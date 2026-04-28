@@ -3,6 +3,7 @@
 
 extern crate alloc;
 
+mod board_effects;
 mod pico_battle_input;
 
 use alloc::{string::ToString, vec::Vec};
@@ -26,7 +27,8 @@ use defmt::info;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Pull};
 use embedded_alloc::Heap;
-use mega_blastoise_core::{BattleInput, FlashDataStore};
+use board_effects::DefmtBattleEffects;
+use mega_blastoise_core::{for_each_new_log_line, BattleInput, FlashDataStore};
 use pico_battle_input::PicoBattleInput;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -99,6 +101,7 @@ async fn main(_spawner: Spawner) {
         Input::new(p.PIN_15, Pull::Up),
     ];
     let mut input = PicoBattleInput::new(move_pins, switch_pins);
+    let mut effects = DefmtBattleEffects::new();
 
     info!("=== mega-blastoise PoC (GPIO moves + switch) ===");
     info!("Initialising data store...");
@@ -144,18 +147,14 @@ async fn main(_spawner: Spawner) {
     battle.start().expect("battle start");
     info!("Battle started — press GPIO move/switch buttons when prompted in logs.");
 
-    for entry in battle.new_log_entries() {
-        info!("{}", entry);
-    }
+    for_each_new_log_line(battle.new_log_entries(), &mut effects);
 
     while !battle.ended() {
         let requests: Vec<(alloc::string::String, Request)> =
             battle.active_requests().collect();
 
         if requests.is_empty() {
-            for entry in battle.new_log_entries() {
-                info!("{}", entry);
-            }
+            for_each_new_log_line(battle.new_log_entries(), &mut effects);
             continue;
         }
 
@@ -175,9 +174,7 @@ async fn main(_spawner: Spawner) {
             }
         }
 
-        for entry in battle.new_log_entries() {
-            info!("{}", entry);
-        }
+        for_each_new_log_line(battle.new_log_entries(), &mut effects);
     }
 
     info!("=== Battle over ===");

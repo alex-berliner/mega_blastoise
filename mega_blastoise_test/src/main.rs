@@ -1,5 +1,7 @@
+mod board_game_effects;
 mod stdin_input;
 
+use board_game_effects::BoardGameEffects;
 use battler::{
     BattleType,
     CoreBattleEngineOptions,
@@ -15,7 +17,7 @@ use battler::{
     SideData,
     TeamData,
 };
-use mega_blastoise_core::{BattleInput, FlashDataStore};
+use mega_blastoise_core::{for_each_new_log_line, BattleInput, FlashDataStore};
 use stdin_input::StdinBattleInput;
 
 fn charizard() -> MonData {
@@ -60,6 +62,7 @@ fn player(id: &str, name: &str) -> PlayerData {
 fn main() {
     let data = FlashDataStore::new();
     let mut input = StdinBattleInput;
+    let mut board_effects = BoardGameEffects::new();
 
     let options = CoreBattleOptions {
         seed: Some(12345),
@@ -100,17 +103,13 @@ fn main() {
     println!("=== Charizard vs Blastoise (interactive) ===\n");
     println!("On each turn, both players pick a move. For forced switches, pick bench slot 1-6.\n");
 
-    for entry in battle.new_log_entries() {
-        println!("{entry}");
-    }
+    for_each_new_log_line(battle.new_log_entries(), &mut board_effects);
 
     while !battle.ended() {
         let requests: Vec<(String, Request)> = battle.active_requests().collect();
 
         if requests.is_empty() {
-            for entry in battle.new_log_entries() {
-                println!("{entry}");
-            }
+            for_each_new_log_line(battle.new_log_entries(), &mut board_effects);
             continue;
         }
 
@@ -121,9 +120,7 @@ fn main() {
             }
         }
 
-        for entry in battle.new_log_entries() {
-            println!("{entry}");
-        }
+        for_each_new_log_line(battle.new_log_entries(), &mut board_effects);
     }
 
     println!("\n=== Battle over ===");
