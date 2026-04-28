@@ -27,7 +27,7 @@ relied on.
 alloc = ["race"]
 ```
 
-### Step 2 — gate the race module by target_has_atomic (NOT YET DONE)
+### Step 2 — gate the race module by target_has_atomic (DONE)
 In `patches/once_cell/src/lib.rs` line 1421-1422:
 ```rust
 // CURRENT (broken on thumbv6m):
@@ -52,6 +52,17 @@ cargo build -p mega-blastoise-test  # must go green
 ```
 cargo run -p mega-blastoise-test
 ```
+(as of 2026-04: also fixed type-chart parsing for emitted KV tables, embedded
+`abilities/gen1.json`, and removed superseded root `src/` / `build.rs` /
+`memory.x`; commits on branch `multiplat`.)
+
+## Firmware note (workspace root)
+From the workspace root, Cargo does **not** pick up `mega_blastoise_fw/.cargo/config.toml`
+default target; use either:
+```
+cargo build -p mega-blastoise-fw --target thumbv6m-none-eabi
+```
+or `cd mega_blastoise_fw && cargo build`.
 
 ## Then commit — suggested breakdown:
 1. `restructure: convert to Cargo workspace with core, fw, and test members`
