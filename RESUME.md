@@ -6,20 +6,15 @@ Restructuring the single-crate `mega_blastoise/` into a Cargo workspace with thr
 - `mega_blastoise_fw` — RP2040 embassy binary (unchanged behaviour)
 - `mega_blastoise_test` — PC std binary (same battle, plain fn main + println!)
 
-## Current state
-All files have been written. The firmware target builds clean:
-```
-cargo build -p mega-blastoise-fw   # ✓
-```
-The PC test target fails:
-```
-cargo build -p mega-blastoise-test  # ✗
-```
-Error: `ahash` (a transitive dep via hashbrown → battler) uses `once_cell::race::OnceBox`
-on x86_64, but our once_cell patch broke the `alloc → race` feature coupling that ahash
-relied on.
+## Current state (complete)
+- `cargo build -p mega-blastoise-test` — passes (once_cell `race` gated by `target_has_atomic`).
+- Firmware: from workspace root use `--target thumbv6m-none-eabi` (see below), or build inside `mega_blastoise_fw/`.
 
-## The fix in progress (half done, needs finishing)
+## Original issue (resolved)
+`ahash` (via hashbrown → battler) needed `once_cell::race` on the host; the patch restores
+`alloc = ["race"]` but skips compiling `race` on thumbv6m where atomics are unavailable.
+
+## The fix (applied)
 
 ### Step 1 — revert the Cargo.toml feature change (DONE)
 `patches/once_cell/Cargo.toml` line 49 has been restored to:
@@ -42,10 +37,10 @@ This makes `race` compile on x86_64 (has atomic ptr, ahash works) but not on
 thumbv6m (no atomic ptr, race module silently absent — ahash is not in the
 embedded dep graph so nothing breaks there).
 
-## After applying step 2, verify both:
+## Verify both targets:
 ```
-cargo build -p mega-blastoise-fw    # must stay green
-cargo build -p mega-blastoise-test  # must go green
+cargo build -p mega-blastoise-test
+cargo build -p mega-blastoise-fw --target thumbv6m-none-eabi   # from workspace root
 ```
 
 ## Then run the PC test to see actual battle output:
@@ -64,21 +59,4 @@ cargo build -p mega-blastoise-fw --target thumbv6m-none-eabi
 ```
 or `cd mega_blastoise_fw && cargo build`.
 
-## Then commit — suggested breakdown:
-1. `restructure: convert to Cargo workspace with core, fw, and test members`
-   - new Cargo.toml (workspace), mega_blastoise_core/, mega_blastoise_fw/,
-     mega_blastoise_test/, removal of old root .cargo/config.toml
-2. `patches/once_cell: gate race module by target_has_atomic instead of removing alloc coupling`
-   - patches/once_cell/Cargo.toml (revert alloc=[])
-   - patches/once_cell/src/lib.rs (add target_has_atomic cfg)
-
-## Files that still exist at workspace root but are now superseded
-These are leftover from before the restructure and should be deleted after
-both builds pass:
-- `src/main.rs`       — replaced by mega_blastoise_fw/src/main.rs
-- `src/data_store.rs` — replaced by mega_blastoise_core/src/data_store.rs
-- `build.rs`          — replaced by mega_blastoise_core/build.rs
-- `memory.x`          — replaced by mega_blastoise_fw/memory.x
-- `.cargo/config.toml` — already deleted
-
-The `src/` dir itself can be removed once confirmed both targets build.
+Superseded root files (`src/`, root `build.rs`, root `memory.x`) have been removed.
