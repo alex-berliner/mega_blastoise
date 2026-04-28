@@ -1418,5 +1418,5 @@ pub mod sync {
     fn _dummy() {}
 }
 
-#[cfg(feature = "race")]
+#[cfg(all(feature = "race", target_has_atomic = "ptr"))]
 pub mod race;
