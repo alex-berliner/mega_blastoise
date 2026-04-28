@@ -15,6 +15,7 @@ fn main() {
 
     let type_chart = load_json(&data_root, "type-chart.json");
     let aliases = load_json(&data_root, "aliases.json");
+    let abilities = load_json(&data_root, "abilities/gen1.json");
     let conditions = merge_json_files(&data_root, &["conditions.json", "move-bases.json"]);
     let mons = slim_mons(load_json(&data_root, "mons/gen1.json"));
     let moves = slim_moves(load_json(&data_root, "moves/gen1.json"));
@@ -26,6 +27,7 @@ fn main() {
 
     emit_kv_table(&mut out, "TYPE_CHART", &type_chart);
     emit_kv_table(&mut out, "ALIASES", &aliases);
+    emit_kv_table(&mut out, "ABILITIES", &abilities);
     emit_kv_table(&mut out, "CONDITIONS", &conditions);
     emit_kv_table(&mut out, "SPECIES", &mons);
     emit_kv_table(&mut out, "MOVES", &moves);
