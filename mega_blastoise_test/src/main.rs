@@ -1,3 +1,5 @@
+mod stdin_input;
+
 use battler::{
     BattleType,
     CoreBattleEngineOptions,
@@ -13,7 +15,8 @@ use battler::{
     SideData,
     TeamData,
 };
-use mega_blastoise_core::FlashDataStore;
+use mega_blastoise_core::{BattleInput, FlashDataStore};
+use stdin_input::StdinBattleInput;
 
 fn charizard() -> MonData {
     MonData {
@@ -56,6 +59,7 @@ fn player(id: &str, name: &str) -> PlayerData {
 
 fn main() {
     let data = FlashDataStore::new();
+    let mut input = StdinBattleInput;
 
     let options = CoreBattleOptions {
         seed: Some(12345),
@@ -93,7 +97,8 @@ fn main() {
         .expect("set p2 team");
 
     battle.start().expect("battle start");
-    println!("=== Charizard vs Blastoise ===");
+    println!("=== Charizard vs Blastoise (interactive) ===\n");
+    println!("On each turn, both players pick a move. For forced switches, pick bench slot 1-6.\n");
 
     for entry in battle.new_log_entries() {
         println!("{entry}");
@@ -110,16 +115,9 @@ fn main() {
         }
 
         for (player_id, request) in &requests {
-            match request {
-                Request::Turn(_) => {
-                    if let Err(e) = battle.set_player_choice(player_id, "move 1") {
-                        eprintln!("choice error for {player_id}: {e}");
-                    }
-                }
-                Request::Switch(_) => {
-                    eprintln!("unexpected switch request for {player_id}");
-                }
-                _ => {}
+            let line = input.read_choice(player_id, request);
+            if let Err(e) = battle.set_player_choice(player_id, &line) {
+                eprintln!("choice error for {player_id}: {e}");
             }
         }
 
@@ -128,5 +126,5 @@ fn main() {
         }
     }
 
-    println!("=== Battle over ===");
+    println!("\n=== Battle over ===");
 }

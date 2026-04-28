@@ -52,6 +52,8 @@ cargo run -p mega-blastoise-test
 `memory.x`; commits on branch `multiplat`.)
 
 ## Firmware note (workspace root)
+See **[README.md](README.md)** for full compile commands (PC + Pico).
+
 From the workspace root, Cargo does **not** pick up `mega_blastoise_fw/.cargo/config.toml`
 default target; use either:
 ```

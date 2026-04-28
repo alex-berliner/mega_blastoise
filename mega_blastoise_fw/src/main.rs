@@ -3,6 +3,8 @@
 
 extern crate alloc;
 
+mod pico_battle_input;
+
 use alloc::{string::ToString, vec::Vec};
 
 use battler::{
@@ -22,8 +24,10 @@ use battler::{
 };
 use defmt::info;
 use embassy_executor::Spawner;
+use embassy_rp::gpio::{Input, Pull};
 use embedded_alloc::Heap;
-use mega_blastoise_core::FlashDataStore;
+use mega_blastoise_core::{BattleInput, FlashDataStore};
+use pico_battle_input::PicoBattleInput;
 use {defmt_rtt as _, panic_probe as _};
 
 #[global_allocator]
@@ -76,10 +80,27 @@ fn player(id: &str, name: &str) -> PlayerData {
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
-    let _p = embassy_rp::init(Default::default());
+    let p = embassy_rp::init(Default::default());
     init_heap();
 
-    info!("=== mega-blastoise PoC ===");
+    // Move buttons GPIO 6–9 (protocol slots 0–3); switch GPIO 10–15 (party 0–5).
+    let move_pins = [
+        Input::new(p.PIN_6, Pull::Up),
+        Input::new(p.PIN_7, Pull::Up),
+        Input::new(p.PIN_8, Pull::Up),
+        Input::new(p.PIN_9, Pull::Up),
+    ];
+    let switch_pins = [
+        Input::new(p.PIN_10, Pull::Up),
+        Input::new(p.PIN_11, Pull::Up),
+        Input::new(p.PIN_12, Pull::Up),
+        Input::new(p.PIN_13, Pull::Up),
+        Input::new(p.PIN_14, Pull::Up),
+        Input::new(p.PIN_15, Pull::Up),
+    ];
+    let mut input = PicoBattleInput::new(move_pins, switch_pins);
+
+    info!("=== mega-blastoise PoC (GPIO moves + switch) ===");
     info!("Initialising data store...");
 
     let data = FlashDataStore::new();
@@ -121,7 +142,7 @@ async fn main(_spawner: Spawner) {
         .expect("set p2 team");
 
     battle.start().expect("battle start");
-    info!("Battle started: Charizard vs Blastoise");
+    info!("Battle started — press GPIO move/switch buttons when prompted in logs.");
 
     for entry in battle.new_log_entries() {
         info!("{}", entry);
@@ -140,15 +161,17 @@ async fn main(_spawner: Spawner) {
 
         for (player_id, request) in &requests {
             match request {
-                Request::Turn(_) => {
-                    if let Err(e) = battle.set_player_choice(player_id, "move 1") {
-                        info!("choice error for {}: {}", player_id.as_str(), defmt::Display2Format(&e));
-                    }
-                }
-                Request::Switch(_) => {
-                    info!("unexpected switch request for {}", player_id.as_str());
-                }
+                Request::Turn(_) => info!("Player {}: press move button [GPIO 6-9]", player_id),
+                Request::Switch(_) => info!("Player {}: press switch [GPIO 10-15]", player_id),
                 _ => {}
+            }
+            let line = input.read_choice(player_id, request);
+            if let Err(e) = battle.set_player_choice(player_id, &line) {
+                info!(
+                    "choice error for {}: {}",
+                    player_id.as_str(),
+                    defmt::Display2Format(&e)
+                );
             }
         }
 
