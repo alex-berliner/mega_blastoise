@@ -3,8 +3,11 @@
 
 extern crate alloc;
 
+use alloc::boxed::Box;
+
 mod board_effects;
 mod pico_battle_input;
+mod pn532;
 
 use alloc::{string::ToString, vec::Vec};
 
@@ -25,7 +28,10 @@ use battler::{
 };
 use defmt::info;
 use embassy_executor::Spawner;
+use embassy_rp::bind_interrupts;
 use embassy_rp::gpio::{Input, Pull};
+use embassy_rp::i2c::{Async, InterruptHandler, I2c};
+use embassy_rp::peripherals::{I2C0, I2C1};
 use embedded_alloc::Heap;
 use board_effects::DefmtBattleEffects;
 use mega_blastoise_core::{for_each_new_log_line, BattleInput, FlashDataStore};
@@ -69,6 +75,21 @@ fn blastoise() -> MonData {
     }
 }
 
+bind_interrupts!(struct Irqs {
+    I2C0_IRQ => InterruptHandler<I2C0>;
+    I2C1_IRQ => InterruptHandler<I2C1>;
+});
+
+#[embassy_executor::task]
+async fn pn532_task_i2c0(bus: &'static mut I2c<'static, I2C0, Async>) {
+    pn532::reader_loop(0, bus).await
+}
+
+#[embassy_executor::task]
+async fn pn532_task_i2c1(bus: &'static mut I2c<'static, I2C1, Async>) {
+    pn532::reader_loop(1, bus).await
+}
+
 fn player(id: &str, name: &str) -> PlayerData {
     PlayerData {
         id: id.to_string(),
@@ -81,9 +102,18 @@ fn player(id: &str, name: &str) -> PlayerData {
 }
 
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     init_heap();
+
+    // Embassy order: SCL, then SDA (see `embassy_rp::i2c::I2c::new_async`).
+    let i2c0 = I2c::new_async(p.I2C0, p.PIN_17, p.PIN_16, Irqs, pn532::i2c_config());
+    let i2c1 = I2c::new_async(p.I2C1, p.PIN_19, p.PIN_18, Irqs, pn532::i2c_config());
+    let i2c0: &'static mut I2c<'static, I2C0, Async> = Box::leak(Box::new(i2c0));
+    let i2c1: &'static mut I2c<'static, I2C1, Async> = Box::leak(Box::new(i2c1));
+    spawner.spawn(pn532_task_i2c0(i2c0)).unwrap();
+    spawner.spawn(pn532_task_i2c1(i2c1)).unwrap();
+    info!("PN532 tasks started (I2C0: GP16/GP17, I2C1: GP18/GP19, addr 0x24)");
 
     // Move buttons GPIO 6–9 (protocol slots 0–3); switch GPIO 10–15 (party 0–5).
     let move_pins = [
@@ -103,7 +133,7 @@ async fn main(_spawner: Spawner) {
     let mut input = PicoBattleInput::new(move_pins, switch_pins);
     let mut effects = DefmtBattleEffects::new();
 
-    info!("=== mega-blastoise PoC (GPIO moves + switch) ===");
+    info!("=== mega-blastoise PoC (GPIO + 2× PN532 I²C) ===");
     info!("Initialising data store...");
 
     let data = FlashDataStore::new();

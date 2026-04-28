@@ -450,6 +450,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "embassy-executor"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90327bcc66333a507f89ecc4e2d911b265c45f5c9bc241f98eee076752d35ac6"
+dependencies = [
+ "critical-section",
+ "document-features",
+ "embassy-executor-macros",
+]
+
+[[package]]
 name = "embassy-executor-macros"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -506,6 +517,8 @@ dependencies = [
  "embassy-hal-internal 0.2.0",
  "embassy-sync 0.6.2",
  "embassy-time",
+ "embassy-time-driver",
+ "embassy-time-queue-utils",
  "embassy-usb-driver",
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
@@ -562,6 +575,7 @@ checksum = "f820157f198ada183ad62e0a66f554c610cdcd1a9f27d4b316358103ced7a1f8"
 dependencies = [
  "cfg-if",
  "critical-section",
+ "defmt 0.3.100",
  "document-features",
  "embassy-time-driver",
  "embedded-hal 0.2.7",
@@ -577,6 +591,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ee71af1b3a0deaa53eaf2d39252f83504c853646e472400b763060389b9fcc9"
 dependencies = [
  "document-features",
+]
+
+[[package]]
+name = "embassy-time-queue-utils"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc55c748d16908a65b166d09ce976575fb8852cf60ccd06174092b41064d8f83"
+dependencies = [
+ "embassy-executor 0.7.0",
+ "heapless",
 ]
 
 [[package]]
@@ -1003,9 +1027,11 @@ dependencies = [
  "cortex-m-rt",
  "defmt 0.3.100",
  "defmt-rtt",
- "embassy-executor",
+ "embassy-executor 0.6.3",
  "embassy-rp",
+ "embassy-time",
  "embedded-alloc",
+ "embedded-hal-async",
  "mega-blastoise-core",
  "panic-probe",
 ]

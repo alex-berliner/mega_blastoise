@@ -45,3 +45,34 @@ cargo build --release
 ```
 
 Flash/run with your usual tool (e.g. `probe-rs` as configured in `mega_blastoise_fw/.cargo/config.toml`).
+
+### PN532 readers (firmware)
+
+Two **PN532** modules on separate I²C buses (`I2C0` + `I2C1`), default address **0x24** each:
+
+| Bus | SCL (GP) | SDA (GP) |
+|-----|----------|----------|
+| I2C0 (reader 0) | GP17 | GP16 |
+| I2C1 (reader 1) | GP19 | GP18 |
+
+Startup spawns two embassy tasks that periodically exchange **GetFirmwareVersion** and discard the reply — bring-up traffic only until NFC handling lands.
+
+### Breadboard power (PN532 + Pico)
+
+PN532 boards draw noticeable current when the RF field is active; pulling both from the Pico’s **3V3** pin alone can brown out the Pico regulator or cause flaky I²C.
+
+**Plan for the breadboard stage:**
+
+1. **External brick** — Use a small DC supply (e.g. barrel jack wall wart into a **buck module** or **LM2596-style** board) that exposes stable **5&nbsp;V** and/or **3.3&nbsp;V** rails at enough current for **both** readers plus headroom (hundreds of mA total is a comfortable target for NFC bring-up).
+
+2. **Power the readers from that rail**, not from Pico **3V3**:
+   - Many PN532 breakouts accept **5&nbsp;V** on **VIN** and regulate down on-board; follow your module’s silkscreen.
+   - If the breakout is **3.3&nbsp;V only**, power it from the external **3.3&nbsp;V** output of the same supply family (not from the Pico pin).
+
+3. **Single ground reference** — Tie **GND** from the barrel/supply module, **Pico GND**, and **both reader GNDs** on one common ground net (breadboard negative rail). I²C only works if grounds are shared.
+
+4. **Pico supply during development** — Easiest: power the Pico over **USB** for flashing/debug while the **external supply feeds only the NFC modules** (still with common GND). Alternatively, feed **5&nbsp;V** into **VSYS** through an appropriate Schottky diode arrangement per Pico docs if you want fully standalone power (more breadboard care).
+
+5. **I²C levels** — RP2040 GPIO is **3.3&nbsp;V** logic. PN532 I²C on common breakouts is 3.3&nbsp;V tolerant; if you ever used a 5&nbsp;V‑only I²C module you would need level shifting (most PN532 boards are 3.3&nbsp;V I²C).
+
+Keep high‑current paths short on the breadboard and avoid routing reader supply current through the Pico pins.
