@@ -1,0 +1,31 @@
+[package]
+name = "mega-blastoise-fw"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mega-blastoise-core = { path = "../mega_blastoise_core" }
+
+# RP2040 async runtime + HAL
+embassy-executor = { version = "0.6", features = ["arch-cortex-m", "executor-thread", "defmt"] }
+embassy-rp = { version = "0.3", features = ["defmt", "critical-section-impl", "rp2040"] }
+
+# Cortex-M core
+cortex-m = { version = "0.7", features = ["inline-asm"] }
+cortex-m-rt = "0.7"
+
+# Logging over RTT
+defmt = "0.3"
+defmt-rtt = "0.4"
+panic-probe = { version = "0.3", features = ["print-defmt"] }
+
+# Heap allocator
+embedded-alloc = "0.5"
+
+# battler types for MonData, TeamData, etc.
+battler = { path = "../../battler/battler", default-features = false }
+battler-data = { path = "../../battler/battler-data", default-features = false }
+anyhow = { version = "1.0", default-features = false }
+
+[build-dependencies]
+# nothing — just need build.rs to exist for memory.x linking

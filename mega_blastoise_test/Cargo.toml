@@ -1,0 +1,10 @@
+[package]
+name = "mega-blastoise-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mega-blastoise-core = { path = "../mega_blastoise_core" }
+battler = { path = "../../battler/battler" }
+battler-data = { path = "../../battler/battler-data" }
+anyhow = "1.0"

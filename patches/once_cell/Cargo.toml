@@ -46,7 +46,7 @@ all-features = true
 rustdoc-args = ["--generate-link-to-definition"]
 
 [features]
-alloc = []
+alloc = ["race"]
 atomic-polyfill = ["critical-section"]
 critical-section = [
     "dep:critical-section",
