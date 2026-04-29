@@ -1,208 +1,190 @@
-#![no_main]
 #![no_std]
+#![no_main]
 
-use mega_blastoise_fw as _; // global logger + panicking-behavior + memory layout
+extern crate alloc;
 
-#[cortex_m_rt::entry]
-fn main() -> ! {
-    defmt::println!("Hello, worlddd!");
+use alloc::boxed::Box;
 
-    mega_blastoise_fw::exit()
+mod board_effects;
+mod pico_battle_input;
+mod pn532;
+
+use alloc::{string::ToString, vec::Vec};
+
+use battler::{
+    BattleType,
+    CoreBattleEngineOptions,
+    CoreBattleOptions,
+    FormatData,
+    PlayerData,
+    PlayerDex,
+    PlayerOptions,
+    PlayerType,
+    Request,
+    SerializedRuleSet,
+    SideData,
+    TeamData,
+};
+use defmt::info;
+use embassy_executor::Spawner;
+use embassy_rp::bind_interrupts;
+use embassy_rp::gpio::{Input, Pull};
+use embassy_rp::i2c::{Async, InterruptHandler, I2c};
+use embassy_rp::peripherals::{I2C0, I2C1};
+use embedded_alloc::Heap;
+use board_effects::DefmtBattleEffects;
+use mega_blastoise_core::{
+    board_prompt_event, demo_team_blue, demo_team_red, process_new_log_lines, BattleInput,
+    BoardEventQueue, FlashDataStore,
+};
+use pico_battle_input::PicoBattleInput;
+use mega_blastoise_fw as _; // global logger + panic handler
+
+#[global_allocator]
+static HEAP: Heap = Heap::empty();
+
+fn init_heap() {
+    const HEAP_SIZE: usize = 128 * 1024;
+    static mut HEAP_MEM: [u8; HEAP_SIZE] = [0u8; HEAP_SIZE];
+    unsafe { HEAP.init(core::ptr::addr_of!(HEAP_MEM) as usize, HEAP_SIZE) }
 }
 
+bind_interrupts!(struct Irqs {
+    I2C0_IRQ => InterruptHandler<I2C0>;
+    I2C1_IRQ => InterruptHandler<I2C1>;
+});
 
-// extern crate alloc;
+#[embassy_executor::task]
+async fn pn532_task_i2c0(bus: &'static mut I2c<'static, I2C0, Async>) {
+    pn532::reader_loop(0, bus).await
+}
 
-// use alloc::boxed::Box;
+#[embassy_executor::task]
+async fn pn532_task_i2c1(bus: &'static mut I2c<'static, I2C1, Async>) {
+    pn532::reader_loop(1, bus).await
+}
 
-// mod board_effects;
-// mod pico_battle_input;
-// mod pn532;
+fn player(id: &str, name: &str) -> PlayerData {
+    PlayerData {
+        id: id.to_string(),
+        name: name.to_string(),
+        player_type: PlayerType::Trainer,
+        player_options: PlayerOptions::default(),
+        team: TeamData::default(),
+        dex: PlayerDex::default(),
+    }
+}
 
-// use alloc::{string::ToString, vec::Vec};
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    let p = embassy_rp::init(Default::default());
+    init_heap();
 
-// use battler::{
-//     BattleType,
-//     CoreBattleEngineOptions,
-//     CoreBattleOptions,
-//     FormatData,
-//     PlayerData,
-//     PlayerDex,
-//     PlayerOptions,
-//     PlayerType,
-//     Request,
-//     SerializedRuleSet,
-//     SideData,
-//     TeamData,
-// };
-// use defmt::info;
-// use embassy_executor::Spawner;
-// use embassy_rp::bind_interrupts;
-// use embassy_rp::gpio::{Input, Pull};
-// use embassy_rp::i2c::{Async, InterruptHandler, I2c};
-// use embassy_rp::peripherals::{I2C0, I2C1};
-// use embedded_alloc::Heap;
-// use board_effects::DefmtBattleEffects;
-// use mega_blastoise_core::{
-//     board_prompt_event, demo_team_blue, demo_team_red, process_new_log_lines, BattleInput,
-//     BoardEventQueue, FlashDataStore,
-// };
-// use pico_battle_input::PicoBattleInput;
-// use {defmt_rtt as _, panic_probe as _};
+    let i2c0 = I2c::new_async(p.I2C0, p.PIN_17, p.PIN_16, Irqs, pn532::i2c_config());
+    let i2c1 = I2c::new_async(p.I2C1, p.PIN_19, p.PIN_18, Irqs, pn532::i2c_config());
+    let i2c0: &'static mut I2c<'static, I2C0, Async> = Box::leak(Box::new(i2c0));
+    let i2c1: &'static mut I2c<'static, I2C1, Async> = Box::leak(Box::new(i2c1));
+    spawner.spawn(pn532_task_i2c0(i2c0)).unwrap();
+    spawner.spawn(pn532_task_i2c1(i2c1)).unwrap();
+    info!("PN532 tasks started (I2C0: GP16/GP17, I2C1: GP18/GP19, addr 0x24)");
 
-// #[global_allocator]
-// static HEAP: Heap = Heap::empty();
+    let move_pins = [
+        Input::new(p.PIN_6, Pull::Up),
+        Input::new(p.PIN_7, Pull::Up),
+        Input::new(p.PIN_8, Pull::Up),
+        Input::new(p.PIN_9, Pull::Up),
+    ];
+    let switch_pins = [
+        Input::new(p.PIN_10, Pull::Up),
+        Input::new(p.PIN_11, Pull::Up),
+        Input::new(p.PIN_12, Pull::Up),
+        Input::new(p.PIN_13, Pull::Up),
+        Input::new(p.PIN_14, Pull::Up),
+        Input::new(p.PIN_15, Pull::Up),
+    ];
+    let mut input = PicoBattleInput::new(move_pins, switch_pins);
+    let mut effects = DefmtBattleEffects::new();
+    let mut queue = BoardEventQueue::new();
 
-// fn init_heap() {
-//     const HEAP_SIZE: usize = 128 * 1024;
-//     static mut HEAP_MEM: [u8; HEAP_SIZE] = [0u8; HEAP_SIZE];
-//     unsafe { HEAP.init(core::ptr::addr_of!(HEAP_MEM) as usize, HEAP_SIZE) }
-// }
+    info!("=== mega-blastoise PoC (GPIO + 2× PN532 I²C) ===");
+    info!("Initialising data store...");
 
-// bind_interrupts!(struct Irqs {
-//     I2C0_IRQ => InterruptHandler<I2C0>;
-//     I2C1_IRQ => InterruptHandler<I2C1>;
-// });
+    let data = FlashDataStore::new();
 
-// #[embassy_executor::task]
-// async fn pn532_task_i2c0(bus: &'static mut I2c<'static, I2C0, Async>) {
-//     pn532::reader_loop(0, bus).await
-// }
+    let options = CoreBattleOptions {
+        seed: Some(12345),
+        format: FormatData {
+            battle_type: BattleType::Singles,
+            rules: SerializedRuleSet::new(),
+        },
+        field: Default::default(),
+        side_1: SideData {
+            name: "Red".to_string(),
+            players: alloc::vec![player("p1", "Red")],
+        },
+        side_2: SideData {
+            name: "Blue".to_string(),
+            players: alloc::vec![player("p2", "Blue")],
+        },
+    };
 
-// #[embassy_executor::task]
-// async fn pn532_task_i2c1(bus: &'static mut I2c<'static, I2C1, Async>) {
-//     pn532::reader_loop(1, bus).await
-// }
+    let engine_opts = CoreBattleEngineOptions {
+        validate_teams: false,
+        auto_continue: true,
+        reveal_actual_health: true,
+        log_time: false,
+        ..Default::default()
+    };
 
-// fn player(id: &str, name: &str) -> PlayerData {
-//     PlayerData {
-//         id: id.to_string(),
-//         name: name.to_string(),
-//         player_type: PlayerType::Trainer,
-//         player_options: PlayerOptions::default(),
-//         team: TeamData::default(),
-//         dex: PlayerDex::default(),
-//     }
-// }
+    let mut battle =
+        battler::PublicCoreBattle::new(options, &data, engine_opts).expect("battle init");
 
-// #[embassy_executor::main]
-// async fn main(spawner: Spawner) {
-//     let p = embassy_rp::init(Default::default());
-//     init_heap();
+    battle
+        .update_team(
+            "p1",
+            TeamData { members: demo_team_red(), ..Default::default() },
+        )
+        .expect("set p1 team");
 
-//     // Embassy order: SCL, then SDA (see `embassy_rp::i2c::I2c::new_async`).
-//     let i2c0 = I2c::new_async(p.I2C0, p.PIN_17, p.PIN_16, Irqs, pn532::i2c_config());
-//     let i2c1 = I2c::new_async(p.I2C1, p.PIN_19, p.PIN_18, Irqs, pn532::i2c_config());
-//     let i2c0: &'static mut I2c<'static, I2C0, Async> = Box::leak(Box::new(i2c0));
-//     let i2c1: &'static mut I2c<'static, I2C1, Async> = Box::leak(Box::new(i2c1));
-//     spawner.spawn(pn532_task_i2c0(i2c0)).unwrap();
-//     spawner.spawn(pn532_task_i2c1(i2c1)).unwrap();
-//     info!("PN532 tasks started (I2C0: GP16/GP17, I2C1: GP18/GP19, addr 0x24)");
+    battle
+        .update_team(
+            "p2",
+            TeamData { members: demo_team_blue(), ..Default::default() },
+        )
+        .expect("set p2 team");
 
-//     // Move buttons GPIO 6–9 (protocol slots 0–3); switch GPIO 10–15 (party 0–5).
-//     let move_pins = [
-//         Input::new(p.PIN_6, Pull::Up),
-//         Input::new(p.PIN_7, Pull::Up),
-//         Input::new(p.PIN_8, Pull::Up),
-//         Input::new(p.PIN_9, Pull::Up),
-//     ];
-//     let switch_pins = [
-//         Input::new(p.PIN_10, Pull::Up),
-//         Input::new(p.PIN_11, Pull::Up),
-//         Input::new(p.PIN_12, Pull::Up),
-//         Input::new(p.PIN_13, Pull::Up),
-//         Input::new(p.PIN_14, Pull::Up),
-//         Input::new(p.PIN_15, Pull::Up),
-//     ];
-//     let mut input = PicoBattleInput::new(move_pins, switch_pins);
-//     let mut effects = DefmtBattleEffects::new();
-//     let mut queue = BoardEventQueue::new();
+    battle.start().expect("battle start");
+    info!("Battle started — GPIO move/switch; prompts also emit board events.");
 
-//     info!("=== mega-blastoise PoC (GPIO + 2× PN532 I²C) ===");
-//     info!("Initialising data store...");
+    process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
 
-//     let data = FlashDataStore::new();
+    while !battle.ended() {
+        let requests: Vec<(alloc::string::String, Request)> =
+            battle.active_requests().collect();
 
-//     let options = CoreBattleOptions {
-//         seed: Some(12345),
-//         format: FormatData {
-//             battle_type: BattleType::Singles,
-//             rules: SerializedRuleSet::new(),
-//         },
-//         field: Default::default(),
-//         side_1: SideData {
-//             name: "Red".to_string(),
-//             players: alloc::vec![player("p1", "Red")],
-//         },
-//         side_2: SideData {
-//             name: "Blue".to_string(),
-//             players: alloc::vec![player("p2", "Blue")],
-//         },
-//     };
+        if requests.is_empty() {
+            process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
+            continue;
+        }
 
-//     let engine_opts = CoreBattleEngineOptions {
-//         validate_teams: false,
-//         auto_continue: true,
-//         reveal_actual_health: true,
-//         log_time: false,
-//         ..Default::default()
-//     };
+        for (player_id, request) in &requests {
+            queue.push_event(board_prompt_event(player_id, request));
+            queue.dispatch_all(&mut effects);
+            let line = input.read_choice(player_id, request);
+            if let Err(e) = battle.set_player_choice(player_id, &line) {
+                info!(
+                    "choice error for {}: {}",
+                    player_id.as_str(),
+                    defmt::Display2Format(&e)
+                );
+            }
+        }
 
-//     let mut battle =
-//         battler::PublicCoreBattle::new(options, &data, engine_opts).expect("battle init");
+        process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
+    }
 
-//     battle
-//         .update_team(
-//             "p1",
-//             TeamData {
-//                 members: demo_team_red(),
-//                 ..Default::default()
-//             },
-//         )
-//         .expect("set p1 team");
-
-//     battle
-//         .update_team(
-//             "p2",
-//             TeamData {
-//                 members: demo_team_blue(),
-//                 ..Default::default()
-//             },
-//         )
-//         .expect("set p2 team");
-
-//     battle.start().expect("battle start");
-//     info!("Battle started — GPIO move/switch; prompts also emit board events.");
-
-//     process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
-
-//     while !battle.ended() {
-//         let requests: Vec<(alloc::string::String, Request)> =
-//             battle.active_requests().collect();
-
-//         if requests.is_empty() {
-//             process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
-//             continue;
-//         }
-
-//         for (player_id, request) in &requests {
-//             queue.push_event(board_prompt_event(player_id, request));
-//             queue.dispatch_all(&mut effects);
-//             let line = input.read_choice(player_id, request);
-//             if let Err(e) = battle.set_player_choice(player_id, &line) {
-//                 info!(
-//                     "choice error for {}: {}",
-//                     player_id.as_str(),
-//                     defmt::Display2Format(&e)
-//                 );
-//             }
-//         }
-
-//         process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
-//     }
-
-//     info!("=== Battle over ===");
-//     loop {
-//         cortex_m::asm::wfi();
-//     }
-// }
+    info!("=== Battle over ===");
+    loop {
+        cortex_m::asm::wfi();
+    }
+}
