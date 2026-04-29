@@ -3,10 +3,16 @@
 extern crate alloc;
 
 pub mod battle_effects;
+pub mod board_event;
 pub mod battle_input;
 pub mod data_store;
+
 pub use battle_effects::{
-    for_each_new_log_line, NoopBattleEffects, ParsedBattleLogLine, BattleEffects,
+    process_new_log_lines, BoardEffects, BoardEventQueue, NoopBoardEffects,
+};
+pub use board_event::{
+    board_prompt_event, parse_log_line, player_display_name, BoardEvent, ParsedBattleLogLine,
+    PromptKind,
 };
 pub use battle_input::{
     format_move_choice, format_switch_choice, join_choice_parts, switch_choice_from_team_indices,

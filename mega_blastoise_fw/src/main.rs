@@ -34,7 +34,9 @@ use embassy_rp::i2c::{Async, InterruptHandler, I2c};
 use embassy_rp::peripherals::{I2C0, I2C1};
 use embedded_alloc::Heap;
 use board_effects::DefmtBattleEffects;
-use mega_blastoise_core::{for_each_new_log_line, BattleInput, FlashDataStore};
+use mega_blastoise_core::{
+    board_prompt_event, process_new_log_lines, BattleInput, BoardEventQueue, FlashDataStore,
+};
 use pico_battle_input::PicoBattleInput;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -132,6 +134,7 @@ async fn main(spawner: Spawner) {
     ];
     let mut input = PicoBattleInput::new(move_pins, switch_pins);
     let mut effects = DefmtBattleEffects::new();
+    let mut queue = BoardEventQueue::new();
 
     info!("=== mega-blastoise PoC (GPIO + 2× PN532 I²C) ===");
     info!("Initialising data store...");
@@ -175,25 +178,22 @@ async fn main(spawner: Spawner) {
         .expect("set p2 team");
 
     battle.start().expect("battle start");
-    info!("Battle started — press GPIO move/switch buttons when prompted in logs.");
+    info!("Battle started — GPIO move/switch; prompts also emit board events.");
 
-    for_each_new_log_line(battle.new_log_entries(), &mut effects);
+    process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
 
     while !battle.ended() {
         let requests: Vec<(alloc::string::String, Request)> =
             battle.active_requests().collect();
 
         if requests.is_empty() {
-            for_each_new_log_line(battle.new_log_entries(), &mut effects);
+            process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
             continue;
         }
 
         for (player_id, request) in &requests {
-            match request {
-                Request::Turn(_) => info!("Player {}: press move button [GPIO 6-9]", player_id),
-                Request::Switch(_) => info!("Player {}: press switch [GPIO 10-15]", player_id),
-                _ => {}
-            }
+            queue.push_event(board_prompt_event(player_id, request));
+            queue.dispatch_all(&mut effects);
             let line = input.read_choice(player_id, request);
             if let Err(e) = battle.set_player_choice(player_id, &line) {
                 info!(
@@ -204,7 +204,7 @@ async fn main(spawner: Spawner) {
             }
         }
 
-        for_each_new_log_line(battle.new_log_entries(), &mut effects);
+        process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
     }
 
     info!("=== Battle over ===");

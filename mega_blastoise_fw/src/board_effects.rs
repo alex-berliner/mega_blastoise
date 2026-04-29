@@ -1,9 +1,8 @@
-//! Physical outputs (RGB / buzzer / PWM audio) — wire [`BattleEffects`] here as drivers appear.
+//! Physical outputs (RGB / buzzer / PWM). Branch on [`BoardEvent`] — descriptions are for RTT only.
 
 use defmt::info;
-use mega_blastoise_core::{BattleEffects, ParsedBattleLogLine};
+use mega_blastoise_core::{BoardEffects, BoardEvent};
 
-/// Logs each line over RTT (same as before). Extend `match` arms for buzzer / NeoPixel / I2S.
 pub struct DefmtBattleEffects;
 
 impl DefmtBattleEffects {
@@ -18,19 +17,22 @@ impl Default for DefmtBattleEffects {
     }
 }
 
-impl BattleEffects for DefmtBattleEffects {
-    fn on_log_line(&mut self, line: &str) {
-        info!("{}", line);
+impl BoardEffects for DefmtBattleEffects {
+    fn on_event(&mut self, event: BoardEvent) {
+        let msg = event.description();
+        info!("{}", defmt::Display2Format(&msg));
 
-        let p = ParsedBattleLogLine::parse(line);
-        match p.title() {
-            "damage" => {
-                let _health = p.get("health");
-                let _mon = p.get("mon");
-                // Future: map `health` (public % / fraction string) → LED color; one-shot SFX.
+        match event {
+            BoardEvent::Damage { health, .. } => {
+                let _ = health;
+                // Future: map public HP string → NeoPixel color
             }
-            "faint" => {}
-            "move" | "animatemove" => {}
+            BoardEvent::Faint { .. } => {}
+            BoardEvent::Move { .. } => {}
+            BoardEvent::Prompt { kind, .. } => {
+                let _ = kind;
+                // Future: turn indicator GPIO per player
+            }
             _ => {}
         }
     }

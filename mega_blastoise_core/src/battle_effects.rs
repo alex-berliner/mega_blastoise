@@ -1,62 +1,74 @@
-//! Hooks for **physical board presentation**: LEDs, sound, displays — separate from battle rules.
-//!
-//! The battler engine exposes human-readable log lines (`PublicCoreBattle::new_log_entries`).
-//! Implement [`BattleEffects::on_log_line`] to react on-device; use [`ParsedBattleLogLine`] to
-//! branch on stable `title|key:value|…` fields (e.g. `damage` + `health` for RGB health rings).
+//! Presentation hooks: typed [`crate::board_event::BoardEvent`] only — parse logs at the edge,
+//! queue, then dispatch.
 
-/// Receives each **new** committed log line since the last drain — same feed you already print.
-pub trait BattleEffects {
-    fn on_log_line(&mut self, line: &str);
+extern crate alloc;
+
+use alloc::collections::VecDeque;
+
+use crate::board_event::{parse_log_line, BoardEvent};
+
+/// Reacts to [`BoardEvent`] (sound, LEDs, prompts). Same trait on host and firmware.
+pub trait BoardEffects {
+    fn on_event(&mut self, event: BoardEvent);
 }
 
-/// Default for firmware that does not yet drive WS2812 / DAC (implements [`BattleEffects`] as no-ops).
+/// Default no-op sink (stub hardware).
 #[derive(Debug, Clone, Copy, Default)]
-pub struct NoopBattleEffects;
+pub struct NoopBoardEffects;
 
-impl BattleEffects for NoopBattleEffects {
-    fn on_log_line(&mut self, _line: &str) {}
+impl BoardEffects for NoopBoardEffects {
+    fn on_event(&mut self, _event: BoardEvent) {}
 }
 
-/// Calls [`BattleEffects::on_log_line`] once per iterator item (typically `battle.new_log_entries()`).
-pub fn for_each_new_log_line<'a, I>(lines: I, effects: &mut impl BattleEffects)
-where
-    I: IntoIterator<Item = &'a str>,
-{
-    for line in lines {
-        effects.on_log_line(line);
-    }
+/// Single FIFO queue for board effects (log-derived + injected prompts / scripted tests).
+#[derive(Debug, Default)]
+pub struct BoardEventQueue {
+    inner: VecDeque<BoardEvent>,
 }
 
-/// Borrowed view of `title|key:value|key:value|…` log lines from the engine.
-#[derive(Debug, Clone, Copy)]
-pub struct ParsedBattleLogLine<'a> {
-    title: &'a str,
-    rest: &'a str,
-}
-
-impl<'a> ParsedBattleLogLine<'a> {
-    pub fn parse(line: &'a str) -> Self {
-        let mut parts = line.splitn(2, '|');
-        let title = parts.next().unwrap_or("");
-        let rest = parts.next().unwrap_or("");
-        Self { title, rest }
-    }
-
-    pub fn title(&self) -> &'a str {
-        self.title
-    }
-
-    pub fn get(&self, key: &str) -> Option<&'a str> {
-        if self.rest.is_empty() {
-            return None;
+impl BoardEventQueue {
+    pub fn new() -> Self {
+        Self {
+            inner: VecDeque::new(),
         }
-        for segment in self.rest.split('|') {
-            if let Some((k, v)) = segment.split_once(':') {
-                if k == key {
-                    return Some(v);
-                }
+    }
+
+    pub fn push_event(&mut self, event: BoardEvent) {
+        self.inner.push_back(event);
+    }
+
+    /// Parse engine log lines and enqueue recognized events (unknown titles are skipped).
+    pub fn push_log_lines<'a, I>(&mut self, lines: I)
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        for line in lines {
+            if let Some(e) = parse_log_line(line) {
+                self.inner.push_back(e);
             }
         }
-        None
     }
+
+    pub fn dispatch_all(&mut self, sink: &mut impl BoardEffects) {
+        while let Some(e) = self.inner.pop_front() {
+            sink.on_event(e);
+        }
+    }
+
+    /// True if nothing pending.
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+}
+
+/// Enqueue parsed log events and dispatch them in order.
+pub fn process_new_log_lines<'a, I>(
+    lines: I,
+    queue: &mut BoardEventQueue,
+    sink: &mut impl BoardEffects,
+) where
+    I: IntoIterator<Item = &'a str>,
+{
+    queue.push_log_lines(lines);
+    queue.dispatch_all(sink);
 }
