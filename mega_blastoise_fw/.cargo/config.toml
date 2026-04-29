@@ -1,5 +1,7 @@
 [target.thumbv6m-none-eabi]
-runner = "probe-rs run --chip RP2040 --speed 12000"
+# We add the specific probe ID and lower the speed to 500kHz
+runner = "probe-rs run --chip RP2040 --probe 2e8a:000c:E663589863798621"
+
 rustflags = [
     "-C", "link-arg=--nmagic",
     "-C", "link-arg=-Tlink.x",

@@ -1,13 +1,5 @@
-mod board_game_effects;
-mod harness;
-mod stdin_input;
+//! Default binary: interactive stdin battle only. Automated checks live in `cargo test`.
 
 fn main() {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    if args.iter().any(|a| a == "--self-test") {
-        harness::run_self_test_effects();
-        return;
-    }
-
-    harness::run_interactive();
+    mega_blastoise_test::harness::run_interactive();
 }

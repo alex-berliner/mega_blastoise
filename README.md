@@ -2,6 +2,17 @@
 
 Workspace layout: `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (RP2040), `mega_blastoise_test` (PC).
 
+## Run modes (`mega-blastoise-test`)
+
+The host binary is **interactive only**: stdin battle with the same **typed `BoardEvent` → `BoardEffects`** path as firmware (queue, prompts, combat log).
+
+| Mode | Command | What it does |
+|------|-----------|----------------|
+| **Interactive** (default) | `cargo run -p mega-blastoise-test`<br>`cargo run -p mega-blastoise-test --release` | Full battle over stdin (pick moves / switches when prompted). |
+| **Automated tests** | `cargo test -p mega-blastoise-test` | Runs Rust tests (board-event parsing, scripted effect pipeline, demo battle init). Pass/fail exit status. |
+
+Firmware (`mega-blastoise-fw`) has no CLI modes; flash and run as usual (see below).
+
 ## Compile
 
 From this directory (`mega_blastoise/mega_blastoise/`, where the workspace `Cargo.toml` lives):
@@ -12,6 +23,8 @@ From this directory (`mega_blastoise/mega_blastoise/`, where the workspace `Carg
 cargo build -p mega-blastoise-test
 cargo run -p mega-blastoise-test
 ```
+
+Add `--release` to `cargo run` for a faster binary. See **Run modes** for `cargo test`.
 
 **Pico / RP2040 firmware:** install the Rust target once:
 
@@ -44,7 +57,21 @@ cargo build
 cargo build --release
 ```
 
-Flash/run with your usual tool (e.g. `probe-rs` as configured in `mega_blastoise_fw/.cargo/config.toml`).
+Flash/run with `probe-rs` as configured in `mega_blastoise_fw/.cargo/config.toml`.
+
+**Install `probe-rs`:** download and run the latest installer from the [probe-rs releases page](https://github.com/probe-rs/probe-rs/releases), then reload your shell:
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/probe-rs/probe-rs/releases/latest/download/probe-rs-tools-installer.sh | sh
+source ~/.bashrc   # or ~/.zshrc
+```
+
+Then flash with a debug probe connected (e.g. Picoprobe, CMSIS-DAP):
+
+```bash
+cd mega_blastoise_fw
+cargo run --release
+```
 
 ### PN532 readers (firmware)
 

@@ -5,7 +5,7 @@ extern crate alloc;
 
 use alloc::collections::VecDeque;
 
-use crate::board_event::{parse_log_line, BoardEvent};
+use crate::board_event::{parse_log_line, BoardEvent, ParsedBattleLogLine};
 
 /// Reacts to [`BoardEvent`] (sound, LEDs, prompts). Same trait on host and firmware.
 pub trait BoardEffects {
@@ -21,16 +21,28 @@ impl BoardEffects for NoopBoardEffects {
 }
 
 /// Single FIFO queue for board effects (log-derived + injected prompts / scripted tests).
-#[derive(Debug, Default)]
+///
+/// The battler often emits `split|side:N`, then a **private** log row, then a **public** row with
+/// the same title (`switch`, `damage`, …). Each `split` becomes a [`BoardEvent::Split`]; the
+/// private row is still skipped so each moment yields one gameplay cue from the public row.
+#[derive(Debug)]
 pub struct BoardEventQueue {
     inner: VecDeque<BoardEvent>,
+    pending_skip_private_after_split: bool,
+}
+
+impl Default for BoardEventQueue {
+    fn default() -> Self {
+        Self {
+            inner: VecDeque::new(),
+            pending_skip_private_after_split: false,
+        }
+    }
 }
 
 impl BoardEventQueue {
     pub fn new() -> Self {
-        Self {
-            inner: VecDeque::new(),
-        }
+        Self::default()
     }
 
     pub fn push_event(&mut self, event: BoardEvent) {
@@ -43,6 +55,18 @@ impl BoardEventQueue {
         I: IntoIterator<Item = &'a str>,
     {
         for line in lines {
+            let p = ParsedBattleLogLine::parse(line);
+            if p.title() == "split" {
+                if let Some(e) = parse_log_line(line) {
+                    self.inner.push_back(e);
+                }
+                self.pending_skip_private_after_split = true;
+                continue;
+            }
+            if self.pending_skip_private_after_split {
+                self.pending_skip_private_after_split = false;
+                continue;
+            }
             if let Some(e) = parse_log_line(line) {
                 self.inner.push_back(e);
             }

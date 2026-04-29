@@ -5,7 +5,6 @@ use battler::{
     CoreBattleEngineOptions,
     CoreBattleOptions,
     FormatData,
-    MonData,
     PlayerData,
     PlayerDex,
     PlayerOptions,
@@ -15,42 +14,81 @@ use battler::{
     TeamData,
 };
 use mega_blastoise_core::{
-    board_prompt_event, process_new_log_lines, BattleInput, BoardEvent, BoardEventQueue,
-    FlashDataStore, PromptKind,
+    board_prompt_event, demo_team_blue, demo_team_red, parse_log_line, BattleInput, BoardEvent,
+    BoardEventQueue, FlashDataStore,
 };
 
 use crate::board_game_effects::BoardGameEffects;
 use crate::stdin_input::StdinBattleInput;
 
+/// After log lines are drained: if a **Turn** event was in this batch, print each side’s active Pokémon.
+fn process_logs_and_turn_snapshot(
+    battle: &mut battler::PublicCoreBattle<'_>,
+    queue: &mut BoardEventQueue,
+    effects: &mut BoardGameEffects,
+) {
+    let lines: Vec<&str> = battle.new_log_entries().collect();
+    let saw_turn = lines.iter().any(|line| {
+        matches!(
+            parse_log_line(line),
+            Some(BoardEvent::Turn { .. })
+        )
+    });
+    queue.push_log_lines(lines.into_iter());
+    queue.dispatch_all(effects);
+    if saw_turn {
+        print_active_pokemon_state(battle);
+    }
+}
+
+fn print_active_pokemon_state(battle: &mut battler::PublicCoreBattle<'_>) {
+    println!("── Active Pokémon ──");
+    for pid in ["p1", "p2"] {
+        let Ok(data) = battle.player_data(pid) else {
+            continue;
+        };
+        let actives: Vec<_> = data.mons.iter().filter(|m| m.active).collect();
+        if actives.is_empty() {
+            println!("  {}: (none on field)", data.name);
+            continue;
+        }
+        for m in actives {
+            let status = m.status.clone().unwrap_or_else(|| "—".into());
+            let types = m
+                .types
+                .iter()
+                .map(|t| format!("{t:?}"))
+                .collect::<Vec<_>>()
+                .join("/");
+            println!(
+                "  {} — {} ({})  HP {}/{} ({})  status: {}  types: [{}]",
+                data.name,
+                m.summary.name,
+                m.species,
+                m.hp,
+                m.max_hp,
+                m.health,
+                status,
+                types
+            );
+            println!(
+                "    ability: {}  item: {}",
+                m.ability,
+                m.item.as_deref().unwrap_or("—")
+            );
+            for mv in &m.moves {
+                let dis = if mv.disabled { " (disabled)" } else { "" };
+                println!(
+                    "    • {}  {}/{} PP{}",
+                    mv.name, mv.pp, mv.max_pp, dis
+                );
+            }
+        }
+    }
+    println!();
+}
+
 // --- Shared wiring so interactive + tests stay aligned ---
-
-fn charizard() -> MonData {
-    MonData {
-        name: "Charizard".to_string(),
-        species: "Charizard".to_string(),
-        ability: "No Ability".to_string(),
-        moves: ["Flamethrower", "Earthquake", "Slash", "Wing Attack"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
-        level: 50,
-        ..Default::default()
-    }
-}
-
-fn blastoise() -> MonData {
-    MonData {
-        name: "Blastoise".to_string(),
-        species: "Blastoise".to_string(),
-        ability: "No Ability".to_string(),
-        moves: ["Surf", "Ice Beam", "Body Slam", "Submission"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect(),
-        level: 50,
-        ..Default::default()
-    }
-}
 
 fn player(id: &str, name: &str) -> PlayerData {
     PlayerData {
@@ -99,23 +137,37 @@ pub fn run_interactive() {
         battler::PublicCoreBattle::new(options, &data, engine_opts).expect("battle init");
 
     battle
-        .update_team("p1", TeamData { members: vec![charizard()], ..Default::default() })
+        .update_team(
+            "p1",
+            TeamData {
+                members: demo_team_red(),
+                ..Default::default()
+            },
+        )
         .expect("set p1 team");
     battle
-        .update_team("p2", TeamData { members: vec![blastoise()], ..Default::default() })
+        .update_team(
+            "p2",
+            TeamData {
+                members: demo_team_blue(),
+                ..Default::default()
+            },
+        )
         .expect("set p2 team");
 
     battle.start().expect("battle start");
-    println!("=== Charizard vs Blastoise (interactive) ===\n");
-    println!("On each turn, both players pick a move. Forced switches: bench slot 1–6.\n");
+    println!("=== Demo battle (4v4 teams, singles field) ===\n");
+    println!(
+        "Each side has four Pokémon — slot 1 is your lead. Pick moves each turn; switches use bench slots 1–6.\n"
+    );
 
-    process_new_log_lines(battle.new_log_entries(), &mut queue, &mut board_effects);
+    process_logs_and_turn_snapshot(&mut battle, &mut queue, &mut board_effects);
 
     while !battle.ended() {
         let requests: Vec<(String, battler::Request)> = battle.active_requests().collect();
 
         if requests.is_empty() {
-            process_new_log_lines(battle.new_log_entries(), &mut queue, &mut board_effects);
+            process_logs_and_turn_snapshot(&mut battle, &mut queue, &mut board_effects);
             continue;
         }
 
@@ -129,37 +181,8 @@ pub fn run_interactive() {
             }
         }
 
-        process_new_log_lines(battle.new_log_entries(), &mut queue, &mut board_effects);
+        process_logs_and_turn_snapshot(&mut battle, &mut queue, &mut board_effects);
     }
 
     println!("\n=== Battle over ===");
-}
-
-/// Feed canned [`BoardEvent`]s through the same sink (board “drives itself” / regression smoke).
-pub fn run_self_test_effects() {
-    let mut queue = BoardEventQueue::new();
-    let mut sink = BoardGameEffects::new();
-
-    let script = [
-        BoardEvent::BattleStart,
-        BoardEvent::Prompt {
-            player_id: "p1".into(),
-            kind: PromptKind::ChooseMove,
-        },
-        BoardEvent::Move {
-            name: "Flamethrower".into(),
-        },
-        BoardEvent::Damage {
-            mon: "b:0 Blastoise".into(),
-            health: "120/201".into(),
-        },
-        BoardEvent::Turn { n: 2 },
-        BoardEvent::Win { side: Some("0".into()) },
-    ];
-
-    for e in script {
-        queue.push_event(e);
-    }
-    queue.dispatch_all(&mut sink);
-    println!("(end of --self-test scripted events)");
 }

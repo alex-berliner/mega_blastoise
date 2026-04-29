@@ -53,6 +53,11 @@ pub enum PromptKind {
 /// Something the board should represent (sound, LEDs, prompts).
 #[derive(Debug, Clone)]
 pub enum BoardEvent {
+    /// Engine `split|side:N` — marks whose private/public log pair follows (see battler
+    /// `log_private_public`).
+    Split {
+        side: String,
+    },
     Damage {
         mon: String,
         health: String,
@@ -68,7 +73,13 @@ pub enum BoardEvent {
     Move {
         name: String,
     },
-    SwitchIn,
+    /// `switch` / `drag` / `appear` — lead or bench coming in (parsed from public log row).
+    SwitchIn {
+        /// Nickname / label (`name` field in the battler log).
+        name: String,
+        species: Option<String>,
+        player_id: Option<String>,
+    },
     SwitchOut,
     Turn {
         n: u32,
@@ -90,6 +101,15 @@ pub fn player_display_name(player_id: &str) -> &'static str {
     match player_id {
         "p1" => "Red",
         "p2" => "Blue",
+        _ => "?",
+    }
+}
+
+/// Friendly label for battler **side index** in the stock 1v1 demo (`0` / `1`).
+pub fn side_display_name(side: &str) -> &'static str {
+    match side {
+        "0" => "Red",
+        "1" => "Blue",
         _ => "?",
     }
 }
@@ -126,7 +146,11 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
         "move" | "animatemove" => Some(BoardEvent::Move {
             name: p.get("name").unwrap_or("?").into(),
         }),
-        "switch" | "drag" | "appear" => Some(BoardEvent::SwitchIn),
+        "switch" | "drag" | "appear" => Some(BoardEvent::SwitchIn {
+            name: p.get("name").unwrap_or("?").into(),
+            species: p.get("species").map(String::from),
+            player_id: p.get("player").map(String::from),
+        }),
         "switchout" => Some(BoardEvent::SwitchOut),
         "turn" => {
             let n = p
@@ -136,6 +160,9 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             Some(BoardEvent::Turn { n })
         }
         "battlestart" => Some(BoardEvent::BattleStart),
+        "split" => Some(BoardEvent::Split {
+            side: p.get("side").unwrap_or("?").into(),
+        }),
         "win" => Some(BoardEvent::Win {
             side: p.get("side").map(String::from),
         }),
@@ -149,6 +176,12 @@ impl BoardEvent {
     /// not on this string.
     pub fn description(&self) -> String {
         match self {
+            BoardEvent::Split { side } => {
+                let who = side_display_name(side.as_str());
+                format!(
+                    "Split for side {side} ({who}) — engine sends an owner-only row next, then the public row; board uses the public row as the next cue"
+                )
+            }
             BoardEvent::Damage { mon, health } => {
                 format!("{mon}: took damage → hit noise, HP light shows {health}")
             }
@@ -161,8 +194,22 @@ impl BoardEvent {
             BoardEvent::Move { name } => format!(
                 "uses {name} → quick move sound + flash that player’s strip"
             ),
-            BoardEvent::SwitchIn => {
-                "new Pokémon in → switch sound + light that bench slot".into()
+            BoardEvent::SwitchIn {
+                name,
+                species,
+                player_id,
+            } => {
+                let mon_label = match species {
+                    Some(sp) if !sp.is_empty() && sp.as_str() != name.as_str() => {
+                        format!("{name} ({sp})")
+                    }
+                    _ => name.clone(),
+                };
+                let trainer = player_id
+                    .as_deref()
+                    .map(player_display_name)
+                    .unwrap_or("Trainer");
+                format!("{trainer} sends in {mon_label} → switch sound + light that slot")
             }
             BoardEvent::SwitchOut => "Pokémon out → dim its lights".into(),
             BoardEvent::Turn { n } => {
