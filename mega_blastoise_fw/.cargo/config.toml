@@ -1,12 +1,32 @@
-[target.thumbv6m-none-eabi]
-# We add the specific probe ID and lower the speed to 500kHz
-runner = "probe-rs run --chip RP2040 --probe 2e8a:000c:E663589863798621"
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+runner = ["probe-rs", "run", "--chip", "RP2040", "--probe", "2e8a:000c:E663589863798621", "--log-format=oneline"]
 
 rustflags = [
-    "-C", "link-arg=--nmagic",
-    "-C", "link-arg=-Tlink.x",
-    "-C", "link-arg=-Tdefmt.x",
+  # "-C", "linker=flip-link",
+  "-C", "link-arg=-Tlink.x",
+  "-C", "link-arg=-Tdefmt.x",
+  # This is needed if your flash or ram addresses are not aligned to 0x10000 in memory.x
+  # See https://github.com/rust-embedded/cortex-m-quickstart/pull/95
+  "-C", "link-arg=--nmagic",
 ]
 
 [build]
-target = "thumbv6m-none-eabi"
+target = "thumbv6m-none-eabi"    # Cortex-M0 and Cortex-M0+
+
+[alias]
+# `cargo rb foo` will expand to `cargo run --bin foo`
+rb = "run --bin"
+# `cargo rrb foo` will expand to `cargo run --release --bin foo`
+rrb = "run --release --bin"
+
+
+# [target.thumbv6m-none-eabi]
+# runner = "probe-rs run --chip RP2040 --speed 12000 --connect-under-reset"
+# rustflags = [
+#     "-C", "link-arg=--nmagic",
+#     "-C", "link-arg=-Tlink.x",
+#     "-C", "link-arg=-Tdefmt.x",
+# ]
+#
+# [build]
+# target = "thumbv6m-none-eabi"
