@@ -9,22 +9,7 @@ mod board_effects;
 mod pico_battle_input;
 mod pn532;
 
-use alloc::{string::ToString, vec::Vec};
-
-use battler::{
-    BattleType,
-    CoreBattleEngineOptions,
-    CoreBattleOptions,
-    FormatData,
-    PlayerData,
-    PlayerDex,
-    PlayerOptions,
-    PlayerType,
-    Request,
-    SerializedRuleSet,
-    SideData,
-    TeamData,
-};
+use battler::TeamData;
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
@@ -34,11 +19,11 @@ use embassy_rp::peripherals::{I2C0, I2C1};
 use embedded_alloc::Heap;
 use board_effects::DefmtBattleEffects;
 use mega_blastoise_core::{
-    board_prompt_event, demo_team_blue, demo_team_red, process_new_log_lines, BattleInput,
+    demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
     BoardEventQueue, FlashDataStore,
 };
 use pico_battle_input::PicoBattleInput;
-use mega_blastoise_fw as _; // global logger + panic handler
+use mega_blastoise_fw as _;
 
 #[global_allocator]
 static HEAP: Heap = Heap::empty();
@@ -62,17 +47,6 @@ async fn pn532_task_i2c0(bus: &'static mut I2c<'static, I2C0, Async>) {
 #[embassy_executor::task]
 async fn pn532_task_i2c1(bus: &'static mut I2c<'static, I2C1, Async>) {
     pn532::reader_loop(1, bus).await
-}
-
-fn player(id: &str, name: &str) -> PlayerData {
-    PlayerData {
-        id: id.to_string(),
-        name: name.to_string(),
-        player_type: PlayerType::Trainer,
-        player_options: PlayerOptions::default(),
-        team: TeamData::default(),
-        dex: PlayerDex::default(),
-    }
 }
 
 #[embassy_executor::main]
@@ -111,77 +85,21 @@ async fn main(spawner: Spawner) {
 
     let data = FlashDataStore::new();
 
-    let options = CoreBattleOptions {
-        seed: Some(12345),
-        format: FormatData {
-            battle_type: BattleType::Singles,
-            rules: SerializedRuleSet::new(),
-        },
-        field: Default::default(),
-        side_1: SideData {
-            name: "Red".to_string(),
-            players: alloc::vec![player("p1", "Red")],
-        },
-        side_2: SideData {
-            name: "Blue".to_string(),
-            players: alloc::vec![player("p2", "Blue")],
-        },
-    };
-
-    let engine_opts = CoreBattleEngineOptions {
-        validate_teams: false,
-        auto_continue: true,
-        reveal_actual_health: true,
-        log_time: false,
-        ..Default::default()
-    };
-
     let mut battle =
-        battler::PublicCoreBattle::new(options, &data, engine_opts).expect("battle init");
+        battler::PublicCoreBattle::new(demo_battle_options(), &data, demo_engine_opts())
+            .expect("battle init");
 
     battle
-        .update_team(
-            "p1",
-            TeamData { members: demo_team_red(), ..Default::default() },
-        )
+        .update_team("p1", TeamData { members: demo_team_red(), ..Default::default() })
         .expect("set p1 team");
-
     battle
-        .update_team(
-            "p2",
-            TeamData { members: demo_team_blue(), ..Default::default() },
-        )
+        .update_team("p2", TeamData { members: demo_team_blue(), ..Default::default() })
         .expect("set p2 team");
 
     battle.start().expect("battle start");
     info!("Battle started — GPIO move/switch; prompts also emit board events.");
 
-    process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
-
-    while !battle.ended() {
-        let requests: Vec<(alloc::string::String, Request)> =
-            battle.active_requests().collect();
-
-        if requests.is_empty() {
-            process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
-            continue;
-        }
-
-        for (player_id, request) in &requests {
-            queue.push_event(board_prompt_event(player_id, request));
-            queue.dispatch_all(&mut effects);
-            let line = input.read_choice(player_id, request);
-            if let Err(e) = battle.set_player_choice(player_id, &line) {
-                info!(
-                    "choice error for {}: {}",
-                    player_id.as_str(),
-                    defmt::Display2Format(&e)
-                );
-            }
-        }
-
-        process_new_log_lines(battle.new_log_entries(), &mut queue, &mut effects);
-    }
+    run_battle(&mut battle, &mut input, &mut queue, &mut effects);
 
     info!("=== Battle over ===");
     loop {
