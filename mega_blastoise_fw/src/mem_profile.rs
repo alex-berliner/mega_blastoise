@@ -3,7 +3,7 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 use defmt::info;
 use embedded_alloc::Heap;
 
-pub const HEAP_SIZE: usize = 128 * 1024;
+pub const HEAP_SIZE: usize = 192 * 1024;
 
 #[global_allocator]
 pub static HEAP: Heap = Heap::empty();
