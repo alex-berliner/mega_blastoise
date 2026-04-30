@@ -1,11 +1,12 @@
 extern crate alloc;
 
-use alloc::string::{String, ToString};
+use alloc::string::String;
 
 use battler::Request;
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
+use crate::mem_profile::heap_snapshot;
 use mega_blastoise_core::{format_move_choice, format_switch_choice, join_choice_parts, BattleInput};
 
 pub struct UsbBattleInput<'d> {
@@ -38,7 +39,7 @@ impl<'d> UsbBattleInput<'d> {
                     for &b in &buf[..n] {
                         match b {
                             b'\r' | b'\n' => {
-                                let line = self.partial.trim().to_string();
+                                let line = String::from(self.partial.trim());
                                 self.partial.clear();
                                 if !line.is_empty() {
                                     return line;
@@ -56,27 +57,30 @@ impl<'d> UsbBattleInput<'d> {
             }
         }
     }
+
+    async fn write_choice_prompt_1_to_4(&mut self, n: usize) {
+        match n {
+            1 => self.write("Pick move [1]: ").await,
+            2 => self.write("Pick move [1-2]: ").await,
+            3 => self.write("Pick move [1-3]: ").await,
+            _ => self.write("Pick move [1-4]: ").await,
+        }
+    }
 }
 
 impl<'d> BattleInput for UsbBattleInput<'d> {
     async fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
-        let label = match player_id { "p1" => "Red", "p2" => "Blue", _ => player_id };
+        let _ = player_id;
 
         match request {
             Request::Turn(turn) => {
+                heap_snapshot("prompt_turn_enter");
                 let mut parts = alloc::vec::Vec::new();
                 for mon in &turn.active {
                     let n = mon.moves.len().min(4);
-                    let mut menu = alloc::format!("\r\n=== {label} — choose move ===\r\n");
-                    for (i, m) in mon.moves.iter().take(4).enumerate() {
-                        let dis = if m.disabled || m.pp == 0 { " (disabled)" } else { "" };
-                        menu.push_str(&alloc::format!(
-                            "  [{}] {}  PP {}/{}{}\r\n", i + 1, m.name, m.pp, m.max_pp, dis
-                        ));
-                    }
-                    self.write(&menu).await;
+                    self.write("\r\n=== Choose move ===\r\n").await;
                     loop {
-                        self.write(&alloc::format!("{label} pick move [1-{n}]: ")).await;
+                        self.write_choice_prompt_1_to_4(n).await;
                         let line = self.read_line().await;
                         if let Ok(btn) = line.parse::<usize>() {
                             if btn >= 1 && btn <= n {
@@ -90,17 +94,20 @@ impl<'d> BattleInput for UsbBattleInput<'d> {
                                 break;
                             }
                         }
-                        self.write(&alloc::format!("Enter a number 1-{n}.\r\n")).await;
+                        self.write("Enter a valid move number.\r\n").await;
                     }
                 }
-                join_choice_parts(&parts)
+                let out = join_choice_parts(&parts);
+                heap_snapshot("prompt_turn_exit");
+                out
             }
             Request::Switch(sw) => {
+                heap_snapshot("prompt_switch_enter");
                 let mut parts = alloc::vec::Vec::new();
                 for _ in &sw.needs_switch {
-                    self.write(&alloc::format!("\r\n=== {label} — switch (bench 1-6) ===\r\n")).await;
+                    self.write("\r\n=== Switch (bench 1-6) ===\r\n").await;
                     loop {
-                        self.write(&alloc::format!("{label} pick slot [1-6]: ")).await;
+                        self.write("Pick slot [1-6]: ").await;
                         let line = self.read_line().await;
                         if let Ok(n) = line.parse::<usize>() {
                             if n >= 1 && n <= 6 {
@@ -111,10 +118,12 @@ impl<'d> BattleInput for UsbBattleInput<'d> {
                         self.write("Enter a number 1-6.\r\n").await;
                     }
                 }
-                join_choice_parts(&parts)
+                let out = join_choice_parts(&parts);
+                heap_snapshot("prompt_switch_exit");
+                out
             }
-            Request::TeamPreview(_) => "random".to_string(),
-            Request::LearnMove(_) => "pass".to_string(),
+            Request::TeamPreview(_) => String::from("random"),
+            Request::LearnMove(_) => String::from("pass"),
         }
     }
 }

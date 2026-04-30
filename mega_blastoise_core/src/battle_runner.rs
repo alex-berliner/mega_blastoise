@@ -1,7 +1,6 @@
 extern crate alloc;
 
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use alloc::string::ToString;
 
 use battler::{
     BattleType, CoreBattleEngineOptions, CoreBattleOptions, FormatData, PlayerData, PlayerDex,
@@ -71,18 +70,22 @@ pub async fn run_battle<I, E, T>(
     process_new_log_lines(battle.new_log_entries(), queue, effects);
 
     while !battle.ended() {
-        let requests: Vec<(String, battler::Request)> = battle.active_requests().collect();
-
-        if requests.is_empty() {
-            process_new_log_lines(battle.new_log_entries(), queue, effects);
-            continue;
+        let mut had_request = false;
+        loop {
+            let next_request = battle.active_requests().next();
+            let Some((player_id, request)) = next_request else {
+                break;
+            };
+            had_request = true;
+            queue.push_event(board_prompt_event(&player_id, &request));
+            queue.dispatch_all(effects);
+            let line = input.read_choice(&player_id, &request).await;
+            let _ = battle.set_player_choice(&player_id, &line);
         }
 
-        for (player_id, request) in &requests {
-            queue.push_event(board_prompt_event(player_id, request));
-            queue.dispatch_all(effects);
-            let line = input.read_choice(player_id, request).await;
-            let _ = battle.set_player_choice(player_id, &line);
+        if !had_request {
+            process_new_log_lines(battle.new_log_entries(), queue, effects);
+            continue;
         }
 
         process_new_log_lines(battle.new_log_entries(), queue, effects);
