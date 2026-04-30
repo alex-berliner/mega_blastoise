@@ -116,7 +116,7 @@ async fn main(spawner: Spawner) {
     info!("Battle started — connect USB serial for CLI input.");
 
     run_battle(&mut battle, &mut input, &mut queue, &mut effects, |_| {
-        // heap_snapshot("after_turn");
+        heap_snapshot("after_turn");
     })
     .await;
 

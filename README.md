@@ -2,6 +2,8 @@
 
 Workspace layout: `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (RP2040), `mega_blastoise_test` (PC).
 
+Architecture overview: see `architecture/README.md`.
+
 ## Run modes (`mega-blastoise-test`)
 
 The host binary is **interactive only**: stdin battle with the same **typed `BoardEvent` → `BoardEffects`** path as firmware (queue, prompts, combat log).

@@ -3,6 +3,7 @@ extern crate alloc;
 use alloc::string::String;
 
 use battler::Request;
+use defmt::info;
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
@@ -70,18 +71,32 @@ impl<'d> UsbBattleInput<'d> {
 
 impl<'d> BattleInput for UsbBattleInput<'d> {
     async fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
+        info!("read_choice player={}", defmt::Display2Format(player_id));
         let _ = player_id;
 
         match request {
             Request::Turn(turn) => {
+                info!("request turn active_slots={}", turn.active.len());
                 heap_snapshot("prompt_turn_enter");
                 let mut parts = alloc::vec::Vec::new();
-                for mon in &turn.active {
+                for (active_idx, mon) in turn.active.iter().enumerate() {
                     let n = mon.moves.len().min(4);
+                    info!("turn slot={} available_moves={}", active_idx, n);
+                    for (i, m) in mon.moves.iter().take(4).enumerate() {
+                        info!(
+                            "  move {}: {} pp={}/{} disabled={}",
+                            i + 1,
+                            defmt::Display2Format(&m.name),
+                            m.pp,
+                            m.max_pp,
+                            m.disabled
+                        );
+                    }
                     self.write("\r\n=== Choose move ===\r\n").await;
                     loop {
                         self.write_choice_prompt_1_to_4(n).await;
                         let line = self.read_line().await;
+                        info!("input line={}", defmt::Display2Format(&line));
                         if let Ok(btn) = line.parse::<usize>() {
                             if btn >= 1 && btn <= n {
                                 let slot = btn - 1;
@@ -91,6 +106,7 @@ impl<'d> BattleInput for UsbBattleInput<'d> {
                                     continue;
                                 }
                                 parts.push(format_move_choice(slot));
+                                info!("accepted move slot={} name={}", slot, defmt::Display2Format(&m.name));
                                 break;
                             }
                         }
@@ -102,6 +118,7 @@ impl<'d> BattleInput for UsbBattleInput<'d> {
                 out
             }
             Request::Switch(sw) => {
+                info!("request switch slots_to_fill={}", sw.needs_switch.len());
                 heap_snapshot("prompt_switch_enter");
                 let mut parts = alloc::vec::Vec::new();
                 for _ in &sw.needs_switch {
@@ -109,9 +126,11 @@ impl<'d> BattleInput for UsbBattleInput<'d> {
                     loop {
                         self.write("Pick slot [1-6]: ").await;
                         let line = self.read_line().await;
+                        info!("input line={}", defmt::Display2Format(&line));
                         if let Ok(n) = line.parse::<usize>() {
                             if n >= 1 && n <= 6 {
                                 parts.push(format_switch_choice(n - 1));
+                                info!("accepted switch slot={}", n - 1);
                                 break;
                             }
                         }
@@ -122,8 +141,14 @@ impl<'d> BattleInput for UsbBattleInput<'d> {
                 heap_snapshot("prompt_switch_exit");
                 out
             }
-            Request::TeamPreview(_) => String::from("random"),
-            Request::LearnMove(_) => String::from("pass"),
+            Request::TeamPreview(_) => {
+                info!("request team_preview => random");
+                String::from("random")
+            }
+            Request::LearnMove(_) => {
+                info!("request learn_move => pass");
+                String::from("pass")
+            }
         }
     }
 }
