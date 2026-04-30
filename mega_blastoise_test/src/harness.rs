@@ -1,30 +1,13 @@
-//! Shared battle setup and harness entrypoints (interactive run vs scripted effect smoke test).
+//! Shared battle setup and harness entrypoints.
 
 use battler::TeamData;
 use mega_blastoise_core::{
-    board_prompt_event, demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red,
-    parse_log_line, BattleInput, BoardEvent, BoardEventQueue, FlashDataStore,
+    demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
+    BoardEventQueue, FlashDataStore,
 };
 
 use crate::board_game_effects::BoardGameEffects;
 use crate::stdin_input::StdinBattleInput;
-
-/// After log lines are drained: if a **Turn** event was in this batch, print each side's active Pokémon.
-fn process_logs_and_turn_snapshot(
-    battle: &mut battler::PublicCoreBattle<'_>,
-    queue: &mut BoardEventQueue,
-    effects: &mut BoardGameEffects,
-) {
-    let lines: Vec<&str> = battle.new_log_entries().collect();
-    let saw_turn = lines
-        .iter()
-        .any(|line| matches!(parse_log_line(line), Some(BoardEvent::Turn { .. })));
-    queue.push_log_lines(lines.into_iter());
-    queue.dispatch_all(effects);
-    if saw_turn {
-        print_active_pokemon_state(battle);
-    }
-}
 
 fn print_active_pokemon_state(battle: &mut battler::PublicCoreBattle<'_>) {
     println!("── Active Pokémon ──");
@@ -86,27 +69,13 @@ pub fn run_interactive() {
         "Each side has four Pokémon — slot 1 is your lead. Pick moves each turn; switches use bench slots 1–6.\n"
     );
 
-    process_logs_and_turn_snapshot(&mut battle, &mut queue, &mut board_effects);
-
-    while !battle.ended() {
-        let requests: Vec<(String, battler::Request)> = battle.active_requests().collect();
-
-        if requests.is_empty() {
-            process_logs_and_turn_snapshot(&mut battle, &mut queue, &mut board_effects);
-            continue;
-        }
-
-        for (player_id, request) in &requests {
-            queue.push_event(board_prompt_event(player_id, request));
-            queue.dispatch_all(&mut board_effects);
-            let line = input.read_choice(player_id, request);
-            if let Err(e) = battle.set_player_choice(player_id, &line) {
-                eprintln!("choice error for {player_id}: {e}");
-            }
-        }
-
-        process_logs_and_turn_snapshot(&mut battle, &mut queue, &mut board_effects);
-    }
+    pollster::block_on(run_battle(
+        &mut battle,
+        &mut input,
+        &mut queue,
+        &mut board_effects,
+        |b| print_active_pokemon_state(b),
+    ));
 
     println!("\n=== Battle over ===");
 }

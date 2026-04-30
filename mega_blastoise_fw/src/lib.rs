@@ -1,6 +1,6 @@
 #![no_std]
 
-use defmt_rtt as _;
+use rtt_target as _;
 use panic_probe as _;
 
 #[defmt::panic_handler]

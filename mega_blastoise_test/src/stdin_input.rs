@@ -35,14 +35,14 @@ impl StdinBattleInput {
 }
 
 impl BattleInput for StdinBattleInput {
-    fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
+    async fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
         let label = Self::player_label(player_id);
         match request {
             Request::Turn(turn) => {
                 let mut parts = Vec::new();
                 for mon_req in &turn.active {
                     println!(
-                        "\n=== {label} ({}) — choose move (1–4) ===",
+                        "\n=== {label} ({}) — choose move (1-4) ===",
                         player_id
                     );
                     let n_moves = mon_req.moves.len().min(4);
@@ -86,7 +86,7 @@ impl BattleInput for StdinBattleInput {
                 let mut parts = Vec::new();
                 for _need in &sw.needs_switch {
                     println!(
-                        "\n=== {label} ({}) — switch (bench 1–6) ===",
+                        "\n=== {label} ({}) — switch (bench 1-6) ===",
                         player_id
                     );
                     let bench = Self::prompt_usize_inclusive(

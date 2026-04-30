@@ -56,14 +56,17 @@ pub fn demo_engine_opts() -> CoreBattleEngineOptions {
 ///
 /// Each side's prompt + log events go through `queue` → `effects` so both firmware
 /// (defmt) and the host test harness (println) see the same event stream.
-pub fn run_battle<I, E>(
+/// `on_turn` is called after each turn's log lines are processed (pass `|_| {}` to skip).
+pub async fn run_battle<I, E, T>(
     battle: &mut battler::PublicCoreBattle<'_>,
     input: &mut I,
     queue: &mut BoardEventQueue,
     effects: &mut E,
+    mut on_turn: T,
 ) where
     I: BattleInput,
     E: BoardEffects,
+    T: FnMut(&mut battler::PublicCoreBattle<'_>),
 {
     process_new_log_lines(battle.new_log_entries(), queue, effects);
 
@@ -78,10 +81,11 @@ pub fn run_battle<I, E>(
         for (player_id, request) in &requests {
             queue.push_event(board_prompt_event(player_id, request));
             queue.dispatch_all(effects);
-            let line = input.read_choice(player_id, request);
+            let line = input.read_choice(player_id, request).await;
             let _ = battle.set_player_choice(player_id, &line);
         }
 
         process_new_log_lines(battle.new_log_entries(), queue, effects);
+        on_turn(battle);
     }
 }

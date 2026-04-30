@@ -8,3 +8,4 @@ mega-blastoise-core = { path = "../mega_blastoise_core" }
 battler = { path = "../../battler/battler" }
 battler-data = { path = "../../battler/battler-data" }
 anyhow = "1.0"
+pollster = "0.3"

@@ -2,6 +2,7 @@
 name = "mega-blastoise-fw"
 version = "0.1.0"
 edition = "2021"
+default-run = "mega-blastoise-fw"
 
 [dependencies]
 mega-blastoise-core = { path = "../mega_blastoise_core" }
@@ -10,15 +11,15 @@ mega-blastoise-core = { path = "../mega_blastoise_core" }
 cortex-m = { version = "0.7", features = ["inline-asm"] }
 cortex-m-rt = "0.7"
 
-# Logging over RTT (defmt 1.0 — required for probe-rs 0.31 compatibility)
+# Logging + bidirectional RTT (rtt-target 0.6 provides defmt global logger + down channel RX)
 defmt = "1.0"
-defmt-rtt = "1.0"
+rtt-target = { version = "0.6", features = ["defmt"] }
 panic-probe = { version = "1.0", features = ["print-defmt"] }
 
 # RP2040 async runtime + HAL
-embassy-executor = { version = "0.6", features = ["arch-cortex-m", "executor-thread", "defmt"] }
-embassy-rp = { version = "0.3", features = ["defmt", "critical-section-impl", "rp2040", "time-driver"] }
-embassy-time = { version = "0.4", features = ["defmt"] }
+embassy-executor = { version = "0.9", features = ["arch-cortex-m", "executor-thread", "defmt"] }
+embassy-rp = { version = "0.8", features = ["defmt", "critical-section-impl", "rp2040", "time-driver"] }
+embassy-time = { version = "0.5", features = ["defmt"] }
 embedded-hal-async = "1"
 
 # Heap allocator
@@ -28,3 +29,6 @@ embedded-alloc = "0.5"
 battler = { path = "../../battler/battler", default-features = false }
 battler-data = { path = "../../battler/battler-data", default-features = false }
 anyhow = { version = "1.0", default-features = false }
+embassy-usb = { version = "0.6", features = ["defmt"] }
+
+[features]

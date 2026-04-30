@@ -58,7 +58,7 @@ impl<'d> PicoBattleInput<'d> {
 }
 
 impl<'d> BattleInput for PicoBattleInput<'d> {
-    fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
+    async fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
         let _ = player_id;
         match request {
             Request::Turn(turn) => {

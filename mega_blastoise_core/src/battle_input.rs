@@ -13,7 +13,7 @@ use battler::Request;
 /// Collects [`Request`] responses as battler choice strings (e.g. `"move 2"`, `"switch 4"`).
 pub trait BattleInput {
     /// Returns the full choice line for this player (may contain `;`-separated sub-choices).
-    fn read_choice(&mut self, player_id: &str, request: &Request) -> String;
+    async fn read_choice(&mut self, player_id: &str, request: &Request) -> String;
 }
 
 /// One move slot — `slot` is 0-based (`move 0` = first move).

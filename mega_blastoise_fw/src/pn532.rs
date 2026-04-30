@@ -43,8 +43,8 @@ pub async fn reader_loop<T: Instance>(reader_id: u8, i2c: &mut I2c<'_, T, Async>
             Ok(()) => {
                 defmt::trace!("pn532 #{} ok", reader_id);
             }
-            Err(e) => {
-                defmt::warn!("pn532 #{} I²C: {}", reader_id, defmt::Debug2Format(&e));
+            Err(_) => {
+                defmt::trace!("pn532 #{} I²C: no ack", reader_id);
             }
         }
         Timer::after_millis(POLL_INTERVAL_MS).await;
