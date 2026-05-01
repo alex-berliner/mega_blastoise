@@ -6,7 +6,6 @@ extern crate alloc;
 use alloc::boxed::Box;
 
 mod board_effects;
-mod mem_profile;
 mod pico_battle_input;
 mod pn532;
 mod usb_input;
@@ -21,8 +20,8 @@ use embassy_rp::usb::{Driver as UsbDriver, InterruptHandler as UsbInterruptHandl
 use rtt_target::{rtt_init, set_defmt_channel};
 use embassy_usb::class::cdc_acm::{CdcAcmClass, State};
 use embassy_usb::{Builder, Config as UsbConfig, UsbDevice};
-use board_effects::DefmtBattleEffects;
-use mem_profile::{heap_snapshot, init_heap};
+use board_effects::UsbBattleEffects;
+use mega_blastoise_fw::mem_profile::{heap_snapshot, init_heap};
 use embassy_futures::join::join;
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
@@ -96,8 +95,9 @@ async fn main(spawner: Spawner) {
     info!("PN532 tasks started (I2C0: GP16/GP17, I2C1: GP18/GP19, addr 0x24)");
     heap_snapshot("after_i2c_tasks");
 
-    let mut effects = DefmtBattleEffects::new();
+    let bus = InputBus::new();
     let mut queue = BoardEventQueue::new();
+    let mut effects = UsbBattleEffects::new(&bus);
 
     info!("Initialising data store...");
     let data = FlashDataStore::new();
@@ -117,7 +117,6 @@ async fn main(spawner: Spawner) {
     info!("Battle started.");
     info!("To send commands: picocom -b 115200 /dev/ttyACM0");
 
-    let bus = InputBus::new();
     join(
         run_battle(&mut battle, &bus, &mut queue, &mut effects, |_| {
             heap_snapshot("after_turn");

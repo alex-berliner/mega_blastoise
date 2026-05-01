@@ -33,6 +33,8 @@ pub struct InputBus {
     pub choices: Channel<NoopRawMutex, String, 4>,
     /// Set by the runner before it blocks; sources subscribe to show the right prompt.
     pub prompt: Signal<NoopRawMutex, ActivePrompt>,
+    /// Battle event descriptions pushed by BoardEffects; drained by output sinks (e.g. USB).
+    pub log: Channel<NoopRawMutex, String, 8>,
 }
 
 impl InputBus {
@@ -40,6 +42,7 @@ impl InputBus {
         Self {
             choices: Channel::new(),
             prompt: Signal::new(),
+            log: Channel::new(),
         }
     }
 

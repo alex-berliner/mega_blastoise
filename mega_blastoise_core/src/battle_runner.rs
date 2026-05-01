@@ -83,7 +83,16 @@ pub async fn run_battle<E, T>(
                 request: request.clone(),
             });
             let line = bus.choices.receive().await;
-            let _ = battle.set_player_choice(&player_id, &line);
+            if let Err(e) = battle.set_player_choice(&player_id, &line) {
+                #[cfg(feature = "defmt")]
+                defmt::error!(
+                    "set_player_choice failed ({}): {}",
+                    player_id.as_str(),
+                    defmt::Display2Format(&e.to_string())
+                );
+                #[cfg(not(feature = "defmt"))]
+                let _ = e;
+            }
         }
 
         if !had_request {
