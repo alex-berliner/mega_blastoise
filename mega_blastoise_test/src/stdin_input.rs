@@ -2,49 +2,30 @@ use std::io::{self, Write};
 
 use battler::Request;
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, BattleInput,
+    format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
 };
 
 pub struct StdinBattleInput;
 
 impl StdinBattleInput {
-    fn player_label(id: &str) -> std::string::String {
-        match id {
-            "p1" => "Red".into(),
-            "p2" => "Blue".into(),
-            _ => id.to_string(),
-        }
-    }
-
-    fn prompt_usize_inclusive(prompt: &str, min: usize, max: usize) -> usize {
+    /// Run forever: wait for each prompt on `bus`, handle it synchronously, send the choice back.
+    /// Blocking stdin reads are fine here — the test binary is single-threaded and nothing
+    /// else needs to run while waiting for the user to type.
+    pub async fn run(&mut self, bus: &InputBus) {
         loop {
-            print!("{prompt}");
-            let _ = io::stdout().flush();
-            let mut line = String::new();
-            if io::stdin().read_line(&mut line).is_err() {
-                continue;
-            }
-            if let Ok(n) = line.trim().parse::<usize>() {
-                if (min..=max).contains(&n) {
-                    return n;
-                }
-            }
-            eprintln!("Please enter a number from {min} to {max}.");
+            let ActivePrompt { player_id, request } = bus.prompt.wait().await;
+            let choice = self.handle(&player_id, &request);
+            bus.choices.send(choice).await;
         }
     }
-}
 
-impl BattleInput for StdinBattleInput {
-    async fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
+    fn handle(&self, player_id: &str, request: &Request) -> String {
         let label = Self::player_label(player_id);
         match request {
             Request::Turn(turn) => {
                 let mut parts = Vec::new();
                 for mon_req in &turn.active {
-                    println!(
-                        "\n=== {label} ({}) — choose move (1-4) ===",
-                        player_id
-                    );
+                    println!("\n=== {label} ({player_id}) — choose move ===");
                     let n_moves = mon_req.moves.len().min(4);
                     if n_moves == 0 {
                         eprintln!("No moves available; passing.");
@@ -53,16 +34,8 @@ impl BattleInput for StdinBattleInput {
                     }
                     for i in 0..n_moves {
                         let m = &mon_req.moves[i];
-                        let btn = i + 1;
-                        let status = if m.disabled || m.pp == 0 {
-                            " (disabled)"
-                        } else {
-                            ""
-                        };
-                        println!(
-                            "  [{btn}] {}  PP {}/{}{}",
-                            m.name, m.pp, m.max_pp, status
-                        );
+                        let status = if m.disabled || m.pp == 0 { " (disabled)" } else { "" };
+                        println!("  [{}] {}  PP {}/{}{}", i + 1, m.name, m.pp, m.max_pp, status);
                     }
                     loop {
                         let btn = Self::prompt_usize_inclusive(
@@ -84,29 +57,50 @@ impl BattleInput for StdinBattleInput {
             }
             Request::Switch(sw) => {
                 let mut parts = Vec::new();
-                for _need in &sw.needs_switch {
-                    println!(
-                        "\n=== {label} ({}) — switch (bench 1-6) ===",
-                        player_id
-                    );
+                for _ in &sw.needs_switch {
+                    println!("\n=== {label} ({player_id}) — switch (bench 1-6) ===");
                     let bench = Self::prompt_usize_inclusive(
                         &format!("{label}, which party slot to send in [1-6]? "),
                         1,
                         6,
                     );
-                    let team_index = bench - 1;
-                    parts.push(format_switch_choice(team_index));
+                    parts.push(format_switch_choice(bench - 1));
                 }
                 join_choice_parts(&parts)
             }
             Request::TeamPreview(_) => {
-                eprintln!("Team preview not handled in this demo; using random.");
+                eprintln!("Team preview not handled; using random.");
                 "random".to_string()
             }
             Request::LearnMove(_) => {
                 eprintln!("Learn move not handled; passing.");
                 "pass".to_string()
             }
+        }
+    }
+
+    fn player_label(id: &str) -> &'static str {
+        match id {
+            "p1" => "Red",
+            "p2" => "Blue",
+            _ => "?",
+        }
+    }
+
+    fn prompt_usize_inclusive(prompt: &str, min: usize, max: usize) -> usize {
+        loop {
+            print!("{prompt}");
+            let _ = io::stdout().flush();
+            let mut line = String::new();
+            if io::stdin().read_line(&mut line).is_err() {
+                continue;
+            }
+            if let Ok(n) = line.trim().parse::<usize>() {
+                if (min..=max).contains(&n) {
+                    return n;
+                }
+            }
+            eprintln!("Please enter a number from {min} to {max}.");
         }
     }
 }

@@ -1021,6 +1021,7 @@ dependencies = [
  "anyhow",
  "battler",
  "battler-data",
+ "embassy-sync 0.7.2",
  "serde",
  "serde_json",
 ]
@@ -1036,6 +1037,7 @@ dependencies = [
  "cortex-m-rt",
  "defmt 1.0.1",
  "embassy-executor",
+ "embassy-futures",
  "embassy-rp",
  "embassy-time",
  "embassy-usb",
@@ -1053,6 +1055,7 @@ dependencies = [
  "anyhow",
  "battler",
  "battler-data",
+ "embassy-futures",
  "mega-blastoise-core",
  "pollster",
 ]

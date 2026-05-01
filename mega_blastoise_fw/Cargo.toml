@@ -30,5 +30,6 @@ battler = { path = "../../battler/battler", default-features = false }
 battler-data = { path = "../../battler/battler-data", default-features = false }
 anyhow = { version = "1.0", default-features = false }
 embassy-usb = { version = "0.6", features = ["defmt"] }
+embassy-futures = "0.1"
 
 [features]

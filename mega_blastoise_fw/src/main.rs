@@ -23,9 +23,10 @@ use embassy_usb::class::cdc_acm::{CdcAcmClass, State};
 use embassy_usb::{Builder, Config as UsbConfig, UsbDevice};
 use board_effects::DefmtBattleEffects;
 use mem_profile::{heap_snapshot, init_heap};
+use embassy_futures::join::join;
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
-    BoardEventQueue, FlashDataStore,
+    BoardEventQueue, FlashDataStore, InputBus,
 };
 use usb_input::UsbBattleInput;
 use mega_blastoise_fw as _;
@@ -113,11 +114,16 @@ async fn main(spawner: Spawner) {
     battle.start().expect("battle start");
     heap_snapshot("after_battle_start");
 
-    info!("Battle started — connect USB serial for CLI input.");
+    info!("Battle started.");
+    info!("To send commands: picocom -b 115200 /dev/ttyACM0");
 
-    run_battle(&mut battle, &mut input, &mut queue, &mut effects, |_| {
-        heap_snapshot("after_turn");
-    })
+    let bus = InputBus::new();
+    join(
+        run_battle(&mut battle, &bus, &mut queue, &mut effects, |_| {
+            heap_snapshot("after_turn");
+        }),
+        input.run(&bus),
+    )
     .await;
 
     info!("=== Battle over ===");

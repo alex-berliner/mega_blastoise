@@ -7,8 +7,11 @@ use defmt::info;
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
+use mega_blastoise_core::{
+    format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
+};
+
 use crate::mem_profile::heap_snapshot;
-use mega_blastoise_core::{format_move_choice, format_switch_choice, join_choice_parts, BattleInput};
 
 pub struct UsbBattleInput<'d> {
     sender: Sender<'d, Driver<'d, USB>>,
@@ -21,59 +24,19 @@ impl<'d> UsbBattleInput<'d> {
         Self { sender, receiver, partial: String::new() }
     }
 
-    async fn write(&mut self, s: &str) {
-        let bytes = s.as_bytes();
-        let mut start = 0;
-        while start < bytes.len() {
-            let end = (start + 63).min(bytes.len());
-            let _ = self.sender.write_packet(&bytes[start..end]).await;
-            start = end;
-        }
-    }
-
-    async fn read_line(&mut self) -> String {
-        self.receiver.wait_connection().await;
-        let mut buf = [0u8; 64];
+    /// Run forever: wait for each prompt on `bus`, handle it, send the choice back.
+    /// Run concurrently with [`run_battle`] via `embassy_futures::join::join(run_battle(...), usb.run(&bus))`.
+    pub async fn run(&mut self, bus: &InputBus) {
         loop {
-            match self.receiver.read_packet(&mut buf).await {
-                Ok(n) => {
-                    for &b in &buf[..n] {
-                        match b {
-                            b'\r' | b'\n' => {
-                                let line = String::from(self.partial.trim());
-                                self.partial.clear();
-                                if !line.is_empty() {
-                                    return line;
-                                }
-                            }
-                            b'\x08' | b'\x7f' => { self.partial.pop(); }
-                            _ => self.partial.push(b as char),
-                        }
-                    }
-                }
-                Err(_) => {
-                    self.partial.clear();
-                    self.receiver.wait_connection().await;
-                }
-            }
+            let ActivePrompt { player_id, request } = bus.prompt.wait().await;
+            info!("usb_input: prompt player={}", defmt::Display2Format(&player_id));
+            let choice = self.handle(&player_id, &request).await;
+            bus.choices.send(choice).await;
         }
     }
 
-    async fn write_choice_prompt_1_to_4(&mut self, n: usize) {
-        match n {
-            1 => self.write("Pick move [1]: ").await,
-            2 => self.write("Pick move [1-2]: ").await,
-            3 => self.write("Pick move [1-3]: ").await,
-            _ => self.write("Pick move [1-4]: ").await,
-        }
-    }
-}
-
-impl<'d> BattleInput for UsbBattleInput<'d> {
-    async fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
-        info!("read_choice player={}", defmt::Display2Format(player_id));
+    async fn handle(&mut self, player_id: &str, request: &Request) -> String {
         let _ = player_id;
-
         match request {
             Request::Turn(turn) => {
                 info!("request turn active_slots={}", turn.active.len());
@@ -94,7 +57,7 @@ impl<'d> BattleInput for UsbBattleInput<'d> {
                     }
                     self.write("\r\n=== Choose move ===\r\n").await;
                     loop {
-                        self.write_choice_prompt_1_to_4(n).await;
+                        self.write_move_prompt(n).await;
                         let line = self.read_line().await;
                         info!("input line={}", defmt::Display2Format(&line));
                         if let Ok(btn) = line.parse::<usize>() {
@@ -149,6 +112,53 @@ impl<'d> BattleInput for UsbBattleInput<'d> {
                 info!("request learn_move => pass");
                 String::from("pass")
             }
+        }
+    }
+
+    async fn write(&mut self, s: &str) {
+        let bytes = s.as_bytes();
+        let mut start = 0;
+        while start < bytes.len() {
+            let end = (start + 63).min(bytes.len());
+            let _ = self.sender.write_packet(&bytes[start..end]).await;
+            start = end;
+        }
+    }
+
+    async fn read_line(&mut self) -> String {
+        self.receiver.wait_connection().await;
+        let mut buf = [0u8; 64];
+        loop {
+            match self.receiver.read_packet(&mut buf).await {
+                Ok(n) => {
+                    for &b in &buf[..n] {
+                        match b {
+                            b'\r' | b'\n' => {
+                                let line = String::from(self.partial.trim());
+                                self.partial.clear();
+                                if !line.is_empty() {
+                                    return line;
+                                }
+                            }
+                            b'\x08' | b'\x7f' => { self.partial.pop(); }
+                            _ => self.partial.push(b as char),
+                        }
+                    }
+                }
+                Err(_) => {
+                    self.partial.clear();
+                    self.receiver.wait_connection().await;
+                }
+            }
+        }
+    }
+
+    async fn write_move_prompt(&mut self, n: usize) {
+        match n {
+            1 => self.write("Pick move [1]: ").await,
+            2 => self.write("Pick move [1-2]: ").await,
+            3 => self.write("Pick move [1-3]: ").await,
+            _ => self.write("Pick move [1-4]: ").await,
         }
     }
 }

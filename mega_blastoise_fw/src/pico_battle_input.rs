@@ -13,7 +13,7 @@ use alloc::vec::Vec;
 use battler::Request;
 use embassy_rp::gpio::Input;
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, BattleInput,
+    format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
 };
 
 fn debounced_is_low(pin: &Input) -> bool {
@@ -40,7 +40,7 @@ fn wait_first_pressed_slice(pins: &[Input<'_>]) -> usize {
     }
 }
 
-/// RP2040 button matrix implementing [`BattleInput`].
+/// RP2040 button matrix for physical move/switch buttons.
 pub struct PicoBattleInput<'d> {
     /// Move buttons → protocol `move 0` … `move 3` (first N used if fewer moves).
     pub move_pins: [Input<'d>; 4],
@@ -57,8 +57,16 @@ impl<'d> PicoBattleInput<'d> {
     }
 }
 
-impl<'d> BattleInput for PicoBattleInput<'d> {
-    async fn read_choice(&mut self, player_id: &str, request: &Request) -> String {
+impl<'d> PicoBattleInput<'d> {
+    pub async fn run(&mut self, bus: &InputBus) {
+        loop {
+            let ActivePrompt { player_id, request } = bus.prompt.wait().await;
+            let choice = self.handle(&player_id, &request);
+            bus.choices.send(choice).await;
+        }
+    }
+
+    fn handle(&mut self, player_id: &str, request: &Request) -> String {
         let _ = player_id;
         match request {
             Request::Turn(turn) => {

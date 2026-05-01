@@ -1,9 +1,10 @@
 //! Shared battle setup and harness entrypoints.
 
 use battler::TeamData;
+use embassy_futures::join::join;
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
-    BoardEventQueue, FlashDataStore,
+    BoardEventQueue, FlashDataStore, InputBus,
 };
 
 use crate::board_game_effects::BoardGameEffects;
@@ -32,11 +33,7 @@ fn print_active_pokemon_state(battle: &mut battler::PublicCoreBattle<'_>) {
                 "  {} — {} ({})  HP {}/{} ({})  status: {}  types: [{}]",
                 data.name, m.summary.name, m.species, m.hp, m.max_hp, m.health, status, types
             );
-            println!(
-                "    ability: {}  item: {}",
-                m.ability,
-                m.item.as_deref().unwrap_or("—")
-            );
+            println!("    ability: {}  item: {}", m.ability, m.item.as_deref().unwrap_or("—"));
             for mv in &m.moves {
                 let dis = if mv.disabled { " (disabled)" } else { "" };
                 println!("    • {}  {}/{} PP{}", mv.name, mv.pp, mv.max_pp, dis);
@@ -65,16 +62,14 @@ pub fn run_interactive() {
 
     battle.start().expect("battle start");
     println!("=== Demo battle (4v4 teams, singles field) ===\n");
-    println!(
-        "Each side has four Pokémon — slot 1 is your lead. Pick moves each turn; switches use bench slots 1–6.\n"
-    );
+    println!("Each side has four Pokémon — slot 1 is your lead. Pick moves each turn; switches use bench slots 1–6.\n");
 
-    pollster::block_on(run_battle(
-        &mut battle,
-        &mut input,
-        &mut queue,
-        &mut board_effects,
-        |b| print_active_pokemon_state(b),
+    let bus = InputBus::new();
+    pollster::block_on(join(
+        run_battle(&mut battle, &bus, &mut queue, &mut board_effects, |b| {
+            print_active_pokemon_state(b)
+        }),
+        input.run(&bus),
     ));
 
     println!("\n=== Battle over ===");
