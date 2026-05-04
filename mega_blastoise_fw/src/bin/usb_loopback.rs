@@ -5,7 +5,7 @@
 //! CRLF) so one logical newline never produces two RTT lines or two echoed CRLFs. A lone `\n`
 //! (Unix) still ends the line.
 //!
-//! Complete lines are logged over defmt (RTT on SWD) as human-readable UTF-8.
+//! Complete lines are logged over defmt (RTT on SWD) as human-readable UTF-8 (`usb_cdc_line` helper).
 //!
 //! Build / flash:
 //! `cargo build --bin usb_loopback`
@@ -26,6 +26,7 @@ use embassy_rp::usb::{Driver as UsbDriver, InterruptHandler as UsbInterruptHandl
 use embassy_usb::class::cdc_acm::{CdcAcmClass, State};
 use embassy_usb::{Builder, Config as UsbConfig, UsbDevice};
 use mega_blastoise_fw::mem_profile::init_heap;
+use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_bytes_to_rtt, write_all, write_crlf};
 use rtt_target::{rtt_init, set_defmt_channel};
 
 bind_interrupts!(struct Irqs {
@@ -38,37 +39,15 @@ async fn usb_task(usb: &'static mut UsbDevice<'static, UsbDriver<'static, USB>>)
 }
 
 const LINE_BUF_CAP: usize = 256;
-const TX_CHUNK: usize = 64;
-
-fn log_line_to_rtt(line: &[u8]) {
-    if line.is_empty() {
-        return;
-    }
-    match core::str::from_utf8(line) {
-        Ok(s) => info!("cdc line: {}", s),
-        Err(_) => info!("cdc line (non-utf8) {} B: {=[u8]:02x}", line.len(), line),
-    }
-}
-
-async fn write_all(
-    sender: &mut embassy_usb::class::cdc_acm::Sender<'static, UsbDriver<'static, USB>>,
-    mut data: &[u8],
-) {
-    while !data.is_empty() {
-        let n = data.len().min(TX_CHUNK);
-        let _ = sender.write_packet(&data[..n]).await;
-        data = &data[n..];
-    }
-}
 
 async fn finish_line(
     line: &[u8],
     line_len: &mut usize,
     sender: &mut embassy_usb::class::cdc_acm::Sender<'static, UsbDriver<'static, USB>>,
 ) {
-    log_line_to_rtt(&line[..*line_len]);
+    log_usb_rx_line_bytes_to_rtt(&line[..*line_len]);
     *line_len = 0;
-    write_all(sender, b"\r\n").await;
+    write_crlf(sender).await;
 }
 
 /// Echo with CRLF on every completed line; see module docs.

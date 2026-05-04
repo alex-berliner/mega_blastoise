@@ -1,6 +1,7 @@
 #![no_std]
 
 pub mod mem_profile;
+pub mod usb_cdc_line;
 
 use rtt_target as _;
 use panic_probe as _;

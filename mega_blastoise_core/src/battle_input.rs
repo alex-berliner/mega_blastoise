@@ -51,6 +51,25 @@ impl InputBus {
     }
 }
 
+/// Anything that can produce choices for the battle runner.
+///
+/// Implement this on your input driver (USB, buttons, …) and pass it to [`run_battle`](crate::run_battle).
+/// The runner joins the battle loop with `input.run(bus)` so both progress cooperatively.
+pub trait InputSource {
+    async fn run(&mut self, bus: &InputBus);
+}
+
+/// Placeholder input source that never produces choices (pends forever).
+///
+/// Use this when no interactive input is needed — e.g. when running without USB.
+pub struct NoInput;
+
+impl InputSource for NoInput {
+    async fn run(&mut self, _bus: &InputBus) {
+        core::future::pending().await
+    }
+}
+
 // ── choice string helpers (used by all input sources) ────────────────────────
 
 /// `move 0` … `move 3` (0-based slot).

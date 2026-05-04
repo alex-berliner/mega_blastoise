@@ -1,7 +1,6 @@
 //! Shared battle setup and harness entrypoints.
 
 use battler::TeamData;
-use embassy_futures::join::join;
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
     BoardEventQueue, FlashDataStore, InputBus,
@@ -65,11 +64,13 @@ pub fn run_interactive() {
     println!("Each side has four Pokémon — slot 1 is your lead. Pick moves each turn; switches use bench slots 1–6.\n");
 
     let bus = InputBus::new();
-    pollster::block_on(join(
-        run_battle(&mut battle, &bus, &mut queue, &mut board_effects, |b| {
-            print_active_pokemon_state(b)
-        }),
-        input.run(&bus),
+    pollster::block_on(run_battle(
+        &mut battle,
+        &bus,
+        &mut input,
+        &mut queue,
+        &mut board_effects,
+        |b| print_active_pokemon_state(b),
     ));
 
     println!("\n=== Battle over ===");

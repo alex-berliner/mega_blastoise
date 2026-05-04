@@ -7,8 +7,10 @@ use battler::{
     PlayerOptions, PlayerType, SerializedRuleSet, SideData, TeamData,
 };
 
+use embassy_futures::join::join;
+
 use crate::battle_effects::{process_new_log_lines, BoardEffects, BoardEventQueue};
-use crate::battle_input::{ActivePrompt, InputBus};
+use crate::battle_input::{ActivePrompt, InputBus, InputSource};
 use crate::board_event::board_prompt_event;
 
 pub fn make_player(id: &str, name: &str) -> PlayerData {
@@ -51,12 +53,27 @@ pub fn demo_engine_opts() -> CoreBattleEngineOptions {
     }
 }
 
-/// Drive a battle to completion: dispatch board events, collect choices via [`InputBus`], advance engine.
+/// Drive a battle to completion, running `input` concurrently for the duration.
 ///
-/// Before blocking on each choice the runner signals [`ActivePrompt`] on `bus.prompt`
-/// so that concurrent input sources can display the right prompt (move names, PP, …).
-/// Run input sources alongside this with `embassy_futures::join`.
-pub async fn run_battle<E, T>(
+/// Signals [`ActivePrompt`] on `bus.prompt` before blocking on each choice so
+/// input sources can display rich prompts. Pass [`NoInput`](crate::NoInput) when
+/// no interactive source is needed.
+pub async fn run_battle<I, E, T>(
+    battle: &mut battler::PublicCoreBattle<'_>,
+    bus: &InputBus,
+    input: &mut I,
+    queue: &mut BoardEventQueue,
+    effects: &mut E,
+    on_turn: T,
+) where
+    I: InputSource,
+    E: BoardEffects,
+    T: FnMut(&mut battler::PublicCoreBattle<'_>),
+{
+    join(battle_loop(battle, bus, queue, effects, on_turn), input.run(bus)).await;
+}
+
+async fn battle_loop<E, T>(
     battle: &mut battler::PublicCoreBattle<'_>,
     bus: &InputBus,
     queue: &mut BoardEventQueue,

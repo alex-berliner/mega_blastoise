@@ -9,7 +9,9 @@ use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
+    InputSource,
 };
+use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
 pub struct UsbBattleInput<'d> {
     sender: Sender<'d, Driver<'d, USB>>,
@@ -53,6 +55,8 @@ impl<'d> UsbBattleInput<'d> {
     }
 
     async fn handle(&mut self, player_id: &str, request: &Request) -> String {
+        use defmt::info;
+        info!("");
         match request {
             Request::Turn(turn) => {
                 self.write("\r\n").await;
@@ -206,38 +210,59 @@ impl<'d> UsbBattleInput<'d> {
         self.write("\r\n").await;
     }
 
-    /// Read a line from USB with local echo and backspace support.
+    /// Same line discipline as `usb_loopback`: `\r` / `\n` end a line; `\n` after `\r` is absorbed.
+    fn take_completed_line(&mut self) -> Option<String> {
+        let line = String::from(self.partial.trim());
+        self.partial.clear();
+        if !line.is_empty() {
+            self.last_typed_line = Some(line.clone());
+            return Some(line);
+        }
+        if let Some(last) = self.last_typed_line.clone() {
+            return Some(last);
+        }
+        None
+    }
+
+    /// Read a line from USB with local echo, backspace, CRLF echo, and RTT log (same as loopback).
     async fn read_line(&mut self) -> String {
         self.receiver.wait_connection().await;
         let mut buf = [0u8; 64];
+        let mut skip_next_lf = false;
         loop {
             match self.receiver.read_packet(&mut buf).await {
                 Ok(n) => {
                     for &b in &buf[..n] {
+                        if skip_next_lf {
+                            if b == b'\n' {
+                                skip_next_lf = false;
+                                continue;
+                            }
+                            skip_next_lf = false;
+                        }
                         match b {
-                            b'\r' | b'\n' => {
-                                // Echo newline so terminal advances.
-                                let _ = self.sender.write_packet(b"\r\n").await;
-                                let line = String::from(self.partial.trim());
-                                self.partial.clear();
-                                if !line.is_empty() {
-                                    self.last_typed_line = Some(line.clone());
+                            b'\r' => {
+                                log_usb_rx_line_str_to_rtt(self.partial.as_str());
+                                write_crlf(&mut self.sender).await;
+                                skip_next_lf = true;
+                                if let Some(line) = self.take_completed_line() {
                                     return line;
                                 }
-                                // Empty line: repeat last typed line (same idea as shell bang-last).
-                                if let Some(last) = self.last_typed_line.clone() {
-                                    return last;
+                            }
+                            b'\n' => {
+                                log_usb_rx_line_str_to_rtt(self.partial.as_str());
+                                write_crlf(&mut self.sender).await;
+                                if let Some(line) = self.take_completed_line() {
+                                    return line;
                                 }
                             }
                             b'\x08' | b'\x7f' => {
                                 if self.partial.pop().is_some() {
-                                    // Erase last character on terminal.
                                     let _ = self.sender.write_packet(b"\x08 \x08").await;
                                 }
                             }
                             b if b >= 0x20 => {
                                 self.partial.push(b as char);
-                                // Echo the character back.
                                 let _ = self.sender.write_packet(&[b]).await;
                             }
                             _ => {}
@@ -246,6 +271,7 @@ impl<'d> UsbBattleInput<'d> {
                 }
                 Err(_) => {
                     self.partial.clear();
+                    skip_next_lf = false;
                     self.receiver.wait_connection().await;
                 }
             }
@@ -262,5 +288,11 @@ impl<'d> UsbBattleInput<'d> {
             "p2" => "Blue",
             _ => "?",
         }
+    }
+}
+
+impl InputSource for UsbBattleInput<'_> {
+    async fn run(&mut self, bus: &InputBus) {
+        UsbBattleInput::run(self, bus).await
     }
 }

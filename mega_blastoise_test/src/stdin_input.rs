@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use battler::Request;
 use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
+    InputSource,
 };
 
 pub struct StdinBattleInput;
@@ -102,5 +103,11 @@ impl StdinBattleInput {
             }
             eprintln!("Please enter a number from {min} to {max}.");
         }
+    }
+}
+
+impl InputSource for StdinBattleInput {
+    async fn run(&mut self, bus: &InputBus) {
+        StdinBattleInput::run(self, bus).await
     }
 }
