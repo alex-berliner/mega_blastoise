@@ -21,7 +21,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use battler::Request;
+use battler::{PlayerBattleData, Request};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::{Channel, Sender};
 
@@ -30,6 +30,9 @@ use embassy_sync::channel::{Channel, Sender};
 pub struct ActivePrompt {
     pub player_id: String,
     pub request: Request,
+    /// Full battle state for the requesting player — used by display sources to show HP, moves,
+    /// and bench. `None` only when the battle engine can't supply data (shouldn't happen).
+    pub player_data: Option<PlayerBattleData>,
 }
 
 /// Shared bus between the battle runner and all input sources.

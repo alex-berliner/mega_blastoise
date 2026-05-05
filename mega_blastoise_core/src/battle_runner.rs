@@ -104,9 +104,11 @@ async fn battle_loop<E, T>(
             had_request = true;
             queue.push_event(board_prompt_event(&player_id, &request));
             queue.dispatch_all(effects);
+            let player_data = battle.player_data(&player_id).ok();
             bus.prompt.send(ActivePrompt {
                 player_id: player_id.clone(),
                 request: request.clone(),
+                player_data,
             }).await;
             let line = bus.choices.receive().await;
             if let Err(e) = battle.set_player_choice(&player_id, &line) {

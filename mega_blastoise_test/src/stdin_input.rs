@@ -14,7 +14,7 @@ impl StdinBattleInput {
     /// else needs to run while waiting for the user to type.
     pub async fn run(&mut self, bus: &InputBus) {
         loop {
-            let ActivePrompt { player_id, request } = bus.prompt.receive().await;
+            let ActivePrompt { player_id, request, .. } = bus.prompt.receive().await;
             let choice = self.handle(&player_id, &request);
             bus.choices.send(choice).await;
         }

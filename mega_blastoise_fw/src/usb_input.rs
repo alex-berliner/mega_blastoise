@@ -20,8 +20,8 @@ pub struct UsbBattleInput<'d> {
     partial: String,
     /// Last non-empty line submitted at a prompt; Enter on an empty line resends it.
     last_typed_line: Option<String>,
-    /// Ally data from the most recent Turn prompt, reused when a Switch prompt follows.
-    last_allies: Option<Vec<PlayerBattleData>>,
+    /// Player data from the most recent Turn prompt, reused when a Switch prompt follows.
+    last_player_data: Option<PlayerBattleData>,
 }
 
 impl<'d> UsbBattleInput<'d> {
@@ -31,7 +31,7 @@ impl<'d> UsbBattleInput<'d> {
             receiver,
             partial: String::new(),
             last_typed_line: None,
-            last_allies: None,
+            last_player_data: None,
         }
     }
 
@@ -54,9 +54,9 @@ impl<'d> UsbBattleInput<'d> {
                     }
                 }
             };
-            let ActivePrompt { player_id, request } = prompt;
+            let ActivePrompt { player_id, request, player_data } = prompt;
             defmt::debug!("usb: prompt received for {}", player_id.as_str());
-            let choice = self.handle(&player_id, &request).await;
+            let choice = self.handle(&player_id, &request, player_data).await;
             self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", choice)).await;
             bus.choices.send(choice).await;
 
@@ -68,18 +68,17 @@ impl<'d> UsbBattleInput<'d> {
         }
     }
 
-    async fn handle(&mut self, player_id: &str, request: &Request) -> String {
+    async fn handle(&mut self, player_id: &str, request: &Request, player_data: Option<PlayerBattleData>) -> String {
         match request {
             Request::Turn(turn) => {
-                // Cache allies so Switch prompts can show bench state.
-                self.last_allies = Some(turn.allies.clone());
+                // Cache for Switch prompts that follow this Turn prompt.
+                self.last_player_data = player_data.clone();
 
                 self.write("\r\n").await;
                 self.write("══════════════════════════════════\r\n").await;
 
-                // Show both sides' active Pokémon.
-                for player in &turn.allies {
-                    self.write_player_state(player).await;
+                if let Some(pd) = &player_data {
+                    self.write_player_state(pd).await;
                 }
 
                 self.write("──────────────────────────────────\r\n").await;
@@ -88,9 +87,8 @@ impl<'d> UsbBattleInput<'d> {
                 for mon_req in &turn.active {
                     let n = mon_req.moves.len().min(4);
 
-                    let mon_name = turn.allies.iter()
-                        .find(|p| p.id == player_id)
-                        .and_then(|p| p.mons.iter().find(|m| m.player_team_position == mon_req.team_position))
+                    let mon_name = player_data.as_ref()
+                        .and_then(|pd| pd.mons.iter().find(|m| m.player_team_position == mon_req.team_position))
                         .map(|m| m.summary.name.as_str())
                         .unwrap_or("?");
 
@@ -170,11 +168,7 @@ impl<'d> UsbBattleInput<'d> {
                     sw.needs_switch.len()
                 )).await;
 
-                // Show bench from cached turn data — clone to release the immutable borrow
-                // on self.last_allies before calling &mut self methods below.
-                let bench_player = self.last_allies.as_ref()
-                    .and_then(|allies| allies.iter().find(|p| p.id == player_id).cloned());
-                if let Some(player) = bench_player {
+                if let Some(player) = self.last_player_data.clone() {
                     self.write_bench_for_switch(&player).await;
                 }
                 self.write("──────────────────────────────────\r\n").await;

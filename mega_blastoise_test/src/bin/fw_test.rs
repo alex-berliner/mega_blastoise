@@ -24,7 +24,7 @@ use std::time::{Duration, Instant};
 const DEFAULT_SERIAL: &str = "/dev/ttyACM1";
 const DEFAULT_ELF: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../mega_blastoise_fw/target/thumbv6m-none-eabi/debug/mega-blastoise-fw",
+    "/../target/thumbv6m-none-eabi/debug/mega-blastoise-fw",
 );
 // Probe serial from .cargo/config.toml runner line.
 const PROBE_ID: &str = "2e8a:000c:E663589863798621";
