@@ -67,7 +67,7 @@ pub fn run_interactive() {
     pollster::block_on(run_battle(
         &mut battle,
         &bus,
-        &mut input,
+        input.run(&bus),
         &mut queue,
         &mut board_effects,
         |b| print_active_pokemon_state(b),

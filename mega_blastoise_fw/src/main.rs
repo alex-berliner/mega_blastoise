@@ -3,24 +3,24 @@
 
 extern crate alloc;
 
-mod board_effects;
+mod battle_effects;
 mod pico_battle_input;
 mod pn532;
 mod subsystems;
 mod usb_input;
 
 use battler::TeamData;
-use defmt::info;
+use defmt::debug;
 use embassy_executor::Spawner;
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
-    BoardEventQueue, FlashDataStore, InputBus, NoInput,
+    BoardEventQueue, FlashDataStore, InputBus,
 };
 use mega_blastoise_fw::mem_profile::{heap_snapshot, init_heap};
 use mega_blastoise_fw as _;
 use rtt_target::{rtt_init, set_defmt_channel};
 
-use board_effects::BattleEffects;
+use battle_effects::BattleEffects;
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -39,7 +39,7 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb")]
     let mut usb_input = {
         let input = subsystems::usb::init(p.USB, &spawner);
-        info!("USB ready. Connect with: picocom -b 115200 /dev/ttyACM1");
+        debug!("USB ready. Connect with: picocom -b 115200 /dev/ttyACM1");
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_usb_init");
         input
@@ -53,7 +53,7 @@ async fn main(spawner: Spawner) {
             p.PIN_16, p.PIN_17, p.PIN_18, p.PIN_19,
             &spawner,
         );
-        info!("NFC readers started (I2C0: GP16/17, I2C1: GP18/19, addr 0x24)");
+        debug!("NFC readers started (I2C0: GP16/17, I2C1: GP18/19, addr 0x24)");
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_nfc_init");
     }
@@ -67,7 +67,7 @@ async fn main(spawner: Spawner) {
         #[cfg(not(feature = "usb"))] None,
     );
 
-    info!("Initialising data store...");
+    debug!("Initialising data store...");
     let data = FlashDataStore::new();
     #[cfg(feature = "mem-profile")]
     heap_snapshot("after_datastore");
@@ -90,20 +90,25 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "mem-profile")]
     heap_snapshot("after_battle_start");
 
-    info!("Battle started.");
+    debug!("Battle started.");
 
     // ── Run ───────────────────────────────────────────────────────────────────
+    // Pass the input future directly. Compose multiple sources with join() here
+    // when NFC / buttons are ready: join(usb.run(&bus), nfc.run(&bus)).
     #[cfg(feature = "usb")]
-    let mut input = usb_input;
-    #[cfg(not(feature = "usb"))]
-    let mut input = NoInput;
-
-    run_battle(&mut battle, &bus, &mut input, &mut queue, &mut effects, |_| {
+    run_battle(&mut battle, &bus, usb_input.run(&bus), &mut queue, &mut effects, |_| {
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_turn");
     })
     .await;
 
-    info!("=== Battle over ===");
+    #[cfg(not(feature = "usb"))]
+    run_battle(&mut battle, &bus, async {}, &mut queue, &mut effects, |_| {
+        #[cfg(feature = "mem-profile")]
+        heap_snapshot("after_turn");
+    })
+    .await;
+
+    debug!("=== Battle over ===");
     loop { cortex_m::asm::wfi(); }
 }

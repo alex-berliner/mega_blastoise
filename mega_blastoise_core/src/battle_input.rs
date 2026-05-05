@@ -2,9 +2,19 @@
 //!
 //! [`InputBus`] is the single point through which all choice strings reach
 //! [`run_battle`](crate::run_battle).  Any number of input sources — USB serial,
-//! physical buttons, NFC readers — obtain a sender and run concurrently (e.g. via
-//! `embassy_futures::join`).  The runner signals [`ActivePrompt`] before blocking on
-//! the channel so that "smart" sources can display rich prompts (move names, PP, …).
+//! physical buttons, NFC readers — can send to `choices` concurrently; all race and
+//! the first answer wins.  The runner sends [`ActivePrompt`] on a capacity-1 channel
+//! before blocking on `choices`, so the display source (e.g. USB) can show rich
+//! prompts (move names, PP, …).  Sources that don't need prompt details (buttons,
+//! NFC) can ignore `bus.prompt` and post choices directly.
+//!
+//! To run multiple sources together, compose their futures before passing to
+//! [`run_battle`](crate::run_battle):
+//! ```ignore
+//! run_battle(&mut battle, &bus,
+//!     embassy_futures::join::join(usb.run(&bus), buttons.run(&bus)),
+//!     ...).await;
+//! ```
 
 extern crate alloc;
 
@@ -14,7 +24,6 @@ use alloc::vec::Vec;
 use battler::Request;
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::{Channel, Sender};
-use embassy_sync::signal::Signal;
 
 /// The engine request the runner is currently waiting on.
 #[derive(Clone)]
@@ -25,23 +34,26 @@ pub struct ActivePrompt {
 
 /// Shared bus between the battle runner and all input sources.
 ///
-/// Create one per battle (stack-allocated, no heap), split off senders for each
-/// input source, then run them alongside [`run_battle`](crate::run_battle) with
-/// `embassy_futures::join`.
+/// Create one per battle (stack-allocated, no heap).  Pass `&bus` to every input
+/// source's `run(&bus)` call, then compose those futures and hand them to
+/// [`run_battle`](crate::run_battle).
 pub struct InputBus {
     /// Choice strings produced by input sources, consumed by the runner.
     pub choices: Channel<NoopRawMutex, String, 4>,
-    /// Set by the runner before it blocks; sources subscribe to show the right prompt.
-    pub prompt: Signal<NoopRawMutex, ActivePrompt>,
+    /// Sent by the runner before it blocks; consumed once by the active display source.
+    /// Capacity-1: the runner cannot send a second prompt until the first is taken.
+    pub prompt: Channel<NoopRawMutex, ActivePrompt, 1>,
     /// Battle event descriptions pushed by BoardEffects; drained by output sinks (e.g. USB).
-    pub log: Channel<NoopRawMutex, String, 8>,
+    /// Capacity 32 handles a full turn's worth of events (move, damage, faint, switch-in, etc.)
+    /// without dropping any before USB drains them.
+    pub log: Channel<NoopRawMutex, String, 32>,
 }
 
 impl InputBus {
     pub const fn new() -> Self {
         Self {
             choices: Channel::new(),
-            prompt: Signal::new(),
+            prompt: Channel::new(),
             log: Channel::new(),
         }
     }
@@ -66,7 +78,7 @@ pub struct NoInput;
 
 impl InputSource for NoInput {
     async fn run(&mut self, _bus: &InputBus) {
-        core::future::pending().await
+        // core::future::pending().await
     }
 }
 

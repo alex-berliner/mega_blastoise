@@ -71,6 +71,8 @@ pub enum BoardEvent {
     },
     /// A move was announced in the log (`move` / `animatemove`).
     Move {
+        /// The Pokémon that used the move (name extracted from `mon:name,player,pos`).
+        user: Option<String>,
         name: String,
     },
     /// `switch` / `drag` / `appear` — lead or bench coming in (parsed from public log row).
@@ -80,7 +82,10 @@ pub enum BoardEvent {
         species: Option<String>,
         player_id: Option<String>,
     },
-    SwitchOut,
+    SwitchOut {
+        /// Pokémon that left the field (name extracted from `mon:name,player,pos`).
+        name: String,
+    },
     Turn {
         n: u32,
     },
@@ -128,6 +133,12 @@ pub fn board_prompt_event(player_id: &str, request: &Request) -> BoardEvent {
     }
 }
 
+/// Extract the display name from a battler `mon` position field (`"name,player_id,pos"`).
+/// Returns the whole string unchanged if no comma is present (e.g. synthetic test values).
+fn extract_mon_name(position_details: &str) -> &str {
+    position_details.split(',').next().unwrap_or(position_details)
+}
+
 /// Parse one committed log line into a typed event, if recognized.
 pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
     let p = ParsedBattleLogLine::parse(line);
@@ -144,6 +155,7 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             mon: p.get("mon").unwrap_or("?").into(),
         }),
         "move" | "animatemove" => Some(BoardEvent::Move {
+            user: p.get("mon").map(|s| extract_mon_name(s).into()),
             name: p.get("name").unwrap_or("?").into(),
         }),
         "switch" | "drag" | "appear" => Some(BoardEvent::SwitchIn {
@@ -151,7 +163,9 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             species: p.get("species").map(String::from),
             player_id: p.get("player").map(String::from),
         }),
-        "switchout" => Some(BoardEvent::SwitchOut),
+        "switchout" => Some(BoardEvent::SwitchOut {
+            name: p.get("mon").map(|s| extract_mon_name(s).into()).unwrap_or_default(),
+        }),
         "turn" => {
             let n = p
                 .get("turn")
@@ -172,28 +186,29 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
 }
 
 impl BoardEvent {
-    /// Plain-language line for hosts (println / defmt). Hardware code should branch on `BoardEvent`,
-    /// not on this string.
+    /// Human-readable battle narrative for display (USB, stdout). Hardware effects code should
+    /// branch on the `BoardEvent` variant directly rather than parsing this string.
     pub fn description(&self) -> String {
         match self {
             BoardEvent::Split { side } => {
-                let who = side_display_name(side.as_str());
-                format!(
-                    "Split for side {side} ({who}) — engine sends an owner-only row next, then the public row; board uses the public row as the next cue"
-                )
+                format!("[split side:{}]", side_display_name(side.as_str()))
             }
             BoardEvent::Damage { mon, health } => {
-                format!("{mon}: took damage → hit noise, HP light shows {health}")
+                let name = extract_mon_name(mon);
+                format!("{name} took damage!  (HP: {health})")
             }
             BoardEvent::Heal { mon, health } => {
-                format!("{mon}: healed → soft blip, HP light shows {health}")
+                let name = extract_mon_name(mon);
+                format!("{name} recovered HP!  (HP: {health})")
             }
             BoardEvent::Faint { mon } => {
-                format!("{mon}: fainted → KO sound, that Pokémon’s lights off")
+                let name = extract_mon_name(mon);
+                format!("{name} fainted!")
             }
-            BoardEvent::Move { name } => format!(
-                "uses {name} → quick move sound + flash that player’s strip"
-            ),
+            BoardEvent::Move { user, name } => match user.as_deref() {
+                Some(u) => format!("{u} used {name}!"),
+                None => format!("Used {name}!"),
+            },
             BoardEvent::SwitchIn {
                 name,
                 species,
@@ -209,31 +224,25 @@ impl BoardEvent {
                     .as_deref()
                     .map(player_display_name)
                     .unwrap_or("Trainer");
-                format!("{trainer} sends in {mon_label} → switch sound + light that slot")
+                format!("{trainer} sent out {mon_label}!")
             }
-            BoardEvent::SwitchOut => "Pokémon out → dim its lights".into(),
-            BoardEvent::Turn { n } => {
-                format!("Turn {n} → optional blink on the turn marker")
+            BoardEvent::SwitchOut { name } => {
+                format!("{name} was recalled!")
             }
-            BoardEvent::BattleStart => {
-                "Fight starts → short beep / lights at full HP".into()
-            }
+            BoardEvent::Turn { n } => format!("--- Turn {n} ---"),
+            BoardEvent::BattleStart => "=== Battle start! ===".into(),
             BoardEvent::Win { side } => match side {
-                Some(s) => format!("Match over — side {s} wins → win sound + that side lights up"),
-                None => "Someone won → win sound + winner side lights up".into(),
+                Some(s) => format!("=== {} wins! ===", side_display_name(s.as_str())),
+                None => "=== Battle over! ===".into(),
             },
-            BoardEvent::Tie => "Draw → short neutral tone".into(),
+            BoardEvent::Tie => "=== Draw! ===".into(),
             BoardEvent::Prompt { player_id, kind } => {
                 let label = player_display_name(player_id.as_str());
                 match kind {
-                    PromptKind::ChooseMove => format!(
-                        "{label}: pick a move — light that player’s move buttons / cue"
-                    ),
-                    PromptKind::ChooseSwitch => format!(
-                        "{label}: must switch — light bench / switch controls"
-                    ),
-                    PromptKind::TeamPreview => format!("{label}: team preview prompt (demo uses random)"),
-                    PromptKind::LearnMove => format!("{label}: learn-move prompt (demo passes)"),
+                    PromptKind::ChooseMove => format!("{label}: choosing a move..."),
+                    PromptKind::ChooseSwitch => format!("{label}: must switch!"),
+                    PromptKind::TeamPreview => format!("{label}: team preview"),
+                    PromptKind::LearnMove => format!("{label}: learn move"),
                 }
             }
         }

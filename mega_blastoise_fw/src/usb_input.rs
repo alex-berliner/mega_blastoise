@@ -1,8 +1,9 @@
 extern crate alloc;
 
 use alloc::string::String;
+use alloc::vec::Vec;
 
-use battler::{MonBattleData, Request};
+use battler::{MonBattleData, PlayerBattleData, Request};
 use embassy_futures::select::{select, Either};
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
@@ -19,6 +20,8 @@ pub struct UsbBattleInput<'d> {
     partial: String,
     /// Last non-empty line submitted at a prompt; Enter on an empty line resends it.
     last_typed_line: Option<String>,
+    /// Ally data from the most recent Turn prompt, reused when a Switch prompt follows.
+    last_allies: Option<Vec<PlayerBattleData>>,
 }
 
 impl<'d> UsbBattleInput<'d> {
@@ -28,83 +31,63 @@ impl<'d> UsbBattleInput<'d> {
             receiver,
             partial: String::new(),
             last_typed_line: None,
+            last_allies: None,
         }
     }
 
     pub async fn run(&mut self, bus: &InputBus) {
+        self.write("=== Battle CLI ready — waiting for first prompt ===\r\n").await;
         loop {
             // While waiting for the next prompt, relay any log lines that arrive.
             let prompt = loop {
-                match select(bus.prompt.wait(), bus.log.receive()).await {
-                    Either::First(p) => break p,
+                match select(bus.prompt.receive(), bus.log.receive()).await {
+                    Either::First(p) => {
+                        // Drain any log lines that were queued alongside the prompt
+                        // so they always print before the interactive prompt text.
+                        while let Ok(line) = bus.log.try_receive() {
+                            self.write_event(&line).await;
+                        }
+                        break p;
+                    }
                     Either::Second(line) => {
-                        self.writeln(&line).await;
+                        self.write_event(&line).await;
                     }
                 }
             };
             let ActivePrompt { player_id, request } = prompt;
+            defmt::debug!("usb: prompt received for {}", player_id.as_str());
             let choice = self.handle(&player_id, &request).await;
+            self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", choice)).await;
             bus.choices.send(choice).await;
 
-            // Turn processing pushes log lines before the next prompt is signaled; drain them
-            // here so they are not skipped when `prompt.wait()` wins the next select.
+            // Drain any log lines produced during turn processing before looping
+            // back to wait for the next prompt.
             while let Ok(line) = bus.log.try_receive() {
-                self.writeln(&line).await;
+                self.write_event(&line).await;
             }
         }
     }
 
     async fn handle(&mut self, player_id: &str, request: &Request) -> String {
-        use defmt::info;
-        info!("");
         match request {
             Request::Turn(turn) => {
+                // Cache allies so Switch prompts can show bench state.
+                self.last_allies = Some(turn.allies.clone());
+
                 self.write("\r\n").await;
                 self.write("══════════════════════════════════\r\n").await;
 
-                // Show both sides' active Pokémon from allies list.
+                // Show both sides' active Pokémon.
                 for player in &turn.allies {
-                    let label = Self::player_label(&player.id);
-                    let actives: alloc::vec::Vec<&MonBattleData> =
-                        player.mons.iter().filter(|m| m.active).collect();
-                    for m in &actives {
-                        let status = m.status.as_deref().unwrap_or("—");
-                        let item = m.item.as_deref().unwrap_or("—");
-                        self.writef(&alloc::format!(
-                            "{} — {} ({})  HP {}/{}  status: {}  item: {}\r\n",
-                            label, m.summary.name, m.species, m.hp, m.max_hp, status, item
-                        )).await;
-                        // Boosts
-                        let b = &m.boosts;
-                        if b.atk != 0 || b.def != 0 || b.spa != 0 || b.spd != 0 || b.spe != 0 {
-                            self.writef(&alloc::format!(
-                                "  boosts  atk:{:+}  def:{:+}  spa:{:+}  spd:{:+}  spe:{:+}\r\n",
-                                b.atk, b.def, b.spa, b.spd, b.spe
-                            )).await;
-                        }
-                    }
-
-                    // Show bench (non-active, alive)
-                    let bench: alloc::vec::Vec<&MonBattleData> =
-                        player.mons.iter().filter(|m| !m.active && m.hp > 0).collect();
-                    if !bench.is_empty() {
-                        let bench_str: alloc::vec::Vec<String> = bench
-                            .iter()
-                            .map(|m| alloc::format!("{} {}/{}", m.summary.name, m.hp, m.max_hp))
-                            .collect();
-                        self.writef(&alloc::format!(
-                            "  bench: {}\r\n", bench_str.join("  ")
-                        )).await;
-                    }
+                    self.write_player_state(player).await;
                 }
 
                 self.write("──────────────────────────────────\r\n").await;
 
-                let mut parts = alloc::vec::Vec::new();
-                for (slot_idx, mon_req) in turn.active.iter().enumerate() {
+                let mut parts = Vec::new();
+                for mon_req in &turn.active {
                     let n = mon_req.moves.len().min(4);
 
-                    // Find this mon's data in allies for its name.
                     let mon_name = turn.allies.iter()
                         .find(|p| p.id == player_id)
                         .and_then(|p| p.mons.iter().find(|m| m.player_team_position == mon_req.team_position))
@@ -113,78 +96,199 @@ impl<'d> UsbBattleInput<'d> {
 
                     let label = Self::player_label(player_id);
                     self.writef(&alloc::format!(
-                        "{} ({}) — pick a move for {}\r\n", label, player_id, mon_name
+                        "{} ({}) — choose move for {}\r\n", label, player_id, mon_name
                     )).await;
 
                     if n == 0 {
-                        self.write("  (no moves available — passing)\r\n").await;
+                        self.write_ok("No moves available — passing automatically").await;
                         parts.push(String::from("pass"));
                         continue;
                     }
 
                     for i in 0..n {
                         let m = &mon_req.moves[i];
-                        let flag = if m.disabled || m.pp == 0 { " ✗" } else { "" };
+                        let usable = !m.disabled && m.pp > 0;
+                        let state = if m.disabled { " [DISABLED]" } else if m.pp == 0 { " [NO PP]" } else { "" };
                         self.writef(&alloc::format!(
-                            "  [{}] {:20}  PP {}/{}{}\r\n",
-                            i + 1, m.name, m.pp, m.max_pp, flag
+                            "  [{}] {:<20}  PP {}/{}{}",
+                            i + 1, m.name, m.pp, m.max_pp, state
                         )).await;
+                        if usable {
+                            self.write("  <-- available\r\n").await;
+                        } else {
+                            self.write("\r\n").await;
+                        }
                     }
 
-                    let _ = slot_idx;
                     loop {
                         self.write_move_prompt(n).await;
                         let line = self.read_line().await;
-                        if let Ok(btn) = line.trim().parse::<usize>() {
-                            if btn >= 1 && btn <= n {
+                        let trimmed = line.trim();
+                        match trimmed.parse::<usize>() {
+                            Ok(btn) if btn >= 1 && btn <= n => {
                                 let slot = btn - 1;
                                 let m = &mon_req.moves[slot];
-                                if m.disabled || m.pp == 0 {
-                                    self.write("  That move cannot be used.\r\n").await;
+                                if m.disabled {
+                                    self.write_err(&alloc::format!(
+                                        "Rejected — {} is disabled, pick another", m.name
+                                    )).await;
                                     continue;
                                 }
-                                self.writef(&alloc::format!(
-                                    "  → {}\r\n", m.name
+                                if m.pp == 0 {
+                                    self.write_err(&alloc::format!(
+                                        "Rejected — {} has no PP remaining, pick another", m.name
+                                    )).await;
+                                    continue;
+                                }
+                                self.write_ok(&alloc::format!(
+                                    "Accepted — {} (slot {})", m.name, slot
                                 )).await;
                                 parts.push(format_move_choice(slot));
                                 break;
                             }
+                            Ok(btn) => {
+                                self.write_err(&alloc::format!(
+                                    "Rejected — {} is out of range, enter 1-{}", btn, n
+                                )).await;
+                            }
+                            Err(_) => {
+                                self.write_err(&alloc::format!(
+                                    "Rejected — \"{}\" is not a number, enter 1-{}", trimmed, n
+                                )).await;
+                            }
                         }
-                        self.writef(&alloc::format!(
-                            "  Enter a number 1–{}.\r\n", n
-                        )).await;
                     }
                 }
                 join_choice_parts(&parts)
             }
 
             Request::Switch(sw) => {
-                self.write("\r\n══ Switch required ══\r\n").await;
-                let mut parts = alloc::vec::Vec::new();
-                for _ in &sw.needs_switch {
+                self.write("\r\n").await;
+                self.write("══════════════════════════════════\r\n").await;
+                self.writef(&alloc::format!(
+                    "SWITCH REQUIRED — {} slot(s) need a replacement\r\n",
+                    sw.needs_switch.len()
+                )).await;
+
+                // Show bench from cached turn data — clone to release the immutable borrow
+                // on self.last_allies before calling &mut self methods below.
+                let bench_player = self.last_allies.as_ref()
+                    .and_then(|allies| allies.iter().find(|p| p.id == player_id).cloned());
+                if let Some(player) = bench_player {
+                    self.write_bench_for_switch(&player).await;
+                }
+                self.write("──────────────────────────────────\r\n").await;
+
+                let mut parts = Vec::new();
+                for (i, &fainted_slot) in sw.needs_switch.iter().enumerate() {
+                    self.writef(&alloc::format!(
+                        "Replacement {} of {} (for team slot {}):\r\n",
+                        i + 1, sw.needs_switch.len(), fainted_slot
+                    )).await;
                     loop {
-                        self.write("Pick party slot to send in [1-6]: ").await;
+                        self.write("Send in party slot [1-6]: ").await;
                         let line = self.read_line().await;
-                        if let Ok(n) = line.trim().parse::<usize>() {
-                            if n >= 1 && n <= 6 {
-                                self.writef(&alloc::format!("  → slot {}\r\n", n)).await;
+                        let trimmed = line.trim();
+                        match trimmed.parse::<usize>() {
+                            Ok(n) if n >= 1 && n <= 6 => {
+                                self.write_ok(&alloc::format!("Accepted — switching in slot {}", n)).await;
                                 parts.push(format_switch_choice(n - 1));
                                 break;
                             }
+                            Ok(n) => {
+                                self.write_err(&alloc::format!(
+                                    "Rejected — {} is out of range, enter 1-6", n
+                                )).await;
+                            }
+                            Err(_) => {
+                                self.write_err(&alloc::format!(
+                                    "Rejected — \"{}\" is not a number, enter 1-6", trimmed
+                                )).await;
+                            }
                         }
-                        self.write("  Enter a number 1–6.\r\n").await;
                     }
                 }
                 join_choice_parts(&parts)
             }
 
             Request::TeamPreview(_) => {
-                self.write("[team preview — using random order]\r\n").await;
+                self.write_dbg("Team preview — using random order").await;
                 String::from("random")
             }
             Request::LearnMove(_) => {
-                self.write("[learn move — passing]\r\n").await;
+                self.write_dbg("Learn move — passing").await;
                 String::from("pass")
+            }
+        }
+    }
+
+    // ── Display helpers ───────────────────────────────────────────────────────
+
+    async fn write_player_state(&mut self, player: &PlayerBattleData) {
+        let label = Self::player_label(&player.id);
+        let actives: Vec<&MonBattleData> = player.mons.iter().filter(|m| m.active).collect();
+        for m in &actives {
+            let status = m.status.as_deref().unwrap_or("ok");
+            let item = m.item.as_deref().unwrap_or("none");
+            let pct = if m.max_hp > 0 { m.hp * 100 / m.max_hp } else { 0 };
+            self.writef(&alloc::format!(
+                "{} — {} ({})  HP {}/{} ({}%)  status: {}  item: {}\r\n",
+                label, m.summary.name, m.species, m.hp, m.max_hp, pct, status, item
+            )).await;
+            let b = &m.boosts;
+            if b.atk != 0 || b.def != 0 || b.spa != 0 || b.spd != 0 || b.spe != 0 {
+                self.writef(&alloc::format!(
+                    "  boosts  atk:{:+}  def:{:+}  spa:{:+}  spd:{:+}  spe:{:+}\r\n",
+                    b.atk, b.def, b.spa, b.spd, b.spe
+                )).await;
+            }
+        }
+
+        // Bench — alive and fainted separately.
+        let bench_alive: Vec<&MonBattleData> =
+            player.mons.iter().filter(|m| !m.active && m.hp > 0).collect();
+        let bench_fainted: Vec<&MonBattleData> =
+            player.mons.iter().filter(|m| !m.active && m.hp == 0).collect();
+        if !bench_alive.is_empty() {
+            let s: Vec<String> = bench_alive
+                .iter()
+                .map(|m| {
+                    let pct = if m.max_hp > 0 { m.hp * 100 / m.max_hp } else { 0 };
+                    alloc::format!("{} {}/{}({}%)", m.summary.name, m.hp, m.max_hp, pct)
+                })
+                .collect();
+            self.writef(&alloc::format!("  bench: {}\r\n", s.join("  "))).await;
+        }
+        if !bench_fainted.is_empty() {
+            let s: Vec<String> = bench_fainted
+                .iter()
+                .map(|m| alloc::format!("{} [fnt]", m.summary.name))
+                .collect();
+            self.writef(&alloc::format!("  fainted: {}\r\n", s.join("  "))).await;
+        }
+    }
+
+    async fn write_bench_for_switch(&mut self, player: &PlayerBattleData) {
+        let label = Self::player_label(&player.id);
+        self.writef(&alloc::format!("  {} party:\r\n", label)).await;
+        for (i, m) in player.mons.iter().enumerate() {
+            let slot = i + 1;
+            if m.active {
+                self.writef(&alloc::format!(
+                    "    [{}] {} — active (HP {}/{})\r\n",
+                    slot, m.summary.name, m.hp, m.max_hp
+                )).await;
+            } else if m.hp == 0 {
+                self.writef(&alloc::format!(
+                    "    [{}] {} — fainted\r\n",
+                    slot, m.summary.name
+                )).await;
+            } else {
+                let pct = m.hp * 100 / m.max_hp.max(1);
+                self.writef(&alloc::format!(
+                    "    [{}] {} — HP {}/{} ({}%)  <-- available\r\n",
+                    slot, m.summary.name, m.hp, m.max_hp, pct
+                )).await;
             }
         }
     }
@@ -210,6 +314,33 @@ impl<'d> UsbBattleInput<'d> {
         self.write("\r\n").await;
     }
 
+    /// Battle event line from the engine (e.g. damage, faint, move used).
+    async fn write_event(&mut self, s: &str) {
+        self.write("[EVT] ").await;
+        self.writeln(s).await;
+    }
+
+    /// Successful input acknowledgement — USB display + RTT debug mirror.
+    async fn write_ok(&mut self, s: &str) {
+        defmt::debug!("[OK]  {}", defmt::Display2Format(s));
+        self.write("[OK]  ").await;
+        self.writeln(s).await;
+    }
+
+    /// Input rejection with reason — USB display + RTT warn mirror.
+    async fn write_err(&mut self, s: &str) {
+        defmt::warn!("[!!]  {}", defmt::Display2Format(s));
+        self.write("[!!]  ").await;
+        self.writeln(s).await;
+    }
+
+    /// Debug / informational line — USB display + RTT debug mirror.
+    async fn write_dbg(&mut self, s: &str) {
+        defmt::debug!("[>>]  {}", defmt::Display2Format(s));
+        self.write("[>>]  ").await;
+        self.writeln(s).await;
+    }
+
     /// Same line discipline as `usb_loopback`: `\r` / `\n` end a line; `\n` after `\r` is absorbed.
     fn take_completed_line(&mut self) -> Option<String> {
         let line = String::from(self.partial.trim());
@@ -224,7 +355,7 @@ impl<'d> UsbBattleInput<'d> {
         None
     }
 
-    /// Read a line from USB with local echo, backspace, CRLF echo, and RTT log (same as loopback).
+    /// Read a line from USB with local echo, backspace, CRLF, and RTT mirror.
     async fn read_line(&mut self) -> String {
         self.receiver.wait_connection().await;
         let mut buf = [0u8; 64];

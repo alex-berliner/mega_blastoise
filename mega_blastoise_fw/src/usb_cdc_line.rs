@@ -3,7 +3,7 @@
 //! Matches the `usb_loopback` test binary: flush on `\r` or `\n`; after `\r`, the next `\n`
 //! is ignored so `\r\n` is one logical line.
 
-use defmt::info;
+use defmt::debug;
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::Sender;
@@ -14,7 +14,7 @@ pub fn log_usb_rx_line_str_to_rtt(line: &str) {
     if line.is_empty() {
         return;
     }
-    info!("usb rx line: {}", line);
+    debug!("usb rx line: {}", line);
 }
 
 pub fn log_usb_rx_line_bytes_to_rtt(line: &[u8]) {
@@ -22,8 +22,8 @@ pub fn log_usb_rx_line_bytes_to_rtt(line: &[u8]) {
         return;
     }
     match core::str::from_utf8(line) {
-        Ok(s) => info!("usb rx line: {}", s),
-        Err(_) => info!("usb rx line (non-utf8) {} B: {=[u8]:02x}", line.len(), line),
+        Ok(s) => debug!("usb rx line: {}", s),
+        Err(_) => debug!("usb rx line (non-utf8) {} B: {=[u8]:02x}", line.len(), line),
     }
 }
 

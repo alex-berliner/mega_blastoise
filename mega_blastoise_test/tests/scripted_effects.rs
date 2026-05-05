@@ -22,6 +22,7 @@ fn scripted_board_events_dispatch_in_order() {
             kind: PromptKind::ChooseMove,
         },
         BoardEvent::Move {
+            user: Some("Charizard".into()),
             name: "Flamethrower".into(),
         },
         BoardEvent::Damage {
@@ -50,7 +51,7 @@ fn scripted_board_events_dispatch_in_order() {
     ));
     assert!(matches!(
         recorder.0[2],
-        BoardEvent::Move { ref name } if name == "Flamethrower"
+        BoardEvent::Move { ref name, .. } if name == "Flamethrower"
     ));
     assert!(matches!(recorder.0[5], BoardEvent::Win { .. }));
 }

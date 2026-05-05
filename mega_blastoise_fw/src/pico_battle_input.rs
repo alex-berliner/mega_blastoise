@@ -60,7 +60,7 @@ impl<'d> PicoBattleInput<'d> {
 impl<'d> PicoBattleInput<'d> {
     pub async fn run(&mut self, bus: &InputBus) {
         loop {
-            let ActivePrompt { player_id, request } = bus.prompt.wait().await;
+            let ActivePrompt { player_id, request } = bus.prompt.receive().await;
             let choice = self.handle(&player_id, &request);
             bus.choices.send(choice).await;
         }
