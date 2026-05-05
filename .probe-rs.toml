@@ -1,4 +1,4 @@
 [presets.pico]
 chip = "RP2040"
 probe = "2e8a:000c:E663589863798621"
-speed = 8000
+speed = 20000

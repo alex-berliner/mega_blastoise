@@ -50,6 +50,8 @@ async fn finish_line(
     write_crlf(sender).await;
 }
 
+const INIT_MSG: &[u8] = b"mega-blastoise USB loopback ready\r\n";
+
 /// Echo with CRLF on every completed line; see module docs.
 async fn cdc_echo(
     mut sender: embassy_usb::class::cdc_acm::Sender<'static, UsbDriver<'static, USB>>,
@@ -62,6 +64,11 @@ async fn cdc_echo(
     let mut skip_next_lf = false;
 
     loop {
+        receiver.wait_connection().await;
+        info!("USB host connected — sending init message");
+        write_all(&mut sender, INIT_MSG).await;
+
+        loop {
         match receiver.read_packet(&mut buf).await {
             Ok(n) => {
                 for &b in &buf[..n] {
@@ -97,12 +104,14 @@ async fn cdc_echo(
                 }
             }
             Err(_) => {
-                info!("cdc RX stalled — wait for host");
-                receiver.wait_connection().await;
-                info!("cdc RX ready");
+                info!("cdc RX stalled — disconnected");
+                line_len = 0;
+                skip_next_lf = false;
+                break;
             }
         }
-    }
+        } // inner loop
+    } // outer loop
 }
 
 #[embassy_executor::main]
