@@ -3,6 +3,7 @@
 
 extern crate alloc;
 
+mod battle_controller;
 mod battle_effects;
 mod pico_battle_input;
 mod pn532;
@@ -12,15 +13,18 @@ mod usb_input;
 use battler::TeamData;
 use defmt::debug;
 use embassy_executor::Spawner;
+use embassy_rp::gpio::{Input, Pull};
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
-    BoardEventQueue, FlashDataStore, InputBus,
+    BoardEventQueue, FlashDataStore, InputBus, InputSource,
 };
 use mega_blastoise_fw::mem_profile::{heap_snapshot, init_heap};
 use mega_blastoise_fw as _;
 use rtt_target::{rtt_init, set_defmt_channel};
 
+use battle_controller::BattleController;
 use battle_effects::BattleEffects;
+use pico_battle_input::PicoBattleInput;
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -39,11 +43,30 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb")]
     let mut usb_input = {
         let input = subsystems::usb::init(p.USB, &spawner);
-        debug!("USB ready. Connect with: picocom -b 115200 /dev/ttyACM1");
+        debug!("USB ready. Connect with: picocom --echo -b 115200 /dev/ttyACM1");
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_usb_init");
         input
     };
+
+    // ── Physical buttons (GPIO 6–9 moves, 10–15 switch) ──────────────────────
+    let buttons = PicoBattleInput::new(
+        [
+            Input::new(p.PIN_6,  Pull::Up),
+            Input::new(p.PIN_7,  Pull::Up),
+            Input::new(p.PIN_8,  Pull::Up),
+            Input::new(p.PIN_9,  Pull::Up),
+        ],
+        [
+            Input::new(p.PIN_10, Pull::Up),
+            Input::new(p.PIN_11, Pull::Up),
+            Input::new(p.PIN_12, Pull::Up),
+            Input::new(p.PIN_13, Pull::Up),
+            Input::new(p.PIN_14, Pull::Up),
+            Input::new(p.PIN_15, Pull::Up),
+        ],
+    );
+    debug!("Buttons ready: move GPIO 6-9, switch GPIO 10-15");
 
     // ── NFC readers (PN532 over I²C) ─────────────────────────────────────────
     #[cfg(feature = "nfc")]
@@ -93,17 +116,18 @@ async fn main(spawner: Spawner) {
     debug!("Battle started.");
 
     // ── Run ───────────────────────────────────────────────────────────────────
-    // Pass the input future directly. Compose multiple sources with join() here
-    // when NFC / buttons are ready: join(usb.run(&bus), nfc.run(&bus)).
     #[cfg(feature = "usb")]
-    run_battle(&mut battle, &bus, usb_input.run(&bus), &mut queue, &mut effects, |_| {
-        #[cfg(feature = "mem-profile")]
-        heap_snapshot("after_turn");
-    })
-    .await;
+    {
+        let mut controller = BattleController::new(usb_input, buttons);
+        run_battle(&mut battle, &bus, controller.run(&bus), &mut queue, &mut effects, |_| {
+            #[cfg(feature = "mem-profile")]
+            heap_snapshot("after_turn");
+        })
+        .await;
+    }
 
     #[cfg(not(feature = "usb"))]
-    run_battle(&mut battle, &bus, async {}, &mut queue, &mut effects, |_| {
+    run_battle(&mut battle, &bus, buttons.run(&bus), &mut queue, &mut effects, |_| {
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_turn");
     })

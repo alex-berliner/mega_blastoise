@@ -15,6 +15,8 @@ use mega_blastoise_core::{
 };
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
+use crate::pico_battle_input::PicoBattleInput;
+
 pub struct UsbBattleInput<'d> {
     sender: Sender<'d, Driver<'d, USB>>,
     receiver: Receiver<'d, Driver<'d, USB>>,
@@ -37,14 +39,21 @@ impl<'d> UsbBattleInput<'d> {
     }
 
     pub async fn run(&mut self, bus: &InputBus) {
+        self.run_inner(bus, None).await;
+    }
+
+    /// Inner event/prompt loop.  Pass `Some(buttons)` to race USB input against physical
+    /// button presses; `None` for USB-only operation.
+    pub(crate) async fn run_inner(
+        &mut self,
+        bus: &InputBus,
+        mut buttons: Option<&mut PicoBattleInput<'_>>,
+    ) {
         self.write("=== Battle CLI ready — waiting for first prompt ===\r\n").await;
         loop {
-            // While waiting for the next prompt, relay any log lines that arrive.
             let prompt = loop {
                 match select(bus.prompt.receive(), bus.log.receive()).await {
                     Either::First(p) => {
-                        // Drain any log lines that were queued alongside the prompt
-                        // so they always print before the interactive prompt text.
                         while let Ok(line) = bus.log.try_receive() {
                             self.write_event(&line).await;
                         }
@@ -57,19 +66,24 @@ impl<'d> UsbBattleInput<'d> {
             };
             let ActivePrompt { player_id, request, player_data } = prompt;
             defmt::debug!("usb: prompt received for {}", player_id.as_str());
-            let choice = self.handle(&player_id, &request, player_data).await;
+            let btns = buttons.as_mut().map(|b| &mut **b);
+            let choice = self.handle(&player_id, &request, player_data, btns).await;
             self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", choice)).await;
             bus.choices.send(choice).await;
 
-            // Drain any log lines produced during turn processing before looping
-            // back to wait for the next prompt.
             while let Ok(line) = bus.log.try_receive() {
                 self.write_event(&line).await;
             }
         }
     }
 
-    async fn handle(&mut self, player_id: &str, request: &Request, player_data: Option<PlayerBattleData>) -> String {
+    async fn handle(
+        &mut self,
+        player_id: &str,
+        request: &Request,
+        player_data: Option<PlayerBattleData>,
+        mut buttons: Option<&mut PicoBattleInput<'_>>,
+    ) -> String {
         match request {
             Request::Turn(turn) => {
                 // Cache for Switch prompts that follow this Turn prompt.
@@ -120,43 +134,125 @@ impl<'d> UsbBattleInput<'d> {
                     }
 
                     self.drain_rx().await;
-                    loop {
+                    'move_input: loop {
                         self.write_move_prompt(n).await;
-                        let line = self.read_line().await;
-                        let trimmed = line.trim();
-                        match trimmed.parse::<usize>() {
-                            Ok(btn) if btn >= 1 && btn <= n => {
-                                let slot = btn - 1;
-                                let m = &mon_req.moves[slot];
-                                if m.disabled {
-                                    self.write_err(&alloc::format!(
-                                        "Rejected — {} is disabled, pick another", m.name
-                                    )).await;
-                                    continue;
+
+                        // Accept input from USB serial or physical button (first wins).
+                        let slot = match buttons.as_mut() {
+                            Some(btns) => {
+                                let is_usable = |i: usize| {
+                                    !mon_req.moves[i].disabled && mon_req.moves[i].pp > 0
+                                };
+                                match select(
+                                    self.read_line(),
+                                    btns.wait_move(n, is_usable),
+                                )
+                                .await
+                                {
+                                    Either::First(line) => {
+                                        let trimmed = line.trim();
+                                        match trimmed.parse::<usize>() {
+                                            Ok(btn) if btn >= 1 && btn <= n => {
+                                                let slot = btn - 1;
+                                                let m = &mon_req.moves[slot];
+                                                if m.disabled {
+                                                    self.write_err(&alloc::format!(
+                                                        "Rejected — {} is disabled", m.name
+                                                    ))
+                                                    .await;
+                                                    continue 'move_input;
+                                                }
+                                                if m.pp == 0 {
+                                                    self.write_err(&alloc::format!(
+                                                        "Rejected — {} has no PP", m.name
+                                                    ))
+                                                    .await;
+                                                    continue 'move_input;
+                                                }
+                                                self.write_ok(&alloc::format!(
+                                                    "Accepted — {} (slot {})", m.name, slot
+                                                ))
+                                                .await;
+                                                slot
+                                            }
+                                            Ok(btn) => {
+                                                self.write_err(&alloc::format!(
+                                                    "Rejected — {} out of range, enter 1-{}", btn, n
+                                                ))
+                                                .await;
+                                                continue 'move_input;
+                                            }
+                                            Err(_) => {
+                                                self.write_err(&alloc::format!(
+                                                    "Rejected — \"{}\" is not a number", trimmed
+                                                ))
+                                                .await;
+                                                continue 'move_input;
+                                            }
+                                        }
+                                    }
+                                    Either::Second(slot) => {
+                                        // Physical button press; clean up any partial USB input.
+                                        self.partial.clear();
+                                        self.write_ok(&alloc::format!(
+                                            "Button — {} (slot {})",
+                                            mon_req.moves[slot].name, slot
+                                        ))
+                                        .await;
+                                        slot
+                                    }
                                 }
-                                if m.pp == 0 {
-                                    self.write_err(&alloc::format!(
-                                        "Rejected — {} has no PP remaining, pick another", m.name
-                                    )).await;
-                                    continue;
+                            }
+                            None => {
+                                // USB-only path.
+                                let line = self.read_line().await;
+                                let trimmed = line.trim();
+                                match trimmed.parse::<usize>() {
+                                    Ok(btn) if btn >= 1 && btn <= n => {
+                                        let slot = btn - 1;
+                                        let m = &mon_req.moves[slot];
+                                        if m.disabled {
+                                            self.write_err(&alloc::format!(
+                                                "Rejected — {} is disabled, pick another", m.name
+                                            ))
+                                            .await;
+                                            continue 'move_input;
+                                        }
+                                        if m.pp == 0 {
+                                            self.write_err(&alloc::format!(
+                                                "Rejected — {} has no PP remaining, pick another",
+                                                m.name
+                                            ))
+                                            .await;
+                                            continue 'move_input;
+                                        }
+                                        self.write_ok(&alloc::format!(
+                                            "Accepted — {} (slot {})", m.name, slot
+                                        ))
+                                        .await;
+                                        slot
+                                    }
+                                    Ok(btn) => {
+                                        self.write_err(&alloc::format!(
+                                            "Rejected — {} is out of range, enter 1-{}", btn, n
+                                        ))
+                                        .await;
+                                        continue 'move_input;
+                                    }
+                                    Err(_) => {
+                                        self.write_err(&alloc::format!(
+                                            "Rejected — \"{}\" is not a number, enter 1-{}",
+                                            trimmed, n
+                                        ))
+                                        .await;
+                                        continue 'move_input;
+                                    }
                                 }
-                                self.write_ok(&alloc::format!(
-                                    "Accepted — {} (slot {})", m.name, slot
-                                )).await;
-                                parts.push(format_move_choice(slot));
-                                break;
                             }
-                            Ok(btn) => {
-                                self.write_err(&alloc::format!(
-                                    "Rejected — {} is out of range, enter 1-{}", btn, n
-                                )).await;
-                            }
-                            Err(_) => {
-                                self.write_err(&alloc::format!(
-                                    "Rejected — \"{}\" is not a number, enter 1-{}", trimmed, n
-                                )).await;
-                            }
-                        }
+                        };
+
+                        parts.push(format_move_choice(slot));
+                        break 'move_input;
                     }
                 }
                 join_choice_parts(&parts)
@@ -182,27 +278,80 @@ impl<'d> UsbBattleInput<'d> {
                         i + 1, sw.needs_switch.len(), fainted_slot
                     )).await;
                     self.drain_rx().await;
-                    loop {
+                    'switch_input: loop {
                         self.write("Send in party slot [1-6]: ").await;
-                        let line = self.read_line().await;
-                        let trimmed = line.trim();
-                        match trimmed.parse::<usize>() {
-                            Ok(n) if n >= 1 && n <= 6 => {
-                                self.write_ok(&alloc::format!("Accepted — switching in slot {}", n)).await;
-                                parts.push(format_switch_choice(n - 1));
-                                break;
+
+                        let team_idx = match buttons.as_mut() {
+                            Some(btns) => {
+                                match select(self.read_line(), btns.wait_switch()).await {
+                                    Either::First(line) => {
+                                        let trimmed = line.trim();
+                                        match trimmed.parse::<usize>() {
+                                            Ok(n) if n >= 1 && n <= 6 => {
+                                                self.write_ok(&alloc::format!(
+                                                    "Accepted — switching in slot {}", n
+                                                ))
+                                                .await;
+                                                n - 1
+                                            }
+                                            Ok(n) => {
+                                                self.write_err(&alloc::format!(
+                                                    "Rejected — {} out of range, enter 1-6", n
+                                                ))
+                                                .await;
+                                                continue 'switch_input;
+                                            }
+                                            Err(_) => {
+                                                self.write_err(&alloc::format!(
+                                                    "Rejected — \"{}\" is not a number", trimmed
+                                                ))
+                                                .await;
+                                                continue 'switch_input;
+                                            }
+                                        }
+                                    }
+                                    Either::Second(idx) => {
+                                        self.partial.clear();
+                                        self.write_ok(&alloc::format!(
+                                            "Button — switching in slot {}", idx + 1
+                                        ))
+                                        .await;
+                                        idx
+                                    }
+                                }
                             }
-                            Ok(n) => {
-                                self.write_err(&alloc::format!(
-                                    "Rejected — {} is out of range, enter 1-6", n
-                                )).await;
+                            None => {
+                                let line = self.read_line().await;
+                                let trimmed = line.trim();
+                                match trimmed.parse::<usize>() {
+                                    Ok(n) if n >= 1 && n <= 6 => {
+                                        self.write_ok(&alloc::format!(
+                                            "Accepted — switching in slot {}", n
+                                        ))
+                                        .await;
+                                        n - 1
+                                    }
+                                    Ok(n) => {
+                                        self.write_err(&alloc::format!(
+                                            "Rejected — {} is out of range, enter 1-6", n
+                                        ))
+                                        .await;
+                                        continue 'switch_input;
+                                    }
+                                    Err(_) => {
+                                        self.write_err(&alloc::format!(
+                                            "Rejected — \"{}\" is not a number, enter 1-6",
+                                            trimmed
+                                        ))
+                                        .await;
+                                        continue 'switch_input;
+                                    }
+                                }
                             }
-                            Err(_) => {
-                                self.write_err(&alloc::format!(
-                                    "Rejected — \"{}\" is not a number, enter 1-6", trimmed
-                                )).await;
-                            }
-                        }
+                        };
+
+                        parts.push(format_switch_choice(team_idx));
+                        break 'switch_input;
                     }
                 }
                 join_choice_parts(&parts)
