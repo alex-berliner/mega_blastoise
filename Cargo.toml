@@ -5,6 +5,10 @@ members = [
     "mega_blastoise_fw",
     "mega_blastoise_test",
 ]
+default-members = [
+    "mega_blastoise_core",
+    "mega_blastoise_test",
+]
 
 [patch.crates-io]
 once_cell = { path = "patches/once_cell" }
