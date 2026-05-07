@@ -1,0 +1,29 @@
+target/
+.git/
+docs/
+
+# fw source not needed — Docker stubs it; avoid pulling embedded deps
+mega_blastoise_fw/src/
+mega_blastoise_fw/.cargo/
+
+# rust-toolchain.toml asks for thumbv6m-none-eabi which isn't needed for the host binary
+rust-toolchain.toml
+
+# battler crates not in the dep tree of mega-blastoise-test
+battler/battler-ai/
+battler/battler-ai-gemini-py/
+battler/battler-calc/
+battler/battler-client/
+battler/battler-local-data/
+battler/battler-multiplayer-service/
+battler/battler-multiplayer-service-client/
+battler/battler-multiplayer-service-producer/
+battler/battler-service/
+battler/battler-service-client/
+battler/battler-service-producer/
+battler/battler-state/
+battler/battler-test-utils/
+battler/battler-wamp/
+battler/battler-wamprat/
+battler/battler-wamprat-schema/
+battler/fxlang-ext/
