@@ -1,5 +1,7 @@
 # Mega Blastoise — Electronics Design
 
+For project overview and gameplay, see [DESIGN.md](./DESIGN.md).
+
 Working document for physical board wiring, power, GPIO assignment, and physical layout. Scope is a convention-portable demo: 3v3 battles, preset teams, no removable physical pieces.
 
 ---

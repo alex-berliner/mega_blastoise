@@ -1,6 +1,6 @@
 # Architecture Docs
 
-This directory contains the architecture documentation for the Mega Blastoise workspace.
+This directory contains the architecture documentation for the Mega Blastoise workspace. For build instructions see [README.md](../README.md); for software internals see [TECHNICAL.md](../TECHNICAL.md).
 
 ## Reading Order
 

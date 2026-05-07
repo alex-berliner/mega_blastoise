@@ -2,7 +2,15 @@
 
 Workspace layout: `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (RP2040), `mega_blastoise_test` (PC).
 
-Architecture overview: see `architecture/README.md`.
+Architecture overview: see [architecture/README.md](./architecture/README.md).
+
+## Documentation
+
+- [DESIGN.md](./DESIGN.md) — project overview, gameplay, hardware summary, and status
+- [ELECTRONICS.md](./ELECTRONICS.md) — GPIO map, wiring, power budget, physical layout
+- [TECHNICAL.md](./TECHNICAL.md) — software internals, crate layout, interfaces, data flow
+- [specs.md](./specs.md) — full specification and architecture reference
+- [architecture/](./architecture/README.md) — deep-dive architecture docs (7 pages)
 
 ## Run modes (`mega-blastoise-test`)
 

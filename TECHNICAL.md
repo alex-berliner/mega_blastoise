@@ -53,7 +53,7 @@ All shared state crosses future/task boundaries through Embassy's channel and si
 
 When the battle engine resolves a turn it emits a log of what happened. The firmware parses those log lines into typed `BoardEvent` values — `Damage`, `Faint`, `SwitchIn`, `Win`, etc. — and dispatches them to the hardware layer, which drives the LEDs and display accordingly.
 
-See `architecture/05-events-and-input.md` for the full event contract.
+See [architecture/05-events-and-input.md](./architecture/05-events-and-input.md) for the full event contract.
 
 ---
 
@@ -76,4 +76,4 @@ cargo build --release
 cargo run --release
 ```
 
-For build scripts and size stats, see `scripts/fw-build.sh`. Full architecture docs are in `architecture/`.
+For build scripts and size stats, see `scripts/fw-build.sh`. Full architecture docs are in [architecture/](./architecture/README.md).
