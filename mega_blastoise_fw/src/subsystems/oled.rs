@@ -32,8 +32,8 @@ pub enum OledCmd {
     ActiveMon { player: u8, name: [u8; 12], len: u8 },
     /// A mon fainted.
     Faint { player: u8 },
-    /// Battle ended.
-    Win,
+    /// Battle ended — winner is 1 (p1) or 2 (p2); 0 means tie.
+    Win { winner: u8 },
 }
 
 static CMD: Channel<CriticalSectionRawMutex, OledCmd, 8> = Channel::new();
@@ -169,14 +169,19 @@ pub async fn task(
                 if player == 1 { p1.fainted = true; render(&mut disp0, "P1: Red", &p1); }
                 else           { p2.fainted = true; render(&mut disp1, "P2: Blue", &p2); }
             }
-            OledCmd::Win => {
+            OledCmd::Win { winner } => {
                 let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+                let (msg0, msg1) = match winner {
+                    1 => ("WINNER!", "GG!"),
+                    2 => ("GG!", "WINNER!"),
+                    _ => ("TIE!", "TIE!"),
+                };
                 disp0.clear(BinaryColor::Off).ok();
-                Text::with_baseline("WINNER!", Point::zero(), style, Baseline::Top)
+                Text::with_baseline(msg0, Point::zero(), style, Baseline::Top)
                     .draw(&mut disp0).ok();
                 disp0.flush().ok();
                 disp1.clear(BinaryColor::Off).ok();
-                Text::with_baseline("GG!", Point::zero(), style, Baseline::Top)
+                Text::with_baseline(msg1, Point::zero(), style, Baseline::Top)
                     .draw(&mut disp1).ok();
                 disp1.flush().ok();
             }

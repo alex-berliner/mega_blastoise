@@ -61,9 +61,14 @@ impl HostOled {
         self.print(player);
     }
 
-    pub fn win(&mut self) {
+    pub fn win(&mut self, winner: u8) {
         if !self.silent {
-            println!("[OLED] P1: WINNER! | P2: GG!");
+            let (msg0, msg1) = match winner {
+                1 => ("WINNER!", "GG!"),
+                2 => ("GG!", "WINNER!"),
+                _ => ("TIE!", "TIE!"),
+            };
+            println!("[OLED] P1: {msg0} | P2: {msg1}");
         }
     }
 

@@ -95,9 +95,19 @@ impl BoardEffects for HostBattleEffects<'_> {
                 self.buzzer.critical_hit();
             }
 
-            BoardEvent::Win { .. } | BoardEvent::Tie => {
+            BoardEvent::Win { side } => {
+                let winner = match side.as_deref() {
+                    Some("0") => 1u8,
+                    Some("1") => 2u8,
+                    _ => 0,
+                };
                 self.buzzer.win();
-                self.oled.win();
+                self.oled.win(winner);
+            }
+
+            BoardEvent::Tie => {
+                self.buzzer.win();
+                self.oled.win(0);
             }
 
             _ => {}
