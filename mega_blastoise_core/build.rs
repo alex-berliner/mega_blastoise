@@ -6,7 +6,7 @@ use std::{
 
 fn main() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let data_root = manifest.join("../../battler/battle-data/data");
+    let data_root = manifest.join("../battler/battle-data/data");
 
     println!("cargo:rerun-if-changed={}", data_root.display());
     println!("cargo:rerun-if-changed=build.rs");
