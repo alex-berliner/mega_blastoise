@@ -12,6 +12,20 @@ Architecture overview: see [architecture/README.md](./architecture/README.md).
 - [specs.md](./specs.md) — full specification and architecture reference
 - [architecture/](./architecture/README.md) — deep-dive architecture docs (7 pages)
 
+## Docker / Podman
+
+Run the interactive battle without installing Rust or any native deps:
+
+```bash
+# Build once
+podman build -t mega-blastoise-test .   # or: docker build ...
+
+# Play
+podman run -i --rm mega-blastoise-test
+```
+
+`-i` is required — the binary reads moves from stdin.
+
 ## Run modes (`mega-blastoise-test`)
 
 The host binary is **interactive only**: stdin battle with the same **typed `BoardEvent` → `BoardEffects`** path as firmware (queue, prompts, combat log).
