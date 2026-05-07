@@ -41,7 +41,7 @@ async fn main(spawner: Spawner) {
 
     // ── USB CDC battle CLI ────────────────────────────────────────────────────
     #[cfg(feature = "usb")]
-    let mut usb_input = {
+    let usb_input = {
         let input = subsystems::usb::init(p.USB, &spawner);
         debug!("USB ready. Connect with: picocom --echo -b 115200 /dev/ttyACM1");
         #[cfg(feature = "mem-profile")]
