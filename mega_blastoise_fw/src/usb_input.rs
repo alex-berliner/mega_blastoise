@@ -146,7 +146,7 @@ impl<'d> UsbBattleInput<'d> {
                                 };
                                 match select(
                                     self.read_line(),
-                                    btns.wait_move(n, is_usable),
+                                    btns.wait_move(player_id, n, is_usable),
                                 )
                                 .await
                                 {
@@ -284,7 +284,7 @@ impl<'d> UsbBattleInput<'d> {
 
                         let team_idx = match buttons.as_mut() {
                             Some(btns) => {
-                                match select(self.read_line(), btns.wait_switch()).await {
+                                match select(self.read_line(), btns.wait_switch(player_id)).await {
                                     Either::First(line) => {
                                         let trimmed = line.trim();
                                         match trimmed.parse::<usize>() {

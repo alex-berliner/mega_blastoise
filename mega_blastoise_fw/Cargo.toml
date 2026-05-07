@@ -20,6 +20,7 @@ panic-probe = { version = "1.0", features = ["print-defmt"] }
 embassy-executor = { version = "0.9", features = ["arch-cortex-m", "executor-thread", "defmt"] }
 embassy-rp = { version = "0.8", features = ["defmt", "critical-section-impl", "rp2040", "time-driver"] }
 embassy-time = { version = "0.5", features = ["defmt"] }
+embassy-sync = "0.6"
 embedded-hal-async = "1"
 
 # Heap allocator
@@ -32,8 +33,16 @@ anyhow = { version = "1.0", default-features = false }
 embassy-usb = { version = "0.6", features = ["defmt"] }
 embassy-futures = "0.1"
 
+# OLED displays
+ssd1306 = { version = "0.10", optional = true }
+embedded-graphics = { version = "0.8", optional = true }
+display-interface = { version = "0.5", optional = true }
+
 [features]
-default = ["usb", "nfc", "mem-profile"]
+default = ["usb", "oled", "buzzer", "mem-profile"]
 usb = []
-nfc = []
+oled = ["dep:ssd1306", "dep:embedded-graphics", "dep:display-interface"]
+buzzer = []
+leds = []
 mem-profile = []
+nfc = []  # legacy; kept for compatibility, not enabled by default

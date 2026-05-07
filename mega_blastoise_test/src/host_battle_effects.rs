@@ -1,18 +1,21 @@
 /// Host mirror of `mega_blastoise_fw::battle_effects::BattleEffects`.
 ///
-/// Tracks HP for both active Pokémon via `HostHwObject<HostHpBarState>` (mirroring
-/// the firmware's `HwObject<HpBarState>`). When a `bus` is provided, narration events
-/// are routed through `bus.log` exactly as the firmware does; without one, they go
-/// directly to stdout.
+/// Handles the same [`BoardEvent`] variants as the firmware: HP tracking,
+/// active-mon updates, faint, and win.  Calls [`HostBuzzer`] and [`HostOled`]
+/// stubs so that tests can observe sound/display events without hardware.
 use mega_blastoise_core::{BoardEffects, BoardEvent, InputBus};
 
+use crate::host_buzzer::HostBuzzer;
 use crate::host_hp_bar::HostHpBarState;
 use crate::host_hw_object::HostHwObject;
+use crate::host_oled::HostOled;
 
 pub struct HostBattleEffects<'a> {
     bus: Option<&'a InputBus>,
     p1_hp: HostHwObject<HostHpBarState>,
     p2_hp: HostHwObject<HostHpBarState>,
+    pub buzzer: HostBuzzer,
+    pub oled: HostOled,
 }
 
 impl<'a> HostBattleEffects<'a> {
@@ -21,16 +24,21 @@ impl<'a> HostBattleEffects<'a> {
             bus,
             p1_hp: HostHwObject::new("P1 HP", HostHpBarState::ZERO, None),
             p2_hp: HostHwObject::new("P2 HP", HostHpBarState::ZERO, None),
+            buzzer: HostBuzzer::new(),
+            oled: HostOled::new(),
         }
     }
 
-    pub fn p1_hp(&self) -> &HostHpBarState {
-        self.p1_hp.state()
+    /// Silence all stdout output from buzzer and OLED stubs (useful in automated tests).
+    pub fn silent(bus: Option<&'a InputBus>) -> Self {
+        let mut s = Self::new(bus);
+        s.buzzer = HostBuzzer::silent();
+        s.oled = HostOled::silent();
+        s
     }
 
-    pub fn p2_hp(&self) -> &HostHpBarState {
-        self.p2_hp.state()
-    }
+    pub fn p1_hp(&self) -> &HostHpBarState { self.p1_hp.state() }
+    pub fn p2_hp(&self) -> &HostHpBarState { self.p2_hp.state() }
 }
 
 fn mon_player_id(mon: &str) -> Option<&str> {
@@ -42,15 +50,46 @@ impl BoardEffects for HostBattleEffects<'_> {
         match &event {
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
                 if let Some(hp) = HostHpBarState::parse(health) {
+                    let pct = hp.pct() as u8;
                     match mon_player_id(mon) {
-                        Some("p1") => self.p1_hp.update(hp),
-                        Some("p2") => self.p2_hp.update(hp),
+                        Some("p1") => {
+                            self.p1_hp.update(hp);
+                            self.oled.update_hp(1, pct);
+                        }
+                        Some("p2") => {
+                            self.p2_hp.update(hp);
+                            self.oled.update_hp(2, pct);
+                        }
                         _ => eprintln!("[WARN] hp event: unknown player in mon={}", mon),
+                    }
+                    if matches!(&event, BoardEvent::Damage { .. }) {
+                        self.buzzer.hit();
                     }
                 } else {
                     eprintln!("[WARN] hp event: parse failed for health={}", health);
                 }
             }
+
+            BoardEvent::Faint { mon } => {
+                if let Some(pid) = mon_player_id(mon) {
+                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    self.oled.faint(player);
+                }
+                self.buzzer.faint();
+            }
+
+            BoardEvent::SwitchIn { name, player_id, .. } => {
+                if let Some(pid) = player_id {
+                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    self.oled.active_mon(player, name.as_str());
+                }
+            }
+
+            BoardEvent::Win { .. } | BoardEvent::Tie => {
+                self.buzzer.win();
+                self.oled.win();
+            }
+
             _ => {}
         }
 

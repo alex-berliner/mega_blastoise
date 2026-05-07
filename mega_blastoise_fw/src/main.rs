@@ -13,7 +13,7 @@ mod usb_input;
 use battler::TeamData;
 use defmt::debug;
 use embassy_executor::Spawner;
-use embassy_rp::gpio::{Input, Pull};
+use embassy_rp::gpio::{Input, Level, Output, Pull};
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
@@ -49,26 +49,47 @@ async fn main(spawner: Spawner) {
         input
     };
 
-    // ── Physical buttons (GPIO 6–9 moves, 10–15 switch) ──────────────────────
+    // ── Button matrix (4 row outputs × 4 col inputs) ─────────────────────────
+    // Rows: GP6 = P1 moves, GP7 = P1 party, GP8 = P2 moves, GP9 = P2 party
+    // Cols: GP10–GP13 (active-LOW with internal pull-ups)
     let buttons = PicoBattleInput::new(
         [
-            Input::new(p.PIN_6,  Pull::Up),
-            Input::new(p.PIN_7,  Pull::Up),
-            Input::new(p.PIN_8,  Pull::Up),
-            Input::new(p.PIN_9,  Pull::Up),
+            Output::new(p.PIN_6,  Level::High),
+            Output::new(p.PIN_7,  Level::High),
+            Output::new(p.PIN_8,  Level::High),
+            Output::new(p.PIN_9,  Level::High),
         ],
         [
             Input::new(p.PIN_10, Pull::Up),
             Input::new(p.PIN_11, Pull::Up),
             Input::new(p.PIN_12, Pull::Up),
             Input::new(p.PIN_13, Pull::Up),
-            Input::new(p.PIN_14, Pull::Up),
-            Input::new(p.PIN_15, Pull::Up),
         ],
     );
-    debug!("Buttons ready: move GPIO 6-9, switch GPIO 10-15");
+    debug!("Button matrix ready: rows GP6-9, cols GP10-13");
 
-    // ── NFC readers (PN532 over I²C) ─────────────────────────────────────────
+    // ── Piezo buzzer (GP21 = PWM slice 2 channel B) ──────────────────────────
+    #[cfg(feature = "buzzer")]
+    {
+        spawner.spawn(subsystems::buzzer::task(p.PWM_SLICE2, p.PIN_21))
+            .expect("buzzer task spawn");
+        debug!("Buzzer ready: GP21 / PWM2B");
+    }
+
+    // ── OLED displays (SSD1306 on I2C0 + I2C1) ───────────────────────────────
+    #[cfg(feature = "oled")]
+    {
+        spawner.spawn(subsystems::oled::task(
+            p.I2C0, p.PIN_17, p.PIN_16,  // I2C0: SCL=GP17, SDA=GP16 → P1 OLED
+            p.I2C1, p.PIN_19, p.PIN_18,  // I2C1: SCL=GP19, SDA=GP18 → P2 OLED
+        ))
+        .expect("oled task spawn");
+        debug!("OLEDs ready: I2C0 GP16/17, I2C1 GP18/19");
+        #[cfg(feature = "mem-profile")]
+        heap_snapshot("after_oled_init");
+    }
+
+    // ── NFC (legacy feature, disabled by default) ─────────────────────────────
     #[cfg(feature = "nfc")]
     {
         subsystems::nfc::init(
