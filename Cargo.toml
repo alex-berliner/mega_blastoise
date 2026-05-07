@@ -5,6 +5,7 @@ members = [
     "mega_blastoise_fw",
     "mega_blastoise_test",
 ]
+exclude = ["battler"]
 default-members = [
     "mega_blastoise_core",
     "mega_blastoise_test",

@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-battler = { path = "../../battler/battler", default-features = false }
-battler-data = { path = "../../battler/battler-data", default-features = false }
+battler = { path = "../battler/battler", default-features = false }
+battler-data = { path = "../battler/battler-data", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 anyhow = { version = "1.0", default-features = false }
