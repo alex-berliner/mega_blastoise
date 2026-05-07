@@ -99,6 +99,8 @@ pub enum BoardEvent {
         player_id: String,
         kind: PromptKind,
     },
+    /// Any log line not matched by a specific variant — preserved so nothing is silently dropped.
+    Raw(String),
 }
 
 /// Short trainer label for messages (`p1` → Red in the stock demo).
@@ -181,7 +183,7 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             side: p.get("side").map(String::from),
         }),
         "tie" => Some(BoardEvent::Tie),
-        _ => None,
+        _ => Some(BoardEvent::Raw(String::from(line))),
     }
 }
 
@@ -236,6 +238,7 @@ impl BoardEvent {
                 None => "=== Battle over! ===".into(),
             },
             BoardEvent::Tie => "=== Draw! ===".into(),
+            BoardEvent::Raw(line) => format!("[event] {line}"),
             BoardEvent::Prompt { player_id, kind } => {
                 let label = player_display_name(player_id.as_str());
                 match kind {
