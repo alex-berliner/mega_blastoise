@@ -13,6 +13,7 @@ use embassy_time::Timer;
 pub enum BuzzerCmd {
     Hit,
     SuperEffective,
+    Crit,
     Faint,
     Win,
 }
@@ -34,6 +35,11 @@ pub async fn task(slice: Peri<'static, PWM_SLICE2>, pin: Peri<'static, PIN_21>) 
                 tone(&mut pwm, 880, 30).await;
                 Timer::after_millis(20).await;
                 tone(&mut pwm, 1320, 70).await;
+            }
+            BuzzerCmd::Crit => {
+                tone(&mut pwm, 1760, 30).await;
+                Timer::after_millis(10).await;
+                tone(&mut pwm, 1760, 60).await;
             }
             BuzzerCmd::Faint => {
                 tone(&mut pwm, 440, 100).await;

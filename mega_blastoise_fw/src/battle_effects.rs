@@ -90,6 +90,16 @@ impl BoardEffects for BattleEffects<'_> {
                 }
             }
 
+            BoardEvent::SuperEffective { .. } => {
+                #[cfg(feature = "buzzer")]
+                buzz(BuzzerCmd::SuperEffective);
+            }
+
+            BoardEvent::CriticalHit { .. } => {
+                #[cfg(feature = "buzzer")]
+                buzz(BuzzerCmd::Crit);
+            }
+
             BoardEvent::Win { .. } | BoardEvent::Tie => {
                 #[cfg(feature = "buzzer")]
                 buzz(BuzzerCmd::Win);

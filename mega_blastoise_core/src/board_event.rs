@@ -99,6 +99,18 @@ pub enum BoardEvent {
         player_id: String,
         kind: PromptKind,
     },
+    SuperEffective { mon: String },
+    Resisted { mon: String },
+    Immune { mon: String },
+    Miss { mon: String },
+    CriticalHit { mon: String },
+    /// Status condition inflicted (`status|mon:...|status:<name>`).
+    SetStatus { mon: String, status: String },
+    /// Status condition cured (`curestatus|mon:...|status:<name>`).
+    CureStatus { mon: String, status: String },
+    /// Can't move this turn (`cant|mon:...|from:<reason>`).
+    Cant { mon: String, reason: String },
+    Fail { mon: String },
     /// Any log line not matched by a specific variant — preserved so nothing is silently dropped.
     Raw(String),
 }
@@ -183,6 +195,38 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             side: p.get("side").map(String::from),
         }),
         "tie" => Some(BoardEvent::Tie),
+        "supereffective" => Some(BoardEvent::SuperEffective {
+            mon: p.get("mon").unwrap_or("?").into(),
+        }),
+        "resisted" => Some(BoardEvent::Resisted {
+            mon: p.get("mon").unwrap_or("?").into(),
+        }),
+        "immune" => Some(BoardEvent::Immune {
+            mon: p.get("mon").unwrap_or("?").into(),
+        }),
+        "miss" => Some(BoardEvent::Miss {
+            mon: p.get("mon").unwrap_or("?").into(),
+        }),
+        "crit" => Some(BoardEvent::CriticalHit {
+            mon: p.get("mon").unwrap_or("?").into(),
+        }),
+        "status" => Some(BoardEvent::SetStatus {
+            mon: p.get("mon").unwrap_or("?").into(),
+            status: p.get("status").unwrap_or("?").into(),
+        }),
+        "curestatus" => Some(BoardEvent::CureStatus {
+            mon: p.get("mon").unwrap_or("?").into(),
+            status: p.get("status").unwrap_or("?").into(),
+        }),
+        "cant" => Some(BoardEvent::Cant {
+            mon: p.get("mon").unwrap_or("?").into(),
+            reason: p.get("from").unwrap_or("?").into(),
+        }),
+        "fail" => Some(BoardEvent::Fail {
+            mon: p.get("mon").map(String::from).unwrap_or_default(),
+        }),
+        // Pure engine bookkeeping — not gameplay events, not narrated.
+        "residual" | "continue" | "info" | "side" | "player" | "teamsize" => None,
         _ => Some(BoardEvent::Raw(String::from(line))),
     }
 }
@@ -238,6 +282,37 @@ impl BoardEvent {
                 None => "=== Battle over! ===".into(),
             },
             BoardEvent::Tie => "=== Draw! ===".into(),
+            BoardEvent::SuperEffective { mon } => {
+                format!("It's super effective on {}!", extract_mon_name(mon))
+            }
+            BoardEvent::Resisted { mon } => {
+                format!("It's not very effective on {}...", extract_mon_name(mon))
+            }
+            BoardEvent::Immune { mon } => {
+                format!("{} is unaffected!", extract_mon_name(mon))
+            }
+            BoardEvent::Miss { mon } => {
+                format!("The attack missed {}!", extract_mon_name(mon))
+            }
+            BoardEvent::CriticalHit { mon } => {
+                format!("A critical hit on {}!", extract_mon_name(mon))
+            }
+            BoardEvent::SetStatus { mon, status } => {
+                format!("{} was inflicted with {}!", extract_mon_name(mon), status)
+            }
+            BoardEvent::CureStatus { mon, status } => {
+                format!("{}'s {} was cured!", extract_mon_name(mon), status)
+            }
+            BoardEvent::Cant { mon, reason } => {
+                format!("{} can't move! ({})", extract_mon_name(mon), reason)
+            }
+            BoardEvent::Fail { mon } => {
+                if mon.is_empty() {
+                    "The move failed!".into()
+                } else {
+                    format!("But it failed for {}!", extract_mon_name(mon))
+                }
+            }
             BoardEvent::Raw(line) => format!("[event] {line}"),
             BoardEvent::Prompt { player_id, kind } => {
                 let label = player_display_name(player_id.as_str());

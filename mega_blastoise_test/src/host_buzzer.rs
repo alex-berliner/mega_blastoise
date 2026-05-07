@@ -23,6 +23,10 @@ impl HostBuzzer {
         self.log("[SFX] super-effective (880 Hz + 1320 Hz)");
     }
 
+    pub fn critical_hit(&self) {
+        self.log("[SFX] critical hit (1760 Hz x2)");
+    }
+
     pub fn faint(&self) {
         self.log("[SFX] faint descending (440→330→220 Hz)");
     }

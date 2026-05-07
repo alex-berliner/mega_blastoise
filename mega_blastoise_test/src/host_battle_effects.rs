@@ -87,6 +87,14 @@ impl BoardEffects for HostBattleEffects<'_> {
                 }
             }
 
+            BoardEvent::SuperEffective { .. } => {
+                self.buzzer.super_effective();
+            }
+
+            BoardEvent::CriticalHit { .. } => {
+                self.buzzer.critical_hit();
+            }
+
             BoardEvent::Win { .. } | BoardEvent::Tie => {
                 self.buzzer.win();
                 self.oled.win();
