@@ -1,5 +1,9 @@
-//! Interactive stdin battle runner and host-side [`BoardEffects`] used by the physical-game prototype.
+//! Interactive stdin battle runner and host-side device interface stubs used by the physical-game prototype.
 
 pub mod board_game_effects;
 pub mod harness;
+pub mod host_battle_controller;
+pub mod host_battle_effects;
+pub mod host_hp_bar;
+pub mod host_hw_object;
 pub mod stdin_input;

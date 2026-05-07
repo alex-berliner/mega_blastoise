@@ -9,7 +9,7 @@ use battler::{
 
 use core::future::Future;
 
-use embassy_futures::join::join;
+use embassy_futures::select::{select, Either};
 
 use crate::battle_effects::{process_new_log_lines, BoardEffects, BoardEventQueue};
 use crate::battle_input::{ActivePrompt, InputBus};
@@ -67,6 +67,9 @@ pub fn demo_engine_opts() -> CoreBattleEngineOptions {
 /// ```
 ///
 /// Pass `async {}` when no interactive source is needed (the runner will auto-continue).
+/// The function returns as soon as the battle ends; `inputs` is dropped at that point even
+/// if it is still pending (input sources typically loop forever, so `select` is correct here
+/// rather than `join`).
 pub async fn run_battle<E, T, F>(
     battle: &mut battler::PublicCoreBattle<'_>,
     bus: &InputBus,
@@ -79,7 +82,9 @@ pub async fn run_battle<E, T, F>(
     T: FnMut(&mut battler::PublicCoreBattle<'_>),
     F: Future<Output = ()>,
 {
-    join(battle_loop(battle, bus, queue, effects, on_turn), inputs).await;
+    match select(battle_loop(battle, bus, queue, effects, on_turn), inputs).await {
+        Either::First(()) | Either::Second(()) => {}
+    }
 }
 
 async fn battle_loop<E, T>(

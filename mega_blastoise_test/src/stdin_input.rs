@@ -93,8 +93,16 @@ impl StdinBattleInput {
             print!("{prompt}");
             let _ = io::stdout().flush();
             let mut line = String::new();
-            if io::stdin().read_line(&mut line).is_err() {
-                continue;
+            match io::stdin().read_line(&mut line) {
+                Ok(0) => {
+                    eprintln!("\nstdin closed (EOF) — exiting.");
+                    std::process::exit(0);
+                }
+                Err(e) => {
+                    eprintln!("stdin error: {e} — exiting.");
+                    std::process::exit(1);
+                }
+                Ok(_) => {}
             }
             if let Ok(n) = line.trim().parse::<usize>() {
                 if (min..=max).contains(&n) {

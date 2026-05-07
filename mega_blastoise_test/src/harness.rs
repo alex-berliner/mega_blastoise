@@ -3,11 +3,11 @@
 use battler::TeamData;
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
-    BoardEventQueue, FlashDataStore, InputBus,
+    BoardEventQueue, FlashDataStore, InputBus, InputSource,
 };
 
-use crate::board_game_effects::BoardGameEffects;
-use crate::stdin_input::StdinBattleInput;
+use crate::host_battle_controller::HostBattleController;
+use crate::host_battle_effects::HostBattleEffects;
 
 fn print_active_pokemon_state(battle: &mut battler::PublicCoreBattle<'_>) {
     println!("── Active Pokémon ──");
@@ -44,8 +44,7 @@ fn print_active_pokemon_state(battle: &mut battler::PublicCoreBattle<'_>) {
 
 pub fn run_interactive() {
     let data = FlashDataStore::new();
-    let mut input = StdinBattleInput;
-    let mut board_effects = BoardGameEffects::new();
+    let mut controller = HostBattleController::new();
     let mut queue = BoardEventQueue::new();
 
     let mut battle =
@@ -64,12 +63,13 @@ pub fn run_interactive() {
     println!("Each side has four Pokémon — slot 1 is your lead. Pick moves each turn; switches use bench slots 1–6.\n");
 
     let bus = InputBus::new();
+    let mut effects = HostBattleEffects::new(Some(&bus));
     pollster::block_on(run_battle(
         &mut battle,
         &bus,
-        input.run(&bus),
+        controller.run(&bus),
         &mut queue,
-        &mut board_effects,
+        &mut effects,
         |b| print_active_pokemon_state(b),
     ));
 
