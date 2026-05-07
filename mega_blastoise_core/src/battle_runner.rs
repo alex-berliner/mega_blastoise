@@ -126,6 +126,11 @@ async fn battle_loop<E, T>(
                 #[cfg(not(feature = "defmt"))]
                 let _ = e;
             }
+            // With auto_continue=true the engine runs the turn synchronously inside
+            // set_player_choice once all players have chosen, immediately making the
+            // next turn's requests available. Flush here so events reach bus.log before
+            // the next prompt is sent rather than piling up until the battle ends.
+            process_new_log_lines(battle.new_log_entries(), queue, effects);
         }
 
         if !had_request {
