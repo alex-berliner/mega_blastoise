@@ -1,5 +1,7 @@
 #![no_std]
 
+pub mod hp_bar;
+pub mod hw_object;
 pub mod mem_profile;
 pub mod usb_cdc_line;
 

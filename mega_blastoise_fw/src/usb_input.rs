@@ -66,6 +66,7 @@ impl<'d> UsbBattleInput<'d> {
             };
             let ActivePrompt { player_id, request, player_data } = prompt;
             defmt::debug!("usb: prompt received for {}", player_id.as_str());
+            self.drain_rx().await;  // drain echo of all [EVT] lines written above
             let btns = buttons.as_mut().map(|b| &mut **b);
             let choice = self.handle(&player_id, &request, player_data, btns).await;
             self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", choice)).await;
@@ -133,9 +134,9 @@ impl<'d> UsbBattleInput<'d> {
                         }
                     }
 
-                    self.drain_rx().await;
                     'move_input: loop {
                         self.write_move_prompt(n).await;
+                        self.drain_rx().await;
 
                         // Accept input from USB serial or physical button (first wins).
                         let slot = match buttons.as_mut() {
@@ -277,9 +278,9 @@ impl<'d> UsbBattleInput<'d> {
                         "Replacement {} of {} (for team slot {}):\r\n",
                         i + 1, sw.needs_switch.len(), fainted_slot
                     )).await;
-                    self.drain_rx().await;
                     'switch_input: loop {
                         self.write("Send in party slot [1-6]: ").await;
+                        self.drain_rx().await;
 
                         let team_idx = match buttons.as_mut() {
                             Some(btns) => {
@@ -501,9 +502,10 @@ impl<'d> UsbBattleInput<'d> {
         None
     }
 
-    /// Read a line from USB with local echo, backspace, CRLF, and RTT mirror.
+    /// Read a line from USB with backspace, CRLF, and RTT mirror.
     async fn read_line(&mut self) -> String {
         self.receiver.wait_connection().await;
+        self.drain_rx().await;
         let mut buf = [0u8; 64];
         let mut skip_next_lf = false;
         loop {
@@ -547,6 +549,7 @@ impl<'d> UsbBattleInput<'d> {
                     self.partial.clear();
                     skip_next_lf = false;
                     self.receiver.wait_connection().await;
+                    self.drain_rx().await;
                 }
             }
         }
@@ -558,17 +561,22 @@ impl<'d> UsbBattleInput<'d> {
     /// echo burst (one USB round-trip, ~2 ms) has passed.
     async fn drain_rx(&mut self) {
         let mut buf = [0u8; 64];
+        let mut total = 0usize;
         loop {
             match select(
                 self.receiver.read_packet(&mut buf),
-                Timer::after(Duration::from_millis(5)),
+                Timer::after(Duration::from_millis(50)),
             )
             .await
             {
-                Either::First(Ok(_)) => {}
+                Either::First(Ok(n)) => {
+                    defmt::info!("drain_rx: dropped {} bytes: {:?}", n, &buf[..n]);
+                    total += n;
+                }
                 _ => break,
             }
         }
+        if total > 0 { defmt::info!("drain_rx: total {} bytes dropped", total); }
         self.partial.clear();
     }
 
