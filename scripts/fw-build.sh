@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT"
+FW_DIR="$ROOT/mega_blastoise_fw"
 
 TRIPLE=thumbv6m-none-eabi
 PROFILE="${PROFILE:-debug}"
@@ -12,7 +12,9 @@ for arg in "$@"; do
 done
 ELF_NAME=mega-blastoise-fw
 
-cargo build -p mega-blastoise-fw --target "$TRIPLE" "$@"
+# Must build from the fw subdirectory so cargo picks up
+# mega_blastoise_fw/.cargo/config.toml (linker flags + memory layout).
+(cd "$FW_DIR" && cargo build --target "$TRIPLE" "$@")
 
 TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 ELF="$TARGET_DIR/$TRIPLE/$PROFILE/$ELF_NAME"

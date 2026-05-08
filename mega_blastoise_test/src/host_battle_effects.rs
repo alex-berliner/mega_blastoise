@@ -65,7 +65,7 @@ impl BoardEffects for HostBattleEffects<'_> {
     fn on_event(&mut self, event: BoardEvent) {
         match &event {
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
-                eprintln!("[RTT] hp event: mon={mon} health={health}");
+                println!("[RTT] hp event: mon={mon} health={health}");
                 if let Some(hp) = HostHpBarState::parse(health) {
                     let pct = hp.pct() as u8;
                     match mon_player_id(mon) {
@@ -79,18 +79,18 @@ impl BoardEffects for HostBattleEffects<'_> {
                             self.oled.update_hp(2, pct);
                             self.led.update_hp(2, pct);
                         }
-                        _ => eprintln!("[RTT:WARN] hp event: unknown player in mon={mon}"),
+                        _ => println!("[RTT:WARN] hp event: unknown player in mon={mon}"),
                     }
                     if matches!(&event, BoardEvent::Damage { .. }) {
                         self.buzzer.hit();
                     }
                 } else {
-                    eprintln!("[RTT:WARN] hp event: parse failed for health={health}");
+                    println!("[RTT:WARN] hp event: parse failed for health={health}");
                 }
             }
 
             BoardEvent::Faint { mon } => {
-                eprintln!("[RTT] faint: {mon}");
+                println!("[RTT] faint: {mon}");
                 if let Some(pid) = mon_player_id(mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
                     self.oled.faint(player);
@@ -161,7 +161,7 @@ impl BoardEffects for HostBattleEffects<'_> {
         if narrate {
             if let Some(bus) = self.bus {
                 if bus.log.try_send(event.description()).is_err() {
-                    eprintln!("[RTT:WARN] battle_effects: log channel full, event dropped");
+                    println!("[RTT:WARN] battle_effects: log channel full, event dropped");
                 }
             } else {
                 println!("{}", event.description());
