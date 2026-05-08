@@ -71,10 +71,12 @@ impl BoardEffects for HostBattleEffects<'_> {
                     match mon_player_id(mon) {
                         Some("p1") => {
                             self.p1_hp.update(hp);
+                            self.oled.update_hp(1, pct);
                             self.led.update_hp(1, pct);
                         }
                         Some("p2") => {
                             self.p2_hp.update(hp);
+                            self.oled.update_hp(2, pct);
                             self.led.update_hp(2, pct);
                         }
                         _ => eprintln!("[RTT:WARN] hp event: unknown player in mon={mon}"),

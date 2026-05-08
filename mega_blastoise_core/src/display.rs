@@ -33,19 +33,18 @@ fn center_style() -> TextStyle {
 ///
 /// Layout:
 /// ```text
-/// Move 0              Move 1   ← y=1, FONT_5X8
-///
-///      ┌─ Mon Name ─┐
-///      └────────────┘          ← centered vertically
-///
+/// Move 0              Move 1   ← y=1,  FONT_5X8
+///      ┌─ Mon Name ─┐          ← y=24–39 (box)
+/// ████████░░░░░░░░░            ← y=44, h=4 (HP bar)
 /// Move 2              Move 3   ← y=55, FONT_5X8
 /// ```
-pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot])
+pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot], hp_pct: u8)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
     let move_char = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
     let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let fill = PrimitiveStyle::with_fill(BinaryColor::On);
 
     display.clear(BinaryColor::Off).ok();
 
@@ -83,6 +82,14 @@ where
 
     Text::with_text_style(mon_name, Point::new(64, name_y), name_char, center_style())
         .draw(display).ok();
+
+    // ── HP bar ────────────────────────────────────────────────────────────────
+    let bar_w = hp_pct as u32 * 128 / 100;
+    if bar_w > 0 {
+        Rectangle::new(Point::new(0, 44), Size::new(bar_w, 4))
+            .into_styled(fill)
+            .draw(display).ok();
+    }
 }
 
 // ── Move detail screen ────────────────────────────────────────────────────────

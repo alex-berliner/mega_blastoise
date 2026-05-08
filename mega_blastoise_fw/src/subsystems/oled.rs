@@ -9,18 +9,22 @@
 //!
 //! Call [`send`] from `BattleEffects::on_event` to queue a display update.
 
+extern crate alloc;
+
+use alloc::vec::Vec;
+
 use display_interface::WriteOnlyDataCommand;
 use embassy_rp::Peri;
-use embassy_rp::i2c::{Blocking, Config as I2cConfig, I2c};
+use embassy_rp::i2c::{Config as I2cConfig, I2c};
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
     pixelcolor::BinaryColor,
     prelude::*,
-    primitives::{PrimitiveStyle, Rectangle},
     text::{Baseline, Text},
 };
+use mega_blastoise_core::{render_player_screen, MoveSlot};
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 
 // ── Command channel ───────────────────────────────────────────────────────────
@@ -30,6 +34,8 @@ pub enum OledCmd {
     HpUpdate { player: u8, pct: u8 },
     /// New active Pokémon (UTF-8 name, up to 12 bytes).
     ActiveMon { player: u8, name: [u8; 12], len: u8 },
+    /// Move list updated (PP changes after each turn).
+    MovesUpdate { player: u8, moves: Vec<MoveSlot> },
     /// A mon fainted.
     Faint { player: u8 },
     /// Battle ended — winner is 1 (p1) or 2 (p2); 0 means tie.
@@ -49,13 +55,14 @@ struct PlayerState {
     name: [u8; 12],
     name_len: u8,
     fainted: bool,
+    moves: Vec<MoveSlot>,
 }
 
 impl PlayerState {
-    const fn new() -> Self {
+    fn new() -> Self {
         let mut name = [b' '; 12];
         name[0] = b'-'; name[1] = b'-'; name[2] = b'-';
-        Self { hp_pct: 100, name, name_len: 3, fainted: false }
+        Self { hp_pct: 100, name, name_len: 3, fainted: false, moves: Vec::new() }
     }
 
     fn name_str(&self) -> &str {
@@ -65,47 +72,13 @@ impl PlayerState {
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
-fn render<DI>(
+fn redraw<DI: WriteOnlyDataCommand>(
     disp: &mut Ssd1306<DI, DisplaySize128x64, BufferedGraphicsMode<DisplaySize128x64>>,
-    header: &str,
     st: &PlayerState,
-) where
-    DI: display_interface::WriteOnlyDataCommand,
-{
-    let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-    let fill = PrimitiveStyle::with_fill(BinaryColor::On);
-
-    disp.clear(BinaryColor::Off).ok();
-
-    Text::with_baseline(header, Point::new(0, 0), style, Baseline::Top)
-        .draw(disp).ok();
-
-    let mon_label = if st.fainted { "FAINTED" } else { st.name_str() };
-    Text::with_baseline(mon_label, Point::new(0, 12), style, Baseline::Top)
-        .draw(disp).ok();
-
-    let bar_w = st.hp_pct as u32 * 128 / 100;
-    if bar_w > 0 {
-        Rectangle::new(Point::new(0, 26), Size::new(bar_w, 8))
-            .into_styled(fill)
-            .draw(disp).ok();
-    }
-
-    let mut buf = [0u8; 5];
-    let pct_str = fmt_pct(st.hp_pct, &mut buf);
-    Text::with_baseline(pct_str, Point::new(0, 36), style, Baseline::Top)
-        .draw(disp).ok();
-
+) {
+    let mon = if st.fainted { "FAINTED" } else { st.name_str() };
+    render_player_screen(disp, mon, &st.moves, st.hp_pct);
     disp.flush().ok();
-}
-
-fn fmt_pct(pct: u8, buf: &mut [u8; 5]) -> &str {
-    let mut i = 0usize;
-    if pct >= 100 { buf[i]=b'1'; i+=1; buf[i]=b'0'; i+=1; buf[i]=b'0'; i+=1; }
-    else if pct >= 10 { buf[i]=b'0'+pct/10; i+=1; buf[i]=b'0'+pct%10; i+=1; }
-    else { buf[i]=b'0'+pct; i+=1; }
-    buf[i] = b'%'; i += 1;
-    core::str::from_utf8(&buf[..i]).unwrap_or("?%")
 }
 
 // ── Embassy task ──────────────────────────────────────────────────────────────
@@ -147,27 +120,36 @@ pub async fn task(
     let mut p1 = PlayerState::new();
     let mut p2 = PlayerState::new();
 
-    render(&mut disp0, "P1: Red", &p1);
-    render(&mut disp1, "P2: Blue", &p2);
+    redraw(&mut disp0, &p1);
+    redraw(&mut disp1, &p2);
 
     loop {
         match CMD.receive().await {
             OledCmd::HpUpdate { player, pct } => {
-                if player == 1 { p1.hp_pct = pct; render(&mut disp0, "P1: Red", &p1); }
-                else           { p2.hp_pct = pct; render(&mut disp1, "P2: Blue", &p2); }
+                if player == 1 { p1.hp_pct = pct; redraw(&mut disp0, &p1); }
+                else           { p2.hp_pct = pct; redraw(&mut disp1, &p2); }
             }
             OledCmd::ActiveMon { player, name, len } => {
                 if player == 1 {
-                    p1.name = name; p1.name_len = len; p1.fainted = false;
-                    render(&mut disp0, "P1: Red", &p1);
+                    p1.name = name; p1.name_len = len; p1.fainted = false; p1.hp_pct = 100;
+                    redraw(&mut disp0, &p1);
                 } else {
-                    p2.name = name; p2.name_len = len; p2.fainted = false;
-                    render(&mut disp1, "P2: Blue", &p2);
+                    p2.name = name; p2.name_len = len; p2.fainted = false; p2.hp_pct = 100;
+                    redraw(&mut disp1, &p2);
                 }
             }
+            OledCmd::MovesUpdate { player, moves } => {
+                if player == 1 { p1.moves = moves; redraw(&mut disp0, &p1); }
+                else           { p2.moves = moves; redraw(&mut disp1, &p2); }
+            }
             OledCmd::Faint { player } => {
-                if player == 1 { p1.fainted = true; render(&mut disp0, "P1: Red", &p1); }
-                else           { p2.fainted = true; render(&mut disp1, "P2: Blue", &p2); }
+                if player == 1 {
+                    p1.fainted = true; p1.hp_pct = 0; p1.moves.clear();
+                    redraw(&mut disp0, &p1);
+                } else {
+                    p2.fainted = true; p2.hp_pct = 0; p2.moves.clear();
+                    redraw(&mut disp1, &p2);
+                }
             }
             OledCmd::Win { winner } => {
                 let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);

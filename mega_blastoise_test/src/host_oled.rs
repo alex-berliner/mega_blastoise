@@ -18,11 +18,12 @@ pub struct OledPlayerState {
     pub header: &'static str,
     pub mon_name: String,
     pub moves: Vec<MoveSlot>,
+    pub hp_pct: u8,
 }
 
 impl OledPlayerState {
     fn new(header: &'static str) -> Self {
-        Self { header, mon_name: "---".into(), moves: Vec::new() }
+        Self { header, mon_name: "---".into(), moves: Vec::new(), hp_pct: 100 }
     }
 }
 
@@ -55,6 +56,7 @@ impl HostOled {
         let s = self.player_mut(player);
         s.mon_name = name;
         s.moves = moves;
+        s.hp_pct = 100;
         self.redraw(player);
     }
 
@@ -63,10 +65,16 @@ impl HostOled {
         self.redraw(player);
     }
 
+    pub fn update_hp(&mut self, player: u8, pct: u8) {
+        self.player_mut(player).hp_pct = pct;
+        self.redraw(player);
+    }
+
     pub fn faint(&mut self, player: u8) {
         let s = self.player_mut(player);
         s.mon_name = "FAINTED".into();
         s.moves.clear();
+        s.hp_pct = 0;
         self.redraw(player);
     }
 
@@ -111,10 +119,11 @@ impl HostOled {
 
     fn redraw(&mut self, player: u8) {
         if self.silent { return; }
-        let (mon_name, moves, disp, label) = if player == 1 {
+        let (mon_name, moves, hp_pct, disp, label) = if player == 1 {
             (
                 self.p1.mon_name.as_str(),
                 self.p1.moves.as_slice(),
+                self.p1.hp_pct,
                 &mut self.p1_disp,
                 "P1 Display",
             )
@@ -122,11 +131,12 @@ impl HostOled {
             (
                 self.p2.mon_name.as_str(),
                 self.p2.moves.as_slice(),
+                self.p2.hp_pct,
                 &mut self.p2_disp,
                 "P2 Display",
             )
         };
-        render_player_screen(disp, mon_name, moves);
+        render_player_screen(disp, mon_name, moves, hp_pct);
         println!("── {label} ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
         disp.render();
     }

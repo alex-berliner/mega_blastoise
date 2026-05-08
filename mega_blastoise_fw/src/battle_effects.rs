@@ -90,12 +90,16 @@ impl BoardEffects for BattleEffects<'_> {
                 buzz(BuzzerCmd::Faint);
             }
 
-            BoardEvent::SwitchIn { name, player_id, .. } => {
+            BoardEvent::SwitchIn { name, player_id, moves, .. } => {
                 if let Some(pid) = player_id {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
                     let (buf, len) = name_buf(name.as_str());
                     #[cfg(feature = "oled")]
                     oled_send(OledCmd::ActiveMon { player, name: buf, len });
+                    #[cfg(feature = "oled")]
+                    if !moves.is_empty() {
+                        oled_send(OledCmd::MovesUpdate { player, moves: moves.clone() });
+                    }
                 }
             }
 
