@@ -9,7 +9,7 @@ use std::io::{self, Write};
 
 use battler::{PlayerBattleData, Request};
 use mega_blastoise_core::{
-    ButtonController, ButtonSource, InputBus, InputSource,
+    ButtonController, ButtonSource, InputBus, InputSource, PlayerAction,
 };
 
 // ── Simulated button source ───────────────────────────────────────────────────
@@ -53,10 +53,10 @@ impl SimButtonSource {
 // ── HostButtonSource ──────────────────────────────────────────────────────────
 
 /// Implements [`ButtonSource`] for host use: checks the pre-fed queue first,
-/// falls back to auto-pick (switches), then blocks on stdin.
+/// then blocks on stdin.
 ///
-/// `on_prompt` prints the move list or bench state so the user knows what to
-/// press — this is the host equivalent of what the OLED shows on hardware.
+/// `on_prompt` prints the move list and available bench so the user knows what to
+/// press — the host equivalent of what the OLED shows on hardware.
 pub struct HostButtonSource {
     pub buttons: SimButtonSource,
     last_player_data: Option<PlayerBattleData>,
@@ -81,38 +81,44 @@ impl ButtonSource for HostButtonSource {
             Request::Turn(turn) => {
                 for mon_req in &turn.active {
                     let n = mon_req.moves.len().min(4);
-                    println!("\n══ {label} ({player_id}) — choose move ══");
+                    println!("\n══ {label} — choose ══");
                     if n == 0 {
                         println!("  No moves available.");
-                        continue;
+                    } else {
+                        for i in 0..n {
+                            let m = &mon_req.moves[i];
+                            let tag = if m.disabled { " [DISABLED]" } else if m.pp == 0 { " [NO PP]" } else { "" };
+                            println!("  [{}] {:<20}  PP {}/{}{}", i + 1, m.name, m.pp, m.max_pp, tag);
+                        }
                     }
-                    for i in 0..n {
-                        let m = &mon_req.moves[i];
-                        let tag = if m.disabled {
-                            " [DISABLED]"
-                        } else if m.pp == 0 {
-                            " [NO PP]"
-                        } else {
-                            ""
-                        };
-                        println!("  [{}] {:<20}  PP {}/{}{}", i + 1, m.name, m.pp, m.max_pp, tag);
+                    if !mon_req.trapped {
+                        if let Some(pd) = player_data {
+                            let bench: Vec<_> = pd.mons.iter().enumerate()
+                                .filter(|(_, m)| !m.active && m.hp > 0)
+                                .collect();
+                            if !bench.is_empty() {
+                                println!("  ── or switch ──");
+                                for (i, m) in &bench {
+                                    let pct = m.hp * 100 / m.max_hp.max(1);
+                                    println!("  [s{}] {} — {}%", i + 1, m.summary.name, pct);
+                                }
+                            }
+                        }
                     }
                 }
             }
             Request::Switch(sw) => {
-                println!("\n══ {label} ({player_id}) — switch required ({} slot(s)) ══",
+                println!("\n══ {label} — Pokémon fainted, send out another ({} needed) ══",
                     sw.needs_switch.len());
                 if let Some(pd) = player_data {
                     for (i, m) in pd.mons.iter().enumerate() {
-                        let slot = i + 1;
                         if m.active {
-                            println!("  [{}] {} — active", slot, m.summary.name);
+                            println!("  [{}] {} — in battle", i + 1, m.summary.name);
                         } else if m.hp == 0 {
-                            println!("  [{}] {} — fainted", slot, m.summary.name);
+                            println!("  [{}] {} — fainted", i + 1, m.summary.name);
                         } else {
                             let pct = m.hp * 100 / m.max_hp.max(1);
-                            println!("  [{}] {} — HP {}/{} ({}%)  <-- available",
-                                slot, m.summary.name, m.hp, m.max_hp, pct);
+                            println!("  [{}] {} — {}/{} HP ({}%)", i + 1, m.summary.name, m.hp, m.max_hp, pct);
                         }
                     }
                 }
@@ -121,26 +127,63 @@ impl ButtonSource for HostButtonSource {
         }
     }
 
-    async fn wait_move(&mut self, player_id: &str, n: usize) -> usize {
-        if let Some(slot) = self.buttons.try_next_move(n) {
-            println!("[BTN] Button {} → move slot {}", slot + 1, slot + 1);
-            return slot;
+    async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
+        if let Some(slot) = self.buttons.try_next_move(n_moves) {
+            println!("[BTN] Move button {} pressed", slot + 1);
+            return PlayerAction::Move(slot);
+        }
+        if let Some(idx) = self.buttons.try_next_switch() {
+            println!("[BTN] Party button {} pressed", idx + 1);
+            return PlayerAction::Switch(idx);
         }
         let label = player_label(player_id);
-        stdin_number(&format!("{label}, button [1-{n}]: "), 1, n).await - 1
+        loop {
+            print!("{label} > ");
+            let _ = io::stdout().flush();
+            let trimmed = read_stdin_line();
+            if let Ok(n) = trimmed.parse::<usize>() {
+                if (1..=n_moves).contains(&n) {
+                    return PlayerAction::Move(n - 1);
+                }
+            }
+            if let Some(rest) = trimmed.strip_prefix('s') {
+                if let Ok(n) = rest.parse::<usize>() {
+                    if n >= 1 {
+                        return PlayerAction::Switch(n - 1);
+                    }
+                }
+            }
+            eprintln!("Enter 1-{n_moves} for a move, or s1-s3 to switch.");
+        }
     }
 
     async fn wait_switch(&mut self, player_id: &str) -> usize {
         if let Some(idx) = self.buttons.try_next_switch() {
-            println!("[BTN] Button {} → party slot {}", idx + 1, idx + 1);
+            println!("[BTN] Party button {} pressed", idx + 1);
             return idx;
         }
-        if let Some(auto) = first_available_bench(&self.last_player_data) {
-            println!("[AUTO] Switching in slot {} (first available bench)", auto + 1);
-            return auto;
-        }
         let label = player_label(player_id);
-        stdin_number(&format!("{label}, switch slot [1-6]: "), 1, 6).await - 1
+        let available: Vec<usize> = self.last_player_data.as_ref()
+            .map(|pd| pd.mons.iter().enumerate()
+                .filter(|(_, m)| !m.active && m.hp > 0)
+                .map(|(i, _)| i)
+                .collect())
+            .unwrap_or_default();
+        let max = self.last_player_data.as_ref().map(|pd| pd.mons.len()).unwrap_or(6);
+        loop {
+            let n = stdin_number(&format!("{label}, slot [1-{max}]: "), 1, max).await - 1;
+            if available.is_empty() || available.contains(&n) {
+                return n;
+            }
+            if let Some(pd) = &self.last_player_data {
+                let m = &pd.mons[n];
+                if m.active {
+                    eprintln!("  {} is already in battle.", m.summary.name);
+                } else {
+                    eprintln!("  {} has fainted.", m.summary.name);
+                }
+            }
+        }
     }
 }
 
@@ -177,13 +220,6 @@ impl InputSource for HostBattleController {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-fn first_available_bench(player_data: &Option<PlayerBattleData>) -> Option<usize> {
-    let pd = player_data.as_ref()?;
-    pd.mons.iter().enumerate().find_map(|(i, m)| {
-        if !m.active && m.hp > 0 { Some(i) } else { None }
-    })
-}
-
 fn player_label(id: &str) -> &'static str {
     match id {
         "p1" => "Red",
@@ -192,23 +228,22 @@ fn player_label(id: &str) -> &'static str {
     }
 }
 
+fn read_stdin_line() -> String {
+    let mut line = String::new();
+    match io::stdin().read_line(&mut line) {
+        Ok(0) => { eprintln!("\nstdin EOF — exiting."); std::process::exit(0); }
+        Err(e) => { eprintln!("stdin error: {e} — exiting."); std::process::exit(1); }
+        Ok(_) => {}
+    }
+    line.trim().to_string()
+}
+
 async fn stdin_number(prompt: &str, min: usize, max: usize) -> usize {
     loop {
         print!("{prompt}");
         let _ = io::stdout().flush();
-        let mut line = String::new();
-        match io::stdin().read_line(&mut line) {
-            Ok(0) => {
-                eprintln!("\nstdin EOF — exiting.");
-                std::process::exit(0);
-            }
-            Err(e) => {
-                eprintln!("stdin error: {e} — exiting.");
-                std::process::exit(1);
-            }
-            Ok(_) => {}
-        }
-        if let Ok(n) = line.trim().parse::<usize>() {
+        let s = read_stdin_line();
+        if let Ok(n) = s.parse::<usize>() {
             if (min..=max).contains(&n) {
                 return n;
             }

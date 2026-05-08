@@ -115,6 +115,14 @@ pub fn switch_choice_from_team_indices(indices: &[usize]) -> String {
 
 // ── Button-event input interface ─────────────────────────────────────────────
 
+/// Result of [`ButtonSource::wait_action`] — the player pressed a move button or a party button.
+pub enum PlayerAction {
+    /// Move button pressed; value is the 0-based slot index.
+    Move(usize),
+    /// Party button pressed; value is the 0-based team index.
+    Switch(usize),
+}
+
 /// A source of raw button-press events — one per physical (or simulated) button.
 ///
 /// Implementors only need to know *which* button was pressed; all battle-protocol
@@ -131,19 +139,19 @@ pub trait ButtonSource {
     ) {
     }
 
-    /// Wait for the player to press a move button and return the 0-based slot (< `n`).
-    /// Implementors must only return values in `0..n`; the caller retries if the move
-    /// is disabled or out of PP, so no move-validity logic is required here.
-    async fn wait_move(&mut self, player_id: &str, n: usize) -> usize;
+    /// Wait for the player to press either a move button or a party button.
+    /// Used during `Request::Turn` where either is valid (unless trapped).
+    async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction;
 
-    /// Wait for the player to press a party button and return a 0-based team index.
+    /// Wait for the player to press a party button only (forced switch after faint).
+    /// Returns a 0-based team index.
     async fn wait_switch(&mut self, player_id: &str) -> usize;
 }
 
 /// Drives the battle engine's choice loop using a [`ButtonSource`].
 ///
 /// Reads [`ActivePrompt`]s from `bus.prompt`, calls the source for each choice, validates
-/// (disabled/no-PP) and retries silently, then sends the final choice string to
+/// (disabled/no-PP, trapped) and retries silently, then sends the final choice string to
 /// `bus.choices`.  Log events are forwarded to `log_sink` while waiting for prompts.
 pub struct ButtonController<BS: ButtonSource> {
     pub source: BS,
@@ -189,13 +197,19 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
                             continue;
                         }
                         loop {
-                            let slot = self.source.wait_move(&player_id, n).await;
-                            if slot < n {
-                                let mv = &mon_req.moves[slot];
-                                if !mv.disabled && mv.pp > 0 {
-                                    parts.push(format_move_choice(slot));
+                            match self.source.wait_action(&player_id, n).await {
+                                PlayerAction::Move(slot) if slot < n => {
+                                    let mv = &mon_req.moves[slot];
+                                    if !mv.disabled && mv.pp > 0 {
+                                        parts.push(format_move_choice(slot));
+                                        break;
+                                    }
+                                }
+                                PlayerAction::Switch(idx) if !mon_req.trapped => {
+                                    parts.push(format_switch_choice(idx));
                                     break;
                                 }
+                                _ => {}
                             }
                         }
                     }

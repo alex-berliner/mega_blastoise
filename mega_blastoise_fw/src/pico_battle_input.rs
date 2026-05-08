@@ -20,7 +20,7 @@ use embassy_rp::gpio::{Input, Output};
 use embassy_time::Timer;
 use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, ButtonSource,
-    InputBus, InputSource,
+    InputBus, InputSource, PlayerAction,
 };
 
 pub struct ButtonMatrix<'d> {
@@ -109,13 +109,32 @@ impl<'d> PicoBattleInput<'d> {
     }
 }
 
-/// [`ButtonSource`] — scan the GPIO matrix for the correct row and return the
-/// 0-based column (move slot or party index).  All battle-protocol logic lives in
-/// [`mega_blastoise_core::ButtonController`].
+/// [`ButtonSource`] — scan the GPIO matrix and return whichever button fires first.
+/// All battle-protocol logic (disabled moves, trapped, PP) lives in [`ButtonController`].
 impl ButtonSource for PicoBattleInput<'_> {
-    async fn wait_move(&mut self, player_id: &str, n: usize) -> usize {
-        let row = if player_id == "p2" { 2 } else { 0 };
-        self.0.wait_press(row, n).await
+    async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
+        let move_row = if player_id == "p2" { 2 } else { 0 };
+        let switch_row = if player_id == "p2" { 3 } else { 1 };
+        let move_mask = (1u8 << n_moves) - 1;
+        loop {
+            let m = self.0.scan_row(move_row) & move_mask;
+            if let Some(col) = (0..n_moves).find(|&c| m & (1 << c) != 0) {
+                loop {
+                    Timer::after_millis(10).await;
+                    if self.0.scan_row(move_row) & move_mask == 0 { break; }
+                }
+                return PlayerAction::Move(col);
+            }
+            let s = self.0.scan_row(switch_row) & 0b0000_0111;
+            if let Some(col) = (0..3usize).find(|&c| s & (1 << c) != 0) {
+                loop {
+                    Timer::after_millis(10).await;
+                    if self.0.scan_row(switch_row) & 0b0000_0111 == 0 { break; }
+                }
+                return PlayerAction::Switch(col);
+            }
+            Timer::after_millis(5).await;
+        }
     }
 
     async fn wait_switch(&mut self, player_id: &str) -> usize {
@@ -146,12 +165,21 @@ impl PicoBattleInput<'_> {
                         parts.push(String::from("pass"));
                         continue;
                     }
-                    let idx = self
-                        .wait_move(player_id, n, |i| {
-                            !mon_req.moves[i].disabled && mon_req.moves[i].pp > 0
-                        })
-                        .await;
-                    parts.push(format_move_choice(idx));
+                    loop {
+                        match self.wait_action(player_id, n).await {
+                            PlayerAction::Move(slot) if slot < n => {
+                                if !mon_req.moves[slot].disabled && mon_req.moves[slot].pp > 0 {
+                                    parts.push(format_move_choice(slot));
+                                    break;
+                                }
+                            }
+                            PlayerAction::Switch(idx) if !mon_req.trapped => {
+                                parts.push(format_switch_choice(idx));
+                                break;
+                            }
+                            _ => {}
+                        }
+                    }
                 }
                 join_choice_parts(&parts)
             }
