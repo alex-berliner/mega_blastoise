@@ -9,6 +9,7 @@ pub mod battle_input;
 pub mod battle_runner;
 pub mod data_store;
 pub mod demo_teams;
+pub mod randbat;
 
 pub use battle_effects::{
     process_new_log_lines, BoardEffects, BoardEventQueue, NoopBoardEffects,
@@ -25,3 +26,4 @@ pub use battle_input::{
 pub use battle_runner::{demo_battle_options, demo_engine_opts, make_player, run_battle};
 pub use data_store::FlashDataStore;
 pub use demo_teams::{demo_team_blue, demo_team_red};
+pub use randbat::draw_randbat_team;
