@@ -11,7 +11,7 @@ use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
-    InputSource,
+    InputSource, PlayerAction,
 };
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
@@ -642,8 +642,32 @@ impl<'d> UsbButtonInput<'d> {
 }
 
 impl mega_blastoise_core::ButtonSource for UsbButtonInput<'_> {
-    async fn wait_move(&mut self, _player_id: &str, n: usize) -> usize {
-        self.read_button(n).await
+    async fn wait_action(&mut self, _player_id: &str, n_moves: usize) -> PlayerAction {
+        let mut saw_s = false;
+        let mut buf = [0u8; 64];
+        loop {
+            self.receiver.wait_connection().await;
+            match self.receiver.read_packet(&mut buf).await {
+                Ok(n) => {
+                    for &b in &buf[..n] {
+                        if saw_s {
+                            if b >= b'1' && b <= b'6' {
+                                return PlayerAction::Switch((b - b'1') as usize);
+                            }
+                            saw_s = false;
+                        }
+                        if b == b's' || b == b'S' {
+                            saw_s = true;
+                        } else if b >= b'1' && b <= b'0' + n_moves as u8 {
+                            return PlayerAction::Move((b - b'1') as usize);
+                        }
+                    }
+                }
+                Err(_) => {
+                    self.receiver.wait_connection().await;
+                }
+            }
+        }
     }
 
     async fn wait_switch(&mut self, _player_id: &str) -> usize {

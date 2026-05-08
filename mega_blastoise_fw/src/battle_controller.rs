@@ -6,7 +6,7 @@
 //! [`mega_blastoise_core::ButtonController`].
 
 use embassy_futures::select::{select, Either};
-use mega_blastoise_core::{ButtonController, ButtonSource, InputBus, InputSource};
+use mega_blastoise_core::{ButtonController, ButtonSource, InputBus, InputSource, PlayerAction};
 
 use crate::pico_battle_input::PicoBattleInput;
 use crate::usb_input::{UsbBattleInput, UsbButtonInput};
@@ -40,14 +40,14 @@ struct CombinedButtonSource<'d> {
 }
 
 impl ButtonSource for CombinedButtonSource<'_> {
-    async fn wait_move(&mut self, player_id: &str, n: usize) -> usize {
+    async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
         match select(
-            self.gpio.wait_move(player_id, n),
-            self.usb.wait_move(player_id, n),
+            self.gpio.wait_action(player_id, n_moves),
+            self.usb.wait_action(player_id, n_moves),
         )
         .await
         {
-            Either::First(s) | Either::Second(s) => s,
+            Either::First(a) | Either::Second(a) => a,
         }
     }
 

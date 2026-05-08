@@ -148,7 +148,7 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb")]
     {
         let mut controller = BattleController::new(usb_input, buttons);
-        run_battle(&mut battle, &bus, controller.run(&bus), &mut queue, &mut effects, |_| {
+        run_battle(&mut battle, &data, &bus, controller.run(&bus), &mut queue, &mut effects, |_| {
             #[cfg(feature = "mem-profile")]
             heap_snapshot("after_turn");
         })
@@ -156,7 +156,7 @@ async fn main(spawner: Spawner) {
     }
 
     #[cfg(not(feature = "usb"))]
-    run_battle(&mut battle, &bus, buttons.run(&bus), &mut queue, &mut effects, |_| {
+    run_battle(&mut battle, &data, &bus, buttons.run(&bus), &mut queue, &mut effects, |_| {
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_turn");
     })
