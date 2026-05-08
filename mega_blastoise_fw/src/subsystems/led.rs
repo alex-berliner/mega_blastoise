@@ -78,7 +78,9 @@ pub enum LedCmd {
 static CMD: Channel<CriticalSectionRawMutex, LedCmd, 8> = Channel::new();
 
 pub fn send(cmd: LedCmd) {
-    CMD.try_send(cmd).ok();
+    if CMD.try_send(cmd).is_err() {
+        defmt::warn!("led: channel full, cmd dropped");
+    }
 }
 
 // ── Per-player state ──────────────────────────────────────────────────────────

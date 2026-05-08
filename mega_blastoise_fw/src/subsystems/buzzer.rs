@@ -20,9 +20,11 @@ pub enum BuzzerCmd {
 
 static CMD: Channel<CriticalSectionRawMutex, BuzzerCmd, 4> = Channel::new();
 
-/// Enqueue a buzzer event; silently drops if the queue is full.
+/// Enqueue a buzzer event; warns via RTT if the queue is full.
 pub fn buzz(cmd: BuzzerCmd) {
-    CMD.try_send(cmd).ok();
+    if CMD.try_send(cmd).is_err() {
+        defmt::warn!("buzzer: channel full, cmd dropped");
+    }
 }
 
 #[embassy_executor::task]
