@@ -27,6 +27,26 @@ pub fn make_player(id: &str, name: &str) -> PlayerData {
     }
 }
 
+/// Like [`demo_battle_options`] but uses `seed` for the battle-engine PRNG.
+pub fn battle_options_with_seed(seed: u64) -> CoreBattleOptions {
+    CoreBattleOptions {
+        seed: Some(seed),
+        format: FormatData {
+            battle_type: BattleType::Singles,
+            rules: SerializedRuleSet::new(),
+        },
+        field: Default::default(),
+        side_1: SideData {
+            name: "Red".to_string(),
+            players: alloc::vec![make_player("p1", "Red")],
+        },
+        side_2: SideData {
+            name: "Blue".to_string(),
+            players: alloc::vec![make_player("p2", "Blue")],
+        },
+    }
+}
+
 pub fn demo_battle_options() -> CoreBattleOptions {
     CoreBattleOptions {
         seed: Some(12345),

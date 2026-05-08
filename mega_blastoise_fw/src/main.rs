@@ -14,8 +14,9 @@ use battler::TeamData;
 use defmt::debug;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
+use embassy_time::Instant;
 use mega_blastoise_core::{
-    demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
+    battle_options_with_seed, demo_engine_opts, draw_randbat_team, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
 };
 use mega_blastoise_fw::mem_profile::{heap_snapshot, init_heap};
@@ -119,22 +120,31 @@ async fn main(spawner: Spawner) {
         #[cfg(not(feature = "usb"))] None,
     );
 
+    // Timing jitter from USB enumeration gives enough entropy for non-repeating matches.
+    let seed = Instant::now().as_ticks();
+
     debug!("Initialising data store...");
     let data = FlashDataStore::new();
     #[cfg(feature = "mem-profile")]
     heap_snapshot("after_datastore");
 
     let mut battle =
-        battler::PublicCoreBattle::new(demo_battle_options(), &data, demo_engine_opts())
+        battler::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())
             .expect("battle init");
     #[cfg(feature = "mem-profile")]
     heap_snapshot("after_battle_new");
 
-    battle.update_team("p1", TeamData { members: demo_team_red(),  ..Default::default() }).expect("p1");
+    battle.update_team("p1", TeamData {
+        members: draw_randbat_team(seed, 4),
+        ..Default::default()
+    }).expect("p1");
     #[cfg(feature = "mem-profile")]
     heap_snapshot("after_team_p1");
 
-    battle.update_team("p2", TeamData { members: demo_team_blue(), ..Default::default() }).expect("p2");
+    battle.update_team("p2", TeamData {
+        members: draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 4),
+        ..Default::default()
+    }).expect("p2");
     #[cfg(feature = "mem-profile")]
     heap_snapshot("after_team_p2");
 
