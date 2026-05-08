@@ -1,7 +1,7 @@
 //! USB CDC-ACM subsystem init.
 //!
 //! Call [`init`] to set up the USB peripheral, spawn the device task, and return
-//! a ready [`UsbBattleInput`].
+//! a ready [`UsbButtonInput`].
 
 extern crate alloc;
 
@@ -14,7 +14,7 @@ use embassy_rp::usb::{Driver as UsbDriver, InterruptHandler as UsbInterruptHandl
 use embassy_usb::class::cdc_acm::{CdcAcmClass, State};
 use embassy_usb::{Builder, Config as UsbConfig, UsbDevice};
 
-use crate::usb_input::UsbBattleInput;
+use crate::usb_input::UsbButtonInput;
 
 embassy_rp::bind_interrupts!(struct UsbIrqs {
     USBCTRL_IRQ => UsbInterruptHandler<USB>;
@@ -25,8 +25,8 @@ async fn usb_device_task(usb: &'static mut UsbDevice<'static, UsbDriver<'static,
     usb.run().await
 }
 
-/// Initialise USB CDC-ACM and return the battle input driver.
-pub fn init(usb_periph: Peri<'static, USB>, spawner: &Spawner) -> UsbBattleInput<'static> {
+/// Initialise USB CDC-ACM and return the button input driver.
+pub fn init(usb_periph: Peri<'static, USB>, spawner: &Spawner) -> UsbButtonInput<'static> {
     let driver = UsbDriver::new(usb_periph, UsbIrqs);
 
     let mut config = UsbConfig::new(0xc0de, 0xcafe);
@@ -50,5 +50,5 @@ pub fn init(usb_periph: Peri<'static, USB>, spawner: &Spawner) -> UsbBattleInput
     spawner.spawn(usb_device_task(usb)).unwrap();
 
     let (sender, receiver) = cdc.split();
-    UsbBattleInput::new(sender, receiver)
+    UsbButtonInput::new(sender, receiver)
 }

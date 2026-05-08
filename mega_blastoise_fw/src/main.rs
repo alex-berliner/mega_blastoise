@@ -22,7 +22,7 @@ use mega_blastoise_fw::mem_profile::{heap_snapshot, init_heap};
 use mega_blastoise_fw as _;
 use rtt_target::{rtt_init, set_defmt_channel};
 
-use battle_controller::BattleController;
+use battle_controller::ButtonBattleController;
 use battle_effects::BattleEffects;
 use pico_battle_input::PicoBattleInput;
 
@@ -147,7 +147,7 @@ async fn main(spawner: Spawner) {
     // ── Run ───────────────────────────────────────────────────────────────────
     #[cfg(feature = "usb")]
     {
-        let mut controller = BattleController::new(usb_input, buttons);
+        let mut controller = ButtonBattleController::new(usb_input, buttons);
         run_battle(&mut battle, &data, &bus, controller.run(&bus), &mut queue, &mut effects, |_| {
             #[cfg(feature = "mem-profile")]
             heap_snapshot("after_turn");
