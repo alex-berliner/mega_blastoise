@@ -36,7 +36,7 @@ async fn main(spawner: Spawner) {
     heap_snapshot("boot");
 
     let channels = rtt_init! {
-        up: { 0: { size: 1024, name: "defmt" } }
+        up: { 0: { size: 4096, name: "defmt" } }
     };
     set_defmt_channel(channels.up.0);
 
