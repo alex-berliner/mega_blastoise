@@ -126,7 +126,7 @@ fn battle_completes_with_prefed_button_moves() {
     // Slot 1 = Earthquake or Ice Beam for every mon — damaging, so the battle ends quickly.
     // Switch requests fall back to auto-pick (first available bench) when the queue is empty.
     for _ in 0..40 {
-        controller.buttons.queue_move(1);
+        controller.buttons_mut().queue_move(1);
     }
 
     let mut effects = HostBattleEffects::new(None);
@@ -157,7 +157,7 @@ fn battle_completes_with_log_channel_active() {
     // Slot 1 = Earthquake or Ice Beam for every mon — damaging, so the battle ends quickly.
     // Switch requests fall back to auto-pick (first available bench) when the queue is empty.
     for _ in 0..40 {
-        controller.buttons.queue_move(1);
+        controller.buttons_mut().queue_move(1);
     }
 
     let mut effects = HostBattleEffects::new(Some(&bus));
@@ -200,7 +200,7 @@ fn button_press_sends_move_choice_without_stdin() {
     let bus = InputBus::new();
     let mut controller = HostBattleController::new();
     // Queue slot 1 (0-based) — the second move in the list (Earthquake / Ice Beam).
-    controller.buttons.queue_move(1);
+    controller.buttons_mut().queue_move(1);
 
     let choice = pollster::block_on(async {
         let driver = async {

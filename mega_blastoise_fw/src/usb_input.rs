@@ -598,3 +598,55 @@ impl InputSource for UsbBattleInput<'_> {
         UsbBattleInput::run(self, bus).await
     }
 }
+
+// ── UsbButtonInput ────────────────────────────────────────────────────────────
+
+/// Minimal [`ButtonSource`] over USB CDC serial.
+///
+/// Reads a single digit (1–n) from the serial port and returns the 0-based slot.
+/// No display, no move lists — the OLED (or host terminal) shows what to press.
+/// Pairs with [`mega_blastoise_core::ButtonController`] which handles all
+/// battle-protocol logic.
+pub struct UsbButtonInput<'d> {
+    sender: Sender<'d, Driver<'d, USB>>,
+    receiver: Receiver<'d, Driver<'d, USB>>,
+}
+
+impl<'d> UsbButtonInput<'d> {
+    pub fn new(
+        sender: Sender<'d, Driver<'d, USB>>,
+        receiver: Receiver<'d, Driver<'d, USB>>,
+    ) -> Self {
+        Self { sender, receiver }
+    }
+
+    /// Read bytes from USB until we get a digit in 1..=max_btn; return 0-based index.
+    async fn read_button(&mut self, max_btn: usize) -> usize {
+        let mut buf = [0u8; 64];
+        loop {
+            self.receiver.wait_connection().await;
+            match self.receiver.read_packet(&mut buf).await {
+                Ok(n) => {
+                    for &b in &buf[..n] {
+                        if b >= b'1' && b <= b'0' + max_btn as u8 {
+                            return (b - b'1') as usize;
+                        }
+                    }
+                }
+                Err(_) => {
+                    self.receiver.wait_connection().await;
+                }
+            }
+        }
+    }
+}
+
+impl mega_blastoise_core::ButtonSource for UsbButtonInput<'_> {
+    async fn wait_move(&mut self, _player_id: &str, n: usize) -> usize {
+        self.read_button(n).await
+    }
+
+    async fn wait_switch(&mut self, _player_id: &str) -> usize {
+        self.read_button(6).await
+    }
+}

@@ -21,7 +21,8 @@ pub use board_event::{
 pub use display::{render_move_detail, render_player_screen};
 pub use battle_input::{
     format_move_choice, format_switch_choice, join_choice_parts, switch_choice_from_team_indices,
-    turn_choice_from_move_slots, ActivePrompt, InputBus, InputSource, NoInput,
+    turn_choice_from_move_slots, ActivePrompt, ButtonController, ButtonSource, InputBus,
+    InputSource, NoInput,
 };
 pub use battle_runner::{demo_battle_options, demo_engine_opts, make_player, run_battle};
 pub use data_store::FlashDataStore;

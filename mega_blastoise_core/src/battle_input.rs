@@ -22,6 +22,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 use battler::{PlayerBattleData, Request};
+use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::{Channel, Sender};
 
@@ -110,4 +111,113 @@ pub fn turn_choice_from_move_slots(slots: &[usize]) -> String {
 pub fn switch_choice_from_team_indices(indices: &[usize]) -> String {
     let parts: Vec<String> = indices.iter().map(|i| format_switch_choice(*i)).collect();
     join_choice_parts(&parts)
+}
+
+// ── Button-event input interface ─────────────────────────────────────────────
+
+/// A source of raw button-press events — one per physical (or simulated) button.
+///
+/// Implementors only need to know *which* button was pressed; all battle-protocol
+/// logic lives in [`ButtonController`].  Both the firmware GPIO matrix and the USB
+/// serial mock implement this trait so they share an identical input pipeline.
+pub trait ButtonSource {
+    /// Called once when the engine sends a new prompt, before waiting for input.
+    /// Override to show a display (terminal menu, OLED update, …).  Default is a no-op.
+    fn on_prompt(
+        &mut self,
+        _player_id: &str,
+        _request: &Request,
+        _player_data: &Option<PlayerBattleData>,
+    ) {
+    }
+
+    /// Wait for the player to press a move button and return the 0-based slot (< `n`).
+    /// Implementors must only return values in `0..n`; the caller retries if the move
+    /// is disabled or out of PP, so no move-validity logic is required here.
+    async fn wait_move(&mut self, player_id: &str, n: usize) -> usize;
+
+    /// Wait for the player to press a party button and return a 0-based team index.
+    async fn wait_switch(&mut self, player_id: &str) -> usize;
+}
+
+/// Drives the battle engine's choice loop using a [`ButtonSource`].
+///
+/// Reads [`ActivePrompt`]s from `bus.prompt`, calls the source for each choice, validates
+/// (disabled/no-PP) and retries silently, then sends the final choice string to
+/// `bus.choices`.  Log events are forwarded to `log_sink` while waiting for prompts.
+pub struct ButtonController<BS: ButtonSource> {
+    pub source: BS,
+    log_sink: fn(&str),
+}
+
+impl<BS: ButtonSource> ButtonController<BS> {
+    pub fn new(source: BS) -> Self {
+        Self { source, log_sink: |_| {} }
+    }
+
+    pub fn with_log_sink(source: BS, log_sink: fn(&str)) -> Self {
+        Self { source, log_sink }
+    }
+}
+
+impl<BS: ButtonSource> InputSource for ButtonController<BS> {
+    async fn run(&mut self, bus: &InputBus) {
+        loop {
+            // Drain bus.log while waiting for the next prompt.
+            let prompt = loop {
+                match select(bus.prompt.receive(), bus.log.receive()).await {
+                    Either::First(p) => {
+                        while let Ok(line) = bus.log.try_receive() {
+                            (self.log_sink)(&line);
+                        }
+                        break p;
+                    }
+                    Either::Second(line) => (self.log_sink)(&line),
+                }
+            };
+
+            let ActivePrompt { player_id, request, player_data } = prompt;
+            self.source.on_prompt(&player_id, &request, &player_data);
+
+            let choice = match &request {
+                Request::Turn(turn) => {
+                    let mut parts = Vec::new();
+                    for mon_req in &turn.active {
+                        let n = mon_req.moves.len().min(4);
+                        if n == 0 {
+                            parts.push(String::from("pass"));
+                            continue;
+                        }
+                        loop {
+                            let slot = self.source.wait_move(&player_id, n).await;
+                            if slot < n {
+                                let mv = &mon_req.moves[slot];
+                                if !mv.disabled && mv.pp > 0 {
+                                    parts.push(format_move_choice(slot));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    join_choice_parts(&parts)
+                }
+                Request::Switch(sw) => {
+                    let mut parts = Vec::new();
+                    for _ in &sw.needs_switch {
+                        let idx = self.source.wait_switch(&player_id).await;
+                        parts.push(format_switch_choice(idx));
+                    }
+                    join_choice_parts(&parts)
+                }
+                Request::TeamPreview(_) => String::from("random"),
+                Request::LearnMove(_) => String::from("pass"),
+            };
+
+            bus.choices.send(choice).await;
+
+            while let Ok(line) = bus.log.try_receive() {
+                (self.log_sink)(&line);
+            }
+        }
+    }
 }

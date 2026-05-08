@@ -19,8 +19,8 @@ use cortex_m::asm::delay as asm_delay;
 use embassy_rp::gpio::{Input, Output};
 use embassy_time::Timer;
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
-    InputSource,
+    format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, ButtonSource,
+    InputBus, InputSource,
 };
 
 pub struct ButtonMatrix<'d> {
@@ -109,6 +109,22 @@ impl<'d> PicoBattleInput<'d> {
     }
 }
 
+/// [`ButtonSource`] — scan the GPIO matrix for the correct row and return the
+/// 0-based column (move slot or party index).  All battle-protocol logic lives in
+/// [`mega_blastoise_core::ButtonController`].
+impl ButtonSource for PicoBattleInput<'_> {
+    async fn wait_move(&mut self, player_id: &str, n: usize) -> usize {
+        let row = if player_id == "p2" { 2 } else { 0 };
+        self.0.wait_press(row, n).await
+    }
+
+    async fn wait_switch(&mut self, player_id: &str) -> usize {
+        let row = if player_id == "p2" { 3 } else { 1 };
+        self.0.wait_press(row, 3).await
+    }
+}
+
+/// Standalone [`InputSource`] — kept for button-only operation without USB.
 impl InputSource for PicoBattleInput<'_> {
     async fn run(&mut self, bus: &InputBus) {
         loop {
