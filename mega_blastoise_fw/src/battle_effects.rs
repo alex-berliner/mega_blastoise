@@ -154,12 +154,18 @@ impl BoardEffects for BattleEffects<'_> {
                 led_send(LedCmd::Win { winner: 0 });
             }
 
+            BoardEvent::MovesUpdate { player_id, moves } => {
+                let player = if player_id.as_str() == "p1" { 1u8 } else { 2u8 };
+                #[cfg(feature = "oled")]
+                oled_send(OledCmd::MovesUpdate { player, moves: moves.clone() });
+            }
+
             _ => {}
         }
 
         // ── USB log narration ─────────────────────────────────────────────────
         let display_on_usb =
-            !matches!(&event, BoardEvent::Split { .. } | BoardEvent::Prompt { .. });
+            !matches!(&event, BoardEvent::Split { .. } | BoardEvent::Prompt { .. } | BoardEvent::MovesUpdate { .. });
 
         if display_on_usb {
             if let Some(bus) = self.bus {
