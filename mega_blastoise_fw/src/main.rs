@@ -76,6 +76,14 @@ async fn main(spawner: Spawner) {
         debug!("Buzzer ready: GP21 / PWM2B");
     }
 
+    // ── NeoPixel LED strip (WS2812B on GP20 via PIO0 / DMA_CH0) ─────────────
+    #[cfg(feature = "leds")]
+    {
+        spawner.spawn(subsystems::led::task(p.PIO0, p.PIN_20, p.DMA_CH0))
+            .expect("led task spawn");
+        debug!("LEDs ready: GP20 / PIO0 / DMA_CH0");
+    }
+
     // ── OLED displays (SSD1306 on I2C0 + I2C1) ───────────────────────────────
     #[cfg(feature = "oled")]
     {

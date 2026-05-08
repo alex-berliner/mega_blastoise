@@ -9,6 +9,9 @@ use crate::subsystems::buzzer::{buzz, BuzzerCmd};
 #[cfg(feature = "oled")]
 use crate::subsystems::oled::{send as oled_send, OledCmd};
 
+#[cfg(feature = "leds")]
+use crate::subsystems::led::{send as led_send, LedCmd, LedStatus};
+
 pub struct BattleEffects<'a> {
     bus: Option<&'a InputBus>,
     p1_hp: HwObject<HpBarState>,
@@ -52,12 +55,16 @@ impl BoardEffects for BattleEffects<'_> {
                             let pct = if hp.max > 0 { (hp.current as u32 * 100 / hp.max as u32) as u8 } else { 0 };
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::HpUpdate { player: 1, pct });
+                            #[cfg(feature = "leds")]
+                            led_send(LedCmd::HpUpdate { player: 1, pct });
                         }
                         Some("p2") => {
                             self.p2_hp.update(hp);
                             let pct = if hp.max > 0 { (hp.current as u32 * 100 / hp.max as u32) as u8 } else { 0 };
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::HpUpdate { player: 2, pct });
+                            #[cfg(feature = "leds")]
+                            led_send(LedCmd::HpUpdate { player: 2, pct });
                         }
                         _ => defmt::warn!("hp event: unknown player in mon={}", mon.as_str()),
                     }
@@ -76,6 +83,8 @@ impl BoardEffects for BattleEffects<'_> {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
                     #[cfg(feature = "oled")]
                     oled_send(OledCmd::Faint { player });
+                    #[cfg(feature = "leds")]
+                    led_send(LedCmd::Faint { player });
                 }
                 #[cfg(feature = "buzzer")]
                 buzz(BuzzerCmd::Faint);
@@ -100,6 +109,24 @@ impl BoardEffects for BattleEffects<'_> {
                 buzz(BuzzerCmd::Crit);
             }
 
+            BoardEvent::SetStatus { mon, status } => {
+                if let Some(pid) = mon_player_id(mon) {
+                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    #[cfg(feature = "leds")]
+                    if let Some(s) = LedStatus::from_str(status.as_str()) {
+                        led_send(LedCmd::SetStatus { player, status: s });
+                    }
+                }
+            }
+
+            BoardEvent::CureStatus { mon, .. } => {
+                if let Some(pid) = mon_player_id(mon) {
+                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    #[cfg(feature = "leds")]
+                    led_send(LedCmd::CureStatus { player });
+                }
+            }
+
             BoardEvent::Win { side } => {
                 let winner = match side.as_deref() {
                     Some("0") => 1u8,
@@ -110,6 +137,8 @@ impl BoardEffects for BattleEffects<'_> {
                 buzz(BuzzerCmd::Win);
                 #[cfg(feature = "oled")]
                 oled_send(OledCmd::Win { winner });
+                #[cfg(feature = "leds")]
+                led_send(LedCmd::Win { winner });
             }
 
             BoardEvent::Tie => {
@@ -117,6 +146,8 @@ impl BoardEffects for BattleEffects<'_> {
                 buzz(BuzzerCmd::Win);
                 #[cfg(feature = "oled")]
                 oled_send(OledCmd::Win { winner: 0 });
+                #[cfg(feature = "leds")]
+                led_send(LedCmd::Win { winner: 0 });
             }
 
             _ => {}
