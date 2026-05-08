@@ -3,6 +3,7 @@
 
 use alloc::format;
 use alloc::string::String;
+use alloc::vec::Vec;
 use core::fmt;
 
 use battler::Request;
@@ -50,6 +51,25 @@ pub enum PromptKind {
     LearnMove,
 }
 
+/// One move slot carried in [`BoardEvent::SwitchIn`] and [`BoardEvent::MovesUpdate`].
+///
+/// Populated by the battle runner from live battle state; the OLED and move-detail
+/// screen render directly from these fields without any further battle queries.
+#[derive(Debug, Clone)]
+pub struct MoveSlot {
+    pub name: String,
+    /// Display type name, e.g. `"Electric"`.
+    pub type_name: String,
+    /// `"Physical"`, `"Special"`, or `"Status"`.
+    pub category: String,
+    /// Base power; `None` for status moves (base_power == 0).
+    pub power: Option<u32>,
+    /// Accuracy 0–100; `None` for moves that always hit.
+    pub accuracy: Option<u8>,
+    pub pp: u8,
+    pub max_pp: u8,
+}
+
 /// Something the board should represent (sound, LEDs, prompts).
 #[derive(Debug, Clone)]
 pub enum BoardEvent {
@@ -73,14 +93,20 @@ pub enum BoardEvent {
     Move {
         /// The Pokémon that used the move (name extracted from `mon:name,player,pos`).
         user: Option<String>,
+        /// The player that used the move (`"p1"` / `"p2"`), extracted from the mon field.
+        player_id: Option<String>,
         name: String,
     },
     /// `switch` / `drag` / `appear` — lead or bench coming in (parsed from public log row).
+    ///
+    /// `moves` is empty when produced by [`parse_log_line`]; the battle runner enriches it
+    /// with the full move list before dispatching.
     SwitchIn {
         /// Nickname / label (`name` field in the battler log).
         name: String,
         species: Option<String>,
         player_id: Option<String>,
+        moves: Vec<MoveSlot>,
     },
     SwitchOut {
         /// Pokémon that left the field (name extracted from `mon:name,player,pos`).
@@ -111,6 +137,12 @@ pub enum BoardEvent {
     /// Can't move this turn (`cant|mon:...|from:<reason>`).
     Cant { mon: String, reason: String },
     Fail { mon: String },
+    /// Active-mon moves refreshed — emitted after every move (PP change) and at switch-in.
+    /// Internal signal; not narrated to USB/stdout.
+    MovesUpdate {
+        player_id: String,
+        moves: Vec<MoveSlot>,
+    },
     /// Any log line not matched by a specific variant — preserved so nothing is silently dropped.
     Raw(String),
 }
@@ -168,14 +200,19 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
         "faint" => Some(BoardEvent::Faint {
             mon: p.get("mon").unwrap_or("?").into(),
         }),
-        "move" | "animatemove" => Some(BoardEvent::Move {
-            user: p.get("mon").map(|s| extract_mon_name(s).into()),
-            name: p.get("name").unwrap_or("?").into(),
-        }),
+        "move" | "animatemove" => {
+            let mon_str = p.get("mon");
+            Some(BoardEvent::Move {
+                user: mon_str.map(|s| extract_mon_name(s).into()),
+                player_id: mon_str.and_then(|s| s.split(',').nth(1)).map(String::from),
+                name: p.get("name").unwrap_or("?").into(),
+            })
+        }
         "switch" | "drag" | "appear" => Some(BoardEvent::SwitchIn {
             name: p.get("name").unwrap_or("?").into(),
             species: p.get("species").map(String::from),
             player_id: p.get("player").map(String::from),
+            moves: Vec::new(), // enriched by the battle runner
         }),
         "switchout" => Some(BoardEvent::SwitchOut {
             name: p.get("mon").map(|s| extract_mon_name(s).into()).unwrap_or_default(),
@@ -251,7 +288,7 @@ impl BoardEvent {
                 let name = extract_mon_name(mon);
                 format!("{name} fainted!")
             }
-            BoardEvent::Move { user, name } => match user.as_deref() {
+            BoardEvent::Move { user, name, .. } => match user.as_deref() {
                 Some(u) => format!("{u} used {name}!"),
                 None => format!("Used {name}!"),
             },
@@ -259,6 +296,7 @@ impl BoardEvent {
                 name,
                 species,
                 player_id,
+                ..
             } => {
                 let mon_label = match species {
                     Some(sp) if !sp.is_empty() && sp.as_str() != name.as_str() => {
@@ -323,6 +361,7 @@ impl BoardEvent {
                     PromptKind::LearnMove => format!("{label}: learn move"),
                 }
             }
+            BoardEvent::MovesUpdate { .. } => String::new(),
         }
     }
 }

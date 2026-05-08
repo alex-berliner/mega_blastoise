@@ -23,11 +23,7 @@ fn parse_switch_in_includes_species_and_player() {
     let line = "switch|player:p1|name:Alpha|species:Charizard|health:100/100";
     let e = parse_log_line(line).expect("switch");
     match e {
-        BoardEvent::SwitchIn {
-            name,
-            species,
-            player_id,
-        } => {
+        BoardEvent::SwitchIn { name, species, player_id, .. } => {
             assert_eq!(name, "Alpha");
             assert_eq!(species.as_deref(), Some("Charizard"));
             assert_eq!(player_id.as_deref(), Some("p1"));

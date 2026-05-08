@@ -134,6 +134,7 @@ fn battle_completes_with_prefed_button_moves() {
 
     pollster::block_on(run_battle(
         &mut battle,
+        &data,
         &bus,
         controller.run(&bus),
         &mut queue,
@@ -164,6 +165,7 @@ fn battle_completes_with_log_channel_active() {
 
     pollster::block_on(run_battle(
         &mut battle,
+        &data,
         &bus,
         controller.run(&bus),
         &mut queue,

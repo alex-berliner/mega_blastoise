@@ -6,14 +6,15 @@ use battler::{
     BattleType, CoreBattleEngineOptions, CoreBattleOptions, FormatData, PlayerData, PlayerDex,
     PlayerOptions, PlayerType, SerializedRuleSet, SideData, TeamData,
 };
+use battler_data::DataStore;
 
 use core::future::Future;
 
 use embassy_futures::select::{select, Either};
 
-use crate::battle_effects::{process_new_log_lines, BoardEffects, BoardEventQueue};
+use crate::battle_effects::{BoardEffects, BoardEventQueue};
 use crate::battle_input::{ActivePrompt, InputBus};
-use crate::board_event::board_prompt_event;
+use crate::board_event::{board_prompt_event, BoardEvent, MoveSlot};
 
 pub fn make_player(id: &str, name: &str) -> PlayerData {
     PlayerData {
@@ -55,13 +56,108 @@ pub fn demo_engine_opts() -> CoreBattleEngineOptions {
     }
 }
 
+/// Query the full move list for the currently active Pokémon of `player_id`.
+///
+/// Pulls live PP from battle state and base stats (power, accuracy, category) from the
+/// data store — the same source of truth the engine uses.
+fn query_active_moves<DS: DataStore>(
+    battle: &mut battler::PublicCoreBattle<'_>,
+    data: &DS,
+    player_id: &str,
+) -> alloc::vec::Vec<MoveSlot> {
+    let Ok(player_data) = battle.player_data(player_id) else {
+        return alloc::vec::Vec::new();
+    };
+    let Some(active_mon) = player_data.mons.into_iter().find(|m| m.active) else {
+        return alloc::vec::Vec::new();
+    };
+    active_mon
+        .moves
+        .into_iter()
+        .map(|mv| {
+            let (power, accuracy, category) = data
+                .get_move(&mv.id)
+                .ok()
+                .flatten()
+                .map(|md| {
+                    (
+                        if md.base_power > 0 { Some(md.base_power) } else { None },
+                        md.accuracy.percentage(),
+                        alloc::format!("{:?}", md.category),
+                    )
+                })
+                .unwrap_or((None, None, alloc::string::String::from("?")));
+            MoveSlot {
+                name: mv.name,
+                type_name: alloc::format!("{:?}", mv.typ),
+                category,
+                power,
+                accuracy,
+                pp: mv.pp,
+                max_pp: mv.max_pp,
+            }
+        })
+        .collect()
+}
+
+/// Drain new log entries, enrich `SwitchIn` with move data, inject `MovesUpdate`
+/// after every `Move` event, then dispatch everything to `effects`.
+fn enrich_and_dispatch<E, DS>(
+    battle: &mut battler::PublicCoreBattle<'_>,
+    data: &DS,
+    queue: &mut BoardEventQueue,
+    effects: &mut E,
+) where
+    E: BoardEffects,
+    DS: DataStore,
+{
+    // Collect into owned strings first so the &mut borrow on battle ends.
+    let entries: alloc::vec::Vec<alloc::string::String> =
+        battle.new_log_entries().map(alloc::string::String::from).collect();
+    queue.push_log_lines(entries.iter().map(alloc::string::String::as_str));
+
+    let raw = queue.drain_pending();
+    for event in raw {
+        // Decide whether to inject a MovesUpdate after this event.
+        let inject = match &event {
+            BoardEvent::Move { player_id: Some(pid), .. } => {
+                let moves = query_active_moves(battle, data, pid.as_str());
+                Some((pid.clone(), moves))
+            }
+            _ => None,
+        };
+
+        // Enrich SwitchIn with move list from live battle state.
+        let enriched = match event {
+            BoardEvent::SwitchIn { name, species, player_id, moves } if moves.is_empty() => {
+                let new_moves = player_id
+                    .as_deref()
+                    .map(|pid| query_active_moves(battle, data, pid))
+                    .unwrap_or_default();
+                BoardEvent::SwitchIn { name, species, player_id, moves: new_moves }
+            }
+            other => other,
+        };
+
+        queue.push_event(enriched);
+
+        if let Some((pid, moves)) = inject {
+            queue.push_event(BoardEvent::MovesUpdate { player_id: pid, moves });
+        }
+    }
+
+    queue.dispatch_all(effects);
+}
+
 /// Drive a battle to completion, running `inputs` concurrently for the duration.
+///
+/// `data` is the game data store used to enrich move slots with power/accuracy/type.
 ///
 /// `inputs` is any future that drives your input sources — a single `source.run(&bus)`,
 /// or multiple sources composed with `embassy_futures::join`:
 ///
 /// ```ignore
-/// run_battle(&mut battle, &bus,
+/// run_battle(&mut battle, &data, &bus,
 ///     join(usb.run(&bus), buttons.run(&bus)),
 ///     ...).await;
 /// ```
@@ -70,8 +166,9 @@ pub fn demo_engine_opts() -> CoreBattleEngineOptions {
 /// The function returns as soon as the battle ends; `inputs` is dropped at that point even
 /// if it is still pending (input sources typically loop forever, so `select` is correct here
 /// rather than `join`).
-pub async fn run_battle<E, T, F>(
+pub async fn run_battle<E, T, F, DS>(
     battle: &mut battler::PublicCoreBattle<'_>,
+    data: &DS,
     bus: &InputBus,
     inputs: F,
     queue: &mut BoardEventQueue,
@@ -81,14 +178,16 @@ pub async fn run_battle<E, T, F>(
     E: BoardEffects,
     T: FnMut(&mut battler::PublicCoreBattle<'_>),
     F: Future<Output = ()>,
+    DS: DataStore,
 {
-    match select(battle_loop(battle, bus, queue, effects, on_turn), inputs).await {
+    match select(battle_loop(battle, data, bus, queue, effects, on_turn), inputs).await {
         Either::First(()) | Either::Second(()) => {}
     }
 }
 
-async fn battle_loop<E, T>(
+async fn battle_loop<E, T, DS>(
     battle: &mut battler::PublicCoreBattle<'_>,
+    data: &DS,
     bus: &InputBus,
     queue: &mut BoardEventQueue,
     effects: &mut E,
@@ -96,8 +195,9 @@ async fn battle_loop<E, T>(
 ) where
     E: BoardEffects,
     T: FnMut(&mut battler::PublicCoreBattle<'_>),
+    DS: DataStore,
 {
-    process_new_log_lines(battle.new_log_entries(), queue, effects);
+    enrich_and_dispatch(battle, data, queue, effects);
 
     while !battle.ended() {
         let mut had_request = false;
@@ -130,15 +230,15 @@ async fn battle_loop<E, T>(
             // set_player_choice once all players have chosen, immediately making the
             // next turn's requests available. Flush here so events reach bus.log before
             // the next prompt is sent rather than piling up until the battle ends.
-            process_new_log_lines(battle.new_log_entries(), queue, effects);
+            enrich_and_dispatch(battle, data, queue, effects);
         }
 
         if !had_request {
-            process_new_log_lines(battle.new_log_entries(), queue, effects);
+            enrich_and_dispatch(battle, data, queue, effects);
             continue;
         }
 
-        process_new_log_lines(battle.new_log_entries(), queue, effects);
+        enrich_and_dispatch(battle, data, queue, effects);
         on_turn(battle);
     }
 }

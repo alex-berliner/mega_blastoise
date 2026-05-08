@@ -23,6 +23,7 @@ fn scripted_board_events_dispatch_in_order() {
         },
         BoardEvent::Move {
             user: Some("Charizard".into()),
+            player_id: None,
             name: "Flamethrower".into(),
         },
         BoardEvent::Damage {

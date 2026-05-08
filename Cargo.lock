@@ -1190,6 +1190,7 @@ dependencies = [
  "defmt 1.0.1",
  "embassy-futures",
  "embassy-sync 0.7.2",
+ "embedded-graphics",
  "serde",
  "serde_json",
 ]
@@ -1217,6 +1218,7 @@ dependencies = [
  "mega-blastoise-core",
  "panic-probe",
  "rtt-target",
+ "smart-leds",
  "ssd1306",
 ]
 
@@ -1228,6 +1230,7 @@ dependencies = [
  "battler",
  "battler-data",
  "embassy-futures",
+ "embedded-graphics",
  "mega-blastoise-core",
  "pollster",
  "serialport",

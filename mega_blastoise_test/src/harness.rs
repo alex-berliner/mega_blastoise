@@ -66,6 +66,7 @@ pub fn run_interactive() {
     let mut effects = HostBattleEffects::new(Some(&bus));
     pollster::block_on(run_battle(
         &mut battle,
+        &data,
         &bus,
         controller.run(&bus),
         &mut queue,

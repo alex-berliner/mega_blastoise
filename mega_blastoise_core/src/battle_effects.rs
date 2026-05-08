@@ -83,6 +83,12 @@ impl BoardEventQueue {
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
+
+    /// Drain all pending events into a `Vec`, leaving the queue empty.
+    /// Used by the battle runner to post-process events before dispatch.
+    pub fn drain_pending(&mut self) -> alloc::vec::Vec<BoardEvent> {
+        self.inner.drain(..).collect()
+    }
 }
 
 /// Enqueue parsed log events and dispatch them in order.
