@@ -128,7 +128,7 @@ async fn main(spawner: Spawner) {
     heap_snapshot("after_team_p1");
 
     battle.update_team("p2", TeamData {
-        members: draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 4),
+        members: draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 3),
         ..Default::default()
     }).expect("p2");
     #[cfg(feature = "mem-profile")]
