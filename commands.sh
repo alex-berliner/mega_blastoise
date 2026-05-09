@@ -28,7 +28,7 @@ function mb_test {
 function mb_flash {
     local elf="$_MB_ELF_DEBUG"
     for arg in "$@"; do [[ "$arg" == "--release" ]] && elf="$_MB_ELF_RELEASE"; done
-    probe-rs download --preset pico "$elf"
+    probe-rs download --preverify --preset pico "$elf"
 }
 
 alias mb_reset='probe-rs reset --preset pico'

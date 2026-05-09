@@ -103,6 +103,15 @@ def find_elf() -> str | None:
 
 def _open_serial(dev: str) -> int:
     """Open and configure a CDC serial port; return file descriptor."""
+    # Pre-disable ECHO before the main open so there is no echo window.
+    # tty settings persist while at least one fd is open; holding fd_pre
+    # across the O_RDWR open guarantees ECHO is already off when fd is opened.
+    fd_pre = os.open(dev, os.O_RDONLY | os.O_NOCTTY)
+    a = termios.tcgetattr(fd_pre)
+    a[3] &= ~termios.ECHO
+    termios.tcsetattr(fd_pre, termios.TCSANOW, a)
+    termios.tcflush(fd_pre, termios.TCOFLUSH)  # cancel any echo queued before ECHO was disabled
+
     fd = os.open(dev, os.O_RDWR | os.O_NOCTTY)
     a = termios.tcgetattr(fd)
     # raw mode
@@ -118,9 +127,7 @@ def _open_serial(dev: str) -> int:
     a[6][termios.VMIN] = 0
     a[6][termios.VTIME] = 1   # 100 ms read timeout
     termios.tcsetattr(fd, termios.TCSANOW, a)
-    # Discard any output bytes that were auto-echoed while ECHO was still on
-    # (the kernel echoes received bytes before tcsetattr can disable ECHO).
-    termios.tcflush(fd, termios.TCOFLUSH)
+    os.close(fd_pre)
     return fd
 
 

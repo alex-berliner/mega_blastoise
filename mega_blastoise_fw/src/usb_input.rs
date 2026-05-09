@@ -7,7 +7,6 @@ use battler::{PlayerBattleData, Request};
 use embassy_futures::select::{select, Either};
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
-use embassy_time::{Duration, Timer};
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_move_choice, format_prompt, format_switch_choice, join_choice_parts, ActivePrompt,
@@ -25,8 +24,6 @@ pub struct UsbBattleInput<'d> {
     last_typed_line: Option<String>,
     /// Player data from the most recent Turn prompt, reused when a Switch prompt follows.
     last_player_data: Option<PlayerBattleData>,
-    /// True until we drain echo garbage once before the first user input read.
-    needs_drain: bool,
 }
 
 impl<'d> UsbBattleInput<'d> {
@@ -37,34 +34,11 @@ impl<'d> UsbBattleInput<'d> {
             partial: String::new(),
             last_typed_line: None,
             last_player_data: None,
-            needs_drain: true,
         }
     }
 
     pub async fn run(&mut self, bus: &InputBus) {
         self.run_inner(bus, None).await;
-    }
-
-    /// Inner event/prompt loop.  Pass `Some(buttons)` to race USB input against physical
-    /// button presses; `None` for USB-only operation.
-    /// Discard any USB input that arrived during the ECHO window when the host
-    /// first opened the CDC port.  The tty line discipline echoes received bytes
-    /// back to the device until the host's `tcsetattr` disables ECHO; those bytes
-    /// can arrive in the firmware's RX buffer before the first prompt is shown.
-    async fn drain_usb_input(&mut self) {
-        let mut buf = [0u8; 64];
-        loop {
-            match select(
-                self.receiver.read_packet(&mut buf),
-                Timer::after(Duration::from_millis(50)),
-            )
-            .await
-            {
-                Either::First(Ok(_)) => {}
-                Either::First(Err(_)) => {}
-                Either::Second(_) => break,
-            }
-        }
     }
 
     pub(crate) async fn run_inner(
@@ -113,14 +87,6 @@ impl<'d> UsbBattleInput<'d> {
                 self.write("\r\n").await;
                 self.write_multiline(&format_prompt(player_id, request, player_data.as_ref())).await;
 
-                // Best-effort drain on first turn: catches any echo bytes that arrived
-                // early (during the host's brief ECHO-on window at _open_serial).
-                // Late-arriving echo is handled by strip_echo_prefix in the parser.
-                if self.needs_drain {
-                    self.needs_drain = false;
-                    self.drain_usb_input().await;
-                }
-
                 let mut parts = Vec::new();
                 for mon_req in &turn.active {
                     let n = mon_req.moves.len().min(4);
@@ -146,7 +112,7 @@ impl<'d> UsbBattleInput<'d> {
                                 .await
                                 {
                                     Either::First(line) => {
-                                        let trimmed = Self::recover_user_input(line.trim());
+                                        let trimmed = line.trim();
                                         if let Some(rest) = trimmed.strip_prefix('s').or_else(|| trimmed.strip_prefix('S')) {
                                             match rest.parse::<usize>() {
                                                 Ok(slot_n) if slot_n >= 1 && slot_n <= 6 => {
@@ -221,7 +187,7 @@ impl<'d> UsbBattleInput<'d> {
                             None => {
                                 // USB-only path.
                                 let line = self.read_line().await;
-                                let trimmed = Self::recover_user_input(line.trim());
+                                let trimmed = line.trim();
                                 if let Some(rest) = trimmed.strip_prefix('s').or_else(|| trimmed.strip_prefix('S')) {
                                     match rest.parse::<usize>() {
                                         Ok(slot_n) if slot_n >= 1 && slot_n <= 6 => {
@@ -497,10 +463,13 @@ impl<'d> UsbBattleInput<'d> {
                                 }
                             }
                             b'\x08' | b'\x7f' => {
-                                self.partial.pop();
+                                if self.partial.pop().is_some() {
+                                    let _ = self.sender.write_packet(b"\x08 \x08").await;
+                                }
                             }
                             b if b >= 0x20 => {
                                 self.partial.push(b as char);
+                                let _ = self.sender.write_packet(&[b]).await;
                             }
                             _ => {}
                         }
@@ -517,46 +486,6 @@ impl<'d> UsbBattleInput<'d> {
 
     async fn write_move_prompt(&mut self, n: usize) {
         self.writef(&alloc::format!("Move [1-{}]: ", n)).await;
-    }
-
-    /// Recover the user's command from a line that may have echo garbage prepended.
-    ///
-    /// The host tty ECHO window (os.open → tcsetattr) can cause firmware output to
-    /// be echoed back and merged with the user's input in one line, e.g.
-    /// "[EVT] Red sent os2" = echo("[EVT] Red sent o") + user("s2").
-    ///
-    /// User commands are always 1–2 chars: a digit (move) or "s/S" + digit (switch).
-    /// Recovery strategy:
-    ///  1. Strip any known output prefix ([EVT], [OK], etc.).
-    ///  2. If the result is still >3 chars (contaminated), extract from the tail.
-    fn recover_user_input(s: &str) -> &str {
-        // Step 1: strip output prefix.
-        const PREFIXES: &[&str] = &["[EVT] ", "[OK]  ", "[!!]  ", "[>>]  "];
-        let s = {
-            let mut out = s;
-            for p in PREFIXES {
-                if let Some(rest) = s.strip_prefix(p) {
-                    out = rest.trim_start();
-                    break;
-                }
-            }
-            out
-        };
-
-        // Step 2: if still long, try to extract from the tail (user input appends at end).
-        if s.len() > 3 {
-            let b = s.as_bytes();
-            let n = b.len();
-            // "s[1-6]" or "S[1-6]" suffix.
-            if n >= 2 && (b[n - 2] == b's' || b[n - 2] == b'S') && b[n - 1].is_ascii_digit() {
-                return &s[n - 2..];
-            }
-            // Single digit suffix.
-            if b[n - 1].is_ascii_digit() {
-                return &s[n - 1..];
-            }
-        }
-        s
     }
 
 }
