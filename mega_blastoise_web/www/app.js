@@ -63,18 +63,6 @@ function applyFlash(flashState) {
     }
 }
 
-// ── Move button labels ────────────────────────────────────────────────────────
-
-function updateMoveLabels() {
-    for (let p = 1; p <= 2; p++) {
-        const names = wasm.get_move_names(p).split('\n');
-        for (let i = 0; i < 4; i++) {
-            const el = document.getElementById(`p${p}-m${i}`);
-            if (el) el.textContent = names[i] || '—';
-        }
-    }
-}
-
 // ── RAF render loop ───────────────────────────────────────────────────────────
 
 function frame() {
@@ -83,7 +71,6 @@ function frame() {
     renderLeds(wasm.get_led_state());
     updateActiveHighlight(wasm.get_active_player());
     applyFlash(wasm.get_flash_state());
-    updateMoveLabels();
     requestAnimationFrame(frame);
 }
 
@@ -108,6 +95,11 @@ document.addEventListener('click', e => {
     if (!e.target.closest('.btn')) inputEl.focus();
 });
 inputEl.focus();
+
+// Scroll input into view when virtual keyboard appears on mobile
+inputEl.addEventListener('focus', () => {
+    setTimeout(() => inputEl.scrollIntoView({ behavior: 'smooth', block: 'end' }), 150);
+});
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 

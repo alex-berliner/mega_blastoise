@@ -234,7 +234,6 @@ impl BoardEffects for WebBattleEffects<'_> {
                         self.p2_led.hp_pct = 100;
                         self.p2_led.register_switch(name);
                     }
-                    crate::update_move_names(p, moves);
                     self.redraw(p);
                     self.flush_leds();
                 }
@@ -244,7 +243,6 @@ impl BoardEffects for WebBattleEffects<'_> {
                 let p = if player_id == "p1" { 1u8 } else { 2u8 };
                 if p == 1 { self.p1_oled.moves = moves.clone(); }
                 else { self.p2_oled.moves = moves.clone(); }
-                crate::update_move_names(p, moves);
                 self.redraw(p);
             }
 

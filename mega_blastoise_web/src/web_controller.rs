@@ -19,18 +19,13 @@ impl ButtonSource for WebButtonSource {
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
         let player = if player_id == "p1" { 1u8 } else { 2u8 };
         crate::set_active_player(player);
-
         loop {
-            let ev = crate::ButtonFuture.await;
+            let ev = crate::PlayerButtonFuture(player).await;
             let action = match ev {
-                crate::ButtonEvent::Move { player: p, slot } if p == player => {
-                    if (slot as usize) < n_moves {
-                        Some(PlayerAction::Move(slot as usize))
-                    } else {
-                        None
-                    }
+                crate::ButtonEvent::Move { slot, .. } if (slot as usize) < n_moves => {
+                    Some(PlayerAction::Move(slot as usize))
                 }
-                crate::ButtonEvent::Switch { player: p, idx } if p == player => {
+                crate::ButtonEvent::Switch { idx, .. } => {
                     Some(PlayerAction::Switch(idx as usize))
                 }
                 _ => None,
@@ -45,14 +40,11 @@ impl ButtonSource for WebButtonSource {
     async fn wait_switch(&mut self, player_id: &str) -> usize {
         let player = if player_id == "p1" { 1u8 } else { 2u8 };
         crate::set_active_player(player);
-
         loop {
-            let ev = crate::ButtonFuture.await;
-            if let crate::ButtonEvent::Switch { player: p, idx } = ev {
-                if p == player {
-                    crate::set_active_player(0);
-                    return idx as usize;
-                }
+            let ev = crate::PlayerButtonFuture(player).await;
+            if let crate::ButtonEvent::Switch { idx, .. } = ev {
+                crate::set_active_player(0);
+                return idx as usize;
             }
         }
     }

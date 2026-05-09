@@ -8,31 +8,6 @@
 </head>
 <body>
 
-  <!-- LED strip -->
-  <div id="led-strip">
-    <div class="led-group" id="leds-p1">
-      <span class="led-label">P1</span>
-      <div class="led" id="led-0"></div><div class="led" id="led-1"></div>
-      <div class="led" id="led-2"></div><div class="led" id="led-3"></div>
-      <div class="led" id="led-4"></div><div class="led" id="led-5"></div>
-      <div class="led" id="led-6"></div><div class="led" id="led-7"></div>
-      <div class="led party" id="led-8"></div><div class="led party" id="led-9"></div>
-      <div class="led party" id="led-10"></div>
-      <div class="led status" id="led-11"></div>
-    </div>
-    <div class="led-divider"></div>
-    <div class="led-group" id="leds-p2">
-      <div class="led status" id="led-23"></div>
-      <div class="led party" id="led-22"></div><div class="led party" id="led-21"></div>
-      <div class="led party" id="led-20"></div>
-      <div class="led" id="led-19"></div><div class="led" id="led-18"></div>
-      <div class="led" id="led-17"></div><div class="led" id="led-16"></div>
-      <div class="led" id="led-15"></div><div class="led" id="led-14"></div>
-      <div class="led" id="led-13"></div><div class="led" id="led-12"></div>
-      <span class="led-label">P2</span>
-    </div>
-  </div>
-
   <!-- Player panels -->
   <div id="players">
 
@@ -41,16 +16,26 @@
       <canvas id="oled-p1" width="128" height="64" class="oled"></canvas>
       <div class="button-area">
         <div class="move-grid">
-          <button class="btn move-btn" id="p1-m0" onclick="pressMove(1,0)">1</button>
-          <button class="btn move-btn" id="p1-m1" onclick="pressMove(1,1)">2</button>
-          <button class="btn move-btn" id="p1-m2" onclick="pressMove(1,2)">3</button>
-          <button class="btn move-btn" id="p1-m3" onclick="pressMove(1,3)">4</button>
+          <button class="btn move-btn" id="p1-m0" onclick="pressMove(1,0)"></button>
+          <button class="btn move-btn" id="p1-m1" onclick="pressMove(1,1)"></button>
+          <button class="btn move-btn" id="p1-m2" onclick="pressMove(1,2)"></button>
+          <button class="btn move-btn" id="p1-m3" onclick="pressMove(1,3)"></button>
         </div>
         <div class="switch-row">
           <button class="btn switch-btn" id="p1-s0" onclick="pressSwitch(1,0)">S1</button>
           <button class="btn switch-btn" id="p1-s1" onclick="pressSwitch(1,1)">S2</button>
           <button class="btn switch-btn" id="p1-s2" onclick="pressSwitch(1,2)">S3</button>
         </div>
+      </div>
+      <!-- P1 LEDs: HP 0-7, party 8-10, status 11 -->
+      <div class="led-row" id="leds-p1">
+        <div class="led" id="led-0"></div><div class="led" id="led-1"></div>
+        <div class="led" id="led-2"></div><div class="led" id="led-3"></div>
+        <div class="led" id="led-4"></div><div class="led" id="led-5"></div>
+        <div class="led" id="led-6"></div><div class="led" id="led-7"></div>
+        <div class="led party" id="led-8"></div><div class="led party" id="led-9"></div>
+        <div class="led party" id="led-10"></div>
+        <div class="led status" id="led-11"></div>
       </div>
     </div>
 
@@ -59,16 +44,26 @@
       <canvas id="oled-p2" width="128" height="64" class="oled"></canvas>
       <div class="button-area">
         <div class="move-grid">
-          <button class="btn move-btn" id="p2-m0" onclick="pressMove(2,0)">1</button>
-          <button class="btn move-btn" id="p2-m1" onclick="pressMove(2,1)">2</button>
-          <button class="btn move-btn" id="p2-m2" onclick="pressMove(2,2)">3</button>
-          <button class="btn move-btn" id="p2-m3" onclick="pressMove(2,3)">4</button>
+          <button class="btn move-btn" id="p2-m0" onclick="pressMove(2,0)"></button>
+          <button class="btn move-btn" id="p2-m1" onclick="pressMove(2,1)"></button>
+          <button class="btn move-btn" id="p2-m2" onclick="pressMove(2,2)"></button>
+          <button class="btn move-btn" id="p2-m3" onclick="pressMove(2,3)"></button>
         </div>
         <div class="switch-row">
           <button class="btn switch-btn" id="p2-s0" onclick="pressSwitch(2,0)">S1</button>
           <button class="btn switch-btn" id="p2-s1" onclick="pressSwitch(2,1)">S2</button>
           <button class="btn switch-btn" id="p2-s2" onclick="pressSwitch(2,2)">S3</button>
         </div>
+      </div>
+      <!-- P2 LEDs: reversed so status is innermost (near divider), HP outermost -->
+      <div class="led-row" id="leds-p2">
+        <div class="led status" id="led-23"></div>
+        <div class="led party" id="led-22"></div><div class="led party" id="led-21"></div>
+        <div class="led party" id="led-20"></div>
+        <div class="led" id="led-19"></div><div class="led" id="led-18"></div>
+        <div class="led" id="led-17"></div><div class="led" id="led-16"></div>
+        <div class="led" id="led-15"></div><div class="led" id="led-14"></div>
+        <div class="led" id="led-13"></div><div class="led" id="led-12"></div>
       </div>
     </div>
 

@@ -26,51 +26,6 @@ body {
   overflow: hidden;
 }
 
-/* ── LED strip ────────────────────────────────────────────────── */
-
-#led-strip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: #0a0a0a;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.led-group {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.led-label {
-  font-size: 10px;
-  color: #555;
-  margin: 0 4px;
-  letter-spacing: 1px;
-}
-
-.led-divider {
-  width: 2px;
-  height: 20px;
-  background: #2a2a2a;
-}
-
-.led {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #111;
-  border: 1px solid #222;
-  transition: background-color 0.1s, box-shadow 0.1s;
-  flex-shrink: 0;
-}
-
-.led.party { width: 12px; height: 12px; }
-.led.status { width: 12px; height: 12px; }
-
 /* ── Player panels ────────────────────────────────────────────── */
 
 #players {
@@ -81,33 +36,37 @@ body {
 
 .player-panel {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-areas:
+    "header  header"
+    "oled    buttons"
+    "leds    leds";
+  grid-template-columns: auto 1fr;
+  align-items: start;
   padding: 10px 12px;
-  gap: 10px;
+  gap: 8px 10px;
   border-right: 1px solid var(--border);
 }
-
 .player-panel:last-child { border-right: none; }
 
 .panel-header {
+  grid-area: header;
   font-size: 11px;
   letter-spacing: 3px;
   font-weight: bold;
-  align-self: stretch;
   text-align: center;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
 }
 
-.p1-color { color: var(--red); border-color: #331111; }
+.p1-color { color: var(--red);  border-color: #331111; }
 .p2-color { color: var(--blue); border-color: #112233; }
 
 /* ── OLED canvas ──────────────────────────────────────────────── */
 
 .oled {
-  width: 256px;   /* 2× scale */
+  grid-area: oled;
+  width: 256px;
   height: 128px;
   image-rendering: pixelated;
   border: 2px solid #1a3a1a;
@@ -119,10 +78,12 @@ body {
 /* ── Buttons ──────────────────────────────────────────────────── */
 
 .button-area {
+  grid-area: buttons;
   display: flex;
   flex-direction: column;
   gap: 8px;
   align-items: center;
+  align-self: center;
 }
 
 .move-grid {
@@ -162,28 +123,55 @@ body {
   border: 2px solid #111a33;
 }
 
-.btn:hover {
-  filter: brightness(1.4);
-}
-
-.btn:active {
-  transform: scale(0.93);
-  filter: brightness(0.8);
-}
+.btn:hover  { filter: brightness(1.4); }
+.btn:active { transform: scale(0.93); filter: brightness(0.8); }
 
 /* Active player highlight */
 .player-panel.active .move-btn {
   border-color: var(--green);
   box-shadow: 0 0 8px var(--green);
 }
-
 .player-panel.active .switch-btn {
   border-color: var(--blue);
   box-shadow: 0 0 6px var(--blue);
 }
-
 #panel-p1.active .panel-header { border-color: var(--red); }
 #panel-p2.active .panel-header { border-color: var(--blue); }
+
+/* ── LED row ──────────────────────────────────────────────────── */
+
+.led-row {
+  grid-area: leds;
+  display: flex;
+  gap: 5px;
+  padding: 2px 0;
+}
+
+.led {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #111;
+  border: 1px solid #222;
+  transition: background-color 0.1s, box-shadow 0.1s;
+  flex-shrink: 0;
+}
+
+.led.party  { width: 13px; height: 13px; align-self: center; }
+.led.status { width: 13px; height: 13px; align-self: center; }
+
+/* ── OLED flash animations ────────────────────────────────────── */
+
+@keyframes flash-super {
+    0%   { border-color: #ffee00; box-shadow: 0 0 14px #ffee00; }
+    100% { border-color: #1a3a1a; box-shadow: none; }
+}
+@keyframes flash-crit {
+    0%   { border-color: #ff4444; box-shadow: 0 0 14px #ff4444; }
+    100% { border-color: #1a3a1a; box-shadow: none; }
+}
+.oled.flash-super { animation: flash-super 0.5s ease-out forwards; }
+.oled.flash-crit  { animation: flash-crit  0.5s ease-out forwards; }
 
 /* ── Terminal ─────────────────────────────────────────────────── */
 
@@ -247,57 +235,30 @@ body {
 
 #input::placeholder { color: #333; }
 
-/* ── OLED flash animations ────────────────────────────────────── */
-
-@keyframes flash-super {
-    0%   { border-color: #ffee00; box-shadow: 0 0 14px #ffee00; }
-    100% { border-color: #1a3a1a; box-shadow: none; }
-}
-@keyframes flash-crit {
-    0%   { border-color: #ff4444; box-shadow: 0 0 14px #ff4444; }
-    100% { border-color: #1a3a1a; box-shadow: none; }
-}
-.oled.flash-super { animation: flash-super 0.5s ease-out forwards; }
-.oled.flash-crit  { animation: flash-crit  0.5s ease-out forwards; }
-
 /* ── Responsive: narrow screens ───────────────────────────────── */
 
 @media (max-width: 680px) {
-  /* LED strip: smaller dots to fit in one row */
-  #led-strip { gap: 6px; padding: 6px 8px; }
-  .led-group  { gap: 2px; }
-  .led        { width: 9px;  height: 9px; }
-  .led.party  { width: 8px;  height: 8px; }
-  .led.status { width: 8px;  height: 8px; }
-  .led-label  { font-size: 9px; margin: 0 2px; }
-  .led-divider { height: 14px; }
-
-  /* Stack panels vertically; OLED sits beside buttons within each panel */
+  /* Stack panels vertically */
   #players { flex-direction: column; }
 
   .player-panel {
-    display: grid;
-    grid-template-areas: "header header" "oled buttons";
-    grid-template-columns: auto 1fr;
-    align-items: start;
-    padding: 8px;
-    gap: 8px;
     border-right: none;
     border-bottom: 1px solid var(--border);
+    padding: 8px;
   }
   .player-panel:last-child { border-bottom: none; }
 
-  .panel-header { grid-area: header; }
-
   .oled {
-    grid-area: oled;
     width: min(44vw, 192px);
     height: min(22vw, 96px);
   }
 
-  .button-area { grid-area: buttons; align-self: center; }
-
   .move-btn   { width: 40px; height: 40px; font-size: 9px;
                 overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .switch-btn { width: 34px; height: 28px; font-size: 11px; }
+
+  .led        { width: 12px; height: 12px; }
+  .led.party  { width: 10px; height: 10px; }
+  .led.status { width: 10px; height: 10px; }
+  .led-row    { gap: 3px; }
 }

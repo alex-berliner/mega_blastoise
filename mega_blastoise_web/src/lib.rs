@@ -22,7 +22,6 @@ use wasm_bindgen_futures::spawn_local;
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
     run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus, InputSource,
-    MoveSlot,
 };
 
 use web_controller::WebButtonSource;
@@ -37,12 +36,11 @@ thread_local! {
     static LED_STATE: RefCell<[u32; 24]> = RefCell::new([0u32; 24]);
     static ACTIVE_PLAYER: RefCell<u8> = RefCell::new(0);
 
-    // Button event queue
-    static BUTTON_QUEUE: RefCell<VecDeque<ButtonEvent>> = RefCell::new(VecDeque::new());
-    static BUTTON_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
-
-    // Text input (unused as a future; submit_text pushes to button queue instead)
-    static _TEXT_QUEUE: RefCell<VecDeque<String>> = RefCell::new(VecDeque::new());
+    // Per-player button queues — both players can pre-queue independently
+    static P1_QUEUE: RefCell<VecDeque<ButtonEvent>> = RefCell::new(VecDeque::new());
+    static P1_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
+    static P2_QUEUE: RefCell<VecDeque<ButtonEvent>> = RefCell::new(VecDeque::new());
+    static P2_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
 
     // Lobby LED animation mode
     static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
@@ -50,13 +48,6 @@ thread_local! {
     // Flash events: [p1_type, p2_type]; 1 = super-effective, 2 = crit; consumed on read
     static FLASH: RefCell<[u8; 2]> = RefCell::new([0, 0]);
 
-    // Move names for button labels
-    static P1_MOVE_NAMES: RefCell<[String; 4]> = RefCell::new(
-        ["—".to_string(), "—".to_string(), "—".to_string(), "—".to_string()]
-    );
-    static P2_MOVE_NAMES: RefCell<[String; 4]> = RefCell::new(
-        ["—".to_string(), "—".to_string(), "—".to_string(), "—".to_string()]
-    );
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -82,21 +73,10 @@ pub(crate) fn set_flash(player: u8, flash_type: u8) {
     FLASH.with(|f| f.borrow_mut()[(player - 1) as usize] = flash_type);
 }
 
-pub(crate) fn update_move_names(player: u8, moves: &[MoveSlot]) {
-    let names: [String; 4] = std::array::from_fn(|i| {
-        moves.get(i).map(|m| m.name.clone()).unwrap_or_else(|| "—".into())
-    });
-    if player == 1 {
-        P1_MOVE_NAMES.with(|m| *m.borrow_mut() = names);
-    } else {
-        P2_MOVE_NAMES.with(|m| *m.borrow_mut() = names);
-    }
-}
-
 fn lobby_led_frame() -> [u32; 24] {
     let t = (Date::now() as u64 / 30) as u8;
-    let v = if t < 128 { t / 2 } else { (255u8.wrapping_sub(t)) / 2 };
-    let color = ((v as u32 / 3) << 16) | v as u32;
+    let v = (if t < 128 { t / 2 } else { (255u8.wrapping_sub(t)) / 2 }) as u32 * 2;
+    let color = ((v / 3) << 16) | v;
     [color; 24]
 }
 
@@ -118,27 +98,62 @@ pub enum ButtonEvent {
     Switch { player: u8, idx:  u8 },
 }
 
-pub(crate) struct ButtonFuture;
+// Wait for either player's button (lobby start)
+pub(crate) struct AnyButtonFuture;
 
-impl Future for ButtonFuture {
+impl Future for AnyButtonFuture {
     type Output = ButtonEvent;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<ButtonEvent> {
-        let ev = BUTTON_QUEUE.with(|q| q.borrow_mut().pop_front());
+        let ev = P1_QUEUE.with(|q| q.borrow_mut().pop_front())
+            .or_else(|| P2_QUEUE.with(|q| q.borrow_mut().pop_front()));
         if let Some(ev) = ev {
             Poll::Ready(ev)
         } else {
-            BUTTON_WAKER.with(|w| *w.borrow_mut() = Some(cx.waker().clone()));
+            P1_WAKER.with(|w| *w.borrow_mut() = Some(cx.waker().clone()));
+            P2_WAKER.with(|w| *w.borrow_mut() = Some(cx.waker().clone()));
+            Poll::Pending
+        }
+    }
+}
+
+// Wait for a specific player's button
+pub(crate) struct PlayerButtonFuture(pub u8);
+
+impl Future for PlayerButtonFuture {
+    type Output = ButtonEvent;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<ButtonEvent> {
+        let player = self.0;
+        let ev = if player == 1 {
+            P1_QUEUE.with(|q| q.borrow_mut().pop_front())
+        } else {
+            P2_QUEUE.with(|q| q.borrow_mut().pop_front())
+        };
+        if let Some(ev) = ev {
+            Poll::Ready(ev)
+        } else {
+            if player == 1 {
+                P1_WAKER.with(|w| *w.borrow_mut() = Some(cx.waker().clone()));
+            } else {
+                P2_WAKER.with(|w| *w.borrow_mut() = Some(cx.waker().clone()));
+            }
             Poll::Pending
         }
     }
 }
 
 fn push_button(ev: ButtonEvent) {
-    BUTTON_QUEUE.with(|q| q.borrow_mut().push_back(ev));
-    BUTTON_WAKER.with(|w| {
-        if let Some(waker) = w.borrow_mut().take() { waker.wake(); }
-    });
+    let player = match &ev {
+        ButtonEvent::Move { player, .. } | ButtonEvent::Switch { player, .. } => *player,
+    };
+    if player == 1 {
+        P1_QUEUE.with(|q| q.borrow_mut().push_back(ev));
+        P1_WAKER.with(|w| { if let Some(waker) = w.borrow_mut().take() { waker.wake(); } });
+    } else {
+        P2_QUEUE.with(|q| q.borrow_mut().push_back(ev));
+        P2_WAKER.with(|w| { if let Some(waker) = w.borrow_mut().take() { waker.wake(); } });
+    }
 }
 
 // ── WASM exports ──────────────────────────────────────────────────────────────
@@ -177,14 +192,6 @@ fn push_button(ev: ButtonEvent) {
         *f.borrow_mut() = [0, 0];
         state
     })
-}
-
-#[wasm_bindgen] pub fn get_move_names(player: u8) -> String {
-    if player == 1 {
-        P1_MOVE_NAMES.with(|m| m.borrow().iter().cloned().collect::<Vec<_>>().join("\n"))
-    } else {
-        P2_MOVE_NAMES.with(|m| m.borrow().iter().cloned().collect::<Vec<_>>().join("\n"))
-    }
 }
 
 #[wasm_bindgen] pub fn get_active_player() -> u8 {
@@ -235,8 +242,6 @@ async fn run_game_loop() {
         set_lobby_displays();
         set_lobby_mode(true);
         set_active_player(0);
-        update_move_names(1, &[]);
-        update_move_names(2, &[]);
 
         print_log("═══════════════════════════════════════");
         print_log("     MEGA BLASTOISE  —  Gen 1 Randbat  ");
@@ -245,7 +250,7 @@ async fn run_game_loop() {
         print_log("");
 
         // Wait for any button press or Enter key
-        let _ = ButtonFuture.await;
+        let _ = AnyButtonFuture.await;
         set_lobby_mode(false);
 
         let seed = (Date::now() as u64) ^ 0xdead_beef_cafe_babe;
