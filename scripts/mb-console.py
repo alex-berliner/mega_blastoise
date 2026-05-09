@@ -16,6 +16,9 @@ Built-in commands (prefix with ':'):
     :reset      reset the board
     :dev        re-detect USB port
     :kill       kill stray probe-rs processes
+    :ready      mark both players ready (lobby mode)
+    :ready p1   mark P1 ready
+    :ready p2   mark P2 ready
     :q / :quit  exit
 """
 

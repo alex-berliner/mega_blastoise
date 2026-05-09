@@ -84,7 +84,51 @@ impl<'d> ButtonMatrix<'d> {
         let row = if player_id == "p2" { 3 } else { 1 };
         self.wait_press(row, 3).await
     }
+
+    /// Wait for any button press from either player (all 4 rows).
+    /// Used in demo mode to interrupt the attract battle.
+    pub async fn wait_any_lobby_press(&mut self) {
+        loop {
+            let any = self.scan_row(0) | self.scan_row(1) | self.scan_row(2) | self.scan_row(3);
+            if any != 0 {
+                loop {
+                    Timer::after_millis(10).await;
+                    let still = self.scan_row(0) | self.scan_row(1) | self.scan_row(2) | self.scan_row(3);
+                    if still == 0 { break; }
+                }
+                return;
+            }
+            Timer::after_millis(5).await;
+        }
+    }
+
+    /// Wait for a button press from a specific player (rows 0+1 = P1, rows 2+3 = P2).
+    /// Used in the waiting phase to toggle per-player ready state.
+    pub async fn wait_lobby_press(&mut self) -> LobbyPress {
+        loop {
+            let p1 = self.scan_row(0) | self.scan_row(1);
+            let p2 = self.scan_row(2) | self.scan_row(3);
+            if p1 != 0 {
+                loop {
+                    Timer::after_millis(10).await;
+                    if self.scan_row(0) | self.scan_row(1) == 0 { break; }
+                }
+                return LobbyPress::P1;
+            }
+            if p2 != 0 {
+                loop {
+                    Timer::after_millis(10).await;
+                    if self.scan_row(2) | self.scan_row(3) == 0 { break; }
+                }
+                return LobbyPress::P2;
+            }
+            Timer::after_millis(5).await;
+        }
+    }
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum LobbyPress { P1, P2 }
 
 /// Thin wrapper around [`ButtonMatrix`] that implements [`InputSource`].
 ///
@@ -106,6 +150,14 @@ impl<'d> PicoBattleInput<'d> {
 
     pub async fn wait_switch(&mut self, player_id: &str) -> usize {
         self.0.wait_switch(player_id).await
+    }
+
+    pub async fn wait_any_lobby_press(&mut self) {
+        self.0.wait_any_lobby_press().await
+    }
+
+    pub async fn wait_lobby_press(&mut self) -> LobbyPress {
+        self.0.wait_lobby_press().await
     }
 }
 

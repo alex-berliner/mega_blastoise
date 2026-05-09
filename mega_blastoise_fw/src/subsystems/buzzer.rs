@@ -16,6 +16,7 @@ pub enum BuzzerCmd {
     Crit,
     Faint,
     Win,
+    CountdownBeep,
 }
 
 static CMD: Channel<CriticalSectionRawMutex, BuzzerCmd, 4> = Channel::new();
@@ -56,6 +57,7 @@ pub async fn task(slice: Peri<'static, PWM_SLICE2>, pin: Peri<'static, PIN_21>) 
                     Timer::after_millis(20).await;
                 }
             }
+            BuzzerCmd::CountdownBeep => tone(&mut pwm, 660, 80).await,
         }
     }
 }

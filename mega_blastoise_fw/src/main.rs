@@ -5,6 +5,7 @@ extern crate alloc;
 
 mod battle_controller;
 mod battle_effects;
+mod lobby;
 mod pico_battle_input;
 mod subsystems;
 mod usb_input;
@@ -13,7 +14,7 @@ use battler::TeamData;
 use defmt::debug;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
-use embassy_time::Instant;
+use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
@@ -24,6 +25,7 @@ use rtt_target::{rtt_init, set_defmt_channel};
 
 use battle_controller::BattleController;
 use battle_effects::BattleEffects;
+use lobby::run_lobby;
 use pico_battle_input::PicoBattleInput;
 
 #[embassy_executor::main]
@@ -41,7 +43,7 @@ async fn main(spawner: Spawner) {
 
     // ── USB CDC battle CLI ────────────────────────────────────────────────────
     #[cfg(feature = "usb")]
-    let usb_input = {
+    let mut usb_input = {
         let input = subsystems::usb::init(p.USB, &spawner);
         debug!("USB ready. Connect with: picocom --echo -b 115200 /dev/ttyACM1");
         #[cfg(feature = "mem-profile")]
@@ -52,7 +54,7 @@ async fn main(spawner: Spawner) {
     // ── Button matrix (4 row outputs × 4 col inputs) ─────────────────────────
     // Rows: GP6 = P1 moves, GP7 = P1 party, GP8 = P2 moves, GP9 = P2 party
     // Cols: GP10–GP13 (active-LOW with internal pull-ups)
-    let buttons = PicoBattleInput::new(
+    let mut buttons = PicoBattleInput::new(
         [
             Output::new(p.PIN_6,  Level::High),
             Output::new(p.PIN_7,  Level::High),
@@ -97,70 +99,84 @@ async fn main(spawner: Spawner) {
         heap_snapshot("after_oled_init");
     }
 
-    // ── Battle engine ─────────────────────────────────────────────────────────
+    // ── Shared battle infrastructure ──────────────────────────────────────────
     let bus = InputBus::new();
     let mut queue = BoardEventQueue::new();
-
-    let mut effects = BattleEffects::new(
-        #[cfg(feature = "usb")] Some(&bus),
-        #[cfg(not(feature = "usb"))] None,
-    );
-
-    // Timing jitter from USB enumeration gives enough entropy for non-repeating matches.
-    let seed = Instant::now().as_ticks();
 
     debug!("Initialising data store...");
     let data = FlashDataStore::new();
     #[cfg(feature = "mem-profile")]
     heap_snapshot("after_datastore");
 
-    let mut battle =
-        battler::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())
-            .expect("battle init");
-    #[cfg(feature = "mem-profile")]
-    heap_snapshot("after_battle_new");
+    // ── Game loop: lobby → battle → lobby → … ────────────────────────────────
+    loop {
+        // Lobby: demo AI battle plays until a player presses ready, then countdown.
+        #[cfg(feature = "usb")]
+        run_lobby(&mut buttons, &mut usb_input, &data, &mut queue).await;
 
-    battle.update_team("p1", TeamData {
-        members: draw_randbat_team(seed, 3),
-        ..Default::default()
-    }).expect("p1");
-    #[cfg(feature = "mem-profile")]
-    heap_snapshot("after_team_p1");
+        #[cfg(not(feature = "usb"))]
+        run_lobby(&mut buttons, &data, &mut queue).await;
 
-    battle.update_team("p2", TeamData {
-        members: draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 3),
-        ..Default::default()
-    }).expect("p2");
-    #[cfg(feature = "mem-profile")]
-    heap_snapshot("after_team_p2");
+        // Draw teams from timing jitter (fresh entropy each round).
+        let seed = Instant::now().as_ticks();
 
-    battle.start().expect("battle start");
-    #[cfg(feature = "mem-profile")]
-    heap_snapshot("after_battle_start");
+        let mut effects = BattleEffects::new(
+            #[cfg(feature = "usb")] Some(&bus),
+            #[cfg(not(feature = "usb"))] None,
+        );
 
-    debug!("Battle started.");
+        let mut battle =
+            battler::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())
+                .expect("battle init");
+        #[cfg(feature = "mem-profile")]
+        heap_snapshot("after_battle_new");
 
-    // ── Run ───────────────────────────────────────────────────────────────────
-    #[cfg(feature = "usb")]
-    {
-        let mut controller = BattleController::new(usb_input, buttons);
-        run_battle(&mut battle, &data, &bus, controller.run(&bus), &mut queue, &mut effects, |b| {
-            for line in format_active_state(b).lines() {
-                let _ = bus.log.try_send(alloc::string::String::from(line));
-            }
+        battle.update_team("p1", TeamData {
+            members: draw_randbat_team(seed, 3),
+            ..Default::default()
+        }).expect("p1");
+        #[cfg(feature = "mem-profile")]
+        heap_snapshot("after_team_p1");
+
+        battle.update_team("p2", TeamData {
+            members: draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 3),
+            ..Default::default()
+        }).expect("p2");
+        #[cfg(feature = "mem-profile")]
+        heap_snapshot("after_team_p2");
+
+        battle.start().expect("battle start");
+        #[cfg(feature = "mem-profile")]
+        heap_snapshot("after_battle_start");
+
+        debug!("Battle started.");
+
+        #[cfg(feature = "usb")]
+        {
+            let mut controller = BattleController::new(usb_input, buttons);
+            run_battle(&mut battle, &data, &bus, controller.run(&bus), &mut queue, &mut effects, |b| {
+                for line in format_active_state(b).lines() {
+                    let _ = bus.log.try_send(alloc::string::String::from(line));
+                }
+                #[cfg(feature = "mem-profile")]
+                heap_snapshot("after_turn");
+            })
+            .await;
+            // Recover ownership of usb_input and buttons from the controller.
+            let (u, b) = controller.into_parts();
+            usb_input = u;
+            buttons = b;
+        }
+
+        #[cfg(not(feature = "usb"))]
+        run_battle(&mut battle, &data, &bus, buttons.run(&bus), &mut queue, &mut effects, |_| {
             #[cfg(feature = "mem-profile")]
             heap_snapshot("after_turn");
         })
         .await;
+
+        debug!("=== Battle over ===");
+        // Brief pause so win effects finish before the lobby resets the LEDs.
+        Timer::after_secs(4).await;
     }
-
-    #[cfg(not(feature = "usb"))]
-    run_battle(&mut battle, &data, &bus, buttons.run(&bus), &mut queue, &mut effects, |_| {
-        #[cfg(feature = "mem-profile")]
-        heap_snapshot("after_turn");
-    })
-    .await;
-
-    debug!("=== Battle over ===");
-    loop { cortex_m::asm::wfi(); }
 }

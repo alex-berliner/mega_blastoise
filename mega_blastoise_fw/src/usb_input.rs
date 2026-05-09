@@ -16,6 +16,13 @@ use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
 use crate::pico_battle_input::PicoBattleInput;
 
+pub enum LobbyUsbCmd {
+    ReadyP1,
+    ReadyP2,
+    ReadyBoth,
+    Unknown,
+}
+
 pub struct UsbBattleInput<'d> {
     sender: Sender<'d, Driver<'d, USB>>,
     receiver: Receiver<'d, Driver<'d, USB>>,
@@ -486,6 +493,34 @@ impl<'d> UsbBattleInput<'d> {
 
     async fn write_move_prompt(&mut self, n: usize) {
         self.writef(&alloc::format!("Move [1-{}]: ", n)).await;
+    }
+
+    // ── Lobby interface ───────────────────────────────────────────────────────
+
+    /// Write a lobby status/info line (adds \r\n).
+    pub async fn write_lobby_line(&mut self, msg: &str) {
+        self.writeln(msg).await;
+    }
+
+    /// Write the current ready state to USB.
+    pub async fn write_lobby_ready_status(&mut self, p1_ready: bool, p2_ready: bool) {
+        let p1 = if p1_ready { "READY" } else { "     " };
+        let p2 = if p2_ready { "READY" } else { "     " };
+        self.writeln(&alloc::format!(
+            "P1: [{}]   P2: [{}]   (:ready p1 / :ready p2 / :ready)",
+            p1, p2
+        )).await;
+    }
+
+    /// Read a lobby command from USB. Returns as soon as a line is submitted.
+    pub async fn read_lobby_cmd(&mut self) -> LobbyUsbCmd {
+        let line = self.read_line().await;
+        match line.trim() {
+            ":ready" => LobbyUsbCmd::ReadyBoth,
+            ":ready p1" => LobbyUsbCmd::ReadyP1,
+            ":ready p2" => LobbyUsbCmd::ReadyP2,
+            _ => LobbyUsbCmd::Unknown,
+        }
     }
 
 }

@@ -18,6 +18,7 @@ use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::pio_programs::ws2812::{PioWs2812, PioWs2812Program};
 use embassy_rp::Peri;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
+use embassy_time::Timer;
 use smart_leds::RGB8;
 
 // ── Interrupt binding ─────────────────────────────────────────────────────────
@@ -73,6 +74,10 @@ pub enum LedCmd {
     SetStatus { player: u8, status: LedStatus },
     CureStatus { player: u8 },
     Win { winner: u8 },
+    // ── Lobby ──────────────────────────────────────────────────────────────────
+    LobbyIdle,
+    LobbyWaiting { p1_ready: bool, p2_ready: bool },
+    LobbyCountdown,
 }
 
 static CMD: Channel<CriticalSectionRawMutex, LedCmd, 8> = Channel::new();
@@ -158,8 +163,14 @@ pub async fn task(
 
     ws.write(&build_frame(&p1, &p2)).await;
 
+    let mut pending: Option<LedCmd> = None;
     loop {
-        let needs_render = match CMD.receive().await {
+        let cmd = match pending.take() {
+            Some(c) => c,
+            None => CMD.receive().await,
+        };
+
+        let needs_render = match cmd {
             LedCmd::HpUpdate { player, pct } => {
                 let st = if player == 1 { &mut p1 } else { &mut p2 };
                 st.hp_pct = pct;
@@ -197,10 +208,56 @@ pub async fn task(
                 ws.write(&frame).await;
                 false
             }
+
+            LedCmd::LobbyIdle => {
+                let mut phase = 0u8;
+                loop {
+                    ws.write(&lobby_idle_frame(phase)).await;
+                    phase = phase.wrapping_add(4);
+                    match CMD.try_receive() {
+                        Ok(next) => { pending = Some(next); break; }
+                        Err(_) => Timer::after_millis(30).await,
+                    }
+                }
+                false
+            }
+
+            LedCmd::LobbyWaiting { p1_ready, p2_ready } => {
+                ws.write(&lobby_waiting_frame(p1_ready, p2_ready)).await;
+                false
+            }
+
+            LedCmd::LobbyCountdown => {
+                for _ in 0..3u8 {
+                    ws.write(&[RGB8 { r: 80, g: 80, b: 80 }; NUM_LEDS]).await;
+                    Timer::after_millis(150).await;
+                    ws.write(&[RGB8 { r: 0, g: 0, b: 0 }; NUM_LEDS]).await;
+                    Timer::after_millis(150).await;
+                }
+                false
+            }
         };
 
         if needs_render {
             ws.write(&build_frame(&p1, &p2)).await;
         }
     }
+}
+
+fn lobby_idle_frame(phase: u8) -> [RGB8; NUM_LEDS] {
+    // Triangle-wave breathing: blue-purple, 0–63 brightness
+    let v = if phase < 128 { phase / 2 } else { (255u8.wrapping_sub(phase)) / 2 };
+    let color = RGB8 { r: v / 3, g: 0, b: v };
+    [color; NUM_LEDS]
+}
+
+fn lobby_waiting_frame(p1_ready: bool, p2_ready: bool) -> [RGB8; NUM_LEDS] {
+    let ready  = RGB8 { r: 0, g: 80, b: 0 };
+    let waiting = RGB8 { r: 0, g: 0,  b: 15 };
+    let mut frame = [RGB8 { r: 0, g: 0, b: 0 }; NUM_LEDS];
+    let c1 = if p1_ready { ready } else { waiting };
+    let c2 = if p2_ready { ready } else { waiting };
+    for i in 0..PER_PLAYER       { frame[i] = c1; }
+    for i in PER_PLAYER..NUM_LEDS { frame[i] = c2; }
+    frame
 }

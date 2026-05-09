@@ -22,6 +22,10 @@ impl<'d> BattleController<'d> {
     pub fn new(usb: UsbBattleInput<'d>, buttons: PicoBattleInput<'d>) -> Self {
         Self { usb, buttons }
     }
+
+    pub fn into_parts(self) -> (UsbBattleInput<'d>, PicoBattleInput<'d>) {
+        (self.usb, self.buttons)
+    }
 }
 
 impl InputSource for BattleController<'_> {
