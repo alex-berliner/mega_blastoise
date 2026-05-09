@@ -12,51 +12,47 @@ impl ButtonSource for WebButtonSource {
     ) {
         let text = format_prompt(player_id, request, player_data.as_ref());
         for line in text.lines() {
-            crate::print(line);
+            crate::print_log(line);
         }
     }
 
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
-        let label = if player_id == "p1" { "Red" } else { "Blue" };
-        loop {
-            let line = crate::read_input_line().await;
-            let trimmed = line.trim();
+        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        crate::set_active_player(player);
 
-            if let Ok(n) = trimmed.parse::<usize>() {
-                if (1..=n_moves).contains(&n) {
-                    crate::print(&format!("{label} > {trimmed}"));
-                    return PlayerAction::Move(n - 1);
-                }
-            }
-            if let Some(rest) = trimmed.strip_prefix('s') {
-                if let Ok(n) = rest.parse::<usize>() {
-                    if n >= 1 {
-                        crate::print(&format!("{label} > {trimmed}"));
-                        return PlayerAction::Switch(n - 1);
+        loop {
+            let ev = crate::ButtonFuture.await;
+            let action = match ev {
+                crate::ButtonEvent::Move { player: p, slot } if p == player => {
+                    if (slot as usize) < n_moves {
+                        Some(PlayerAction::Move(slot as usize))
+                    } else {
+                        None
                     }
                 }
-            }
-            if !trimmed.is_empty() {
-                crate::print(&format!(
-                    "  (enter 1-{n_moves} for a move, or s1-s3 to switch)"
-                ));
+                crate::ButtonEvent::Switch { player: p, idx } if p == player => {
+                    Some(PlayerAction::Switch(idx as usize))
+                }
+                _ => None,
+            };
+            if let Some(a) = action {
+                crate::set_active_player(0);
+                return a;
             }
         }
     }
 
     async fn wait_switch(&mut self, player_id: &str) -> usize {
-        let label = if player_id == "p1" { "Red" } else { "Blue" };
+        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        crate::set_active_player(player);
+
         loop {
-            let line = crate::read_input_line().await;
-            let trimmed = line.trim();
-            if let Ok(n) = trimmed.parse::<usize>() {
-                if n >= 1 {
-                    crate::print(&format!("{label} > s{trimmed}"));
-                    return n - 1;
+            let ev = crate::ButtonFuture.await;
+            if let crate::ButtonEvent::Switch { player: p, idx } = ev {
+                if p == player {
+                    crate::set_active_player(0);
+                    return idx as usize;
                 }
-            }
-            if !trimmed.is_empty() {
-                crate::print("  (enter party slot number, e.g. 2)");
             }
         }
     }
