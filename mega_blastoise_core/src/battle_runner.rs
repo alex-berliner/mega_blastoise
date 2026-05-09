@@ -236,6 +236,8 @@ async fn battle_loop<E, T, DS>(
                 player_data,
             }).await;
             let line = bus.choices.receive().await;
+            #[cfg(feature = "timing")]
+            let t0 = embassy_time::Instant::now();
             if let Err(e) = battle.set_player_choice(&player_id, &line) {
                 #[cfg(feature = "defmt")]
                 defmt::error!(
@@ -246,6 +248,12 @@ async fn battle_loop<E, T, DS>(
                 #[cfg(not(feature = "defmt"))]
                 let _ = e;
             }
+            #[cfg(feature = "timing")]
+            defmt::info!(
+                "set_player_choice({}): {}ms",
+                player_id.as_str(),
+                t0.elapsed().as_millis()
+            );
             // With auto_continue=true the engine runs the turn synchronously inside
             // set_player_choice once all players have chosen, immediately making the
             // next turn's requests available. Flush here so events reach bus.log before

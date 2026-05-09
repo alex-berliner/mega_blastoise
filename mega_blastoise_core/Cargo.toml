@@ -13,10 +13,12 @@ ciborium = { version = "0.2", default-features = false }
 embassy-sync = { version = "0.7", default-features = false }
 embassy-futures = "0.1"
 defmt = { version = "1.0", optional = true }
+embassy-time = { version = "0.5", optional = true }
 
 [features]
 default = []
 defmt = ["dep:defmt"]
+timing = ["dep:embassy-time", "defmt"]
 
 [build-dependencies]
 serde_json = "1.0"
