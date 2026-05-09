@@ -6,7 +6,6 @@ extern crate alloc;
 mod battle_controller;
 mod battle_effects;
 mod pico_battle_input;
-mod pn532;
 mod subsystems;
 mod usb_input;
 
@@ -96,19 +95,6 @@ async fn main(spawner: Spawner) {
         debug!("OLEDs ready: I2C0 GP16/17, I2C1 GP18/19");
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_oled_init");
-    }
-
-    // ── NFC (legacy feature, disabled by default) ─────────────────────────────
-    #[cfg(feature = "nfc")]
-    {
-        subsystems::nfc::init(
-            p.I2C0, p.I2C1,
-            p.PIN_16, p.PIN_17, p.PIN_18, p.PIN_19,
-            &spawner,
-        );
-        debug!("NFC readers started (I2C0: GP16/17, I2C1: GP18/19, addr 0x24)");
-        #[cfg(feature = "mem-profile")]
-        heap_snapshot("after_nfc_init");
     }
 
     // ── Battle engine ─────────────────────────────────────────────────────────

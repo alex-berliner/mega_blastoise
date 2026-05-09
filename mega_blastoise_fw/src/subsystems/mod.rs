@@ -1,9 +1,6 @@
 #[cfg(feature = "usb")]
 pub mod usb;
 
-#[cfg(feature = "nfc")]
-pub mod nfc;
-
 #[cfg(feature = "buzzer")]
 pub mod buzzer;
 

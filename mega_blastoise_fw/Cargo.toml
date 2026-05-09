@@ -47,4 +47,3 @@ oled = ["dep:ssd1306", "dep:embedded-graphics", "dep:display-interface"]
 buzzer = []
 leds = ["dep:smart-leds"]
 mem-profile = []
-nfc = []  # legacy; kept for compatibility, not enabled by default
