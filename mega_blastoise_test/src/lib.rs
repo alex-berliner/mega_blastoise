@@ -11,3 +11,4 @@ pub mod host_hw_object;
 pub mod host_led;
 pub mod host_oled;
 pub mod stdin_input;
+pub mod turn_timing;
