@@ -4,6 +4,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use ciborium::ser::into_writer;
+
 fn main() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
     let data_root = manifest.join("../battler/battle-data/data");
@@ -25,12 +27,15 @@ fn main() {
          // Source: battler/battle-data/data  (gen 1)\n\n",
     );
 
-    emit_kv_table(&mut out, "TYPE_CHART", &type_chart);
-    emit_kv_table(&mut out, "ALIASES", &aliases);
-    emit_kv_table(&mut out, "ABILITIES", &abilities);
-    emit_kv_table(&mut out, "CONDITIONS", &conditions);
-    emit_kv_table(&mut out, "SPECIES", &mons);
-    emit_kv_table(&mut out, "MOVES", &moves);
+    // TYPE_CHART values are TypeEffectiveness, which deserializes via deserialize_f32.
+    // ciborium is strict about float vs integer CBOR types, so normalize integers to f64
+    // (0 → 0.0, 1 → 1.0, 2 → 2.0) so they round-trip through TypeEffectiveness::Deserialize.
+    emit_cbor_table(&mut out, "TYPE_CHART", &integers_to_floats(type_chart));
+    emit_cbor_table(&mut out, "ALIASES", &aliases);
+    emit_cbor_table(&mut out, "ABILITIES", &abilities);
+    emit_cbor_table(&mut out, "CONDITIONS", &conditions);
+    emit_cbor_table(&mut out, "SPECIES", &mons);
+    emit_cbor_table(&mut out, "MOVES", &moves);
 
     fs::write(out_dir.join("battle_data.rs"), out).unwrap();
 
@@ -104,29 +109,59 @@ fn map_object_values(
     }
 }
 
-fn emit_kv_table(out: &mut String, name: &str, val: &serde_json::Value) {
+fn emit_cbor_table(out: &mut String, name: &str, val: &serde_json::Value) {
     let map: BTreeMap<&str, &serde_json::Value> = match val {
         serde_json::Value::Object(m) => m.iter().map(|(k, v)| (k.as_str(), v)).collect(),
         _ => {
-            let compact = serde_json::to_string(val).unwrap();
+            let bytes = cbor_encode(val);
             out.push_str(&format!(
-                "pub static {name}: &[(&str, &str)] = &[\n    (\"\", {raw}),\n];\n\n",
-                raw = escaped_raw_str(&compact),
+                "pub static {name}: &[(&str, &[u8])] = &[\n    (\"\", &{raw}),\n];\n\n",
+                raw = bytes_literal(&bytes),
             ));
             return;
         }
     };
 
-    out.push_str(&format!("pub static {name}: &[(&str, &str)] = &[\n"));
+    out.push_str(&format!("pub static {name}: &[(&str, &[u8])] = &[\n"));
     for (k, v) in &map {
-        let compact = serde_json::to_string(v).unwrap();
+        let bytes = cbor_encode(v);
         out.push_str(&format!(
-            "    ({key}, {val}),\n",
+            "    ({key}, &{val}),\n",
             key = escaped_raw_str(k),
-            val = escaped_raw_str(&compact),
+            val = bytes_literal(&bytes),
         ));
     }
     out.push_str("];\n\n");
+}
+
+/// Recursively convert integer JSON numbers to f64 so ciborium encodes them as CBOR floats.
+/// Only used for the TYPE_CHART, where TypeEffectiveness::Deserialize calls deserialize_f32
+/// and ciborium refuses to coerce CBOR integers to floats.
+fn integers_to_floats(val: serde_json::Value) -> serde_json::Value {
+    match val {
+        serde_json::Value::Object(map) => serde_json::Value::Object(
+            map.into_iter().map(|(k, v)| (k, integers_to_floats(v))).collect(),
+        ),
+        serde_json::Value::Array(arr) => {
+            serde_json::Value::Array(arr.into_iter().map(integers_to_floats).collect())
+        }
+        serde_json::Value::Number(n) if n.is_u64() || n.is_i64() => {
+            let f = n.as_f64().expect("integer fits f64");
+            serde_json::Value::Number(serde_json::Number::from_f64(f).unwrap())
+        }
+        other => other,
+    }
+}
+
+fn cbor_encode(val: &serde_json::Value) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    into_writer(val, &mut bytes).unwrap_or_else(|e| panic!("CBOR encode failed: {e}"));
+    bytes
+}
+
+fn bytes_literal(bytes: &[u8]) -> String {
+    let entries: Vec<String> = bytes.iter().map(|b| format!("0x{b:02x}")).collect();
+    format!("[{}]", entries.join(", "))
 }
 
 fn escaped_raw_str(s: &str) -> String {
