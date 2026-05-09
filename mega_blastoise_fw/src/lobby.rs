@@ -223,8 +223,8 @@ pub async fn run_lobby(
             }
             Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = true; }
             Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = true; }
-            Either::Second(LobbyUsbCmd::Unknown) => {
-                // Unrecognised line typed during demo — treat as generic interrupt.
+            Either::Second(LobbyUsbCmd::StopDemo) | Either::Second(LobbyUsbCmd::Unknown) => {
+                // :s / :stop or unrecognised input — interrupt demo, enter waiting phase.
             }
         }
         demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
@@ -247,7 +247,7 @@ pub async fn run_lobby(
                     Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = !ready.p1; break; }
                     Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = !ready.p2; break; }
                     Either::Second(LobbyUsbCmd::ReadyBoth) => { ready.p1 = true; ready.p2 = true; break; }
-                    Either::Second(LobbyUsbCmd::Unknown) => {}
+                    Either::Second(LobbyUsbCmd::StopDemo) | Either::Second(LobbyUsbCmd::Unknown) => {}
                 }
             }
         }

@@ -20,6 +20,7 @@ pub enum LobbyUsbCmd {
     ReadyP1,
     ReadyP2,
     ReadyBoth,
+    StopDemo,
     Unknown,
 }
 
@@ -519,6 +520,7 @@ impl<'d> UsbBattleInput<'d> {
             ":ready" => LobbyUsbCmd::ReadyBoth,
             ":ready p1" => LobbyUsbCmd::ReadyP1,
             ":ready p2" => LobbyUsbCmd::ReadyP2,
+            ":s" | ":stop" => LobbyUsbCmd::StopDemo,
             _ => LobbyUsbCmd::Unknown,
         }
     }

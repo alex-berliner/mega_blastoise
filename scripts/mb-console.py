@@ -384,6 +384,7 @@ def main() -> None:
                     "    :q / :quit        exit\n"
                     "\n"
                     "  Firmware commands (forwarded over USB):\n"
+                    "    :s / :stop        stop demo battle, enter ready phase\n"
                     "    :ready            both players ready (human)\n"
                     "    :ready p1         P1 ready (human)\n"
                     "    :ready p2         P2 ready (human)\n"
