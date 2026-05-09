@@ -17,6 +17,7 @@ use display_interface::WriteOnlyDataCommand;
 use embassy_rp::Peri;
 use embassy_rp::i2c::{Config as I2cConfig, I2c};
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
+use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
@@ -43,8 +44,12 @@ pub enum OledCmd {
 }
 
 static CMD: Channel<CriticalSectionRawMutex, OledCmd, 8> = Channel::new();
+static READY: AtomicBool = AtomicBool::new(false);
 
 pub fn send(cmd: OledCmd) {
+    if !READY.load(Ordering::Relaxed) {
+        return;
+    }
     if CMD.try_send(cmd).is_err() {
         defmt::warn!("oled: channel full, cmd dropped");
     }
@@ -118,6 +123,8 @@ pub async fn task(
         defmt::warn!("OLED init failed — display task exiting");
         return;
     }
+
+    READY.store(true, Ordering::Relaxed);
 
     let mut p1 = PlayerState::new();
     let mut p2 = PlayerState::new();
