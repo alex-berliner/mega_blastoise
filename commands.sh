@@ -1,34 +1,55 @@
-# . $MB_BASE/commands.sh  (MB_BASE = workspace root)
+# mega-blastoise dev commands
+# Source with:  . $MB_BASE/commands.sh   (MB_BASE = workspace root)
 
-ELF=$MB_BASE/target/thumbv6m-none-eabi/debug/mega-blastoise-fw
+_MB_FW_DIR="$MB_BASE/mega_blastoise_fw"
+_MB_ELF_DEBUG="$MB_BASE/target/thumbv6m-none-eabi/debug/mega-blastoise-fw"
+_MB_ELF_RELEASE="$MB_BASE/target/thumbv6m-none-eabi/release/mega-blastoise-fw"
+_MB_CONSOLE="$MB_BASE/scripts/mb-console.py"
 
-alias mbcd_fw='cd $MB_BASE/mega_blastoise_fw'
+# ── Build ────────────────────────────────────────────────────────────────────
 
-# Build fw (embedded target via .cargo/config.toml) AND verify the test crate compiles for host.
-# Pass extra cargo flags (e.g. --release) and they apply to the fw build only.
+# Build firmware (embedded target) and verify the test crate compiles for host.
+# Extra args are forwarded to `cargo build` for the fw only (e.g. --release).
 function mb_build {
     echo "=== fw ===" &&
-    (cd "$MB_BASE/mega_blastoise_fw" && cargo build "$@") &&
+    (cd "$_MB_FW_DIR" && cargo build "$@") &&
     echo "=== test ===" &&
-    (cd "$MB_BASE" && cargo check -p mega-blastoise-test)
+    cargo check -p mega-blastoise-test
 }
 
-# Run host-side tests (does not touch the fw target).
+# Run host-side tests (no hardware required).
 function mb_test {
-    (cd "$MB_BASE" && cargo test -p mega-blastoise-test "$@")
+    cargo test -p mega-blastoise-test "$@"
 }
 
-alias mb_download='mbcd_fw && probe-rs download --preset pico "$ELF"'
-alias mb_reset='mbcd_fw && probe-rs reset --preset pico'
-alias mb_kill='pkill -9 -f "probe-rs" || true; pkill -9 -f "picocom" || true'
-alias mb_rttpoll='timeout 2 probe-rs attach --preset pico "$ELF"'
-alias mb_usb_init='stty -F /dev/ttyACM1 raw -echo -hupcl min 0 time 1'
-alias mb_usbpoll='mb_usb_init && timeout 2 cat /dev/ttyACM1'
-function mb_usb_send
-{
-    # Open once so HUPCL doesn't reset termios between stty and write
-    exec 3<>/dev/ttyACM1
-    stty -F /proc/self/fd/3 raw -echo -hupcl min 0 time 1
-    printf '%s\n' "$@" >&3
-    exec 3>&-
+# ── Flash / reset ────────────────────────────────────────────────────────────
+
+# Flash debug ELF.  Pass --release for the release build.
+function mb_flash {
+    local elf="$_MB_ELF_DEBUG"
+    for arg in "$@"; do [[ "$arg" == "--release" ]] && elf="$_MB_ELF_RELEASE"; done
+    probe-rs download --preset pico "$elf"
+}
+
+alias mb_reset='probe-rs reset --preset pico'
+alias mb_kill='pkill -f probe-rs || true'
+
+# ── Console ──────────────────────────────────────────────────────────────────
+
+# Stream RTT + USB output; forward keyboard input to USB.
+# Flags are passed through to mb-console.py (--no-rtt, --no-usb, --log FILE, etc.)
+function mb_console {
+    python3 "$_MB_CONSOLE" "$@"
+}
+
+# ── Combined workflows ───────────────────────────────────────────────────────
+
+# Flash + reset + open console (board must already be connected).
+function mb_run {
+    mb_flash "$@" && mb_reset && mb_console
+}
+
+# Full cycle: build → flash → reset → console.
+function mb_dev {
+    mb_build "$@" && mb_run "$@"
 }
