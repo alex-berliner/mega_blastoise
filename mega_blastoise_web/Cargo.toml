@@ -1,0 +1,35 @@
+[workspace]
+# Standalone WASM crate — not a member of the parent workspace.
+# Build with: wasm-pack build --target web [--release]
+# from the mega_blastoise_web/ directory.
+
+[package]
+name = "mega-blastoise-web"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element"] }
+console_error_panic_hook = "0.1"
+
+mega-blastoise-core = { path = "../mega_blastoise_core" }
+battler = { path = "../battler/battler" }
+battler-data = { path = "../battler/battler-data" }
+anyhow = "1.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# getrandom (pulled in by battler → rand) needs wasm_js feature for wasm32-unknown-unknown.
+getrandom = { version = "0.4", features = ["wasm_js"] }
+
+[patch.crates-io]
+once_cell = { path = "../patches/once_cell" }
+
+[profile.release]
+opt-level = "s"
+lto = true
