@@ -3,15 +3,15 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use battler::{MonBattleData, PlayerBattleData, Request};
+use battler::{PlayerBattleData, Request};
 use embassy_futures::select::{select, Either};
 use embassy_rp::peripherals::USB;
 use embassy_time::{Duration, Timer};
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
-    InputSource, PlayerAction,
+    format_move_choice, format_prompt, format_switch_choice, join_choice_parts, ActivePrompt,
+    InputBus, InputSource, PlayerAction,
 };
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
@@ -87,51 +87,17 @@ impl<'d> UsbBattleInput<'d> {
     ) -> String {
         match request {
             Request::Turn(turn) => {
-                // Cache for Switch prompts that follow this Turn prompt.
                 self.last_player_data = player_data.clone();
-
                 self.write("\r\n").await;
-                self.write("══════════════════════════════════\r\n").await;
-
-                if let Some(pd) = &player_data {
-                    self.write_player_state(pd).await;
-                }
-
-                self.write("──────────────────────────────────\r\n").await;
+                self.write_multiline(&format_prompt(player_id, request, player_data.as_ref())).await;
 
                 let mut parts = Vec::new();
                 for mon_req in &turn.active {
                     let n = mon_req.moves.len().min(4);
-
-                    let mon_name = player_data.as_ref()
-                        .and_then(|pd| pd.mons.iter().find(|m| m.player_team_position == mon_req.team_position))
-                        .map(|m| m.summary.name.as_str())
-                        .unwrap_or("?");
-
-                    let label = Self::player_label(player_id);
-                    self.writef(&alloc::format!(
-                        "{} ({}) — choose move for {}\r\n", label, player_id, mon_name
-                    )).await;
-
                     if n == 0 {
                         self.write_ok("No moves available — passing automatically").await;
                         parts.push(String::from("pass"));
                         continue;
-                    }
-
-                    for i in 0..n {
-                        let m = &mon_req.moves[i];
-                        let usable = !m.disabled && m.pp > 0;
-                        let state = if m.disabled { " [DISABLED]" } else if m.pp == 0 { " [NO PP]" } else { "" };
-                        self.writef(&alloc::format!(
-                            "  [{}] {:<20}  PP {}/{}{}",
-                            i + 1, m.name, m.pp, m.max_pp, state
-                        )).await;
-                        if usable {
-                            self.write("  <-- available\r\n").await;
-                        } else {
-                            self.write("\r\n").await;
-                        }
                     }
 
                     'move_input: loop {
@@ -261,16 +227,7 @@ impl<'d> UsbBattleInput<'d> {
 
             Request::Switch(sw) => {
                 self.write("\r\n").await;
-                self.write("══════════════════════════════════\r\n").await;
-                self.writef(&alloc::format!(
-                    "SWITCH REQUIRED — {} slot(s) need a replacement\r\n",
-                    sw.needs_switch.len()
-                )).await;
-
-                if let Some(player) = self.last_player_data.clone() {
-                    self.write_bench_for_switch(&player).await;
-                }
-                self.write("──────────────────────────────────\r\n").await;
+                self.write_multiline(&format_prompt(player_id, request, self.last_player_data.as_ref())).await;
 
                 let mut parts = Vec::new();
                 for (i, &fainted_slot) in sw.needs_switch.iter().enumerate() {
@@ -369,81 +326,20 @@ impl<'d> UsbBattleInput<'d> {
         }
     }
 
-    // ── Display helpers ───────────────────────────────────────────────────────
-
-    async fn write_player_state(&mut self, player: &PlayerBattleData) {
-        let label = Self::player_label(&player.id);
-        let actives: Vec<&MonBattleData> = player.mons.iter().filter(|m| m.active).collect();
-        for m in &actives {
-            let status = m.status.as_deref().unwrap_or("ok");
-            let item = m.item.as_deref().unwrap_or("none");
-            let pct = if m.max_hp > 0 { m.hp * 100 / m.max_hp } else { 0 };
-            self.writef(&alloc::format!(
-                "{} — {} ({})  HP {}/{} ({}%)  status: {}  item: {}\r\n",
-                label, m.summary.name, m.species, m.hp, m.max_hp, pct, status, item
-            )).await;
-            let b = &m.boosts;
-            if b.atk != 0 || b.def != 0 || b.spa != 0 || b.spd != 0 || b.spe != 0 {
-                self.writef(&alloc::format!(
-                    "  boosts  atk:{:+}  def:{:+}  spa:{:+}  spd:{:+}  spe:{:+}\r\n",
-                    b.atk, b.def, b.spa, b.spd, b.spe
-                )).await;
-            }
-        }
-
-        // Bench — alive and fainted separately.
-        let bench_alive: Vec<&MonBattleData> =
-            player.mons.iter().filter(|m| !m.active && m.hp > 0).collect();
-        let bench_fainted: Vec<&MonBattleData> =
-            player.mons.iter().filter(|m| !m.active && m.hp == 0).collect();
-        if !bench_alive.is_empty() {
-            let s: Vec<String> = bench_alive
-                .iter()
-                .map(|m| {
-                    let pct = if m.max_hp > 0 { m.hp * 100 / m.max_hp } else { 0 };
-                    alloc::format!("{} {}/{}({}%)", m.summary.name, m.hp, m.max_hp, pct)
-                })
-                .collect();
-            self.writef(&alloc::format!("  bench: {}\r\n", s.join("  "))).await;
-        }
-        if !bench_fainted.is_empty() {
-            let s: Vec<String> = bench_fainted
-                .iter()
-                .map(|m| alloc::format!("{} [fnt]", m.summary.name))
-                .collect();
-            self.writef(&alloc::format!("  fainted: {}\r\n", s.join("  "))).await;
-        }
-    }
-
-    async fn write_bench_for_switch(&mut self, player: &PlayerBattleData) {
-        let label = Self::player_label(&player.id);
-        self.writef(&alloc::format!("  {} party:\r\n", label)).await;
-        for (i, m) in player.mons.iter().enumerate() {
-            let slot = i + 1;
-            if m.active {
-                self.writef(&alloc::format!(
-                    "    [{}] {} — active (HP {}/{})\r\n",
-                    slot, m.summary.name, m.hp, m.max_hp
-                )).await;
-            } else if m.hp == 0 {
-                self.writef(&alloc::format!(
-                    "    [{}] {} — fainted\r\n",
-                    slot, m.summary.name
-                )).await;
-            } else {
-                let pct = m.hp * 100 / m.max_hp.max(1);
-                self.writef(&alloc::format!(
-                    "    [{}] {} — HP {}/{} ({}%)  <-- available\r\n",
-                    slot, m.summary.name, m.hp, m.max_hp, pct
-                )).await;
-            }
-        }
-    }
-
     // ── I/O primitives ────────────────────────────────────────────────────────
 
     async fn write(&mut self, s: &str) {
         self.writef(s).await
+    }
+
+    /// Write a `\n`-delimited string with `\r\n` line endings.
+    async fn write_multiline(&mut self, s: &str) {
+        for line in s.split('\n') {
+            if !line.is_empty() {
+                self.writef(line).await;
+                self.write("\r\n").await;
+            }
+        }
     }
 
     async fn writef(&mut self, s: &str) {
@@ -584,13 +480,6 @@ impl<'d> UsbBattleInput<'d> {
         self.writef(&alloc::format!("Move [1-{}]: ", n)).await;
     }
 
-    fn player_label(id: &str) -> &'static str {
-        match id {
-            "p1" => "Red",
-            "p2" => "Blue",
-            _ => "?",
-        }
-    }
 }
 
 impl InputSource for UsbBattleInput<'_> {

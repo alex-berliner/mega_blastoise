@@ -2,7 +2,7 @@
 
 use battler::TeamData;
 use mega_blastoise_core::{
-    demo_battle_options, demo_engine_opts, draw_randbat_team, run_battle,
+    demo_battle_options, demo_engine_opts, draw_randbat_team, format_active_state, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
 };
 
@@ -10,36 +10,7 @@ use crate::host_battle_controller::HostBattleController;
 use crate::host_battle_effects::HostBattleEffects;
 
 fn print_active_pokemon_state(battle: &mut battler::PublicCoreBattle<'_>) {
-    println!("── Active Pokémon ──");
-    for pid in ["p1", "p2"] {
-        let Ok(data) = battle.player_data(pid) else {
-            continue;
-        };
-        let actives: Vec<_> = data.mons.iter().filter(|m| m.active).collect();
-        if actives.is_empty() {
-            println!("  {}: (none on field)", data.name);
-            continue;
-        }
-        for m in actives {
-            let status = m.status.clone().unwrap_or_else(|| "—".into());
-            let types = m
-                .types
-                .iter()
-                .map(|t| format!("{t:?}"))
-                .collect::<Vec<_>>()
-                .join("/");
-            println!(
-                "  {} — {} ({})  HP {}/{} ({})  status: {}  types: [{}]",
-                data.name, m.summary.name, m.species, m.hp, m.max_hp, m.health, status, types
-            );
-            println!("    ability: {}  item: {}", m.ability, m.item.as_deref().unwrap_or("—"));
-            for mv in &m.moves {
-                let dis = if mv.disabled { " (disabled)" } else { "" };
-                println!("    • {}  {}/{} PP{}", mv.name, mv.pp, mv.max_pp, dis);
-            }
-        }
-    }
-    println!();
+    print!("{}", format_active_state(battle));
 }
 
 pub fn run_interactive() {

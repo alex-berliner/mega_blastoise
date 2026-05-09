@@ -9,7 +9,7 @@ use std::io::{self, Write};
 
 use battler::{PlayerBattleData, Request};
 use mega_blastoise_core::{
-    ButtonController, ButtonSource, InputBus, InputSource, PlayerAction,
+    format_prompt, ButtonController, ButtonSource, InputBus, InputSource, PlayerAction,
 };
 
 // ── Simulated button source ───────────────────────────────────────────────────
@@ -76,55 +76,7 @@ impl ButtonSource for HostButtonSource {
         player_data: &Option<PlayerBattleData>,
     ) {
         self.last_player_data = player_data.clone();
-        let label = player_label(player_id);
-        match request {
-            Request::Turn(turn) => {
-                for mon_req in &turn.active {
-                    let n = mon_req.moves.len().min(4);
-                    println!("\n══ {label} — choose ══");
-                    if n == 0 {
-                        println!("  No moves available.");
-                    } else {
-                        for i in 0..n {
-                            let m = &mon_req.moves[i];
-                            let tag = if m.disabled { " [DISABLED]" } else if m.pp == 0 { " [NO PP]" } else { "" };
-                            println!("  [{}] {:<20}  PP {}/{}{}", i + 1, m.name, m.pp, m.max_pp, tag);
-                        }
-                    }
-                    if !mon_req.trapped {
-                        if let Some(pd) = player_data {
-                            let bench: Vec<_> = pd.mons.iter().enumerate()
-                                .filter(|(_, m)| !m.active && m.hp > 0)
-                                .collect();
-                            if !bench.is_empty() {
-                                println!("  ── or switch ──");
-                                for (i, m) in &bench {
-                                    let pct = m.hp * 100 / m.max_hp.max(1);
-                                    println!("  [s{}] {} — {}%", i + 1, m.summary.name, pct);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Request::Switch(sw) => {
-                println!("\n══ {label} — Pokémon fainted, send out another ({} needed) ══",
-                    sw.needs_switch.len());
-                if let Some(pd) = player_data {
-                    for (i, m) in pd.mons.iter().enumerate() {
-                        if m.active {
-                            println!("  [{}] {} — in battle", i + 1, m.summary.name);
-                        } else if m.hp == 0 {
-                            println!("  [{}] {} — fainted", i + 1, m.summary.name);
-                        } else {
-                            let pct = m.hp * 100 / m.max_hp.max(1);
-                            println!("  [{}] {} — {}/{} HP ({}%)", i + 1, m.summary.name, m.hp, m.max_hp, pct);
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
+        print!("\n{}", format_prompt(player_id, request, player_data.as_ref()));
     }
 
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
@@ -136,7 +88,7 @@ impl ButtonSource for HostButtonSource {
             println!("[BTN] Party button {} pressed", idx + 1);
             return PlayerAction::Switch(idx);
         }
-        let label = player_label(player_id);
+        let label = if player_id == "p1" { "Red" } else { "Blue" };
         loop {
             print!("{label} > ");
             let _ = io::stdout().flush();
@@ -162,7 +114,7 @@ impl ButtonSource for HostButtonSource {
             println!("[BTN] Party button {} pressed", idx + 1);
             return idx;
         }
-        let label = player_label(player_id);
+        let label = if player_id == "p1" { "Red" } else { "Blue" };
         let available: Vec<usize> = self.last_player_data.as_ref()
             .map(|pd| pd.mons.iter().enumerate()
                 .filter(|(_, m)| !m.active && m.hp > 0)
@@ -219,14 +171,6 @@ impl InputSource for HostBattleController {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-fn player_label(id: &str) -> &'static str {
-    match id {
-        "p1" => "Red",
-        "p2" => "Blue",
-        _ => "?",
-    }
-}
 
 fn read_stdin_line() -> String {
     let mut line = String::new();

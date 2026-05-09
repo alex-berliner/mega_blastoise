@@ -15,7 +15,7 @@ use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_time::Instant;
 use mega_blastoise_core::{
-    battle_options_with_seed, demo_engine_opts, draw_randbat_team, run_battle,
+    battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
 };
 use mega_blastoise_fw::mem_profile::{heap_snapshot, init_heap};
@@ -144,7 +144,10 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "usb")]
     {
         let mut controller = BattleController::new(usb_input, buttons);
-        run_battle(&mut battle, &data, &bus, controller.run(&bus), &mut queue, &mut effects, |_| {
+        run_battle(&mut battle, &data, &bus, controller.run(&bus), &mut queue, &mut effects, |b| {
+            for line in format_active_state(b).lines() {
+                let _ = bus.log.try_send(alloc::string::String::from(line));
+            }
             #[cfg(feature = "mem-profile")]
             heap_snapshot("after_turn");
         })
