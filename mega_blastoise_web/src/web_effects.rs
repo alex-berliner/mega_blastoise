@@ -27,14 +27,14 @@ fn hp_lit(pct: u8) -> usize {
     ((pct as usize * 8 + 99) / 100).min(8)
 }
 
-// Status LED colors (match firmware)
+// Status LED colors (match firmware; battler emits lowercase IDs)
 fn status_color(status: &str) -> u32 {
     match status {
-        "PAR" => pack_rgb(255, 200, 0),
-        "BRN" => pack_rgb(255, 60, 0),
-        "FRZ" => pack_rgb(0, 200, 255),
-        "PSN" | "TOX" => pack_rgb(150, 0, 200),
-        "SLP" => pack_rgb(0, 80, 0),
+        "par" => pack_rgb(255, 200, 0),
+        "brn" => pack_rgb(255, 60, 0),
+        "frz" => pack_rgb(0, 200, 255),
+        "psn" | "tox" => pack_rgb(150, 0, 200),
+        "slp" => pack_rgb(0, 80, 0),
         _ => 0,
     }
 }
