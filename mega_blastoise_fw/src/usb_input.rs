@@ -457,7 +457,6 @@ impl<'d> UsbBattleInput<'d> {
     /// echo burst (one USB round-trip, ~2 ms) has passed.
     async fn drain_rx(&mut self) {
         let mut buf = [0u8; 64];
-        let mut total = 0usize;
         loop {
             match select(
                 self.receiver.read_packet(&mut buf),
@@ -465,14 +464,10 @@ impl<'d> UsbBattleInput<'d> {
             )
             .await
             {
-                Either::First(Ok(n)) => {
-                    defmt::info!("drain_rx: dropped {} bytes: {:?}", n, &buf[..n]);
-                    total += n;
-                }
+                Either::First(Ok(_)) => {}
                 _ => break,
             }
         }
-        if total > 0 { defmt::info!("drain_rx: total {} bytes dropped", total); }
         self.partial.clear();
     }
 
