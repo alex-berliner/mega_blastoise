@@ -1405,6 +1405,7 @@ dependencies = [
  "defmt 1.0.1",
  "embassy-futures",
  "embassy-sync 0.7.2",
+ "embassy-time",
  "embedded-graphics",
  "serde",
  "serde_json",
