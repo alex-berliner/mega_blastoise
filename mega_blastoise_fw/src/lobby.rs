@@ -187,18 +187,42 @@ pub async fn run_lobby(
     loop {
         #[cfg(feature = "leds")]
         led_send(LedCmd::LobbyIdle);
-        usb.write_lobby_line("Demo — press any button to ready up").await;
+        usb.write_lobby_line("Demo — press any button or type :ready to start").await;
 
-        let interrupted = run_demo_battle(buttons, data, queue, demo_seed).await;
+        // Race the demo battle against USB input so :ready works during demo.
+        let mut ready = ReadyState::default();
+        match select(
+            run_demo_battle(buttons, data, queue, demo_seed),
+            usb.read_lobby_cmd(),
+        ).await {
+            Either::First(false) => {
+                // Demo ended naturally — brief pause then loop.
+                demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
+                Timer::after_secs(3).await;
+                continue;
+            }
+            Either::First(true) => {
+                // Button press interrupted demo — enter waiting phase.
+            }
+            Either::Second(LobbyUsbCmd::ReadyBoth) => {
+                ready.p1 = true;
+                ready.p2 = true;
+            }
+            Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = true; }
+            Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = true; }
+            Either::Second(LobbyUsbCmd::Unknown) => {
+                // Unrecognised line typed during demo — treat as generic interrupt.
+            }
+        }
         demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
 
-        if !interrupted {
-            Timer::after_secs(3).await;
-            continue;
-        }
-
-        let mut ready = ReadyState::default();
+        // ── Waiting phase ─────────────────────────────────────────────────────
         loop {
+            if ready.both() {
+                do_countdown(usb).await;
+                return;
+            }
+
             #[cfg(feature = "leds")]
             led_send(LedCmd::LobbyWaiting { p1_ready: ready.p1, p2_ready: ready.p2 });
             usb.write_lobby_ready_status(ready.p1, ready.p2).await;
@@ -210,27 +234,26 @@ pub async fn run_lobby(
                     Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = !ready.p1; break; }
                     Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = !ready.p2; break; }
                     Either::Second(LobbyUsbCmd::ReadyBoth) => { ready.p1 = true; ready.p2 = true; break; }
-                    Either::Second(LobbyUsbCmd::Unknown) => {} // ignore, keep waiting
+                    Either::Second(LobbyUsbCmd::Unknown) => {}
                 }
-            }
-
-            if ready.both() {
-                usb.write_lobby_line("Both ready!").await;
-                for i in (1u8..=3).rev() {
-                    #[cfg(feature = "buzzer")]
-                    buzz(BuzzerCmd::CountdownBeep);
-                    usb.write_lobby_line(&alloc::format!("{}...", i)).await;
-                    Timer::after_secs(1).await;
-                }
-                #[cfg(feature = "leds")]
-                led_send(LedCmd::LobbyCountdown);
-                #[cfg(feature = "buzzer")]
-                buzz(BuzzerCmd::Win);
-                usb.write_lobby_line("GO!").await;
-                return;
             }
         }
     }
+}
+
+async fn do_countdown(usb: &mut UsbBattleInput<'_>) {
+    usb.write_lobby_line("Both ready!").await;
+    for i in (1u8..=3).rev() {
+        #[cfg(feature = "buzzer")]
+        buzz(BuzzerCmd::CountdownBeep);
+        usb.write_lobby_line(&alloc::format!("{}...", i)).await;
+        Timer::after_secs(1).await;
+    }
+    #[cfg(feature = "leds")]
+    led_send(LedCmd::LobbyCountdown);
+    #[cfg(feature = "buzzer")]
+    buzz(BuzzerCmd::Win);
+    usb.write_lobby_line("GO!").await;
 }
 
 /// Run the lobby (button-only variant). Returns when countdown completes.
