@@ -118,6 +118,9 @@ def _open_serial(dev: str) -> int:
     a[6][termios.VMIN] = 0
     a[6][termios.VTIME] = 1   # 100 ms read timeout
     termios.tcsetattr(fd, termios.TCSANOW, a)
+    # Discard any output bytes that were auto-echoed while ECHO was still on
+    # (the kernel echoes received bytes before tcsetattr can disable ECHO).
+    termios.tcflush(fd, termios.TCOFLUSH)
     return fd
 
 
@@ -132,7 +135,12 @@ def _serial_send(dev: str, text: str) -> None:
 
 # ── Background reader threads ─────────────────────────────────────────────────
 
-def _rtt_reader(elf: str, out_q: queue.Queue, stop: threading.Event) -> None:
+def _rtt_reader(
+    elf: str,
+    out_q: queue.Queue,
+    stop: threading.Event,
+    proc_ref: list,
+) -> None:
     """Stream probe-rs RTT output into *out_q*.  Restarts on disconnect."""
     cmd = [
         "probe-rs", "attach", "--preset", "pico",
@@ -147,6 +155,7 @@ def _rtt_reader(elf: str, out_q: queue.Queue, stop: threading.Event) -> None:
                 text=True,
                 bufsize=1,
             )
+            proc_ref[0] = proc
             for raw in proc.stdout:
                 line = _strip_ansi(raw.rstrip("\r\n"))
                 if line:
@@ -154,14 +163,17 @@ def _rtt_reader(elf: str, out_q: queue.Queue, stop: threading.Event) -> None:
                 if stop.is_set():
                     proc.terminate()
                     break
+            proc_ref[0] = None
             proc.wait()
             if not stop.is_set():
                 out_q.put(("sys", "RTT disconnected — reconnecting in 2 s"))
                 stop.wait(2.0)
         except FileNotFoundError:
+            proc_ref[0] = None
             out_q.put(("err", "probe-rs not found in PATH"))
             return
         except Exception as exc:
+            proc_ref[0] = None
             if not stop.is_set():
                 out_q.put(("err", f"RTT: {exc}"))
                 stop.wait(2.0)
@@ -287,13 +299,17 @@ def main() -> None:
     stop = threading.Event()
     dev_ref: list[str | None] = [usb_dev]
 
+    # Kill any stray probe-rs processes before starting our own.
+    _kill_probe_rs()
+
     # Start background threads
     bg: list[threading.Thread] = []
+    rtt_proc_ref: list = [None]
 
     if not args.no_rtt:
         if elf:
             t = threading.Thread(
-                target=_rtt_reader, args=(elf, out_q, stop), daemon=True, name="rtt"
+                target=_rtt_reader, args=(elf, out_q, stop, rtt_proc_ref), daemon=True, name="rtt"
             )
             t.start(); bg.append(t)
         else:
@@ -310,11 +326,15 @@ def main() -> None:
     )
     pt.start()
 
-    _kill_probe_rs(out_q)
-
     def _shutdown(*_):
-        _kill_probe_rs()
         stop.set()
+        p = rtt_proc_ref[0]
+        if p is not None:
+            try:
+                p.terminate()
+            except Exception:
+                pass
+        _kill_probe_rs()
         if log_fh:
             log_fh.close()
 
