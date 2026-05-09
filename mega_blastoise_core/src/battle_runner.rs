@@ -27,7 +27,6 @@ pub fn make_player(id: &str, name: &str) -> PlayerData {
     }
 }
 
-/// Like [`demo_battle_options`] but uses `seed` for the battle-engine PRNG.
 pub fn battle_options_with_seed(seed: u64) -> CoreBattleOptions {
     CoreBattleOptions {
         seed: Some(seed),
@@ -76,10 +75,58 @@ pub fn demo_engine_opts() -> CoreBattleEngineOptions {
     }
 }
 
-/// Query the full move list for the currently active Pokémon of `player_id`.
-///
-/// Pulls live PP from battle state and base stats (power, accuracy, category) from the
-/// data store — the same source of truth the engine uses.
+// ── Move slot cache ───────────────────────────────────────────────────────────
+
+// Caches per-player MoveSlot lists for the active Pokémon.  Populated once on
+// SwitchIn (full CBOR decode via query_active_moves).  On subsequent Move
+// events we only refresh PP from battle RAM — no CBOR decode.
+struct MoveSlotCache {
+    entries: alloc::vec::Vec<(alloc::string::String, alloc::vec::Vec<MoveSlot>)>,
+}
+
+impl MoveSlotCache {
+    fn new() -> Self {
+        Self { entries: alloc::vec::Vec::new() }
+    }
+
+    fn store(&mut self, player_id: &str, slots: alloc::vec::Vec<MoveSlot>) {
+        if let Some(e) = self.entries.iter_mut().find(|(id, _)| id == player_id) {
+            e.1 = slots;
+        } else {
+            self.entries.push((player_id.to_string(), slots));
+        }
+    }
+
+    // Read current PP from battle state (no CBOR), update cached slots, return
+    // a clone.  Returns empty vec on cache miss.
+    fn refresh_pp(
+        &mut self,
+        player_id: &str,
+        battle: &mut battler::PublicCoreBattle<'_>,
+    ) -> alloc::vec::Vec<MoveSlot> {
+        let Ok(player_data) = battle.player_data(player_id) else {
+            return alloc::vec::Vec::new();
+        };
+        let pp_list: alloc::vec::Vec<(u8, u8)> = player_data
+            .mons
+            .iter()
+            .find(|m| m.active)
+            .map(|m| m.moves.iter().map(|mv| (mv.pp, mv.max_pp)).collect())
+            .unwrap_or_default();
+
+        let Some(entry) = self.entries.iter_mut().find(|(id, _)| id == player_id) else {
+            return alloc::vec::Vec::new();
+        };
+        for (slot, (pp, max_pp)) in entry.1.iter_mut().zip(pp_list.iter()) {
+            slot.pp = *pp;
+            slot.max_pp = *max_pp;
+        }
+        entry.1.clone()
+    }
+}
+
+// ── DataStore lookup (full CBOR decode, called only on SwitchIn) ──────────────
+
 fn query_active_moves<DS: DataStore>(
     battle: &mut battler::PublicCoreBattle<'_>,
     data: &DS,
@@ -120,18 +167,18 @@ fn query_active_moves<DS: DataStore>(
         .collect()
 }
 
-/// Drain new log entries, enrich `SwitchIn` with move data, inject `MovesUpdate`
-/// after every `Move` event, then dispatch everything to `effects`.
+// ── Event enrichment ──────────────────────────────────────────────────────────
+
 fn enrich_and_dispatch<E, DS>(
     battle: &mut battler::PublicCoreBattle<'_>,
     data: &DS,
     queue: &mut BoardEventQueue,
     effects: &mut E,
+    cache: &mut MoveSlotCache,
 ) where
     E: BoardEffects,
     DS: DataStore,
 {
-    // ── phase 1: drain log entries out of the battle engine ───────────────────
     #[cfg(feature = "timing")]
     let t_drain = embassy_time::Instant::now();
 
@@ -142,7 +189,6 @@ fn enrich_and_dispatch<E, DS>(
     #[cfg(feature = "timing")]
     let drain_ms = t_drain.elapsed().as_millis();
 
-    // ── phase 2: parse log lines into BoardEvents ─────────────────────────────
     #[cfg(feature = "timing")]
     let t_parse = embassy_time::Instant::now();
 
@@ -151,7 +197,6 @@ fn enrich_and_dispatch<E, DS>(
     #[cfg(feature = "timing")]
     let parse_ms = t_parse.elapsed().as_millis();
 
-    // ── phase 3: enrich events + query_active_moves ───────────────────────────
     #[cfg(feature = "timing")]
     let t_enrich = embassy_time::Instant::now();
 
@@ -159,39 +204,57 @@ fn enrich_and_dispatch<E, DS>(
     for event in raw {
         let inject = match &event {
             BoardEvent::Move { player_id: Some(pid), .. } => {
+                // PP-only refresh from battle RAM — no CBOR decode.
                 #[cfg(feature = "timing")]
-                let t_qam = embassy_time::Instant::now();
+                let t_pp = embassy_time::Instant::now();
 
-                let moves = query_active_moves(battle, data, pid.as_str());
+                let moves = cache.refresh_pp(pid.as_str(), battle);
 
                 #[cfg(feature = "timing")]
-                defmt::info!("  query_active_moves({}): {}ms", pid.as_str(), t_qam.elapsed().as_millis());
+                defmt::info!("  refresh_pp({}): {}ms", pid.as_str(), t_pp.elapsed().as_millis());
 
-                Some((pid.clone(), moves))
+                if moves.is_empty() {
+                    // Cache miss (shouldn't happen after SwitchIn) — fall back.
+                    #[cfg(feature = "timing")]
+                    defmt::info!("  refresh_pp cache miss for {}, falling back", pid.as_str());
+                    let moves = query_active_moves(battle, data, pid.as_str());
+                    cache.store(pid.as_str(), moves.clone());
+                    Some((pid.clone(), moves))
+                } else {
+                    Some((pid.clone(), moves))
+                }
             }
             _ => None,
         };
 
         let enriched = match event {
             BoardEvent::SwitchIn { name, species, player_id, moves } if moves.is_empty() => {
-                #[cfg(feature = "timing")]
-                let t_qam = embassy_time::Instant::now();
+                // Full CBOR decode — only happens once per switch-in.
+                let new_moves = player_id.as_deref().map(|pid| {
+                    #[cfg(feature = "timing")]
+                    let t_qam = embassy_time::Instant::now();
 
-                let new_moves = player_id
-                    .as_deref()
-                    .map(|pid| query_active_moves(battle, data, pid))
-                    .unwrap_or_default();
+                    let moves = query_active_moves(battle, data, pid);
+                    cache.store(pid, moves.clone());
 
-                #[cfg(feature = "timing")]
-                defmt::info!("  query_active_moves(SwitchIn): {}ms", t_qam.elapsed().as_millis());
+                    #[cfg(feature = "timing")]
+                    defmt::info!("  query_active_moves(SwitchIn {}): {}ms", pid, t_qam.elapsed().as_millis());
 
+                    moves
+                }).unwrap_or_default();
                 BoardEvent::SwitchIn { name, species, player_id, moves: new_moves }
+            }
+            BoardEvent::SwitchIn { name, species, player_id, moves } => {
+                // Pre-populated — cache for future PP refreshes.
+                if let Some(pid) = &player_id {
+                    cache.store(pid.as_str(), moves.clone());
+                }
+                BoardEvent::SwitchIn { name, species, player_id, moves }
             }
             other => other,
         };
 
         queue.push_event(enriched);
-
         if let Some((pid, moves)) = inject {
             queue.push_event(BoardEvent::MovesUpdate { player_id: pid, moves });
         }
@@ -200,7 +263,6 @@ fn enrich_and_dispatch<E, DS>(
     #[cfg(feature = "timing")]
     let enrich_ms = t_enrich.elapsed().as_millis();
 
-    // ── phase 4: dispatch BoardEvents to OLED / LED / buzzer ─────────────────
     #[cfg(feature = "timing")]
     let t_dispatch = embassy_time::Instant::now();
 
@@ -222,7 +284,8 @@ fn enrich_and_dispatch<E, DS>(
     }
 }
 
-/// Drive a battle to completion, running `inputs` concurrently for the duration.
+// ── Battle runner ─────────────────────────────────────────────────────────────
+
 pub async fn run_battle<E, T, F, DS>(
     battle: &mut battler::PublicCoreBattle<'_>,
     data: &DS,
@@ -254,7 +317,8 @@ async fn battle_loop<E, T, DS>(
     T: FnMut(&mut battler::PublicCoreBattle<'_>),
     DS: DataStore,
 {
-    enrich_and_dispatch(battle, data, queue, effects);
+    let mut cache = MoveSlotCache::new();
+    enrich_and_dispatch(battle, data, queue, effects, &mut cache);
 
     while !battle.ended() {
         let mut had_request = false;
@@ -298,7 +362,7 @@ async fn battle_loop<E, T, DS>(
             #[cfg(feature = "timing")]
             let t_ead = embassy_time::Instant::now();
 
-            enrich_and_dispatch(battle, data, queue, effects);
+            enrich_and_dispatch(battle, data, queue, effects, &mut cache);
 
             #[cfg(feature = "timing")]
             defmt::info!(
@@ -309,11 +373,11 @@ async fn battle_loop<E, T, DS>(
         }
 
         if !had_request {
-            enrich_and_dispatch(battle, data, queue, effects);
+            enrich_and_dispatch(battle, data, queue, effects, &mut cache);
             continue;
         }
 
-        enrich_and_dispatch(battle, data, queue, effects);
+        enrich_and_dispatch(battle, data, queue, effects, &mut cache);
         on_turn(battle);
     }
 }
