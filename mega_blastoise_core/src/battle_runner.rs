@@ -97,22 +97,14 @@ impl MoveSlotCache {
         }
     }
 
-    // Read current PP from battle state (no CBOR), update cached slots, return
-    // a clone.  Returns empty vec on cache miss.
+    // Read current PP from battle state (no CBOR, no full PlayerBattleData), update
+    // cached slots, return a clone.  Returns empty vec on cache miss.
     fn refresh_pp(
         &mut self,
         player_id: &str,
-        battle: &mut battler::PublicCoreBattle<'_>,
+        battle: &battler::PublicCoreBattle<'_>,
     ) -> alloc::vec::Vec<MoveSlot> {
-        let Ok(player_data) = battle.player_data(player_id) else {
-            return alloc::vec::Vec::new();
-        };
-        let pp_list: alloc::vec::Vec<(u8, u8)> = player_data
-            .mons
-            .iter()
-            .find(|m| m.active)
-            .map(|m| m.moves.iter().map(|mv| (mv.pp, mv.max_pp)).collect())
-            .unwrap_or_default();
+        let pp_list = battle.active_mon_move_pp(player_id).unwrap_or_default();
 
         let Some(entry) = self.entries.iter_mut().find(|(id, _)| id == player_id) else {
             return alloc::vec::Vec::new();

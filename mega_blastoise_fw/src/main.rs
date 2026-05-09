@@ -160,6 +160,9 @@ async fn main(spawner: Spawner) {
                 }
                 #[cfg(feature = "mem-profile")]
                 heap_snapshot("after_turn");
+                for (action_type, ms) in b.drain_action_timings() {
+                    defmt::info!("  action[{}]: {}ms", action_type, ms);
+                }
             })
             .await;
             // Recover ownership of usb_input and buttons from the controller.
@@ -169,9 +172,12 @@ async fn main(spawner: Spawner) {
         }
 
         #[cfg(not(feature = "usb"))]
-        run_battle(&mut battle, &data, &bus, buttons.run(&bus), &mut queue, &mut effects, |_| {
+        run_battle(&mut battle, &data, &bus, buttons.run(&bus), &mut queue, &mut effects, |b| {
             #[cfg(feature = "mem-profile")]
             heap_snapshot("after_turn");
+            for (action_type, ms) in b.drain_action_timings() {
+                defmt::info!("  action[{}]: {}ms", action_type, ms);
+            }
         })
         .await;
 
