@@ -70,7 +70,8 @@ impl LedStatus {
 
 pub enum LedCmd {
     HpUpdate { player: u8, pct: u8 },
-    Faint { player: u8 },
+    SwitchIn { player: u8, name: [u8; 12], len: u8 },
+    Faint { player: u8, name: [u8; 12], len: u8 },
     SetStatus { player: u8, status: LedStatus },
     CureStatus { player: u8 },
     Win { winner: u8 },
@@ -92,13 +93,39 @@ pub fn send(cmd: LedCmd) {
 
 struct PlayerLedState {
     hp_pct: u8,
-    alive_count: u8,
+    party: [Option<([u8; 12], u8)>; 3],
     status: Option<LedStatus>,
 }
 
 impl PlayerLedState {
     const fn new() -> Self {
-        Self { hp_pct: 100, alive_count: 3, status: None }
+        Self { hp_pct: 100, party: [None, None, None], status: None }
+    }
+
+    fn alive_count(&self) -> usize {
+        self.party.iter().filter(|s| s.is_some()).count()
+    }
+
+    fn register_switch(&mut self, name: &[u8; 12], len: u8) {
+        let already = self.party.iter().any(|s| {
+            if let Some((n, l)) = s { *l == len && &n[..len as usize] == &name[..len as usize] }
+            else { false }
+        });
+        if already { return; }
+        if let Some(slot) = self.party.iter_mut().find(|s| s.is_none()) {
+            *slot = Some((*name, len));
+        }
+    }
+
+    fn register_faint(&mut self, name: &[u8; 12], len: u8) {
+        for slot in &mut self.party {
+            if let Some((n, l)) = slot {
+                if *l == len && &n[..len as usize] == &name[..len as usize] {
+                    *slot = None;
+                    return;
+                }
+            }
+        }
     }
 
     fn render(&self) -> [RGB8; PER_PLAYER] {
@@ -113,7 +140,7 @@ impl PlayerLedState {
         }
 
         // LEDs 8–10: party slots — alive = dim green, fainted = off
-        for i in 0..self.alive_count.min(3) as usize {
+        for i in 0..self.alive_count().min(3) {
             buf[8 + i] = RGB8 { r: 0, g: 30, b: 0 };
         }
 
@@ -176,10 +203,16 @@ pub async fn task(
                 st.hp_pct = pct;
                 true
             }
-            LedCmd::Faint { player } => {
+            LedCmd::SwitchIn { player, name, len } => {
+                let st = if player == 1 { &mut p1 } else { &mut p2 };
+                st.hp_pct = 100;
+                st.register_switch(&name, len);
+                true
+            }
+            LedCmd::Faint { player, name, len } => {
                 let st = if player == 1 { &mut p1 } else { &mut p2 };
                 st.hp_pct = 0;
-                if st.alive_count > 0 { st.alive_count -= 1; }
+                st.register_faint(&name, len);
                 st.status = None;
                 true
             }

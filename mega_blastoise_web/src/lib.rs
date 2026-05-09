@@ -22,6 +22,7 @@ use wasm_bindgen_futures::spawn_local;
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
     run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus, InputSource,
+    MoveSlot,
 };
 
 use web_controller::WebButtonSource;
@@ -42,6 +43,20 @@ thread_local! {
 
     // Text input (unused as a future; submit_text pushes to button queue instead)
     static _TEXT_QUEUE: RefCell<VecDeque<String>> = RefCell::new(VecDeque::new());
+
+    // Lobby LED animation mode
+    static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
+
+    // Flash events: [p1_type, p2_type]; 1 = super-effective, 2 = crit; consumed on read
+    static FLASH: RefCell<[u8; 2]> = RefCell::new([0, 0]);
+
+    // Move names for button labels
+    static P1_MOVE_NAMES: RefCell<[String; 4]> = RefCell::new(
+        ["—".to_string(), "—".to_string(), "—".to_string(), "—".to_string()]
+    );
+    static P2_MOVE_NAMES: RefCell<[String; 4]> = RefCell::new(
+        ["—".to_string(), "—".to_string(), "—".to_string(), "—".to_string()]
+    );
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -57,6 +72,32 @@ pub(crate) fn update_leds(leds: [u32; 24]) {
 
 pub(crate) fn set_active_player(player: u8) {
     ACTIVE_PLAYER.with(|a| *a.borrow_mut() = player);
+}
+
+pub(crate) fn set_lobby_mode(active: bool) {
+    LOBBY_MODE.with(|m| *m.borrow_mut() = active);
+}
+
+pub(crate) fn set_flash(player: u8, flash_type: u8) {
+    FLASH.with(|f| f.borrow_mut()[(player - 1) as usize] = flash_type);
+}
+
+pub(crate) fn update_move_names(player: u8, moves: &[MoveSlot]) {
+    let names: [String; 4] = std::array::from_fn(|i| {
+        moves.get(i).map(|m| m.name.clone()).unwrap_or_else(|| "—".into())
+    });
+    if player == 1 {
+        P1_MOVE_NAMES.with(|m| *m.borrow_mut() = names);
+    } else {
+        P2_MOVE_NAMES.with(|m| *m.borrow_mut() = names);
+    }
+}
+
+fn lobby_led_frame() -> [u32; 24] {
+    let t = (Date::now() as u64 / 30) as u8;
+    let v = if t < 128 { t / 2 } else { (255u8.wrapping_sub(t)) / 2 };
+    let color = ((v as u32 / 3) << 16) | v as u32;
+    [color; 24]
 }
 
 pub(crate) fn print_log(line: &str) {
@@ -124,7 +165,26 @@ fn push_button(ev: ButtonEvent) {
 }
 
 #[wasm_bindgen] pub fn get_led_state() -> Vec<u32> {
+    if LOBBY_MODE.with(|m| *m.borrow()) {
+        return lobby_led_frame().to_vec();
+    }
     LED_STATE.with(|l| l.borrow().to_vec())
+}
+
+#[wasm_bindgen] pub fn get_flash_state() -> Vec<u8> {
+    FLASH.with(|f| {
+        let state = f.borrow().to_vec();
+        *f.borrow_mut() = [0, 0];
+        state
+    })
+}
+
+#[wasm_bindgen] pub fn get_move_names(player: u8) -> String {
+    if player == 1 {
+        P1_MOVE_NAMES.with(|m| m.borrow().iter().cloned().collect::<Vec<_>>().join("\n"))
+    } else {
+        P2_MOVE_NAMES.with(|m| m.borrow().iter().cloned().collect::<Vec<_>>().join("\n"))
+    }
 }
 
 #[wasm_bindgen] pub fn get_active_player() -> u8 {
@@ -159,9 +219,7 @@ fn set_lobby_displays() {
     draw_centered(&mut d2, "P2  BLUE", "ANY BUTTON");
     update_pixels(1, d1.to_rgba());
     update_pixels(2, d2.to_rgba());
-    // Lobby LEDs: dim blue across all 24
-    let lobby_blue = ((0u32) << 16) | ((0u32) << 8) | 20u32;
-    update_leds([lobby_blue; 24]);
+    // LEDs driven by lobby_led_frame() while LOBBY_MODE is active
 }
 
 fn print_line(line: &str) {
@@ -175,7 +233,10 @@ async fn run_game_loop() {
 
     loop {
         set_lobby_displays();
+        set_lobby_mode(true);
         set_active_player(0);
+        update_move_names(1, &[]);
+        update_move_names(2, &[]);
 
         print_log("═══════════════════════════════════════");
         print_log("     MEGA BLASTOISE  —  Gen 1 Randbat  ");
@@ -185,6 +246,7 @@ async fn run_game_loop() {
 
         // Wait for any button press or Enter key
         let _ = ButtonFuture.await;
+        set_lobby_mode(false);
 
         let seed = (Date::now() as u64) ^ 0xdead_beef_cafe_babe;
 

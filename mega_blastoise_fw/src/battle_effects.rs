@@ -83,8 +83,11 @@ impl BoardEffects for BattleEffects<'_> {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
                     #[cfg(feature = "oled")]
                     oled_send(OledCmd::Faint { player });
-                    #[cfg(feature = "leds")]
-                    led_send(LedCmd::Faint { player });
+                    #[cfg(feature = "leds")] {
+                        let mon_name = mon.split(',').next().unwrap_or("?");
+                        let (name, len) = name_buf(mon_name);
+                        led_send(LedCmd::Faint { player, name, len });
+                    }
                 }
                 #[cfg(feature = "buzzer")]
                 buzz(BuzzerCmd::Faint);
@@ -100,6 +103,8 @@ impl BoardEffects for BattleEffects<'_> {
                     if !moves.is_empty() {
                         oled_send(OledCmd::MovesUpdate { player, moves: moves.clone() });
                     }
+                    #[cfg(feature = "leds")]
+                    led_send(LedCmd::SwitchIn { player, name: buf, len });
                 }
             }
 

@@ -50,6 +50,31 @@ function updateActiveHighlight(active) {
     document.getElementById('panel-p2').classList.toggle('active', active === 2);
 }
 
+// ── Flash effects (super-effective / crit) ────────────────────────────────────
+
+function applyFlash(flashState) {
+    for (let p = 1; p <= 2; p++) {
+        const type = flashState[p - 1];
+        if (type === 0) continue;
+        const el = document.getElementById(`oled-p${p}`);
+        el.classList.remove('flash-super', 'flash-crit');
+        void el.offsetWidth; // restart animation
+        el.classList.add(type === 1 ? 'flash-super' : 'flash-crit');
+    }
+}
+
+// ── Move button labels ────────────────────────────────────────────────────────
+
+function updateMoveLabels() {
+    for (let p = 1; p <= 2; p++) {
+        const names = wasm.get_move_names(p).split('\n');
+        for (let i = 0; i < 4; i++) {
+            const el = document.getElementById(`p${p}-m${i}`);
+            if (el) el.textContent = names[i] || '—';
+        }
+    }
+}
+
 // ── RAF render loop ───────────────────────────────────────────────────────────
 
 function frame() {
@@ -57,6 +82,8 @@ function frame() {
     renderOled(ctx2, wasm.get_p2_pixels());
     renderLeds(wasm.get_led_state());
     updateActiveHighlight(wasm.get_active_player());
+    applyFlash(wasm.get_flash_state());
+    updateMoveLabels();
     requestAnimationFrame(frame);
 }
 

@@ -247,10 +247,57 @@ body {
 
 #input::placeholder { color: #333; }
 
+/* ── OLED flash animations ────────────────────────────────────── */
+
+@keyframes flash-super {
+    0%   { border-color: #ffee00; box-shadow: 0 0 14px #ffee00; }
+    100% { border-color: #1a3a1a; box-shadow: none; }
+}
+@keyframes flash-crit {
+    0%   { border-color: #ff4444; box-shadow: 0 0 14px #ff4444; }
+    100% { border-color: #1a3a1a; box-shadow: none; }
+}
+.oled.flash-super { animation: flash-super 0.5s ease-out forwards; }
+.oled.flash-crit  { animation: flash-crit  0.5s ease-out forwards; }
+
 /* ── Responsive: narrow screens ───────────────────────────────── */
 
-@media (max-width: 600px) {
-  .oled { width: 192px; height: 96px; }
-  .move-btn { width: 44px; height: 44px; }
-  .switch-btn { width: 36px; height: 28px; }
+@media (max-width: 680px) {
+  /* LED strip: smaller dots to fit in one row */
+  #led-strip { gap: 6px; padding: 6px 8px; }
+  .led-group  { gap: 2px; }
+  .led        { width: 9px;  height: 9px; }
+  .led.party  { width: 8px;  height: 8px; }
+  .led.status { width: 8px;  height: 8px; }
+  .led-label  { font-size: 9px; margin: 0 2px; }
+  .led-divider { height: 14px; }
+
+  /* Stack panels vertically; OLED sits beside buttons within each panel */
+  #players { flex-direction: column; }
+
+  .player-panel {
+    display: grid;
+    grid-template-areas: "header header" "oled buttons";
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    padding: 8px;
+    gap: 8px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .player-panel:last-child { border-bottom: none; }
+
+  .panel-header { grid-area: header; }
+
+  .oled {
+    grid-area: oled;
+    width: min(44vw, 192px);
+    height: min(22vw, 96px);
+  }
+
+  .button-area { grid-area: buttons; align-self: center; }
+
+  .move-btn   { width: 40px; height: 40px; font-size: 9px;
+                overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .switch-btn { width: 34px; height: 28px; font-size: 11px; }
 }

@@ -43,19 +43,36 @@ fn status_color(status: &str) -> u32 {
 
 struct LedPlayerState {
     hp_pct: u8,
-    alive_count: u8,
-    status: u32, // packed RGB, 0 = none
+    party: [Option<std::string::String>; 3],
+    status: u32,
 }
 
 impl LedPlayerState {
-    fn new() -> Self { Self { hp_pct: 100, alive_count: 3, status: 0 } }
+    fn new() -> Self { Self { hp_pct: 100, party: [None, None, None], status: 0 } }
+
+    fn alive_count(&self) -> usize {
+        self.party.iter().filter(|s| s.is_some()).count()
+    }
+
+    fn register_switch(&mut self, name: &str) {
+        if self.party.iter().any(|s| s.as_deref() == Some(name)) { return; }
+        if let Some(slot) = self.party.iter_mut().find(|s| s.is_none()) {
+            *slot = Some(name.to_string());
+        }
+    }
+
+    fn register_faint(&mut self, name: &str) {
+        for slot in &mut self.party {
+            if slot.as_deref() == Some(name) { *slot = None; return; }
+        }
+    }
 
     fn render(&self) -> [u32; 12] {
         let mut buf = [0u32; 12];
         let lit = hp_lit(self.hp_pct);
         let color = hp_color(self.hp_pct);
         for i in 0..lit { buf[i] = color; }
-        for i in 0..self.alive_count.min(3) as usize {
+        for i in 0..self.alive_count().min(3) {
             buf[8 + i] = pack_rgb(0, 30, 0);
         }
         buf[11] = self.status;
@@ -208,12 +225,18 @@ impl BoardEffects for WebBattleEffects<'_> {
                         self.p1_oled.mon_name = name.clone();
                         self.p1_oled.moves = moves.clone();
                         self.p1_oled.hp_pct = 100;
+                        self.p1_led.hp_pct = 100;
+                        self.p1_led.register_switch(name);
                     } else {
                         self.p2_oled.mon_name = name.clone();
                         self.p2_oled.moves = moves.clone();
                         self.p2_oled.hp_pct = 100;
+                        self.p2_led.hp_pct = 100;
+                        self.p2_led.register_switch(name);
                     }
+                    crate::update_move_names(p, moves);
                     self.redraw(p);
+                    self.flush_leds();
                 }
             }
 
@@ -221,20 +244,22 @@ impl BoardEffects for WebBattleEffects<'_> {
                 let p = if player_id == "p1" { 1u8 } else { 2u8 };
                 if p == 1 { self.p1_oled.moves = moves.clone(); }
                 else { self.p2_oled.moves = moves.clone(); }
+                crate::update_move_names(p, moves);
                 self.redraw(p);
             }
 
             BoardEvent::Faint { mon } => {
+                let mon_name = mon.split(',').next().unwrap_or(mon.as_str()).trim();
                 if let Some(p) = player_num(mon) {
                     if p == 1 {
                         self.p1_oled.hp_pct = 0;
                         self.p1_led.hp_pct = 0;
-                        if self.p1_led.alive_count > 0 { self.p1_led.alive_count -= 1; }
+                        self.p1_led.register_faint(mon_name);
                         self.p1_led.status = 0;
                     } else {
                         self.p2_oled.hp_pct = 0;
                         self.p2_led.hp_pct = 0;
-                        if self.p2_led.alive_count > 0 { self.p2_led.alive_count -= 1; }
+                        self.p2_led.register_faint(mon_name);
                         self.p2_led.status = 0;
                     }
                     self.redraw(p);
@@ -283,6 +308,14 @@ impl BoardEffects for WebBattleEffects<'_> {
                 crate::update_pixels(1, self.p1_disp.to_rgba());
                 crate::update_pixels(2, self.p2_disp.to_rgba());
                 crate::update_leds(win_leds(0));
+            }
+
+            BoardEvent::SuperEffective { mon } => {
+                if let Some(p) = player_num(mon) { crate::set_flash(p, 1); }
+            }
+
+            BoardEvent::CriticalHit { mon } => {
+                if let Some(p) = player_num(mon) { crate::set_flash(p, 2); }
             }
 
             _ => {}
