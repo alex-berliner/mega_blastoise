@@ -131,29 +131,60 @@ fn enrich_and_dispatch<E, DS>(
     E: BoardEffects,
     DS: DataStore,
 {
-    // Collect into owned strings first so the &mut borrow on battle ends.
+    // ── phase 1: drain log entries out of the battle engine ───────────────────
+    #[cfg(feature = "timing")]
+    let t_drain = embassy_time::Instant::now();
+
     let entries: alloc::vec::Vec<alloc::string::String> =
         battle.new_log_entries().map(alloc::string::String::from).collect();
+    let n_entries = entries.len();
+
+    #[cfg(feature = "timing")]
+    let drain_ms = t_drain.elapsed().as_millis();
+
+    // ── phase 2: parse log lines into BoardEvents ─────────────────────────────
+    #[cfg(feature = "timing")]
+    let t_parse = embassy_time::Instant::now();
+
     queue.push_log_lines(entries.iter().map(alloc::string::String::as_str));
+
+    #[cfg(feature = "timing")]
+    let parse_ms = t_parse.elapsed().as_millis();
+
+    // ── phase 3: enrich events + query_active_moves ───────────────────────────
+    #[cfg(feature = "timing")]
+    let t_enrich = embassy_time::Instant::now();
 
     let raw = queue.drain_pending();
     for event in raw {
-        // Decide whether to inject a MovesUpdate after this event.
         let inject = match &event {
             BoardEvent::Move { player_id: Some(pid), .. } => {
+                #[cfg(feature = "timing")]
+                let t_qam = embassy_time::Instant::now();
+
                 let moves = query_active_moves(battle, data, pid.as_str());
+
+                #[cfg(feature = "timing")]
+                defmt::info!("  query_active_moves({}): {}ms", pid.as_str(), t_qam.elapsed().as_millis());
+
                 Some((pid.clone(), moves))
             }
             _ => None,
         };
 
-        // Enrich SwitchIn with move list from live battle state.
         let enriched = match event {
             BoardEvent::SwitchIn { name, species, player_id, moves } if moves.is_empty() => {
+                #[cfg(feature = "timing")]
+                let t_qam = embassy_time::Instant::now();
+
                 let new_moves = player_id
                     .as_deref()
                     .map(|pid| query_active_moves(battle, data, pid))
                     .unwrap_or_default();
+
+                #[cfg(feature = "timing")]
+                defmt::info!("  query_active_moves(SwitchIn): {}ms", t_qam.elapsed().as_millis());
+
                 BoardEvent::SwitchIn { name, species, player_id, moves: new_moves }
             }
             other => other,
@@ -166,26 +197,32 @@ fn enrich_and_dispatch<E, DS>(
         }
     }
 
+    #[cfg(feature = "timing")]
+    let enrich_ms = t_enrich.elapsed().as_millis();
+
+    // ── phase 4: dispatch BoardEvents to OLED / LED / buzzer ─────────────────
+    #[cfg(feature = "timing")]
+    let t_dispatch = embassy_time::Instant::now();
+
     queue.dispatch_all(effects);
+
+    #[cfg(feature = "timing")]
+    let dispatch_ms = t_dispatch.elapsed().as_millis();
+
+    #[cfg(feature = "timing")]
+    if n_entries > 0 || drain_ms + parse_ms + enrich_ms + dispatch_ms > 0 {
+        defmt::info!(
+            "enrich_and_dispatch: entries={} drain={}ms parse={}ms enrich={}ms dispatch={}ms",
+            n_entries as u32,
+            drain_ms,
+            parse_ms,
+            enrich_ms,
+            dispatch_ms,
+        );
+    }
 }
 
 /// Drive a battle to completion, running `inputs` concurrently for the duration.
-///
-/// `data` is the game data store used to enrich move slots with power/accuracy/type.
-///
-/// `inputs` is any future that drives your input sources — a single `source.run(&bus)`,
-/// or multiple sources composed with `embassy_futures::join`:
-///
-/// ```ignore
-/// run_battle(&mut battle, &data, &bus,
-///     join(usb.run(&bus), buttons.run(&bus)),
-///     ...).await;
-/// ```
-///
-/// Pass `async {}` when no interactive source is needed (the runner will auto-continue).
-/// The function returns as soon as the battle ends; `inputs` is dropped at that point even
-/// if it is still pending (input sources typically loop forever, so `select` is correct here
-/// rather than `join`).
 pub async fn run_battle<E, T, F, DS>(
     battle: &mut battler::PublicCoreBattle<'_>,
     data: &DS,
@@ -236,8 +273,10 @@ async fn battle_loop<E, T, DS>(
                 player_data,
             }).await;
             let line = bus.choices.receive().await;
+
             #[cfg(feature = "timing")]
             let t0 = embassy_time::Instant::now();
+
             if let Err(e) = battle.set_player_choice(&player_id, &line) {
                 #[cfg(feature = "defmt")]
                 defmt::error!(
@@ -248,17 +287,25 @@ async fn battle_loop<E, T, DS>(
                 #[cfg(not(feature = "defmt"))]
                 let _ = e;
             }
+
             #[cfg(feature = "timing")]
             defmt::info!(
                 "set_player_choice({}): {}ms",
                 player_id.as_str(),
                 t0.elapsed().as_millis()
             );
-            // With auto_continue=true the engine runs the turn synchronously inside
-            // set_player_choice once all players have chosen, immediately making the
-            // next turn's requests available. Flush here so events reach bus.log before
-            // the next prompt is sent rather than piling up until the battle ends.
+
+            #[cfg(feature = "timing")]
+            let t_ead = embassy_time::Instant::now();
+
             enrich_and_dispatch(battle, data, queue, effects);
+
+            #[cfg(feature = "timing")]
+            defmt::info!(
+                "enrich_and_dispatch after set_player_choice({}): {}ms",
+                player_id.as_str(),
+                t_ead.elapsed().as_millis()
+            );
         }
 
         if !had_request {
