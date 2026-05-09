@@ -6,7 +6,6 @@ use alloc::vec::Vec;
 use battler::{PlayerBattleData, Request};
 use embassy_futures::select::{select, Either};
 use embassy_rp::peripherals::USB;
-use embassy_time::{Duration, Timer};
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
@@ -66,7 +65,6 @@ impl<'d> UsbBattleInput<'d> {
             };
             let ActivePrompt { player_id, request, player_data } = prompt;
             defmt::debug!("usb: prompt received for {}", player_id.as_str());
-            self.drain_rx().await;  // drain echo of all [EVT] lines written above
             let btns = buttons.as_mut().map(|b| &mut **b);
             let choice = self.handle(&player_id, &request, player_data, btns).await;
             self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", choice)).await;
@@ -102,7 +100,6 @@ impl<'d> UsbBattleInput<'d> {
 
                     'move_input: loop {
                         self.write_move_prompt(n).await;
-                        self.drain_rx().await;
 
                         // Accept input from USB serial or physical button (first wins).
                         let slot = match buttons.as_mut() {
@@ -237,7 +234,6 @@ impl<'d> UsbBattleInput<'d> {
                     )).await;
                     'switch_input: loop {
                         self.write("Send in party slot [1-6]: ").await;
-                        self.drain_rx().await;
 
                         let team_idx = match buttons.as_mut() {
                             Some(btns) => {
@@ -401,7 +397,6 @@ impl<'d> UsbBattleInput<'d> {
     /// Read a line from USB with backspace, CRLF, and RTT mirror.
     async fn read_line(&mut self) -> String {
         self.receiver.wait_connection().await;
-        self.drain_rx().await;
         let mut buf = [0u8; 64];
         let mut skip_next_lf = false;
         loop {
@@ -445,30 +440,9 @@ impl<'d> UsbBattleInput<'d> {
                     self.partial.clear();
                     skip_next_lf = false;
                     self.receiver.wait_connection().await;
-                    self.drain_rx().await;
                 }
             }
         }
-    }
-
-    /// Drain any bytes sitting in the USB RX FIFO.
-    /// Called after displaying a prompt to discard host-echoed TX bytes before
-    /// reading user input. Uses a short timeout so the drain ends once the
-    /// echo burst (one USB round-trip, ~2 ms) has passed.
-    async fn drain_rx(&mut self) {
-        let mut buf = [0u8; 64];
-        loop {
-            match select(
-                self.receiver.read_packet(&mut buf),
-                Timer::after(Duration::from_millis(50)),
-            )
-            .await
-            {
-                Either::First(Ok(_)) => {}
-                _ => break,
-            }
-        }
-        self.partial.clear();
     }
 
     async fn write_move_prompt(&mut self, n: usize) {
