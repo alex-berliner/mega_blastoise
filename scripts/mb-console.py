@@ -123,7 +123,7 @@ def _open_serial(dev: str) -> int:
 
 def _serial_send(dev: str, text: str) -> None:
     """Send a line to the USB serial port."""
-    fd = _open_serial(dev)
+    fd = os.open(dev, os.O_WRONLY | os.O_NOCTTY)
     try:
         os.write(fd, (text + "\n").encode())
     finally:
@@ -242,12 +242,13 @@ def _probe_run(args: list[str], out_q: queue.Queue, label: str) -> bool:
     return True
 
 
-def _kill_probe_rs(out_q: queue.Queue) -> None:
+def _kill_probe_rs(out_q: queue.Queue | None = None) -> None:
     result = subprocess.run(["pkill", "-f", "probe-rs"], capture_output=True)
-    if result.returncode == 0:
-        out_q.put(("sys", "killed stray probe-rs processes"))
-    else:
-        out_q.put(("sys", "no stray probe-rs processes"))
+    if out_q is not None:
+        if result.returncode == 0:
+            out_q.put(("sys", "killed stray probe-rs processes"))
+        else:
+            out_q.put(("sys", "no stray probe-rs processes"))
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -309,7 +310,10 @@ def main() -> None:
     )
     pt.start()
 
+    _kill_probe_rs(out_q)
+
     def _shutdown(*_):
+        _kill_probe_rs()
         stop.set()
         if log_fh:
             log_fh.close()
