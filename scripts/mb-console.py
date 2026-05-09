@@ -12,13 +12,15 @@ Usage:
     If --dev is omitted the firmware CDC port is found via sysfs VID:PID.
 
 Built-in commands (prefix with ':'):
+    :help / ?   show all commands
     :reflash    re-flash current ELF and reset
     :reset      reset the board
     :dev        re-detect USB port
     :kill       kill stray probe-rs processes
-    :ready      mark both players ready (lobby mode)
-    :ready p1   mark P1 ready
-    :ready p2   mark P2 ready
+    :ready      mark both players ready (human)
+    :ready p1   mark P1 ready (human)
+    :ready p2   mark P2 ready (human)
+    :unready    unready both players
     :q / :quit  exit
 """
 
@@ -354,7 +356,7 @@ def main() -> None:
     elf_label = elf or "(none)"
     dev_label = usb_dev or "(none)"
     print(f"mb-console  ELF={elf_label}  USB={dev_label}")
-    print("Type to send over USB.  :reflash  :reset  :dev  :kill  :q")
+    print("Type to send over USB.  :help for commands.")
     print()
 
     try:
@@ -370,6 +372,29 @@ def main() -> None:
 
             if line in (":q", ":quit", ":exit"):
                 break
+
+            elif line in (":help", ":h", "?"):
+                print(
+                    "\n"
+                    "  Host commands (handled by mb-console):\n"
+                    "    :reflash          re-flash current ELF and reset\n"
+                    "    :reset            reset the board\n"
+                    "    :dev              re-detect USB device\n"
+                    "    :kill             kill stray probe-rs processes\n"
+                    "    :q / :quit        exit\n"
+                    "\n"
+                    "  Firmware commands (forwarded over USB):\n"
+                    "    :ready            both players ready (human)\n"
+                    "    :ready p1         P1 ready (human)\n"
+                    "    :ready p2         P2 ready (human)\n"
+                    "    :ready p1 ai      P1 ready as AI\n"
+                    "    :ready p2 ai      P2 ready as AI\n"
+                    "    :ready ai         both players as AI\n"
+                    "    :unready          both players unready\n"
+                    "    :unready p1       P1 unready\n"
+                    "    :unready p2       P2 unready\n"
+                    "  Any other input is sent as-is over USB.\n"
+                )
 
             elif line == ":dev":
                 found = find_fw_tty()
