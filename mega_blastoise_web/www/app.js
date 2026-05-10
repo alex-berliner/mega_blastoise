@@ -55,6 +55,9 @@ function applyFlash(flashState) {
 // ── RAF render loop ───────────────────────────────────────────────────────────
 
 function frame() {
+    const transitions = wasm.consume_battle_transitions();
+    if (transitions & 1) stopPlayerCycle(1);
+    if (transitions & 2) stopPlayerCycle(2);
     renderOled(ctx1, wasm.get_p1_pixels());
     renderOled(ctx2, wasm.get_p2_pixels());
     renderLeds(wasm.get_led_state());
@@ -264,8 +267,11 @@ inputEl.focus();
     setupRowResize(rowHandle);
 })();
 
-// Scroll input into view when virtual keyboard appears on mobile
+// Scroll input into view when virtual keyboard appears on mobile.
+// Skipped on the initial page-load focus so the player panels stay visible.
+let pageLoadFocusDone = false;
 inputEl.addEventListener('focus', () => {
+    if (!pageLoadFocusDone) { pageLoadFocusDone = true; return; }
     setTimeout(() => inputEl.scrollIntoView({ behavior: 'smooth', block: 'end' }), 150);
 });
 

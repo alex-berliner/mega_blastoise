@@ -36,6 +36,11 @@ impl ButtonSource for WebButtonSource {
         }
     }
 
+    fn on_waiting_for_other_player(&mut self, player_id: &str) {
+        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        crate::show_waiting_for_opponent_screen(player);
+    }
+
     async fn wait_cancel_window(&mut self, player_id: &str) -> bool {
         let player = if player_id == "p1" { 1u8 } else { 2u8 };
         if crate::is_ai_player(player) { return false; }

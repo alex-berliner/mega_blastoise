@@ -1434,7 +1434,6 @@ dependencies = [
  "embedded-graphics",
  "embedded-hal-async",
  "mega-blastoise-core",
- "panic-probe",
  "rtt-target",
  "smart-leds",
  "ssd1306",
@@ -1593,16 +1592,6 @@ dependencies = [
 [[package]]
 name = "once_cell"
 version = "1.21.4"
-
-[[package]]
-name = "panic-probe"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd402d00b0fb94c5aee000029204a46884b1262e0c443f166d86d2c0747e1a1a"
-dependencies = [
- "cortex-m",
- "defmt 1.0.1",
-]
 
 [[package]]
 name = "parking_lot"

@@ -229,7 +229,7 @@ where
     D: DrawTarget<Color = BinaryColor>,
 {
     let hdr = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-    let name = if slot.hp == 0 { "FAINTED" } else { slot.name.as_str() };
+    let name = slot.name.as_str();
     let type_str = match slot.types.len() {
         0 => alloc::format!(""),
         1 => alloc::format!("{}", type_abbr(slot.types[0])),
@@ -265,7 +265,7 @@ where
     draw_mon_header(display, slot);
 
     let status_abbr = if slot.hp == 0 {
-        "FNT"
+        " FNT"
     } else {
         match slot.status.as_deref() {
             Some("par") => " PAR",

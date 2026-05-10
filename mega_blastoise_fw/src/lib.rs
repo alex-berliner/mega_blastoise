@@ -6,9 +6,31 @@ pub mod mem_profile;
 pub mod usb_cdc_line;
 
 use rtt_target as _;
-use panic_probe as _;
+
+/// Drive GP25 (Pico onboard LED) high by writing directly to SIO registers.
+/// Safe to call in a panic handler — no Embassy HAL required.
+fn drive_error_led() {
+    unsafe {
+        // Configure GP25 for SIO function (FUNCSEL = 5).
+        (0x4001_40CC_u32 as *mut u32).write_volatile(5);
+        // Enable output.
+        (0xD000_0024_u32 as *mut u32).write_volatile(1 << 25);
+        // Set output HIGH.
+        (0xD000_0014_u32 as *mut u32).write_volatile(1 << 25);
+    }
+}
+
+#[panic_handler]
+fn panic_handler(info: &core::panic::PanicInfo) -> ! {
+    cortex_m::interrupt::disable();
+    drive_error_led();
+    defmt::error!("{}", defmt::Display2Format(info));
+    cortex_m::asm::udf()
+}
 
 #[defmt::panic_handler]
-fn panic() -> ! {
+fn defmt_panic() -> ! {
+    cortex_m::interrupt::disable();
+    drive_error_led();
     cortex_m::asm::udf()
 }

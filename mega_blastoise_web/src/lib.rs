@@ -10,7 +10,7 @@ use std::task::{Context, Poll, Waker};
 
 use battler::TeamData;
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
+    mono_font::{ascii::{FONT_5X8, FONT_6X10}, MonoTextStyle},
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Alignment, Baseline, Text, TextStyleBuilder},
@@ -88,6 +88,10 @@ thread_local! {
     // When false, all animation sleeps are skipped (useful for CLI testing).
     static ANIM_ENABLED: RefCell<bool> = RefCell::new(true);
 
+    // Set whenever update_pixels() writes new battle content (not overlays).
+    // Consumed by consume_battle_transitions() so JS can cancel held long-press cycles.
+    static BATTLE_DIRTY: RefCell<[bool; 2]> = RefCell::new([false, false]);
+
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -107,6 +111,7 @@ pub(crate) fn display_only(player: u8, pixels: Vec<u8>) {
 }
 
 pub(crate) fn update_pixels(player: u8, pixels: Vec<u8>) {
+    BATTLE_DIRTY.with(|d| d.borrow_mut()[(player - 1) as usize] = true);
     if player == 1 {
         P1_BATTLE_PIXELS.with(|p| *p.borrow_mut() = pixels.clone());
         // Don't overwrite the detail overlay — restore_screen will pick up
@@ -288,6 +293,27 @@ pub(crate) fn show_waiting_screen(player: u8) {
     Text::with_text_style(
         "tap to unready",
         Point::new(64, 42),
+        MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
+        ts,
+    ).draw(&mut disp).ok();
+    display_only(player, disp.to_rgba());
+}
+
+pub(crate) fn show_waiting_for_opponent_screen(player: u8) {
+    let mut disp = WasmDisplay::new();
+    let ts = TextStyleBuilder::new()
+        .alignment(Alignment::Center)
+        .baseline(Baseline::Top)
+        .build();
+    Text::with_text_style(
+        "Waiting for",
+        Point::new(64, 20),
+        MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
+        ts,
+    ).draw(&mut disp).ok();
+    Text::with_text_style(
+        "opponent...",
+        Point::new(64, 32),
         MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
         ts,
     ).draw(&mut disp).ok();
@@ -592,7 +618,10 @@ fn enter_demo_mode() {
             }
             ":ready p1" => push_button(ButtonEvent::Move { player: 1, slot: 0 }),
             ":ready p2" => push_button(ButtonEvent::Move { player: 2, slot: 0 }),
-            _ => { print_log("  lobby: :ready | :ready p1 | :ready p2 | :ready ai | :demo"); }
+            _ => {
+                push_button(ButtonEvent::Move { player: 1, slot: 0 });
+                push_button(ButtonEvent::Move { player: 2, slot: 0 });
+            }
         }
         return;
     }
@@ -649,6 +678,18 @@ fn enter_demo_mode() {
         let state = f.borrow().to_vec();
         *f.borrow_mut() = [0, 0];
         state
+    })
+}
+
+/// Returns a bitmask of players whose battle OLED content changed this frame:
+/// bit 0 = P1, bit 1 = P2. Clears the flags on read. JS uses this to cancel
+/// any active long-press cycle when the screen transitions away.
+#[wasm_bindgen] pub fn consume_battle_transitions() -> u8 {
+    BATTLE_DIRTY.with(|d| {
+        let mut flags = d.borrow_mut();
+        let bits = (flags[0] as u8) | ((flags[1] as u8) << 1);
+        *flags = [false, false];
+        bits
     })
 }
 

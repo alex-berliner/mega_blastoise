@@ -151,6 +151,10 @@ pub trait ButtonSource {
     /// Override to show a "waiting / press to unready" screen.  Default is a no-op.
     fn on_choice_pending(&mut self, _player_id: &str) {}
 
+    /// Called for a player who has no pending request this turn (e.g. only the other
+    /// player needs to switch after a faint).  Override to show "Waiting for opponent".
+    fn on_waiting_for_other_player(&mut self, _player_id: &str) {}
+
     /// Wait until the cancel window expires (returns `false` = committed) or the
     /// player presses any button (returns `true` = cancelled).  Default always
     /// proceeds immediately — override to add an undo window.
@@ -281,6 +285,14 @@ impl<BS: ButtonSource + Clone> ButtonController<BS> {
                 extra_prompts.push(p);
             }
 
+            for idle_id in ["p1", "p2"] {
+                let has_prompt = first_prompt.player_id == idle_id
+                    || extra_prompts.iter().any(|p| p.player_id == idle_id);
+                if !has_prompt {
+                    self.source.on_waiting_for_other_player(idle_id);
+                }
+            }
+
             if extra_prompts.len() == 1 {
                 // Two-player batch: collect both choices simultaneously so neither player
                 // blocks on the other's pick or cancel window.
@@ -345,6 +357,15 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
                 let p = bus.prompt.receive().await;
                 self.source.on_prompt(&p.player_id, &p.request, &p.player_data);
                 extra_prompts.push(p);
+            }
+
+            // Notify any player who has no request this turn.
+            for idle_id in ["p1", "p2"] {
+                let has_prompt = first_prompt.player_id == idle_id
+                    || extra_prompts.iter().any(|p| p.player_id == idle_id);
+                if !has_prompt {
+                    self.source.on_waiting_for_other_player(idle_id);
+                }
             }
 
             // Collect and submit choices in prompt order.

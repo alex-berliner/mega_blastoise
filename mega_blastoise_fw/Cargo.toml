@@ -14,7 +14,6 @@ cortex-m-rt = "0.7"
 # Logging + bidirectional RTT (rtt-target 0.6 provides defmt global logger + down channel RX)
 defmt = "1.0"
 rtt-target = { version = "0.6", features = ["defmt"] }
-panic-probe = { version = "1.0", features = ["print-defmt"] }
 
 # RP2040 async runtime + HAL
 embassy-executor = { version = "0.9", features = ["arch-cortex-m", "executor-thread", "defmt"] }
