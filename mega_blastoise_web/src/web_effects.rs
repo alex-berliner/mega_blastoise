@@ -94,11 +94,12 @@ struct OledPlayerState {
     mon_name: std::string::String,
     moves: std::vec::Vec<MoveSlot>,
     hp_pct: u8,
+    status: Option<std::string::String>,
 }
 
 impl OledPlayerState {
     fn new() -> Self {
-        Self { mon_name: "---".into(), moves: std::vec::Vec::new(), hp_pct: 100 }
+        Self { mon_name: "---".into(), moves: std::vec::Vec::new(), hp_pct: 100, status: None }
     }
 }
 
@@ -138,6 +139,7 @@ impl<'a> WebBattleEffects<'a> {
                 &self.p1_oled.mon_name,
                 &self.p1_oled.moves,
                 self.p1_oled.hp_pct,
+                self.p1_oled.status.as_deref(),
             );
             crate::update_pixels(1, self.p1_disp.to_rgba());
         } else {
@@ -146,6 +148,7 @@ impl<'a> WebBattleEffects<'a> {
                 &self.p2_oled.mon_name,
                 &self.p2_oled.moves,
                 self.p2_oled.hp_pct,
+                self.p2_oled.status.as_deref(),
             );
             crate::update_pixels(2, self.p2_disp.to_rgba());
         }
@@ -273,12 +276,14 @@ impl BoardEffects for WebBattleEffects<'_> {
                         self.p1_oled.mon_name = name.clone();
                         self.p1_oled.moves = moves.clone();
                         self.p1_oled.hp_pct = 100;
+                        self.p1_oled.status = None;
                         self.p1_led.hp_pct = 100;
                         self.p1_led.register_switch(name);
                     } else {
                         self.p2_oled.mon_name = name.clone();
                         self.p2_oled.moves = moves.clone();
                         self.p2_oled.hp_pct = 100;
+                        self.p2_oled.status = None;
                         self.p2_led.hp_pct = 100;
                         self.p2_led.register_switch(name);
                     }
@@ -302,11 +307,13 @@ impl BoardEffects for WebBattleEffects<'_> {
                 if let Some(p) = player_num(mon) {
                     if p == 1 {
                         self.p1_oled.hp_pct = 0;
+                        self.p1_oled.status = None;
                         self.p1_led.hp_pct = 0;
                         self.p1_led.register_faint(mon_name);
                         self.p1_led.status = 0;
                     } else {
                         self.p2_oled.hp_pct = 0;
+                        self.p2_oled.status = None;
                         self.p2_led.hp_pct = 0;
                         self.p2_led.register_faint(mon_name);
                         self.p2_led.status = 0;
@@ -322,8 +329,13 @@ impl BoardEffects for WebBattleEffects<'_> {
             BoardEvent::SetStatus { mon, status } => {
                 if let Some(p) = player_num(mon) {
                     let color = status_color(status);
-                    if p == 1 { self.p1_led.status = color; }
-                    else { self.p2_led.status = color; }
+                    if p == 1 {
+                        self.p1_led.status = color;
+                        self.p1_oled.status = Some(status.clone());
+                    } else {
+                        self.p2_led.status = color;
+                        self.p2_oled.status = Some(status.clone());
+                    }
                     self.flush_leds();
                 }
                 let desc = event.description();
@@ -334,8 +346,13 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::CureStatus { mon, .. } => {
                 if let Some(p) = player_num(mon) {
-                    if p == 1 { self.p1_led.status = 0; }
-                    else { self.p2_led.status = 0; }
+                    if p == 1 {
+                        self.p1_led.status = 0;
+                        self.p1_oled.status = None;
+                    } else {
+                        self.p2_led.status = 0;
+                        self.p2_oled.status = None;
+                    }
                     self.flush_leds();
                 }
                 let desc = event.description();

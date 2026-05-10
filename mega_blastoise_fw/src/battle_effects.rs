@@ -123,25 +123,35 @@ impl BoardEffects for BattleEffects<'_> {
             }
 
             BoardEvent::SetStatus { mon, status } => {
-                #[cfg(feature = "leds")]
                 if let Some(pid) = mon_player_id(mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    #[cfg(feature = "leds")]
                     if let Some(s) = LedStatus::from_str(status.as_str()) {
                         led_send(LedCmd::SetStatus { player, status: s });
                     }
+                    #[cfg(feature = "oled")]
+                    {
+                        let bytes = status.as_bytes();
+                        let len = bytes.len().min(4) as u8;
+                        let mut buf = [0u8; 4];
+                        buf[..len as usize].copy_from_slice(&bytes[..len as usize]);
+                        oled_send(OledCmd::StatusSet { player, status: buf, len });
+                    }
+                    #[cfg(not(any(feature = "leds", feature = "oled")))]
+                    let _ = (mon, status);
                 }
-                #[cfg(not(feature = "leds"))]
-                let _ = (mon, status);
             }
 
             BoardEvent::CureStatus { mon, .. } => {
-                #[cfg(feature = "leds")]
                 if let Some(pid) = mon_player_id(mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    #[cfg(feature = "leds")]
                     led_send(LedCmd::CureStatus { player });
+                    #[cfg(feature = "oled")]
+                    oled_send(OledCmd::StatusClear { player });
+                    #[cfg(not(any(feature = "leds", feature = "oled")))]
+                    let _ = mon;
                 }
-                #[cfg(not(feature = "leds"))]
-                let _ = mon;
             }
 
             BoardEvent::Win { side } => {

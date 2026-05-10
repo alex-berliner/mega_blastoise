@@ -26,6 +26,7 @@ pub struct PartySlotData {
     pub level: u8,
     pub hp: u16,
     pub max_hp: u16,
+    pub active: bool,
     pub status: Option<alloc::string::String>,
     pub atk: u16,
     pub def: u16,
@@ -44,6 +45,7 @@ pub fn party_slot_from_mon(mon: &battler::MonBattleData) -> PartySlotData {
         level: mon.summary.level,
         hp: mon.hp,
         max_hp: mon.max_hp,
+        active: mon.active,
         status: mon.status.clone(),
         atk: get(Stat::Atk),
         def: get(Stat::Def),
@@ -76,9 +78,16 @@ fn center_style() -> TextStyle {
 /// Move 0              Move 1   ← y=1,  FONT_5X8
 ///      ┌─ Mon Name ─┐          ← y=24–39 (box)
 /// ████████░░░░░░░░░            ← y=44, h=4 (HP bar)
+///                         PSN  ← y=46, FONT_5X8 right-aligned (status)
 /// Move 2              Move 3   ← y=55, FONT_5X8
 /// ```
-pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot], hp_pct: u8)
+pub fn render_player_screen<D>(
+    display: &mut D,
+    mon_name: &str,
+    moves: &[MoveSlot],
+    hp_pct: u8,
+    status: Option<&str>,
+)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
@@ -129,6 +138,19 @@ where
         Rectangle::new(Point::new(0, 44), Size::new(bar_w, 4))
             .into_styled(fill)
             .draw(display).ok();
+    }
+
+    // ── Status condition ─────────────────────────────────────────────────────
+    if let Some(s) = status {
+        let abbr = match s {
+            "par" => "PAR", "brn" => "BRN", "frz" => "FRZ",
+            "psn" | "tox" => "PSN", "slp" => "SLP",
+            _ => "",
+        };
+        if !abbr.is_empty() {
+            Text::with_text_style(abbr, Point::new(127, 46), move_char, tr_style())
+                .draw(display).ok();
+        }
     }
 }
 

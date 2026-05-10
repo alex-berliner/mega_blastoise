@@ -65,6 +65,9 @@ thread_local! {
     // Full party snapshot per player (for long-press switch button rendering)
     static P1_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
     static P2_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
+    // Version counter for party data — JS polls to avoid redundant DOM updates
+    static P1_PARTY_VER: RefCell<u32> = RefCell::new(0);
+    static P2_PARTY_VER: RefCell<u32> = RefCell::new(0);
 
     // True while a detail/stats overlay is displayed — suppresses update_pixels writes
     static P1_IN_DETAIL: RefCell<bool> = RefCell::new(false);
@@ -131,8 +134,13 @@ pub(crate) fn update_moves(player: u8, moves: Vec<MoveSlot>) {
 }
 
 pub(crate) fn update_party(player: u8, slots: Vec<PartySlotData>) {
-    if player == 1 { P1_PARTY.with(|p| *p.borrow_mut() = slots); }
-    else           { P2_PARTY.with(|p| *p.borrow_mut() = slots); }
+    if player == 1 {
+        P1_PARTY.with(|p| *p.borrow_mut() = slots);
+        P1_PARTY_VER.with(|v| *v.borrow_mut() += 1);
+    } else {
+        P2_PARTY.with(|p| *p.borrow_mut() = slots);
+        P2_PARTY_VER.with(|v| *v.borrow_mut() += 1);
+    }
 }
 
 pub(crate) fn is_ai_paused() -> bool {
@@ -417,6 +425,26 @@ fn enter_demo_mode() {
             print_log(&format!("Unknown command: {}", line.trim()));
         }
     }
+}
+
+/// Returns party info for all 3 slots as a comma-separated string.
+/// Each slot: "Name|hp/maxhp|active" or "" if slot missing.
+/// active = "1" if the mon is currently on the field, "0" otherwise.
+#[wasm_bindgen]
+pub fn get_party_labels(player: u8) -> String {
+    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
+                else           { P2_PARTY.with(|p| p.borrow().clone()) };
+    (0..3usize).map(|i| {
+        party.get(i).map(|s| format!("{}|{}/{}|{}", s.name, s.hp, s.max_hp, if s.active { 1 } else { 0 }))
+             .unwrap_or_default()
+    }).collect::<Vec<_>>().join(",")
+}
+
+/// Version counter for party data.
+#[wasm_bindgen]
+pub fn get_party_version(player: u8) -> u32 {
+    if player == 1 { P1_PARTY_VER.with(|v| *v.borrow()) }
+    else           { P2_PARTY_VER.with(|v| *v.borrow()) }
 }
 
 /// Returns move labels for all 4 slots as a comma-separated string.

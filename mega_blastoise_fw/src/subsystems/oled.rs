@@ -39,6 +39,10 @@ pub enum OledCmd {
     MovesUpdate { player: u8, moves: Vec<MoveSlot> },
     /// A mon fainted.
     Faint { player: u8 },
+    /// Status condition set ("par", "brn", "frz", "psn", "tox", "slp").
+    StatusSet { player: u8, status: [u8; 4], len: u8 },
+    /// Status condition cleared.
+    StatusClear { player: u8 },
     /// Battle ended — winner is 1 (p1) or 2 (p2); 0 means tie.
     Win { winner: u8 },
     /// Long-press detail view for a move slot (0-based).
@@ -72,17 +76,24 @@ struct PlayerState {
     fainted: bool,
     moves: Vec<MoveSlot>,
     party: Vec<PartySlotData>,
+    status: [u8; 4],
+    status_len: u8,
 }
 
 impl PlayerState {
     fn new() -> Self {
         let mut name = [b' '; 12];
         name[0] = b'-'; name[1] = b'-'; name[2] = b'-';
-        Self { hp_pct: 100, name, name_len: 3, fainted: false, moves: Vec::new(), party: Vec::new() }
+        Self { hp_pct: 100, name, name_len: 3, fainted: false, moves: Vec::new(), party: Vec::new(), status: [0; 4], status_len: 0 }
     }
 
     fn name_str(&self) -> &str {
         core::str::from_utf8(&self.name[..self.name_len as usize]).unwrap_or("?")
+    }
+
+    fn status_str(&self) -> Option<&str> {
+        if self.status_len == 0 { return None; }
+        core::str::from_utf8(&self.status[..self.status_len as usize]).ok()
     }
 }
 
@@ -93,7 +104,7 @@ fn redraw<DI: WriteOnlyDataCommand>(
     st: &PlayerState,
 ) {
     let mon = if st.fainted { "FAINTED" } else { st.name_str() };
-    render_player_screen(disp, mon, &st.moves, st.hp_pct);
+    render_player_screen(disp, mon, &st.moves, st.hp_pct, st.status_str());
     disp.flush().ok();
 }
 
@@ -149,10 +160,10 @@ pub async fn task(
             }
             OledCmd::ActiveMon { player, name, len } => {
                 if player == 1 {
-                    p1.name = name; p1.name_len = len; p1.fainted = false; p1.hp_pct = 100;
+                    p1.name = name; p1.name_len = len; p1.fainted = false; p1.hp_pct = 100; p1.status_len = 0;
                     redraw(&mut disp0, &p1);
                 } else {
-                    p2.name = name; p2.name_len = len; p2.fainted = false; p2.hp_pct = 100;
+                    p2.name = name; p2.name_len = len; p2.fainted = false; p2.hp_pct = 100; p2.status_len = 0;
                     redraw(&mut disp1, &p2);
                 }
             }
@@ -162,12 +173,20 @@ pub async fn task(
             }
             OledCmd::Faint { player } => {
                 if player == 1 {
-                    p1.fainted = true; p1.hp_pct = 0; p1.moves.clear();
+                    p1.fainted = true; p1.hp_pct = 0; p1.moves.clear(); p1.status_len = 0;
                     redraw(&mut disp0, &p1);
                 } else {
-                    p2.fainted = true; p2.hp_pct = 0; p2.moves.clear();
+                    p2.fainted = true; p2.hp_pct = 0; p2.moves.clear(); p2.status_len = 0;
                     redraw(&mut disp1, &p2);
                 }
+            }
+            OledCmd::StatusSet { player, status, len } => {
+                if player == 1 { p1.status = status; p1.status_len = len; redraw(&mut disp0, &p1); }
+                else           { p2.status = status; p2.status_len = len; redraw(&mut disp1, &p2); }
+            }
+            OledCmd::StatusClear { player } => {
+                if player == 1 { p1.status_len = 0; redraw(&mut disp0, &p1); }
+                else           { p2.status_len = 0; redraw(&mut disp1, &p2); }
             }
             OledCmd::ShowMoveDetail { player, slot } => {
                 if player == 1 {

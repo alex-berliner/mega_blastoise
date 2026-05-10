@@ -56,6 +56,7 @@ const MOVE_KEYS = ['1', '2', '3', '4'];
 const SWITCH_KEYS = ['A', 'S', 'D'];
 
 let p1MovesVer = -1, p2MovesVer = -1;
+let p1PartyVer = -1, p2PartyVer = -1;
 
 function updateMoveLabels(player) {
     const raw = wasm.get_move_labels(player);
@@ -77,11 +78,40 @@ function updateMoveLabels(player) {
     }
 }
 
+function updatePartyLabels(player) {
+    const raw = wasm.get_party_labels(player);
+    const slots = raw.split(',');
+    const keys = player === 1 ? ['A', 'S', 'D'] : ['U', 'I', 'O'];
+    for (let i = 0; i < 3; i++) {
+        const el = document.getElementById(`p${player}-s${i}`);
+        if (!el) continue;
+        const slot = slots[i] || '';
+        if (!slot) {
+            el.innerHTML = `<span class="sw-key">${keys[i]}</span><span class="sw-label">S${i + 1}</span>`;
+            el.classList.remove('sw-active', 'sw-fainted');
+            continue;
+        }
+        const [name, hpStr, activeStr] = slot.split('|');
+        const [hp, maxHp] = hpStr ? hpStr.split('/').map(Number) : [0, 0];
+        const active = activeStr === '1';
+        const fainted = hp === 0;
+        // Abbreviate name to 5 chars max
+        const abbr = name.length > 5 ? name.slice(0, 5) : name;
+        el.innerHTML = `<span class="sw-key">${keys[i]}</span><span class="sw-label">${abbr}</span>`;
+        el.classList.toggle('sw-active', active);
+        el.classList.toggle('sw-fainted', fainted && !active);
+    }
+}
+
 function tickMoveLabels() {
     const v1 = wasm.get_moves_version(1);
     const v2 = wasm.get_moves_version(2);
     if (v1 !== p1MovesVer) { p1MovesVer = v1; updateMoveLabels(1); }
     if (v2 !== p2MovesVer) { p2MovesVer = v2; updateMoveLabels(2); }
+    const pv1 = wasm.get_party_version(1);
+    const pv2 = wasm.get_party_version(2);
+    if (pv1 !== p1PartyVer) { p1PartyVer = pv1; updatePartyLabels(1); }
+    if (pv2 !== p2PartyVer) { p2PartyVer = pv2; updatePartyLabels(2); }
 }
 
 // ── RAF render loop ───────────────────────────────────────────────────────────
@@ -259,7 +289,7 @@ logObserver.observe(logEl, { childList: true, characterData: true, subtree: true
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
-// Set switch button key hints once (they don't change)
+// Set initial switch button key hints (overwritten once party data arrives)
 function initSwitchHints() {
     for (let p = 1; p <= 2; p++) {
         const keys = p === 1 ? ['A', 'S', 'D'] : ['U', 'I', 'O'];
@@ -269,6 +299,7 @@ function initSwitchHints() {
         }
     }
 }
+
 
 async function run() {
     try {
