@@ -10,6 +10,7 @@
 
   <!-- Demo mode trigger -->
   <div id="demo-row">
+    <span class="demo-label">DEBUG</span>
     <button id="vs-ai-btn" class="demo-btn">BLUE VS AI</button>
     <button id="demo-btn" class="demo-btn">DEMO</button>
     <button id="pause-btn" class="demo-btn">PAUSE</button>
@@ -26,8 +27,7 @@
         <div class="panel-header p1-color">RED</div>
         <!-- OLED flanked by move button columns -->
         <div class="oled-area">
-          <span class="side-label">DEBUG</span>
-          <div class="move-col">
+<div class="move-col">
             <button class="btn move-btn" id="p1-m0"></button>
             <button class="btn move-btn" id="p1-m2"></button>
           </div>
@@ -45,15 +45,21 @@
         <!-- P1 LEDs: HP 0-7, party 8-10 -->
         <div class="led-row" id="leds-p1">
           <div class="led-group">
-            <div class="led" id="led-0"></div><div class="led" id="led-1"></div>
-            <div class="led" id="led-2"></div><div class="led" id="led-3"></div>
-            <div class="led" id="led-4"></div><div class="led" id="led-5"></div>
-            <div class="led" id="led-6"></div><div class="led" id="led-7"></div>
+            <span class="led-label">HEALTH</span>
+            <div class="led-dots">
+              <div class="led" id="led-0"></div><div class="led" id="led-1"></div>
+              <div class="led" id="led-2"></div><div class="led" id="led-3"></div>
+              <div class="led" id="led-4"></div><div class="led" id="led-5"></div>
+              <div class="led" id="led-6"></div><div class="led" id="led-7"></div>
+            </div>
           </div>
           <div class="led-group">
-            <div class="led party" id="led-8"></div>
-            <div class="led party" id="led-9"></div>
-            <div class="led party" id="led-10"></div>
+            <span class="led-label">TEAM</span>
+            <div class="led-dots">
+              <div class="led party" id="led-8"></div>
+              <div class="led party" id="led-9"></div>
+              <div class="led party" id="led-10"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -61,8 +67,7 @@
       <div class="player-panel" id="panel-p2" data-player="2">
         <div class="panel-header p2-color">BLUE</div>
         <div class="oled-area">
-          <span class="side-label">DEBUG</span>
-          <div class="move-col">
+<div class="move-col">
             <button class="btn move-btn" id="p2-m0"></button>
             <button class="btn move-btn" id="p2-m2"></button>
           </div>
@@ -80,15 +85,21 @@
         <!-- P2 LEDs: reversed, party innermost (near divider), HP outermost -->
         <div class="led-row" id="leds-p2">
           <div class="led-group">
-            <div class="led party" id="led-22"></div>
-            <div class="led party" id="led-21"></div>
-            <div class="led party" id="led-20"></div>
+            <span class="led-label">TEAM</span>
+            <div class="led-dots">
+              <div class="led party" id="led-22"></div>
+              <div class="led party" id="led-21"></div>
+              <div class="led party" id="led-20"></div>
+            </div>
           </div>
           <div class="led-group">
-            <div class="led" id="led-19"></div><div class="led" id="led-18"></div>
-            <div class="led" id="led-17"></div><div class="led" id="led-16"></div>
-            <div class="led" id="led-15"></div><div class="led" id="led-14"></div>
-            <div class="led" id="led-13"></div><div class="led" id="led-12"></div>
+            <span class="led-label">HEALTH</span>
+            <div class="led-dots">
+              <div class="led" id="led-19"></div><div class="led" id="led-18"></div>
+              <div class="led" id="led-17"></div><div class="led" id="led-16"></div>
+              <div class="led" id="led-15"></div><div class="led" id="led-14"></div>
+              <div class="led" id="led-13"></div><div class="led" id="led-12"></div>
+            </div>
           </div>
         </div>
       </div>

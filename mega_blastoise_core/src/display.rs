@@ -203,11 +203,11 @@ where
 fn type_abbr(t: battler::Type) -> &'static str {
     match t {
         battler::Type::Normal   => "NRM",
-        battler::Type::Fighting => "FTG",
+        battler::Type::Fighting => "FGT",
         battler::Type::Flying   => "FLY",
         battler::Type::Poison   => "PSN",
         battler::Type::Ground   => "GND",
-        battler::Type::Rock     => "ROK",
+        battler::Type::Rock     => "RCK",
         battler::Type::Bug      => "BUG",
         battler::Type::Ghost    => "GHO",
         battler::Type::Steel    => "STL",

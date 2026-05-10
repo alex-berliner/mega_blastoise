@@ -22,6 +22,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 use battler::{PlayerBattleData, Request};
+use embassy_futures::join::join;
 use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::{Channel, Sender};
@@ -243,6 +244,68 @@ impl<BS: ButtonSource> ButtonController<BS> {
                 self.source.on_prompt(&prompt.player_id, &prompt.request, &prompt.player_data);
             } else {
                 return choice;
+            }
+        }
+    }
+}
+
+impl<BS: ButtonSource + Clone> ButtonController<BS> {
+    /// Like `run`, but collects all players' choices in parallel when `batch_total > 1`.
+    /// Requires `BS: Clone` so each player gets an independent source instance.
+    /// Choices are always sent to `bus.choices` in prompt order (p1 before p2).
+    pub async fn run_parallel(&mut self, bus: &InputBus) {
+        loop {
+            let first_prompt = loop {
+                match select(bus.prompt.receive(), bus.log.receive()).await {
+                    Either::First(p) => {
+                        while let Ok(line) = bus.log.try_receive() {
+                            (self.log_sink)(&line);
+                        }
+                        break p;
+                    }
+                    Either::Second(line) => (self.log_sink)(&line),
+                }
+            };
+
+            self.source.on_prompt(
+                &first_prompt.player_id,
+                &first_prompt.request,
+                &first_prompt.player_data,
+            );
+
+            let extra_count = first_prompt.batch_total.saturating_sub(1);
+            let mut extra_prompts: Vec<ActivePrompt> = Vec::with_capacity(extra_count);
+            for _ in 0..extra_count {
+                let p = bus.prompt.receive().await;
+                self.source.on_prompt(&p.player_id, &p.request, &p.player_data);
+                extra_prompts.push(p);
+            }
+
+            if extra_prompts.len() == 1 {
+                // Two-player batch: collect both choices simultaneously so neither player
+                // blocks on the other's pick or cancel window.
+                let extra = extra_prompts.remove(0);
+                let mut source2 = self.source.clone();
+                let mut ctrl2 = ButtonController { source: source2, log_sink: self.log_sink };
+                let (c1, c2) = join(
+                    self.collect_choice_with_unready(&first_prompt),
+                    ctrl2.collect_choice_with_unready(&extra),
+                ).await;
+                // Send in prompt order so battle_runner applies them to the right players.
+                bus.choices.send(c1).await;
+                bus.choices.send(c2).await;
+            } else {
+                // Single player (or unsupported batch size) — serial.
+                let choice = self.collect_choice_with_unready(&first_prompt).await;
+                bus.choices.send(choice).await;
+                for extra in &extra_prompts {
+                    let choice = self.collect_choice_with_unready(extra).await;
+                    bus.choices.send(choice).await;
+                }
+            }
+
+            while let Ok(line) = bus.log.try_receive() {
+                (self.log_sink)(&line);
             }
         }
     }

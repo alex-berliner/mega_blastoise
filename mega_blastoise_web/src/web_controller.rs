@@ -2,6 +2,7 @@ use battler::{PlayerBattleData, Request};
 use js_sys::Date;
 use mega_blastoise_core::{format_prompt, party_slot_from_mon, ButtonSource, PlayerAction};
 
+#[derive(Clone)]
 pub struct WebButtonSource;
 
 impl ButtonSource for WebButtonSource {

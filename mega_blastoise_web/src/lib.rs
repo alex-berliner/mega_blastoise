@@ -795,7 +795,7 @@ async fn run_game_loop() {
             &mut battle,
             &data,
             &bus,
-            controller.run(&bus),
+            controller.run_parallel(&bus),
             &mut queue,
             &mut effects,
             |b| {
