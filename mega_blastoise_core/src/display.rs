@@ -251,13 +251,13 @@ where
         .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
         .draw(display).ok();
 
-    // HP + status
+    // HP + status (slot.status is the condition ID: "par", "brn", "psn", "tox", "slp", "frz")
     let status_abbr = match slot.status.as_deref() {
-        Some("Paralysis")              => " PAR",
-        Some("Burn")                   => " BRN",
-        Some("Poison") | Some("Bad Poison") => " PSN",
-        Some("Sleep")                  => " SLP",
-        Some("Freeze")                 => " FRZ",
+        Some("par")              => " PAR",
+        Some("brn")              => " BRN",
+        Some("psn") | Some("tox") => " PSN",
+        Some("slp")              => " SLP",
+        Some("frz")              => " FRZ",
         _ => "",
     };
     let hp_line = alloc::format!("HP:{}/{}{}", slot.hp, slot.max_hp, status_abbr);
