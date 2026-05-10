@@ -4,6 +4,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 use battler::{PlayerBattleData, Request};
+use cortex_m::peripheral::SCB;
 use embassy_futures::select::{select, Either};
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
@@ -465,6 +466,10 @@ impl<'d> UsbBattleInput<'d> {
                                 write_crlf(&mut self.sender).await;
                                 skip_next_lf = true;
                                 if let Some(line) = self.take_completed_line() {
+                                    if line.trim() == ":reset" {
+                                        self.write("Resetting...\r\n").await;
+                                        SCB::sys_reset();
+                                    }
                                     return line;
                                 }
                             }
@@ -472,6 +477,10 @@ impl<'d> UsbBattleInput<'d> {
                                 log_usb_rx_line_str_to_rtt(self.partial.as_str());
                                 write_crlf(&mut self.sender).await;
                                 if let Some(line) = self.take_completed_line() {
+                                    if line.trim() == ":reset" {
+                                        self.write("Resetting...\r\n").await;
+                                        SCB::sys_reset();
+                                    }
                                     return line;
                                 }
                             }
