@@ -196,9 +196,11 @@ pub async fn run_lobby(
     queue: &mut BoardEventQueue,
 ) -> [bool; 2] {
     let mut demo_seed = embassy_time::Instant::now().as_ticks() ^ 0xfeed_f00d_dead_beef;
+    let mut p1_ai = false;
     let mut p2_ai = false;
 
     'demo: loop {
+        p1_ai = false;
         p2_ai = false;
         #[cfg(feature = "leds")]
         led_send(LedCmd::LobbyIdle);
@@ -225,17 +227,23 @@ pub async fn run_lobby(
             }
             Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = true; }
             Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = true; }
+            Either::Second(LobbyUsbCmd::P1Ai) => {
+                ready.p1 = true;
+                ready.p2 = true;
+                p1_ai = true;
+            }
             Either::Second(LobbyUsbCmd::VsAi) => {
-                // P1 human vs P2 AI — both immediately ready.
                 ready.p1 = true;
                 ready.p2 = true;
                 p2_ai = true;
             }
             Either::Second(LobbyUsbCmd::Demo) => {
-                // Explicitly re-enter demo loop.
                 demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
                 continue 'demo;
             }
+            Either::Second(LobbyUsbCmd::UnreadyP1) => { ready.p1 = false; }
+            Either::Second(LobbyUsbCmd::UnreadyP2) => { ready.p2 = false; }
+            Either::Second(LobbyUsbCmd::UnreadyBoth) => { ready.p1 = false; ready.p2 = false; }
             Either::Second(LobbyUsbCmd::StopDemo) | Either::Second(LobbyUsbCmd::Unknown) => {
                 // :s / :stop or unrecognised input — interrupt demo, enter waiting phase.
             }
@@ -246,7 +254,7 @@ pub async fn run_lobby(
         loop {
             if ready.both() {
                 do_countdown(usb).await;
-                return [false, p2_ai];
+                return [p1_ai, p2_ai];
             }
 
             #[cfg(feature = "leds")]
@@ -260,15 +268,22 @@ pub async fn run_lobby(
                     Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = !ready.p1; break; }
                     Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = !ready.p2; break; }
                     Either::Second(LobbyUsbCmd::ReadyBoth) => { ready.p1 = true; ready.p2 = true; break; }
+                    Either::Second(LobbyUsbCmd::UnreadyP1) => { ready.p1 = false; break; }
+                    Either::Second(LobbyUsbCmd::UnreadyP2) => { ready.p2 = false; break; }
+                    Either::Second(LobbyUsbCmd::UnreadyBoth) => { ready.p1 = false; ready.p2 = false; break; }
+                    Either::Second(LobbyUsbCmd::P1Ai) => {
+                        ready.p1 = true;
+                        ready.p2 = true;
+                        p1_ai = true;
+                        break;
+                    }
                     Either::Second(LobbyUsbCmd::VsAi) => {
-                        // Both ready with P2 as AI.
                         ready.p1 = true;
                         ready.p2 = true;
                         p2_ai = true;
                         break;
                     }
                     Either::Second(LobbyUsbCmd::Demo) => {
-                        // Go back to demo loop.
                         demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
                         continue 'demo;
                     }

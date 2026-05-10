@@ -22,6 +22,11 @@ pub enum LobbyUsbCmd {
     ReadyP1,
     ReadyP2,
     ReadyBoth,
+    UnreadyP1,
+    UnreadyP2,
+    UnreadyBoth,
+    /// `:ready p1 ai` — start the real battle with P1 as AI.
+    P1Ai,
     /// `:ready ai` — start the real battle with P2 as AI.
     VsAi,
     /// `:demo` — restart the AI vs AI demo loop.
@@ -600,7 +605,11 @@ impl<'d> UsbBattleInput<'d> {
             ":ready" => LobbyUsbCmd::ReadyBoth,
             ":ready p1" => LobbyUsbCmd::ReadyP1,
             ":ready p2" => LobbyUsbCmd::ReadyP2,
-            ":ready ai" | ":ready both ai" => LobbyUsbCmd::VsAi,
+            ":ready p1 ai" => LobbyUsbCmd::P1Ai,
+            ":ready ai" | ":ready both ai" | ":ready p2 ai" => LobbyUsbCmd::VsAi,
+            ":unready p1" => LobbyUsbCmd::UnreadyP1,
+            ":unready p2" => LobbyUsbCmd::UnreadyP2,
+            ":unready" => LobbyUsbCmd::UnreadyBoth,
             ":demo" => LobbyUsbCmd::Demo,
             ":s" | ":stop" => LobbyUsbCmd::StopDemo,
             _ => LobbyUsbCmd::Unknown,

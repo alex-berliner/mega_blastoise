@@ -21,7 +21,7 @@ impl BoardGameEffects {
 }
 
 impl BoardEffects for BoardGameEffects {
-    fn on_event(&mut self, event: BoardEvent) {
+    async fn on_event(&mut self, event: BoardEvent) {
         println!("{}", event.description());
         if self.echo_debug {
             eprintln!("  {:?}", event);
