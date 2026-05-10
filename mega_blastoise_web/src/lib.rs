@@ -80,6 +80,20 @@ thread_local! {
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
 
+/// Write pixels to the display canvas only — does NOT update P_BATTLE_PIXELS.
+/// Used by flash animations so the long-press restore source stays clean.
+pub(crate) fn display_only(player: u8, pixels: Vec<u8>) {
+    if player == 1 {
+        if !P1_IN_DETAIL.with(|d| *d.borrow()) {
+            P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        }
+    } else {
+        if !P2_IN_DETAIL.with(|d| *d.borrow()) {
+            P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        }
+    }
+}
+
 pub(crate) fn update_pixels(player: u8, pixels: Vec<u8>) {
     if player == 1 {
         P1_BATTLE_PIXELS.with(|p| *p.borrow_mut() = pixels.clone());
@@ -327,6 +341,12 @@ fn enter_demo_mode() {
     enter_demo_mode();
 }
 
+#[wasm_bindgen] pub fn wasm_reset() {
+    if let Some(win) = web_sys::window() {
+        win.location().reload().ok();
+    }
+}
+
 #[wasm_bindgen] pub fn wasm_toggle_ai_pause() -> bool {
     let new_state = AI_PAUSED.with(|p| { let v = !*p.borrow(); *p.borrow_mut() = v; v });
     new_state
@@ -341,6 +361,10 @@ fn enter_demo_mode() {
 }
 
 #[wasm_bindgen] pub fn submit_text(line: String) {
+    if line.trim() == ":reset" {
+        wasm_reset();
+        return;
+    }
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
     match line.trim() {
         ":ready ai" | ":demo" => {

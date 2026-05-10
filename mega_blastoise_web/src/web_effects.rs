@@ -159,8 +159,10 @@ impl<'a> WebBattleEffects<'a> {
     fn flash_both(&mut self, text: &str) {
         draw_event_text(&mut self.p1_disp, text);
         draw_event_text(&mut self.p2_disp, text);
-        crate::update_pixels(1, self.p1_disp.to_rgba());
-        crate::update_pixels(2, self.p2_disp.to_rgba());
+        // display_only: don't corrupt P_BATTLE_PIXELS — long-press restore must
+        // return the real battle state, not the flash text.
+        crate::display_only(1, self.p1_disp.to_rgba());
+        crate::display_only(2, self.p2_disp.to_rgba());
     }
 
     fn redraw_both(&mut self) {
@@ -310,8 +312,8 @@ impl BoardEffects for WebBattleEffects<'_> {
                         self.p2_led.register_faint(mon_name);
                         self.p2_led.status = 0;
                     }
-                    self.redraw(p);
                     self.flush_leds();
+                    // redraw_both() below handles the OLED update with hp=0
                 }
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::FAINT_MS).await;
