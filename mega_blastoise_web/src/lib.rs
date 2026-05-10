@@ -22,7 +22,7 @@ use wasm_bindgen_futures::spawn_local;
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
     render_move_detail, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen,
-    run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus, InputSource,
+    run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus,
     MoveSlot, PartySlotData,
 };
 
@@ -592,6 +592,23 @@ fn enter_demo_mode() {
     push_button(ButtonEvent::Move { player: 2, slot: 0 });
 }
 
+#[wasm_bindgen] pub fn is_lobby_mode() -> bool {
+    LOBBY_MODE.with(|m| *m.borrow())
+}
+
+/// Long-press lobby handler: `player` pressed long → their opponent is AI-controlled.
+/// Immediately draws the correct lobby screens and queues both players as ready.
+#[wasm_bindgen] pub fn wasm_lobby_long_press(player: u8) {
+    if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
+    // player is human, opponent is AI
+    let ai = if player == 1 { [false, true] } else { [true, false] };
+    NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some(ai));
+    draw_lobby_screen(1, true, ai[0]);
+    draw_lobby_screen(2, true, ai[1]);
+    push_button(ButtonEvent::Move { player: 1, slot: 0 });
+    push_button(ButtonEvent::Move { player: 2, slot: 0 });
+}
+
 #[wasm_bindgen] pub fn submit_text(line: String) {
     let cmd = line.trim();
 
@@ -703,24 +720,50 @@ pub fn start() {
 
 // ── OLED helpers ──────────────────────────────────────────────────────────────
 
-fn draw_centered(disp: &mut WasmDisplay, line1: &str, line2: &str) {
-    disp.clear_all();
-    let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+/// Draw the lobby ready state for one player.
+/// ready=false → idle ("PRESS READY / HOLD FOR AI")
+/// ready=true, ai=false → "READY!"
+/// ready=true, ai=true → "AI" (this side is AI-controlled)
+fn draw_lobby_screen(player: u8, ready: bool, ai: bool) {
+    let mut disp = WasmDisplay::new();
     let ts = TextStyleBuilder::new()
         .alignment(Alignment::Center)
         .baseline(Baseline::Top)
         .build();
-    Text::with_text_style(line1, Point::new(64, 20), style, ts).draw(disp).ok();
-    Text::with_text_style(line2, Point::new(64, 36), style, ts).draw(disp).ok();
+    if !ready {
+        Text::with_text_style(
+            "PRESS READY",
+            Point::new(64, 16),
+            MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
+            ts,
+        ).draw(&mut disp).ok();
+        Text::with_text_style(
+            "HOLD FOR AI",
+            Point::new(64, 36),
+            MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
+            ts,
+        ).draw(&mut disp).ok();
+    } else if ai {
+        Text::with_text_style(
+            "AI",
+            Point::new(64, 27),
+            MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
+            ts,
+        ).draw(&mut disp).ok();
+    } else {
+        Text::with_text_style(
+            "READY!",
+            Point::new(64, 27),
+            MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
+            ts,
+        ).draw(&mut disp).ok();
+    }
+    update_pixels(player, disp.to_rgba());
 }
 
 fn set_lobby_displays() {
-    let mut d1 = WasmDisplay::new();
-    let mut d2 = WasmDisplay::new();
-    draw_centered(&mut d1, "P1  RED", "PRESS ANY BUTTON");
-    draw_centered(&mut d2, "P2  BLUE", "PRESS ANY BUTTON");
-    update_pixels(1, d1.to_rgba());
-    update_pixels(2, d2.to_rgba());
+    draw_lobby_screen(1, false, false);
+    draw_lobby_screen(2, false, false);
     // LEDs driven by lobby_led_frame() while LOBBY_MODE is active
 }
 
@@ -771,7 +814,7 @@ async fn run_game_loop() {
             ));
             print_log("");
 
-            // Wait for both players to press a button
+            // Wait for both players to press a button (or one to long-press for AI opponent)
             loop {
                 let ev = AnyButtonFuture.await;
                 let player = match &ev {
@@ -779,6 +822,11 @@ async fn run_game_loop() {
                     | ButtonEvent::Switch { player, .. } => *player,
                 };
                 LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = true);
+                // Show READY! or AI depending on whether NEXT_GAME_AI has been set for this player
+                let is_ai = NEXT_GAME_AI.with(|n| {
+                    n.borrow().map(|a| a[(player - 1) as usize]).unwrap_or(false)
+                });
+                draw_lobby_screen(player, true, is_ai);
                 if LOBBY_READY.with(|r| { let rr = r.borrow(); rr[0] && rr[1] }) { break; }
             }
         }

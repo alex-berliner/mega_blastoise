@@ -54,6 +54,9 @@ pub enum OledCmd {
     PartyUpdate { player: u8, slots: Vec<PartySlotData> },
     /// Restore normal battle screen after detail view.
     RestoreScreen { player: u8 },
+    /// Lobby ready state for a player. ready=false → idle instructions;
+    /// ready=true,ai=false → "READY!"; ready=true,ai=true → "AI" (AI-controlled side).
+    LobbyState { player: u8, ready: bool, ai: bool },
 }
 
 static CMD: Channel<CriticalSectionRawMutex, OledCmd, 8> = Channel::new();
@@ -92,6 +95,30 @@ impl PlayerState {
 }
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
+
+async fn draw_lobby_screen<DI>(
+    disp: &mut Ssd1306Async<DI, DisplaySize128x64, BufferedGraphicsModeAsync<DisplaySize128x64>>,
+    ready: bool,
+    ai: bool,
+)
+where
+    DI: AsyncWriteOnlyDataCommand,
+{
+    let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    disp.clear(BinaryColor::Off).ok();
+    if !ready {
+        // Centered on 128px wide display: "PRESS READY" and "HOLD FOR AI" (11 chars × 6px = 66px)
+        Text::with_baseline("PRESS READY", Point::new(31, 20), style, Baseline::Top).draw(disp).ok();
+        Text::with_baseline("HOLD FOR AI", Point::new(31, 36), style, Baseline::Top).draw(disp).ok();
+    } else if ai {
+        // "AI" centered (2 chars × 6px = 12px, offset = 64 - 6 = 58)
+        Text::with_baseline("AI", Point::new(58, 27), style, Baseline::Top).draw(disp).ok();
+    } else {
+        // "READY!" centered (6 chars × 6px = 36px, offset = 64 - 18 = 46)
+        Text::with_baseline("READY!", Point::new(46, 27), style, Baseline::Top).draw(disp).ok();
+    }
+    disp.flush().await.ok();
+}
 
 async fn redraw<DI>(
     disp: &mut Ssd1306Async<DI, DisplaySize128x64, BufferedGraphicsModeAsync<DisplaySize128x64>>,
@@ -206,6 +233,10 @@ pub async fn task(
             OledCmd::RestoreScreen { player } => {
                 if player == 1 { redraw(&mut disp0, &p1).await; }
                 else           { redraw(&mut disp1, &p2).await; }
+            }
+            OledCmd::LobbyState { player, ready, ai } => {
+                if player == 1 { draw_lobby_screen(&mut disp0, ready, ai).await; }
+                else           { draw_lobby_screen(&mut disp1, ready, ai).await; }
             }
             OledCmd::Win { winner } => {
                 let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);

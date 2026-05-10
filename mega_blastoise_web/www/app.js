@@ -94,6 +94,7 @@ function stopPlayerCycle(player) {
 }
 
 // Switch buttons: long press shows party stats cycling between page 0 and 1; short press selects.
+// During lobby, long press selects AI opponent instead.
 function setupSwitchLongPress(el, player, idx) {
     let holdTimer = null;
     let fired = false;
@@ -104,7 +105,11 @@ function setupSwitchLongPress(el, player, idx) {
         fired = false;
         holdTimer = setTimeout(() => {
             fired = true;
-            startPlayerCycle(player, idx);
+            if (wasm.is_lobby_mode()) {
+                wasm.wasm_lobby_long_press(player);
+            } else {
+                startPlayerCycle(player, idx);
+            }
         }, 500);
     });
 
@@ -113,7 +118,7 @@ function setupSwitchLongPress(el, player, idx) {
         holdTimer = null;
         if (fired) {
             // Only stop/restore if this button is still the active one for this player.
-            if (playerCycleState[player].activeIdx === idx) {
+            if (!wasm.is_lobby_mode() && playerCycleState[player].activeIdx === idx) {
                 stopPlayerCycle(player);
                 wasm.wasm_restore_screen(player);
             }
@@ -126,7 +131,7 @@ function setupSwitchLongPress(el, player, idx) {
     el.addEventListener('pointercancel', () => {
         clearTimeout(holdTimer);
         holdTimer = null;
-        if (fired && playerCycleState[player].activeIdx === idx) {
+        if (fired && !wasm.is_lobby_mode() && playerCycleState[player].activeIdx === idx) {
             stopPlayerCycle(player);
             wasm.wasm_restore_screen(player);
         }
@@ -135,8 +140,7 @@ function setupSwitchLongPress(el, player, idx) {
 }
 
 // Long-press detection for move buttons (500 ms threshold).
-// Short tap → press_move; hold → show move detail view until release.
-// Long press is always available for both players regardless of whose turn it is.
+// Short tap → press_move; hold → show move detail view (battle) or select AI opponent (lobby).
 function setupMoveLongPress(el, player, slot) {
     let timer = null;
     let fired = false;
@@ -146,14 +150,18 @@ function setupMoveLongPress(el, player, slot) {
         fired = false;
         timer = setTimeout(() => {
             fired = true;
-            wasm.wasm_show_move_detail(player, slot);
+            if (wasm.is_lobby_mode()) {
+                wasm.wasm_lobby_long_press(player);
+            } else {
+                wasm.wasm_show_move_detail(player, slot);
+            }
         }, 500);
     });
 
     el.addEventListener('pointerup', () => {
         clearTimeout(timer);
         if (fired) {
-            wasm.wasm_restore_screen(player);
+            if (!wasm.is_lobby_mode()) wasm.wasm_restore_screen(player);
         } else {
             wasm.press_move(player, slot);
         }
@@ -162,7 +170,7 @@ function setupMoveLongPress(el, player, slot) {
 
     el.addEventListener('pointercancel', () => {
         clearTimeout(timer);
-        if (fired) wasm.wasm_restore_screen(player);
+        if (fired && !wasm.is_lobby_mode()) wasm.wasm_restore_screen(player);
         fired = false;
     });
 }

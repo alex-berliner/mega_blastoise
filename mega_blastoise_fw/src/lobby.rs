@@ -24,6 +24,9 @@ use crate::subsystems::led::{send as led_send, LedCmd};
 #[cfg(feature = "buzzer")]
 use crate::subsystems::buzzer::{buzz, BuzzerCmd};
 
+#[cfg(feature = "oled")]
+use crate::subsystems::oled::{send as oled_send, OledCmd};
+
 #[cfg(feature = "usb")]
 use crate::usb_input::{LobbyUsbCmd, UsbBattleInput};
 
@@ -62,8 +65,10 @@ impl<'a, 'u, 'b> UsbButtonLobbyInput<'a, 'u, 'b> {
 impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
     async fn wait_event(&mut self) -> LobbyEvent {
         match select(self.buttons.wait_lobby_press(), self.usb.read_lobby_cmd()).await {
-            Either::First(LobbyPress::P1) => LobbyEvent::P1,
-            Either::First(LobbyPress::P2) => LobbyEvent::P2,
+            Either::First(LobbyPress::P1)    => LobbyEvent::P1,
+            Either::First(LobbyPress::P2)    => LobbyEvent::P2,
+            Either::First(LobbyPress::P1Long) => LobbyEvent::VsAi,
+            Either::First(LobbyPress::P2Long) => LobbyEvent::P1Ai,
             Either::Second(cmd) => match cmd {
                 LobbyUsbCmd::ReadyP1    => LobbyEvent::P1,
                 LobbyUsbCmd::ReadyP2    => LobbyEvent::P2,
@@ -106,8 +111,10 @@ impl<'a, 'b> ButtonOnlyLobbyInput<'a, 'b> {
 impl LobbyInput for ButtonOnlyLobbyInput<'_, '_> {
     async fn wait_event(&mut self) -> LobbyEvent {
         match self.buttons.wait_lobby_press().await {
-            LobbyPress::P1 => LobbyEvent::P1,
-            LobbyPress::P2 => LobbyEvent::P2,
+            LobbyPress::P1     => LobbyEvent::P1,
+            LobbyPress::P2     => LobbyEvent::P2,
+            LobbyPress::P1Long => LobbyEvent::VsAi,
+            LobbyPress::P2Long => LobbyEvent::P1Ai,
         }
     }
 
@@ -210,6 +217,14 @@ async fn do_countdown(input: &mut impl LobbyInput) {
     input.write_line("GO!").await;
 }
 
+// ── OLED helper ───────────────────────────────────────────────────────────────
+
+#[cfg(feature = "oled")]
+fn oled_lobby_update(p1_ready: bool, p2_ready: bool, p1_ai: bool, p2_ai: bool) {
+    oled_send(OledCmd::LobbyState { player: 1, ready: p1_ready, ai: p1_ai });
+    oled_send(OledCmd::LobbyState { player: 2, ready: p2_ready, ai: p2_ai });
+}
+
 // ── Lobby logic ───────────────────────────────────────────────────────────────
 
 async fn run_lobby_inner(
@@ -237,10 +252,16 @@ async fn run_lobby_inner(
         ).await {
             Either::First(_) => {
                 demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
+                #[cfg(feature = "oled")]
+                oled_lobby_update(false, false, false, false);
                 Timer::after_secs(3).await;
                 continue 'demo;
             }
-            Either::Second(e) => e,
+            Either::Second(e) => {
+                #[cfg(feature = "oled")]
+                oled_lobby_update(false, false, false, false);
+                e
+            }
         };
         demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
 
@@ -255,6 +276,8 @@ async fn run_lobby_inner(
             LobbyEvent::UnreadyP1 | LobbyEvent::UnreadyP2 |
             LobbyEvent::UnreadyBoth | LobbyEvent::Stop => {}
         }
+        #[cfg(feature = "oled")]
+        oled_lobby_update(ready.p1, ready.p2, p1_ai, p2_ai);
 
         // ── Waiting phase ─────────────────────────────────────────────────────
         loop {
@@ -268,17 +291,25 @@ async fn run_lobby_inner(
             input.write_status(ready.p1, ready.p2).await;
 
             match input.wait_event().await {
-                LobbyEvent::P1          => { ready.p1 = !ready.p1; }
-                LobbyEvent::P2          => { ready.p2 = !ready.p2; }
+                LobbyEvent::P1 => {
+                    ready.p1 = !ready.p1;
+                    if !ready.p1 { p1_ai = false; p2_ai = false; }
+                }
+                LobbyEvent::P2 => {
+                    ready.p2 = !ready.p2;
+                    if !ready.p2 { p1_ai = false; p2_ai = false; }
+                }
                 LobbyEvent::BothReady   => { ready.p1 = true; ready.p2 = true; }
-                LobbyEvent::UnreadyP1   => { ready.p1 = false; }
-                LobbyEvent::UnreadyP2   => { ready.p2 = false; }
-                LobbyEvent::UnreadyBoth => { ready.p1 = false; ready.p2 = false; }
-                LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; }
-                LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p2_ai = true; }
+                LobbyEvent::UnreadyP1   => { ready.p1 = false; p1_ai = false; p2_ai = false; }
+                LobbyEvent::UnreadyP2   => { ready.p2 = false; p1_ai = false; p2_ai = false; }
+                LobbyEvent::UnreadyBoth => { ready.p1 = false; ready.p2 = false; p1_ai = false; p2_ai = false; }
+                LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = false; }
+                LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p1_ai = false; p2_ai = true; }
                 LobbyEvent::Demo        => { continue 'demo; }
                 LobbyEvent::Stop        => {}
             }
+            #[cfg(feature = "oled")]
+            oled_lobby_update(ready.p1, ready.p2, p1_ai, p2_ai);
         }
     }
 }

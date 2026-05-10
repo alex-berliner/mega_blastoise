@@ -96,24 +96,47 @@ impl<'d> ButtonMatrix<'d> {
     }
 
     /// Wait for a button press from a specific player (rows 0+1 = P1, rows 2+3 = P2).
-    /// Used in the waiting phase to toggle per-player ready state.
+    /// Short press (< 500 ms) → P1/P2; long press (≥ 500 ms) → P1Long/P2Long.
+    /// Any press performs unready in the lobby; long press selects AI opponent.
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
         loop {
             let p1 = self.scan_row(0) | self.scan_row(1);
             let p2 = self.scan_row(2) | self.scan_row(3);
             if p1 != 0 {
-                loop {
+                let mut held_ms = 0u64;
+                let is_long = loop {
                     Timer::after_millis(10).await;
-                    if self.scan_row(0) | self.scan_row(1) == 0 { break; }
+                    held_ms += 10;
+                    if self.scan_row(0) | self.scan_row(1) == 0 { break false; }
+                    if held_ms >= 500 { break true; }
+                };
+                if is_long {
+                    loop {
+                        Timer::after_millis(10).await;
+                        if self.scan_row(0) | self.scan_row(1) == 0 { break; }
+                    }
+                    return LobbyPress::P1Long;
+                } else {
+                    return LobbyPress::P1;
                 }
-                return LobbyPress::P1;
             }
             if p2 != 0 {
-                loop {
+                let mut held_ms = 0u64;
+                let is_long = loop {
                     Timer::after_millis(10).await;
-                    if self.scan_row(2) | self.scan_row(3) == 0 { break; }
+                    held_ms += 10;
+                    if self.scan_row(2) | self.scan_row(3) == 0 { break false; }
+                    if held_ms >= 500 { break true; }
+                };
+                if is_long {
+                    loop {
+                        Timer::after_millis(10).await;
+                        if self.scan_row(2) | self.scan_row(3) == 0 { break; }
+                    }
+                    return LobbyPress::P2Long;
+                } else {
+                    return LobbyPress::P2;
                 }
-                return LobbyPress::P2;
             }
             Timer::after_millis(5).await;
         }
@@ -121,7 +144,7 @@ impl<'d> ButtonMatrix<'d> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum LobbyPress { P1, P2 }
+pub enum LobbyPress { P1, P2, P1Long, P2Long }
 
 /// Thin wrapper around [`ButtonMatrix`] that implements [`InputSource`].
 ///
