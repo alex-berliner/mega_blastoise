@@ -1,5 +1,7 @@
 # mega_blastoise
 
+**[▶ Play live](https://alex-berliner.github.io/mega_blastoise/)** — browser-based Gen 1 random battle simulator
+
 Workspace layout: `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (RP2040), `mega_blastoise_test` (PC).
 
 Architecture overview: see [architecture/README.md](./architecture/README.md).
