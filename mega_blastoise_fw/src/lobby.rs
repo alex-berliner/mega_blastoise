@@ -197,7 +197,7 @@ pub async fn run_lobby(
 ) {
     let mut demo_seed = embassy_time::Instant::now().as_ticks() ^ 0xfeed_f00d_dead_beef;
 
-    loop {
+    'demo: loop {
         #[cfg(feature = "leds")]
         led_send(LedCmd::LobbyIdle);
         usb.write_lobby_line("Demo — press any button or type :ready to start").await;
@@ -212,7 +212,7 @@ pub async fn run_lobby(
                 // Demo ended naturally — brief pause then loop.
                 demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
                 Timer::after_secs(3).await;
-                continue;
+                continue 'demo;
             }
             Either::First(true) => {
                 // Button press interrupted demo — enter waiting phase.
@@ -223,6 +223,11 @@ pub async fn run_lobby(
             }
             Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = true; }
             Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = true; }
+            Either::Second(LobbyUsbCmd::ReadyAi) => {
+                // Explicitly requested AI vs AI — restart demo loop immediately.
+                demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
+                continue 'demo;
+            }
             Either::Second(LobbyUsbCmd::StopDemo) | Either::Second(LobbyUsbCmd::Unknown) => {
                 // :s / :stop or unrecognised input — interrupt demo, enter waiting phase.
             }
@@ -247,6 +252,11 @@ pub async fn run_lobby(
                     Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = !ready.p1; break; }
                     Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = !ready.p2; break; }
                     Either::Second(LobbyUsbCmd::ReadyBoth) => { ready.p1 = true; ready.p2 = true; break; }
+                    Either::Second(LobbyUsbCmd::ReadyAi) => {
+                        // Return to demo mode from the waiting phase.
+                        demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
+                        continue 'demo;
+                    }
                     Either::Second(LobbyUsbCmd::StopDemo) | Either::Second(LobbyUsbCmd::Unknown) => {}
                 }
             }
