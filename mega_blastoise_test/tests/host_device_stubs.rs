@@ -205,7 +205,7 @@ fn button_press_sends_move_choice_without_stdin() {
     let choice = pollster::block_on(async {
         let driver = async {
             bus.prompt
-                .send(ActivePrompt { player_id, request, player_data })
+                .send(ActivePrompt { player_id, request, player_data, batch_total: 1 })
                 .await;
             bus.choices.receive().await
         };

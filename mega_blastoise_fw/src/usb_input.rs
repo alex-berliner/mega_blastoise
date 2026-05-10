@@ -128,7 +128,7 @@ impl<'d> UsbBattleInput<'d> {
                     }
                 }
             };
-            let ActivePrompt { player_id, request, player_data } = prompt;
+            let ActivePrompt { player_id, request, player_data, .. } = prompt;
             defmt::debug!("usb: prompt received for {}", player_id.as_str());
             let player_idx = if player_id.as_str() == "p1" { 0 } else { 1 };
             let choice = if self.ai_players[player_idx] {

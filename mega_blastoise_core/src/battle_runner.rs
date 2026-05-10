@@ -327,6 +327,7 @@ async fn battle_loop<E, T, DS>(
             had_request = true;
 
             // Send all prompts to bus.prompt before collecting any choices.
+            let batch_total = requests.len();
             for (player_id, request) in &requests {
                 queue.push_event(board_prompt_event(player_id, request));
                 queue.dispatch_all(effects).await;
@@ -335,6 +336,7 @@ async fn battle_loop<E, T, DS>(
                     player_id: player_id.clone(),
                     request: request.clone(),
                     player_data,
+                    batch_total,
                 }).await;
             }
 

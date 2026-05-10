@@ -200,6 +200,70 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 });
 inputEl.focus();
 
+// ── Drag-to-resize handles ────────────────────────────────────────────────────
+
+(function() {
+    const colHandle = document.getElementById('col-resizer');
+    const rowHandle = document.getElementById('row-resizer');
+    const instructions = document.getElementById('instructions');
+    const terminal = document.getElementById('terminal');
+
+    function endDrag(handle) {
+        handle.classList.remove('dragging');
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+    }
+
+    function setupColResize(handle) {
+        let dragging = false, startX, startWidth;
+        handle.addEventListener('pointerdown', e => {
+            dragging = true;
+            startX = e.clientX;
+            startWidth = instructions.getBoundingClientRect().width;
+            handle.classList.add('dragging');
+            handle.setPointerCapture(e.pointerId);
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
+            e.preventDefault();
+        });
+        handle.addEventListener('pointermove', e => {
+            if (!dragging) return;
+            const newWidth = Math.max(120, startWidth - (e.clientX - startX));
+            instructions.style.flexGrow = '0';
+            instructions.style.flexShrink = '0';
+            instructions.style.flexBasis = `${newWidth}px`;
+        });
+        handle.addEventListener('pointerup', () => { dragging = false; endDrag(handle); });
+        handle.addEventListener('pointercancel', () => { dragging = false; endDrag(handle); });
+    }
+
+    function setupRowResize(handle) {
+        let dragging = false, startY, startHeight;
+        handle.addEventListener('pointerdown', e => {
+            dragging = true;
+            startY = e.clientY;
+            startHeight = terminal.getBoundingClientRect().height;
+            handle.classList.add('dragging');
+            handle.setPointerCapture(e.pointerId);
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'row-resize';
+            e.preventDefault();
+        });
+        handle.addEventListener('pointermove', e => {
+            if (!dragging) return;
+            const newHeight = Math.max(80, startHeight - (e.clientY - startY));
+            terminal.style.flexGrow = '0';
+            terminal.style.flexShrink = '0';
+            terminal.style.flexBasis = `${newHeight}px`;
+        });
+        handle.addEventListener('pointerup', () => { dragging = false; endDrag(handle); });
+        handle.addEventListener('pointercancel', () => { dragging = false; endDrag(handle); });
+    }
+
+    setupColResize(colHandle);
+    setupRowResize(rowHandle);
+})();
+
 // Scroll input into view when virtual keyboard appears on mobile
 inputEl.addEventListener('focus', () => {
     setTimeout(() => inputEl.scrollIntoView({ behavior: 'smooth', block: 'end' }), 150);

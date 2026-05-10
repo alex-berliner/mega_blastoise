@@ -34,6 +34,11 @@ pub struct ActivePrompt {
     /// Full battle state for the requesting player — used by display sources to show HP, moves,
     /// and bench. `None` only when the battle engine can't supply data (shouldn't happen).
     pub player_data: Option<PlayerBattleData>,
+    /// Total number of prompts in this batch (e.g. 2 when both players need to choose
+    /// simultaneously). Input sources use this to wait for all prompts with `receive().await`
+    /// instead of `try_receive()`, eliminating the race where the second prompt hasn't been
+    /// sent yet when the first is processed.
+    pub batch_total: usize,
 }
 
 /// Shared bus between the battle runner and all input sources.
@@ -266,10 +271,15 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
                 &first_prompt.player_data,
             );
 
-            // Drain any additional queued prompts (parallel turn) and fire
-            // on_prompt for all players before collecting any choices.
-            let mut extra_prompts: Vec<ActivePrompt> = Vec::new();
-            while let Ok(p) = bus.prompt.try_receive() {
+            // Receive all remaining prompts in this batch using blocking receive().
+            // Using try_receive() here would race: the battle_runner sends prompts
+            // in a loop with dispatch_all().await between sends, so the second
+            // prompt may not be in the channel yet when the first is processed.
+            // batch_total tells us exactly how many to expect.
+            let extra_count = first_prompt.batch_total.saturating_sub(1);
+            let mut extra_prompts: Vec<ActivePrompt> = Vec::with_capacity(extra_count);
+            for _ in 0..extra_count {
+                let p = bus.prompt.receive().await;
                 self.source.on_prompt(&p.player_id, &p.request, &p.player_data);
                 extra_prompts.push(p);
             }
