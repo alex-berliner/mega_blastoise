@@ -1,11 +1,11 @@
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
+    mono_font::{ascii::{FONT_6X10, FONT_5X8}, MonoTextStyle},
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Alignment, Baseline, Text, TextStyleBuilder},
 };
 use mega_blastoise_core::{
-    render_player_screen, BoardEffects, BoardEvent, InputBus, MoveSlot,
+    anim, render_player_screen, BoardEffects, BoardEvent, InputBus, MoveSlot,
 };
 
 use crate::web_display::WasmDisplay;
@@ -155,6 +155,13 @@ impl<'a> WebBattleEffects<'a> {
     fn flush_leds(&self) {
         crate::update_leds(build_led_frame(&self.p1_led, &self.p2_led));
     }
+
+    fn flash_both(&mut self, text: &str) {
+        draw_event_text(&mut self.p1_disp, text);
+        draw_event_text(&mut self.p2_disp, text);
+        crate::update_pixels(1, self.p1_disp.to_rgba());
+        crate::update_pixels(2, self.p2_disp.to_rgba());
+    }
 }
 
 fn player_num(mon: &str) -> Option<u8> {
@@ -189,6 +196,24 @@ fn win_leds(winner: u8) -> [u32; 24] {
     frame
 }
 
+fn draw_event_text(disp: &mut WasmDisplay, text: &str) {
+    disp.clear_all();
+    let style = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    let ts = TextStyleBuilder::new()
+        .alignment(Alignment::Center)
+        .baseline(Baseline::Top)
+        .build();
+    const MAX: usize = 21; // safe chars per line at 5px on 128px canvas
+    if text.len() <= MAX {
+        Text::with_text_style(text, Point::new(64, 28), style, ts).draw(disp).ok();
+    } else {
+        let split = text[..MAX].rfind(' ').unwrap_or(MAX);
+        let line2 = text[split..].trim_start();
+        Text::with_text_style(&text[..split], Point::new(64, 22), style, ts).draw(disp).ok();
+        Text::with_text_style(line2, Point::new(64, 36), style, ts).draw(disp).ok();
+    }
+}
+
 fn draw_win_screen(disp: &mut WasmDisplay, msg: &str) {
     disp.clear_all();
     let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
@@ -202,8 +227,19 @@ fn draw_win_screen(disp: &mut WasmDisplay, msg: &str) {
 }
 
 impl BoardEffects for WebBattleEffects<'_> {
-    fn on_event(&mut self, event: BoardEvent) {
+    async fn on_event(&mut self, event: BoardEvent) {
+        let narrate = !matches!(
+            &event,
+            BoardEvent::Split { .. } | BoardEvent::Prompt { .. } | BoardEvent::MovesUpdate { .. }
+        );
+
         match &event {
+            BoardEvent::Move { .. } => {
+                let desc = event.description();
+                self.flash_both(&desc);
+                crate::sleep_ms(anim::MOVE_MS).await;
+            }
+
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
                 if let (Some(p), Some(pct)) = (player_num(mon), parse_hp_pct(health)) {
                     if p == 1 {
@@ -216,9 +252,13 @@ impl BoardEffects for WebBattleEffects<'_> {
                     self.redraw(p);
                     self.flush_leds();
                 }
+                crate::sleep_ms(anim::DAMAGE_MS).await;
             }
 
             BoardEvent::SwitchIn { name, player_id, moves, .. } => {
+                let desc = event.description();
+                self.flash_both(&desc);
+                crate::sleep_ms(anim::SWITCH_IN_MS / 2).await;
                 if let Some(pid) = player_id {
                     let p = if pid == "p1" { 1u8 } else { 2u8 };
                     crate::update_moves(p, moves.clone());
@@ -238,6 +278,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                     self.redraw(p);
                     self.flush_leds();
                 }
+                crate::sleep_ms(anim::SWITCH_IN_MS / 2).await;
             }
 
             BoardEvent::MovesUpdate { player_id, moves } => {
@@ -250,6 +291,7 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::Faint { mon } => {
                 let mon_name = mon.split(',').next().unwrap_or(mon.as_str()).trim();
+                let desc = event.description();
                 if let Some(p) = player_num(mon) {
                     if p == 1 {
                         self.p1_oled.hp_pct = 0;
@@ -265,6 +307,8 @@ impl BoardEffects for WebBattleEffects<'_> {
                     self.redraw(p);
                     self.flush_leds();
                 }
+                self.flash_both(&desc);
+                crate::sleep_ms(anim::FAINT_MS).await;
             }
 
             BoardEvent::SetStatus { mon, status } => {
@@ -274,6 +318,9 @@ impl BoardEffects for WebBattleEffects<'_> {
                     else { self.p2_led.status = color; }
                     self.flush_leds();
                 }
+                let desc = event.description();
+                self.flash_both(&desc);
+                crate::sleep_ms(anim::EFFECT_MS).await;
             }
 
             BoardEvent::CureStatus { mon, .. } => {
@@ -282,6 +329,23 @@ impl BoardEffects for WebBattleEffects<'_> {
                     else { self.p2_led.status = 0; }
                     self.flush_leds();
                 }
+                let desc = event.description();
+                self.flash_both(&desc);
+                crate::sleep_ms(anim::EFFECT_MS).await;
+            }
+
+            BoardEvent::SuperEffective { mon } => {
+                if let Some(p) = player_num(mon) { crate::set_flash(p, 1); }
+                let desc = event.description();
+                self.flash_both(&desc);
+                crate::sleep_ms(anim::EFFECT_MS).await;
+            }
+
+            BoardEvent::CriticalHit { mon } => {
+                if let Some(p) = player_num(mon) { crate::set_flash(p, 2); }
+                let desc = event.description();
+                self.flash_both(&desc);
+                crate::sleep_ms(anim::EFFECT_MS).await;
             }
 
             BoardEvent::Win { side } => {
@@ -310,21 +374,19 @@ impl BoardEffects for WebBattleEffects<'_> {
                 crate::update_leds(win_leds(0));
             }
 
-            BoardEvent::SuperEffective { mon } => {
-                if let Some(p) = player_num(mon) { crate::set_flash(p, 1); }
-            }
-
-            BoardEvent::CriticalHit { mon } => {
-                if let Some(p) = player_num(mon) { crate::set_flash(p, 2); }
+            BoardEvent::Miss { .. }
+            | BoardEvent::Immune { .. }
+            | BoardEvent::Resisted { .. }
+            | BoardEvent::Cant { .. }
+            | BoardEvent::Fail { .. } => {
+                let desc = event.description();
+                self.flash_both(&desc);
+                crate::sleep_ms(anim::BRIEF_MS).await;
             }
 
             _ => {}
         }
 
-        let narrate = !matches!(
-            &event,
-            BoardEvent::Split { .. } | BoardEvent::Prompt { .. } | BoardEvent::MovesUpdate { .. }
-        );
         if narrate {
             let _ = self.bus.log.try_send(event.description());
         }

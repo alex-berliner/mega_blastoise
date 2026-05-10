@@ -161,7 +161,7 @@ fn query_active_moves<DS: DataStore>(
 
 // ── Event enrichment ──────────────────────────────────────────────────────────
 
-fn enrich_and_dispatch<E, DS>(
+async fn enrich_and_dispatch<E, DS>(
     battle: &mut battler::PublicCoreBattle<'_>,
     data: &DS,
     queue: &mut BoardEventQueue,
@@ -258,7 +258,7 @@ fn enrich_and_dispatch<E, DS>(
     #[cfg(feature = "timing")]
     let t_dispatch = embassy_time::Instant::now();
 
-    queue.dispatch_all(effects);
+    queue.dispatch_all(effects).await;
 
     #[cfg(feature = "timing")]
     let dispatch_ms = t_dispatch.elapsed().as_millis();
@@ -310,7 +310,7 @@ async fn battle_loop<E, T, DS>(
     DS: DataStore,
 {
     let mut cache = MoveSlotCache::new();
-    enrich_and_dispatch(battle, data, queue, effects, &mut cache);
+    enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
 
     while !battle.ended() {
         let mut had_request = false;
@@ -321,7 +321,7 @@ async fn battle_loop<E, T, DS>(
             };
             had_request = true;
             queue.push_event(board_prompt_event(&player_id, &request));
-            queue.dispatch_all(effects);
+            queue.dispatch_all(effects).await;
             let player_data = battle.player_data(&player_id).ok();
             bus.prompt.send(ActivePrompt {
                 player_id: player_id.clone(),
@@ -354,7 +354,7 @@ async fn battle_loop<E, T, DS>(
             #[cfg(feature = "timing")]
             let t_ead = embassy_time::Instant::now();
 
-            enrich_and_dispatch(battle, data, queue, effects, &mut cache);
+            enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
 
             #[cfg(feature = "timing")]
             defmt::info!(
@@ -365,11 +365,11 @@ async fn battle_loop<E, T, DS>(
         }
 
         if !had_request {
-            enrich_and_dispatch(battle, data, queue, effects, &mut cache);
+            enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
             continue;
         }
 
-        enrich_and_dispatch(battle, data, queue, effects, &mut cache);
+        enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
         on_turn(battle);
     }
 }

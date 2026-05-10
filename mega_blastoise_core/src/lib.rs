@@ -13,7 +13,7 @@ pub mod prompt_fmt;
 pub mod randbat;
 
 pub use battle_effects::{
-    process_new_log_lines, BoardEffects, BoardEventQueue, NoopBoardEffects,
+    anim, process_new_log_lines, BoardEffects, BoardEventQueue, NoopBoardEffects,
 };
 pub use board_event::{
     board_prompt_event, parse_log_line, player_display_name, side_display_name, BoardEvent,

@@ -181,7 +181,7 @@ fn pack_rgb(r: u8, g: u8, b: u8) -> u32 {
     ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
 }
 
-async fn sleep_ms(ms: u32) {
+pub(crate) async fn sleep_ms(ms: u32) {
     let promise = js_sys::Promise::new(&mut |resolve: js_sys::Function, _| {
         web_sys::window()
             .unwrap()

@@ -7,9 +7,19 @@ use alloc::collections::VecDeque;
 
 use crate::board_event::{parse_log_line, BoardEvent, ParsedBattleLogLine};
 
+/// Shared animation delay durations (ms). Identical on all targets for presentation parity.
+pub mod anim {
+    pub const MOVE_MS:      u32 = 800;
+    pub const DAMAGE_MS:    u32 = 500;
+    pub const SWITCH_IN_MS: u32 = 700;
+    pub const FAINT_MS:     u32 = 1200;
+    pub const EFFECT_MS:    u32 = 400;  // super-effective, crit, status change
+    pub const BRIEF_MS:     u32 = 300;  // miss, immune, resist, fail, cant
+}
+
 /// Reacts to [`BoardEvent`] (sound, LEDs, prompts). Same trait on host and firmware.
 pub trait BoardEffects {
-    fn on_event(&mut self, event: BoardEvent);
+    async fn on_event(&mut self, event: BoardEvent);
 }
 
 /// Default no-op sink (stub hardware).
@@ -17,7 +27,7 @@ pub trait BoardEffects {
 pub struct NoopBoardEffects;
 
 impl BoardEffects for NoopBoardEffects {
-    fn on_event(&mut self, _event: BoardEvent) {}
+    async fn on_event(&mut self, _event: BoardEvent) {}
 }
 
 /// Single FIFO queue for board effects (log-derived + injected prompts / scripted tests).
@@ -73,9 +83,9 @@ impl BoardEventQueue {
         }
     }
 
-    pub fn dispatch_all(&mut self, sink: &mut impl BoardEffects) {
+    pub async fn dispatch_all(&mut self, sink: &mut impl BoardEffects) {
         while let Some(e) = self.inner.pop_front() {
-            sink.on_event(e);
+            sink.on_event(e).await;
         }
     }
 
@@ -92,7 +102,7 @@ impl BoardEventQueue {
 }
 
 /// Enqueue parsed log events and dispatch them in order.
-pub fn process_new_log_lines<'a, I>(
+pub async fn process_new_log_lines<'a, I>(
     lines: I,
     queue: &mut BoardEventQueue,
     sink: &mut impl BoardEffects,
@@ -100,5 +110,5 @@ pub fn process_new_log_lines<'a, I>(
     I: IntoIterator<Item = &'a str>,
 {
     queue.push_log_lines(lines);
-    queue.dispatch_all(sink);
+    queue.dispatch_all(sink).await;
 }

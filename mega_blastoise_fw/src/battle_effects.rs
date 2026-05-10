@@ -1,4 +1,5 @@
-use mega_blastoise_core::{BoardEffects, BoardEvent, InputBus};
+use embassy_time::Timer;
+use mega_blastoise_core::{anim, BoardEffects, BoardEvent, InputBus};
 
 use mega_blastoise_fw::hp_bar::HpBarState;
 use mega_blastoise_fw::hw_object::HwObject;
@@ -42,7 +43,7 @@ fn name_buf(name: &str) -> ([u8; 12], u8) {
 }
 
 impl BoardEffects for BattleEffects<'_> {
-    fn on_event(&mut self, event: BoardEvent) {
+    async fn on_event(&mut self, event: BoardEvent) {
         // ── HP tracking + hardware output ─────────────────────────────────────
         match &event {
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
@@ -174,6 +175,27 @@ impl BoardEffects for BattleEffects<'_> {
             }
 
             _ => {}
+        }
+
+        // ── Animation delay ───────────────────────────────────────────────────
+        let delay_ms = match &event {
+            BoardEvent::Move { .. }                                    => anim::MOVE_MS,
+            BoardEvent::Damage { .. } | BoardEvent::Heal { .. }       => anim::DAMAGE_MS,
+            BoardEvent::SwitchIn { .. }                               => anim::SWITCH_IN_MS,
+            BoardEvent::Faint { .. }                                  => anim::FAINT_MS,
+            BoardEvent::SuperEffective { .. }
+            | BoardEvent::CriticalHit { .. }
+            | BoardEvent::SetStatus { .. }
+            | BoardEvent::CureStatus { .. }                           => anim::EFFECT_MS,
+            BoardEvent::Miss { .. }
+            | BoardEvent::Immune { .. }
+            | BoardEvent::Resisted { .. }
+            | BoardEvent::Cant { .. }
+            | BoardEvent::Fail { .. }                                 => anim::BRIEF_MS,
+            _ => 0,
+        };
+        if delay_ms > 0 {
+            Timer::after_millis(delay_ms as u64).await;
         }
 
         // ── USB log narration ─────────────────────────────────────────────────
