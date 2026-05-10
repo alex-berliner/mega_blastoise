@@ -112,7 +112,12 @@ async fn main(spawner: Spawner) {
     loop {
         // Lobby: demo AI battle plays until a player presses ready, then countdown.
         #[cfg(feature = "usb")]
-        run_lobby(&mut buttons, &mut usb_input, &data, &mut queue).await;
+        let ai_players = run_lobby(&mut buttons, &mut usb_input, &data, &mut queue).await;
+        #[cfg(feature = "usb")]
+        {
+            let seed = Instant::now().as_ticks();
+            usb_input.set_ai_players(ai_players, seed);
+        }
 
         #[cfg(not(feature = "usb"))]
         run_lobby(&mut buttons, &data, &mut queue).await;
@@ -169,6 +174,7 @@ async fn main(spawner: Spawner) {
             let (u, b) = controller.into_parts();
             usb_input = u;
             buttons = b;
+            usb_input.set_ai_players([false, false], 0);
         }
 
         #[cfg(not(feature = "usb"))]

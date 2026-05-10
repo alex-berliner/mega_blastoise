@@ -187,20 +187,22 @@ async fn run_countdown() {
 
 // ── Lobby entrypoints ─────────────────────────────────────────────────────────
 
-/// Run the lobby (USB + button variant). Returns when countdown completes.
+/// Run the lobby (USB + button variant). Returns `[p1_ai, p2_ai]` when countdown completes.
 #[cfg(feature = "usb")]
 pub async fn run_lobby(
     buttons: &mut PicoBattleInput<'_>,
     usb: &mut UsbBattleInput<'_>,
     data: &FlashDataStore,
     queue: &mut BoardEventQueue,
-) {
+) -> [bool; 2] {
     let mut demo_seed = embassy_time::Instant::now().as_ticks() ^ 0xfeed_f00d_dead_beef;
+    let mut p2_ai = false;
 
     'demo: loop {
+        p2_ai = false;
         #[cfg(feature = "leds")]
         led_send(LedCmd::LobbyIdle);
-        usb.write_lobby_line("Demo — press any button or type :ready to start").await;
+        usb.write_lobby_line("Demo — press any button or :ready / :ready ai to start").await;
 
         // Race the demo battle against USB input so :ready works during demo.
         let mut ready = ReadyState::default();
@@ -223,8 +225,14 @@ pub async fn run_lobby(
             }
             Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = true; }
             Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = true; }
-            Either::Second(LobbyUsbCmd::ReadyAi) => {
-                // Explicitly requested AI vs AI — restart demo loop immediately.
+            Either::Second(LobbyUsbCmd::VsAi) => {
+                // P1 human vs P2 AI — both immediately ready.
+                ready.p1 = true;
+                ready.p2 = true;
+                p2_ai = true;
+            }
+            Either::Second(LobbyUsbCmd::Demo) => {
+                // Explicitly re-enter demo loop.
                 demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
                 continue 'demo;
             }
@@ -238,7 +246,7 @@ pub async fn run_lobby(
         loop {
             if ready.both() {
                 do_countdown(usb).await;
-                return;
+                return [false, p2_ai];
             }
 
             #[cfg(feature = "leds")]
@@ -252,8 +260,15 @@ pub async fn run_lobby(
                     Either::Second(LobbyUsbCmd::ReadyP1) => { ready.p1 = !ready.p1; break; }
                     Either::Second(LobbyUsbCmd::ReadyP2) => { ready.p2 = !ready.p2; break; }
                     Either::Second(LobbyUsbCmd::ReadyBoth) => { ready.p1 = true; ready.p2 = true; break; }
-                    Either::Second(LobbyUsbCmd::ReadyAi) => {
-                        // Return to demo mode from the waiting phase.
+                    Either::Second(LobbyUsbCmd::VsAi) => {
+                        // Both ready with P2 as AI.
+                        ready.p1 = true;
+                        ready.p2 = true;
+                        p2_ai = true;
+                        break;
+                    }
+                    Either::Second(LobbyUsbCmd::Demo) => {
+                        // Go back to demo loop.
                         demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
                         continue 'demo;
                     }

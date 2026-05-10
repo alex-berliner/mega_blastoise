@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 
 use battler::{PlayerBattleData, Request};
 use cortex_m::peripheral::SCB;
+use crate::battle_effects::ANIM_ENABLED;
 use embassy_futures::select::{select, Either};
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
@@ -21,7 +22,10 @@ pub enum LobbyUsbCmd {
     ReadyP1,
     ReadyP2,
     ReadyBoth,
-    ReadyAi,
+    /// `:ready ai` — start the real battle with P2 as AI.
+    VsAi,
+    /// `:demo` — restart the AI vs AI demo loop.
+    Demo,
     StopDemo,
     Unknown,
 }
@@ -34,6 +38,10 @@ pub struct UsbBattleInput<'d> {
     last_typed_line: Option<String>,
     /// Player data from the most recent Turn prompt, reused when a Switch prompt follows.
     last_player_data: Option<PlayerBattleData>,
+    /// Which players are AI-controlled this battle (reset each lobby).
+    ai_players: [bool; 2],
+    /// RNG state for AI choices.
+    ai_rng: u64,
 }
 
 impl<'d> UsbBattleInput<'d> {
@@ -44,6 +52,55 @@ impl<'d> UsbBattleInput<'d> {
             partial: String::new(),
             last_typed_line: None,
             last_player_data: None,
+            ai_players: [false, false],
+            ai_rng: 0x9e3779b97f4a7c15,
+        }
+    }
+
+    /// Configure which players are AI for the upcoming battle.
+    pub fn set_ai_players(&mut self, ai: [bool; 2], seed: u64) {
+        self.ai_players = ai;
+        self.ai_rng = seed ^ 0xbad_c0ffee_dead;
+    }
+
+    fn ai_next_u64(&mut self) -> u64 {
+        self.ai_rng = self.ai_rng.wrapping_add(0x9e3779b97f4a7c15);
+        let mut z = self.ai_rng;
+        z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+        z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
+        z ^ (z >> 31)
+    }
+
+    fn make_ai_choice(&mut self, request: &Request, player_data: Option<&PlayerBattleData>) -> String {
+        match request {
+            Request::Turn(turn) => {
+                let mut parts = Vec::new();
+                for mon_req in &turn.active {
+                    let n = mon_req.moves.len().min(4);
+                    if n == 0 { parts.push(String::from("pass")); continue; }
+                    let slot = (self.ai_next_u64() as usize) % n;
+                    parts.push(format_move_choice(slot));
+                }
+                join_choice_parts(&parts)
+            }
+            Request::Switch(sw) => {
+                let valid: Vec<usize> = match player_data {
+                    Some(pd) => pd.mons.iter().enumerate()
+                        .filter(|(_, m)| !m.active && m.hp > 0)
+                        .map(|(i, _)| i)
+                        .collect(),
+                    None => alloc::vec![1, 2],
+                };
+                let mut parts = Vec::new();
+                for _ in &sw.needs_switch {
+                    let idx = if valid.is_empty() { 0 }
+                              else { valid[(self.ai_next_u64() as usize) % valid.len()] };
+                    parts.push(format_switch_choice(idx));
+                }
+                join_choice_parts(&parts)
+            }
+            Request::TeamPreview(_) => String::from("random"),
+            Request::LearnMove(_) => String::from("pass"),
         }
     }
 
@@ -73,8 +130,14 @@ impl<'d> UsbBattleInput<'d> {
             };
             let ActivePrompt { player_id, request, player_data } = prompt;
             defmt::debug!("usb: prompt received for {}", player_id.as_str());
-            let btns = buttons.as_mut().map(|b| &mut **b);
-            let choice = self.handle(&player_id, &request, player_data, btns).await;
+            let player_idx = if player_id.as_str() == "p1" { 0 } else { 1 };
+            let choice = if self.ai_players[player_idx] {
+                self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", player_id.as_str())).await;
+                self.make_ai_choice(&request, player_data.as_ref())
+            } else {
+                let btns = buttons.as_mut().map(|b| &mut **b);
+                self.handle(&player_id, &request, player_data, btns).await
+            };
             self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", choice)).await;
             bus.choices.send(choice).await;
 
@@ -467,9 +530,10 @@ impl<'d> UsbBattleInput<'d> {
                                 write_crlf(&mut self.sender).await;
                                 skip_next_lf = true;
                                 if let Some(line) = self.take_completed_line() {
-                                    if line.trim() == ":reset" {
-                                        self.write("Resetting...\r\n").await;
-                                        SCB::sys_reset();
+                                    if let Some(msg) = handle_meta_cmd(line.trim()) {
+                                        self.write(msg).await;
+                                        self.write("\r\n").await;
+                                        continue;
                                     }
                                     return line;
                                 }
@@ -478,9 +542,10 @@ impl<'d> UsbBattleInput<'d> {
                                 log_usb_rx_line_str_to_rtt(self.partial.as_str());
                                 write_crlf(&mut self.sender).await;
                                 if let Some(line) = self.take_completed_line() {
-                                    if line.trim() == ":reset" {
-                                        self.write("Resetting...\r\n").await;
-                                        SCB::sys_reset();
+                                    if let Some(msg) = handle_meta_cmd(line.trim()) {
+                                        self.write(msg).await;
+                                        self.write("\r\n").await;
+                                        continue;
                                     }
                                     return line;
                                 }
@@ -535,12 +600,26 @@ impl<'d> UsbBattleInput<'d> {
             ":ready" => LobbyUsbCmd::ReadyBoth,
             ":ready p1" => LobbyUsbCmd::ReadyP1,
             ":ready p2" => LobbyUsbCmd::ReadyP2,
-            ":ready ai" | ":ready both ai" | ":demo" => LobbyUsbCmd::ReadyAi,
+            ":ready ai" | ":ready both ai" => LobbyUsbCmd::VsAi,
+            ":demo" => LobbyUsbCmd::Demo,
             ":s" | ":stop" => LobbyUsbCmd::StopDemo,
             _ => LobbyUsbCmd::Unknown,
         }
     }
 
+}
+
+/// Handle meta-commands that are valid at any time (lobby or battle).
+/// Returns Some(ack message) if handled, None to pass the line through as normal input.
+/// Side-effects (reset, flag toggle) happen before returning.
+fn handle_meta_cmd(line: &str) -> Option<&'static str> {
+    match line {
+        ":reset" => { SCB::sys_reset(); }
+        ":anim off" => { ANIM_ENABLED.store(false, core::sync::atomic::Ordering::Relaxed); return Some("[anim] animations OFF"); }
+        ":anim on"  => { ANIM_ENABLED.store(true,  core::sync::atomic::Ordering::Relaxed); return Some("[anim] animations ON"); }
+        _ => return None,
+    }
+    None
 }
 
 impl InputSource for UsbBattleInput<'_> {

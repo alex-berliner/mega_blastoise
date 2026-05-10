@@ -80,6 +80,9 @@ thread_local! {
     // loop-top reset of AI_PLAYERS, applied just before the battle starts.
     static NEXT_GAME_AI: RefCell<Option<[bool; 2]>> = RefCell::new(None);
 
+    // When false, all animation sleeps are skipped (useful for CLI testing).
+    static ANIM_ENABLED: RefCell<bool> = RefCell::new(true);
+
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -207,6 +210,7 @@ fn pack_rgb(r: u8, g: u8, b: u8) -> u32 {
 }
 
 pub(crate) async fn sleep_ms(ms: u32) {
+    if !ANIM_ENABLED.with(|a| *a.borrow()) { return; }
     let promise = js_sys::Promise::new(&mut |resolve: js_sys::Function, _| {
         web_sys::window()
             .unwrap()
@@ -366,13 +370,21 @@ fn enter_demo_mode() {
 }
 
 #[wasm_bindgen] pub fn submit_text(line: String) {
-    if line.trim() == ":reset" {
-        wasm_reset();
-        return;
+    match line.trim() {
+        ":reset" => { wasm_reset(); return; }
+        ":anim off" => { ANIM_ENABLED.with(|a| *a.borrow_mut() = false); print_log("[anim] animations OFF"); return; }
+        ":anim on"  => { ANIM_ENABLED.with(|a| *a.borrow_mut() = true);  print_log("[anim] animations ON");  return; }
+        _ => {}
     }
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
     match line.trim() {
-        ":ready ai" | ":demo" => {
+        ":ready ai" => {
+            // VS AI: P1 human, P2 AI
+            NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([false, true]));
+            push_button(ButtonEvent::Move { player: 1, slot: 0 });
+            push_button(ButtonEvent::Move { player: 2, slot: 0 });
+        }
+        ":demo" => {
             enter_demo_mode();
         }
         ":ready" | ":ready both" | "" => {

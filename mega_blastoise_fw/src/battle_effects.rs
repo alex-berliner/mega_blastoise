@@ -1,5 +1,8 @@
+use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_time::Timer;
 use mega_blastoise_core::{anim, BoardEffects, BoardEvent, InputBus};
+
+pub static ANIM_ENABLED: AtomicBool = AtomicBool::new(true);
 
 use mega_blastoise_fw::hp_bar::HpBarState;
 use mega_blastoise_fw::hw_object::HwObject;
@@ -195,7 +198,7 @@ impl BoardEffects for BattleEffects<'_> {
             | BoardEvent::Fail { .. }                                 => anim::BRIEF_MS,
             _ => 0,
         };
-        if delay_ms > 0 {
+        if delay_ms > 0 && ANIM_ENABLED.load(Ordering::Relaxed) {
             Timer::after_millis(delay_ms as u64).await;
         }
 
