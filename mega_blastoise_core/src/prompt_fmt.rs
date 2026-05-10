@@ -115,10 +115,6 @@ pub fn format_player_state(pd: &PlayerBattleData) -> String {
                 b.atk, b.def, b.spa, b.spd, b.spe
             ));
         }
-        for mv in &m.moves {
-            let dis = if mv.disabled { " [DISABLED]" } else { "" };
-            out.push_str(&format!("  • {}  {}/{} PP{}\n", mv.name, mv.pp, mv.max_pp, dis));
-        }
     }
 
     let bench_alive: Vec<_> = pd.mons.iter().filter(|m| !m.active && m.hp > 0).collect();

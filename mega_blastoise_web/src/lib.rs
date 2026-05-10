@@ -21,8 +21,9 @@ use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
-    render_move_detail, render_pokemon_stats, run_battle, BoardEventQueue,
-    ButtonController, FlashDataStore, InputBus, InputSource, MoveSlot, PartySlotData,
+    render_move_detail, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen,
+    run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus, InputSource,
+    MoveSlot, PartySlotData,
 };
 
 use web_controller::WebButtonSource;
@@ -66,6 +67,10 @@ thread_local! {
     // True while a detail/stats overlay is displayed — suppresses update_pixels writes
     static P1_IN_DETAIL: RefCell<bool> = RefCell::new(false);
     static P2_IN_DETAIL: RefCell<bool> = RefCell::new(false);
+
+    // Active mon name per player (updated on SwitchIn; shown on waiting screen)
+    static P1_MON_NAME: RefCell<String> = RefCell::new(String::new());
+    static P2_MON_NAME: RefCell<String> = RefCell::new(String::new());
 
     // Which players are AI-controlled this game (reset each lobby)
     static AI_PLAYERS: RefCell<[bool; 2]> = RefCell::new([false, false]);
@@ -117,6 +122,16 @@ pub(crate) fn update_pixels(player: u8, pixels: Vec<u8>) {
     }
 }
 
+pub(crate) fn set_active_mon_name(player: u8, name: &str) {
+    if player == 1 { P1_MON_NAME.with(|n| *n.borrow_mut() = name.to_string()); }
+    else           { P2_MON_NAME.with(|n| *n.borrow_mut() = name.to_string()); }
+}
+
+fn get_active_mon_name(player: u8) -> String {
+    if player == 1 { P1_MON_NAME.with(|n| n.borrow().clone()) }
+    else           { P2_MON_NAME.with(|n| n.borrow().clone()) }
+}
+
 pub(crate) fn update_moves(player: u8, moves: Vec<MoveSlot>) {
     if player == 1 { P1_MOVES.with(|m| *m.borrow_mut() = moves); }
     else           { P2_MOVES.with(|m| *m.borrow_mut() = moves); }
@@ -151,12 +166,16 @@ pub(crate) fn ai_pick_switch(player: u8) -> usize {
     0
 }
 
-pub(crate) fn show_pokemon_stats(player: u8, team_idx: usize) {
+pub(crate) fn show_pokemon_stats(player: u8, team_idx: usize, page: u8) {
     let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
                 else           { P2_PARTY.with(|p| p.borrow().clone()) };
     if let Some(slot) = party.get(team_idx) {
         let mut disp = WasmDisplay::new();
-        render_pokemon_stats(&mut disp, slot);
+        if page == 1 {
+            render_pokemon_stats_page2(&mut disp, slot);
+        } else {
+            render_pokemon_stats(&mut disp, slot);
+        }
         let pixels = disp.to_rgba();
         if player == 1 {
             P1_IN_DETAIL.with(|d| *d.borrow_mut() = true);
@@ -185,6 +204,96 @@ pub(crate) fn show_move_detail(player: u8, slot: usize) {
     }
 }
 
+pub(crate) fn show_switch_screen(player: u8) {
+    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
+                else           { P2_PARTY.with(|p| p.borrow().clone()) };
+    let mut disp = WasmDisplay::new();
+    render_switch_screen(&mut disp, &party);
+    // Use update_pixels so P_BATTLE_PIXELS also holds the switch screen —
+    // restore_screen can then correctly return to the switch prompt after a
+    // long-press stats view. SwitchIn's redraw() will overwrite P_BATTLE_PIXELS
+    // with the new battle screen once the switch completes.
+    update_pixels(player, disp.to_rgba());
+}
+
+pub(crate) fn clear_input_queues() {
+    P1_QUEUE.with(|q| q.borrow_mut().clear());
+    P2_QUEUE.with(|q| q.borrow_mut().clear());
+}
+
+/// Returns true if the party slot at `idx` is alive (hp > 0) or data is unavailable.
+pub(crate) fn party_slot_alive(player: u8, idx: usize) -> bool {
+    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
+                else           { P2_PARTY.with(|p| p.borrow().clone()) };
+    party.get(idx).map(|s| s.hp > 0).unwrap_or(true)
+}
+
+pub(crate) fn show_invalid_selection(player: u8) {
+    use embedded_graphics::{
+        mono_font::{ascii::FONT_6X10, MonoTextStyle},
+        pixelcolor::BinaryColor,
+        prelude::*,
+        text::{Alignment, Baseline, Text, TextStyleBuilder},
+    };
+    let mut disp = WasmDisplay::new();
+    let ts = TextStyleBuilder::new()
+        .alignment(Alignment::Center)
+        .baseline(Baseline::Top)
+        .build();
+    Text::with_text_style(
+        "Already fainted!",
+        Point::new(64, 27),
+        MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
+        ts,
+    ).draw(&mut disp).ok();
+    display_only(player, disp.to_rgba());
+}
+
+/// Pop one button event from the player's queue without blocking.
+pub(crate) fn pop_player_button(player: u8) -> Option<ButtonEvent> {
+    if player == 1 {
+        P1_QUEUE.with(|q| q.borrow_mut().pop_front())
+    } else {
+        P2_QUEUE.with(|q| q.borrow_mut().pop_front())
+    }
+}
+
+/// Overlay the waiting screen on the player's OLED using display_only
+/// so P_BATTLE_PIXELS is preserved for restore after cancel.
+pub(crate) fn show_waiting_screen(player: u8) {
+    use embedded_graphics::{
+        mono_font::{ascii::{FONT_5X8, FONT_6X10}, MonoTextStyle},
+        pixelcolor::BinaryColor,
+        prelude::*,
+        text::{Alignment, Baseline, Text, TextStyleBuilder},
+    };
+    let mon_name = get_active_mon_name(player);
+    let mut disp = WasmDisplay::new();
+    let ts = TextStyleBuilder::new()
+        .alignment(Alignment::Center)
+        .baseline(Baseline::Top)
+        .build();
+    Text::with_text_style(
+        &mon_name,
+        Point::new(64, 12),
+        MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
+        ts,
+    ).draw(&mut disp).ok();
+    Text::with_text_style(
+        "Waiting...",
+        Point::new(64, 28),
+        MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
+        ts,
+    ).draw(&mut disp).ok();
+    Text::with_text_style(
+        "tap to unready",
+        Point::new(64, 42),
+        MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
+        ts,
+    ).draw(&mut disp).ok();
+    display_only(player, disp.to_rgba());
+}
+
 pub(crate) fn restore_screen(player: u8) {
     if player == 1 {
         P1_IN_DETAIL.with(|d| *d.borrow_mut() = false);
@@ -199,6 +308,91 @@ pub(crate) fn restore_screen(player: u8) {
 
 pub(crate) fn update_leds(leds: [u32; 24]) {
     LED_STATE.with(|l| *l.borrow_mut() = leds);
+}
+
+fn status_led_color(status: Option<&str>) -> u32 {
+    fn rgb(r: u8, g: u8, b: u8) -> u32 { ((r as u32) << 16) | ((g as u32) << 8) | b as u32 }
+    match status {
+        None | Some("") => rgb(0,   160, 0),
+        Some("par")     => rgb(220, 180, 0),
+        Some("brn")     => rgb(220, 20,  0),
+        Some("frz")     => rgb(60,  80,  255),
+        Some("psn")     => rgb(180, 60,  220),
+        Some("tox")     => rgb(80,  0,   100),
+        Some("slp")     => rgb(220, 80,  80),
+        _               => rgb(0,   160, 0),
+    }
+}
+
+/// Update HP bar (indices 0-7) for one player only.
+/// Party LEDs (8-10 / 20-22) are managed separately by sync_party_leds.
+pub(crate) fn update_hp_leds(player: u8, frame: [u32; 8]) {
+    LED_STATE.with(|l| {
+        let mut leds = l.borrow_mut();
+        let base = if player == 1 { 0 } else { 12 };
+        for i in 0..8 { leds[base + i] = frame[i]; }
+    });
+}
+
+/// Rewrite party LEDs (3 slots per player) from P_PARTY status data.
+/// Each slot is colored by status (or green if healthy, off if fainted).
+/// The old dedicated status LED position (11/23) is zeroed out.
+pub(crate) fn sync_party_leds(player: u8) {
+    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
+                else           { P2_PARTY.with(|p| p.borrow().clone()) };
+    LED_STATE.with(|l| {
+        let mut leds = l.borrow_mut();
+        let base = if player == 1 { 8 } else { 20 };
+        let green = status_led_color(None);
+        for i in 0..3usize {
+            // P2's board is oriented in reverse, so mirror the slot→LED mapping.
+            let party_idx = if player == 2 { 2 - i } else { i };
+            leds[base + i] = if party.is_empty() {
+                green // party not yet populated — default to all healthy
+            } else {
+                match party.get(party_idx) {
+                    Some(slot) if slot.hp > 0 => status_led_color(slot.status.as_deref()),
+                    _ => 0,
+                }
+            };
+        }
+        leds[base + 3] = 0; // old status-LED position — always off
+    });
+}
+
+/// Patch a party slot's status in P_PARTY without a full replace.
+/// Call after SetStatus/CureStatus so sync_party_leds sees the new value.
+pub(crate) fn update_party_slot_status(player: u8, mon_name: &str, status: Option<String>) {
+    if player == 1 {
+        P1_PARTY.with(|p| {
+            if let Some(slot) = p.borrow_mut().iter_mut().find(|s| s.name == mon_name) {
+                slot.status = status;
+            }
+        });
+    } else {
+        P2_PARTY.with(|p| {
+            if let Some(slot) = p.borrow_mut().iter_mut().find(|s| s.name == mon_name) {
+                slot.status = status;
+            }
+        });
+    }
+}
+
+/// Patch a party slot's HP in P_PARTY (used on Faint to set hp=0).
+pub(crate) fn update_party_slot_hp(player: u8, mon_name: &str, hp: u16) {
+    if player == 1 {
+        P1_PARTY.with(|p| {
+            if let Some(slot) = p.borrow_mut().iter_mut().find(|s| s.name == mon_name) {
+                slot.hp = hp;
+            }
+        });
+    } else {
+        P2_PARTY.with(|p| {
+            if let Some(slot) = p.borrow_mut().iter_mut().find(|s| s.name == mon_name) {
+                slot.hp = hp;
+            }
+        });
+    }
 }
 
 pub(crate) fn set_lobby_mode(active: bool) {
@@ -330,7 +524,11 @@ fn push_button(ev: ButtonEvent) {
 }
 
 #[wasm_bindgen] pub fn wasm_show_pokemon_stats(player: u8, team_idx: u8) {
-    show_pokemon_stats(player, team_idx as usize);
+    show_pokemon_stats(player, team_idx as usize, 0);
+}
+
+#[wasm_bindgen] pub fn wasm_show_pokemon_stats_page(player: u8, team_idx: u8, page: u8) {
+    show_pokemon_stats(player, team_idx as usize, page);
 }
 
 #[wasm_bindgen] pub fn wasm_restore_screen(player: u8) {
@@ -362,42 +560,73 @@ fn enter_demo_mode() {
 
 #[wasm_bindgen] pub fn wasm_enter_vs_ai_mode() {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
-    // Record intent in NEXT_GAME_AI so it survives the loop-top AI_PLAYERS reset.
-    // Push ready events for both players so the lobby exits immediately.
-    NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([false, true]));
+    // p1=AI (Red), p2=human (Blue)
+    NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, false]));
     push_button(ButtonEvent::Move { player: 1, slot: 0 });
     push_button(ButtonEvent::Move { player: 2, slot: 0 });
 }
 
 #[wasm_bindgen] pub fn submit_text(line: String) {
-    match line.trim() {
-        ":reset" => { wasm_reset(); return; }
+    let cmd = line.trim();
+
+    // Global commands always available
+    match cmd {
+        ":reset"    => { wasm_reset(); return; }
         ":anim off" => { ANIM_ENABLED.with(|a| *a.borrow_mut() = false); print_log("[anim] animations OFF"); return; }
         ":anim on"  => { ANIM_ENABLED.with(|a| *a.borrow_mut() = true);  print_log("[anim] animations ON");  return; }
         _ => {}
     }
-    if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
-    match line.trim() {
-        ":ready ai" => {
-            // VS AI: P1 human, P2 AI
-            NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([false, true]));
-            push_button(ButtonEvent::Move { player: 1, slot: 0 });
-            push_button(ButtonEvent::Move { player: 2, slot: 0 });
+
+    if LOBBY_MODE.with(|m| *m.borrow()) {
+        match cmd {
+            ":ready ai" => {
+                // VS AI: P1=AI (Red), P2=human (Blue)
+                NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, false]));
+                push_button(ButtonEvent::Move { player: 1, slot: 0 });
+                push_button(ButtonEvent::Move { player: 2, slot: 0 });
+            }
+            ":demo" => { enter_demo_mode(); }
+            ":ready" | ":ready both" => {
+                push_button(ButtonEvent::Move { player: 1, slot: 0 });
+                push_button(ButtonEvent::Move { player: 2, slot: 0 });
+            }
+            ":ready p1" => push_button(ButtonEvent::Move { player: 1, slot: 0 }),
+            ":ready p2" => push_button(ButtonEvent::Move { player: 2, slot: 0 }),
+            _ => { print_log("  lobby: :ready | :ready p1 | :ready p2 | :ready ai | :demo"); }
         }
-        ":demo" => {
-            enter_demo_mode();
-        }
-        ":ready" | ":ready both" | "" => {
-            push_button(ButtonEvent::Move { player: 1, slot: 0 });
-            push_button(ButtonEvent::Move { player: 2, slot: 0 });
-        }
-        ":ready p1" => push_button(ButtonEvent::Move { player: 1, slot: 0 }),
-        ":ready p2" => push_button(ButtonEvent::Move { player: 2, slot: 0 }),
-        _ => {
-            push_button(ButtonEvent::Move { player: 1, slot: 0 });
-            push_button(ButtonEvent::Move { player: 2, slot: 0 });
+        return;
+    }
+
+    // In-game: parse move/switch commands.
+    // Default player is p2 (Blue, the human in VS AI mode).
+    // Prefix with "p1:" to send to Red instead.
+    let (player, rest) = if let Some(r) = cmd.strip_prefix("p1:") {
+        (1u8, r)
+    } else if let Some(r) = cmd.strip_prefix("p2:") {
+        (2u8, r)
+    } else {
+        (2u8, cmd)
+    };
+
+    // "s1"-"s3" → switch slot 0-2
+    if let Some(n) = rest.strip_prefix('s').or_else(|| rest.strip_prefix('S')) {
+        if let Ok(idx) = n.parse::<u8>() {
+            if idx >= 1 && idx <= 3 {
+                push_button(ButtonEvent::Switch { player, idx: idx - 1 });
+                return;
+            }
         }
     }
+
+    // "1"-"4" → move slot 0-3
+    if let Ok(slot) = rest.parse::<u8>() {
+        if slot >= 1 && slot <= 4 {
+            push_button(ButtonEvent::Move { player, slot: slot - 1 });
+            return;
+        }
+    }
+
+    print_log("  in-game: 1-4 (move) | s1-s3 (switch) | p1:1 (send to Red)");
 }
 
 #[wasm_bindgen] pub fn get_p1_pixels() -> Vec<u8> {
@@ -521,6 +750,10 @@ async fn run_game_loop() {
         // so they don't get consumed as the first battle move.
         P1_QUEUE.with(|q| q.borrow_mut().clear());
         P2_QUEUE.with(|q| q.borrow_mut().clear());
+        // Reset detail overlay state so a held button at end of last game
+        // doesn't bleed into this one.
+        P1_IN_DETAIL.with(|d| *d.borrow_mut() = false);
+        P2_IN_DETAIL.with(|d| *d.borrow_mut() = false);
 
         // Countdown fanfare: 3 gold flashes
         let gold = pack_rgb(200, 150, 0);

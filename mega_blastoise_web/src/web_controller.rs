@@ -1,4 +1,5 @@
 use battler::{PlayerBattleData, Request};
+use js_sys::Date;
 use mega_blastoise_core::{format_prompt, party_slot_from_mon, ButtonSource, PlayerAction};
 
 pub struct WebButtonSource;
@@ -10,14 +11,38 @@ impl ButtonSource for WebButtonSource {
         request: &Request,
         player_data: &Option<PlayerBattleData>,
     ) {
+        let player = if player_id == "p1" { 1u8 } else { 2u8 };
         let text = format_prompt(player_id, request, player_data.as_ref());
         for line in text.lines() {
             crate::print_log(line);
         }
+        // Restore the battle screen — clears any "waiting / unready" overlay.
+        crate::restore_screen(player);
         if let Some(pd) = player_data {
-            let player = if player_id == "p1" { 1u8 } else { 2u8 };
             let slots = pd.mons.iter().map(party_slot_from_mon).collect();
             crate::update_party(player, slots);
+            crate::sync_party_leds(player);
+            if matches!(request, Request::Switch(_)) {
+                crate::show_switch_screen(player);
+            }
+        }
+    }
+
+    fn on_choice_pending(&mut self, player_id: &str) {
+        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        if !crate::is_ai_player(player) {
+            crate::show_waiting_screen(player);
+        }
+    }
+
+    async fn wait_cancel_window(&mut self, player_id: &str) -> bool {
+        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        if crate::is_ai_player(player) { return false; }
+        let deadline = Date::now() + 1000.0;
+        loop {
+            if crate::pop_player_button(player).is_some() { return true; }
+            if Date::now() >= deadline { return false; }
+            crate::sleep_ms(50).await;
         }
     }
 
@@ -34,7 +59,14 @@ impl ButtonSource for WebButtonSource {
                     return PlayerAction::Move(slot as usize);
                 }
                 crate::ButtonEvent::Switch { idx, .. } => {
-                    return PlayerAction::Switch(idx as usize);
+                    let idx = idx as usize;
+                    if !crate::party_slot_alive(player, idx) {
+                        crate::show_invalid_selection(player);
+                        crate::sleep_ms(600).await;
+                        crate::restore_screen(player);
+                        continue;
+                    }
+                    return PlayerAction::Switch(idx);
                 }
                 _ => {}
             }
@@ -50,7 +82,14 @@ impl ButtonSource for WebButtonSource {
         loop {
             let ev = crate::PlayerButtonFuture(player).await;
             if let crate::ButtonEvent::Switch { idx, .. } = ev {
-                return idx as usize;
+                let idx = idx as usize;
+                if !crate::party_slot_alive(player, idx) {
+                    crate::show_invalid_selection(player);
+                    crate::sleep_ms(600).await;
+                    crate::restore_screen(player);
+                    continue;
+                }
+                return idx;
             }
         }
     }

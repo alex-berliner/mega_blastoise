@@ -32,6 +32,15 @@ pub struct PartySlotData {
     pub spe: u16,
     pub spc: u16,
     pub types: alloc::vec::Vec<battler::Type>,
+    /// Move name + (pp, max_pp) for each slot, in order.
+    pub moves: alloc::vec::Vec<(alloc::string::String, u8, u8)>,
+    /// Stat stage boosts (-6 to +6).
+    pub boost_atk: i8,
+    pub boost_def: i8,
+    pub boost_spe: i8,
+    pub boost_spc: i8,
+    /// Held item name, if any.
+    pub item: Option<alloc::string::String>,
 }
 
 /// Convert the display-relevant fields of a [`battler::MonBattleData`] into a
@@ -50,6 +59,12 @@ pub fn party_slot_from_mon(mon: &battler::MonBattleData) -> PartySlotData {
         spe: get(Stat::Spe),
         spc: get(Stat::SpAtk),
         types: mon.types.clone(),
+        moves: mon.moves.iter().map(|m| (m.name.clone(), m.pp, m.max_pp)).collect(),
+        boost_atk: mon.boosts.atk,
+        boost_def: mon.boosts.def,
+        boost_spe: mon.boosts.spe,
+        boost_spc: mon.boosts.spa,
+        item: mon.item.clone(),
     }
 }
 
@@ -75,16 +90,14 @@ fn center_style() -> TextStyle {
 /// ```text
 /// Move 0              Move 1   ← y=1,  FONT_5X8
 ///      ┌─ Mon Name ─┐          ← y=24–39 (box)
-/// ████████░░░░░░░░░            ← y=44, h=4 (HP bar)
 /// Move 2              Move 3   ← y=55, FONT_5X8
 /// ```
-pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot], hp_pct: u8)
+pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot])
 where
     D: DrawTarget<Color = BinaryColor>,
 {
     let move_char = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
     let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-    let fill = PrimitiveStyle::with_fill(BinaryColor::On);
 
     display.clear(BinaryColor::Off).ok();
 
@@ -123,13 +136,6 @@ where
     Text::with_text_style(mon_name, Point::new(64, name_y), name_char, center_style())
         .draw(display).ok();
 
-    // ── HP bar ────────────────────────────────────────────────────────────────
-    let bar_w = hp_pct as u32 * 128 / 100;
-    if bar_w > 0 {
-        Rectangle::new(Point::new(0, 44), Size::new(bar_w, 4))
-            .into_styled(fill)
-            .draw(display).ok();
-    }
 }
 
 // ── Move detail screen ────────────────────────────────────────────────────────
@@ -192,66 +198,186 @@ where
         .draw(display).ok();
 }
 
-// ── Party stats screen ────────────────────────────────────────────────────────
+// ── Shared header for pokémon stat/move pages ─────────────────────────────────
 
-/// Draw the party-stats screen (long-press switch view) onto any 128×64 `DrawTarget`.
+fn type_abbr(t: battler::Type) -> &'static str {
+    match t {
+        battler::Type::Normal   => "NRM",
+        battler::Type::Fighting => "FTG",
+        battler::Type::Flying   => "FLY",
+        battler::Type::Poison   => "PSN",
+        battler::Type::Ground   => "GND",
+        battler::Type::Rock     => "ROK",
+        battler::Type::Bug      => "BUG",
+        battler::Type::Ghost    => "GHO",
+        battler::Type::Steel    => "STL",
+        battler::Type::Fire     => "FIR",
+        battler::Type::Water    => "WAT",
+        battler::Type::Grass    => "GRS",
+        battler::Type::Electric => "ELC",
+        battler::Type::Psychic  => "PSY",
+        battler::Type::Ice      => "ICE",
+        battler::Type::Dragon   => "DRG",
+        battler::Type::Dark     => "DRK",
+        battler::Type::Fairy    => "FAI",
+        _                       => "???",
+    }
+}
+
+fn draw_mon_header<D>(display: &mut D, slot: &PartySlotData)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let hdr = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let name = if slot.hp == 0 { "FAINTED" } else { slot.name.as_str() };
+    let type_str = match slot.types.len() {
+        0 => alloc::format!(""),
+        1 => alloc::format!("{}", type_abbr(slot.types[0])),
+        _ => alloc::format!("{}/{}", type_abbr(slot.types[0]), type_abbr(slot.types[1])),
+    };
+    Text::with_text_style(name,      Point::new(0,   0), hdr, tl_style()).draw(display).ok();
+    Text::with_text_style(&type_str, Point::new(127, 0), hdr, tr_style()).draw(display).ok();
+    Rectangle::new(Point::new(0, 12), Size::new(128, 1))
+        .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+        .draw(display).ok();
+}
+
+// ── Party stats screen — page 1: current stats with boosts ───────────────────
+
+/// Draw the stats page (long-press page 0): name/types header, HP+status, stats+boosts.
 ///
 /// Layout:
 /// ```text
-/// Pikachu        Lv.25   ← FONT_6X10
-/// ────────────────────
-/// HP:42/75    [PAR]      ← FONT_5X8
-/// Atk:55  Def:40
-/// Spe:90  Spc:50
-/// Electric / Flying
+/// Pikachu       Electric  ← name left, type right (FONT_6X10)
+/// ──────────────────────
+/// HP: 42/75         PAR  ← HP left, status right (FONT_5X8)
+/// Atk: 55  +2
+/// Def: 40
+/// Spe: 90  -1
+/// Spc: 50
 /// ```
 pub fn render_pokemon_stats<D>(display: &mut D, slot: &PartySlotData)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
-    let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-    let info_char = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    let info = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    draw_mon_header(display, slot);
+
+    let status_abbr = if slot.hp == 0 {
+        "FNT"
+    } else {
+        match slot.status.as_deref() {
+            Some("par") => " PAR",
+            Some("brn") => " BRN",
+            Some("psn") | Some("tox") => " PSN",
+            Some("slp") => " SLP",
+            Some("frz") => " FRZ",
+            _           => "",
+        }
+    };
+    let hp_line  = alloc::format!("HP: {}/{}{}", slot.hp, slot.max_hp, status_abbr);
+    let lv_line  = alloc::format!("Lv.{}", slot.level);
+    Text::with_text_style(&hp_line, Point::new(0,   15), info, tl_style()).draw(display).ok();
+    Text::with_text_style(&lv_line, Point::new(127, 15), info, tr_style()).draw(display).ok();
+
+    let stats: &[(&str, u16, i8)] = &[
+        ("Atk", slot.atk, slot.boost_atk),
+        ("Def", slot.def, slot.boost_def),
+        ("Spc", slot.spc, slot.boost_spc),
+        ("Spe", slot.spe, slot.boost_spe),
+    ];
+    for (i, (label, val, boost)) in stats.iter().enumerate() {
+        let y = 25 + i as i32 * 10;
+        let b = if *boost >= 0 { alloc::format!("+{}", boost) } else { alloc::format!("{}", boost) };
+        let line = alloc::format!("{}: {} ({})", label, val, b);
+        Text::with_text_style(&line, Point::new(0, y), info, tl_style()).draw(display).ok();
+    }
+}
+
+// ── Party stats screen — page 2: moves + held item ───────────────────────────
+
+/// Draw the moves page (long-press page 1): name/types header, held item, moves with PP.
+///
+/// Layout:
+/// ```text
+/// Pikachu       Electric
+/// ──────────────────────
+/// Item: —
+/// Surf           10/16
+/// Thunderbolt     5/8
+/// Ice Beam       15/16
+/// Double-Edge     8/16
+/// ```
+pub fn render_pokemon_stats_page2<D>(display: &mut D, slot: &PartySlotData)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let info = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    draw_mon_header(display, slot);
+
+    let item_str = match slot.item.as_deref() {
+        Some(s) if !s.is_empty() => alloc::format!("Item: {}", s),
+        _                        => alloc::format!("Item: -"),
+    };
+    Text::with_text_style(&item_str, Point::new(0, 15), info, tl_style()).draw(display).ok();
+
+    for (i, (mv_name, pp, max_pp)) in slot.moves.iter().enumerate().take(4) {
+        let y = 25 + i as i32 * 10;
+        let name_t = if mv_name.len() > 13 { &mv_name[..13] } else { mv_name.as_str() };
+        let pp_str = alloc::format!("{}/{}", pp, max_pp);
+        Text::with_text_style(name_t, Point::new(0,   y), info, tl_style()).draw(display).ok();
+        Text::with_text_style(&pp_str, Point::new(127, y), info, tr_style()).draw(display).ok();
+    }
+}
+
+// ── Switch prompt screen ──────────────────────────────────────────────────────
+
+/// Draw the forced-switch prompt screen onto any 128×64 `DrawTarget`.
+///
+/// Layout:
+/// ```text
+/// -- SWITCH --            ← FONT_6X10, centered
+/// ──────────────────────
+/// 1 Pikachu         75%  ← FONT_5X8, slot# + name left, HP/status right
+/// 2 Charizard       FNT
+/// 3 Blastoise       PAR
+/// ```
+pub fn render_switch_screen<D>(display: &mut D, party: &[PartySlotData])
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let header_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let slot_char   = MonoTextStyle::new(&FONT_5X8,  BinaryColor::On);
 
     display.clear(BinaryColor::Off).ok();
 
-    // Name + level
-    let lv_text = alloc::format!("Lv.{}", slot.level);
-    let name = if slot.hp == 0 { "FAINTED" } else { slot.name.as_str() };
-    Text::with_text_style(name, Point::new(0, 0), name_char, tl_style())
-        .draw(display).ok();
-    Text::with_text_style(&lv_text, Point::new(127, 0), name_char, tr_style())
+    Text::with_text_style("-- SWITCH --", Point::new(64, 0), header_char, center_style())
         .draw(display).ok();
 
-    Rectangle::new(Point::new(0, 11), Size::new(128, 1))
+    Rectangle::new(Point::new(0, 12), Size::new(128, 1))
         .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
         .draw(display).ok();
 
-    // HP + status
-    let status_abbr = match slot.status.as_deref() {
-        Some("par") => " PAR",
-        Some("brn") => " BRN",
-        Some("psn") | Some("tox") => " PSN",
-        Some("slp") => " SLP",
-        Some("frz") => " FRZ",
-        _ => "",
-    };
-    let hp_line = alloc::format!("HP:{}/{}{}", slot.hp, slot.max_hp, status_abbr);
-    Text::with_text_style(&hp_line, Point::new(0, 14), info_char, tl_style())
-        .draw(display).ok();
-
-    // Battle stats
-    let atk_def = alloc::format!("Atk:{}  Def:{}", slot.atk, slot.def);
-    Text::with_text_style(&atk_def, Point::new(0, 24), info_char, tl_style())
-        .draw(display).ok();
-
-    let spe_spc = alloc::format!("Spe:{}  Spc:{}", slot.spe, slot.spc);
-    Text::with_text_style(&spe_spc, Point::new(0, 33), info_char, tl_style())
-        .draw(display).ok();
-
-    // Types
-    let type_parts: alloc::vec::Vec<alloc::string::String> = slot.types.iter()
-        .map(|t| alloc::format!("{t:?}"))
-        .collect();
-    Text::with_text_style(&type_parts.join(" / "), Point::new(0, 43), info_char, tl_style())
-        .draw(display).ok();
+    for (i, slot) in party.iter().enumerate().take(6) {
+        let y = 15 + i as i32 * 9;
+        let name = if slot.name.len() > 10 { &slot.name[..10] } else { slot.name.as_str() };
+        let left = alloc::format!("{} {}", i + 1, name);
+        let hp_str = alloc::format!("{}/{}", slot.hp, slot.max_hp);
+        let right = if slot.hp == 0 {
+            alloc::format!("FNT")
+        } else {
+            match slot.status.as_deref() {
+                Some("par") => alloc::format!("PAR {}", hp_str),
+                Some("brn") => alloc::format!("BRN {}", hp_str),
+                Some("psn") | Some("tox") => alloc::format!("PSN {}", hp_str),
+                Some("slp") => alloc::format!("SLP {}", hp_str),
+                Some("frz") => alloc::format!("FRZ {}", hp_str),
+                _ => hp_str,
+            }
+        };
+        Text::with_text_style(&left,  Point::new(0,   y), slot_char, tl_style()).draw(display).ok();
+        Text::with_text_style(&right, Point::new(127, y), slot_char, tr_style()).draw(display).ok();
+    }
 }

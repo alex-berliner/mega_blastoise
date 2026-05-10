@@ -64,24 +64,56 @@ function frame() {
 
 // ── Button handlers ────────────────────────────────────────────────────────────
 
-// Switch buttons: long press shows party stats; short press selects.
+// Per-player shared long-press cycle state: only one button's cycle runs at a time.
+// When a new button starts cycling, it cancels any existing cycle for that player.
+const playerCycleState = {
+    1: { timer: null, activeIdx: null },
+    2: { timer: null, activeIdx: null },
+};
+
+function startPlayerCycle(player, idx) {
+    const state = playerCycleState[player];
+    clearInterval(state.timer);
+    state.activeIdx = idx;
+    let page = 0;
+    wasm.wasm_show_pokemon_stats_page(player, idx, page);
+    state.timer = setInterval(() => {
+        page = page === 0 ? 1 : 0;
+        wasm.wasm_show_pokemon_stats_page(player, idx, page);
+    }, 2000);
+}
+
+function stopPlayerCycle(player) {
+    const state = playerCycleState[player];
+    clearInterval(state.timer);
+    state.timer = null;
+    state.activeIdx = null;
+}
+
+// Switch buttons: long press shows party stats cycling between page 0 and 1; short press selects.
 function setupSwitchLongPress(el, player, idx) {
-    let timer = null;
+    let holdTimer = null;
     let fired = false;
 
     el.addEventListener('pointerdown', e => {
         e.preventDefault();
+        clearTimeout(holdTimer);
         fired = false;
-        timer = setTimeout(() => {
+        holdTimer = setTimeout(() => {
             fired = true;
-            wasm.wasm_show_pokemon_stats(player, idx);
+            startPlayerCycle(player, idx);
         }, 500);
     });
 
     el.addEventListener('pointerup', () => {
-        clearTimeout(timer);
+        clearTimeout(holdTimer);
+        holdTimer = null;
         if (fired) {
-            wasm.wasm_restore_screen(player);
+            // Only stop/restore if this button is still the active one for this player.
+            if (playerCycleState[player].activeIdx === idx) {
+                stopPlayerCycle(player);
+                wasm.wasm_restore_screen(player);
+            }
         } else {
             wasm.press_switch(player, idx);
         }
@@ -89,8 +121,12 @@ function setupSwitchLongPress(el, player, idx) {
     });
 
     el.addEventListener('pointercancel', () => {
-        clearTimeout(timer);
-        if (fired) wasm.wasm_restore_screen(player);
+        clearTimeout(holdTimer);
+        holdTimer = null;
+        if (fired && playerCycleState[player].activeIdx === idx) {
+            stopPlayerCycle(player);
+            wasm.wasm_restore_screen(player);
+        }
         fired = false;
     });
 }

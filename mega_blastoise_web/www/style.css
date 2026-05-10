@@ -30,12 +30,12 @@ body {
 
 #players {
   display: flex;
+  flex-direction: column;
   flex: 0 0 auto;
   border-bottom: 1px solid var(--border);
 }
 
 .player-panel {
-  flex: 1;
   display: grid;
   grid-template-areas:
     "header"
@@ -46,9 +46,9 @@ body {
   justify-items: center;
   padding: 10px 12px;
   gap: 8px;
-  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
-.player-panel:last-child { border-right: none; }
+.player-panel:last-child { border-bottom: none; }
 
 .panel-header {
   grid-area: header;
@@ -259,15 +259,7 @@ body {
 /* ── Responsive: narrow screens ───────────────────────────────── */
 
 @media (max-width: 680px) {
-  /* Stack panels vertically */
-  #players { flex-direction: column; }
-
-  .player-panel {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    padding: 8px;
-  }
-  .player-panel:last-child { border-bottom: none; }
+  .player-panel { padding: 8px; }
 
   .oled { width: min(60vw, 256px); height: min(30vw, 128px); }
 

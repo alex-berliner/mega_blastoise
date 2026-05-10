@@ -93,7 +93,7 @@ fn redraw<DI: WriteOnlyDataCommand>(
     st: &PlayerState,
 ) {
     let mon = if st.fainted { "FAINTED" } else { st.name_str() };
-    render_player_screen(disp, mon, &st.moves, st.hp_pct);
+    render_player_screen(disp, mon, &st.moves);
     disp.flush().ok();
 }
 

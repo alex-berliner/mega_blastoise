@@ -4,7 +4,7 @@ use alloc::string::ToString;
 
 use battler::{
     BattleType, CoreBattleEngineOptions, CoreBattleOptions, FormatData, PlayerData, PlayerDex,
-    PlayerOptions, PlayerType, SerializedRuleSet, SideData, TeamData,
+    PlayerOptions, PlayerType, Request, SerializedRuleSet, SideData, TeamData,
 };
 use battler_data::DataStore;
 
@@ -315,53 +315,66 @@ async fn battle_loop<E, T, DS>(
     while !battle.ended() {
         let mut had_request = false;
         loop {
-            let next_request = battle.active_requests().next();
-            let Some((player_id, request)) = next_request else {
-                break;
-            };
+            // Collect ALL active requests before sending any prompts, so both
+            // players are prompted simultaneously and can inspect their screens
+            // in parallel without waiting on each other.
+            let requests: alloc::vec::Vec<(alloc::string::String, Request)> = battle
+                .active_requests()
+                .map(|(pid, req)| (pid.to_string(), req.clone()))
+                .collect();
+
+            if requests.is_empty() { break; }
             had_request = true;
-            queue.push_event(board_prompt_event(&player_id, &request));
-            queue.dispatch_all(effects).await;
-            let player_data = battle.player_data(&player_id).ok();
-            bus.prompt.send(ActivePrompt {
-                player_id: player_id.clone(),
-                request: request.clone(),
-                player_data,
-            }).await;
-            let line = bus.choices.receive().await;
 
-            #[cfg(feature = "timing")]
-            let t0 = embassy_time::Instant::now();
-
-            if let Err(e) = battle.set_player_choice(&player_id, &line) {
-                #[cfg(feature = "defmt")]
-                defmt::error!(
-                    "set_player_choice failed ({}): {}",
-                    player_id.as_str(),
-                    defmt::Display2Format(&e.to_string())
-                );
-                #[cfg(not(feature = "defmt"))]
-                let _ = e;
+            // Send all prompts to bus.prompt before collecting any choices.
+            for (player_id, request) in &requests {
+                queue.push_event(board_prompt_event(player_id, request));
+                queue.dispatch_all(effects).await;
+                let player_data = battle.player_data(player_id).ok();
+                bus.prompt.send(ActivePrompt {
+                    player_id: player_id.clone(),
+                    request: request.clone(),
+                    player_data,
+                }).await;
             }
 
-            #[cfg(feature = "timing")]
-            defmt::info!(
-                "set_player_choice({}): {}ms",
-                player_id.as_str(),
-                t0.elapsed().as_millis()
-            );
+            // Collect choices in the same order as prompts, then apply them.
+            for (player_id, _) in &requests {
+                let line = bus.choices.receive().await;
 
-            #[cfg(feature = "timing")]
-            let t_ead = embassy_time::Instant::now();
+                #[cfg(feature = "timing")]
+                let t0 = embassy_time::Instant::now();
 
-            enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
+                if let Err(e) = battle.set_player_choice(player_id, &line) {
+                    #[cfg(feature = "defmt")]
+                    defmt::error!(
+                        "set_player_choice failed ({}): {}",
+                        player_id.as_str(),
+                        defmt::Display2Format(&e.to_string())
+                    );
+                    #[cfg(not(feature = "defmt"))]
+                    let _ = e;
+                }
 
-            #[cfg(feature = "timing")]
-            defmt::info!(
-                "enrich_and_dispatch after set_player_choice({}): {}ms",
-                player_id.as_str(),
-                t_ead.elapsed().as_millis()
-            );
+                #[cfg(feature = "timing")]
+                defmt::info!(
+                    "set_player_choice({}): {}ms",
+                    player_id.as_str(),
+                    t0.elapsed().as_millis()
+                );
+
+                #[cfg(feature = "timing")]
+                let t_ead = embassy_time::Instant::now();
+
+                enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
+
+                #[cfg(feature = "timing")]
+                defmt::info!(
+                    "enrich_and_dispatch after set_player_choice({}): {}ms",
+                    player_id.as_str(),
+                    t_ead.elapsed().as_millis()
+                );
+            }
         }
 
         if !had_request {

@@ -27,79 +27,36 @@ fn hp_lit(pct: u8) -> usize {
     ((pct as usize * 8 + 99) / 100).min(8)
 }
 
-// Status LED colors (match firmware; battler emits lowercase IDs)
-fn status_color(status: &str) -> u32 {
-    match status {
-        "par" => pack_rgb(255, 200, 0),
-        "brn" => pack_rgb(255, 60, 0),
-        "frz" => pack_rgb(0, 200, 255),
-        "psn" | "tox" => pack_rgb(150, 0, 200),
-        "slp" => pack_rgb(0, 80, 0),
-        _ => 0,
-    }
-}
-
 // ── Per-player LED state ──────────────────────────────────────────────────────
 
 struct LedPlayerState {
     hp_pct: u8,
-    party: [Option<std::string::String>; 3],
-    status: u32,
 }
 
 impl LedPlayerState {
-    fn new() -> Self { Self { hp_pct: 100, party: [None, None, None], status: 0 } }
+    fn new() -> Self { Self { hp_pct: 100 } }
 
-    fn alive_count(&self) -> usize {
-        self.party.iter().filter(|s| s.is_some()).count()
-    }
-
-    fn register_switch(&mut self, name: &str) {
-        if self.party.iter().any(|s| s.as_deref() == Some(name)) { return; }
-        if let Some(slot) = self.party.iter_mut().find(|s| s.is_none()) {
-            *slot = Some(name.to_string());
-        }
-    }
-
-    fn register_faint(&mut self, name: &str) {
-        for slot in &mut self.party {
-            if slot.as_deref() == Some(name) { *slot = None; return; }
-        }
-    }
-
-    fn render(&self) -> [u32; 12] {
-        let mut buf = [0u32; 12];
+    /// Returns HP bar only (8 slots); party LEDs are managed by sync_party_leds.
+    fn render(&self) -> [u32; 8] {
+        let mut buf = [0u32; 8];
         let lit = hp_lit(self.hp_pct);
         let color = hp_color(self.hp_pct);
         for i in 0..lit { buf[i] = color; }
-        for i in 0..self.alive_count().min(3) {
-            buf[8 + i] = pack_rgb(0, 160, 0);
-        }
-        buf[11] = self.status;
         buf
     }
 }
 
-fn build_led_frame(p1: &LedPlayerState, p2: &LedPlayerState) -> [u32; 24] {
-    let mut frame = [0u32; 24];
-    let b1 = p1.render();
-    let b2 = p2.render();
-    frame[..12].copy_from_slice(&b1);
-    frame[12..].copy_from_slice(&b2);
-    frame
-}
 
 // ── Per-player OLED state ─────────────────────────────────────────────────────
 
 struct OledPlayerState {
     mon_name: std::string::String,
     moves: std::vec::Vec<MoveSlot>,
-    hp_pct: u8,
 }
 
 impl OledPlayerState {
     fn new() -> Self {
-        Self { mon_name: "---".into(), moves: std::vec::Vec::new(), hp_pct: 100 }
+        Self { mon_name: "---".into(), moves: std::vec::Vec::new() }
     }
 }
 
@@ -128,7 +85,7 @@ impl<'a> WebBattleEffects<'a> {
         };
         s.redraw(1);
         s.redraw(2);
-        crate::update_leds(build_led_frame(&s.p1_led, &s.p2_led));
+        s.flush_leds();
         s
     }
 
@@ -138,7 +95,6 @@ impl<'a> WebBattleEffects<'a> {
                 &mut self.p1_disp,
                 &self.p1_oled.mon_name,
                 &self.p1_oled.moves,
-                self.p1_oled.hp_pct,
             );
             crate::update_pixels(1, self.p1_disp.to_rgba());
         } else {
@@ -146,14 +102,16 @@ impl<'a> WebBattleEffects<'a> {
                 &mut self.p2_disp,
                 &self.p2_oled.mon_name,
                 &self.p2_oled.moves,
-                self.p2_oled.hp_pct,
             );
             crate::update_pixels(2, self.p2_disp.to_rgba());
         }
     }
 
     fn flush_leds(&self) {
-        crate::update_leds(build_led_frame(&self.p1_led, &self.p2_led));
+        crate::update_hp_leds(1, self.p1_led.render());
+        crate::sync_party_leds(1);
+        crate::update_hp_leds(2, self.p2_led.render());
+        crate::sync_party_leds(2);
     }
 
     fn flash_both(&mut self, text: &str) {
@@ -174,6 +132,10 @@ impl<'a> WebBattleEffects<'a> {
 fn player_num(mon: &str) -> Option<u8> {
     let id = mon.split(',').nth(1)?.trim();
     if id == "p1" { Some(1) } else if id == "p2" { Some(2) } else { None }
+}
+
+fn mon_name(mon: &str) -> &str {
+    mon.split(',').next().unwrap_or(mon)
 }
 
 fn parse_hp_pct(health: &str) -> Option<u8> {
@@ -210,14 +172,36 @@ fn draw_event_text(disp: &mut WasmDisplay, text: &str) {
         .alignment(Alignment::Center)
         .baseline(Baseline::Top)
         .build();
-    const MAX: usize = 21; // safe chars per line at 5px on 128px canvas
-    if text.len() <= MAX {
-        Text::with_text_style(text, Point::new(64, 28), style, ts).draw(disp).ok();
-    } else {
-        let split = text[..MAX].rfind(' ').unwrap_or(MAX);
-        let line2 = text[split..].trim_start();
-        Text::with_text_style(&text[..split], Point::new(64, 22), style, ts).draw(disp).ok();
-        Text::with_text_style(line2, Point::new(64, 36), style, ts).draw(disp).ok();
+
+    // Target chars per line: evenly divide for long text, 21-char cap for short.
+    let target = if text.len() > 25 { (text.len() + 2) / 3 } else { 21 };
+
+    let mut lines = [""; 3];
+    let mut n = 0usize;
+    let mut rest = text;
+    while !rest.is_empty() && n < 3 {
+        if rest.len() <= target || n == 2 {
+            lines[n] = rest;
+            n += 1;
+            break;
+        }
+        let search_end = (target + 4).min(rest.len());
+        let at = rest[..search_end].rfind(' ').unwrap_or(target.min(rest.len()));
+        lines[n] = rest[..at].trim();
+        n += 1;
+        rest = rest[at..].trim_start();
+    }
+
+    let start_y: i32 = match n {
+        1 => 28,
+        2 => 23,
+        _ => 17,
+    };
+    for i in 0..n {
+        if !lines[i].is_empty() {
+            Text::with_text_style(lines[i], Point::new(64, start_y + i as i32 * 10), style, ts)
+                .draw(disp).ok();
+        }
     }
 }
 
@@ -250,13 +234,8 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
                 if let (Some(p), Some(pct)) = (player_num(mon), parse_hp_pct(health)) {
-                    if p == 1 {
-                        self.p1_oled.hp_pct = pct;
-                        self.p1_led.hp_pct = pct;
-                    } else {
-                        self.p2_oled.hp_pct = pct;
-                        self.p2_led.hp_pct = pct;
-                    }
+                    if p == 1 { self.p1_led.hp_pct = pct; }
+                    else      { self.p2_led.hp_pct = pct; }
                     self.redraw(p);
                     self.flush_leds();
                 }
@@ -270,19 +249,18 @@ impl BoardEffects for WebBattleEffects<'_> {
                 if let Some(pid) = player_id {
                     let p = if pid == "p1" { 1u8 } else { 2u8 };
                     crate::update_moves(p, moves.clone());
+                    crate::set_active_mon_name(p, name);
                     if p == 1 {
                         self.p1_oled.mon_name = name.clone();
                         self.p1_oled.moves = moves.clone();
-                        self.p1_oled.hp_pct = 100;
                         self.p1_led.hp_pct = 100;
-                        self.p1_led.register_switch(name);
                     } else {
                         self.p2_oled.mon_name = name.clone();
                         self.p2_oled.moves = moves.clone();
-                        self.p2_oled.hp_pct = 100;
                         self.p2_led.hp_pct = 100;
-                        self.p2_led.register_switch(name);
                     }
+                    // Status LED is synced from player_data in on_prompt; don't reset here
+                    // to avoid clobbering a status that persists through switching.
                     self.flush_leds();
                 }
                 self.redraw_both();
@@ -298,22 +276,12 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::Faint { mon } => {
-                let mon_name = mon.split(',').next().unwrap_or(mon.as_str()).trim();
                 let desc = event.description();
                 if let Some(p) = player_num(mon) {
-                    if p == 1 {
-                        self.p1_oled.hp_pct = 0;
-                        self.p1_led.hp_pct = 0;
-                        self.p1_led.register_faint(mon_name);
-                        self.p1_led.status = 0;
-                    } else {
-                        self.p2_oled.hp_pct = 0;
-                        self.p2_led.hp_pct = 0;
-                        self.p2_led.register_faint(mon_name);
-                        self.p2_led.status = 0;
-                    }
+                    if p == 1 { self.p1_led.hp_pct = 0; }
+                    else      { self.p2_led.hp_pct = 0; }
+                    crate::update_party_slot_hp(p, mon_name(mon), 0);
                     self.flush_leds();
-                    // redraw_both() below handles the OLED update with hp=0
                 }
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::FAINT_MS).await;
@@ -322,9 +290,7 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::SetStatus { mon, status } => {
                 if let Some(p) = player_num(mon) {
-                    let color = status_color(status);
-                    if p == 1 { self.p1_led.status = color; }
-                    else { self.p2_led.status = color; }
+                    crate::update_party_slot_status(p, mon_name(mon), Some(status.clone()));
                     self.flush_leds();
                 }
                 let desc = event.description();
@@ -335,8 +301,7 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::CureStatus { mon, .. } => {
                 if let Some(p) = player_num(mon) {
-                    if p == 1 { self.p1_led.status = 0; }
-                    else { self.p2_led.status = 0; }
+                    crate::update_party_slot_status(p, mon_name(mon), None);
                     self.flush_leds();
                 }
                 let desc = event.description();
@@ -398,6 +363,12 @@ impl BoardEffects for WebBattleEffects<'_> {
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::BRIEF_MS).await;
                 self.redraw_both();
+            }
+
+            BoardEvent::Turn { .. } => {
+                // Discard any queued button presses from the previous turn
+                // so mashing doesn't cascade across turns.
+                crate::clear_input_queues();
             }
 
             _ => {}

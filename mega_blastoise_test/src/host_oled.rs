@@ -119,11 +119,10 @@ impl HostOled {
 
     fn redraw(&mut self, player: u8) {
         if self.silent { return; }
-        let (mon_name, moves, hp_pct, disp, label) = if player == 1 {
+        let (mon_name, moves, disp, label) = if player == 1 {
             (
                 self.p1.mon_name.as_str(),
                 self.p1.moves.as_slice(),
-                self.p1.hp_pct,
                 &mut self.p1_disp,
                 "P1 Display",
             )
@@ -131,12 +130,11 @@ impl HostOled {
             (
                 self.p2.mon_name.as_str(),
                 self.p2.moves.as_slice(),
-                self.p2.hp_pct,
                 &mut self.p2_disp,
                 "P2 Display",
             )
         };
-        render_player_screen(disp, mon_name, moves, hp_pct);
+        render_player_screen(disp, mon_name, moves);
         println!("── {label} ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
         disp.render();
     }

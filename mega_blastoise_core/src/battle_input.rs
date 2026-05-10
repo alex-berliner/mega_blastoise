@@ -44,9 +44,10 @@ pub struct ActivePrompt {
 pub struct InputBus {
     /// Choice strings produced by input sources, consumed by the runner.
     pub choices: Channel<NoopRawMutex, String, 4>,
-    /// Sent by the runner before it blocks; consumed once by the active display source.
-    /// Capacity-1: the runner cannot send a second prompt until the first is taken.
-    pub prompt: Channel<NoopRawMutex, ActivePrompt, 1>,
+    /// Sent by the runner before it blocks on choices.  Capacity-2 lets the runner
+    /// queue both players' prompts simultaneously so ButtonController can fire
+    /// on_prompt for everyone before any wait_action blocks.
+    pub prompt: Channel<NoopRawMutex, ActivePrompt, 2>,
     /// Battle event descriptions pushed by BoardEffects; drained by output sinks (e.g. USB).
     /// Capacity 32 handles a full turn's worth of events (move, damage, faint, switch-in, etc.)
     /// without dropping any before USB drains them.
@@ -74,6 +75,7 @@ impl InputBus {
 pub trait InputSource {
     async fn run(&mut self, bus: &InputBus);
 }
+
 
 /// Placeholder input source that never produces choices (pends forever).
 ///
@@ -139,6 +141,15 @@ pub trait ButtonSource {
     ) {
     }
 
+    /// Called after the player makes a provisional choice.
+    /// Override to show a "waiting / press to unready" screen.  Default is a no-op.
+    fn on_choice_pending(&mut self, _player_id: &str) {}
+
+    /// Wait until the cancel window expires (returns `false` = committed) or the
+    /// player presses any button (returns `true` = cancelled).  Default always
+    /// proceeds immediately — override to add an undo window.
+    async fn wait_cancel_window(&mut self, _player_id: &str) -> bool { false }
+
     /// Wait for the player to press either a move button or a party button.
     /// Used during `Request::Turn` where either is valid (unless trapped).
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction;
@@ -168,11 +179,75 @@ impl<BS: ButtonSource> ButtonController<BS> {
     }
 }
 
+impl<BS: ButtonSource> ButtonController<BS> {
+    /// Collect the player's choice for a given prompt (move/switch/etc.).
+    async fn collect_choice(&mut self, prompt: &ActivePrompt) -> String {
+        let ActivePrompt { player_id, request, .. } = prompt;
+        match request {
+            Request::Turn(turn) => {
+                let mut parts = Vec::new();
+                for mon_req in &turn.active {
+                    let n = mon_req.moves.len().min(4);
+                    if n == 0 {
+                        parts.push(String::from("pass"));
+                        continue;
+                    }
+                    if mon_req.locked_into_move {
+                        parts.push(format_move_choice(0));
+                        continue;
+                    }
+                    loop {
+                        match self.source.wait_action(player_id, n).await {
+                            PlayerAction::Move(slot) if slot < n => {
+                                let mv = &mon_req.moves[slot];
+                                if !mv.disabled && mv.pp > 0 {
+                                    parts.push(format_move_choice(slot));
+                                    break;
+                                }
+                            }
+                            PlayerAction::Switch(idx) if !mon_req.trapped => {
+                                parts.push(format_switch_choice(idx));
+                                break;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                join_choice_parts(&parts)
+            }
+            Request::Switch(sw) => {
+                let mut parts = Vec::new();
+                for _ in &sw.needs_switch {
+                    let idx = self.source.wait_switch(player_id).await;
+                    parts.push(format_switch_choice(idx));
+                }
+                join_choice_parts(&parts)
+            }
+            Request::TeamPreview(_) => String::from("random"),
+            Request::LearnMove(_) => String::from("pass"),
+        }
+    }
+
+    /// Collect a choice with undo support: shows the waiting screen and allows
+    /// the player to cancel within the cancel window.
+    async fn collect_choice_with_unready(&mut self, prompt: &ActivePrompt) -> String {
+        loop {
+            let choice = self.collect_choice(prompt).await;
+            self.source.on_choice_pending(&prompt.player_id);
+            if self.source.wait_cancel_window(&prompt.player_id).await {
+                self.source.on_prompt(&prompt.player_id, &prompt.request, &prompt.player_data);
+            } else {
+                return choice;
+            }
+        }
+    }
+}
+
 impl<BS: ButtonSource> InputSource for ButtonController<BS> {
     async fn run(&mut self, bus: &InputBus) {
         loop {
             // Drain bus.log while waiting for the next prompt.
-            let prompt = loop {
+            let first_prompt = loop {
                 match select(bus.prompt.receive(), bus.log.receive()).await {
                     Either::First(p) => {
                         while let Ok(line) = bus.log.try_receive() {
@@ -184,54 +259,29 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
                 }
             };
 
-            let ActivePrompt { player_id, request, player_data } = prompt;
-            self.source.on_prompt(&player_id, &request, &player_data);
+            // Fire on_prompt for the first player immediately.
+            self.source.on_prompt(
+                &first_prompt.player_id,
+                &first_prompt.request,
+                &first_prompt.player_data,
+            );
 
-            let choice = match &request {
-                Request::Turn(turn) => {
-                    let mut parts = Vec::new();
-                    for mon_req in &turn.active {
-                        let n = mon_req.moves.len().min(4);
-                        if n == 0 {
-                            parts.push(String::from("pass"));
-                            continue;
-                        }
-                        if mon_req.locked_into_move {
-                            parts.push(format_move_choice(0));
-                            continue;
-                        }
-                        loop {
-                            match self.source.wait_action(&player_id, n).await {
-                                PlayerAction::Move(slot) if slot < n => {
-                                    let mv = &mon_req.moves[slot];
-                                    if !mv.disabled && mv.pp > 0 {
-                                        parts.push(format_move_choice(slot));
-                                        break;
-                                    }
-                                }
-                                PlayerAction::Switch(idx) if !mon_req.trapped => {
-                                    parts.push(format_switch_choice(idx));
-                                    break;
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    join_choice_parts(&parts)
-                }
-                Request::Switch(sw) => {
-                    let mut parts = Vec::new();
-                    for _ in &sw.needs_switch {
-                        let idx = self.source.wait_switch(&player_id).await;
-                        parts.push(format_switch_choice(idx));
-                    }
-                    join_choice_parts(&parts)
-                }
-                Request::TeamPreview(_) => String::from("random"),
-                Request::LearnMove(_) => String::from("pass"),
-            };
+            // Drain any additional queued prompts (parallel turn) and fire
+            // on_prompt for all players before collecting any choices.
+            let mut extra_prompts: Vec<ActivePrompt> = Vec::new();
+            while let Ok(p) = bus.prompt.try_receive() {
+                self.source.on_prompt(&p.player_id, &p.request, &p.player_data);
+                extra_prompts.push(p);
+            }
 
+            // Collect and submit choices in prompt order.
+            let choice = self.collect_choice_with_unready(&first_prompt).await;
             bus.choices.send(choice).await;
+
+            for extra in &extra_prompts {
+                let choice = self.collect_choice_with_unready(extra).await;
+                bus.choices.send(choice).await;
+            }
 
             while let Ok(line) = bus.log.try_receive() {
                 (self.log_sink)(&line);

@@ -10,7 +10,7 @@
 
   <!-- Demo mode trigger -->
   <div id="demo-row">
-    <button id="vs-ai-btn" class="demo-btn">RED VS AI</button>
+    <button id="vs-ai-btn" class="demo-btn">BLUE VS AI</button>
     <button id="demo-btn" class="demo-btn">DEMO</button>
     <button id="pause-btn" class="demo-btn">PAUSE</button>
     <button id="reset-btn" class="demo-btn">RESET</button>
@@ -38,7 +38,7 @@
         <button class="btn switch-btn" id="p1-s1" >S2</button>
         <button class="btn switch-btn" id="p1-s2" >S3</button>
       </div>
-      <!-- P1 LEDs: HP 0-7, party 8-10, status 11 -->
+      <!-- P1 LEDs: HP 0-7, party 8-10 -->
       <div class="led-row" id="leds-p1">
         <div class="led-group">
           <div class="led" id="led-0"></div><div class="led" id="led-1"></div>
@@ -50,9 +50,6 @@
           <div class="led party" id="led-8"></div>
           <div class="led party" id="led-9"></div>
           <div class="led party" id="led-10"></div>
-        </div>
-        <div class="led-group">
-          <div class="led status" id="led-11"></div>
         </div>
       </div>
     </div>
@@ -75,11 +72,8 @@
         <button class="btn switch-btn" id="p2-s1" >S2</button>
         <button class="btn switch-btn" id="p2-s2" >S3</button>
       </div>
-      <!-- P2 LEDs: reversed so status is innermost (near divider), HP outermost -->
+      <!-- P2 LEDs: reversed, party innermost (near divider), HP outermost -->
       <div class="led-row" id="leds-p2">
-        <div class="led-group">
-          <div class="led status" id="led-23"></div>
-        </div>
         <div class="led-group">
           <div class="led party" id="led-22"></div>
           <div class="led party" id="led-21"></div>
