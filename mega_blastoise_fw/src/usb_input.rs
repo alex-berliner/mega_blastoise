@@ -301,6 +301,12 @@ impl<'d> UsbBattleInput<'d> {
             }
 
             Request::Switch(sw) => {
+                // Prefer the fresh player_data attached to this Switch request (it reflects
+                // the faint that triggered the switch, e.g. Goldeen at 0 HP).  Fall back to
+                // last_player_data only if the engine sent None.
+                if player_data.is_some() {
+                    self.last_player_data = player_data.clone();
+                }
                 self.write("\r\n").await;
                 self.write_multiline(&format_prompt(player_id, request, self.last_player_data.as_ref())).await;
 
