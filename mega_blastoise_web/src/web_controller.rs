@@ -18,26 +18,14 @@ impl ButtonSource for WebButtonSource {
 
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
         let player = if player_id == "p1" { 1u8 } else { 2u8 };
-        crate::set_active_player(player);
         loop {
             let ev = crate::PlayerButtonFuture(player).await;
             match ev {
                 crate::ButtonEvent::Move { slot, .. } if (slot as usize) < n_moves => {
-                    crate::set_active_player(0);
                     return PlayerAction::Move(slot as usize);
                 }
                 crate::ButtonEvent::Switch { idx, .. } => {
-                    crate::set_active_player(0);
                     return PlayerAction::Switch(idx as usize);
-                }
-                crate::ButtonEvent::LongPressMove { slot, .. } if (slot as usize) < n_moves => {
-                    crate::show_move_detail(player, slot as usize);
-                    // Wait for release; ignore other events until then.
-                    loop {
-                        let ev2 = crate::PlayerButtonFuture(player).await;
-                        if matches!(ev2, crate::ButtonEvent::LongPressRelease { .. }) { break; }
-                    }
-                    crate::restore_screen(player);
                 }
                 _ => {}
             }
@@ -46,11 +34,9 @@ impl ButtonSource for WebButtonSource {
 
     async fn wait_switch(&mut self, player_id: &str) -> usize {
         let player = if player_id == "p1" { 1u8 } else { 2u8 };
-        crate::set_active_player(player);
         loop {
             let ev = crate::PlayerButtonFuture(player).await;
             if let crate::ButtonEvent::Switch { idx, .. } = ev {
-                crate::set_active_player(0);
                 return idx as usize;
             }
         }

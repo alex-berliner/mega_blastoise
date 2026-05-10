@@ -103,6 +103,11 @@ impl<'d> UsbBattleInput<'d> {
                         parts.push(String::from("pass"));
                         continue;
                     }
+                    if mon_req.locked_into_move {
+                        self.write_ok("Locked into recharge — submitting automatically").await;
+                        parts.push(format_move_choice(0));
+                        continue;
+                    }
 
                     'move_input: loop {
                         self.write_move_prompt(n).await;

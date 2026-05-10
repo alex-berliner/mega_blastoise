@@ -39,17 +39,6 @@ function renderLeds(leds) {
     }
 }
 
-// ── Active-player button highlight ───────────────────────────────────────────
-
-let lastActivePlayer = 0;
-
-function updateActiveHighlight(active) {
-    if (active === lastActivePlayer) return;
-    lastActivePlayer = active;
-    document.getElementById('panel-p1').classList.toggle('active', active === 1);
-    document.getElementById('panel-p2').classList.toggle('active', active === 2);
-}
-
 // ── Flash effects (super-effective / crit) ────────────────────────────────────
 
 function applyFlash(flashState) {
@@ -69,7 +58,6 @@ function frame() {
     renderOled(ctx1, wasm.get_p1_pixels());
     renderOled(ctx2, wasm.get_p2_pixels());
     renderLeds(wasm.get_led_state());
-    updateActiveHighlight(wasm.get_active_player());
     applyFlash(wasm.get_flash_state());
     requestAnimationFrame(frame);
 }
@@ -79,7 +67,8 @@ function frame() {
 window.pressSwitch = (player, idx) => wasm.press_switch(player, idx);
 
 // Long-press detection for move buttons (500 ms threshold).
-// Short tap → press_move; hold → long_press_move (detail view) until release.
+// Short tap → press_move; hold → show move detail view until release.
+// Long press is always available for both players regardless of whose turn it is.
 function setupMoveLongPress(el, player, slot) {
     let timer = null;
     let fired = false;
@@ -89,14 +78,14 @@ function setupMoveLongPress(el, player, slot) {
         fired = false;
         timer = setTimeout(() => {
             fired = true;
-            wasm.long_press_move(player, slot);
+            wasm.wasm_show_move_detail(player, slot);
         }, 500);
     });
 
     el.addEventListener('pointerup', () => {
         clearTimeout(timer);
         if (fired) {
-            wasm.long_press_release(player);
+            wasm.wasm_restore_screen(player);
         } else {
             wasm.press_move(player, slot);
         }
@@ -105,7 +94,7 @@ function setupMoveLongPress(el, player, slot) {
 
     el.addEventListener('pointercancel', () => {
         clearTimeout(timer);
-        if (fired) wasm.long_press_release(player);
+        if (fired) wasm.wasm_restore_screen(player);
         fired = false;
     });
 }

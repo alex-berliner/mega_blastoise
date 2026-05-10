@@ -196,6 +196,10 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
                             parts.push(String::from("pass"));
                             continue;
                         }
+                        if mon_req.locked_into_move {
+                            parts.push(format_move_choice(0));
+                            continue;
+                        }
                         loop {
                             match self.source.wait_action(&player_id, n).await {
                                 PlayerAction::Move(slot) if slot < n => {

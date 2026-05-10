@@ -35,7 +35,6 @@ thread_local! {
     static P1_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
     static P2_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
     static LED_STATE: RefCell<[u32; 24]> = RefCell::new([0u32; 24]);
-    static ACTIVE_PLAYER: RefCell<u8> = RefCell::new(0);
 
     // Per-player button queues — both players can pre-queue independently
     static P1_QUEUE: RefCell<VecDeque<ButtonEvent>> = RefCell::new(VecDeque::new());
@@ -106,10 +105,6 @@ pub(crate) fn update_leds(leds: [u32; 24]) {
     LED_STATE.with(|l| *l.borrow_mut() = leds);
 }
 
-pub(crate) fn set_active_player(player: u8) {
-    ACTIVE_PLAYER.with(|a| *a.borrow_mut() = player);
-}
-
 pub(crate) fn set_lobby_mode(active: bool) {
     LOBBY_MODE.with(|m| *m.borrow_mut() = active);
 }
@@ -160,10 +155,8 @@ pub(crate) fn print_log(line: &str) {
 // ── Button events ─────────────────────────────────────────────────────────────
 
 pub enum ButtonEvent {
-    Move             { player: u8, slot: u8 },
-    Switch           { player: u8, idx:  u8 },
-    LongPressMove    { player: u8, slot: u8 },
-    LongPressRelease { player: u8 },
+    Move   { player: u8, slot: u8 },
+    Switch { player: u8, idx:  u8 },
 }
 
 // Wait for either player's button (lobby start)
@@ -213,10 +206,8 @@ impl Future for PlayerButtonFuture {
 
 fn push_button(ev: ButtonEvent) {
     let player = match &ev {
-        ButtonEvent::Move             { player, .. }
-        | ButtonEvent::Switch           { player, .. }
-        | ButtonEvent::LongPressMove    { player, .. }
-        | ButtonEvent::LongPressRelease { player }    => *player,
+        ButtonEvent::Move   { player, .. }
+        | ButtonEvent::Switch { player, .. } => *player,
     };
     if player == 1 {
         P1_QUEUE.with(|q| q.borrow_mut().push_back(ev));
@@ -237,12 +228,12 @@ fn push_button(ev: ButtonEvent) {
     push_button(ButtonEvent::Switch { player, idx });
 }
 
-#[wasm_bindgen] pub fn long_press_move(player: u8, slot: u8) {
-    push_button(ButtonEvent::LongPressMove { player, slot });
+#[wasm_bindgen] pub fn wasm_show_move_detail(player: u8, slot: u8) {
+    show_move_detail(player, slot as usize);
 }
 
-#[wasm_bindgen] pub fn long_press_release(player: u8) {
-    push_button(ButtonEvent::LongPressRelease { player });
+#[wasm_bindgen] pub fn wasm_restore_screen(player: u8) {
+    restore_screen(player);
 }
 
 #[wasm_bindgen] pub fn submit_text(_line: String) {
@@ -271,10 +262,6 @@ fn push_button(ev: ButtonEvent) {
         *f.borrow_mut() = [0, 0];
         state
     })
-}
-
-#[wasm_bindgen] pub fn get_active_player() -> u8 {
-    ACTIVE_PLAYER.with(|a| *a.borrow())
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -321,7 +308,6 @@ async fn run_game_loop() {
         LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
         set_lobby_displays();
         set_lobby_mode(true);
-        set_active_player(0);
 
         print_log("═══════════════════════════════════════");
         print_log("     MEGA BLASTOISE  —  Gen 1 Randbat  ");
@@ -338,10 +324,8 @@ async fn run_game_loop() {
         loop {
             let ev = AnyButtonFuture.await;
             let player = match &ev {
-                ButtonEvent::Move             { player, .. }
-                | ButtonEvent::Switch           { player, .. }
-                | ButtonEvent::LongPressMove    { player, .. }
-                | ButtonEvent::LongPressRelease { player }    => *player,
+                ButtonEvent::Move   { player, .. }
+                | ButtonEvent::Switch { player, .. } => *player,
             };
             LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = true);
             if LOBBY_READY.with(|r| { let rr = r.borrow(); rr[0] && rr[1] }) { break; }
@@ -398,7 +382,6 @@ async fn run_game_loop() {
         )
         .await;
 
-        set_active_player(0);
         print_log("");
         print_log("── Battle over — press any button for a new game ───");
         print_log("");

@@ -13,13 +13,17 @@
 
     <div class="player-panel" id="panel-p1" data-player="1">
       <div class="panel-header p1-color">RED</div>
-      <!-- OLED + corner move buttons overlaid -->
+      <!-- OLED flanked by move button columns -->
       <div class="oled-area">
+        <div class="move-col">
+          <button class="btn move-btn" id="p1-m0"></button>
+          <button class="btn move-btn" id="p1-m2"></button>
+        </div>
         <canvas id="oled-p1" width="128" height="64" class="oled"></canvas>
-        <button class="btn move-btn" id="p1-m0"></button>
-        <button class="btn move-btn" id="p1-m1"></button>
-        <button class="btn move-btn" id="p1-m2"></button>
-        <button class="btn move-btn" id="p1-m3"></button>
+        <div class="move-col">
+          <button class="btn move-btn" id="p1-m1"></button>
+          <button class="btn move-btn" id="p1-m3"></button>
+        </div>
       </div>
       <div class="switch-row">
         <button class="btn switch-btn" id="p1-s0" onclick="pressSwitch(1,0)">S1</button>
@@ -41,11 +45,15 @@
     <div class="player-panel" id="panel-p2" data-player="2">
       <div class="panel-header p2-color">BLUE</div>
       <div class="oled-area">
+        <div class="move-col">
+          <button class="btn move-btn" id="p2-m0"></button>
+          <button class="btn move-btn" id="p2-m2"></button>
+        </div>
         <canvas id="oled-p2" width="128" height="64" class="oled"></canvas>
-        <button class="btn move-btn" id="p2-m0"></button>
-        <button class="btn move-btn" id="p2-m1"></button>
-        <button class="btn move-btn" id="p2-m2"></button>
-        <button class="btn move-btn" id="p2-m3"></button>
+        <div class="move-col">
+          <button class="btn move-btn" id="p2-m1"></button>
+          <button class="btn move-btn" id="p2-m3"></button>
+        </div>
       </div>
       <div class="switch-row">
         <button class="btn switch-btn" id="p2-s0" onclick="pressSwitch(2,0)">S1</button>
