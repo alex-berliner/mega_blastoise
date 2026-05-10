@@ -183,6 +183,7 @@ impl BoardEffects for BattleEffects<'_> {
             BoardEvent::Damage { .. } | BoardEvent::Heal { .. }       => anim::DAMAGE_MS,
             BoardEvent::SwitchIn { .. }                               => anim::SWITCH_IN_MS,
             BoardEvent::Faint { .. }                                  => anim::FAINT_MS,
+            BoardEvent::Win { .. } | BoardEvent::Tie                  => anim::WIN_MS,
             BoardEvent::SuperEffective { .. }
             | BoardEvent::CriticalHit { .. }
             | BoardEvent::SetStatus { .. }

@@ -13,6 +13,7 @@ pub mod anim {
     pub const DAMAGE_MS:    u32 = 1000;
     pub const SWITCH_IN_MS: u32 = 1400;
     pub const FAINT_MS:     u32 = 2400;
+    pub const WIN_MS:       u32 = 5000;
     pub const EFFECT_MS:    u32 = 800;  // super-effective, crit, status change
     pub const BRIEF_MS:     u32 = 600;  // miss, immune, resist, fail, cant
 }

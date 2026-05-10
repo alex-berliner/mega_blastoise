@@ -73,6 +73,9 @@ thread_local! {
     // Demo mode: both AI, auto-restart each game (persists until page reload)
     static DEMO_MODE: RefCell<bool> = RefCell::new(false);
 
+    // AI pause: when true, AI players block in wait_action/wait_switch
+    static AI_PAUSED: RefCell<bool> = RefCell::new(false);
+
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -101,6 +104,10 @@ pub(crate) fn update_moves(player: u8, moves: Vec<MoveSlot>) {
 pub(crate) fn update_party(player: u8, slots: Vec<PartySlotData>) {
     if player == 1 { P1_PARTY.with(|p| *p.borrow_mut() = slots); }
     else           { P2_PARTY.with(|p| *p.borrow_mut() = slots); }
+}
+
+pub(crate) fn is_ai_paused() -> bool {
+    AI_PAUSED.with(|p| *p.borrow())
 }
 
 pub(crate) fn is_ai_player(player: u8) -> bool {
@@ -320,6 +327,11 @@ fn enter_demo_mode() {
     enter_demo_mode();
 }
 
+#[wasm_bindgen] pub fn wasm_toggle_ai_pause() -> bool {
+    let new_state = AI_PAUSED.with(|p| { let v = !*p.borrow(); *p.borrow_mut() = v; v });
+    new_state
+}
+
 #[wasm_bindgen] pub fn wasm_enter_vs_ai_mode() {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
     // P1 human, P2 AI — single game, returns to normal lobby after
@@ -413,6 +425,7 @@ async fn run_game_loop() {
     loop {
         LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
         AI_PLAYERS.with(|a| *a.borrow_mut() = [false, false]);
+        AI_PAUSED.with(|p| *p.borrow_mut() = false);
         set_lobby_displays();
         set_lobby_mode(true);
 

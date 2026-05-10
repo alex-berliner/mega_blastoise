@@ -141,7 +141,8 @@ inputEl.addEventListener('keydown', e => {
 });
 
 document.addEventListener('click', e => {
-    if (!e.target.closest('.btn') && e.target.id !== 'demo-btn' && e.target.id !== 'vs-ai-btn') inputEl.focus();
+    const ids = ['demo-btn', 'vs-ai-btn', 'pause-btn'];
+    if (!e.target.closest('.btn') && !ids.includes(e.target.id)) inputEl.focus();
 });
 
 document.getElementById('vs-ai-btn').addEventListener('click', () => {
@@ -150,6 +151,12 @@ document.getElementById('vs-ai-btn').addEventListener('click', () => {
 
 document.getElementById('demo-btn').addEventListener('click', () => {
     wasm.wasm_enter_demo_mode();
+});
+
+const pauseBtn = document.getElementById('pause-btn');
+pauseBtn.addEventListener('click', () => {
+    const paused = wasm.wasm_toggle_ai_pause();
+    pauseBtn.textContent = paused ? 'RESUME' : 'PAUSE';
 });
 inputEl.focus();
 

@@ -162,6 +162,11 @@ impl<'a> WebBattleEffects<'a> {
         crate::update_pixels(1, self.p1_disp.to_rgba());
         crate::update_pixels(2, self.p2_disp.to_rgba());
     }
+
+    fn redraw_both(&mut self) {
+        self.redraw(1);
+        self.redraw(2);
+    }
 }
 
 fn player_num(mon: &str) -> Option<u8> {
@@ -238,6 +243,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 let desc = event.description();
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::MOVE_MS).await;
+                self.redraw_both();
             }
 
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
@@ -275,9 +281,9 @@ impl BoardEffects for WebBattleEffects<'_> {
                         self.p2_led.hp_pct = 100;
                         self.p2_led.register_switch(name);
                     }
-                    self.redraw(p);
                     self.flush_leds();
                 }
+                self.redraw_both();
                 crate::sleep_ms(anim::SWITCH_IN_MS / 2).await;
             }
 
@@ -309,6 +315,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 }
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::FAINT_MS).await;
+                self.redraw_both();
             }
 
             BoardEvent::SetStatus { mon, status } => {
@@ -321,6 +328,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 let desc = event.description();
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::EFFECT_MS).await;
+                self.redraw_both();
             }
 
             BoardEvent::CureStatus { mon, .. } => {
@@ -332,6 +340,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 let desc = event.description();
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::EFFECT_MS).await;
+                self.redraw_both();
             }
 
             BoardEvent::SuperEffective { mon } => {
@@ -339,6 +348,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 let desc = event.description();
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::EFFECT_MS).await;
+                self.redraw_both();
             }
 
             BoardEvent::CriticalHit { mon } => {
@@ -346,6 +356,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 let desc = event.description();
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::EFFECT_MS).await;
+                self.redraw_both();
             }
 
             BoardEvent::Win { side } => {
@@ -364,6 +375,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 crate::update_pixels(1, self.p1_disp.to_rgba());
                 crate::update_pixels(2, self.p2_disp.to_rgba());
                 crate::update_leds(win_leds(winner));
+                crate::sleep_ms(anim::WIN_MS).await;
             }
 
             BoardEvent::Tie => {
@@ -372,6 +384,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 crate::update_pixels(1, self.p1_disp.to_rgba());
                 crate::update_pixels(2, self.p2_disp.to_rgba());
                 crate::update_leds(win_leds(0));
+                crate::sleep_ms(anim::WIN_MS).await;
             }
 
             BoardEvent::Miss { .. }
@@ -382,6 +395,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 let desc = event.description();
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::BRIEF_MS).await;
+                self.redraw_both();
             }
 
             _ => {}

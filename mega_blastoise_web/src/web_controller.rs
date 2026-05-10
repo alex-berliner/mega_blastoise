@@ -24,6 +24,7 @@ impl ButtonSource for WebButtonSource {
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
         let player = if player_id == "p1" { 1u8 } else { 2u8 };
         if crate::is_ai_player(player) {
+            while crate::is_ai_paused() { crate::sleep_ms(100).await; }
             return PlayerAction::Move(crate::ai_pick_move(n_moves));
         }
         loop {
@@ -43,6 +44,7 @@ impl ButtonSource for WebButtonSource {
     async fn wait_switch(&mut self, player_id: &str) -> usize {
         let player = if player_id == "p1" { 1u8 } else { 2u8 };
         if crate::is_ai_player(player) {
+            while crate::is_ai_paused() { crate::sleep_ms(100).await; }
             return crate::ai_pick_switch(player);
         }
         loop {
