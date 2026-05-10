@@ -76,6 +76,10 @@ thread_local! {
     // AI pause: when true, AI players block in wait_action/wait_switch
     static AI_PAUSED: RefCell<bool> = RefCell::new(false);
 
+    // Pending AI config for the next game: set by VS AI button, survives the
+    // loop-top reset of AI_PLAYERS, applied just before the battle starts.
+    static NEXT_GAME_AI: RefCell<Option<[bool; 2]>> = RefCell::new(None);
+
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -330,8 +334,8 @@ fn push_button(ev: ButtonEvent) {
 }
 
 fn enter_demo_mode() {
-    AI_PLAYERS.with(|a| *a.borrow_mut() = [true, true]);
     DEMO_MODE.with(|d| *d.borrow_mut() = true);
+    NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, true]));
     push_button(ButtonEvent::Move { player: 1, slot: 0 });
     push_button(ButtonEvent::Move { player: 2, slot: 0 });
 }
@@ -354,8 +358,9 @@ fn enter_demo_mode() {
 
 #[wasm_bindgen] pub fn wasm_enter_vs_ai_mode() {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
-    // P1 human, P2 AI — single game, returns to normal lobby after
-    AI_PLAYERS.with(|a| { let mut a = a.borrow_mut(); a[0] = false; a[1] = true; });
+    // Record intent in NEXT_GAME_AI so it survives the loop-top AI_PLAYERS reset.
+    // Push ready events for both players so the lobby exits immediately.
+    NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([false, true]));
     push_button(ButtonEvent::Move { player: 1, slot: 0 });
     push_button(ButtonEvent::Move { player: 2, slot: 0 });
 }
@@ -454,9 +459,9 @@ async fn run_game_loop() {
         set_lobby_mode(true);
 
         if DEMO_MODE.with(|d| *d.borrow()) {
-            // Demo mode: both players are AI; pause briefly, but exit to normal
-            // lobby if a human presses any button during the pause.
-            AI_PLAYERS.with(|a| *a.borrow_mut() = [true, true]);
+            // Demo mode: auto-ready lobby with 15 s pause; exit if a button is pressed.
+            // Set the AI config for this iteration via NEXT_GAME_AI like any other caller.
+            NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, true]));
             let mut interrupted = false;
             for _ in 0..150u16 {  // 150 × 100 ms = 15 s
                 sleep_ms(100).await;
@@ -465,11 +470,11 @@ async fn run_game_loop() {
                 if pressed { interrupted = true; break; }
             }
             if interrupted {
+                // Exit demo mode. Don't clear queues — the queued events (including
+                // any VS AI ready signals) will be consumed naturally by the normal
+                // lobby on the next iteration. NEXT_GAME_AI carries any VS AI intent
+                // forward; AI_PLAYERS is reset at the top of the next iteration.
                 DEMO_MODE.with(|d| *d.borrow_mut() = false);
-                AI_PLAYERS.with(|a| *a.borrow_mut() = [false, false]);
-                set_lobby_mode(false);
-                P1_QUEUE.with(|q| q.borrow_mut().clear());
-                P2_QUEUE.with(|q| q.borrow_mut().clear());
                 continue;
             }
         } else {
@@ -496,6 +501,10 @@ async fn run_game_loop() {
             }
         }
         set_lobby_mode(false);
+        // Apply any VS AI mode that was requested during the lobby.
+        if let Some(ai) = NEXT_GAME_AI.with(|n| n.borrow_mut().take()) {
+            AI_PLAYERS.with(|a| *a.borrow_mut() = ai);
+        }
         // Drain any button presses that accumulated during the lobby phase
         // so they don't get consumed as the first battle move.
         P1_QUEUE.with(|q| q.borrow_mut().clear());
