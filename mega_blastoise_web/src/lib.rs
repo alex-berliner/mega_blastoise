@@ -63,6 +63,10 @@ thread_local! {
     static P1_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
     static P2_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
 
+    // True while a detail/stats overlay is displayed — suppresses update_pixels writes
+    static P1_IN_DETAIL: RefCell<bool> = RefCell::new(false);
+    static P2_IN_DETAIL: RefCell<bool> = RefCell::new(false);
+
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -70,10 +74,16 @@ thread_local! {
 pub(crate) fn update_pixels(player: u8, pixels: Vec<u8>) {
     if player == 1 {
         P1_BATTLE_PIXELS.with(|p| *p.borrow_mut() = pixels.clone());
-        P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        // Don't overwrite the detail overlay — restore_screen will pick up
+        // the updated battle pixels when the player releases.
+        if !P1_IN_DETAIL.with(|d| *d.borrow()) {
+            P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        }
     } else {
         P2_BATTLE_PIXELS.with(|p| *p.borrow_mut() = pixels.clone());
-        P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        if !P2_IN_DETAIL.with(|d| *d.borrow()) {
+            P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        }
     }
 }
 
@@ -94,8 +104,13 @@ pub(crate) fn show_pokemon_stats(player: u8, team_idx: usize) {
         let mut disp = WasmDisplay::new();
         render_pokemon_stats(&mut disp, slot);
         let pixels = disp.to_rgba();
-        if player == 1 { P1_PIXELS.with(|p| *p.borrow_mut() = pixels); }
-        else           { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+        if player == 1 {
+            P1_IN_DETAIL.with(|d| *d.borrow_mut() = true);
+            P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        } else {
+            P2_IN_DETAIL.with(|d| *d.borrow_mut() = true);
+            P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        }
     }
 }
 
@@ -106,17 +121,23 @@ pub(crate) fn show_move_detail(player: u8, slot: usize) {
         let mut disp = WasmDisplay::new();
         render_move_detail(&mut disp, mv);
         let pixels = disp.to_rgba();
-        // Only update display pixels, not the battle snapshot.
-        if player == 1 { P1_PIXELS.with(|p| *p.borrow_mut() = pixels); }
-        else           { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+        if player == 1 {
+            P1_IN_DETAIL.with(|d| *d.borrow_mut() = true);
+            P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        } else {
+            P2_IN_DETAIL.with(|d| *d.borrow_mut() = true);
+            P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
+        }
     }
 }
 
 pub(crate) fn restore_screen(player: u8) {
     if player == 1 {
+        P1_IN_DETAIL.with(|d| *d.borrow_mut() = false);
         let pix = P1_BATTLE_PIXELS.with(|p| p.borrow().clone());
         P1_PIXELS.with(|p| *p.borrow_mut() = pix);
     } else {
+        P2_IN_DETAIL.with(|d| *d.borrow_mut() = false);
         let pix = P2_BATTLE_PIXELS.with(|p| p.borrow().clone());
         P2_PIXELS.with(|p| *p.borrow_mut() = pix);
     }
@@ -261,9 +282,20 @@ fn push_button(ev: ButtonEvent) {
     restore_screen(player);
 }
 
-#[wasm_bindgen] pub fn submit_text(_line: String) {
-    // Treat Enter as a button press to start/advance the lobby.
-    push_button(ButtonEvent::Move { player: 1, slot: 0 });
+#[wasm_bindgen] pub fn submit_text(line: String) {
+    if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
+    match line.trim() {
+        ":ready" | ":ready ai" | ":ready both" | "" => {
+            push_button(ButtonEvent::Move { player: 1, slot: 0 });
+            push_button(ButtonEvent::Move { player: 2, slot: 0 });
+        }
+        ":ready p1" => push_button(ButtonEvent::Move { player: 1, slot: 0 }),
+        ":ready p2" => push_button(ButtonEvent::Move { player: 2, slot: 0 }),
+        _ => {
+            push_button(ButtonEvent::Move { player: 1, slot: 0 });
+            push_button(ButtonEvent::Move { player: 2, slot: 0 });
+        }
+    }
 }
 
 #[wasm_bindgen] pub fn get_p1_pixels() -> Vec<u8> {
@@ -356,6 +388,10 @@ async fn run_game_loop() {
             if LOBBY_READY.with(|r| { let rr = r.borrow(); rr[0] && rr[1] }) { break; }
         }
         set_lobby_mode(false);
+        // Drain any button presses that accumulated during the lobby phase
+        // so they don't get consumed as the first battle move.
+        P1_QUEUE.with(|q| q.borrow_mut().clear());
+        P2_QUEUE.with(|q| q.borrow_mut().clear());
 
         // Countdown fanfare: 3 gold flashes
         let gold = pack_rgb(200, 150, 0);

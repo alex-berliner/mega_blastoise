@@ -32,13 +32,20 @@
       </div>
       <!-- P1 LEDs: HP 0-7, party 8-10, status 11 -->
       <div class="led-row" id="leds-p1">
-        <div class="led" id="led-0"></div><div class="led" id="led-1"></div>
-        <div class="led" id="led-2"></div><div class="led" id="led-3"></div>
-        <div class="led" id="led-4"></div><div class="led" id="led-5"></div>
-        <div class="led" id="led-6"></div><div class="led" id="led-7"></div>
-        <div class="led party" id="led-8"></div><div class="led party" id="led-9"></div>
-        <div class="led party" id="led-10"></div>
-        <div class="led status" id="led-11"></div>
+        <div class="led-group">
+          <div class="led" id="led-0"></div><div class="led" id="led-1"></div>
+          <div class="led" id="led-2"></div><div class="led" id="led-3"></div>
+          <div class="led" id="led-4"></div><div class="led" id="led-5"></div>
+          <div class="led" id="led-6"></div><div class="led" id="led-7"></div>
+        </div>
+        <div class="led-group">
+          <div class="led party" id="led-8"></div>
+          <div class="led party" id="led-9"></div>
+          <div class="led party" id="led-10"></div>
+        </div>
+        <div class="led-group">
+          <div class="led status" id="led-11"></div>
+        </div>
       </div>
     </div>
 
@@ -62,13 +69,20 @@
       </div>
       <!-- P2 LEDs: reversed so status is innermost (near divider), HP outermost -->
       <div class="led-row" id="leds-p2">
-        <div class="led status" id="led-23"></div>
-        <div class="led party" id="led-22"></div><div class="led party" id="led-21"></div>
-        <div class="led party" id="led-20"></div>
-        <div class="led" id="led-19"></div><div class="led" id="led-18"></div>
-        <div class="led" id="led-17"></div><div class="led" id="led-16"></div>
-        <div class="led" id="led-15"></div><div class="led" id="led-14"></div>
-        <div class="led" id="led-13"></div><div class="led" id="led-12"></div>
+        <div class="led-group">
+          <div class="led status" id="led-23"></div>
+        </div>
+        <div class="led-group">
+          <div class="led party" id="led-22"></div>
+          <div class="led party" id="led-21"></div>
+          <div class="led party" id="led-20"></div>
+        </div>
+        <div class="led-group">
+          <div class="led" id="led-19"></div><div class="led" id="led-18"></div>
+          <div class="led" id="led-17"></div><div class="led" id="led-16"></div>
+          <div class="led" id="led-15"></div><div class="led" id="led-14"></div>
+          <div class="led" id="led-13"></div><div class="led" id="led-12"></div>
+        </div>
       </div>
     </div>
 
