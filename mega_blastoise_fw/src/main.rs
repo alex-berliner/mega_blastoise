@@ -113,14 +113,18 @@ async fn main(spawner: Spawner) {
         // Lobby: demo AI battle plays until a player presses ready, then countdown.
         #[cfg(feature = "usb")]
         let ai_players = run_lobby(&mut buttons, &mut usb_input, &data, &mut queue).await;
+        #[cfg(not(feature = "usb"))]
+        let ai_players = run_lobby(&mut buttons, &data, &mut queue).await;
+
+        queue.drain_pending(); // discard any demo events still queued
+
         #[cfg(feature = "usb")]
         {
             let seed = Instant::now().as_ticks();
             usb_input.set_ai_players(ai_players, seed);
         }
 
-        #[cfg(not(feature = "usb"))]
-        run_lobby(&mut buttons, &data, &mut queue).await;
+        let _ = ai_players; // used above under #[cfg(feature = "usb")]
 
         // Draw teams from timing jitter (fresh entropy each round).
         let seed = Instant::now().as_ticks();

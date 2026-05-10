@@ -11,8 +11,8 @@ use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
-    format_move_choice, format_prompt, format_switch_choice, join_choice_parts, ActivePrompt,
-    InputBus, InputSource, PlayerAction,
+    format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
+    ActivePrompt, InputBus, InputSource, PlayerAction, RandomAi,
 };
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
@@ -45,8 +45,8 @@ pub struct UsbBattleInput<'d> {
     last_player_data: Option<PlayerBattleData>,
     /// Which players are AI-controlled this battle (reset each lobby).
     ai_players: [bool; 2],
-    /// RNG state for AI choices.
-    ai_rng: u64,
+    /// AI choice engine for AI-controlled players.
+    ai: RandomAi,
 }
 
 impl<'d> UsbBattleInput<'d> {
@@ -58,55 +58,14 @@ impl<'d> UsbBattleInput<'d> {
             last_typed_line: None,
             last_player_data: None,
             ai_players: [false, false],
-            ai_rng: 0x9e3779b97f4a7c15,
+            ai: RandomAi::new(0x9e3779b97f4a7c15),
         }
     }
 
     /// Configure which players are AI for the upcoming battle.
     pub fn set_ai_players(&mut self, ai: [bool; 2], seed: u64) {
         self.ai_players = ai;
-        self.ai_rng = seed ^ 0xbad_c0ffee_dead;
-    }
-
-    fn ai_next_u64(&mut self) -> u64 {
-        self.ai_rng = self.ai_rng.wrapping_add(0x9e3779b97f4a7c15);
-        let mut z = self.ai_rng;
-        z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
-        z ^ (z >> 31)
-    }
-
-    fn make_ai_choice(&mut self, request: &Request, player_data: Option<&PlayerBattleData>) -> String {
-        match request {
-            Request::Turn(turn) => {
-                let mut parts = Vec::new();
-                for mon_req in &turn.active {
-                    let n = mon_req.moves.len().min(4);
-                    if n == 0 { parts.push(String::from("pass")); continue; }
-                    let slot = (self.ai_next_u64() as usize) % n;
-                    parts.push(format_move_choice(slot));
-                }
-                join_choice_parts(&parts)
-            }
-            Request::Switch(sw) => {
-                let valid: Vec<usize> = match player_data {
-                    Some(pd) => pd.mons.iter().enumerate()
-                        .filter(|(_, m)| !m.active && m.hp > 0)
-                        .map(|(i, _)| i)
-                        .collect(),
-                    None => alloc::vec![1, 2],
-                };
-                let mut parts = Vec::new();
-                for _ in &sw.needs_switch {
-                    let idx = if valid.is_empty() { 0 }
-                              else { valid[(self.ai_next_u64() as usize) % valid.len()] };
-                    parts.push(format_switch_choice(idx));
-                }
-                join_choice_parts(&parts)
-            }
-            Request::TeamPreview(_) => String::from("random"),
-            Request::LearnMove(_) => String::from("pass"),
-        }
+        self.ai = RandomAi::new(seed ^ 0xbad_c0ffee_dead);
     }
 
     pub async fn run(&mut self, bus: &InputBus) {
@@ -138,7 +97,7 @@ impl<'d> UsbBattleInput<'d> {
             let player_idx = if player_id.as_str() == "p1" { 0 } else { 1 };
             let choice = if self.ai_players[player_idx] {
                 self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", player_id.as_str())).await;
-                self.make_ai_choice(&request, player_data.as_ref())
+                self.ai.make_choice(&request, player_data.as_ref())
             } else {
                 let btns = buttons.as_mut().map(|b| &mut **b);
                 self.handle(&player_id, &request, player_data, btns).await
@@ -637,78 +596,3 @@ impl InputSource for UsbBattleInput<'_> {
     }
 }
 
-// ── UsbButtonInput ────────────────────────────────────────────────────────────
-
-/// Minimal [`ButtonSource`] over USB CDC serial.
-///
-/// Reads a single digit (1–n) from the serial port and returns the 0-based slot.
-/// No display, no move lists — the OLED (or host terminal) shows what to press.
-/// Pairs with [`mega_blastoise_core::ButtonController`] which handles all
-/// battle-protocol logic.
-pub struct UsbButtonInput<'d> {
-    sender: Sender<'d, Driver<'d, USB>>,
-    receiver: Receiver<'d, Driver<'d, USB>>,
-}
-
-impl<'d> UsbButtonInput<'d> {
-    pub fn new(
-        sender: Sender<'d, Driver<'d, USB>>,
-        receiver: Receiver<'d, Driver<'d, USB>>,
-    ) -> Self {
-        Self { sender, receiver }
-    }
-
-    /// Read bytes from USB until we get a digit in 1..=max_btn; return 0-based index.
-    async fn read_button(&mut self, max_btn: usize) -> usize {
-        let mut buf = [0u8; 64];
-        loop {
-            self.receiver.wait_connection().await;
-            match self.receiver.read_packet(&mut buf).await {
-                Ok(n) => {
-                    for &b in &buf[..n] {
-                        if b >= b'1' && b <= b'0' + max_btn as u8 {
-                            return (b - b'1') as usize;
-                        }
-                    }
-                }
-                Err(_) => {
-                    self.receiver.wait_connection().await;
-                }
-            }
-        }
-    }
-}
-
-impl mega_blastoise_core::ButtonSource for UsbButtonInput<'_> {
-    async fn wait_action(&mut self, _player_id: &str, n_moves: usize) -> PlayerAction {
-        let mut saw_s = false;
-        let mut buf = [0u8; 64];
-        loop {
-            self.receiver.wait_connection().await;
-            match self.receiver.read_packet(&mut buf).await {
-                Ok(n) => {
-                    for &b in &buf[..n] {
-                        if saw_s {
-                            if b >= b'1' && b <= b'6' {
-                                return PlayerAction::Switch((b - b'1') as usize);
-                            }
-                            saw_s = false;
-                        }
-                        if b == b's' || b == b'S' {
-                            saw_s = true;
-                        } else if b >= b'1' && b <= b'0' + n_moves as u8 {
-                            return PlayerAction::Move((b - b'1') as usize);
-                        }
-                    }
-                }
-                Err(_) => {
-                    self.receiver.wait_connection().await;
-                }
-            }
-        }
-    }
-
-    async fn wait_switch(&mut self, _player_id: &str) -> usize {
-        self.read_button(6).await
-    }
-}

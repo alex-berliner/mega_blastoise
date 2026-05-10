@@ -22,6 +22,7 @@ use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, party_slot_from_mon, ActivePrompt,
     ButtonSource, InputBus, InputSource, PlayerAction,
 };
+#[cfg(feature = "oled")]
 use crate::subsystems::oled::{send as oled_send, OledCmd};
 
 pub struct ButtonMatrix<'d> {
@@ -94,23 +95,6 @@ impl<'d> ButtonMatrix<'d> {
         }
     }
 
-    /// Wait for any button press from either player (all 4 rows).
-    /// Used in demo mode to interrupt the attract battle.
-    pub async fn wait_any_lobby_press(&mut self) {
-        loop {
-            let any = self.scan_row(0) | self.scan_row(1) | self.scan_row(2) | self.scan_row(3);
-            if any != 0 {
-                loop {
-                    Timer::after_millis(10).await;
-                    let still = self.scan_row(0) | self.scan_row(1) | self.scan_row(2) | self.scan_row(3);
-                    if still == 0 { break; }
-                }
-                return;
-            }
-            Timer::after_millis(5).await;
-        }
-    }
-
     /// Wait for a button press from a specific player (rows 0+1 = P1, rows 2+3 = P2).
     /// Used in the waiting phase to toggle per-player ready state.
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
@@ -161,10 +145,6 @@ impl<'d> PicoBattleInput<'d> {
         self.0.wait_switch(player_id).await
     }
 
-    pub async fn wait_any_lobby_press(&mut self) {
-        self.0.wait_any_lobby_press().await
-    }
-
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
         self.0.wait_lobby_press().await
     }
@@ -179,6 +159,7 @@ impl ButtonSource for PicoBattleInput<'_> {
         _request: &Request,
         player_data: &Option<PlayerBattleData>,
     ) {
+        #[cfg(feature = "oled")]
         if let Some(pd) = player_data {
             let player = if player_id == "p2" { 2u8 } else { 1u8 };
             let slots = pd.mons.iter().map(party_slot_from_mon).collect();
@@ -203,9 +184,12 @@ impl ButtonSource for PicoBattleInput<'_> {
                     if held_ms >= 500 { break true; }
                 };
                 if is_long {
-                    oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8 });
+                    #[cfg(feature = "oled")]
+                    { oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8 });
+                      self.0.wait_release(switch_row).await;
+                      oled_send(OledCmd::RestoreScreen { player }); }
+                    #[cfg(not(feature = "oled"))]
                     self.0.wait_release(switch_row).await;
-                    oled_send(OledCmd::RestoreScreen { player });
                 } else {
                     return PlayerAction::Switch(col);
                 }
@@ -226,9 +210,12 @@ impl ButtonSource for PicoBattleInput<'_> {
                     }
                 };
                 if is_long {
-                    oled_send(OledCmd::ShowMoveDetail { player, slot: col as u8 });
+                    #[cfg(feature = "oled")]
+                    { oled_send(OledCmd::ShowMoveDetail { player, slot: col as u8 });
+                      self.0.wait_release(move_row).await;
+                      oled_send(OledCmd::RestoreScreen { player }); }
+                    #[cfg(not(feature = "oled"))]
                     self.0.wait_release(move_row).await;
-                    oled_send(OledCmd::RestoreScreen { player });
                     // Don't return — loop back and wait for a new press.
                 } else {
                     return PlayerAction::Move(col);
@@ -253,9 +240,12 @@ impl ButtonSource for PicoBattleInput<'_> {
                     if held_ms >= 500 { break true; }
                 };
                 if is_long {
-                    oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8 });
+                    #[cfg(feature = "oled")]
+                    { oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8 });
+                      self.0.wait_release(row).await;
+                      oled_send(OledCmd::RestoreScreen { player }); }
+                    #[cfg(not(feature = "oled"))]
                     self.0.wait_release(row).await;
-                    oled_send(OledCmd::RestoreScreen { player });
                 } else {
                     return col;
                 }

@@ -11,6 +11,8 @@ pub mod data_store;
 pub mod demo_teams;
 pub mod prompt_fmt;
 pub mod randbat;
+pub mod rng;
+pub mod random_ai;
 
 pub use battle_effects::{
     anim, process_new_log_lines, BoardEffects, BoardEventQueue, NoopBoardEffects,
@@ -30,3 +32,5 @@ pub use prompt_fmt::{format_active_state, format_player_state, format_prompt};
 pub use data_store::FlashDataStore;
 pub use demo_teams::{demo_team_blue, demo_team_red};
 pub use randbat::draw_randbat_team;
+pub use rng::SimpleRng;
+pub use random_ai::RandomAi;
