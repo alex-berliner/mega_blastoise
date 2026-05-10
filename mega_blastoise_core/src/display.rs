@@ -143,8 +143,11 @@ where
     // ── Status condition ─────────────────────────────────────────────────────
     if let Some(s) = status {
         let abbr = match s {
-            "par" => "PAR", "brn" => "BRN", "frz" => "FRZ",
-            "psn" | "tox" => "PSN", "slp" => "SLP",
+            "Paralysis" => "PAR",
+            "Burn"      => "BRN",
+            "Freeze"    => "FRZ",
+            "Poison" | "Bad Poison" => "PSN",
+            "Sleep"     => "SLP",
             _ => "",
         };
         if !abbr.is_empty() {
@@ -250,11 +253,11 @@ where
 
     // HP + status
     let status_abbr = match slot.status.as_deref() {
-        Some("par") => " PAR",
-        Some("brn") => " BRN",
-        Some("psn") | Some("tox") => " PSN",
-        Some("slp") => " SLP",
-        Some("frz") => " FRZ",
+        Some("Paralysis")              => " PAR",
+        Some("Burn")                   => " BRN",
+        Some("Poison") | Some("Bad Poison") => " PSN",
+        Some("Sleep")                  => " SLP",
+        Some("Freeze")                 => " FRZ",
         _ => "",
     };
     let hp_line = alloc::format!("HP:{}/{}{}", slot.hp, slot.max_hp, status_abbr);

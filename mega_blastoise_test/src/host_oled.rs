@@ -19,11 +19,12 @@ pub struct OledPlayerState {
     pub mon_name: String,
     pub moves: Vec<MoveSlot>,
     pub hp_pct: u8,
+    pub status: Option<String>,
 }
 
 impl OledPlayerState {
     fn new(header: &'static str) -> Self {
-        Self { header, mon_name: "---".into(), moves: Vec::new(), hp_pct: 100 }
+        Self { header, mon_name: "---".into(), moves: Vec::new(), hp_pct: 100, status: None }
     }
 }
 
@@ -136,7 +137,7 @@ impl HostOled {
                 "P2 Display",
             )
         };
-        render_player_screen(disp, mon_name, moves, hp_pct);
+        render_player_screen(disp, mon_name, moves, hp_pct, None);
         println!("── {label} ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
         disp.render();
     }

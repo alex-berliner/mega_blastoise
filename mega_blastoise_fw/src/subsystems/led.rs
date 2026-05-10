@@ -46,11 +46,11 @@ pub enum LedStatus {
 impl LedStatus {
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
-            "par" => Some(Self::Paralyzed),
-            "brn" => Some(Self::Burned),
-            "frz" => Some(Self::Frozen),
-            "psn" | "tox" => Some(Self::Poisoned),
-            "slp" => Some(Self::Asleep),
+            "Paralysis"              => Some(Self::Paralyzed),
+            "Burn"                   => Some(Self::Burned),
+            "Freeze"                 => Some(Self::Frozen),
+            "Poison" | "Bad Poison"  => Some(Self::Poisoned),
+            "Sleep"                  => Some(Self::Asleep),
             _ => None,
         }
     }

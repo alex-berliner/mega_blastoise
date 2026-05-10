@@ -39,8 +39,8 @@ pub enum OledCmd {
     MovesUpdate { player: u8, moves: Vec<MoveSlot> },
     /// A mon fainted.
     Faint { player: u8 },
-    /// Status condition set ("par", "brn", "frz", "psn", "tox", "slp").
-    StatusSet { player: u8, status: [u8; 4], len: u8 },
+    /// Status condition set (full name, e.g. "Paralysis", "Bad Poison").
+    StatusSet { player: u8, status: [u8; 10], len: u8 },
     /// Status condition cleared.
     StatusClear { player: u8 },
     /// Battle ended — winner is 1 (p1) or 2 (p2); 0 means tie.
@@ -76,7 +76,7 @@ struct PlayerState {
     fainted: bool,
     moves: Vec<MoveSlot>,
     party: Vec<PartySlotData>,
-    status: [u8; 4],
+    status: [u8; 10],
     status_len: u8,
 }
 
@@ -84,7 +84,7 @@ impl PlayerState {
     fn new() -> Self {
         let mut name = [b' '; 12];
         name[0] = b'-'; name[1] = b'-'; name[2] = b'-';
-        Self { hp_pct: 100, name, name_len: 3, fainted: false, moves: Vec::new(), party: Vec::new(), status: [0; 4], status_len: 0 }
+        Self { hp_pct: 100, name, name_len: 3, fainted: false, moves: Vec::new(), party: Vec::new(), status: [0; 10], status_len: 0 }
     }
 
     fn name_str(&self) -> &str {

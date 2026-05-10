@@ -132,8 +132,8 @@ impl BoardEffects for BattleEffects<'_> {
                     #[cfg(feature = "oled")]
                     {
                         let bytes = status.as_bytes();
-                        let len = bytes.len().min(4) as u8;
-                        let mut buf = [0u8; 4];
+                        let len = bytes.len().min(10) as u8;
+                        let mut buf = [0u8; 10];
                         buf[..len as usize].copy_from_slice(&bytes[..len as usize]);
                         oled_send(OledCmd::StatusSet { player, status: buf, len });
                     }

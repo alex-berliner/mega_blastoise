@@ -62,7 +62,7 @@ fn status_label(s: &str) -> &str {
 }
 
 impl BoardEffects for HostBattleEffects<'_> {
-    fn on_event(&mut self, event: BoardEvent) {
+    async fn on_event(&mut self, event: BoardEvent) {
         match &event {
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
                 println!("[RTT] hp event: mon={mon} health={health}");
