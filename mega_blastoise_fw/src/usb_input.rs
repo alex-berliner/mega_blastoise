@@ -633,6 +633,11 @@ fn handle_meta_cmd(line: &str) -> Option<&'static str> {
         ":reset"    => { SCB::sys_reset() }
         ":anim off" => { ANIM_ENABLED.store(false, core::sync::atomic::Ordering::Relaxed); Some("[anim] animations OFF") }
         ":anim on"  => { ANIM_ENABLED.store(true,  core::sync::atomic::Ordering::Relaxed); Some("[anim] animations ON") }
+        ":help" | "?" => Some(concat!(
+            "Lobby:  :ready [:p1|:p2|:ai]  :demo  :s/:stop\r\n",
+            "Battle: 1-4 (move)  s1-s6 (switch)\r\n",
+            "Any:    :anim [on|off]  :reset",
+        )),
         _ => None,
     }
 }

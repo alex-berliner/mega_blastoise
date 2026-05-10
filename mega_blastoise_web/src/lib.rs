@@ -58,6 +58,9 @@ thread_local! {
     // Current active move list per player (for long-press detail rendering)
     static P1_MOVES: RefCell<Vec<MoveSlot>> = RefCell::new(Vec::new());
     static P2_MOVES: RefCell<Vec<MoveSlot>> = RefCell::new(Vec::new());
+    // Incremented each time moves are updated — JS uses this to avoid redundant DOM updates
+    static P1_MOVES_VER: RefCell<u32> = RefCell::new(0);
+    static P2_MOVES_VER: RefCell<u32> = RefCell::new(0);
 
     // Full party snapshot per player (for long-press switch button rendering)
     static P1_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
@@ -118,8 +121,13 @@ pub(crate) fn update_pixels(player: u8, pixels: Vec<u8>) {
 }
 
 pub(crate) fn update_moves(player: u8, moves: Vec<MoveSlot>) {
-    if player == 1 { P1_MOVES.with(|m| *m.borrow_mut() = moves); }
-    else           { P2_MOVES.with(|m| *m.borrow_mut() = moves); }
+    if player == 1 {
+        P1_MOVES.with(|m| *m.borrow_mut() = moves);
+        P1_MOVES_VER.with(|v| *v.borrow_mut() += 1);
+    } else {
+        P2_MOVES.with(|m| *m.borrow_mut() = moves);
+        P2_MOVES_VER.with(|v| *v.borrow_mut() += 1);
+    }
 }
 
 pub(crate) fn update_party(player: u8, slots: Vec<PartySlotData>) {
@@ -374,6 +382,18 @@ fn enter_demo_mode() {
         ":reset" => { wasm_reset(); return; }
         ":anim off" => { ANIM_ENABLED.with(|a| *a.borrow_mut() = false); print_log("[anim] animations OFF"); return; }
         ":anim on"  => { ANIM_ENABLED.with(|a| *a.borrow_mut() = true);  print_log("[anim] animations ON");  return; }
+        ":pause" | ":resume" => {
+            let paused = wasm_toggle_ai_pause();
+            print_log(if paused { "[AI] paused" } else { "[AI] resumed" });
+            return;
+        }
+        ":help" => {
+            print_log("Commands: :ready [:p1|:p2|:ai]  :demo  :pause  :anim [on|off]  :reset");
+            print_log("Keys P1: 1-4=moves  A/S/D=switch");
+            print_log("Keys P2: 7-0=moves  U/I/O=switch");
+            print_log("Hold move/switch button 500ms for detail view");
+            return;
+        }
         _ => {}
     }
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
@@ -394,10 +414,29 @@ fn enter_demo_mode() {
         ":ready p1" => push_button(ButtonEvent::Move { player: 1, slot: 0 }),
         ":ready p2" => push_button(ButtonEvent::Move { player: 2, slot: 0 }),
         _ => {
-            push_button(ButtonEvent::Move { player: 1, slot: 0 });
-            push_button(ButtonEvent::Move { player: 2, slot: 0 });
+            print_log(&format!("Unknown command: {}", line.trim()));
         }
     }
+}
+
+/// Returns move labels for all 4 slots as a comma-separated string.
+/// Each slot: "Name|pp/maxpp" or "" if no move in that slot.
+#[wasm_bindgen]
+pub fn get_move_labels(player: u8) -> String {
+    let moves = if player == 1 { P1_MOVES.with(|m| m.borrow().clone()) }
+                else           { P2_MOVES.with(|m| m.borrow().clone()) };
+    (0..4usize).map(|i| {
+        moves.get(i).map(|mv| format!("{}|{}/{}", mv.name, mv.pp, mv.max_pp))
+             .unwrap_or_default()
+    }).collect::<Vec<_>>().join(",")
+}
+
+/// Version counter: increments each time a player's moves are updated.
+/// JS polls this to avoid redundant DOM updates.
+#[wasm_bindgen]
+pub fn get_moves_version(player: u8) -> u32 {
+    if player == 1 { P1_MOVES_VER.with(|v| *v.borrow()) }
+    else           { P2_MOVES_VER.with(|v| *v.borrow()) }
 }
 
 #[wasm_bindgen] pub fn get_p1_pixels() -> Vec<u8> {
@@ -499,6 +538,10 @@ async fn run_game_loop() {
                 env!("GIT_HASH"),
                 env!("BUILD_DATETIME"),
             ));
+            print_log("");
+            print_log("  Keys — P1: 1-4 moves  A/S/D switch");
+            print_log("         P2: 7-0 moves  U/I/O switch");
+            print_log("  Hold move/switch button for details");
             print_log("");
 
             // Wait for both players to press a button

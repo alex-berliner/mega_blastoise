@@ -50,10 +50,6 @@ struct LedPlayerState {
 impl LedPlayerState {
     fn new() -> Self { Self { hp_pct: 100, party: [None, None, None], status: 0 } }
 
-    fn alive_count(&self) -> usize {
-        self.party.iter().filter(|s| s.is_some()).count()
-    }
-
     fn register_switch(&mut self, name: &str) {
         if self.party.iter().any(|s| s.as_deref() == Some(name)) { return; }
         if let Some(slot) = self.party.iter_mut().find(|s| s.is_none()) {
@@ -72,8 +68,11 @@ impl LedPlayerState {
         let lit = hp_lit(self.hp_pct);
         let color = hp_color(self.hp_pct);
         for i in 0..lit { buf[i] = color; }
-        for i in 0..self.alive_count().min(3) {
-            buf[8 + i] = pack_rgb(0, 160, 0);
+        // Position-stable: slot i → LED 8+i, gap for fainted
+        for (i, slot) in self.party.iter().enumerate() {
+            if slot.is_some() {
+                buf[8 + i] = pack_rgb(0, 160, 0);
+            }
         }
         buf[11] = self.status;
         buf

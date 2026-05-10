@@ -15,9 +15,6 @@ function renderOled(ctx, pixels) {
 
 // ── LED strip rendering ───────────────────────────────────────────────────────
 
-// LED IDs in display order: P1 = 0-7 HP, 8-10 party, 11 status
-//                           P2 = 12-23 (mirrored)
-// We re-map to match firmware layout (P1 leds 0-11, P2 leds 12-23).
 const ledEls = Array.from({ length: 24 }, (_, i) => document.getElementById(`led-${i}`));
 
 function renderLeds(leds) {
@@ -52,6 +49,41 @@ function applyFlash(flashState) {
     }
 }
 
+// ── Move button labels ────────────────────────────────────────────────────────
+
+// Key hints shown on buttons (move slots 0-3 map to keys 1-4)
+const MOVE_KEYS = ['1', '2', '3', '4'];
+const SWITCH_KEYS = ['A', 'S', 'D'];
+
+let p1MovesVer = -1, p2MovesVer = -1;
+
+function updateMoveLabels(player) {
+    const raw = wasm.get_move_labels(player);
+    const slots = raw.split(',');
+    for (let i = 0; i < 4; i++) {
+        const el = document.getElementById(`p${player}-m${i}`);
+        if (!el) continue;
+        const slot = slots[i] || '';
+        if (!slot) {
+            el.innerHTML = `<span class="mv-key">${MOVE_KEYS[i]}</span>`;
+            el.classList.remove('mv-no-pp');
+            continue;
+        }
+        const [name, ppStr] = slot.split('|');
+        const [pp, maxPp] = ppStr ? ppStr.split('/') : ['', ''];
+        const noPp = pp === '0';
+        el.innerHTML = `<span class="mv-key">${MOVE_KEYS[i]}</span><span class="mv-name">${name}</span><span class="mv-pp">${pp}/${maxPp}</span>`;
+        el.classList.toggle('mv-no-pp', noPp);
+    }
+}
+
+function tickMoveLabels() {
+    const v1 = wasm.get_moves_version(1);
+    const v2 = wasm.get_moves_version(2);
+    if (v1 !== p1MovesVer) { p1MovesVer = v1; updateMoveLabels(1); }
+    if (v2 !== p2MovesVer) { p2MovesVer = v2; updateMoveLabels(2); }
+}
+
 // ── RAF render loop ───────────────────────────────────────────────────────────
 
 function frame() {
@@ -59,12 +91,12 @@ function frame() {
     renderOled(ctx2, wasm.get_p2_pixels());
     renderLeds(wasm.get_led_state());
     applyFlash(wasm.get_flash_state());
+    tickMoveLabels();
     requestAnimationFrame(frame);
 }
 
 // ── Button handlers ────────────────────────────────────────────────────────────
 
-// Switch buttons: long press shows party stats; short press selects.
 function setupSwitchLongPress(el, player, idx) {
     let timer = null;
     let fired = false;
@@ -95,9 +127,6 @@ function setupSwitchLongPress(el, player, idx) {
     });
 }
 
-// Long-press detection for move buttons (500 ms threshold).
-// Short tap → press_move; hold → show move detail view until release.
-// Long press is always available for both players regardless of whose turn it is.
 function setupMoveLongPress(el, player, slot) {
     let timer = null;
     let fired = false;
@@ -128,9 +157,54 @@ function setupMoveLongPress(el, player, slot) {
     });
 }
 
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+
+// P1: 1-4 = moves 0-3, a/s/d = switches 0-2
+// P2: 7/8/9/0 = moves 0-3, u/i/o = switches 0-2 (2-player mode)
+const P1_MOVE_KEYS   = { '1': 0, '2': 1, '3': 2, '4': 3 };
+const P1_SWITCH_KEYS = { 'a': 0, 's': 1, 'd': 2 };
+const P2_MOVE_KEYS   = { '7': 0, '8': 1, '9': 2, '0': 3 };
+const P2_SWITCH_KEYS = { 'u': 0, 'i': 1, 'o': 2 };
+
+document.addEventListener('keydown', e => {
+    // Don't intercept when typing in the text input
+    if (document.activeElement === inputEl) return;
+    // Don't intercept modifier combos
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    const k = e.key.toLowerCase();
+
+    if (k in P1_MOVE_KEYS) {
+        e.preventDefault();
+        wasm.press_move(1, P1_MOVE_KEYS[k]);
+        flashBtn(`p1-m${P1_MOVE_KEYS[k]}`);
+    } else if (k in P1_SWITCH_KEYS) {
+        e.preventDefault();
+        wasm.press_switch(1, P1_SWITCH_KEYS[k]);
+        flashBtn(`p1-s${P1_SWITCH_KEYS[k]}`);
+    } else if (k in P2_MOVE_KEYS) {
+        e.preventDefault();
+        wasm.press_move(2, P2_MOVE_KEYS[k]);
+        flashBtn(`p2-m${P2_MOVE_KEYS[k]}`);
+    } else if (k in P2_SWITCH_KEYS) {
+        e.preventDefault();
+        wasm.press_switch(2, P2_SWITCH_KEYS[k]);
+        flashBtn(`p2-s${P2_SWITCH_KEYS[k]}`);
+    }
+});
+
+function flashBtn(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('btn-flash');
+    setTimeout(() => el.classList.remove('btn-flash'), 120);
+}
+
 // ── Text input ────────────────────────────────────────────────────────────────
 
 const inputEl = document.getElementById('input');
+const logEl   = document.getElementById('log');
+const LOG_MAX = 400;
 
 inputEl.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
@@ -169,7 +243,32 @@ inputEl.addEventListener('focus', () => {
     setTimeout(() => inputEl.scrollIntoView({ behavior: 'smooth', block: 'end' }), 150);
 });
 
+// ── Log line trimmer ──────────────────────────────────────────────────────────
+// Rust calls print_log which does insertAdjacentText; we observe mutations and trim.
+
+const logObserver = new MutationObserver(() => {
+    // Count newlines in textContent as a proxy for line count
+    const text = logEl.textContent;
+    const lines = text.split('\n');
+    if (lines.length > LOG_MAX + 50) {
+        logEl.textContent = lines.slice(lines.length - LOG_MAX).join('\n');
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+});
+logObserver.observe(logEl, { childList: true, characterData: true, subtree: true });
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
+
+// Set switch button key hints once (they don't change)
+function initSwitchHints() {
+    for (let p = 1; p <= 2; p++) {
+        const keys = p === 1 ? ['A', 'S', 'D'] : ['U', 'I', 'O'];
+        for (let i = 0; i < 3; i++) {
+            const el = document.getElementById(`p${p}-s${i}`);
+            if (el) el.innerHTML = `<span class="sw-key">${keys[i]}</span><span class="sw-label">S${i + 1}</span>`;
+        }
+    }
+}
 
 async function run() {
     try {
@@ -184,6 +283,14 @@ async function run() {
             const el = document.getElementById(`p${p}-s${i}`);
             if (el) setupSwitchLongPress(el, p, i);
         });
+        initSwitchHints();
+        // Seed move buttons with key hints before first battle
+        for (let p = 1; p <= 2; p++) {
+            for (let i = 0; i < 4; i++) {
+                const el = document.getElementById(`p${p}-m${i}`);
+                if (el) el.innerHTML = `<span class="mv-key">${MOVE_KEYS[i]}</span>`;
+            }
+        }
         requestAnimationFrame(frame);
     } catch (err) {
         document.getElementById('log').textContent += `\nFailed to load WASM: ${err}\n`;
