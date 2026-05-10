@@ -78,6 +78,7 @@ impl InputBus {
 ///
 /// Implement this on your input driver (USB, buttons, …) and pass it to [`run_battle`](crate::run_battle).
 /// The runner joins the battle loop with `input.run(bus)` so both progress cooperatively.
+#[allow(async_fn_in_trait)]
 pub trait InputSource {
     async fn run(&mut self, bus: &InputBus);
 }
@@ -136,6 +137,7 @@ pub enum PlayerAction {
 /// Implementors only need to know *which* button was pressed; all battle-protocol
 /// logic lives in [`ButtonController`].  Both the firmware GPIO matrix and the USB
 /// serial mock implement this trait so they share an identical input pipeline.
+#[allow(async_fn_in_trait)]
 pub trait ButtonSource {
     /// Called once when the engine sends a new prompt, before waiting for input.
     /// Override to show a display (terminal menu, OLED update, …).  Default is a no-op.
@@ -297,7 +299,7 @@ impl<BS: ButtonSource + Clone> ButtonController<BS> {
                 // Two-player batch: collect both choices simultaneously so neither player
                 // blocks on the other's pick or cancel window.
                 let extra = extra_prompts.remove(0);
-                let mut source2 = self.source.clone();
+                let source2 = self.source.clone();
                 let mut ctrl2 = ButtonController { source: source2, log_sink: self.log_sink };
                 let (c1, c2) = join(
                     self.collect_choice_with_unready(&first_prompt),

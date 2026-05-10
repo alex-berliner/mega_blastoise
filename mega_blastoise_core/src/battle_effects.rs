@@ -19,6 +19,7 @@ pub mod anim {
 }
 
 /// Reacts to [`BoardEvent`] (sound, LEDs, prompts). Same trait on host and firmware.
+#[allow(async_fn_in_trait)]
 pub trait BoardEffects {
     async fn on_event(&mut self, event: BoardEvent);
 }

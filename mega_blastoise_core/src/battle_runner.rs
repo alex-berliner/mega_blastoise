@@ -176,7 +176,7 @@ async fn enrich_and_dispatch<E, DS>(
 
     let entries: alloc::vec::Vec<alloc::string::String> =
         battle.new_log_entries().map(alloc::string::String::from).collect();
-    let n_entries = entries.len();
+    let _n_entries = entries.len();
 
     #[cfg(feature = "timing")]
     let drain_ms = t_drain.elapsed().as_millis();
