@@ -180,6 +180,7 @@ body {
 
 .sw-key   { font-size: 7px; color: #3a3a5a; line-height: 1; }
 .sw-label { font-size: 9px; color: var(--blue); line-height: 1; }
+.sw-hp    { font-size: 7px; line-height: 1; }
 
 .switch-btn.sw-active  { border-color: #224488; background: #0d1428; }
 .switch-btn.sw-active .sw-label { color: #88aaff; }

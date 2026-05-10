@@ -58,6 +58,15 @@ const SWITCH_KEYS = ['A', 'S', 'D'];
 let p1MovesVer = -1, p2MovesVer = -1;
 let p1PartyVer = -1, p2PartyVer = -1;
 
+// Gen 1 type colors (dark theme friendly)
+const TYPE_COLORS = {
+    'Normal':   '#888',   'Fire':     '#c84',   'Water':    '#48c',
+    'Electric': '#ca0',   'Grass':    '#4a8',   'Ice':      '#8cc',
+    'Fighting': '#c44',   'Poison':   '#a4a',   'Ground':   '#a84',
+    'Flying':   '#88c',   'Psychic':  '#c48',   'Bug':      '#8a4',
+    'Rock':     '#888',   'Ghost':    '#448',   'Dragon':   '#44c',
+};
+
 function updateMoveLabels(player) {
     const raw = wasm.get_move_labels(player);
     const slots = raw.split(',');
@@ -68,14 +77,23 @@ function updateMoveLabels(player) {
         if (!slot) {
             el.innerHTML = `<span class="mv-key">${MOVE_KEYS[i]}</span>`;
             el.classList.remove('mv-no-pp');
+            el.style.borderColor = '';
             continue;
         }
-        const [name, ppStr] = slot.split('|');
+        const [name, ppStr, typeName] = slot.split('|');
         const [pp, maxPp] = ppStr ? ppStr.split('/') : ['', ''];
         const noPp = pp === '0';
+        const typeColor = TYPE_COLORS[typeName] || '#333';
         el.innerHTML = `<span class="mv-key">${MOVE_KEYS[i]}</span><span class="mv-name">${name}</span><span class="mv-pp">${pp}/${maxPp}</span>`;
         el.classList.toggle('mv-no-pp', noPp);
+        el.style.borderColor = noPp ? '#1a2a1a' : typeColor;
     }
+}
+
+function hpColor(pct) {
+    if (pct > 50) return '#4a8';
+    if (pct > 25) return '#a84';
+    return '#c44';
 }
 
 function updatePartyLabels(player) {
@@ -89,17 +107,22 @@ function updatePartyLabels(player) {
         if (!slot) {
             el.innerHTML = `<span class="sw-key">${keys[i]}</span><span class="sw-label">S${i + 1}</span>`;
             el.classList.remove('sw-active', 'sw-fainted');
+            el.style.borderColor = '';
             continue;
         }
         const [name, hpStr, activeStr] = slot.split('|');
         const [hp, maxHp] = hpStr ? hpStr.split('/').map(Number) : [0, 0];
         const active = activeStr === '1';
-        const fainted = hp === 0;
+        const fainted = hp === 0 && !active;
+        const pct = maxHp > 0 ? Math.round(hp * 100 / maxHp) : 0;
         // Abbreviate name to 5 chars max
         const abbr = name.length > 5 ? name.slice(0, 5) : name;
-        el.innerHTML = `<span class="sw-key">${keys[i]}</span><span class="sw-label">${abbr}</span>`;
+        const hpLabel = active ? '●' : (fainted ? '✕' : `${pct}%`);
+        const hpCol = fainted ? '#333' : hpColor(pct);
+        el.innerHTML = `<span class="sw-key">${keys[i]}</span><span class="sw-label">${abbr}</span><span class="sw-hp" style="color:${hpCol}">${hpLabel}</span>`;
         el.classList.toggle('sw-active', active);
-        el.classList.toggle('sw-fainted', fainted && !active);
+        el.classList.toggle('sw-fainted', fainted);
+        el.style.borderColor = active ? '#224488' : (fainted ? '#222' : hpCol + '66');
     }
 }
 
@@ -276,16 +299,58 @@ inputEl.addEventListener('focus', () => {
 // ── Log line trimmer ──────────────────────────────────────────────────────────
 // Rust calls print_log which does insertAdjacentText; we observe mutations and trim.
 
-const logObserver = new MutationObserver(() => {
-    // Count newlines in textContent as a proxy for line count
-    const text = logEl.textContent;
-    const lines = text.split('\n');
-    if (lines.length > LOG_MAX + 50) {
-        logEl.textContent = lines.slice(lines.length - LOG_MAX).join('\n');
-        logEl.scrollTop = logEl.scrollHeight;
+// Trim log every 5 seconds to prevent unbounded growth.
+setInterval(() => {
+    const children = logEl.childNodes;
+    if (children.length > LOG_MAX + 50) {
+        const toRemove = children.length - LOG_MAX;
+        for (let i = 0; i < toRemove; i++) logEl.removeChild(logEl.firstChild);
+    }
+}, 5000);
+
+// ── Colored log (override Rust's print_log via global monkey-patch) ────────────
+// We patch window.__print_log to colorize lines before appending.
+// Rust print_log calls insertAdjacentText directly, so we intercept via a
+// MutationObserver that replaces newly added text nodes with colored spans.
+
+const TEXT_COLOR_RULES = [
+    [/fainted!/,                   '#c44'],   // faint → red
+    [/WINNER!/,                    '#ca0'],   // win → gold
+    [/GG!/,                        '#888'],   // loss → grey
+    [/TIE!/,                       '#888'],   // tie
+    [/── Battle/,                  '#4a8'],   // turn separator → green
+    [/─── Turn/,                   '#4a8'],   // turn marker
+    [/was inflicted|is paralyzed|was burned|was frozen|fell asleep|was poisoned/, '#a4a'],  // status
+    [/was cured|woke up|thawed|unfrozen/,  '#8cc'],  // cure status → cyan
+    [/super effective/i,           '#ca0'],   // SE → gold
+    [/critical hit/i,              '#c84'],   // crit → orange
+    [/It missed|but it failed/i,   '#666'],   // miss/fail → grey
+    [/took damage/,                '#c88'],   // damage → light red
+    [/\[OK\]/,                     '#4a8'],   // accepted → green
+    [/\[!!\]/,                     '#c44'],   // rejected → red
+    [/\[EVT\]/,                    '#688'],   // event prefix
+    [/Keys|build |MEGA BLASTOISE/, '#444'],   // meta lines
+];
+
+const logMutObs = new MutationObserver(mutations => {
+    for (const m of mutations) {
+        for (const node of m.addedNodes) {
+            if (node.nodeType !== Node.TEXT_NODE) continue;
+            const text = node.textContent;
+            let color = null;
+            for (const [pat, col] of TEXT_COLOR_RULES) {
+                if (pat.test(text)) { color = col; break; }
+            }
+            if (color) {
+                const span = document.createElement('span');
+                span.style.color = color;
+                span.textContent = text;
+                node.replaceWith(span);
+            }
+        }
     }
 });
-logObserver.observe(logEl, { childList: true, characterData: true, subtree: true });
+logMutObs.observe(logEl, { childList: true });
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 

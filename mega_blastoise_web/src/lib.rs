@@ -448,13 +448,13 @@ pub fn get_party_version(player: u8) -> u32 {
 }
 
 /// Returns move labels for all 4 slots as a comma-separated string.
-/// Each slot: "Name|pp/maxpp" or "" if no move in that slot.
+/// Each slot: "Name|pp/maxpp|TypeName" or "" if no move in that slot.
 #[wasm_bindgen]
 pub fn get_move_labels(player: u8) -> String {
     let moves = if player == 1 { P1_MOVES.with(|m| m.borrow().clone()) }
                 else           { P2_MOVES.with(|m| m.borrow().clone()) };
     (0..4usize).map(|i| {
-        moves.get(i).map(|mv| format!("{}|{}/{}", mv.name, mv.pp, mv.max_pp))
+        moves.get(i).map(|mv| format!("{}|{}/{}|{}", mv.name, mv.pp, mv.max_pp, mv.type_name))
              .unwrap_or_default()
     }).collect::<Vec<_>>().join(",")
 }
