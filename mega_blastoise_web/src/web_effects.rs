@@ -73,7 +73,7 @@ impl LedPlayerState {
         let color = hp_color(self.hp_pct);
         for i in 0..lit { buf[i] = color; }
         for i in 0..self.alive_count().min(3) {
-            buf[8 + i] = pack_rgb(0, 30, 0);
+            buf[8 + i] = pack_rgb(0, 160, 0);
         }
         buf[11] = self.status;
         buf

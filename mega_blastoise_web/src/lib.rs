@@ -67,6 +67,12 @@ thread_local! {
     static P1_IN_DETAIL: RefCell<bool> = RefCell::new(false);
     static P2_IN_DETAIL: RefCell<bool> = RefCell::new(false);
 
+    // Which players are AI-controlled this game (reset each lobby)
+    static AI_PLAYERS: RefCell<[bool; 2]> = RefCell::new([false, false]);
+
+    // Demo mode: both AI, auto-restart each game (persists until page reload)
+    static DEMO_MODE: RefCell<bool> = RefCell::new(false);
+
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -95,6 +101,26 @@ pub(crate) fn update_moves(player: u8, moves: Vec<MoveSlot>) {
 pub(crate) fn update_party(player: u8, slots: Vec<PartySlotData>) {
     if player == 1 { P1_PARTY.with(|p| *p.borrow_mut() = slots); }
     else           { P2_PARTY.with(|p| *p.borrow_mut() = slots); }
+}
+
+pub(crate) fn is_ai_player(player: u8) -> bool {
+    AI_PLAYERS.with(|a| a.borrow()[(player - 1) as usize])
+}
+
+pub(crate) fn ai_pick_move(n_moves: usize) -> usize {
+    (js_sys::Math::random() * n_moves as f64) as usize
+}
+
+pub(crate) fn ai_pick_switch(player: u8) -> usize {
+    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
+                else           { P2_PARTY.with(|p| p.borrow().clone()) };
+    // Try slots 1, 2, 0 — prefer bench slots over active (slot 0 is usually active)
+    for &idx in &[1usize, 2, 0] {
+        if let Some(slot) = party.get(idx) {
+            if slot.hp > 0 { return idx; }
+        }
+    }
+    0
 }
 
 pub(crate) fn show_pokemon_stats(player: u8, team_idx: usize) {
@@ -282,10 +308,25 @@ fn push_button(ev: ButtonEvent) {
     restore_screen(player);
 }
 
+fn enter_demo_mode() {
+    AI_PLAYERS.with(|a| *a.borrow_mut() = [true, true]);
+    DEMO_MODE.with(|d| *d.borrow_mut() = true);
+    push_button(ButtonEvent::Move { player: 1, slot: 0 });
+    push_button(ButtonEvent::Move { player: 2, slot: 0 });
+}
+
+#[wasm_bindgen] pub fn wasm_enter_demo_mode() {
+    if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
+    enter_demo_mode();
+}
+
 #[wasm_bindgen] pub fn submit_text(line: String) {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
     match line.trim() {
-        ":ready" | ":ready ai" | ":ready both" | "" => {
+        ":ready ai" | ":demo" => {
+            enter_demo_mode();
+        }
+        ":ready" | ":ready both" | "" => {
             push_button(ButtonEvent::Move { player: 1, slot: 0 });
             push_button(ButtonEvent::Move { player: 2, slot: 0 });
         }
@@ -363,29 +404,51 @@ async fn run_game_loop() {
 
     loop {
         LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
+        AI_PLAYERS.with(|a| *a.borrow_mut() = [false, false]);
         set_lobby_displays();
         set_lobby_mode(true);
 
-        print_log("═══════════════════════════════════════");
-        print_log("     MEGA BLASTOISE  —  Gen 1 Randbat  ");
-        print_log("   Both players press a button to start ");
-        print_log("═══════════════════════════════════════");
-        print_log(&format!(
-            "  build {} · {}",
-            env!("GIT_HASH"),
-            env!("BUILD_DATETIME"),
-        ));
-        print_log("");
+        if DEMO_MODE.with(|d| *d.borrow()) {
+            // Demo mode: both players are AI; pause briefly, but exit to normal
+            // lobby if a human presses any button during the pause.
+            AI_PLAYERS.with(|a| *a.borrow_mut() = [true, true]);
+            let mut interrupted = false;
+            for _ in 0..150u16 {  // 150 × 100 ms = 15 s
+                sleep_ms(100).await;
+                let pressed = P1_QUEUE.with(|q| !q.borrow().is_empty())
+                           || P2_QUEUE.with(|q| !q.borrow().is_empty());
+                if pressed { interrupted = true; break; }
+            }
+            if interrupted {
+                DEMO_MODE.with(|d| *d.borrow_mut() = false);
+                AI_PLAYERS.with(|a| *a.borrow_mut() = [false, false]);
+                set_lobby_mode(false);
+                P1_QUEUE.with(|q| q.borrow_mut().clear());
+                P2_QUEUE.with(|q| q.borrow_mut().clear());
+                continue;
+            }
+        } else {
+            print_log("═══════════════════════════════════════");
+            print_log("     MEGA BLASTOISE  —  Gen 1 Randbat  ");
+            print_log("   Both players press a button to start ");
+            print_log("═══════════════════════════════════════");
+            print_log(&format!(
+                "  build {} · {}",
+                env!("GIT_HASH"),
+                env!("BUILD_DATETIME"),
+            ));
+            print_log("");
 
-        // Wait for both players to press a button
-        loop {
-            let ev = AnyButtonFuture.await;
-            let player = match &ev {
-                ButtonEvent::Move   { player, .. }
-                | ButtonEvent::Switch { player, .. } => *player,
-            };
-            LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = true);
-            if LOBBY_READY.with(|r| { let rr = r.borrow(); rr[0] && rr[1] }) { break; }
+            // Wait for both players to press a button
+            loop {
+                let ev = AnyButtonFuture.await;
+                let player = match &ev {
+                    ButtonEvent::Move   { player, .. }
+                    | ButtonEvent::Switch { player, .. } => *player,
+                };
+                LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = true);
+                if LOBBY_READY.with(|r| { let rr = r.borrow(); rr[0] && rr[1] }) { break; }
+            }
         }
         set_lobby_mode(false);
         // Drain any button presses that accumulated during the lobby phase

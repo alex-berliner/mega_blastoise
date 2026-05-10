@@ -141,7 +141,11 @@ inputEl.addEventListener('keydown', e => {
 });
 
 document.addEventListener('click', e => {
-    if (!e.target.closest('.btn')) inputEl.focus();
+    if (!e.target.closest('.btn') && e.target.id !== 'demo-btn') inputEl.focus();
+});
+
+document.getElementById('demo-btn').addEventListener('click', () => {
+    wasm.wasm_enter_demo_mode();
 });
 inputEl.focus();
 
