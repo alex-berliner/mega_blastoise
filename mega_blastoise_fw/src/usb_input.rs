@@ -346,8 +346,9 @@ impl<'d> UsbBattleInput<'d> {
             }
 
             Request::Switch(sw) => {
+                // Use fresh player_data (not last_player_data) so HP reflects fainted mons.
                 self.write("\r\n").await;
-                self.write_multiline(&format_prompt(player_id, request, self.last_player_data.as_ref())).await;
+                self.write_multiline(&format_prompt(player_id, request, player_data.as_ref())).await;
 
                 let mut parts = Vec::new();
                 for (i, &fainted_slot) in sw.needs_switch.iter().enumerate() {
@@ -358,41 +359,29 @@ impl<'d> UsbBattleInput<'d> {
                     'switch_input: loop {
                         self.write("Send in party slot [1-6]: ").await;
 
-                        let team_idx = match buttons.as_mut() {
+                        let raw_idx = match buttons.as_mut() {
                             Some(btns) => {
                                 match select(self.read_line(), btns.wait_switch(player_id)).await {
                                     Either::First(line) => {
                                         let trimmed = line.trim();
                                         match trimmed.parse::<usize>() {
-                                            Ok(n) if n >= 1 && n <= 6 => {
-                                                self.write_ok(&alloc::format!(
-                                                    "Accepted — switching in slot {}", n
-                                                ))
-                                                .await;
-                                                n - 1
-                                            }
+                                            Ok(n) if n >= 1 && n <= 6 => n - 1,
                                             Ok(n) => {
                                                 self.write_err(&alloc::format!(
                                                     "Rejected — {} out of range, enter 1-6", n
-                                                ))
-                                                .await;
+                                                )).await;
                                                 continue 'switch_input;
                                             }
                                             Err(_) => {
                                                 self.write_err(&alloc::format!(
                                                     "Rejected — \"{}\" is not a number", trimmed
-                                                ))
-                                                .await;
+                                                )).await;
                                                 continue 'switch_input;
                                             }
                                         }
                                     }
                                     Either::Second(idx) => {
                                         self.partial.clear();
-                                        self.write_ok(&alloc::format!(
-                                            "Button — switching in slot {}", idx + 1
-                                        ))
-                                        .await;
                                         idx
                                     }
                                 }
@@ -401,33 +390,44 @@ impl<'d> UsbBattleInput<'d> {
                                 let line = self.read_line().await;
                                 let trimmed = line.trim();
                                 match trimmed.parse::<usize>() {
-                                    Ok(n) if n >= 1 && n <= 6 => {
-                                        self.write_ok(&alloc::format!(
-                                            "Accepted — switching in slot {}", n
-                                        ))
-                                        .await;
-                                        n - 1
-                                    }
+                                    Ok(n) if n >= 1 && n <= 6 => n - 1,
                                     Ok(n) => {
                                         self.write_err(&alloc::format!(
                                             "Rejected — {} is out of range, enter 1-6", n
-                                        ))
-                                        .await;
+                                        )).await;
                                         continue 'switch_input;
                                     }
                                     Err(_) => {
                                         self.write_err(&alloc::format!(
                                             "Rejected — \"{}\" is not a number, enter 1-6",
                                             trimmed
-                                        ))
-                                        .await;
+                                        )).await;
                                         continue 'switch_input;
                                     }
                                 }
                             }
                         };
 
-                        parts.push(format_switch_choice(team_idx));
+                        // Validate: must be a bench mon with HP remaining.
+                        if let Some(pd) = player_data.as_ref() {
+                            if let Some(mon) = pd.mons.get(raw_idx) {
+                                if mon.active {
+                                    self.write_err(&alloc::format!(
+                                        "Rejected — slot {} is currently active", raw_idx + 1
+                                    )).await;
+                                    continue 'switch_input;
+                                }
+                                if mon.hp == 0 {
+                                    self.write_err(&alloc::format!(
+                                        "Rejected — slot {} has fainted", raw_idx + 1
+                                    )).await;
+                                    continue 'switch_input;
+                                }
+                            }
+                        }
+
+                        self.write_ok(&alloc::format!("Accepted — switching in slot {}", raw_idx + 1)).await;
+                        parts.push(format_switch_choice(raw_idx));
                         break 'switch_input;
                     }
                 }
