@@ -78,7 +78,16 @@ impl<'d> UsbBattleInput<'d> {
                 for mon_req in &turn.active {
                     let n = mon_req.moves.len().min(4);
                     if n == 0 { parts.push(String::from("pass")); continue; }
-                    let slot = (self.ai_next_u64() as usize) % n;
+                    if mon_req.locked_into_move {
+                        parts.push(format_move_choice(0));
+                        continue;
+                    }
+                    let valid: Vec<usize> = mon_req.moves[..n].iter().enumerate()
+                        .filter(|(_, m)| !m.disabled && m.pp > 0)
+                        .map(|(i, _)| i)
+                        .collect();
+                    let choices = if valid.is_empty() { (0..n).collect::<Vec<_>>() } else { valid };
+                    let slot = choices[(self.ai_next_u64() as usize) % choices.len()];
                     parts.push(format_move_choice(slot));
                 }
                 join_choice_parts(&parts)

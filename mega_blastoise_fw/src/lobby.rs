@@ -58,7 +58,17 @@ impl DemoAi {
                         parts.push(String::from("pass"));
                         continue;
                     }
-                    let slot = (self.next_u64() as usize) % n;
+                    if mon_req.locked_into_move {
+                        parts.push(format_move_choice(0));
+                        continue;
+                    }
+                    // Prefer moves with PP that are not disabled.
+                    let valid: Vec<usize> = mon_req.moves[..n].iter().enumerate()
+                        .filter(|(_, m)| !m.disabled && m.pp > 0)
+                        .map(|(i, _)| i)
+                        .collect();
+                    let choices = if valid.is_empty() { (0..n).collect::<Vec<_>>() } else { valid };
+                    let slot = choices[(self.next_u64() as usize) % choices.len()];
                     parts.push(format_move_choice(slot));
                 }
                 join_choice_parts(&parts)

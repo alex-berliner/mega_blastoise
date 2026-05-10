@@ -17,10 +17,13 @@ Built-in commands (prefix with ':'):
     :reset      reset the board
     :dev        re-detect USB port
     :kill       kill stray probe-rs processes
-    :ready      mark both players ready (human)
-    :ready p1   mark P1 ready (human)
-    :ready p2   mark P2 ready (human)
-    :unready    unready both players
+    :ready      mark both players ready (human vs human)
+    :ready p1   mark P1 ready
+    :ready p2   mark P2 ready
+    :ready ai   P1 human vs P2 AI (starts real battle)
+    :demo       restart AI vs AI demo loop
+    :anim off   disable animation delays (fast testing)
+    :anim on    re-enable animation delays
     :q / :quit  exit
 """
 
@@ -385,15 +388,14 @@ def main() -> None:
                     "\n"
                     "  Firmware commands (forwarded over USB):\n"
                     "    :s / :stop        stop demo battle, enter ready phase\n"
-                    "    :ready            both players ready (human)\n"
-                    "    :ready p1         P1 ready (human)\n"
-                    "    :ready p2         P2 ready (human)\n"
-                    "    :ready p1 ai      P1 ready as AI\n"
-                    "    :ready p2 ai      P2 ready as AI\n"
-                    "    :ready ai         both players as AI\n"
-                    "    :unready          both players unready\n"
-                    "    :unready p1       P1 unready\n"
-                    "    :unready p2       P2 unready\n"
+                    "    :ready            both players ready (human vs human)\n"
+                    "    :ready p1         P1 ready\n"
+                    "    :ready p2         P2 ready\n"
+                    "    :ready ai         P1 human vs P2 AI (start real battle)\n"
+                    "    :demo             restart AI vs AI demo loop\n"
+                    "    :anim off         disable animation delays (fast testing)\n"
+                    "    :anim on          re-enable animation delays\n"
+                    "    :reset            reset the board (any time)\n"
                     "  Any other input is sent as-is over USB.\n"
                 )
 
