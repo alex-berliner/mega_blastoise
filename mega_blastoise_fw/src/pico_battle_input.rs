@@ -22,6 +22,7 @@ use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, ButtonSource,
     InputBus, InputSource, PlayerAction,
 };
+use crate::subsystems::oled::{send as oled_send, OledCmd};
 
 pub struct ButtonMatrix<'d> {
     rows: [Output<'d>; 4],
@@ -83,6 +84,14 @@ impl<'d> ButtonMatrix<'d> {
     pub async fn wait_switch(&mut self, player_id: &str) -> usize {
         let row = if player_id == "p2" { 3 } else { 1 };
         self.wait_press(row, 3).await
+    }
+
+    /// Wait for all buttons in `row` to be released (used after long-press detection).
+    pub async fn wait_release(&mut self, row: usize) {
+        loop {
+            Timer::after_millis(10).await;
+            if self.scan_row(row) == 0 { break; }
+        }
     }
 
     /// Wait for any button press from either player (all 4 rows).
@@ -165,26 +174,42 @@ impl<'d> PicoBattleInput<'d> {
 /// All battle-protocol logic (disabled moves, trapped, PP) lives in [`ButtonController`].
 impl ButtonSource for PicoBattleInput<'_> {
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
-        let move_row = if player_id == "p2" { 2 } else { 0 };
+        let move_row   = if player_id == "p2" { 2 } else { 0 };
         let switch_row = if player_id == "p2" { 3 } else { 1 };
-        let move_mask = (1u8 << n_moves) - 1;
+        let player     = if player_id == "p2" { 2u8 } else { 1u8 };
+        let move_mask  = (1u8 << n_moves) - 1;
         loop {
-            let m = self.0.scan_row(move_row) & move_mask;
-            if let Some(col) = (0..n_moves).find(|&c| m & (1 << c) != 0) {
-                loop {
-                    Timer::after_millis(10).await;
-                    if self.0.scan_row(move_row) & move_mask == 0 { break; }
-                }
-                return PlayerAction::Move(col);
-            }
+            // Switch buttons — always short press.
             let s = self.0.scan_row(switch_row) & 0b0000_0111;
             if let Some(col) = (0..3usize).find(|&c| s & (1 << c) != 0) {
-                loop {
-                    Timer::after_millis(10).await;
-                    if self.0.scan_row(switch_row) & 0b0000_0111 == 0 { break; }
-                }
+                self.0.wait_release(switch_row).await;
                 return PlayerAction::Switch(col);
             }
+
+            // Move buttons — detect long press (≥500 ms) vs short press.
+            let m = self.0.scan_row(move_row) & move_mask;
+            if let Some(col) = (0..n_moves).find(|&c| m & (1 << c) != 0) {
+                let mut held_ms = 0u64;
+                let is_long = loop {
+                    Timer::after_millis(10).await;
+                    held_ms += 10;
+                    if self.0.scan_row(move_row) & (1 << col) == 0 {
+                        break false; // released before threshold
+                    }
+                    if held_ms >= 500 {
+                        break true; // threshold crossed, still held
+                    }
+                };
+                if is_long {
+                    oled_send(OledCmd::ShowMoveDetail { player, slot: col as u8 });
+                    self.0.wait_release(move_row).await;
+                    oled_send(OledCmd::RestoreScreen { player });
+                    // Don't return — loop back and wait for a new press.
+                } else {
+                    return PlayerAction::Move(col);
+                }
+            }
+
             Timer::after_millis(5).await;
         }
     }

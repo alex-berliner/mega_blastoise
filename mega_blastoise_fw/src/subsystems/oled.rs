@@ -25,7 +25,7 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use mega_blastoise_core::{render_player_screen, MoveSlot};
+use mega_blastoise_core::{render_move_detail, render_player_screen, MoveSlot};
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 
 // ── Command channel ───────────────────────────────────────────────────────────
@@ -41,6 +41,10 @@ pub enum OledCmd {
     Faint { player: u8 },
     /// Battle ended — winner is 1 (p1) or 2 (p2); 0 means tie.
     Win { winner: u8 },
+    /// Long-press detail view for a move slot (0-based).
+    ShowMoveDetail { player: u8, slot: u8 },
+    /// Restore normal battle screen after detail view.
+    RestoreScreen { player: u8 },
 }
 
 static CMD: Channel<CriticalSectionRawMutex, OledCmd, 8> = Channel::new();
@@ -159,6 +163,21 @@ pub async fn task(
                     p2.fainted = true; p2.hp_pct = 0; p2.moves.clear();
                     redraw(&mut disp1, &p2);
                 }
+            }
+            OledCmd::ShowMoveDetail { player, slot } => {
+                if player == 1 {
+                    if let Some(mv) = p1.moves.get(slot as usize) {
+                        render_move_detail(&mut disp0, mv);
+                        disp0.flush().ok();
+                    }
+                } else if let Some(mv) = p2.moves.get(slot as usize) {
+                    render_move_detail(&mut disp1, mv);
+                    disp1.flush().ok();
+                }
+            }
+            OledCmd::RestoreScreen { player } => {
+                if player == 1 { redraw(&mut disp0, &p1); }
+                else           { redraw(&mut disp1, &p2); }
             }
             OledCmd::Win { winner } => {
                 let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);

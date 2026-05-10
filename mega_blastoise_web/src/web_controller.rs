@@ -21,18 +21,25 @@ impl ButtonSource for WebButtonSource {
         crate::set_active_player(player);
         loop {
             let ev = crate::PlayerButtonFuture(player).await;
-            let action = match ev {
+            match ev {
                 crate::ButtonEvent::Move { slot, .. } if (slot as usize) < n_moves => {
-                    Some(PlayerAction::Move(slot as usize))
+                    crate::set_active_player(0);
+                    return PlayerAction::Move(slot as usize);
                 }
                 crate::ButtonEvent::Switch { idx, .. } => {
-                    Some(PlayerAction::Switch(idx as usize))
+                    crate::set_active_player(0);
+                    return PlayerAction::Switch(idx as usize);
                 }
-                _ => None,
-            };
-            if let Some(a) = action {
-                crate::set_active_player(0);
-                return a;
+                crate::ButtonEvent::LongPressMove { slot, .. } if (slot as usize) < n_moves => {
+                    crate::show_move_detail(player, slot as usize);
+                    // Wait for release; ignore other events until then.
+                    loop {
+                        let ev2 = crate::PlayerButtonFuture(player).await;
+                        if matches!(ev2, crate::ButtonEvent::LongPressRelease { .. }) { break; }
+                    }
+                    crate::restore_screen(player);
+                }
+                _ => {}
             }
         }
     }

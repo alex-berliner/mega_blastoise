@@ -38,13 +38,14 @@ body {
   flex: 1;
   display: grid;
   grid-template-areas:
-    "header  header"
-    "oled    buttons"
-    "leds    leds";
-  grid-template-columns: auto 1fr;
-  align-items: start;
+    "header"
+    "oled-area"
+    "switches"
+    "leds";
+  grid-template-columns: 1fr;
+  justify-items: center;
   padding: 10px 12px;
-  gap: 8px 10px;
+  gap: 8px;
   border-right: 1px solid var(--border);
 }
 .player-panel:last-child { border-right: none; }
@@ -57,15 +58,24 @@ body {
   text-align: center;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
+  width: 100%;
 }
 
 .p1-color { color: var(--red);  border-color: #331111; }
 .p2-color { color: var(--blue); border-color: #112233; }
 
-/* ── OLED canvas ──────────────────────────────────────────────── */
+/* ── OLED + corner button overlay ─────────────────────────────── */
+
+.oled-area {
+  grid-area: oled-area;
+  position: relative;
+  width: 256px;
+  height: 128px;
+}
 
 .oled {
-  grid-area: oled;
+  position: absolute;
+  top: 0; left: 0;
   width: 256px;
   height: 128px;
   image-rendering: pixelated;
@@ -75,29 +85,48 @@ body {
   display: block;
 }
 
-/* ── Buttons ──────────────────────────────────────────────────── */
-
-.button-area {
-  grid-area: buttons;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  align-self: center;
+/* Move buttons absolutely positioned at OLED corners */
+.move-btn {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  background: rgba(13, 26, 13, 0.88);
+  color: var(--green);
+  border: 2px solid #1a3a1a;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  user-select: none;
+  transition: background 0.08s, transform 0.05s, box-shadow 0.08s;
+  z-index: 1;
 }
 
-.move-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
+/* nth-child: canvas=1, m0=2, m1=3, m2=4, m3=5 */
+.oled-area .move-btn:nth-child(2) { top: 0;    left: 0;   border-radius: 3px 4px 4px 3px; }
+.oled-area .move-btn:nth-child(3) { top: 0;    right: 0;  border-radius: 4px 3px 3px 4px; }
+.oled-area .move-btn:nth-child(4) { bottom: 0; left: 0;   border-radius: 4px 3px 3px 4px; }
+.oled-area .move-btn:nth-child(5) { bottom: 0; right: 0;  border-radius: 3px 4px 4px 3px; }
+
+.move-btn:hover  { filter: brightness(1.4); }
+.move-btn:active { transform: scale(0.93); filter: brightness(0.8); }
+
+/* ── Switch row ───────────────────────────────────────────────── */
 
 .switch-row {
+  grid-area: switches;
   display: flex;
   gap: 6px;
+  justify-content: center;
 }
 
-.btn {
+.switch-btn {
+  width: 42px;
+  height: 32px;
+  background: #0d0d1a;
+  color: var(--blue);
+  border: 2px solid #111a33;
   font-family: inherit;
   font-size: 13px;
   font-weight: bold;
@@ -107,24 +136,8 @@ body {
   transition: background 0.08s, transform 0.05s, box-shadow 0.08s;
 }
 
-.move-btn {
-  width: 52px;
-  height: 52px;
-  background: #0d1a0d;
-  color: var(--green);
-  border: 2px solid #1a3a1a;
-}
-
-.switch-btn {
-  width: 42px;
-  height: 32px;
-  background: #0d0d1a;
-  color: var(--blue);
-  border: 2px solid #111a33;
-}
-
-.btn:hover  { filter: brightness(1.4); }
-.btn:active { transform: scale(0.93); filter: brightness(0.8); }
+.switch-btn:hover  { filter: brightness(1.4); }
+.switch-btn:active { transform: scale(0.93); filter: brightness(0.8); }
 
 /* Active player highlight */
 .player-panel.active .move-btn {
@@ -209,16 +222,10 @@ body {
   flex-shrink: 0;
 }
 
-#blink {
+#prompt {
   color: var(--green);
   margin-right: 4px;
-  animation: blink 1.1s step-end infinite;
   flex-shrink: 0;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
 }
 
 #input {
@@ -229,7 +236,7 @@ body {
   font-size: inherit;
   outline: none;
   flex: 1;
-  caret-color: transparent;
+  caret-color: var(--green);
   min-width: 0;
 }
 
@@ -248,13 +255,17 @@ body {
   }
   .player-panel:last-child { border-bottom: none; }
 
-  .oled {
-    width: min(44vw, 192px);
-    height: min(22vw, 96px);
+  .oled-area {
+    width: min(88vw, 256px);
+    height: min(44vw, 128px);
   }
 
-  .move-btn   { width: 40px; height: 40px; font-size: 9px;
-                overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .oled {
+    width: 100%;
+    height: 100%;
+  }
+
+  .move-btn   { width: 40px; height: 40px; font-size: 9px; }
   .switch-btn { width: 34px; height: 28px; font-size: 11px; }
 
   .led        { width: 12px; height: 12px; }

@@ -21,7 +21,8 @@ use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
-    run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus, InputSource,
+    render_move_detail, run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus,
+    InputSource, MoveSlot,
 };
 
 use web_controller::WebButtonSource;
@@ -45,16 +46,60 @@ thread_local! {
     // Lobby LED animation mode
     static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
 
+    // Per-player lobby ready state
+    static LOBBY_READY: RefCell<[bool; 2]> = RefCell::new([false, false]);
+
     // Flash events: [p1_type, p2_type]; 1 = super-effective, 2 = crit; consumed on read
     static FLASH: RefCell<[u8; 2]> = RefCell::new([0, 0]);
+
+    // Move detail: last-rendered battle pixels (for restore after long press)
+    static P1_BATTLE_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
+    static P2_BATTLE_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
+
+    // Current active move list per player (for long-press detail rendering)
+    static P1_MOVES: RefCell<Vec<MoveSlot>> = RefCell::new(Vec::new());
+    static P2_MOVES: RefCell<Vec<MoveSlot>> = RefCell::new(Vec::new());
 
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
 
 pub(crate) fn update_pixels(player: u8, pixels: Vec<u8>) {
-    if player == 1 { P1_PIXELS.with(|p| *p.borrow_mut() = pixels); }
-    else { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+    if player == 1 {
+        P1_BATTLE_PIXELS.with(|p| *p.borrow_mut() = pixels.clone());
+        P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
+    } else {
+        P2_BATTLE_PIXELS.with(|p| *p.borrow_mut() = pixels.clone());
+        P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
+    }
+}
+
+pub(crate) fn update_moves(player: u8, moves: Vec<MoveSlot>) {
+    if player == 1 { P1_MOVES.with(|m| *m.borrow_mut() = moves); }
+    else           { P2_MOVES.with(|m| *m.borrow_mut() = moves); }
+}
+
+pub(crate) fn show_move_detail(player: u8, slot: usize) {
+    let moves = if player == 1 { P1_MOVES.with(|m| m.borrow().clone()) }
+                else           { P2_MOVES.with(|m| m.borrow().clone()) };
+    if let Some(mv) = moves.get(slot) {
+        let mut disp = WasmDisplay::new();
+        render_move_detail(&mut disp, mv);
+        let pixels = disp.to_rgba();
+        // Only update display pixels, not the battle snapshot.
+        if player == 1 { P1_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+        else           { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+    }
+}
+
+pub(crate) fn restore_screen(player: u8) {
+    if player == 1 {
+        let pix = P1_BATTLE_PIXELS.with(|p| p.borrow().clone());
+        P1_PIXELS.with(|p| *p.borrow_mut() = pix);
+    } else {
+        let pix = P2_BATTLE_PIXELS.with(|p| p.borrow().clone());
+        P2_PIXELS.with(|p| *p.borrow_mut() = pix);
+    }
 }
 
 pub(crate) fn update_leds(leds: [u32; 24]) {
@@ -69,15 +114,36 @@ pub(crate) fn set_lobby_mode(active: bool) {
     LOBBY_MODE.with(|m| *m.borrow_mut() = active);
 }
 
+fn pack_rgb(r: u8, g: u8, b: u8) -> u32 {
+    ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
+}
+
+async fn sleep_ms(ms: u32) {
+    let promise = js_sys::Promise::new(&mut |resolve: js_sys::Function, _| {
+        web_sys::window()
+            .unwrap()
+            .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms as i32)
+            .unwrap();
+    });
+    wasm_bindgen_futures::JsFuture::from(promise).await.ok();
+}
+
 pub(crate) fn set_flash(player: u8, flash_type: u8) {
     FLASH.with(|f| f.borrow_mut()[(player - 1) as usize] = flash_type);
 }
 
 fn lobby_led_frame() -> [u32; 24] {
+    let ready = LOBBY_READY.with(|r| *r.borrow());
     let t = (Date::now() as u64 / 30) as u8;
     let v = (if t < 128 { t / 2 } else { (255u8.wrapping_sub(t)) / 2 }) as u32 * 2;
-    let color = ((v / 3) << 16) | v;
-    [color; 24]
+    let breathe = ((v / 3) << 16) | v;
+    let done = pack_rgb(0, 200, 50);
+    let mut frame = [0u32; 24];
+    let c1 = if ready[0] { done } else { breathe };
+    let c2 = if ready[1] { done } else { breathe };
+    for i in 0..12  { frame[i] = c1; }
+    for i in 12..24 { frame[i] = c2; }
+    frame
 }
 
 pub(crate) fn print_log(line: &str) {
@@ -94,8 +160,10 @@ pub(crate) fn print_log(line: &str) {
 // ── Button events ─────────────────────────────────────────────────────────────
 
 pub enum ButtonEvent {
-    Move   { player: u8, slot: u8 },
-    Switch { player: u8, idx:  u8 },
+    Move             { player: u8, slot: u8 },
+    Switch           { player: u8, idx:  u8 },
+    LongPressMove    { player: u8, slot: u8 },
+    LongPressRelease { player: u8 },
 }
 
 // Wait for either player's button (lobby start)
@@ -145,7 +213,10 @@ impl Future for PlayerButtonFuture {
 
 fn push_button(ev: ButtonEvent) {
     let player = match &ev {
-        ButtonEvent::Move { player, .. } | ButtonEvent::Switch { player, .. } => *player,
+        ButtonEvent::Move             { player, .. }
+        | ButtonEvent::Switch           { player, .. }
+        | ButtonEvent::LongPressMove    { player, .. }
+        | ButtonEvent::LongPressRelease { player }    => *player,
     };
     if player == 1 {
         P1_QUEUE.with(|q| q.borrow_mut().push_back(ev));
@@ -164,6 +235,14 @@ fn push_button(ev: ButtonEvent) {
 
 #[wasm_bindgen] pub fn press_switch(player: u8, idx: u8) {
     push_button(ButtonEvent::Switch { player, idx });
+}
+
+#[wasm_bindgen] pub fn long_press_move(player: u8, slot: u8) {
+    push_button(ButtonEvent::LongPressMove { player, slot });
+}
+
+#[wasm_bindgen] pub fn long_press_release(player: u8) {
+    push_button(ButtonEvent::LongPressRelease { player });
 }
 
 #[wasm_bindgen] pub fn submit_text(_line: String) {
@@ -222,8 +301,8 @@ fn draw_centered(disp: &mut WasmDisplay, line1: &str, line2: &str) {
 fn set_lobby_displays() {
     let mut d1 = WasmDisplay::new();
     let mut d2 = WasmDisplay::new();
-    draw_centered(&mut d1, "P1  RED", "ANY BUTTON");
-    draw_centered(&mut d2, "P2  BLUE", "ANY BUTTON");
+    draw_centered(&mut d1, "P1  RED", "PRESS READY");
+    draw_centered(&mut d2, "P2  BLUE", "PRESS READY");
     update_pixels(1, d1.to_rgba());
     update_pixels(2, d2.to_rgba());
     // LEDs driven by lobby_led_frame() while LOBBY_MODE is active
@@ -239,19 +318,44 @@ async fn run_game_loop() {
     let data = FlashDataStore::new();
 
     loop {
+        LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
         set_lobby_displays();
         set_lobby_mode(true);
         set_active_player(0);
 
         print_log("═══════════════════════════════════════");
         print_log("     MEGA BLASTOISE  —  Gen 1 Randbat  ");
-        print_log("   Press any button or Enter to start  ");
+        print_log("   Both players press a button to start ");
         print_log("═══════════════════════════════════════");
+        print_log(&format!(
+            "  build {} · {}",
+            env!("GIT_HASH"),
+            env!("BUILD_DATETIME"),
+        ));
         print_log("");
 
-        // Wait for any button press or Enter key
-        let _ = AnyButtonFuture.await;
+        // Wait for both players to press a button
+        loop {
+            let ev = AnyButtonFuture.await;
+            let player = match &ev {
+                ButtonEvent::Move             { player, .. }
+                | ButtonEvent::Switch           { player, .. }
+                | ButtonEvent::LongPressMove    { player, .. }
+                | ButtonEvent::LongPressRelease { player }    => *player,
+            };
+            LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = true);
+            if LOBBY_READY.with(|r| { let rr = r.borrow(); rr[0] && rr[1] }) { break; }
+        }
         set_lobby_mode(false);
+
+        // Countdown fanfare: 3 gold flashes
+        let gold = pack_rgb(200, 150, 0);
+        for _ in 0..3u8 {
+            update_leds([gold; 24]);
+            sleep_ms(200).await;
+            update_leds([0u32; 24]);
+            sleep_ms(100).await;
+        }
 
         let seed = (Date::now() as u64) ^ 0xdead_beef_cafe_babe;
 

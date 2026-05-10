@@ -221,6 +221,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             BoardEvent::SwitchIn { name, player_id, moves, .. } => {
                 if let Some(pid) = player_id {
                     let p = if pid == "p1" { 1u8 } else { 2u8 };
+                    crate::update_moves(p, moves.clone());
                     if p == 1 {
                         self.p1_oled.mon_name = name.clone();
                         self.p1_oled.moves = moves.clone();
@@ -241,6 +242,7 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::MovesUpdate { player_id, moves } => {
                 let p = if player_id == "p1" { 1u8 } else { 2u8 };
+                crate::update_moves(p, moves.clone());
                 if p == 1 { self.p1_oled.moves = moves.clone(); }
                 else { self.p2_oled.moves = moves.clone(); }
                 self.redraw(p);

@@ -165,6 +165,14 @@ impl BoardEffects for BattleEffects<'_> {
                 oled_send(OledCmd::MovesUpdate { player, moves: moves.clone() });
             }
 
+            BoardEvent::Prompt { player_id, .. } => {
+                // Restore normal OLED view at the start of each prompt in case a
+                // long-press detail screen was left open (e.g. USB won the input race).
+                let player = if player_id.as_str() == "p1" { 1u8 } else { 2u8 };
+                #[cfg(feature = "oled")]
+                oled_send(OledCmd::RestoreScreen { player });
+            }
+
             _ => {}
         }
 

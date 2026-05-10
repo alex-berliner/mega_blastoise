@@ -74,10 +74,41 @@ function frame() {
     requestAnimationFrame(frame);
 }
 
-// ── Button handlers (global so inline onclick works) ─────────────────────────
+// ── Button handlers ────────────────────────────────────────────────────────────
 
-window.pressMove   = (player, slot) => wasm.press_move(player, slot);
-window.pressSwitch = (player, idx)  => wasm.press_switch(player, idx);
+window.pressSwitch = (player, idx) => wasm.press_switch(player, idx);
+
+// Long-press detection for move buttons (500 ms threshold).
+// Short tap → press_move; hold → long_press_move (detail view) until release.
+function setupMoveLongPress(el, player, slot) {
+    let timer = null;
+    let fired = false;
+
+    el.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        fired = false;
+        timer = setTimeout(() => {
+            fired = true;
+            wasm.long_press_move(player, slot);
+        }, 500);
+    });
+
+    el.addEventListener('pointerup', () => {
+        clearTimeout(timer);
+        if (fired) {
+            wasm.long_press_release(player);
+        } else {
+            wasm.press_move(player, slot);
+        }
+        fired = false;
+    });
+
+    el.addEventListener('pointercancel', () => {
+        clearTimeout(timer);
+        if (fired) wasm.long_press_release(player);
+        fired = false;
+    });
+}
 
 // ── Text input ────────────────────────────────────────────────────────────────
 
@@ -106,6 +137,11 @@ inputEl.addEventListener('focus', () => {
 async function run() {
     try {
         await init();
+        // Wire up long-press detection for all move buttons.
+        [[1,0],[1,1],[1,2],[1,3],[2,0],[2,1],[2,2],[2,3]].forEach(([p, s]) => {
+            const el = document.getElementById(`p${p}-m${s}`);
+            if (el) setupMoveLongPress(el, p, s);
+        });
         requestAnimationFrame(frame);
     } catch (err) {
         document.getElementById('log').textContent += `\nFailed to load WASM: ${err}\n`;
