@@ -676,8 +676,8 @@ fn draw_centered(disp: &mut WasmDisplay, line1: &str, line2: &str) {
 fn set_lobby_displays() {
     let mut d1 = WasmDisplay::new();
     let mut d2 = WasmDisplay::new();
-    draw_centered(&mut d1, "P1  RED", "PRESS READY");
-    draw_centered(&mut d2, "P2  BLUE", "PRESS READY");
+    draw_centered(&mut d1, "P1  RED", "PRESS ANY BUTTON");
+    draw_centered(&mut d2, "P2  BLUE", "PRESS ANY BUTTON");
     update_pixels(1, d1.to_rgba());
     update_pixels(2, d2.to_rgba());
     // LEDs driven by lobby_led_frame() while LOBBY_MODE is active

@@ -1,7 +1,8 @@
 fn main() {
-    // Human-readable UTC build time via `date`.
+    // Human-readable EST build time via `date`.
     let datetime = std::process::Command::new("date")
-        .args(["-u", "+%Y-%m-%d %H:%M UTC"])
+        .env("TZ", "America/New_York")
+        .args(["+%Y-%m-%d %H:%M EST"])
         .output()
         .ok()
         .and_then(|o| String::from_utf8(o.stdout).ok())
