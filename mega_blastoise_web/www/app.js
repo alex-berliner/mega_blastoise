@@ -141,7 +141,11 @@ inputEl.addEventListener('keydown', e => {
 });
 
 document.addEventListener('click', e => {
-    if (!e.target.closest('.btn') && e.target.id !== 'demo-btn') inputEl.focus();
+    if (!e.target.closest('.btn') && e.target.id !== 'demo-btn' && e.target.id !== 'vs-ai-btn') inputEl.focus();
+});
+
+document.getElementById('vs-ai-btn').addEventListener('click', () => {
+    wasm.wasm_enter_vs_ai_mode();
 });
 
 document.getElementById('demo-btn').addEventListener('click', () => {

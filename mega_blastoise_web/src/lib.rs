@@ -320,6 +320,14 @@ fn enter_demo_mode() {
     enter_demo_mode();
 }
 
+#[wasm_bindgen] pub fn wasm_enter_vs_ai_mode() {
+    if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
+    // P1 human, P2 AI — single game, returns to normal lobby after
+    AI_PLAYERS.with(|a| { let mut a = a.borrow_mut(); a[0] = false; a[1] = true; });
+    push_button(ButtonEvent::Move { player: 1, slot: 0 });
+    push_button(ButtonEvent::Move { player: 2, slot: 0 });
+}
+
 #[wasm_bindgen] pub fn submit_text(line: String) {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
     match line.trim() {
