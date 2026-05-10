@@ -25,7 +25,7 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use mega_blastoise_core::{render_move_detail, render_player_screen, MoveSlot};
+use mega_blastoise_core::{party_slot_from_mon, render_move_detail, render_player_screen, render_pokemon_stats, MoveSlot, PartySlotData};
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 
 // ── Command channel ───────────────────────────────────────────────────────────
@@ -43,6 +43,10 @@ pub enum OledCmd {
     Win { winner: u8 },
     /// Long-press detail view for a move slot (0-based).
     ShowMoveDetail { player: u8, slot: u8 },
+    /// Long-press stats view for a party slot (0-based team index).
+    ShowPokemonStats { player: u8, team_idx: u8 },
+    /// Update the cached party snapshot used by ShowPokemonStats.
+    PartyUpdate { player: u8, slots: Vec<PartySlotData> },
     /// Restore normal battle screen after detail view.
     RestoreScreen { player: u8 },
 }
@@ -67,13 +71,14 @@ struct PlayerState {
     name_len: u8,
     fainted: bool,
     moves: Vec<MoveSlot>,
+    party: Vec<PartySlotData>,
 }
 
 impl PlayerState {
     fn new() -> Self {
         let mut name = [b' '; 12];
         name[0] = b'-'; name[1] = b'-'; name[2] = b'-';
-        Self { hp_pct: 100, name, name_len: 3, fainted: false, moves: Vec::new() }
+        Self { hp_pct: 100, name, name_len: 3, fainted: false, moves: Vec::new(), party: Vec::new() }
     }
 
     fn name_str(&self) -> &str {
@@ -174,6 +179,21 @@ pub async fn task(
                     render_move_detail(&mut disp1, mv);
                     disp1.flush().ok();
                 }
+            }
+            OledCmd::ShowPokemonStats { player, team_idx } => {
+                if player == 1 {
+                    if let Some(slot) = p1.party.get(team_idx as usize) {
+                        render_pokemon_stats(&mut disp0, slot);
+                        disp0.flush().ok();
+                    }
+                } else if let Some(slot) = p2.party.get(team_idx as usize) {
+                    render_pokemon_stats(&mut disp1, slot);
+                    disp1.flush().ok();
+                }
+            }
+            OledCmd::PartyUpdate { player, slots } => {
+                if player == 1 { p1.party = slots; }
+                else           { p2.party = slots; }
             }
             OledCmd::RestoreScreen { player } => {
                 if player == 1 { redraw(&mut disp0, &p1); }

@@ -1,5 +1,5 @@
 use battler::{PlayerBattleData, Request};
-use mega_blastoise_core::{format_prompt, ButtonSource, PlayerAction};
+use mega_blastoise_core::{format_prompt, party_slot_from_mon, ButtonSource, PlayerAction};
 
 pub struct WebButtonSource;
 
@@ -13,6 +13,11 @@ impl ButtonSource for WebButtonSource {
         let text = format_prompt(player_id, request, player_data.as_ref());
         for line in text.lines() {
             crate::print_log(line);
+        }
+        if let Some(pd) = player_data {
+            let player = if player_id == "p1" { 1u8 } else { 2u8 };
+            let slots = pd.mons.iter().map(party_slot_from_mon).collect();
+            crate::update_party(player, slots);
         }
     }
 

@@ -13,6 +13,46 @@ use embedded_graphics::{
 
 use crate::board_event::MoveSlot;
 
+// ── Party slot snapshot ───────────────────────────────────────────────────────
+
+/// Compact snapshot of a party Pokémon's in-battle stats, used by all display
+/// targets for the long-press party-stats view.
+///
+/// Derived from [`battler::MonBattleData`] via [`party_slot_from_mon`]; cheap
+/// enough to cache on embedded hardware for the duration of a battle prompt.
+#[derive(Clone)]
+pub struct PartySlotData {
+    pub name: alloc::string::String,
+    pub level: u8,
+    pub hp: u16,
+    pub max_hp: u16,
+    pub status: Option<alloc::string::String>,
+    pub atk: u16,
+    pub def: u16,
+    pub spe: u16,
+    pub spc: u16,
+    pub types: alloc::vec::Vec<battler::Type>,
+}
+
+/// Convert the display-relevant fields of a [`battler::MonBattleData`] into a
+/// [`PartySlotData`].  Call this once at prompt time; store the result.
+pub fn party_slot_from_mon(mon: &battler::MonBattleData) -> PartySlotData {
+    use battler::Stat;
+    let get = |s: Stat| mon.stats.get(&s).copied().unwrap_or(0u16);
+    PartySlotData {
+        name: mon.summary.name.clone(),
+        level: mon.summary.level,
+        hp: mon.hp,
+        max_hp: mon.max_hp,
+        status: mon.status.clone(),
+        atk: get(Stat::Atk),
+        def: get(Stat::Def),
+        spe: get(Stat::Spe),
+        spc: get(Stat::SpAtk),
+        types: mon.types.clone(),
+    }
+}
+
 // ── Shared text styles ────────────────────────────────────────────────────────
 
 fn tl_style() -> TextStyle {
@@ -149,5 +189,69 @@ where
 
     let pp_line = alloc::format!("PP:   {}/{}", mv.pp, mv.max_pp);
     Text::with_text_style(&pp_line, Point::new(0, 46), info_char, tl_style())
+        .draw(display).ok();
+}
+
+// ── Party stats screen ────────────────────────────────────────────────────────
+
+/// Draw the party-stats screen (long-press switch view) onto any 128×64 `DrawTarget`.
+///
+/// Layout:
+/// ```text
+/// Pikachu        Lv.25   ← FONT_6X10
+/// ────────────────────
+/// HP:42/75    [PAR]      ← FONT_5X8
+/// Atk:55  Def:40
+/// Spe:90  Spc:50
+/// Electric / Flying
+/// ```
+pub fn render_pokemon_stats<D>(display: &mut D, slot: &PartySlotData)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let info_char = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+
+    display.clear(BinaryColor::Off).ok();
+
+    // Name + level
+    let lv_text = alloc::format!("Lv.{}", slot.level);
+    let name = if slot.hp == 0 { "FAINTED" } else { slot.name.as_str() };
+    Text::with_text_style(name, Point::new(0, 0), name_char, tl_style())
+        .draw(display).ok();
+    Text::with_text_style(&lv_text, Point::new(127, 0), name_char, tr_style())
+        .draw(display).ok();
+
+    Rectangle::new(Point::new(0, 11), Size::new(128, 1))
+        .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+        .draw(display).ok();
+
+    // HP + status
+    let status_abbr = match slot.status.as_deref() {
+        Some("par") => " PAR",
+        Some("brn") => " BRN",
+        Some("psn") | Some("tox") => " PSN",
+        Some("slp") => " SLP",
+        Some("frz") => " FRZ",
+        _ => "",
+    };
+    let hp_line = alloc::format!("HP:{}/{}{}", slot.hp, slot.max_hp, status_abbr);
+    Text::with_text_style(&hp_line, Point::new(0, 14), info_char, tl_style())
+        .draw(display).ok();
+
+    // Battle stats
+    let atk_def = alloc::format!("Atk:{}  Def:{}", slot.atk, slot.def);
+    Text::with_text_style(&atk_def, Point::new(0, 24), info_char, tl_style())
+        .draw(display).ok();
+
+    let spe_spc = alloc::format!("Spe:{}  Spc:{}", slot.spe, slot.spc);
+    Text::with_text_style(&spe_spc, Point::new(0, 33), info_char, tl_style())
+        .draw(display).ok();
+
+    // Types
+    let type_parts: alloc::vec::Vec<alloc::string::String> = slot.types.iter()
+        .map(|t| alloc::format!("{t:?}"))
+        .collect();
+    Text::with_text_style(&type_parts.join(" / "), Point::new(0, 43), info_char, tl_style())
         .draw(display).ok();
 }

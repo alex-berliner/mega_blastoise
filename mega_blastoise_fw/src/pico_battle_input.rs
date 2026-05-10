@@ -14,13 +14,13 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use battler::Request;
+use battler::{PlayerBattleData, Request};
 use cortex_m::asm::delay as asm_delay;
 use embassy_rp::gpio::{Input, Output};
 use embassy_time::Timer;
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, ButtonSource,
-    InputBus, InputSource, PlayerAction,
+    format_move_choice, format_switch_choice, join_choice_parts, party_slot_from_mon, ActivePrompt,
+    ButtonSource, InputBus, InputSource, PlayerAction,
 };
 use crate::subsystems::oled::{send as oled_send, OledCmd};
 
@@ -173,17 +173,42 @@ impl<'d> PicoBattleInput<'d> {
 /// [`ButtonSource`] — scan the GPIO matrix and return whichever button fires first.
 /// All battle-protocol logic (disabled moves, trapped, PP) lives in [`ButtonController`].
 impl ButtonSource for PicoBattleInput<'_> {
+    fn on_prompt(
+        &mut self,
+        player_id: &str,
+        _request: &Request,
+        player_data: &Option<PlayerBattleData>,
+    ) {
+        if let Some(pd) = player_data {
+            let player = if player_id == "p2" { 2u8 } else { 1u8 };
+            let slots = pd.mons.iter().map(party_slot_from_mon).collect();
+            oled_send(OledCmd::PartyUpdate { player, slots });
+        }
+    }
+
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
         let move_row   = if player_id == "p2" { 2 } else { 0 };
         let switch_row = if player_id == "p2" { 3 } else { 1 };
         let player     = if player_id == "p2" { 2u8 } else { 1u8 };
         let move_mask  = (1u8 << n_moves) - 1;
         loop {
-            // Switch buttons — always short press.
+            // Switch buttons — long press shows party stats; short press selects.
             let s = self.0.scan_row(switch_row) & 0b0000_0111;
             if let Some(col) = (0..3usize).find(|&c| s & (1 << c) != 0) {
-                self.0.wait_release(switch_row).await;
-                return PlayerAction::Switch(col);
+                let mut held_ms = 0u64;
+                let is_long = loop {
+                    Timer::after_millis(10).await;
+                    held_ms += 10;
+                    if self.0.scan_row(switch_row) & (1 << col) == 0 { break false; }
+                    if held_ms >= 500 { break true; }
+                };
+                if is_long {
+                    oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8 });
+                    self.0.wait_release(switch_row).await;
+                    oled_send(OledCmd::RestoreScreen { player });
+                } else {
+                    return PlayerAction::Switch(col);
+                }
             }
 
             // Move buttons — detect long press (≥500 ms) vs short press.
@@ -215,8 +240,28 @@ impl ButtonSource for PicoBattleInput<'_> {
     }
 
     async fn wait_switch(&mut self, player_id: &str) -> usize {
-        let row = if player_id == "p2" { 3 } else { 1 };
-        self.0.wait_press(row, 3).await
+        let row    = if player_id == "p2" { 3 } else { 1 };
+        let player = if player_id == "p2" { 2u8 } else { 1u8 };
+        loop {
+            let s = self.0.scan_row(row) & 0b0000_0111;
+            if let Some(col) = (0..3usize).find(|&c| s & (1 << c) != 0) {
+                let mut held_ms = 0u64;
+                let is_long = loop {
+                    Timer::after_millis(10).await;
+                    held_ms += 10;
+                    if self.0.scan_row(row) & (1 << col) == 0 { break false; }
+                    if held_ms >= 500 { break true; }
+                };
+                if is_long {
+                    oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8 });
+                    self.0.wait_release(row).await;
+                    oled_send(OledCmd::RestoreScreen { player });
+                } else {
+                    return col;
+                }
+            }
+            Timer::after_millis(5).await;
+        }
     }
 }
 
@@ -240,6 +285,10 @@ impl PicoBattleInput<'_> {
                     let n = mon_req.moves.len().min(4);
                     if n == 0 {
                         parts.push(String::from("pass"));
+                        continue;
+                    }
+                    if mon_req.locked_into_move {
+                        parts.push(format_move_choice(0));
                         continue;
                     }
                     loop {

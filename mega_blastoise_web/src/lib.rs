@@ -21,8 +21,8 @@ use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
-    render_move_detail, run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus,
-    InputSource, MoveSlot,
+    render_move_detail, render_pokemon_stats, run_battle, BoardEventQueue,
+    ButtonController, FlashDataStore, InputBus, InputSource, MoveSlot, PartySlotData,
 };
 
 use web_controller::WebButtonSource;
@@ -59,6 +59,10 @@ thread_local! {
     static P1_MOVES: RefCell<Vec<MoveSlot>> = RefCell::new(Vec::new());
     static P2_MOVES: RefCell<Vec<MoveSlot>> = RefCell::new(Vec::new());
 
+    // Full party snapshot per player (for long-press switch button rendering)
+    static P1_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
+    static P2_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
+
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -76,6 +80,23 @@ pub(crate) fn update_pixels(player: u8, pixels: Vec<u8>) {
 pub(crate) fn update_moves(player: u8, moves: Vec<MoveSlot>) {
     if player == 1 { P1_MOVES.with(|m| *m.borrow_mut() = moves); }
     else           { P2_MOVES.with(|m| *m.borrow_mut() = moves); }
+}
+
+pub(crate) fn update_party(player: u8, slots: Vec<PartySlotData>) {
+    if player == 1 { P1_PARTY.with(|p| *p.borrow_mut() = slots); }
+    else           { P2_PARTY.with(|p| *p.borrow_mut() = slots); }
+}
+
+pub(crate) fn show_pokemon_stats(player: u8, team_idx: usize) {
+    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
+                else           { P2_PARTY.with(|p| p.borrow().clone()) };
+    if let Some(slot) = party.get(team_idx) {
+        let mut disp = WasmDisplay::new();
+        render_pokemon_stats(&mut disp, slot);
+        let pixels = disp.to_rgba();
+        if player == 1 { P1_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+        else           { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+    }
 }
 
 pub(crate) fn show_move_detail(player: u8, slot: usize) {
@@ -230,6 +251,10 @@ fn push_button(ev: ButtonEvent) {
 
 #[wasm_bindgen] pub fn wasm_show_move_detail(player: u8, slot: u8) {
     show_move_detail(player, slot as usize);
+}
+
+#[wasm_bindgen] pub fn wasm_show_pokemon_stats(player: u8, team_idx: u8) {
+    show_pokemon_stats(player, team_idx as usize);
 }
 
 #[wasm_bindgen] pub fn wasm_restore_screen(player: u8) {

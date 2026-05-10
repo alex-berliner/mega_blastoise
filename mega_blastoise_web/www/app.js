@@ -64,7 +64,36 @@ function frame() {
 
 // ── Button handlers ────────────────────────────────────────────────────────────
 
-window.pressSwitch = (player, idx) => wasm.press_switch(player, idx);
+// Switch buttons: long press shows party stats; short press selects.
+function setupSwitchLongPress(el, player, idx) {
+    let timer = null;
+    let fired = false;
+
+    el.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        fired = false;
+        timer = setTimeout(() => {
+            fired = true;
+            wasm.wasm_show_pokemon_stats(player, idx);
+        }, 500);
+    });
+
+    el.addEventListener('pointerup', () => {
+        clearTimeout(timer);
+        if (fired) {
+            wasm.wasm_restore_screen(player);
+        } else {
+            wasm.press_switch(player, idx);
+        }
+        fired = false;
+    });
+
+    el.addEventListener('pointercancel', () => {
+        clearTimeout(timer);
+        if (fired) wasm.wasm_restore_screen(player);
+        fired = false;
+    });
+}
 
 // Long-press detection for move buttons (500 ms threshold).
 // Short tap → press_move; hold → show move detail view until release.
@@ -130,6 +159,11 @@ async function run() {
         [[1,0],[1,1],[1,2],[1,3],[2,0],[2,1],[2,2],[2,3]].forEach(([p, s]) => {
             const el = document.getElementById(`p${p}-m${s}`);
             if (el) setupMoveLongPress(el, p, s);
+        });
+        // Wire up switch buttons (long press = party stats view).
+        [[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]].forEach(([p, i]) => {
+            const el = document.getElementById(`p${p}-s${i}`);
+            if (el) setupSwitchLongPress(el, p, i);
         });
         requestAnimationFrame(frame);
     } catch (err) {
