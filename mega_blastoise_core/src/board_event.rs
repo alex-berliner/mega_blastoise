@@ -185,6 +185,14 @@ fn extract_mon_name(position_details: &str) -> &str {
     position_details.split(',').next().unwrap_or(position_details)
 }
 
+/// Build `"Red's Golduck"` from a `mon` position field.
+fn player_mon_label(mon: &str) -> String {
+    let name = extract_mon_name(mon);
+    let player = mon.split(',').nth(1).unwrap_or("");
+    let trainer = player_display_name(player);
+    format!("{trainer}'s {name}")
+}
+
 /// Parse one committed log line into a typed event, if recognized.
 pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
     let p = ParsedBattleLogLine::parse(line);
@@ -277,19 +285,20 @@ impl BoardEvent {
                 format!("[split side:{}]", side_display_name(side.as_str()))
             }
             BoardEvent::Damage { mon, health } => {
-                let name = extract_mon_name(mon);
-                format!("{name} took damage!  (HP: {health})")
+                format!("{} took damage!  (HP: {health})", player_mon_label(mon))
             }
             BoardEvent::Heal { mon, health } => {
-                let name = extract_mon_name(mon);
-                format!("{name} recovered HP!  (HP: {health})")
+                format!("{} recovered HP!  (HP: {health})", player_mon_label(mon))
             }
             BoardEvent::Faint { mon } => {
-                let name = extract_mon_name(mon);
-                format!("{name} fainted!")
+                format!("{} fainted!", player_mon_label(mon))
             }
-            BoardEvent::Move { user, name, .. } => match user.as_deref() {
-                Some(u) => format!("{u} used {name}!"),
+            BoardEvent::Move { user, name, player_id, .. } => match user.as_deref() {
+                Some(u) => {
+                    let trainer = player_id.as_deref().map(player_display_name).unwrap_or("");
+                    if trainer.is_empty() { format!("{u} used {name}!") }
+                    else { format!("{trainer}'s {u} used {name}!") }
+                }
                 None => format!("Used {name}!"),
             },
             BoardEvent::SwitchIn {
@@ -321,34 +330,34 @@ impl BoardEvent {
             },
             BoardEvent::Tie => "=== Draw! ===".into(),
             BoardEvent::SuperEffective { mon } => {
-                format!("It's super effective on {}!", extract_mon_name(mon))
+                format!("It's super effective on {}!", player_mon_label(mon))
             }
             BoardEvent::Resisted { mon } => {
-                format!("It's not very effective on {}...", extract_mon_name(mon))
+                format!("It's not very effective on {}...", player_mon_label(mon))
             }
             BoardEvent::Immune { mon } => {
-                format!("{} is unaffected!", extract_mon_name(mon))
+                format!("{} is unaffected!", player_mon_label(mon))
             }
             BoardEvent::Miss { mon } => {
-                format!("The attack missed {}!", extract_mon_name(mon))
+                format!("The attack missed {}!", player_mon_label(mon))
             }
             BoardEvent::CriticalHit { mon } => {
-                format!("A critical hit on {}!", extract_mon_name(mon))
+                format!("A critical hit on {}!", player_mon_label(mon))
             }
             BoardEvent::SetStatus { mon, status } => {
-                format!("{} was inflicted with {}!", extract_mon_name(mon), status)
+                format!("{} was inflicted with {}!", player_mon_label(mon), status)
             }
             BoardEvent::CureStatus { mon, status } => {
-                format!("{}'s {} was cured!", extract_mon_name(mon), status)
+                format!("{}'s {} was cured!", player_mon_label(mon), status)
             }
             BoardEvent::Cant { mon, reason } => {
-                format!("{} can't move! ({})", extract_mon_name(mon), reason)
+                format!("{} can't move! ({})", player_mon_label(mon), reason)
             }
             BoardEvent::Fail { mon } => {
                 if mon.is_empty() {
                     "The move failed!".into()
                 } else {
-                    format!("But it failed for {}!", extract_mon_name(mon))
+                    format!("But it failed for {}!", player_mon_label(mon))
                 }
             }
             BoardEvent::Raw(line) => format!("[event] {line}"),
