@@ -25,7 +25,7 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use mega_blastoise_core::{party_slot_from_mon, render_move_detail, render_player_screen, render_pokemon_stats, MoveSlot, PartySlotData};
+use mega_blastoise_core::{render_move_detail, render_player_screen, render_pokemon_stats, MoveSlot, PartySlotData};
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 
 // ── Command channel ───────────────────────────────────────────────────────────

@@ -102,10 +102,6 @@ impl PlayerLedState {
         Self { hp_pct: 100, party: [None, None, None], status: None }
     }
 
-    fn alive_count(&self) -> usize {
-        self.party.iter().filter(|s| s.is_some()).count()
-    }
-
     fn register_switch(&mut self, name: &[u8; 12], len: u8) {
         let already = self.party.iter().any(|s| {
             if let Some((n, l)) = s { *l == len && &n[..len as usize] == &name[..len as usize] }
@@ -139,9 +135,11 @@ impl PlayerLedState {
             buf[i] = color;
         }
 
-        // LEDs 8–10: party slots — alive = dim green, fainted = off
-        for i in 0..self.alive_count().min(3) {
-            buf[8 + i] = RGB8 { r: 0, g: 30, b: 0 };
+        // LEDs 8–10: party slots — position-stable; alive = dim green, fainted = off
+        for (i, slot) in self.party.iter().enumerate() {
+            if slot.is_some() {
+                buf[8 + i] = RGB8 { r: 0, g: 30, b: 0 };
+            }
         }
 
         // LED 11: status indicator

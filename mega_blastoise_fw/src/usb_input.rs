@@ -602,17 +602,24 @@ impl<'d> UsbBattleInput<'d> {
         )).await;
     }
 
-    /// Read a lobby command from USB. Returns as soon as a line is submitted.
+    /// Read a lobby command from USB. Returns as soon as a non-meta line is submitted.
+    /// Meta commands (`:reset`, `:anim on/off`) are handled immediately and loop.
     pub async fn read_lobby_cmd(&mut self) -> LobbyUsbCmd {
-        let line = self.read_line().await;
-        match line.trim() {
-            ":ready" => LobbyUsbCmd::ReadyBoth,
-            ":ready p1" => LobbyUsbCmd::ReadyP1,
-            ":ready p2" => LobbyUsbCmd::ReadyP2,
-            ":ready ai" | ":ready both ai" => LobbyUsbCmd::VsAi,
-            ":demo" => LobbyUsbCmd::Demo,
-            ":s" | ":stop" => LobbyUsbCmd::StopDemo,
-            _ => LobbyUsbCmd::Unknown,
+        loop {
+            let line = self.read_line().await;
+            if let Some(msg) = handle_meta_cmd(line.trim()) {
+                self.writeln(msg).await;
+                continue;
+            }
+            return match line.trim() {
+                ":ready" => LobbyUsbCmd::ReadyBoth,
+                ":ready p1" => LobbyUsbCmd::ReadyP1,
+                ":ready p2" => LobbyUsbCmd::ReadyP2,
+                ":ready ai" | ":ready both ai" => LobbyUsbCmd::VsAi,
+                ":demo" => LobbyUsbCmd::Demo,
+                ":s" | ":stop" => LobbyUsbCmd::StopDemo,
+                _ => LobbyUsbCmd::Unknown,
+            };
         }
     }
 
@@ -623,12 +630,11 @@ impl<'d> UsbBattleInput<'d> {
 /// Side-effects (reset, flag toggle) happen before returning.
 fn handle_meta_cmd(line: &str) -> Option<&'static str> {
     match line {
-        ":reset" => { SCB::sys_reset(); }
-        ":anim off" => { ANIM_ENABLED.store(false, core::sync::atomic::Ordering::Relaxed); return Some("[anim] animations OFF"); }
-        ":anim on"  => { ANIM_ENABLED.store(true,  core::sync::atomic::Ordering::Relaxed); return Some("[anim] animations ON"); }
-        _ => return None,
+        ":reset"    => { SCB::sys_reset() }
+        ":anim off" => { ANIM_ENABLED.store(false, core::sync::atomic::Ordering::Relaxed); Some("[anim] animations OFF") }
+        ":anim on"  => { ANIM_ENABLED.store(true,  core::sync::atomic::Ordering::Relaxed); Some("[anim] animations ON") }
+        _ => None,
     }
-    None
 }
 
 impl InputSource for UsbBattleInput<'_> {
@@ -645,11 +651,13 @@ impl InputSource for UsbBattleInput<'_> {
 /// No display, no move lists — the OLED (or host terminal) shows what to press.
 /// Pairs with [`mega_blastoise_core::ButtonController`] which handles all
 /// battle-protocol logic.
+#[allow(dead_code)]
 pub struct UsbButtonInput<'d> {
     sender: Sender<'d, Driver<'d, USB>>,
     receiver: Receiver<'d, Driver<'d, USB>>,
 }
 
+#[allow(dead_code)]
 impl<'d> UsbButtonInput<'d> {
     pub fn new(
         sender: Sender<'d, Driver<'d, USB>>,

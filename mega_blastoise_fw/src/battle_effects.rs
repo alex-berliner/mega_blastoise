@@ -123,21 +123,25 @@ impl BoardEffects for BattleEffects<'_> {
             }
 
             BoardEvent::SetStatus { mon, status } => {
+                #[cfg(feature = "leds")]
                 if let Some(pid) = mon_player_id(mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
-                    #[cfg(feature = "leds")]
                     if let Some(s) = LedStatus::from_str(status.as_str()) {
                         led_send(LedCmd::SetStatus { player, status: s });
                     }
                 }
+                #[cfg(not(feature = "leds"))]
+                let _ = (mon, status);
             }
 
             BoardEvent::CureStatus { mon, .. } => {
+                #[cfg(feature = "leds")]
                 if let Some(pid) = mon_player_id(mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
-                    #[cfg(feature = "leds")]
                     led_send(LedCmd::CureStatus { player });
                 }
+                #[cfg(not(feature = "leds"))]
+                let _ = mon;
             }
 
             BoardEvent::Win { side } => {
@@ -180,6 +184,19 @@ impl BoardEffects for BattleEffects<'_> {
             _ => {}
         }
 
+        // ── USB log narration (before animation so run_inner drains it during the delay) ──
+        let display_on_usb =
+            !matches!(&event, BoardEvent::Split { .. } | BoardEvent::Prompt { .. } | BoardEvent::MovesUpdate { .. });
+
+        if display_on_usb {
+            if let Some(bus) = self.bus {
+                let msg = event.description();
+                if bus.log.try_send(msg).is_err() {
+                    defmt::warn!("battle_effects: log channel full, event dropped");
+                }
+            }
+        }
+
         // ── Animation delay ───────────────────────────────────────────────────
         let delay_ms = match &event {
             BoardEvent::Move { .. }                                    => anim::MOVE_MS,
@@ -200,19 +217,6 @@ impl BoardEffects for BattleEffects<'_> {
         };
         if delay_ms > 0 && ANIM_ENABLED.load(Ordering::Relaxed) {
             Timer::after_millis(delay_ms as u64).await;
-        }
-
-        // ── USB log narration ─────────────────────────────────────────────────
-        let display_on_usb =
-            !matches!(&event, BoardEvent::Split { .. } | BoardEvent::Prompt { .. } | BoardEvent::MovesUpdate { .. });
-
-        if display_on_usb {
-            if let Some(bus) = self.bus {
-                let msg = event.description();
-                if bus.log.try_send(msg).is_err() {
-                    defmt::warn!("battle_effects: log channel full, event dropped");
-                }
-            }
         }
     }
 }

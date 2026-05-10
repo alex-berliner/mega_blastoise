@@ -206,10 +206,9 @@ pub async fn run_lobby(
     queue: &mut BoardEventQueue,
 ) -> [bool; 2] {
     let mut demo_seed = embassy_time::Instant::now().as_ticks() ^ 0xfeed_f00d_dead_beef;
-    let mut p2_ai = false;
 
     'demo: loop {
-        p2_ai = false;
+        let mut p2_ai = false;
         #[cfg(feature = "leds")]
         led_send(LedCmd::LobbyIdle);
         usb.write_lobby_line("Demo — press any button or :ready / :ready ai to start").await;

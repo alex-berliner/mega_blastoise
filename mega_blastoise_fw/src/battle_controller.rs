@@ -38,6 +38,7 @@ impl InputSource for BattleController<'_> {
 
 /// Races USB serial digits against GPIO button scans; the first valid press wins.
 /// Wraps both in [`ButtonController`] so battle-protocol logic is shared.
+#[allow(dead_code)]
 struct CombinedButtonSource<'d> {
     usb: UsbButtonInput<'d>,
     gpio: PicoBattleInput<'d>,
@@ -67,10 +68,12 @@ impl ButtonSource for CombinedButtonSource<'_> {
     }
 }
 
+#[allow(dead_code)]
 pub struct ButtonBattleController<'d> {
     inner: ButtonController<CombinedButtonSource<'d>>,
 }
 
+#[allow(dead_code)]
 impl<'d> ButtonBattleController<'d> {
     pub fn new(usb: UsbButtonInput<'d>, gpio: PicoBattleInput<'d>) -> Self {
         Self {
