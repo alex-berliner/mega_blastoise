@@ -14,8 +14,10 @@ impl ButtonSource for WebButtonSource {
         for line in text.lines() {
             crate::print_log(line);
         }
+        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        // Clear any detail overlay so the normal OLED view returns at prompt time.
+        crate::restore_screen(player);
         if let Some(pd) = player_data {
-            let player = if player_id == "p1" { 1u8 } else { 2u8 };
             let slots = pd.mons.iter().map(party_slot_from_mon).collect();
             crate::update_party(player, slots);
         }

@@ -158,13 +158,10 @@ pub(crate) fn ai_pick_move(n_moves: usize) -> usize {
 pub(crate) fn ai_pick_switch(player: u8) -> usize {
     let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
                 else           { P2_PARTY.with(|p| p.borrow().clone()) };
-    // Try slots 1, 2, 0 — prefer bench slots over active (slot 0 is usually active)
-    for &idx in &[1usize, 2, 0] {
-        if let Some(slot) = party.get(idx) {
-            if slot.hp > 0 { return idx; }
-        }
-    }
-    0
+    party.iter().enumerate()
+        .find(|(_, s)| !s.active && s.hp > 0)
+        .map(|(i, _)| i)
+        .unwrap_or(0)
 }
 
 pub(crate) fn show_pokemon_stats(player: u8, team_idx: usize) {

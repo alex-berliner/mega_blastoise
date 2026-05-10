@@ -51,9 +51,9 @@ function applyFlash(flashState) {
 
 // ── Move button labels ────────────────────────────────────────────────────────
 
-// Key hints shown on buttons (move slots 0-3 map to keys 1-4)
-const MOVE_KEYS = ['1', '2', '3', '4'];
-const SWITCH_KEYS = ['A', 'S', 'D'];
+// Key hints shown on buttons (P1: 1-4, P2: 7-0)
+const P1_MOVE_KEYS   = ['1', '2', '3', '4'];
+const P2_MOVE_KEYS_L = ['7', '8', '9', '0'];  // labels only (see P2_MOVE_KEYS for handler)
 
 let p1MovesVer = -1, p2MovesVer = -1;
 let p1PartyVer = -1, p2PartyVer = -1;
@@ -70,12 +70,13 @@ const TYPE_COLORS = {
 function updateMoveLabels(player) {
     const raw = wasm.get_move_labels(player);
     const slots = raw.split(',');
+    const keys = player === 1 ? P1_MOVE_KEYS : P2_MOVE_KEYS_L;
     for (let i = 0; i < 4; i++) {
         const el = document.getElementById(`p${player}-m${i}`);
         if (!el) continue;
         const slot = slots[i] || '';
         if (!slot) {
-            el.innerHTML = `<span class="mv-key">${MOVE_KEYS[i]}</span>`;
+            el.innerHTML = `<span class="mv-key">${keys[i]}</span>`;
             el.classList.remove('mv-no-pp');
             el.style.borderColor = '';
             continue;
@@ -84,7 +85,7 @@ function updateMoveLabels(player) {
         const [pp, maxPp] = ppStr ? ppStr.split('/') : ['', ''];
         const noPp = pp === '0';
         const typeColor = TYPE_COLORS[typeName] || '#333';
-        el.innerHTML = `<span class="mv-key">${MOVE_KEYS[i]}</span><span class="mv-name">${name}</span><span class="mv-pp">${pp}/${maxPp}</span>`;
+        el.innerHTML = `<span class="mv-key">${keys[i]}</span><span class="mv-name">${name}</span><span class="mv-pp">${pp}/${maxPp}</span>`;
         el.classList.toggle('mv-no-pp', noPp);
         el.style.borderColor = noPp ? '#1a2a1a' : typeColor;
     }
@@ -314,22 +315,28 @@ setInterval(() => {
 // MutationObserver that replaces newly added text nodes with colored spans.
 
 const TEXT_COLOR_RULES = [
-    [/fainted!/,                   '#c44'],   // faint → red
-    [/WINNER!/,                    '#ca0'],   // win → gold
-    [/GG!/,                        '#888'],   // loss → grey
-    [/TIE!/,                       '#888'],   // tie
-    [/── Battle/,                  '#4a8'],   // turn separator → green
-    [/─── Turn/,                   '#4a8'],   // turn marker
-    [/was inflicted|is paralyzed|was burned|was frozen|fell asleep|was poisoned/, '#a4a'],  // status
-    [/was cured|woke up|thawed|unfrozen/,  '#8cc'],  // cure status → cyan
-    [/super effective/i,           '#ca0'],   // SE → gold
-    [/critical hit/i,              '#c84'],   // crit → orange
-    [/It missed|but it failed/i,   '#666'],   // miss/fail → grey
-    [/took damage/,                '#c88'],   // damage → light red
-    [/\[OK\]/,                     '#4a8'],   // accepted → green
-    [/\[!!\]/,                     '#c44'],   // rejected → red
-    [/\[EVT\]/,                    '#688'],   // event prefix
-    [/Keys|build |MEGA BLASTOISE/, '#444'],   // meta lines
+    [/fainted!/,                   '#c44'],   // faint
+    [/wins!/,                      '#ca0'],   // "=== Red wins! ==="
+    [/Draw!/,                      '#888'],   // "=== Draw! ==="
+    [/Battle start/,               '#4a8'],   // "=== Battle start! ==="
+    [/^--- Turn/,                  '#4a8'],   // "--- Turn N ---"
+    [/── Battle/,                  '#4a8'],   // JS log separator line
+    [/was inflicted/,              '#a4a'],   // "X was inflicted with Paralysis!"
+    [/can't move/,                 '#a4a'],   // paralysis skip, sleep, freeze
+    [/was cured/,                  '#8cc'],   // "X's Paralysis was cured!"
+    [/recovered HP/,               '#4a8'],   // "X recovered HP!"
+    [/was recalled/,               '#468'],   // "X was recalled!"
+    [/sent out/,                   '#88f'],   // "Blue sent out Charizard!"
+    [/super effective/i,           '#ca0'],   // SE
+    [/critical hit/i,              '#c84'],   // crit
+    [/attack missed|but it failed/i, '#666'], // miss/fail
+    [/not very effective/i,        '#888'],   // resisted
+    [/is unaffected/i,             '#888'],   // immune
+    [/took damage/,                '#c88'],   // damage
+    [/\[OK\]/,                     '#4a8'],   // accepted
+    [/\[!!\]/,                     '#c44'],   // rejected
+    [/\[event\]/,                  '#688'],   // raw battler event
+    [/Keys|build |MEGA BLASTOISE/, '#444'],   // meta/boot lines
 ];
 
 const logMutObs = new MutationObserver(mutations => {
@@ -382,9 +389,10 @@ async function run() {
         initSwitchHints();
         // Seed move buttons with key hints before first battle
         for (let p = 1; p <= 2; p++) {
+            const keys = p === 1 ? P1_MOVE_KEYS : P2_MOVE_KEYS_L;
             for (let i = 0; i < 4; i++) {
                 const el = document.getElementById(`p${p}-m${i}`);
-                if (el) el.innerHTML = `<span class="mv-key">${MOVE_KEYS[i]}</span>`;
+                if (el) el.innerHTML = `<span class="mv-key">${keys[i]}</span>`;
             }
         }
         requestAnimationFrame(frame);
