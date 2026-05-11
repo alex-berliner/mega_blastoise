@@ -564,6 +564,7 @@ fn push_button(ev: ButtonEvent) {
 fn enter_demo_mode() {
     DEMO_MODE.with(|d| *d.borrow_mut() = true);
     NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, true]));
+    LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
     push_button(ButtonEvent::Move { player: 1, slot: 0 });
     push_button(ButtonEvent::Move { player: 2, slot: 0 });
 }
@@ -588,6 +589,7 @@ fn enter_demo_mode() {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
     // p1=AI (Red), p2=human (Blue)
     NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, false]));
+    LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
     push_button(ButtonEvent::Move { player: 1, slot: 0 });
     push_button(ButtonEvent::Move { player: 2, slot: 0 });
 }
@@ -603,6 +605,7 @@ fn enter_demo_mode() {
     // player is human, opponent is AI
     let ai = if player == 1 { [false, true] } else { [true, false] };
     NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some(ai));
+    LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
     draw_lobby_screen(1, true, ai[0]);
     draw_lobby_screen(2, true, ai[1]);
     push_button(ButtonEvent::Move { player: 1, slot: 0 });
@@ -614,7 +617,7 @@ fn enter_demo_mode() {
 
     // Global commands always available
     match cmd {
-        ":reset"    => { wasm_reset(); return; }
+        ":reset" | ":restart" => { wasm_reset(); return; }
         ":anim off" => { ANIM_ENABLED.with(|a| *a.borrow_mut() = false); print_log("[anim] animations OFF"); return; }
         ":anim on"  => { ANIM_ENABLED.with(|a| *a.borrow_mut() = true);  print_log("[anim] animations ON");  return; }
         _ => {}
@@ -622,14 +625,16 @@ fn enter_demo_mode() {
 
     if LOBBY_MODE.with(|m| *m.borrow()) {
         match cmd {
-            ":ready ai" => {
+            ":ready ai" | ":vs ai" | ":blue vs ai" => {
                 // VS AI: P1=AI (Red), P2=human (Blue)
                 NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, false]));
+                LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
                 push_button(ButtonEvent::Move { player: 1, slot: 0 });
                 push_button(ButtonEvent::Move { player: 2, slot: 0 });
             }
             ":demo" => { enter_demo_mode(); }
             ":ready" | ":ready both" => {
+                LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
                 push_button(ButtonEvent::Move { player: 1, slot: 0 });
                 push_button(ButtonEvent::Move { player: 2, slot: 0 });
             }
@@ -790,19 +795,26 @@ async fn run_game_loop() {
             ));
             print_log("");
 
-            // Wait for both players to press a button (or one to long-press for AI opponent)
+            // Wait for both players to press a button (or one to long-press for AI opponent).
+            // Pressing while already ready unreadies the player and cancels any AI config.
             loop {
                 let ev = AnyButtonFuture.await;
                 let player = match &ev {
                     ButtonEvent::Move   { player, .. }
                     | ButtonEvent::Switch { player, .. } => *player,
                 };
-                LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = true);
-                // Show READY! or AI depending on whether NEXT_GAME_AI has been set for this player
-                let is_ai = NEXT_GAME_AI.with(|n| {
-                    n.borrow().map(|a| a[(player - 1) as usize]).unwrap_or(false)
-                });
-                draw_lobby_screen(player, true, is_ai);
+                let already_ready = LOBBY_READY.with(|r| r.borrow()[(player - 1) as usize]);
+                if already_ready {
+                    LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = false);
+                    NEXT_GAME_AI.with(|n| *n.borrow_mut() = None);
+                    draw_lobby_screen(player, false, false);
+                } else {
+                    LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = true);
+                    let is_ai = NEXT_GAME_AI.with(|n| {
+                        n.borrow().map(|a| a[(player - 1) as usize]).unwrap_or(false)
+                    });
+                    draw_lobby_screen(player, true, is_ai);
+                }
                 if LOBBY_READY.with(|r| { let rr = r.borrow(); rr[0] && rr[1] }) { break; }
             }
         }
