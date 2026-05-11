@@ -8,7 +8,7 @@ mod tests {
 
     use battler::{Request, TeamData};
     use mega_blastoise_core::{
-        battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_move_choice,
+        battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_move_choice,
         format_switch_choice, join_choice_parts, FlashDataStore,
     };
 
@@ -58,8 +58,7 @@ mod tests {
         let data = FlashDataStore::new();
         let seed = 0xdead_beef_cafe_u64;
 
-        let team_red = draw_randbat_team(seed, 3);
-        let team_blue = draw_randbat_team(seed.wrapping_add(0x9e37_79b9_7f4a_7c15), 3);
+        let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
 
         let mut battle =
             battler::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())

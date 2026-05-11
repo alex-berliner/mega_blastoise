@@ -13,7 +13,7 @@ use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
     parse_lobby_cmd, parse_switch_line, parse_turn_line,
-    ActivePrompt, InputBus, InputSource, RandomAi, TurnChoice,
+    ActivePrompt, InputBus, InputSource, RandomAi, TurnChoice, TEAM_SEED_SALT,
 };
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
@@ -46,7 +46,7 @@ impl<'d> UsbBattleInput<'d> {
             last_typed_line: None,
             last_player_data: None,
             ai_players: [false, false],
-            ai: RandomAi::new(0x9e3779b97f4a7c15),
+            ai: RandomAi::new(TEAM_SEED_SALT),
         }
     }
 

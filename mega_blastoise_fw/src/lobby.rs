@@ -11,9 +11,9 @@ use battler::TeamData;
 use embassy_futures::select::{select, Either};
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::{
-    battle_options_with_seed, demo_engine_opts, draw_randbat_team, draw_two_randbat_teams,
+    battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams,
     ActivePrompt, BoardEventQueue, FlashDataStore, InputBus, InputSource, RandomAi,
-    LOBBY_DEMO_DELAY_MS,
+    LOBBY_DEMO_DELAY_MS, TEAM_SEED_SALT,
 };
 
 use crate::battle_effects::BattleEffects;
@@ -276,7 +276,7 @@ async fn run_lobby_inner(
                     input.wait_event(),
                 ).await {
                     Either::First(_) => {
-                        demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
+                        demo_seed = demo_seed.wrapping_add(TEAM_SEED_SALT);
                         #[cfg(feature = "oled")]
                         oled_lobby_update(false, false, false, false);
                         Timer::after_secs(3).await;
@@ -290,7 +290,7 @@ async fn run_lobby_inner(
                 }
             }
         };
-        demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
+        demo_seed = demo_seed.wrapping_add(TEAM_SEED_SALT);
 
         // Apply the interrupting event to initial ready state.
         match event {
