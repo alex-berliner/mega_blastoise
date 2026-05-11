@@ -13,7 +13,7 @@ use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
     parse_lobby_cmd, parse_switch_line, parse_turn_line,
-    ActivePrompt, InputBus, InputSource, LobbyCmd, PlayerAction, RandomAi, TurnChoice,
+    ActivePrompt, InputBus, InputSource, RandomAi, TurnChoice,
 };
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
@@ -431,12 +431,11 @@ impl<'d> UsbBattleInput<'d> {
 /// Side-effects (reset, flag toggle) happen before returning.
 fn handle_meta_cmd(line: &str) -> Option<&'static str> {
     match line {
-        ":reset" => { SCB::sys_reset(); }
-        ":anim off" => { ANIM_ENABLED.store(false, core::sync::atomic::Ordering::Relaxed); return Some("[anim] animations OFF"); }
-        ":anim on"  => { ANIM_ENABLED.store(true,  core::sync::atomic::Ordering::Relaxed); return Some("[anim] animations ON"); }
-        _ => return None,
+        ":reset"    => SCB::sys_reset(),
+        ":anim off" => { ANIM_ENABLED.store(false, core::sync::atomic::Ordering::Relaxed); Some("[anim] animations OFF") }
+        ":anim on"  => { ANIM_ENABLED.store(true,  core::sync::atomic::Ordering::Relaxed); Some("[anim] animations ON") }
+        _           => None,
     }
-    None
 }
 
 impl InputSource for UsbBattleInput<'_> {

@@ -68,14 +68,14 @@ impl BoardEffects for BattleEffects<'_> {
                 }
             }
 
-            BoardEvent::Faint { mon, team_slot } => {
+            BoardEvent::Faint { mon, team_slot: _team_slot } => {
                 defmt::info!("faint: {}", mon.as_str());
                 if let Some(pid) = mon_player_id(mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
                     #[cfg(feature = "oled")]
                     oled_send(OledCmd::Faint { player });
                     #[cfg(feature = "leds")]
-                    if let Some(slot) = team_slot {
+                    if let Some(slot) = _team_slot {
                         led_send(LedCmd::Faint { player, slot });
                     }
                 }
@@ -83,7 +83,7 @@ impl BoardEffects for BattleEffects<'_> {
                 buzz(BuzzerCmd::Faint);
             }
 
-            BoardEvent::SwitchIn { name, player_id, moves, team_slot, .. } => {
+            BoardEvent::SwitchIn { name, player_id, moves, team_slot: _team_slot, .. } => {
                 if let Some(pid) = player_id {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
                     let (buf, len) = name_buf(name.as_str());
@@ -94,7 +94,7 @@ impl BoardEffects for BattleEffects<'_> {
                         oled_send(OledCmd::MovesUpdate { player, moves: moves.clone() });
                     }
                     #[cfg(feature = "leds")]
-                    if let Some(slot) = team_slot {
+                    if let Some(slot) = _team_slot {
                         led_send(LedCmd::SwitchIn { player, slot });
                     }
                 }
@@ -110,20 +110,20 @@ impl BoardEffects for BattleEffects<'_> {
                 buzz(BuzzerCmd::Crit);
             }
 
-            BoardEvent::SetStatus { mon, status } => {
-                if let Some(pid) = mon_player_id(mon) {
+            BoardEvent::SetStatus { mon: _mon, status: _status } => {
+                #[cfg(feature = "leds")]
+                if let Some(pid) = mon_player_id(_mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
-                    #[cfg(feature = "leds")]
-                    if let Some(s) = LedStatus::from_str(status.as_str()) {
+                    if let Some(s) = LedStatus::from_str(_status.as_str()) {
                         led_send(LedCmd::SetStatus { player, status: s });
                     }
                 }
             }
 
-            BoardEvent::CureStatus { mon, .. } => {
-                if let Some(pid) = mon_player_id(mon) {
+            BoardEvent::CureStatus { mon: _mon, .. } => {
+                #[cfg(feature = "leds")]
+                if let Some(pid) = mon_player_id(_mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
-                    #[cfg(feature = "leds")]
                     led_send(LedCmd::CureStatus { player });
                 }
             }

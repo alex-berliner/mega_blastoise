@@ -18,11 +18,7 @@ use embassy_rp::Peri;
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
-use embedded_graphics::{
-    pixelcolor::BinaryColor,
-    prelude::*,
-};
-use mega_blastoise_core::{party_slot_from_mon, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, MoveSlot, PartySlotData};
+use mega_blastoise_core::{render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, MoveSlot, PartySlotData};
 use display_interface::AsyncWriteOnlyDataCommand;
 use ssd1306::{mode::BufferedGraphicsModeAsync, prelude::*, I2CDisplayInterface, Ssd1306Async};
 
