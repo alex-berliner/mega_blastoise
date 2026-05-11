@@ -254,8 +254,9 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::Tie => {
-                render_win_screen(&mut self.p1_disp, "TIE!");
-                render_win_screen(&mut self.p2_disp, "TIE!");
+                let (msg1, msg2) = BoardEvent::win_messages(0);
+                render_win_screen(&mut self.p1_disp, msg1);
+                render_win_screen(&mut self.p2_disp, msg2);
                 crate::update_pixels(1, self.p1_disp.to_rgba());
                 crate::update_pixels(2, self.p2_disp.to_rgba());
                 crate::update_leds(win_leds(0));
