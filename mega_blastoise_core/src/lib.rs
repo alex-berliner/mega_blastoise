@@ -5,6 +5,7 @@ extern crate alloc;
 pub mod battle_effects;
 pub mod cli_parse;
 pub mod display;
+pub mod hp_bar;
 pub mod board_event;
 pub mod battle_input;
 pub mod battle_runner;
@@ -28,7 +29,8 @@ pub use battle_input::{
     turn_choice_from_move_slots, ActivePrompt, ButtonController, ButtonSource, InputBus,
     InputSource, NoInput, PlayerAction,
 };
-pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle};
+pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
+pub use hp_bar::HpBarState;
 pub use prompt_fmt::{format_active_state, format_player_state, format_prompt};
 pub use data_store::FlashDataStore;
 pub use demo_teams::{demo_team_blue, demo_team_red};

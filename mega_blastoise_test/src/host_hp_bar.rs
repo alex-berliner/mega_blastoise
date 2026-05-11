@@ -1,8 +1,6 @@
 use std::fmt;
+use mega_blastoise_core::HpBarState;
 
-/// Host mirror of `mega_blastoise_fw::hp_bar::HpBarState`.
-/// Uses `Display` instead of `defmt::Format`.
-#[derive(Clone, Copy)]
 pub struct HostHpBarState {
     pub current: u16,
     pub max: u16,
@@ -11,18 +9,8 @@ pub struct HostHpBarState {
 impl HostHpBarState {
     pub const ZERO: Self = Self { current: 0, max: 0 };
 
-    /// Parse battler health string: `"current/max"` or bare `"current"` (fainted = 0/1).
     pub fn parse(health: &str) -> Option<Self> {
-        let health = health.trim();
-        if let Some((cur, max)) = health.split_once('/') {
-            Some(Self {
-                current: cur.trim().parse().ok()?,
-                max: max.trim().parse().ok()?,
-            })
-        } else {
-            let current: u16 = health.parse().ok()?;
-            Some(Self { current, max: current.max(1) })
-        }
+        HpBarState::parse(health).map(|hp| Self { current: hp.current, max: hp.max })
     }
 
     pub fn pct(&self) -> u32 {

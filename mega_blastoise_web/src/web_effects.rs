@@ -5,7 +5,7 @@ use embedded_graphics::{
     text::{Alignment, Baseline, Text, TextStyleBuilder},
 };
 use mega_blastoise_core::{
-    anim, render_player_screen, BoardEffects, BoardEvent, InputBus, MoveSlot,
+    anim, render_player_screen, BoardEffects, BoardEvent, HpBarState, InputBus, MoveSlot,
 };
 
 use crate::web_display::WasmDisplay;
@@ -138,17 +138,6 @@ fn mon_name(mon: &str) -> &str {
     mon.split(',').next().unwrap_or(mon)
 }
 
-fn parse_hp_pct(health: &str) -> Option<u8> {
-    let health = health.trim();
-    if let Some((cur, max)) = health.split_once('/') {
-        let cur: u32 = cur.trim().parse().ok()?;
-        let max: u32 = max.trim().parse().ok()?;
-        if max > 0 { Some((cur * 100 / max) as u8) } else { Some(0) }
-    } else {
-        let v: u8 = health.parse().ok()?;
-        Some(v)
-    }
-}
 
 fn win_leds(winner: u8) -> [u32; 24] {
     let gold = pack_rgb(200, 150, 0);
@@ -233,7 +222,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
-                if let (Some(p), Some(pct)) = (player_num(mon), parse_hp_pct(health)) {
+                if let (Some(p), Some(pct)) = (player_num(mon), HpBarState::parse(health).map(|h| h.pct())) {
                     if p == 1 { self.p1_led.hp_pct = pct; }
                     else      { self.p2_led.hp_pct = pct; }
                     self.redraw(p);

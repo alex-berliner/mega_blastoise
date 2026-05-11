@@ -1,10 +1,8 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_time::Timer;
-use mega_blastoise_core::{anim, BoardEffects, BoardEvent, InputBus};
+use mega_blastoise_core::{anim, BoardEffects, BoardEvent, HpBarState, InputBus};
 
 pub static ANIM_ENABLED: AtomicBool = AtomicBool::new(true);
-
-use mega_blastoise_fw::hp_bar::HpBarState;
 
 #[cfg(feature = "buzzer")]
 use crate::subsystems::buzzer::{buzz, BuzzerCmd};
@@ -46,17 +44,17 @@ impl BoardEffects for BattleEffects<'_> {
                 defmt::info!("hp event: mon={} health={}", mon.as_str(), health.as_str());
                 if let Some(hp) = HpBarState::parse(health) {
                     let player = mon_player_id(mon);
-                    let pct = if hp.max > 0 { (hp.current as u32 * 100 / hp.max as u32) as u8 } else { 0 };
+                    let pct = hp.pct();
                     match player {
                         Some("p1") => {
-                            defmt::info!("P1 HP: {}", hp);
+                            defmt::info!("P1 HP: {}/{}", hp.current, hp.max);
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::HpUpdate { player: 1, pct });
                             #[cfg(feature = "leds")]
                             led_send(LedCmd::HpUpdate { player: 1, pct });
                         }
                         Some("p2") => {
-                            defmt::info!("P2 HP: {}", hp);
+                            defmt::info!("P2 HP: {}/{}", hp.current, hp.max);
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::HpUpdate { player: 2, pct });
                             #[cfg(feature = "leds")]
