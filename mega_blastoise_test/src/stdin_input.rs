@@ -2,8 +2,8 @@ use std::io::{self, Write};
 
 use battler::Request;
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, ActivePrompt, InputBus,
-    InputSource,
+    format_move_choice, format_switch_choice, join_choice_parts, player_display_name,
+    ActivePrompt, InputBus, InputSource,
 };
 
 pub struct StdinBattleInput;
@@ -80,13 +80,7 @@ impl StdinBattleInput {
         }
     }
 
-    fn player_label(id: &str) -> &'static str {
-        match id {
-            "p1" => "Red",
-            "p2" => "Blue",
-            _ => "?",
-        }
-    }
+    fn player_label(id: &str) -> &'static str { player_display_name(id) }
 
     fn prompt_usize_inclusive(prompt: &str, min: usize, max: usize) -> usize {
         loop {
