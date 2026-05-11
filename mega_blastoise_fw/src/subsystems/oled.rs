@@ -19,12 +19,10 @@ use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
     pixelcolor::BinaryColor,
     prelude::*,
-    text::{Baseline, Text},
 };
-use mega_blastoise_core::{party_slot_from_mon, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, MoveSlot, PartySlotData};
+use mega_blastoise_core::{party_slot_from_mon, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, MoveSlot, PartySlotData};
 use display_interface::AsyncWriteOnlyDataCommand;
 use ssd1306::{mode::BufferedGraphicsModeAsync, prelude::*, I2CDisplayInterface, Ssd1306Async};
 
@@ -227,19 +225,14 @@ pub async fn task(
                 else           { draw_lobby_screen(&mut disp1, ready, ai).await; }
             }
             OledCmd::Win { winner } => {
-                let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
                 let (msg0, msg1) = match winner {
                     1 => ("WINNER!", "GG!"),
                     2 => ("GG!", "WINNER!"),
                     _ => ("TIE!", "TIE!"),
                 };
-                disp0.clear(BinaryColor::Off).ok();
-                Text::with_baseline(msg0, Point::zero(), style, Baseline::Top)
-                    .draw(&mut disp0).ok();
+                render_win_screen(&mut disp0, msg0);
                 disp0.flush().await.ok();
-                disp1.clear(BinaryColor::Off).ok();
-                Text::with_baseline(msg1, Point::zero(), style, Baseline::Top)
-                    .draw(&mut disp1).ok();
+                render_win_screen(&mut disp1, msg1);
                 disp1.flush().await.ok();
             }
         }

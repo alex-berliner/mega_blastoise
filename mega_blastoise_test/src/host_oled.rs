@@ -4,13 +4,7 @@
 /// functions from `mega_blastoise_core::display`.  On every state change the
 /// display redraws and `CliDisplay::render()` prints it to stdout via Unicode
 /// half-blocks.
-use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
-    pixelcolor::BinaryColor,
-    prelude::*,
-    text::{Baseline, Text},
-};
-use mega_blastoise_core::{render_move_detail, render_player_screen, MoveSlot};
+use mega_blastoise_core::{render_move_detail, render_player_screen, render_win_screen, MoveSlot};
 
 use crate::cli_display::CliDisplay;
 
@@ -100,13 +94,8 @@ impl HostOled {
             2 => ("GG!", "WINNER!"),
             _ => ("TIE!", "TIE!"),
         };
-        let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-        self.p1_disp.clear(BinaryColor::Off).ok();
-        Text::with_baseline(msg0, Point::zero(), style, Baseline::Top)
-            .draw(&mut self.p1_disp).ok();
-        self.p2_disp.clear(BinaryColor::Off).ok();
-        Text::with_baseline(msg1, Point::zero(), style, Baseline::Top)
-            .draw(&mut self.p2_disp).ok();
+        render_win_screen(&mut self.p1_disp, msg0);
+        render_win_screen(&mut self.p2_disp, msg1);
         println!("── P1 Display ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
         self.p1_disp.render();
         println!("── P2 Display ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");

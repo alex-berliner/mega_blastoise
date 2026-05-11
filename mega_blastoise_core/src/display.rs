@@ -382,6 +382,20 @@ where
     }
 }
 
+// ── Win screen ────────────────────────────────────────────────────────────────
+
+/// Draw a win/loss/tie message centered on any 128×64 `DrawTarget`.
+///
+/// Typical messages: `"WINNER!"`, `"GG!"`, `"TIE!"`.
+pub fn render_win_screen<D>(display: &mut D, msg: &str)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    Text::with_text_style(msg, Point::new(64, 27), style, center_style()).draw(display).ok();
+}
+
 // ── Lobby screen ──────────────────────────────────────────────────────────────
 
 /// Draw the lobby ready state onto any 128×64 `DrawTarget`.

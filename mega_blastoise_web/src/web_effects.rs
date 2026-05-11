@@ -1,11 +1,11 @@
 use embedded_graphics::{
-    mono_font::{ascii::{FONT_6X10, FONT_5X8}, MonoTextStyle},
+    mono_font::{ascii::FONT_5X8, MonoTextStyle},
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Alignment, Baseline, Text, TextStyleBuilder},
 };
 use mega_blastoise_core::{
-    anim, render_player_screen, BoardEffects, BoardEvent, HpBarState, InputBus, MoveSlot,
+    anim, render_player_screen, render_win_screen, BoardEffects, BoardEvent, HpBarState, InputBus, MoveSlot,
 };
 
 use crate::web_display::WasmDisplay;
@@ -194,17 +194,6 @@ fn draw_event_text(disp: &mut WasmDisplay, text: &str) {
     }
 }
 
-fn draw_win_screen(disp: &mut WasmDisplay, msg: &str) {
-    disp.clear_all();
-    let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-    let ts = TextStyleBuilder::new()
-        .alignment(Alignment::Center)
-        .baseline(Baseline::Top)
-        .build();
-    Text::with_text_style(msg, Point::new(64, 27), style, ts)
-        .draw(disp)
-        .ok();
-}
 
 impl BoardEffects for WebBattleEffects<'_> {
     async fn on_event(&mut self, event: BoardEvent) {
@@ -326,8 +315,8 @@ impl BoardEffects for WebBattleEffects<'_> {
                     2 => ("GG!", "WINNER!"),
                     _ => ("TIE!", "TIE!"),
                 };
-                draw_win_screen(&mut self.p1_disp, msg1);
-                draw_win_screen(&mut self.p2_disp, msg2);
+                render_win_screen(&mut self.p1_disp, msg1);
+                render_win_screen(&mut self.p2_disp, msg2);
                 crate::update_pixels(1, self.p1_disp.to_rgba());
                 crate::update_pixels(2, self.p2_disp.to_rgba());
                 crate::update_leds(win_leds(winner));
@@ -335,8 +324,8 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::Tie => {
-                draw_win_screen(&mut self.p1_disp, "TIE!");
-                draw_win_screen(&mut self.p2_disp, "TIE!");
+                render_win_screen(&mut self.p1_disp, "TIE!");
+                render_win_screen(&mut self.p2_disp, "TIE!");
                 crate::update_pixels(1, self.p1_disp.to_rgba());
                 crate::update_pixels(2, self.p2_disp.to_rgba());
                 crate::update_leds(win_leds(0));
