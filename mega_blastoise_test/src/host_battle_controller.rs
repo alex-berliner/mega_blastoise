@@ -9,7 +9,7 @@ use std::io::{self, Write};
 
 use battler::{PlayerBattleData, Request};
 use mega_blastoise_core::{
-    format_prompt, ButtonController, ButtonSource, InputBus, InputSource, PlayerAction,
+    format_prompt, player_display_name, ButtonController, ButtonSource, InputBus, InputSource, PlayerAction,
 };
 
 // ── Simulated button source ───────────────────────────────────────────────────
@@ -88,7 +88,7 @@ impl ButtonSource for HostButtonSource {
             println!("[BTN] Party button {} pressed", idx + 1);
             return PlayerAction::Switch(idx);
         }
-        let label = if player_id == "p1" { "Red" } else { "Blue" };
+        let label = player_display_name(player_id);
         loop {
             print!("{label} > ");
             let _ = io::stdout().flush();
@@ -114,7 +114,7 @@ impl ButtonSource for HostButtonSource {
             println!("[BTN] Party button {} pressed", idx + 1);
             return idx;
         }
-        let label = if player_id == "p1" { "Red" } else { "Blue" };
+        let label = player_display_name(player_id);
         let available: Vec<usize> = self.last_player_data.as_ref()
             .map(|pd| pd.mons.iter().enumerate()
                 .filter(|(_, m)| !m.active && m.hp > 0)
