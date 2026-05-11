@@ -304,6 +304,29 @@ impl BoardEvent {
         }
     }
 
+    /// Returns the canonical animation delay (ms) for this event, using the
+    /// shared `anim::*` constants.  Returns 0 for events that need no delay.
+    pub fn anim_delay_ms(&self) -> u32 {
+        use crate::anim;
+        match self {
+            Self::Move { .. }                                  => anim::MOVE_MS,
+            Self::Damage { .. } | Self::Heal { .. }           => anim::DAMAGE_MS,
+            Self::SwitchIn { .. }                              => anim::SWITCH_IN_MS,
+            Self::Faint { .. }                                 => anim::FAINT_MS,
+            Self::Win { .. } | Self::Tie                      => anim::WIN_MS,
+            Self::SuperEffective { .. }
+            | Self::CriticalHit { .. }
+            | Self::SetStatus { .. }
+            | Self::CureStatus { .. }                         => anim::EFFECT_MS,
+            Self::Miss { .. }
+            | Self::Immune { .. }
+            | Self::Resisted { .. }
+            | Self::Cant { .. }
+            | Self::Fail { .. }                               => anim::BRIEF_MS,
+            _ => 0,
+        }
+    }
+
     /// Returns `true` if this event should be forwarded to USB / log output.
     /// `Split`, `Prompt`, and `MovesUpdate` are internal engine signals that
     /// all targets suppress.

@@ -1,6 +1,6 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_time::Timer;
-use mega_blastoise_core::{anim, mon_player_id, player_id_to_num, BoardEffects, BoardEvent, HpBarState, InputBus};
+use mega_blastoise_core::{mon_player_id, player_id_to_num, BoardEffects, BoardEvent, HpBarState, InputBus};
 
 pub static ANIM_ENABLED: AtomicBool = AtomicBool::new(true);
 
@@ -165,23 +165,7 @@ impl BoardEffects for BattleEffects<'_> {
         }
 
         // ── Animation delay ───────────────────────────────────────────────────
-        let delay_ms = match &event {
-            BoardEvent::Move { .. }                                    => anim::MOVE_MS,
-            BoardEvent::Damage { .. } | BoardEvent::Heal { .. }       => anim::DAMAGE_MS,
-            BoardEvent::SwitchIn { .. }                               => anim::SWITCH_IN_MS,
-            BoardEvent::Faint { .. }                                  => anim::FAINT_MS,
-            BoardEvent::Win { .. } | BoardEvent::Tie                  => anim::WIN_MS,
-            BoardEvent::SuperEffective { .. }
-            | BoardEvent::CriticalHit { .. }
-            | BoardEvent::SetStatus { .. }
-            | BoardEvent::CureStatus { .. }                           => anim::EFFECT_MS,
-            BoardEvent::Miss { .. }
-            | BoardEvent::Immune { .. }
-            | BoardEvent::Resisted { .. }
-            | BoardEvent::Cant { .. }
-            | BoardEvent::Fail { .. }                                 => anim::BRIEF_MS,
-            _ => 0,
-        };
+        let delay_ms = event.anim_delay_ms();
         if delay_ms > 0 && ANIM_ENABLED.load(Ordering::Relaxed) {
             Timer::after_millis(delay_ms as u64).await;
         }
