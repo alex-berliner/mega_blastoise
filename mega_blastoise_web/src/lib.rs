@@ -708,7 +708,7 @@ fn draw_lobby_screen(player: u8, ready: bool, ai: bool) {
         .build();
     if !ready {
         Text::with_text_style(
-            "PRESS READY",
+            "PRESS TO READY",
             Point::new(64, 16),
             MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
             ts,
