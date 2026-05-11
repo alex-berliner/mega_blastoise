@@ -16,8 +16,10 @@ use embassy_rp::bind_interrupts;
 use embassy_rp::i2c::{Config as I2cConfig, I2c, InterruptHandler};
 use embassy_rp::Peri;
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
+use core::cell::RefCell;
 use core::sync::atomic::{AtomicBool, Ordering};
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
+use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel};
+use embedded_graphics::{draw_target::DrawTarget, geometry::{OriginDimensions, Size}, pixelcolor::BinaryColor, Pixel};
 use mega_blastoise_core::{render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, MoveSlot, PartySlotData};
 use display_interface::AsyncWriteOnlyDataCommand;
 use ssd1306::{mode::BufferedGraphicsModeAsync, prelude::*, I2CDisplayInterface, Ssd1306Async};
@@ -26,6 +28,57 @@ bind_interrupts!(struct OledIrqs {
     I2C0_IRQ => InterruptHandler<I2C0>;
     I2C1_IRQ => InterruptHandler<I2C1>;
 });
+
+// ── Shadow framebuffer ────────────────────────────────────────────────────────
+//
+// Packed 128×64 monochrome buffer: 16 bytes per row (128 bits), row-major, MSB = leftmost pixel.
+// Updated after every flush so :oled can snapshot without touching the ssd1306 driver internals.
+
+struct Shadow([[u8; 16]; 64]);
+
+impl Shadow {
+    const fn new() -> Self { Self([[0u8; 16]; 64]) }
+}
+
+impl DrawTarget for Shadow {
+    type Color = BinaryColor;
+    type Error = core::convert::Infallible;
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where I: IntoIterator<Item = Pixel<BinaryColor>> {
+        for Pixel(coord, color) in pixels {
+            if coord.x >= 0 && coord.y >= 0 {
+                let (x, y) = (coord.x as usize, coord.y as usize);
+                if x < 128 && y < 64 {
+                    let b = &mut self.0[y][x >> 3];
+                    let bit = 0x80u8 >> (x & 7);
+                    if color.is_on() { *b |= bit; } else { *b &= !bit; }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+impl OriginDimensions for Shadow {
+    fn size(&self) -> Size { Size::new(128, 64) }
+}
+
+static P1_SHADOW: BlockingMutex<CriticalSectionRawMutex, RefCell<[[u8; 16]; 64]>> =
+    BlockingMutex::new(RefCell::new([[0u8; 16]; 64]));
+static P2_SHADOW: BlockingMutex<CriticalSectionRawMutex, RefCell<[[u8; 16]; 64]>> =
+    BlockingMutex::new(RefCell::new([[0u8; 16]; 64]));
+
+fn store_shadow(player: u8, s: &Shadow) {
+    if player == 1 { P1_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
+    else           { P2_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
+}
+
+/// Snapshot the current OLED framebuffer for `player` (1 or 2).
+/// Packed row-major: bit 7 of byte [y][0] is pixel (0, y).
+pub fn read_shadow_fb(player: u8) -> [[u8; 16]; 64] {
+    if player == 1 { P1_SHADOW.lock(|fb| *fb.borrow()) }
+    else           { P2_SHADOW.lock(|fb| *fb.borrow()) }
+}
 
 // ── Command channel ───────────────────────────────────────────────────────────
 
@@ -92,6 +145,8 @@ impl PlayerState {
 
 async fn draw_lobby_screen<DI>(
     disp: &mut Ssd1306Async<DI, DisplaySize128x64, BufferedGraphicsModeAsync<DisplaySize128x64>>,
+    shadow: &mut Shadow,
+    player: u8,
     ready: bool,
     ai: bool,
 )
@@ -99,11 +154,15 @@ where
     DI: AsyncWriteOnlyDataCommand,
 {
     render_lobby_screen(disp, ready, ai);
+    render_lobby_screen(shadow, ready, ai);
+    store_shadow(player, shadow);
     disp.flush().await.ok();
 }
 
 async fn redraw<DI>(
     disp: &mut Ssd1306Async<DI, DisplaySize128x64, BufferedGraphicsModeAsync<DisplaySize128x64>>,
+    shadow: &mut Shadow,
+    player: u8,
     st: &PlayerState,
 )
 where
@@ -111,6 +170,8 @@ where
 {
     let mon = if st.fainted { "FAINTED" } else { st.name_str() };
     render_player_screen(disp, mon, &st.moves);
+    render_player_screen(shadow, mon, &st.moves);
+    store_shadow(player, shadow);
     disp.flush().await.ok();
 }
 
@@ -154,46 +215,52 @@ pub async fn task(
 
     let mut p1 = PlayerState::new();
     let mut p2 = PlayerState::new();
+    let mut s1 = Shadow::new();
+    let mut s2 = Shadow::new();
 
-    redraw(&mut disp0, &p1).await;
-    redraw(&mut disp1, &p2).await;
+    redraw(&mut disp0, &mut s1, 1, &p1).await;
+    redraw(&mut disp1, &mut s2, 2, &p2).await;
 
     loop {
         match CMD.receive().await {
             OledCmd::HpUpdate { player, pct } => {
-                if player == 1 { p1.hp_pct = pct; redraw(&mut disp0, &p1).await; }
-                else           { p2.hp_pct = pct; redraw(&mut disp1, &p2).await; }
+                if player == 1 { p1.hp_pct = pct; redraw(&mut disp0, &mut s1, 1, &p1).await; }
+                else           { p2.hp_pct = pct; redraw(&mut disp1, &mut s2, 2, &p2).await; }
             }
             OledCmd::ActiveMon { player, name, len } => {
                 if player == 1 {
                     p1.name = name; p1.name_len = len; p1.fainted = false; p1.hp_pct = 100;
-                    redraw(&mut disp0, &p1).await;
+                    redraw(&mut disp0, &mut s1, 1, &p1).await;
                 } else {
                     p2.name = name; p2.name_len = len; p2.fainted = false; p2.hp_pct = 100;
-                    redraw(&mut disp1, &p2).await;
+                    redraw(&mut disp1, &mut s2, 2, &p2).await;
                 }
             }
             OledCmd::MovesUpdate { player, moves } => {
-                if player == 1 { p1.moves = moves; redraw(&mut disp0, &p1).await; }
-                else           { p2.moves = moves; redraw(&mut disp1, &p2).await; }
+                if player == 1 { p1.moves = moves; redraw(&mut disp0, &mut s1, 1, &p1).await; }
+                else           { p2.moves = moves; redraw(&mut disp1, &mut s2, 2, &p2).await; }
             }
             OledCmd::Faint { player } => {
                 if player == 1 {
                     p1.fainted = true; p1.hp_pct = 0; p1.moves.clear();
-                    redraw(&mut disp0, &p1).await;
+                    redraw(&mut disp0, &mut s1, 1, &p1).await;
                 } else {
                     p2.fainted = true; p2.hp_pct = 0; p2.moves.clear();
-                    redraw(&mut disp1, &p2).await;
+                    redraw(&mut disp1, &mut s2, 2, &p2).await;
                 }
             }
             OledCmd::ShowMoveDetail { player, slot } => {
                 if player == 1 {
                     if let Some(mv) = p1.moves.get(slot as usize) {
                         render_move_detail(&mut disp0, mv);
+                        render_move_detail(&mut s1, mv);
+                        store_shadow(1, &s1);
                         disp0.flush().await.ok();
                     }
                 } else if let Some(mv) = p2.moves.get(slot as usize) {
                     render_move_detail(&mut disp1, mv);
+                    render_move_detail(&mut s2, mv);
+                    store_shadow(2, &s2);
                     disp1.flush().await.ok();
                 }
             }
@@ -201,10 +268,14 @@ pub async fn task(
                 if player == 1 {
                     if let Some(slot) = p1.party.get(team_idx as usize) {
                         render_pokemon_stats(&mut disp0, slot);
+                        render_pokemon_stats(&mut s1, slot);
+                        store_shadow(1, &s1);
                         disp0.flush().await.ok();
                     }
                 } else if let Some(slot) = p2.party.get(team_idx as usize) {
                     render_pokemon_stats(&mut disp1, slot);
+                    render_pokemon_stats(&mut s2, slot);
+                    store_shadow(2, &s2);
                     disp1.flush().await.ok();
                 }
             }
@@ -213,12 +284,12 @@ pub async fn task(
                 else           { p2.party = slots; }
             }
             OledCmd::RestoreScreen { player } => {
-                if player == 1 { redraw(&mut disp0, &p1).await; }
-                else           { redraw(&mut disp1, &p2).await; }
+                if player == 1 { redraw(&mut disp0, &mut s1, 1, &p1).await; }
+                else           { redraw(&mut disp1, &mut s2, 2, &p2).await; }
             }
             OledCmd::LobbyState { player, ready, ai } => {
-                if player == 1 { draw_lobby_screen(&mut disp0, ready, ai).await; }
-                else           { draw_lobby_screen(&mut disp1, ready, ai).await; }
+                if player == 1 { draw_lobby_screen(&mut disp0, &mut s1, 1, ready, ai).await; }
+                else           { draw_lobby_screen(&mut disp1, &mut s2, 2, ready, ai).await; }
             }
             OledCmd::Win { winner } => {
                 let (msg0, msg1) = match winner {
@@ -227,8 +298,12 @@ pub async fn task(
                     _ => ("TIE!", "TIE!"),
                 };
                 render_win_screen(&mut disp0, msg0);
+                render_win_screen(&mut s1, msg0);
+                store_shadow(1, &s1);
                 disp0.flush().await.ok();
                 render_win_screen(&mut disp1, msg1);
+                render_win_screen(&mut s2, msg1);
+                store_shadow(2, &s2);
                 disp1.flush().await.ok();
             }
         }

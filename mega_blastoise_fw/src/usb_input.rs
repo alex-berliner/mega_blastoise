@@ -18,6 +18,8 @@ use mega_blastoise_core::{
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
 use crate::pico_battle_input::PicoBattleInput;
+#[cfg(feature = "oled")]
+use crate::subsystems::oled::read_shadow_fb;
 
 pub use mega_blastoise_core::LobbyCmd as LobbyUsbCmd;
 
@@ -360,6 +362,10 @@ impl<'d> UsbBattleInput<'d> {
                                 write_crlf(&mut self.sender).await;
                                 skip_next_lf = true;
                                 if let Some(line) = self.take_completed_line() {
+                                    if let Some(p) = oled_dump_player(line.trim()) {
+                                        self.write_oled_dump(p).await;
+                                        continue;
+                                    }
                                     if let Some(msg) = handle_meta_cmd(line.trim()) {
                                         self.write(msg).await;
                                         self.write("\r\n").await;
@@ -372,6 +378,10 @@ impl<'d> UsbBattleInput<'d> {
                                 log_usb_rx_line_str_to_rtt(self.partial.as_str());
                                 write_crlf(&mut self.sender).await;
                                 if let Some(line) = self.take_completed_line() {
+                                    if let Some(p) = oled_dump_player(line.trim()) {
+                                        self.write_oled_dump(p).await;
+                                        continue;
+                                    }
                                     if let Some(msg) = handle_meta_cmd(line.trim()) {
                                         self.write(msg).await;
                                         self.write("\r\n").await;
@@ -406,6 +416,32 @@ impl<'d> UsbBattleInput<'d> {
         self.writef(&alloc::format!("Move [1-{}]: ", n)).await;
     }
 
+    /// Dump one OLED framebuffer as ASCII art (half-block chars) over USB.
+    async fn write_oled_dump(&mut self, player: u8) {
+        #[cfg(feature = "oled")]
+        {
+            let fb = read_shadow_fb(player);
+            self.writeln(&alloc::format!("[P{} OLED 128×64]", player)).await;
+            for row in 0..32usize {
+                let mut line = alloc::string::String::with_capacity(128 * 3);
+                for col in 0..128usize {
+                    let top    = (fb[row * 2    ][col >> 3] >> (7 - (col & 7))) & 1 == 1;
+                    let bottom = (fb[row * 2 + 1][col >> 3] >> (7 - (col & 7))) & 1 == 1;
+                    line.push_str(match (top, bottom) {
+                        (false, false) => " ",
+                        (true,  false) => "▀",
+                        (false, true)  => "▄",
+                        (true,  true)  => "█",
+                    });
+                }
+                self.writeln(&line).await;
+            }
+            self.writeln("[end]").await;
+        }
+        #[cfg(not(feature = "oled"))]
+        self.writeln("[oled feature not enabled]").await;
+    }
+
     // ── Lobby interface ───────────────────────────────────────────────────────
 
     /// Write a lobby status/info line (adds \r\n).
@@ -424,6 +460,16 @@ impl<'d> UsbBattleInput<'d> {
         parse_lobby_cmd(line.trim())
     }
 
+}
+
+/// If `line` is an `:oled` dump command, return the player number to dump (1 or 2).
+/// `:oled` and `:oled p1` → 1; `:oled p2` → 2.
+fn oled_dump_player(line: &str) -> Option<u8> {
+    match line {
+        ":oled" | ":oled p1" | ":oled 1" => Some(1),
+        ":oled p2" | ":oled 2"           => Some(2),
+        _ => None,
+    }
 }
 
 /// Handle meta-commands that are valid at any time (lobby or battle).
