@@ -3,6 +3,7 @@
 extern crate alloc;
 
 pub mod battle_effects;
+pub mod cli_parse;
 pub mod display;
 pub mod board_event;
 pub mod battle_input;
@@ -34,3 +35,7 @@ pub use demo_teams::{demo_team_blue, demo_team_red};
 pub use randbat::draw_randbat_team;
 pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
+pub use cli_parse::{
+    parse_lobby_cmd, parse_switch_line, parse_turn_line, parse_web_game_cmd,
+    LobbyCmd, TurnChoice, WebGameInput,
+};

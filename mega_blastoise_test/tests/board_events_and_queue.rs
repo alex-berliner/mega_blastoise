@@ -1,5 +1,7 @@
 //! `BoardEvent` parsing and `BoardEventQueue` log handling.
 
+extern crate pollster;
+
 use mega_blastoise_core::{
     parse_log_line, BoardEvent, BoardEffects, BoardEventQueue, ParsedBattleLogLine,
 };
@@ -7,7 +9,7 @@ use mega_blastoise_core::{
 struct Recorder(Vec<BoardEvent>);
 
 impl BoardEffects for Recorder {
-    fn on_event(&mut self, event: BoardEvent) {
+    async fn on_event(&mut self, event: BoardEvent) {
         self.0.push(event);
     }
 }
@@ -42,7 +44,7 @@ fn queue_skips_private_row_after_split_for_duplicate_switch() {
         "switch|player:p1|name:A|species:X",
     ];
     q.push_log_lines(lines.into_iter());
-    q.dispatch_all(&mut r);
+    pollster::block_on(q.dispatch_all(&mut r));
     assert!(
         matches!(r.0.first(), Some(BoardEvent::Split { .. })),
         "first event should be Split"

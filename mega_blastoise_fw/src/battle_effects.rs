@@ -5,7 +5,6 @@ use mega_blastoise_core::{anim, BoardEffects, BoardEvent, InputBus};
 pub static ANIM_ENABLED: AtomicBool = AtomicBool::new(true);
 
 use mega_blastoise_fw::hp_bar::HpBarState;
-use mega_blastoise_fw::hw_object::HwObject;
 
 #[cfg(feature = "buzzer")]
 use crate::subsystems::buzzer::{buzz, BuzzerCmd};
@@ -18,17 +17,11 @@ use crate::subsystems::led::{send as led_send, LedCmd, LedStatus};
 
 pub struct BattleEffects<'a> {
     bus: Option<&'a InputBus>,
-    p1_hp: HwObject<HpBarState>,
-    p2_hp: HwObject<HpBarState>,
 }
 
 impl<'a> BattleEffects<'a> {
     pub fn new(bus: Option<&'a InputBus>) -> Self {
-        Self {
-            bus,
-            p1_hp: HwObject::new("P1 HP", HpBarState::ZERO, None),
-            p2_hp: HwObject::new("P2 HP", HpBarState::ZERO, None),
-        }
+        Self { bus }
     }
 }
 
@@ -53,18 +46,17 @@ impl BoardEffects for BattleEffects<'_> {
                 defmt::info!("hp event: mon={} health={}", mon.as_str(), health.as_str());
                 if let Some(hp) = HpBarState::parse(health) {
                     let player = mon_player_id(mon);
+                    let pct = if hp.max > 0 { (hp.current as u32 * 100 / hp.max as u32) as u8 } else { 0 };
                     match player {
                         Some("p1") => {
-                            self.p1_hp.update(hp);
-                            let pct = if hp.max > 0 { (hp.current as u32 * 100 / hp.max as u32) as u8 } else { 0 };
+                            defmt::info!("P1 HP: {}", hp);
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::HpUpdate { player: 1, pct });
                             #[cfg(feature = "leds")]
                             led_send(LedCmd::HpUpdate { player: 1, pct });
                         }
                         Some("p2") => {
-                            self.p2_hp.update(hp);
-                            let pct = if hp.max > 0 { (hp.current as u32 * 100 / hp.max as u32) as u8 } else { 0 };
+                            defmt::info!("P2 HP: {}", hp);
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::HpUpdate { player: 2, pct });
                             #[cfg(feature = "leds")]
@@ -81,23 +73,22 @@ impl BoardEffects for BattleEffects<'_> {
                 }
             }
 
-            BoardEvent::Faint { mon } => {
+            BoardEvent::Faint { mon, team_slot } => {
                 defmt::info!("faint: {}", mon.as_str());
                 if let Some(pid) = mon_player_id(mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
                     #[cfg(feature = "oled")]
                     oled_send(OledCmd::Faint { player });
-                    #[cfg(feature = "leds")] {
-                        let mon_name = mon.split(',').next().unwrap_or("?");
-                        let (name, len) = name_buf(mon_name);
-                        led_send(LedCmd::Faint { player, name, len });
+                    #[cfg(feature = "leds")]
+                    if let Some(slot) = team_slot {
+                        led_send(LedCmd::Faint { player, slot });
                     }
                 }
                 #[cfg(feature = "buzzer")]
                 buzz(BuzzerCmd::Faint);
             }
 
-            BoardEvent::SwitchIn { name, player_id, moves, .. } => {
+            BoardEvent::SwitchIn { name, player_id, moves, team_slot, .. } => {
                 if let Some(pid) = player_id {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };
                     let (buf, len) = name_buf(name.as_str());
@@ -108,7 +99,9 @@ impl BoardEffects for BattleEffects<'_> {
                         oled_send(OledCmd::MovesUpdate { player, moves: moves.clone() });
                     }
                     #[cfg(feature = "leds")]
-                    led_send(LedCmd::SwitchIn { player, name: buf, len });
+                    if let Some(slot) = team_slot {
+                        led_send(LedCmd::SwitchIn { player, slot });
+                    }
                 }
             }
 

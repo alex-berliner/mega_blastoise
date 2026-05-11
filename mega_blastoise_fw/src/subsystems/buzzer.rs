@@ -63,7 +63,7 @@ pub async fn task(slice: Peri<'static, PWM_SLICE2>, pin: Peri<'static, PIN_21>) 
 }
 
 async fn tone(pwm: &mut Pwm<'_>, freq_hz: u32, ms: u64) {
-    let sys_clk = 125_000_000u32;
+    let sys_clk = embassy_rp::clocks::clk_sys_freq();
     // Pick smallest integer divider so top = sys_clk / (freq * div) - 1 fits in u16.
     let mut div = 1u32;
     while sys_clk / (freq_hz * div) > 65535 {

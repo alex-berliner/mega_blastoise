@@ -1,11 +1,12 @@
 //! Scripted [`BoardEvent`] stream matches what [`BoardEffects`] receives (host pipeline smoke).
 
 use mega_blastoise_core::{BoardEvent, BoardEffects, BoardEventQueue, PromptKind};
+extern crate pollster;
 
 struct Recorder(Vec<BoardEvent>);
 
 impl BoardEffects for Recorder {
-    fn on_event(&mut self, event: BoardEvent) {
+    async fn on_event(&mut self, event: BoardEvent) {
         self.0.push(event);
     }
 }
@@ -39,7 +40,7 @@ fn scripted_board_events_dispatch_in_order() {
     for e in script {
         queue.push_event(e);
     }
-    queue.dispatch_all(&mut recorder);
+    pollster::block_on(queue.dispatch_all(&mut recorder));
 
     assert_eq!(recorder.0.len(), 6);
     assert!(matches!(recorder.0[0], BoardEvent::BattleStart));

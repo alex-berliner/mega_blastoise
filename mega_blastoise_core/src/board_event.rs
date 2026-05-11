@@ -88,6 +88,8 @@ pub enum BoardEvent {
     },
     Faint {
         mon: String,
+        /// Team slot index (0-based) populated by the battle runner; None if unavailable.
+        team_slot: Option<u8>,
     },
     /// A move was announced in the log (`move` / `animatemove`).
     Move {
@@ -106,6 +108,8 @@ pub enum BoardEvent {
         name: String,
         species: Option<String>,
         player_id: Option<String>,
+        /// Team slot index (0-based) populated by the battle runner; None if unavailable.
+        team_slot: Option<u8>,
         moves: Vec<MoveSlot>,
     },
     SwitchOut {
@@ -207,6 +211,7 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
         }),
         "faint" => Some(BoardEvent::Faint {
             mon: p.get("mon").unwrap_or("?").into(),
+            team_slot: None,
         }),
         "move" | "animatemove" => {
             let mon_str = p.get("mon");
@@ -220,7 +225,8 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             name: p.get("name").unwrap_or("?").into(),
             species: p.get("species").map(String::from),
             player_id: p.get("player").map(String::from),
-            moves: Vec::new(), // enriched by the battle runner
+            team_slot: None,
+            moves: Vec::new(),
         }),
         "switchout" => Some(BoardEvent::SwitchOut {
             name: p.get("mon").map(|s| extract_mon_name(s).into()).unwrap_or_default(),
@@ -290,7 +296,7 @@ impl BoardEvent {
             BoardEvent::Heal { mon, health } => {
                 format!("{} recovered HP!  (HP: {health})", player_mon_label(mon))
             }
-            BoardEvent::Faint { mon } => {
+            BoardEvent::Faint { mon, .. } => {
                 format!("{} fainted!", player_mon_label(mon))
             }
             BoardEvent::Move { user, name, player_id, .. } => match user.as_deref() {

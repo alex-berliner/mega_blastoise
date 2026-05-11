@@ -119,18 +119,19 @@ impl MoveSlotCache {
 
 // ── DataStore lookup (full CBOR decode, called only on SwitchIn) ──────────────
 
+/// Returns (move slots, team slot index) for the currently active mon.
 fn query_active_moves<DS: DataStore>(
     battle: &mut battler::PublicCoreBattle<'_>,
     data: &DS,
     player_id: &str,
-) -> alloc::vec::Vec<MoveSlot> {
+) -> (alloc::vec::Vec<MoveSlot>, Option<u8>) {
     let Ok(player_data) = battle.player_data(player_id) else {
-        return alloc::vec::Vec::new();
+        return (alloc::vec::Vec::new(), None);
     };
-    let Some(active_mon) = player_data.mons.into_iter().find(|m| m.active) else {
-        return alloc::vec::Vec::new();
+    let Some((slot_idx, active_mon)) = player_data.mons.into_iter().enumerate().find(|(_, m)| m.active) else {
+        return (alloc::vec::Vec::new(), None);
     };
-    active_mon
+    let moves = active_mon
         .moves
         .into_iter()
         .map(|mv| {
@@ -156,7 +157,13 @@ fn query_active_moves<DS: DataStore>(
                 max_pp: mv.max_pp,
             }
         })
-        .collect()
+        .collect();
+    (moves, Some(slot_idx as u8))
+}
+
+fn query_team_slot_by_name(battle: &mut battler::PublicCoreBattle<'_>, player_id: &str, name: &str) -> Option<u8> {
+    let data = battle.player_data(player_id).ok()?;
+    data.mons.iter().position(|m| m.summary.name.as_str() == name).map(|i| i as u8)
 }
 
 // ── Event enrichment ──────────────────────────────────────────────────────────
@@ -211,7 +218,7 @@ async fn enrich_and_dispatch<E, DS>(
                     // Cache miss (shouldn't happen after SwitchIn) — fall back.
                     #[cfg(feature = "timing")]
                     defmt::info!("  refresh_pp cache miss for {}, falling back", pid.as_str());
-                    let moves = query_active_moves(battle, data, pid.as_str());
+                    let (moves, _) = query_active_moves(battle, data, pid.as_str());
                     cache.store(pid.as_str(), moves.clone());
                     Some((pid.clone(), moves))
                 } else {
@@ -222,28 +229,34 @@ async fn enrich_and_dispatch<E, DS>(
         };
 
         let enriched = match event {
-            BoardEvent::SwitchIn { name, species, player_id, moves } if moves.is_empty() => {
+            BoardEvent::SwitchIn { name, species, player_id, moves, .. } if moves.is_empty() => {
                 // Full CBOR decode — only happens once per switch-in.
-                let new_moves = player_id.as_deref().map(|pid| {
+                let (new_moves, slot) = player_id.as_deref().map(|pid| {
                     #[cfg(feature = "timing")]
                     let t_qam = embassy_time::Instant::now();
 
-                    let moves = query_active_moves(battle, data, pid);
+                    let (moves, slot) = query_active_moves(battle, data, pid);
                     cache.store(pid, moves.clone());
 
                     #[cfg(feature = "timing")]
                     defmt::info!("  query_active_moves(SwitchIn {}): {}ms", pid, t_qam.elapsed().as_millis());
 
-                    moves
-                }).unwrap_or_default();
-                BoardEvent::SwitchIn { name, species, player_id, moves: new_moves }
+                    (moves, slot)
+                }).unwrap_or((alloc::vec::Vec::new(), None));
+                BoardEvent::SwitchIn { name, species, player_id, team_slot: slot, moves: new_moves }
             }
-            BoardEvent::SwitchIn { name, species, player_id, moves } => {
+            BoardEvent::SwitchIn { name, species, player_id, moves, team_slot } => {
                 // Pre-populated — cache for future PP refreshes.
                 if let Some(pid) = &player_id {
                     cache.store(pid.as_str(), moves.clone());
                 }
-                BoardEvent::SwitchIn { name, species, player_id, moves }
+                BoardEvent::SwitchIn { name, species, player_id, moves, team_slot }
+            }
+            BoardEvent::Faint { mon, .. } => {
+                let name = mon.split(',').next().unwrap_or(mon.as_str());
+                let pid = mon.split(',').nth(1).unwrap_or("");
+                let slot = if !pid.is_empty() { query_team_slot_by_name(battle, pid, name) } else { None };
+                BoardEvent::Faint { mon, team_slot: slot }
             }
             other => other,
         };

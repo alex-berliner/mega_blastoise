@@ -89,7 +89,7 @@ impl BoardEffects for HostBattleEffects<'_> {
                 }
             }
 
-            BoardEvent::Faint { mon } => {
+            BoardEvent::Faint { mon, .. } => {
                 println!("[RTT] faint: {mon}");
                 if let Some(pid) = mon_player_id(mon) {
                     let player = if pid == "p1" { 1u8 } else { 2u8 };

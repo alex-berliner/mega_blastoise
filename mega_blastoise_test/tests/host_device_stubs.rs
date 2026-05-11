@@ -61,10 +61,10 @@ fn hw_object_tracks_state() {
 #[test]
 fn effects_tracks_p1_hp_on_damage() {
     let mut effects = HostBattleEffects::new(None);
-    effects.on_event(BoardEvent::Damage {
+    pollster::block_on(effects.on_event(BoardEvent::Damage {
         mon: "Charizard,p1,0".to_string(),
         health: "80/100".to_string(),
-    });
+    }));
     assert_eq!(effects.p1_hp().current, 80);
     assert_eq!(effects.p1_hp().max, 100);
 }
@@ -72,10 +72,10 @@ fn effects_tracks_p1_hp_on_damage() {
 #[test]
 fn effects_tracks_p2_hp_on_damage() {
     let mut effects = HostBattleEffects::new(None);
-    effects.on_event(BoardEvent::Damage {
+    pollster::block_on(effects.on_event(BoardEvent::Damage {
         mon: "Blastoise,p2,0".to_string(),
         health: "50/150".to_string(),
-    });
+    }));
     assert_eq!(effects.p2_hp().current, 50);
     assert_eq!(effects.p2_hp().max, 150);
 }
@@ -84,7 +84,10 @@ fn effects_tracks_p2_hp_on_damage() {
 fn effects_sends_narration_to_log_channel() {
     let bus = InputBus::new();
     let mut effects = HostBattleEffects::new(Some(&bus));
-    effects.on_event(BoardEvent::Faint { mon: "Charizard,p1,0".to_string() });
+    pollster::block_on(effects.on_event(BoardEvent::Faint {
+        mon: "Charizard,p1,0".to_string(),
+        team_slot: None,
+    }));
     // Should have enqueued a description string, not printed directly.
     let msg = bus.log.try_receive().expect("log channel should have a message");
     assert!(msg.contains("faint") || !msg.is_empty());
@@ -94,7 +97,7 @@ fn effects_sends_narration_to_log_channel() {
 fn effects_suppresses_split_and_prompt_events() {
     let bus = InputBus::new();
     let mut effects = HostBattleEffects::new(Some(&bus));
-    effects.on_event(BoardEvent::Split { side: "p1".to_string() });
+    pollster::block_on(effects.on_event(BoardEvent::Split { side: "p1".to_string() }));
     assert!(bus.log.try_receive().is_err(), "Split should not reach bus.log");
 }
 

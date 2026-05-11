@@ -275,7 +275,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 self.redraw(p);
             }
 
-            BoardEvent::Faint { mon } => {
+            BoardEvent::Faint { mon, .. } => {
                 let desc = event.description();
                 if let Some(p) = player_num(mon) {
                     if p == 1 { self.p1_led.hp_pct = 0; }
