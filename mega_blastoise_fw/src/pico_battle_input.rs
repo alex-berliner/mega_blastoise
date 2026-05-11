@@ -19,7 +19,7 @@ use cortex_m::asm::delay as asm_delay;
 use embassy_rp::gpio::{Input, Output};
 use embassy_time::Timer;
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, party_slot_from_mon, ActivePrompt,
+    format_move_choice, format_switch_choice, join_choice_parts, party_slot_from_mon, player_id_to_num, ActivePrompt,
     ButtonSource, InputBus, InputSource, PlayerAction,
 };
 #[cfg(feature = "oled")]
@@ -184,7 +184,7 @@ impl ButtonSource for PicoBattleInput<'_> {
     ) {
         #[cfg(feature = "oled")]
         if let Some(pd) = player_data {
-            let player = if player_id == "p2" { 2u8 } else { 1u8 };
+            let player = player_id_to_num(player_id);
             let slots = pd.mons.iter().map(party_slot_from_mon).collect();
             oled_send(OledCmd::PartyUpdate { player, slots });
         }
@@ -193,7 +193,7 @@ impl ButtonSource for PicoBattleInput<'_> {
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
         let move_row   = if player_id == "p2" { 2 } else { 0 };
         let switch_row = if player_id == "p2" { 3 } else { 1 };
-        let player     = if player_id == "p2" { 2u8 } else { 1u8 };
+        let player     = player_id_to_num(player_id);
         let move_mask  = (1u8 << n_moves) - 1;
         loop {
             // Switch buttons — long press shows party stats; short press selects.
@@ -251,7 +251,7 @@ impl ButtonSource for PicoBattleInput<'_> {
 
     async fn wait_switch(&mut self, player_id: &str) -> usize {
         let row    = if player_id == "p2" { 3 } else { 1 };
-        let player = if player_id == "p2" { 2u8 } else { 1u8 };
+        let player = player_id_to_num(player_id);
         loop {
             let s = self.0.scan_row(row) & 0b0000_0111;
             if let Some(col) = (0..3usize).find(|&c| s & (1 << c) != 0) {
