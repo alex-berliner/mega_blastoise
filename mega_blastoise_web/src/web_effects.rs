@@ -138,10 +138,7 @@ fn win_leds(winner: u8) -> [u32; 24] {
 
 impl BoardEffects for WebBattleEffects<'_> {
     async fn on_event(&mut self, event: BoardEvent) {
-        let narrate = !matches!(
-            &event,
-            BoardEvent::Split { .. } | BoardEvent::Prompt { .. } | BoardEvent::MovesUpdate { .. }
-        );
+        let narrate = event.should_narrate();
 
         match &event {
             BoardEvent::Move { .. } => {

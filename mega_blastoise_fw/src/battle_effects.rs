@@ -187,10 +187,7 @@ impl BoardEffects for BattleEffects<'_> {
         }
 
         // ── USB log narration ─────────────────────────────────────────────────
-        let display_on_usb =
-            !matches!(&event, BoardEvent::Split { .. } | BoardEvent::Prompt { .. } | BoardEvent::MovesUpdate { .. });
-
-        if display_on_usb {
+        if event.should_narrate() {
             if let Some(bus) = self.bus {
                 let msg = event.description();
                 if bus.log.try_send(msg).is_err() {

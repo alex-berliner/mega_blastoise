@@ -304,6 +304,13 @@ impl BoardEvent {
         }
     }
 
+    /// Returns `true` if this event should be forwarded to USB / log output.
+    /// `Split`, `Prompt`, and `MovesUpdate` are internal engine signals that
+    /// all targets suppress.
+    pub fn should_narrate(&self) -> bool {
+        !matches!(self, Self::Split { .. } | Self::Prompt { .. } | Self::MovesUpdate { .. })
+    }
+
     /// Human-readable battle narrative for display (USB, stdout). Hardware effects code should
     /// branch on the `BoardEvent` variant directly rather than parsing this string.
     pub fn description(&self) -> String {

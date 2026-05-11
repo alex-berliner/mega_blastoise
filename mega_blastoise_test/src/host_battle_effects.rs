@@ -145,12 +145,7 @@ impl BoardEffects for HostBattleEffects<'_> {
             _ => {}
         }
 
-        // Split, Prompt, MovesUpdate are internal signals; suppress from narration.
-        let narrate = !matches!(
-            &event,
-            BoardEvent::Split { .. } | BoardEvent::Prompt { .. } | BoardEvent::MovesUpdate { .. }
-        );
-        if narrate {
+        if event.should_narrate() {
             if let Some(bus) = self.bus {
                 if bus.log.try_send(event.description()).is_err() {
                     println!("[RTT:WARN] battle_effects: log channel full, event dropped");
