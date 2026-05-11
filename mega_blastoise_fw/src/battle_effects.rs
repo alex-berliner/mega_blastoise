@@ -1,6 +1,6 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_time::Timer;
-use mega_blastoise_core::{mon_player_id, player_id_to_num, BoardEffects, BoardEvent, HpBarState, InputBus};
+use mega_blastoise_core::{mon_player_id, mon_player_num, player_id_to_num, BoardEffects, BoardEvent, HpBarState, InputBus};
 
 pub static ANIM_ENABLED: AtomicBool = AtomicBool::new(true);
 
@@ -70,8 +70,7 @@ impl BoardEffects for BattleEffects<'_> {
 
             BoardEvent::Faint { mon, team_slot: _team_slot } => {
                 defmt::info!("faint: {}", mon.as_str());
-                if let Some(pid) = mon_player_id(mon) {
-                    let player = player_id_to_num(pid);
+                if let Some(player) = mon_player_num(mon) {
                     #[cfg(feature = "oled")]
                     oled_send(OledCmd::Faint { player });
                     #[cfg(feature = "leds")]
@@ -112,8 +111,7 @@ impl BoardEffects for BattleEffects<'_> {
 
             BoardEvent::SetStatus { mon: _mon, status: _status } => {
                 #[cfg(feature = "leds")]
-                if let Some(pid) = mon_player_id(_mon) {
-                    let player = player_id_to_num(pid);
+                if let Some(player) = mon_player_num(_mon) {
                     if let Some(s) = LedStatus::from_str(_status.as_str()) {
                         led_send(LedCmd::SetStatus { player, status: s });
                     }
@@ -122,8 +120,7 @@ impl BoardEffects for BattleEffects<'_> {
 
             BoardEvent::CureStatus { mon: _mon, .. } => {
                 #[cfg(feature = "leds")]
-                if let Some(pid) = mon_player_id(_mon) {
-                    let player = player_id_to_num(pid);
+                if let Some(player) = mon_player_num(_mon) {
                     led_send(LedCmd::CureStatus { player });
                 }
             }

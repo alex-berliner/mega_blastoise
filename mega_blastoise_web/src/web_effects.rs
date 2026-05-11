@@ -1,5 +1,5 @@
 use mega_blastoise_core::{
-    anim, hp_bar_color, hp_bar_count, mon_display_name, mon_player_id, player_id_to_num, render_event_text,
+    anim, hp_bar_color, hp_bar_count, mon_display_name, mon_player_num, player_id_to_num, render_event_text,
     render_player_screen, render_win_screen, BoardEffects, BoardEvent, HpBarState, InputBus,
     MoveSlot,
 };
@@ -115,9 +115,6 @@ impl<'a> WebBattleEffects<'a> {
     }
 }
 
-fn player_num(mon: &str) -> Option<u8> {
-    mon_player_id(mon).map(|id| player_id_to_num(id))
-}
 
 
 fn win_leds(winner: u8) -> [u32; 24] {
@@ -149,7 +146,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::Damage { mon, health } | BoardEvent::Heal { mon, health } => {
-                if let (Some(p), Some(pct)) = (player_num(mon), HpBarState::parse(health).map(|h| h.pct())) {
+                if let (Some(p), Some(pct)) = (mon_player_num(mon), HpBarState::parse(health).map(|h| h.pct())) {
                     if p == 1 { self.p1_led.hp_pct = pct; }
                     else      { self.p2_led.hp_pct = pct; }
                     self.redraw(p);
@@ -193,7 +190,7 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::Faint { mon, .. } => {
                 let desc = event.description();
-                if let Some(p) = player_num(mon) {
+                if let Some(p) = mon_player_num(mon) {
                     if p == 1 { self.p1_led.hp_pct = 0; }
                     else      { self.p2_led.hp_pct = 0; }
                     crate::update_party_slot_hp(p, mon_display_name(mon), 0);
@@ -205,7 +202,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::SetStatus { mon, status } => {
-                if let Some(p) = player_num(mon) {
+                if let Some(p) = mon_player_num(mon) {
                     crate::update_party_slot_status(p, mon_display_name(mon), Some(status.clone()));
                     self.flush_leds();
                 }
@@ -216,7 +213,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::CureStatus { mon, .. } => {
-                if let Some(p) = player_num(mon) {
+                if let Some(p) = mon_player_num(mon) {
                     crate::update_party_slot_status(p, mon_display_name(mon), None);
                     self.flush_leds();
                 }
@@ -227,7 +224,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::SuperEffective { mon } => {
-                if let Some(p) = player_num(mon) { crate::set_flash(p, 1); }
+                if let Some(p) = mon_player_num(mon) { crate::set_flash(p, 1); }
                 let desc = event.description();
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::EFFECT_MS).await;
@@ -235,7 +232,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::CriticalHit { mon } => {
-                if let Some(p) = player_num(mon) { crate::set_flash(p, 2); }
+                if let Some(p) = mon_player_num(mon) { crate::set_flash(p, 2); }
                 let desc = event.description();
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::EFFECT_MS).await;

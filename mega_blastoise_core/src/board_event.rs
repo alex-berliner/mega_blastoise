@@ -200,6 +200,11 @@ pub fn mon_player_id(mon: &str) -> Option<&str> {
     if id == "p1" || id == "p2" { Some(id) } else { None }
 }
 
+/// Extract the player number (1 or 2) from a battler `mon` position field.
+pub fn mon_player_num(mon: &str) -> Option<u8> {
+    mon_player_id(mon).map(player_id_to_num)
+}
+
 /// Build `"Red's Golduck"` from a `mon` position field.
 fn player_mon_label(mon: &str) -> String {
     let name = mon_display_name(mon);
@@ -301,6 +306,16 @@ impl BoardEvent {
             Some("0") => 1,
             Some("1") => 2,
             _ => 0,
+        }
+    }
+
+    /// Returns the two OLED win-screen messages `(p1_msg, p2_msg)` for a given winner.
+    /// `winner` is 1-based (from [`win_player_num`](Self::win_player_num)); 0 means tie.
+    pub fn win_messages(winner: u8) -> (&'static str, &'static str) {
+        match winner {
+            1 => ("WINNER!", "GG!"),
+            2 => ("GG!", "WINNER!"),
+            _ => ("TIE!", "TIE!"),
         }
     }
 
