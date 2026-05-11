@@ -24,7 +24,7 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use mega_blastoise_core::{party_slot_from_mon, render_move_detail, render_player_screen, render_pokemon_stats, MoveSlot, PartySlotData};
+use mega_blastoise_core::{party_slot_from_mon, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, MoveSlot, PartySlotData};
 use display_interface::AsyncWriteOnlyDataCommand;
 use ssd1306::{mode::BufferedGraphicsModeAsync, prelude::*, I2CDisplayInterface, Ssd1306Async};
 
@@ -104,19 +104,7 @@ async fn draw_lobby_screen<DI>(
 where
     DI: AsyncWriteOnlyDataCommand,
 {
-    let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-    disp.clear(BinaryColor::Off).ok();
-    if !ready {
-        // Centered on 128px wide display: "PRESS READY" and "HOLD FOR AI" (11 chars × 6px = 66px)
-        Text::with_baseline("PRESS TO READY", Point::new(22, 20), style, Baseline::Top).draw(disp).ok();
-        Text::with_baseline("HOLD: FIGHT AI", Point::new(22, 36), style, Baseline::Top).draw(disp).ok();
-    } else if ai {
-        // "AI" centered (2 chars × 6px = 12px, offset = 64 - 6 = 58)
-        Text::with_baseline("AI", Point::new(58, 27), style, Baseline::Top).draw(disp).ok();
-    } else {
-        // "READY!" centered (6 chars × 6px = 36px, offset = 64 - 18 = 46)
-        Text::with_baseline("READY!", Point::new(46, 27), style, Baseline::Top).draw(disp).ok();
-    }
+    render_lobby_screen(disp, ready, ai);
     disp.flush().await.ok();
 }
 

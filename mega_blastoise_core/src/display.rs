@@ -381,3 +381,27 @@ where
         Text::with_text_style(&right, Point::new(127, y), slot_char, tr_style()).draw(display).ok();
     }
 }
+
+// ── Lobby screen ──────────────────────────────────────────────────────────────
+
+/// Draw the lobby ready state onto any 128×64 `DrawTarget`.
+///
+/// - `ready=false` → idle: "PRESS TO READY" / "HOLD: FIGHT AI"
+/// - `ready=true, ai=false` → "READY!"
+/// - `ready=true, ai=true`  → "AI" (this side is AI-controlled)
+pub fn render_lobby_screen<D>(display: &mut D, ready: bool, ai: bool)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let style_lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let style_sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    if !ready {
+        Text::with_text_style("PRESS TO READY", Point::new(64, 16), style_lg, center_style()).draw(display).ok();
+        Text::with_text_style("HOLD: FIGHT AI", Point::new(64, 36), style_sm, center_style()).draw(display).ok();
+    } else if ai {
+        Text::with_text_style("AI",     Point::new(64, 27), style_lg, center_style()).draw(display).ok();
+    } else {
+        Text::with_text_style("READY!", Point::new(64, 27), style_lg, center_style()).draw(display).ok();
+    }
+}

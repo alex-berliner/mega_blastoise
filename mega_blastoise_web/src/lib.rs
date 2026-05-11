@@ -10,7 +10,7 @@ use std::task::{Context, Poll, Waker};
 
 use battler::TeamData;
 use embedded_graphics::{
-    mono_font::{ascii::{FONT_5X8, FONT_6X10}, MonoTextStyle},
+    mono_font::{ascii::FONT_5X8, MonoTextStyle},
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Alignment, Baseline, Text, TextStyleBuilder},
@@ -21,9 +21,10 @@ use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
-    parse_web_game_cmd, render_move_detail, render_pokemon_stats, render_pokemon_stats_page2,
-    render_switch_screen, run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus,
-    MoveSlot, PartySlotData, WebGameInput,
+    parse_web_game_cmd, render_lobby_screen, render_move_detail, render_pokemon_stats,
+    render_pokemon_stats_page2, render_switch_screen, run_battle, BoardEventQueue,
+    ButtonController, FlashDataStore, InputBus, MoveSlot, PartySlotData, WebGameInput,
+    LOBBY_DEMO_DELAY_MS,
 };
 
 use web_controller::WebButtonSource;
@@ -701,44 +702,9 @@ pub fn start() {
 
 // ── OLED helpers ──────────────────────────────────────────────────────────────
 
-/// Draw the lobby ready state for one player.
-/// ready=false → idle ("PRESS READY / HOLD FOR AI")
-/// ready=true, ai=false → "READY!"
-/// ready=true, ai=true → "AI" (this side is AI-controlled)
 fn draw_lobby_screen(player: u8, ready: bool, ai: bool) {
     let mut disp = WasmDisplay::new();
-    let ts = TextStyleBuilder::new()
-        .alignment(Alignment::Center)
-        .baseline(Baseline::Top)
-        .build();
-    if !ready {
-        Text::with_text_style(
-            "PRESS TO READY",
-            Point::new(64, 16),
-            MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
-            ts,
-        ).draw(&mut disp).ok();
-        Text::with_text_style(
-            "HOLD: FIGHT AI",
-            Point::new(64, 36),
-            MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
-            ts,
-        ).draw(&mut disp).ok();
-    } else if ai {
-        Text::with_text_style(
-            "AI",
-            Point::new(64, 27),
-            MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
-            ts,
-        ).draw(&mut disp).ok();
-    } else {
-        Text::with_text_style(
-            "READY!",
-            Point::new(64, 27),
-            MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
-            ts,
-        ).draw(&mut disp).ok();
-    }
+    render_lobby_screen(&mut disp, ready, ai);
     update_pixels(player, disp.to_rgba());
 }
 
@@ -769,7 +735,7 @@ async fn run_game_loop() {
             // Set the AI config for this iteration via NEXT_GAME_AI like any other caller.
             NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, true]));
             let mut interrupted = false;
-            for _ in 0..150u16 {  // 150 × 100 ms = 15 s
+            for _ in 0..(LOBBY_DEMO_DELAY_MS / 100) as u16 {
                 sleep_ms(100).await;
                 let pressed = P1_QUEUE.with(|q| !q.borrow().is_empty())
                            || P2_QUEUE.with(|q| !q.borrow().is_empty());
