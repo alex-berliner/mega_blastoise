@@ -185,13 +185,19 @@ pub fn board_prompt_event(player_id: &str, request: &Request) -> BoardEvent {
 
 /// Extract the display name from a battler `mon` position field (`"name,player_id,pos"`).
 /// Returns the whole string unchanged if no comma is present (e.g. synthetic test values).
-fn extract_mon_name(position_details: &str) -> &str {
+pub fn mon_display_name(position_details: &str) -> &str {
     position_details.split(',').next().unwrap_or(position_details)
+}
+
+/// Extract the player id (`"p1"` or `"p2"`) from a battler `mon` position field.
+pub fn mon_player_id(mon: &str) -> Option<&str> {
+    let id = mon.split(',').nth(1)?.trim();
+    if id == "p1" || id == "p2" { Some(id) } else { None }
 }
 
 /// Build `"Red's Golduck"` from a `mon` position field.
 fn player_mon_label(mon: &str) -> String {
-    let name = extract_mon_name(mon);
+    let name = mon_display_name(mon);
     let player = mon.split(',').nth(1).unwrap_or("");
     let trainer = player_display_name(player);
     format!("{trainer}'s {name}")
@@ -216,7 +222,7 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
         "move" | "animatemove" => {
             let mon_str = p.get("mon");
             Some(BoardEvent::Move {
-                user: mon_str.map(|s| extract_mon_name(s).into()),
+                user: mon_str.map(|s| mon_display_name(s).into()),
                 player_id: mon_str.and_then(|s| s.split(',').nth(1)).map(String::from),
                 name: p.get("name").unwrap_or("?").into(),
             })
@@ -229,7 +235,7 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             moves: Vec::new(),
         }),
         "switchout" => Some(BoardEvent::SwitchOut {
-            name: p.get("mon").map(|s| extract_mon_name(s).into()).unwrap_or_default(),
+            name: p.get("mon").map(|s| mon_display_name(s).into()).unwrap_or_default(),
         }),
         "turn" => {
             let n = p

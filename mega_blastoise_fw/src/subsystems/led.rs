@@ -19,6 +19,7 @@ use embassy_rp::pio_programs::ws2812::{PioWs2812, PioWs2812Program};
 use embassy_rp::Peri;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Timer;
+use mega_blastoise_core::{hp_bar_color, hp_bar_count};
 use smart_leds::RGB8;
 
 // ── Interrupt binding ─────────────────────────────────────────────────────────
@@ -110,8 +111,8 @@ impl PlayerLedState {
         let mut buf = [off; PER_PLAYER];
 
         // LEDs 0–7: HP bar
-        let lit = hp_lit(self.hp_pct);
-        let color = hp_color(self.hp_pct);
+        let lit = hp_bar_count(self.hp_pct);
+        let color = hp_color_rgb(self.hp_pct);
         for i in 0..lit {
             buf[i] = color;
         }
@@ -128,15 +129,9 @@ impl PlayerLedState {
     }
 }
 
-fn hp_lit(pct: u8) -> usize {
-    if pct == 0 { return 0; }
-    ((pct as usize * 8 + 99) / 100).min(8)
-}
-
-fn hp_color(pct: u8) -> RGB8 {
-    if pct > 50      { RGB8 { r:   0, g: 180, b: 0 } }
-    else if pct > 25 { RGB8 { r: 180, g: 150, b: 0 } }
-    else             { RGB8 { r: 200, g:   0, b: 0 } }
+fn hp_color_rgb(pct: u8) -> RGB8 {
+    let (r, g, b) = hp_bar_color(pct);
+    RGB8 { r, g, b }
 }
 
 fn build_frame(p1: &PlayerLedState, p2: &PlayerLedState) -> [RGB8; NUM_LEDS] {

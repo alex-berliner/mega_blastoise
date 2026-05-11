@@ -1,3 +1,16 @@
+/// Number of HP-bar LEDs to light (out of 8) for the given percentage.
+pub fn hp_bar_count(pct: u8) -> usize {
+    if pct == 0 { return 0; }
+    ((pct as usize * 8 + 99) / 100).min(8)
+}
+
+/// HP-bar color as `(r, g, b)`: green > 50%, yellow > 25%, red ≤ 25%.
+pub fn hp_bar_color(pct: u8) -> (u8, u8, u8) {
+    if pct > 50      { (0, 180, 0) }
+    else if pct > 25 { (180, 150, 0) }
+    else             { (200, 0, 0) }
+}
+
 /// Parsed HP state from a battler health string (`"current/max"` or bare `"current"`).
 #[derive(Clone, Copy)]
 pub struct HpBarState {

@@ -1,6 +1,6 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_time::Timer;
-use mega_blastoise_core::{anim, BoardEffects, BoardEvent, HpBarState, InputBus};
+use mega_blastoise_core::{anim, mon_player_id, BoardEffects, BoardEvent, HpBarState, InputBus};
 
 pub static ANIM_ENABLED: AtomicBool = AtomicBool::new(true);
 
@@ -23,9 +23,6 @@ impl<'a> BattleEffects<'a> {
     }
 }
 
-fn mon_player_id(mon: &str) -> Option<&str> {
-    mon.split(',').nth(1)
-}
 
 /// Copy up to 12 bytes of a Pokémon name into a fixed-size buffer.
 fn name_buf(name: &str) -> ([u8; 12], u8) {

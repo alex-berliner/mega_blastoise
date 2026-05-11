@@ -5,7 +5,8 @@ use embedded_graphics::{
     text::{Alignment, Baseline, Text, TextStyleBuilder},
 };
 use mega_blastoise_core::{
-    anim, render_player_screen, render_win_screen, BoardEffects, BoardEvent, HpBarState, InputBus, MoveSlot,
+    anim, hp_bar_color, hp_bar_count, mon_display_name, mon_player_id, render_player_screen,
+    render_win_screen, BoardEffects, BoardEvent, HpBarState, InputBus, MoveSlot,
 };
 
 use crate::web_display::WasmDisplay;
@@ -16,15 +17,9 @@ fn pack_rgb(r: u8, g: u8, b: u8) -> u32 {
     ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
 }
 
-fn hp_color(pct: u8) -> u32 {
-    if pct > 50 { pack_rgb(0, 180, 0) }
-    else if pct > 25 { pack_rgb(180, 150, 0) }
-    else { pack_rgb(200, 0, 0) }
-}
-
-fn hp_lit(pct: u8) -> usize {
-    if pct == 0 { return 0; }
-    ((pct as usize * 8 + 99) / 100).min(8)
+fn hp_color_packed(pct: u8) -> u32 {
+    let (r, g, b) = hp_bar_color(pct);
+    pack_rgb(r, g, b)
 }
 
 // ── Per-player LED state ──────────────────────────────────────────────────────
@@ -39,8 +34,8 @@ impl LedPlayerState {
     /// Returns HP bar only (8 slots); party LEDs are managed by sync_party_leds.
     fn render(&self) -> [u32; 8] {
         let mut buf = [0u32; 8];
-        let lit = hp_lit(self.hp_pct);
-        let color = hp_color(self.hp_pct);
+        let lit = hp_bar_count(self.hp_pct);
+        let color = hp_color_packed(self.hp_pct);
         for i in 0..lit { buf[i] = color; }
         buf
     }
@@ -130,12 +125,7 @@ impl<'a> WebBattleEffects<'a> {
 }
 
 fn player_num(mon: &str) -> Option<u8> {
-    let id = mon.split(',').nth(1)?.trim();
-    if id == "p1" { Some(1) } else if id == "p2" { Some(2) } else { None }
-}
-
-fn mon_name(mon: &str) -> &str {
-    mon.split(',').next().unwrap_or(mon)
+    mon_player_id(mon).map(|id| if id == "p1" { 1 } else { 2 })
 }
 
 
@@ -258,7 +248,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 if let Some(p) = player_num(mon) {
                     if p == 1 { self.p1_led.hp_pct = 0; }
                     else      { self.p2_led.hp_pct = 0; }
-                    crate::update_party_slot_hp(p, mon_name(mon), 0);
+                    crate::update_party_slot_hp(p, mon_display_name(mon), 0);
                     self.flush_leds();
                 }
                 self.flash_both(&desc);
@@ -268,7 +258,7 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::SetStatus { mon, status } => {
                 if let Some(p) = player_num(mon) {
-                    crate::update_party_slot_status(p, mon_name(mon), Some(status.clone()));
+                    crate::update_party_slot_status(p, mon_display_name(mon), Some(status.clone()));
                     self.flush_leds();
                 }
                 let desc = event.description();
@@ -279,7 +269,7 @@ impl BoardEffects for WebBattleEffects<'_> {
 
             BoardEvent::CureStatus { mon, .. } => {
                 if let Some(p) = player_num(mon) {
-                    crate::update_party_slot_status(p, mon_name(mon), None);
+                    crate::update_party_slot_status(p, mon_display_name(mon), None);
                     self.flush_leds();
                 }
                 let desc = event.description();
