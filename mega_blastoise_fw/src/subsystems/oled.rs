@@ -20,7 +20,7 @@ use core::cell::RefCell;
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel};
 use embedded_graphics::{draw_target::DrawTarget, geometry::{OriginDimensions, Size}, pixelcolor::BinaryColor, Pixel};
-use mega_blastoise_core::{render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, MoveSlot, PartySlotData};
+use mega_blastoise_core::{render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, BoardEvent, MoveSlot, PartySlotData};
 use display_interface::AsyncWriteOnlyDataCommand;
 use ssd1306::{mode::BufferedGraphicsModeAsync, prelude::*, I2CDisplayInterface, Ssd1306Async};
 
@@ -292,11 +292,7 @@ pub async fn task(
                 else           { draw_lobby_screen(&mut disp1, &mut s2, 2, ready, ai).await; }
             }
             OledCmd::Win { winner } => {
-                let (msg0, msg1) = match winner {
-                    1 => ("WINNER!", "GG!"),
-                    2 => ("GG!", "WINNER!"),
-                    _ => ("TIE!", "TIE!"),
-                };
+                let (msg0, msg1) = BoardEvent::win_messages(winner);
                 render_win_screen(&mut disp0, msg0);
                 render_win_screen(&mut s1, msg0);
                 store_shadow(1, &s1);

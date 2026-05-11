@@ -4,7 +4,7 @@
 /// functions from `mega_blastoise_core::display`.  On every state change the
 /// display redraws and `CliDisplay::render()` prints it to stdout via Unicode
 /// half-blocks.
-use mega_blastoise_core::{render_move_detail, render_player_screen, render_win_screen, MoveSlot};
+use mega_blastoise_core::{render_move_detail, render_player_screen, render_win_screen, BoardEvent, MoveSlot};
 
 use crate::cli_display::CliDisplay;
 
@@ -89,11 +89,7 @@ impl HostOled {
 
     pub fn win(&mut self, winner: u8) {
         if self.silent { return; }
-        let (msg0, msg1) = match winner {
-            1 => ("WINNER!", "GG!"),
-            2 => ("GG!", "WINNER!"),
-            _ => ("TIE!", "TIE!"),
-        };
+        let (msg0, msg1) = BoardEvent::win_messages(winner);
         render_win_screen(&mut self.p1_disp, msg0);
         render_win_screen(&mut self.p2_disp, msg1);
         println!("── P1 Display ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
