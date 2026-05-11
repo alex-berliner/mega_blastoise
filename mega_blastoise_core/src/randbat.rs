@@ -45,3 +45,16 @@ pub fn draw_randbat_team(seed: u64, count: usize) -> Vec<MonData> {
     }
     team
 }
+
+/// Canonical two-team seed offset (golden ratio × 2⁶⁴).
+/// Add to one seed to get a well-separated second seed.
+pub const TEAM_SEED_SALT: u64 = 0x9e3779b97f4a7c15;
+
+/// Draw two independent random-battle teams from a single seed.
+/// Returns `(red_team, blue_team)`.
+pub fn draw_two_randbat_teams(seed: u64, count: usize) -> (Vec<MonData>, Vec<MonData>) {
+    (
+        draw_randbat_team(seed, count),
+        draw_randbat_team(seed.wrapping_add(TEAM_SEED_SALT), count),
+    )
+}

@@ -14,7 +14,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::{
-    battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
+    battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
     parse_web_game_cmd, render_invalid_selection, render_lobby_screen, render_move_detail,
     render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen,
     render_waiting_for_opponent, render_waiting_screen, run_battle, BoardEventQueue,
@@ -754,8 +754,7 @@ async fn run_game_loop() {
             Err(e) => { print_log(&format!("Battle init error: {e}")); continue; }
         };
 
-        let team_red  = draw_randbat_team(seed, 3);
-        let team_blue = draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 3);
+        let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
 
         let ok = battle.update_team("p1", TeamData { members: team_red,  ..Default::default() }).is_ok()
                && battle.update_team("p2", TeamData { members: team_blue, ..Default::default() }).is_ok()

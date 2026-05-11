@@ -11,7 +11,7 @@ use battler::TeamData;
 use embassy_futures::select::{select, Either};
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::{
-    battle_options_with_seed, demo_engine_opts, draw_randbat_team,
+    battle_options_with_seed, demo_engine_opts, draw_randbat_team, draw_two_randbat_teams,
     ActivePrompt, BoardEventQueue, FlashDataStore, InputBus, InputSource, RandomAi,
     LOBBY_DEMO_DELAY_MS,
 };
@@ -160,14 +160,9 @@ async fn run_demo_battle(data: &FlashDataStore, queue: &mut BoardEventQueue, see
         Err(_) => return,
     };
 
-    let _ = battle.update_team("p1", TeamData {
-        members: draw_randbat_team(seed, 3),
-        ..Default::default()
-    });
-    let _ = battle.update_team("p2", TeamData {
-        members: draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 3),
-        ..Default::default()
-    });
+    let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
+    let _ = battle.update_team("p1", TeamData { members: team_red,  ..Default::default() });
+    let _ = battle.update_team("p2", TeamData { members: team_blue, ..Default::default() });
     if battle.start().is_err() {
         return;
     }

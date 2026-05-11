@@ -2,7 +2,7 @@
 
 use battler::TeamData;
 use mega_blastoise_core::{
-    demo_battle_options, demo_engine_opts, draw_randbat_team, format_active_state, run_battle,
+    demo_battle_options, demo_engine_opts, draw_two_randbat_teams, format_active_state, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
 };
 
@@ -23,8 +23,7 @@ pub fn run_interactive() {
         .map(|d| d.as_nanos() as u64)
         .unwrap_or(0xdeadbeef);
 
-    let team_red = draw_randbat_team(seed, 3);
-    let team_blue = draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 3);
+    let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
 
     let mut battle =
         battler::PublicCoreBattle::new(demo_battle_options(), &data, demo_engine_opts())

@@ -34,7 +34,7 @@ pub use hp_bar::{hp_bar_color, hp_bar_count, HpBarState};
 pub use prompt_fmt::{format_active_state, format_lobby_status, format_player_state, format_prompt};
 pub use data_store::FlashDataStore;
 pub use demo_teams::{demo_team_blue, demo_team_red};
-pub use randbat::draw_randbat_team;
+pub use randbat::{draw_randbat_team, draw_two_randbat_teams, TEAM_SEED_SALT};
 pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
 pub use cli_parse::{

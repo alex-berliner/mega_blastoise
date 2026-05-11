@@ -16,7 +16,7 @@ use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
 use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
-    battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state, run_battle,
+    battle_options_with_seed, demo_engine_opts, draw_randbat_team, draw_two_randbat_teams, format_active_state, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
 };
 use mega_blastoise_fw::mem_profile::{heap_snapshot, init_heap};
@@ -148,7 +148,7 @@ async fn main(spawner: Spawner) {
         heap_snapshot("after_team_p1");
 
         battle.update_team("p2", TeamData {
-            members: draw_randbat_team(seed.wrapping_add(0x9e3779b97f4a7c15), 3),
+            members: draw_randbat_team(seed.wrapping_add(mega_blastoise_core::TEAM_SEED_SALT), 3),
             ..Default::default()
         }).expect("p2");
         #[cfg(feature = "mem-profile")]
