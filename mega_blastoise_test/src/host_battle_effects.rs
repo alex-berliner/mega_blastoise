@@ -130,11 +130,7 @@ impl BoardEffects for HostBattleEffects<'_> {
             }
 
             BoardEvent::Win { side } => {
-                let winner = match side.as_deref() {
-                    Some("0") => 1u8,
-                    Some("1") => 2u8,
-                    _ => 0,
-                };
+                let winner = BoardEvent::win_player_num(side);
                 self.buzzer.win();
                 self.oled.win(winner);
                 self.led.win(winner);

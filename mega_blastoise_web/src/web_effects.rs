@@ -246,11 +246,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::Win { side } => {
-                let winner = match side.as_deref() {
-                    Some("0") => 1u8,
-                    Some("1") => 2u8,
-                    _ => 0,
-                };
+                let winner = BoardEvent::win_player_num(side);
                 let (msg1, msg2) = match winner {
                     1 => ("WINNER!", "GG!"),
                     2 => ("GG!", "WINNER!"),

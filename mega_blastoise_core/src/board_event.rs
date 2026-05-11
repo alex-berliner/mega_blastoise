@@ -289,6 +289,16 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
 }
 
 impl BoardEvent {
+    /// Convert `BoardEvent::Win { side }` to a 1-based player number (1 or 2),
+    /// or 0 for a tie / unknown side.  Call at the `Win` arm; panics on other variants.
+    pub fn win_player_num(side: &Option<String>) -> u8 {
+        match side.as_deref() {
+            Some("0") => 1,
+            Some("1") => 2,
+            _ => 0,
+        }
+    }
+
     /// Human-readable battle narrative for display (USB, stdout). Hardware effects code should
     /// branch on the `BoardEvent` variant directly rather than parsing this string.
     pub fn description(&self) -> String {

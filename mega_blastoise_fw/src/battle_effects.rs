@@ -129,11 +129,7 @@ impl BoardEffects for BattleEffects<'_> {
             }
 
             BoardEvent::Win { side } => {
-                let winner = match side.as_deref() {
-                    Some("0") => 1u8,
-                    Some("1") => 2u8,
-                    _ => 0,
-                };
+                let winner = BoardEvent::win_player_num(side);
                 #[cfg(feature = "buzzer")]
                 buzz(BuzzerCmd::Win);
                 #[cfg(feature = "oled")]
