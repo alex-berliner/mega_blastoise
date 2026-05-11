@@ -3,7 +3,7 @@
 /// Handles the same [`BoardEvent`] variants as the firmware: HP tracking,
 /// active-mon updates, faint, and win.  Calls [`HostBuzzer`] and [`HostOled`]
 /// stubs so that tests can observe sound/display events without hardware.
-use mega_blastoise_core::{mon_player_id, BoardEffects, BoardEvent, InputBus};
+use mega_blastoise_core::{mon_player_id, player_id_to_num, BoardEffects, BoardEvent, InputBus};
 
 use crate::host_buzzer::HostBuzzer;
 use crate::host_hp_bar::HostHpBarState;
@@ -88,7 +88,7 @@ impl BoardEffects for HostBattleEffects<'_> {
             BoardEvent::Faint { mon, .. } => {
                 println!("[RTT] faint: {mon}");
                 if let Some(pid) = mon_player_id(mon) {
-                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    let player = player_id_to_num(pid);
                     self.oled.faint(player);
                     self.led.faint(player);
                 }
@@ -97,13 +97,13 @@ impl BoardEffects for HostBattleEffects<'_> {
 
             BoardEvent::SwitchIn { name, player_id, moves, .. } => {
                 if let Some(pid) = player_id {
-                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    let player = player_id_to_num(pid);
                     self.oled.switch_in(player, name.clone(), moves.clone());
                 }
             }
 
             BoardEvent::MovesUpdate { player_id, moves } => {
-                let player = if player_id.as_str() == "p1" { 1u8 } else { 2u8 };
+                let player = player_id_to_num(player_id.as_str());
                 self.oled.update_moves(player, moves.clone());
             }
 
@@ -117,14 +117,14 @@ impl BoardEffects for HostBattleEffects<'_> {
 
             BoardEvent::SetStatus { mon, status } => {
                 if let Some(pid) = mon_player_id(mon) {
-                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    let player = player_id_to_num(pid);
                     self.led.set_status(player, status_label(status.as_str()));
                 }
             }
 
             BoardEvent::CureStatus { mon, .. } => {
                 if let Some(pid) = mon_player_id(mon) {
-                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    let player = player_id_to_num(pid);
                     self.led.cure_status(player);
                 }
             }

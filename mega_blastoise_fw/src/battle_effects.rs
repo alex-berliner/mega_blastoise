@@ -1,6 +1,6 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_time::Timer;
-use mega_blastoise_core::{anim, mon_player_id, BoardEffects, BoardEvent, HpBarState, InputBus};
+use mega_blastoise_core::{anim, mon_player_id, player_id_to_num, BoardEffects, BoardEvent, HpBarState, InputBus};
 
 pub static ANIM_ENABLED: AtomicBool = AtomicBool::new(true);
 
@@ -71,7 +71,7 @@ impl BoardEffects for BattleEffects<'_> {
             BoardEvent::Faint { mon, team_slot: _team_slot } => {
                 defmt::info!("faint: {}", mon.as_str());
                 if let Some(pid) = mon_player_id(mon) {
-                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    let player = player_id_to_num(pid);
                     #[cfg(feature = "oled")]
                     oled_send(OledCmd::Faint { player });
                     #[cfg(feature = "leds")]
@@ -85,7 +85,7 @@ impl BoardEffects for BattleEffects<'_> {
 
             BoardEvent::SwitchIn { name, player_id, moves, team_slot: _team_slot, .. } => {
                 if let Some(pid) = player_id {
-                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    let player = player_id_to_num(pid);
                     let (buf, len) = name_buf(name.as_str());
                     #[cfg(feature = "oled")]
                     oled_send(OledCmd::ActiveMon { player, name: buf, len });
@@ -113,7 +113,7 @@ impl BoardEffects for BattleEffects<'_> {
             BoardEvent::SetStatus { mon: _mon, status: _status } => {
                 #[cfg(feature = "leds")]
                 if let Some(pid) = mon_player_id(_mon) {
-                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    let player = player_id_to_num(pid);
                     if let Some(s) = LedStatus::from_str(_status.as_str()) {
                         led_send(LedCmd::SetStatus { player, status: s });
                     }
@@ -123,7 +123,7 @@ impl BoardEffects for BattleEffects<'_> {
             BoardEvent::CureStatus { mon: _mon, .. } => {
                 #[cfg(feature = "leds")]
                 if let Some(pid) = mon_player_id(_mon) {
-                    let player = if pid == "p1" { 1u8 } else { 2u8 };
+                    let player = player_id_to_num(pid);
                     led_send(LedCmd::CureStatus { player });
                 }
             }
@@ -148,7 +148,7 @@ impl BoardEffects for BattleEffects<'_> {
             }
 
             BoardEvent::MovesUpdate { player_id, moves } => {
-                let player = if player_id.as_str() == "p1" { 1u8 } else { 2u8 };
+                let player = player_id_to_num(player_id.as_str());
                 #[cfg(feature = "oled")]
                 oled_send(OledCmd::MovesUpdate { player, moves: moves.clone() });
             }
@@ -156,7 +156,7 @@ impl BoardEffects for BattleEffects<'_> {
             BoardEvent::Prompt { player_id, .. } => {
                 // Restore normal OLED view at the start of each prompt in case a
                 // long-press detail screen was left open (e.g. USB won the input race).
-                let player = if player_id.as_str() == "p1" { 1u8 } else { 2u8 };
+                let player = player_id_to_num(player_id.as_str());
                 #[cfg(feature = "oled")]
                 oled_send(OledCmd::RestoreScreen { player });
             }

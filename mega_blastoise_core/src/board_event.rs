@@ -152,6 +152,11 @@ pub enum BoardEvent {
 }
 
 /// Short trainer label for messages (`p1` → Red in the stock demo).
+/// Convert `"p1"` / `"p2"` to 1 / 2.  Any other value returns 2.
+pub fn player_id_to_num(player_id: &str) -> u8 {
+    if player_id == "p1" { 1 } else { 2 }
+}
+
 pub fn player_display_name(player_id: &str) -> &'static str {
     match player_id {
         "p1" => "Red",

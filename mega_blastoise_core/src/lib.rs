@@ -21,7 +21,7 @@ pub use battle_effects::{
 };
 pub use board_event::{
     board_prompt_event, mon_display_name, mon_player_id, parse_log_line, player_display_name,
-    side_display_name, BoardEvent, MoveSlot, ParsedBattleLogLine, PromptKind,
+    player_id_to_num, side_display_name, BoardEvent, MoveSlot, ParsedBattleLogLine, PromptKind,
 };
 pub use display::{party_slot_from_mon, render_event_text, render_invalid_selection, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, OledFrameBuffer, PartySlotData};
 pub use battle_input::{

@@ -1,5 +1,5 @@
 use mega_blastoise_core::{
-    anim, hp_bar_color, hp_bar_count, mon_display_name, mon_player_id, render_event_text,
+    anim, hp_bar_color, hp_bar_count, mon_display_name, mon_player_id, player_id_to_num, render_event_text,
     render_player_screen, render_win_screen, BoardEffects, BoardEvent, HpBarState, InputBus,
     MoveSlot,
 };
@@ -116,7 +116,7 @@ impl<'a> WebBattleEffects<'a> {
 }
 
 fn player_num(mon: &str) -> Option<u8> {
-    mon_player_id(mon).map(|id| if id == "p1" { 1 } else { 2 })
+    mon_player_id(mon).map(|id| player_id_to_num(id))
 }
 
 
@@ -166,7 +166,7 @@ impl BoardEffects for WebBattleEffects<'_> {
                 self.flash_both(&desc);
                 crate::sleep_ms(anim::SWITCH_IN_MS / 2).await;
                 if let Some(pid) = player_id {
-                    let p = if pid == "p1" { 1u8 } else { 2u8 };
+                    let p = player_id_to_num(pid);
                     crate::update_moves(p, moves.clone());
                     crate::set_active_mon_name(p, name);
                     if p == 1 {
@@ -187,7 +187,7 @@ impl BoardEffects for WebBattleEffects<'_> {
             }
 
             BoardEvent::MovesUpdate { player_id, moves } => {
-                let p = if player_id == "p1" { 1u8 } else { 2u8 };
+                let p = player_id_to_num(player_id);
                 crate::update_moves(p, moves.clone());
                 if p == 1 { self.p1_oled.moves = moves.clone(); }
                 else { self.p2_oled.moves = moves.clone(); }
