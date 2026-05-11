@@ -11,6 +11,7 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 5. [Events and Input Contracts](./05-events-and-input.md)
 6. [Memory and Debugging](./06-memory-and-debugging.md)
 7. [Design Principles and Extension Guide](./07-design-principles.md)
+8. [Feature Map: Core vs. Target-Specific](./08-feature-map.md)
 
 ## Quick Links
 
