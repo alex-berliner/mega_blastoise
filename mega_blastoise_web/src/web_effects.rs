@@ -1,12 +1,7 @@
-use embedded_graphics::{
-    mono_font::{ascii::FONT_5X8, MonoTextStyle},
-    pixelcolor::BinaryColor,
-    prelude::*,
-    text::{Alignment, Baseline, Text, TextStyleBuilder},
-};
 use mega_blastoise_core::{
-    anim, hp_bar_color, hp_bar_count, mon_display_name, mon_player_id, render_player_screen,
-    render_win_screen, BoardEffects, BoardEvent, HpBarState, InputBus, MoveSlot,
+    anim, hp_bar_color, hp_bar_count, mon_display_name, mon_player_id, render_event_text,
+    render_player_screen, render_win_screen, BoardEffects, BoardEvent, HpBarState, InputBus,
+    MoveSlot,
 };
 
 use crate::web_display::WasmDisplay;
@@ -110,8 +105,8 @@ impl<'a> WebBattleEffects<'a> {
     }
 
     fn flash_both(&mut self, text: &str) {
-        draw_event_text(&mut self.p1_disp, text);
-        draw_event_text(&mut self.p2_disp, text);
+        render_event_text(&mut self.p1_disp, text);
+        render_event_text(&mut self.p2_disp, text);
         // display_only: don't corrupt P_BATTLE_PIXELS — long-press restore must
         // return the real battle state, not the flash text.
         crate::display_only(1, self.p1_disp.to_rgba());
@@ -142,46 +137,6 @@ fn win_leds(winner: u8) -> [u32; 24] {
     for i in 0..12  { frame[i] = c1; }
     for i in 12..24 { frame[i] = c2; }
     frame
-}
-
-fn draw_event_text(disp: &mut WasmDisplay, text: &str) {
-    disp.clear_all();
-    let style = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
-    let ts = TextStyleBuilder::new()
-        .alignment(Alignment::Center)
-        .baseline(Baseline::Top)
-        .build();
-
-    // Target chars per line: evenly divide for long text, 21-char cap for short.
-    let target = if text.len() > 25 { (text.len() + 2) / 3 } else { 21 };
-
-    let mut lines = [""; 3];
-    let mut n = 0usize;
-    let mut rest = text;
-    while !rest.is_empty() && n < 3 {
-        if rest.len() <= target || n == 2 {
-            lines[n] = rest;
-            n += 1;
-            break;
-        }
-        let search_end = (target + 4).min(rest.len());
-        let at = rest[..search_end].rfind(' ').unwrap_or(target.min(rest.len()));
-        lines[n] = rest[..at].trim();
-        n += 1;
-        rest = rest[at..].trim_start();
-    }
-
-    let start_y: i32 = match n {
-        1 => 28,
-        2 => 23,
-        _ => 17,
-    };
-    for i in 0..n {
-        if !lines[i].is_empty() {
-            Text::with_text_style(lines[i], Point::new(64, start_y + i as i32 * 10), style, ts)
-                .draw(disp).ok();
-        }
-    }
 }
 
 

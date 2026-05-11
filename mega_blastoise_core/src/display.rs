@@ -441,6 +441,51 @@ where
     Text::with_text_style("opponent...", Point::new(64, 32), sm, center_style()).draw(display).ok();
 }
 
+// ── Battle event flash screen ─────────────────────────────────────────────────
+
+/// Draw a battle event narration centered on any 128×64 `DrawTarget`.
+///
+/// Word-wraps `text` to at most 3 lines of FONT_5X8, centered vertically.
+/// Used for move/faint/status event overlays shown briefly during a turn.
+pub fn render_event_text<D>(display: &mut D, text: &str)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let style = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+
+    // Target chars per line: evenly divide for long text, 21-char cap for short.
+    let target = if text.len() > 25 { (text.len() + 2) / 3 } else { 21 };
+
+    let mut lines = [""; 3];
+    let mut n = 0usize;
+    let mut rest = text;
+    while !rest.is_empty() && n < 3 {
+        if rest.len() <= target || n == 2 {
+            lines[n] = rest;
+            n += 1;
+            break;
+        }
+        let search_end = (target + 4).min(rest.len());
+        let at = rest[..search_end].rfind(' ').unwrap_or(target.min(rest.len()));
+        lines[n] = rest[..at].trim();
+        n += 1;
+        rest = rest[at..].trim_start();
+    }
+
+    let start_y: i32 = match n {
+        1 => 28,
+        2 => 23,
+        _ => 17,
+    };
+    for i in 0..n {
+        if !lines[i].is_empty() {
+            Text::with_text_style(lines[i], Point::new(64, start_y + i as i32 * 10), style, center_style())
+                .draw(display).ok();
+        }
+    }
+}
+
 // ── Lobby screen ──────────────────────────────────────────────────────────────
 
 /// Draw the lobby ready state onto any 128×64 `DrawTarget`.

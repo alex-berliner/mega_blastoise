@@ -21,10 +21,6 @@ impl WasmDisplay {
         Self { fb: [[false; OLED_W]; OLED_H] }
     }
 
-    pub fn clear_all(&mut self) {
-        self.fb = [[false; OLED_W]; OLED_H];
-    }
-
     pub fn to_rgba(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(OLED_W * OLED_H * 4);
         for row in &self.fb {
