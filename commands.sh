@@ -1,6 +1,10 @@
 # mega-blastoise dev commands
 # Source with:  . $MB_BASE/commands.sh   (MB_BASE = workspace root)
 
+# Unset previous definitions so re-sourcing always picks up the latest versions.
+unset -f mb_build mb_test mb_flash mb_reset mb_kill mb_console mb_run mb_dev 2>/dev/null
+unalias  mb_build mb_test mb_flash mb_reset mb_kill mb_console mb_run mb_dev 2>/dev/null
+
 _MB_FW_DIR="$MB_BASE/mega_blastoise_fw"
 _MB_ELF_DEBUG="$MB_BASE/target/thumbv6m-none-eabi/debug/mega-blastoise-fw"
 _MB_ELF_RELEASE="$MB_BASE/target/thumbv6m-none-eabi/release/mega-blastoise-fw"
