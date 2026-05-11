@@ -8,13 +8,9 @@ use crate::web_display::WasmDisplay;
 
 // ── LED helpers ───────────────────────────────────────────────────────────────
 
-fn pack_rgb(r: u8, g: u8, b: u8) -> u32 {
-    ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
-}
-
 fn hp_color_packed(pct: u8) -> u32 {
     let (r, g, b) = hp_bar_color(pct);
-    pack_rgb(r, g, b)
+    crate::pack_rgb(r, g, b)
 }
 
 // ── Per-player LED state ──────────────────────────────────────────────────────
@@ -125,9 +121,9 @@ fn player_num(mon: &str) -> Option<u8> {
 
 
 fn win_leds(winner: u8) -> [u32; 24] {
-    let gold = pack_rgb(200, 150, 0);
-    let dim  = pack_rgb(40, 0, 0);
-    let grey = pack_rgb(60, 60, 60);
+    let gold = crate::pack_rgb(200, 150, 0);
+    let dim  = crate::pack_rgb(40, 0, 0);
+    let grey = crate::pack_rgb(60, 60, 60);
     let (c1, c2) = match winner {
         1 => (gold, dim),
         2 => (dim, gold),
