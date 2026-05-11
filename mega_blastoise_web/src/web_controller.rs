@@ -1,6 +1,6 @@
 use battler::{PlayerBattleData, Request};
 use js_sys::Date;
-use mega_blastoise_core::{format_prompt, party_slot_from_mon, ButtonSource, PlayerAction};
+use mega_blastoise_core::{format_prompt, party_slot_from_mon, player_id_to_num, ButtonSource, PlayerAction};
 
 #[derive(Clone)]
 pub struct WebButtonSource;
@@ -12,7 +12,7 @@ impl ButtonSource for WebButtonSource {
         request: &Request,
         player_data: &Option<PlayerBattleData>,
     ) {
-        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        let player = player_id_to_num(player_id);
         let text = format_prompt(player_id, request, player_data.as_ref());
         for line in text.lines() {
             crate::print_log(line);
@@ -30,19 +30,19 @@ impl ButtonSource for WebButtonSource {
     }
 
     fn on_choice_pending(&mut self, player_id: &str) {
-        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        let player = player_id_to_num(player_id);
         if !crate::is_ai_player(player) {
             crate::show_waiting_screen(player);
         }
     }
 
     fn on_waiting_for_other_player(&mut self, player_id: &str) {
-        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        let player = player_id_to_num(player_id);
         crate::show_waiting_for_opponent_screen(player);
     }
 
     async fn wait_cancel_window(&mut self, player_id: &str) -> bool {
-        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        let player = player_id_to_num(player_id);
         if crate::is_ai_player(player) { return false; }
         let deadline = Date::now() + 1000.0;
         loop {
@@ -53,7 +53,7 @@ impl ButtonSource for WebButtonSource {
     }
 
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
-        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        let player = player_id_to_num(player_id);
         if crate::is_ai_player(player) {
             while crate::is_ai_paused() { crate::sleep_ms(100).await; }
             return PlayerAction::Move(crate::ai_pick_move(n_moves));
@@ -80,7 +80,7 @@ impl ButtonSource for WebButtonSource {
     }
 
     async fn wait_switch(&mut self, player_id: &str) -> usize {
-        let player = if player_id == "p1" { 1u8 } else { 2u8 };
+        let player = player_id_to_num(player_id);
         if crate::is_ai_player(player) {
             while crate::is_ai_paused() { crate::sleep_ms(100).await; }
             return crate::ai_pick_switch(player);
