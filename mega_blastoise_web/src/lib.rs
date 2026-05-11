@@ -579,10 +579,8 @@ fn enter_demo_mode() {
             }
             ":ready p1" => push_button(ButtonEvent::Move { player: 1, slot: 0 }),
             ":ready p2" => push_button(ButtonEvent::Move { player: 2, slot: 0 }),
-            _ => {
-                push_button(ButtonEvent::Move { player: 1, slot: 0 });
-                push_button(ButtonEvent::Move { player: 2, slot: 0 });
-            }
+            "?" | ":help" | ":h" => print_log("  lobby: :ready | :ready p1 | :ready p2 | :ready ai | :demo | :reset"),
+            _ => print_log("  unknown command — type ? for help"),
         }
         return;
     }
