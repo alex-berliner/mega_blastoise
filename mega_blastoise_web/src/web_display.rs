@@ -4,6 +4,7 @@ use embedded_graphics::{
     pixelcolor::BinaryColor,
     Pixel,
 };
+use mega_blastoise_core::OledFrameBuffer;
 
 pub const OLED_W: usize = 128;
 pub const OLED_H: usize = 64;
@@ -13,17 +14,17 @@ pub const ON: [u8; 4] = [57, 255, 20, 255];   // #39ff14 neon green
 pub const OFF: [u8; 4] = [10, 25, 10, 255];    // near-black green
 
 pub struct WasmDisplay {
-    pub fb: [[bool; OLED_W]; OLED_H],
+    pub inner: OledFrameBuffer,
 }
 
 impl WasmDisplay {
     pub fn new() -> Self {
-        Self { fb: [[false; OLED_W]; OLED_H] }
+        Self { inner: OledFrameBuffer::new() }
     }
 
     pub fn to_rgba(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(OLED_W * OLED_H * 4);
-        for row in &self.fb {
+        for row in &self.inner.fb {
             for &pixel in row {
                 let c = if pixel { ON } else { OFF };
                 out.extend_from_slice(&c);
@@ -41,16 +42,7 @@ impl DrawTarget for WasmDisplay {
     where
         I: IntoIterator<Item = Pixel<BinaryColor>>,
     {
-        for Pixel(coord, color) in pixels {
-            if coord.x >= 0 && coord.y >= 0 {
-                let x = coord.x as usize;
-                let y = coord.y as usize;
-                if x < OLED_W && y < OLED_H {
-                    self.fb[y][x] = color.is_on();
-                }
-            }
-        }
-        Ok(())
+        self.inner.draw_iter(pixels)
     }
 }
 

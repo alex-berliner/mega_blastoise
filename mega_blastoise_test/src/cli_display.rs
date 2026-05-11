@@ -4,19 +4,18 @@ use embedded_graphics::{
     pixelcolor::BinaryColor,
     Pixel,
 };
+use mega_blastoise_core::OledFrameBuffer;
 
 /// 128×64 framebuffer that renders to stdout using Unicode half-block characters.
 ///
-/// Implements `DrawTarget<Color = BinaryColor>`, so any embedded-graphics
-/// primitive or text that targets the real `Ssd1306` can be redirected here
-/// during host-side development without hardware.
+/// Wraps [`OledFrameBuffer`] and adds a terminal output method.
 pub struct CliDisplay {
-    fb: [[bool; 128]; 64],
+    inner: OledFrameBuffer,
 }
 
 impl CliDisplay {
     pub fn new() -> Self {
-        Self { fb: [[false; 128]; 64] }
+        Self { inner: OledFrameBuffer::new() }
     }
 
     /// Print the framebuffer to stdout as 32 terminal rows (2 pixel rows per line).
@@ -26,8 +25,8 @@ impl CliDisplay {
         for row in 0..32usize {
             let mut line = String::with_capacity(128 + 1);
             for col in 0..128usize {
-                let top = self.fb[row * 2][col];
-                let bottom = self.fb[row * 2 + 1][col];
+                let top = self.inner.fb[row * 2][col];
+                let bottom = self.inner.fb[row * 2 + 1][col];
                 line.push(match (top, bottom) {
                     (false, false) => ' ',
                     (true, false) => '▀',
@@ -54,16 +53,7 @@ impl DrawTarget for CliDisplay {
     where
         I: IntoIterator<Item = Pixel<BinaryColor>>,
     {
-        for Pixel(coord, color) in pixels {
-            if coord.x >= 0 && coord.y >= 0 {
-                let x = coord.x as usize;
-                let y = coord.y as usize;
-                if x < 128 && y < 64 {
-                    self.fb[y][x] = color.is_on();
-                }
-            }
-        }
-        Ok(())
+        self.inner.draw_iter(pixels)
     }
 }
 

@@ -1,6 +1,8 @@
 extern crate alloc;
 
 use embedded_graphics::{
+    draw_target::DrawTarget,
+    geometry::{OriginDimensions, Size},
     mono_font::{
         ascii::{FONT_5X8, FONT_6X10},
         MonoTextStyle,
@@ -9,6 +11,7 @@ use embedded_graphics::{
     prelude::*,
     primitives::{PrimitiveStyle, Rectangle},
     text::{Alignment, Baseline, Text, TextStyle, TextStyleBuilder},
+    Pixel,
 };
 
 use crate::board_event::MoveSlot;
@@ -507,5 +510,49 @@ where
         Text::with_text_style("AI",     Point::new(64, 27), style_lg, center_style()).draw(display).ok();
     } else {
         Text::with_text_style("READY!", Point::new(64, 27), style_lg, center_style()).draw(display).ok();
+    }
+}
+
+// ── Generic 128×64 framebuffer ────────────────────────────────────────────────
+
+/// Target-independent 128×64 monochrome pixel buffer.
+///
+/// Implements `DrawTarget<Color = BinaryColor>` so all `render_*` functions can
+/// write into it directly.  Wrap it in a target-specific newtype that adds
+/// output methods (`to_rgba()` for web, `render()` for CLI, …).
+pub struct OledFrameBuffer {
+    pub fb: [[bool; 128]; 64],
+}
+
+impl OledFrameBuffer {
+    pub const fn new() -> Self {
+        Self { fb: [[false; 128]; 64] }
+    }
+}
+
+impl DrawTarget for OledFrameBuffer {
+    type Color = BinaryColor;
+    type Error = core::convert::Infallible;
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Pixel<BinaryColor>>,
+    {
+        for Pixel(coord, color) in pixels {
+            if coord.x >= 0 && coord.y >= 0 {
+                let x = coord.x as usize;
+                let y = coord.y as usize;
+                if x < 128 && y < 64 {
+                    self.fb[y][x] = color.is_on();
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+impl OriginDimensions for OledFrameBuffer {
+    fn size(&self) -> Size {
+        Size::new(128, 64)
     }
 }
