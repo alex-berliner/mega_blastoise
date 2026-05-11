@@ -14,12 +14,12 @@ function mb_build {
     echo "=== fw ===" &&
     (cd "$_MB_FW_DIR" && cargo build "$@") &&
     echo "=== test ===" &&
-    cargo check -p mega-blastoise-test
+    (cd "$MB_BASE" && cargo check -p mega-blastoise-test)
 }
 
 # Run host-side tests (no hardware required).
 function mb_test {
-    cargo test -p mega-blastoise-test "$@"
+    (cd "$MB_BASE" && cargo test -p mega-blastoise-test "$@")
 }
 
 # ── Flash / reset ────────────────────────────────────────────────────────────
@@ -28,18 +28,18 @@ function mb_test {
 function mb_flash {
     local elf="$_MB_ELF_DEBUG"
     for arg in "$@"; do [[ "$arg" == "--release" ]] && elf="$_MB_ELF_RELEASE"; done
-    probe-rs download --preverify --preset pico "$elf"
+    (cd "$MB_BASE" && probe-rs download --preverify --preset pico "$elf")
 }
 
-alias mb_reset='probe-rs reset --preset pico'
-alias mb_kill='pkill -f probe-rs || true'
+function mb_reset { (cd "$MB_BASE" && probe-rs reset --preset pico); }
+function mb_kill  { (cd "$MB_BASE" && pkill -f probe-rs || true); }
 
 # ── Console ──────────────────────────────────────────────────────────────────
 
 # Stream RTT + USB output; forward keyboard input to USB.
 # Flags are passed through to mb-console.py (--no-rtt, --no-usb, --log FILE, etc.)
 function mb_console {
-    python3 "$_MB_CONSOLE" "$@"
+    (cd "$MB_BASE" && python3 "$_MB_CONSOLE" "$@")
 }
 
 # ── Combined workflows ───────────────────────────────────────────────────────
