@@ -109,7 +109,7 @@ where
     if !ready {
         // Centered on 128px wide display: "PRESS READY" and "HOLD FOR AI" (11 chars × 6px = 66px)
         Text::with_baseline("PRESS READY", Point::new(31, 20), style, Baseline::Top).draw(disp).ok();
-        Text::with_baseline("HOLD FOR AI", Point::new(31, 36), style, Baseline::Top).draw(disp).ok();
+        Text::with_baseline("HOLD: FIGHT AI", Point::new(22, 36), style, Baseline::Top).draw(disp).ok();
     } else if ai {
         // "AI" centered (2 chars × 6px = 12px, offset = 64 - 6 = 58)
         Text::with_baseline("AI", Point::new(58, 27), style, Baseline::Top).draw(disp).ok();

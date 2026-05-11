@@ -21,9 +21,9 @@ use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
-    render_move_detail, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen,
-    run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus,
-    MoveSlot, PartySlotData,
+    parse_web_game_cmd, render_move_detail, render_pokemon_stats, render_pokemon_stats_page2,
+    render_switch_screen, run_battle, BoardEventQueue, ButtonController, FlashDataStore, InputBus,
+    MoveSlot, PartySlotData, WebGameInput,
 };
 
 use web_controller::WebButtonSource;
@@ -644,35 +644,11 @@ fn enter_demo_mode() {
     }
 
     // In-game: parse move/switch commands.
-    // Default player is p2 (Blue, the human in VS AI mode).
-    // Prefix with "p1:" to send to Red instead.
-    let (player, rest) = if let Some(r) = cmd.strip_prefix("p1:") {
-        (1u8, r)
-    } else if let Some(r) = cmd.strip_prefix("p2:") {
-        (2u8, r)
-    } else {
-        (2u8, cmd)
-    };
-
-    // "s1"-"s3" → switch slot 0-2
-    if let Some(n) = rest.strip_prefix('s').or_else(|| rest.strip_prefix('S')) {
-        if let Ok(idx) = n.parse::<u8>() {
-            if idx >= 1 && idx <= 3 {
-                push_button(ButtonEvent::Switch { player, idx: idx - 1 });
-                return;
-            }
-        }
+    match parse_web_game_cmd(cmd) {
+        WebGameInput::Move { player, slot } => push_button(ButtonEvent::Move { player, slot }),
+        WebGameInput::Switch { player, idx }  => push_button(ButtonEvent::Switch { player, idx }),
+        WebGameInput::Unknown => print_log("  in-game: 1-4 (move) | s1-s3 (switch) | p1:1 (send to Red)"),
     }
-
-    // "1"-"4" → move slot 0-3
-    if let Ok(slot) = rest.parse::<u8>() {
-        if slot >= 1 && slot <= 4 {
-            push_button(ButtonEvent::Move { player, slot: slot - 1 });
-            return;
-        }
-    }
-
-    print_log("  in-game: 1-4 (move) | s1-s3 (switch) | p1:1 (send to Red)");
 }
 
 #[wasm_bindgen] pub fn get_p1_pixels() -> Vec<u8> {
@@ -738,7 +714,7 @@ fn draw_lobby_screen(player: u8, ready: bool, ai: bool) {
             ts,
         ).draw(&mut disp).ok();
         Text::with_text_style(
-            "HOLD FOR AI",
+            "HOLD: FIGHT AI",
             Point::new(64, 36),
             MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
             ts,
