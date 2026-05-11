@@ -38,3 +38,9 @@ impl HpBarState {
         if self.max > 0 { (self.current as u32 * 100 / self.max as u32) as u8 } else { 0 }
     }
 }
+
+impl core::fmt::Display for HpBarState {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}/{} ({}%)", self.current, self.max, self.pct())
+    }
+}
