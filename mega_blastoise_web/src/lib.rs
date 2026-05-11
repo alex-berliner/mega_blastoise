@@ -9,20 +9,15 @@ use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
 use battler::TeamData;
-use embedded_graphics::{
-    mono_font::{ascii::FONT_5X8, MonoTextStyle},
-    pixelcolor::BinaryColor,
-    prelude::*,
-    text::{Alignment, Baseline, Text, TextStyleBuilder},
-};
 use js_sys::Date;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team, format_active_state,
-    parse_web_game_cmd, render_lobby_screen, render_move_detail, render_pokemon_stats,
-    render_pokemon_stats_page2, render_switch_screen, run_battle, BoardEventQueue,
+    parse_web_game_cmd, render_invalid_selection, render_lobby_screen, render_move_detail,
+    render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen,
+    render_waiting_for_opponent, render_waiting_screen, run_battle, BoardEventQueue,
     ButtonController, FlashDataStore, InputBus, MoveSlot, PartySlotData, WebGameInput,
     LOBBY_DEMO_DELAY_MS,
 };
@@ -235,23 +230,8 @@ pub(crate) fn party_slot_alive(player: u8, idx: usize) -> bool {
 }
 
 pub(crate) fn show_invalid_selection(player: u8) {
-    use embedded_graphics::{
-        mono_font::{ascii::FONT_6X10, MonoTextStyle},
-        pixelcolor::BinaryColor,
-        prelude::*,
-        text::{Alignment, Baseline, Text, TextStyleBuilder},
-    };
     let mut disp = WasmDisplay::new();
-    let ts = TextStyleBuilder::new()
-        .alignment(Alignment::Center)
-        .baseline(Baseline::Top)
-        .build();
-    Text::with_text_style(
-        "Already fainted!",
-        Point::new(64, 27),
-        MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
-        ts,
-    ).draw(&mut disp).ok();
+    render_invalid_selection(&mut disp);
     display_only(player, disp.to_rgba());
 }
 
@@ -267,57 +247,15 @@ pub(crate) fn pop_player_button(player: u8) -> Option<ButtonEvent> {
 /// Overlay the waiting screen on the player's OLED using display_only
 /// so P_BATTLE_PIXELS is preserved for restore after cancel.
 pub(crate) fn show_waiting_screen(player: u8) {
-    use embedded_graphics::{
-        mono_font::{ascii::{FONT_5X8, FONT_6X10}, MonoTextStyle},
-        pixelcolor::BinaryColor,
-        prelude::*,
-        text::{Alignment, Baseline, Text, TextStyleBuilder},
-    };
     let mon_name = get_active_mon_name(player);
     let mut disp = WasmDisplay::new();
-    let ts = TextStyleBuilder::new()
-        .alignment(Alignment::Center)
-        .baseline(Baseline::Top)
-        .build();
-    Text::with_text_style(
-        &mon_name,
-        Point::new(64, 12),
-        MonoTextStyle::new(&FONT_6X10, BinaryColor::On),
-        ts,
-    ).draw(&mut disp).ok();
-    Text::with_text_style(
-        "Waiting...",
-        Point::new(64, 28),
-        MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
-        ts,
-    ).draw(&mut disp).ok();
-    Text::with_text_style(
-        "tap to unready",
-        Point::new(64, 42),
-        MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
-        ts,
-    ).draw(&mut disp).ok();
+    render_waiting_screen(&mut disp, &mon_name, "tap to unready");
     display_only(player, disp.to_rgba());
 }
 
 pub(crate) fn show_waiting_for_opponent_screen(player: u8) {
     let mut disp = WasmDisplay::new();
-    let ts = TextStyleBuilder::new()
-        .alignment(Alignment::Center)
-        .baseline(Baseline::Top)
-        .build();
-    Text::with_text_style(
-        "Waiting for",
-        Point::new(64, 20),
-        MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
-        ts,
-    ).draw(&mut disp).ok();
-    Text::with_text_style(
-        "opponent...",
-        Point::new(64, 32),
-        MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
-        ts,
-    ).draw(&mut disp).ok();
+    render_waiting_for_opponent(&mut disp);
     display_only(player, disp.to_rgba());
 }
 

@@ -396,6 +396,51 @@ where
     Text::with_text_style(msg, Point::new(64, 27), style, center_style()).draw(display).ok();
 }
 
+// ── In-game overlay screens ───────────────────────────────────────────────────
+
+/// Draw an "invalid selection" flash onto any 128×64 `DrawTarget`.
+///
+/// Shown briefly when the player tries to switch to a fainted Pokémon.
+pub fn render_invalid_selection<D>(display: &mut D)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    Text::with_text_style("Already fainted!", Point::new(64, 27), style, center_style()).draw(display).ok();
+}
+
+/// Draw the "submitted, waiting" overlay onto any 128×64 `DrawTarget`.
+///
+/// Shown after a player commits their choice while waiting for the turn to resolve.
+/// `cancel_hint` is shown at the bottom line; pass `""` to omit it.
+pub fn render_waiting_screen<D>(display: &mut D, mon_name: &str, cancel_hint: &str)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    Text::with_text_style(mon_name,      Point::new(64, 12), lg, center_style()).draw(display).ok();
+    Text::with_text_style("Waiting...",  Point::new(64, 28), sm, center_style()).draw(display).ok();
+    if !cancel_hint.is_empty() {
+        Text::with_text_style(cancel_hint, Point::new(64, 42), sm, center_style()).draw(display).ok();
+    }
+}
+
+/// Draw the "waiting for other player" overlay onto any 128×64 `DrawTarget`.
+///
+/// Shown on one player's screen while the other player is still choosing.
+pub fn render_waiting_for_opponent<D>(display: &mut D)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    Text::with_text_style("Waiting for",  Point::new(64, 20), sm, center_style()).draw(display).ok();
+    Text::with_text_style("opponent...", Point::new(64, 32), sm, center_style()).draw(display).ok();
+}
+
 // ── Lobby screen ──────────────────────────────────────────────────────────────
 
 /// Draw the lobby ready state onto any 128×64 `DrawTarget`.
