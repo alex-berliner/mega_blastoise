@@ -11,7 +11,7 @@ use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
-    format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
+    format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
     parse_lobby_cmd, parse_switch_line, parse_turn_line,
     ActivePrompt, InputBus, InputSource, LobbyCmd, PlayerAction, RandomAi, TurnChoice,
 };
@@ -415,12 +415,7 @@ impl<'d> UsbBattleInput<'d> {
 
     /// Write the current ready state to USB.
     pub async fn write_lobby_ready_status(&mut self, p1_ready: bool, p2_ready: bool) {
-        let p1 = if p1_ready { "READY" } else { "     " };
-        let p2 = if p2_ready { "READY" } else { "     " };
-        self.writeln(&alloc::format!(
-            "P1: [{}]   P2: [{}]   (:ready p1 / :ready p2 / :ready)",
-            p1, p2
-        )).await;
+        self.writeln(&format_lobby_status(p1_ready, p2_ready)).await;
     }
 
     /// Read a lobby command from USB. Returns as soon as a line is submitted.

@@ -31,7 +31,7 @@ pub use battle_input::{
 };
 pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
 pub use hp_bar::HpBarState;
-pub use prompt_fmt::{format_active_state, format_player_state, format_prompt};
+pub use prompt_fmt::{format_active_state, format_lobby_status, format_player_state, format_prompt};
 pub use data_store::FlashDataStore;
 pub use demo_teams::{demo_team_blue, demo_team_red};
 pub use randbat::draw_randbat_team;

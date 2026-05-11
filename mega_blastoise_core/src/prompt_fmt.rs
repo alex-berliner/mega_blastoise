@@ -163,6 +163,15 @@ fn format_bench_for_switch(pd: &PlayerBattleData) -> String {
     out
 }
 
+/// Format the lobby ready state for CLI display.
+///
+/// Returns a line like: `P1: [READY]   P2: [     ]   (:ready p1 / :ready p2 / :ready)`
+pub fn format_lobby_status(p1_ready: bool, p2_ready: bool) -> String {
+    let p1 = if p1_ready { "READY" } else { "     " };
+    let p2 = if p2_ready { "READY" } else { "     " };
+    format!("P1: [{}]   P2: [{}]   (:ready p1 / :ready p2 / :ready)", p1, p2)
+}
+
 /// Format the active Pokémon state for both players (used in post-turn display).
 pub fn format_active_state(battle: &mut battler::PublicCoreBattle<'_>) -> String {
     let mut out = String::from("── Active Pokémon ──\n");
