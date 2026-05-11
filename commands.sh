@@ -2,8 +2,11 @@
 # Source with:  . $MB_BASE/commands.sh   (MB_BASE = workspace root)
 
 # Unset previous definitions so re-sourcing always picks up the latest versions.
-unset -f $(compgen -A function mb_) 2>/dev/null
-unalias  $(compgen -a          mb_) 2>/dev/null
+# NOTE FOR CLAUDE: every name defined anywhere in this file (functions, aliases,
+# variables) MUST have a matching compgen unset line here.
+unset -f $(compgen -A function mb_)  2>/dev/null
+unalias  $(compgen -a          mb_)  2>/dev/null
+unset    $(compgen -v          _MB_) 2>/dev/null
 
 _MB_FW_DIR="$MB_BASE/mega_blastoise_fw"
 _MB_ELF_DEBUG="$MB_BASE/target/thumbv6m-none-eabi/debug/mega-blastoise-fw"
