@@ -46,6 +46,9 @@ pub fn battle_options_with_seed(seed: u64) -> CoreBattleOptions {
     }
 }
 
+/// Idle delay (ms) at lobby start before the demo battle begins automatically.
+pub const LOBBY_DEMO_DELAY_MS: u64 = 15_000;
+
 pub fn demo_battle_options() -> CoreBattleOptions {
     CoreBattleOptions {
         seed: Some(12345),

@@ -9,10 +9,11 @@ extern crate alloc;
 
 use battler::TeamData;
 use embassy_futures::select::{select, Either};
-use embassy_time::Timer;
+use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_randbat_team,
     ActivePrompt, BoardEventQueue, FlashDataStore, InputBus, InputSource, RandomAi,
+    LOBBY_DEMO_DELAY_MS,
 };
 
 use crate::battle_effects::BattleEffects;
@@ -245,22 +246,53 @@ async fn run_lobby_inner(
 
         let mut ready = ReadyState::default();
 
-        // Race demo battle against any input event.
-        let event = match select(
-            run_demo_battle(data, queue, demo_seed),
-            input.wait_event(),
-        ).await {
-            Either::First(_) => {
-                demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
-                #[cfg(feature = "oled")]
-                oled_lobby_update(false, false, false, false);
-                Timer::after_secs(3).await;
-                continue 'demo;
+        // Countdown to demo start; log at each 5-second step, bail early on input.
+        // Stop events (stale USB bytes, unknown commands) are ignored so they
+        // don't interrupt the countdown.
+        const STEP_MS: u64 = 5_000;
+        let steps = (LOBBY_DEMO_DELAY_MS / STEP_MS) as u32;
+        let mut remaining = steps;
+        let pre_event = 'wait: loop {
+            let secs = remaining as u64 * STEP_MS / 1000;
+            input.write_line(&alloc::format!("Demo starting in {} seconds", secs)).await;
+            let deadline = Instant::now() + Duration::from_millis(STEP_MS);
+            loop {
+                match select(Timer::at(deadline), input.wait_event()).await {
+                    Either::Second(LobbyEvent::Stop) => {}
+                    Either::Second(e) => break 'wait Some(e),
+                    Either::First(_) => break,
+                }
             }
-            Either::Second(e) => {
+            remaining -= 1;
+            if remaining == 0 { break None; }
+        };
+
+        let event = match pre_event {
+            Some(e) => {
                 #[cfg(feature = "oled")]
                 oled_lobby_update(false, false, false, false);
                 e
+            }
+            None => {
+                input.write_line("Demo starting!").await;
+                // Idle delay elapsed — race demo battle against next input.
+                match select(
+                    run_demo_battle(data, queue, demo_seed),
+                    input.wait_event(),
+                ).await {
+                    Either::First(_) => {
+                        demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
+                        #[cfg(feature = "oled")]
+                        oled_lobby_update(false, false, false, false);
+                        Timer::after_secs(3).await;
+                        continue 'demo;
+                    }
+                    Either::Second(e) => {
+                        #[cfg(feature = "oled")]
+                        oled_lobby_update(false, false, false, false);
+                        e
+                    }
+                }
             }
         };
         demo_seed = demo_seed.wrapping_add(0x9e3779b97f4a7c15);
