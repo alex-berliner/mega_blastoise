@@ -21,7 +21,7 @@ impl StdinBattleInput {
     }
 
     fn handle(&self, player_id: &str, request: &Request) -> String {
-        let label = Self::player_label(player_id);
+        let label = player_display_name(player_id);
         match request {
             Request::Turn(turn) => {
                 let mut parts = Vec::new();
@@ -79,8 +79,6 @@ impl StdinBattleInput {
             }
         }
     }
-
-    fn player_label(id: &str) -> &'static str { player_display_name(id) }
 
     fn prompt_usize_inclusive(prompt: &str, min: usize, max: usize) -> usize {
         loop {
