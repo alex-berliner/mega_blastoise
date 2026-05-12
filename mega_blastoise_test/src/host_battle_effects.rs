@@ -3,7 +3,7 @@
 /// Handles the same [`BoardEvent`] variants as the firmware: HP tracking,
 /// active-mon updates, faint, and win.  Calls [`HostBuzzer`] and [`HostOled`]
 /// stubs so that tests can observe sound/display events without hardware.
-use mega_blastoise_core::{mon_player_id, mon_player_num, player_id_to_num, BoardEffects, BoardEvent, InputBus};
+use mega_blastoise_core::{mon_player_id, mon_player_num, player_id_to_num, status_abbrev, BoardEffects, BoardEvent, InputBus};
 
 use crate::host_buzzer::HostBuzzer;
 use crate::host_hp_bar::HostHpBarState;
@@ -43,18 +43,6 @@ impl<'a> HostBattleEffects<'a> {
 
     pub fn p1_hp(&self) -> &HostHpBarState { self.p1_hp.state() }
     pub fn p2_hp(&self) -> &HostHpBarState { self.p2_hp.state() }
-}
-
-fn status_label(s: &str) -> &str {
-    match s {
-        "par" => "PAR",
-        "brn" => "BRN",
-        "frz" => "FRZ",
-        "psn" => "PSN",
-        "tox" => "TOX",
-        "slp" => "SLP",
-        other => other,
-    }
 }
 
 impl BoardEffects for HostBattleEffects<'_> {
@@ -116,7 +104,7 @@ impl BoardEffects for HostBattleEffects<'_> {
 
             BoardEvent::SetStatus { mon, status } => {
                 if let Some(player) = mon_player_num(mon) {
-                    self.led.set_status(player, status_label(status.as_str()));
+                    self.led.set_status(player, status_abbrev(status.as_str()));
                 }
             }
 

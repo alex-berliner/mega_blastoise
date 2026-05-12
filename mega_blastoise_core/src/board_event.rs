@@ -205,6 +205,19 @@ pub fn mon_player_num(mon: &str) -> Option<u8> {
     mon_player_id(mon).map(player_id_to_num)
 }
 
+/// Convert a battler status ID to its display abbreviation.
+pub fn status_abbrev(s: &str) -> &str {
+    match s {
+        "par" => "PAR",
+        "brn" => "BRN",
+        "frz" => "FRZ",
+        "psn" => "PSN",
+        "tox" => "TOX",
+        "slp" => "SLP",
+        other => other,
+    }
+}
+
 /// Build `"Red's Golduck"` from a `mon` position field.
 fn player_mon_label(mon: &str) -> String {
     let name = mon_display_name(mon);
@@ -417,10 +430,10 @@ impl BoardEvent {
                 format!("A critical hit on {}!", player_mon_label(mon))
             }
             BoardEvent::SetStatus { mon, status } => {
-                format!("{} was inflicted with {}!", player_mon_label(mon), status)
+                format!("{} was inflicted with {}!", player_mon_label(mon), status_abbrev(status))
             }
             BoardEvent::CureStatus { mon, status } => {
-                format!("{}'s {} was cured!", player_mon_label(mon), status)
+                format!("{}'s {} was cured!", player_mon_label(mon), status_abbrev(status))
             }
             BoardEvent::Cant { mon, reason } => {
                 format!("{} can't move! ({})", player_mon_label(mon), reason)
