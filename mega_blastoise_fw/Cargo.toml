@@ -48,3 +48,7 @@ buzzer = []
 leds = ["dep:smart-leds"]
 mem-profile = []
 trace = ["mega-blastoise-core/trace"]
+# Boot with the OLED-framebuffer RTT dump enabled. Without this feature the
+# dump defaults off and is opt-in per-boot via `:oledlog on`. Either way the
+# `:oledlog on|off` runtime command can still flip it.
+oledlog = []

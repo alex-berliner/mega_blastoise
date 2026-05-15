@@ -69,9 +69,11 @@ static P2_SHADOW: BlockingMutex<CriticalSectionRawMutex, RefCell<[[u8; 16]; 64]>
     BlockingMutex::new(RefCell::new([[0u8; 16]; 64]));
 
 /// When true, every framebuffer change is rendered over RTT (defmt).
-/// Default off; toggled at runtime via the `:oledlog on|off` USB command
-/// (works in the lobby and during a battle).
-static OLED_DUMP: AtomicBool = AtomicBool::new(false);
+///
+/// Boot default is set by the `oledlog` cargo feature (on with the feature,
+/// off without). The `:oledlog on|off` USB command flips it at runtime
+/// either way (works in the lobby and during a battle).
+static OLED_DUMP: AtomicBool = AtomicBool::new(cfg!(feature = "oledlog"));
 
 pub fn set_oled_dump(on: bool) {
     OLED_DUMP.store(on, Ordering::Relaxed);
