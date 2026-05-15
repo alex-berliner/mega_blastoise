@@ -135,11 +135,16 @@ impl DemoAi {
 
 impl InputSource for DemoAi {
     async fn run(&mut self, bus: &InputBus) {
+        let mut n: u32 = 0;
         loop {
-            let ActivePrompt { request, player_data, .. } = bus.prompt.receive().await;
+            defmt::debug!("DemoAi: waiting for prompt #{}", n);
+            let ActivePrompt { player_id, request, player_data, .. } = bus.prompt.receive().await;
+            defmt::debug!("DemoAi: got prompt #{} for {}", n, player_id.as_str());
             Timer::after_millis(400 + (self.0.next_u64() % 600)).await;
             let choice = self.0.make_choice(&request, player_data.as_ref());
+            defmt::debug!("DemoAi: sending choice #{} for {}: {}", n, player_id.as_str(), choice.as_str());
             bus.choices.send(choice).await;
+            n += 1;
         }
     }
 }
