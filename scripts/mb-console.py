@@ -199,6 +199,10 @@ def _usb_reader(dev_ref: list[str | None], out_q: queue.Queue, stop: threading.E
     while not stop.is_set():
         dev = dev_ref[0]
         if not dev or not Path(dev).exists():
+            # Device path stale or gone — try to find it by VID:PID.
+            found = find_fw_tty()
+            if found:
+                dev_ref[0] = found
             stop.wait(1.0)
             continue
 
@@ -409,12 +413,19 @@ def main() -> None:
                 _kill_probe_rs(out_q)
 
             elif line == ":reset":
+                # Kill RTT reader first so probe-rs can open the probe.
+                p = rtt_proc_ref[0]
+                if p is not None:
+                    p.terminate()
                 _probe_run(["reset"], out_q, "resetting…")
 
             elif line == ":reflash":
                 if not elf:
                     out_q.put(("err", "no ELF — pass ELF path as argument"))
                 else:
+                    p = rtt_proc_ref[0]
+                    if p is not None:
+                        p.terminate()
                     if _probe_run(["download", elf], out_q, f"flashing {Path(elf).name}…"):
                         _probe_run(["reset"], out_q, "resetting…")
 
@@ -423,6 +434,15 @@ def main() -> None:
                 if not dev:
                     out_q.put(("err", "no USB device (try :dev to detect)"))
                     continue
+                # Auto-redetect if the stored path is gone.
+                if not Path(dev).exists():
+                    found = find_fw_tty()
+                    if found:
+                        dev_ref[0] = found
+                        dev = found
+                    else:
+                        out_q.put(("err", f"USB device gone ({dev}); replug or :dev"))
+                        continue
                 try:
                     _serial_send(dev, line)
                     out_q.put(("sys", f"→ {line}"))
