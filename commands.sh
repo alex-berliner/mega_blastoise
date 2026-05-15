@@ -56,7 +56,7 @@ function mb_run {
     mb_flash "$@" && mb_reset && mb_console
 }
 
-# Full cycle: build → flash → reset → console.
+# Full cycle: kill stray probes → build → flash → reset → console.
 function mb_dev {
-    mb_build "$@" && mb_run "$@"
+    mb_kill && mb_build "$@" && mb_run "$@"
 }
