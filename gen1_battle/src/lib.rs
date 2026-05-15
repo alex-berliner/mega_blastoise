@@ -22,6 +22,16 @@ mod state;
 mod tables;
 mod types;
 
+/// Internal types exposed for unit tests. Not part of the stable API surface
+/// (everything in here can change shape without a SemVer bump).
+#[doc(hidden)]
+pub mod testing {
+    pub use crate::combat::*;
+    pub use crate::dispatch::*;
+    pub use crate::rng::Rng;
+    pub use crate::state::*;
+}
+
 pub use battle::{Battle, PublicCoreBattle};
 pub use data::{
     BoostTable, MonBattleData, MonData, MonSummary, MoveSlot, PlayerBattleData, PlayerData,

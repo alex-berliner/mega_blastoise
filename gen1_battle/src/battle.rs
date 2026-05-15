@@ -16,7 +16,7 @@ use hashbrown::HashMap;
 use crate::data::{
     BoostTable, MonBattleData, MonSummary, MoveSlot as ApiMoveSlot, PlayerBattleData, TeamData,
 };
-use crate::dispatch::{end_of_turn, execute_move, pre_move_check, Log};
+use crate::dispatch::{end_of_turn, execute_move, locked_move_slot, pre_move_check, Log};
 use crate::options::{CoreBattleEngineOptions, CoreBattleOptions};
 use crate::request::{MonTurnRequest, Request, SwitchRequest, TurnRequest};
 use crate::rng::Rng;
@@ -322,11 +322,18 @@ impl<'a> Battle<'a> {
                     }
                 })
                 .collect();
+            let v = &m.volatile;
             let active = MonTurnRequest {
                 team_position: s.active_idx,
                 moves,
-                trapped: m.volatile.has(crate::state::Volatile::TRAPPED),
-                locked_into_move: m.volatile.has(crate::state::Volatile::MUST_RECHARGE),
+                trapped: v.has(crate::state::Volatile::TRAPPED)
+                    || v.has(crate::state::Volatile::BIDING)
+                    || v.has(crate::state::Volatile::CHARGING)
+                    || !v.multi_turn_move.is_empty(),
+                locked_into_move: v.has(crate::state::Volatile::MUST_RECHARGE)
+                    || v.has(crate::state::Volatile::CHARGING)
+                    || v.has(crate::state::Volatile::BIDING)
+                    || !v.multi_turn_move.is_empty(),
             };
             self.requests
                 .push((player_id, Request::Turn(TurnRequest { active: alloc::vec![active] })));
@@ -425,12 +432,33 @@ impl<'a> Battle<'a> {
                     }
                 }
                 Some(Choice::Move(slot)) => {
+                    // Override with locked-in move if any (TwoTurn release, Bide, Wrap).
+                    let effective = locked_move_slot(&self.sides[side]).unwrap_or(slot);
                     if pre_move_check(&mut self.rng, &mut self.sides, side, &mut self.log) {
-                        let _ =
-                            execute_move(&mut self.rng, &mut self.sides, side, slot as usize, &mut self.log);
+                        let _ = execute_move(
+                            &mut self.rng,
+                            &mut self.sides,
+                            side,
+                            effective as usize,
+                            &mut self.log,
+                        );
                     }
                 }
-                None => {}
+                None => {
+                    // No choice (e.g. mon fainted before choice was set);
+                    // honor a locked-in move if present.
+                    if let Some(forced) = locked_move_slot(&self.sides[side]) {
+                        if pre_move_check(&mut self.rng, &mut self.sides, side, &mut self.log) {
+                            let _ = execute_move(
+                                &mut self.rng,
+                                &mut self.sides,
+                                side,
+                                forced as usize,
+                                &mut self.log,
+                            );
+                        }
+                    }
+                }
             }
         }
 

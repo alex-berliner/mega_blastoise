@@ -9,7 +9,7 @@ extern crate alloc;
 use alloc::format;
 use alloc::string::String;
 
-use crate::combat::{compute_damage, hit_roll, stage_mult};
+use crate::combat::{compute_damage, hit_roll};
 use crate::log::Event;
 use crate::rng::Rng;
 use crate::state::{Mon, MoveSlot, Side, Status, Volatile};
@@ -50,7 +50,7 @@ pub struct MoveOutcome {
     pub fainted_user: bool,
 }
 
-/// Use `attacker_idx` (0=p1, 1=p2) attacks the opposite side with `move_slot`.
+/// Use `attacker_side_idx` (0=p1, 1=p2) attacks with `move_slot_idx`.
 ///
 /// All `Side` and `Mon` mutation happens inside this function.
 pub fn execute_move(
@@ -68,6 +68,20 @@ pub fn execute_move(
     let Some(mv) = move_by_id(mv_id) else {
         return MoveOutcome::default();
     };
+
+    // Disable check.
+    {
+        let a = sides[attacker_side_idx].active();
+        if a.volatile.has(Volatile::DISABLED)
+            && a.volatile.disabled_slot as usize == move_slot_idx
+        {
+            log.push(Event::MoveDisabled {
+                side: attacker_side_idx as u8,
+                move_id: mv.id,
+            });
+            return MoveOutcome::default();
+        }
+    }
 
     // Deduct PP up-front (Gen 1 behavior).
     {
@@ -96,8 +110,38 @@ pub fn execute_move(
         handle_miss_side_effects(rng, mv, sides, attacker_side_idx, log);
         return MoveOutcome::default();
     }
+    let _ = defender_side_idx;
 
-    // Apply effect based on kind.
+    apply_effect(rng, mv, sides, attacker_side_idx, log)
+}
+
+/// Execute a move without consuming PP and without re-announcing it (used by
+/// Mirror Move / Metronome / TwoTurn release / Bide release / Wrap continuation).
+fn execute_move_no_pp(
+    rng: &mut Rng,
+    mv: &MoveEntry,
+    sides: &mut [Side; 2],
+    attacker_side_idx: usize,
+    log: &mut Log,
+) -> MoveOutcome {
+    sides[attacker_side_idx].active_mut().last_move_used = mv.id;
+    sides[attacker_side_idx].last_move_used = mv.id;
+    sides[attacker_side_idx].last_move_was_normal_or_fighting =
+        matches!(mv.move_type, crate::types::Type::Normal | crate::types::Type::Fighting);
+    log.push(Event::MoveUsed {
+        side: attacker_side_idx as u8,
+        move_id: mv.id,
+    });
+
+    let hit = {
+        let (a, d) = active_pair(sides, attacker_side_idx);
+        hit_roll(rng, mv, a, d)
+    };
+    if !hit {
+        log.push(Event::Miss { side: attacker_side_idx as u8 });
+        handle_miss_side_effects(rng, mv, sides, attacker_side_idx, log);
+        return MoveOutcome::default();
+    }
     apply_effect(rng, mv, sides, attacker_side_idx, log)
 }
 
@@ -151,7 +195,6 @@ fn apply_effect(
         DamageMaybeBoostTarget => {
             outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
             if outcome.damage_dealt > 0 {
-                // param0 = stat_id, param1 = delta as u8 (i8 reinterpret), encoded ~30% chance.
                 if roll_chance_byte(rng, 76) {
                     let delta = mv.effect_param1 as i8;
                     apply_stage_change(sides, defender_side, mv.effect_param0, delta, log);
@@ -170,12 +213,18 @@ fn apply_effect(
             apply_stage_change(sides, attacker_side, mv.effect_param0, delta, log);
         }
         BoostTarget => {
-            let delta = mv.effect_param1 as i8;
-            apply_stage_change(sides, defender_side, mv.effect_param0, delta, log);
+            // Mist on the target side blocks stat reductions.
+            if (mv.effect_param1 as i8) < 0
+                && sides[defender_side].active().volatile.has(Volatile::MIST)
+            {
+                log.push(Event::Failed);
+            } else {
+                let delta = mv.effect_param1 as i8;
+                apply_stage_change(sides, defender_side, mv.effect_param0, delta, log);
+            }
         }
         StatusOnly => {
             let mut s = status_from_param(mv.effect_param0);
-            // Sleep: random 1..=7
             if matches!(s, Status::Sleep(_)) {
                 let turns = (rng.range(7) as u8) + 1;
                 s = Status::Sleep(turns);
@@ -183,7 +232,6 @@ fn apply_effect(
             try_apply_status(sides, defender_side, s, log);
         }
         MultiHit2to5 => {
-            // 3/8 for 2, 3/8 for 3, 1/8 for 4, 1/8 for 5.
             let r = rng.range(8) as u8;
             let hits = match r {
                 0 | 1 | 2 => 2,
@@ -233,7 +281,6 @@ fn apply_effect(
                 log.push(Event::Miss { side: attacker_side as u8 });
                 return MoveOutcome::default();
             }
-            // 30% chance.
             if rng.byte() < (30u32 * 255 / 100) as u8 {
                 let dmg = sides[defender_side].active().hp_cur;
                 deal_damage(sides, defender_side, dmg, log);
@@ -244,7 +291,6 @@ fn apply_effect(
             }
         }
         ForceSwitchTarget => {
-            // Gen 1: always fails in trainer battle.
             log.push(Event::Failed);
         }
         LevelDamage => {
@@ -283,12 +329,54 @@ fn apply_effect(
             a.status = Status::Sleep(2);
         }
         TwoTurn => {
-            // Skipping multi-turn implementation for first cut: deal damage in one turn.
-            outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
+            let a = sides[attacker_side].active_mut();
+            if a.volatile.has(Volatile::CHARGING) {
+                // Turn 2: deliver the damage, clear charging state.
+                a.volatile.clear(Volatile::CHARGING);
+                a.volatile.clear(Volatile::INVULNERABLE);
+                a.volatile.multi_turn_move = "";
+                a.volatile.multi_turn_turns = 0;
+                outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
+            } else {
+                // Turn 1: announce charge, set lock.
+                a.volatile.set(Volatile::CHARGING);
+                a.volatile.multi_turn_move = mv.id;
+                a.volatile.multi_turn_turns = 1;
+                if mv.effect_param0 == 1 {
+                    a.volatile.set(Volatile::INVULNERABLE);
+                }
+                log.push(Event::Charging {
+                    side: attacker_side as u8,
+                    move_id: mv.id,
+                });
+            }
         }
         Bide => {
-            // Skipping: behave as plain damage for first cut.
-            outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
+            let a = sides[attacker_side].active_mut();
+            if a.volatile.has(Volatile::BIDING) {
+                if a.volatile.bide_turns > 0 {
+                    a.volatile.bide_turns -= 1;
+                    log.push(Event::BideStoring { side: attacker_side as u8 });
+                } else {
+                    // Unleash 2× stored damage as untyped damage.
+                    let stored = a.volatile.bide_damage;
+                    a.volatile.clear(Volatile::BIDING);
+                    a.volatile.bide_damage = 0;
+                    a.volatile.multi_turn_move = "";
+                    let dmg = stored.saturating_mul(2).max(1);
+                    deal_damage(sides, defender_side, dmg, log);
+                    outcome.damage_dealt = dmg;
+                    outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
+                    log.push(Event::BideUnleash { side: attacker_side as u8 });
+                }
+            } else {
+                a.volatile.set(Volatile::BIDING);
+                a.volatile.bide_damage = 0;
+                // 2 or 3 turns to store (Gen 1 rolls one of these).
+                a.volatile.bide_turns = 1 + (rng.byte() & 1);
+                a.volatile.multi_turn_move = mv.id;
+                log.push(Event::BideStoring { side: attacker_side as u8 });
+            }
         }
         HyperBeam => {
             outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
@@ -297,7 +385,6 @@ fn apply_effect(
             }
         }
         Counter => {
-            // 2× the last Normal/Fighting damage taken by attacker this turn.
             let cs = sides[attacker_side].active().counter_source_dmg;
             if cs > 0 {
                 let dmg = cs.saturating_mul(2);
@@ -313,87 +400,208 @@ fn apply_effect(
             if last.is_empty() || last == "mirrormove" {
                 log.push(Event::Failed);
             } else if let Some(mv2) = move_by_id(last) {
-                // Recursively dispatch; no PP deduction (skip the path above).
-                let mut faux = MoveOutcome { hit: true, ..Default::default() };
-                let _ = mv2;
-                faux = apply_effect(rng, mv2, sides, attacker_side, log);
-                outcome = faux;
+                outcome = execute_move_no_pp(rng, mv2, sides, attacker_side, log);
             }
         }
-        Mimic | Transform | Substitute | Disable | Wrap | LeechSeed | LightScreen
-        | Reflect | Mist | FocusEnergy | Conversion | Haze | Metronome | PayDay
-        | SelfDestruct | NoOp => {
-            // Implement the meaningful subset; rest are stubs that log.
-            match mv.effect_kind {
-                LightScreen => {
-                    sides[attacker_side].light_screen_turns = 5;
-                    sides[attacker_side].active_mut().volatile.set(Volatile::LIGHT_SCREEN);
+        Mimic => {
+            let target_last = sides[defender_side].last_move_used;
+            let target_moves: alloc::vec::Vec<&'static str> = sides[defender_side]
+                .active()
+                .moves
+                .iter()
+                .filter(|s| !s.move_id.is_empty())
+                .map(|s| s.move_id)
+                .collect();
+            // Prefer last_move_used; else random from target's moves.
+            let learn: Option<&'static str> = if !target_last.is_empty() {
+                Some(target_last)
+            } else if !target_moves.is_empty() {
+                Some(target_moves[(rng.range(target_moves.len() as u32)) as usize])
+            } else {
+                None
+            };
+            let Some(new_move) = learn else {
+                log.push(Event::Failed);
+                return outcome;
+            };
+            // Find the user's Mimic slot — fallback to first slot.
+            let a = sides[attacker_side].active_mut();
+            let mimic_slot = a.find_move_slot("mimic").unwrap_or(0) as usize;
+            let new_max = move_by_id(new_move).map(|m| m.pp).unwrap_or(5).min(5);
+            a.moves[mimic_slot] = MoveSlot {
+                move_id: new_move,
+                pp: new_max,
+                max_pp: new_max,
+            };
+            log.push(Event::Mimicked {
+                side: attacker_side as u8,
+                move_id: new_move,
+            });
+        }
+        Transform => {
+            let target = sides[defender_side].active().clone();
+            let a = sides[attacker_side].active_mut();
+            a.species_id = target.species_id;
+            a.primary_type = target.primary_type;
+            a.secondary_type = target.secondary_type;
+            // Stats: copy non-HP only.
+            a.stats[1] = target.stats[1];
+            a.stats[2] = target.stats[2];
+            a.stats[3] = target.stats[3];
+            a.stats[4] = target.stats[4];
+            a.stages = target.stages;
+            // Copy moves with PP=5.
+            for (i, m) in target.moves.iter().enumerate() {
+                if m.move_id.is_empty() {
+                    a.moves[i] = MoveSlot::default();
+                } else {
+                    a.moves[i] = MoveSlot {
+                        move_id: m.move_id,
+                        pp: 5,
+                        max_pp: 5,
+                    };
                 }
-                Reflect => {
-                    sides[attacker_side].reflect_turns = 5;
-                    sides[attacker_side].active_mut().volatile.set(Volatile::REFLECT);
-                }
-                Mist => {
-                    sides[attacker_side].active_mut().volatile.set(Volatile::MIST);
-                }
-                FocusEnergy => {
-                    sides[attacker_side].active_mut().volatile.set(Volatile::FOCUS_ENERGY);
-                }
-                LeechSeed => {
-                    if !matches!(
-                        sides[defender_side].active().primary_type,
-                        crate::types::Type::Grass
-                    ) && !matches!(
-                        sides[defender_side].active().secondary_type,
-                        crate::types::Type::Grass
-                    ) {
-                        sides[defender_side].active_mut().volatile.set(Volatile::LEECH_SEEDED);
-                    }
-                }
-                Substitute => {
-                    let max = sides[attacker_side].active().hp_max;
-                    let cost = (max / 4).max(1);
-                    if sides[attacker_side].active().hp_cur > cost {
-                        sides[attacker_side].active_mut().hp_cur -= cost;
-                        sides[attacker_side].active_mut().volatile.set(Volatile::SUBSTITUTED);
-                        sides[attacker_side].active_mut().volatile.substitute_hp =
-                            (cost + 1).min(255) as u8;
-                    }
-                }
-                Haze => {
-                    for s in sides.iter_mut() {
-                        for st in &mut s.active_mut().stages {
-                            *st = 0;
-                        }
-                        s.active_mut().volatile.flags = 0;
-                    }
-                }
-                SelfDestruct => {
-                    // Halves defender Def in Gen 1; we just deal damage with a 2× scale.
-                    outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
-                    sides[attacker_side].active_mut().hp_cur = 0;
-                    outcome.fainted_user = true;
-                }
-                Metronome => {
-                    // Pick a random move from the table, recurse.
-                    let mut idx = rng.range(MOVES.len() as u32) as usize;
-                    let mut safety = 32;
-                    while safety > 0 {
-                        let cand = &MOVES[idx];
-                        if cand.id != "metronome" && cand.id != "struggle" {
-                            break;
-                        }
-                        idx = rng.range(MOVES.len() as u32) as usize;
-                        safety -= 1;
-                    }
-                    let cand: &MoveEntry = &MOVES[idx];
-                    outcome = apply_effect(rng, cand, sides, attacker_side, log);
-                }
-                Mimic | Transform | Disable | Wrap | Conversion | PayDay | NoOp => {
-                    log.push(Event::NoEffect);
-                }
-                _ => {}
             }
+            a.volatile.set(Volatile::TRANSFORMED);
+            log.push(Event::Transformed { side: attacker_side as u8 });
+        }
+        Substitute => {
+            let max = sides[attacker_side].active().hp_max;
+            let cost = (max / 4).max(1);
+            if sides[attacker_side].active().hp_cur > cost {
+                sides[attacker_side].active_mut().hp_cur -= cost;
+                sides[attacker_side].active_mut().volatile.set(Volatile::SUBSTITUTED);
+                sides[attacker_side].active_mut().volatile.substitute_hp =
+                    (cost + 1).min(255) as u8;
+                log.push(Event::Substitute { side: attacker_side as u8 });
+            } else {
+                log.push(Event::Failed);
+            }
+        }
+        Disable => {
+            // Pick a target move slot with PP > 0.
+            let candidates: alloc::vec::Vec<u8> = sides[defender_side]
+                .active()
+                .moves
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| !s.move_id.is_empty() && s.pp > 0)
+                .map(|(i, _)| i as u8)
+                .collect();
+            if candidates.is_empty() {
+                log.push(Event::Failed);
+            } else {
+                let pick = candidates[(rng.range(candidates.len() as u32)) as usize];
+                let turns = ((rng.byte() & 0b111) as u8).saturating_add(1); // 1..=8
+                let d = sides[defender_side].active_mut();
+                d.volatile.set(Volatile::DISABLED);
+                d.volatile.disabled_slot = pick;
+                d.volatile.disabled_turns = turns;
+                log.push(Event::Disabled {
+                    side: defender_side as u8,
+                    move_slot: pick,
+                });
+            }
+        }
+        Wrap => {
+            // Hit once, then trap target for 1..=4 additional turns.
+            outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
+            if outcome.damage_dealt > 0 && !outcome.fainted_target {
+                let extra = (rng.range(4) as u8) + 1; // 1..=4
+                // Attacker locks into the move; defender is trapped.
+                {
+                    let a = sides[attacker_side].active_mut();
+                    a.volatile.multi_turn_move = mv.id;
+                    a.volatile.multi_turn_turns = extra;
+                }
+                {
+                    let d = sides[defender_side].active_mut();
+                    d.volatile.set(Volatile::TRAPPED);
+                    d.volatile.trapping_turns = extra;
+                }
+                log.push(Event::Wrap {
+                    side: attacker_side as u8,
+                    turns: extra,
+                });
+            }
+        }
+        LeechSeed => {
+            let dt1 = sides[defender_side].active().primary_type;
+            let dt2 = sides[defender_side].active().secondary_type;
+            if matches!(dt1, crate::types::Type::Grass)
+                || matches!(dt2, crate::types::Type::Grass)
+            {
+                log.push(Event::Failed);
+            } else if sides[defender_side].active().volatile.has(Volatile::LEECH_SEEDED) {
+                log.push(Event::Failed);
+            } else {
+                sides[defender_side].active_mut().volatile.set(Volatile::LEECH_SEEDED);
+                log.push(Event::LeechSeed { side: defender_side as u8 });
+            }
+        }
+        LightScreen => {
+            sides[attacker_side].light_screen_turns = 5;
+            sides[attacker_side].active_mut().volatile.set(Volatile::LIGHT_SCREEN);
+            log.push(Event::ScreenUp { side: attacker_side as u8, kind: 1 });
+        }
+        Reflect => {
+            sides[attacker_side].reflect_turns = 5;
+            sides[attacker_side].active_mut().volatile.set(Volatile::REFLECT);
+            log.push(Event::ScreenUp { side: attacker_side as u8, kind: 0 });
+        }
+        Mist => {
+            sides[attacker_side].active_mut().volatile.set(Volatile::MIST);
+            log.push(Event::MistOn { side: attacker_side as u8 });
+        }
+        FocusEnergy => {
+            sides[attacker_side].active_mut().volatile.set(Volatile::FOCUS_ENERGY);
+            log.push(Event::FocusEnergyOn { side: attacker_side as u8 });
+        }
+        Conversion => {
+            let t1 = sides[defender_side].active().primary_type;
+            let t2 = sides[defender_side].active().secondary_type;
+            let a = sides[attacker_side].active_mut();
+            a.primary_type = t1;
+            a.secondary_type = t2;
+            log.push(Event::Converted { side: attacker_side as u8 });
+        }
+        Haze => {
+            for s in sides.iter_mut() {
+                for st in &mut s.active_mut().stages {
+                    *st = 0;
+                }
+                // Clear non-major status on opponent in Gen 1.
+                let mv = s.active_mut();
+                mv.volatile.flags = 0;
+            }
+            sides[defender_side].active_mut().status = Status::None;
+            log.push(Event::Haze);
+        }
+        Metronome => {
+            let mut idx = rng.range(MOVES.len() as u32) as usize;
+            let mut safety = 32;
+            while safety > 0 {
+                let cand = &MOVES[idx];
+                if cand.id != "metronome" && cand.id != "struggle" {
+                    break;
+                }
+                idx = rng.range(MOVES.len() as u32) as usize;
+                safety -= 1;
+            }
+            let cand: &MoveEntry = &MOVES[idx];
+            outcome = execute_move_no_pp(rng, cand, sides, attacker_side, log);
+        }
+        PayDay => {
+            outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
+        }
+        SelfDestruct => {
+            outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
+            sides[attacker_side].active_mut().hp_cur = 0;
+            outcome.fainted_user = true;
+            log.push(Event::Faint { side: attacker_side as u8 });
+        }
+        NoOp => {
+            log.push(Event::NoEffect);
         }
     }
     outcome
@@ -418,6 +626,11 @@ fn damage_step(
     mut outcome: MoveOutcome,
 ) -> MoveOutcome {
     let defender_side = 1 - attacker_side;
+    // Invulnerable target (Fly/Dig)?
+    if sides[defender_side].active().volatile.has(Volatile::INVULNERABLE) {
+        log.push(Event::Miss { side: attacker_side as u8 });
+        return outcome;
+    }
     let (dmg, crit) = {
         let (atk_side_ref, def_side_ref) = if attacker_side == 0 {
             let (l, r) = sides.split_at(1);
@@ -442,11 +655,22 @@ fn damage_step(
     if crit {
         log.push(Event::Crit { side: attacker_side as u8 });
     }
-    // Record source damage for Counter.
+    // Record source damage for Counter, and Bide-stored damage on defender.
     if matches!(mv.move_type, crate::types::Type::Normal | crate::types::Type::Fighting) {
         sides[defender_side].active_mut().counter_source_dmg = dmg;
     }
     deal_damage(sides, defender_side, dmg, log);
+    if sides[defender_side].active().volatile.has(Volatile::BIDING) {
+        let actual = dmg;
+        sides[defender_side]
+            .active_mut()
+            .volatile
+            .bide_damage = sides[defender_side]
+            .active()
+            .volatile
+            .bide_damage
+            .saturating_add(actual);
+    }
     outcome.damage_dealt = outcome.damage_dealt.saturating_add(dmg);
     outcome.crit = outcome.crit || crit;
     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
@@ -462,6 +686,7 @@ fn deal_damage(sides: &mut [Side; 2], target_side: usize, dmg: u16, log: &mut Lo
         if dmg >= sub_hp {
             m.volatile.clear(Volatile::SUBSTITUTED);
             m.volatile.substitute_hp = 0;
+            log.push(Event::SubstituteBroken { side: target_side as u8 });
         } else {
             m.volatile.substitute_hp = (sub_hp - dmg) as u8;
         }
@@ -533,30 +758,32 @@ pub fn end_of_turn(sides: &mut [Side; 2], log: &mut Log) {
         if sides[i].active().fainted() {
             continue;
         }
-        let m = sides[i].active_mut();
-        // Burn / Poison
-        let max = m.hp_max;
-        match m.status {
+        let max = sides[i].active().hp_max;
+        match sides[i].active().status {
             Status::Poison => {
                 let d = (max / 16).max(1);
+                let m = sides[i].active_mut();
                 m.hp_cur = m.hp_cur.saturating_sub(d);
                 log.push(Event::Damage { side: i as u8, dealt: d });
             }
             Status::Burn => {
                 let d = (max / 16).max(1);
+                let m = sides[i].active_mut();
                 m.hp_cur = m.hp_cur.saturating_sub(d);
                 log.push(Event::Damage { side: i as u8, dealt: d });
             }
             Status::BadPoison(c) => {
                 let d = ((max as u32 * c as u32) / 16).max(1) as u16;
+                let m = sides[i].active_mut();
                 m.hp_cur = m.hp_cur.saturating_sub(d);
                 log.push(Event::Damage { side: i as u8, dealt: d });
                 m.status = Status::BadPoison(c.saturating_add(1).min(15));
             }
             _ => {}
         }
-        if m.volatile.has(Volatile::LEECH_SEEDED) && m.hp_cur > 0 {
+        if sides[i].active().volatile.has(Volatile::LEECH_SEEDED) && sides[i].active().hp_cur > 0 {
             let d = (max / 16).max(1);
+            let m = sides[i].active_mut();
             m.hp_cur = m.hp_cur.saturating_sub(d);
             log.push(Event::Damage { side: i as u8, dealt: d });
             let healer = 1 - i;
@@ -570,11 +797,32 @@ pub fn end_of_turn(sides: &mut [Side; 2], log: &mut Log) {
     for s in sides.iter_mut() {
         if s.reflect_turns > 0 {
             s.reflect_turns -= 1;
+            if s.reflect_turns == 0 {
+                s.active_mut().volatile.clear(Volatile::REFLECT);
+            }
         }
         if s.light_screen_turns > 0 {
             s.light_screen_turns -= 1;
+            if s.light_screen_turns == 0 {
+                s.active_mut().volatile.clear(Volatile::LIGHT_SCREEN);
+            }
         }
     }
+    // Decrement Disable counters on both sides.
+    for i in 0..2 {
+        let m = sides[i].active_mut();
+        if m.volatile.has(Volatile::DISABLED) {
+            if m.volatile.disabled_turns > 0 {
+                m.volatile.disabled_turns -= 1;
+                if m.volatile.disabled_turns == 0 {
+                    m.volatile.clear(Volatile::DISABLED);
+                    m.volatile.disabled_slot = 0;
+                    log.push(Event::DisableEnded { side: i as u8 });
+                }
+            }
+        }
+    }
+    // Wrap-trap countdown happens at turn use (in the trapping user's choice).
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -597,8 +845,22 @@ pub fn pre_move_check(
         log.push(Event::Recharge { side: side as u8 });
         return false;
     }
+    if m.volatile.has(Volatile::TRAPPED) {
+        // Can't move while trapped (Wrap/Bind/Fire Spin/Clamp from opponent).
+        if m.volatile.trapping_turns > 0 {
+            m.volatile.trapping_turns -= 1;
+            if m.volatile.trapping_turns == 0 {
+                m.volatile.clear(Volatile::TRAPPED);
+            }
+        }
+        log.push(Event::CantMoveTrapped { side: side as u8 });
+        return false;
+    }
     match m.status {
-        Status::Freeze => return false,
+        Status::Freeze => {
+            log.push(Event::Frozen { side: side as u8 });
+            return false;
+        }
         Status::Sleep(t) => {
             if t == 0 {
                 m.status = Status::None;
@@ -623,7 +885,6 @@ pub fn pre_move_check(
         } else {
             m.volatile.confused_turns -= 1;
             if rng.byte() < 128 {
-                // hit self for ~40 power typeless physical against own def
                 let lvl = m.level as u32;
                 let atk = m.stats[1] as u32;
                 let def = m.stats[2] as u32;
@@ -636,6 +897,17 @@ pub fn pre_move_check(
         }
     }
     true
+}
+
+/// Returns Some(move_slot) if the mon must use a specific move this turn
+/// (TwoTurn charging→release, Bide unleash, Wrap continuation).
+/// Used by Battle::do_battle_turn to override the player's choice.
+pub fn locked_move_slot(side: &Side) -> Option<u8> {
+    let m = side.active();
+    if !m.volatile.multi_turn_move.is_empty() {
+        return m.find_move_slot(m.volatile.multi_turn_move);
+    }
+    None
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -652,8 +924,6 @@ impl Log {
         Self { pending: alloc::vec::Vec::new() }
     }
     pub fn push(&mut self, ev: Event) {
-        // Format to a compact string at the boundary (heap allocation, but
-        // drained per turn — bounded).
         self.pending.push(format!("{}", ev));
     }
 }

@@ -31,7 +31,9 @@ pub struct Volatile {
     pub bide_turns: u8,
     pub disabled_slot: u8,
     pub disabled_turns: u8,
-    pub multi_turn_move: u8,
+    /// Move id for a locked-in multi-turn action (TwoTurn charge, Wrap, Bide).
+    /// 0 means none. Resolved via lookup against MOVES table.
+    pub multi_turn_move: &'static str,
     pub multi_turn_turns: u8,
     pub reflect_turns: u8,
     pub light_screen_turns: u8,
@@ -126,6 +128,13 @@ impl Mon {
 
     pub fn fainted(&self) -> bool {
         !self.empty() && self.hp_cur == 0
+    }
+
+    /// Find the 0-based move slot containing the given move id, if any.
+    pub fn find_move_slot(&self, move_id: &str) -> Option<u8> {
+        self.moves.iter().enumerate()
+            .find(|(_, s)| s.move_id == move_id)
+            .map(|(i, _)| i as u8)
     }
 
     /// Initialize a mon from species id + level + chosen moves.
