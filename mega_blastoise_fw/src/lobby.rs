@@ -141,7 +141,12 @@ impl InputSource for DemoAi {
             let ActivePrompt { request, player_data, .. } = bus.prompt.receive().await;
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: got prompt");
+            // Cosmetic pacing so the demo is watchable. Skipped under `trace`
+            // (used for fast hardware verification runs).
+            #[cfg(not(feature = "trace"))]
             Timer::after_millis(400 + (self.0.next_u64() % 600)).await;
+            #[cfg(feature = "trace")]
+            let _ = self.0.next_u64(); // keep RNG stream identical
             let choice = self.0.make_choice(&request, player_data.as_ref());
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: sending choice: {}", choice.as_str());
