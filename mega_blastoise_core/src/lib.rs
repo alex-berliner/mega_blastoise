@@ -38,6 +38,6 @@ pub use randbat::{draw_randbat_team, draw_two_randbat_teams, TEAM_SEED_SALT};
 pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
 pub use cli_parse::{
-    parse_lobby_cmd, parse_switch_line, parse_turn_line, parse_web_game_cmd,
+    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, parse_web_game_cmd,
     LobbyCmd, TurnChoice, WebGameInput,
 };

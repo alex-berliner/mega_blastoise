@@ -4,7 +4,7 @@
 //! If a refactor changes any of these, this file will catch it.
 
 use mega_blastoise_core::{
-    parse_lobby_cmd, parse_switch_line, parse_turn_line, parse_web_game_cmd,
+    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, parse_web_game_cmd,
     LobbyCmd, TurnChoice, WebGameInput,
 };
 
@@ -231,4 +231,79 @@ fn web_garbage_is_unknown() {
     assert_eq!(parse_web_game_cmd(""), WebGameInput::Unknown);
     assert_eq!(parse_web_game_cmd("move"), WebGameInput::Unknown);
     assert_eq!(parse_web_game_cmd(":ready"), WebGameInput::Unknown);
+}
+
+// ── :team upload ──────────────────────────────────────────────────────────────
+
+#[test]
+fn team_cmd_classified_as_upload() {
+    assert_eq!(parse_lobby_cmd(":team p1 pikachu"), LobbyCmd::UploadTeam);
+    assert_eq!(parse_lobby_cmd(":team p2 snorlax:bodyslam"), LobbyCmd::UploadTeam);
+}
+
+#[test]
+fn team_spec_player_index() {
+    let (p, _) = parse_team_spec(":team p1 pikachu").unwrap();
+    assert_eq!(p, 0);
+    let (p, _) = parse_team_spec(":team p2 pikachu").unwrap();
+    assert_eq!(p, 1);
+}
+
+#[test]
+fn team_spec_species_only_gets_default_move() {
+    let (_, team) = parse_team_spec(":team p1 snorlax").unwrap();
+    assert_eq!(team.len(), 1);
+    assert_eq!(team[0].species, "snorlax");
+    assert_eq!(team[0].level, 100);
+    assert_eq!(team[0].moves.len(), 1);
+    assert_eq!(team[0].moves[0].id, "tackle");
+}
+
+#[test]
+fn team_spec_with_moves() {
+    let (_, team) =
+        parse_team_spec(":team p1 snorlax:bodyslam:earthquake:rest:hyperbeam").unwrap();
+    assert_eq!(team.len(), 1);
+    let ids: Vec<&str> = team[0].moves.iter().map(|m| m.id.as_str()).collect();
+    assert_eq!(ids, ["bodyslam", "earthquake", "rest", "hyperbeam"]);
+}
+
+#[test]
+fn team_spec_multiple_mons() {
+    let (_, team) =
+        parse_team_spec(":team p2 pikachu:thunderbolt,charizard:flamethrower,snorlax").unwrap();
+    assert_eq!(team.len(), 3);
+    assert_eq!(team[0].species, "pikachu");
+    assert_eq!(team[1].species, "charizard");
+    assert_eq!(team[2].species, "snorlax");
+}
+
+#[test]
+fn team_spec_caps_at_six_mons() {
+    let (_, team) = parse_team_spec(
+        ":team p1 a,b,c,d,e,f,g,h",
+    )
+    .unwrap();
+    assert_eq!(team.len(), 6);
+}
+
+#[test]
+fn team_spec_caps_moves_at_four() {
+    let (_, team) =
+        parse_team_spec(":team p1 snorlax:m1:m2:m3:m4:m5:m6").unwrap();
+    assert_eq!(team[0].moves.len(), 4);
+}
+
+#[test]
+fn team_spec_rejects_bad_player() {
+    assert!(parse_team_spec(":team p3 pikachu").is_none());
+    assert!(parse_team_spec(":team xx pikachu").is_none());
+}
+
+#[test]
+fn team_spec_rejects_missing_parts() {
+    assert!(parse_team_spec(":team p1").is_none());
+    assert!(parse_team_spec(":team p1 ").is_none());
+    assert!(parse_team_spec(":team").is_none());
+    assert!(parse_team_spec("team p1 pikachu").is_none());
 }

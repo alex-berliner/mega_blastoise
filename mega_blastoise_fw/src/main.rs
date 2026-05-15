@@ -25,7 +25,7 @@ use rtt_target::{rtt_init, set_defmt_channel};
 
 use battle_controller::BattleController;
 use battle_effects::BattleEffects;
-use lobby::run_lobby;
+use lobby::{run_lobby, LobbyResult};
 use pico_battle_input::PicoBattleInput;
 
 #[embassy_executor::main]
@@ -112,9 +112,11 @@ async fn main(spawner: Spawner) {
     loop {
         // Lobby: demo AI battle plays until a player presses ready, then countdown.
         #[cfg(feature = "usb")]
-        let ai_players = run_lobby(&mut buttons, &mut usb_input, &data, &mut queue).await;
+        let LobbyResult { ai_players, team_p1: up_p1, team_p2: up_p2 } =
+            run_lobby(&mut buttons, &mut usb_input, &data, &mut queue).await;
         #[cfg(not(feature = "usb"))]
-        let ai_players = run_lobby(&mut buttons, &data, &mut queue).await;
+        let LobbyResult { ai_players, team_p1: up_p1, team_p2: up_p2 } =
+            run_lobby(&mut buttons, &data, &mut queue).await;
 
         queue.drain_pending(); // discard any demo events still queued
 
@@ -140,7 +142,10 @@ async fn main(spawner: Spawner) {
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_battle_new");
 
-        let (team_p1, team_p2) = draw_two_randbat_teams(seed, 3);
+        // Use uploaded test teams when provided, else draw random ones.
+        let (rand_p1, rand_p2) = draw_two_randbat_teams(seed, 3);
+        let team_p1 = up_p1.unwrap_or(rand_p1);
+        let team_p2 = up_p2.unwrap_or(rand_p2);
         battle.update_team("p1", TeamData { members: team_p1, ..Default::default() }).expect("p1");
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_team_p1");

@@ -7,7 +7,7 @@
 
 extern crate alloc;
 
-use gen1_battle::TeamData;
+use gen1_battle::{MonData, TeamData};
 use embassy_futures::select::{select, Either};
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::{
@@ -39,6 +39,19 @@ pub enum LobbyEvent {
     UnreadyP1, UnreadyP2, UnreadyBoth,
     P1Ai, VsAi,
     Demo, Stop,
+    /// A `:team pN …` upload. Stored and used for the next real battle in
+    /// place of a random team. Does not affect ready state.
+    TeamUpload { player: u8, team: alloc::vec::Vec<MonData> },
+}
+
+/// Result of a lobby session.
+pub struct LobbyResult {
+    /// Which players are AI-controlled.
+    pub ai_players: [bool; 2],
+    /// Uploaded team for p1, if `:team p1 …` was issued (else random).
+    pub team_p1: Option<alloc::vec::Vec<MonData>>,
+    /// Uploaded team for p2, if `:team p2 …` was issued (else random).
+    pub team_p2: Option<alloc::vec::Vec<MonData>>,
 }
 
 pub trait LobbyInput {
@@ -80,6 +93,10 @@ impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
                 LobbyUsbCmd::P1Ai       => LobbyEvent::P1Ai,
                 LobbyUsbCmd::VsAi       => LobbyEvent::VsAi,
                 LobbyUsbCmd::Demo       => LobbyEvent::Demo,
+                LobbyUsbCmd::UploadTeam => match self.usb.take_pending_team() {
+                    Some((player, team)) => LobbyEvent::TeamUpload { player, team },
+                    None => LobbyEvent::Stop, // malformed :team — ignore
+                },
                 LobbyUsbCmd::StopDemo | LobbyUsbCmd::Unknown => LobbyEvent::Stop,
             },
         }
@@ -255,10 +272,14 @@ async fn run_lobby_inner(
     input: &mut impl LobbyInput,
     data: &FlashDataStore,
     queue: &mut BoardEventQueue,
-) -> [bool; 2] {
+) -> LobbyResult {
     let mut demo_seed = embassy_time::Instant::now().as_ticks() ^ 0xfeed_f00d_dead_beef;
     let mut p1_ai;
     let mut p2_ai;
+    // Uploaded test teams persist across the whole lobby session until the
+    // real battle starts.
+    let mut uploaded_p1: Option<alloc::vec::Vec<MonData>> = None;
+    let mut uploaded_p2: Option<alloc::vec::Vec<MonData>> = None;
 
     'demo: loop {
         p1_ai = false;
@@ -282,6 +303,10 @@ async fn run_lobby_inner(
             loop {
                 match select(Timer::at(deadline), input.wait_event()).await {
                     Either::Second(LobbyEvent::Stop) => {}
+                    Either::Second(LobbyEvent::TeamUpload { player, team }) => {
+                        if player == 0 { uploaded_p1 = Some(team); }
+                        else { uploaded_p2 = Some(team); }
+                    }
                     Either::Second(e) => break 'wait Some(e),
                     Either::First(_) => break,
                 }
@@ -328,6 +353,11 @@ async fn run_lobby_inner(
             LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; }
             LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p2_ai = true; }
             LobbyEvent::Demo        => { continue 'demo; }
+            LobbyEvent::TeamUpload { player, team } => {
+                if player == 0 { uploaded_p1 = Some(team); }
+                else { uploaded_p2 = Some(team); }
+                continue 'demo;
+            }
             LobbyEvent::UnreadyP1 | LobbyEvent::UnreadyP2 |
             LobbyEvent::UnreadyBoth | LobbyEvent::Stop => {}
         }
@@ -338,7 +368,11 @@ async fn run_lobby_inner(
         loop {
             if ready.both() {
                 do_countdown(input).await;
-                return [p1_ai, p2_ai];
+                return LobbyResult {
+                    ai_players: [p1_ai, p2_ai],
+                    team_p1: uploaded_p1,
+                    team_p2: uploaded_p2,
+                };
             }
 
             #[cfg(feature = "leds")]
@@ -361,6 +395,10 @@ async fn run_lobby_inner(
                 LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = false; }
                 LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p1_ai = false; p2_ai = true; }
                 LobbyEvent::Demo        => { continue 'demo; }
+                LobbyEvent::TeamUpload { player, team } => {
+                    if player == 0 { uploaded_p1 = Some(team); }
+                    else { uploaded_p2 = Some(team); }
+                }
                 LobbyEvent::Stop        => {}
             }
             #[cfg(feature = "oled")]
@@ -377,7 +415,7 @@ pub async fn run_lobby(
     usb: &mut UsbBattleInput<'_>,
     data: &FlashDataStore,
     queue: &mut BoardEventQueue,
-) -> [bool; 2] {
+) -> LobbyResult {
     let mut input = UsbButtonLobbyInput::new(usb, buttons);
     run_lobby_inner(&mut input, data, queue).await
 }
@@ -387,7 +425,7 @@ pub async fn run_lobby(
     buttons: &mut PicoBattleInput<'_>,
     data: &FlashDataStore,
     queue: &mut BoardEventQueue,
-) -> [bool; 2] {
+) -> LobbyResult {
     let mut input = ButtonOnlyLobbyInput::new(buttons);
     run_lobby_inner(&mut input, data, queue).await
 }

@@ -12,9 +12,10 @@ use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
-    parse_lobby_cmd, parse_switch_line, parse_turn_line,
+    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line,
     ActivePrompt, InputBus, InputSource, RandomAi, TurnChoice, TEAM_SEED_SALT,
 };
+use gen1_battle::MonData;
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
 use crate::pico_battle_input::PicoBattleInput;
@@ -35,6 +36,9 @@ pub struct UsbBattleInput<'d> {
     ai_players: [bool; 2],
     /// AI choice engine for AI-controlled players.
     ai: RandomAi,
+    /// Most recently parsed `:team` upload, consumed by the lobby on the next
+    /// `LobbyEvent::TeamUpload`. `(player_index, team)`.
+    pending_lobby_team: Option<(u8, alloc::vec::Vec<MonData>)>,
 }
 
 impl<'d> UsbBattleInput<'d> {
@@ -47,7 +51,13 @@ impl<'d> UsbBattleInput<'d> {
             last_player_data: None,
             ai_players: [false, false],
             ai: RandomAi::new(TEAM_SEED_SALT),
+            pending_lobby_team: None,
         }
+    }
+
+    /// Take the most recently uploaded `:team` payload, if any.
+    pub fn take_pending_team(&mut self) -> Option<(u8, alloc::vec::Vec<MonData>)> {
+        self.pending_lobby_team.take()
     }
 
     /// Configure which players are AI for the upcoming battle.
@@ -463,7 +473,29 @@ impl<'d> UsbBattleInput<'d> {
             self.partial.clear();
         }
         let line = self.read_line().await;
-        parse_lobby_cmd(line.trim())
+        let trimmed = line.trim();
+        let cmd = parse_lobby_cmd(trimmed);
+        if cmd == LobbyUsbCmd::UploadTeam {
+            match parse_team_spec(trimmed) {
+                Some((player, team)) => {
+                    let n = team.len();
+                    self.pending_lobby_team = Some((player, team));
+                    self.writeln(&alloc::format!(
+                        "Team uploaded for p{} ({} mon)",
+                        player + 1,
+                        n
+                    ))
+                    .await;
+                }
+                None => {
+                    self.writeln(
+                        "Bad :team syntax. Use: :team p1 species:move:move,species:...",
+                    )
+                    .await;
+                }
+            }
+        }
+        cmd
     }
 
 }

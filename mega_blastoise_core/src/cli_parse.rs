@@ -1,6 +1,9 @@
 extern crate alloc;
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+
+use gen1_battle::{MonData, MoveSlot};
 
 // ── USB battle prompt parsing ─────────────────────────────────────────────────
 
@@ -61,6 +64,10 @@ pub enum LobbyCmd {
     VsAi,
     Demo,
     StopDemo,
+    /// `:team p1 …` / `:team p2 …` — caller must then parse the team via
+    /// [`parse_team_spec`] (the team payload isn't carried in this enum so
+    /// `LobbyCmd` stays `Copy`-cheap and `PartialEq`).
+    UploadTeam,
     Unknown,
 }
 
@@ -76,7 +83,79 @@ pub fn parse_lobby_cmd(line: &str) -> LobbyCmd {
         ":unready"                                       => LobbyCmd::UnreadyBoth,
         ":demo"                                          => LobbyCmd::Demo,
         ":s" | ":stop"                                   => LobbyCmd::StopDemo,
+        l if l.starts_with(":team ")                     => LobbyCmd::UploadTeam,
         _                                                => LobbyCmd::Unknown,
+    }
+}
+
+/// Parse a `:team` upload line into `(player_index, team)`.
+///
+/// Syntax:
+/// ```text
+/// :team p1 SPECIES[:MOVE[:MOVE[:MOVE[:MOVE]]]][,SPECIES...]
+/// ```
+/// - `p1` → player index 0, `p2` → 1.
+/// - Up to 6 comma-separated mons; up to 4 colon-separated moves each.
+/// - Level defaults to 100. If no moves are given, the mon gets `tackle`
+///   so it can still act.
+///
+/// Species/move strings are passed through verbatim; `gen1_battle::update_team`
+/// canonicalizes them (lowercases, strips non-alphanumerics) and rejects
+/// anything it can't resolve.
+pub fn parse_team_spec(line: &str) -> Option<(u8, Vec<MonData>)> {
+    let rest = line.trim().strip_prefix(":team ")?.trim();
+    let (who, spec) = rest.split_once(char::is_whitespace)?;
+    let player = match who.trim() {
+        "p1" => 0u8,
+        "p2" => 1u8,
+        _ => return None,
+    };
+
+    let mut team: Vec<MonData> = Vec::new();
+    for mon_spec in spec.split(',') {
+        let mon_spec = mon_spec.trim();
+        if mon_spec.is_empty() {
+            continue;
+        }
+        let mut parts = mon_spec.split(':');
+        let species = parts.next()?.trim();
+        if species.is_empty() {
+            return None;
+        }
+        let move_strs: Vec<&str> =
+            parts.map(|m| m.trim()).filter(|m| !m.is_empty()).take(4).collect();
+
+        let make_slot = |id: &str| MoveSlot {
+            name: id.to_string(),
+            id: id.to_string(),
+            typ: String::new(),
+            pp: 0,
+            max_pp: 0,
+            disabled: false,
+            target: 0,
+        };
+        let moves: Vec<MoveSlot> = if move_strs.is_empty() {
+            alloc::vec![make_slot("tackle")]
+        } else {
+            move_strs.iter().map(|m| make_slot(m)).collect()
+        };
+
+        team.push(MonData {
+            name: species.to_string(),
+            species: species.to_string(),
+            level: 100,
+            moves,
+            ..Default::default()
+        });
+        if team.len() == 6 {
+            break;
+        }
+    }
+
+    if team.is_empty() {
+        None
+    } else {
+        Some((player, team))
     }
 }
 
