@@ -518,6 +518,16 @@ fn handle_meta_cmd(line: &str) -> Option<&'static str> {
         ":reset"    => SCB::sys_reset(),
         ":anim off" => { ANIM_ENABLED.store(false, core::sync::atomic::Ordering::Relaxed); Some("[anim] animations OFF") }
         ":anim on"  => { ANIM_ENABLED.store(true,  core::sync::atomic::Ordering::Relaxed); Some("[anim] animations ON") }
+        ":oledlog on" => {
+            #[cfg(feature = "oled")]
+            crate::subsystems::oled::set_oled_dump(true);
+            Some("[oledlog] OLED RTT dump ON")
+        }
+        ":oledlog off" => {
+            #[cfg(feature = "oled")]
+            crate::subsystems::oled::set_oled_dump(false);
+            Some("[oledlog] OLED RTT dump OFF")
+        }
         _           => None,
     }
 }

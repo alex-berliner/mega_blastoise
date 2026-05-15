@@ -68,9 +68,52 @@ static P1_SHADOW: BlockingMutex<CriticalSectionRawMutex, RefCell<[[u8; 16]; 64]>
 static P2_SHADOW: BlockingMutex<CriticalSectionRawMutex, RefCell<[[u8; 16]; 64]>> =
     BlockingMutex::new(RefCell::new([[0u8; 16]; 64]));
 
+/// When true, every framebuffer change is rendered over RTT (defmt).
+/// Default off; toggled at runtime via the `:oledlog on|off` USB command
+/// (works in the lobby and during a battle).
+static OLED_DUMP: AtomicBool = AtomicBool::new(false);
+
+pub fn set_oled_dump(on: bool) {
+    OLED_DUMP.store(on, Ordering::Relaxed);
+}
+
+pub fn oled_dump_enabled() -> bool {
+    OLED_DUMP.load(Ordering::Relaxed)
+}
+
 fn store_shadow(player: u8, s: &Shadow) {
     if player == 1 { P1_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
     else           { P2_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
+    if OLED_DUMP.load(Ordering::Relaxed) {
+        dump_fb_rtt(player, &s.0);
+    }
+}
+
+/// Render a framebuffer over RTT using the same half-block format as the
+/// `:oled` USB dump: 32 rows of 128 chars, each char = 2 vertical pixels.
+/// Built into a fixed stack buffer (no heap) and emitted line-by-line.
+fn dump_fb_rtt(player: u8, fb: &[[u8; 16]; 64]) {
+    defmt::info!("oled[p{}] === 128x64 ===", player);
+    // Each glyph is at most 3 UTF-8 bytes; 128 glyphs → 384 bytes max.
+    let mut buf = [0u8; 128 * 3];
+    for row in 0..32usize {
+        let mut len = 0usize;
+        for col in 0..128usize {
+            let top = (fb[row * 2][col >> 3] >> (7 - (col & 7))) & 1 == 1;
+            let bottom = (fb[row * 2 + 1][col >> 3] >> (7 - (col & 7))) & 1 == 1;
+            let glyph: &[u8] = match (top, bottom) {
+                (false, false) => b" ",
+                (true, false) => "\u{2580}".as_bytes(),  // ▀
+                (false, true) => "\u{2584}".as_bytes(),   // ▄
+                (true, true) => "\u{2588}".as_bytes(),    // █
+            };
+            buf[len..len + glyph.len()].copy_from_slice(glyph);
+            len += glyph.len();
+        }
+        let s = core::str::from_utf8(&buf[..len]).unwrap_or("?");
+        defmt::info!("oled[p{}] {=str}", player, s);
+    }
+    defmt::info!("oled[p{}] === end ===", player);
 }
 
 /// Snapshot the current OLED framebuffer for `player` (1 or 2).
