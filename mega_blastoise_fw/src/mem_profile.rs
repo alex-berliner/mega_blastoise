@@ -3,7 +3,10 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 use defmt::info;
 use embedded_alloc::Heap;
 
-pub const HEAP_SIZE: usize = 128 * 1024;
+// gen1_battle peaks at <10 KB of heap (vs battler's 115 KB which forced the
+// old 128 KB). 64 KB keeps ~20× headroom over peak; the freed 64 KB goes to
+// the RTT buffer (see main.rs) with stack budget unchanged.
+pub const HEAP_SIZE: usize = 64 * 1024;
 
 #[global_allocator]
 pub static HEAP: Heap = Heap::empty();
