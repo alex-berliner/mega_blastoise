@@ -456,6 +456,12 @@ impl<'d> UsbBattleInput<'d> {
 
     /// Read a lobby command from USB. Returns as soon as a line is submitted.
     pub async fn read_lobby_cmd(&mut self) -> LobbyUsbCmd {
+        // Discard any partial input accumulated before this call (e.g. stray
+        // chars echoed between countdown steps) so they don't corrupt the command.
+        if !self.partial.is_empty() {
+            self.write("\r\033[K").await;
+            self.partial.clear();
+        }
         let line = self.read_line().await;
         parse_lobby_cmd(line.trim())
     }
