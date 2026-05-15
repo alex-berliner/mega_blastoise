@@ -3,7 +3,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use battler::{PlayerBattleData, Request};
+use gen1_battle::{PlayerBattleData, Request};
 
 use crate::rng::SimpleRng;
 use crate::{format_move_choice, format_switch_choice, join_choice_parts};

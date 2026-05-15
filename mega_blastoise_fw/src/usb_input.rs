@@ -3,7 +3,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use battler::{PlayerBattleData, Request};
+use gen1_battle::{PlayerBattleData, Request};
 use cortex_m::peripheral::SCB;
 use crate::battle_effects::ANIM_ENABLED;
 use embassy_futures::select::{select, Either};

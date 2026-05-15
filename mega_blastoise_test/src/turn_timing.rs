@@ -6,7 +6,7 @@
 mod tests {
     use std::time::{Duration, Instant};
 
-    use battler::{Request, TeamData};
+    use gen1_battle::{Request, TeamData};
     use mega_blastoise_core::{
         battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_move_choice,
         format_switch_choice, join_choice_parts, FlashDataStore,
@@ -17,7 +17,7 @@ mod tests {
     fn auto_choice(
         player_id: &str,
         request: &Request,
-        battle: &mut battler::PublicCoreBattle<'_>,
+        battle: &mut gen1_battle::PublicCoreBattle<'_>,
     ) -> String {
         match request {
             Request::Turn(turn) => {
@@ -61,7 +61,7 @@ mod tests {
         let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
 
         let mut battle =
-            battler::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())
+            gen1_battle::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())
                 .expect("battle init");
         battle
             .update_team("p1", TeamData { members: team_red, ..Default::default() })
@@ -79,7 +79,8 @@ mod tests {
         println!("{}", "-".repeat(30));
 
         while !battle.ended() {
-            let Some((player_id, request)) = battle.active_requests().next() else {
+            let next = battle.active_requests().next().map(|(pid, req)| (pid.to_string(), req.clone()));
+            let Some((player_id, request)) = next else {
                 break;
             };
 
@@ -90,7 +91,7 @@ mod tests {
             let elapsed = t0.elapsed();
 
             println!("{:<6} {:<8} {:>12.3?}", n, player_id, elapsed);
-            rows.push((player_id.clone(), elapsed));
+            rows.push((player_id, elapsed));
         }
 
         // ── Summary ────────────────────────────────────────────────────────────

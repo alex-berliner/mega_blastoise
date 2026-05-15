@@ -1,0 +1,17 @@
+[package]
+name = "gen1_battle"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+defmt = ["dep:defmt"]
+
+[dependencies]
+anyhow = { version = "1.0", default-features = false }
+hashbrown = { version = "0.14", default-features = false, features = ["ahash"] }
+heapless = "0.8"
+defmt = { version = "1.0", optional = true }
+
+[build-dependencies]
+serde_json = "1.0"

@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use battler::Request;
+use gen1_battle::Request;
 use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, player_display_name,
     ActivePrompt, InputBus, InputSource,

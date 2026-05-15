@@ -10,7 +10,7 @@ mod pico_battle_input;
 mod subsystems;
 mod usb_input;
 
-use battler::TeamData;
+use gen1_battle::TeamData;
 use defmt::debug;
 use embassy_executor::Spawner;
 use embassy_rp::gpio::{Input, Level, Output, Pull};
@@ -135,7 +135,7 @@ async fn main(spawner: Spawner) {
         );
 
         let mut battle =
-            battler::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())
+            gen1_battle::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())
                 .expect("battle init");
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_battle_new");

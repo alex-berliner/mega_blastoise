@@ -6,7 +6,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 
-use battler::Request;
+use gen1_battle::Request;
 
 /// Borrowed view of `title|key:value|…` committed log lines from the engine.
 #[derive(Debug, Clone, Copy)]

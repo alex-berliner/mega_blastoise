@@ -7,7 +7,7 @@
 use std::collections::VecDeque;
 use std::io::{self, Write};
 
-use battler::{PlayerBattleData, Request};
+use gen1_battle::{PlayerBattleData, Request};
 use mega_blastoise_core::{
     format_prompt, player_display_name, ButtonController, ButtonSource, InputBus, InputSource, PlayerAction,
 };

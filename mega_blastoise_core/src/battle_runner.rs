@@ -2,7 +2,7 @@ extern crate alloc;
 
 use alloc::string::ToString;
 
-use battler::{
+use gen1_battle::{
     BattleType, CoreBattleEngineOptions, CoreBattleOptions, FormatData, PlayerData, PlayerDex,
     PlayerOptions, PlayerType, Request, SerializedRuleSet, SideData, TeamData,
 };
@@ -105,7 +105,7 @@ impl MoveSlotCache {
     fn refresh_pp(
         &mut self,
         player_id: &str,
-        battle: &battler::PublicCoreBattle<'_>,
+        battle: &gen1_battle::PublicCoreBattle<'_>,
     ) -> alloc::vec::Vec<MoveSlot> {
         let pp_list = battle.active_mon_move_pp(player_id).unwrap_or_default();
 
@@ -124,7 +124,7 @@ impl MoveSlotCache {
 
 /// Returns (move slots, team slot index) for the currently active mon.
 fn query_active_moves<DS: DataStore>(
-    battle: &mut battler::PublicCoreBattle<'_>,
+    battle: &mut gen1_battle::PublicCoreBattle<'_>,
     data: &DS,
     player_id: &str,
 ) -> (alloc::vec::Vec<MoveSlot>, Option<u8>) {
@@ -134,25 +134,23 @@ fn query_active_moves<DS: DataStore>(
     let Some((slot_idx, active_mon)) = player_data.mons.into_iter().enumerate().find(|(_, m)| m.active) else {
         return (alloc::vec::Vec::new(), None);
     };
+    let _ = data;
     let moves = active_mon
         .moves
         .into_iter()
         .map(|mv| {
-            let (power, accuracy, category) = data
-                .get_move(&mv.id)
-                .ok()
-                .flatten()
-                .map(|md| {
-                    (
-                        if md.base_power > 0 { Some(md.base_power) } else { None },
-                        md.accuracy.percentage(),
-                        alloc::format!("{:?}", md.category),
-                    )
-                })
-                .unwrap_or((None, None, alloc::string::String::from("?")));
+            let info = gen1_battle::move_by_id(&mv.id);
+            let (power, accuracy, category) = match info {
+                Some(m) => (
+                    if m.power > 0 { Some(m.power as u32) } else { None },
+                    if m.accuracy > 0 { Some(m.accuracy) } else { None },
+                    alloc::format!("{:?}", m.category),
+                ),
+                None => (None, None, alloc::string::String::from("?")),
+            };
             MoveSlot {
                 name: mv.name,
-                type_name: alloc::format!("{:?}", mv.typ),
+                type_name: mv.typ.clone(),
                 category,
                 power,
                 accuracy,
@@ -164,7 +162,7 @@ fn query_active_moves<DS: DataStore>(
     (moves, Some(slot_idx as u8))
 }
 
-fn query_team_slot_by_name(battle: &mut battler::PublicCoreBattle<'_>, player_id: &str, name: &str) -> Option<u8> {
+fn query_team_slot_by_name(battle: &mut gen1_battle::PublicCoreBattle<'_>, player_id: &str, name: &str) -> Option<u8> {
     let data = battle.player_data(player_id).ok()?;
     data.mons.iter().position(|m| m.summary.name.as_str() == name).map(|i| i as u8)
 }
@@ -172,7 +170,7 @@ fn query_team_slot_by_name(battle: &mut battler::PublicCoreBattle<'_>, player_id
 // ── Event enrichment ──────────────────────────────────────────────────────────
 
 async fn enrich_and_dispatch<E, DS>(
-    battle: &mut battler::PublicCoreBattle<'_>,
+    battle: &mut gen1_battle::PublicCoreBattle<'_>,
     data: &DS,
     queue: &mut BoardEventQueue,
     effects: &mut E,
@@ -297,7 +295,7 @@ async fn enrich_and_dispatch<E, DS>(
 // ── Battle runner ─────────────────────────────────────────────────────────────
 
 pub async fn run_battle<E, T, F, DS>(
-    battle: &mut battler::PublicCoreBattle<'_>,
+    battle: &mut gen1_battle::PublicCoreBattle<'_>,
     data: &DS,
     bus: &InputBus,
     inputs: F,
@@ -306,7 +304,7 @@ pub async fn run_battle<E, T, F, DS>(
     on_turn: T,
 ) where
     E: BoardEffects,
-    T: FnMut(&mut battler::PublicCoreBattle<'_>),
+    T: FnMut(&mut gen1_battle::PublicCoreBattle<'_>),
     F: Future<Output = ()>,
     DS: DataStore,
 {
@@ -316,7 +314,7 @@ pub async fn run_battle<E, T, F, DS>(
 }
 
 async fn battle_loop<E, T, DS>(
-    battle: &mut battler::PublicCoreBattle<'_>,
+    battle: &mut gen1_battle::PublicCoreBattle<'_>,
     data: &DS,
     bus: &InputBus,
     queue: &mut BoardEventQueue,
@@ -324,13 +322,19 @@ async fn battle_loop<E, T, DS>(
     mut on_turn: T,
 ) where
     E: BoardEffects,
-    T: FnMut(&mut battler::PublicCoreBattle<'_>),
+    T: FnMut(&mut gen1_battle::PublicCoreBattle<'_>),
     DS: DataStore,
 {
     let mut cache = MoveSlotCache::new();
+    #[cfg(feature = "trace")]
+    defmt::info!("[trace] battle_loop: start, initial dispatch");
     enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
 
+    let mut turn: u32 = 0;
     while !battle.ended() {
+        turn += 1;
+        #[cfg(feature = "trace")]
+        defmt::info!("[trace] battle_loop: turn {}", turn);
         let mut had_request = false;
         loop {
             // Collect ALL active requests before sending any prompts, so both
@@ -344,9 +348,14 @@ async fn battle_loop<E, T, DS>(
             if requests.is_empty() { break; }
             had_request = true;
 
+            #[cfg(feature = "trace")]
+            defmt::info!("[trace] battle_loop: {} request(s) this turn", requests.len() as u32);
+
             // Send all prompts to bus.prompt before collecting any choices.
             let batch_total = requests.len();
             for (player_id, request) in &requests {
+                #[cfg(feature = "trace")]
+                defmt::info!("[trace] battle_loop: sending prompt to {}", player_id.as_str());
                 queue.push_event(board_prompt_event(player_id, request));
                 queue.dispatch_all(effects).await;
                 let player_data = battle.player_data(player_id).ok();
@@ -356,11 +365,17 @@ async fn battle_loop<E, T, DS>(
                     player_data,
                     batch_total,
                 }).await;
+                #[cfg(feature = "trace")]
+                defmt::info!("[trace] battle_loop: prompt delivered to {}", player_id.as_str());
             }
 
             // Collect choices in the same order as prompts, then apply them.
             for (player_id, _) in &requests {
+                #[cfg(feature = "trace")]
+                defmt::info!("[trace] battle_loop: waiting for choice from {}", player_id.as_str());
                 let line = bus.choices.receive().await;
+                #[cfg(feature = "trace")]
+                defmt::info!("[trace] battle_loop: got choice from {}: {}", player_id.as_str(), line.as_str());
 
                 #[cfg(feature = "timing")]
                 let t0 = embassy_time::Instant::now();
@@ -405,4 +420,6 @@ async fn battle_loop<E, T, DS>(
         enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
         on_turn(battle);
     }
+    #[cfg(feature = "trace")]
+    defmt::info!("[trace] battle_loop: ended after {} turn(s)", turn);
 }

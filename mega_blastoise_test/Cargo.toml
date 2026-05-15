@@ -9,6 +9,7 @@ embedded-graphics = "0.8"
 mega-blastoise-core = { path = "../mega_blastoise_core" }
 battler = { path = "../battler/battler" }
 battler-data = { path = "../battler/battler-data" }
+gen1_battle = { path = "../gen1_battle" }
 anyhow = "1.0"
 pollster = "0.3"
 embassy-futures = "0.1"

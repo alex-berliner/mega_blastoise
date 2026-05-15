@@ -7,7 +7,7 @@
 
 extern crate alloc;
 
-use battler::TeamData;
+use gen1_battle::TeamData;
 use embassy_futures::select::{select, Either};
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::{
@@ -136,10 +136,18 @@ impl DemoAi {
 impl InputSource for DemoAi {
     async fn run(&mut self, bus: &InputBus) {
         loop {
+            #[cfg(feature = "trace")]
+            defmt::info!("[trace] DemoAi: waiting for prompt");
             let ActivePrompt { request, player_data, .. } = bus.prompt.receive().await;
+            #[cfg(feature = "trace")]
+            defmt::info!("[trace] DemoAi: got prompt");
             Timer::after_millis(400 + (self.0.next_u64() % 600)).await;
             let choice = self.0.make_choice(&request, player_data.as_ref());
+            #[cfg(feature = "trace")]
+            defmt::info!("[trace] DemoAi: sending choice: {}", choice.as_str());
             bus.choices.send(choice).await;
+            #[cfg(feature = "trace")]
+            defmt::info!("[trace] DemoAi: choice sent");
         }
     }
 }
@@ -151,21 +159,33 @@ impl InputSource for DemoAi {
 async fn run_demo_battle(data: &FlashDataStore, queue: &mut BoardEventQueue, seed: u64) {
     use mega_blastoise_core::run_battle;
 
-    let mut battle = match battler::PublicCoreBattle::new(
+    #[cfg(feature = "trace")]
+    defmt::info!("[trace] run_demo_battle: start seed={}", seed);
+
+    let mut battle = match gen1_battle::PublicCoreBattle::new(
         battle_options_with_seed(seed),
         data,
         demo_engine_opts(),
     ) {
         Ok(b) => b,
-        Err(_) => return,
+        Err(_) => {
+            #[cfg(feature = "trace")]
+            defmt::info!("[trace] run_demo_battle: battle init failed");
+            return;
+        }
     };
 
     let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
     let _ = battle.update_team("p1", TeamData { members: team_red,  ..Default::default() });
     let _ = battle.update_team("p2", TeamData { members: team_blue, ..Default::default() });
     if battle.start().is_err() {
+        #[cfg(feature = "trace")]
+        defmt::info!("[trace] run_demo_battle: battle start failed");
         return;
     }
+
+    #[cfg(feature = "trace")]
+    defmt::info!("[trace] run_demo_battle: battle started");
 
     let mut demo_effects = BattleEffects::new(None);
     let demo_bus = InputBus::new();
@@ -180,6 +200,9 @@ async fn run_demo_battle(data: &FlashDataStore, queue: &mut BoardEventQueue, see
         &mut demo_effects,
         |_| {},
     ).await;
+
+    #[cfg(feature = "trace")]
+    defmt::info!("[trace] run_demo_battle: done");
 }
 
 // ── Ready state ───────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 //! Battler initializes with [`mega_blastoise_core::demo_team_red`] / [`demo_team_blue`] teams.
 
-use battler::{
+use gen1_battle::{
     BattleType,
     CoreBattleEngineOptions,
     CoreBattleOptions,
@@ -55,7 +55,7 @@ fn battle_starts_with_four_mons_per_player() {
     };
 
     let mut battle =
-        battler::PublicCoreBattle::new(options, &data, engine_opts).expect("battle init");
+        gen1_battle::PublicCoreBattle::new(options, &data, engine_opts).expect("battle init");
 
     battle
         .update_team(

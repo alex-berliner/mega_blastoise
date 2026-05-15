@@ -6,6 +6,7 @@ default-run = "mega-blastoise-fw"
 
 [dependencies]
 mega-blastoise-core = { path = "../mega_blastoise_core", features = ["defmt", "timing"] }
+gen1_battle = { path = "../gen1_battle" }
 
 # Cortex-M core
 cortex-m = { version = "0.7", features = ["inline-asm"] }
@@ -46,3 +47,4 @@ oled = ["dep:ssd1306", "dep:embedded-graphics", "dep:display-interface"]
 buzzer = []
 leds = ["dep:smart-leds"]
 mem-profile = []
+trace = ["mega-blastoise-core/trace"]

@@ -21,7 +21,7 @@ use crate::board_event::MoveSlot;
 /// Compact snapshot of a party Pokémon's in-battle stats, used by all display
 /// targets for the long-press party-stats view.
 ///
-/// Derived from [`battler::MonBattleData`] via [`party_slot_from_mon`]; cheap
+/// Derived from [`gen1_battle::MonBattleData`] via [`party_slot_from_mon`]; cheap
 /// enough to cache on embedded hardware for the duration of a battle prompt.
 #[derive(Clone)]
 pub struct PartySlotData {
@@ -34,7 +34,7 @@ pub struct PartySlotData {
     pub def: u16,
     pub spe: u16,
     pub spc: u16,
-    pub types: alloc::vec::Vec<battler::Type>,
+    pub types: alloc::vec::Vec<gen1_battle::Type>,
     /// Move name + (pp, max_pp) for each slot, in order.
     pub moves: alloc::vec::Vec<(alloc::string::String, u8, u8)>,
     /// Stat stage boosts (-6 to +6).
@@ -46,10 +46,10 @@ pub struct PartySlotData {
     pub item: Option<alloc::string::String>,
 }
 
-/// Convert the display-relevant fields of a [`battler::MonBattleData`] into a
+/// Convert the display-relevant fields of a [`gen1_battle::MonBattleData`] into a
 /// [`PartySlotData`].  Call this once at prompt time; store the result.
-pub fn party_slot_from_mon(mon: &battler::MonBattleData) -> PartySlotData {
-    use battler::Stat;
+pub fn party_slot_from_mon(mon: &gen1_battle::MonBattleData) -> PartySlotData {
+    use gen1_battle::Stat;
     let get = |s: Stat| mon.stats.get(&s).copied().unwrap_or(0u16);
     PartySlotData {
         name: mon.summary.name.clone(),
@@ -203,26 +203,26 @@ where
 
 // ── Shared header for pokémon stat/move pages ─────────────────────────────────
 
-fn type_abbr(t: battler::Type) -> &'static str {
+fn type_abbr(t: gen1_battle::Type) -> &'static str {
     match t {
-        battler::Type::Normal   => "NRM",
-        battler::Type::Fighting => "FGT",
-        battler::Type::Flying   => "FLY",
-        battler::Type::Poison   => "PSN",
-        battler::Type::Ground   => "GND",
-        battler::Type::Rock     => "RCK",
-        battler::Type::Bug      => "BUG",
-        battler::Type::Ghost    => "GHO",
-        battler::Type::Steel    => "STL",
-        battler::Type::Fire     => "FIR",
-        battler::Type::Water    => "WAT",
-        battler::Type::Grass    => "GRS",
-        battler::Type::Electric => "ELC",
-        battler::Type::Psychic  => "PSY",
-        battler::Type::Ice      => "ICE",
-        battler::Type::Dragon   => "DRG",
-        battler::Type::Dark     => "DRK",
-        battler::Type::Fairy    => "FAI",
+        gen1_battle::Type::Normal   => "NRM",
+        gen1_battle::Type::Fighting => "FGT",
+        gen1_battle::Type::Flying   => "FLY",
+        gen1_battle::Type::Poison   => "PSN",
+        gen1_battle::Type::Ground   => "GND",
+        gen1_battle::Type::Rock     => "RCK",
+        gen1_battle::Type::Bug      => "BUG",
+        gen1_battle::Type::Ghost    => "GHO",
+        gen1_battle::Type::Steel    => "STL",
+        gen1_battle::Type::Fire     => "FIR",
+        gen1_battle::Type::Water    => "WAT",
+        gen1_battle::Type::Grass    => "GRS",
+        gen1_battle::Type::Electric => "ELC",
+        gen1_battle::Type::Psychic  => "PSY",
+        gen1_battle::Type::Ice      => "ICE",
+        gen1_battle::Type::Dragon   => "DRG",
+        gen1_battle::Type::Dark     => "DRK",
+        gen1_battle::Type::Fairy    => "FAI",
         _                       => "???",
     }
 }

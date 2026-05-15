@@ -4,7 +4,7 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use battler::{PlayerBattleData, Request};
+use gen1_battle::{PlayerBattleData, Request};
 
 fn player_label(id: &str) -> &'static str {
     match id {
@@ -107,7 +107,8 @@ pub fn format_player_state(pd: &PlayerBattleData) -> String {
             "{} — {} ({})  HP {}/{} ({}%)  status: {}  types: [{}]\n",
             label, m.summary.name, m.species, m.hp, m.max_hp, pct, status, types.join("/")
         ));
-        out.push_str(&format!("  ability: {}  item: {}\n", m.ability, item));
+        let ability = m.ability.as_deref().unwrap_or("—");
+        out.push_str(&format!("  ability: {}  item: {}\n", ability, item));
         let b = &m.boosts;
         if b.atk != 0 || b.def != 0 || b.spa != 0 || b.spd != 0 || b.spe != 0 {
             out.push_str(&format!(
@@ -173,7 +174,7 @@ pub fn format_lobby_status(p1_ready: bool, p2_ready: bool) -> String {
 }
 
 /// Format the active Pokémon state for both players (used in post-turn display).
-pub fn format_active_state(battle: &mut battler::PublicCoreBattle<'_>) -> String {
+pub fn format_active_state(battle: &mut gen1_battle::PublicCoreBattle<'_>) -> String {
     let mut out = String::from("── Active Pokémon ──\n");
     for pid in ["p1", "p2"] {
         let Ok(data) = battle.player_data(pid) else { continue };

@@ -2,17 +2,29 @@
 
 extern crate alloc;
 
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
-use battler::MonData;
+use gen1_battle::{MonData, MoveSlot};
 
 fn mon(name: &str, species: &str, moves: [&str; 4]) -> MonData {
     MonData {
-        name: name.into(),
-        species: species.into(),
-        ability: "No Ability".into(),
-        moves: moves.iter().map(|s| (*s).into()).collect(),
+        name: String::from(name),
+        species: String::from(species),
+        ability: Some(String::from("No Ability")),
+        moves: moves
+            .iter()
+            .map(|s| MoveSlot {
+                name: String::from(*s),
+                id: String::from(*s),
+                typ: String::new(),
+                pp: 0,
+                max_pp: 0,
+                disabled: false,
+                target: 0,
+            })
+            .collect(),
         level: 50,
         ..Default::default()
     }

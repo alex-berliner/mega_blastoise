@@ -1,6 +1,6 @@
 //! Shared battle setup and harness entrypoints.
 
-use battler::TeamData;
+use gen1_battle::TeamData;
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, draw_two_randbat_teams, format_active_state, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
@@ -9,7 +9,7 @@ use mega_blastoise_core::{
 use crate::host_battle_controller::HostBattleController;
 use crate::host_battle_effects::HostBattleEffects;
 
-fn print_active_pokemon_state(battle: &mut battler::PublicCoreBattle<'_>) {
+fn print_active_pokemon_state(battle: &mut gen1_battle::PublicCoreBattle<'_>) {
     print!("{}", format_active_state(battle));
 }
 
@@ -26,7 +26,7 @@ pub fn run_interactive() {
     let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
 
     let mut battle =
-        battler::PublicCoreBattle::new(demo_battle_options(), &data, demo_engine_opts())
+        gen1_battle::PublicCoreBattle::new(demo_battle_options(), &data, demo_engine_opts())
             .expect("battle init");
 
     battle

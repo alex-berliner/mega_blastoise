@@ -3,7 +3,7 @@
 //!
 //! These cover the firmware abstractions that the interactive binary couldn't reach.
 
-use battler::TeamData;
+use gen1_battle::TeamData;
 use embassy_futures::select::{select, Either};
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
@@ -103,9 +103,9 @@ fn effects_suppresses_split_and_prompt_events() {
 
 // ── HostBattleController — full automated battle ──────────────────────────────
 
-fn make_battle(data: &FlashDataStore) -> battler::PublicCoreBattle<'_> {
+fn make_battle(data: &FlashDataStore) -> gen1_battle::PublicCoreBattle<'_> {
     let mut battle =
-        battler::PublicCoreBattle::new(demo_battle_options(), data, demo_engine_opts())
+        gen1_battle::PublicCoreBattle::new(demo_battle_options(), data, demo_engine_opts())
             .expect("battle init");
     battle
         .update_team("p1", TeamData { members: demo_team_red(), ..Default::default() })
@@ -197,6 +197,7 @@ fn button_press_sends_move_choice_without_stdin() {
     let (player_id, request) = battle
         .active_requests()
         .next()
+        .map(|(pid, req)| (pid.to_string(), req.clone()))
         .expect("battle should have an active request after start");
     let player_data = battle.player_data(&player_id).ok();
 

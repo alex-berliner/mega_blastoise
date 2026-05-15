@@ -21,7 +21,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use battler::{PlayerBattleData, Request};
+use gen1_battle::{PlayerBattleData, Request};
 use embassy_futures::join::join;
 use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;

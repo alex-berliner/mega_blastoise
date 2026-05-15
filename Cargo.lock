@@ -994,6 +994,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "gen1_battle"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "defmt 1.0.1",
+ "hashbrown 0.14.5",
+ "heapless 0.8.0",
+ "serde_json",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1408,6 +1419,7 @@ dependencies = [
  "embassy-sync 0.7.2",
  "embassy-time",
  "embedded-graphics",
+ "gen1_battle",
  "serde",
  "serde_json",
  "ureq",
@@ -1433,6 +1445,7 @@ dependencies = [
  "embedded-alloc",
  "embedded-graphics",
  "embedded-hal-async",
+ "gen1_battle",
  "mega-blastoise-core",
  "rtt-target",
  "smart-leds",
@@ -1448,6 +1461,7 @@ dependencies = [
  "battler-data",
  "embassy-futures",
  "embedded-graphics",
+ "gen1_battle",
  "mega-blastoise-core",
  "pollster",
  "serialport",

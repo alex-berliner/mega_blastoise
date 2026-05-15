@@ -14,7 +14,7 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use battler::{PlayerBattleData, Request};
+use gen1_battle::{PlayerBattleData, Request};
 use cortex_m::asm::delay as asm_delay;
 use embassy_rp::gpio::{Input, Output};
 use embassy_time::Timer;

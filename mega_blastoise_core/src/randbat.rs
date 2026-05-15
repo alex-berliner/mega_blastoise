@@ -1,7 +1,8 @@
 extern crate alloc;
 
+use alloc::string::String;
 use alloc::vec::Vec;
-use battler::MonData;
+use gen1_battle::{MonData, MoveSlot};
 
 pub struct RandBatEntry {
     pub species: &'static str,
@@ -21,7 +22,7 @@ fn xorshift64(state: &mut u64) -> u64 {
 }
 
 /// Pick `count` distinct Pokémon at random from `RANDBAT_POOL` and return them
-/// as a team ready for `battler::PublicCoreBattle::update_team`.
+/// as a team ready for `gen1_battle::PublicCoreBattle::update_team`.
 pub fn draw_randbat_team(seed: u64, count: usize) -> Vec<MonData> {
     let n = RANDBAT_POOL.len();
     let take = count.min(n);
@@ -35,10 +36,22 @@ pub fn draw_randbat_team(seed: u64, count: usize) -> Vec<MonData> {
         indices.swap(i, j);
         let e = &RANDBAT_POOL[indices[i]];
         team.push(MonData {
-            name: e.species.into(),
-            species: e.species.into(),
-            ability: "No Ability".into(),
-            moves: e.moves.iter().map(|&m| m.into()).collect(),
+            name: String::from(e.species),
+            species: String::from(e.species),
+            ability: Some(String::from("No Ability")),
+            moves: e
+                .moves
+                .iter()
+                .map(|&m| MoveSlot {
+                    name: String::from(m),
+                    id: String::from(m),
+                    typ: String::new(),
+                    pp: 0,
+                    max_pp: 0,
+                    disabled: false,
+                    target: 0,
+                })
+                .collect(),
             level: e.level,
             ..Default::default()
         });
