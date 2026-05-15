@@ -39,7 +39,7 @@ function mb_flash {
 }
 
 function mb_reset { (cd "$MB_BASE" && probe-rs reset --preset pico); }
-function mb_kill  { (cd "$MB_BASE" && pkill -f probe-rs || true); }
+function mb_kill  { (cd "$MB_BASE" && pkill -f probe-rs || true && pkill -f picocom || true); }
 
 # ── Console ──────────────────────────────────────────────────────────────────
 
