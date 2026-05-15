@@ -35,7 +35,7 @@ function mb_test {
 function mb_flash {
     local elf="$_MB_ELF_DEBUG"
     for arg in "$@"; do [[ "$arg" == "--release" ]] && elf="$_MB_ELF_RELEASE"; done
-    (cd "$MB_BASE" && probe-rs download --preverify --preset pico "$elf")
+    (cd "$MB_BASE" && probe-rs download --preset pico "$elf")
 }
 
 function mb_reset { (cd "$MB_BASE" && probe-rs reset --preset pico); }
