@@ -21,6 +21,7 @@ Built-in commands (prefix with ':'):
     :ready p1   mark P1 ready (human)
     :ready p2   mark P2 ready (human)
     :unready    unready both players
+    :demo       start a demo (AI vs AI) battle
     :q / :quit  exit
 """
 
@@ -388,6 +389,7 @@ def main() -> None:
                     "    :q / :quit        exit\n"
                     "\n"
                     "  Firmware commands (forwarded over USB):\n"
+                    "    :demo             start a demo (AI vs AI) battle\n"
                     "    :s / :stop        stop demo battle, enter ready phase\n"
                     "    :ready            both players ready (human)\n"
                     "    :ready p1         P1 ready (human)\n"
@@ -413,10 +415,15 @@ def main() -> None:
                 _kill_probe_rs(out_q)
 
             elif line == ":reset":
-                # Kill RTT reader first so probe-rs can open the probe.
+                # Kill RTT reader and wait for it to release the probe.
                 p = rtt_proc_ref[0]
                 if p is not None:
                     p.terminate()
+                    try:
+                        p.wait(timeout=2.0)
+                    except subprocess.TimeoutExpired:
+                        p.kill()
+                        p.wait()
                 _probe_run(["reset"], out_q, "resetting…")
 
             elif line == ":reflash":
