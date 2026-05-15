@@ -187,7 +187,7 @@ pub async fn task(
     sda1: Peri<'static, PIN_18>,
 ) {
     let mut cfg = I2cConfig::default();
-    cfg.frequency = 400_000;
+    cfg.frequency = 100_000;
 
     let bus0 = I2c::new_async(i2c0, scl0, sda0, OledIrqs, cfg);
     let bus1 = I2c::new_async(i2c1, scl1, sda1, OledIrqs, cfg);
@@ -206,8 +206,12 @@ pub async fn task(
     )
     .into_buffered_graphics_mode();
 
-    if disp0.init().await.is_err() || disp1.init().await.is_err() {
-        defmt::warn!("OLED init failed — display task exiting");
+    let p1_ok = disp0.init().await.is_ok();
+    let p2_ok = disp1.init().await.is_ok();
+    if !p1_ok { defmt::warn!("OLED P1 init failed"); }
+    if !p2_ok { defmt::warn!("OLED P2 init failed"); }
+    if !p1_ok && !p2_ok {
+        defmt::warn!("OLED: no displays found — display task exiting");
         return;
     }
 
@@ -218,65 +222,69 @@ pub async fn task(
     let mut s1 = Shadow::new();
     let mut s2 = Shadow::new();
 
-    redraw(&mut disp0, &mut s1, 1, &p1).await;
-    redraw(&mut disp1, &mut s2, 2, &p2).await;
+    if p1_ok { redraw(&mut disp0, &mut s1, 1, &p1).await; }
+    if p2_ok { redraw(&mut disp1, &mut s2, 2, &p2).await; }
 
     loop {
         match CMD.receive().await {
             OledCmd::HpUpdate { player, pct } => {
-                if player == 1 { p1.hp_pct = pct; redraw(&mut disp0, &mut s1, 1, &p1).await; }
-                else           { p2.hp_pct = pct; redraw(&mut disp1, &mut s2, 2, &p2).await; }
+                if player == 1 { p1.hp_pct = pct; if p1_ok { redraw(&mut disp0, &mut s1, 1, &p1).await; } }
+                else           { p2.hp_pct = pct; if p2_ok { redraw(&mut disp1, &mut s2, 2, &p2).await; } }
             }
             OledCmd::ActiveMon { player, name, len } => {
                 if player == 1 {
                     p1.name = name; p1.name_len = len; p1.fainted = false; p1.hp_pct = 100;
-                    redraw(&mut disp0, &mut s1, 1, &p1).await;
+                    if p1_ok { redraw(&mut disp0, &mut s1, 1, &p1).await; }
                 } else {
                     p2.name = name; p2.name_len = len; p2.fainted = false; p2.hp_pct = 100;
-                    redraw(&mut disp1, &mut s2, 2, &p2).await;
+                    if p2_ok { redraw(&mut disp1, &mut s2, 2, &p2).await; }
                 }
             }
             OledCmd::MovesUpdate { player, moves } => {
-                if player == 1 { p1.moves = moves; redraw(&mut disp0, &mut s1, 1, &p1).await; }
-                else           { p2.moves = moves; redraw(&mut disp1, &mut s2, 2, &p2).await; }
+                if player == 1 { p1.moves = moves; if p1_ok { redraw(&mut disp0, &mut s1, 1, &p1).await; } }
+                else           { p2.moves = moves; if p2_ok { redraw(&mut disp1, &mut s2, 2, &p2).await; } }
             }
             OledCmd::Faint { player } => {
                 if player == 1 {
                     p1.fainted = true; p1.hp_pct = 0; p1.moves.clear();
-                    redraw(&mut disp0, &mut s1, 1, &p1).await;
+                    if p1_ok { redraw(&mut disp0, &mut s1, 1, &p1).await; }
                 } else {
                     p2.fainted = true; p2.hp_pct = 0; p2.moves.clear();
-                    redraw(&mut disp1, &mut s2, 2, &p2).await;
+                    if p2_ok { redraw(&mut disp1, &mut s2, 2, &p2).await; }
                 }
             }
             OledCmd::ShowMoveDetail { player, slot } => {
-                if player == 1 {
+                if player == 1 && p1_ok {
                     if let Some(mv) = p1.moves.get(slot as usize) {
                         render_move_detail(&mut disp0, mv);
                         render_move_detail(&mut s1, mv);
                         store_shadow(1, &s1);
                         disp0.flush().await.ok();
                     }
-                } else if let Some(mv) = p2.moves.get(slot as usize) {
-                    render_move_detail(&mut disp1, mv);
-                    render_move_detail(&mut s2, mv);
-                    store_shadow(2, &s2);
-                    disp1.flush().await.ok();
+                } else if player != 1 && p2_ok {
+                    if let Some(mv) = p2.moves.get(slot as usize) {
+                        render_move_detail(&mut disp1, mv);
+                        render_move_detail(&mut s2, mv);
+                        store_shadow(2, &s2);
+                        disp1.flush().await.ok();
+                    }
                 }
             }
             OledCmd::ShowPokemonStats { player, team_idx } => {
-                if player == 1 {
+                if player == 1 && p1_ok {
                     if let Some(slot) = p1.party.get(team_idx as usize) {
                         render_pokemon_stats(&mut disp0, slot);
                         render_pokemon_stats(&mut s1, slot);
                         store_shadow(1, &s1);
                         disp0.flush().await.ok();
                     }
-                } else if let Some(slot) = p2.party.get(team_idx as usize) {
-                    render_pokemon_stats(&mut disp1, slot);
-                    render_pokemon_stats(&mut s2, slot);
-                    store_shadow(2, &s2);
-                    disp1.flush().await.ok();
+                } else if player != 1 && p2_ok {
+                    if let Some(slot) = p2.party.get(team_idx as usize) {
+                        render_pokemon_stats(&mut disp1, slot);
+                        render_pokemon_stats(&mut s2, slot);
+                        store_shadow(2, &s2);
+                        disp1.flush().await.ok();
+                    }
                 }
             }
             OledCmd::PartyUpdate { player, slots } => {
@@ -284,23 +292,27 @@ pub async fn task(
                 else           { p2.party = slots; }
             }
             OledCmd::RestoreScreen { player } => {
-                if player == 1 { redraw(&mut disp0, &mut s1, 1, &p1).await; }
-                else           { redraw(&mut disp1, &mut s2, 2, &p2).await; }
+                if player == 1 { if p1_ok { redraw(&mut disp0, &mut s1, 1, &p1).await; } }
+                else           { if p2_ok { redraw(&mut disp1, &mut s2, 2, &p2).await; } }
             }
             OledCmd::LobbyState { player, ready, ai } => {
-                if player == 1 { draw_lobby_screen(&mut disp0, &mut s1, 1, ready, ai).await; }
-                else           { draw_lobby_screen(&mut disp1, &mut s2, 2, ready, ai).await; }
+                if player == 1 { if p1_ok { draw_lobby_screen(&mut disp0, &mut s1, 1, ready, ai).await; } }
+                else           { if p2_ok { draw_lobby_screen(&mut disp1, &mut s2, 2, ready, ai).await; } }
             }
             OledCmd::Win { winner } => {
                 let (msg0, msg1) = BoardEvent::win_messages(winner);
-                render_win_screen(&mut disp0, msg0);
-                render_win_screen(&mut s1, msg0);
-                store_shadow(1, &s1);
-                disp0.flush().await.ok();
-                render_win_screen(&mut disp1, msg1);
-                render_win_screen(&mut s2, msg1);
-                store_shadow(2, &s2);
-                disp1.flush().await.ok();
+                if p1_ok {
+                    render_win_screen(&mut disp0, msg0);
+                    render_win_screen(&mut s1, msg0);
+                    store_shadow(1, &s1);
+                    disp0.flush().await.ok();
+                }
+                if p2_ok {
+                    render_win_screen(&mut disp1, msg1);
+                    render_win_screen(&mut s2, msg1);
+                    store_shadow(2, &s2);
+                    disp1.flush().await.ok();
+                }
             }
         }
     }
