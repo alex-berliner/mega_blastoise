@@ -36,8 +36,15 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "mem-profile")]
     heap_snapshot("boot");
 
+    // RTT up-buffer sized to capture a whole AI battle's OLED-framebuffer dump
+    // (`oledfb|pN|<2 KB hex>` per frame change). gen1_battle's real heap peak is
+    // ~3 KB (measured) so the 64 KB heap is far oversized; RAM is 256 KB, so we
+    // spend the abundant free RAM on a large RTT buffer instead. Default
+    // NoBlockSkip mode is kept deliberately: BlockIfFull throttles the firmware
+    // to a crawl (battle can't finish in real time over RTT). A 96 KB buffer
+    // absorbs the OLED burst between probe-rs drains so few/no frames drop.
     let channels = rtt_init! {
-        up: { 0: { size: 32768, name: "defmt" } }
+        up: { 0: { size: 96 * 1024, name: "defmt" } }
     };
     set_defmt_channel(channels.up.0);
 
