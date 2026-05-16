@@ -20,7 +20,7 @@ use core::cell::RefCell;
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel};
 use embedded_graphics::{draw_target::DrawTarget, geometry::{OriginDimensions, Size}, pixelcolor::BinaryColor, Pixel};
-use mega_blastoise_core::{render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, BoardEvent, MoveSlot, PartySlotData};
+use mega_blastoise_core::{render_event_text, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, BoardEvent, MoveSlot, PartySlotData};
 use display_interface::AsyncWriteOnlyDataCommand;
 use ssd1306::{mode::BufferedGraphicsModeAsync, prelude::*, I2CDisplayInterface, Ssd1306Async};
 
@@ -146,6 +146,11 @@ pub enum OledCmd {
     /// Lobby ready state for a player. ready=false → idle instructions;
     /// ready=true,ai=false → "READY!"; ready=true,ai=true → "AI" (AI-controlled side).
     LobbyState { player: u8, ready: bool, ai: bool },
+    /// Transient battle-narration overlay for events without a dedicated state
+    /// screen (move used, crit, miss, status, …). Held visible by the caller's
+    /// animation delay; the next state redraw (HpUpdate / RestoreScreen /
+    /// SwitchIn) clears it. `player` 0 = show on both displays.
+    EventFlash { player: u8, text: [u8; 48], len: u8 },
 }
 
 static CMD: Channel<CriticalSectionRawMutex, OledCmd, 8> = Channel::new();
@@ -340,6 +345,21 @@ pub async fn task(
             OledCmd::LobbyState { player, ready, ai } => {
                 if player == 1 { if p1_ok { draw_lobby_screen(&mut disp0, &mut s1, 1, ready, ai).await; } }
                 else           { if p2_ok { draw_lobby_screen(&mut disp1, &mut s2, 2, ready, ai).await; } }
+            }
+            OledCmd::EventFlash { player, text, len } => {
+                let s = core::str::from_utf8(&text[..len as usize]).unwrap_or("");
+                if (player == 1 || player == 0) && p1_ok {
+                    render_event_text(&mut disp0, s);
+                    render_event_text(&mut s1, s);
+                    store_shadow(1, &s1);
+                    disp0.flush().await.ok();
+                }
+                if (player != 1 || player == 0) && p2_ok {
+                    render_event_text(&mut disp1, s);
+                    render_event_text(&mut s2, s);
+                    store_shadow(2, &s2);
+                    disp1.flush().await.ok();
+                }
             }
             OledCmd::Win { winner } => {
                 let (msg0, msg1) = BoardEvent::win_messages(winner);

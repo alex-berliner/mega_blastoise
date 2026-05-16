@@ -33,6 +33,17 @@ fn name_buf(name: &str) -> ([u8; 12], u8) {
     (buf, len)
 }
 
+/// Flash a transient narration overlay on a player's OLED (0 = both).
+/// `text` is byte-truncated to 48; `render_event_text` word-wraps it.
+#[cfg(feature = "oled")]
+fn oled_flash(player: u8, text: &str) {
+    let bytes = text.as_bytes();
+    let len = bytes.len().min(48) as u8;
+    let mut buf = [b' '; 48];
+    buf[..len as usize].copy_from_slice(&bytes[..len as usize]);
+    oled_send(OledCmd::EventFlash { player, text: buf, len });
+}
+
 impl BoardEffects for BattleEffects<'_> {
     async fn on_event(&mut self, event: BoardEvent) {
         // ── HP tracking + hardware output ─────────────────────────────────────
@@ -99,14 +110,18 @@ impl BoardEffects for BattleEffects<'_> {
                 }
             }
 
-            BoardEvent::SuperEffective { .. } => {
+            BoardEvent::SuperEffective { mon } => {
                 #[cfg(feature = "buzzer")]
                 buzz(BuzzerCmd::SuperEffective);
+                #[cfg(feature = "oled")]
+                oled_flash(mon_player_num(mon).unwrap_or(0), &event.description());
             }
 
-            BoardEvent::CriticalHit { .. } => {
+            BoardEvent::CriticalHit { mon } => {
                 #[cfg(feature = "buzzer")]
                 buzz(BuzzerCmd::Crit);
+                #[cfg(feature = "oled")]
+                oled_flash(mon_player_num(mon).unwrap_or(0), &event.description());
             }
 
             BoardEvent::SetStatus { mon: _mon, status: _status } => {
@@ -116,6 +131,8 @@ impl BoardEffects for BattleEffects<'_> {
                         led_send(LedCmd::SetStatus { player, status: s });
                     }
                 }
+                #[cfg(feature = "oled")]
+                oled_flash(mon_player_num(_mon).unwrap_or(0), &event.description());
             }
 
             BoardEvent::CureStatus { mon: _mon, .. } => {
@@ -123,6 +140,8 @@ impl BoardEffects for BattleEffects<'_> {
                 if let Some(player) = mon_player_num(_mon) {
                     led_send(LedCmd::CureStatus { player });
                 }
+                #[cfg(feature = "oled")]
+                oled_flash(mon_player_num(_mon).unwrap_or(0), &event.description());
             }
 
             BoardEvent::Win { side } => {
@@ -156,6 +175,28 @@ impl BoardEffects for BattleEffects<'_> {
                 let player = player_id_to_num(player_id.as_str());
                 #[cfg(feature = "oled")]
                 oled_send(OledCmd::RestoreScreen { player });
+            }
+
+            // ── Transient narration flashes for events without a state screen ──
+            BoardEvent::Move { player_id, .. } => {
+                #[cfg(feature = "oled")]
+                {
+                    let player = player_id.as_deref().map(player_id_to_num).unwrap_or(0);
+                    oled_flash(player, &event.description());
+                }
+            }
+
+            BoardEvent::Miss { mon }
+            | BoardEvent::Immune { mon }
+            | BoardEvent::Resisted { mon }
+            | BoardEvent::Fail { mon } => {
+                #[cfg(feature = "oled")]
+                oled_flash(mon_player_num(mon).unwrap_or(0), &event.description());
+            }
+
+            BoardEvent::Cant { mon, .. } => {
+                #[cfg(feature = "oled")]
+                oled_flash(mon_player_num(mon).unwrap_or(0), &event.description());
             }
 
             _ => {}
