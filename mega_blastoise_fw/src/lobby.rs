@@ -323,10 +323,23 @@ async fn run_lobby_inner(
             }
             None => {
                 input.write_line("Demo starting!").await;
-                // Idle delay elapsed — race demo battle against next input.
+                // Idle delay elapsed — race the demo battle against the next
+                // *actionable* input. `LobbyEvent::Stop` is unrecognised/stale
+                // USB noise (e.g. a Linux host's ModemManager probing the CDC
+                // port on every enumeration); consuming it must NOT cancel the
+                // in-progress demo, so we filter it out *inside* the racing
+                // future rather than letting it resolve the select.
+                let next_actionable = async {
+                    loop {
+                        let e = input.wait_event().await;
+                        if !matches!(e, LobbyEvent::Stop) {
+                            break e;
+                        }
+                    }
+                };
                 match select(
                     run_demo_battle(data, queue, demo_seed),
-                    input.wait_event(),
+                    next_actionable,
                 ).await {
                     Either::First(_) => {
                         demo_seed = demo_seed.wrapping_add(TEAM_SEED_SALT);
