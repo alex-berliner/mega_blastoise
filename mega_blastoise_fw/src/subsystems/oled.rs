@@ -17,7 +17,7 @@ use embassy_rp::i2c::{Config as I2cConfig, I2c, InterruptHandler};
 use embassy_rp::Peri;
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
 use core::cell::RefCell;
-use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel};
 use embedded_graphics::{draw_target::DrawTarget, geometry::{OriginDimensions, Size}, pixelcolor::BinaryColor, Pixel};
 use mega_blastoise_core::{render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, BoardEvent, MoveSlot, PartySlotData};
@@ -83,54 +83,36 @@ pub fn oled_dump_enabled() -> bool {
     OLED_DUMP.load(Ordering::Relaxed)
 }
 
-/// Last dump time (ms since boot) per player, for rate-limiting.
-/// A full dump is ~4 KB of defmt; during a fast battle renders fire every few
-/// ms, which floods the RTT buffer and — because defmt RTT is blocking — wedges
-/// the whole executor. A framebuffer only needs its latest state, so coalesce:
-/// at most one dump per `DUMP_MIN_INTERVAL_MS` per player.
-static P1_LAST_DUMP_MS: AtomicU32 = AtomicU32::new(0);
-static P2_LAST_DUMP_MS: AtomicU32 = AtomicU32::new(0);
-const DUMP_MIN_INTERVAL_MS: u32 = 400;
-
 fn store_shadow(player: u8, s: &Shadow) {
     if player == 1 { P1_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
     else           { P2_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
     if OLED_DUMP.load(Ordering::Relaxed) {
-        let now = embassy_time::Instant::now().as_millis() as u32;
-        let slot = if player == 1 { &P1_LAST_DUMP_MS } else { &P2_LAST_DUMP_MS };
-        let last = slot.load(Ordering::Relaxed);
-        if now.wrapping_sub(last) >= DUMP_MIN_INTERVAL_MS {
-            slot.store(now, Ordering::Relaxed);
-            dump_fb_rtt(player, &s.0);
-        }
+        dump_fb_rtt(player, &s.0);
     }
 }
 
-/// Render a framebuffer over RTT using the same half-block format as the
-/// `:oled` USB dump: 32 rows of 128 chars, each char = 2 vertical pixels.
-/// Built into a fixed stack buffer (no heap) and emitted line-by-line.
+/// Emit the framebuffer as ONE compact defmt message: the 1024 packed bytes
+/// as a hex string (`oledfb|pN|<2048 hex chars>`).
+///
+/// The earlier per-row half-block dump was 33 defmt messages (~4 KB) per
+/// render — under battle render rates that floods RTT and either wedges the
+/// executor (blocking defmt) or drops body rows (non-blocking). A single
+/// atomic ~2 KB message survives bursts, so every frame of a whole game can
+/// be captured. The host side reconstructs the screen offline (see
+/// scripts/oled_render.py).
 fn dump_fb_rtt(player: u8, fb: &[[u8; 16]; 64]) {
-    defmt::info!("oled[p{}] === 128x64 ===", player);
-    // Each glyph is at most 3 UTF-8 bytes; 128 glyphs → 384 bytes max.
-    let mut buf = [0u8; 128 * 3];
-    for row in 0..32usize {
-        let mut len = 0usize;
-        for col in 0..128usize {
-            let top = (fb[row * 2][col >> 3] >> (7 - (col & 7))) & 1 == 1;
-            let bottom = (fb[row * 2 + 1][col >> 3] >> (7 - (col & 7))) & 1 == 1;
-            let glyph: &[u8] = match (top, bottom) {
-                (false, false) => b" ",
-                (true, false) => "\u{2580}".as_bytes(),  // ▀
-                (false, true) => "\u{2584}".as_bytes(),   // ▄
-                (true, true) => "\u{2588}".as_bytes(),    // █
-            };
-            buf[len..len + glyph.len()].copy_from_slice(glyph);
-            len += glyph.len();
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut hex = [0u8; 1024 * 2];
+    let mut i = 0usize;
+    for row in fb {
+        for &b in row {
+            hex[i] = HEX[(b >> 4) as usize];
+            hex[i + 1] = HEX[(b & 0xf) as usize];
+            i += 2;
         }
-        let s = core::str::from_utf8(&buf[..len]).unwrap_or("?");
-        defmt::info!("oled[p{}] {=str}", player, s);
     }
-    defmt::info!("oled[p{}] === end ===", player);
+    let s = core::str::from_utf8(&hex).unwrap_or("?");
+    defmt::info!("oledfb|p{}|{=str}", player, s);
 }
 
 /// Snapshot the current OLED framebuffer for `player` (1 or 2).
