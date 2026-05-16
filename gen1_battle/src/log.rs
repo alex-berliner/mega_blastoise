@@ -2,6 +2,7 @@
 
 use core::fmt;
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum Event {
     MoveUsed { side: u8, move_id: &'static str },

@@ -17,7 +17,7 @@ use embassy_rp::i2c::{Config as I2cConfig, I2c, InterruptHandler};
 use embassy_rp::Peri;
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
 use core::cell::RefCell;
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel};
 use embedded_graphics::{draw_target::DrawTarget, geometry::{OriginDimensions, Size}, pixelcolor::BinaryColor, Pixel};
 use mega_blastoise_core::{render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, BoardEvent, MoveSlot, PartySlotData};
@@ -83,11 +83,26 @@ pub fn oled_dump_enabled() -> bool {
     OLED_DUMP.load(Ordering::Relaxed)
 }
 
+/// Last dump time (ms since boot) per player, for rate-limiting.
+/// A full dump is ~4 KB of defmt; during a fast battle renders fire every few
+/// ms, which floods the RTT buffer and — because defmt RTT is blocking — wedges
+/// the whole executor. A framebuffer only needs its latest state, so coalesce:
+/// at most one dump per `DUMP_MIN_INTERVAL_MS` per player.
+static P1_LAST_DUMP_MS: AtomicU32 = AtomicU32::new(0);
+static P2_LAST_DUMP_MS: AtomicU32 = AtomicU32::new(0);
+const DUMP_MIN_INTERVAL_MS: u32 = 400;
+
 fn store_shadow(player: u8, s: &Shadow) {
     if player == 1 { P1_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
     else           { P2_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
     if OLED_DUMP.load(Ordering::Relaxed) {
-        dump_fb_rtt(player, &s.0);
+        let now = embassy_time::Instant::now().as_millis() as u32;
+        let slot = if player == 1 { &P1_LAST_DUMP_MS } else { &P2_LAST_DUMP_MS };
+        let last = slot.load(Ordering::Relaxed);
+        if now.wrapping_sub(last) >= DUMP_MIN_INTERVAL_MS {
+            slot.store(now, Ordering::Relaxed);
+            dump_fb_rtt(player, &s.0);
+        }
     }
 }
 

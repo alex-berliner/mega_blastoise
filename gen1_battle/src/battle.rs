@@ -139,10 +139,8 @@ impl<'a> Battle<'a> {
         }
         // Initial switch-in narration.
         for i in 0..2 {
-            self.log.push(crate::log::Event::SwitchIn {
-                side: i as u8,
-                slot: self.sides[i].active_idx,
-            });
+            let s = &self.sides[i];
+            self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
         }
         self.phase = Phase::Turn;
         self.rebuild_requests();
@@ -358,11 +356,11 @@ impl<'a> Battle<'a> {
         }
         if self.team_wiped(0) {
             self.winner = Some(1);
-            self.log.push(crate::log::Event::Win { side: 1 });
+            self.log.push_board(format!("win|side:1"));
             self.phase = Phase::Ended;
         } else if self.team_wiped(1) {
             self.winner = Some(0);
-            self.log.push(crate::log::Event::Win { side: 0 });
+            self.log.push_board(format!("win|side:0"));
             self.phase = Phase::Ended;
         } else if self.pending_switch_needed[0] || self.pending_switch_needed[1] {
             self.phase = Phase::AwaitSwitch;
@@ -382,14 +380,16 @@ impl<'a> Battle<'a> {
                     && !self.sides[i].team[slot as usize].fainted()
                 {
                     self.sides[i].active_idx = slot;
-                    self.log.push(crate::log::Event::SwitchIn { side: i as u8, slot });
+                    let s = &self.sides[i];
+                    self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
                 }
             } else {
                 // Auto-pick first alive.
                 for (j, m) in self.sides[i].team.iter().enumerate() {
                     if !m.empty() && !m.fainted() && j as u8 != self.sides[i].active_idx {
                         self.sides[i].active_idx = j as u8;
-                        self.log.push(crate::log::Event::SwitchIn { side: i as u8, slot: j as u8 });
+                        let s = &self.sides[i];
+                        self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
                         break;
                     }
                 }
@@ -428,7 +428,8 @@ impl<'a> Battle<'a> {
                     let s = (slot as usize).min(5);
                     if !self.sides[side].team[s].empty() && !self.sides[side].team[s].fainted() {
                         self.sides[side].active_idx = slot;
-                        self.log.push(crate::log::Event::SwitchIn { side: side as u8, slot });
+                        let si = &self.sides[side];
+                        self.log.push_board(format!("switch|player:{}|name:{}", si.player_id, si.active().name));
                     }
                 }
                 Some(Choice::Move(slot)) => {

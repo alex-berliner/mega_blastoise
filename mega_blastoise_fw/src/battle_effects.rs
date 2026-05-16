@@ -162,9 +162,15 @@ impl BoardEffects for BattleEffects<'_> {
         }
 
         // ── Animation delay ───────────────────────────────────────────────────
-        let delay_ms = event.anim_delay_ms();
-        if delay_ms > 0 && ANIM_ENABLED.load(Ordering::Relaxed) {
-            Timer::after_millis(delay_ms as u64).await;
+        // Skipped under `trace` (fast hardware-verification builds) — same
+        // rationale as DemoAi's pacing delay. Normal builds keep animations,
+        // runtime-toggleable via `:anim off`.
+        #[cfg(not(feature = "trace"))]
+        {
+            let delay_ms = event.anim_delay_ms();
+            if delay_ms > 0 && ANIM_ENABLED.load(Ordering::Relaxed) {
+                Timer::after_millis(delay_ms as u64).await;
+            }
         }
 
         // ── USB log narration ─────────────────────────────────────────────────

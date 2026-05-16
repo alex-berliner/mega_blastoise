@@ -302,7 +302,7 @@ async fn run_lobby_inner(
             let deadline = Instant::now() + Duration::from_millis(STEP_MS);
             loop {
                 match select(Timer::at(deadline), input.wait_event()).await {
-                    Either::Second(LobbyEvent::Stop) => {}
+                    Either::Second(LobbyEvent::Stop) => break 'wait None,
                     Either::Second(LobbyEvent::TeamUpload { player, team }) => {
                         if player == 0 { uploaded_p1 = Some(team); }
                         else { uploaded_p2 = Some(team); }

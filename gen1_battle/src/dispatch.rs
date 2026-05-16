@@ -95,10 +95,10 @@ pub fn execute_move(
     sides[attacker_side_idx].last_move_was_normal_or_fighting =
         matches!(mv.move_type, crate::types::Type::Normal | crate::types::Type::Fighting);
 
-    log.push(Event::MoveUsed {
-        side: attacker_side_idx as u8,
-        move_id: mv.id,
-    });
+    {
+        let s = &sides[attacker_side_idx];
+        log.push_board(format!("move|mon:{},{},0|name:{}", s.active().name, s.player_id, mv.id));
+    }
 
     // Accuracy check (status moves still respect accuracy).
     let hit = {
@@ -106,7 +106,10 @@ pub fn execute_move(
         hit_roll(rng, mv, a, d)
     };
     if !hit {
-        log.push(Event::Miss { side: attacker_side_idx as u8 });
+        {
+            let s = &sides[attacker_side_idx];
+            log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
+        }
         handle_miss_side_effects(rng, mv, sides, attacker_side_idx, log);
         return MoveOutcome::default();
     }
@@ -128,17 +131,20 @@ fn execute_move_no_pp(
     sides[attacker_side_idx].last_move_used = mv.id;
     sides[attacker_side_idx].last_move_was_normal_or_fighting =
         matches!(mv.move_type, crate::types::Type::Normal | crate::types::Type::Fighting);
-    log.push(Event::MoveUsed {
-        side: attacker_side_idx as u8,
-        move_id: mv.id,
-    });
+    {
+        let s = &sides[attacker_side_idx];
+        log.push_board(format!("move|mon:{},{},0|name:{}", s.active().name, s.player_id, mv.id));
+    }
 
     let hit = {
         let (a, d) = active_pair(sides, attacker_side_idx);
         hit_roll(rng, mv, a, d)
     };
     if !hit {
-        log.push(Event::Miss { side: attacker_side_idx as u8 });
+        {
+            let s = &sides[attacker_side_idx];
+            log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
+        }
         handle_miss_side_effects(rng, mv, sides, attacker_side_idx, log);
         return MoveOutcome::default();
     }
@@ -153,13 +159,12 @@ fn handle_miss_side_effects(
     log: &mut Log,
 ) {
     if mv.effect_kind == MoveEffectKind::CrashOnMiss {
-        let a = sides[attacker_side].active_mut();
         let crash = 1u16; // Gen 1 quirk: 1 HP, not 1/8.
-        a.hp_cur = a.hp_cur.saturating_sub(crash);
-        log.push(Event::Damage {
-            side: attacker_side as u8,
-            dealt: crash,
-        });
+        let cur = sides[attacker_side].active().hp_cur;
+        sides[attacker_side].active_mut().hp_cur = cur.saturating_sub(crash);
+        let s = &sides[attacker_side];
+        let m = s.active();
+        log.push_board(format!("damage|mon:{},{},0|health:{}/{}", m.name, s.player_id, m.hp_cur, m.hp_max));
     }
 }
 
@@ -217,7 +222,8 @@ fn apply_effect(
             if (mv.effect_param1 as i8) < 0
                 && sides[defender_side].active().volatile.has(Volatile::MIST)
             {
-                log.push(Event::Failed);
+                let s = &sides[attacker_side];
+                log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
             } else {
                 let delta = mv.effect_param1 as i8;
                 apply_stage_change(sides, defender_side, mv.effect_param0, delta, log);
@@ -278,7 +284,8 @@ fn apply_effect(
             let a_spe = sides[attacker_side].active().stats[4];
             let d_spe = sides[defender_side].active().stats[4];
             if a_spe < d_spe {
-                log.push(Event::Miss { side: attacker_side as u8 });
+                let s = &sides[attacker_side];
+                log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
                 return MoveOutcome::default();
             }
             if rng.byte() < (30u32 * 255 / 100) as u8 {
@@ -287,11 +294,13 @@ fn apply_effect(
                 outcome.damage_dealt = dmg;
                 outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
             } else {
-                log.push(Event::Miss { side: attacker_side as u8 });
+                let s = &sides[attacker_side];
+                log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
             }
         }
         ForceSwitchTarget => {
-            log.push(Event::Failed);
+            let s = &sides[attacker_side];
+            log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
         }
         LevelDamage => {
             let dmg = sides[attacker_side].active().level as u16;
@@ -392,13 +401,15 @@ fn apply_effect(
                 outcome.damage_dealt = dmg;
                 outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
             } else {
-                log.push(Event::Failed);
+                let s = &sides[attacker_side];
+                log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
             }
         }
         MirrorMove => {
             let last = sides[defender_side].last_move_used;
             if last.is_empty() || last == "mirrormove" {
-                log.push(Event::Failed);
+                let s = &sides[attacker_side];
+                log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
             } else if let Some(mv2) = move_by_id(last) {
                 outcome = execute_move_no_pp(rng, mv2, sides, attacker_side, log);
             }
@@ -421,7 +432,8 @@ fn apply_effect(
                 None
             };
             let Some(new_move) = learn else {
-                log.push(Event::Failed);
+                let s = &sides[attacker_side];
+                log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
                 return outcome;
             };
             // Find the user's Mimic slot — fallback to first slot.
@@ -475,7 +487,8 @@ fn apply_effect(
                     (cost + 1).min(255) as u8;
                 log.push(Event::Substitute { side: attacker_side as u8 });
             } else {
-                log.push(Event::Failed);
+                let s = &sides[attacker_side];
+                log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
             }
         }
         Disable => {
@@ -489,7 +502,8 @@ fn apply_effect(
                 .map(|(i, _)| i as u8)
                 .collect();
             if candidates.is_empty() {
-                log.push(Event::Failed);
+                let s = &sides[attacker_side];
+                log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
             } else {
                 let pick = candidates[(rng.range(candidates.len() as u32)) as usize];
                 let turns = ((rng.byte() & 0b111) as u8).saturating_add(1); // 1..=8
@@ -531,9 +545,11 @@ fn apply_effect(
             if matches!(dt1, crate::types::Type::Grass)
                 || matches!(dt2, crate::types::Type::Grass)
             {
-                log.push(Event::Failed);
+                let s = &sides[attacker_side];
+                log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
             } else if sides[defender_side].active().volatile.has(Volatile::LEECH_SEEDED) {
-                log.push(Event::Failed);
+                let s = &sides[attacker_side];
+                log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
             } else {
                 sides[defender_side].active_mut().volatile.set(Volatile::LEECH_SEEDED);
                 log.push(Event::LeechSeed { side: defender_side as u8 });
@@ -598,10 +614,14 @@ fn apply_effect(
             outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
             sides[attacker_side].active_mut().hp_cur = 0;
             outcome.fainted_user = true;
-            log.push(Event::Faint { side: attacker_side as u8 });
+            {
+                let s = &sides[attacker_side];
+                log.push_board(format!("faint|mon:{},{},0", s.active().name, s.player_id));
+            }
         }
         NoOp => {
-            log.push(Event::NoEffect);
+            let s = &sides[attacker_side];
+            log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
         }
     }
     outcome
@@ -628,7 +648,8 @@ fn damage_step(
     let defender_side = 1 - attacker_side;
     // Invulnerable target (Fly/Dig)?
     if sides[defender_side].active().volatile.has(Volatile::INVULNERABLE) {
-        log.push(Event::Miss { side: attacker_side as u8 });
+        let s = &sides[attacker_side];
+        log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
         return outcome;
     }
     let (dmg, crit) = {
@@ -649,11 +670,13 @@ fn damage_step(
         )
     };
     if dmg == 0 {
-        log.push(Event::Immune);
+        let s = &sides[defender_side];
+        log.push_board(format!("immune|mon:{},{},0", s.active().name, s.player_id));
         return outcome;
     }
     if crit {
-        log.push(Event::Crit { side: attacker_side as u8 });
+        let s = &sides[defender_side];
+        log.push_board(format!("crit|mon:{},{},0", s.active().name, s.player_id));
     }
     // Record source damage for Counter, and Bide-stored damage on defender.
     if matches!(mv.move_type, crate::types::Type::Normal | crate::types::Type::Fighting) {
@@ -678,29 +701,26 @@ fn damage_step(
 }
 
 fn deal_damage(sides: &mut [Side; 2], target_side: usize, dmg: u16, log: &mut Log) {
-    let m = sides[target_side].active_mut();
-
     // Substitute absorbs damage.
-    if m.volatile.has(Volatile::SUBSTITUTED) {
-        let sub_hp = m.volatile.substitute_hp as u16;
+    if sides[target_side].active().volatile.has(Volatile::SUBSTITUTED) {
+        let sub_hp = sides[target_side].active().volatile.substitute_hp as u16;
         if dmg >= sub_hp {
-            m.volatile.clear(Volatile::SUBSTITUTED);
-            m.volatile.substitute_hp = 0;
+            sides[target_side].active_mut().volatile.clear(Volatile::SUBSTITUTED);
+            sides[target_side].active_mut().volatile.substitute_hp = 0;
             log.push(Event::SubstituteBroken { side: target_side as u8 });
         } else {
-            m.volatile.substitute_hp = (sub_hp - dmg) as u8;
+            sides[target_side].active_mut().volatile.substitute_hp = (sub_hp - dmg) as u8;
         }
         return;
     }
 
-    let actual = dmg.min(m.hp_cur);
-    m.hp_cur -= actual;
-    log.push(Event::Damage {
-        side: target_side as u8,
-        dealt: actual,
-    });
+    let actual = dmg.min(sides[target_side].active().hp_cur);
+    sides[target_side].active_mut().hp_cur -= actual;
+    let s = &sides[target_side];
+    let m = s.active();
+    log.push_board(format!("damage|mon:{},{},0|health:{}/{}", m.name, s.player_id, m.hp_cur, m.hp_max));
     if m.hp_cur == 0 {
-        log.push(Event::Faint { side: target_side as u8 });
+        log.push_board(format!("faint|mon:{},{},0", m.name, s.player_id));
     }
 }
 
@@ -709,23 +729,37 @@ fn damage_self(sides: &mut [Side; 2], side: usize, dmg: u16, log: &mut Log) {
 }
 
 fn heal_mon(sides: &mut [Side; 2], side: usize, amt: u16, log: &mut Log) {
-    let m = sides[side].active_mut();
-    let new_hp = (m.hp_cur as u32 + amt as u32).min(m.hp_max as u32) as u16;
-    let healed = new_hp - m.hp_cur;
-    m.hp_cur = new_hp;
+    let (new_hp, healed) = {
+        let m = sides[side].active();
+        let new = (m.hp_cur as u32 + amt as u32).min(m.hp_max as u32) as u16;
+        (new, new - m.hp_cur)
+    };
+    sides[side].active_mut().hp_cur = new_hp;
     if healed > 0 {
-        log.push(Event::Heal { side: side as u8, amount: healed });
+        let s = &sides[side];
+        let m = s.active();
+        log.push_board(format!("heal|mon:{},{},0|health:{}/{}", m.name, s.player_id, m.hp_cur, m.hp_max));
     }
 }
 
 fn try_apply_status(sides: &mut [Side; 2], side: usize, status: Status, log: &mut Log) {
-    let m = sides[side].active_mut();
-    if !matches!(m.status, Status::None) {
+    if !matches!(sides[side].active().status, Status::None) {
         return;
     }
     if !matches!(status, Status::None) {
-        m.status = status;
-        log.push(Event::StatusInflicted { side: side as u8 });
+        sides[side].active_mut().status = status;
+        let status_str = match status {
+            Status::Poison => "psn",
+            Status::Burn => "brn",
+            Status::Freeze => "frz",
+            Status::Paralysis => "par",
+            Status::Sleep(_) => "slp",
+            Status::BadPoison(_) => "tox",
+            Status::None => "",
+        };
+        let s = &sides[side];
+        let m = s.active();
+        log.push_board(format!("status|mon:{},{},0|status:{}", m.name, s.player_id, status_str));
     }
 }
 
@@ -762,35 +796,42 @@ pub fn end_of_turn(sides: &mut [Side; 2], log: &mut Log) {
         match sides[i].active().status {
             Status::Poison => {
                 let d = (max / 16).max(1);
-                let m = sides[i].active_mut();
-                m.hp_cur = m.hp_cur.saturating_sub(d);
-                log.push(Event::Damage { side: i as u8, dealt: d });
+                let new_hp = sides[i].active().hp_cur.saturating_sub(d);
+                sides[i].active_mut().hp_cur = new_hp;
+                let s = &sides[i];
+                log.push_board(format!("damage|mon:{},{},0|health:{}/{}", s.active().name, s.player_id, new_hp, max));
             }
             Status::Burn => {
                 let d = (max / 16).max(1);
-                let m = sides[i].active_mut();
-                m.hp_cur = m.hp_cur.saturating_sub(d);
-                log.push(Event::Damage { side: i as u8, dealt: d });
+                let new_hp = sides[i].active().hp_cur.saturating_sub(d);
+                sides[i].active_mut().hp_cur = new_hp;
+                let s = &sides[i];
+                log.push_board(format!("damage|mon:{},{},0|health:{}/{}", s.active().name, s.player_id, new_hp, max));
             }
             Status::BadPoison(c) => {
                 let d = ((max as u32 * c as u32) / 16).max(1) as u16;
-                let m = sides[i].active_mut();
-                m.hp_cur = m.hp_cur.saturating_sub(d);
-                log.push(Event::Damage { side: i as u8, dealt: d });
-                m.status = Status::BadPoison(c.saturating_add(1).min(15));
+                let new_hp = sides[i].active().hp_cur.saturating_sub(d);
+                sides[i].active_mut().hp_cur = new_hp;
+                sides[i].active_mut().status = Status::BadPoison(c.saturating_add(1).min(15));
+                let s = &sides[i];
+                log.push_board(format!("damage|mon:{},{},0|health:{}/{}", s.active().name, s.player_id, new_hp, max));
             }
             _ => {}
         }
         if sides[i].active().volatile.has(Volatile::LEECH_SEEDED) && sides[i].active().hp_cur > 0 {
             let d = (max / 16).max(1);
-            let m = sides[i].active_mut();
-            m.hp_cur = m.hp_cur.saturating_sub(d);
-            log.push(Event::Damage { side: i as u8, dealt: d });
+            let new_hp = sides[i].active().hp_cur.saturating_sub(d);
+            sides[i].active_mut().hp_cur = new_hp;
+            {
+                let s = &sides[i];
+                log.push_board(format!("damage|mon:{},{},0|health:{}/{}", s.active().name, s.player_id, new_hp, max));
+            }
             let healer = 1 - i;
             heal_mon(sides, healer, d, log);
         }
         if sides[i].active().hp_cur == 0 {
-            log.push(Event::Faint { side: i as u8 });
+            let s = &sides[i];
+            log.push_board(format!("faint|mon:{},{},0", s.active().name, s.player_id));
         }
     }
     // Decrement screens.
@@ -835,63 +876,74 @@ pub fn pre_move_check(
     side: usize,
     log: &mut Log,
 ) -> bool {
-    let m = sides[side].active_mut();
-    if m.volatile.has(Volatile::FLINCHED) {
-        m.volatile.clear(Volatile::FLINCHED);
+    if sides[side].active().volatile.has(Volatile::FLINCHED) {
+        sides[side].active_mut().volatile.clear(Volatile::FLINCHED);
         return false;
     }
-    if m.volatile.has(Volatile::MUST_RECHARGE) {
-        m.volatile.clear(Volatile::MUST_RECHARGE);
-        log.push(Event::Recharge { side: side as u8 });
+    if sides[side].active().volatile.has(Volatile::MUST_RECHARGE) {
+        sides[side].active_mut().volatile.clear(Volatile::MUST_RECHARGE);
+        let s = &sides[side];
+        log.push_board(format!("cant|mon:{},{},0|from:recharge", s.active().name, s.player_id));
         return false;
     }
-    if m.volatile.has(Volatile::TRAPPED) {
+    if sides[side].active().volatile.has(Volatile::TRAPPED) {
         // Can't move while trapped (Wrap/Bind/Fire Spin/Clamp from opponent).
-        if m.volatile.trapping_turns > 0 {
-            m.volatile.trapping_turns -= 1;
-            if m.volatile.trapping_turns == 0 {
-                m.volatile.clear(Volatile::TRAPPED);
+        {
+            let m = sides[side].active_mut();
+            if m.volatile.trapping_turns > 0 {
+                m.volatile.trapping_turns -= 1;
+                if m.volatile.trapping_turns == 0 {
+                    m.volatile.clear(Volatile::TRAPPED);
+                }
             }
         }
-        log.push(Event::CantMoveTrapped { side: side as u8 });
+        let s = &sides[side];
+        log.push_board(format!("cant|mon:{},{},0|from:trapped", s.active().name, s.player_id));
         return false;
     }
-    match m.status {
+    let current_status = sides[side].active().status;
+    match current_status {
         Status::Freeze => {
-            log.push(Event::Frozen { side: side as u8 });
+            let s = &sides[side];
+            log.push_board(format!("cant|mon:{},{},0|from:frz", s.active().name, s.player_id));
             return false;
         }
         Status::Sleep(t) => {
             if t == 0 {
-                m.status = Status::None;
-                log.push(Event::Wake { side: side as u8 });
+                sides[side].active_mut().status = Status::None;
+                let s = &sides[side];
+                log.push_board(format!("curestatus|mon:{},{},0|status:slp", s.active().name, s.player_id));
                 return false; // Gen 1: lose the wake turn.
             } else {
-                m.status = Status::Sleep(t - 1);
+                sides[side].active_mut().status = Status::Sleep(t - 1);
                 return false;
             }
         }
         Status::Paralysis => {
             if rng.byte() < (255u32 / 4) as u8 {
-                log.push(Event::FullyParalyzed { side: side as u8 });
+                let s = &sides[side];
+                log.push_board(format!("cant|mon:{},{},0|from:par", s.active().name, s.player_id));
                 return false;
             }
         }
         _ => {}
     }
-    if m.volatile.has(Volatile::CONFUSED) {
-        if m.volatile.confused_turns == 0 {
-            m.volatile.clear(Volatile::CONFUSED);
+    if sides[side].active().volatile.has(Volatile::CONFUSED) {
+        if sides[side].active().volatile.confused_turns == 0 {
+            sides[side].active_mut().volatile.clear(Volatile::CONFUSED);
         } else {
-            m.volatile.confused_turns -= 1;
+            sides[side].active_mut().volatile.confused_turns -= 1;
             if rng.byte() < 128 {
-                let lvl = m.level as u32;
-                let atk = m.stats[1] as u32;
-                let def = m.stats[2] as u32;
+                let (lvl, atk, def, hp_cur) = {
+                    let m = sides[side].active();
+                    (m.level as u32, m.stats[1] as u32, m.stats[2] as u32, m.hp_cur)
+                };
                 let dmg = ((((2 * lvl / 5 + 2) * 40 * atk) / def.max(1)) / 50 + 2) as u16;
-                let actual = dmg.min(m.hp_cur);
-                m.hp_cur -= actual;
-                log.push(Event::ConfusionSelfHit { side: side as u8, dealt: actual });
+                let actual = dmg.min(hp_cur);
+                sides[side].active_mut().hp_cur -= actual;
+                let s = &sides[side];
+                let m = s.active();
+                log.push_board(format!("damage|mon:{},{},0|health:{}/{}", m.name, s.player_id, m.hp_cur, m.hp_max));
                 return false;
             }
         }
@@ -925,5 +977,8 @@ impl Log {
     }
     pub fn push(&mut self, ev: Event) {
         self.pending.push(format!("{}", ev));
+    }
+    pub fn push_board(&mut self, s: String) {
+        self.pending.push(s);
     }
 }
