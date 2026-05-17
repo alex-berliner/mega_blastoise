@@ -16,6 +16,7 @@ use embassy_rp::bind_interrupts;
 use embassy_rp::i2c::{Config as I2cConfig, I2c, InterruptHandler};
 use embassy_rp::Peri;
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
+use embassy_time::{with_timeout, Duration};
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel};
@@ -253,8 +254,13 @@ pub async fn task(
     )
     .into_buffered_graphics_mode();
 
-    let p1_ok = disp0.init().await.is_ok();
-    let p2_ok = disp1.init().await.is_ok();
+    // Bound init: embassy async I²C blocks forever waiting for an ACK from an
+    // absent display, which would wedge this whole task (and starve the other,
+    // present display). A timeout turns "no device on this bus" into a clean
+    // !ok instead of a hang.
+    const INIT_TIMEOUT: Duration = Duration::from_millis(500);
+    let p1_ok = matches!(with_timeout(INIT_TIMEOUT, disp0.init()).await, Ok(Ok(())));
+    let p2_ok = matches!(with_timeout(INIT_TIMEOUT, disp1.init()).await, Ok(Ok(())));
     if !p1_ok { defmt::warn!("OLED P1 init failed"); }
     if !p2_ok { defmt::warn!("OLED P2 init failed"); }
     if !p1_ok && !p2_ok {
