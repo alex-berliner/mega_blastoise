@@ -8,7 +8,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
-use battler::TeamData;
+use gen1_battle::TeamData;
 use js_sys::Date;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
@@ -745,7 +745,7 @@ async fn run_game_loop() {
 
         let seed = (Date::now() as u64) ^ 0xdead_beef_cafe_babe;
 
-        let mut battle = match battler::PublicCoreBattle::new(
+        let mut battle = match gen1_battle::PublicCoreBattle::new(
             battle_options_with_seed(seed),
             &data,
             demo_engine_opts(),

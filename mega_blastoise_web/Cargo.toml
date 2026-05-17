@@ -19,6 +19,7 @@ console_error_panic_hook = "0.1"
 embedded-graphics = { version = "0.8", default-features = false }
 
 mega-blastoise-core = { path = "../mega_blastoise_core" }
+gen1_battle = { path = "../gen1_battle" }
 battler = { path = "../battler/battler" }
 battler-data = { path = "../battler/battler-data" }
 anyhow = "1.0"

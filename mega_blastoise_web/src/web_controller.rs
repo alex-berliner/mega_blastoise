@@ -1,4 +1,4 @@
-use battler::{PlayerBattleData, Request};
+use gen1_battle::{PlayerBattleData, Request};
 use js_sys::Date;
 use mega_blastoise_core::{format_prompt, party_slot_from_mon, player_id_to_num, ButtonSource, PlayerAction};
 

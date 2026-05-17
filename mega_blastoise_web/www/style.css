@@ -400,8 +400,9 @@ body {
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     padding: 14px 16px;
-    max-height: 40dvh;
-    overflow-y: auto;
+    /* Let it grow to its full content height; the body scrolls on mobile,
+       so an inner max-height/scroll box just clips the text in half. */
+    overflow-y: visible;
   }
 
   #terminal {
