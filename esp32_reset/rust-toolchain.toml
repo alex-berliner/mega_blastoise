@@ -1,0 +1,5 @@
+# ESP32 (original / WROOM-32) is Xtensa — needs Espressif's Rust fork.
+# Install once with: cargo install espup && espup install
+# then `source ~/export-esp.sh` in the shell you build from.
+[toolchain]
+channel = "esp"

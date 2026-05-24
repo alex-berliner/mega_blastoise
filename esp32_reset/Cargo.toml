@@ -1,0 +1,26 @@
+[package]
+name = "esp32_reset"
+version = "0.1.0"
+edition = "2021"
+description = "Hardware recovery line: pulse RP2040 RUN low on a USB trigger"
+
+# NOTE: deliberately NOT a member of the root workspace (see root Cargo.toml
+# `exclude`). This crate builds for xtensa-esp32-none-elf with the Espressif
+# `esp` toolchain; the workspace is nightly + thumbv6m.
+
+[dependencies]
+esp-hal       = { version = "0.23.1", features = ["esp32"] }
+esp-backtrace = { version = "0.15.0", features = ["esp32", "panic-handler", "exception-handler", "println"] }
+esp-println   = { version = "0.13.0", features = ["esp32", "uart"] }
+embedded-io   = "0.6"
+
+[profile.release]
+opt-level        = "s"
+lto              = true
+codegen-units    = 1
+debug            = 2
+overflow-checks  = false
+
+[profile.dev]
+opt-level = "s"
+lto       = false

@@ -1,0 +1,239 @@
+# Mega Blastoise — top-level board design (atopile)
+#
+# Two-player handheld Pokemon battler. Source of truth for component
+# count, GPIO assignment, and power topology is ../../../ELECTRONICS.md.
+# This file expresses the same wiring as code so atopile can emit a
+# KiCad netlist and PCB project from it.
+#
+# Build:   ato build
+# Output:  build/default/ (KiCad project, BOM, netlist)
+
+import Resistor from "generics/resistors.ato"
+import Capacitor from "generics/capacitors.ato"
+import Power from "generics/interfaces.ato"
+
+# ---- Local component stubs ---------------------------------------------------
+#
+# Stubs for parts that aren't in the standard atopile registry. Each one
+# only declares pins; assign a real footprint + MPN before fabbing. For
+# the Pico, OLEDs, TP4056, MT3608, slide switch, and JST headers the
+# expectation is to drop in pre-made modules and wire to their headers
+# instead of placing the raw silicon.
+
+component RaspberryPiPico:
+    # Castellated module; pins named per Pico pinout. Treat as a daughterboard.
+    signal vbus; signal vsys; signal gnd
+    signal gp0;  signal gp1;  signal gp2;  signal gp3
+    signal gp4;  signal gp5;  signal gp6;  signal gp7
+    signal gp8;  signal gp9;  signal gp10; signal gp11
+    signal gp12; signal gp13; signal gp14; signal gp15
+    signal gp16; signal gp17; signal gp18; signal gp19
+    signal gp20; signal gp21; signal gp22
+    signal gp26; signal gp27; signal gp28; signal gp29
+    signal v3v3_out
+    signal run                  # pull LOW to reset
+    footprint = "RPi_Pico:RPi_Pico_SMD_TH"
+    mpn = "SC0915"              # Raspberry Pi Pico H
+
+component SSD1306_OLED_4pin:
+    # Generic 128x64 I2C OLED breakout: VCC, GND, SCL, SDA.
+    signal vcc; signal gnd; signal scl; signal sda
+    footprint = "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+
+component TactileButton_6mm:
+    # SPST momentary, 6x6 mm, 4 legs (two pairs tied together).
+    signal a; signal b
+    footprint = "Button_Switch_THT:SW_PUSH_6mm"
+
+component PiezoBuzzer:
+    # Passive piezo (PWM-driven), 2 leads.
+    signal sig; signal gnd
+    footprint = "Buzzer_Beeper:Buzzer_12x9.5RM7.6"
+
+component TP4056_Module:
+    # USB-C LiPo charge module breakout. Headers for IN/OUT/BAT.
+    signal in_p; signal in_n
+    signal bat_p; signal bat_n
+    signal out_p; signal out_n
+    footprint = "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical"
+
+component MT3608_Boost:
+    # MT3608 adjustable boost module breakout, pre-set to 5V.
+    signal vin; signal vin_gnd
+    signal vout; signal vout_gnd
+    footprint = "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical"
+
+component SlideSwitch_SPDT:
+    signal common; signal a; signal b
+    footprint = "Button_Switch_THT:SW_Slide_1P2T_SS12D00"
+
+component JST_PH_2pin:
+    # LiPo battery connector (JST-PH 2.0 mm pitch, 2-pin).
+    signal p1; signal p2
+    footprint = "Connector_JST:JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal"
+
+component PinHeader_1x3:
+    signal p1; signal p2; signal p3
+    footprint = "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical"
+
+# ---- Reusable subassemblies --------------------------------------------------
+
+module ButtonMatrix4x4:
+    # 4 rows x 4 cols, 14 buttons populated (4 moves + 3 party per player).
+    # Active-low scan: rows driven LOW one at a time, cols read with the
+    # Pico's internal pull-ups.
+    signal r0; signal r1; signal r2; signal r3
+    signal c0; signal c1; signal c2; signal c3
+
+    # P1 moves: row 0, cols 0..3
+    mp1_1 = new TactileButton_6mm; mp1_1.a ~ r0; mp1_1.b ~ c0
+    mp1_2 = new TactileButton_6mm; mp1_2.a ~ r0; mp1_2.b ~ c1
+    mp1_3 = new TactileButton_6mm; mp1_3.a ~ r0; mp1_3.b ~ c2
+    mp1_4 = new TactileButton_6mm; mp1_4.a ~ r0; mp1_4.b ~ c3
+
+    # P1 party: row 1, cols 0..2
+    pp1_1 = new TactileButton_6mm; pp1_1.a ~ r1; pp1_1.b ~ c0
+    pp1_2 = new TactileButton_6mm; pp1_2.a ~ r1; pp1_2.b ~ c1
+    pp1_3 = new TactileButton_6mm; pp1_3.a ~ r1; pp1_3.b ~ c2
+
+    # P2 moves: row 2, cols 0..3
+    mp2_1 = new TactileButton_6mm; mp2_1.a ~ r2; mp2_1.b ~ c0
+    mp2_2 = new TactileButton_6mm; mp2_2.a ~ r2; mp2_2.b ~ c1
+    mp2_3 = new TactileButton_6mm; mp2_3.a ~ r2; mp2_3.b ~ c2
+    mp2_4 = new TactileButton_6mm; mp2_4.a ~ r2; mp2_4.b ~ c3
+
+    # P2 party: row 3, cols 0..2
+    pp2_1 = new TactileButton_6mm; pp2_1.a ~ r3; pp2_1.b ~ c0
+    pp2_2 = new TactileButton_6mm; pp2_2.a ~ r3; pp2_2.b ~ c1
+    pp2_3 = new TactileButton_6mm; pp2_3.a ~ r3; pp2_3.b ~ c2
+
+module OledSegment:
+    # SSD1306 + its 100 nF decoupling cap. Exposes I2C and power.
+    signal vcc; signal gnd; signal scl; signal sda
+
+    oled = new SSD1306_OLED_4pin
+    oled.vcc ~ vcc; oled.gnd ~ gnd
+    oled.scl ~ scl; oled.sda ~ sda
+
+    c_dec = new Capacitor
+    c_dec.value = 100nF
+    c_dec.package = "C0603"
+    c_dec.p1 ~ vcc; c_dec.p2 ~ gnd
+
+module PowerStage:
+    # LiPo + TP4056 charge + MT3608 boost + SPDT switch -> 5V rail.
+    # Battery rail (BAT) feeds both TP4056 (for charging) and MT3608 (for boost).
+    signal v5; signal gnd
+    signal bat_p; signal bat_n
+
+    bat = new JST_PH_2pin
+    bat.p1 ~ bat_p; bat.p2 ~ bat_n
+    bat_n ~ gnd
+
+    charger = new TP4056_Module
+    charger.bat_p ~ bat_p
+    charger.bat_n ~ bat_n
+    charger.in_n  ~ gnd
+    charger.out_n ~ gnd
+    # in_p / out_p are wired off-board; treat charger as the USB-C jack.
+
+    boost = new MT3608_Boost
+    boost.vin      ~ bat_p
+    boost.vin_gnd  ~ gnd
+    boost.vout_gnd ~ gnd
+
+    sw = new SlideSwitch_SPDT
+    sw.common ~ boost.vout
+    sw.a      ~ v5
+    # sw.b left floating: switch isolates the load when off so the boost
+    # doesn't draw quiescent current through the rest of the board.
+
+# ---- Top-level board ---------------------------------------------------------
+
+module MegaBlastoise:
+    # Rails
+    v5  = new Power     # boosted 5 V, drives Pico VSYS + NeoPixel VCC
+    v3v3 = new Power    # Pico's onboard 3V3 regulator output, drives OLEDs
+    gnd = v5.gnd
+    v3v3.gnd ~ gnd
+
+    # ---- Power ----
+    psu = new PowerStage
+    psu.v5  ~ v5.vcc
+    psu.gnd ~ gnd
+
+    c_v5_bulk = new Capacitor   # bulk cap at the head of the 5V rail
+    c_v5_bulk.value = 10uF
+    c_v5_bulk.package = "C0805"
+    c_v5_bulk.p1 ~ v5.vcc
+    c_v5_bulk.p2 ~ gnd
+
+    # ---- MCU ----
+    pico = new RaspberryPiPico
+    pico.vsys ~ v5.vcc
+    pico.gnd  ~ gnd
+    pico.v3v3_out ~ v3v3.vcc
+
+    c_pico_3v3 = new Capacitor
+    c_pico_3v3.value = 1uF
+    c_pico_3v3.package = "C0603"
+    c_pico_3v3.p1 ~ v3v3.vcc
+    c_pico_3v3.p2 ~ gnd
+
+    # ---- P1 OLED on I2C0 (GP16 SDA / GP17 SCL) ----
+    oled_p1 = new OledSegment
+    oled_p1.vcc ~ v3v3.vcc
+    oled_p1.gnd ~ gnd
+    oled_p1.sda ~ pico.gp16
+    oled_p1.scl ~ pico.gp17
+
+    # ---- P2 OLED on I2C1 (GP18 SDA / GP19 SCL) ----
+    oled_p2 = new OledSegment
+    oled_p2.vcc ~ v3v3.vcc
+    oled_p2.gnd ~ gnd
+    oled_p2.sda ~ pico.gp18
+    oled_p2.scl ~ pico.gp19
+
+    # ---- Button matrix on GP6..13 ----
+    btns = new ButtonMatrix4x4
+    btns.r0 ~ pico.gp6;  btns.r1 ~ pico.gp7
+    btns.r2 ~ pico.gp8;  btns.r3 ~ pico.gp9
+    btns.c0 ~ pico.gp10; btns.c1 ~ pico.gp11
+    btns.c2 ~ pico.gp12; btns.c3 ~ pico.gp13
+
+    # ---- WS2812B NeoPixel strip ----
+    # 330R series on the data line, 470 uF bulk cap at the strip entry.
+    # Header carries 5V / DIN / GND to the strip (which lives off-board).
+    r_neo_data = new Resistor
+    r_neo_data.value = 330ohm
+    r_neo_data.package = "R0603"
+    r_neo_data.p1 ~ pico.gp20
+
+    c_neo_bulk = new Capacitor
+    c_neo_bulk.value = 470uF
+    c_neo_bulk.package = "CP_Radial_D8.0mm_P3.50mm"
+    c_neo_bulk.p1 ~ v5.vcc
+    c_neo_bulk.p2 ~ gnd
+
+    hdr_neo = new PinHeader_1x3
+    hdr_neo.p1 ~ v5.vcc          # 5 V
+    hdr_neo.p2 ~ r_neo_data.p2   # DIN (after series resistor)
+    hdr_neo.p3 ~ gnd
+
+    # ---- Piezo buzzer on GP21 ----
+    buzzer = new PiezoBuzzer
+    buzzer.sig ~ pico.gp21
+    buzzer.gnd ~ gnd
+
+    # ---- Reset button on RUN ----
+    # Holds the Pico in reset when pressed (RUN -> GND). See
+    # memory/project_reset_button.md for context.
+    btn_reset = new TactileButton_6mm
+    btn_reset.a ~ pico.run
+    btn_reset.b ~ gnd
+
+    # ---- Error LED on a spare GPIO ----
+    # See memory/project_error_led.md. GP22 is free per ELECTRONICS.md.
+    led_err = new Resistor   # placeholder; replace with `LED` once
+                             # imported from generics/leds.ato.
+    # The intent: pico.gp22 -> R (470R) -> LED anode; LED cathode -> GND.
