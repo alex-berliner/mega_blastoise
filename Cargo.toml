@@ -6,7 +6,7 @@ members = [
     "mega_blastoise_fw",
     "mega_blastoise_test",
 ]
-exclude = ["battler"]
+exclude = ["battler", "esp32_reset"]
 default-members = [
     "mega_blastoise_core",
     "mega_blastoise_test",

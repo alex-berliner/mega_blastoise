@@ -17,6 +17,7 @@ use embassy_rp::i2c::{Config as I2cConfig, I2c, InterruptHandler};
 use embassy_rp::Peri;
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
 use embassy_time::{with_timeout, Duration};
+use embassy_futures::join::join;
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel};
@@ -87,6 +88,19 @@ pub fn oled_dump_enabled() -> bool {
 fn store_shadow(player: u8, s: &Shadow) {
     if player == 1 { P1_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
     else           { P2_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
+}
+
+/// Emit the framebuffer over RTT for offline capture — but ONLY when
+/// `oledlog` is enabled, and ONLY *after* the display has flushed.
+///
+/// The ~2 KB hex format + defmt write is heavy. If it sits between render
+/// and `flush()` it stalls that panel's update, and since each panel hits
+/// the stall at a different time the two displays visibly desync (very
+/// noticeable with `oledlog` on, gone with it off). Keeping the dump strictly
+/// after the flush means the old frame stays up through the dump and both
+/// panels switch together; `oledlog` no longer perturbs display timing.
+/// No-op when the dump is disabled.
+fn dump_rtt(player: u8, s: &Shadow) {
     if OLED_DUMP.load(Ordering::Relaxed) {
         dump_fb_rtt(player, &s.0);
     }
@@ -205,6 +219,7 @@ where
     render_lobby_screen(shadow, ready, ai);
     store_shadow(player, shadow);
     disp.flush().await.ok();
+    dump_rtt(player, shadow);
 }
 
 async fn redraw<DI>(
@@ -221,6 +236,7 @@ where
     render_player_screen(shadow, mon, &st.moves);
     store_shadow(player, shadow);
     disp.flush().await.ok();
+    dump_rtt(player, shadow);
 }
 
 // ── Embassy task ──────────────────────────────────────────────────────────────
@@ -313,6 +329,7 @@ pub async fn task(
                         render_move_detail(&mut s1, mv);
                         store_shadow(1, &s1);
                         disp0.flush().await.ok();
+                        dump_rtt(1, &s1);
                     }
                 } else if player != 1 && p2_ok {
                     if let Some(mv) = p2.moves.get(slot as usize) {
@@ -320,6 +337,7 @@ pub async fn task(
                         render_move_detail(&mut s2, mv);
                         store_shadow(2, &s2);
                         disp1.flush().await.ok();
+                        dump_rtt(2, &s2);
                     }
                 }
             }
@@ -330,6 +348,7 @@ pub async fn task(
                         render_pokemon_stats(&mut s1, slot);
                         store_shadow(1, &s1);
                         disp0.flush().await.ok();
+                        dump_rtt(1, &s1);
                     }
                 } else if player != 1 && p2_ok {
                     if let Some(slot) = p2.party.get(team_idx as usize) {
@@ -337,6 +356,7 @@ pub async fn task(
                         render_pokemon_stats(&mut s2, slot);
                         store_shadow(2, &s2);
                         disp1.flush().await.ok();
+                        dump_rtt(2, &s2);
                     }
                 }
             }
@@ -354,18 +374,34 @@ pub async fn task(
             }
             OledCmd::EventFlash { player, text, len } => {
                 let s = core::str::from_utf8(&text[..len as usize]).unwrap_or("");
-                if (player == 1 || player == 0) && p1_ok {
+                let do1 = (player == 1 || player == 0) && p1_ok;
+                let do2 = (player != 1 || player == 0) && p2_ok;
+                if do1 {
                     render_event_text(&mut disp0, s);
                     render_event_text(&mut s1, s);
                     store_shadow(1, &s1);
-                    disp0.flush().await.ok();
                 }
-                if (player != 1 || player == 0) && p2_ok {
+                if do2 {
                     render_event_text(&mut disp1, s);
                     render_event_text(&mut s2, s);
                     store_shadow(2, &s2);
+                }
+                // Broadcast (player 0) drives both panels with the same text.
+                // I2C0 and I2C1 are independent peripherals, so flush them
+                // concurrently — flushing disp0 fully before starting disp1
+                // staggers the two panels by a whole flush (~tens of ms),
+                // which is plainly visible as one screen updating first.
+                if do1 && do2 {
+                    let _ = join(disp0.flush(), disp1.flush()).await;
+                } else if do1 {
+                    disp0.flush().await.ok();
+                } else if do2 {
                     disp1.flush().await.ok();
                 }
+                // RTT dump strictly after both panels have flushed, so it
+                // can't stagger the broadcast.
+                if do1 { dump_rtt(1, &s1); }
+                if do2 { dump_rtt(2, &s2); }
             }
             OledCmd::Win { winner } => {
                 let (msg0, msg1) = BoardEvent::win_messages(winner);
@@ -373,14 +409,23 @@ pub async fn task(
                     render_win_screen(&mut disp0, msg0);
                     render_win_screen(&mut s1, msg0);
                     store_shadow(1, &s1);
-                    disp0.flush().await.ok();
                 }
                 if p2_ok {
                     render_win_screen(&mut disp1, msg1);
                     render_win_screen(&mut s2, msg1);
                     store_shadow(2, &s2);
+                }
+                // Both panels show the win/lose result at once — flush the
+                // two independent I²C buses concurrently to keep them in sync.
+                if p1_ok && p2_ok {
+                    let _ = join(disp0.flush(), disp1.flush()).await;
+                } else if p1_ok {
+                    disp0.flush().await.ok();
+                } else if p2_ok {
                     disp1.flush().await.ok();
                 }
+                if p1_ok { dump_rtt(1, &s1); }
+                if p2_ok { dump_rtt(2, &s2); }
             }
         }
     }
