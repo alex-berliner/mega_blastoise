@@ -11,18 +11,16 @@ Usage:
     If ELF is omitted the most-recent debug/release build is used.
     If --dev is omitted the firmware CDC port is found via sysfs VID:PID.
 
-Built-in commands (prefix with ':'):
-    :help / ?   show all commands
+Host commands (handled by this script):
+    :help / ?   show host commands, then query the device for its own list
     :reflash    re-flash current ELF and reset
-    :reset      reset the board
+    :reset      reset the board (via probe)
     :dev        re-detect USB port
     :kill       kill stray probe-rs processes
-    :ready      mark both players ready (human)
-    :ready p1   mark P1 ready (human)
-    :ready p2   mark P2 ready (human)
-    :unready    unready both players
-    :demo       start a demo (AI vs AI) battle
     :q / :quit  exit
+
+Everything else is forwarded as-is over USB. The firmware enumerates its own
+commands in response to ':help' / '?' — the device is the source of truth.
 """
 
 from __future__ import annotations
@@ -138,10 +136,17 @@ def _open_serial(dev: str) -> int:
 
 
 def _serial_send(dev: str, text: str) -> None:
-    """Send a line to the USB serial port."""
+    """Send a line to the USB serial port.
+
+    The line is prefixed with DEL bytes to clear any junk sitting in the
+    firmware's partial-line buffer (e.g. output echoed back into the device
+    during the brief cooked-tty window when the port is first opened — see
+    _open_serial). The firmware pops one buffered char per DEL and ignores
+    DEL on an empty buffer, so this never completes or repeats a line.
+    """
     fd = os.open(dev, os.O_WRONLY | os.O_NOCTTY)
     try:
-        os.write(fd, (text + "\n").encode())
+        os.write(fd, b"\x7f" * 64 + (text + "\n").encode())
     finally:
         os.close(fd)
 
@@ -224,6 +229,9 @@ def _usb_reader(dev_ref: list[str | None], out_q: queue.Queue, stop: threading.E
                 buf += chunk
                 while b"\n" in buf:
                     line_b, buf = buf.split(b"\n", 1)
+                    # Drop backspace echo ("\b \b" per char the fw popped, e.g.
+                    # from the DEL prefix _serial_send uses to clear junk).
+                    line_b = line_b.replace(b"\x08 \x08", b"")
                     line = line_b.rstrip(b"\r").decode("utf-8", errors="replace")
                     if line:
                         out_q.put(("usb", line))
@@ -289,7 +297,7 @@ def main() -> None:
         prog="mb-console",
         description="Streaming RTT + USB dev console for mega-blastoise.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__.split("Built-in")[1],
+        epilog="Host commands" + __doc__.split("Host commands")[1],
     )
     ap.add_argument("elf", nargs="?", help="Firmware ELF (auto-detected if omitted)")
     ap.add_argument("--dev", metavar="PATH", help="USB device (auto-detected if omitted)")
@@ -364,6 +372,26 @@ def main() -> None:
     print("Type to send over USB.  :help for commands.")
     print()
 
+    def send_to_fw(line: str) -> None:
+        dev = dev_ref[0]
+        if not dev:
+            out_q.put(("err", "no USB device (try :dev to detect)"))
+            return
+        # Auto-redetect if the stored path is gone.
+        if not Path(dev).exists():
+            found = find_fw_tty()
+            if found:
+                dev_ref[0] = found
+                dev = found
+            else:
+                out_q.put(("err", f"USB device gone ({dev}); replug or :dev"))
+                return
+        try:
+            _serial_send(dev, line)
+            out_q.put(("sys", f"→ {line}"))
+        except OSError as exc:
+            out_q.put(("err", f"send failed: {exc}"))
+
     try:
         while True:
             try:
@@ -383,25 +411,18 @@ def main() -> None:
                     "\n"
                     "  Host commands (handled by mb-console):\n"
                     "    :reflash          re-flash current ELF and reset\n"
-                    "    :reset            reset the board\n"
+                    "    :reset            reset the board (via probe, not the fw :reset)\n"
                     "    :dev              re-detect USB device\n"
                     "    :kill             kill stray probe-rs processes\n"
                     "    :q / :quit        exit\n"
                     "\n"
-                    "  Firmware commands (forwarded over USB):\n"
-                    "    :demo             start a demo (AI vs AI) battle\n"
-                    "    :s / :stop        stop demo battle, enter ready phase\n"
-                    "    :ready            both players ready (human)\n"
-                    "    :ready p1         P1 ready (human)\n"
-                    "    :ready p2         P2 ready (human)\n"
-                    "    :ready p1 ai      P1 ready as AI\n"
-                    "    :ready p2 ai      P2 ready as AI\n"
-                    "    :ready ai         both players as AI\n"
-                    "    :unready          both players unready\n"
-                    "    :unready p1       P1 unready\n"
-                    "    :unready p2       P2 unready\n"
-                    "  Any other input is sent as-is over USB.\n"
+                    "  Anything else is sent as-is over USB; the device's own\n"
+                    "  command list follows (printed by the firmware):\n"
                 )
+                # Forward to the firmware so the device enumerates its own
+                # commands — the firmware, not this script, is the source of
+                # truth for what runs on the device.
+                send_to_fw(line)
 
             elif line == ":dev":
                 found = find_fw_tty()
@@ -437,24 +458,7 @@ def main() -> None:
                         _probe_run(["reset"], out_q, "resetting…")
 
             else:
-                dev = dev_ref[0]
-                if not dev:
-                    out_q.put(("err", "no USB device (try :dev to detect)"))
-                    continue
-                # Auto-redetect if the stored path is gone.
-                if not Path(dev).exists():
-                    found = find_fw_tty()
-                    if found:
-                        dev_ref[0] = found
-                        dev = found
-                    else:
-                        out_q.put(("err", f"USB device gone ({dev}); replug or :dev"))
-                        continue
-                try:
-                    _serial_send(dev, line)
-                    out_q.put(("sys", f"→ {line}"))
-                except OSError as exc:
-                    out_q.put(("err", f"send failed: {exc}"))
+                send_to_fw(line)
 
     finally:
         _shutdown()

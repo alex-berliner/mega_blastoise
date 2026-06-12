@@ -13,7 +13,7 @@ use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
     parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line,
-    ActivePrompt, InputBus, InputSource, RandomAi, TurnChoice, TEAM_SEED_SALT,
+    ActivePrompt, InputBus, InputSource, RandomAi, TurnChoice, LOBBY_HELP, TEAM_SEED_SALT,
 };
 use gen1_battle::MonData;
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
@@ -372,6 +372,10 @@ impl<'d> UsbBattleInput<'d> {
                                 write_crlf(&mut self.sender).await;
                                 skip_next_lf = true;
                                 if let Some(line) = self.take_completed_line() {
+                                    if is_help_cmd(line.trim()) {
+                                        self.write_help().await;
+                                        continue;
+                                    }
                                     if let Some(p) = oled_dump_player(line.trim()) {
                                         self.write_oled_dump(p).await;
                                         continue;
@@ -388,6 +392,10 @@ impl<'d> UsbBattleInput<'d> {
                                 log_usb_rx_line_str_to_rtt(self.partial.as_str());
                                 write_crlf(&mut self.sender).await;
                                 if let Some(line) = self.take_completed_line() {
+                                    if is_help_cmd(line.trim()) {
+                                        self.write_help().await;
+                                        continue;
+                                    }
                                     if let Some(p) = oled_dump_player(line.trim()) {
                                         self.write_oled_dump(p).await;
                                         continue;
@@ -424,6 +432,20 @@ impl<'d> UsbBattleInput<'d> {
 
     async fn write_move_prompt(&mut self, n: usize) {
         self.writef(&alloc::format!("Move [1-{}]: ", n)).await;
+    }
+
+    /// Print the device command list (`:help` / `:h` / `?`).
+    async fn write_help(&mut self) {
+        self.writeln("[help] Device commands").await;
+        self.writeln("  Lobby:").await;
+        for l in LOBBY_HELP {
+            self.writeln(&alloc::format!("    {}", l)).await;
+        }
+        self.writeln("  Any time:").await;
+        for l in META_HELP {
+            self.writeln(&alloc::format!("    {}", l)).await;
+        }
+        self.writeln("  In battle: answer the prompt with a move number, or 'switch N'.").await;
     }
 
     /// Dump one OLED framebuffer as ASCII art (half-block chars) over USB.
@@ -475,6 +497,12 @@ impl<'d> UsbBattleInput<'d> {
         let line = self.read_line().await;
         let trimmed = line.trim();
         let cmd = parse_lobby_cmd(trimmed);
+        // Feedback for mistyped commands, but only for lines that *look* like
+        // commands: replying to arbitrary junk (USB noise, our own output
+        // echoed back by a cooked tty) could feed back into ourselves forever.
+        if cmd == LobbyUsbCmd::Unknown && trimmed.starts_with(':') {
+            self.writeln("[??] unknown command (:help for commands)").await;
+        }
         if cmd == LobbyUsbCmd::UploadTeam {
             match parse_team_spec(trimmed) {
                 Some((player, team)) => {
@@ -509,6 +537,23 @@ fn oled_dump_player(line: &str) -> Option<u8> {
         _ => None,
     }
 }
+
+/// `:help` / `:h` / `?` — handled in `read_line` like the other meta-commands,
+/// so it works at any time (lobby or battle).
+fn is_help_cmd(line: &str) -> bool {
+    matches!(line, ":help" | ":h" | "?")
+}
+
+/// Help lines for the meta-commands handled by [`handle_meta_cmd`] and
+/// [`oled_dump_player`]. Keep in sync with their match arms; lobby commands
+/// live in `LOBBY_HELP` next to `parse_lobby_cmd` in mega-blastoise-core.
+const META_HELP: &[&str] = &[
+    ":help / :h / ?    this list",
+    ":oled [p1|p2]     dump an OLED framebuffer as ASCII art",
+    ":anim on|off      battle animations",
+    ":oledlog on|off   OLED framebuffer RTT dump",
+    ":reset            reboot the device",
+];
 
 /// Handle meta-commands that are valid at any time (lobby or battle).
 /// Returns Some(ack message) if handled, None to pass the line through as normal input.

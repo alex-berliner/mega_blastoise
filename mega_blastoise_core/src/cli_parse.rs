@@ -71,6 +71,21 @@ pub enum LobbyCmd {
     Unknown,
 }
 
+/// Help lines for the lobby commands recognised by [`parse_lobby_cmd`].
+/// Kept adjacent to the parser so the two stay in sync. The firmware prints
+/// this in response to `:help` / `:h` / `?`, making the device the source of
+/// truth for its own command set — keep every arm below represented here.
+pub const LOBBY_HELP: &[&str] = &[
+    ":ready            both players ready (human)",
+    ":ready p1|p2      one player ready (human)",
+    ":ready p1 ai      P1 ready as AI",
+    ":ready ai         both players as AI (also: :ready p2 ai, :ready both ai)",
+    ":unready [p1|p2]  unready both / one player",
+    ":demo             start a demo (AI vs AI) battle",
+    ":s / :stop        cancel demo countdown / stop a running demo",
+    ":team pN SPEC     upload team, e.g. :team p1 species:move:move,species:...",
+];
+
 pub fn parse_lobby_cmd(line: &str) -> LobbyCmd {
     match line.trim() {
         ":ready"                                         => LobbyCmd::ReadyBoth,

@@ -39,5 +39,5 @@ pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
 pub use cli_parse::{
     parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, parse_web_game_cmd,
-    LobbyCmd, TurnChoice, WebGameInput,
+    LobbyCmd, TurnChoice, WebGameInput, LOBBY_HELP,
 };
