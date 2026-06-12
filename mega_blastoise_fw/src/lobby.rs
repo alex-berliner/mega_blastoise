@@ -78,27 +78,33 @@ impl<'a, 'u, 'b> UsbButtonLobbyInput<'a, 'u, 'b> {
 #[cfg(feature = "usb")]
 impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
     async fn wait_event(&mut self) -> LobbyEvent {
-        match select(self.buttons.wait_lobby_press(), self.usb.read_lobby_cmd()).await {
-            Either::First(LobbyPress::P1)    => LobbyEvent::P1,
-            Either::First(LobbyPress::P2)    => LobbyEvent::P2,
-            Either::First(LobbyPress::P1Long) => LobbyEvent::VsAi,
-            Either::First(LobbyPress::P2Long) => LobbyEvent::P1Ai,
-            Either::Second(cmd) => match cmd {
-                LobbyUsbCmd::ReadyP1    => LobbyEvent::P1,
-                LobbyUsbCmd::ReadyP2    => LobbyEvent::P2,
-                LobbyUsbCmd::ReadyBoth  => LobbyEvent::BothReady,
-                LobbyUsbCmd::UnreadyP1  => LobbyEvent::UnreadyP1,
-                LobbyUsbCmd::UnreadyP2  => LobbyEvent::UnreadyP2,
-                LobbyUsbCmd::UnreadyBoth => LobbyEvent::UnreadyBoth,
-                LobbyUsbCmd::P1Ai       => LobbyEvent::P1Ai,
-                LobbyUsbCmd::VsAi       => LobbyEvent::VsAi,
-                LobbyUsbCmd::Demo       => LobbyEvent::Demo,
-                LobbyUsbCmd::UploadTeam => match self.usb.take_pending_team() {
-                    Some((player, team)) => LobbyEvent::TeamUpload { player, team },
-                    None => LobbyEvent::Stop, // malformed :team — ignore
+        // Noise (unrecognised commands, stale USB bytes, malformed :team) is
+        // swallowed here so callers never see it; `Stop` is exclusively a
+        // deliberate `:s` / `:stop`.
+        loop {
+            return match select(self.buttons.wait_lobby_press(), self.usb.read_lobby_cmd()).await {
+                Either::First(LobbyPress::P1)    => LobbyEvent::P1,
+                Either::First(LobbyPress::P2)    => LobbyEvent::P2,
+                Either::First(LobbyPress::P1Long) => LobbyEvent::VsAi,
+                Either::First(LobbyPress::P2Long) => LobbyEvent::P1Ai,
+                Either::Second(cmd) => match cmd {
+                    LobbyUsbCmd::ReadyP1    => LobbyEvent::P1,
+                    LobbyUsbCmd::ReadyP2    => LobbyEvent::P2,
+                    LobbyUsbCmd::ReadyBoth  => LobbyEvent::BothReady,
+                    LobbyUsbCmd::UnreadyP1  => LobbyEvent::UnreadyP1,
+                    LobbyUsbCmd::UnreadyP2  => LobbyEvent::UnreadyP2,
+                    LobbyUsbCmd::UnreadyBoth => LobbyEvent::UnreadyBoth,
+                    LobbyUsbCmd::P1Ai       => LobbyEvent::P1Ai,
+                    LobbyUsbCmd::VsAi       => LobbyEvent::VsAi,
+                    LobbyUsbCmd::Demo       => LobbyEvent::Demo,
+                    LobbyUsbCmd::UploadTeam => match self.usb.take_pending_team() {
+                        Some((player, team)) => LobbyEvent::TeamUpload { player, team },
+                        None => continue, // malformed :team — ignore
+                    },
+                    LobbyUsbCmd::StopDemo => LobbyEvent::Stop,
+                    LobbyUsbCmd::Unknown  => continue,
                 },
-                LobbyUsbCmd::StopDemo | LobbyUsbCmd::Unknown => LobbyEvent::Stop,
-            },
+            };
         }
     }
 
@@ -291,8 +297,10 @@ async fn run_lobby_inner(
         let mut ready = ReadyState::default();
 
         // Countdown to demo start; log at each 5-second step, bail early on input.
-        // Stop events (stale USB bytes, unknown commands) are ignored so they
-        // don't interrupt the countdown.
+        // `Stop` (a deliberate `:s`) cancels the countdown: it breaks out as a
+        // normal event, hits the `Stop => {}` arm below, and falls into the
+        // waiting phase with nobody ready. Noise never reaches here —
+        // `wait_event` swallows it.
         const STEP_MS: u64 = 5_000;
         let steps = (LOBBY_DEMO_DELAY_MS / STEP_MS) as u32;
         let mut remaining = steps;
@@ -302,7 +310,6 @@ async fn run_lobby_inner(
             let deadline = Instant::now() + Duration::from_millis(STEP_MS);
             loop {
                 match select(Timer::at(deadline), input.wait_event()).await {
-                    Either::Second(LobbyEvent::Stop) => break 'wait None,
                     Either::Second(LobbyEvent::TeamUpload { player, team }) => {
                         if player == 0 { uploaded_p1 = Some(team); }
                         else { uploaded_p2 = Some(team); }
@@ -324,22 +331,14 @@ async fn run_lobby_inner(
             None => {
                 input.write_line("Demo starting!").await;
                 // Idle delay elapsed — race the demo battle against the next
-                // *actionable* input. `LobbyEvent::Stop` is unrecognised/stale
-                // USB noise (e.g. a Linux host's ModemManager probing the CDC
-                // port on every enumeration); consuming it must NOT cancel the
-                // in-progress demo, so we filter it out *inside* the racing
-                // future rather than letting it resolve the select.
-                let next_actionable = async {
-                    loop {
-                        let e = input.wait_event().await;
-                        if !matches!(e, LobbyEvent::Stop) {
-                            break e;
-                        }
-                    }
-                };
+                // input event. Noise (e.g. a Linux host's ModemManager probing
+                // the CDC port on every enumeration) is swallowed inside
+                // `wait_event`, so anything that resolves the select here is a
+                // deliberate action — including `:s`, which cancels the demo
+                // and drops to the waiting phase via the `Stop => {}` arm.
                 match select(
                     run_demo_battle(data, queue, demo_seed),
-                    next_actionable,
+                    input.wait_event(),
                 ).await {
                     Either::First(_) => {
                         demo_seed = demo_seed.wrapping_add(TEAM_SEED_SALT);
