@@ -215,7 +215,9 @@ async fn run_demo_battle(data: &FlashDataStore, queue: &mut BoardEventQueue, see
     #[cfg(feature = "trace")]
     defmt::info!("[trace] run_demo_battle: battle started");
 
-    let mut demo_effects = BattleEffects::new(None);
+    // Demo battle drives no hardware LEDs — the lobby idle animation owns the
+    // strips while we're here.
+    let mut demo_effects = BattleEffects::new(None, false);
     let demo_bus = InputBus::new();
     let mut ai = DemoAi::new(seed ^ 0xdead_beef_cafe_babe);
 

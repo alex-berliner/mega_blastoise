@@ -1,19 +1,23 @@
-//! WS2812B NeoPixel strip driver — one 24-LED chain on GP20 via PIO0.
+//! WS2812B NeoPixel driver — two independent 12-LED strips, one per player.
 //!
-//! LED layout (single daisy-chain, both players):
-//!   P1: LEDs  0–7  HP bar  |  8–10 party slots  |  11 status
-//!   P2: LEDs 12–19 HP bar  | 20–22 party slots  | 23 status
+//! Each player has its own data GPIO and PIO state machine (P1 = GP20/SM0,
+//! P2 = GP22/SM1, both on PIO0 sharing one loaded program). Per-strip layout:
 //!
-//! Call [`send`] from `BattleEffects::on_event` to queue an update.
-//! The task re-renders the full 24-LED frame after each command.
+//!   LEDs 0–7   HP bar of the active mon (green >50%, yellow >25%, red ≤25%)
+//!   LEDs 8–10  the 3 party-member indicators (see below)
+//!   LED  11    unused — kept dark, reserved for debug
 //!
-//! Two-strip variant: swap the single `PioWs2812<_, _, 24>` for two
-//! `PioWs2812<_, _, 12>` instances on separate SM/GPIO and write each
-//! player buffer independently — the per-player state structs are already
-//! separated.
+//! Each party indicator encodes one team member:
+//!   * green if healthy, or the status-effect color if afflicted
+//!   * brightness scales with that member's remaining HP
+//!   * off once the member has fainted (or before it has been seen)
+//!
+//! Call [`send`] from `BattleEffects::on_event` to queue an update. The task
+//! re-renders both strips after each command. HP / status / cure commands
+//! target each player's *active* mon, tracked from the last `SwitchIn`.
 
 use embassy_rp::bind_interrupts;
-use embassy_rp::peripherals::{DMA_CH0, PIN_20, PIO0};
+use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIN_20, PIN_22, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::pio_programs::ws2812::{PioWs2812, PioWs2812Program};
 use embassy_rp::Peri;
@@ -30,8 +34,28 @@ bind_interrupts!(struct LedIrqs {
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 
-const NUM_LEDS: usize = 24;
-const PER_PLAYER: usize = 12;
+/// Physical LEDs per strip.
+const NUM_LEDS: usize = 12;
+/// LEDs we actually drive; LED index 11 is the dark debug reserve.
+const USED_LEDS: usize = 11;
+/// First party-indicator LED; slots occupy `PARTY..PARTY+3` (8,9,10).
+const PARTY: usize = 8;
+const TEAM_SIZE: usize = 3;
+
+const OFF: RGB8 = RGB8 { r: 0, g: 0, b: 0 };
+/// Party dot color for a healthy (un-statused) member, before HP dimming.
+const OK_GREEN: RGB8 = RGB8 { r: 0, g: 90, b: 0 };
+
+/// Master brightness, applied to every frame just before it is written. Keeps
+/// current draw (and thus voltage droop / color shift on long or weakly-powered
+/// strips) low, and keeps the whole thing easy on the eyes. Percent of full.
+const BRIGHTNESS_PCT: u16 = 35;
+
+/// Scale a color by the master brightness.
+fn cap(c: RGB8) -> RGB8 {
+    let s = |v: u8| ((v as u16 * BRIGHTNESS_PCT) / 100) as u8;
+    RGB8 { r: s(c.r), g: s(c.g), b: s(c.b) }
+}
 
 // ── Status type ───────────────────────────────────────────────────────────────
 
@@ -56,13 +80,14 @@ impl LedStatus {
         }
     }
 
+    /// Party-dot base color (moderate brightness; HP dimming is applied on top).
     fn color(self) -> RGB8 {
         match self {
-            Self::Paralyzed => RGB8 { r: 255, g: 200, b:   0 },
-            Self::Burned    => RGB8 { r: 255, g:  60, b:   0 },
-            Self::Frozen    => RGB8 { r:   0, g: 200, b: 255 },
-            Self::Poisoned  => RGB8 { r: 150, g:   0, b: 200 },
-            Self::Asleep    => RGB8 { r:   0, g:  80, b:   0 },
+            Self::Paralyzed => RGB8 { r: 70, g: 55, b:  0 }, // yellow
+            Self::Burned    => RGB8 { r: 75, g: 18, b:  0 }, // orange
+            Self::Frozen    => RGB8 { r:  0, g: 50, b: 70 }, // cyan
+            Self::Poisoned  => RGB8 { r: 45, g:  0, b: 55 }, // purple
+            Self::Asleep    => RGB8 { r: 28, g: 28, b: 28 }, // dim white
         }
     }
 }
@@ -70,8 +95,11 @@ impl LedStatus {
 // ── Command channel ───────────────────────────────────────────────────────────
 
 pub enum LedCmd {
+    /// Reset a player's strip for a new battle: mark the first `size` team
+    /// members alive + full HP (green), clear the rest. Sent at battle start.
+    TeamInit { player: u8, size: u8 },
     HpUpdate { player: u8, pct: u8 },
-    /// Mon switched in; `slot` is the 0-based team index.
+    /// Mon switched in; `slot` is the 0-based team index (also becomes active).
     SwitchIn { player: u8, slot: u8 },
     /// Mon fainted; `slot` is the 0-based team index.
     Faint { player: u8, slot: u8 },
@@ -94,39 +122,74 @@ pub fn send(cmd: LedCmd) {
 
 // ── Per-player state ──────────────────────────────────────────────────────────
 
-struct PlayerLedState {
+#[derive(Clone, Copy)]
+struct MemberState {
+    /// Seen on the field at least once; before that the dot stays dark.
+    seen: bool,
+    /// 0 = fainted (dot off).
     hp_pct: u8,
-    /// per-slot alive state; indexed by team slot (0-based). true = alive.
-    party: [bool; 3],
     status: Option<LedStatus>,
+}
+
+impl MemberState {
+    const fn new() -> Self {
+        Self { seen: false, hp_pct: 100, status: None }
+    }
+}
+
+struct PlayerLedState {
+    members: [MemberState; TEAM_SIZE],
+    /// Team slot of the active mon; drives the 0–7 HP bar.
+    active: usize,
 }
 
 impl PlayerLedState {
     const fn new() -> Self {
-        Self { hp_pct: 100, party: [false; 3], status: None }
+        Self { members: [MemberState::new(); TEAM_SIZE], active: 0 }
     }
 
-    fn render(&self) -> [RGB8; PER_PLAYER] {
-        let off = RGB8 { r: 0, g: 0, b: 0 };
-        let mut buf = [off; PER_PLAYER];
+    fn render(&self) -> [RGB8; NUM_LEDS] {
+        let mut buf = [OFF; NUM_LEDS];
 
-        // LEDs 0–7: HP bar
-        let lit = hp_bar_count(self.hp_pct);
-        let color = hp_color_rgb(self.hp_pct);
-        for i in 0..lit {
-            buf[i] = color;
+        // LEDs 0–7: HP bar of the active mon.
+        let active = &self.members[self.active];
+        let lit = hp_bar_count(active.hp_pct);
+        let color = hp_color_rgb(active.hp_pct);
+        for px in buf.iter_mut().take(lit) {
+            *px = color;
         }
 
-        // LEDs 8–10: party slots — each dot corresponds to one team slot
-        for (i, &alive) in self.party.iter().enumerate() {
-            if alive { buf[8 + i] = RGB8 { r: 0, g: 30, b: 0 }; }
+        // LEDs 8–10: per-member party / status / HP indicators.
+        for (i, m) in self.members.iter().enumerate() {
+            buf[PARTY + i] = party_color(m);
         }
 
-        // LED 11: status indicator
-        buf[11] = self.status.map(|s| s.color()).unwrap_or(off);
+        // LED 11 stays OFF (debug reserve).
 
+        // Master brightness on the driven LEDs (11 stays dark either way).
+        for px in buf.iter_mut().take(USED_LEDS) {
+            *px = cap(*px);
+        }
         buf
     }
+}
+
+/// Party-dot color for one member: off if unseen/fainted, else green (or the
+/// status color) dimmed by remaining HP.
+fn party_color(m: &MemberState) -> RGB8 {
+    if !m.seen || m.hp_pct == 0 {
+        return OFF;
+    }
+    let base = m.status.map(|s| s.color()).unwrap_or(OK_GREEN);
+    dim(base, m.hp_pct)
+}
+
+/// Scale a color by HP percent, floored so a near-dead member is still visible.
+fn dim(c: RGB8, hp_pct: u8) -> RGB8 {
+    // factor ranges 35..=100 across 0..=100% HP.
+    let f = 35 + (65u16 * hp_pct.min(100) as u16) / 100;
+    let scale = |v: u8| ((v as u16 * f) / 100) as u8;
+    RGB8 { r: scale(c.r), g: scale(c.g), b: scale(c.b) }
 }
 
 fn hp_color_rgb(pct: u8) -> RGB8 {
@@ -134,13 +197,13 @@ fn hp_color_rgb(pct: u8) -> RGB8 {
     RGB8 { r, g, b }
 }
 
-fn build_frame(p1: &PlayerLedState, p2: &PlayerLedState) -> [RGB8; NUM_LEDS] {
-    let off = RGB8 { r: 0, g: 0, b: 0 };
-    let mut frame = [off; NUM_LEDS];
-    let b1 = p1.render();
-    let b2 = p2.render();
-    frame[..PER_PLAYER].copy_from_slice(&b1);
-    frame[PER_PLAYER..].copy_from_slice(&b2);
+/// Fill LEDs 0..USED_LEDS with `color`, leaving the debug reserve dark.
+fn solid(color: RGB8) -> [RGB8; NUM_LEDS] {
+    let color = cap(color);
+    let mut frame = [OFF; NUM_LEDS];
+    for px in frame.iter_mut().take(USED_LEDS) {
+        *px = color;
+    }
     frame
 }
 
@@ -149,18 +212,23 @@ fn build_frame(p1: &PlayerLedState, p2: &PlayerLedState) -> [RGB8; NUM_LEDS] {
 #[embassy_executor::task]
 pub async fn task(
     pio0: Peri<'static, PIO0>,
-    pin20: Peri<'static, PIN_20>,
-    dma: Peri<'static, DMA_CH0>,
+    p1_pin: Peri<'static, PIN_20>,
+    p2_pin: Peri<'static, PIN_22>,
+    p1_dma: Peri<'static, DMA_CH0>,
+    p2_dma: Peri<'static, DMA_CH1>,
 ) {
-    let Pio { mut common, sm0, .. } = Pio::new(pio0, LedIrqs);
+    let Pio { mut common, sm0, sm1, .. } = Pio::new(pio0, LedIrqs);
     let prg = PioWs2812Program::new(&mut common);
-    let mut ws: PioWs2812<'_, PIO0, 0, NUM_LEDS> =
-        PioWs2812::new(&mut common, sm0, dma, pin20, &prg);
+    let mut ws1: PioWs2812<'_, PIO0, 0, NUM_LEDS> =
+        PioWs2812::new(&mut common, sm0, p1_dma, p1_pin, &prg);
+    let mut ws2: PioWs2812<'_, PIO0, 1, NUM_LEDS> =
+        PioWs2812::new(&mut common, sm1, p2_dma, p2_pin, &prg);
 
     let mut p1 = PlayerLedState::new();
     let mut p2 = PlayerLedState::new();
 
-    ws.write(&build_frame(&p1, &p2)).await;
+    ws1.write(&p1.render()).await;
+    ws2.write(&p2.render()).await;
 
     let mut pending: Option<LedCmd> = None;
     loop {
@@ -170,32 +238,49 @@ pub async fn task(
         };
 
         let needs_render = match cmd {
+            LedCmd::TeamInit { player, size } => {
+                let st = pick(&mut p1, &mut p2, player);
+                *st = PlayerLedState::new();
+                for m in st.members.iter_mut().take(size as usize) {
+                    m.seen = true;
+                    m.hp_pct = 100;
+                }
+                true
+            }
             LedCmd::HpUpdate { player, pct } => {
-                let st = if player == 1 { &mut p1 } else { &mut p2 };
-                st.hp_pct = pct;
+                let st = pick(&mut p1, &mut p2, player);
+                let a = st.active;
+                st.members[a].hp_pct = pct;
+                st.members[a].seen = true;
                 true
             }
             LedCmd::SwitchIn { player, slot } => {
-                let st = if player == 1 { &mut p1 } else { &mut p2 };
-                st.hp_pct = 100;
-                if (slot as usize) < 3 { st.party[slot as usize] = true; }
+                let st = pick(&mut p1, &mut p2, player);
+                if (slot as usize) < TEAM_SIZE {
+                    st.active = slot as usize;
+                    st.members[slot as usize].seen = true;
+                    st.members[slot as usize].hp_pct = 100;
+                }
                 true
             }
             LedCmd::Faint { player, slot } => {
-                let st = if player == 1 { &mut p1 } else { &mut p2 };
-                st.hp_pct = 0;
-                if (slot as usize) < 3 { st.party[slot as usize] = false; }
-                st.status = None;
+                let st = pick(&mut p1, &mut p2, player);
+                if (slot as usize) < TEAM_SIZE {
+                    st.members[slot as usize].hp_pct = 0;
+                    st.members[slot as usize].status = None;
+                }
                 true
             }
             LedCmd::SetStatus { player, status } => {
-                let st = if player == 1 { &mut p1 } else { &mut p2 };
-                st.status = Some(status);
+                let st = pick(&mut p1, &mut p2, player);
+                let a = st.active;
+                st.members[a].status = Some(status);
                 true
             }
             LedCmd::CureStatus { player } => {
-                let st = if player == 1 { &mut p1 } else { &mut p2 };
-                st.status = None;
+                let st = pick(&mut p1, &mut p2, player);
+                let a = st.active;
+                st.members[a].status = None;
                 true
             }
             LedCmd::Win { winner } => {
@@ -207,62 +292,56 @@ pub async fn task(
                     2 => (dim, gold),
                     _ => (grey, grey),
                 };
-                let mut frame = [RGB8 { r: 0, g: 0, b: 0 }; NUM_LEDS];
-                for i in 0..PER_PLAYER       { frame[i] = c1; }
-                for i in PER_PLAYER..NUM_LEDS { frame[i] = c2; }
-                ws.write(&frame).await;
+                ws1.write(&solid(c1)).await;
+                ws2.write(&solid(c2)).await;
                 false
             }
 
             LedCmd::LobbyIdle => {
-                let mut phase = 0u8;
-                loop {
-                    ws.write(&lobby_idle_frame(phase)).await;
-                    phase = phase.wrapping_add(4);
-                    match CMD.try_receive() {
-                        Ok(next) => { pending = Some(next); break; }
-                        Err(_) => Timer::after_millis(30).await,
-                    }
-                }
+                // Steady, calm glow — no animation. A breathing loop here gets
+                // starved and janky while the demo battle hogs the single
+                // executor thread, which reads as an erratic strobe. Holds the
+                // color until the next command arrives. Values are pre-cap, so
+                // the visible result is ~1/3 of these (see BRIGHTNESS_PCT).
+                let frame = solid(RGB8 { r: 60, g: 10, b: 230 });
+                ws1.write(&frame).await;
+                ws2.write(&frame).await;
                 false
             }
 
             LedCmd::LobbyWaiting { p1_ready, p2_ready } => {
-                ws.write(&lobby_waiting_frame(p1_ready, p2_ready)).await;
+                let ready   = RGB8 { r: 0, g: 80, b: 0 };
+                let waiting = RGB8 { r: 0, g: 0,  b: 15 };
+                ws1.write(&solid(if p1_ready { ready } else { waiting })).await;
+                ws2.write(&solid(if p2_ready { ready } else { waiting })).await;
                 false
             }
 
             LedCmd::LobbyCountdown => {
+                // Three gentle white fade-pulses (no hard strobe): each ramps
+                // up then down over ~600 ms.
                 for _ in 0..3u8 {
-                    ws.write(&[RGB8 { r: 80, g: 80, b: 80 }; NUM_LEDS]).await;
-                    Timer::after_millis(150).await;
-                    ws.write(&[RGB8 { r: 0, g: 0, b: 0 }; NUM_LEDS]).await;
-                    Timer::after_millis(150).await;
+                    for step in 0..=20u8 {
+                        let tri = if step <= 10 { step } else { 20 - step }; // 0..10..0
+                        let v = tri * 9; // 0..90
+                        let f = solid(RGB8 { r: v, g: v, b: v });
+                        ws1.write(&f).await;
+                        ws2.write(&f).await;
+                        Timer::after_millis(28).await;
+                    }
                 }
                 false
             }
         };
 
         if needs_render {
-            ws.write(&build_frame(&p1, &p2)).await;
+            ws1.write(&p1.render()).await;
+            ws2.write(&p2.render()).await;
         }
     }
 }
 
-fn lobby_idle_frame(phase: u8) -> [RGB8; NUM_LEDS] {
-    // Triangle-wave breathing: blue-purple, 0–63 brightness
-    let v = if phase < 128 { phase / 2 } else { (255u8.wrapping_sub(phase)) / 2 };
-    let color = RGB8 { r: v / 3, g: 0, b: v };
-    [color; NUM_LEDS]
+fn pick<'a>(p1: &'a mut PlayerLedState, p2: &'a mut PlayerLedState, player: u8) -> &'a mut PlayerLedState {
+    if player == 1 { p1 } else { p2 }
 }
 
-fn lobby_waiting_frame(p1_ready: bool, p2_ready: bool) -> [RGB8; NUM_LEDS] {
-    let ready  = RGB8 { r: 0, g: 80, b: 0 };
-    let waiting = RGB8 { r: 0, g: 0,  b: 15 };
-    let mut frame = [RGB8 { r: 0, g: 0, b: 0 }; NUM_LEDS];
-    let c1 = if p1_ready { ready } else { waiting };
-    let c2 = if p2_ready { ready } else { waiting };
-    for i in 0..PER_PLAYER       { frame[i] = c1; }
-    for i in PER_PLAYER..NUM_LEDS { frame[i] = c2; }
-    frame
-}

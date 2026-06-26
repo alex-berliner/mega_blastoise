@@ -15,11 +15,28 @@ use crate::subsystems::led::{send as led_send, LedCmd, LedStatus};
 
 pub struct BattleEffects<'a> {
     bus: Option<&'a InputBus>,
+    /// When false, hardware LED output is suppressed (used for the lobby's
+    /// demo battle so it doesn't fight the calm idle animation).
+    #[cfg(feature = "leds")]
+    leds: bool,
 }
 
 impl<'a> BattleEffects<'a> {
-    pub fn new(bus: Option<&'a InputBus>) -> Self {
-        Self { bus }
+    pub fn new(bus: Option<&'a InputBus>, leds_enabled: bool) -> Self {
+        #[cfg(not(feature = "leds"))]
+        let _ = leds_enabled;
+        Self {
+            bus,
+            #[cfg(feature = "leds")]
+            leds: leds_enabled,
+        }
+    }
+
+    #[cfg(feature = "leds")]
+    fn led(&self, cmd: LedCmd) {
+        if self.leds {
+            led_send(cmd);
+        }
     }
 }
 
@@ -61,14 +78,14 @@ impl BoardEffects for BattleEffects<'_> {
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::HpUpdate { player: 1, pct });
                             #[cfg(feature = "leds")]
-                            led_send(LedCmd::HpUpdate { player: 1, pct });
+                            self.led(LedCmd::HpUpdate { player: 1, pct });
                         }
                         Some("p2") => {
                             defmt::info!("P2 HP: {}/{}", hp.current, hp.max);
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::HpUpdate { player: 2, pct });
                             #[cfg(feature = "leds")]
-                            led_send(LedCmd::HpUpdate { player: 2, pct });
+                            self.led(LedCmd::HpUpdate { player: 2, pct });
                         }
                         _ => defmt::warn!("hp event: unknown player in mon={}", mon.as_str()),
                     }
@@ -88,7 +105,7 @@ impl BoardEffects for BattleEffects<'_> {
                     oled_send(OledCmd::Faint { player });
                     #[cfg(feature = "leds")]
                     if let Some(slot) = _team_slot {
-                        led_send(LedCmd::Faint { player, slot });
+                        self.led(LedCmd::Faint { player, slot: *slot });
                     }
                 }
                 #[cfg(feature = "buzzer")]
@@ -107,7 +124,7 @@ impl BoardEffects for BattleEffects<'_> {
                     }
                     #[cfg(feature = "leds")]
                     if let Some(slot) = _team_slot {
-                        led_send(LedCmd::SwitchIn { player, slot });
+                        self.led(LedCmd::SwitchIn { player, slot: *slot });
                     }
                 }
             }
@@ -130,7 +147,7 @@ impl BoardEffects for BattleEffects<'_> {
                 #[cfg(feature = "leds")]
                 if let Some(player) = mon_player_num(_mon) {
                     if let Some(s) = LedStatus::from_str(_status.as_str()) {
-                        led_send(LedCmd::SetStatus { player, status: s });
+                        self.led(LedCmd::SetStatus { player, status: s });
                     }
                 }
                 #[cfg(feature = "oled")]
@@ -140,7 +157,7 @@ impl BoardEffects for BattleEffects<'_> {
             BoardEvent::CureStatus { mon: _mon, .. } => {
                 #[cfg(feature = "leds")]
                 if let Some(player) = mon_player_num(_mon) {
-                    led_send(LedCmd::CureStatus { player });
+                    self.led(LedCmd::CureStatus { player });
                 }
                 #[cfg(feature = "oled")]
                 oled_flash(&event.description());
@@ -153,7 +170,7 @@ impl BoardEffects for BattleEffects<'_> {
                 #[cfg(feature = "oled")]
                 oled_send(OledCmd::Win { winner });
                 #[cfg(feature = "leds")]
-                led_send(LedCmd::Win { winner });
+                self.led(LedCmd::Win { winner });
             }
 
             BoardEvent::Tie => {
@@ -162,7 +179,7 @@ impl BoardEffects for BattleEffects<'_> {
                 #[cfg(feature = "oled")]
                 oled_send(OledCmd::Win { winner: 0 });
                 #[cfg(feature = "leds")]
-                led_send(LedCmd::Win { winner: 0 });
+                self.led(LedCmd::Win { winner: 0 });
             }
 
             BoardEvent::MovesUpdate { player_id, moves } => {

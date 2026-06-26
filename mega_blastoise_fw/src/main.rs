@@ -85,12 +85,14 @@ async fn main(spawner: Spawner) {
         debug!("Buzzer ready: GP21 / PWM2B");
     }
 
-    // ── NeoPixel LED strip (WS2812B on GP20 via PIO0 / DMA_CH0) ─────────────
+    // ── NeoPixel LED strips (WS2812B: P1 GP20/SM0/DMA0, P2 GP22/SM1/DMA1) ────
     #[cfg(feature = "leds")]
     {
-        spawner.spawn(subsystems::led::task(p.PIO0, p.PIN_20, p.DMA_CH0))
-            .expect("led task spawn");
-        debug!("LEDs ready: GP20 / PIO0 / DMA_CH0");
+        spawner.spawn(subsystems::led::task(
+            p.PIO0, p.PIN_20, p.PIN_22, p.DMA_CH0, p.DMA_CH1,
+        ))
+        .expect("led task spawn");
+        debug!("LEDs ready: P1 GP20, P2 GP22 / PIO0 SM0+SM1 / DMA0+DMA1");
     }
 
     // ── OLED displays (SSD1306 on I2C0 + I2C1) ───────────────────────────────
@@ -141,6 +143,7 @@ async fn main(spawner: Spawner) {
         let mut effects = BattleEffects::new(
             #[cfg(feature = "usb")] Some(&bus),
             #[cfg(not(feature = "usb"))] None,
+            true,
         );
 
         let mut battle =
@@ -153,6 +156,8 @@ async fn main(spawner: Spawner) {
         let (rand_p1, rand_p2) = draw_two_randbat_teams(seed, 3);
         let team_p1 = up_p1.unwrap_or(rand_p1);
         let team_p2 = up_p2.unwrap_or(rand_p2);
+        #[cfg(feature = "leds")]
+        let (p1_team_size, p2_team_size) = (team_p1.len() as u8, team_p2.len() as u8);
         battle.update_team("p1", TeamData { members: team_p1, ..Default::default() }).expect("p1");
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_team_p1");
@@ -166,6 +171,15 @@ async fn main(spawner: Spawner) {
         heap_snapshot("after_battle_start");
 
         debug!("Battle started.");
+
+        // Light each player's full team green for the new battle (resets any
+        // stale per-member state from the previous round).
+        #[cfg(feature = "leds")]
+        {
+            use subsystems::led::{send as led_send, LedCmd};
+            led_send(LedCmd::TeamInit { player: 1, size: p1_team_size });
+            led_send(LedCmd::TeamInit { player: 2, size: p2_team_size });
+        }
 
         #[cfg(feature = "usb")]
         {
