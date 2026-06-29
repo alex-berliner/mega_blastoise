@@ -12,15 +12,16 @@ use embassy_rp::usb::Driver;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
-    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line,
-    ActivePrompt, InputBus, InputSource, RandomAi, TurnChoice, LOBBY_HELP, TEAM_SEED_SALT,
+    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, party_slot_from_mon,
+    player_id_to_num, ActivePrompt, ButtonSource, InputBus, InputSource, PlayerAction, RandomAi,
+    TurnChoice, LOBBY_HELP, TEAM_SEED_SALT,
 };
 use gen1_battle::MonData;
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
-use crate::pico_battle_input::PicoBattleInput;
+use crate::pico_battle_input::{PicoBattleInput, PlayerTurn};
 #[cfg(feature = "oled")]
-use crate::subsystems::oled::read_shadow_fb;
+use crate::subsystems::oled::{read_shadow_fb, send as oled_send, wait_fb_change, OledCmd};
 
 pub use mega_blastoise_core::LobbyCmd as LobbyUsbCmd;
 
@@ -78,7 +79,9 @@ impl<'d> UsbBattleInput<'d> {
     ) {
         self.write("=== Battle CLI ready — waiting for first prompt ===\r\n").await;
         loop {
-            let prompt = loop {
+            // ── Gather the whole prompt batch (1 or 2 players) before acting,
+            //    so both boards can be driven simultaneously. ─────────────────
+            let first = loop {
                 match select(bus.prompt.receive(), bus.log.receive()).await {
                     Either::First(p) => {
                         while let Ok(line) = bus.log.try_receive() {
@@ -86,28 +89,88 @@ impl<'d> UsbBattleInput<'d> {
                         }
                         break p;
                     }
-                    Either::Second(line) => {
-                        self.write_event(&line).await;
-                    }
+                    Either::Second(line) => self.write_event(&line).await,
                 }
             };
-            let ActivePrompt { player_id, request, player_data, .. } = prompt;
-            defmt::debug!("usb: prompt received for {}", player_id.as_str());
-            let player_idx = if player_id.as_str() == "p1" { 0 } else { 1 };
-            let choice = if self.ai_players[player_idx] {
-                self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", player_id.as_str())).await;
-                self.ai.make_choice(&request, player_data.as_ref())
+            let batch_total = first.batch_total.max(1);
+            let mut prompts: Vec<ActivePrompt> = Vec::with_capacity(batch_total);
+            prompts.push(first);
+            while prompts.len() < batch_total {
+                match select(bus.prompt.receive(), bus.log.receive()).await {
+                    Either::First(p) => prompts.push(p),
+                    Either::Second(line) => self.write_event(&line).await,
+                }
+            }
+
+            // Refresh each player's party snapshot so the OLED long-press stats
+            // screen has data (run_inner doesn't go through ButtonSource::on_prompt).
+            #[cfg(feature = "oled")]
+            for p in &prompts {
+                send_party_update(p);
+            }
+
+            // ── Resolve each prompt: AI auto-chooses now; humans are deferred. ─
+            let mut choices: Vec<Option<String>> = (0..prompts.len()).map(|_| None).collect();
+            let mut humans: Vec<usize> = Vec::new();
+            for (i, p) in prompts.iter().enumerate() {
+                let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
+                if self.ai_players[idx] {
+                    self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", p.player_id.as_str())).await;
+                    choices[i] = Some(self.ai.make_choice(&p.request, p.player_data.as_ref()));
+                } else {
+                    humans.push(i);
+                }
+            }
+
+            // ── Collect human choices. Two human boards → fully parallel
+            //    (each player operates independently, no waiting on the other). ─
+            let parallel = buttons.is_some()
+                && humans.len() == 2
+                && !is_multi_switch(&prompts[humans[0]].request)
+                && !is_multi_switch(&prompts[humans[1]].request);
+
+            if parallel {
+                let (i0, i1) = (humans[0], humans[1]);
+                self.display_prompt(&prompts[i0]).await;
+                self.display_prompt(&prompts[i1]).await;
+                let pt0 = PlayerTurn::from_request(prompts[i0].player_id.as_str(), &prompts[i0].request);
+                let pt1 = PlayerTurn::from_request(prompts[i1].player_id.as_str(), &prompts[i1].request);
+                let btns = buttons.as_mut().expect("parallel requires buttons");
+                let [c0, c1] = btns.wait_two_turns([pt0, pt1]).await;
+                choices[i0] = Some(c0);
+                choices[i1] = Some(c1);
             } else {
-                let btns = buttons.as_mut().map(|b| &mut **b);
-                self.handle(&player_id, &request, player_data, btns).await
-            };
-            self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", choice)).await;
-            bus.choices.send(choice).await;
+                for &i in &humans {
+                    let btns = buttons.as_mut().map(|b| &mut **b);
+                    let pid = prompts[i].player_id.clone();
+                    let req = prompts[i].request.clone();
+                    let pd = prompts[i].player_data.clone();
+                    let choice = self.handle(&pid, &req, pd, btns).await;
+                    choices[i] = Some(choice);
+                }
+            }
+
+            // ── Submit choices in prompt order (the runner applies them so). ──
+            for c in choices {
+                let c = c.unwrap_or_else(|| String::from("pass"));
+                self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", c)).await;
+                bus.choices.send(c).await;
+            }
 
             while let Ok(line) = bus.log.try_receive() {
                 self.write_event(&line).await;
             }
         }
+    }
+
+    /// Write a player's prompt text to USB without collecting input — used when
+    /// the parallel button collector owns the actual input phase.
+    async fn display_prompt(&mut self, p: &ActivePrompt) {
+        if p.player_data.is_some() {
+            self.last_player_data = p.player_data.clone();
+        }
+        self.write("\r\n").await;
+        self.write_multiline(&format_prompt(p.player_id.as_str(), &p.request, p.player_data.as_ref())).await;
     }
 
     async fn handle(
@@ -141,12 +204,11 @@ impl<'d> UsbBattleInput<'d> {
                         self.write_move_prompt(n).await;
 
                         // Get raw input: button press wins immediately; USB line goes to parse.
+                        // `wait_action` reports a move OR a party press (mid-turn switch) and
+                        // handles long-press detail views internally.
                         let choice = match buttons.as_mut() {
                             Some(btns) => {
-                                let is_usable = |i: usize| {
-                                    !mon_req.moves[i].disabled && mon_req.moves[i].pp > 0
-                                };
-                                match select(self.read_line(), btns.wait_move(player_id, n, is_usable)).await {
+                                match select(self.read_line(), btns.wait_action(player_id, n)).await {
                                     Either::First(line) => {
                                         match parse_turn_line(line.trim(), n) {
                                             Ok(c) => c,
@@ -156,12 +218,29 @@ impl<'d> UsbBattleInput<'d> {
                                             }
                                         }
                                     }
-                                    Either::Second(slot) => {
+                                    Either::Second(PlayerAction::Move(slot)) => {
                                         self.partial.clear();
-                                        self.write_ok(&alloc::format!(
-                                            "Button — {} (slot {})", mon_req.moves[slot].name, slot
-                                        )).await;
+                                        let m = &mon_req.moves[slot];
+                                        if m.disabled {
+                                            self.write_err(&alloc::format!("Rejected — {} is disabled", m.name)).await;
+                                            continue 'move_input;
+                                        }
+                                        if m.pp == 0 {
+                                            self.write_err(&alloc::format!("Rejected — {} has no PP", m.name)).await;
+                                            continue 'move_input;
+                                        }
+                                        self.write_ok(&alloc::format!("Button — {} (slot {})", m.name, slot)).await;
                                         parts.push(format_move_choice(slot));
+                                        break 'move_input;
+                                    }
+                                    Either::Second(PlayerAction::Switch(idx)) => {
+                                        self.partial.clear();
+                                        if mon_req.trapped {
+                                            self.write_err("Rejected — Pokémon is trapped, cannot switch").await;
+                                            continue 'move_input;
+                                        }
+                                        self.write_ok(&alloc::format!("Button — switching in slot {}", idx + 1)).await;
+                                        parts.push(format_switch_choice(idx));
                                         break 'move_input;
                                     }
                                 }
@@ -356,7 +435,23 @@ impl<'d> UsbBattleInput<'d> {
         let mut buf = [0u8; 64];
         let mut skip_next_lf = false;
         loop {
-            match self.receiver.read_packet(&mut buf).await {
+            // While waiting for input, also watch for OLED framebuffer changes
+            // (`:oled auto on`) and print the half-block dump inline. The
+            // select result is bound to a variable so the read_packet future
+            // (which borrows self.receiver) is dropped before write_oled_dump
+            // needs &mut self.
+            #[cfg(feature = "oled")]
+            let res = match select(self.receiver.read_packet(&mut buf), wait_fb_change()).await {
+                Either::First(r) => r,
+                Either::Second(mask) => {
+                    if mask & 1 != 0 { self.write_oled_dump(1).await; }
+                    if mask & 2 != 0 { self.write_oled_dump(2).await; }
+                    continue;
+                }
+            };
+            #[cfg(not(feature = "oled"))]
+            let res = self.receiver.read_packet(&mut buf).await;
+            match res {
                 Ok(n) => {
                     for &b in &buf[..n] {
                         if skip_next_lf {
@@ -528,6 +623,25 @@ impl<'d> UsbBattleInput<'d> {
 
 }
 
+/// Push a player's party snapshot to their OLED, so a long-press on a party
+/// button (`ShowPokemonStats`) has bench data to render. Mirrors what
+/// `ButtonSource::on_prompt` does on the button-only path.
+#[cfg(feature = "oled")]
+fn send_party_update(p: &ActivePrompt) {
+    if let Some(pd) = &p.player_data {
+        let player = player_id_to_num(p.player_id.as_str());
+        let slots = pd.mons.iter().map(party_slot_from_mon).collect();
+        oled_send(OledCmd::PartyUpdate { player, slots });
+    }
+}
+
+/// True when a request needs more than one replacement (e.g. multi-faint). The
+/// parallel collector handles a single switch per player, so these fall back to
+/// the serial path.
+fn is_multi_switch(request: &Request) -> bool {
+    matches!(request, Request::Switch(sw) if sw.needs_switch.len() > 1)
+}
+
 /// If `line` is an `:oled` dump command, return the player number to dump (1 or 2).
 /// `:oled` and `:oled p1` → 1; `:oled p2` → 2.
 fn oled_dump_player(line: &str) -> Option<u8> {
@@ -550,6 +664,7 @@ fn is_help_cmd(line: &str) -> bool {
 const META_HELP: &[&str] = &[
     ":help / :h / ?    this list",
     ":oled [p1|p2]     dump an OLED framebuffer as ASCII art",
+    ":oled auto on|off auto-dump framebuffers whenever they change",
     ":anim on|off      battle animations",
     ":oledlog on|off   OLED framebuffer RTT dump",
     ":reset            reboot the device",
@@ -563,6 +678,16 @@ fn handle_meta_cmd(line: &str) -> Option<&'static str> {
         ":reset"    => SCB::sys_reset(),
         ":anim off" => { ANIM_ENABLED.store(false, core::sync::atomic::Ordering::Relaxed); Some("[anim] animations OFF") }
         ":anim on"  => { ANIM_ENABLED.store(true,  core::sync::atomic::Ordering::Relaxed); Some("[anim] animations ON") }
+        ":oled auto on" => {
+            #[cfg(feature = "oled")]
+            crate::subsystems::oled::set_usb_auto_dump(true);
+            Some("[oled] auto dump ON")
+        }
+        ":oled auto off" => {
+            #[cfg(feature = "oled")]
+            crate::subsystems::oled::set_usb_auto_dump(false);
+            Some("[oled] auto dump OFF")
+        }
         ":oledlog on" => {
             #[cfg(feature = "oled")]
             crate::subsystems::oled::set_oled_dump(true);

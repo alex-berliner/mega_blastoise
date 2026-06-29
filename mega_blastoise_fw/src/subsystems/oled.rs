@@ -18,9 +18,9 @@ use embassy_rp::Peri;
 use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
 use embassy_time::{with_timeout, Duration};
 use embassy_futures::join::join;
-use core::cell::RefCell;
+use core::cell::{Cell, RefCell};
 use core::sync::atomic::{AtomicBool, Ordering};
-use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel};
+use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel, signal::Signal};
 use embedded_graphics::{draw_target::DrawTarget, geometry::{OriginDimensions, Size}, pixelcolor::BinaryColor, Pixel};
 use mega_blastoise_core::{render_event_text, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_win_screen, BoardEvent, MoveSlot, PartySlotData};
 use display_interface::AsyncWriteOnlyDataCommand;
@@ -85,9 +85,45 @@ pub fn oled_dump_enabled() -> bool {
     OLED_DUMP.load(Ordering::Relaxed)
 }
 
+/// When true, every framebuffer change is also printed over USB as the
+/// `:oled`-style half-block art. Toggled at runtime via `:oled auto on|off`;
+/// off by default. The OLED task only raises a notification here (atomic +
+/// signal, non-blocking, so it can't stagger panel flushes the way the old
+/// pre-flush RTT dump did); the USB side picks it up in `read_line` and does
+/// the actual printing (see `UsbBattleInput::write_oled_dump`).
+static USB_AUTO_DUMP: AtomicBool = AtomicBool::new(false);
+/// Bitmask of players whose framebuffer changed since the last USB dump
+/// (bit 0 = p1, bit 1 = p2). Accumulates so bursts coalesce into one dump.
+/// Mutex+Cell instead of an atomic: thumbv6m has no RMW atomics (no fetch_or).
+static FB_CHANGED: BlockingMutex<CriticalSectionRawMutex, Cell<u8>> =
+    BlockingMutex::new(Cell::new(0));
+static FB_SIGNAL: Signal<CriticalSectionRawMutex, ()> = Signal::new();
+
+pub fn set_usb_auto_dump(on: bool) {
+    USB_AUTO_DUMP.store(on, Ordering::Relaxed);
+}
+
+/// Wait until a framebuffer changes while `:oled auto` is on. Returns the
+/// changed-player bitmask (bit 0 = p1, bit 1 = p2). Never resolves while
+/// auto-dump is off.
+pub async fn wait_fb_change() -> u8 {
+    loop {
+        FB_SIGNAL.wait().await;
+        let mask = FB_CHANGED.lock(|m| m.replace(0));
+        if mask != 0 {
+            return mask;
+        }
+    }
+}
+
 fn store_shadow(player: u8, s: &Shadow) {
     if player == 1 { P1_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
     else           { P2_SHADOW.lock(|fb| *fb.borrow_mut() = s.0); }
+    if USB_AUTO_DUMP.load(Ordering::Relaxed) {
+        let bit = if player == 1 { 1 } else { 2 };
+        FB_CHANGED.lock(|m| m.set(m.get() | bit));
+        FB_SIGNAL.signal(());
+    }
 }
 
 /// Emit the framebuffer over RTT for offline capture — but ONLY when

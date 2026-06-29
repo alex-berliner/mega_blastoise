@@ -1,12 +1,12 @@
 //! 4×4 button matrix driver.
 //!
 //! Physical mapping (per ELECTRONICS.md):
-//! - Row 0 (GP6):  P1 move buttons 1–4  → cols 0–3
+//! - Row 0 (GP5):  P1 move buttons 1–4  → cols 0–3
 //! - Row 1 (GP7):  P1 party buttons 1–3 → cols 0–2  (col 3 unused)
 //! - Row 2 (GP8):  P2 move buttons 1–4  → cols 0–3
 //! - Row 3 (GP9):  P2 party buttons 1–3 → cols 0–2  (col 3 unused)
 //!
-//! Row pins (GP6–9) are `Output`s, driven LOW one at a time during scan.
+//! Row pins (GP5,7,8,9) are `Output`s, driven LOW one at a time during scan.
 //! Col pins (GP10–13) are `Input`s with internal pull-ups; LOW = pressed.
 
 extern crate alloc;
@@ -17,7 +17,7 @@ use alloc::vec::Vec;
 use gen1_battle::{PlayerBattleData, Request};
 use cortex_m::asm::delay as asm_delay;
 use embassy_rp::gpio::{Input, Output};
-use embassy_time::Timer;
+use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, party_slot_from_mon, player_id_to_num, ActivePrompt,
     ButtonSource, InputBus, InputSource, PlayerAction,
@@ -64,19 +64,6 @@ impl<'d> ButtonMatrix<'d> {
                 return col;
             }
             Timer::after_millis(5).await;
-        }
-    }
-
-    /// Wait for a move button for `player_id`, returning the 0-based move slot.
-    /// Retries silently if `is_usable(col)` returns false (disabled / no PP).
-    pub async fn wait_move<F>(&mut self, player_id: &str, n: usize, is_usable: F) -> usize
-    where
-        F: Fn(usize) -> bool,
-    {
-        let row = if player_id == "p2" { 2 } else { 0 };
-        loop {
-            let col = self.wait_press(row, n).await;
-            if is_usable(col) { return col; }
         }
     }
 
@@ -157,13 +144,6 @@ impl<'d> PicoBattleInput<'d> {
         Self(ButtonMatrix::new(rows, cols))
     }
 
-    pub async fn wait_move<F>(&mut self, player_id: &str, n: usize, is_usable: F) -> usize
-    where
-        F: Fn(usize) -> bool,
-    {
-        self.0.wait_move(player_id, n, is_usable).await
-    }
-
     pub async fn wait_switch(&mut self, player_id: &str) -> usize {
         self.0.wait_switch(player_id).await
     }
@@ -171,6 +151,177 @@ impl<'d> PicoBattleInput<'d> {
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
         self.0.wait_lobby_press().await
     }
+
+    /// Collect *both* players' choices at the same time, scanning the whole
+    /// matrix in one loop so neither board blocks the other. Handles long-press
+    /// (≥500 ms shows move detail / party stats on that player's OLED instead of
+    /// selecting) and mid-turn switching. Returns each player's choice string in
+    /// the same order as `players`.
+    pub async fn wait_two_turns(&mut self, players: [PlayerTurn; 2]) -> [String; 2] {
+        const LONG_MS: u64 = 500;
+        let mut st = [TwoState::Wait; 2];
+        let mut out: [String; 2] = [String::new(), String::new()];
+
+        // Players with a forced choice (locked move / no moves) need no input.
+        for i in 0..2 {
+            if let Some(c) = &players[i].auto {
+                out[i] = c.clone();
+                st[i] = TwoState::Done;
+            }
+        }
+
+        loop {
+            if matches!(st[0], TwoState::Done) && matches!(st[1], TwoState::Done) {
+                return out;
+            }
+
+            // One full matrix scan, shared by both players.
+            let mut pressed = [[false; 4]; 4];
+            for r in 0..4 {
+                let m = self.0.scan_row(r);
+                for c in 0..4 {
+                    pressed[r][c] = m & (1 << c) != 0;
+                }
+            }
+            let now = Instant::now().as_millis();
+
+            for i in 0..2 {
+                let pt = &players[i];
+                match st[i] {
+                    TwoState::Done => {}
+                    TwoState::Wait => {
+                        // Switch row takes priority, mirroring wait_action.
+                        let mut moved = false;
+                        if pt.can_switch() {
+                            if let Some(c) = (0..3).find(|&c| pressed[pt.switch_row][c]) {
+                                st[i] = TwoState::Hold { row: pt.switch_row, col: c, switch: true, t0: now };
+                                moved = true;
+                            }
+                        }
+                        if !moved && pt.n_moves > 0 {
+                            if let Some(c) = (0..pt.n_moves).find(|&c| pressed[pt.move_row][c]) {
+                                st[i] = TwoState::Hold { row: pt.move_row, col: c, switch: false, t0: now };
+                            }
+                        }
+                    }
+                    TwoState::Hold { row, col, switch, t0 } => {
+                        if pressed[row][col] {
+                            // Still held — promote to a detail view at the threshold.
+                            if now.saturating_sub(t0) >= LONG_MS {
+                                #[cfg(feature = "oled")]
+                                if switch {
+                                    oled_send(OledCmd::ShowPokemonStats { player: pt.player_num, team_idx: col as u8 });
+                                } else {
+                                    oled_send(OledCmd::ShowMoveDetail { player: pt.player_num, slot: col as u8 });
+                                }
+                                st[i] = TwoState::Shown { row };
+                            }
+                        } else if now.saturating_sub(t0) < LONG_MS {
+                            // Short press → a selection (if valid).
+                            if switch {
+                                out[i] = format_switch_choice(col);
+                                st[i] = TwoState::Done;
+                            } else if pt.usable[col] {
+                                out[i] = format_move_choice(col);
+                                st[i] = TwoState::Done;
+                            } else {
+                                st[i] = TwoState::Wait; // disabled / no PP — ignore
+                            }
+                        } else {
+                            st[i] = TwoState::Wait;
+                        }
+                    }
+                    TwoState::Shown { row } => {
+                        // Detail view stays up until the button is released.
+                        if !(0..4).any(|c| pressed[row][c]) {
+                            #[cfg(feature = "oled")]
+                            oled_send(OledCmd::RestoreScreen { player: pt.player_num });
+                            st[i] = TwoState::Wait;
+                        }
+                    }
+                }
+            }
+
+            Timer::after_millis(6).await;
+        }
+    }
+}
+
+/// One player's options for a single decision point, distilled from their
+/// `Request` so the parallel collector doesn't need the gen1 battle types.
+pub struct PlayerTurn {
+    /// 1 or 2 — used to target the right OLED for long-press detail views.
+    player_num: u8,
+    /// Matrix row scanned for this player's move buttons.
+    move_row: usize,
+    /// Matrix row scanned for this player's party buttons.
+    switch_row: usize,
+    /// Number of move buttons that are live (0 = no move input this turn).
+    n_moves: usize,
+    /// Per-move usability (not disabled and has PP).
+    usable: [bool; 4],
+    /// Active mon can't switch out.
+    trapped: bool,
+    /// `Request::Switch` — only a party button is valid (forced switch).
+    must_switch: bool,
+    /// Forced choice (locked move, no moves, team preview) — submit without input.
+    auto: Option<String>,
+}
+
+impl PlayerTurn {
+    /// Distil a player's `Request` into the options the matrix collector needs.
+    pub fn from_request(player_id: &str, request: &Request) -> Self {
+        let p2 = player_id == "p2";
+        let mut pt = Self {
+            player_num: if p2 { 2 } else { 1 },
+            move_row: if p2 { 2 } else { 0 },
+            switch_row: if p2 { 3 } else { 1 },
+            n_moves: 0,
+            usable: [false; 4],
+            trapped: false,
+            must_switch: false,
+            auto: None,
+        };
+        match request {
+            Request::Turn(turn) => {
+                if let Some(mon) = turn.active.first() {
+                    let n = mon.moves.len().min(4);
+                    if n == 0 {
+                        pt.auto = Some(String::from("pass"));
+                    } else if mon.locked_into_move {
+                        pt.auto = Some(format_move_choice(0));
+                    } else {
+                        pt.n_moves = n;
+                        for i in 0..n {
+                            pt.usable[i] = !mon.moves[i].disabled && mon.moves[i].pp > 0;
+                        }
+                        pt.trapped = mon.trapped;
+                    }
+                }
+            }
+            Request::Switch(_) => pt.must_switch = true,
+            Request::TeamPreview(_) => pt.auto = Some(String::from("random")),
+            Request::LearnMove(_) => pt.auto = Some(String::from("pass")),
+        }
+        pt
+    }
+
+    fn can_switch(&self) -> bool {
+        self.must_switch || !self.trapped
+    }
+}
+
+/// Per-player progress inside [`PicoBattleInput::wait_two_turns`].
+#[derive(Clone, Copy)]
+enum TwoState {
+    /// No button down yet.
+    Wait,
+    /// A button is held; timing it to tell a tap from a long-press.
+    Hold { row: usize, col: usize, switch: bool, t0: u64 },
+    /// Long-press detail view is showing; waiting for release.
+    Shown { row: usize },
+    /// Choice committed.
+    Done,
 }
 
 /// [`ButtonSource`] — scan the GPIO matrix and return whichever button fires first.

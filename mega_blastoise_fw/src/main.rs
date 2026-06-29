@@ -59,11 +59,12 @@ async fn main(spawner: Spawner) {
     };
 
     // ── Button matrix (4 row outputs × 4 col inputs) ─────────────────────────
-    // Rows: GP6 = P1 moves, GP7 = P1 party, GP8 = P2 moves, GP9 = P2 party
+    // Rows: GP5 = P1 moves, GP7 = P1 party, GP8 = P2 moves, GP9 = P2 party
+    // (P1 moves moved off GP6 → GP5 to keep clear of the user's debug wiring.)
     // Cols: GP10–GP13 (active-LOW with internal pull-ups)
     let mut buttons = PicoBattleInput::new(
         [
-            Output::new(p.PIN_6,  Level::High),
+            Output::new(p.PIN_5,  Level::High),
             Output::new(p.PIN_7,  Level::High),
             Output::new(p.PIN_8,  Level::High),
             Output::new(p.PIN_9,  Level::High),
