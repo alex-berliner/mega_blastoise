@@ -13,8 +13,8 @@ use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
     parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, party_slot_from_mon,
-    player_id_to_num, ActivePrompt, ButtonSource, InputBus, InputSource, PlayerAction, RandomAi,
-    TurnChoice, LOBBY_HELP, TEAM_SEED_SALT,
+    player_id_to_num, turn_action_choice, ActionReject, ActivePrompt, ButtonSource, InputBus,
+    InputSource, PlayerAction, RandomAi, TurnChoice, LOBBY_HELP, TEAM_SEED_SALT,
 };
 use gen1_battle::MonData;
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
@@ -200,55 +200,38 @@ impl<'d> UsbBattleInput<'d> {
                         continue;
                     }
 
+                    let mut usable = [false; 4];
+                    for i in 0..n {
+                        usable[i] = !mon_req.moves[i].disabled && mon_req.moves[i].pp > 0;
+                    }
+                    let active_slot = Some(mon_req.team_position as usize);
+
                     'move_input: loop {
                         self.write_move_prompt(n).await;
 
-                        // Get raw input: button press wins immediately; USB line goes to parse.
-                        // `wait_action` reports a move OR a party press (mid-turn switch) and
-                        // handles long-press detail views internally.
-                        let choice = match buttons.as_mut() {
-                            Some(btns) => {
-                                match select(self.read_line(), btns.wait_action(player_id, n)).await {
-                                    Either::First(line) => {
-                                        match parse_turn_line(line.trim(), n) {
-                                            Ok(c) => c,
-                                            Err(msg) => {
-                                                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                                                continue 'move_input;
-                                            }
-                                        }
+                        // Obtain an action: a button press wins immediately (long-press
+                        // detail handled internally), or a parsed USB line. Both then go
+                        // through the SAME shared validator, so the rules can't drift.
+                        let action: PlayerAction = match buttons.as_mut() {
+                            Some(btns) => match select(self.read_line(), btns.wait_action(player_id, n)).await {
+                                Either::First(line) => match parse_turn_line(line.trim(), n) {
+                                    Ok(TurnChoice::Move(s)) => PlayerAction::Move(s),
+                                    Ok(TurnChoice::Switch(i)) => PlayerAction::Switch(i),
+                                    Err(msg) => {
+                                        self.write_err(&alloc::format!("Rejected — {}", msg)).await;
+                                        continue 'move_input;
                                     }
-                                    Either::Second(PlayerAction::Move(slot)) => {
-                                        self.partial.clear();
-                                        let m = &mon_req.moves[slot];
-                                        if m.disabled {
-                                            self.write_err(&alloc::format!("Rejected — {} is disabled", m.name)).await;
-                                            continue 'move_input;
-                                        }
-                                        if m.pp == 0 {
-                                            self.write_err(&alloc::format!("Rejected — {} has no PP", m.name)).await;
-                                            continue 'move_input;
-                                        }
-                                        self.write_ok(&alloc::format!("Button — {} (slot {})", m.name, slot)).await;
-                                        parts.push(format_move_choice(slot));
-                                        break 'move_input;
-                                    }
-                                    Either::Second(PlayerAction::Switch(idx)) => {
-                                        self.partial.clear();
-                                        if mon_req.trapped {
-                                            self.write_err("Rejected — Pokémon is trapped, cannot switch").await;
-                                            continue 'move_input;
-                                        }
-                                        self.write_ok(&alloc::format!("Button — switching in slot {}", idx + 1)).await;
-                                        parts.push(format_switch_choice(idx));
-                                        break 'move_input;
-                                    }
+                                },
+                                Either::Second(a) => {
+                                    self.partial.clear();
+                                    a
                                 }
-                            }
+                            },
                             None => {
                                 let line = self.read_line().await;
                                 match parse_turn_line(line.trim(), n) {
-                                    Ok(c) => c,
+                                    Ok(TurnChoice::Move(s)) => PlayerAction::Move(s),
+                                    Ok(TurnChoice::Switch(i)) => PlayerAction::Switch(i),
                                     Err(msg) => {
                                         self.write_err(&alloc::format!("Rejected — {}", msg)).await;
                                         continue 'move_input;
@@ -257,31 +240,24 @@ impl<'d> UsbBattleInput<'d> {
                             }
                         };
 
-                        // Common validation for USB-parsed choices.
-                        match choice {
-                            TurnChoice::Move(slot) => {
-                                let m = &mon_req.moves[slot];
-                                if m.disabled {
-                                    self.write_err(&alloc::format!("Rejected — {} is disabled", m.name)).await;
-                                    continue 'move_input;
+                        match turn_action_choice(&action, n, &usable, mon_req.trapped, active_slot) {
+                            Ok(choice) => {
+                                match &action {
+                                    PlayerAction::Move(s) => {
+                                        self.write_ok(&alloc::format!("Accepted — {} (slot {})", mon_req.moves[*s].name, s)).await;
+                                    }
+                                    PlayerAction::Switch(i) => {
+                                        self.write_ok(&alloc::format!("Switching in slot {}", i + 1)).await;
+                                    }
                                 }
-                                if m.pp == 0 {
-                                    self.write_err(&alloc::format!("Rejected — {} has no PP", m.name)).await;
-                                    continue 'move_input;
-                                }
-                                self.write_ok(&alloc::format!("Accepted — {} (slot {})", m.name, slot)).await;
-                                parts.push(format_move_choice(slot));
+                                parts.push(choice);
+                                break 'move_input;
                             }
-                            TurnChoice::Switch(idx) => {
-                                if mon_req.trapped {
-                                    self.write_err("Rejected — Pokémon is trapped, cannot switch").await;
-                                    continue 'move_input;
-                                }
-                                self.write_ok(&alloc::format!("Switching in slot {}", idx + 1)).await;
-                                parts.push(format_switch_choice(idx));
+                            Err(reason) => {
+                                self.write_err(&alloc::format!("Rejected — {}", reject_reason(reason))).await;
+                                continue 'move_input;
                             }
                         }
-                        break 'move_input;
                     }
                 }
                 join_choice_parts(&parts)
@@ -632,6 +608,16 @@ fn send_party_update(p: &ActivePrompt) {
         let player = player_id_to_num(p.player_id.as_str());
         let slots = pd.mons.iter().map(party_slot_from_mon).collect();
         oled_send(OledCmd::PartyUpdate { player, slots });
+    }
+}
+
+/// Human-readable reason for a rejected turn action (shown over USB).
+fn reject_reason(r: ActionReject) -> &'static str {
+    match r {
+        ActionReject::OutOfRange => "no such move",
+        ActionReject::Unusable => "move is disabled or out of PP",
+        ActionReject::Trapped => "Pokémon is trapped, cannot switch",
+        ActionReject::AlreadyActive => "that Pokémon is already in battle",
     }
 }
 

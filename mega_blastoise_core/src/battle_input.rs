@@ -122,6 +122,56 @@ pub fn switch_choice_from_team_indices(indices: &[usize]) -> String {
     join_choice_parts(&parts)
 }
 
+/// Why a [`PlayerAction`] can't be committed for a `Request::Turn`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ActionReject {
+    /// Move slot is past the number of available moves.
+    OutOfRange,
+    /// Move is disabled or out of PP.
+    Unusable,
+    /// Active Pokémon is trapped and can't switch out.
+    Trapped,
+    /// Tried to switch to the Pokémon that is already active.
+    AlreadyActive,
+}
+
+/// The single source of truth for turn-choice rules, shared by every input
+/// pipeline (web, USB CLI, GPIO button matrix) so they cannot drift apart.
+///
+/// * `move_usable[i]` is true when move `i` is selectable (not disabled, has PP).
+/// * `active_slot` is the team index of the currently-active mon, so a switch to
+///   it (a no-op that would waste the turn) is rejected.
+///
+/// Returns the engine choice string, or the reason the press should be ignored.
+pub fn turn_action_choice(
+    action: &PlayerAction,
+    n_moves: usize,
+    move_usable: &[bool],
+    trapped: bool,
+    active_slot: Option<usize>,
+) -> Result<String, ActionReject> {
+    match *action {
+        PlayerAction::Move(slot) => {
+            if slot >= n_moves {
+                return Err(ActionReject::OutOfRange);
+            }
+            if !move_usable.get(slot).copied().unwrap_or(false) {
+                return Err(ActionReject::Unusable);
+            }
+            Ok(format_move_choice(slot))
+        }
+        PlayerAction::Switch(idx) => {
+            if active_slot == Some(idx) {
+                return Err(ActionReject::AlreadyActive);
+            }
+            if trapped {
+                return Err(ActionReject::Trapped);
+            }
+            Ok(format_switch_choice(idx))
+        }
+    }
+}
+
 // ── Button-event input interface ─────────────────────────────────────────────
 
 /// Result of [`ButtonSource::wait_action`] — the player pressed a move button or a party button.
@@ -208,20 +258,16 @@ impl<BS: ButtonSource> ButtonController<BS> {
                         parts.push(format_move_choice(0));
                         continue;
                     }
+                    let mut usable = [false; 4];
+                    for i in 0..n {
+                        usable[i] = !mon_req.moves[i].disabled && mon_req.moves[i].pp > 0;
+                    }
+                    let active_slot = Some(mon_req.team_position as usize);
                     loop {
-                        match self.source.wait_action(player_id, n).await {
-                            PlayerAction::Move(slot) if slot < n => {
-                                let mv = &mon_req.moves[slot];
-                                if !mv.disabled && mv.pp > 0 {
-                                    parts.push(format_move_choice(slot));
-                                    break;
-                                }
-                            }
-                            PlayerAction::Switch(idx) if !mon_req.trapped => {
-                                parts.push(format_switch_choice(idx));
-                                break;
-                            }
-                            _ => {}
+                        let action = self.source.wait_action(player_id, n).await;
+                        if let Ok(choice) = turn_action_choice(&action, n, &usable, mon_req.trapped, active_slot) {
+                            parts.push(choice);
+                            break;
                         }
                     }
                 }

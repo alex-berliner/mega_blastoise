@@ -26,8 +26,8 @@ pub use board_event::{
 pub use display::{party_slot_from_mon, render_event_text, render_invalid_selection, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, OledFrameBuffer, PartySlotData};
 pub use battle_input::{
     format_move_choice, format_switch_choice, join_choice_parts, switch_choice_from_team_indices,
-    turn_choice_from_move_slots, ActivePrompt, ButtonController, ButtonSource, InputBus,
-    InputSource, NoInput, PlayerAction,
+    turn_action_choice, turn_choice_from_move_slots, ActionReject, ActivePrompt, ButtonController,
+    ButtonSource, InputBus, InputSource, NoInput, PlayerAction,
 };
 pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
 pub use hp_bar::{hp_bar_color, hp_bar_count, HpBarState};

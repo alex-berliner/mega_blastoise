@@ -19,8 +19,8 @@ use cortex_m::asm::delay as asm_delay;
 use embassy_rp::gpio::{Input, Output};
 use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, party_slot_from_mon, player_id_to_num, ActivePrompt,
-    ButtonSource, InputBus, InputSource, PlayerAction,
+    format_move_choice, format_switch_choice, join_choice_parts, party_slot_from_mon, player_id_to_num,
+    turn_action_choice, ActivePrompt, ButtonSource, InputBus, InputSource, PlayerAction,
 };
 #[cfg(feature = "oled")]
 use crate::subsystems::oled::{send as oled_send, OledCmd};
@@ -190,15 +190,12 @@ impl<'d> PicoBattleInput<'d> {
                 match st[i] {
                     TwoState::Done => {}
                     TwoState::Wait => {
-                        // Switch row takes priority, mirroring wait_action.
-                        let mut moved = false;
-                        if pt.can_switch() {
-                            if let Some(c) = (0..3).find(|&c| pressed[pt.switch_row][c]) {
-                                st[i] = TwoState::Hold { row: pt.switch_row, col: c, switch: true, t0: now };
-                                moved = true;
-                            }
-                        }
-                        if !moved && pt.n_moves > 0 {
+                        // Switch row takes priority. Always enter Hold on a party press
+                        // so a long-press can show stats even for a trapped/active mon;
+                        // the actual selection is validated on release.
+                        if let Some(c) = (0..3).find(|&c| pressed[pt.switch_row][c]) {
+                            st[i] = TwoState::Hold { row: pt.switch_row, col: c, switch: true, t0: now };
+                        } else if pt.n_moves > 0 {
                             if let Some(c) = (0..pt.n_moves).find(|&c| pressed[pt.move_row][c]) {
                                 st[i] = TwoState::Hold { row: pt.move_row, col: c, switch: false, t0: now };
                             }
@@ -217,15 +214,19 @@ impl<'d> PicoBattleInput<'d> {
                                 st[i] = TwoState::Shown { row };
                             }
                         } else if now.saturating_sub(t0) < LONG_MS {
-                            // Short press → a selection (if valid).
-                            if switch {
-                                out[i] = format_switch_choice(col);
-                                st[i] = TwoState::Done;
-                            } else if pt.usable[col] {
-                                out[i] = format_move_choice(col);
-                                st[i] = TwoState::Done;
+                            // Short press → a selection, validated by the shared rule
+                            // (handles disabled/PP, trapped, and switch-to-active).
+                            let action = if switch {
+                                PlayerAction::Switch(col)
                             } else {
-                                st[i] = TwoState::Wait; // disabled / no PP — ignore
+                                PlayerAction::Move(col)
+                            };
+                            match turn_action_choice(&action, pt.n_moves, &pt.usable, pt.trapped, pt.active_slot) {
+                                Ok(choice) => {
+                                    out[i] = choice;
+                                    st[i] = TwoState::Done;
+                                }
+                                Err(_) => st[i] = TwoState::Wait, // invalid press — ignore
                             }
                         } else {
                             st[i] = TwoState::Wait;
@@ -262,8 +263,8 @@ pub struct PlayerTurn {
     usable: [bool; 4],
     /// Active mon can't switch out.
     trapped: bool,
-    /// `Request::Switch` — only a party button is valid (forced switch).
-    must_switch: bool,
+    /// Team index of the active mon (so switching to it is rejected).
+    active_slot: Option<usize>,
     /// Forced choice (locked move, no moves, team preview) — submit without input.
     auto: Option<String>,
 }
@@ -279,12 +280,13 @@ impl PlayerTurn {
             n_moves: 0,
             usable: [false; 4],
             trapped: false,
-            must_switch: false,
+            active_slot: None,
             auto: None,
         };
         match request {
             Request::Turn(turn) => {
                 if let Some(mon) = turn.active.first() {
+                    pt.active_slot = Some(mon.team_position as usize);
                     let n = mon.moves.len().min(4);
                     if n == 0 {
                         pt.auto = Some(String::from("pass"));
@@ -299,15 +301,11 @@ impl PlayerTurn {
                     }
                 }
             }
-            Request::Switch(_) => pt.must_switch = true,
+            Request::Switch(_) => {} // forced switch: no moves, any non-active bench mon
             Request::TeamPreview(_) => pt.auto = Some(String::from("random")),
             Request::LearnMove(_) => pt.auto = Some(String::from("pass")),
         }
         pt
-    }
-
-    fn can_switch(&self) -> bool {
-        self.must_switch || !self.trapped
     }
 }
 
@@ -455,19 +453,16 @@ impl PicoBattleInput<'_> {
                         parts.push(format_move_choice(0));
                         continue;
                     }
+                    let mut usable = [false; 4];
+                    for i in 0..n {
+                        usable[i] = !mon_req.moves[i].disabled && mon_req.moves[i].pp > 0;
+                    }
+                    let active_slot = Some(mon_req.team_position as usize);
                     loop {
-                        match self.wait_action(player_id, n).await {
-                            PlayerAction::Move(slot) if slot < n => {
-                                if !mon_req.moves[slot].disabled && mon_req.moves[slot].pp > 0 {
-                                    parts.push(format_move_choice(slot));
-                                    break;
-                                }
-                            }
-                            PlayerAction::Switch(idx) if !mon_req.trapped => {
-                                parts.push(format_switch_choice(idx));
-                                break;
-                            }
-                            _ => {}
+                        let action = self.wait_action(player_id, n).await;
+                        if let Ok(choice) = turn_action_choice(&action, n, &usable, mon_req.trapped, active_slot) {
+                            parts.push(choice);
+                            break;
                         }
                     }
                 }
