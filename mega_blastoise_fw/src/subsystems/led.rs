@@ -21,6 +21,7 @@ use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIN_20, PIN_22, PIO0};
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::pio_programs::ws2812::{PioWs2812, PioWs2812Program};
 use embassy_rp::Peri;
+use embassy_futures::select::{select, Either};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::Timer;
 use mega_blastoise_core::{hp_bar_color, hp_bar_count};
@@ -298,14 +299,30 @@ pub async fn task(
             }
 
             LedCmd::LobbyIdle => {
-                // Steady, calm glow — no animation. A breathing loop here gets
-                // starved and janky while the demo battle hogs the single
-                // executor thread, which reads as an erratic strobe. Holds the
-                // color until the next command arrives. Values are pre-cap, so
-                // the visible result is ~1/3 of these (see BRIGHTNESS_PCT).
-                let frame = solid(RGB8 { r: 60, g: 10, b: 230 });
-                ws1.write(&frame).await;
-                ws2.write(&frame).await;
+                // Slow "breathing" glow until the next command arrives. Each
+                // frame is one small monotonic step of a triangle wave, so even
+                // if the demo battle briefly starves this task the animation
+                // just pauses and resumes — it never jumps, so no strobe. The
+                // base color is pre-cap; both BRIGHTNESS_PCT and the per-frame
+                // breath factor scale it down further.
+                const STEPS: u8 = 60; // full breath ≈ STEPS * frame_ms
+                const HALF: u8 = STEPS / 2;
+                let base = RGB8 { r: 60, g: 10, b: 230 };
+                let mut step: u8 = 0;
+                loop {
+                    // Triangle 0..HALF..0 → breath factor 25..100 %.
+                    let tri = if step <= HALF { step } else { STEPS - step };
+                    let factor = 25 + (tri as u16 * 75 / HALF as u16);
+                    let s = |v: u8| ((v as u16 * factor) / 100) as u8;
+                    let frame = solid(RGB8 { r: s(base.r), g: s(base.g), b: s(base.b) });
+                    ws1.write(&frame).await;
+                    ws2.write(&frame).await;
+                    step = (step + 1) % STEPS;
+                    match select(Timer::after_millis(45), CMD.receive()).await {
+                        Either::First(_) => {}                       // next breath frame
+                        Either::Second(c) => { pending = Some(c); break; }
+                    }
+                }
                 false
             }
 

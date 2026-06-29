@@ -44,15 +44,18 @@ async fn main(_spawner: Spawner) {
     };
     set_defmt_channel(channels.up.0);
 
-    defmt::info!("ws2812_test: driving {} LEDs on GP20 (PIO0)", NUM_LEDS);
+    defmt::info!("ws2812_test: driving {} LEDs on GP20 + GP22 (PIO0 SM0/SM1)", NUM_LEDS);
 
-    let Pio { mut common, sm0, .. } = Pio::new(p.PIO0, Irqs);
+    let Pio { mut common, sm0, sm1, .. } = Pio::new(p.PIO0, Irqs);
     let prg = PioWs2812Program::new(&mut common);
     let mut ws: PioWs2812<'_, PIO0, 0, NUM_LEDS> =
         PioWs2812::new(&mut common, sm0, p.DMA_CH0, p.PIN_20, &prg);
+    let mut ws2: PioWs2812<'_, PIO0, 1, NUM_LEDS> =
+        PioWs2812::new(&mut common, sm1, p.DMA_CH1, p.PIN_22, &prg);
 
     // Make sure everything starts dark.
     ws.write(&[OFF; NUM_LEDS]).await;
+    ws2.write(&[OFF; NUM_LEDS]).await;
     Timer::after_millis(200).await;
 
     loop {
@@ -64,6 +67,7 @@ async fn main(_spawner: Spawner) {
         ] {
             defmt::info!("solid {}", name);
             ws.write(&[color; NUM_LEDS]).await;
+            ws2.write(&[color; NUM_LEDS]).await;
             Timer::after_millis(700).await;
         }
 
@@ -73,6 +77,7 @@ async fn main(_spawner: Spawner) {
             let mut frame = [OFF; NUM_LEDS];
             frame[i] = RGB8 { r: 30, g: 30, b: 30 };
             ws.write(&frame).await;
+            ws2.write(&frame).await;
             Timer::after_millis(120).await;
         }
 
@@ -85,6 +90,7 @@ async fn main(_spawner: Spawner) {
                 *px = wheel(hue);
             }
             ws.write(&frame).await;
+            ws2.write(&frame).await;
             Timer::after_millis(15).await;
         }
     }
