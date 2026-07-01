@@ -59,7 +59,7 @@ for p in S.PADS:
 for (c,h,t) in S.LABELS:
     ax.text(X(c),Y(h),t,ha="left",va="center",fontsize=6.3,fontweight="bold",color="#222",zorder=9)
 
-ax.text(0.0,-0.03,"Mega Blastoise - single 24x55 stripboard, rev 2   (X=cut  dots=pads  lines=underside jumpers)",
+ax.text(0.0,-0.03,"Mega Blastoise - single 24x55 stripboard, rev 3 - face-to-face   (X=cut  dots=pads  lines=underside jumpers)",
         ha="left",va="bottom",fontsize=9,fontweight="bold")
 plt.tight_layout()
 out="/home/alex/Code/mega_blastoise/hardware/stripboard/mega_blastoise_single_board_preview.png"

@@ -89,27 +89,28 @@ everything else (cuts, jumpers, nets) is footprint-independent.
 every leg -> union-find nets): all 14 switches connect exactly their row GPIO to
 their col GPIO, 8 nets total, no stray shorts.
 
-## Single-board build (whole console on one 24x55 board) - rev 2
-`gen_single_board.py` puts **everything on one stripboard**. Outputs
-`mega_blastoise_single_board.diy` (+ `_preview.png`). Layout, top to bottom:
+## Single-board build (whole console on one 24x55 board) - rev 3
+`gen_single_board.py` puts **everything on one stripboard**, arranged for two
+players **facing each other** across the board. Outputs
+`mega_blastoise_single_board.diy` (+ `_preview.png`). Board top to bottom:
 
-- **holes 3-20**: the 14-switch matrix, split into **player zones** - P2 on the
-  left half, P1 on the right, each player's party column (S1-S3) beside their
-  moves column (M1-M4).
-- **hole 23**: two 3-pad **LED strip connectors** (DIN/5V/GND). The WS2812B
-  strips themselves are OFF the board - wire them out from these pads.
-- **holes 24-35**: the two **SSD1306 OLEDs**, header row at 24 (GND,VCC,SCL,SDA),
-  screen hanging below - each directly under its player's buttons.
-- **holes 38-45**: the **Pico, mounted on the TOP side, USB pointing LEFT**
-  (pin 1 = GP0 at the bottom-left pin; VBUS is n/c). Two full cut lines run
-  across its 20 columns (holes 37 and 42) to isolate the pin rows.
-- **hole 49**: **MB102 5V input** - two adjacent pads bottom-right, "-" on the
-  left (W), "+" on the right (X).
-- **rails**: GND = col B, 3V3 = col W, 5V = col X (next to each other). The 5V
-  rail is fed by the MB102 and powers the LED strips; the Pico runs from USB;
-  grounds are shared. (No buzzer.)
+- **P2 module (rotated 180deg)**: party row S3 S2 S1, moves M4 M3, screen
+  (header at its bottom edge), moves M2 M1. From P2's seat it reads exactly
+  like P1's module. **Firmware must render P2's OLED rotated 180deg.**
+- **P1 module**: moves M1 M2, screen (header at its top edge), moves M3 M4,
+  party row S1 S2 S3.
+- The 4 move buttons of each player sit at the **four corners of their screen**,
+  matching where the moves render on the OLED; the 3 party buttons share a row.
+- **LED strip connectors on the left edge (col A)**: P2's at the top (rows
+  2/5/8), P1's at the bottom (rows 41/44/47), each DIN/5V/GND - out of the
+  play area; the WS2812B strips are off-board.
+- **holes 47-54**: the **Pico, on the TOP side, USB pointing LEFT** (pin 1 =
+  GP0 bottom-left; VBUS n/c), isolation cut lines at holes 46 and 50.
+- **hole 53**: **MB102 5V input** - "-" on the left (W), "+" on the right (X).
+- **rails**: GND = col B, 3V3 = col W, 5V = col X. MB102 feeds the 5V rail for
+  the LED strips; the Pico runs from USB; grounds are shared. (No buzzer.)
 
-All ~34 jumper wires are meant to be routed on the **underside** so the top
+All ~41 jumper wires are meant to be routed on the **underside** so the top
 stays clean. The `verify()` in the script proves the netlist by union-find
 (strips + cuts + jumpers + every pad) and also checks that no hole takes two
 wire ends - it must report PASS before the `.diy` is written.
