@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <org.diylc.core.Project>
   <fileVersion><major>3</major><minor>32</minor><build>0</build></fileVersion>
-  <title>Mega Blastoise Button Matrix - full assembly</title>
+  <title>Mega Blastoise - full system</title>
   <author>generated</author>
-  <description>4x4 matrix + Raspberry Pi Pico + ribbon wiring, on stripboard.</description>
+  <description>Button matrix + Pico + 2 OLEDs + 2 WS2812B strips + buzzer, with wiring.</description>
   <width><value>29.0</value><unit class="org.diylc.core.measures.SizeUnit">cm</unit></width>
   <height><value>21.0</value><unit class="org.diylc.core.measures.SizeUnit">cm</unit></height>
   <gridSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></gridSpacing>
@@ -436,98 +436,98 @@
       <orientation>DEFAULT</orientation>
     </org.diylc.components.misc.Label>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P1M1</name><alpha>45</alpha><value></value>
+      <name>SW_P1M1</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="1.74" y="0.84"/><java.awt.Point x="2.16" y="1.16"/></controlPoints>
       <firstPoint x="1.74" y="0.84"/><secondPoint x="2.16" y="1.16"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P1M2</name><alpha>45</alpha><value></value>
+      <name>SW_P1M2</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="1.74" y="1.24"/><java.awt.Point x="2.16" y="1.56"/></controlPoints>
       <firstPoint x="1.74" y="1.24"/><secondPoint x="2.16" y="1.56"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P1M3</name><alpha>45</alpha><value></value>
+      <name>SW_P1M3</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="1.74" y="1.64"/><java.awt.Point x="2.16" y="1.96"/></controlPoints>
       <firstPoint x="1.74" y="1.64"/><secondPoint x="2.16" y="1.96"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P1M4</name><alpha>45</alpha><value></value>
+      <name>SW_P1M4</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="1.74" y="2.04"/><java.awt.Point x="2.16" y="2.36"/></controlPoints>
       <firstPoint x="1.74" y="2.04"/><secondPoint x="2.16" y="2.36"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P1S1</name><alpha>45</alpha><value></value>
+      <name>SW_P1S1</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="1.14" y="0.84"/><java.awt.Point x="1.56" y="1.16"/></controlPoints>
       <firstPoint x="1.14" y="0.84"/><secondPoint x="1.56" y="1.16"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P1S2</name><alpha>45</alpha><value></value>
+      <name>SW_P1S2</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="1.14" y="1.24"/><java.awt.Point x="1.56" y="1.56"/></controlPoints>
       <firstPoint x="1.14" y="1.24"/><secondPoint x="1.56" y="1.56"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P1S3</name><alpha>45</alpha><value></value>
+      <name>SW_P1S3</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="1.14" y="1.64"/><java.awt.Point x="1.56" y="1.96"/></controlPoints>
       <firstPoint x="1.14" y="1.64"/><secondPoint x="1.56" y="1.96"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P2M1</name><alpha>45</alpha><value></value>
+      <name>SW_P2M1</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="0.54" y="0.84"/><java.awt.Point x="0.96" y="1.16"/></controlPoints>
       <firstPoint x="0.54" y="0.84"/><secondPoint x="0.96" y="1.16"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P2M2</name><alpha>45</alpha><value></value>
+      <name>SW_P2M2</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="0.54" y="1.24"/><java.awt.Point x="0.96" y="1.56"/></controlPoints>
       <firstPoint x="0.54" y="1.24"/><secondPoint x="0.96" y="1.56"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P2M3</name><alpha>45</alpha><value></value>
+      <name>SW_P2M3</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="0.54" y="1.64"/><java.awt.Point x="0.96" y="1.96"/></controlPoints>
       <firstPoint x="0.54" y="1.64"/><secondPoint x="0.96" y="1.96"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P2M4</name><alpha>45</alpha><value></value>
+      <name>SW_P2M4</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="0.54" y="2.04"/><java.awt.Point x="0.96" y="2.36"/></controlPoints>
       <firstPoint x="0.54" y="2.04"/><secondPoint x="0.96" y="2.36"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P2S1</name><alpha>45</alpha><value></value>
+      <name>SW_P2S1</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="-0.06" y="0.84"/><java.awt.Point x="0.36" y="1.16"/></controlPoints>
       <firstPoint x="-0.06" y="0.84"/><secondPoint x="0.36" y="1.16"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P2S2</name><alpha>45</alpha><value></value>
+      <name>SW_P2S2</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="-0.06" y="1.24"/><java.awt.Point x="0.36" y="1.56"/></controlPoints>
       <firstPoint x="-0.06" y="1.24"/><secondPoint x="0.36" y="1.56"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
-      <name>SW_P2S3</name><alpha>45</alpha><value></value>
+      <name>SW_P2S3</name><alpha>60</alpha><value></value>
       <controlPoints><java.awt.Point x="-0.06" y="1.64"/><java.awt.Point x="0.36" y="1.96"/></controlPoints>
       <firstPoint x="-0.06" y="1.64"/><secondPoint x="0.36" y="1.96"/>
       <color><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
@@ -536,89 +536,514 @@
     <org.diylc.components.semiconductors.DIL__IC>
       <name>Pico</name><alpha>100</alpha><value>RP2040</value><orientation>DEFAULT</orientation>
       <pinCount>_40</pinCount><pinSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></pinSpacing><rowSpacing><value>0.7</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></rowSpacing>
-      <controlPoints><java.awt.Point x="0.7" y="3.2"/><java.awt.Point x="0.7" y="3.3"/><java.awt.Point x="0.7" y="3.4"/><java.awt.Point x="0.7" y="3.5"/><java.awt.Point x="0.7" y="3.6"/><java.awt.Point x="0.7" y="3.7"/><java.awt.Point x="0.7" y="3.8"/><java.awt.Point x="0.7" y="3.9"/><java.awt.Point x="0.7" y="4.0"/><java.awt.Point x="0.7" y="4.1"/><java.awt.Point x="0.7" y="4.2"/><java.awt.Point x="0.7" y="4.3"/><java.awt.Point x="0.7" y="4.4"/><java.awt.Point x="0.7" y="4.5"/><java.awt.Point x="0.7" y="4.6"/><java.awt.Point x="0.7" y="4.7"/><java.awt.Point x="0.7" y="4.8"/><java.awt.Point x="0.7" y="4.9"/><java.awt.Point x="0.7" y="5.0"/><java.awt.Point x="0.7" y="5.1"/><java.awt.Point x="1.4" y="3.2"/><java.awt.Point x="1.4" y="3.3"/><java.awt.Point x="1.4" y="3.4"/><java.awt.Point x="1.4" y="3.5"/><java.awt.Point x="1.4" y="3.6"/><java.awt.Point x="1.4" y="3.7"/><java.awt.Point x="1.4" y="3.8"/><java.awt.Point x="1.4" y="3.9"/><java.awt.Point x="1.4" y="4.0"/><java.awt.Point x="1.4" y="4.1"/><java.awt.Point x="1.4" y="4.2"/><java.awt.Point x="1.4" y="4.3"/><java.awt.Point x="1.4" y="4.4"/><java.awt.Point x="1.4" y="4.5"/><java.awt.Point x="1.4" y="4.6"/><java.awt.Point x="1.4" y="4.7"/><java.awt.Point x="1.4" y="4.8"/><java.awt.Point x="1.4" y="4.9"/><java.awt.Point x="1.4" y="5.0"/><java.awt.Point x="1.4" y="5.1"/></controlPoints><display>NAME</display>
+      <controlPoints><java.awt.Point x="0.7" y="3.3"/><java.awt.Point x="0.7" y="3.4"/><java.awt.Point x="0.7" y="3.5"/><java.awt.Point x="0.7" y="3.6"/><java.awt.Point x="0.7" y="3.7"/><java.awt.Point x="0.7" y="3.8"/><java.awt.Point x="0.7" y="3.9"/><java.awt.Point x="0.7" y="4.0"/><java.awt.Point x="0.7" y="4.1"/><java.awt.Point x="0.7" y="4.2"/><java.awt.Point x="0.7" y="4.3"/><java.awt.Point x="0.7" y="4.4"/><java.awt.Point x="0.7" y="4.5"/><java.awt.Point x="0.7" y="4.6"/><java.awt.Point x="0.7" y="4.7"/><java.awt.Point x="0.7" y="4.8"/><java.awt.Point x="0.7" y="4.9"/><java.awt.Point x="0.7" y="5.0"/><java.awt.Point x="0.7" y="5.1"/><java.awt.Point x="0.7" y="5.2"/><java.awt.Point x="1.4" y="3.3"/><java.awt.Point x="1.4" y="3.4"/><java.awt.Point x="1.4" y="3.5"/><java.awt.Point x="1.4" y="3.6"/><java.awt.Point x="1.4" y="3.7"/><java.awt.Point x="1.4" y="3.8"/><java.awt.Point x="1.4" y="3.9"/><java.awt.Point x="1.4" y="4.0"/><java.awt.Point x="1.4" y="4.1"/><java.awt.Point x="1.4" y="4.2"/><java.awt.Point x="1.4" y="4.3"/><java.awt.Point x="1.4" y="4.4"/><java.awt.Point x="1.4" y="4.5"/><java.awt.Point x="1.4" y="4.6"/><java.awt.Point x="1.4" y="4.7"/><java.awt.Point x="1.4" y="4.8"/><java.awt.Point x="1.4" y="4.9"/><java.awt.Point x="1.4" y="5.0"/><java.awt.Point x="1.4" y="5.1"/><java.awt.Point x="1.4" y="5.2"/></controlPoints><display>NAME</display>
       <bodyColor><red>70</red><green>70</green><blue>80</blue><alpha>255</alpha></bodyColor><borderColor><red>40</red><green>40</green><blue>45</blue><alpha>255</alpha></borderColor>
       <labelColor><red>230</red><green>230</green><blue>230</blue><alpha>255</alpha></labelColor><indentColor><red>40</red><green>40</green><blue>45</blue><alpha>255</alpha></indentColor>
       <displayNumbers>NO</displayNumbers>
     </org.diylc.components.semiconductors.DIL__IC>
     <org.diylc.components.misc.Label>
-      <name>PicoLbl</name><point x="0.7" y="3.02"/><text>Raspberry Pi Pico</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <name>PicoLbl</name><point x="0.7" y="3.14"/><text>Raspberry Pi Pico</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
       <color><red>40</red><green>40</green><blue>45</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin7</name><point x="0.6" y="3.9"/><text>GP5 p7</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>200</red><green>40</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>RIGHT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin10</name><point x="0.6" y="4.2"/><text>GP7 p10</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>230</red><green>120</green><blue>20</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>RIGHT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin11</name><point x="0.6" y="4.3"/><text>GP8 p11</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>170</red><green>150</green><blue>20</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>RIGHT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin12</name><point x="0.6" y="4.4"/><text>GP9 p12</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>40</red><green>160</green><blue>60</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>RIGHT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin14</name><point x="0.6" y="4.6"/><text>GP10 p14</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>RIGHT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin15</name><point x="0.6" y="4.7"/><text>GP11 p15</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>130</red><green>60</green><blue>190</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>RIGHT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin16</name><point x="0.6" y="4.8"/><text>GP12 p16</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>140</red><green>90</green><blue>50</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>RIGHT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin17</name><point x="0.6" y="4.9"/><text>GP13 p17</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>90</red><green>90</green><blue>90</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>RIGHT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin21</name><point x="1.5" y="5.2"/><text>GP16 SDA p21</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin22</name><point x="1.5" y="5.1"/><text>GP17 SCL p22</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>20</red><green>150</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin24</name><point x="1.5" y="4.9"/><text>GP18 SDA p24</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin25</name><point x="1.5" y="4.8"/><text>GP19 SCL p25</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>20</red><green>150</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin26</name><point x="1.5" y="4.7"/><text>GP20 DIN p26</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>40</red><green>160</green><blue>60</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin27</name><point x="1.5" y="4.6"/><text>GP21 p27</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>150</red><green>120</green><blue>20</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin29</name><point x="1.5" y="4.4"/><text>GP22 DIN p29</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>150</red><green>60</green><blue>190</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin36</name><point x="1.5" y="3.7"/><text>3V3 p36</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin38</name><point x="1.5" y="3.5"/><text>GND p38</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>50</red><green>50</green><blue>50</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>pin40</name><point x="1.5" y="3.3"/><text>VBUS 5V p40</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
       <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
       <orientation>DEFAULT</orientation>
     </org.diylc.components.misc.Label>
     <org.diylc.components.connectivity.HookupWire>
       <name>w_GP5</name><alpha>127</alpha>
-      <controlPoints><java.awt.Point x="2.1" y="0.6"/><java.awt.Point x="2.1" y="2.95"/><java.awt.Point x="0.4" y="3.8"/><java.awt.Point x="0.7" y="3.8"/></controlPoints>
+      <controlPoints><java.awt.Point x="2.1" y="0.6"/><java.awt.Point x="2.1" y="2.95"/><java.awt.Point x="0.4" y="3.9"/><java.awt.Point x="0.7" y="3.9"/></controlPoints>
       <color><red>200</red><green>40</green><blue>40</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
     </org.diylc.components.connectivity.HookupWire>
     <org.diylc.components.connectivity.HookupWire>
       <name>w_GP7</name><alpha>127</alpha>
-      <controlPoints><java.awt.Point x="1.5" y="0.6"/><java.awt.Point x="1.5" y="2.95"/><java.awt.Point x="0.4" y="4.0"/><java.awt.Point x="0.7" y="4.0"/></controlPoints>
+      <controlPoints><java.awt.Point x="1.5" y="0.6"/><java.awt.Point x="1.5" y="2.95"/><java.awt.Point x="0.4" y="4.2"/><java.awt.Point x="0.7" y="4.2"/></controlPoints>
       <color><red>230</red><green>120</green><blue>20</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
     </org.diylc.components.connectivity.HookupWire>
     <org.diylc.components.connectivity.HookupWire>
       <name>w_GP8</name><alpha>127</alpha>
-      <controlPoints><java.awt.Point x="0.9" y="0.6"/><java.awt.Point x="0.9" y="2.95"/><java.awt.Point x="0.4" y="4.1"/><java.awt.Point x="0.7" y="4.1"/></controlPoints>
+      <controlPoints><java.awt.Point x="0.9" y="0.6"/><java.awt.Point x="0.9" y="2.95"/><java.awt.Point x="0.4" y="4.3"/><java.awt.Point x="0.7" y="4.3"/></controlPoints>
       <color><red>170</red><green>150</green><blue>20</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
     </org.diylc.components.connectivity.HookupWire>
     <org.diylc.components.connectivity.HookupWire>
       <name>w_GP9</name><alpha>127</alpha>
-      <controlPoints><java.awt.Point x="0.3" y="0.6"/><java.awt.Point x="0.3" y="2.95"/><java.awt.Point x="0.4" y="4.2"/><java.awt.Point x="0.7" y="4.2"/></controlPoints>
+      <controlPoints><java.awt.Point x="0.3" y="0.6"/><java.awt.Point x="0.3" y="2.95"/><java.awt.Point x="0.4" y="4.4"/><java.awt.Point x="0.7" y="4.4"/></controlPoints>
       <color><red>40</red><green>160</green><blue>60</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
     </org.diylc.components.connectivity.HookupWire>
     <org.diylc.components.connectivity.HookupWire>
       <name>w_GP10</name><alpha>127</alpha>
-      <controlPoints><java.awt.Point x="0.0" y="1.0"/><java.awt.Point x="0.0" y="2.95"/><java.awt.Point x="0.4" y="4.3"/><java.awt.Point x="0.7" y="4.3"/></controlPoints>
+      <controlPoints><java.awt.Point x="0.0" y="1.0"/><java.awt.Point x="0.0" y="2.95"/><java.awt.Point x="0.4" y="4.6"/><java.awt.Point x="0.7" y="4.6"/></controlPoints>
       <color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
     </org.diylc.components.connectivity.HookupWire>
     <org.diylc.components.connectivity.HookupWire>
       <name>w_GP11</name><alpha>127</alpha>
-      <controlPoints><java.awt.Point x="0.0" y="1.4"/><java.awt.Point x="0.0" y="2.95"/><java.awt.Point x="0.4" y="4.4"/><java.awt.Point x="0.7" y="4.4"/></controlPoints>
+      <controlPoints><java.awt.Point x="0.0" y="1.4"/><java.awt.Point x="0.0" y="2.95"/><java.awt.Point x="0.4" y="4.7"/><java.awt.Point x="0.7" y="4.7"/></controlPoints>
       <color><red>130</red><green>60</green><blue>190</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
     </org.diylc.components.connectivity.HookupWire>
     <org.diylc.components.connectivity.HookupWire>
       <name>w_GP12</name><alpha>127</alpha>
-      <controlPoints><java.awt.Point x="0.0" y="1.8"/><java.awt.Point x="0.0" y="2.95"/><java.awt.Point x="0.4" y="4.5"/><java.awt.Point x="0.7" y="4.5"/></controlPoints>
+      <controlPoints><java.awt.Point x="0.0" y="1.8"/><java.awt.Point x="0.0" y="2.95"/><java.awt.Point x="0.4" y="4.8"/><java.awt.Point x="0.7" y="4.8"/></controlPoints>
       <color><red>140</red><green>90</green><blue>50</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
     </org.diylc.components.connectivity.HookupWire>
     <org.diylc.components.connectivity.HookupWire>
       <name>w_GP13</name><alpha>127</alpha>
-      <controlPoints><java.awt.Point x="0.6" y="2.2"/><java.awt.Point x="0.6" y="2.95"/><java.awt.Point x="0.4" y="4.6"/><java.awt.Point x="0.7" y="4.6"/></controlPoints>
+      <controlPoints><java.awt.Point x="0.6" y="2.2"/><java.awt.Point x="0.6" y="2.95"/><java.awt.Point x="0.4" y="4.9"/><java.awt.Point x="0.7" y="4.9"/></controlPoints>
       <color><red>90</red><green>90</green><blue>90</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
     </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.shapes.Rectangle>
+      <name>OLED1_body</name><alpha>70</alpha><value></value>
+      <controlPoints><java.awt.Point x="2.3" y="3.35"/><java.awt.Point x="3.25" y="3.95"/></controlPoints>
+      <firstPoint x="2.3" y="3.35"/><secondPoint x="3.25" y="3.95"/>
+      <color><red>35</red><green>40</green><blue>55</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
+    </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.misc.Label>
-      <name>parts0</name><point x="1.75" y="3.3"/><text>Parts:</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <name>OLED1_t</name><point x="2.35" y="3.22"/><text>OLED P1 (SSD1306 I2C0)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>OLED1_p0</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="2.35" y="3.47"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>OLED1_l0</name><point x="2.45" y="3.47"/><text>SDA GP16</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>OLED1_w0</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="3.47"/><java.awt.Point x="1.75" y="3.47"/><java.awt.Point x="1.75" y="5.2"/><java.awt.Point x="1.55" y="5.2"/></controlPoints>
+      <color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>OLED1_p1</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>20</red><green>150</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="2.35" y="3.59"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>OLED1_l1</name><point x="2.45" y="3.59"/><text>SCL GP17</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>20</red><green>150</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>OLED1_w1</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="3.59"/><java.awt.Point x="1.75" y="3.59"/><java.awt.Point x="1.75" y="5.1"/><java.awt.Point x="1.55" y="5.1"/></controlPoints>
+      <color><red>20</red><green>150</green><blue>200</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>OLED1_p2</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></color>
+      <point x="2.35" y="3.71"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>OLED1_l2</name><point x="2.45" y="3.71"/><text>VCC 3V3</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>OLED1_w2</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="3.71"/><java.awt.Point x="1.75" y="3.71"/><java.awt.Point x="1.75" y="3.7"/><java.awt.Point x="1.55" y="3.7"/></controlPoints>
+      <color><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>OLED1_p3</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color>
+      <point x="2.35" y="3.83"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>OLED1_l3</name><point x="2.45" y="3.83"/><text>GND</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>OLED1_w3</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="3.83"/><java.awt.Point x="1.75" y="3.83"/><java.awt.Point x="1.75" y="3.5"/><java.awt.Point x="1.55" y="3.5"/></controlPoints>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.shapes.Rectangle>
+      <name>OLED2_body</name><alpha>70</alpha><value></value>
+      <controlPoints><java.awt.Point x="2.3" y="4.15"/><java.awt.Point x="3.25" y="4.75"/></controlPoints>
+      <firstPoint x="2.3" y="4.15"/><secondPoint x="3.25" y="4.75"/>
+      <color><red>35</red><green>40</green><blue>55</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
+    </org.diylc.components.shapes.Rectangle>
+    <org.diylc.components.misc.Label>
+      <name>OLED2_t</name><point x="2.35" y="4.02"/><text>OLED P2 (SSD1306 I2C1)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>OLED2_p0</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="2.35" y="4.27"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>OLED2_l0</name><point x="2.45" y="4.27"/><text>SDA GP18</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>OLED2_w0</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="4.27"/><java.awt.Point x="1.75" y="4.27"/><java.awt.Point x="1.75" y="4.9"/><java.awt.Point x="1.55" y="4.9"/></controlPoints>
+      <color><red>40</red><green>90</green><blue>200</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>OLED2_p1</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>20</red><green>150</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="2.35" y="4.39"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>OLED2_l1</name><point x="2.45" y="4.39"/><text>SCL GP19</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>20</red><green>150</green><blue>200</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>OLED2_w1</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="4.39"/><java.awt.Point x="1.75" y="4.39"/><java.awt.Point x="1.75" y="4.8"/><java.awt.Point x="1.55" y="4.8"/></controlPoints>
+      <color><red>20</red><green>150</green><blue>200</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>OLED2_p2</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></color>
+      <point x="2.35" y="4.51"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>OLED2_l2</name><point x="2.45" y="4.51"/><text>VCC 3V3</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>OLED2_w2</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="4.51"/><java.awt.Point x="1.75" y="4.51"/><java.awt.Point x="1.75" y="3.7"/><java.awt.Point x="1.55" y="3.7"/></controlPoints>
+      <color><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>OLED2_p3</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color>
+      <point x="2.35" y="4.63"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>OLED2_l3</name><point x="2.45" y="4.63"/><text>GND</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>OLED2_w3</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="4.63"/><java.awt.Point x="1.75" y="4.63"/><java.awt.Point x="1.75" y="3.5"/><java.awt.Point x="1.55" y="3.5"/></controlPoints>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.shapes.Rectangle>
+      <name>LED1_body</name><alpha>70</alpha><value></value>
+      <controlPoints><java.awt.Point x="2.3" y="4.95"/><java.awt.Point x="3.45" y="5.2"/></controlPoints>
+      <firstPoint x="2.3" y="4.95"/><secondPoint x="3.45" y="5.2"/>
+      <color><red>35</red><green>40</green><blue>55</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
+    </org.diylc.components.shapes.Rectangle>
+    <org.diylc.components.misc.Label>
+      <name>LED1_t</name><point x="2.35" y="4.82"/><text>WS2812B strip P1</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>LED1_p0</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>40</red><green>160</green><blue>60</blue><alpha>255</alpha></color>
+      <point x="2.35" y="5.01"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LED1_l0</name><point x="2.45" y="5.01"/><text>DIN GP20</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>40</red><green>160</green><blue>60</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>LED1_w0</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="5.01"/><java.awt.Point x="1.75" y="5.01"/><java.awt.Point x="1.75" y="4.7"/><java.awt.Point x="1.55" y="4.7"/></controlPoints>
+      <color><red>40</red><green>160</green><blue>60</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>LED1_p1</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></color>
+      <point x="2.35" y="5.08"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LED1_l1</name><point x="2.45" y="5.08"/><text>5V</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>LED1_w1</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="5.08"/><java.awt.Point x="1.75" y="5.08"/><java.awt.Point x="1.75" y="3.3"/><java.awt.Point x="1.55" y="3.3"/></controlPoints>
+      <color><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>LED1_p2</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color>
+      <point x="2.35" y="5.14"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LED1_l2</name><point x="2.45" y="5.14"/><text>GND</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>LED1_w2</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="5.14"/><java.awt.Point x="1.75" y="5.14"/><java.awt.Point x="1.75" y="3.5"/><java.awt.Point x="1.55" y="3.5"/></controlPoints>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.shapes.Rectangle>
+      <name>LED2_body</name><alpha>70</alpha><value></value>
+      <controlPoints><java.awt.Point x="2.3" y="5.4"/><java.awt.Point x="3.45" y="5.65"/></controlPoints>
+      <firstPoint x="2.3" y="5.4"/><secondPoint x="3.45" y="5.65"/>
+      <color><red>35</red><green>40</green><blue>55</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
+    </org.diylc.components.shapes.Rectangle>
+    <org.diylc.components.misc.Label>
+      <name>LED2_t</name><point x="2.35" y="5.27"/><text>WS2812B strip P2</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>LED2_p0</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>150</red><green>60</green><blue>190</blue><alpha>255</alpha></color>
+      <point x="2.35" y="5.46"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LED2_l0</name><point x="2.45" y="5.46"/><text>DIN GP22</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>150</red><green>60</green><blue>190</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>LED2_w0</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="5.46"/><java.awt.Point x="1.75" y="5.46"/><java.awt.Point x="1.75" y="4.4"/><java.awt.Point x="1.55" y="4.4"/></controlPoints>
+      <color><red>150</red><green>60</green><blue>190</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>LED2_p1</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></color>
+      <point x="2.35" y="5.53"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LED2_l1</name><point x="2.45" y="5.53"/><text>5V</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>LED2_w1</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="5.53"/><java.awt.Point x="1.75" y="5.53"/><java.awt.Point x="1.75" y="3.3"/><java.awt.Point x="1.55" y="3.3"/></controlPoints>
+      <color><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>LED2_p2</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color>
+      <point x="2.35" y="5.59"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LED2_l2</name><point x="2.45" y="5.59"/><text>GND</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>LED2_w2</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="2.35" y="5.59"/><java.awt.Point x="1.75" y="5.59"/><java.awt.Point x="1.75" y="3.5"/><java.awt.Point x="1.55" y="3.5"/></controlPoints>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.shapes.Rectangle>
+      <name>BUZ_body</name><alpha>70</alpha><value></value>
+      <controlPoints><java.awt.Point x="1.8" y="5.45"/><java.awt.Point x="2.15" y="5.75"/></controlPoints>
+      <firstPoint x="1.8" y="5.45"/><secondPoint x="2.15" y="5.75"/>
+      <color><red>35</red><green>40</green><blue>55</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
+    </org.diylc.components.shapes.Rectangle>
+    <org.diylc.components.misc.Label>
+      <name>BUZ_t</name><point x="1.85" y="5.32"/><text>Buzzer</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>40</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>BUZ_p0</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>150</red><green>120</green><blue>20</blue><alpha>255</alpha></color>
+      <point x="1.85" y="5.55"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>BUZ_l0</name><point x="1.95" y="5.55"/><text>GP21</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>150</red><green>120</green><blue>20</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>BUZ_w0</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="1.85" y="5.55"/><java.awt.Point x="1.75" y="5.55"/><java.awt.Point x="1.75" y="4.6"/><java.awt.Point x="1.55" y="4.6"/></controlPoints>
+      <color><red>150</red><green>120</green><blue>20</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>BUZ_p1</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color>
+      <point x="1.85" y="5.65"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>BUZ_l1</name><point x="1.95" y="5.65"/><text>GND</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.HookupWire>
+      <name>BUZ_w1</name><alpha>127</alpha>
+      <controlPoints><java.awt.Point x="1.85" y="5.65"/><java.awt.Point x="1.75" y="5.65"/><java.awt.Point x="1.75" y="3.5"/><java.awt.Point x="1.55" y="3.5"/></controlPoints>
+      <color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color><pointCount>FOUR</pointCount><gauge>_20</gauge>
+    </org.diylc.components.connectivity.HookupWire>
+    <org.diylc.components.misc.Label>
+      <name>parts0</name><point x="3.6" y="3.45"/><text>Parts:</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
       <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
       <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
       <orientation>DEFAULT</orientation>
     </org.diylc.components.misc.Label>
     <org.diylc.components.misc.Label>
-      <name>parts1</name><point x="1.75" y="3.5"/><text>14x 6mm tactile push switch</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <name>parts1</name><point x="3.6" y="3.67"/><text>1x Raspberry Pi Pico (RP2040)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
       <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
       <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
       <orientation>DEFAULT</orientation>
     </org.diylc.components.misc.Label>
     <org.diylc.components.misc.Label>
-      <name>parts2</name><point x="1.75" y="3.7"/><text>1x stripboard (>=24 x 24 holes, A-X)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <name>parts2</name><point x="3.6" y="3.89"/><text>14x 6mm tactile switch (matrix, stripboard)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
       <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
       <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
       <orientation>DEFAULT</orientation>
     </org.diylc.components.misc.Label>
     <org.diylc.components.misc.Label>
-      <name>parts3</name><point x="1.75" y="3.9"/><text>1x Raspberry Pi Pico (RP2040)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <name>parts3</name><point x="3.6" y="4.11"/><text>2x SSD1306 OLED  - P1 I2C0 GP16/17, P2 I2C1 GP18/19</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
       <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
       <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
       <orientation>DEFAULT</orientation>
     </org.diylc.components.misc.Label>
     <org.diylc.components.misc.Label>
-      <name>parts4</name><point x="1.75" y="4.1"/><text>8-way ribbon: board headers -> Pico</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <name>parts4</name><point x="3.6" y="4.33"/><text>2x WS2812B strip  - P1 GP20, P2 GP22 (5V)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
       <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
       <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
       <orientation>DEFAULT</orientation>
     </org.diylc.components.misc.Label>
     <org.diylc.components.misc.Label>
-      <name>parts5</name><point x="1.75" y="4.3"/><text>~10x insulated jumper wire (col buses)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <name>parts5</name><point x="3.6" y="4.55"/><text>1x passive buzzer - GP21</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>parts6</name><point x="3.6" y="4.77"/><text>power: 3V3 -> OLEDs, 5V(VBUS) -> strips, common GND</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>parts7</name><point x="3.6" y="4.99"/><text>wire: 8-way ribbon + ~10 jumpers (col buses)</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
       <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
       <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
       <orientation>DEFAULT</orientation>
