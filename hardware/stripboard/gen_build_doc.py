@@ -4,14 +4,32 @@ board, derived directly from the verified model in gen_single_board.py so
 every coordinate in the doc is exactly what the verifier passed.
 
 Coordinates: column letter (A..X) + hole number (1..55), e.g. D23.
+Each build section includes its own underside jumper wires (tagged 'sec' in
+the model), so a section is fully done - wires and parts - before moving on.
 """
 import gen_single_board as S
+from collections import defaultdict
 
 L = "ABCDEFGHIJKLMNOPQRSTUVWX"
 def P(c, h): return f'{L[c]}{h}'
 
 ok, msgs, stats = S.verify()
 assert ok, f'model does not verify: {msgs}'
+
+by_sec = defaultdict(list)
+for j in S.JUMPERS: by_sec[j['sec']].append(j)
+assert 'misc' not in by_sec, 'untagged jumpers: ' + str(by_sec['misc'])
+
+def wire_table(w, jumpers):
+    w('| net | wire (underside) |')
+    w('|---|---|')
+    by_net = defaultdict(list)
+    for j in jumpers: by_net[j['net']].append(j)
+    for net in sorted(by_net, key=lambda n: (not n.startswith('GP'),
+                      int(n[2:]) if n.startswith('GP') else 0, n)):
+        runs = '  ,  '.join(f"{P(*j['a'])} -> {P(*j['b'])}" for j in by_net[net])
+        w(f'| **{net}** | {runs} |')
+    w('')
 
 out = []
 w = out.append
@@ -28,6 +46,10 @@ w('right, holes 1..55 top to bottom, looking at the **component (top) side**')
 w('with the copper strips running vertically underneath. P2 sits at the top')
 w('edge, P1 at the bottom.')
 w('')
+w('Each section below is self-contained: solder its jumper wires (thin')
+w('insulated wire on the UNDERSIDE, soldered only at the two end holes), then')
+w('its components, then move to the next section.')
+w('')
 
 w('## 0. Parts and tools')
 w('')
@@ -43,12 +65,14 @@ w('')
 
 w('## 1. Mark and cut the tracks (%d cuts)' % stats['cuts'])
 w('')
+w('Do ALL cuts first - several strips are shared between sections, so cutting')
+w('later risks slicing under an already-soldered part.')
+w('')
 w('Cuts are ON a hole (the hole is destroyed). To avoid mirror-image mistakes:')
 w('push a pin through each listed hole from the component side, then cut the')
 w('copper around the pin hole on the strip side. Verify every cut afterwards')
 w('with a continuity meter (probe the two holes either side of the cut).')
 w('')
-# group cuts into the straight lines + the rest
 cuts = sorted(S.CUTS)
 line46 = sorted(c for (c,h) in cuts if h == 46 and 2 <= c <= 21)
 line50 = sorted(c for (c,h) in cuts if h == 50 and 2 <= c <= 21)
@@ -62,28 +86,12 @@ w(f'- **P1/P2 border** - hole 23 on cols {", ".join(L[c] for c in line23)} ({len
 w('- **Singles** - ' + ', '.join(P(c,h) for (c,h) in sorted(rest, key=lambda x:(x[1],x[0]))))
 w('')
 
-w('## 2. Solder the jumper wires (%d, all on the UNDERSIDE)' % stats['jumpers'])
+w('## 2. Pico and power rails')
 w('')
-w('Insulated wire on the strip side, soldered only at its two end holes.')
-w('Do these before the components so the underside is still easy to work on.')
-w('Grouped by net:')
+w('Wires first (they feed the rails from the Pico):')
 w('')
-from collections import defaultdict
-by_net = defaultdict(list)
-for j in S.JUMPERS: by_net[j['net']].append(j)
-order = ['GND','3V3','5V','GP5','GP7','GP8','GP9','GP10','GP11','GP12','GP13',
-         'GP16','GP17','GP18','GP19','GP20','GP22']
-w('| net | wires |')
-w('|---|---|')
-for net in order:
-    if net not in by_net: continue
-    runs = '  ,  '.join(f"{P(*j['a'])} -> {P(*j['b'])}" for j in by_net[net])
-    w(f'| **{net}** | {runs} |')
-w('')
-w('Tip: tick each wire off in this table as you solder it.')
-w('')
-
-w('## 3. Solder the Pico (TOP side, holes 47 and 54, cols C..V)')
+wire_table(w, by_sec['pico'])
+w('Then the Pico, on the TOP side, pin rows at holes 47 and 54, cols C..V:')
 w('')
 w('- Orientation: **USB connector points LEFT** (toward col A).')
 w(f'- Pin 1 (GP0) is the **bottom-left** pin at {P(*S.pico_col(1))}.')
@@ -92,11 +100,17 @@ w('- VBUS (top-left pin, C47) is intentionally not connected.')
 w('- Solder headers to the Pico first, drop it in, check it sits between the')
 w('  two cut lines (holes 46 and 50 isolate its pin rows), then solder.')
 w('')
-
-w('## 4. Solder the 14 switches')
+w('Rails after this section: **B = GND**, **W = 3V3**, **X = 5V** (X stays')
+w('dead until the MB102 section).')
 w('')
-w('Each switch spans two strips 3 columns apart; both legs of each side land')
-w('on the listed column. All four legs get soldered.')
+
+w('## 3. Button matrix (%d wires, 14 switches)' % len(by_sec['switches']))
+w('')
+w('All the matrix nets - row nets GP5/7/8/9 and column nets GP10-13:')
+w('')
+wire_table(w, by_sec['switches'])
+w('Then the switches. Each spans two strips 3 columns apart; all four legs')
+w('get soldered:')
 w('')
 w('| player | button | left legs (col, holes) | right legs (col, holes) |')
 w('|---|---|---|---|')
@@ -109,7 +123,12 @@ w('bottom-right of their screen (rows 20-22), their party row S1 S2 S3 reads')
 w('right-to-left in board coordinates. Follow the table and it comes out right.')
 w('')
 
-w('## 5. Solder the OLED headers')
+w('## 4. OLED screens (%d wires, 2 modules)' % len(by_sec['oled']))
+w('')
+w('I2C signals plus each screen\'s 3V3/GND taps to the rails:')
+w('')
+wire_table(w, by_sec['oled'])
+w('Then the headers:')
 w('')
 w('- **P1 OLED**: header at hole 27, screen hangs DOWN (rows 27-37).')
 w('  Pin order left to right: GND=J27, VCC=K27, SCL=L27, SDA=M27.')
@@ -119,10 +138,20 @@ w('- Double-check your module silkscreen: if its pin order is not GND-VCC-SCL-SD
 w('  tell the generator, do not improvise.')
 w('')
 
-w('## 6. External connections')
+w('## 5. LED strip connectors (%d wires, left edge)' % len(by_sec['led']))
+w('')
+w('DIN feeds from the Pico plus the 5V/GND taps for each connector:')
+w('')
+wire_table(w, by_sec['led'])
+w('The strips are off-board; their 3 wires each solder into column A:')
 w('')
 w('- **LED strip P2** (top left edge): DIN=A2, 5V=A5, GND=A8.')
 w('- **LED strip P1** (bottom left edge): DIN=A41, 5V=A44, GND=A47.')
+w('')
+
+w('## 6. MB102 supply input (%d wire)' % len(by_sec['mb102']))
+w('')
+wire_table(w, by_sec['mb102'])
 w('- **MB102 supply** (bottom right): "-" to W53, "+" to X53.')
 w('- Power plan: MB102 5V drives the LED strips via the X rail; the Pico runs')
 w('  from its own USB; grounds are shared through the B rail.')

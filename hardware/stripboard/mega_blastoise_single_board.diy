@@ -757,58 +757,58 @@
     </org.diylc.components.connectivity.Jumper>
     <org.diylc.components.connectivity.Jumper>
       <name>j29</name><alpha>100</alpha>
-      <points><java.awt.Point x="1.6" y="4.8"/><java.awt.Point x="0.0" y="4.0"/></points>
-      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
-      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>40</red><green>160</green><blue>60</blue><alpha>255</alpha></leadColor>
-      <display>NONE</display><flipStanding>false</flipStanding>
-    </org.diylc.components.connectivity.Jumper>
-    <org.diylc.components.connectivity.Jumper>
-      <name>j30</name><alpha>100</alpha>
-      <points><java.awt.Point x="1.3" y="4.8"/><java.awt.Point x="0.0" y="0.1"/></points>
-      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
-      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>150</red><green>60</green><blue>190</blue><alpha>255</alpha></leadColor>
-      <display>NONE</display><flipStanding>false</flipStanding>
-    </org.diylc.components.connectivity.Jumper>
-    <org.diylc.components.connectivity.Jumper>
-      <name>j31</name><alpha>100</alpha>
-      <points><java.awt.Point x="0.6" y="4.8"/><java.awt.Point x="2.2" y="4.8"/></points>
-      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
-      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></leadColor>
-      <display>NONE</display><flipStanding>false</flipStanding>
-    </org.diylc.components.connectivity.Jumper>
-    <org.diylc.components.connectivity.Jumper>
-      <name>j32</name><alpha>100</alpha>
       <points><java.awt.Point x="1.1" y="1.5"/><java.awt.Point x="2.2" y="1.5"/></points>
       <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></leadColor>
       <display>NONE</display><flipStanding>false</flipStanding>
     </org.diylc.components.connectivity.Jumper>
     <org.diylc.components.connectivity.Jumper>
-      <name>j33</name><alpha>100</alpha>
+      <name>j30</name><alpha>100</alpha>
       <points><java.awt.Point x="1.0" y="3.2"/><java.awt.Point x="2.2" y="3.2"/></points>
       <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></leadColor>
       <display>NONE</display><flipStanding>false</flipStanding>
     </org.diylc.components.connectivity.Jumper>
     <org.diylc.components.connectivity.Jumper>
-      <name>j34</name><alpha>100</alpha>
-      <points><java.awt.Point x="0.4" y="4.8"/><java.awt.Point x="0.1" y="4.9"/></points>
-      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
-      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></leadColor>
-      <display>NONE</display><flipStanding>false</flipStanding>
-    </org.diylc.components.connectivity.Jumper>
-    <org.diylc.components.connectivity.Jumper>
-      <name>j35</name><alpha>100</alpha>
+      <name>j31</name><alpha>100</alpha>
       <points><java.awt.Point x="1.2" y="1.5"/><java.awt.Point x="0.1" y="1.5"/></points>
       <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></leadColor>
       <display>NONE</display><flipStanding>false</flipStanding>
     </org.diylc.components.connectivity.Jumper>
     <org.diylc.components.connectivity.Jumper>
-      <name>j36</name><alpha>100</alpha>
+      <name>j32</name><alpha>100</alpha>
       <points><java.awt.Point x="0.9" y="3.0"/><java.awt.Point x="0.1" y="3.0"/></points>
       <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>j33</name><alpha>100</alpha>
+      <points><java.awt.Point x="1.6" y="4.8"/><java.awt.Point x="0.0" y="4.0"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>40</red><green>160</green><blue>60</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>j34</name><alpha>100</alpha>
+      <points><java.awt.Point x="1.3" y="4.8"/><java.awt.Point x="0.0" y="0.1"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>150</red><green>60</green><blue>190</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>j35</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.0" y="0.4"/><java.awt.Point x="2.3" y="0.4"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>j36</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.0" y="4.5"/><java.awt.Point x="2.3" y="4.5"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></leadColor>
       <display>NONE</display><flipStanding>false</flipStanding>
     </org.diylc.components.connectivity.Jumper>
     <org.diylc.components.connectivity.Jumper>
@@ -827,16 +827,16 @@
     </org.diylc.components.connectivity.Jumper>
     <org.diylc.components.connectivity.Jumper>
       <name>j39</name><alpha>100</alpha>
-      <points><java.awt.Point x="0.0" y="0.4"/><java.awt.Point x="2.3" y="0.4"/></points>
+      <points><java.awt.Point x="0.6" y="4.8"/><java.awt.Point x="2.2" y="4.8"/></points>
       <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
-      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></leadColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></leadColor>
       <display>NONE</display><flipStanding>false</flipStanding>
     </org.diylc.components.connectivity.Jumper>
     <org.diylc.components.connectivity.Jumper>
       <name>j40</name><alpha>100</alpha>
-      <points><java.awt.Point x="0.0" y="4.5"/><java.awt.Point x="2.3" y="4.5"/></points>
+      <points><java.awt.Point x="0.4" y="4.8"/><java.awt.Point x="0.1" y="4.9"/></points>
       <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
-      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></leadColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></leadColor>
       <display>NONE</display><flipStanding>false</flipStanding>
     </org.diylc.components.connectivity.Jumper>
     <org.diylc.components.connectivity.SolderPad>

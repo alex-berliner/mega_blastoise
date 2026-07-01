@@ -34,7 +34,7 @@ NCOLS, NHOLES = 24, 55
 PADS = []; CUTS = []; JUMPERS = []; SW_BODIES = []; MODULES = []; LABELS = []
 def pad(name, net, c, h): PADS.append(dict(name=name, net=net, c=c, h=h))
 def cut(c, h):            CUTS.append((c, h))
-def jump(net, a, b):      JUMPERS.append(dict(net=net, a=a, b=b))
+def jump(net, a, b, sec='misc'): JUMPERS.append(dict(net=net, a=a, b=b, sec=sec))
 def label(c, h, t):       LABELS.append((c, h, t))
 
 # ── Pico: TOP side, bottom of board, USB left. pins rows 47 (top) / 54 (bot) ──
@@ -101,7 +101,7 @@ label(0.7, 44.0, '-> LED strip P1 (DIN/5V/GND)')
 # ── MB102 5V input, bottom right: "-" left (W), "+" right (X) ─────────────────
 cut(22, 52)
 pad('mb102_minus','GND',22,53); pad('mb102_plus','5V',23,53)
-jump('GND', (22,54), (1,54))
+jump('GND', (22,54), (1,54), 'mb102')
 MODULES.append(('MB102 5V in', 21.4, 52.3, 23.6, 53.7))
 label(17.8, 53.0, 'MB102: - +')
 
@@ -111,32 +111,32 @@ for h in (13, 30): cut(4, h); cut(15, h)                    # split move-node st
 for h in (10, 35): cut(10, h)                               # S2 nodes vs OLED pins
 
 # ── jumpers (all routed on the UNDERSIDE) ─────────────────────────────────────
-def feed(net, target): jump(net, NET_STUB[net], target)
+def feed(net, target, sec='misc'): jump(net, NET_STUB[net], target, sec)
 # matrix row nets
-feed('GP5', (7,42));  jump('GP5', (7,44), (18,44))
-feed('GP7', (6,31));  jump('GP7', (6,33), (13,33));  jump('GP7', (13,31), (20,31))
-feed('GP8', (7,10));  jump('GP8', (7,12), (18,12))
-feed('GP9', (6,10));  jump('GP9', (6,12), (13,12));  jump('GP9', (13,14), (20,14))
+feed('GP5', (7,42), 'switches');  jump('GP5', (7,44), (18,44), 'switches')
+feed('GP7', (6,31), 'switches');  jump('GP7', (6,33), (13,33), 'switches');  jump('GP7', (13,31), (20,31), 'switches')
+feed('GP8', (7,10), 'switches');  jump('GP8', (7,12), (18,12), 'switches')
+feed('GP9', (6,10), 'switches');  jump('GP9', (6,12), (13,12), 'switches');  jump('GP9', (13,14), (20,14), 'switches')
 # matrix column nets (chain every segment of each column net)
-feed('GP10', (4,27)); jump('GP10', (4,29), (3,29))
-jump('GP10', (3,26), (17,22));  jump('GP10', (17,20), (15,19))
-feed('GP11', (15,28)); jump('GP11', (15,25), (10,5)); jump('GP11', (10,7), (10,38))
-jump('GP11', (10,9), (4,16))   # P2 M2 node segment (col 4, rows 14-22)
-feed('GP12', (17,30)); jump('GP12', (17,32), (4,32))
-jump('GP12', (4,34), (3,12));   jump('GP12', (3,14), (15,10))
-feed('GP13', (15,34)); jump('GP13', (15,36), (4,10))
-# OLED signals
-feed('GP16', (12,30)); feed('GP17', (11,30))
-feed('GP18', (9,15));  feed('GP19', (10,15))
-# LED strip DIN
-feed('GP20', (0,40));  feed('GP22', (0,1))
-# power
-feed('3V3', (22,48))
-jump('3V3', (11,15), (22,15));  jump('3V3', (10,32), (22,32))
-feed('GND', (1,49))
-jump('GND', (12,15), (1,15));   jump('GND', (9,30), (1,30))
-jump('GND', (0,7), (1,7));      jump('GND', (0,48), (1,48))
-jump('5V', (0,4), (23,4));      jump('5V', (0,45), (23,45))
+feed('GP10', (4,27), 'switches'); jump('GP10', (4,29), (3,29), 'switches')
+jump('GP10', (3,26), (17,22), 'switches');  jump('GP10', (17,20), (15,19), 'switches')
+feed('GP11', (15,28), 'switches'); jump('GP11', (15,25), (10,5), 'switches'); jump('GP11', (10,7), (10,38), 'switches')
+jump('GP11', (10,9), (4,16), 'switches')   # P2 M2 node segment (col 4, rows 14-22)
+feed('GP12', (17,30), 'switches'); jump('GP12', (17,32), (4,32), 'switches')
+jump('GP12', (4,34), (3,12), 'switches');   jump('GP12', (3,14), (15,10), 'switches')
+feed('GP13', (15,34), 'switches'); jump('GP13', (15,36), (4,10), 'switches')
+# OLED signals + their power taps
+feed('GP16', (12,30), 'oled'); feed('GP17', (11,30), 'oled')
+feed('GP18', (9,15), 'oled');  feed('GP19', (10,15), 'oled')
+jump('3V3', (11,15), (22,15), 'oled');  jump('3V3', (10,32), (22,32), 'oled')
+jump('GND', (12,15), (1,15), 'oled');   jump('GND', (9,30), (1,30), 'oled')
+# LED strip connectors: DIN feeds + power taps
+feed('GP20', (0,40), 'led');  feed('GP22', (0,1), 'led')
+jump('5V', (0,4), (23,4), 'led');       jump('5V', (0,45), (23,45), 'led')
+jump('GND', (0,7), (1,7), 'led');       jump('GND', (0,48), (1,48), 'led')
+# Pico -> rails
+feed('3V3', (22,48), 'pico')
+feed('GND', (1,49), 'pico')
 
 # ── orientation indicators ─────────────────────────────────────────────────────
 MODULES.append(('USB', 0.9, 49.2, 1.9, 51.8))

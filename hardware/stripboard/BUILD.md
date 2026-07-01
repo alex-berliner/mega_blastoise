@@ -7,6 +7,10 @@ right, holes 1..55 top to bottom, looking at the **component (top) side**
 with the copper strips running vertically underneath. P2 sits at the top
 edge, P1 at the bottom.
 
+Each section below is self-contained: solder its jumper wires (thin
+insulated wire on the UNDERSIDE, soldered only at the two end holes), then
+its components, then move to the next section.
+
 ## 0. Parts and tools
 
 - 1x stripboard, 24 strips x 55 holes (A..X)
@@ -20,6 +24,9 @@ edge, P1 at the bottom.
 
 ## 1. Mark and cut the tracks (65 cuts)
 
+Do ALL cuts first - several strips are shared between sections, so cutting
+later risks slicing under an already-soldered part.
+
 Cuts are ON a hole (the hole is destroyed). To avoid mirror-image mistakes:
 push a pin through each listed hole from the component side, then cut the
 copper around the pin hole on the strip side. Verify every cut afterwards
@@ -30,35 +37,16 @@ with a continuity meter (probe the two holes either side of the cut).
 - **P1/P2 border** - hole 23 on cols D, E, G, H, J, K, L, M, N, P, R, S, U (13 cuts)
 - **Singles** - A3, A6, A9, K10, E13, P13, E30, P30, K35, A43, A46, W52
 
-## 2. Solder the jumper wires (41, all on the UNDERSIDE)
+## 2. Pico and power rails
 
-Insulated wire on the strip side, soldered only at its two end holes.
-Do these before the components so the underside is still easy to work on.
-Grouped by net:
+Wires first (they feed the rails from the Pico):
 
-| net | wires |
+| net | wire (underside) |
 |---|---|
-| **GND** | W54 -> B54  ,  E48 -> B49  ,  M15 -> B15  ,  J30 -> B30  ,  A7 -> B7  ,  A48 -> B48 |
-| **3V3** | G48 -> W48  ,  L15 -> W15  ,  K32 -> W32 |
-| **5V** | A4 -> X4  ,  A45 -> X45 |
-| **GP5** | I52 -> H42  ,  H44 -> S44 |
-| **GP7** | L52 -> G31  ,  G33 -> N33  ,  N31 -> U31 |
-| **GP8** | M52 -> H10  ,  H12 -> S12 |
-| **GP9** | N52 -> G10  ,  G12 -> N12  ,  N14 -> U14 |
-| **GP10** | P52 -> E27  ,  E29 -> D29  ,  D26 -> R22  ,  R20 -> P19 |
-| **GP11** | Q52 -> P28  ,  P25 -> K5  ,  K7 -> K38  ,  K9 -> E16 |
-| **GP12** | R52 -> R30  ,  R32 -> E32  ,  E34 -> D12  ,  D14 -> P10 |
-| **GP13** | S52 -> P34  ,  P36 -> E10 |
-| **GP16** | V48 -> M30 |
-| **GP17** | U48 -> L30 |
-| **GP18** | S48 -> J15 |
-| **GP19** | R48 -> K15 |
-| **GP20** | Q48 -> A40 |
-| **GP22** | N48 -> A1 |
+| **3V3** | G48 -> W48 |
+| **GND** | E48 -> B49 |
 
-Tip: tick each wire off in this table as you solder it.
-
-## 3. Solder the Pico (TOP side, holes 47 and 54, cols C..V)
+Then the Pico, on the TOP side, pin rows at holes 47 and 54, cols C..V:
 
 - Orientation: **USB connector points LEFT** (toward col A).
 - Pin 1 (GP0) is the **bottom-left** pin at C54.
@@ -67,10 +55,26 @@ Tip: tick each wire off in this table as you solder it.
 - Solder headers to the Pico first, drop it in, check it sits between the
   two cut lines (holes 46 and 50 isolate its pin rows), then solder.
 
-## 4. Solder the 14 switches
+Rails after this section: **B = GND**, **W = 3V3**, **X = 5V** (X stays
+dead until the MB102 section).
 
-Each switch spans two strips 3 columns apart; both legs of each side land
-on the listed column. All four legs get soldered.
+## 3. Button matrix (24 wires, 14 switches)
+
+All the matrix nets - row nets GP5/7/8/9 and column nets GP10-13:
+
+| net | wire (underside) |
+|---|---|
+| **GP5** | I52 -> H42  ,  H44 -> S44 |
+| **GP7** | L52 -> G31  ,  G33 -> N33  ,  N31 -> U31 |
+| **GP8** | M52 -> H10  ,  H12 -> S12 |
+| **GP9** | N52 -> G10  ,  G12 -> N12  ,  N14 -> U14 |
+| **GP10** | P52 -> E27  ,  E29 -> D29  ,  D26 -> R22  ,  R20 -> P19 |
+| **GP11** | Q52 -> P28  ,  P25 -> K5  ,  K7 -> K38  ,  K9 -> E16 |
+| **GP12** | R52 -> R30  ,  R32 -> E32  ,  E34 -> D12  ,  D14 -> P10 |
+| **GP13** | S52 -> P34  ,  P36 -> E10 |
+
+Then the switches. Each spans two strips 3 columns apart; all four legs
+get soldered:
 
 | player | button | left legs (col, holes) | right legs (col, holes) |
 |---|---|---|---|
@@ -93,7 +97,20 @@ P2's buttons are labeled from P2's seat: their M1 is at the board's
 bottom-right of their screen (rows 20-22), their party row S1 S2 S3 reads
 right-to-left in board coordinates. Follow the table and it comes out right.
 
-## 5. Solder the OLED headers
+## 4. OLED screens (8 wires, 2 modules)
+
+I2C signals plus each screen's 3V3/GND taps to the rails:
+
+| net | wire (underside) |
+|---|---|
+| **GP16** | V48 -> M30 |
+| **GP17** | U48 -> L30 |
+| **GP18** | S48 -> J15 |
+| **GP19** | R48 -> K15 |
+| **3V3** | L15 -> W15  ,  K32 -> W32 |
+| **GND** | M15 -> B15  ,  J30 -> B30 |
+
+Then the headers:
 
 - **P1 OLED**: header at hole 27, screen hangs DOWN (rows 27-37).
   Pin order left to right: GND=J27, VCC=K27, SCL=L27, SDA=M27.
@@ -102,10 +119,28 @@ right-to-left in board coordinates. Follow the table and it comes out right.
 - Double-check your module silkscreen: if its pin order is not GND-VCC-SCL-SDA,
   tell the generator, do not improvise.
 
-## 6. External connections
+## 5. LED strip connectors (6 wires, left edge)
+
+DIN feeds from the Pico plus the 5V/GND taps for each connector:
+
+| net | wire (underside) |
+|---|---|
+| **GP20** | Q48 -> A40 |
+| **GP22** | N48 -> A1 |
+| **5V** | A4 -> X4  ,  A45 -> X45 |
+| **GND** | A7 -> B7  ,  A48 -> B48 |
+
+The strips are off-board; their 3 wires each solder into column A:
 
 - **LED strip P2** (top left edge): DIN=A2, 5V=A5, GND=A8.
 - **LED strip P1** (bottom left edge): DIN=A41, 5V=A44, GND=A47.
+
+## 6. MB102 supply input (1 wire)
+
+| net | wire (underside) |
+|---|---|
+| **GND** | W54 -> B54 |
+
 - **MB102 supply** (bottom right): "-" to W53, "+" to X53.
 - Power plan: MB102 5V drives the LED strips via the X rail; the Pico runs
   from its own USB; grounds are shared through the B rail.
