@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<org.diylc.core.Project>
+  <fileVersion><major>3</major><minor>32</minor><build>0</build></fileVersion>
+  <title>Mega Blastoise Button Matrix</title>
+  <author>generated</author>
+  <description>4x4 key matrix on stripboard, 14x 6mm tactile switches, vertical strips.</description>
+  <width><value>29.0</value><unit class="org.diylc.core.measures.SizeUnit">cm</unit></width>
+  <height><value>21.0</value><unit class="org.diylc.core.measures.SizeUnit">cm</unit></height>
+  <gridSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></gridSpacing>
+  <components>
+    <org.diylc.components.boards.VeroBoard>
+      <name>Matrix board</name><alpha>127</alpha><value></value>
+      <controlPoints><java.awt.Point x="0.0" y="0.3"/><java.awt.Point x="2.3" y="2.6"/></controlPoints>
+      <firstPoint x="0.0" y="0.3"/><secondPoint x="2.3" y="2.6"/>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><borderColor><red>173</red><green>164</green><blue>125</blue><alpha>255</alpha></borderColor>
+      <coordinateColor><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></coordinateColor><drawCoordinates>true</drawCoordinates>
+      <spacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></spacing><stripColor><red>218</red><green>138</green><blue>103</blue><alpha>255</alpha></stripColor>
+      <orientation>VERTICAL</orientation>
+    </org.diylc.components.boards.VeroBoard>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1M1r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="2.1" y="0.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1M1c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="1.8" y="1.1"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P1M1L</name><point x="1.95" y="1.0"/><text>M1</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1M2r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="2.1" y="1.3"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1M2c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="1.8" y="1.5"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P1M2L</name><point x="1.95" y="1.4"/><text>M2</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1M3r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="2.1" y="1.7"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1M3c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="1.8" y="1.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P1M3L</name><point x="1.95" y="1.8"/><text>M3</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1M4r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="2.1" y="2.1"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1M4c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="1.8" y="2.3"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P1M4L</name><point x="1.95" y="2.2"/><text>M4</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1S1r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="1.5" y="0.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1S1c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="1.2" y="1.1"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P1S1L</name><point x="1.35" y="1.0"/><text>S1</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1S2r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="1.5" y="1.3"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1S2c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="1.2" y="1.5"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P1S2L</name><point x="1.35" y="1.4"/><text>S2</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1S3r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="1.5" y="1.7"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P1S3c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="1.2" y="1.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P1S3L</name><point x="1.35" y="1.8"/><text>S3</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2M1r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.9" y="0.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2M1c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="0.6" y="1.1"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P2M1L</name><point x="0.75" y="1.0"/><text>M1</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2M2r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.9" y="1.3"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2M2c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="0.6" y="1.5"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P2M2L</name><point x="0.75" y="1.4"/><text>M2</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2M3r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.9" y="1.7"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2M3c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="0.6" y="1.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P2M3L</name><point x="0.75" y="1.8"/><text>M3</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2M4r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.9" y="2.1"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2M4c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="0.6" y="2.3"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P2M4L</name><point x="0.75" y="2.2"/><text>M4</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2S1r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.3" y="0.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2S1c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="0.0" y="1.1"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P2S1L</name><point x="0.15" y="1.0"/><text>S1</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2S2r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.3" y="1.3"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2S2c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="0.0" y="1.5"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P2S2L</name><point x="0.15" y="1.4"/><text>S2</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2S3r</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>150</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.3" y="1.7"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>P2S3c</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></color>
+      <point x="0.0" y="1.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>P2S3L</name><point x="0.15" y="1.8"/><text>S3</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP5_0</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="1.8" y="1.2"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP5_1</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="1.8" y="1.6"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP5_2</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="1.8" y="2.0"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP7_0</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="1.2" y="1.2"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP7_1</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="1.2" y="1.6"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP8_0</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="0.6" y="1.2"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP8_1</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="0.6" y="1.6"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP8_2</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="0.6" y="2.0"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP9_0</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="0.0" y="1.2"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.TraceCut>
+      <name>X_GP9_1</name><size><value>0.07</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size>
+      <fillColor><red>255</red><green>255</green><blue>255</blue><alpha>255</alpha></fillColor><borderColor><red>255</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><cutBetweenHoles>false</cutBetweenHoles>
+      <holeSpacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></holeSpacing><point x="0.0" y="1.6"/>
+    </org.diylc.components.connectivity.TraceCut>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP10_0.3</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.0" y="1.0"/><java.awt.Point x="0.6" y="1.0"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP10_0.9</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.6" y="1.0"/><java.awt.Point x="1.2" y="1.0"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP10_1.5</name><alpha>100</alpha>
+      <points><java.awt.Point x="1.2" y="1.0"/><java.awt.Point x="1.8" y="1.0"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP11_0.3</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.0" y="1.4"/><java.awt.Point x="0.6" y="1.4"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP11_0.9</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.6" y="1.4"/><java.awt.Point x="1.2" y="1.4"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP11_1.5</name><alpha>100</alpha>
+      <points><java.awt.Point x="1.2" y="1.4"/><java.awt.Point x="1.8" y="1.4"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP12_0.3</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.0" y="1.8"/><java.awt.Point x="0.6" y="1.8"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP12_0.9</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.6" y="1.8"/><java.awt.Point x="1.2" y="1.8"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP12_1.5</name><alpha>100</alpha>
+      <points><java.awt.Point x="1.2" y="1.8"/><java.awt.Point x="1.8" y="1.8"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.Jumper>
+      <name>GP13_0.9</name><alpha>100</alpha>
+      <points><java.awt.Point x="0.6" y="2.2"/><java.awt.Point x="1.8" y="2.2"/></points>
+      <bodyColor><red>60</red><green>60</green><blue>60</blue><alpha>255</alpha></bodyColor><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
+      <labelColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></labelColor><leadColor><red>0</red><green>90</green><blue>200</blue><alpha>255</alpha></leadColor>
+      <display>NONE</display><flipStanding>false</flipStanding>
+    </org.diylc.components.connectivity.Jumper>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>HGP5</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>200</red><green>60</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="2.1" y="0.6"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LGP5</name><point x="2.12" y="0.55"/><text>GP5</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>HGP7</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>200</red><green>60</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="1.5" y="0.6"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LGP7</name><point x="1.52" y="0.55"/><text>GP7</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>HGP8</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>200</red><green>60</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.9" y="0.6"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LGP8</name><point x="0.92" y="0.55"/><text>GP8</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>HGP9</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>200</red><green>60</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.3" y="0.6"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LGP9</name><point x="0.32" y="0.55"/><text>GP9</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>HGP10</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>200</red><green>60</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.0" y="1.0"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LGP10</name><point x="-0.02" y="1.02"/><text>GP10</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>HGP11</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>200</red><green>60</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.0" y="1.4"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LGP11</name><point x="-0.02" y="1.42"/><text>GP11</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>HGP12</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>200</red><green>60</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.0" y="1.8"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LGP12</name><point x="-0.02" y="1.82"/><text>GP12</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.connectivity.SolderPad>
+      <name>HGP13</name><size><value>0.08</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>200</red><green>60</green><blue>0</blue><alpha>255</alpha></color>
+      <point x="0.6" y="2.2"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+    </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>LGP13</name><point x="0.58" y="2.22"/><text>GP13</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>CENTER</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>T1</name><point x="0.0" y="0.12"/><text>Mega Blastoise 4x4 button matrix (14x 6mm tactile) - strips run down the columns</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>8.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>T2</name><point x="0.0" y="2.78"/><text>rows GP5/7/8/9 = bus strips   cols GP10-13 = node strips   red X = cut track   blue = col jumpers</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+  </components>
+  <groups/>
+  <lockedLayers/>
+</org.diylc.core.Project>
