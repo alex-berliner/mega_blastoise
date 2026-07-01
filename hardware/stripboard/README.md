@@ -90,6 +90,11 @@ every leg -> union-find nets): all 14 switches connect exactly their row GPIO to
 their col GPIO, 8 nets total, no stray shorts.
 
 ## Single-board build (whole console on one 24x55 board) - rev 3
+
+> **Building it? Follow [BUILD.md](BUILD.md)** - step-by-step instructions
+> (cut list, wire list, solder order, continuity tests) generated from the
+> verified model by `gen_build_doc.py`. Regenerate it whenever the layout
+> changes.
 `gen_single_board.py` puts **everything on one stripboard**, arranged for two
 players **facing each other** across the board. Outputs
 `mega_blastoise_single_board.diy` (+ `_preview.png`). Board top to bottom:
