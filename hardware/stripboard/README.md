@@ -89,22 +89,30 @@ everything else (cuts, jumpers, nets) is footprint-independent.
 every leg -> union-find nets): all 14 switches connect exactly their row GPIO to
 their col GPIO, 8 nets total, no stray shorts.
 
-## Single-board build (whole console on one 24x55 board)
-`gen_single_board.py` puts **everything on one stripboard**: the Pico (on the
-underside, across the strips at the bottom), the 14-switch matrix, both SSD1306
-OLED footprints, both WS2812B strip footprints, and GND/5V/3V3 rails.
-Outputs `mega_blastoise_single_board.diy` (+ `_preview.png`).
+## Single-board build (whole console on one 24x55 board) - rev 2
+`gen_single_board.py` puts **everything on one stripboard**. Outputs
+`mega_blastoise_single_board.diy` (+ `_preview.png`). Layout, top to bottom:
 
-How it fits 24 wide: the Pico eats 20 of the 24 columns, so every one of its
-columns is cut just above the top pin row (hole 47) - that frees the whole upper
-board (holes 1..46), and the ~16 used Pico nets are fed up with jumper wires
-(insulated, they cross freely). Matrix in holes 1..23, peripherals 25..46.
+- **holes 3-20**: the 14-switch matrix, split into **player zones** - P2 on the
+  left half, P1 on the right, each player's party column (S1-S3) beside their
+  moves column (M1-M4).
+- **hole 23**: two 3-pad **LED strip connectors** (DIN/5V/GND). The WS2812B
+  strips themselves are OFF the board - wire them out from these pads.
+- **holes 24-35**: the two **SSD1306 OLEDs**, header row at 24 (GND,VCC,SCL,SDA),
+  screen hanging below - each directly under its player's buttons.
+- **holes 38-45**: the **Pico, mounted on the TOP side, USB pointing LEFT**
+  (pin 1 = GP0 at the bottom-left pin; VBUS is n/c). Two full cut lines run
+  across its 20 columns (holes 37 and 42) to isolate the pin rows.
+- **hole 49**: **MB102 5V input** - two adjacent pads bottom-right, "-" on the
+  left (W), "+" on the right (X).
+- **rails**: GND = col B, 3V3 = col W, 5V = col X (next to each other). The 5V
+  rail is fed by the MB102 and powers the LED strips; the Pico runs from USB;
+  grounds are shared. (No buzzer.)
 
-It is **dense**: ~58 track cuts and ~35 jumpers, several of them long. The
-`verify()` in the script proves the netlist by union-find (strips + cuts +
-jumpers + every pad) - it reports PASS with no opens and no shorts before the
-`.diy` is written. If you'd rather build something less cut-heavy, the matrix
-board + the full-system wiring diagram (above) split cleanly across two boards.
+All ~34 jumper wires are meant to be routed on the **underside** so the top
+stays clean. The `verify()` in the script proves the netlist by union-find
+(strips + cuts + jumpers + every pad) and also checks that no hole takes two
+wire ends - it must report PASS before the `.diy` is written.
 
 ## Firmware
 Matches the shipped firmware pin map (`main.rs`): rows GP5/7/8/9, cols GP10-13.
