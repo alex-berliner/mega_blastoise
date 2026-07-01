@@ -9,12 +9,16 @@ onto the top of that board, full width (letters A..X), using roughly the first
 22 holes.
 
 ## Files
-- **`mega_blastoise_matrix.diy`** - the layout, for **DIYLC** (DIY Layout Creator).
-  Authoritative source: open it to see every switch, track cut, and jumper.
-  Loads in DIYLC 6.1.0.
-- **`mega_blastoise_matrix_preview.png`** - a quick render of the same layout.
-- **`gen_matrix_diy.py`** - regenerates the `.diy` (edit geometry here, not the XML).
-- **`preview_strip.py`** - regenerates the preview PNG.
+- **`mega_blastoise_matrix.diy`** - the matrix layout, for **DIYLC** (DIY Layout
+  Creator). Authoritative source for the board: every switch, track cut, jumper.
+- **`mega_blastoise_matrix_full.diy`** - the **full assembly**: the same matrix
+  plus switch bodies, the Raspberry Pi Pico (a 40-pin DIL stand-in), the 8 ribbon
+  wires to the correct Pico pins, and a parts list.
+- **`*_preview.png`** - quick renders of each.
+- **`gen_matrix_diy.py`** / **`gen_matrix_full_diy.py`** - regenerate the `.diy`s
+  (edit geometry here, not the XML). The full one imports the matrix one.
+- **`preview_strip.py`** / **`preview_full.py`** - regenerate the preview PNGs.
+- **`verify_matrix.py`** - netlist check of the matrix.
 
 ## Opening it
 DIYLC is a single jar (needs Java). From the DIYLC folder:
@@ -39,12 +43,16 @@ Each switch straddles a bus strip and the node strip 3 letters to its left
 (A<->D, G<->J, M<->P, S<->V): both legs of the row terminal land on the bus
 strip, both legs of the col terminal on the node strip.
 
+Pico physical-pin numbers below are the RP2040 board's actual header pins
+(GP5=7, GP7=9, GP8=10, GP9=11, GP10=12, GP11=13, GP12=14, GP13=15 -- all on
+the left column; GP6/pin 8 is skipped).
+
 | Matrix row | Bus strip | | Matrix col | Net | run as |
 |---|---|---|---|---|---|
-| P1 moves (M1-M4) | **GP5** (pin 7) | | col 0 | **GP10** (pin 14) | jumper row |
-| P1 party (S1-S3) | **GP7** (pin 10) | | col 1 | **GP11** (pin 15) | jumper row |
-| P2 moves (M1-M4) | **GP8** (pin 11) | | col 2 | **GP12** (pin 16) | jumper row |
-| P2 party (S1-S3) | **GP9** (pin 12) | | col 3 | **GP13** (pin 17) | jumper row |
+| P1 moves (M1-M4) | **GP5** (pin 7) | | col 0 | **GP10** (pin 12) | jumper row |
+| P1 party (S1-S3) | **GP7** (pin 9) | | col 1 | **GP11** (pin 13) | jumper row |
+| P2 moves (M1-M4) | **GP8** (pin 10) | | col 2 | **GP12** (pin 14) | jumper row |
+| P2 party (S1-S3) | **GP9** (pin 11) | | col 3 | **GP13** (pin 15) | jumper row |
 
 col 3 exists only on the move rows (party rows have 3 buttons).
 

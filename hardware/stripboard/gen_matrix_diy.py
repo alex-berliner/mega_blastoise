@@ -145,13 +145,15 @@ for (c, gp) in COLS:                                # cols exit at bottom-most n
 label('T1', 0.0, 0.12, 'Mega Blastoise 4x4 button matrix (14x 6mm tactile) - strips run down the columns', 8, 'LEFT', raw=True)
 label('T2', 0.0, 2.78, 'rows GP5/7/8/9 = bus strips   cols GP10-13 = node strips   red X = cut track   blue = col jumpers', 7, 'LEFT', raw=True)
 
-body = '\n'.join('    ' + line for comp in comps for line in comp.splitlines())
-out = f'''<?xml version="1.0" encoding="UTF-8" ?>
+def project_xml(components, title='Mega Blastoise Button Matrix',
+                desc='4x4 key matrix on stripboard, 14x 6mm tactile switches, vertical strips.'):
+    body = '\n'.join('    ' + line for comp in components for line in comp.splitlines())
+    return f'''<?xml version="1.0" encoding="UTF-8" ?>
 <org.diylc.core.Project>
   <fileVersion><major>3</major><minor>32</minor><build>0</build></fileVersion>
-  <title>Mega Blastoise Button Matrix</title>
+  <title>{title}</title>
   <author>generated</author>
-  <description>4x4 key matrix on stripboard, 14x 6mm tactile switches, vertical strips.</description>
+  <description>{desc}</description>
   <width>{size(29.0,'cm')}</width>
   <height>{size(21.0,'cm')}</height>
   <gridSpacing>{size(0.1,'in')}</gridSpacing>
@@ -162,8 +164,10 @@ out = f'''<?xml version="1.0" encoding="UTF-8" ?>
   <lockedLayers/>
 </org.diylc.core.Project>
 '''
-import sys
-path = sys.argv[1] if len(sys.argv) > 1 else 'mega_blastoise_matrix.diy'
-with open(path, 'w') as f:
-    f.write(out)
-print(f'wrote {path}: {len(comps)} components')
+
+if __name__ == '__main__':
+    import sys
+    path = sys.argv[1] if len(sys.argv) > 1 else 'mega_blastoise_matrix.diy'
+    with open(path, 'w') as f:
+        f.write(project_xml(comps))
+    print(f'wrote {path}: {len(comps)} components')
