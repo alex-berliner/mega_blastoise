@@ -89,6 +89,23 @@ everything else (cuts, jumpers, nets) is footprint-independent.
 every leg -> union-find nets): all 14 switches connect exactly their row GPIO to
 their col GPIO, 8 nets total, no stray shorts.
 
+## Single-board build (whole console on one 24x55 board)
+`gen_single_board.py` puts **everything on one stripboard**: the Pico (on the
+underside, across the strips at the bottom), the 14-switch matrix, both SSD1306
+OLED footprints, both WS2812B strip footprints, and GND/5V/3V3 rails.
+Outputs `mega_blastoise_single_board.diy` (+ `_preview.png`).
+
+How it fits 24 wide: the Pico eats 20 of the 24 columns, so every one of its
+columns is cut just above the top pin row (hole 47) - that frees the whole upper
+board (holes 1..46), and the ~16 used Pico nets are fed up with jumper wires
+(insulated, they cross freely). Matrix in holes 1..23, peripherals 25..46.
+
+It is **dense**: ~58 track cuts and ~35 jumpers, several of them long. The
+`verify()` in the script proves the netlist by union-find (strips + cuts +
+jumpers + every pad) - it reports PASS with no opens and no shorts before the
+`.diy` is written. If you'd rather build something less cut-heavy, the matrix
+board + the full-system wiring diagram (above) split cleanly across two boards.
+
 ## Firmware
 Matches the shipped firmware pin map (`main.rs`): rows GP5/7/8/9, cols GP10-13.
 No firmware change needed - drop-in replacement for the breadboard matrix.
