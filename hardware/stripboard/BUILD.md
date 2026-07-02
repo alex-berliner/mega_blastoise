@@ -116,8 +116,8 @@ Then the headers:
 
 - **P1 OLED**: header at hole 27, screen hangs DOWN (rows 27-37). Pin order
   left to right: GND=O27, VCC=N27, SCL=M27, SDA=L27.
-- **P2 OLED**: rotated 180 deg - header at hole 18, screen hangs UP (rows
-  8-18). Pin order left to right: SDA=O18, SCL=N18, VCC=M18, GND=L18.
+- **P2 OLED**: rotated 180 deg - header at hole 19, screen hangs UP (rows
+  9-19). Pin order left to right: SDA=O19, SCL=N19, VCC=M19, GND=L19.
 - Double-check your module silkscreen: if its pin order is not GND-VCC-SCL-SDA,
   tell the generator, do not improvise.
 
@@ -166,7 +166,7 @@ With the meter on continuity, no power applied:
 | GP9 (P2 party) | 12 | GP13 (col 4) | 17 |
 
 4. **OLEDs**: SDA/SCL of each header to Pico pins - P1: L27-pin21(GP16),
-   M27-pin22(GP17); P2: O18-pin24(GP18), N18-pin25(GP19).
+   M27-pin22(GP17); P2: O19-pin24(GP18), N19-pin25(GP19).
 5. Plug in USB only (no MB102): OLEDs must come up. Then add the MB102 and
    the strips.
 

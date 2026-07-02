@@ -86,14 +86,15 @@ for (nm, rn, cn, node, bus, hb) in BUTTONS:
 label(8.0, 0.3, 'PLAYER 2 (faces down)'); label(8.0, 46.0, 'PLAYER 1 (faces up)')
 
 # ── OLED headers: 4 pads. P1 header on top edge; P2 rotated so order reverses ──
-# P2 (row 18, header at BOTTOM of its screen): SDA SCL VCC GND
+OLED2_ROW, OLED1_ROW = 19, 27
+# P2 (header at BOTTOM of its screen): SDA SCL VCC GND
 for c, net in [(9,'GP18'),(10,'GP19'),(11,'3V3'),(12,'GND')]:
-    pad(f'oled2_{net}', net, c, 18)
-# P1 (row 27, header at TOP of its screen): GND VCC SCL SDA
+    pad(f'oled2_{net}', net, c, OLED2_ROW)
+# P1 (header at TOP of its screen): GND VCC SCL SDA
 for c, net in [(9,'GND'),(10,'3V3'),(11,'GP17'),(12,'GP16')]:
-    pad(f'oled1_{net}', net, c, 27)
-MODULES.append(('OLED P2 (180deg)', 5.7, 7.5, 16.3, 18.4))
-MODULES.append(('OLED P1',          5.7, 26.6, 16.3, 37.5))
+    pad(f'oled1_{net}', net, c, OLED1_ROW)
+MODULES.append(('OLED P2 (180deg)', 5.7, OLED2_ROW-10.9, 16.3, OLED2_ROW+0.4))
+MODULES.append(('OLED P1',          5.7, OLED1_ROW-0.4, 16.3, OLED1_ROW+10.5))
 
 # ── LED strip connectors on the left edge (col A): DIN / 5V / GND ─────────────
 pad('led2_din','GP22',0,2); pad('led2_5v','5V',0,5); pad('led2_gnd','GND',0,8)

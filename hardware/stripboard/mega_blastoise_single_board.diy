@@ -24,8 +24,8 @@
     </org.diylc.components.shapes.Rectangle>
     <org.diylc.components.shapes.Rectangle>
       <name>OLED_P2_(180deg)</name><alpha>55</alpha><value></value>
-      <controlPoints><java.awt.Point x="0.57" y="0.75"/><java.awt.Point x="1.63" y="1.84"/></controlPoints>
-      <firstPoint x="0.57" y="0.75"/><secondPoint x="1.63" y="1.84"/>
+      <controlPoints><java.awt.Point x="0.57" y="0.81"/><java.awt.Point x="1.63" y="1.94"/></controlPoints>
+      <firstPoint x="0.57" y="0.81"/><secondPoint x="1.63" y="1.94"/>
       <color><red>35</red><green>40</green><blue>55</blue><alpha>255</alpha></color><borderColor><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></borderColor>
       <borderThickness><value>0.2</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></borderThickness><edgeRadius><value>1.0</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></edgeRadius>
     </org.diylc.components.shapes.Rectangle>
@@ -1249,19 +1249,19 @@
     </org.diylc.components.connectivity.SolderPad>
     <org.diylc.components.connectivity.SolderPad>
       <name>p102</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>90</red><green>140</green><blue>220</blue><alpha>255</alpha></color>
-      <point x="0.9" y="1.8"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+      <point x="0.9" y="1.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
     </org.diylc.components.connectivity.SolderPad>
     <org.diylc.components.connectivity.SolderPad>
       <name>p103</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>60</red><green>180</green><blue>210</blue><alpha>255</alpha></color>
-      <point x="1.0" y="1.8"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+      <point x="1.0" y="1.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
     </org.diylc.components.connectivity.SolderPad>
     <org.diylc.components.connectivity.SolderPad>
       <name>p104</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>230</red><green>140</green><blue>20</blue><alpha>255</alpha></color>
-      <point x="1.1" y="1.8"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+      <point x="1.1" y="1.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
     </org.diylc.components.connectivity.SolderPad>
     <org.diylc.components.connectivity.SolderPad>
       <name>p105</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color>
-      <point x="1.2" y="1.8"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
+      <point x="1.2" y="1.9"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
     </org.diylc.components.connectivity.SolderPad>
     <org.diylc.components.connectivity.SolderPad>
       <name>p106</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>30</red><green>30</green><blue>30</blue><alpha>255</alpha></color>
