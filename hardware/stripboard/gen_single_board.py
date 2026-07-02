@@ -31,6 +31,12 @@ GND_TAP_PIN = 38
 
 NCOLS, NHOLES = 24, 55
 
+# Column lettering matches the grid printed on the physical board: viewed from
+# the COMPONENT side (copper down), the printed letters read X (left) -> A
+# (right). Column index 0 = leftmost strip in all diagrams = printed "X".
+LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWX"
+def letter(c): return LETTERS[NCOLS - 1 - c]
+
 PADS = []; CUTS = []; JUMPERS = []; SW_BODIES = []; MODULES = []; LABELS = []
 def pad(name, net, c, h): PADS.append(dict(name=name, net=net, c=c, h=h))
 def cut(c, h):            CUTS.append((c, h))
@@ -216,7 +222,7 @@ def emit_diy():
   <controlPoints><java.awt.Point x="{X(0)}" y="{Y(1)}"/><java.awt.Point x="{X(23)}" y="{Y(55)}"/></controlPoints>
   <firstPoint x="{X(0)}" y="{Y(1)}"/><secondPoint x="{X(23)}" y="{Y(55)}"/>
   <boardColor>{_col(248,235,179)}</boardColor><borderColor>{_col(173,164,125)}</borderColor>
-  <coordinateColor>{_col(120,120,120)}</coordinateColor><drawCoordinates>true</drawCoordinates>
+  <coordinateColor>{_col(120,120,120)}</coordinateColor><drawCoordinates>false</drawCoordinates>
   <spacing>{_sz(0.1,'in')}</spacing><stripColor>{_col(218,138,103)}</stripColor>
   <orientation>VERTICAL</orientation>
 </org.diylc.components.boards.VeroBoard>''')
@@ -252,6 +258,16 @@ def emit_diy():
   <name>p{i}</name><size>{_sz(0.09,'in')}</size><color>{_col(*netrgb(p['net']))}</color>
   <point x="{X(p['c'])}" y="{Y(p['h'])}"/><type>ROUND</type><holeSize>{_sz(0.8,'mm')}</holeSize><layer>_1</layer>
 </org.diylc.components.connectivity.SolderPad>''')
+    # column letters (board's printed grid: X..A left to right) + hole numbers
+    coord_labels = [(c-0.2, 0.2, letter(c)) for c in range(NCOLS)]
+    coord_labels += [(-1.0, h, str(h)) for h in range(5, NHOLES+1, 5)]
+    for i,(c,h,t) in enumerate(coord_labels):
+        C.append(f'''<org.diylc.components.misc.Label>
+  <name>coord{i}</name><point x="{X(c)}" y="{Y(h)}"/><text>{t}</text>{_font(6)}
+  <color>{_col(120,120,120)}</color><center>false</center>
+  <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+  <orientation>DEFAULT</orientation>
+</org.diylc.components.misc.Label>''')
     for i,(c,h,t) in enumerate(LABELS):
         C.append(f'''<org.diylc.components.misc.Label>
   <name>t{i}</name><point x="{X(c)}" y="{Y(h)}"/><text>{t}</text>{_font(7)}

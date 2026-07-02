@@ -16,10 +16,9 @@ ax.invert_yaxis()
 # board + vertical strips
 ax.add_patch(FancyBboxPatch((X(0)-0.05,Y(1)-0.05),X(NC-1)+0.10,Y(NH-1)+0.10,
              boxstyle="round,pad=0.01,rounding_size=0.05",fc="#f4f0e4",ec="#cbbf9a",lw=1.5,zorder=0))
-letters="ABCDEFGHIJKLMNOPQRSTUVWX"
 for c in range(NC):
     ax.add_patch(Rectangle((X(c)-0.012,Y(1)),0.024,Y(NH-1),fc="#da8a67",ec="none",alpha=0.30,zorder=0.5))
-    ax.text(X(c),Y(0.3),letters[c],ha="center",va="center",fontsize=6,color="#888")
+    ax.text(X(c),Y(0.3),S.letter(c),ha="center",va="center",fontsize=6,color="#888")
 for h in range(1,NH+1,5):
     ax.text(X(-1.2),Y(h),str(h),ha="center",va="center",fontsize=5.5,color="#aaa")
 

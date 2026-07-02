@@ -11,7 +11,7 @@
       <controlPoints><java.awt.Point x="0.0" y="0.1"/><java.awt.Point x="2.3" y="5.5"/></controlPoints>
       <firstPoint x="0.0" y="0.1"/><secondPoint x="2.3" y="5.5"/>
       <boardColor><red>248</red><green>235</green><blue>179</blue><alpha>255</alpha></boardColor><borderColor><red>173</red><green>164</green><blue>125</blue><alpha>255</alpha></borderColor>
-      <coordinateColor><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></coordinateColor><drawCoordinates>true</drawCoordinates>
+      <coordinateColor><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></coordinateColor><drawCoordinates>false</drawCoordinates>
       <spacing><value>0.1</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></spacing><stripColor><red>218</red><green>138</green><blue>103</blue><alpha>255</alpha></stripColor>
       <orientation>VERTICAL</orientation>
     </org.diylc.components.boards.VeroBoard>
@@ -1311,6 +1311,216 @@
       <name>p117</name><size><value>0.09</value><unit class="org.diylc.core.measures.SizeUnit">in</unit></size><color><red>210</red><green>40</green><blue>40</blue><alpha>255</alpha></color>
       <point x="2.3" y="5.3"/><type>ROUND</type><holeSize><value>0.8</value><unit class="org.diylc.core.measures.SizeUnit">mm</unit></holeSize><layer>_1</layer>
     </org.diylc.components.connectivity.SolderPad>
+    <org.diylc.components.misc.Label>
+      <name>coord0</name><point x="-0.02" y="0.02"/><text>X</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord1</name><point x="0.08" y="0.02"/><text>W</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord2</name><point x="0.18" y="0.02"/><text>V</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord3</name><point x="0.28" y="0.02"/><text>U</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord4</name><point x="0.38" y="0.02"/><text>T</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord5</name><point x="0.48" y="0.02"/><text>S</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord6</name><point x="0.58" y="0.02"/><text>R</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord7</name><point x="0.68" y="0.02"/><text>Q</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord8</name><point x="0.78" y="0.02"/><text>P</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord9</name><point x="0.88" y="0.02"/><text>O</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord10</name><point x="0.98" y="0.02"/><text>N</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord11</name><point x="1.08" y="0.02"/><text>M</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord12</name><point x="1.18" y="0.02"/><text>L</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord13</name><point x="1.28" y="0.02"/><text>K</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord14</name><point x="1.38" y="0.02"/><text>J</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord15</name><point x="1.48" y="0.02"/><text>I</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord16</name><point x="1.58" y="0.02"/><text>H</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord17</name><point x="1.68" y="0.02"/><text>G</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord18</name><point x="1.78" y="0.02"/><text>F</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord19</name><point x="1.88" y="0.02"/><text>E</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord20</name><point x="1.98" y="0.02"/><text>D</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord21</name><point x="2.08" y="0.02"/><text>C</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord22</name><point x="2.18" y="0.02"/><text>B</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord23</name><point x="2.28" y="0.02"/><text>A</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord24</name><point x="-0.1" y="0.5"/><text>5</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord25</name><point x="-0.1" y="1.0"/><text>10</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord26</name><point x="-0.1" y="1.5"/><text>15</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord27</name><point x="-0.1" y="2.0"/><text>20</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord28</name><point x="-0.1" y="2.5"/><text>25</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord29</name><point x="-0.1" y="3.0"/><text>30</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord30</name><point x="-0.1" y="3.5"/><text>35</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord31</name><point x="-0.1" y="4.0"/><text>40</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord32</name><point x="-0.1" y="4.5"/><text>45</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord33</name><point x="-0.1" y="5.0"/><text>50</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
+    <org.diylc.components.misc.Label>
+      <name>coord34</name><point x="-0.1" y="5.5"/><text>55</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>6.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
+      <color><red>120</red><green>120</green><blue>120</blue><alpha>255</alpha></color><center>false</center>
+      <horizontalAlignment>LEFT</horizontalAlignment><verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </org.diylc.components.misc.Label>
     <org.diylc.components.misc.Label>
       <name>t0</name><point x="0.04" y="0.03"/><text>GND</text><font><attributes><entry><awt-text-attribute>weight</awt-text-attribute><null/></entry><entry><awt-text-attribute>transform</awt-text-attribute><null/></entry><entry><awt-text-attribute>width</awt-text-attribute><null/></entry><entry><awt-text-attribute>size</awt-text-attribute><float>7.0</float></entry><entry><awt-text-attribute>tracking</awt-text-attribute><null/></entry><entry><awt-text-attribute>family</awt-text-attribute><string>Tahoma</string></entry><entry><awt-text-attribute>superscript</awt-text-attribute><null/></entry><entry><awt-text-attribute>posture</awt-text-attribute><null/></entry></attributes></font>
       <color><red>0</red><green>0</green><blue>0</blue><alpha>255</alpha></color><center>false</center>

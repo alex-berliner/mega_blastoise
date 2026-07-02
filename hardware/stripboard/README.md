@@ -95,6 +95,11 @@ their col GPIO, 8 nets total, no stray shorts.
 > (cut list, wire list, solder order, continuity tests) generated from the
 > verified model by `gen_build_doc.py`. Regenerate it whenever the layout
 > changes.
+
+Column lettering matches the grid **printed on the physical board**: viewed
+from the component side (copper down) the printed letters read **X left ->
+A right**; they read A..X left-to-right only with the copper side facing you.
+All diagrams and docs use the component-side view.
 `gen_single_board.py` puts **everything on one stripboard**, arranged for two
 players **facing each other** across the board. Outputs
 `mega_blastoise_single_board.diy` (+ `_preview.png`). Board top to bottom:
@@ -106,13 +111,13 @@ players **facing each other** across the board. Outputs
   party row S1 S2 S3.
 - The 4 move buttons of each player sit at the **four corners of their screen**,
   matching where the moves render on the OLED; the 3 party buttons share a row.
-- **LED strip connectors on the left edge (col A)**: P2's at the top (rows
+- **LED strip connectors on the left edge (col X)**: P2's at the top (rows
   2/5/8), P1's at the bottom (rows 41/44/47), each DIN/5V/GND - out of the
   play area; the WS2812B strips are off-board.
 - **holes 47-54**: the **Pico, on the TOP side, USB pointing LEFT** (pin 1 =
   GP0 bottom-left; VBUS n/c), isolation cut lines at holes 46 and 50.
-- **hole 53**: **MB102 5V input** - "-" on the left (W), "+" on the right (X).
-- **rails**: GND = col B, 3V3 = col W, 5V = col X. MB102 feeds the 5V rail for
+- **hole 53**: **MB102 5V input** - "-" on the left (B), "+" on the right (A).
+- **rails**: GND = col W, 3V3 = col B, 5V = col A. MB102 feeds the 5V rail for
   the LED strips; the Pico runs from USB; grounds are shared. (No buzzer.)
 
 All ~41 jumper wires are meant to be routed on the **underside** so the top
