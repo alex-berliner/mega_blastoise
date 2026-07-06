@@ -172,8 +172,9 @@ With the meter on continuity, no power applied:
 
 ## 8. Firmware note
 
-- P2's OLED is physically rotated 180 deg - the firmware needs to set the
-  SSD1306 segment-remap + COM-scan-direction flip for the P2 display.
+- No display flip needed: P2's OLED is physically rotated 180 deg AND P2
+  views the board from the opposite side - the two rotations cancel, so the
+  firmware renders both displays identically.
 - Pin map is unchanged from the breadboard build (rows GP5/7/8/9, cols
   GP10-13, OLEDs GP16/17 + GP18/19, strips GP20/GP22).
 

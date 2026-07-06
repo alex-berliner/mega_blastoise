@@ -106,7 +106,8 @@ players **facing each other** across the board. Outputs
 
 - **P2 module (rotated 180deg)**: party row S3 S2 S1, moves M4 M3, screen
   (header at its bottom edge), moves M2 M1. From P2's seat it reads exactly
-  like P1's module. **Firmware must render P2's OLED rotated 180deg.**
+  like P1's module. No firmware flip needed: the physical rotation and P2's
+  opposite viewing angle cancel out.
 - **P1 module**: moves M1 M2, screen (header at its top edge), moves M3 M4,
   party row S1 S2 S3.
 - The 4 move buttons of each player sit at the **four corners of their screen**,

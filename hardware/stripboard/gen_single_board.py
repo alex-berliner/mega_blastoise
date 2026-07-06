@@ -11,7 +11,8 @@ rev 3 changes:
   2. P2's whole module is P1's rotated 180 deg (P2 sits across the board):
      board top->bottom = [S3 S2 S1] [M4 M3] [screen 180deg] [M2 M1]  (P2)
                          [M1 M2] [screen] [M3 M4] [S1 S2 S3]         (P1)
-     NOTE: firmware must render P2's OLED rotated 180 deg.
+     No firmware flip needed: the module's physical 180deg rotation and P2
+     viewing from the opposite side cancel out.
   3. LED strip connectors moved to the left edge (col A): P2's at the top,
      P1's at the bottom - out of the play area
   Pico on TOP side at the bottom (USB left), MB102 5V in bottom-right,
