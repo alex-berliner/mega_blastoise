@@ -294,6 +294,11 @@ async fn run_lobby_inner(
         p2_ai = false;
         #[cfg(feature = "leds")]
         led_send(LedCmd::LobbyIdle);
+        // Reset both screens to the idle lobby state on every lobby entry,
+        // like the web client's set_lobby_displays() — without this the win
+        // screen (or boot placeholder) lingers through the demo countdown.
+        #[cfg(feature = "oled")]
+        oled_lobby_update(false, false, false, false);
         input.write_line("Demo — press any button or :ready / :ready ai to start").await;
 
         let mut ready = ReadyState::default();

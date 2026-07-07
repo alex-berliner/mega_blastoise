@@ -327,8 +327,11 @@ pub async fn task(
     let mut s1 = Shadow::new();
     let mut s2 = Shadow::new();
 
-    if p1_ok { redraw(&mut disp0, &mut s1, 1, &p1).await; }
-    if p2_ok { redraw(&mut disp1, &mut s2, 2, &p2).await; }
+    // Boot into the idle lobby screen (matches the web client, which calls
+    // set_lobby_displays() at the top of its game loop) — not the placeholder
+    // "---" player screen.
+    if p1_ok { draw_lobby_screen(&mut disp0, &mut s1, 1, false, false).await; }
+    if p2_ok { draw_lobby_screen(&mut disp1, &mut s2, 2, false, false).await; }
 
     loop {
         match CMD.receive().await {
