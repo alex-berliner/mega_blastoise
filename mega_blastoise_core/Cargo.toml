@@ -26,3 +26,4 @@ trace = ["defmt"]
 serde_json = "1.0"
 ciborium = "0.2"
 ureq = "2"
+png = "0.17"

@@ -3,6 +3,7 @@ extern crate alloc;
 use embedded_graphics::{
     draw_target::DrawTarget,
     geometry::{OriginDimensions, Size},
+    image::{Image, ImageRaw},
     mono_font::{
         ascii::{FONT_5X8, FONT_6X10},
         MonoTextStyle,
@@ -91,38 +92,50 @@ fn center_style() -> TextStyle {
 ///
 /// Layout:
 /// ```text
-/// Move 0              Move 1   ← y=1,  FONT_5X8
-///      ┌─ Mon Name ─┐          ← y=24–39 (box)
-/// Move 2              Move 3   ← y=55, FONT_5X8
+/// Move 0              Move 1   ← y=0,  FONT_5X8
+///        [48x48 sprite]        ← y=8–55, centered
+/// Move 2              Move 3   ← y=56, FONT_5X8
 /// ```
+/// The mon's sprite fills the band between the move rows; when the name has
+/// no sprite ("FAINTED", "---") it falls back to the name in a centered box.
 pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot])
 where
     D: DrawTarget<Color = BinaryColor>,
 {
     let move_char = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
-    let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let move_h = FONT_5X8.character_size.height as i32;
 
     display.clear(BinaryColor::Off).ok();
 
     // ── Corner moves ──────────────────────────────────────────────────────────
     if let Some(mv) = moves.first() {
-        Text::with_text_style(&mv.name, Point::new(0, 1), move_char, tl_style())
+        Text::with_text_style(&mv.name, Point::new(0, 0), move_char, tl_style())
             .draw(display).ok();
     }
     if let Some(mv) = moves.get(1) {
-        Text::with_text_style(&mv.name, Point::new(127, 1), move_char, tr_style())
+        Text::with_text_style(&mv.name, Point::new(127, 0), move_char, tr_style())
             .draw(display).ok();
     }
     if let Some(mv) = moves.get(2) {
-        Text::with_text_style(&mv.name, Point::new(0, 55), move_char, tl_style())
+        Text::with_text_style(&mv.name, Point::new(0, 64 - move_h), move_char, tl_style())
             .draw(display).ok();
     }
     if let Some(mv) = moves.get(3) {
-        Text::with_text_style(&mv.name, Point::new(127, 55), move_char, tr_style())
+        Text::with_text_style(&mv.name, Point::new(127, 64 - move_h), move_char, tr_style())
             .draw(display).ok();
     }
 
-    // ── Mon name in a box, centered ───────────────────────────────────────────
+    // ── Mon sprite, centered between the move rows ────────────────────────────
+    if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
+        let side = crate::sprites::SPRITE_SIDE;
+        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
+        Image::new(&raw, Point::new((128 - side as i32) / 2, move_h))
+            .draw(display).ok();
+        return;
+    }
+
+    // ── Fallback: name in a box, centered ─────────────────────────────────────
+    let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
     let name_y = 27i32;
     let char_w = FONT_6X10.character_size.width;
     let char_h = FONT_6X10.character_size.height;

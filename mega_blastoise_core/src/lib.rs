@@ -15,6 +15,7 @@ pub mod prompt_fmt;
 pub mod randbat;
 pub mod rng;
 pub mod random_ai;
+pub mod sprites;
 
 pub use battle_effects::{
     anim, process_new_log_lines, BoardEffects, BoardEventQueue, NoopBoardEffects,
