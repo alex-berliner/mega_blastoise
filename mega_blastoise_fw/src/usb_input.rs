@@ -126,7 +126,7 @@ impl<'d> UsbBattleInput<'d> {
                         )
                         .await
                         {
-                            Either3::First(line) => col.typed_line(line.trim(), &mut fx),
+                            Either3::First(line) => col.typed_line(line.trim(), Instant::now().as_millis(), &mut fx),
                             Either3::Second(ev) => {
                                 col.pad_event(ev, Instant::now().as_millis(), &mut fx)
                             }
@@ -140,7 +140,7 @@ impl<'d> UsbBattleInput<'d> {
                         )
                         .await
                         {
-                            Either::First(line) => col.typed_line(line.trim(), &mut fx),
+                            Either::First(line) => col.typed_line(line.trim(), Instant::now().as_millis(), &mut fx),
                             Either::Second(()) => {}
                         }
                     }
@@ -379,6 +379,7 @@ impl<'d> UsbBattleInput<'d> {
         }
         self.writeln("  In battle: 'p1 2' / 'p2 s3' (bare '2' / 's3' when only one player is choosing);").await;
         self.writeln("  typing for a committed player unreadies them.").await;
+        self.writeln("  Button sim: :press pN <1-4|s1-s3> | :hold pN <1-4|s1-s3> | :release pN").await;
     }
 
     /// Dump one OLED framebuffer as ASCII art (half-block chars) over USB.

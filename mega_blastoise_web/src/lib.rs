@@ -805,7 +805,7 @@ async fn collect_battle_input(bus: &InputBus, seed: u64) {
             .await
             {
                 Either3::First(BattleInput::Pad(ev)) => col.pad_event(ev, now_ms(), &mut fx),
-                Either3::First(BattleInput::Line(line)) => col.typed_line(line.trim(), &mut fx),
+                Either3::First(BattleInput::Line(line)) => col.typed_line(line.trim(), now_ms(), &mut fx),
                 Either3::Second(line) => print_log(&format!("[EVT] {line}")),
                 Either3::Third(()) => {}
             }

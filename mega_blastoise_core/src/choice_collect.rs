@@ -385,9 +385,33 @@ impl ChoiceCollector {
     /// is prompted. `<cmd>` is a move number, `sN`, `switch N`, or (during a
     /// forced switch) a party slot as `N` / `sN`. Typing for a committed
     /// player unreadies them.
-    pub fn typed_line(&mut self, line: &str, fx: &mut Vec<Effect>) {
+    ///
+    /// Button simulation (for testing without hardware): `:press pN <btn>`
+    /// taps, `:hold pN <btn>` starts a long press, `:release pN` ends it —
+    /// `<btn>` is a move number 1-4 or a party slot s1-s3. These go through
+    /// [`Self::pad_event`], so they exercise the exact button code paths.
+    pub fn typed_line(&mut self, line: &str, now_ms: u64, fx: &mut Vec<Effect>) {
         let line = line.trim();
         if line.is_empty() {
+            return;
+        }
+
+        if let Some(rest) = line.strip_prefix(":press ") {
+            self.sim_button(rest, SimKind::Tap, now_ms, fx);
+            return;
+        }
+        if let Some(rest) = line.strip_prefix(":hold ") {
+            self.sim_button(rest, SimKind::Hold, now_ms, fx);
+            return;
+        }
+        if let Some(rest) = line.strip_prefix(":release ") {
+            match parse_player_ref(rest.trim()) {
+                Some(player) => {
+                    fx.push(Effect::Dbg(format!("sim release p{player}")));
+                    self.pad_event(PadEvent::HoldEnd { player }, now_ms, fx);
+                }
+                None => fx.push(Effect::Err(String::from("usage: :release p1|p2"))),
+            }
             return;
         }
 
@@ -493,6 +517,50 @@ impl ChoiceCollector {
         }
     }
 
+    /// Parse and inject a simulated button: `pN <btn>` where `<btn>` is a
+    /// move number 1-4 or a party slot s1-s3.
+    fn sim_button(&mut self, rest: &str, kind: SimKind, now_ms: u64, fx: &mut Vec<Effect>) {
+        let usage = "usage: :press|:hold pN <1-4|s1-s3>";
+        let mut parts = rest.trim().split_whitespace();
+        let (Some(pref), Some(bref), None) = (parts.next(), parts.next(), parts.next()) else {
+            fx.push(Effect::Err(String::from(usage)));
+            return;
+        };
+        let Some(player) = parse_player_ref(pref) else {
+            fx.push(Effect::Err(String::from(usage)));
+            return;
+        };
+        let ev = if let Some(n) = bref.strip_prefix(['s', 'S']) {
+            match n.parse::<u8>() {
+                Ok(i) if (1..=3).contains(&i) => match kind {
+                    SimKind::Tap => PadEvent::TapSwitch { player, idx: i - 1 },
+                    SimKind::Hold => PadEvent::HoldSwitch { player, idx: i - 1 },
+                },
+                _ => {
+                    fx.push(Effect::Err(String::from(usage)));
+                    return;
+                }
+            }
+        } else {
+            match bref.parse::<u8>() {
+                Ok(i) if (1..=4).contains(&i) => match kind {
+                    SimKind::Tap => PadEvent::TapMove { player, slot: i - 1 },
+                    SimKind::Hold => PadEvent::HoldMove { player, slot: i - 1 },
+                },
+                _ => {
+                    fx.push(Effect::Err(String::from(usage)));
+                    return;
+                }
+            }
+        };
+        let verb = match kind {
+            SimKind::Tap => "press",
+            SimKind::Hold => "hold",
+        };
+        fx.push(Effect::Dbg(format!("sim {verb} p{player} {bref}")));
+        self.pad_event(ev, now_ms, fx);
+    }
+
     /// Advance timers: restores expired invalid flashes and runs the
     /// both-committed grace window. Returns true once collection is complete
     /// (call [`Self::take_choices`] then).
@@ -562,6 +630,21 @@ enum Pad {
     Tap(PlayerAction),
     Hold(HoldView),
     HoldEnd,
+}
+
+#[derive(Clone, Copy)]
+enum SimKind {
+    Tap,
+    Hold,
+}
+
+/// "p1" / "p2" → player number.
+fn parse_player_ref(s: &str) -> Option<u8> {
+    match s {
+        "p1" => Some(1),
+        "p2" => Some(2),
+        _ => None,
+    }
 }
 
 enum HoldView {
@@ -684,7 +767,7 @@ mod tests {
         assert!(!c.tick(10, &mut fx));
         c.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, 500, &mut fx); // unready
         assert!(!c.tick(10 + UNREADY_GRACE_MS + 100, &mut fx), "p2 is choosing again");
-        c.typed_line("p2 3", &mut fx);
+        c.typed_line("p2 3", 0, &mut fx);
         assert!(!c.tick(2000, &mut fx), "fresh grace");
         assert!(c.tick(2000 + UNREADY_GRACE_MS, &mut fx));
     }
@@ -693,10 +776,10 @@ mod tests {
     fn typed_prefix_and_bare_rules() {
         let (mut c, _) = two_humans();
         let mut fx = Vec::new();
-        c.typed_line("2", &mut fx);
+        c.typed_line("2", 0, &mut fx);
         assert!(err_containing(&fx, "Both players are choosing"));
         fx.clear();
-        c.typed_line("p2 2", &mut fx);
+        c.typed_line("p2 2", 0, &mut fx);
         assert_eq!(c.out[1], "move 1");
     }
 
@@ -710,11 +793,11 @@ mod tests {
             &mut fx,
         );
         fx.clear();
-        c.typed_line("3", &mut fx);
+        c.typed_line("3", 0, &mut fx);
         assert_eq!(c.out[0], "move 2");
         // AI can't be unreadied.
         fx.clear();
-        c.typed_line("p2 1", &mut fx);
+        c.typed_line("p2 1", 0, &mut fx);
         assert!(err_containing(&fx, "forced this turn"));
     }
 
@@ -722,13 +805,13 @@ mod tests {
     fn typing_while_committed_unreadies_instead_of_replacing() {
         let (mut c, _) = two_humans();
         let mut fx = Vec::new();
-        c.typed_line("p1 1", &mut fx);
+        c.typed_line("p1 1", 0, &mut fx);
         assert_eq!(c.out[0], "move 0");
         fx.clear();
-        c.typed_line("p1 4", &mut fx);
+        c.typed_line("p1 4", 0, &mut fx);
         assert!(c.out[0].is_empty(), "unreadied, not replaced");
         assert!(fx.iter().any(|e| matches!(e, Effect::Ok(m) if m.contains("unreadied"))));
-        c.typed_line("p1 4", &mut fx);
+        c.typed_line("p1 4", 0, &mut fx);
         assert_eq!(c.out[0], "move 3");
     }
 
@@ -736,7 +819,7 @@ mod tests {
     fn sn_switch_syntax_in_turn() {
         let (mut c, _) = two_humans();
         let mut fx = Vec::new();
-        c.typed_line("p1 s2", &mut fx);
+        c.typed_line("p1 s2", 0, &mut fx);
         assert_eq!(c.out[0], "switch 1");
     }
 
@@ -754,7 +837,7 @@ mod tests {
         // Without player data party_ok is all-true; typed slot works bare
         // (single human) and via sN.
         fx.clear();
-        c.typed_line("s2", &mut fx);
+        c.typed_line("s2", 0, &mut fx);
         assert_eq!(c.out[0], "switch 1");
         // Unready by tapping returns to the SWITCH picker, not the battle screen.
         fx.clear();
@@ -785,8 +868,8 @@ mod tests {
         assert_eq!(c.out[0], "switch 1");
         // Typed fainted pick gets the message.
         let mut fx2 = Vec::new();
-        c.typed_line("p1 s3", &mut fx2); // unreadies first
-        c.typed_line("p1 s3", &mut fx2);
+        c.typed_line("p1 s3", 0, &mut fx2); // unreadies first
+        c.typed_line("p1 s3", 0, &mut fx2);
         assert!(err_containing(&fx2, "no longer fight"));
     }
 
@@ -829,6 +912,33 @@ mod tests {
     }
 
     #[test]
+    fn sim_button_commands_drive_pad_events() {
+        let (mut c, _) = two_humans();
+        let mut fx = Vec::new();
+        // :press taps — commits like a real button.
+        c.typed_line(":press p1 2", 0, &mut fx);
+        assert_eq!(c.out[0], "move 1");
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowWaiting { player: 1 })));
+        // :press while committed unreadies, like a real button.
+        fx.clear();
+        c.typed_line(":press p1 1", 10, &mut fx);
+        assert!(c.out[0].is_empty());
+        // :hold / :release drive the detail view.
+        fx.clear();
+        c.typed_line(":hold p2 s2", 20, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowPokemonStats { player: 2, team_idx: 1, page: 0 })));
+        fx.clear();
+        c.typed_line(":release p2", 30, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { player: 2 })));
+        // Bad refs get usage errors.
+        fx.clear();
+        c.typed_line(":press p3 1", 40, &mut fx);
+        assert!(err_containing(&fx, "usage"));
+        c.typed_line(":press p1 s4", 50, &mut fx);
+        assert!(err_containing(&fx, "usage"));
+    }
+
+    #[test]
     fn both_auto_completes_without_grace() {
         let mut fx = Vec::new();
         let mut p1 = SlotOptions::from_prompt(&turn_prompt("p1", 4));
@@ -846,7 +956,7 @@ mod tests {
             alloc::vec![SlotOptions::from_prompt(&switch_prompt("p2"))],
             &mut fx,
         );
-        c.typed_line("2", &mut fx);
+        c.typed_line("2", 0, &mut fx);
         assert!(!c.tick(0, &mut fx));
         assert!(c.tick(UNREADY_GRACE_MS, &mut fx));
         let ch = c.take_choices();
@@ -862,7 +972,7 @@ mod tests {
             &mut fx,
         );
         fx.clear();
-        c.typed_line("p2 1", &mut fx);
+        c.typed_line("p2 1", 0, &mut fx);
         assert!(err_containing(&fx, "no pending prompt"));
     }
 }
