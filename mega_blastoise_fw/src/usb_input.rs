@@ -104,9 +104,14 @@ impl<'d> UsbBattleInput<'d> {
 
             // Refresh each player's party snapshot so the OLED long-press stats
             // screen has data (run_inner doesn't go through ButtonSource::on_prompt).
+            // A forced switch also flips that player's OLED to the pick-a-mon
+            // screen, like web's on_prompt does.
             #[cfg(feature = "oled")]
             for p in &prompts {
                 send_party_update(p);
+                if matches!(p.request, Request::Switch(_)) {
+                    oled_send(OledCmd::ShowSwitchScreen { player: player_id_to_num(p.player_id.as_str()) });
+                }
             }
 
             // A player with no prompt this batch is waiting on the other (e.g.
