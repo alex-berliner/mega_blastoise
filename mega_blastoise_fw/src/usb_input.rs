@@ -3,25 +3,24 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use gen1_battle::{PlayerBattleData, Request};
 use cortex_m::peripheral::SCB;
 use crate::battle_effects::ANIM_ENABLED;
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{select, select3, Either, Either3};
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
+use embassy_time::Instant;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
-    format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
-    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, party_slot_from_mon,
-    player_id_to_num, turn_action_choice, ActionReject, ActivePrompt, ButtonSource, InputBus,
-    InputSource, PlayerAction, PlayerChoice, RandomAi, TurnChoice, LOBBY_HELP, TEAM_SEED_SALT,
+    format_lobby_status, parse_lobby_cmd, parse_team_spec, ActivePrompt, ChoiceCollector,
+    CollectEffect, InputBus, InputSource, PlayerChoice, RandomAi, SlotOptions, COLLECT_TICK_MS,
+    LOBBY_HELP, TEAM_SEED_SALT,
 };
 use gen1_battle::MonData;
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
-use crate::pico_battle_input::{PicoBattleInput, PlayerTurn, TwoTurnProgress};
+use crate::pico_battle_input::{PadScan, PicoBattleInput};
 #[cfg(feature = "oled")]
-use crate::subsystems::oled::{read_shadow_fb, send as oled_send, wait_fb_change, OledCmd};
+use crate::subsystems::oled::{read_shadow_fb, send as oled_send, wait_fb_change};
 
 pub use mega_blastoise_core::LobbyCmd as LobbyUsbCmd;
 
@@ -31,8 +30,6 @@ pub struct UsbBattleInput<'d> {
     partial: String,
     /// Last non-empty line submitted at a prompt; Enter on an empty line resends it.
     last_typed_line: Option<String>,
-    /// Player data from the most recent Turn prompt, reused when a Switch prompt follows.
-    last_player_data: Option<PlayerBattleData>,
     /// Which players are AI-controlled this battle (reset each lobby).
     ai_players: [bool; 2],
     /// AI choice engine for AI-controlled players.
@@ -49,7 +46,6 @@ impl<'d> UsbBattleInput<'d> {
             receiver,
             partial: String::new(),
             last_typed_line: None,
-            last_player_data: None,
             ai_players: [false, false],
             ai: RandomAi::new(TEAM_SEED_SALT),
             pending_lobby_team: None,
@@ -102,112 +98,65 @@ impl<'d> UsbBattleInput<'d> {
                 }
             }
 
-            // Refresh each player's party snapshot so the OLED long-press stats
-            // screen has data (run_inner doesn't go through ButtonSource::on_prompt).
-            // A forced switch also flips that player's OLED to the pick-a-mon
-            // screen, like web's on_prompt does.
-            #[cfg(feature = "oled")]
+            // ── Shared collection: ALL semantics live in core's
+            //    ChoiceCollector, identical to the web client. This loop only
+            //    does raw IO: typed lines, matrix pad events, the tick clock,
+            //    and applying the collector's effects. ──────────────────────
+            let mut batch: Vec<SlotOptions> = Vec::with_capacity(prompts.len());
             for p in &prompts {
-                send_party_update(p);
-                if matches!(p.request, Request::Switch(_)) {
-                    oled_send(OledCmd::ShowSwitchScreen { player: player_id_to_num(p.player_id.as_str()) });
+                let mut slot = SlotOptions::from_prompt(p);
+                let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
+                if self.ai_players[idx] {
+                    slot.set_ai_choice(self.ai.make_choice(&p.request, p.player_data.as_ref()));
                 }
+                batch.push(slot);
             }
+            let mut fx: Vec<CollectEffect> = Vec::new();
+            let mut col = ChoiceCollector::new(batch, &mut fx);
+            self.apply_effects(&mut fx).await;
 
-            // A player with no prompt this batch is waiting on the other (e.g.
-            // a forced switch after a faint) — show their waiting screen.
-            #[cfg(feature = "oled")]
-            for pid in ["p1", "p2"] {
-                if !prompts.iter().any(|p| p.player_id == pid) {
-                    oled_send(OledCmd::ShowWaitingForOpponent { player: player_id_to_num(pid) });
-                }
-            }
-
-            let mut choices: Vec<Option<String>> = (0..prompts.len()).map(|_| None).collect();
-            let no_multi = prompts.iter().all(|p| !is_multi_switch(&p.request));
-
-            if buttons.is_some() && no_multi {
-                // ── Universal parallel collection ─────────────────────────────
-                // Every batch (human vs human, human vs AI, single forced
-                // switch) runs through the matrix collector: AI prompts are
-                // pre-committed as auto choices, and a single-prompt batch is
-                // padded with an inert slot. This gives every human the
-                // waiting screen, tap-to-unready, and the both-ready grace
-                // window regardless of opponent type.
-                let mut built: Vec<PlayerTurn> = Vec::with_capacity(2);
-                for p in prompts.iter() {
-                    let mut pt = PlayerTurn::from_request(
-                        p.player_id.as_str(), &p.request, p.player_data.as_ref(),
-                    );
-                    let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
-                    if self.ai_players[idx] {
-                        self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", p.player_id.as_str())).await;
-                        pt.set_auto(self.ai.make_choice(&p.request, p.player_data.as_ref()));
-                    } else {
-                        self.display_prompt(p).await;
-                    }
-                    built.push(pt);
-                }
-                let n_prompts = built.len();
-                let players: [PlayerTurn; 2] = match built.len() {
-                    2 => {
-                        let mut it = built.into_iter();
-                        [it.next().unwrap(), it.next().unwrap()]
-                    }
-                    _ => [built.pop().expect("non-empty batch"), PlayerTurn::inert()],
-                };
-                let ids = [
-                    prompts.first().map(|p| p.player_id.clone()).unwrap_or_default(),
-                    prompts.get(1).map(|p| p.player_id.clone()).unwrap_or_default(),
-                ];
-                let btns = buttons.as_mut().expect("checked buttons.is_some()");
-
-                // Race typed USB lines ("p1 2", "p2 s3") against the button
-                // matrix. Progress lives outside the button future, so losing
-                // the select doesn't forget a choice a player already made.
-                // wait_two_turns returns only after everyone committed AND the
-                // unready grace window passed — loop until then, so a
-                // USB-typed final choice still gets the grace period.
-                let mut progress = TwoTurnProgress::new(&players);
-                loop {
-                    match select(self.read_line(), btns.wait_two_turns(&players, &mut progress)).await {
-                        Either::First(line) => {
-                            self.handle_parallel_line(line.trim(), &players, &ids, &mut progress).await;
+            let mut scan = PadScan::default();
+            loop {
+                match buttons.as_mut() {
+                    Some(btns) => {
+                        match select3(
+                            self.read_line(),
+                            btns.next_pad_event(&mut scan),
+                            embassy_time::Timer::after_millis(COLLECT_TICK_MS),
+                        )
+                        .await
+                        {
+                            Either3::First(line) => col.typed_line(line.trim(), &mut fx),
+                            Either3::Second(ev) => {
+                                col.pad_event(ev, Instant::now().as_millis(), &mut fx)
+                            }
+                            Either3::Third(()) => {}
                         }
-                        Either::Second(()) => break,
+                    }
+                    None => {
+                        match select(
+                            self.read_line(),
+                            embassy_time::Timer::after_millis(COLLECT_TICK_MS),
+                        )
+                        .await
+                        {
+                            Either::First(line) => col.typed_line(line.trim(), &mut fx),
+                            Either::Second(()) => {}
+                        }
                     }
                 }
-                let outs = progress.into_choices();
-                for (i, c) in outs.into_iter().take(n_prompts).enumerate() {
-                    choices[i] = Some(c);
-                }
-            } else {
-                // No buttons (host build) or a multi-slot switch: serial.
-                for (i, p) in prompts.iter().enumerate() {
-                    let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
-                    if self.ai_players[idx] {
-                        self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", p.player_id.as_str())).await;
-                        choices[i] = Some(self.ai.make_choice(&p.request, p.player_data.as_ref()));
-                    }
-                }
-                for i in 0..prompts.len() {
-                    if choices[i].is_some() {
-                        continue;
-                    }
-                    let btns = buttons.as_mut().map(|b| &mut **b);
-                    let pid = prompts[i].player_id.clone();
-                    let req = prompts[i].request.clone();
-                    let pd = prompts[i].player_data.clone();
-                    let choice = self.handle(&pid, &req, pd, btns).await;
-                    choices[i] = Some(choice);
+                let done = col.tick(Instant::now().as_millis(), &mut fx);
+                self.apply_effects(&mut fx).await;
+                if done {
+                    break;
                 }
             }
 
             // ── Submit choices, tagged by player (the runner routes by id). ──
-            for (p, c) in prompts.iter().zip(choices) {
-                let c = c.unwrap_or_else(|| String::from("pass"));
-                self.write_dbg(&alloc::format!("Submitting to engine ({}): \"{}\"", p.player_id.as_str(), c)).await;
-                bus.choices.send(PlayerChoice { player_id: p.player_id.clone(), choice: c }).await;
+            for (player_id, choice) in col.take_choices() {
+                let choice = if choice.is_empty() { String::from("pass") } else { choice };
+                self.write_dbg(&alloc::format!("Submitting to engine ({}): \"{}\"", player_id.as_str(), choice.as_str())).await;
+                bus.choices.send(PlayerChoice { player_id, choice }).await;
             }
 
             while let Ok(line) = bus.log.try_receive() {
@@ -216,325 +165,21 @@ impl<'d> UsbBattleInput<'d> {
         }
     }
 
-    /// Write a player's prompt text to USB without collecting input — used when
-    /// the parallel button collector owns the actual input phase.
-    async fn display_prompt(&mut self, p: &ActivePrompt) {
-        if p.player_data.is_some() {
-            self.last_player_data = p.player_data.clone();
-        }
-        self.write("\r\n").await;
-        self.write_multiline(&format_prompt(p.player_id.as_str(), &p.request, p.player_data.as_ref())).await;
-    }
-
-    /// Parse a typed turn line, accepting both bare ("2", "s3") and
-    /// player-prefixed ("p1 2") forms — the prefixed form is the universal
-    /// syntax, the bare form is unambiguous while a single player is prompted.
-    /// Writes the rejection message itself; None means "re-prompt".
-    async fn parse_typed_turn(&mut self, line: &str, player_id: &str, n: usize) -> Option<PlayerAction> {
-        let rest = match strip_player_prefix(line.trim(), player_id) {
-            Ok(r) => r,
-            Err(msg) => {
-                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                return None;
-            }
-        };
-        match parse_turn_line(rest, n) {
-            Ok(TurnChoice::Move(s)) => Some(PlayerAction::Move(s)),
-            Ok(TurnChoice::Switch(i)) => Some(PlayerAction::Switch(i)),
-            Err(msg) => {
-                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                None
-            }
-        }
-    }
-
-    /// Parse a typed forced-switch line: a party slot as "3", "s3", or the
-    /// player-prefixed "p1 3" / "p1 s3". Writes the rejection itself.
-    async fn parse_typed_switch(&mut self, line: &str, player_id: &str) -> Option<usize> {
-        let rest = match strip_player_prefix(line.trim(), player_id) {
-            Ok(r) => r,
-            Err(msg) => {
-                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                return None;
-            }
-        };
-        let slot = rest.strip_prefix('s').unwrap_or(rest).trim();
-        match parse_switch_line(slot) {
-            Ok(idx) => Some(idx),
-            Err(msg) => {
-                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                None
-            }
-        }
-    }
-
-    /// Whether team slot `idx` in `last_player_data` is fainted (only a
-    /// definite yes rejects — missing data defers to the engine).
-    fn slot_fainted(&self, idx: usize) -> bool {
-        self.last_player_data
-            .as_ref()
-            .and_then(|pd| pd.mons.get(idx))
-            .is_some_and(|m| m.hp == 0)
-    }
-
-    /// Handle a typed line while both players are choosing in parallel.
-    /// Requires a player prefix — "p1 <cmd>" / "p2 <cmd>" — where <cmd> is the
-    /// usual turn syntax (move 1-4 or s2-s6). Runs through the same shared
-    /// validator as button presses.
-    async fn handle_parallel_line(
-        &mut self,
-        line: &str,
-        players: &[PlayerTurn; 2],
-        ids: &[String; 2],
-        progress: &mut TwoTurnProgress,
-    ) {
-        if line.is_empty() {
-            return;
-        }
-        let mut parsed = None;
-        for i in 0..2 {
-            if let Some(rest) = line.strip_prefix(ids[i].as_str()) {
-                if rest.starts_with(' ') {
-                    parsed = Some((i, rest.trim()));
-                    break;
+    /// Map the collector's effects onto USB output and the OLED channel.
+    async fn apply_effects(&mut self, fx: &mut Vec<CollectEffect>) {
+        for e in fx.drain(..) {
+            match e {
+                CollectEffect::Oled(_cmd) => {
+                    #[cfg(feature = "oled")]
+                    oled_send(_cmd);
                 }
-            }
-        }
-        let Some((i, rest)) = parsed else {
-            self.write_err("Both players are choosing — prefix with the player, e.g. \"p1 2\" or \"p2 s3\"").await;
-            return;
-        };
-        // Typing anything for a committed player unreadies them — back to
-        // their pick screen; they choose again with a fresh line or buttons.
-        if progress.is_done(i) {
-            if progress.is_auto(i) {
-                self.write_err(&alloc::format!("{}'s action is forced this turn", ids[i].as_str())).await;
-            } else {
-                progress.unready(i, players);
-                self.write_ok(&alloc::format!("{} unreadied — choose again", ids[i].as_str())).await;
-            }
-            return;
-        }
-
-        // Forced replacement after a faint: expect a party slot ("3" or "s3").
-        if players[i].forced_switch() {
-            let slot = rest.strip_prefix('s').unwrap_or(rest).trim();
-            match parse_switch_line(slot) {
-                Ok(idx) if players[i].switch_target_ok(idx) => {
-                    let choice = format_switch_choice(idx);
-                    self.write_ok(&alloc::format!("Accepted — {} {}", ids[i].as_str(), choice.as_str())).await;
-                    progress.set_choice(i, players, choice);
+                CollectEffect::Ok(m) => self.write_ok(&m).await,
+                CollectEffect::Err(m) => self.write_err(&m).await,
+                CollectEffect::Dbg(m) => self.write_dbg(&m).await,
+                CollectEffect::Text(t) => {
+                    self.write("\r\n").await;
+                    self.write_multiline(&t).await;
                 }
-                Ok(_) => {
-                    self.write_err(&alloc::format!(
-                        "Rejected ({}) — That pokemon can no longer fight!", ids[i].as_str()
-                    )).await;
-                }
-                Err(msg) => {
-                    self.write_err(&alloc::format!("Rejected ({}) — {}", ids[i].as_str(), msg)).await;
-                }
-            }
-            return;
-        }
-
-        let n = players[i].n_moves();
-        let action = match parse_turn_line(rest, n) {
-            Ok(TurnChoice::Move(s)) => PlayerAction::Move(s),
-            Ok(TurnChoice::Switch(x)) => PlayerAction::Switch(x),
-            Err(msg) => {
-                self.write_err(&alloc::format!("Rejected ({}) — {}", ids[i].as_str(), msg)).await;
-                return;
-            }
-        };
-        if let PlayerAction::Switch(idx) = &action {
-            // Already-active is caught by the shared validator; a benched target
-            // that still fails here can only be fainted.
-            if players[i].active_slot_is_not(*idx) && !players[i].switch_target_ok(*idx) {
-                self.write_err(&alloc::format!(
-                    "Rejected ({}) — That pokemon can no longer fight!", ids[i].as_str()
-                )).await;
-                return;
-            }
-        }
-        match players[i].typed_action_choice(&action) {
-            Ok(choice) => {
-                self.write_ok(&alloc::format!("Accepted — {} {}", ids[i].as_str(), choice.as_str())).await;
-                progress.set_choice(i, players, choice);
-            }
-            Err(reason) => {
-                self.write_err(&alloc::format!("Rejected ({}) — {}", ids[i].as_str(), reject_reason(reason))).await;
-            }
-        }
-    }
-
-    async fn handle(
-        &mut self,
-        player_id: &str,
-        request: &Request,
-        player_data: Option<PlayerBattleData>,
-        mut buttons: Option<&mut PicoBattleInput<'_>>,
-    ) -> String {
-        match request {
-            Request::Turn(turn) => {
-                self.last_player_data = player_data.clone();
-                self.write("\r\n").await;
-                self.write_multiline(&format_prompt(player_id, request, player_data.as_ref())).await;
-
-                let mut parts = Vec::new();
-                for mon_req in &turn.active {
-                    let n = mon_req.moves.len().min(4);
-                    if n == 0 {
-                        self.write_ok("No moves available — passing automatically").await;
-                        parts.push(String::from("pass"));
-                        continue;
-                    }
-                    if mon_req.locked_into_move {
-                        self.write_ok("Locked into recharge — submitting automatically").await;
-                        parts.push(format_move_choice(0));
-                        continue;
-                    }
-
-                    let mut usable = [false; 4];
-                    for i in 0..n {
-                        usable[i] = !mon_req.moves[i].disabled && mon_req.moves[i].pp > 0;
-                    }
-                    let active_slot = Some(mon_req.team_position as usize);
-
-                    'move_input: loop {
-                        self.write_move_prompt(n).await;
-
-                        // Obtain an action: a button press wins immediately (long-press
-                        // detail handled internally), or a parsed USB line. Both then go
-                        // through the SAME shared validator, so the rules can't drift.
-                        let action: PlayerAction = match buttons.as_mut() {
-                            Some(btns) => match select(self.read_line(), btns.wait_action(player_id, n)).await {
-                                Either::First(line) => match self.parse_typed_turn(&line, player_id, n).await {
-                                    Some(a) => a,
-                                    None => continue 'move_input,
-                                },
-                                Either::Second(a) => {
-                                    self.partial.clear();
-                                    a
-                                }
-                            },
-                            None => {
-                                let line = self.read_line().await;
-                                match self.parse_typed_turn(&line, player_id, n).await {
-                                    Some(a) => a,
-                                    None => continue 'move_input,
-                                }
-                            }
-                        };
-
-                        if let PlayerAction::Switch(idx) = &action {
-                            if self.slot_fainted(*idx) {
-                                self.write_err("Rejected — That pokemon can no longer fight!").await;
-                                continue 'move_input;
-                            }
-                        }
-                        match turn_action_choice(&action, n, &usable, mon_req.trapped, active_slot) {
-                            Ok(choice) => {
-                                match &action {
-                                    PlayerAction::Move(s) => {
-                                        self.write_ok(&alloc::format!("Accepted — {} (slot {})", mon_req.moves[*s].name, s)).await;
-                                    }
-                                    PlayerAction::Switch(i) => {
-                                        self.write_ok(&alloc::format!("Switching in slot {}", i + 1)).await;
-                                    }
-                                }
-                                parts.push(choice);
-                                break 'move_input;
-                            }
-                            Err(reason) => {
-                                self.write_err(&alloc::format!("Rejected — {}", reject_reason(reason))).await;
-                                continue 'move_input;
-                            }
-                        }
-                    }
-                }
-                join_choice_parts(&parts)
-            }
-
-            Request::Switch(sw) => {
-                // Prefer the fresh player_data attached to this Switch request (it reflects
-                // the faint that triggered the switch, e.g. Goldeen at 0 HP).  Fall back to
-                // last_player_data only if the engine sent None.
-                if player_data.is_some() {
-                    self.last_player_data = player_data.clone();
-                }
-                self.write("\r\n").await;
-                self.write_multiline(&format_prompt(player_id, request, self.last_player_data.as_ref())).await;
-
-                let mut parts = Vec::new();
-                for (i, &fainted_slot) in sw.needs_switch.iter().enumerate() {
-                    self.writef(&alloc::format!(
-                        "Replacement {} of {} (for team slot {}):\r\n",
-                        i + 1, sw.needs_switch.len(), fainted_slot
-                    )).await;
-                    'switch_input: loop {
-                        self.write("Send in party slot [1-6]: ").await;
-
-                        let team_idx = match buttons.as_mut() {
-                            Some(btns) => {
-                                match select(self.read_line(), btns.wait_switch(player_id)).await {
-                                    Either::First(line) => {
-                                        match self.parse_typed_switch(&line, player_id).await {
-                                            Some(idx) => idx,
-                                            None => continue 'switch_input,
-                                        }
-                                    }
-                                    Either::Second(idx) => {
-                                        self.partial.clear();
-                                        idx
-                                    }
-                                }
-                            }
-                            None => {
-                                let line = self.read_line().await;
-                                match self.parse_typed_switch(&line, player_id).await {
-                                    Some(idx) => idx,
-                                    None => continue 'switch_input,
-                                }
-                            }
-                        };
-
-                        // Both button and typed selections go through the same
-                        // aliveness check before the engine sees them.
-                        let is_active = self.last_player_data.as_ref()
-                            .and_then(|pd| pd.mons.get(team_idx))
-                            .is_some_and(|m| m.active);
-                        if self.slot_fainted(team_idx) || is_active {
-                            if is_active {
-                                self.write_err("Rejected — that Pokémon is already in battle").await;
-                            } else {
-                                self.write_err("Rejected — That pokemon can no longer fight!").await;
-                            }
-                            // Flash the invalid-selection screen for button players.
-                            #[cfg(feature = "oled")]
-                            {
-                                let player = player_id_to_num(player_id);
-                                oled_send(OledCmd::ShowInvalidSelection { player });
-                                embassy_time::Timer::after_millis(600).await;
-                                oled_send(OledCmd::ShowSwitchScreen { player });
-                            }
-                            continue 'switch_input;
-                        }
-
-                        self.write_ok(&alloc::format!("Accepted — switching in slot {}", team_idx + 1)).await;
-                        parts.push(format_switch_choice(team_idx));
-                        break 'switch_input;
-                    }
-                }
-                join_choice_parts(&parts)
-            }
-
-            Request::TeamPreview(_) => {
-                self.write_dbg("Team preview — using random order").await;
-                String::from("random")
-            }
-            Request::LearnMove(_) => {
-                self.write_dbg("Learn move — passing").await;
-                String::from("pass")
             }
         }
     }
@@ -721,10 +366,6 @@ impl<'d> UsbBattleInput<'d> {
         }
     }
 
-    async fn write_move_prompt(&mut self, n: usize) {
-        self.writef(&alloc::format!("Move [1-{}]: ", n)).await;
-    }
-
     /// Print the device command list (`:help` / `:h` / `?`).
     async fn write_help(&mut self) {
         self.writeln("[help] Device commands").await;
@@ -736,7 +377,8 @@ impl<'d> UsbBattleInput<'d> {
         for l in META_HELP {
             self.writeln(&alloc::format!("    {}", l)).await;
         }
-        self.writeln("  In battle: answer the prompt with a move number, or 'switch N'.").await;
+        self.writeln("  In battle: 'p1 2' / 'p2 s3' (bare '2' / 's3' when only one player is choosing);").await;
+        self.writeln("  typing for a committed player unreadies them.").await;
     }
 
     /// Dump one OLED framebuffer as ASCII art (half-block chars) over USB.
@@ -817,53 +459,6 @@ impl<'d> UsbBattleInput<'d> {
         cmd
     }
 
-}
-
-/// Push a player's party snapshot to their OLED, so a long-press on a party
-/// button (`ShowPokemonStats`) has bench data to render. Mirrors what
-/// `ButtonSource::on_prompt` does on the button-only path.
-#[cfg(feature = "oled")]
-fn send_party_update(p: &ActivePrompt) {
-    if let Some(pd) = &p.player_data {
-        let player = player_id_to_num(p.player_id.as_str());
-        let slots = pd.mons.iter().map(party_slot_from_mon).collect();
-        oled_send(OledCmd::PartyUpdate { player, slots });
-    }
-}
-
-/// Human-readable reason for a rejected turn action (shown over USB).
-fn reject_reason(r: ActionReject) -> &'static str {
-    match r {
-        ActionReject::OutOfRange => "no such move",
-        ActionReject::Unusable => "move is disabled or out of PP",
-        ActionReject::Trapped => "Pokémon is trapped, cannot switch",
-        ActionReject::AlreadyActive => "that Pokémon is already in battle",
-    }
-}
-
-/// True when a request needs more than one replacement (e.g. multi-faint). The
-/// parallel collector handles a single switch per player, so these fall back to
-/// the serial path.
-fn is_multi_switch(request: &Request) -> bool {
-    matches!(request, Request::Switch(sw) if sw.needs_switch.len() > 1)
-}
-
-/// Strip an optional "p1 "/"p2 " prefix from a typed line. Bare lines pass
-/// through (unambiguous while a single player is prompted); a prefix naming
-/// the other player is an error.
-fn strip_player_prefix<'a>(line: &'a str, player_id: &str) -> Result<&'a str, &'static str> {
-    for pid in ["p1", "p2"] {
-        if let Some(rest) = line.strip_prefix(pid) {
-            if rest.starts_with(' ') {
-                return if pid == player_id {
-                    Ok(rest.trim())
-                } else {
-                    Err("that prefix names the other player")
-                };
-            }
-        }
-    }
-    Ok(line)
 }
 
 /// If `line` is an `:oled` dump command, return the player number to dump (1 or 2).
