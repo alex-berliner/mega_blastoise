@@ -217,15 +217,21 @@ pub const BOB_BASE_PERIOD_MS: u32 = 900;
 /// How often platforms should call [`OledController::tick_bob`].
 pub const BOB_TICK_MS: u32 = 75;
 
-/// Bob period for a given Speed stat. Speed clamps to [0, 300] (real stats
-/// can reach ~1000 but scaling over that whole range would flatten it):
-/// Speed 0 → 4× the base period (slowest), Speed 300 → half the base (2×
-/// bob rate), linear in between.
+/// Bob period for a given Speed stat.
+///
+/// The bob RATE (hops/sec) interpolates linearly from 1/4× the base rate at
+/// `SPEED_LO` to 2× at `SPEED_HI` — linear in frequency, not period, so
+/// mid-speed mons look mid-tempo instead of every slow mon bunching at
+/// "barely moving". The clamp range matches real level-100 Gen 1 speed
+/// stats (~100–320; boosted values can reach ~1000 but scaling across that
+/// would flatten the differences that matter).
 fn bob_period_ms(speed: u16) -> u32 {
-    let slowest = BOB_BASE_PERIOD_MS * 4;
-    let fastest = BOB_BASE_PERIOD_MS / 2;
-    let s = speed.min(300) as u32;
-    slowest - (slowest - fastest) * s / 300
+    const SPEED_LO: u32 = 100;
+    const SPEED_HI: u32 = 300;
+    // Rate multiplier in permille: 250 (1/4×) … 2000 (2×).
+    let s = (speed as u32).clamp(SPEED_LO, SPEED_HI);
+    let rate_pm = 250 + (2000 - 250) * (s - SPEED_LO) / (SPEED_HI - SPEED_LO);
+    BOB_BASE_PERIOD_MS * 1000 / rate_pm
 }
 
 pub enum Screen<'a> {
