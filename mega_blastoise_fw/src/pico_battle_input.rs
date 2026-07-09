@@ -353,7 +353,8 @@ impl TwoTurnProgress {
     }
 
     /// Commit an externally validated choice (e.g. a typed USB line) for
-    /// player `i`. Shows their "waiting… / tap to unready" screen.
+    /// player `i`. Shows their "waiting… / tap to unready" screen. Replacing
+    /// an already-committed choice restarts the grace window.
     pub fn set_choice(&mut self, i: usize, players: &[PlayerTurn; 2], choice: String) {
         #[cfg(feature = "oled")]
         oled_send(OledCmd::ShowWaiting { player: players[i].player_num });
@@ -361,6 +362,12 @@ impl TwoTurnProgress {
         let _ = players;
         self.out[i] = choice;
         self.st[i] = TwoState::Done;
+        self.grace_start = None;
+    }
+
+    /// Player `i`'s choice was forced (locked move / no moves) — not retypable.
+    pub fn is_auto(&self, i: usize) -> bool {
+        self.auto[i]
     }
 
     pub fn into_choices(self) -> [String; 2] {
