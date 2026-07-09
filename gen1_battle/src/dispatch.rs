@@ -97,7 +97,7 @@ pub fn execute_move(
 
     {
         let s = &sides[attacker_side_idx];
-        log.push_board(format!("move|mon:{},{},0|name:{}", s.active().name, s.player_id, mv.id));
+        log.push_board(format!("move|mon:{},{},0|name:{}", s.active().name, s.player_id, mv.name));
     }
 
     // Accuracy check (status moves still respect accuracy).
@@ -133,7 +133,7 @@ fn execute_move_no_pp(
         matches!(mv.move_type, crate::types::Type::Normal | crate::types::Type::Fighting);
     {
         let s = &sides[attacker_side_idx];
-        log.push_board(format!("move|mon:{},{},0|name:{}", s.active().name, s.player_id, mv.id));
+        log.push_board(format!("move|mon:{},{},0|name:{}", s.active().name, s.player_id, mv.name));
     }
 
     let hit = {
