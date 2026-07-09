@@ -79,19 +79,27 @@ mod tests {
         println!("{}", "-".repeat(30));
 
         while !battle.ended() {
-            let next = battle.active_requests().next().map(|(pid, req)| (pid.to_string(), req.clone()));
-            let Some((player_id, request)) = next else {
+            // The turn only advances once every active player has submitted a
+            // choice, so answer all requests each round like battle_runner does.
+            let requests: Vec<(String, Request)> = battle
+                .active_requests()
+                .map(|(pid, req)| (pid.to_string(), req.clone()))
+                .collect();
+            if requests.is_empty() {
                 break;
-            };
+            }
 
-            n += 1;
-            let choice = auto_choice(&player_id, &request, &mut battle);
-            let t0 = Instant::now();
-            battle.set_player_choice(&player_id, &choice).expect("set_player_choice");
-            let elapsed = t0.elapsed();
+            for (player_id, request) in requests {
+                n += 1;
+                assert!(n < 10_000, "battle failed to make progress after {n} choices");
+                let choice = auto_choice(&player_id, &request, &mut battle);
+                let t0 = Instant::now();
+                battle.set_player_choice(&player_id, &choice).expect("set_player_choice");
+                let elapsed = t0.elapsed();
 
-            println!("{:<6} {:<8} {:>12.3?}", n, player_id, elapsed);
-            rows.push((player_id, elapsed));
+                println!("{:<6} {:<8} {:>12.3?}", n, player_id, elapsed);
+                rows.push((player_id, elapsed));
+            }
         }
 
         // ── Summary ────────────────────────────────────────────────────────────
