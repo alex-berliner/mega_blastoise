@@ -530,11 +530,25 @@ impl<'d> UsbBattleInput<'d> {
     }
 
     async fn writef(&mut self, s: &str) {
+        // No host terminal attached (DTR low) → drop the output. An undrained
+        // CDC IN endpoint pends write_packet forever, which would wedge the
+        // battle loop when the console disconnects mid-battle.
+        if !self.sender.dtr() {
+            return;
+        }
         let bytes = s.as_bytes();
         let mut start = 0;
         while start < bytes.len() {
             let end = (start + 63).min(bytes.len());
-            let _ = self.sender.write_packet(&bytes[start..end]).await;
+            let write = self.sender.write_packet(&bytes[start..end]);
+            // Timeout guards the DTR-high-but-not-reading case (frozen host
+            // process): drop the rest of the line rather than stall the game.
+            if embassy_time::with_timeout(embassy_time::Duration::from_millis(500), write)
+                .await
+                .is_err()
+            {
+                return;
+            }
             start = end;
         }
     }
