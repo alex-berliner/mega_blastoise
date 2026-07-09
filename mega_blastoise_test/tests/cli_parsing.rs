@@ -127,9 +127,13 @@ fn lobby_ready_p1_ai() {
 }
 
 #[test]
+fn lobby_ready_p2_ai() {
+    assert_eq!(parse_lobby_cmd(":ready p2 ai"), LobbyCmd::P2Ai);
+}
+
+#[test]
 fn lobby_vs_ai_all_aliases() {
     assert_eq!(parse_lobby_cmd(":ready ai"),      LobbyCmd::VsAi);
-    assert_eq!(parse_lobby_cmd(":ready p2 ai"),   LobbyCmd::VsAi);
     assert_eq!(parse_lobby_cmd(":ready both ai"), LobbyCmd::VsAi);
 }
 

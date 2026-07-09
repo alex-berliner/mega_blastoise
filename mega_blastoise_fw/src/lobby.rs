@@ -37,7 +37,7 @@ pub enum LobbyEvent {
     P1, P2,
     BothReady,
     UnreadyP1, UnreadyP2, UnreadyBoth,
-    P1Ai, VsAi,
+    P1Ai, P2Ai, VsAi,
     Demo, Stop,
     /// A `:team pN …` upload. Stored and used for the next real battle in
     /// place of a random team. Does not affect ready state.
@@ -85,7 +85,8 @@ impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
             return match select(self.buttons.wait_lobby_press(), self.usb.read_lobby_cmd()).await {
                 Either::First(LobbyPress::P1)    => LobbyEvent::P1,
                 Either::First(LobbyPress::P2)    => LobbyEvent::P2,
-                Either::First(LobbyPress::P1Long) => LobbyEvent::VsAi,
+                // Long-press = "give me an AI opponent": the presser stays human.
+                Either::First(LobbyPress::P1Long) => LobbyEvent::P2Ai,
                 Either::First(LobbyPress::P2Long) => LobbyEvent::P1Ai,
                 Either::Second(cmd) => match cmd {
                     LobbyUsbCmd::ReadyP1    => LobbyEvent::P1,
@@ -95,6 +96,7 @@ impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
                     LobbyUsbCmd::UnreadyP2  => LobbyEvent::UnreadyP2,
                     LobbyUsbCmd::UnreadyBoth => LobbyEvent::UnreadyBoth,
                     LobbyUsbCmd::P1Ai       => LobbyEvent::P1Ai,
+                    LobbyUsbCmd::P2Ai       => LobbyEvent::P2Ai,
                     LobbyUsbCmd::VsAi       => LobbyEvent::VsAi,
                     LobbyUsbCmd::Demo       => LobbyEvent::Demo,
                     LobbyUsbCmd::UploadTeam => match self.usb.take_pending_team() {
@@ -137,7 +139,7 @@ impl LobbyInput for ButtonOnlyLobbyInput<'_, '_> {
         match self.buttons.wait_lobby_press().await {
             LobbyPress::P1     => LobbyEvent::P1,
             LobbyPress::P2     => LobbyEvent::P2,
-            LobbyPress::P1Long => LobbyEvent::VsAi,
+            LobbyPress::P1Long => LobbyEvent::P2Ai,
             LobbyPress::P2Long => LobbyEvent::P1Ai,
         }
     }
@@ -369,8 +371,9 @@ async fn run_lobby_inner(
             LobbyEvent::P1          => { ready.p1 = true; }
             LobbyEvent::P2          => { ready.p2 = true; }
             LobbyEvent::BothReady   => { ready.p1 = true; ready.p2 = true; }
-            LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; }
-            LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p2_ai = true; }
+            LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = false; }
+            LobbyEvent::P2Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = false; p2_ai = true; }
+            LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = true; }
             LobbyEvent::Demo        => { continue 'demo; }
             LobbyEvent::TeamUpload { player, team } => {
                 if player == 0 { uploaded_p1 = Some(team); }
@@ -412,7 +415,8 @@ async fn run_lobby_inner(
                 LobbyEvent::UnreadyP2   => { ready.p2 = false; p1_ai = false; p2_ai = false; }
                 LobbyEvent::UnreadyBoth => { ready.p1 = false; ready.p2 = false; p1_ai = false; p2_ai = false; }
                 LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = false; }
-                LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p1_ai = false; p2_ai = true; }
+                LobbyEvent::P2Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = false; p2_ai = true; }
+                LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = true; }
                 LobbyEvent::Demo        => { continue 'demo; }
                 LobbyEvent::TeamUpload { player, team } => {
                     if player == 0 { uploaded_p1 = Some(team); }
