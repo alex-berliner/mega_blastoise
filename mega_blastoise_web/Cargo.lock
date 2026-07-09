@@ -690,6 +690,7 @@ dependencies = [
  "battler",
  "battler-data",
  "console_error_panic_hook",
+ "embassy-futures",
  "embedded-graphics",
  "gen1_battle",
  "getrandom 0.4.2",

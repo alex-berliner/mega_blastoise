@@ -55,9 +55,6 @@ function applyFlash(flashState) {
 // ── RAF render loop ───────────────────────────────────────────────────────────
 
 function frame() {
-    const transitions = wasm.consume_battle_transitions();
-    if (transitions & 1) stopPlayerCycle(1);
-    if (transitions & 2) stopPlayerCycle(2);
     renderOled(ctx1, wasm.get_p1_pixels());
     renderOled(ctx2, wasm.get_p2_pixels());
     renderLeds(wasm.get_led_state());
@@ -67,112 +64,56 @@ function frame() {
 
 // ── Button handlers ────────────────────────────────────────────────────────────
 
-// Per-player shared long-press cycle state: only one button's cycle runs at a time.
-// When a new button starts cycling, it cancels any existing cycle for that player.
-const playerCycleState = {
-    1: { timer: null, activeIdx: null },
-    2: { timer: null, activeIdx: null },
-};
-
-function startPlayerCycle(player, idx) {
-    const state = playerCycleState[player];
-    clearInterval(state.timer);
-    state.activeIdx = idx;
-    let page = 0;
-    wasm.wasm_show_pokemon_stats_page(player, idx, page);
-    state.timer = setInterval(() => {
-        page = page === 0 ? 1 : 0;
-        wasm.wasm_show_pokemon_stats_page(player, idx, page);
-    }, 2000);
-}
-
-function stopPlayerCycle(player) {
-    const state = playerCycleState[player];
-    clearInterval(state.timer);
-    state.timer = null;
-    state.activeIdx = null;
-}
-
-// Switch buttons: long press shows party stats cycling between page 0 and 1; short press selects.
-// During lobby, long press selects AI opponent instead.
-function setupSwitchLongPress(el, player, idx) {
-    let holdTimer = null;
-    let fired = false;
-
-    el.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        clearTimeout(holdTimer);
-        fired = false;
-        holdTimer = setTimeout(() => {
-            fired = true;
-            if (wasm.is_lobby_mode()) {
-                wasm.wasm_lobby_long_press(player);
-            } else {
-                startPlayerCycle(player, idx);
-            }
-        }, 500);
-    });
-
-    el.addEventListener('pointerup', () => {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-        if (fired) {
-            // Only stop/restore if this button is still the active one for this player.
-            if (!wasm.is_lobby_mode() && playerCycleState[player].activeIdx === idx) {
-                stopPlayerCycle(player);
-                wasm.wasm_restore_screen(player);
-            }
-        } else {
-            wasm.press_switch(player, idx);
-        }
-        fired = false;
-    });
-
-    el.addEventListener('pointercancel', () => {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-        if (fired && !wasm.is_lobby_mode() && playerCycleState[player].activeIdx === idx) {
-            stopPlayerCycle(player);
-            wasm.wasm_restore_screen(player);
-        }
-        fired = false;
-    });
-}
-
-// Long-press detection for move buttons (500 ms threshold).
-// Short tap → press_move; hold → show move detail view (battle) or select AI opponent (lobby).
-function setupMoveLongPress(el, player, slot) {
+// Press classification only (tap vs 500 ms hold) — mirrors the firmware's
+// matrix scan layer. What a tap or hold DOES is decided by the shared
+// collector inside the wasm; this file must never call screen functions.
+function setupButton(el, player, tap, holdStart) {
     let timer = null;
     let fired = false;
 
     el.addEventListener('pointerdown', e => {
         e.preventDefault();
+        clearTimeout(timer);
         fired = false;
         timer = setTimeout(() => {
             fired = true;
             if (wasm.is_lobby_mode()) {
                 wasm.wasm_lobby_long_press(player);
             } else {
-                wasm.wasm_show_move_detail(player, slot);
+                holdStart();
             }
         }, 500);
     });
 
-    el.addEventListener('pointerup', () => {
+    const finish = () => {
         clearTimeout(timer);
+        timer = null;
         if (fired) {
-            if (!wasm.is_lobby_mode()) wasm.wasm_restore_screen(player);
+            if (!wasm.is_lobby_mode()) wasm.hold_end(player);
         } else {
-            wasm.press_move(player, slot);
+            tap();
         }
         fired = false;
-    });
-
+    };
+    el.addEventListener('pointerup', finish);
     el.addEventListener('pointercancel', () => {
         clearTimeout(timer);
-        if (fired && !wasm.is_lobby_mode()) wasm.wasm_restore_screen(player);
+        timer = null;
+        if (fired && !wasm.is_lobby_mode()) wasm.hold_end(player);
         fired = false;
     });
+}
+
+function setupSwitchLongPress(el, player, idx) {
+    setupButton(el, player,
+        () => wasm.press_switch(player, idx),
+        () => wasm.hold_switch(player, idx));
+}
+
+function setupMoveLongPress(el, player, slot) {
+    setupButton(el, player,
+        () => wasm.press_move(player, slot),
+        () => wasm.hold_move(player, slot));
 }
 
 // ── Text input ────────────────────────────────────────────────────────────────

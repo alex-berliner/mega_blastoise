@@ -17,6 +17,7 @@ js-sys = "0.3"
 web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Location"] }
 console_error_panic_hook = "0.1"
 embedded-graphics = { version = "0.8", default-features = false }
+embassy-futures = "0.1"
 
 mega-blastoise-core = { path = "../mega_blastoise_core" }
 gen1_battle = { path = "../gen1_battle" }

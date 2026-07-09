@@ -1,4 +1,3 @@
-mod web_controller;
 mod web_display;
 mod web_effects;
 
@@ -13,14 +12,13 @@ use js_sys::Date;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 
+use embassy_futures::select::{select, select3, Either, Either3};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
-    parse_web_game_cmd, render_screen, run_battle, BoardEventQueue, ButtonController,
-    FlashDataStore, InputBus, OledCmd, OledController, PartySlotData, WebGameInput,
-    LOBBY_DEMO_DELAY_MS,
+    party_slot_from_mon, render_screen, run_battle, ActivePrompt, BoardEventQueue,
+    ChoiceCollector, CollectEffect, FlashDataStore, InputBus, OledCmd, OledController, PadEvent,
+    PartySlotData, PlayerChoice, RandomAi, SlotOptions, COLLECT_TICK_MS, LOBBY_DEMO_DELAY_MS,
 };
-
-use web_controller::WebButtonSource;
 use web_effects::WebBattleEffects;
 use web_display::WasmDisplay;
 
@@ -36,6 +34,11 @@ thread_local! {
     static P1_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
     static P2_QUEUE: RefCell<VecDeque<ButtonEvent>> = RefCell::new(VecDeque::new());
     static P2_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
+
+    // Battle-input queue: classified pad events and typed lines, consumed by
+    // the shared ChoiceCollector loop (mirrors the firmware's USB+matrix IO).
+    static BATTLE_INPUT: RefCell<VecDeque<BattleInput>> = RefCell::new(VecDeque::new());
+    static BATTLE_INPUT_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
 
     // Lobby LED animation mode
     static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
@@ -72,10 +75,6 @@ thread_local! {
     // When false, all animation sleeps are skipped (useful for CLI testing).
     static ANIM_ENABLED: RefCell<bool> = RefCell::new(true);
 
-    // Set whenever update_pixels() writes new battle content (not overlays).
-    // Consumed by consume_battle_transitions() so JS can cancel held long-press cycles.
-    static BATTLE_DIRTY: RefCell<[bool; 2]> = RefCell::new([false, false]);
-
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -84,27 +83,12 @@ thread_local! {
 /// canvases it changed. The ONLY write path to the OLED canvases — mirrors
 /// the firmware's OLED task loop (apply → render `ctl.screen(p)` → flush).
 pub(crate) fn oled_apply(cmd: OledCmd) {
-    // Battle-state screens (not transient overlays) mark BATTLE_DIRTY so JS
-    // can cancel a held long-press cycle when the screen transitions away.
-    let dirty = matches!(
-        cmd,
-        OledCmd::HpUpdate { .. }
-            | OledCmd::ActiveMon { .. }
-            | OledCmd::MovesUpdate { .. }
-            | OledCmd::Faint { .. }
-            | OledCmd::Win { .. }
-            | OledCmd::LobbyState { .. }
-            | OledCmd::ShowSwitchScreen { .. }
-    );
     let redraw = OLED_CTL.with(|c| c.borrow_mut().apply(cmd));
     for player in [1u8, 2] {
         if redraw.includes(player) {
             let mut disp = WasmDisplay::new();
             OLED_CTL.with(|c| render_screen(&mut disp, &c.borrow().screen(player)));
             let pixels = disp.to_rgba();
-            if dirty {
-                BATTLE_DIRTY.with(|d| d.borrow_mut()[(player - 1) as usize] = true);
-            }
             if player == 1 { P1_PIXELS.with(|p| *p.borrow_mut() = pixels); }
             else           { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
         }
@@ -126,12 +110,6 @@ pub fn wasm_tick_bob() {
             else           { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
         }
     }
-}
-
-pub(crate) fn update_party(player: u8, slots: Vec<PartySlotData>) {
-    if player == 1 { P1_PARTY.with(|p| *p.borrow_mut() = slots.clone()); }
-    else           { P2_PARTY.with(|p| *p.borrow_mut() = slots.clone()); }
-    oled_apply(OledCmd::PartyUpdate { player, slots });
 }
 
 pub(crate) fn is_ai_paused() -> bool {
@@ -158,18 +136,6 @@ pub(crate) fn ai_pick_switch(player: u8) -> usize {
     0
 }
 
-pub(crate) fn show_pokemon_stats(player: u8, team_idx: usize, page: u8) {
-    oled_apply(OledCmd::ShowPokemonStats { player, team_idx: team_idx as u8, page });
-}
-
-pub(crate) fn show_move_detail(player: u8, slot: usize) {
-    oled_apply(OledCmd::ShowMoveDetail { player, slot: slot as u8 });
-}
-
-pub(crate) fn show_switch_screen(player: u8) {
-    oled_apply(OledCmd::ShowSwitchScreen { player });
-}
-
 pub(crate) fn clear_input_queues() {
     P1_QUEUE.with(|q| q.borrow_mut().clear());
     P2_QUEUE.with(|q| q.borrow_mut().clear());
@@ -182,30 +148,6 @@ pub(crate) fn party_slot_alive(player: u8, idx: usize) -> bool {
     party.get(idx).map(|s| s.hp > 0).unwrap_or(true)
 }
 
-pub(crate) fn show_invalid_selection(player: u8) {
-    oled_apply(OledCmd::ShowInvalidSelection { player });
-}
-
-/// Pop one button event from the player's queue without blocking.
-pub(crate) fn pop_player_button(player: u8) -> Option<ButtonEvent> {
-    if player == 1 {
-        P1_QUEUE.with(|q| q.borrow_mut().pop_front())
-    } else {
-        P2_QUEUE.with(|q| q.borrow_mut().pop_front())
-    }
-}
-
-pub(crate) fn show_waiting_screen(player: u8) {
-    oled_apply(OledCmd::ShowWaiting { player });
-}
-
-pub(crate) fn show_waiting_for_opponent_screen(player: u8) {
-    oled_apply(OledCmd::ShowWaitingForOpponent { player });
-}
-
-pub(crate) fn restore_screen(player: u8) {
-    oled_apply(OledCmd::RestoreScreen { player });
-}
 
 pub(crate) fn update_leds(leds: [u32; 24]) {
     LED_STATE.with(|l| *l.borrow_mut() = leds);
@@ -304,6 +246,18 @@ pub(crate) fn pack_rgb(r: u8, g: u8, b: u8) -> u32 {
     ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
 }
 
+/// Sleep unconditionally — the collector tick and countdown clocks must run
+/// even with `:anim off` (sleep_ms below is animation-gated).
+pub(crate) async fn sleep_ms_raw(ms: u32) {
+    let promise = js_sys::Promise::new(&mut |resolve: js_sys::Function, _| {
+        web_sys::window()
+            .unwrap()
+            .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms as i32)
+            .unwrap();
+    });
+    wasm_bindgen_futures::JsFuture::from(promise).await.ok();
+}
+
 pub(crate) async fn sleep_ms(ms: u32) {
     if !ANIM_ENABLED.with(|a| *a.borrow()) { return; }
     let promise = js_sys::Promise::new(&mut |resolve: js_sys::Function, _| {
@@ -396,6 +350,38 @@ impl Future for PlayerButtonFuture {
     }
 }
 
+/// One unit of battle input from the page: a classified pad event or a line
+/// typed into the terminal.
+enum BattleInput {
+    Pad(PadEvent),
+    Line(String),
+}
+
+fn push_battle_input(inp: BattleInput) {
+    BATTLE_INPUT.with(|q| q.borrow_mut().push_back(inp));
+    BATTLE_INPUT_WAKER.with(|w| {
+        if let Some(waker) = w.borrow_mut().take() {
+            waker.wake();
+        }
+    });
+}
+
+/// Resolves with the next battle input (pad event or typed line).
+struct BattleInputFuture;
+
+impl Future for BattleInputFuture {
+    type Output = BattleInput;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<BattleInput> {
+        if let Some(inp) = BATTLE_INPUT.with(|q| q.borrow_mut().pop_front()) {
+            Poll::Ready(inp)
+        } else {
+            BATTLE_INPUT_WAKER.with(|w| *w.borrow_mut() = Some(cx.waker().clone()));
+            Poll::Pending
+        }
+    }
+}
+
 fn push_button(ev: ButtonEvent) {
     let player = match &ev {
         ButtonEvent::Move   { player, .. }
@@ -413,27 +399,35 @@ fn push_button(ev: ButtonEvent) {
 // ── WASM exports ──────────────────────────────────────────────────────────────
 
 #[wasm_bindgen] pub fn press_move(player: u8, slot: u8) {
-    push_button(ButtonEvent::Move { player, slot });
+    if LOBBY_MODE.with(|m| *m.borrow()) {
+        push_button(ButtonEvent::Move { player, slot });
+    } else {
+        push_battle_input(BattleInput::Pad(PadEvent::TapMove { player, slot }));
+    }
 }
 
 #[wasm_bindgen] pub fn press_switch(player: u8, idx: u8) {
-    push_button(ButtonEvent::Switch { player, idx });
+    if LOBBY_MODE.with(|m| *m.borrow()) {
+        push_button(ButtonEvent::Switch { player, idx });
+    } else {
+        push_battle_input(BattleInput::Pad(PadEvent::TapSwitch { player, idx }));
+    }
 }
 
-#[wasm_bindgen] pub fn wasm_show_move_detail(player: u8, slot: u8) {
-    show_move_detail(player, slot as usize);
+/// A move button crossed the 500 ms hold threshold (battle only — the lobby
+/// long-press goes through wasm_lobby_long_press).
+#[wasm_bindgen] pub fn hold_move(player: u8, slot: u8) {
+    push_battle_input(BattleInput::Pad(PadEvent::HoldMove { player, slot }));
 }
 
-#[wasm_bindgen] pub fn wasm_show_pokemon_stats(player: u8, team_idx: u8) {
-    show_pokemon_stats(player, team_idx as usize, 0);
+/// A party button crossed the 500 ms hold threshold.
+#[wasm_bindgen] pub fn hold_switch(player: u8, idx: u8) {
+    push_battle_input(BattleInput::Pad(PadEvent::HoldSwitch { player, idx }));
 }
 
-#[wasm_bindgen] pub fn wasm_show_pokemon_stats_page(player: u8, team_idx: u8, page: u8) {
-    show_pokemon_stats(player, team_idx as usize, page);
-}
-
-#[wasm_bindgen] pub fn wasm_restore_screen(player: u8) {
-    restore_screen(player);
+/// The held button was released.
+#[wasm_bindgen] pub fn hold_end(player: u8) {
+    push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
 }
 
 fn enter_demo_mode() {
@@ -521,12 +515,10 @@ fn enter_demo_mode() {
         return;
     }
 
-    // In-game: parse move/switch commands.
-    match parse_web_game_cmd(cmd) {
-        WebGameInput::Move { player, slot } => push_button(ButtonEvent::Move { player, slot }),
-        WebGameInput::Switch { player, idx }  => push_button(ButtonEvent::Switch { player, idx }),
-        WebGameInput::Unknown => print_log("  in-game: 1-4 (move) | s1-s3 (switch) | p1:1 (send to Red)"),
-    }
+    // In-game: the line goes to the shared collector — identical grammar and
+    // feedback to the firmware's USB CLI ("p1 2", "p2 s3", bare when only one
+    // player is choosing; typing for a committed player unreadies them).
+    push_battle_input(BattleInput::Line(String::from(cmd)));
 }
 
 #[wasm_bindgen] pub fn get_p1_pixels() -> Vec<u8> {
@@ -552,18 +544,6 @@ fn enter_demo_mode() {
     })
 }
 
-/// Returns a bitmask of players whose battle OLED content changed this frame:
-/// bit 0 = P1, bit 1 = P2. Clears the flags on read. JS uses this to cancel
-/// any active long-press cycle when the screen transitions away.
-#[wasm_bindgen] pub fn consume_battle_transitions() -> u8 {
-    BATTLE_DIRTY.with(|d| {
-        let mut flags = d.borrow_mut();
-        let bits = (flags[0] as u8) | ((flags[1] as u8) << 1);
-        *flags = [false, false];
-        bits
-    })
-}
-
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 #[wasm_bindgen(start)]
@@ -582,10 +562,6 @@ fn set_lobby_displays() {
     draw_lobby_screen(1, false, false);
     draw_lobby_screen(2, false, false);
     // LEDs driven by lobby_led_frame() while LOBBY_MODE is active
-}
-
-fn print_line(line: &str) {
-    print_log(line);
 }
 
 // ── Game loop ─────────────────────────────────────────────────────────────────
@@ -666,14 +642,18 @@ async fn run_game_loop() {
         // (No detail-overlay reset needed: the shared controller redraws over
         // any leftover overlay on the first battle state command.)
 
-        // Countdown fanfare: 3 gold flashes
+        // Countdown — same text and 500 ms cadence as the firmware lobby,
+        // with a gold LED flash per tick as the web's buzzer stand-in.
+        print_log("Both ready!");
         let gold = pack_rgb(200, 150, 0);
-        for _ in 0..3u8 {
+        for i in (1u8..=3).rev() {
+            print_log(&format!("{}...", i));
             update_leds([gold; 24]);
-            sleep_ms(200).await;
+            sleep_ms_raw(250).await;
             update_leds([0u32; 24]);
-            sleep_ms(100).await;
+            sleep_ms_raw(250).await;
         }
+        print_log("GO!");
 
         let seed = (Date::now() as u64) ^ 0xdead_beef_cafe_babe;
 
@@ -699,13 +679,12 @@ async fn run_game_loop() {
         let bus = InputBus::new();
         let mut queue = BoardEventQueue::new();
         let mut effects = WebBattleEffects::new(&bus);
-        let mut controller = ButtonController::with_log_sink(WebButtonSource, print_line);
 
         run_battle(
             &mut battle,
             &data,
             &bus,
-            controller.run_parallel(&bus),
+            collect_battle_input(&bus, seed),
             &mut queue,
             &mut effects,
             |b| {
@@ -718,5 +697,128 @@ async fn run_game_loop() {
         print_log("");
         print_log("── Battle over — press any button for a new game ───");
         print_log("");
+    }
+}
+
+// ── Battle input collection ───────────────────────────────────────────────────
+//
+// The exact mirror of the firmware's USB battle loop: gather the prompt
+// batch, hand everything to core's ChoiceCollector (where ALL semantics
+// live), and shuttle raw IO — pad events, typed lines, the tick clock, and
+// the collector's effects.
+
+fn now_ms() -> u64 {
+    Date::now() as u64
+}
+
+fn apply_effects(fx: &mut Vec<CollectEffect>) {
+    for e in fx.drain(..) {
+        match e {
+            CollectEffect::Oled(cmd) => oled_apply(cmd),
+            CollectEffect::Ok(m) => print_log(&format!("[OK]  {m}")),
+            CollectEffect::Err(m) => print_log(&format!("[!!]  {m}")),
+            CollectEffect::Dbg(m) => print_log(&format!("[>>]  {m}")),
+            CollectEffect::Text(t) => {
+                print_log("");
+                for line in t.lines() {
+                    if !line.is_empty() {
+                        print_log(line);
+                    }
+                }
+            }
+        }
+    }
+}
+
+async fn collect_battle_input(bus: &InputBus, seed: u64) {
+    let mut ai = RandomAi::new(seed ^ 0xbad_c0ffee_dead);
+    // Nothing from a previous battle is input for this one.
+    BATTLE_INPUT.with(|q| q.borrow_mut().clear());
+
+    loop {
+        // ── Gather the whole prompt batch, narrating engine events while
+        //    we wait (same "[EVT] " framing as the firmware CLI). ──────────
+        let first = loop {
+            match select(bus.prompt.receive(), bus.log.receive()).await {
+                Either::First(p) => {
+                    while let Ok(line) = bus.log.try_receive() {
+                        print_log(&format!("[EVT] {line}"));
+                    }
+                    break p;
+                }
+                Either::Second(line) => print_log(&format!("[EVT] {line}")),
+            }
+        };
+        let batch_total = first.batch_total.max(1);
+        let mut prompts: Vec<ActivePrompt> = Vec::with_capacity(batch_total);
+        prompts.push(first);
+        while prompts.len() < batch_total {
+            match select(bus.prompt.receive(), bus.log.receive()).await {
+                Either::First(p) => prompts.push(p),
+                Either::Second(line) => print_log(&format!("[EVT] {line}")),
+            }
+        }
+
+        // Web-only side state: party snapshots for the LED strip.
+        for p in &prompts {
+            if let Some(pd) = &p.player_data {
+                let player = mega_blastoise_core::player_id_to_num(p.player_id.as_str());
+                let slots: Vec<PartySlotData> = pd.mons.iter().map(party_slot_from_mon).collect();
+                if player == 1 { P1_PARTY.with(|s| *s.borrow_mut() = slots.clone()); }
+                else           { P2_PARTY.with(|s| *s.borrow_mut() = slots.clone()); }
+                sync_party_leds(player);
+            }
+        }
+
+        // PAUSE gates AI turns (web-only debug affordance).
+        let any_ai = prompts.iter().any(|p| {
+            is_ai_player(mega_blastoise_core::player_id_to_num(p.player_id.as_str()))
+        });
+        while any_ai && is_ai_paused() {
+            sleep_ms_raw(100).await;
+        }
+
+        let mut batch: Vec<SlotOptions> = Vec::with_capacity(prompts.len());
+        for p in &prompts {
+            let mut slot = SlotOptions::from_prompt(p);
+            let player = mega_blastoise_core::player_id_to_num(p.player_id.as_str());
+            if is_ai_player(player) {
+                slot.set_ai_choice(ai.make_choice(&p.request, p.player_data.as_ref()));
+            }
+            batch.push(slot);
+        }
+        // Pad presses made between turns are dropped, exactly like the
+        // firmware (its matrix scan only listens while collecting); typed
+        // lines buffer across the gap on both platforms.
+        BATTLE_INPUT.with(|q| q.borrow_mut().retain(|i| matches!(i, BattleInput::Line(_))));
+
+        let mut fx: Vec<CollectEffect> = Vec::new();
+        let mut col = ChoiceCollector::new(batch, &mut fx);
+        apply_effects(&mut fx);
+
+        loop {
+            match select3(
+                BattleInputFuture,
+                bus.log.receive(),
+                sleep_ms_raw(COLLECT_TICK_MS as u32),
+            )
+            .await
+            {
+                Either3::First(BattleInput::Pad(ev)) => col.pad_event(ev, now_ms(), &mut fx),
+                Either3::First(BattleInput::Line(line)) => col.typed_line(line.trim(), &mut fx),
+                Either3::Second(line) => print_log(&format!("[EVT] {line}")),
+                Either3::Third(()) => {}
+            }
+            let done = col.tick(now_ms(), &mut fx);
+            apply_effects(&mut fx);
+            if done {
+                break;
+            }
+        }
+
+        for (player_id, choice) in col.take_choices() {
+            let choice = if choice.is_empty() { String::from("pass") } else { choice };
+            bus.choices.send(PlayerChoice { player_id, choice }).await;
+        }
     }
 }
