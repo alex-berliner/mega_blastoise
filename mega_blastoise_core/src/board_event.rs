@@ -151,6 +151,9 @@ pub enum BoardEvent {
     EffectStart { mon: String, what: String, detail: Option<String> },
     /// A volatile effect ended (`end|mon:...|what:<id>`).
     EffectEnd { mon: String, what: String },
+    /// The active mon's display identity changed in place (Transform):
+    /// `activemon|mon:...|name:<new>|speed:<spe>`. Display-only, not narrated.
+    ActiveMonUpdate { mon: String, name: String, speed: Option<u16> },
     Fail { mon: String },
     /// Active-mon moves refreshed — emitted after every move (PP change) and at switch-in.
     /// Internal signal; not narrated to USB/stdout.
@@ -331,6 +334,11 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             mon: p.get("mon").unwrap_or("?").into(),
             what: p.get("what").unwrap_or("?").into(),
         }),
+        "activemon" => Some(BoardEvent::ActiveMonUpdate {
+            mon: p.get("mon").unwrap_or("?").into(),
+            name: p.get("name").unwrap_or("?").into(),
+            speed: p.get("speed").and_then(|v| v.parse::<u16>().ok()),
+        }),
         // Pure engine bookkeeping — not gameplay events, not narrated.
         "residual" | "continue" | "info" | "side" | "player" | "teamsize" => None,
         _ => Some(BoardEvent::Raw(String::from(line))),
@@ -388,7 +396,13 @@ impl BoardEvent {
     /// `Split`, `Prompt`, and `MovesUpdate` are internal engine signals that
     /// all targets suppress.
     pub fn should_narrate(&self) -> bool {
-        !matches!(self, Self::Split { .. } | Self::Prompt { .. } | Self::MovesUpdate { .. })
+        !matches!(
+            self,
+            Self::Split { .. }
+                | Self::Prompt { .. }
+                | Self::MovesUpdate { .. }
+                | Self::ActiveMonUpdate { .. }
+        )
     }
 
     /// Human-readable battle narrative for display (USB, stdout). Hardware effects code should
@@ -505,7 +519,13 @@ impl BoardEvent {
                     "mist" => format!("{label} became shrouded in mist!"),
                     "focusenergy" => format!("{label} is getting pumped!"),
                     "conversion" => format!("{label} converted its type!"),
-                    "transform" => format!("{label} transformed!"),
+                    "transform" => {
+                        if detail.is_some() {
+                            format!("{label} transformed into {mv}!")
+                        } else {
+                            format!("{label} transformed!")
+                        }
+                    }
                     "mimic" => format!("{label} mimicked {mv}!"),
                     "charging" => format!("{label} is charging {mv}!"),
                     "bide" => format!("{label} is storing energy!"),
@@ -529,6 +549,7 @@ impl BoardEvent {
                     format!("But it failed for {}!", player_mon_label(mon))
                 }
             }
+            BoardEvent::ActiveMonUpdate { .. } => String::new(), // display-only
             BoardEvent::Raw(line) => format!("[event] {line}"),
             BoardEvent::Prompt { player_id, kind } => {
                 let label = player_display_name(player_id.as_str());

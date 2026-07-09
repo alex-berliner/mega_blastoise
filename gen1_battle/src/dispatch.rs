@@ -486,6 +486,18 @@ fn apply_effect(
         }
         Transform => {
             let target = sides[defender_side].active().clone();
+            // Snapshot the original once (re-transforming keeps the first
+            // backup) — restored on switch-out / faint.
+            if !sides[attacker_side].active().volatile.has(Volatile::TRANSFORMED) {
+                let a = sides[attacker_side].active();
+                sides[attacker_side].transform_backup = Some(crate::state::TransformBackup {
+                    species_id: a.species_id,
+                    primary_type: a.primary_type,
+                    secondary_type: a.secondary_type,
+                    stats: a.stats,
+                    moves: a.moves,
+                });
+            }
             let a = sides[attacker_side].active_mut();
             a.species_id = target.species_id;
             a.primary_type = target.primary_type;
@@ -510,7 +522,16 @@ fn apply_effect(
             }
             a.volatile.set(Volatile::TRANSFORMED);
             let s = &sides[attacker_side];
-            log.push_board(format!("start|mon:{},{},0|what:transform", s.active().name, s.player_id));
+            log.push_board(format!(
+                "start|mon:{},{},0|what:transform|move:{}",
+                s.active().name, s.player_id, target.name
+            ));
+            // Display refresh: the transformed mon shows the target's sprite,
+            // name, and (copied) speed.
+            log.push_board(format!(
+                "activemon|mon:{},{},0|name:{}|speed:{}",
+                s.active().name, s.player_id, target.name, s.active().stats[4]
+            ));
         }
         Substitute => {
             let max = sides[attacker_side].active().hp_max;
@@ -741,6 +762,31 @@ fn damage_step(
     outcome.crit = outcome.crit || crit;
     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
     outcome
+}
+
+/// Gen 1 switch-out semantics for the mon LEAVING the field: volatile state
+/// and stat stages reset, screens/mist/focus-energy end, Toxic downgrades to
+/// regular poison, and Transform reverts to the pre-transform snapshot.
+pub fn reset_on_switch_out(s: &mut Side) {
+    if s.active().volatile.has(Volatile::TRANSFORMED) {
+        if let Some(b) = s.transform_backup.take() {
+            let m = s.active_mut();
+            m.species_id = b.species_id;
+            m.primary_type = b.primary_type;
+            m.secondary_type = b.secondary_type;
+            m.stats = b.stats;
+            m.moves = b.moves;
+        }
+    }
+    s.transform_backup = None;
+    s.reflect_turns = 0;
+    s.light_screen_turns = 0;
+    let m = s.active_mut();
+    m.volatile = Volatile::default();
+    m.stages = [0; 6];
+    if matches!(m.status, Status::BadPoison(_)) {
+        m.status = Status::Poison;
+    }
 }
 
 fn deal_damage(sides: &mut [Side; 2], target_side: usize, dmg: u16, log: &mut Log) {

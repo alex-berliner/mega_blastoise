@@ -405,19 +405,21 @@ impl<'a> Battle<'a> {
                 if (slot as usize) < 6 && !self.sides[i].team[slot as usize].empty()
                     && !self.sides[i].team[slot as usize].fainted()
                 {
+                    crate::dispatch::reset_on_switch_out(&mut self.sides[i]);
                     self.sides[i].active_idx = slot;
                     let s = &self.sides[i];
                     self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
                 }
             } else {
                 // Auto-pick first alive.
-                for (j, m) in self.sides[i].team.iter().enumerate() {
-                    if !m.empty() && !m.fainted() && j as u8 != self.sides[i].active_idx {
-                        self.sides[i].active_idx = j as u8;
-                        let s = &self.sides[i];
-                        self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
-                        break;
-                    }
+                let pick = self.sides[i].team.iter().enumerate()
+                    .find(|(j, m)| !m.empty() && !m.fainted() && *j as u8 != self.sides[i].active_idx)
+                    .map(|(j, _)| j as u8);
+                if let Some(j) = pick {
+                    crate::dispatch::reset_on_switch_out(&mut self.sides[i]);
+                    self.sides[i].active_idx = j;
+                    let s = &self.sides[i];
+                    self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
                 }
             }
         }
@@ -453,6 +455,7 @@ impl<'a> Battle<'a> {
                 Some(Choice::Switch(slot)) => {
                     let s = (slot as usize).min(5);
                     if !self.sides[side].team[s].empty() && !self.sides[side].team[s].fainted() {
+                        crate::dispatch::reset_on_switch_out(&mut self.sides[side]);
                         self.sides[side].active_idx = slot;
                         let si = &self.sides[side];
                         self.log.push_board(format!("switch|player:{}|name:{}", si.player_id, si.active().name));

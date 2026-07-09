@@ -173,6 +173,18 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
             let player = player_id_to_num(player_id.as_str());
             cmds.push(OledCmd::MovesUpdate { player, moves: moves.clone() });
         }
+        BoardEvent::ActiveMonUpdate { mon, name, speed } => {
+            // Transform: same mon, new face — sprite/name/speed swap in place.
+            if let Some(player) = mon_player_num(mon) {
+                let (buf, len) = name_buf(name.as_str());
+                cmds.push(OledCmd::ActiveMon {
+                    player,
+                    name: buf,
+                    len,
+                    speed: speed.unwrap_or(150),
+                });
+            }
+        }
         BoardEvent::Prompt { player_id, .. } => {
             // Restore the normal view at prompt start in case a long-press
             // detail screen was left open (e.g. USB won the input race).

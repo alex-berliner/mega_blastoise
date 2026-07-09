@@ -230,6 +230,7 @@ async fn enrich_and_dispatch<E, DS>(
             _ => None,
         };
 
+        let mut inject_extra: Option<(alloc::string::String, alloc::vec::Vec<MoveSlot>)> = None;
         let enriched = match event {
             BoardEvent::SwitchIn { name, species, player_id, moves, .. } if moves.is_empty() => {
                 // Full CBOR decode — only happens once per switch-in.
@@ -260,10 +261,29 @@ async fn enrich_and_dispatch<E, DS>(
                 let slot = if !pid.is_empty() { query_team_slot_by_name(battle, pid, name) } else { None };
                 BoardEvent::Faint { mon, team_slot: slot }
             }
+            BoardEvent::EffectStart { ref mon, ref what, .. }
+                if what == "transform" || what == "mimic" =>
+            {
+                // The mon's move NAMES changed — the PP-only cache refresh
+                // can't see that. Full re-query, refresh the cache, and
+                // update the move corners.
+                let pid = mon.split(',').nth(1).unwrap_or("").to_string();
+                if !pid.is_empty() {
+                    let (moves, _, _) = query_active_moves(battle, data, &pid);
+                    cache.store(&pid, moves.clone());
+                    if !moves.is_empty() {
+                        inject_extra = Some((pid, moves));
+                    }
+                }
+                event
+            }
             other => other,
         };
 
         queue.push_event(enriched);
+        if let Some((pid, moves)) = inject_extra {
+            queue.push_event(BoardEvent::MovesUpdate { player_id: pid, moves });
+        }
         if let Some((pid, moves)) = inject {
             queue.push_event(BoardEvent::MovesUpdate { player_id: pid, moves });
         }

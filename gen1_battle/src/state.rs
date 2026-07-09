@@ -192,6 +192,17 @@ fn compute_hp(base: u16, level: u8) -> u16 {
     v.min(999) as u16
 }
 
+/// Pre-Transform snapshot of the transforming mon, restored when it leaves
+/// the field (Gen 1: Transform reverts on switch-out / faint).
+#[derive(Clone, Copy, Debug)]
+pub struct TransformBackup {
+    pub species_id: &'static str,
+    pub primary_type: Type,
+    pub secondary_type: Type,
+    pub stats: [u16; 5],
+    pub moves: [MoveSlot; 4],
+}
+
 /// One side (player) — 6 mons + active index.
 #[derive(Clone, Debug, Default)]
 pub struct Side {
@@ -204,6 +215,8 @@ pub struct Side {
     pub last_move_used: &'static str,
     pub last_move_was_normal_or_fighting: bool,
     pub last_move_damage: u16,
+    /// Set while the active mon is TRANSFORMED (only the active mon can be).
+    pub transform_backup: Option<TransformBackup>,
 }
 
 impl Side {
