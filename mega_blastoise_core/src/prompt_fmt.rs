@@ -45,15 +45,20 @@ pub fn format_prompt(
                 if n == 0 {
                     out.push_str("  (no moves available — will pass automatically)\n");
                 } else {
-                    for i in 0..n {
-                        let m = &mon_req.moves[i];
-                        let tag =
-                            if m.disabled { " [DISABLED]" } else if m.pp == 0 { " [NO PP]" } else { "" };
-                        let avail = if !m.disabled && m.pp > 0 { "  <--" } else { "" };
-                        out.push_str(&format!(
-                            "  [{}] {:<20}  PP {}/{}{}{}\n",
-                            i + 1, m.name, m.pp, m.max_pp, tag, avail
-                        ));
+                    let cells: Vec<String> = (0..n)
+                        .map(|i| {
+                            let m = &mon_req.moves[i];
+                            let tag =
+                                if m.disabled { " [DISABLED]" } else if m.pp == 0 { " [NO PP]" } else { "" };
+                            format!("[{}] {:<20}  PP {}/{}{}", i + 1, m.name, m.pp, m.max_pp, tag)
+                        })
+                        .collect();
+                    for pair in cells.chunks(2) {
+                        match pair {
+                            [a, b] => out.push_str(&format!("  {:<38}{}\n", a, b)),
+                            [a] => out.push_str(&format!("  {}\n", a)),
+                            _ => {}
+                        }
                     }
                 }
                 if !mon_req.trapped {
@@ -91,24 +96,21 @@ pub fn format_prompt(
     out
 }
 
-/// Format the active + bench state for one player.
+/// Format the active mon's state for one player.
 ///
-/// Shows: species, HP%, status, types, ability, item, stat boosts, move list with PP.
+/// Shows: species, HP%, status, types, stat boosts, plus any fainted bench mons.
 pub fn format_player_state(pd: &PlayerBattleData) -> String {
     let mut out = String::new();
     let label = player_label(&pd.id);
 
     for m in pd.mons.iter().filter(|m| m.active) {
         let status = m.status.as_deref().unwrap_or("ok");
-        let item = m.item.as_deref().unwrap_or("—");
         let pct = if m.max_hp > 0 { m.hp as u32 * 100 / m.max_hp as u32 } else { 0 };
         let types: Vec<String> = m.types.iter().map(|t| format!("{t:?}")).collect();
         out.push_str(&format!(
             "{} — {} ({})  HP {}/{} ({}%)  status: {}  types: [{}]\n",
             label, m.summary.name, m.species, m.hp, m.max_hp, pct, status, types.join("/")
         ));
-        let ability = m.ability.as_deref().unwrap_or("—");
-        out.push_str(&format!("  ability: {}  item: {}\n", ability, item));
         let b = &m.boosts;
         if b.atk != 0 || b.def != 0 || b.spa != 0 || b.spd != 0 || b.spe != 0 {
             out.push_str(&format!(
@@ -118,18 +120,7 @@ pub fn format_player_state(pd: &PlayerBattleData) -> String {
         }
     }
 
-    let bench_alive: Vec<_> = pd.mons.iter().filter(|m| !m.active && m.hp > 0).collect();
     let bench_fainted: Vec<_> = pd.mons.iter().filter(|m| !m.active && m.hp == 0).collect();
-    if !bench_alive.is_empty() {
-        let parts: Vec<String> = bench_alive
-            .iter()
-            .map(|m| {
-                let pct = if m.max_hp > 0 { m.hp as u32 * 100 / m.max_hp as u32 } else { 0 };
-                format!("{} {}%({}hp)", m.summary.name, pct, m.hp)
-            })
-            .collect();
-        out.push_str(&format!("  bench: {}\n", parts.join("  ")));
-    }
     if !bench_fainted.is_empty() {
         let parts: Vec<String> = bench_fainted
             .iter()
