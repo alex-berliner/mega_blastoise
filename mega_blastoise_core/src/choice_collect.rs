@@ -44,6 +44,19 @@ pub const HOLD_THRESHOLD_MS: u64 = 500;
 /// While a party-stats view is held, its two pages alternate at this cadence.
 pub const STATS_PAGE_CYCLE_MS: u64 = 2000;
 
+/// Help lines for in-battle typed input — shared by every platform's help
+/// output, and kept next to [`ChoiceCollector::typed_line`] so the two can't
+/// drift.
+pub const BATTLE_HELP: &[&str] = &[
+    "p1 2 / p2 s3      choose a move / switch for a player",
+    "2 / s3            bare form, when only one player is choosing",
+    "switch N          in-turn switch by team slot (sN also works)",
+    "(typing anything for a committed player unreadies them)",
+    ":press pN <1-4|s1-s3>    simulate a button tap",
+    ":hold pN <1-4|s1-s3>     simulate a long press down",
+    ":release pN              release the held button",
+];
+
 /// A physical-input event, already classified by the platform's raw layer.
 /// `player` is 1 or 2; indices are 0-based.
 #[derive(Clone, Copy, Debug)]

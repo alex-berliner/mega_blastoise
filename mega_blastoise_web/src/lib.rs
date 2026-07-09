@@ -17,7 +17,8 @@ use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
     party_slot_from_mon, render_screen, run_battle, ActivePrompt, BoardEventQueue,
     ChoiceCollector, CollectEffect, FlashDataStore, InputBus, OledCmd, OledController, PadEvent,
-    PartySlotData, PlayerChoice, RandomAi, SlotOptions, COLLECT_TICK_MS, LOBBY_DEMO_DELAY_MS,
+    PartySlotData, PlayerChoice, RandomAi, SlotOptions, BATTLE_HELP, COLLECT_TICK_MS,
+    LOBBY_DEMO_DELAY_MS,
 };
 use web_effects::WebBattleEffects;
 use web_display::WasmDisplay;
@@ -287,6 +288,33 @@ fn lobby_led_frame() -> [u32; 24] {
     frame
 }
 
+/// `?` / `:help` — same layout as the firmware's device help; the battle
+/// section is the shared BATTLE_HELP so the grammars can't drift.
+fn print_help() {
+    print_log("[help] Web commands");
+    print_log("  Lobby:");
+    for l in [
+        ":ready            both players ready (human)",
+        ":ready p1|p2      one player ready (human)",
+        ":ready ai         P1 is AI (play as P2; also the BLUE VS AI button)",
+        ":demo             AI vs AI demo (also the DEMO button)",
+    ] {
+        print_log(&format!("    {l}"));
+    }
+    print_log("  Any time:");
+    for l in [
+        ":help / :h / ?    this list",
+        ":anim on|off      battle animations",
+        ":reset            reload (new battle)",
+    ] {
+        print_log(&format!("    {l}"));
+    }
+    print_log("  In battle:");
+    for l in BATTLE_HELP {
+        print_log(&format!("    {l}"));
+    }
+}
+
 pub(crate) fn print_log(line: &str) {
     let doc = match web_sys::window().and_then(|w| w.document()) {
         Some(d) => d,
@@ -489,6 +517,7 @@ fn enter_demo_mode() {
         ":reset" | ":restart" => { wasm_reset(); return; }
         ":anim off" => { ANIM_ENABLED.with(|a| *a.borrow_mut() = false); print_log("[anim] animations OFF"); return; }
         ":anim on"  => { ANIM_ENABLED.with(|a| *a.borrow_mut() = true);  print_log("[anim] animations ON");  return; }
+        "?" | ":help" | ":h" => { print_help(); return; }
         _ => {}
     }
 
@@ -509,7 +538,6 @@ fn enter_demo_mode() {
             }
             ":ready p1" => push_button(ButtonEvent::Move { player: 1, slot: 0 }),
             ":ready p2" => push_button(ButtonEvent::Move { player: 2, slot: 0 }),
-            "?" | ":help" | ":h" => print_log("  lobby: :ready | :ready p1 | :ready p2 | :ready ai | :demo | :reset"),
             _ => print_log("  unknown command — type ? for help"),
         }
         return;

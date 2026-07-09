@@ -12,8 +12,8 @@ use embassy_time::Instant;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_lobby_status, parse_lobby_cmd, parse_team_spec, ActivePrompt, ChoiceCollector,
-    CollectEffect, InputBus, InputSource, PlayerChoice, RandomAi, SlotOptions, COLLECT_TICK_MS,
-    LOBBY_HELP, TEAM_SEED_SALT,
+    CollectEffect, InputBus, InputSource, PlayerChoice, RandomAi, SlotOptions, BATTLE_HELP,
+    COLLECT_TICK_MS, LOBBY_HELP, TEAM_SEED_SALT,
 };
 use gen1_battle::MonData;
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
@@ -377,9 +377,10 @@ impl<'d> UsbBattleInput<'d> {
         for l in META_HELP {
             self.writeln(&alloc::format!("    {}", l)).await;
         }
-        self.writeln("  In battle: 'p1 2' / 'p2 s3' (bare '2' / 's3' when only one player is choosing);").await;
-        self.writeln("  typing for a committed player unreadies them.").await;
-        self.writeln("  Button sim: :press pN <1-4|s1-s3> | :hold pN <1-4|s1-s3> | :release pN").await;
+        self.writeln("  In battle:").await;
+        for l in BATTLE_HELP {
+            self.writeln(&alloc::format!("    {}", l)).await;
+        }
     }
 
     /// Dump one OLED framebuffer as ASCII art (half-block chars) over USB.
