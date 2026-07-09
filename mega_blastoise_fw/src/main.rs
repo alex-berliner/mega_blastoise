@@ -19,7 +19,9 @@ use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state, run_battle,
     BoardEventQueue, FlashDataStore, InputBus, InputSource,
 };
-use mega_blastoise_fw::mem_profile::{heap_snapshot, init_heap};
+use mega_blastoise_fw::mem_profile::init_heap;
+#[cfg(feature = "mem-profile")]
+use mega_blastoise_fw::mem_profile::heap_snapshot;
 use mega_blastoise_fw as _;
 use rtt_target::{rtt_init, set_defmt_channel};
 
