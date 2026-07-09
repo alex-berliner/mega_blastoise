@@ -60,6 +60,26 @@ fn usb_switch_6_is_five_indexed() {
 }
 
 #[test]
+fn usb_switch_s2_is_idx_1() {
+    assert_eq!(parse_turn_line("s2", 4), Ok(TurnChoice::Switch(1)));
+}
+
+#[test]
+fn usb_switch_uppercase_s3_is_idx_2() {
+    assert_eq!(parse_turn_line("S3", 4), Ok(TurnChoice::Switch(2)));
+}
+
+#[test]
+fn usb_switch_s0_rejected() {
+    assert!(parse_turn_line("s0", 4).is_err());
+}
+
+#[test]
+fn usb_switch_s7_rejected() {
+    assert!(parse_turn_line("s7", 4).is_err());
+}
+
+#[test]
 fn usb_switch_0_rejected() {
     assert!(parse_turn_line("switch 0", 4).is_err());
 }

@@ -28,8 +28,17 @@ pub fn parse_turn_line(trimmed: &str, n: usize) -> Result<TurnChoice, String> {
         }
         return Ok(TurnChoice::Switch(idx - 1));
     }
+    // "s2" / "S2" — switch to team slot 2, matching the prompt's [sN] labels.
+    if let Some(rest) = trimmed.strip_prefix(['s', 'S']) {
+        if let Ok(idx) = rest.trim().parse::<usize>() {
+            if idx == 0 || idx > 6 {
+                return Err(alloc::format!("switch slot must be s1-s6, got s{}", idx));
+            }
+            return Ok(TurnChoice::Switch(idx - 1));
+        }
+    }
     let slot: usize = trimmed.parse().map_err(|_| {
-        alloc::format!("expected move number 1-{}, got '{}'", n, trimmed)
+        alloc::format!("expected move number 1-{} or switch s1-s6, got '{}'", n, trimmed)
     })?;
     if slot == 0 || slot > n {
         return Err(alloc::format!("move slot must be 1-{}, got {}", n, slot));
