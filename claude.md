@@ -1,3 +1,24 @@
+## ZERO-DRIFT RULE: shared display & input semantics (MANDATORY)
+
+The pico firmware and the web client MUST be indistinguishable in everything
+the player sees and does during a battle. This is enforced structurally:
+
+- `mega_blastoise_core/src/oled_ctl.rs` — the ONLY place that decides what a
+  screen shows (`OledController` + `oled_cmds_for_event`).
+- `mega_blastoise_core/src/choice_collect.rs` — the ONLY place that decides
+  how input behaves (`ChoiceCollector`: prompts, accept/reject + messages,
+  waiting screen, tap/type-to-unready, the 1 s both-ready grace, invalid
+  flashes, long-press detail views, typed-line grammar).
+
+Platforms (mega_blastoise_fw, mega_blastoise_web) may contain ONLY raw IO:
+press classification (tap vs 500 ms hold), typed-line transport, rendering
+`OledCmd`s, printing collector `Effect` lines, and a monotonic-ms clock for
+`tick()`. If a change makes you write battle UX behavior in fw- or web-only
+code, STOP — put it in core and drive it from both platforms. When behavior
+between targets conflicts, the pico is the source of truth.
+
+---
+
 ## Project
 
 A physical two-player board game implementation of Pokémon Gen 1 combat. Hardware-driven feedback (NeoPixels, e-ink). Runs entirely on a Raspberry Pi Pico (RP2040). No phone, no PC, no network — fully self-contained.
