@@ -17,14 +17,29 @@ use crate::tables::{move_by_id, MoveCategory, MoveEffectKind, MoveEntry, MOVES};
 
 /// Stat encoding in effect_param0 for boost-type effects.
 fn stat_idx_from_param(p: u8) -> usize {
-    // Atk=1, Def=2, SpAtk(Spc)=3, SpDef=4(unused gen1), Spe=5
+    // Atk=1, Def=2, SpAtk(Spc)=3, SpDef=4(unused gen1), Spe=5, Acc=6, Eva=7
     match p {
         1 => 0, // -> stages[0] = Atk
         2 => 1, // -> stages[1] = Def
         3 => 2, // -> stages[2] = Spc
         4 => 2, // SpDef collapses to Spc in Gen 1
         5 => 3, // -> stages[3] = Spe
+        6 => 4, // -> stages[4] = Accuracy
+        7 => 5, // -> stages[5] = Evasion
         _ => 0,
+    }
+}
+
+/// Display name for a stat param (for the `boost|` board line).
+fn stat_name_from_param(p: u8) -> &'static str {
+    match p {
+        1 => "Attack",
+        2 => "Defense",
+        3 | 4 => "Special",
+        5 => "Speed",
+        6 => "accuracy",
+        7 => "evasiveness",
+        _ => "stat",
     }
 }
 
@@ -75,10 +90,8 @@ pub fn execute_move(
         if a.volatile.has(Volatile::DISABLED)
             && a.volatile.disabled_slot as usize == move_slot_idx
         {
-            log.push(Event::MoveDisabled {
-                side: attacker_side_idx as u8,
-                move_id: mv.id,
-            });
+            let s = &sides[attacker_side_idx];
+            log.push_board(format!("cant|mon:{},{},0|from:disabled", s.active().name, s.player_id));
             return MoveOutcome::default();
         }
     }
@@ -187,8 +200,13 @@ fn apply_effect(
         DamageMaybeStatus => {
             outcome = damage_step(rng, sides, attacker_side, mv, log, outcome);
             if outcome.damage_dealt > 0 && roll_chance_byte(rng, mv.effect_param1) {
-                let new_status = status_from_param(mv.effect_param0);
-                try_apply_status(sides, defender_side, new_status, log);
+                if mv.effect_param0 == 6 {
+                    // Confusion is a volatile, not a major status.
+                    try_apply_confusion(rng, sides, defender_side, log);
+                } else {
+                    let new_status = status_from_param(mv.effect_param0);
+                    try_apply_status(sides, defender_side, new_status, log);
+                }
             }
         }
         DamageMaybeFlinch => {
@@ -230,12 +248,22 @@ fn apply_effect(
             }
         }
         StatusOnly => {
-            let mut s = status_from_param(mv.effect_param0);
-            if matches!(s, Status::Sleep(_)) {
-                let turns = (rng.range(7) as u8) + 1;
-                s = Status::Sleep(turns);
+            if mv.effect_param0 == 6 {
+                // Confuse Ray / Supersonic — confusion is a volatile.
+                if sides[defender_side].active().volatile.has(Volatile::CONFUSED) {
+                    let s = &sides[attacker_side];
+                    log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
+                } else {
+                    try_apply_confusion(rng, sides, defender_side, log);
+                }
+            } else {
+                let mut s = status_from_param(mv.effect_param0);
+                if matches!(s, Status::Sleep(_)) {
+                    let turns = (rng.range(7) as u8) + 1;
+                    s = Status::Sleep(turns);
+                }
+                try_apply_status(sides, defender_side, s, log);
             }
-            try_apply_status(sides, defender_side, s, log);
         }
         MultiHit2to5 => {
             let r = rng.range(8) as u8;
@@ -354,10 +382,11 @@ fn apply_effect(
                 if mv.effect_param0 == 1 {
                     a.volatile.set(Volatile::INVULNERABLE);
                 }
-                log.push(Event::Charging {
-                    side: attacker_side as u8,
-                    move_id: mv.id,
-                });
+                let s = &sides[attacker_side];
+                log.push_board(format!(
+                    "start|mon:{},{},0|what:charging|move:{}",
+                    s.active().name, s.player_id, mv.name
+                ));
             }
         }
         Bide => {
@@ -365,7 +394,8 @@ fn apply_effect(
             if a.volatile.has(Volatile::BIDING) {
                 if a.volatile.bide_turns > 0 {
                     a.volatile.bide_turns -= 1;
-                    log.push(Event::BideStoring { side: attacker_side as u8 });
+                    let s = &sides[attacker_side];
+                    log.push_board(format!("start|mon:{},{},0|what:bide", s.active().name, s.player_id));
                 } else {
                     // Unleash 2× stored damage as untyped damage.
                     let stored = a.volatile.bide_damage;
@@ -376,7 +406,8 @@ fn apply_effect(
                     deal_damage(sides, defender_side, dmg, log);
                     outcome.damage_dealt = dmg;
                     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
-                    log.push(Event::BideUnleash { side: attacker_side as u8 });
+                    let s = &sides[attacker_side];
+                    log.push_board(format!("end|mon:{},{},0|what:bide", s.active().name, s.player_id));
                 }
             } else {
                 a.volatile.set(Volatile::BIDING);
@@ -384,7 +415,8 @@ fn apply_effect(
                 // 2 or 3 turns to store (Gen 1 rolls one of these).
                 a.volatile.bide_turns = 1 + (rng.byte() & 1);
                 a.volatile.multi_turn_move = mv.id;
-                log.push(Event::BideStoring { side: attacker_side as u8 });
+                let s = &sides[attacker_side];
+                log.push_board(format!("start|mon:{},{},0|what:bide", s.active().name, s.player_id));
             }
         }
         HyperBeam => {
@@ -445,10 +477,12 @@ fn apply_effect(
                 pp: new_max,
                 max_pp: new_max,
             };
-            log.push(Event::Mimicked {
-                side: attacker_side as u8,
-                move_id: new_move,
-            });
+            let learned = move_by_id(new_move).map(|m| m.name).unwrap_or(new_move);
+            let s = &sides[attacker_side];
+            log.push_board(format!(
+                "start|mon:{},{},0|what:mimic|move:{}",
+                s.active().name, s.player_id, learned
+            ));
         }
         Transform => {
             let target = sides[defender_side].active().clone();
@@ -475,7 +509,8 @@ fn apply_effect(
                 }
             }
             a.volatile.set(Volatile::TRANSFORMED);
-            log.push(Event::Transformed { side: attacker_side as u8 });
+            let s = &sides[attacker_side];
+            log.push_board(format!("start|mon:{},{},0|what:transform", s.active().name, s.player_id));
         }
         Substitute => {
             let max = sides[attacker_side].active().hp_max;
@@ -485,7 +520,8 @@ fn apply_effect(
                 sides[attacker_side].active_mut().volatile.set(Volatile::SUBSTITUTED);
                 sides[attacker_side].active_mut().volatile.substitute_hp =
                     (cost + 1).min(255) as u8;
-                log.push(Event::Substitute { side: attacker_side as u8 });
+                let s = &sides[attacker_side];
+                log.push_board(format!("start|mon:{},{},0|what:substitute", s.active().name, s.player_id));
             } else {
                 let s = &sides[attacker_side];
                 log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
@@ -511,10 +547,12 @@ fn apply_effect(
                 d.volatile.set(Volatile::DISABLED);
                 d.volatile.disabled_slot = pick;
                 d.volatile.disabled_turns = turns;
-                log.push(Event::Disabled {
-                    side: defender_side as u8,
-                    move_slot: pick,
-                });
+                let disabled = move_by_id(d.moves[pick as usize].move_id).map(|m| m.name).unwrap_or("move");
+                let s = &sides[defender_side];
+                log.push_board(format!(
+                    "start|mon:{},{},0|what:disable|move:{}",
+                    s.active().name, s.player_id, disabled
+                ));
             }
         }
         Wrap => {
@@ -533,10 +571,8 @@ fn apply_effect(
                     d.volatile.set(Volatile::TRAPPED);
                     d.volatile.trapping_turns = extra;
                 }
-                log.push(Event::Wrap {
-                    side: attacker_side as u8,
-                    turns: extra,
-                });
+                let s = &sides[defender_side];
+                log.push_board(format!("start|mon:{},{},0|what:wrap", s.active().name, s.player_id));
             }
         }
         LeechSeed => {
@@ -552,26 +588,31 @@ fn apply_effect(
                 log.push_board(format!("fail|mon:{},{},0", s.active().name, s.player_id));
             } else {
                 sides[defender_side].active_mut().volatile.set(Volatile::LEECH_SEEDED);
-                log.push(Event::LeechSeed { side: defender_side as u8 });
+                let s = &sides[defender_side];
+                log.push_board(format!("start|mon:{},{},0|what:seeded", s.active().name, s.player_id));
             }
         }
         LightScreen => {
             sides[attacker_side].light_screen_turns = 5;
             sides[attacker_side].active_mut().volatile.set(Volatile::LIGHT_SCREEN);
-            log.push(Event::ScreenUp { side: attacker_side as u8, kind: 1 });
+            let s = &sides[attacker_side];
+            log.push_board(format!("start|mon:{},{},0|what:lightscreen", s.active().name, s.player_id));
         }
         Reflect => {
             sides[attacker_side].reflect_turns = 5;
             sides[attacker_side].active_mut().volatile.set(Volatile::REFLECT);
-            log.push(Event::ScreenUp { side: attacker_side as u8, kind: 0 });
+            let s = &sides[attacker_side];
+            log.push_board(format!("start|mon:{},{},0|what:reflect", s.active().name, s.player_id));
         }
         Mist => {
             sides[attacker_side].active_mut().volatile.set(Volatile::MIST);
-            log.push(Event::MistOn { side: attacker_side as u8 });
+            let s = &sides[attacker_side];
+            log.push_board(format!("start|mon:{},{},0|what:mist", s.active().name, s.player_id));
         }
         FocusEnergy => {
             sides[attacker_side].active_mut().volatile.set(Volatile::FOCUS_ENERGY);
-            log.push(Event::FocusEnergyOn { side: attacker_side as u8 });
+            let s = &sides[attacker_side];
+            log.push_board(format!("start|mon:{},{},0|what:focusenergy", s.active().name, s.player_id));
         }
         Conversion => {
             let t1 = sides[defender_side].active().primary_type;
@@ -579,7 +620,8 @@ fn apply_effect(
             let a = sides[attacker_side].active_mut();
             a.primary_type = t1;
             a.secondary_type = t2;
-            log.push(Event::Converted { side: attacker_side as u8 });
+            let s = &sides[attacker_side];
+            log.push_board(format!("start|mon:{},{},0|what:conversion", s.active().name, s.player_id));
         }
         Haze => {
             for s in sides.iter_mut() {
@@ -591,7 +633,8 @@ fn apply_effect(
                 mv.volatile.flags = 0;
             }
             sides[defender_side].active_mut().status = Status::None;
-            log.push(Event::Haze);
+            let s = &sides[attacker_side];
+            log.push_board(format!("start|mon:{},{},0|what:haze", s.active().name, s.player_id));
         }
         Metronome => {
             let mut idx = rng.range(MOVES.len() as u32) as usize;
@@ -707,7 +750,8 @@ fn deal_damage(sides: &mut [Side; 2], target_side: usize, dmg: u16, log: &mut Lo
         if dmg >= sub_hp {
             sides[target_side].active_mut().volatile.clear(Volatile::SUBSTITUTED);
             sides[target_side].active_mut().volatile.substitute_hp = 0;
-            log.push(Event::SubstituteBroken { side: target_side as u8 });
+            let s = &sides[target_side];
+            log.push_board(format!("end|mon:{},{},0|what:substitute", s.active().name, s.player_id));
         } else {
             sides[target_side].active_mut().volatile.substitute_hp = (sub_hp - dmg) as u8;
         }
@@ -763,6 +807,19 @@ fn try_apply_status(sides: &mut [Side; 2], side: usize, status: Status, log: &mu
     }
 }
 
+/// Inflict the confusion volatile (Gen 1: 1-4 attacking turns). Silently does
+/// nothing if the target is already confused.
+fn try_apply_confusion(rng: &mut Rng, sides: &mut [Side; 2], side: usize, log: &mut Log) {
+    let d = sides[side].active_mut();
+    if d.volatile.has(Volatile::CONFUSED) || d.hp_cur == 0 {
+        return;
+    }
+    d.volatile.set(Volatile::CONFUSED);
+    d.volatile.confused_turns = (rng.range(4) as u8) + 1;
+    let s = &sides[side];
+    log.push_board(format!("start|mon:{},{},0|what:confusion", s.active().name, s.player_id));
+}
+
 fn apply_stage_change(
     sides: &mut [Side; 2],
     side: usize,
@@ -775,11 +832,11 @@ fn apply_stage_change(
     let new = (m.stages[idx] as i32 + delta as i32).clamp(-6, 6) as i8;
     if new != m.stages[idx] {
         m.stages[idx] = new;
-        log.push(Event::StatChanged {
-            side: side as u8,
-            stat: stat_param,
-            delta,
-        });
+        let s = &sides[side];
+        log.push_board(format!(
+            "boost|mon:{},{},0|stat:{}|delta:{}",
+            s.active().name, s.player_id, stat_name_from_param(stat_param), delta
+        ));
     }
 }
 
@@ -858,7 +915,8 @@ pub fn end_of_turn(sides: &mut [Side; 2], log: &mut Log) {
                 if m.volatile.disabled_turns == 0 {
                     m.volatile.clear(Volatile::DISABLED);
                     m.volatile.disabled_slot = 0;
-                    log.push(Event::DisableEnded { side: i as u8 });
+                    let s = &sides[i];
+                    log.push_board(format!("end|mon:{},{},0|what:disable", s.active().name, s.player_id));
                 }
             }
         }
@@ -934,6 +992,10 @@ pub fn pre_move_check(
         } else {
             sides[side].active_mut().volatile.confused_turns -= 1;
             if rng.byte() < 128 {
+                {
+                    let s = &sides[side];
+                    log.push_board(format!("cant|mon:{},{},0|from:confusion", s.active().name, s.player_id));
+                }
                 let (lvl, atk, def, hp_cur) = {
                     let m = sides[side].active();
                     (m.level as u32, m.stats[1] as u32, m.stats[2] as u32, m.hp_cur)

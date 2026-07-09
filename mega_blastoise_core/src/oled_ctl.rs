@@ -186,6 +186,9 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
         | BoardEvent::CriticalHit { .. }
         | BoardEvent::SetStatus { .. }
         | BoardEvent::CureStatus { .. }
+        | BoardEvent::StatChange { .. }
+        | BoardEvent::EffectStart { .. }
+        | BoardEvent::EffectEnd { .. }
         | BoardEvent::Miss { .. }
         | BoardEvent::Immune { .. }
         | BoardEvent::Resisted { .. }

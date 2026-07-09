@@ -67,12 +67,14 @@ pub fn hit_roll(rng: &mut Rng, mv: &MoveEntry, attacker: &Mon, defender: &Mon) -
         // Always-hit move.
         return true;
     }
-    // accuracy as 0..=255
+    // accuracy as 0..=255, scaled by the attacker's accuracy stage and the
+    // defender's evasion stage (stages[4]/stages[5]).
     let mut acc = (mv.accuracy as u32 * 255) / 100;
-    let (an, ad) = stage_mult(attacker.stages[1].min(6)); // approximation: no accuracy slot
-    let _ = (an, ad);
-    // For simplicity ignore acc/eva stages (rarely used in randbats); document.
-    acc = acc.min(255);
+    let (an, ad) = stage_mult(attacker.stages[4]);
+    acc = acc * an / ad;
+    let (en, ed) = stage_mult(-defender.stages[5]);
+    acc = acc * en / ed;
+    acc = acc.clamp(1, 255);
     (rng.byte() as u32) < acc
 }
 

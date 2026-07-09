@@ -140,6 +140,14 @@ pub enum BoardEvent {
     CureStatus { mon: String, status: String },
     /// Can't move this turn (`cant|mon:...|from:<reason>`).
     Cant { mon: String, reason: String },
+    /// Stat stage change (`boost|mon:...|stat:<name>|delta:<i8>`).
+    StatChange { mon: String, stat: String, delta: i8 },
+    /// A volatile effect began (`start|mon:...|what:<id>[|move:<name>]`) —
+    /// seeded, confusion, substitute, wrap, disable, reflect, lightscreen,
+    /// mist, focusenergy, conversion, transform, mimic, charging, bide, haze.
+    EffectStart { mon: String, what: String, detail: Option<String> },
+    /// A volatile effect ended (`end|mon:...|what:<id>`).
+    EffectEnd { mon: String, what: String },
     Fail { mon: String },
     /// Active-mon moves refreshed — emitted after every move (PP change) and at switch-in.
     /// Internal signal; not narrated to USB/stdout.
@@ -305,6 +313,20 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
         "fail" => Some(BoardEvent::Fail {
             mon: p.get("mon").map(String::from).unwrap_or_default(),
         }),
+        "boost" => Some(BoardEvent::StatChange {
+            mon: p.get("mon").unwrap_or("?").into(),
+            stat: p.get("stat").unwrap_or("stat").into(),
+            delta: p.get("delta").and_then(|d| d.parse::<i8>().ok()).unwrap_or(0),
+        }),
+        "start" => Some(BoardEvent::EffectStart {
+            mon: p.get("mon").unwrap_or("?").into(),
+            what: p.get("what").unwrap_or("?").into(),
+            detail: p.get("move").map(String::from),
+        }),
+        "end" => Some(BoardEvent::EffectEnd {
+            mon: p.get("mon").unwrap_or("?").into(),
+            what: p.get("what").unwrap_or("?").into(),
+        }),
         // Pure engine bookkeeping — not gameplay events, not narrated.
         "residual" | "continue" | "info" | "side" | "player" | "teamsize" => None,
         _ => Some(BoardEvent::Raw(String::from(line))),
@@ -345,7 +367,10 @@ impl BoardEvent {
             Self::SuperEffective { .. }
             | Self::CriticalHit { .. }
             | Self::SetStatus { .. }
-            | Self::CureStatus { .. }                         => anim::EFFECT_MS,
+            | Self::CureStatus { .. }
+            | Self::StatChange { .. }
+            | Self::EffectStart { .. }
+            | Self::EffectEnd { .. }                          => anim::EFFECT_MS,
             Self::Miss { .. }
             | Self::Immune { .. }
             | Self::Resisted { .. }
@@ -430,13 +455,68 @@ impl BoardEvent {
                 format!("A critical hit on {}!", player_mon_label(mon))
             }
             BoardEvent::SetStatus { mon, status } => {
-                format!("{} was inflicted with {}!", player_mon_label(mon), status_abbrev(status))
+                let label = player_mon_label(mon);
+                match status.as_str() {
+                    "brn" => format!("{label} was burned!"),
+                    "psn" => format!("{label} was poisoned!"),
+                    "tox" => format!("{label} was badly poisoned!"),
+                    "par" => format!("{label} was paralyzed!"),
+                    "slp" => format!("{label} fell asleep!"),
+                    "frz" => format!("{label} was frozen solid!"),
+                    other => format!("{label} was inflicted with {}!", status_abbrev(other)),
+                }
             }
             BoardEvent::CureStatus { mon, status } => {
                 format!("{}'s {} was cured!", player_mon_label(mon), status_abbrev(status))
             }
             BoardEvent::Cant { mon, reason } => {
-                format!("{} can't move! ({})", player_mon_label(mon), reason)
+                let label = player_mon_label(mon);
+                match reason.as_str() {
+                    "confusion" => format!("{label} hurt itself in its confusion!"),
+                    "disabled" => format!("{label}'s move is disabled!"),
+                    _ => format!("{label} can't move! ({reason})"),
+                }
+            }
+            BoardEvent::StatChange { mon, stat, delta } => {
+                let label = player_mon_label(mon);
+                let dir = match delta {
+                    d if *d >= 2 => "rose sharply",
+                    d if *d == 1 => "rose",
+                    d if *d == -1 => "fell",
+                    _ => "fell harshly",
+                };
+                format!("{label}'s {stat} {dir}!")
+            }
+            BoardEvent::EffectStart { mon, what, detail } => {
+                let label = player_mon_label(mon);
+                let mv = detail.as_deref().unwrap_or("?");
+                match what.as_str() {
+                    "seeded" => format!("{label} was seeded!"),
+                    "confusion" => format!("{label} became confused!"),
+                    "substitute" => format!("{label} put up a substitute!"),
+                    "wrap" => format!("{label} was wrapped!"),
+                    "disable" => format!("{label}'s {mv} was disabled!"),
+                    "reflect" => format!("{label} put up Reflect!"),
+                    "lightscreen" => format!("{label} put up Light Screen!"),
+                    "mist" => format!("{label} became shrouded in mist!"),
+                    "focusenergy" => format!("{label} is getting pumped!"),
+                    "conversion" => format!("{label} converted its type!"),
+                    "transform" => format!("{label} transformed!"),
+                    "mimic" => format!("{label} mimicked {mv}!"),
+                    "charging" => format!("{label} is charging {mv}!"),
+                    "bide" => format!("{label} is storing energy!"),
+                    "haze" => "All stat changes were eliminated!".into(),
+                    other => format!("{label}: {other}"),
+                }
+            }
+            BoardEvent::EffectEnd { mon, what } => {
+                let label = player_mon_label(mon);
+                match what.as_str() {
+                    "substitute" => format!("{label}'s substitute broke!"),
+                    "disable" => format!("{label} is no longer disabled!"),
+                    "bide" => format!("{label} unleashed its energy!"),
+                    other => format!("{label}'s {other} wore off!"),
+                }
             }
             BoardEvent::Fail { mon } => {
                 if mon.is_empty() {

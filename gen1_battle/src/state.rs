@@ -90,8 +90,8 @@ pub struct Mon {
     pub secondary_type: Type,
     pub status: Status,
     pub moves: [MoveSlot; 4],
-    /// Stat stages for Atk/Def/Spc/Spe (HP doesn't stage). Range -6..=6.
-    pub stages: [i8; 4],
+    /// Stat stages for Atk/Def/Spc/Spe/Acc/Eva (HP doesn't stage). Range -6..=6.
+    pub stages: [i8; 6],
     pub volatile: Volatile,
     /// Move id used last turn (for Mirror Move).
     pub last_move_used: &'static str,
@@ -112,7 +112,7 @@ impl Default for Mon {
             secondary_type: Type::None,
             status: Status::None,
             moves: [MoveSlot::default(); 4],
-            stages: [0; 4],
+            stages: [0; 6],
             volatile: Volatile::default(),
             last_move_used: "",
             counter_source_dmg: 0,
@@ -168,7 +168,7 @@ impl Mon {
             secondary_type: sp.secondary_type,
             status: Status::None,
             moves,
-            stages: [0; 4],
+            stages: [0; 6],
             volatile: Volatile::default(),
             last_move_used: "",
             counter_source_dmg: 0,
