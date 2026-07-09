@@ -212,18 +212,29 @@ impl<'d> PicoBattleInput<'d> {
                             }
                         } else if now.saturating_sub(t0) < LONG_MS {
                             // Short press → a selection, validated by the shared rule
-                            // (handles disabled/PP, trapped, and switch-to-active).
+                            // (handles disabled/PP, trapped, and switch-to-active),
+                            // plus the fainted-bench check.
                             let action = if switch {
                                 PlayerAction::Switch(col)
                             } else {
                                 PlayerAction::Move(col)
                             };
-                            match turn_action_choice(&action, pt.n_moves, &pt.usable, pt.trapped, pt.active_slot) {
+                            let verdict = if switch && !pt.party_ok[col.min(5)] {
+                                Err(())
+                            } else {
+                                turn_action_choice(&action, pt.n_moves, &pt.usable, pt.trapped, pt.active_slot).map_err(|_| ())
+                            };
+                            match verdict {
                                 Ok(choice) => {
                                     out[i] = choice;
                                     st[i] = TwoState::Done;
                                 }
-                                Err(_) => st[i] = TwoState::Wait, // invalid press — ignore
+                                Err(()) => {
+                                    // Flash the invalid-selection screen briefly.
+                                    #[cfg(feature = "oled")]
+                                    oled_send(OledCmd::ShowInvalidSelection { player: pt.player_num });
+                                    st[i] = TwoState::Invalid { until: now + 600 };
+                                }
                             }
                         } else {
                             st[i] = TwoState::Wait;
@@ -232,6 +243,13 @@ impl<'d> PicoBattleInput<'d> {
                     TwoState::Shown { row } => {
                         // Detail view stays up until the button is released.
                         if !(0..4).any(|c| pressed[row][c]) {
+                            #[cfg(feature = "oled")]
+                            oled_send(OledCmd::RestoreScreen { player: pt.player_num });
+                            st[i] = TwoState::Wait;
+                        }
+                    }
+                    TwoState::Invalid { until } => {
+                        if now >= until {
                             #[cfg(feature = "oled")]
                             oled_send(OledCmd::RestoreScreen { player: pt.player_num });
                             st[i] = TwoState::Wait;
@@ -309,13 +327,18 @@ pub struct PlayerTurn {
     trapped: bool,
     /// Team index of the active mon (so switching to it is rejected).
     active_slot: Option<usize>,
+    /// Per-team-slot switch validity (alive and not active). All-true when no
+    /// player data was attached — the engine still validates.
+    party_ok: [bool; 6],
+    /// This is a forced replacement after a faint (Request::Switch).
+    forced_switch: bool,
     /// Forced choice (locked move, no moves, team preview) — submit without input.
     auto: Option<String>,
 }
 
 impl PlayerTurn {
     /// Distil a player's `Request` into the options the matrix collector needs.
-    pub fn from_request(player_id: &str, request: &Request) -> Self {
+    pub fn from_request(player_id: &str, request: &Request, player_data: Option<&PlayerBattleData>) -> Self {
         let p2 = player_id == "p2";
         let mut pt = Self {
             player_num: if p2 { 2 } else { 1 },
@@ -325,8 +348,15 @@ impl PlayerTurn {
             usable: [false; 4],
             trapped: false,
             active_slot: None,
+            party_ok: [true; 6],
+            forced_switch: false,
             auto: None,
         };
+        if let Some(pd) = player_data {
+            for (i, ok) in pt.party_ok.iter_mut().enumerate() {
+                *ok = pd.mons.get(i).is_some_and(|m| !m.active && m.hp > 0);
+            }
+        }
         match request {
             Request::Turn(turn) => {
                 if let Some(mon) = turn.active.first() {
@@ -345,7 +375,7 @@ impl PlayerTurn {
                     }
                 }
             }
-            Request::Switch(_) => {} // forced switch: no moves, any non-active bench mon
+            Request::Switch(_) => pt.forced_switch = true, // no moves, pick a bench mon
             Request::TeamPreview(_) => pt.auto = Some(String::from("random")),
             Request::LearnMove(_) => pt.auto = Some(String::from("pass")),
         }
@@ -355,6 +385,21 @@ impl PlayerTurn {
     /// Number of live move buttons this turn (for parsing typed move slots).
     pub fn n_moves(&self) -> usize {
         self.n_moves
+    }
+
+    /// This prompt is a forced replacement after a faint.
+    pub fn forced_switch(&self) -> bool {
+        self.forced_switch
+    }
+
+    /// Whether team slot `i` is a legal switch target (alive and benched).
+    pub fn switch_target_ok(&self, i: usize) -> bool {
+        self.party_ok.get(i).copied().unwrap_or(false)
+    }
+
+    /// True when team slot `i` is not the currently active slot.
+    pub fn active_slot_is_not(&self, i: usize) -> bool {
+        self.active_slot != Some(i)
     }
 
     /// Validate a typed action through the same shared rule as button presses
@@ -373,6 +418,8 @@ enum TwoState {
     Hold { row: usize, col: usize, switch: bool, t0: u64 },
     /// Long-press detail view is showing; waiting for release.
     Shown { row: usize },
+    /// Invalid selection screen is showing; restores at the deadline.
+    Invalid { until: u64 },
     /// Choice committed.
     Done,
 }

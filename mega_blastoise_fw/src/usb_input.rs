@@ -148,8 +148,12 @@ impl<'d> UsbBattleInput<'d> {
                 self.display_prompt(&prompts[i0]).await;
                 self.display_prompt(&prompts[i1]).await;
                 let players = [
-                    PlayerTurn::from_request(prompts[i0].player_id.as_str(), &prompts[i0].request),
-                    PlayerTurn::from_request(prompts[i1].player_id.as_str(), &prompts[i1].request),
+                    PlayerTurn::from_request(
+                        prompts[i0].player_id.as_str(), &prompts[i0].request, prompts[i0].player_data.as_ref(),
+                    ),
+                    PlayerTurn::from_request(
+                        prompts[i1].player_id.as_str(), &prompts[i1].request, prompts[i1].player_data.as_ref(),
+                    ),
                 ];
                 let ids = [prompts[i0].player_id.clone(), prompts[i1].player_id.clone()];
                 let btns = buttons.as_mut().expect("parallel requires buttons");
@@ -203,6 +207,57 @@ impl<'d> UsbBattleInput<'d> {
         self.write_multiline(&format_prompt(p.player_id.as_str(), &p.request, p.player_data.as_ref())).await;
     }
 
+    /// Parse a typed turn line, accepting both bare ("2", "s3") and
+    /// player-prefixed ("p1 2") forms — the prefixed form is the universal
+    /// syntax, the bare form is unambiguous while a single player is prompted.
+    /// Writes the rejection message itself; None means "re-prompt".
+    async fn parse_typed_turn(&mut self, line: &str, player_id: &str, n: usize) -> Option<PlayerAction> {
+        let rest = match strip_player_prefix(line.trim(), player_id) {
+            Ok(r) => r,
+            Err(msg) => {
+                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
+                return None;
+            }
+        };
+        match parse_turn_line(rest, n) {
+            Ok(TurnChoice::Move(s)) => Some(PlayerAction::Move(s)),
+            Ok(TurnChoice::Switch(i)) => Some(PlayerAction::Switch(i)),
+            Err(msg) => {
+                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
+                None
+            }
+        }
+    }
+
+    /// Parse a typed forced-switch line: a party slot as "3", "s3", or the
+    /// player-prefixed "p1 3" / "p1 s3". Writes the rejection itself.
+    async fn parse_typed_switch(&mut self, line: &str, player_id: &str) -> Option<usize> {
+        let rest = match strip_player_prefix(line.trim(), player_id) {
+            Ok(r) => r,
+            Err(msg) => {
+                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
+                return None;
+            }
+        };
+        let slot = rest.strip_prefix('s').unwrap_or(rest).trim();
+        match parse_switch_line(slot) {
+            Ok(idx) => Some(idx),
+            Err(msg) => {
+                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
+                None
+            }
+        }
+    }
+
+    /// Whether team slot `idx` in `last_player_data` is fainted (only a
+    /// definite yes rejects — missing data defers to the engine).
+    fn slot_fainted(&self, idx: usize) -> bool {
+        self.last_player_data
+            .as_ref()
+            .and_then(|pd| pd.mons.get(idx))
+            .is_some_and(|m| m.hp == 0)
+    }
+
     /// Handle a typed line while both players are choosing in parallel.
     /// Requires a player prefix — "p1 <cmd>" / "p2 <cmd>" — where <cmd> is the
     /// usual turn syntax (move 1-4 or s2-s6). Runs through the same shared
@@ -234,6 +289,28 @@ impl<'d> UsbBattleInput<'d> {
             self.write_err(&alloc::format!("{} has already chosen", ids[i].as_str())).await;
             return;
         }
+
+        // Forced replacement after a faint: expect a party slot ("3" or "s3").
+        if players[i].forced_switch() {
+            let slot = rest.strip_prefix('s').unwrap_or(rest).trim();
+            match parse_switch_line(slot) {
+                Ok(idx) if players[i].switch_target_ok(idx) => {
+                    let choice = format_switch_choice(idx);
+                    self.write_ok(&alloc::format!("Accepted — {} {}", ids[i].as_str(), choice.as_str())).await;
+                    progress.set_choice(i, players, choice);
+                }
+                Ok(_) => {
+                    self.write_err(&alloc::format!(
+                        "Rejected ({}) — That pokemon can no longer fight!", ids[i].as_str()
+                    )).await;
+                }
+                Err(msg) => {
+                    self.write_err(&alloc::format!("Rejected ({}) — {}", ids[i].as_str(), msg)).await;
+                }
+            }
+            return;
+        }
+
         let n = players[i].n_moves();
         let action = match parse_turn_line(rest, n) {
             Ok(TurnChoice::Move(s)) => PlayerAction::Move(s),
@@ -243,6 +320,16 @@ impl<'d> UsbBattleInput<'d> {
                 return;
             }
         };
+        if let PlayerAction::Switch(idx) = &action {
+            // Already-active is caught by the shared validator; a benched target
+            // that still fails here can only be fainted.
+            if players[i].active_slot_is_not(*idx) && !players[i].switch_target_ok(*idx) {
+                self.write_err(&alloc::format!(
+                    "Rejected ({}) — That pokemon can no longer fight!", ids[i].as_str()
+                )).await;
+                return;
+            }
+        }
         match players[i].typed_action_choice(&action) {
             Ok(choice) => {
                 self.write_ok(&alloc::format!("Accepted — {} {}", ids[i].as_str(), choice.as_str())).await;
@@ -295,13 +382,9 @@ impl<'d> UsbBattleInput<'d> {
                         // through the SAME shared validator, so the rules can't drift.
                         let action: PlayerAction = match buttons.as_mut() {
                             Some(btns) => match select(self.read_line(), btns.wait_action(player_id, n)).await {
-                                Either::First(line) => match parse_turn_line(line.trim(), n) {
-                                    Ok(TurnChoice::Move(s)) => PlayerAction::Move(s),
-                                    Ok(TurnChoice::Switch(i)) => PlayerAction::Switch(i),
-                                    Err(msg) => {
-                                        self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                                        continue 'move_input;
-                                    }
+                                Either::First(line) => match self.parse_typed_turn(&line, player_id, n).await {
+                                    Some(a) => a,
+                                    None => continue 'move_input,
                                 },
                                 Either::Second(a) => {
                                     self.partial.clear();
@@ -310,17 +393,19 @@ impl<'d> UsbBattleInput<'d> {
                             },
                             None => {
                                 let line = self.read_line().await;
-                                match parse_turn_line(line.trim(), n) {
-                                    Ok(TurnChoice::Move(s)) => PlayerAction::Move(s),
-                                    Ok(TurnChoice::Switch(i)) => PlayerAction::Switch(i),
-                                    Err(msg) => {
-                                        self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                                        continue 'move_input;
-                                    }
+                                match self.parse_typed_turn(&line, player_id, n).await {
+                                    Some(a) => a,
+                                    None => continue 'move_input,
                                 }
                             }
                         };
 
+                        if let PlayerAction::Switch(idx) = &action {
+                            if self.slot_fainted(*idx) {
+                                self.write_err("Rejected — That pokemon can no longer fight!").await;
+                                continue 'move_input;
+                            }
+                        }
                         match turn_action_choice(&action, n, &usable, mon_req.trapped, active_slot) {
                             Ok(choice) => {
                                 match &action {
@@ -367,33 +452,47 @@ impl<'d> UsbBattleInput<'d> {
                             Some(btns) => {
                                 match select(self.read_line(), btns.wait_switch(player_id)).await {
                                     Either::First(line) => {
-                                        match parse_switch_line(line.trim()) {
-                                            Ok(idx) => idx,
-                                            Err(msg) => {
-                                                self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                                                continue 'switch_input;
-                                            }
+                                        match self.parse_typed_switch(&line, player_id).await {
+                                            Some(idx) => idx,
+                                            None => continue 'switch_input,
                                         }
                                     }
                                     Either::Second(idx) => {
                                         self.partial.clear();
-                                        self.write_ok(&alloc::format!("Button — switching in slot {}", idx + 1)).await;
-                                        parts.push(format_switch_choice(idx));
-                                        break 'switch_input;
+                                        idx
                                     }
                                 }
                             }
                             None => {
                                 let line = self.read_line().await;
-                                match parse_switch_line(line.trim()) {
-                                    Ok(idx) => idx,
-                                    Err(msg) => {
-                                        self.write_err(&alloc::format!("Rejected — {}", msg)).await;
-                                        continue 'switch_input;
-                                    }
+                                match self.parse_typed_switch(&line, player_id).await {
+                                    Some(idx) => idx,
+                                    None => continue 'switch_input,
                                 }
                             }
                         };
+
+                        // Both button and typed selections go through the same
+                        // aliveness check before the engine sees them.
+                        let is_active = self.last_player_data.as_ref()
+                            .and_then(|pd| pd.mons.get(team_idx))
+                            .is_some_and(|m| m.active);
+                        if self.slot_fainted(team_idx) || is_active {
+                            if is_active {
+                                self.write_err("Rejected — that Pokémon is already in battle").await;
+                            } else {
+                                self.write_err("Rejected — That pokemon can no longer fight!").await;
+                            }
+                            // Flash the invalid-selection screen for button players.
+                            #[cfg(feature = "oled")]
+                            {
+                                let player = player_id_to_num(player_id);
+                                oled_send(OledCmd::ShowInvalidSelection { player });
+                                embassy_time::Timer::after_millis(600).await;
+                                oled_send(OledCmd::ShowSwitchScreen { player });
+                            }
+                            continue 'switch_input;
+                        }
 
                         self.write_ok(&alloc::format!("Accepted — switching in slot {}", team_idx + 1)).await;
                         parts.push(format_switch_choice(team_idx));
@@ -707,6 +806,24 @@ fn reject_reason(r: ActionReject) -> &'static str {
 /// the serial path.
 fn is_multi_switch(request: &Request) -> bool {
     matches!(request, Request::Switch(sw) if sw.needs_switch.len() > 1)
+}
+
+/// Strip an optional "p1 "/"p2 " prefix from a typed line. Bare lines pass
+/// through (unambiguous while a single player is prompted); a prefix naming
+/// the other player is an error.
+fn strip_player_prefix<'a>(line: &'a str, player_id: &str) -> Result<&'a str, &'static str> {
+    for pid in ["p1", "p2"] {
+        if let Some(rest) = line.strip_prefix(pid) {
+            if rest.starts_with(' ') {
+                return if pid == player_id {
+                    Ok(rest.trim())
+                } else {
+                    Err("that prefix names the other player")
+                };
+            }
+        }
+    }
+    Ok(line)
 }
 
 /// If `line` is an `:oled` dump command, return the player number to dump (1 or 2).
