@@ -352,7 +352,9 @@ def main() -> None:
     if args.no_usb:
         usb_dev = None
     else:
-        usb_dev = args.dev or find_fw_tty() or "/dev/ttyACM1"
+        # No hardcoded fallback path: a stale guess can grab the debug
+        # probe's CDC port instead of the firmware (matched by VID:PID).
+        usb_dev = args.dev or find_fw_tty()
 
     log_fh = open(args.log, "a") if args.log else None
 
@@ -363,6 +365,25 @@ def main() -> None:
 
     # Kill any stray probe-rs processes before starting our own.
     _kill_probe_rs()
+
+    # If the firmware's USB isn't enumerated the core probably isn't running
+    # (mb_flash leaves the target halted until a reset). Reset it now — before
+    # the RTT attach exists to race with — and wait for USB to come up.
+    if not args.no_usb and usb_dev is None:
+        print("firmware USB not found — resetting target…")
+        subprocess.run(["probe-rs", "reset", "--preset", "pico"], capture_output=True)
+        deadline = time.monotonic() + 8.0
+        while time.monotonic() < deadline:
+            usb_dev = find_fw_tty()
+            if usb_dev:
+                break
+            time.sleep(0.25)
+        if usb_dev is None:
+            print(
+                "warning: firmware USB still not found — flash the board or check the cable",
+                file=sys.stderr,
+            )
+        dev_ref[0] = usb_dev
 
     # Start background threads
     bg: list[threading.Thread] = []
