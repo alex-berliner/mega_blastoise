@@ -1,11 +1,10 @@
-//! Regression tests for USB and web CLI command parsing.
+//! Regression tests for the battle CLI command parsing (shared by USB and web).
 //!
 //! These are the canonical contracts for what the firmware and web UI accept.
 //! If a refactor changes any of these, this file will catch it.
 
 use mega_blastoise_core::{
-    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, parse_web_game_cmd,
-    LobbyCmd, TurnChoice, WebGameInput,
+    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, LobbyCmd, TurnChoice,
 };
 
 // ── USB turn prompt — move slot ───────────────────────────────────────────────
@@ -185,76 +184,6 @@ fn lobby_unknown_is_unknown() {
 #[test]
 fn lobby_cmd_trims_whitespace() {
     assert_eq!(parse_lobby_cmd("  :ready  "), LobbyCmd::ReadyBoth);
-}
-
-// ── Web in-game commands ──────────────────────────────────────────────────────
-
-#[test]
-fn web_move_1_defaults_to_p2() {
-    assert_eq!(parse_web_game_cmd("1"), WebGameInput::Move { player: 2, slot: 0 });
-}
-
-#[test]
-fn web_move_4_is_slot_3() {
-    assert_eq!(parse_web_game_cmd("4"), WebGameInput::Move { player: 2, slot: 3 });
-}
-
-#[test]
-fn web_move_p1_prefix() {
-    assert_eq!(parse_web_game_cmd("p1:1"), WebGameInput::Move { player: 1, slot: 0 });
-    assert_eq!(parse_web_game_cmd("p1:4"), WebGameInput::Move { player: 1, slot: 3 });
-}
-
-#[test]
-fn web_move_p2_prefix_explicit() {
-    assert_eq!(parse_web_game_cmd("p2:2"), WebGameInput::Move { player: 2, slot: 1 });
-}
-
-#[test]
-fn web_switch_s1_is_idx_0() {
-    assert_eq!(parse_web_game_cmd("s1"), WebGameInput::Switch { player: 2, idx: 0 });
-}
-
-#[test]
-fn web_switch_s3_is_idx_2() {
-    assert_eq!(parse_web_game_cmd("s3"), WebGameInput::Switch { player: 2, idx: 2 });
-}
-
-#[test]
-fn web_switch_uppercase_s() {
-    assert_eq!(parse_web_game_cmd("S2"), WebGameInput::Switch { player: 2, idx: 1 });
-}
-
-#[test]
-fn web_switch_p1_prefix() {
-    assert_eq!(parse_web_game_cmd("p1:s2"), WebGameInput::Switch { player: 1, idx: 1 });
-}
-
-#[test]
-fn web_move_0_rejected() {
-    assert_eq!(parse_web_game_cmd("0"), WebGameInput::Unknown);
-}
-
-#[test]
-fn web_move_5_rejected() {
-    assert_eq!(parse_web_game_cmd("5"), WebGameInput::Unknown);
-}
-
-#[test]
-fn web_switch_s0_rejected() {
-    assert_eq!(parse_web_game_cmd("s0"), WebGameInput::Unknown);
-}
-
-#[test]
-fn web_switch_s4_rejected() {
-    assert_eq!(parse_web_game_cmd("s4"), WebGameInput::Unknown);
-}
-
-#[test]
-fn web_garbage_is_unknown() {
-    assert_eq!(parse_web_game_cmd(""), WebGameInput::Unknown);
-    assert_eq!(parse_web_game_cmd("move"), WebGameInput::Unknown);
-    assert_eq!(parse_web_game_cmd(":ready"), WebGameInput::Unknown);
 }
 
 // ── :team upload ──────────────────────────────────────────────────────────────

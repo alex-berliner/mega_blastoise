@@ -9,6 +9,7 @@ pub mod hp_bar;
 pub mod board_event;
 pub mod battle_input;
 pub mod battle_runner;
+pub mod choice_collect;
 pub mod data_store;
 pub mod demo_teams;
 pub mod prompt_fmt;
@@ -32,6 +33,10 @@ pub use battle_input::{
     turn_action_choice, turn_choice_from_move_slots, ActionReject, ActivePrompt, ButtonController,
     ButtonSource, InputBus, InputSource, NoInput, PlayerAction, PlayerChoice,
 };
+pub use choice_collect::{
+    reject_reason, ChoiceCollector, Effect as CollectEffect, PadEvent, SlotOptions,
+    COLLECT_TICK_MS, HOLD_THRESHOLD_MS, INVALID_FLASH_MS, UNREADY_GRACE_MS,
+};
 pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
 pub use hp_bar::{hp_bar_color, hp_bar_count, HpBarState};
 pub use prompt_fmt::{format_active_state, format_lobby_status, format_player_state, format_prompt};
@@ -41,6 +46,5 @@ pub use randbat::{draw_randbat_team, draw_two_randbat_teams, TEAM_SEED_SALT};
 pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
 pub use cli_parse::{
-    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, parse_web_game_cmd,
-    LobbyCmd, TurnChoice, WebGameInput, LOBBY_HELP,
+    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, LobbyCmd, TurnChoice, LOBBY_HELP,
 };

@@ -22,7 +22,6 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 use gen1_battle::{PlayerBattleData, Request};
-use embassy_futures::join::join;
 use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::{Channel, Sender};
@@ -208,19 +207,6 @@ pub trait ButtonSource {
     ) {
     }
 
-    /// Called after the player makes a provisional choice.
-    /// Override to show a "waiting / press to unready" screen.  Default is a no-op.
-    fn on_choice_pending(&mut self, _player_id: &str) {}
-
-    /// Called for a player who has no pending request this turn (e.g. only the other
-    /// player needs to switch after a faint).  Override to show "Waiting for opponent".
-    fn on_waiting_for_other_player(&mut self, _player_id: &str) {}
-
-    /// Wait until the cancel window expires (returns `false` = committed) or the
-    /// player presses any button (returns `true` = cancelled).  Default always
-    /// proceeds immediately — override to add an undo window.
-    async fn wait_cancel_window(&mut self, _player_id: &str) -> bool { false }
-
     /// Wait for the player to press either a move button or a party button.
     /// Used during `Request::Turn` where either is valid (unless trapped).
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction;
@@ -295,87 +281,6 @@ impl<BS: ButtonSource> ButtonController<BS> {
         }
     }
 
-    /// Collect a choice with undo support: shows the waiting screen and allows
-    /// the player to cancel within the cancel window.
-    async fn collect_choice_with_unready(&mut self, prompt: &ActivePrompt) -> String {
-        loop {
-            let choice = self.collect_choice(prompt).await;
-            self.source.on_choice_pending(&prompt.player_id);
-            if self.source.wait_cancel_window(&prompt.player_id).await {
-                self.source.on_prompt(&prompt.player_id, &prompt.request, &prompt.player_data);
-            } else {
-                return choice;
-            }
-        }
-    }
-}
-
-impl<BS: ButtonSource + Clone> ButtonController<BS> {
-    /// Like `run`, but collects all players' choices in parallel when `batch_total > 1`.
-    /// Requires `BS: Clone` so each player gets an independent source instance.
-    pub async fn run_parallel(&mut self, bus: &InputBus) {
-        loop {
-            let first_prompt = loop {
-                match select(bus.prompt.receive(), bus.log.receive()).await {
-                    Either::First(p) => {
-                        while let Ok(line) = bus.log.try_receive() {
-                            (self.log_sink)(&line);
-                        }
-                        break p;
-                    }
-                    Either::Second(line) => (self.log_sink)(&line),
-                }
-            };
-
-            self.source.on_prompt(
-                &first_prompt.player_id,
-                &first_prompt.request,
-                &first_prompt.player_data,
-            );
-
-            let extra_count = first_prompt.batch_total.saturating_sub(1);
-            let mut extra_prompts: Vec<ActivePrompt> = Vec::with_capacity(extra_count);
-            for _ in 0..extra_count {
-                let p = bus.prompt.receive().await;
-                self.source.on_prompt(&p.player_id, &p.request, &p.player_data);
-                extra_prompts.push(p);
-            }
-
-            for idle_id in ["p1", "p2"] {
-                let has_prompt = first_prompt.player_id == idle_id
-                    || extra_prompts.iter().any(|p| p.player_id == idle_id);
-                if !has_prompt {
-                    self.source.on_waiting_for_other_player(idle_id);
-                }
-            }
-
-            if extra_prompts.len() == 1 {
-                // Two-player batch: collect both choices simultaneously so neither player
-                // blocks on the other's pick or cancel window.
-                let extra = extra_prompts.remove(0);
-                let source2 = self.source.clone();
-                let mut ctrl2 = ButtonController { source: source2, log_sink: self.log_sink };
-                let (c1, c2) = join(
-                    self.collect_choice_with_unready(&first_prompt),
-                    ctrl2.collect_choice_with_unready(&extra),
-                ).await;
-                bus.choices.send(PlayerChoice { player_id: first_prompt.player_id.clone(), choice: c1 }).await;
-                bus.choices.send(PlayerChoice { player_id: extra.player_id.clone(), choice: c2 }).await;
-            } else {
-                // Single player (or unsupported batch size) — serial.
-                let choice = self.collect_choice_with_unready(&first_prompt).await;
-                bus.choices.send(PlayerChoice { player_id: first_prompt.player_id.clone(), choice }).await;
-                for extra in &extra_prompts {
-                    let choice = self.collect_choice_with_unready(extra).await;
-                    bus.choices.send(PlayerChoice { player_id: extra.player_id.clone(), choice }).await;
-                }
-            }
-
-            while let Ok(line) = bus.log.try_receive() {
-                (self.log_sink)(&line);
-            }
-        }
-    }
 }
 
 impl<BS: ButtonSource> InputSource for ButtonController<BS> {
@@ -414,21 +319,12 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
                 extra_prompts.push(p);
             }
 
-            // Notify any player who has no request this turn.
-            for idle_id in ["p1", "p2"] {
-                let has_prompt = first_prompt.player_id == idle_id
-                    || extra_prompts.iter().any(|p| p.player_id == idle_id);
-                if !has_prompt {
-                    self.source.on_waiting_for_other_player(idle_id);
-                }
-            }
-
             // Collect and submit each prompt's choice.
-            let choice = self.collect_choice_with_unready(&first_prompt).await;
+            let choice = self.collect_choice(&first_prompt).await;
             bus.choices.send(PlayerChoice { player_id: first_prompt.player_id.clone(), choice }).await;
 
             for extra in &extra_prompts {
-                let choice = self.collect_choice_with_unready(extra).await;
+                let choice = self.collect_choice(extra).await;
                 bus.choices.send(PlayerChoice { player_id: extra.player_id.clone(), choice }).await;
             }
 
