@@ -177,8 +177,12 @@ impl<'a> Battle<'a> {
         } else {
             return Err(anyhow!("unparseable choice: {}", trimmed));
         }
-        // If both sides have submitted, advance.
-        if self.pending_choice[0].is_some() && self.pending_choice[1].is_some() {
+        // Advance once every side with a pending request has submitted (during
+        // a forced switch only the switching side is asked to act).
+        let all_in = self.requests.iter().all(|(pid, _)| {
+            self.find_side(pid).map(|i| self.pending_choice[i].is_some()).unwrap_or(true)
+        });
+        if all_in {
             self.advance_turn();
         }
         Ok(())
@@ -296,6 +300,12 @@ impl<'a> Battle<'a> {
                         needs_switch: alloc::vec![s.active_idx],
                     }),
                 ));
+                continue;
+            }
+            // During a forced-switch phase only the switching side acts; the
+            // other player waits and picks their next move once the
+            // replacement is out.
+            if matches!(self.phase, Phase::AwaitSwitch) {
                 continue;
             }
             // Turn request for the active mon.

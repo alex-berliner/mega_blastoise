@@ -109,6 +109,15 @@ impl<'d> UsbBattleInput<'d> {
                 send_party_update(p);
             }
 
+            // A player with no prompt this batch is waiting on the other (e.g.
+            // a forced switch after a faint) — show their waiting screen.
+            #[cfg(feature = "oled")]
+            for pid in ["p1", "p2"] {
+                if !prompts.iter().any(|p| p.player_id == pid) {
+                    oled_send(OledCmd::ShowWaitingForOpponent { player: player_id_to_num(pid) });
+                }
+            }
+
             // ── Resolve each prompt: AI auto-chooses now; humans are deferred. ─
             let mut choices: Vec<Option<String>> = (0..prompts.len()).map(|_| None).collect();
             let mut humans: Vec<usize> = Vec::new();
