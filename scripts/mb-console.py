@@ -158,6 +158,7 @@ def _rtt_reader(
     out_q: queue.Queue,
     stop: threading.Event,
     proc_ref: list,
+    pause: threading.Event,
 ) -> None:
     """Stream probe-rs RTT output into *out_q*.  Restarts on disconnect."""
     cmd = [
@@ -165,6 +166,11 @@ def _rtt_reader(
         "--no-location", "--no-timestamps", elf,
     ]
     while not stop.is_set():
+        # Held off during :reset/:reflash — attaching while the target is
+        # rebooting races the DP and can wedge the freshly booted firmware.
+        if pause.is_set():
+            stop.wait(0.2)
+            continue
         try:
             proc = subprocess.Popen(
                 cmd,
@@ -279,6 +285,36 @@ def _probe_run(args: list[str], out_q: queue.Queue, label: str) -> bool:
     return True
 
 
+def _stop_rtt(proc_ref: list, pause: threading.Event) -> None:
+    """Pause the RTT reader and kill its probe-rs so the DP is free."""
+    pause.set()
+    p = proc_ref[0]
+    if p is not None:
+        p.terminate()
+        try:
+            p.wait(timeout=2.0)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.wait()
+
+
+def _resume_after_boot(dev_ref: list, out_q: queue.Queue, pause: threading.Event) -> None:
+    """Wait for the firmware's USB to re-enumerate after a reset, then let the
+    RTT reader reattach. Attaching mid-boot races the DP and can wedge the
+    freshly booted firmware, so USB-up is the boot-complete signal."""
+    deadline = time.monotonic() + 8.0
+    while time.monotonic() < deadline:
+        found = find_fw_tty()
+        if found:
+            dev_ref[0] = found
+            out_q.put(("sys", f"USB back: {found}"))
+            break
+        time.sleep(0.25)
+    else:
+        out_q.put(("err", "USB did not re-enumerate within 8 s"))
+    pause.clear()
+
+
 def _kill_probe_rs(out_q: queue.Queue | None = None) -> None:
     result = subprocess.run(["pkill", "-f", "probe-rs"], capture_output=True)
     if out_q is not None:
@@ -322,6 +358,7 @@ def main() -> None:
 
     out_q: queue.Queue = queue.Queue()
     stop = threading.Event()
+    rtt_pause = threading.Event()
     dev_ref: list[str | None] = [usb_dev]
 
     # Kill any stray probe-rs processes before starting our own.
@@ -334,7 +371,7 @@ def main() -> None:
     if not args.no_rtt:
         if elf:
             t = threading.Thread(
-                target=_rtt_reader, args=(elf, out_q, stop, rtt_proc_ref), daemon=True, name="rtt"
+                target=_rtt_reader, args=(elf, out_q, stop, rtt_proc_ref, rtt_pause), daemon=True, name="rtt"
             )
             t.start(); bg.append(t)
         else:
@@ -436,26 +473,18 @@ def main() -> None:
                 _kill_probe_rs(out_q)
 
             elif line == ":reset":
-                # Kill RTT reader and wait for it to release the probe.
-                p = rtt_proc_ref[0]
-                if p is not None:
-                    p.terminate()
-                    try:
-                        p.wait(timeout=2.0)
-                    except subprocess.TimeoutExpired:
-                        p.kill()
-                        p.wait()
+                _stop_rtt(rtt_proc_ref, rtt_pause)
                 _probe_run(["reset"], out_q, "resetting…")
+                _resume_after_boot(dev_ref, out_q, rtt_pause)
 
             elif line == ":reflash":
                 if not elf:
                     out_q.put(("err", "no ELF — pass ELF path as argument"))
                 else:
-                    p = rtt_proc_ref[0]
-                    if p is not None:
-                        p.terminate()
+                    _stop_rtt(rtt_proc_ref, rtt_pause)
                     if _probe_run(["download", elf], out_q, f"flashing {Path(elf).name}…"):
                         _probe_run(["reset"], out_q, "resetting…")
+                    _resume_after_boot(dev_ref, out_q, rtt_pause)
 
             else:
                 send_to_fw(line)
