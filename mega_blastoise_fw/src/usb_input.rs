@@ -123,46 +123,50 @@ impl<'d> UsbBattleInput<'d> {
                 }
             }
 
-            // ── Resolve each prompt: AI auto-chooses now; humans are deferred. ─
             let mut choices: Vec<Option<String>> = (0..prompts.len()).map(|_| None).collect();
-            let mut humans: Vec<usize> = Vec::new();
-            for (i, p) in prompts.iter().enumerate() {
-                let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
-                if self.ai_players[idx] {
-                    self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", p.player_id.as_str())).await;
-                    choices[i] = Some(self.ai.make_choice(&p.request, p.player_data.as_ref()));
-                } else {
-                    humans.push(i);
+            let no_multi = prompts.iter().all(|p| !is_multi_switch(&p.request));
+
+            if buttons.is_some() && no_multi {
+                // ── Universal parallel collection ─────────────────────────────
+                // Every batch (human vs human, human vs AI, single forced
+                // switch) runs through the matrix collector: AI prompts are
+                // pre-committed as auto choices, and a single-prompt batch is
+                // padded with an inert slot. This gives every human the
+                // waiting screen, tap-to-unready, and the both-ready grace
+                // window regardless of opponent type.
+                let mut built: Vec<PlayerTurn> = Vec::with_capacity(2);
+                for p in prompts.iter() {
+                    let mut pt = PlayerTurn::from_request(
+                        p.player_id.as_str(), &p.request, p.player_data.as_ref(),
+                    );
+                    let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
+                    if self.ai_players[idx] {
+                        self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", p.player_id.as_str())).await;
+                        pt.set_auto(self.ai.make_choice(&p.request, p.player_data.as_ref()));
+                    } else {
+                        self.display_prompt(p).await;
+                    }
+                    built.push(pt);
                 }
-            }
-
-            // ── Collect human choices. Two human boards → fully parallel
-            //    (each player operates independently, no waiting on the other). ─
-            let parallel = buttons.is_some()
-                && humans.len() == 2
-                && !is_multi_switch(&prompts[humans[0]].request)
-                && !is_multi_switch(&prompts[humans[1]].request);
-
-            if parallel {
-                let (i0, i1) = (humans[0], humans[1]);
-                self.display_prompt(&prompts[i0]).await;
-                self.display_prompt(&prompts[i1]).await;
-                let players = [
-                    PlayerTurn::from_request(
-                        prompts[i0].player_id.as_str(), &prompts[i0].request, prompts[i0].player_data.as_ref(),
-                    ),
-                    PlayerTurn::from_request(
-                        prompts[i1].player_id.as_str(), &prompts[i1].request, prompts[i1].player_data.as_ref(),
-                    ),
+                let n_prompts = built.len();
+                let players: [PlayerTurn; 2] = match built.len() {
+                    2 => {
+                        let mut it = built.into_iter();
+                        [it.next().unwrap(), it.next().unwrap()]
+                    }
+                    _ => [built.pop().expect("non-empty batch"), PlayerTurn::inert()],
+                };
+                let ids = [
+                    prompts.first().map(|p| p.player_id.clone()).unwrap_or_default(),
+                    prompts.get(1).map(|p| p.player_id.clone()).unwrap_or_default(),
                 ];
-                let ids = [prompts[i0].player_id.clone(), prompts[i1].player_id.clone()];
-                let btns = buttons.as_mut().expect("parallel requires buttons");
+                let btns = buttons.as_mut().expect("checked buttons.is_some()");
 
                 // Race typed USB lines ("p1 2", "p2 s3") against the button
                 // matrix. Progress lives outside the button future, so losing
                 // the select doesn't forget a choice a player already made.
-                // wait_two_turns returns only after both players committed AND
-                // the unready grace window passed — loop until then, so a
+                // wait_two_turns returns only after everyone committed AND the
+                // unready grace window passed — loop until then, so a
                 // USB-typed final choice still gets the grace period.
                 let mut progress = TwoTurnProgress::new(&players);
                 loop {
@@ -173,11 +177,23 @@ impl<'d> UsbBattleInput<'d> {
                         Either::Second(()) => break,
                     }
                 }
-                let [c0, c1] = progress.into_choices();
-                choices[i0] = Some(c0);
-                choices[i1] = Some(c1);
+                let outs = progress.into_choices();
+                for (i, c) in outs.into_iter().take(n_prompts).enumerate() {
+                    choices[i] = Some(c);
+                }
             } else {
-                for &i in &humans {
+                // No buttons (host build) or a multi-slot switch: serial.
+                for (i, p) in prompts.iter().enumerate() {
+                    let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
+                    if self.ai_players[idx] {
+                        self.write_dbg(&alloc::format!("[AI] auto-choosing for {}", p.player_id.as_str())).await;
+                        choices[i] = Some(self.ai.make_choice(&p.request, p.player_data.as_ref()));
+                    }
+                }
+                for i in 0..prompts.len() {
+                    if choices[i].is_some() {
+                        continue;
+                    }
                     let btns = buttons.as_mut().map(|b| &mut **b);
                     let pid = prompts[i].player_id.clone();
                     let req = prompts[i].request.clone();

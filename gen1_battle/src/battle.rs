@@ -313,35 +313,51 @@ impl<'a> Battle<'a> {
             if m.empty() || m.fainted() {
                 continue;
             }
-            let moves: Vec<ApiMoveSlot> = m
-                .moves
-                .iter()
-                .filter(|sl| !sl.move_id.is_empty())
-                .map(|sl| {
-                    let info = move_by_id(sl.move_id).unwrap();
-                    ApiMoveSlot {
-                        name: info.name.to_string(),
-                        id: info.id.to_string(),
-                        typ: format!("{:?}", info.move_type),
-                        pp: sl.pp,
-                        max_pp: sl.max_pp,
-                        disabled: false,
-                        target: 0,
-                    }
-                })
-                .collect();
             let v = &m.volatile;
+            let recharging = v.has(crate::state::Volatile::MUST_RECHARGE);
+            // A recharging mon's only option is "Recharge" — shown as a real,
+            // selectable move rather than auto-submitted, so the player sees
+            // what's happening. Any move choice resolves to the recharge turn.
+            let moves: Vec<ApiMoveSlot> = if recharging {
+                alloc::vec![ApiMoveSlot {
+                    name: "Recharge".to_string(),
+                    id: "recharge".to_string(),
+                    typ: "Normal".to_string(),
+                    pp: 1,
+                    max_pp: 1,
+                    disabled: false,
+                    target: 0,
+                }]
+            } else {
+                m.moves
+                    .iter()
+                    .filter(|sl| !sl.move_id.is_empty())
+                    .map(|sl| {
+                        let info = move_by_id(sl.move_id).unwrap();
+                        ApiMoveSlot {
+                            name: info.name.to_string(),
+                            id: info.id.to_string(),
+                            typ: format!("{:?}", info.move_type),
+                            pp: sl.pp,
+                            max_pp: sl.max_pp,
+                            disabled: false,
+                            target: 0,
+                        }
+                    })
+                    .collect()
+            };
             let active = MonTurnRequest {
                 team_position: s.active_idx,
                 moves,
-                trapped: v.has(crate::state::Volatile::TRAPPED)
+                trapped: recharging
+                    || v.has(crate::state::Volatile::TRAPPED)
                     || v.has(crate::state::Volatile::BIDING)
                     || v.has(crate::state::Volatile::CHARGING)
                     || !v.multi_turn_move.is_empty(),
-                locked_into_move: v.has(crate::state::Volatile::MUST_RECHARGE)
-                    || v.has(crate::state::Volatile::CHARGING)
-                    || v.has(crate::state::Volatile::BIDING)
-                    || !v.multi_turn_move.is_empty(),
+                locked_into_move: !recharging
+                    && (v.has(crate::state::Volatile::CHARGING)
+                        || v.has(crate::state::Volatile::BIDING)
+                        || !v.multi_turn_move.is_empty()),
             };
             self.requests
                 .push((player_id, Request::Turn(TurnRequest { active: alloc::vec![active] })));

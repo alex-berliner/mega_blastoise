@@ -356,6 +356,34 @@ async fn battle_loop<E, T, DS>(
             for (player_id, request) in &requests {
                 #[cfg(feature = "trace")]
                 defmt::info!("[trace] battle_loop: sending prompt to {}", player_id.as_str());
+                // Refresh the OLED move corners for this prompt. Normally a
+                // PP refresh from battle RAM; a recharging mon instead shows
+                // its synthetic single "Recharge" option.
+                if let Request::Turn(turn) = request {
+                    let is_recharge = turn
+                        .active
+                        .first()
+                        .is_some_and(|a| a.moves.len() == 1 && a.moves[0].id == "recharge");
+                    let moves = if is_recharge {
+                        alloc::vec![MoveSlot {
+                            name: alloc::string::String::from("Recharge"),
+                            type_name: alloc::string::String::from("Normal"),
+                            category: alloc::string::String::from("Status"),
+                            power: None,
+                            accuracy: None,
+                            pp: 1,
+                            max_pp: 1,
+                        }]
+                    } else {
+                        cache.refresh_pp(player_id, battle)
+                    };
+                    if !moves.is_empty() {
+                        queue.push_event(BoardEvent::MovesUpdate {
+                            player_id: player_id.clone(),
+                            moves,
+                        });
+                    }
+                }
                 queue.push_event(board_prompt_event(player_id, request));
                 queue.dispatch_all(effects).await;
                 let player_data = battle.player_data(player_id).ok();

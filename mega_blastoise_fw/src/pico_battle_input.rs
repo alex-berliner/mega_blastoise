@@ -462,6 +462,29 @@ impl PlayerTurn {
         pt
     }
 
+    /// Placeholder for a single-prompt batch: permanently committed with an
+    /// empty choice, never unreadies, and contributes no submission.
+    pub fn inert() -> Self {
+        Self {
+            player_num: 0,
+            move_row: 0,
+            switch_row: 1,
+            n_moves: 0,
+            usable: [false; 4],
+            trapped: false,
+            active_slot: None,
+            party_ok: [false; 6],
+            forced_switch: false,
+            auto: Some(String::new()),
+        }
+    }
+
+    /// Pre-commit this player's choice (AI-controlled prompt): no input is
+    /// collected and the choice can't be unreadied.
+    pub fn set_auto(&mut self, choice: String) {
+        self.auto = Some(choice);
+    }
+
     /// Number of live move buttons this turn (for parsing typed move slots).
     pub fn n_moves(&self) -> usize {
         self.n_moves
