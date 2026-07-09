@@ -44,18 +44,6 @@ impl<'a> BattleEffects<'a> {
 
 impl BoardEffects for BattleEffects<'_> {
     async fn on_event(&mut self, event: BoardEvent) {
-        self.handle(event, true).await
-    }
-
-    async fn on_event_unpaced(&mut self, event: BoardEvent) {
-        self.handle(event, false).await
-    }
-}
-
-impl BattleEffects<'_> {
-    async fn handle(&mut self, event: BoardEvent, paced: bool) {
-        #[cfg(feature = "trace")]
-        let _ = paced;
         // ── OLED: shared event→command mapping (mega_blastoise_core) ─────────
         // What the displays show is decided once, in core, identically for
         // firmware and web. This block only forwards.
@@ -155,7 +143,7 @@ impl BattleEffects<'_> {
         #[cfg(not(feature = "trace"))]
         {
             let delay_ms = event.anim_delay_ms();
-            if paced && delay_ms > 0 && ANIM_ENABLED.load(Ordering::Relaxed) {
+            if delay_ms > 0 && ANIM_ENABLED.load(Ordering::Relaxed) {
                 Timer::after_millis(delay_ms as u64).await;
             }
         }

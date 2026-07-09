@@ -78,16 +78,6 @@ fn win_leds(winner: u8) -> [u32; 24] {
 
 impl BoardEffects for WebBattleEffects<'_> {
     async fn on_event(&mut self, event: BoardEvent) {
-        self.handle(event, true).await
-    }
-
-    async fn on_event_unpaced(&mut self, event: BoardEvent) {
-        self.handle(event, false).await
-    }
-}
-
-impl WebBattleEffects<'_> {
-    async fn handle(&mut self, event: BoardEvent, paced: bool) {
         // ── OLED: shared event→command mapping (mega_blastoise_core) ─────────
         for cmd in oled_cmds_for_event(&event) {
             crate::oled_apply(cmd);
@@ -165,7 +155,7 @@ impl WebBattleEffects<'_> {
         // ── Animation delay (same canonical per-event delay as firmware;
         //    sleep_ms is a no-op when :anim off) ────────────────────────────────
         let delay_ms = event.anim_delay_ms();
-        if paced && delay_ms > 0 {
+        if delay_ms > 0 {
             crate::sleep_ms(delay_ms).await;
         }
 

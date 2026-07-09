@@ -151,17 +151,16 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
             if let Some(pid) = player_id {
                 let player = player_id_to_num(pid);
                 // Update the battle-screen data first, then flash
-                // "<trainer> sent out X!" on that player's display — the
-                // next prompt's RestoreScreen reveals the updated screen.
-                // Per-player (not broadcast) so simultaneous send-ins show
-                // each side's own message.
+                // "<trainer> sent out X!" on BOTH displays (shared context,
+                // like combat narration) — the next prompt's RestoreScreen
+                // reveals the updated battle screen.
                 let (buf, len) = name_buf(name.as_str());
                 cmds.push(OledCmd::ActiveMon { player, name: buf, len });
                 if !moves.is_empty() {
                     cmds.push(OledCmd::MovesUpdate { player, moves: moves.clone() });
                 }
                 let (text, tlen) = flash_buf(&event.description());
-                cmds.push(OledCmd::EventFlash { player, text, len: tlen });
+                cmds.push(OledCmd::EventFlash { player: 0, text, len: tlen });
             }
         }
         BoardEvent::MovesUpdate { player_id, moves } => {
