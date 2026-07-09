@@ -33,7 +33,7 @@ impl HostOled {
 
     pub fn switch_in(&mut self, player: u8, name: String, moves: Vec<MoveSlot>) {
         let (buf, len) = name_buf(&name);
-        self.apply(OledCmd::ActiveMon { player, name: buf, len });
+        self.apply(OledCmd::ActiveMon { player, name: buf, len, speed: 150 });
         if !moves.is_empty() {
             self.apply(OledCmd::MovesUpdate { player, moves });
         }

@@ -43,8 +43,9 @@ pub enum OledCmd {
     /// HP changed; `pct` is 0–100. Data-only (HP renders on the LED strip):
     /// the current view is kept so narration flashes aren't interrupted.
     HpUpdate { player: u8, pct: u8 },
-    /// New active Pokémon (UTF-8 name, up to 12 bytes).
-    ActiveMon { player: u8, name: [u8; 12], len: u8 },
+    /// New active Pokémon (UTF-8 name, up to 12 bytes). `speed` is the mon's
+    /// Speed stat — drives the battle-screen sprite bob rate.
+    ActiveMon { player: u8, name: [u8; 12], len: u8, speed: u16 },
     /// Move list updated (PP changes after each turn).
     MovesUpdate { player: u8, moves: Vec<MoveSlot> },
     /// A mon fainted.
@@ -147,7 +148,7 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
                 cmds.push(OledCmd::Faint { player });
             }
         }
-        BoardEvent::SwitchIn { name, player_id, moves, .. } => {
+        BoardEvent::SwitchIn { name, player_id, moves, speed, .. } => {
             if let Some(pid) = player_id {
                 let player = player_id_to_num(pid);
                 // Update the battle-screen data first, then flash
@@ -155,7 +156,12 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
                 // like combat narration) — the next prompt's RestoreScreen
                 // reveals the updated battle screen.
                 let (buf, len) = name_buf(name.as_str());
-                cmds.push(OledCmd::ActiveMon { player, name: buf, len });
+                cmds.push(OledCmd::ActiveMon {
+                    player,
+                    name: buf,
+                    len,
+                    speed: speed.unwrap_or(150),
+                });
                 if !moves.is_empty() {
                     cmds.push(OledCmd::MovesUpdate { player, moves: moves.clone() });
                 }
@@ -203,8 +209,24 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
 /// A fully-resolved description of one display's current contents.
 /// [`render_screen`] turns this into pixels; platforms never pick a
 /// `render_*` function themselves.
-/// Sprite bob cadence on the battle screen (one 2-px hop per period).
-pub const BOB_PERIOD_MS: u64 = 900;
+/// Base sprite-bob period on the battle screen (one 2-px hop per period).
+/// The actual period scales with the active mon's Speed stat — see
+/// [`bob_period_ms`].
+pub const BOB_BASE_PERIOD_MS: u32 = 900;
+
+/// How often platforms should call [`OledController::tick_bob`].
+pub const BOB_TICK_MS: u32 = 75;
+
+/// Bob period for a given Speed stat. Speed clamps to [0, 300] (real stats
+/// can reach ~1000 but scaling over that whole range would flatten it):
+/// Speed 0 → 4× the base period (slowest), Speed 300 → half the base (2×
+/// bob rate), linear in between.
+fn bob_period_ms(speed: u16) -> u32 {
+    let slowest = BOB_BASE_PERIOD_MS * 4;
+    let fastest = BOB_BASE_PERIOD_MS / 2;
+    let s = speed.min(300) as u32;
+    slowest - (slowest - fastest) * s / 300
+}
 
 pub enum Screen<'a> {
     Lobby { ready: bool, ai: bool },
@@ -267,6 +289,12 @@ struct Player {
     flash: [u8; 48],
     flash_len: u8,
     view: View,
+    /// Active mon's Speed stat (bob pacing).
+    speed: u16,
+    /// Bob phase (true = sprite raised 2 px).
+    bob_up: bool,
+    /// Milliseconds accumulated toward the next bob flip.
+    bob_acc_ms: u32,
 }
 
 impl Player {
@@ -283,6 +311,9 @@ impl Player {
             flash: [b' '; 48],
             flash_len: 0,
             view: View::Lobby { ready: false, ai: false },
+            speed: 150,
+            bob_up: false,
+            bob_acc_ms: 0,
         }
     }
 
@@ -327,23 +358,29 @@ pub struct OledController {
     p1: Player,
     p2: Player,
     winner: u8,
-    bob_up: bool,
 }
 
 impl OledController {
     pub fn new() -> Self {
-        Self { p1: Player::new(), p2: Player::new(), winner: 0, bob_up: false }
+        Self { p1: Player::new(), p2: Player::new(), winner: 0 }
     }
 
-    /// Advance the battle-screen sprite bob one step. Call every
-    /// [`BOB_PERIOD_MS`]; returns which displays show the battle screen and
-    /// need a redraw (None while neither does).
-    pub fn tick_bob(&mut self) -> OledRedraw {
-        self.bob_up = !self.bob_up;
-        match (
-            matches!(self.p1.view, View::Battle),
-            matches!(self.p2.view, View::Battle),
-        ) {
+    /// Advance the battle-screen sprite bobs by `dt_ms` (call every
+    /// [`BOB_TICK_MS`]). Each player's sprite flips at its own rate, scaled
+    /// by that mon's Speed stat. Returns which displays showed a flip on the
+    /// battle screen and need a redraw.
+    pub fn tick_bob(&mut self, dt_ms: u32) -> OledRedraw {
+        let mut flip = [false; 2];
+        for (i, p) in [&mut self.p1, &mut self.p2].into_iter().enumerate() {
+            p.bob_acc_ms += dt_ms;
+            let period = bob_period_ms(p.speed);
+            if p.bob_acc_ms >= period {
+                p.bob_acc_ms %= period;
+                p.bob_up = !p.bob_up;
+                flip[i] = matches!(p.view, View::Battle);
+            }
+        }
+        match (flip[0], flip[1]) {
             (true, true) => OledRedraw::Both,
             (true, false) => OledRedraw::P1,
             (false, true) => OledRedraw::P2,
@@ -372,7 +409,7 @@ impl OledController {
                     OledRedraw::None
                 }
             }
-            OledCmd::ActiveMon { name, len, .. } => {
+            OledCmd::ActiveMon { name, len, speed, .. } => {
                 // Data-only, like HpUpdate: the switch-in EventFlash (and the
                 // next prompt's RestoreScreen) control what's on screen, so
                 // the battle screen doesn't flash between them.
@@ -381,6 +418,7 @@ impl OledController {
                 p.name_len = len;
                 p.fainted = false;
                 p.hp_pct = 100;
+                p.speed = speed;
                 if matches!(p.view, View::Battle) {
                     OledRedraw::for_player(player)
                 } else {
@@ -479,14 +517,14 @@ impl OledController {
         let p = if player == 1 { &self.p1 } else { &self.p2 };
         match &p.view {
             View::Lobby { ready, ai } => Screen::Lobby { ready: *ready, ai: *ai },
-            View::Battle => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: self.bob_up },
+            View::Battle => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up },
             View::MoveDetail(slot) => match p.moves.get(*slot as usize) {
                 Some(mv) => Screen::MoveDetail(mv),
-                None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: self.bob_up },
+                None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up },
             },
             View::Stats { team_idx, page } => match p.party.get(*team_idx as usize) {
                 Some(slot) => Screen::Stats { slot, page: *page },
-                None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: self.bob_up },
+                None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up },
             },
             View::EventFlash => Screen::EventText(
                 core::str::from_utf8(&p.flash[..p.flash_len as usize]).unwrap_or(""),

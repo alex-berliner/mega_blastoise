@@ -26,7 +26,7 @@ use core::cell::{Cell, RefCell};
 use core::sync::atomic::{AtomicBool, Ordering};
 use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as BlockingMutex}, channel::Channel, signal::Signal};
 use embedded_graphics::{draw_target::DrawTarget, geometry::{OriginDimensions, Size}, pixelcolor::BinaryColor, Pixel};
-use mega_blastoise_core::{render_screen, OledController, BOB_PERIOD_MS};
+use mega_blastoise_core::{render_screen, OledController, BOB_TICK_MS};
 pub use mega_blastoise_core::OledCmd;
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306Async};
 
@@ -276,10 +276,10 @@ pub async fn task(
         if redraw_p2 { dump_rtt(2, &s2); }
 
         // Wake on the next command, or on the bob tick to hop the battle
-        // sprite up/down while a battle screen is idle.
-        let redraw = match select(CMD.receive(), Timer::after_millis(BOB_PERIOD_MS)).await {
+        // sprites — each player's rate scales with their mon's Speed stat.
+        let redraw = match select(CMD.receive(), Timer::after_millis(BOB_TICK_MS as u64)).await {
             Either::First(cmd) => ctl.apply(cmd),
-            Either::Second(()) => ctl.tick_bob(),
+            Either::Second(()) => ctl.tick_bob(BOB_TICK_MS),
         };
         redraw_p1 = redraw.includes(1) && p1_ok;
         redraw_p2 = redraw.includes(2) && p2_ok;

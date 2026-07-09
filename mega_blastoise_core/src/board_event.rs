@@ -111,6 +111,9 @@ pub enum BoardEvent {
         /// Team slot index (0-based) populated by the battle runner; None if unavailable.
         team_slot: Option<u8>,
         moves: Vec<MoveSlot>,
+        /// Active mon's Speed stat, populated by the battle runner — drives
+        /// the battle-screen sprite bob rate.
+        speed: Option<u16>,
     },
     SwitchOut {
         /// Pokémon that left the field (name extracted from `mon:name,player,pos`).
@@ -264,6 +267,7 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
             player_id: p.get("player").map(String::from),
             team_slot: None,
             moves: Vec::new(),
+            speed: None,
         }),
         "switchout" => Some(BoardEvent::SwitchOut {
             name: p.get("mon").map(|s| mon_display_name(s).into()).unwrap_or_default(),

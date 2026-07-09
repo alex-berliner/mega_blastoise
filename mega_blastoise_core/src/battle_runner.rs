@@ -127,13 +127,14 @@ fn query_active_moves<DS: DataStore>(
     battle: &mut gen1_battle::PublicCoreBattle<'_>,
     data: &DS,
     player_id: &str,
-) -> (alloc::vec::Vec<MoveSlot>, Option<u8>) {
+) -> (alloc::vec::Vec<MoveSlot>, Option<u8>, Option<u16>) {
     let Ok(player_data) = battle.player_data(player_id) else {
-        return (alloc::vec::Vec::new(), None);
+        return (alloc::vec::Vec::new(), None, None);
     };
     let Some((slot_idx, active_mon)) = player_data.mons.into_iter().enumerate().find(|(_, m)| m.active) else {
-        return (alloc::vec::Vec::new(), None);
+        return (alloc::vec::Vec::new(), None, None);
     };
+    let speed = active_mon.stats.get(&gen1_battle::Stat::Spe).copied();
     let _ = data;
     let moves = active_mon
         .moves
@@ -159,7 +160,7 @@ fn query_active_moves<DS: DataStore>(
             }
         })
         .collect();
-    (moves, Some(slot_idx as u8))
+    (moves, Some(slot_idx as u8), speed)
 }
 
 fn query_team_slot_by_name(battle: &mut gen1_battle::PublicCoreBattle<'_>, player_id: &str, name: &str) -> Option<u8> {
@@ -219,7 +220,7 @@ async fn enrich_and_dispatch<E, DS>(
                     // Cache miss (shouldn't happen after SwitchIn) — fall back.
                     #[cfg(feature = "timing")]
                     defmt::info!("  refresh_pp cache miss for {}, falling back", pid.as_str());
-                    let (moves, _) = query_active_moves(battle, data, pid.as_str());
+                    let (moves, _, _) = query_active_moves(battle, data, pid.as_str());
                     cache.store(pid.as_str(), moves.clone());
                     Some((pid.clone(), moves))
                 } else {
@@ -232,26 +233,26 @@ async fn enrich_and_dispatch<E, DS>(
         let enriched = match event {
             BoardEvent::SwitchIn { name, species, player_id, moves, .. } if moves.is_empty() => {
                 // Full CBOR decode — only happens once per switch-in.
-                let (new_moves, slot) = player_id.as_deref().map(|pid| {
+                let (new_moves, slot, speed) = player_id.as_deref().map(|pid| {
                     #[cfg(feature = "timing")]
                     let t_qam = embassy_time::Instant::now();
 
-                    let (moves, slot) = query_active_moves(battle, data, pid);
+                    let (moves, slot, speed) = query_active_moves(battle, data, pid);
                     cache.store(pid, moves.clone());
 
                     #[cfg(feature = "timing")]
                     defmt::info!("  query_active_moves(SwitchIn {}): {}ms", pid, t_qam.elapsed().as_millis());
 
-                    (moves, slot)
-                }).unwrap_or((alloc::vec::Vec::new(), None));
-                BoardEvent::SwitchIn { name, species, player_id, team_slot: slot, moves: new_moves }
+                    (moves, slot, speed)
+                }).unwrap_or((alloc::vec::Vec::new(), None, None));
+                BoardEvent::SwitchIn { name, species, player_id, team_slot: slot, moves: new_moves, speed }
             }
-            BoardEvent::SwitchIn { name, species, player_id, moves, team_slot } => {
+            BoardEvent::SwitchIn { name, species, player_id, moves, team_slot, speed } => {
                 // Pre-populated — cache for future PP refreshes.
                 if let Some(pid) = &player_id {
                     cache.store(pid.as_str(), moves.clone());
                 }
-                BoardEvent::SwitchIn { name, species, player_id, moves, team_slot }
+                BoardEvent::SwitchIn { name, species, player_id, moves, team_slot, speed }
             }
             BoardEvent::Faint { mon, .. } => {
                 let name = mon.split(',').next().unwrap_or(mon.as_str());

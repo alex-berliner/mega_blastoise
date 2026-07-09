@@ -111,11 +111,12 @@ pub(crate) fn oled_apply(cmd: OledCmd) {
     }
 }
 
-/// Advance the battle-screen sprite bob — called every 900 ms from JS,
-/// mirroring the firmware's OLED-task tick.
+/// Advance the battle-screen sprite bobs — called every BOB_TICK_MS from JS,
+/// mirroring the firmware's OLED-task tick. Each player's bob rate scales
+/// with their active mon's Speed stat.
 #[wasm_bindgen]
 pub fn wasm_tick_bob() {
-    let redraw = OLED_CTL.with(|c| c.borrow_mut().tick_bob());
+    let redraw = OLED_CTL.with(|c| c.borrow_mut().tick_bob(mega_blastoise_core::BOB_TICK_MS));
     for player in [1u8, 2] {
         if redraw.includes(player) {
             let mut disp = WasmDisplay::new();
