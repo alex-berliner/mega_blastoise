@@ -371,13 +371,19 @@ impl OledController {
                 }
             }
             OledCmd::ActiveMon { name, len, .. } => {
+                // Data-only, like HpUpdate: the switch-in EventFlash (and the
+                // next prompt's RestoreScreen) control what's on screen, so
+                // the battle screen doesn't flash between them.
                 let p = self.player_mut(player);
                 p.name = name;
                 p.name_len = len;
                 p.fainted = false;
                 p.hp_pct = 100;
-                p.view = View::Battle;
-                OledRedraw::for_player(player)
+                if matches!(p.view, View::Battle) {
+                    OledRedraw::for_player(player)
+                } else {
+                    OledRedraw::None
+                }
             }
             OledCmd::MovesUpdate { moves, .. } => {
                 // Data-only update (PP refresh) — same rule as HpUpdate.
