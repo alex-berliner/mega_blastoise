@@ -288,10 +288,15 @@ impl<'d> UsbBattleInput<'d> {
             self.write_err("Both players are choosing — prefix with the player, e.g. \"p1 2\" or \"p2 s3\"").await;
             return;
         };
-        // A committed player may retype: a valid line replaces their choice
-        // (and restarts the grace window); auto choices are fixed.
-        if progress.is_done(i) && progress.is_auto(i) {
-            self.write_err(&alloc::format!("{}'s action is forced this turn", ids[i].as_str())).await;
+        // Typing anything for a committed player unreadies them — back to
+        // their pick screen; they choose again with a fresh line or buttons.
+        if progress.is_done(i) {
+            if progress.is_auto(i) {
+                self.write_err(&alloc::format!("{}'s action is forced this turn", ids[i].as_str())).await;
+            } else {
+                progress.unready(i, players);
+                self.write_ok(&alloc::format!("{} unreadied — choose again", ids[i].as_str())).await;
+            }
             return;
         }
 
