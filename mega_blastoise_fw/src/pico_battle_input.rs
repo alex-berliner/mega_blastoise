@@ -156,20 +156,37 @@ impl<'d> PicoBattleInput<'d> {
     /// Collect *both* players' choices at the same time, scanning the whole
     /// matrix in one loop so neither board blocks the other. Handles long-press
     /// (≥500 ms shows move detail / party stats on that player's OLED instead of
-    /// selecting) and mid-turn switching. Completes when both players are done;
-    /// read the choices out of `progress`.
+    /// selecting) and mid-turn switching.
+    ///
+    /// A committed player sees the waiting screen and can UNREADY by pressing
+    /// any of their buttons, returning to their pick screen. Once both players
+    /// have committed, a grace window keeps the unready option open; the
+    /// future completes (read the choices out of `progress`) only after the
+    /// window passes with both players still committed.
     ///
     /// All state lives in `progress`, so this future can be dropped (e.g. losing
     /// a `select` race against USB input) and re-entered without forgetting a
     /// choice a player already committed.
     pub async fn wait_two_turns(&mut self, players: &[PlayerTurn; 2], progress: &mut TwoTurnProgress) {
         const LONG_MS: u64 = 500;
-        let st = &mut progress.st;
-        let out = &mut progress.out;
+        /// Both-committed grace window before the choices are final.
+        const GRACE_MS: u64 = 1000;
 
         loop {
-            if matches!(st[0], TwoState::Done) && matches!(st[1], TwoState::Done) {
-                return;
+            if progress.all_done() {
+                // Forced choices on both sides have nothing to unready.
+                if progress.auto[0] && progress.auto[1] {
+                    return;
+                }
+                let now = Instant::now().as_millis();
+                match progress.grace_start {
+                    None => progress.grace_start = Some(now),
+                    Some(t0) if now.saturating_sub(t0) >= GRACE_MS => return,
+                    Some(_) => {}
+                }
+                // Fall through: keep scanning so either player can still unready.
+            } else {
+                progress.grace_start = None;
             }
 
             // One full matrix scan, shared by both players.
@@ -182,10 +199,40 @@ impl<'d> PicoBattleInput<'d> {
             }
             let now = Instant::now().as_millis();
 
+            let st = &mut progress.st;
+            let out = &mut progress.out;
             for i in 0..2 {
                 let pt = &players[i];
                 match st[i] {
-                    TwoState::Done => {}
+                    TwoState::Done => {
+                        // Any press on this player's rows unreadies their
+                        // committed choice (auto choices can't be unreadied).
+                        if !progress.auto[i] {
+                            let any = (0..4).any(|c| {
+                                pressed[pt.move_row][c] || pressed[pt.switch_row][c]
+                            });
+                            if any {
+                                out[i].clear();
+                                #[cfg(feature = "oled")]
+                                if pt.forced_switch {
+                                    oled_send(OledCmd::ShowSwitchScreen { player: pt.player_num });
+                                } else {
+                                    oled_send(OledCmd::RestoreScreen { player: pt.player_num });
+                                }
+                                st[i] = TwoState::CancelRelease;
+                            }
+                        }
+                    }
+                    TwoState::CancelRelease => {
+                        // Unready acknowledged — wait for full release so the
+                        // same press can't immediately select something.
+                        let any = (0..4).any(|c| {
+                            pressed[pt.move_row][c] || pressed[pt.switch_row][c]
+                        });
+                        if !any {
+                            st[i] = TwoState::Wait;
+                        }
+                    }
                     TwoState::Wait => {
                         // Switch row takes priority. Always enter Hold on a party press
                         // so a long-press can show stats even for a trapped/active mon;
@@ -228,6 +275,9 @@ impl<'d> PicoBattleInput<'d> {
                                 Ok(choice) => {
                                     out[i] = choice;
                                     st[i] = TwoState::Done;
+                                    // "waiting… / tap to unready"
+                                    #[cfg(feature = "oled")]
+                                    oled_send(OledCmd::ShowWaiting { player: pt.player_num });
                                 }
                                 Err(()) => {
                                     // Flash the invalid-selection screen briefly.
@@ -269,16 +319,26 @@ impl<'d> PicoBattleInput<'d> {
 pub struct TwoTurnProgress {
     st: [TwoState; 2],
     out: [String; 2],
+    /// Which players had a forced (auto) choice — those can't unready.
+    auto: [bool; 2],
+    /// When both players first became Done (ms) — starts the grace window.
+    grace_start: Option<u64>,
 }
 
 impl TwoTurnProgress {
     pub fn new(players: &[PlayerTurn; 2]) -> Self {
-        let mut p = Self { st: [TwoState::Wait; 2], out: [String::new(), String::new()] };
+        let mut p = Self {
+            st: [TwoState::Wait; 2],
+            out: [String::new(), String::new()],
+            auto: [false; 2],
+            grace_start: None,
+        };
         // Players with a forced choice (locked move / no moves) need no input.
         for i in 0..2 {
             if let Some(c) = &players[i].auto {
                 p.out[i] = c.clone();
                 p.st[i] = TwoState::Done;
+                p.auto[i] = true;
             }
         }
         p
@@ -293,12 +353,10 @@ impl TwoTurnProgress {
     }
 
     /// Commit an externally validated choice (e.g. a typed USB line) for
-    /// player `i`. Dismisses that player's long-press detail view if showing.
+    /// player `i`. Shows their "waiting… / tap to unready" screen.
     pub fn set_choice(&mut self, i: usize, players: &[PlayerTurn; 2], choice: String) {
         #[cfg(feature = "oled")]
-        if matches!(self.st[i], TwoState::Shown { .. }) {
-            oled_send(OledCmd::RestoreScreen { player: players[i].player_num });
-        }
+        oled_send(OledCmd::ShowWaiting { player: players[i].player_num });
         #[cfg(not(feature = "oled"))]
         let _ = players;
         self.out[i] = choice;
@@ -420,6 +478,8 @@ enum TwoState {
     Shown { row: usize },
     /// Invalid selection screen is showing; restores at the deadline.
     Invalid { until: u64 },
+    /// Player unreadied; waiting for the triggering press to be released.
+    CancelRelease,
     /// Choice committed.
     Done,
 }

@@ -161,13 +161,16 @@ impl<'d> UsbBattleInput<'d> {
                 // Race typed USB lines ("p1 2", "p2 s3") against the button
                 // matrix. Progress lives outside the button future, so losing
                 // the select doesn't forget a choice a player already made.
+                // wait_two_turns returns only after both players committed AND
+                // the unready grace window passed — loop until then, so a
+                // USB-typed final choice still gets the grace period.
                 let mut progress = TwoTurnProgress::new(&players);
-                while !progress.all_done() {
+                loop {
                     match select(self.read_line(), btns.wait_two_turns(&players, &mut progress)).await {
                         Either::First(line) => {
                             self.handle_parallel_line(line.trim(), &players, &ids, &mut progress).await;
                         }
-                        Either::Second(()) => {}
+                        Either::Second(()) => break,
                     }
                 }
                 let [c0, c1] = progress.into_choices();
