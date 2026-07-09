@@ -47,9 +47,18 @@ pub struct ActivePrompt {
 /// Create one per battle (stack-allocated, no heap).  Pass `&bus` to every input
 /// source's `run(&bus)` call, then compose those futures and hand them to
 /// [`run_battle`](crate::run_battle).
+/// A player's submitted choice, tagged with who it belongs to so the runner
+/// routes by id instead of relying on submission order.
+#[derive(Clone, Debug)]
+pub struct PlayerChoice {
+    pub player_id: String,
+    pub choice: String,
+}
+
 pub struct InputBus {
-    /// Choice strings produced by input sources, consumed by the runner.
-    pub choices: Channel<NoopRawMutex, String, 4>,
+    /// Choices produced by input sources, consumed by the runner. Tagged with
+    /// the player id, so sources may submit in any order.
+    pub choices: Channel<NoopRawMutex, PlayerChoice, 4>,
     /// Sent by the runner before it blocks on choices.  Capacity-2 lets the runner
     /// queue both players' prompts simultaneously so ButtonController can fire
     /// on_prompt for everyone before any wait_action blocks.
@@ -69,7 +78,7 @@ impl InputBus {
         }
     }
 
-    pub fn sender(&self) -> Sender<'_, NoopRawMutex, String, 4> {
+    pub fn sender(&self) -> Sender<'_, NoopRawMutex, PlayerChoice, 4> {
         self.choices.sender()
     }
 }
@@ -304,7 +313,6 @@ impl<BS: ButtonSource> ButtonController<BS> {
 impl<BS: ButtonSource + Clone> ButtonController<BS> {
     /// Like `run`, but collects all players' choices in parallel when `batch_total > 1`.
     /// Requires `BS: Clone` so each player gets an independent source instance.
-    /// Choices are always sent to `bus.choices` in prompt order (p1 before p2).
     pub async fn run_parallel(&mut self, bus: &InputBus) {
         loop {
             let first_prompt = loop {
@@ -351,16 +359,15 @@ impl<BS: ButtonSource + Clone> ButtonController<BS> {
                     self.collect_choice_with_unready(&first_prompt),
                     ctrl2.collect_choice_with_unready(&extra),
                 ).await;
-                // Send in prompt order so battle_runner applies them to the right players.
-                bus.choices.send(c1).await;
-                bus.choices.send(c2).await;
+                bus.choices.send(PlayerChoice { player_id: first_prompt.player_id.clone(), choice: c1 }).await;
+                bus.choices.send(PlayerChoice { player_id: extra.player_id.clone(), choice: c2 }).await;
             } else {
                 // Single player (or unsupported batch size) — serial.
                 let choice = self.collect_choice_with_unready(&first_prompt).await;
-                bus.choices.send(choice).await;
+                bus.choices.send(PlayerChoice { player_id: first_prompt.player_id.clone(), choice }).await;
                 for extra in &extra_prompts {
                     let choice = self.collect_choice_with_unready(extra).await;
-                    bus.choices.send(choice).await;
+                    bus.choices.send(PlayerChoice { player_id: extra.player_id.clone(), choice }).await;
                 }
             }
 
@@ -416,13 +423,13 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
                 }
             }
 
-            // Collect and submit choices in prompt order.
+            // Collect and submit each prompt's choice.
             let choice = self.collect_choice_with_unready(&first_prompt).await;
-            bus.choices.send(choice).await;
+            bus.choices.send(PlayerChoice { player_id: first_prompt.player_id.clone(), choice }).await;
 
             for extra in &extra_prompts {
                 let choice = self.collect_choice_with_unready(extra).await;
-                bus.choices.send(choice).await;
+                bus.choices.send(PlayerChoice { player_id: extra.player_id.clone(), choice }).await;
             }
 
             while let Ok(line) = bus.log.try_receive() {

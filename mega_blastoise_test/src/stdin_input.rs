@@ -3,7 +3,7 @@ use std::io::{self, Write};
 use gen1_battle::Request;
 use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, player_display_name,
-    ActivePrompt, InputBus, InputSource,
+    ActivePrompt, InputBus, InputSource, PlayerChoice,
 };
 
 pub struct StdinBattleInput;
@@ -16,7 +16,7 @@ impl StdinBattleInput {
         loop {
             let ActivePrompt { player_id, request, .. } = bus.prompt.receive().await;
             let choice = self.handle(&player_id, &request);
-            bus.choices.send(choice).await;
+            bus.choices.send(PlayerChoice { player_id, choice }).await;
         }
     }
 

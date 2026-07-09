@@ -20,7 +20,8 @@ use embassy_rp::gpio::{Input, Output};
 use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
     format_move_choice, format_switch_choice, join_choice_parts, party_slot_from_mon, player_id_to_num,
-    turn_action_choice, ActivePrompt, ButtonSource, InputBus, InputSource, PlayerAction,
+    turn_action_choice, ActionReject, ActivePrompt, ButtonSource, InputBus, InputSource,
+    PlayerAction, PlayerChoice,
 };
 #[cfg(feature = "oled")]
 use crate::subsystems::oled::{send as oled_send, OledCmd};
@@ -155,24 +156,20 @@ impl<'d> PicoBattleInput<'d> {
     /// Collect *both* players' choices at the same time, scanning the whole
     /// matrix in one loop so neither board blocks the other. Handles long-press
     /// (≥500 ms shows move detail / party stats on that player's OLED instead of
-    /// selecting) and mid-turn switching. Returns each player's choice string in
-    /// the same order as `players`.
-    pub async fn wait_two_turns(&mut self, players: [PlayerTurn; 2]) -> [String; 2] {
+    /// selecting) and mid-turn switching. Completes when both players are done;
+    /// read the choices out of `progress`.
+    ///
+    /// All state lives in `progress`, so this future can be dropped (e.g. losing
+    /// a `select` race against USB input) and re-entered without forgetting a
+    /// choice a player already committed.
+    pub async fn wait_two_turns(&mut self, players: &[PlayerTurn; 2], progress: &mut TwoTurnProgress) {
         const LONG_MS: u64 = 500;
-        let mut st = [TwoState::Wait; 2];
-        let mut out: [String; 2] = [String::new(), String::new()];
-
-        // Players with a forced choice (locked move / no moves) need no input.
-        for i in 0..2 {
-            if let Some(c) = &players[i].auto {
-                out[i] = c.clone();
-                st[i] = TwoState::Done;
-            }
-        }
+        let st = &mut progress.st;
+        let out = &mut progress.out;
 
         loop {
             if matches!(st[0], TwoState::Done) && matches!(st[1], TwoState::Done) {
-                return out;
+                return;
             }
 
             // One full matrix scan, shared by both players.
@@ -207,7 +204,7 @@ impl<'d> PicoBattleInput<'d> {
                             if now.saturating_sub(t0) >= LONG_MS {
                                 #[cfg(feature = "oled")]
                                 if switch {
-                                    oled_send(OledCmd::ShowPokemonStats { player: pt.player_num, team_idx: col as u8 });
+                                    oled_send(OledCmd::ShowPokemonStats { player: pt.player_num, team_idx: col as u8, page: 0 });
                                 } else {
                                     oled_send(OledCmd::ShowMoveDetail { player: pt.player_num, slot: col as u8 });
                                 }
@@ -245,6 +242,53 @@ impl<'d> PicoBattleInput<'d> {
 
             Timer::after_millis(6).await;
         }
+    }
+}
+
+/// State of a two-player parallel wait, held by the caller so the
+/// [`PicoBattleInput::wait_two_turns`] future can be raced against other input
+/// (USB lines) and re-entered without losing a committed choice.
+pub struct TwoTurnProgress {
+    st: [TwoState; 2],
+    out: [String; 2],
+}
+
+impl TwoTurnProgress {
+    pub fn new(players: &[PlayerTurn; 2]) -> Self {
+        let mut p = Self { st: [TwoState::Wait; 2], out: [String::new(), String::new()] };
+        // Players with a forced choice (locked move / no moves) need no input.
+        for i in 0..2 {
+            if let Some(c) = &players[i].auto {
+                p.out[i] = c.clone();
+                p.st[i] = TwoState::Done;
+            }
+        }
+        p
+    }
+
+    pub fn is_done(&self, i: usize) -> bool {
+        matches!(self.st[i], TwoState::Done)
+    }
+
+    pub fn all_done(&self) -> bool {
+        self.is_done(0) && self.is_done(1)
+    }
+
+    /// Commit an externally validated choice (e.g. a typed USB line) for
+    /// player `i`. Dismisses that player's long-press detail view if showing.
+    pub fn set_choice(&mut self, i: usize, players: &[PlayerTurn; 2], choice: String) {
+        #[cfg(feature = "oled")]
+        if matches!(self.st[i], TwoState::Shown { .. }) {
+            oled_send(OledCmd::RestoreScreen { player: players[i].player_num });
+        }
+        #[cfg(not(feature = "oled"))]
+        let _ = players;
+        self.out[i] = choice;
+        self.st[i] = TwoState::Done;
+    }
+
+    pub fn into_choices(self) -> [String; 2] {
+        self.out
     }
 }
 
@@ -307,6 +351,17 @@ impl PlayerTurn {
         }
         pt
     }
+
+    /// Number of live move buttons this turn (for parsing typed move slots).
+    pub fn n_moves(&self) -> usize {
+        self.n_moves
+    }
+
+    /// Validate a typed action through the same shared rule as button presses
+    /// (disabled/PP, trapped, switch-to-active).
+    pub fn typed_action_choice(&self, action: &PlayerAction) -> Result<String, ActionReject> {
+        turn_action_choice(action, self.n_moves, &self.usable, self.trapped, self.active_slot)
+    }
 }
 
 /// Per-player progress inside [`PicoBattleInput::wait_two_turns`].
@@ -357,7 +412,7 @@ impl ButtonSource for PicoBattleInput<'_> {
                 };
                 if is_long {
                     #[cfg(feature = "oled")]
-                    { oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8 });
+                    { oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8, page: 0 });
                       self.0.wait_release(switch_row).await;
                       oled_send(OledCmd::RestoreScreen { player }); }
                     #[cfg(not(feature = "oled"))]
@@ -413,7 +468,7 @@ impl ButtonSource for PicoBattleInput<'_> {
                 };
                 if is_long {
                     #[cfg(feature = "oled")]
-                    { oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8 });
+                    { oled_send(OledCmd::ShowPokemonStats { player, team_idx: col as u8, page: 0 });
                       self.0.wait_release(row).await;
                       oled_send(OledCmd::RestoreScreen { player }); }
                     #[cfg(not(feature = "oled"))]
@@ -433,7 +488,7 @@ impl InputSource for PicoBattleInput<'_> {
         loop {
             let ActivePrompt { player_id, request, .. } = bus.prompt.receive().await;
             let choice = self.handle_request(&player_id, &request).await;
-            bus.choices.send(choice).await;
+            bus.choices.send(PlayerChoice { player_id, choice }).await;
         }
     }
 }

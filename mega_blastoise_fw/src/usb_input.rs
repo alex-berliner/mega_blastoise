@@ -14,12 +14,12 @@ use mega_blastoise_core::{
     format_lobby_status, format_move_choice, format_prompt, format_switch_choice, join_choice_parts,
     parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, party_slot_from_mon,
     player_id_to_num, turn_action_choice, ActionReject, ActivePrompt, ButtonSource, InputBus,
-    InputSource, PlayerAction, RandomAi, TurnChoice, LOBBY_HELP, TEAM_SEED_SALT,
+    InputSource, PlayerAction, PlayerChoice, RandomAi, TurnChoice, LOBBY_HELP, TEAM_SEED_SALT,
 };
 use gen1_battle::MonData;
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
 
-use crate::pico_battle_input::{PicoBattleInput, PlayerTurn};
+use crate::pico_battle_input::{PicoBattleInput, PlayerTurn, TwoTurnProgress};
 #[cfg(feature = "oled")]
 use crate::subsystems::oled::{read_shadow_fb, send as oled_send, wait_fb_change, OledCmd};
 
@@ -133,10 +133,26 @@ impl<'d> UsbBattleInput<'d> {
                 let (i0, i1) = (humans[0], humans[1]);
                 self.display_prompt(&prompts[i0]).await;
                 self.display_prompt(&prompts[i1]).await;
-                let pt0 = PlayerTurn::from_request(prompts[i0].player_id.as_str(), &prompts[i0].request);
-                let pt1 = PlayerTurn::from_request(prompts[i1].player_id.as_str(), &prompts[i1].request);
+                let players = [
+                    PlayerTurn::from_request(prompts[i0].player_id.as_str(), &prompts[i0].request),
+                    PlayerTurn::from_request(prompts[i1].player_id.as_str(), &prompts[i1].request),
+                ];
+                let ids = [prompts[i0].player_id.clone(), prompts[i1].player_id.clone()];
                 let btns = buttons.as_mut().expect("parallel requires buttons");
-                let [c0, c1] = btns.wait_two_turns([pt0, pt1]).await;
+
+                // Race typed USB lines ("p1 2", "p2 s3") against the button
+                // matrix. Progress lives outside the button future, so losing
+                // the select doesn't forget a choice a player already made.
+                let mut progress = TwoTurnProgress::new(&players);
+                while !progress.all_done() {
+                    match select(self.read_line(), btns.wait_two_turns(&players, &mut progress)).await {
+                        Either::First(line) => {
+                            self.handle_parallel_line(line.trim(), &players, &ids, &mut progress).await;
+                        }
+                        Either::Second(()) => {}
+                    }
+                }
+                let [c0, c1] = progress.into_choices();
                 choices[i0] = Some(c0);
                 choices[i1] = Some(c1);
             } else {
@@ -150,11 +166,11 @@ impl<'d> UsbBattleInput<'d> {
                 }
             }
 
-            // ── Submit choices in prompt order (the runner applies them so). ──
-            for c in choices {
+            // ── Submit choices, tagged by player (the runner routes by id). ──
+            for (p, c) in prompts.iter().zip(choices) {
                 let c = c.unwrap_or_else(|| String::from("pass"));
-                self.write_dbg(&alloc::format!("Submitting to engine: \"{}\"", c)).await;
-                bus.choices.send(c).await;
+                self.write_dbg(&alloc::format!("Submitting to engine ({}): \"{}\"", p.player_id.as_str(), c)).await;
+                bus.choices.send(PlayerChoice { player_id: p.player_id.clone(), choice: c }).await;
             }
 
             while let Ok(line) = bus.log.try_receive() {
@@ -171,6 +187,57 @@ impl<'d> UsbBattleInput<'d> {
         }
         self.write("\r\n").await;
         self.write_multiline(&format_prompt(p.player_id.as_str(), &p.request, p.player_data.as_ref())).await;
+    }
+
+    /// Handle a typed line while both players are choosing in parallel.
+    /// Requires a player prefix — "p1 <cmd>" / "p2 <cmd>" — where <cmd> is the
+    /// usual turn syntax (move 1-4 or s2-s6). Runs through the same shared
+    /// validator as button presses.
+    async fn handle_parallel_line(
+        &mut self,
+        line: &str,
+        players: &[PlayerTurn; 2],
+        ids: &[String; 2],
+        progress: &mut TwoTurnProgress,
+    ) {
+        if line.is_empty() {
+            return;
+        }
+        let mut parsed = None;
+        for i in 0..2 {
+            if let Some(rest) = line.strip_prefix(ids[i].as_str()) {
+                if rest.starts_with(' ') {
+                    parsed = Some((i, rest.trim()));
+                    break;
+                }
+            }
+        }
+        let Some((i, rest)) = parsed else {
+            self.write_err("Both players are choosing — prefix with the player, e.g. \"p1 2\" or \"p2 s3\"").await;
+            return;
+        };
+        if progress.is_done(i) {
+            self.write_err(&alloc::format!("{} has already chosen", ids[i].as_str())).await;
+            return;
+        }
+        let n = players[i].n_moves();
+        let action = match parse_turn_line(rest, n) {
+            Ok(TurnChoice::Move(s)) => PlayerAction::Move(s),
+            Ok(TurnChoice::Switch(x)) => PlayerAction::Switch(x),
+            Err(msg) => {
+                self.write_err(&alloc::format!("Rejected ({}) — {}", ids[i].as_str(), msg)).await;
+                return;
+            }
+        };
+        match players[i].typed_action_choice(&action) {
+            Ok(choice) => {
+                self.write_ok(&alloc::format!("Accepted — {} {}", ids[i].as_str(), choice.as_str())).await;
+                progress.set_choice(i, players, choice);
+            }
+            Err(reason) => {
+                self.write_err(&alloc::format!("Rejected ({}) — {}", ids[i].as_str(), reject_reason(reason))).await;
+            }
+        }
     }
 
     async fn handle(

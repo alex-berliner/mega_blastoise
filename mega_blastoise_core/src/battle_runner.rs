@@ -369,13 +369,28 @@ async fn battle_loop<E, T, DS>(
                 defmt::info!("[trace] battle_loop: prompt delivered to {}", player_id.as_str());
             }
 
-            // Collect choices in the same order as prompts, then apply them.
-            for (player_id, _) in &requests {
+            // Collect one choice per prompted player, routed by the id tag so
+            // sources may submit in any order.
+            let mut pending: alloc::vec::Vec<&str> =
+                requests.iter().map(|(pid, _)| pid.as_str()).collect();
+            while !pending.is_empty() {
                 #[cfg(feature = "trace")]
-                defmt::info!("[trace] battle_loop: waiting for choice from {}", player_id.as_str());
-                let line = bus.choices.receive().await;
+                defmt::info!("[trace] battle_loop: waiting for {} choice(s)", pending.len() as u32);
+                let submitted = bus.choices.receive().await;
+                let Some(pos) = pending.iter().position(|pid| *pid == submitted.player_id) else {
+                    // Duplicate or stray submission — this turn already has that
+                    // player's choice (or the player has no request). Drop it.
+                    #[cfg(feature = "defmt")]
+                    defmt::error!(
+                        "battle_loop: dropping choice for {} with no pending request",
+                        submitted.player_id.as_str()
+                    );
+                    continue;
+                };
+                let player_id = pending.remove(pos);
+                let line = submitted.choice;
                 #[cfg(feature = "trace")]
-                defmt::info!("[trace] battle_loop: got choice from {}: {}", player_id.as_str(), line.as_str());
+                defmt::info!("[trace] battle_loop: got choice from {}: {}", player_id, line.as_str());
 
                 #[cfg(feature = "timing")]
                 let t0 = embassy_time::Instant::now();
@@ -384,7 +399,7 @@ async fn battle_loop<E, T, DS>(
                     #[cfg(feature = "defmt")]
                     defmt::error!(
                         "set_player_choice failed ({}): {}",
-                        player_id.as_str(),
+                        player_id,
                         defmt::Display2Format(&e.to_string())
                     );
                     #[cfg(not(feature = "defmt"))]
@@ -394,7 +409,7 @@ async fn battle_loop<E, T, DS>(
                 #[cfg(feature = "timing")]
                 defmt::info!(
                     "set_player_choice({}): {}ms",
-                    player_id.as_str(),
+                    player_id,
                     t0.elapsed().as_millis()
                 );
 
@@ -406,7 +421,7 @@ async fn battle_loop<E, T, DS>(
                 #[cfg(feature = "timing")]
                 defmt::info!(
                     "enrich_and_dispatch after set_player_choice({}): {}ms",
-                    player_id.as_str(),
+                    player_id,
                     t_ead.elapsed().as_millis()
                 );
             }

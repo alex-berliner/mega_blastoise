@@ -12,7 +12,7 @@ use embassy_futures::select::{select, Either};
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams,
-    ActivePrompt, BoardEventQueue, FlashDataStore, InputBus, InputSource, RandomAi,
+    ActivePrompt, BoardEventQueue, FlashDataStore, InputBus, InputSource, PlayerChoice, RandomAi,
     LOBBY_DEMO_DELAY_MS, TEAM_SEED_SALT,
 };
 
@@ -161,7 +161,7 @@ impl InputSource for DemoAi {
         loop {
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: waiting for prompt");
-            let ActivePrompt { request, player_data, .. } = bus.prompt.receive().await;
+            let ActivePrompt { player_id, request, player_data, .. } = bus.prompt.receive().await;
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: got prompt");
             // Cosmetic pacing so the demo is watchable. Skipped under `trace`
@@ -173,7 +173,7 @@ impl InputSource for DemoAi {
             let choice = self.0.make_choice(&request, player_data.as_ref());
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: sending choice: {}", choice.as_str());
-            bus.choices.send(choice).await;
+            bus.choices.send(PlayerChoice { player_id, choice }).await;
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: choice sent");
         }

@@ -220,5 +220,6 @@ fn button_press_sends_move_choice_without_stdin() {
     });
 
     // format_move_choice(1) == "move 1"
-    assert_eq!(choice, "move 1");
+    assert_eq!(choice.player_id, "p1");
+    assert_eq!(choice.choice, "move 1");
 }
