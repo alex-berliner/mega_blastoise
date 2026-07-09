@@ -136,22 +136,100 @@ where
     }
 
     // ── Corner moves, on top of the sprite ────────────────────────────────────
-    if let Some(mv) = moves.first() {
-        Text::with_text_style(&mv.name, Point::new(0, 0), move_char, tl_style())
-            .draw(display).ok();
+    #[cfg(not(feature = "wrapmoves"))]
+    {
+        if let Some(mv) = moves.first() {
+            Text::with_text_style(&mv.name, Point::new(0, 0), move_char, tl_style())
+                .draw(display).ok();
+        }
+        if let Some(mv) = moves.get(1) {
+            Text::with_text_style(&mv.name, Point::new(127, 0), move_char, tr_style())
+                .draw(display).ok();
+        }
+        if let Some(mv) = moves.get(2) {
+            Text::with_text_style(&mv.name, Point::new(0, 64 - move_h), move_char, tl_style())
+                .draw(display).ok();
+        }
+        if let Some(mv) = moves.get(3) {
+            Text::with_text_style(&mv.name, Point::new(127, 64 - move_h), move_char, tr_style())
+                .draw(display).ok();
+        }
     }
-    if let Some(mv) = moves.get(1) {
-        Text::with_text_style(&mv.name, Point::new(127, 0), move_char, tr_style())
-            .draw(display).ok();
+    // wrapmoves variant: move names wrap at spaces/hyphens (and long words
+    // hyphenate) into stacked lines — top corners grow downward, bottom
+    // corners grow upward. Pairs well with bigsprite's narrow corners.
+    #[cfg(feature = "wrapmoves")]
+    for (mv, x, top, right) in [
+        (moves.first(), 0i32, true, false),
+        (moves.get(1), 127, true, true),
+        (moves.get(2), 0, false, false),
+        (moves.get(3), 127, false, true),
+    ] {
+        let Some(mv) = mv else { continue };
+        let lines = wrap_move_name(&mv.name);
+        let n = lines.len() as i32;
+        for (j, line) in lines.iter().enumerate() {
+            let y = if top {
+                j as i32 * move_h
+            } else {
+                64 - n * move_h + j as i32 * move_h
+            };
+            let style = if right { tr_style() } else { tl_style() };
+            Text::with_text_style(line, Point::new(x, y), move_char, style)
+                .draw(display).ok();
+        }
     }
-    if let Some(mv) = moves.get(2) {
-        Text::with_text_style(&mv.name, Point::new(0, 64 - move_h), move_char, tl_style())
-            .draw(display).ok();
+}
+
+/// Split a move name for the wrapped corner layout: break at spaces, keep
+/// hyphens with the leading part ("Double-" / "Edge"), and hyphenate words
+/// longer than 6 characters into 5-char chunks ("Earth-" / "quake").
+#[cfg(feature = "wrapmoves")]
+fn wrap_move_name(name: &str) -> alloc::vec::Vec<alloc::string::String> {
+    use alloc::string::String;
+    let mut out = alloc::vec::Vec::new();
+    // `natural_hyphen`: the word was followed by a real hyphen in the name
+    // ("Double-Edge") — it renders verbatim on the word's last line and does
+    // not count toward the hyphenation length.
+    let mut push_word = |word: &str, natural_hyphen: bool| {
+        let mut rest = word;
+        while rest.chars().count() > 6 {
+            let split = rest
+                .char_indices()
+                .nth(5)
+                .map(|(i, _)| i)
+                .unwrap_or(rest.len());
+            let mut chunk = String::from(&rest[..split]);
+            chunk.push('-');
+            out.push(chunk);
+            rest = &rest[split..];
+        }
+        if !rest.is_empty() || natural_hyphen {
+            let mut last = String::from(rest);
+            if natural_hyphen {
+                last.push('-');
+            }
+            out.push(last);
+        }
+    };
+    let mut cur = String::new();
+    for ch in name.chars() {
+        match ch {
+            ' ' => {
+                if !cur.is_empty() {
+                    push_word(&core::mem::take(&mut cur), false);
+                }
+            }
+            '-' => {
+                push_word(&core::mem::take(&mut cur), true);
+            }
+            c => cur.push(c),
+        }
     }
-    if let Some(mv) = moves.get(3) {
-        Text::with_text_style(&mv.name, Point::new(127, 64 - move_h), move_char, tr_style())
-            .draw(display).ok();
+    if !cur.is_empty() {
+        push_word(&cur, false);
     }
+    out
 }
 
 // ── Move detail screen ────────────────────────────────────────────────────────
@@ -567,5 +645,28 @@ impl DrawTarget for OledFrameBuffer {
 impl OriginDimensions for OledFrameBuffer {
     fn size(&self) -> Size {
         Size::new(128, 64)
+    }
+}
+
+#[cfg(all(test, feature = "wrapmoves"))]
+mod wrap_tests {
+    use super::wrap_move_name;
+    use alloc::string::String;
+    use alloc::vec::Vec;
+
+    fn w(name: &str) -> Vec<String> {
+        wrap_move_name(name)
+    }
+
+    #[test]
+    fn wraps_spaces_hyphens_and_long_words() {
+        assert_eq!(w("Skull Bash"), ["Skull", "Bash"]);
+        assert_eq!(w("Double-Edge"), ["Double-", "Edge"]);
+        assert_eq!(w("Earthquake"), ["Earth-", "quake"]);
+        assert_eq!(w("Flamethrower"), ["Flame-", "throw-", "er"]);
+        assert_eq!(w("Confuse Ray"), ["Confu-", "se", "Ray"]);
+        assert_eq!(w("Gust"), ["Gust"]);
+        assert_eq!(w("Splash"), ["Splash"]);
+        assert_eq!(w("Self-Destruct"), ["Self-", "Destr-", "uct"]);
     }
 }

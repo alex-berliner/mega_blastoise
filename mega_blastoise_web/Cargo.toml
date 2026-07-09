@@ -34,3 +34,8 @@ once_cell = { path = "../patches/once_cell" }
 [profile.release]
 opt-level = "s"
 lto = true
+
+[features]
+# Display variants: un-rescaled 56px sprites / wrapped corner move names.
+bigsprite = ["mega-blastoise-core/bigsprite"]
+wrapmoves = ["mega-blastoise-core/wrapmoves"]

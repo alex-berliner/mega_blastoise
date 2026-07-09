@@ -264,10 +264,14 @@ fn emit_roster(
 
 // ── Gen 1 OLED sprites ───────────────────────────────────────────────────────
 
-/// Rendered sprite side length in pixels. 48 fits between the two corner-move
-/// text rows on the 128x64 OLED (rows 8..56).
-const SPRITE_SIDE: usize = 48;
-const SPRITE_BYTES: usize = SPRITE_SIDE * SPRITE_SIDE / 8;
+/// Rendered sprite side length in pixels. The default 48 fits between the
+/// two corner-move text rows on the 128x64 OLED (rows 8..56). The `bigsprite`
+/// build variant uses a 56px canvas with the Game Boy sprites placed 1:1
+/// (un-rescaled; GB front sprites are at most 56x56) — the corner move text
+/// draws over the sprite's margins.
+fn sprite_side() -> usize {
+    if std::env::var("CARGO_FEATURE_BIGSPRITE").is_ok() { 56 } else { 48 }
+}
 
 /// The 151 Gen 1 species in dex order, using battler's display names
 /// (`mons/gen1.json` `name` fields) so `render_player_screen` can match the
@@ -364,19 +368,36 @@ fn sprite_ink(path: &Path) -> Vec<Vec<bool>> {
         .collect()
 }
 
-/// Scale an ink mask to fit `SPRITE_SIDE` (aspect preserved, centered on a
+/// Center an ink mask 1:1 on a `side`-square canvas (bigsprite variant).
+/// Falls back to scaling if a crop somehow exceeds the canvas.
+fn center_ink(ink: &[Vec<bool>], side: usize) -> Vec<Vec<bool>> {
+    let (sh, sw) = (ink.len(), ink[0].len());
+    if sh > side || sw > side {
+        return scale_ink(ink, side);
+    }
+    let (oy, ox) = ((side - sh) / 2, (side - sw) / 2);
+    let mut out = vec![vec![false; side]; side];
+    for (y, row) in ink.iter().enumerate() {
+        for (x, &lit) in row.iter().enumerate() {
+            out[oy + y][ox + x] = lit;
+        }
+    }
+    out
+}
+
+/// Scale an ink mask to fit `side` (aspect preserved, centered on a
 /// square): each destination pixel lights if lit source pixels cover more
 /// than half of its footprint (exact box-overlap coverage).
-fn scale_ink(ink: &[Vec<bool>]) -> [[bool; SPRITE_SIDE]; SPRITE_SIDE] {
+fn scale_ink(ink: &[Vec<bool>], side: usize) -> Vec<Vec<bool>> {
     let (sh, sw) = (ink.len(), ink[0].len());
     let (nh, nw) = if sh >= sw {
-        (SPRITE_SIDE, ((sw * SPRITE_SIDE + sh / 2) / sh).max(1))
+        (side, ((sw * side + sh / 2) / sh).max(1))
     } else {
-        (((sh * SPRITE_SIDE + sw / 2) / sw).max(1), SPRITE_SIDE)
+        (((sh * side + sw / 2) / sw).max(1), side)
     };
-    let (oy, ox) = ((SPRITE_SIDE - nh) / 2, (SPRITE_SIDE - nw) / 2);
+    let (oy, ox) = ((side - nh) / 2, (side - nw) / 2);
 
-    let mut out = [[false; SPRITE_SIDE]; SPRITE_SIDE];
+    let mut out = vec![vec![false; side]; side];
     for dy in 0..nh {
         let (sy0, sy1) = (dy as f64 * sh as f64 / nh as f64, (dy + 1) as f64 * sh as f64 / nh as f64);
         for dx in 0..nw {
@@ -401,17 +422,22 @@ fn scale_ink(ink: &[Vec<bool>]) -> [[bool; SPRITE_SIDE]; SPRITE_SIDE] {
 /// `embedded_graphics::image::ImageRaw::<BinaryColor>` expects.
 fn emit_sprites(out: &mut String, manifest: &Path) {
     println!("cargo:rerun-if-changed={}", manifest.join("vendor/sprites").display());
+    println!("cargo:rerun-if-env-changed=CARGO_FEATURE_BIGSPRITE");
+    let side = sprite_side();
+    let bytes = side * side / 8;
+    let big = std::env::var("CARGO_FEATURE_BIGSPRITE").is_ok();
 
-    let mut entries: Vec<(&str, [u8; SPRITE_BYTES])> = GEN1_DEX
+    let mut entries: Vec<(&str, Vec<u8>)> = GEN1_DEX
         .iter()
         .enumerate()
         .map(|(i, name)| {
-            let scaled = scale_ink(&sprite_ink(&fetch_sprite(manifest, i + 1)));
-            let mut packed = [0u8; SPRITE_BYTES];
-            for (y, row) in scaled.iter().enumerate() {
+            let ink = sprite_ink(&fetch_sprite(manifest, i + 1));
+            let canvas = if big { center_ink(&ink, side) } else { scale_ink(&ink, side) };
+            let mut packed = vec![0u8; bytes];
+            for (y, row) in canvas.iter().enumerate() {
                 for (x, &lit) in row.iter().enumerate() {
                     if lit {
-                        packed[y * SPRITE_SIDE / 8 + x / 8] |= 0x80 >> (x % 8);
+                        packed[y * side / 8 + x / 8] |= 0x80 >> (x % 8);
                     }
                 }
             }
@@ -420,9 +446,10 @@ fn emit_sprites(out: &mut String, manifest: &Path) {
         .collect();
     entries.sort_by_key(|(name, _)| *name);
 
-    out.push_str(&format!("pub const SPRITE_SIDE: u32 = {SPRITE_SIDE};\n\n"));
+    out.push_str(&format!("pub const SPRITE_SIDE: u32 = {side};\n"));
+    out.push_str(&format!("pub const SPRITE_BYTES: usize = {bytes};\n\n"));
     out.push_str(&format!(
-        "pub static MON_SPRITES: &[(&str, [u8; {SPRITE_BYTES}])] = &[\n"
+        "pub static MON_SPRITES: &[(&str, [u8; {bytes}])] = &[\n"
     ));
     for (name, packed) in &entries {
         out.push_str(&format!(

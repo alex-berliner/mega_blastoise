@@ -18,6 +18,11 @@ embassy-time = { version = "0.5", optional = true }
 
 [features]
 default = []
+# Display variants (combine freely):
+#  - bigsprite: un-rescaled 56px Game Boy sprites
+#  - wrapmoves: corner move names wrapped/hyphenated across lines
+bigsprite = []
+wrapmoves = []
 defmt = ["dep:defmt"]
 timing = ["dep:embassy-time", "defmt"]
 trace = ["defmt"]
