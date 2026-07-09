@@ -259,7 +259,7 @@ async fn do_countdown(input: &mut impl LobbyInput) {
         #[cfg(feature = "buzzer")]
         buzz(BuzzerCmd::CountdownBeep);
         input.write_line(&alloc::format!("{}...", i)).await;
-        Timer::after_secs(1).await;
+        Timer::after_millis(500).await;
     }
     #[cfg(feature = "leds")]
     led_send(LedCmd::LobbyCountdown);
