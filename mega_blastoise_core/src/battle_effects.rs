@@ -22,6 +22,13 @@ pub mod anim {
 #[allow(async_fn_in_trait)]
 pub trait BoardEffects {
     async fn on_event(&mut self, event: BoardEvent);
+
+    /// Like [`Self::on_event`] but skips any pacing delay — used when the
+    /// event after this one should appear at the same time (e.g. both
+    /// players' switch-ins at battle start). Pacing platforms override.
+    async fn on_event_unpaced(&mut self, event: BoardEvent) {
+        self.on_event(event).await
+    }
 }
 
 /// Default no-op sink (stub hardware).
@@ -87,7 +94,16 @@ impl BoardEventQueue {
 
     pub async fn dispatch_all(&mut self, sink: &mut impl BoardEffects) {
         while let Some(e) = self.inner.pop_front() {
-            sink.on_event(e).await;
+            // Back-to-back switch-ins are both players sending out at once —
+            // dispatch the first without its pacing delay so the two displays
+            // animate together instead of one after the other.
+            let paired_switch_in = matches!(&e, BoardEvent::SwitchIn { .. })
+                && matches!(self.inner.front(), Some(BoardEvent::SwitchIn { .. }));
+            if paired_switch_in {
+                sink.on_event_unpaced(e).await;
+            } else {
+                sink.on_event(e).await;
+            }
         }
     }
 

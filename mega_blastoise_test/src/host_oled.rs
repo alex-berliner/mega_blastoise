@@ -1,29 +1,15 @@
 /// Host mirror of `mega_blastoise_fw::subsystems::oled`.
 ///
-/// Each player gets a `CliDisplay` framebuffer driven by the shared rendering
-/// functions from `mega_blastoise_core::display`.  On every state change the
-/// display redraws and `CliDisplay::render()` prints it to stdout via Unicode
-/// half-blocks.
-use mega_blastoise_core::{render_move_detail, render_player_screen, render_win_screen, BoardEvent, MoveSlot};
+/// Screen decisions come from the same `mega_blastoise_core::oled_ctl`
+/// state machine the firmware and web client use; this file only renders
+/// the controller's current screen into a `CliDisplay` and prints it to
+/// stdout via Unicode half-blocks.
+use mega_blastoise_core::{name_buf, render_screen, MoveSlot, OledCmd, OledController};
 
 use crate::cli_display::CliDisplay;
 
-pub struct OledPlayerState {
-    pub header: &'static str,
-    pub mon_name: String,
-    pub moves: Vec<MoveSlot>,
-    pub hp_pct: u8,
-}
-
-impl OledPlayerState {
-    fn new(header: &'static str) -> Self {
-        Self { header, mon_name: "---".into(), moves: Vec::new(), hp_pct: 100 }
-    }
-}
-
 pub struct HostOled {
-    pub p1: OledPlayerState,
-    pub p2: OledPlayerState,
+    ctl: OledController,
     p1_disp: CliDisplay,
     p2_disp: CliDisplay,
     pub silent: bool,
@@ -32,8 +18,7 @@ pub struct HostOled {
 impl HostOled {
     pub fn new() -> Self {
         Self {
-            p1: OledPlayerState::new("P1: Red"),
-            p2: OledPlayerState::new("P2: Blue"),
+            ctl: OledController::new(),
             p1_disp: CliDisplay::new(),
             p2_disp: CliDisplay::new(),
             silent: false,
@@ -47,81 +32,47 @@ impl HostOled {
     }
 
     pub fn switch_in(&mut self, player: u8, name: String, moves: Vec<MoveSlot>) {
-        let s = self.player_mut(player);
-        s.mon_name = name;
-        s.moves = moves;
-        s.hp_pct = 100;
-        self.redraw(player);
+        let (buf, len) = name_buf(&name);
+        self.apply(OledCmd::ActiveMon { player, name: buf, len });
+        if !moves.is_empty() {
+            self.apply(OledCmd::MovesUpdate { player, moves });
+        }
     }
 
     pub fn update_moves(&mut self, player: u8, moves: Vec<MoveSlot>) {
-        self.player_mut(player).moves = moves;
-        self.redraw(player);
+        self.apply(OledCmd::MovesUpdate { player, moves });
     }
 
     pub fn update_hp(&mut self, player: u8, pct: u8) {
-        self.player_mut(player).hp_pct = pct;
-        self.redraw(player);
+        self.apply(OledCmd::HpUpdate { player, pct });
     }
 
     pub fn faint(&mut self, player: u8) {
-        let s = self.player_mut(player);
-        s.mon_name = "FAINTED".into();
-        s.moves.clear();
-        s.hp_pct = 0;
-        self.redraw(player);
+        self.apply(OledCmd::Faint { player });
     }
 
     /// Show the move detail screen for `move_idx` on `player`'s display.
     pub fn show_move_detail(&mut self, player: u8, move_idx: usize) {
-        if self.silent { return; }
-        let (moves, disp, label) = if player == 1 {
-            (&self.p1.moves, &mut self.p1_disp, "P1 Display")
-        } else {
-            (&self.p2.moves, &mut self.p2_disp, "P2 Display")
-        };
-        if let Some(mv) = moves.get(move_idx) {
-            render_move_detail(disp, mv);
-            println!("── {label} (move detail) ──────────────────────────────────────────────────────────────────────────────────────────────────────────");
-            disp.render();
-        }
+        self.apply(OledCmd::ShowMoveDetail { player, slot: move_idx as u8 });
     }
 
     pub fn win(&mut self, winner: u8) {
-        if self.silent { return; }
-        let (msg0, msg1) = BoardEvent::win_messages(winner);
-        render_win_screen(&mut self.p1_disp, msg0);
-        render_win_screen(&mut self.p2_disp, msg1);
-        println!("── P1 Display ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
-        self.p1_disp.render();
-        println!("── P2 Display ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
-        self.p2_disp.render();
+        self.apply(OledCmd::Win { winner });
     }
 
-    fn player_mut(&mut self, player: u8) -> &mut OledPlayerState {
-        if player == 1 { &mut self.p1 } else { &mut self.p2 }
-    }
-
-    fn redraw(&mut self, player: u8) {
-        if self.silent { return; }
-        let (mon_name, moves, disp, label) = if player == 1 {
-            (
-                self.p1.mon_name.as_str(),
-                self.p1.moves.as_slice(),
-                &mut self.p1_disp,
-                "P1 Display",
-            )
-        } else {
-            (
-                self.p2.mon_name.as_str(),
-                self.p2.moves.as_slice(),
-                &mut self.p2_disp,
-                "P2 Display",
-            )
-        };
-        render_player_screen(disp, mon_name, moves);
-        println!("── {label} ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
-        disp.render();
+    fn apply(&mut self, cmd: OledCmd) {
+        let redraw = self.ctl.apply(cmd);
+        if self.silent {
+            return;
+        }
+        for player in [1u8, 2] {
+            if redraw.includes(player) {
+                let disp = if player == 1 { &mut self.p1_disp } else { &mut self.p2_disp };
+                render_screen(disp, &self.ctl.screen(player));
+                println!("── P{player} Display ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────");
+                disp.render();
+            }
+        }
     }
 }
 

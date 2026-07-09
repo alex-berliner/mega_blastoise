@@ -303,6 +303,8 @@ async function run() {
             if (el) setupSwitchLongPress(el, p, i);
         });
         requestAnimationFrame(frame);
+        // Battle-screen sprite bob — mirrors the firmware's 900 ms tick.
+        setInterval(() => wasm.wasm_tick_bob(), 900);
     } catch (err) {
         document.getElementById('log').textContent += `\nFailed to load WASM: ${err}\n`;
         console.error(err);

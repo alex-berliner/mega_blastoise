@@ -15,10 +15,8 @@ use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
-    parse_web_game_cmd, render_invalid_selection, render_lobby_screen, render_move_detail,
-    render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen,
-    render_waiting_for_opponent, render_waiting_screen, run_battle, BoardEventQueue,
-    ButtonController, FlashDataStore, InputBus, MoveSlot, PartySlotData, WebGameInput,
+    parse_web_game_cmd, render_screen, run_battle, BoardEventQueue, ButtonController,
+    FlashDataStore, InputBus, OledCmd, OledController, PartySlotData, WebGameInput,
     LOBBY_DEMO_DELAY_MS,
 };
 
@@ -48,25 +46,15 @@ thread_local! {
     // Flash events: [p1_type, p2_type]; 1 = super-effective, 2 = crit; consumed on read
     static FLASH: RefCell<[u8; 2]> = RefCell::new([0, 0]);
 
-    // Move detail: last-rendered battle pixels (for restore after long press)
-    static P1_BATTLE_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
-    static P2_BATTLE_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
+    // The shared two-display state machine (mega_blastoise_core::oled_ctl) —
+    // identical to the firmware's. All screen decisions happen in here;
+    // this file only repaints canvases when it says so. See oled_apply().
+    static OLED_CTL: RefCell<OledController> = RefCell::new(OledController::new());
 
-    // Current active move list per player (for long-press detail rendering)
-    static P1_MOVES: RefCell<Vec<MoveSlot>> = RefCell::new(Vec::new());
-    static P2_MOVES: RefCell<Vec<MoveSlot>> = RefCell::new(Vec::new());
-
-    // Full party snapshot per player (for long-press switch button rendering)
+    // Full party snapshot per player (for AI switch picks + party LED sync;
+    // the OLED controller keeps its own copy via OledCmd::PartyUpdate)
     static P1_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
     static P2_PARTY: RefCell<Vec<PartySlotData>> = RefCell::new(Vec::new());
-
-    // True while a detail/stats overlay is displayed — suppresses update_pixels writes
-    static P1_IN_DETAIL: RefCell<bool> = RefCell::new(false);
-    static P2_IN_DETAIL: RefCell<bool> = RefCell::new(false);
-
-    // Active mon name per player (updated on SwitchIn; shown on waiting screen)
-    static P1_MON_NAME: RefCell<String> = RefCell::new(String::new());
-    static P2_MON_NAME: RefCell<String> = RefCell::new(String::new());
 
     // Which players are AI-controlled this game (reset each lobby)
     static AI_PLAYERS: RefCell<[bool; 2]> = RefCell::new([false, false]);
@@ -92,55 +80,57 @@ thread_local! {
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
 
-/// Write pixels to the display canvas only — does NOT update P_BATTLE_PIXELS.
-/// Used by flash animations so the long-press restore source stays clean.
-pub(crate) fn display_only(player: u8, pixels: Vec<u8>) {
-    if player == 1 {
-        if !P1_IN_DETAIL.with(|d| *d.borrow()) {
-            P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
-        }
-    } else {
-        if !P2_IN_DETAIL.with(|d| *d.borrow()) {
-            P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
+/// Apply a display command to the shared controller and repaint whichever
+/// canvases it changed. The ONLY write path to the OLED canvases — mirrors
+/// the firmware's OLED task loop (apply → render `ctl.screen(p)` → flush).
+pub(crate) fn oled_apply(cmd: OledCmd) {
+    // Battle-state screens (not transient overlays) mark BATTLE_DIRTY so JS
+    // can cancel a held long-press cycle when the screen transitions away.
+    let dirty = matches!(
+        cmd,
+        OledCmd::HpUpdate { .. }
+            | OledCmd::ActiveMon { .. }
+            | OledCmd::MovesUpdate { .. }
+            | OledCmd::Faint { .. }
+            | OledCmd::Win { .. }
+            | OledCmd::LobbyState { .. }
+            | OledCmd::ShowSwitchScreen { .. }
+    );
+    let redraw = OLED_CTL.with(|c| c.borrow_mut().apply(cmd));
+    for player in [1u8, 2] {
+        if redraw.includes(player) {
+            let mut disp = WasmDisplay::new();
+            OLED_CTL.with(|c| render_screen(&mut disp, &c.borrow().screen(player)));
+            let pixels = disp.to_rgba();
+            if dirty {
+                BATTLE_DIRTY.with(|d| d.borrow_mut()[(player - 1) as usize] = true);
+            }
+            if player == 1 { P1_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+            else           { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
         }
     }
 }
 
-pub(crate) fn update_pixels(player: u8, pixels: Vec<u8>) {
-    BATTLE_DIRTY.with(|d| d.borrow_mut()[(player - 1) as usize] = true);
-    if player == 1 {
-        P1_BATTLE_PIXELS.with(|p| *p.borrow_mut() = pixels.clone());
-        // Don't overwrite the detail overlay — restore_screen will pick up
-        // the updated battle pixels when the player releases.
-        if !P1_IN_DETAIL.with(|d| *d.borrow()) {
-            P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
-        }
-    } else {
-        P2_BATTLE_PIXELS.with(|p| *p.borrow_mut() = pixels.clone());
-        if !P2_IN_DETAIL.with(|d| *d.borrow()) {
-            P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
+/// Advance the battle-screen sprite bob — called every 900 ms from JS,
+/// mirroring the firmware's OLED-task tick.
+#[wasm_bindgen]
+pub fn wasm_tick_bob() {
+    let redraw = OLED_CTL.with(|c| c.borrow_mut().tick_bob());
+    for player in [1u8, 2] {
+        if redraw.includes(player) {
+            let mut disp = WasmDisplay::new();
+            OLED_CTL.with(|c| render_screen(&mut disp, &c.borrow().screen(player)));
+            let pixels = disp.to_rgba();
+            if player == 1 { P1_PIXELS.with(|p| *p.borrow_mut() = pixels); }
+            else           { P2_PIXELS.with(|p| *p.borrow_mut() = pixels); }
         }
     }
-}
-
-pub(crate) fn set_active_mon_name(player: u8, name: &str) {
-    if player == 1 { P1_MON_NAME.with(|n| *n.borrow_mut() = name.to_string()); }
-    else           { P2_MON_NAME.with(|n| *n.borrow_mut() = name.to_string()); }
-}
-
-fn get_active_mon_name(player: u8) -> String {
-    if player == 1 { P1_MON_NAME.with(|n| n.borrow().clone()) }
-    else           { P2_MON_NAME.with(|n| n.borrow().clone()) }
-}
-
-pub(crate) fn update_moves(player: u8, moves: Vec<MoveSlot>) {
-    if player == 1 { P1_MOVES.with(|m| *m.borrow_mut() = moves); }
-    else           { P2_MOVES.with(|m| *m.borrow_mut() = moves); }
 }
 
 pub(crate) fn update_party(player: u8, slots: Vec<PartySlotData>) {
-    if player == 1 { P1_PARTY.with(|p| *p.borrow_mut() = slots); }
-    else           { P2_PARTY.with(|p| *p.borrow_mut() = slots); }
+    if player == 1 { P1_PARTY.with(|p| *p.borrow_mut() = slots.clone()); }
+    else           { P2_PARTY.with(|p| *p.borrow_mut() = slots.clone()); }
+    oled_apply(OledCmd::PartyUpdate { player, slots });
 }
 
 pub(crate) fn is_ai_paused() -> bool {
@@ -168,53 +158,15 @@ pub(crate) fn ai_pick_switch(player: u8) -> usize {
 }
 
 pub(crate) fn show_pokemon_stats(player: u8, team_idx: usize, page: u8) {
-    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
-                else           { P2_PARTY.with(|p| p.borrow().clone()) };
-    if let Some(slot) = party.get(team_idx) {
-        let mut disp = WasmDisplay::new();
-        if page == 1 {
-            render_pokemon_stats_page2(&mut disp, slot);
-        } else {
-            render_pokemon_stats(&mut disp, slot);
-        }
-        let pixels = disp.to_rgba();
-        if player == 1 {
-            P1_IN_DETAIL.with(|d| *d.borrow_mut() = true);
-            P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
-        } else {
-            P2_IN_DETAIL.with(|d| *d.borrow_mut() = true);
-            P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
-        }
-    }
+    oled_apply(OledCmd::ShowPokemonStats { player, team_idx: team_idx as u8, page });
 }
 
 pub(crate) fn show_move_detail(player: u8, slot: usize) {
-    let moves = if player == 1 { P1_MOVES.with(|m| m.borrow().clone()) }
-                else           { P2_MOVES.with(|m| m.borrow().clone()) };
-    if let Some(mv) = moves.get(slot) {
-        let mut disp = WasmDisplay::new();
-        render_move_detail(&mut disp, mv);
-        let pixels = disp.to_rgba();
-        if player == 1 {
-            P1_IN_DETAIL.with(|d| *d.borrow_mut() = true);
-            P1_PIXELS.with(|p| *p.borrow_mut() = pixels);
-        } else {
-            P2_IN_DETAIL.with(|d| *d.borrow_mut() = true);
-            P2_PIXELS.with(|p| *p.borrow_mut() = pixels);
-        }
-    }
+    oled_apply(OledCmd::ShowMoveDetail { player, slot: slot as u8 });
 }
 
 pub(crate) fn show_switch_screen(player: u8) {
-    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
-                else           { P2_PARTY.with(|p| p.borrow().clone()) };
-    let mut disp = WasmDisplay::new();
-    render_switch_screen(&mut disp, &party);
-    // Use update_pixels so P_BATTLE_PIXELS also holds the switch screen —
-    // restore_screen can then correctly return to the switch prompt after a
-    // long-press stats view. SwitchIn's redraw() will overwrite P_BATTLE_PIXELS
-    // with the new battle screen once the switch completes.
-    update_pixels(player, disp.to_rgba());
+    oled_apply(OledCmd::ShowSwitchScreen { player });
 }
 
 pub(crate) fn clear_input_queues() {
@@ -230,9 +182,7 @@ pub(crate) fn party_slot_alive(player: u8, idx: usize) -> bool {
 }
 
 pub(crate) fn show_invalid_selection(player: u8) {
-    let mut disp = WasmDisplay::new();
-    render_invalid_selection(&mut disp);
-    display_only(player, disp.to_rgba());
+    oled_apply(OledCmd::ShowInvalidSelection { player });
 }
 
 /// Pop one button event from the player's queue without blocking.
@@ -244,31 +194,16 @@ pub(crate) fn pop_player_button(player: u8) -> Option<ButtonEvent> {
     }
 }
 
-/// Overlay the waiting screen on the player's OLED using display_only
-/// so P_BATTLE_PIXELS is preserved for restore after cancel.
 pub(crate) fn show_waiting_screen(player: u8) {
-    let mon_name = get_active_mon_name(player);
-    let mut disp = WasmDisplay::new();
-    render_waiting_screen(&mut disp, &mon_name, "tap to unready");
-    display_only(player, disp.to_rgba());
+    oled_apply(OledCmd::ShowWaiting { player });
 }
 
 pub(crate) fn show_waiting_for_opponent_screen(player: u8) {
-    let mut disp = WasmDisplay::new();
-    render_waiting_for_opponent(&mut disp);
-    display_only(player, disp.to_rgba());
+    oled_apply(OledCmd::ShowWaitingForOpponent { player });
 }
 
 pub(crate) fn restore_screen(player: u8) {
-    if player == 1 {
-        P1_IN_DETAIL.with(|d| *d.borrow_mut() = false);
-        let pix = P1_BATTLE_PIXELS.with(|p| p.borrow().clone());
-        P1_PIXELS.with(|p| *p.borrow_mut() = pix);
-    } else {
-        P2_IN_DETAIL.with(|d| *d.borrow_mut() = false);
-        let pix = P2_BATTLE_PIXELS.with(|p| p.borrow().clone());
-        P2_PIXELS.with(|p| *p.borrow_mut() = pix);
-    }
+    oled_apply(OledCmd::RestoreScreen { player });
 }
 
 pub(crate) fn update_leds(leds: [u32; 24]) {
@@ -639,9 +574,7 @@ pub fn start() {
 // ── OLED helpers ──────────────────────────────────────────────────────────────
 
 fn draw_lobby_screen(player: u8, ready: bool, ai: bool) {
-    let mut disp = WasmDisplay::new();
-    render_lobby_screen(&mut disp, ready, ai);
-    update_pixels(player, disp.to_rgba());
+    oled_apply(OledCmd::LobbyState { player, ready, ai });
 }
 
 fn set_lobby_displays() {
@@ -729,10 +662,8 @@ async fn run_game_loop() {
         // so they don't get consumed as the first battle move.
         P1_QUEUE.with(|q| q.borrow_mut().clear());
         P2_QUEUE.with(|q| q.borrow_mut().clear());
-        // Reset detail overlay state so a held button at end of last game
-        // doesn't bleed into this one.
-        P1_IN_DETAIL.with(|d| *d.borrow_mut() = false);
-        P2_IN_DETAIL.with(|d| *d.borrow_mut() = false);
+        // (No detail-overlay reset needed: the shared controller redraws over
+        // any leftover overlay on the first battle state command.)
 
         // Countdown fanfare: 3 gold flashes
         let gold = pack_rgb(200, 150, 0);

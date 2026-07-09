@@ -12,6 +12,7 @@ pub mod battle_runner;
 pub mod data_store;
 pub mod demo_teams;
 pub mod prompt_fmt;
+pub mod oled_ctl;
 pub mod randbat;
 pub mod rng;
 pub mod random_ai;
@@ -25,6 +26,7 @@ pub use board_event::{
     mon_player_num, player_id_to_num, side_display_name, status_abbrev, BoardEvent, MoveSlot, ParsedBattleLogLine, PromptKind,
 };
 pub use display::{party_slot_from_mon, render_event_text, render_invalid_selection, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, OledFrameBuffer, PartySlotData};
+pub use oled_ctl::{flash_buf, name_buf, oled_cmds_for_event, render_screen, OledCmd, OledController, OledRedraw, Screen, BOB_PERIOD_MS};
 pub use battle_input::{
     format_move_choice, format_switch_choice, join_choice_parts, switch_choice_from_team_indices,
     turn_action_choice, turn_choice_from_move_slots, ActionReject, ActivePrompt, ButtonController,

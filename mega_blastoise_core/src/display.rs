@@ -98,7 +98,7 @@ fn center_style() -> TextStyle {
 /// ```
 /// The mon's sprite fills the band between the move rows; when the name has
 /// no sprite ("FAINTED", "---") it falls back to the name in a centered box.
-pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot])
+pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot], sprite_y_off: i32)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
@@ -129,7 +129,7 @@ where
     if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
         let side = crate::sprites::SPRITE_SIDE;
         let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
-        Image::new(&raw, Point::new((128 - side as i32) / 2, move_h))
+        Image::new(&raw, Point::new((128 - side as i32) / 2, move_h + sprite_y_off))
             .draw(display).ok();
         return;
     }
