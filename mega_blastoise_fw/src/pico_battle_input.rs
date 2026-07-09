@@ -119,33 +119,64 @@ impl<'d> PicoBattleInput<'d> {
     /// Classification (tap vs ≥500 ms hold) lives here; ALL semantics live in
     /// [`ChoiceCollector`]. Scan state is held in `scan`, outside this future,
     /// so losing a `select` race mid-press doesn't drop the press.
+    ///
+    /// While a hold is showing, a second press is timed independently: if it
+    /// becomes a hold it takes over and the first button goes STALE (ignored
+    /// until physically released, and its release emits no event).
     pub async fn next_pad_event(&mut self, scan: &mut PadScan) -> PadEvent {
         loop {
-            let mut pressed = [[false; 4]; 4];
+            let mut pressed = [0u8; 4];
+            for (r, mask) in pressed.iter_mut().enumerate() {
+                *mask = self.0.scan_row(r);
+            }
+            // Stale buttons stop being stale once released.
             for r in 0..4 {
-                let m = self.0.scan_row(r);
-                for c in 0..4 {
-                    pressed[r][c] = m & (1 << c) != 0;
-                }
+                scan.stale[r] &= pressed[r];
             }
             let now = Instant::now().as_millis();
 
             for i in 0..2usize {
                 let player = (i + 1) as u8;
                 let (move_row, switch_row) = if i == 0 { (0usize, 1usize) } else { (2, 3) };
-                match scan.st[i] {
-                    PadState::Idle => {
-                        // Party row takes priority, like the original collector.
-                        if let Some(c) = (0..3).find(|&c| pressed[switch_row][c]) {
-                            scan.st[i] = PadState::Held { row: switch_row, col: c, switch: true, t0: now };
-                        } else if let Some(c) = (0..4).find(|&c| pressed[move_row][c]) {
-                            scan.st[i] = PadState::Held { row: move_row, col: c, switch: false, t0: now };
+                let live = |row: usize, cols: u8| (pressed[row] & !scan.stale[row]) & cols;
+                let is_down = |row: usize, col: usize| pressed[row] & (1 << col) != 0;
+                // Party row takes priority, like the original collector.
+                let fresh_press = |except: Option<(usize, usize)>| -> Option<(usize, usize, bool)> {
+                    for &(row, cols, switch) in
+                        &[(switch_row, 0b0111u8, true), (move_row, 0b1111u8, false)]
+                    {
+                        if let Some(c) = (0..4).find(|&c| {
+                            live(row, cols) & (1 << c) != 0 && except != Some((row, c))
+                        }) {
+                            return Some((row, c, switch));
                         }
                     }
-                    PadState::Held { row, col, switch, t0 } => {
-                        if pressed[row][col] {
+                    None
+                };
+
+                match scan.st[i] {
+                    PadState::Idle => {
+                        if let Some((row, col, switch)) = fresh_press(None) {
+                            scan.st[i] = PadState::Held { row, col, switch, t0: now, prev: None };
+                        }
+                    }
+                    PadState::Held { row, col, switch, t0, prev } => {
+                        // If the previous hold's button was released while we
+                        // time the new press, its view ends now.
+                        if let Some((prow, pcol)) = prev {
+                            if !is_down(prow, pcol) {
+                                scan.st[i] = PadState::Held { row, col, switch, t0, prev: None };
+                                return PadEvent::HoldEnd { player };
+                            }
+                        }
+                        if is_down(row, col) {
                             if now.saturating_sub(t0) >= HOLD_THRESHOLD_MS {
-                                scan.st[i] = PadState::HoldOut { row };
+                                // This hold takes over; the previous button is
+                                // stale until physically released.
+                                if let Some((prow, pcol)) = prev {
+                                    scan.stale[prow] |= 1 << pcol;
+                                }
+                                scan.st[i] = PadState::HoldOut { row, col };
                                 return if switch {
                                     PadEvent::HoldSwitch { player, idx: col as u8 }
                                 } else {
@@ -153,7 +184,10 @@ impl<'d> PicoBattleInput<'d> {
                                 };
                             }
                         } else {
-                            scan.st[i] = PadState::Idle;
+                            scan.st[i] = match prev {
+                                Some((prow, pcol)) => PadState::HoldOut { row: prow, col: pcol },
+                                None => PadState::Idle,
+                            };
                             return if switch {
                                 PadEvent::TapSwitch { player, idx: col as u8 }
                             } else {
@@ -161,10 +195,20 @@ impl<'d> PicoBattleInput<'d> {
                             };
                         }
                     }
-                    PadState::HoldOut { row } => {
-                        if !(0..4).any(|c| pressed[row][c]) {
+                    PadState::HoldOut { row, col } => {
+                        if !is_down(row, col) {
                             scan.st[i] = PadState::Idle;
                             return PadEvent::HoldEnd { player };
+                        }
+                        // A second press starts timing while the view stays up.
+                        if let Some((nrow, ncol, nswitch)) = fresh_press(Some((row, col))) {
+                            scan.st[i] = PadState::Held {
+                                row: nrow,
+                                col: ncol,
+                                switch: nswitch,
+                                t0: now,
+                                prev: Some((row, col)),
+                            };
                         }
                     }
                 }
@@ -179,16 +223,20 @@ impl<'d> PicoBattleInput<'d> {
 #[derive(Default)]
 pub struct PadScan {
     st: [PadState; 2],
+    /// Per-row bitmask of buttons overridden by a newer hold — ignored until
+    /// physically released.
+    stale: [u8; 4],
 }
 
 #[derive(Default, Clone, Copy)]
 enum PadState {
     #[default]
     Idle,
-    /// Button down; timing a tap vs a hold.
-    Held { row: usize, col: usize, switch: bool, t0: u64 },
-    /// Hold reported; waiting for release.
-    HoldOut { row: usize },
+    /// Button down; timing a tap vs a hold. `prev` is a still-held button
+    /// whose hold view is currently showing.
+    Held { row: usize, col: usize, switch: bool, t0: u64, prev: Option<(usize, usize)> },
+    /// Hold reported; waiting for release or a second press.
+    HoldOut { row: usize, col: usize },
 }
 
 /// Button-only [`InputSource`] for no-USB builds: the same shared

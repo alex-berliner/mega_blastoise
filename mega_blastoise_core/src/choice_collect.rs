@@ -328,7 +328,13 @@ impl ChoiceCollector {
 
             (SlotState::Choosing, Pad::Tap(action)) => self.tap(i, action, now_ms, fx),
 
-            (SlotState::Choosing, Pad::Hold(view)) => {
+            // A new hold OVERRIDES a detail view already showing — the
+            // newest held button wins; the old one stays ignored (platforms
+            // stale it out) until physically released.
+            (
+                SlotState::Choosing | SlotState::Detail | SlotState::Stats { .. },
+                Pad::Hold(view),
+            ) => {
                 let s = &self.slots[i];
                 match view {
                     HoldView::Move(slot) => {
@@ -949,6 +955,31 @@ mod tests {
         assert!(err_containing(&fx, "usage"));
         c.typed_line(":press p1 s4", 50, &mut fx);
         assert!(err_containing(&fx, "usage"));
+    }
+
+    #[test]
+    fn second_hold_overrides_first_detail_view() {
+        let (mut c, _) = two_humans();
+        let mut fx = Vec::new();
+        c.pad_event(PadEvent::HoldMove { player: 1, slot: 0 }, 0, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowMoveDetail { player: 1, slot: 0 })));
+        // Second hold while the first view is up → view swaps directly.
+        fx.clear();
+        c.pad_event(PadEvent::HoldMove { player: 1, slot: 1 }, 100, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowMoveDetail { player: 1, slot: 1 })));
+        assert!(!has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { .. })));
+        // Works across view kinds too (move detail → party stats).
+        fx.clear();
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: 2 }, 200, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowPokemonStats { player: 1, team_idx: 2, page: 0 })));
+        // Release of the newest hold restores the pick screen.
+        fx.clear();
+        c.pad_event(PadEvent::HoldEnd { player: 1 }, 300, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { player: 1 })));
+        // A stray HoldEnd afterwards (first button finally released) is inert.
+        fx.clear();
+        c.pad_event(PadEvent::HoldEnd { player: 1 }, 400, &mut fx);
+        assert!(fx.is_empty());
     }
 
     #[test]
