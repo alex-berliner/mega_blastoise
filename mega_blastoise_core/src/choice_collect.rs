@@ -41,6 +41,8 @@ pub const COLLECT_TICK_MS: u64 = 50;
 /// Press-and-hold threshold platforms use to classify a press as a hold
 /// (detail view) instead of a tap (selection).
 pub const HOLD_THRESHOLD_MS: u64 = 500;
+/// While a party-stats view is held, its two pages alternate at this cadence.
+pub const STATS_PAGE_CYCLE_MS: u64 = 2000;
 
 /// A physical-input event, already classified by the platform's raw layer.
 /// `player` is 1 or 2; indices are 0-based.
@@ -187,8 +189,11 @@ impl SlotOptions {
 enum SlotState {
     /// Waiting for a selection.
     Choosing,
-    /// A long-press detail view is up; restores on HoldEnd.
+    /// A long-press move-detail view is up; restores on HoldEnd.
     Detail,
+    /// A long-press party-stats view is up; its two pages alternate every
+    /// [`STATS_PAGE_CYCLE_MS`] until HoldEnd.
+    Stats { team_idx: u8, page: u8, next_flip: u64 },
     /// Invalid-selection screen is up; restores at `until`.
     Invalid { until: u64 },
     /// Choice locked in (waiting screen shown, unless auto).
@@ -313,19 +318,28 @@ impl ChoiceCollector {
             (SlotState::Choosing, Pad::Hold(view)) => {
                 let s = &self.slots[i];
                 match view {
-                    HoldView::Move(slot) => fx.push(Effect::Oled(OledCmd::ShowMoveDetail {
-                        player: s.player_num,
-                        slot,
-                    })),
-                    HoldView::Stats(idx) => fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
-                        player: s.player_num,
-                        team_idx: idx,
-                        page: 0,
-                    })),
+                    HoldView::Move(slot) => {
+                        fx.push(Effect::Oled(OledCmd::ShowMoveDetail {
+                            player: s.player_num,
+                            slot,
+                        }));
+                        self.st[i] = SlotState::Detail;
+                    }
+                    HoldView::Stats(idx) => {
+                        fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
+                            player: s.player_num,
+                            team_idx: idx,
+                            page: 0,
+                        }));
+                        self.st[i] = SlotState::Stats {
+                            team_idx: idx,
+                            page: 0,
+                            next_flip: now_ms + STATS_PAGE_CYCLE_MS,
+                        };
+                    }
                 }
-                self.st[i] = SlotState::Detail;
             }
-            (SlotState::Detail, Pad::HoldEnd) => {
+            (SlotState::Detail | SlotState::Stats { .. }, Pad::HoldEnd) => {
                 fx.push(Effect::Oled(self.slots[i].pick_screen()));
                 self.st[i] = SlotState::Choosing;
             }
@@ -487,11 +501,26 @@ impl ChoiceCollector {
             return true;
         }
         for i in 0..self.n_real {
-            if let SlotState::Invalid { until } = self.st[i] {
-                if now_ms >= until {
+            match self.st[i] {
+                SlotState::Invalid { until } if now_ms >= until => {
                     fx.push(Effect::Oled(self.slots[i].pick_screen()));
                     self.st[i] = SlotState::Choosing;
                 }
+                // Held party-stats view: alternate its two pages.
+                SlotState::Stats { team_idx, page, next_flip } if now_ms >= next_flip => {
+                    let page = page ^ 1;
+                    fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
+                        player: self.slots[i].player_num,
+                        team_idx,
+                        page,
+                    }));
+                    self.st[i] = SlotState::Stats {
+                        team_idx,
+                        page,
+                        next_flip: now_ms + STATS_PAGE_CYCLE_MS,
+                    };
+                }
+                _ => {}
             }
         }
         let all_committed = (0..2).all(|i| self.st[i] == SlotState::Committed);
@@ -776,6 +805,27 @@ mod tests {
         c.pad_event(PadEvent::HoldMove { player: 1, slot: 1 }, 800, &mut fx);
         assert!(!has_oled(&fx, |o| matches!(o, OledCmd::ShowMoveDetail { .. })));
         assert!(c.out[0].is_empty(), "unreadied");
+    }
+
+    #[test]
+    fn stats_hold_cycles_pages() {
+        let (mut c, _) = two_humans();
+        let mut fx = Vec::new();
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: 1 }, 0, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowPokemonStats { player: 1, team_idx: 1, page: 0 })));
+        fx.clear();
+        c.tick(STATS_PAGE_CYCLE_MS, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowPokemonStats { page: 1, .. })));
+        fx.clear();
+        c.tick(2 * STATS_PAGE_CYCLE_MS, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowPokemonStats { page: 0, .. })));
+        fx.clear();
+        c.pad_event(PadEvent::HoldEnd { player: 1 }, 2 * STATS_PAGE_CYCLE_MS + 100, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { player: 1 })));
+        // And the cycle stops.
+        fx.clear();
+        c.tick(4 * STATS_PAGE_CYCLE_MS, &mut fx);
+        assert!(!has_oled(&fx, |o| matches!(o, OledCmd::ShowPokemonStats { .. })));
     }
 
     #[test]

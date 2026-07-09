@@ -35,7 +35,7 @@ pub use battle_input::{
 };
 pub use choice_collect::{
     reject_reason, ChoiceCollector, Effect as CollectEffect, PadEvent, SlotOptions,
-    COLLECT_TICK_MS, HOLD_THRESHOLD_MS, INVALID_FLASH_MS, UNREADY_GRACE_MS,
+    COLLECT_TICK_MS, HOLD_THRESHOLD_MS, INVALID_FLASH_MS, STATS_PAGE_CYCLE_MS, UNREADY_GRACE_MS,
 };
 pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
 pub use hp_bar::{hp_bar_color, hp_bar_count, HpBarState};
