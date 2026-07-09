@@ -107,7 +107,35 @@ where
 
     display.clear(BinaryColor::Off).ok();
 
-    // ── Corner moves ──────────────────────────────────────────────────────────
+    // ── Mon sprite (or fallback name box), centered between the move rows ────
+    // Drawn FIRST: when the bob offset shifts the sprite into a move row, its
+    // black background must not overwrite the text — moves go on top.
+    if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
+        let side = crate::sprites::SPRITE_SIDE;
+        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
+        Image::new(&raw, Point::new((128 - side as i32) / 2, move_h + sprite_y_off))
+            .draw(display).ok();
+    } else {
+        // Fallback: name in a box, centered ("FAINTED", "---").
+        let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+        let name_y = 27i32;
+        let char_w = FONT_6X10.character_size.width;
+        let char_h = FONT_6X10.character_size.height;
+        let pad = 3u32;
+        let text_w = mon_name.len() as u32 * char_w;
+        let box_w = (text_w + pad * 2).max(char_w);
+        let box_x = ((128u32.saturating_sub(box_w)) / 2) as i32;
+        let box_y = name_y - pad as i32;
+
+        Rectangle::new(Point::new(box_x, box_y), Size::new(box_w, char_h + pad * 2))
+            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
+            .draw(display).ok();
+
+        Text::with_text_style(mon_name, Point::new(64, name_y), name_char, center_style())
+            .draw(display).ok();
+    }
+
+    // ── Corner moves, on top of the sprite ────────────────────────────────────
     if let Some(mv) = moves.first() {
         Text::with_text_style(&mv.name, Point::new(0, 0), move_char, tl_style())
             .draw(display).ok();
@@ -124,34 +152,6 @@ where
         Text::with_text_style(&mv.name, Point::new(127, 64 - move_h), move_char, tr_style())
             .draw(display).ok();
     }
-
-    // ── Mon sprite, centered between the move rows ────────────────────────────
-    if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
-        let side = crate::sprites::SPRITE_SIDE;
-        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
-        Image::new(&raw, Point::new((128 - side as i32) / 2, move_h + sprite_y_off))
-            .draw(display).ok();
-        return;
-    }
-
-    // ── Fallback: name in a box, centered ─────────────────────────────────────
-    let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-    let name_y = 27i32;
-    let char_w = FONT_6X10.character_size.width;
-    let char_h = FONT_6X10.character_size.height;
-    let pad = 3u32;
-    let text_w = mon_name.len() as u32 * char_w;
-    let box_w = (text_w + pad * 2).max(char_w);
-    let box_x = ((128u32.saturating_sub(box_w)) / 2) as i32;
-    let box_y = name_y - pad as i32;
-
-    Rectangle::new(Point::new(box_x, box_y), Size::new(box_w, char_h + pad * 2))
-        .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
-        .draw(display).ok();
-
-    Text::with_text_style(mon_name, Point::new(64, name_y), name_char, center_style())
-        .draw(display).ok();
-
 }
 
 // ── Move detail screen ────────────────────────────────────────────────────────
