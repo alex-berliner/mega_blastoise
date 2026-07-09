@@ -7,8 +7,13 @@ include!(concat!(env!("OUT_DIR"), "/sprites.rs"));
 /// Look up a species' sprite by its battler display name (e.g. "Blastoise",
 /// "Mr. Mime"). `None` for non-species strings like "FAINTED" or "---".
 pub fn mon_sprite(name: &str) -> Option<&'static [u8; 288]> {
+    if let Ok(i) = MON_SPRITES.binary_search_by(|(n, _)| (*n).cmp(name)) {
+        return Some(&MON_SPRITES[i].1);
+    }
+    // Fallback for non-canonical casing (e.g. a lowercase id leaking in as a
+    // display name): linear case-insensitive scan — 151 entries, miss-only.
     MON_SPRITES
-        .binary_search_by(|(n, _)| (*n).cmp(name))
-        .ok()
-        .map(|i| &MON_SPRITES[i].1)
+        .iter()
+        .find(|(n, _)| n.eq_ignore_ascii_case(name))
+        .map(|(_, spr)| spr)
 }

@@ -168,7 +168,10 @@ pub fn parse_team_spec(line: &str) -> Option<(u8, Vec<MonData>)> {
         };
 
         team.push(MonData {
-            name: species.to_string(),
+            // Leave the name empty: the engine then uses the species' proper
+            // display name ("Ditto", "Mr. Mime"), which the sprite table and
+            // narration are keyed on. Typed input here is lowercase ids.
+            name: String::new(),
             species: species.to_string(),
             level: 100,
             moves,

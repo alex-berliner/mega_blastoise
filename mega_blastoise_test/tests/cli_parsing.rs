@@ -203,6 +203,15 @@ fn team_spec_player_index() {
 }
 
 #[test]
+fn team_spec_leaves_name_for_engine_canonicalization() {
+    // The engine fills empty names with the species display name ("Ditto"),
+    // which the sprite table is keyed on — a raw typed name here would break
+    // sprite lookup.
+    let (_, team) = parse_team_spec(":team p1 ditto:transform").unwrap();
+    assert!(team[0].name.is_empty());
+}
+
+#[test]
 fn team_spec_species_only_gets_default_move() {
     let (_, team) = parse_team_spec(":team p1 snorlax").unwrap();
     assert_eq!(team.len(), 1);
