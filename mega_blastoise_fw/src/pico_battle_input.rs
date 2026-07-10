@@ -11,8 +11,8 @@
 //!   serves as BOTH the 4th sense line for the GP6/7/8 drives AND the drive
 //!   line for P2 party 2/3. GP13 is redundant (tied to GP9) and untouched.
 //!     GP6 × {GP10, GP11, GP12, GP9} = P1 moves 1, 3, 2, 4
-//!     GP7 × {GP10, GP11, GP12}      = P1 party 1-3,  GP7 × GP9 = P2 move 4
-//!     GP8 × {GP10, GP11, GP12}      = P2 moves 2, 3, 1,  GP8 × GP9 = P2 party 1
+//!     GP7 × {GP10, GP11, GP12}      = P1 party 1-3,  GP7 × GP9 = P2 move 1
+//!     GP8 × {GP10, GP11, GP12}      = P2 moves 3, 2, 4,  GP8 × GP9 = P2 party 1
 //!     GP9 × {GP10, GP11}            = P2 party 2-3
 //!
 //! Every pin is a `Flex`: a scan drives one line low at a time (open-drain
@@ -79,8 +79,8 @@ mod board {
     pub const N_PINS: usize = 7;
     pub const SCANS: ScanTable = &[
         (0, &[(4, mv(1, 0)), (5, mv(1, 2)), (6, mv(1, 1)), (3, mv(1, 3))]),
-        (1, &[(4, pt(1, 0)), (5, pt(1, 1)), (6, pt(1, 2)), (3, mv(2, 3))]),
-        (2, &[(4, mv(2, 1)), (5, mv(2, 2)), (6, mv(2, 0)), (3, pt(2, 0))]),
+        (1, &[(4, pt(1, 0)), (5, pt(1, 1)), (6, pt(1, 2)), (3, mv(2, 0))]),
+        (2, &[(4, mv(2, 2)), (5, mv(2, 1)), (6, mv(2, 3)), (3, pt(2, 0))]),
         (3, &[(4, pt(2, 1)), (5, pt(2, 2))]),
     ];
 }
