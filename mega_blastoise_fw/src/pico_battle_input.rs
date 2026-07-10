@@ -1,8 +1,8 @@
 //! Button-matrix driver — table-driven, so a PCB revision is just a pin map.
 //!
-//! Boards (default = the partner PCB; `stripboard` selects the old board):
+//! Boards (default = the partner PCB; `breadboard` selects the old board):
 //!
-//! `stripboard` — hand-wired stripboard (per ELECTRONICS.md):
+//! `breadboard` — hand-wired breadboard (per ELECTRONICS.md):
 //!   drives GP5 (P1 moves), GP7 (P1 party), GP8 (P2 moves), GP9 (P2 party);
 //!   senses GP10–GP13.
 //!
@@ -56,7 +56,7 @@ const fn pt(player: u8, idx: u8) -> PadBtn {
 /// sense pins to read while it is low and the button each one means.
 type ScanTable = &'static [(usize, &'static [(usize, PadBtn)])];
 
-#[cfg(feature = "stripboard")]
+#[cfg(feature = "breadboard")]
 mod board {
     use super::{mv, pt, ScanTable};
     /// Pin array order: GP5, GP7, GP8, GP9, GP10, GP11, GP12, GP13.
@@ -69,7 +69,7 @@ mod board {
     ];
 }
 
-#[cfg(not(feature = "stripboard"))]
+#[cfg(not(feature = "breadboard"))]
 mod board {
     use super::{mv, pt, ScanTable};
     /// Pin array order: GP6, GP7, GP8, GP9, GP10, GP11, GP12.

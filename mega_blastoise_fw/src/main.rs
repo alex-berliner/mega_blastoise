@@ -63,9 +63,9 @@ async fn main(spawner: Spawner) {
     // ── Button matrix (see pico_battle_input's board tables) ─────────────────
     // Default: partner PCB — drives GP6/7/8/9, senses GP10-12 + GP9
     // (GP9/GP13 are one net on that board; GP13 stays unused).
-    // `stripboard` feature: the hand-wired board — drives GP5/7/8/9,
+    // `breadboard` feature: the hand-wired board — drives GP5/7/8/9,
     // senses GP10-13.
-    #[cfg(feature = "stripboard")]
+    #[cfg(feature = "breadboard")]
     let mut buttons = PicoBattleInput::new([
         Flex::new(p.PIN_5),
         Flex::new(p.PIN_7),
@@ -76,7 +76,7 @@ async fn main(spawner: Spawner) {
         Flex::new(p.PIN_12),
         Flex::new(p.PIN_13),
     ]);
-    #[cfg(not(feature = "stripboard"))]
+    #[cfg(not(feature = "breadboard"))]
     let mut buttons = PicoBattleInput::new([
         Flex::new(p.PIN_6),
         Flex::new(p.PIN_7),
@@ -109,12 +109,19 @@ async fn main(spawner: Spawner) {
     // ── OLED displays (SSD1306 on I2C0 + I2C1) ───────────────────────────────
     #[cfg(feature = "oled")]
     {
+        #[cfg(feature = "breadboard")]
         spawner.spawn(subsystems::oled::task(
-            p.I2C0, p.PIN_17, p.PIN_16,  // I2C0: SCL=GP17, SDA=GP16 → P1 OLED
-            p.I2C1, p.PIN_19, p.PIN_18,  // I2C1: SCL=GP19, SDA=GP18 → P2 OLED
+            p.I2C0, p.PIN_17, p.PIN_16,  // P1: I2C0, SCL=GP17, SDA=GP16
+            p.I2C1, p.PIN_19, p.PIN_18,  // P2: I2C1, SCL=GP19, SDA=GP18
         ))
         .expect("oled task spawn");
-        debug!("OLEDs ready: I2C0 GP16/17, I2C1 GP18/19");
+        #[cfg(not(feature = "breadboard"))]
+        spawner.spawn(subsystems::oled::task(
+            p.I2C1, p.PIN_3, p.PIN_2,    // P1: I2C1, SCL=GP3, SDA=GP2
+            p.I2C0, p.PIN_5, p.PIN_4,    // P2: I2C0, SCL=GP5, SDA=GP4
+        ))
+        .expect("oled task spawn");
+        debug!("OLEDs ready");
         #[cfg(feature = "mem-profile")]
         heap_snapshot("after_oled_init");
     }

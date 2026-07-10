@@ -1,7 +1,13 @@
 //! SSD1306 OLED driver, one display per player.
 //!
-//! P1: I2C0  (GP16 SDA, GP17 SCL)
-//! P2: I2C1  (GP18 SDA, GP19 SCL)
+//! Wiring (default = partner PCB; `breadboard` = the hand-wired rig):
+//!   PCB:        P1 on I2C1 (GP2 SDA, GP3 SCL);  P2 on I2C0 (GP4 SDA, GP5 SCL)
+//!   breadboard: P1 on I2C0 (GP16 SDA, GP17 SCL); P2 on I2C1 (GP18 SDA, GP19 SCL)
+//!
+//! NOTE (PCB): the schematic net labels show SCL on GP2/GP4 and SDA on
+//! GP3/GP5, but the RP2040's I2C function map is fixed (even GPIO = SDA, odd
+//! = SCL), so this driver uses the only hardware-valid orientation. If the
+//! copper really is crossed the displays won't ACK — check with i2c_scan.
 //!
 //! Uses embassy async I²C — the 20 ms framebuffer flush is spread across
 //! ~64 small executor yields instead of blocking the task solid.
@@ -18,7 +24,23 @@ extern crate alloc;
 use embassy_rp::bind_interrupts;
 use embassy_rp::i2c::{Config as I2cConfig, I2c, InterruptHandler};
 use embassy_rp::Peri;
-use embassy_rp::peripherals::{I2C0, I2C1, PIN_16, PIN_17, PIN_18, PIN_19};
+use embassy_rp::peripherals::{I2C0, I2C1};
+
+/// Per-board bus/pin assignment (see module doc).
+#[cfg(feature = "breadboard")]
+mod wiring {
+    pub use embassy_rp::peripherals::{
+        I2C0 as P1Bus, I2C1 as P2Bus, PIN_16 as P1Sda, PIN_17 as P1Scl, PIN_18 as P2Sda,
+        PIN_19 as P2Scl,
+    };
+}
+#[cfg(not(feature = "breadboard"))]
+mod wiring {
+    pub use embassy_rp::peripherals::{
+        I2C0 as P2Bus, I2C1 as P1Bus, PIN_2 as P1Sda, PIN_3 as P1Scl, PIN_4 as P2Sda,
+        PIN_5 as P2Scl,
+    };
+}
 use embassy_time::{with_timeout, Duration, Timer};
 use embassy_futures::join::join;
 use embassy_futures::select::{select, Either};
@@ -195,18 +217,18 @@ pub fn send(cmd: OledCmd) {
 
 #[embassy_executor::task]
 pub async fn task(
-    i2c0: Peri<'static, I2C0>,
-    scl0: Peri<'static, PIN_17>,
-    sda0: Peri<'static, PIN_16>,
-    i2c1: Peri<'static, I2C1>,
-    scl1: Peri<'static, PIN_19>,
-    sda1: Peri<'static, PIN_18>,
+    p1_bus: Peri<'static, wiring::P1Bus>,
+    p1_scl: Peri<'static, wiring::P1Scl>,
+    p1_sda: Peri<'static, wiring::P1Sda>,
+    p2_bus: Peri<'static, wiring::P2Bus>,
+    p2_scl: Peri<'static, wiring::P2Scl>,
+    p2_sda: Peri<'static, wiring::P2Sda>,
 ) {
     let mut cfg = I2cConfig::default();
     cfg.frequency = 100_000;
 
-    let bus0 = I2c::new_async(i2c0, scl0, sda0, OledIrqs, cfg);
-    let bus1 = I2c::new_async(i2c1, scl1, sda1, OledIrqs, cfg);
+    let bus0 = I2c::new_async(p1_bus, p1_scl, p1_sda, OledIrqs, cfg);
+    let bus1 = I2c::new_async(p2_bus, p2_scl, p2_sda, OledIrqs, cfg);
 
     let mut disp0 = Ssd1306Async::new(
         I2CDisplayInterface::new(bus0),
