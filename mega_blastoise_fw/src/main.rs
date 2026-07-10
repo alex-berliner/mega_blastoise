@@ -61,10 +61,11 @@ async fn main(spawner: Spawner) {
     };
 
     // ── Button matrix (see pico_battle_input's board tables) ─────────────────
-    // Default: stripboard — drives GP5/7/8/9, senses GP10-13.
-    // `pcb` feature: partner PCB — drives GP6/7/8/9, senses GP10-12 + GP9
+    // Default: partner PCB — drives GP6/7/8/9, senses GP10-12 + GP9
     // (GP9/GP13 are one net on that board; GP13 stays unused).
-    #[cfg(not(feature = "pcb"))]
+    // `stripboard` feature: the hand-wired board — drives GP5/7/8/9,
+    // senses GP10-13.
+    #[cfg(feature = "stripboard")]
     let mut buttons = PicoBattleInput::new([
         Flex::new(p.PIN_5),
         Flex::new(p.PIN_7),
@@ -75,7 +76,7 @@ async fn main(spawner: Spawner) {
         Flex::new(p.PIN_12),
         Flex::new(p.PIN_13),
     ]);
-    #[cfg(feature = "pcb")]
+    #[cfg(not(feature = "stripboard"))]
     let mut buttons = PicoBattleInput::new([
         Flex::new(p.PIN_6),
         Flex::new(p.PIN_7),

@@ -48,9 +48,10 @@ buzzer = []
 leds = ["dep:smart-leds"]
 mem-profile = []
 trace = ["mega-blastoise-core/trace"]
-# Partner-made button PCB (probed 2026-07-10): drives GP6/7/8/9, senses
-# GP10-12 + GP9 (GP9/GP13 are one net). Default = hand-wired stripboard.
-pcb = []
+# Button board: the partner-made PCB is the DEFAULT (drives GP6/7/8/9,
+# senses GP10-12 + GP9; GP9/GP13 are one net). This feature selects the old
+# hand-wired stripboard instead (drives GP5/7/8/9, senses GP10-13).
+stripboard = []
 # Display variants: un-rescaled 56px sprites / wrapped corner move names.
 bigsprite = ["mega-blastoise-core/bigsprite"]
 wrapmoves = ["mega-blastoise-core/wrapmoves"]

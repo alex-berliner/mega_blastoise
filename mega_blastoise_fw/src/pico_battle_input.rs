@@ -1,19 +1,19 @@
 //! Button-matrix driver — table-driven, so a PCB revision is just a pin map.
 //!
-//! Boards (select with the `pcb` cargo feature):
+//! Boards (default = the partner PCB; `stripboard` selects the old board):
 //!
-//! DEFAULT — hand-wired stripboard (per ELECTRONICS.md):
+//! `stripboard` — hand-wired stripboard (per ELECTRONICS.md):
 //!   drives GP5 (P1 moves), GP7 (P1 party), GP8 (P2 moves), GP9 (P2 party);
 //!   senses GP10–GP13.
 //!
-//! `pcb` — partner-made PCB (probed 2026-07-10 with gpio_probe): GP9 and
-//!   GP13 are one net that serves as BOTH the 4th sense line for the GP6/7/8
-//!   drives AND the drive line for P2 party 2/3. GP13 is redundant (tied to
-//!   GP9) and left untouched.
-//!     GP6  × {GP10, GP11, GP12, GP9}  = P1 moves 1-4
-//!     GP7  × {GP10, GP11, GP12}       = P1 party 1-3,  GP7 × GP9 = P2 move 1
-//!     GP8  × {GP10, GP11, GP12}       = P2 moves 2-4,  GP8 × GP9 = P2 party 1
-//!     GP9  × {GP10, GP11}             = P2 party 2-3
+//! DEFAULT — partner-made PCB (pairs probed with gpio_probe and functions
+//!   confirmed on the faceplate, 2026-07-10): GP9 and GP13 are one net that
+//!   serves as BOTH the 4th sense line for the GP6/7/8 drives AND the drive
+//!   line for P2 party 2/3. GP13 is redundant (tied to GP9) and untouched.
+//!     GP6 × {GP10, GP11, GP12, GP9} = P1 moves 1, 3, 2, 4
+//!     GP7 × {GP10, GP11, GP12}      = P1 party 1-3,  GP7 × GP9 = P2 move 4
+//!     GP8 × {GP10, GP11, GP12}      = P2 moves 2, 3, 1,  GP8 × GP9 = P2 party 1
+//!     GP9 × {GP10, GP11}            = P2 party 2-3
 //!
 //! Every pin is a `Flex`: a scan drives one line low at a time (open-drain
 //! style, inputs with pull-ups otherwise) and reads the mapped sense pins.
@@ -56,7 +56,7 @@ const fn pt(player: u8, idx: u8) -> PadBtn {
 /// sense pins to read while it is low and the button each one means.
 type ScanTable = &'static [(usize, &'static [(usize, PadBtn)])];
 
-#[cfg(not(feature = "pcb"))]
+#[cfg(feature = "stripboard")]
 mod board {
     use super::{mv, pt, ScanTable};
     /// Pin array order: GP5, GP7, GP8, GP9, GP10, GP11, GP12, GP13.
@@ -69,21 +69,18 @@ mod board {
     ];
 }
 
-#[cfg(feature = "pcb")]
+#[cfg(not(feature = "stripboard"))]
 mod board {
     use super::{mv, pt, ScanTable};
     /// Pin array order: GP6, GP7, GP8, GP9, GP10, GP11, GP12.
     /// Index 3 (GP9) is both a sense (rows GP6/7/8) and a drive (last scan).
-    ///
-    /// PROVISIONAL function assignment (electrical pairs verified by
-    /// gpio_probe 2026-07-10; which pair is which game button still needs
-    /// confirmation from the physical faceplate — edit the PadBtn cells
-    /// below, the scan topology stays).
+    /// Function assignment confirmed against the faceplate 2026-07-10 (note
+    /// the scrambled move orders — they match the physical silkscreen).
     pub const N_PINS: usize = 7;
     pub const SCANS: ScanTable = &[
-        (0, &[(4, mv(1, 0)), (5, mv(1, 1)), (6, mv(1, 2)), (3, mv(1, 3))]),
-        (1, &[(4, pt(1, 0)), (5, pt(1, 1)), (6, pt(1, 2)), (3, mv(2, 0))]),
-        (2, &[(4, mv(2, 1)), (5, mv(2, 2)), (6, mv(2, 3)), (3, pt(2, 0))]),
+        (0, &[(4, mv(1, 0)), (5, mv(1, 2)), (6, mv(1, 1)), (3, mv(1, 3))]),
+        (1, &[(4, pt(1, 0)), (5, pt(1, 1)), (6, pt(1, 2)), (3, mv(2, 3))]),
+        (2, &[(4, mv(2, 1)), (5, mv(2, 2)), (6, mv(2, 0)), (3, pt(2, 0))]),
         (3, &[(4, pt(2, 1)), (5, pt(2, 2))]),
     ];
 }
