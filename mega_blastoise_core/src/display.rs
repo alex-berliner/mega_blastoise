@@ -72,6 +72,21 @@ pub fn party_slot_from_mon(mon: &gen1_battle::MonBattleData) -> PartySlotData {
     }
 }
 
+/// Longest prefix of `s` at most `max_bytes` long, ending on a char boundary.
+/// Byte-index truncation on names panics on multi-byte characters (a
+/// typographic apostrophe in a roster name hard-faulted the firmware from
+/// `render_switch_screen`); every display truncation goes through here.
+fn prefix_bytes(s: &str, max_bytes: usize) -> &str {
+    if s.len() <= max_bytes {
+        return s;
+    }
+    let mut end = max_bytes;
+    while end > 0 && !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    &s[..end]
+}
+
 // ── Shared text styles ────────────────────────────────────────────────────────
 
 fn tl_style() -> TextStyle {
@@ -419,7 +434,7 @@ where
 
     for (i, (mv_name, pp, max_pp)) in slot.moves.iter().enumerate().take(4) {
         let y = 25 + i as i32 * 10;
-        let name_t = if mv_name.len() > 13 { &mv_name[..13] } else { mv_name.as_str() };
+        let name_t = prefix_bytes(mv_name, 13);
         let pp_str = alloc::format!("{}/{}", pp, max_pp);
         Text::with_text_style(name_t, Point::new(0,   y), info, tl_style()).draw(display).ok();
         Text::with_text_style(&pp_str, Point::new(127, y), info, tr_style()).draw(display).ok();
@@ -456,7 +471,7 @@ where
 
     for (i, slot) in party.iter().enumerate().take(6) {
         let y = 15 + i as i32 * 9;
-        let name = if slot.name.len() > 10 { &slot.name[..10] } else { slot.name.as_str() };
+        let name = prefix_bytes(&slot.name, 10);
         let left = alloc::format!("{} {}", i + 1, name);
         let hp_str = alloc::format!("{}/{}", slot.hp, slot.max_hp);
         let right = if slot.hp == 0 {
@@ -560,8 +575,10 @@ where
             n += 1;
             break;
         }
-        let search_end = (target + 4).min(rest.len());
-        let at = rest[..search_end].rfind(' ').unwrap_or(target.min(rest.len()));
+        let search_end = prefix_bytes(rest, target + 4).len();
+        let at = rest[..search_end]
+            .rfind(' ')
+            .unwrap_or_else(|| prefix_bytes(rest, target).len());
         lines[n] = rest[..at].trim();
         n += 1;
         rest = rest[at..].trim_start();
@@ -668,5 +685,69 @@ mod wrap_tests {
         assert_eq!(w("Gust"), ["Gust"]);
         assert_eq!(w("Splash"), ["Splash"]);
         assert_eq!(w("Self-Destruct"), ["Self-", "Destr-", "uct"]);
+    }
+}
+
+#[cfg(test)]
+mod utf8_render_tests {
+    use super::*;
+    use alloc::string::String;
+    use alloc::vec::Vec;
+
+    /// Pixel sink: accepts any draw, panics never.
+    struct Sink;
+    impl DrawTarget for Sink {
+        type Color = BinaryColor;
+        type Error = core::convert::Infallible;
+        fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+        where
+            I: IntoIterator<Item = Pixel<BinaryColor>>,
+        {
+            for _ in pixels {}
+            Ok(())
+        }
+    }
+    impl OriginDimensions for Sink {
+        fn size(&self) -> Size {
+            Size::new(128, 64)
+        }
+    }
+
+    fn slot(name: &str) -> PartySlotData {
+        PartySlotData {
+            name: String::from(name),
+            level: 78,
+            hp: 100,
+            max_hp: 200,
+            status: None,
+            atk: 1, def: 1, spe: 1, spc: 1,
+            types: Vec::new(),
+            moves: alloc::vec![(String::from("Farfetch\u{2019}d Special Move"), 5, 10)],
+            boost_atk: 0, boost_def: 0, boost_spe: 0, boost_spc: 0,
+            item: None,
+        }
+    }
+
+    /// The overnight hard fault: a typographic apostrophe (multi-byte) at a
+    /// truncation boundary. Every screen that truncates text must survive
+    /// non-ASCII names.
+    #[test]
+    fn non_ascii_names_render_without_panic() {
+        let mut d = Sink;
+        let party = alloc::vec![slot("Farfetch\u{2019}d"), slot("Nidoran\u{2640}")];
+        render_switch_screen(&mut d, &party);
+        render_pokemon_stats(&mut d, &party[0]);
+        render_pokemon_stats_page2(&mut d, &party[0]);
+        render_event_text(&mut d, "Red\u{2019}s Farfetch\u{2019}d used Swords Dance!");
+        render_event_text(&mut d, "\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}\u{2019}");
+    }
+
+    #[test]
+    fn prefix_bytes_floors_to_char_boundary() {
+        let s = "Farfetch\u{2019}d"; // bytes 8..11 are the apostrophe
+        assert_eq!(prefix_bytes(s, 9), "Farfetch");
+        assert_eq!(prefix_bytes(s, 10), "Farfetch");
+        assert_eq!(prefix_bytes(s, 11), "Farfetch\u{2019}");
+        assert_eq!(prefix_bytes(s, 100), s);
     }
 }

@@ -36,7 +36,11 @@ pub fn draw_randbat_team(seed: u64, count: usize) -> Vec<MonData> {
         indices.swap(i, j);
         let e = &RANDBAT_POOL[indices[i]];
         team.push(MonData {
-            name: String::from(e.species),
+            // Leave the name empty: the engine fills in the species' canonical
+            // display name, which the sprite table and ASCII OLED font are
+            // keyed on. Roster strings carry typographic characters (curly
+            // apostrophes) that would miss the sprite and render as '?'.
+            name: String::new(),
             species: String::from(e.species),
             ability: Some(String::from("No Ability")),
             moves: e
