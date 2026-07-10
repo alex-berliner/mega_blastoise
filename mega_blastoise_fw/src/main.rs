@@ -13,7 +13,7 @@ mod usb_input;
 use gen1_battle::TeamData;
 use defmt::debug;
 use embassy_executor::Spawner;
-use embassy_rp::gpio::{Input, Level, Output, Pull};
+use embassy_rp::gpio::{Flex};
 use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state, run_battle,
@@ -60,25 +60,32 @@ async fn main(spawner: Spawner) {
         input
     };
 
-    // ── Button matrix (4 row outputs × 4 col inputs) ─────────────────────────
-    // Rows: GP5 = P1 moves, GP7 = P1 party, GP8 = P2 moves, GP9 = P2 party
-    // (P1 moves moved off GP6 → GP5 to keep clear of the user's debug wiring.)
-    // Cols: GP10–GP13 (active-LOW with internal pull-ups)
-    let mut buttons = PicoBattleInput::new(
-        [
-            Output::new(p.PIN_5,  Level::High),
-            Output::new(p.PIN_7,  Level::High),
-            Output::new(p.PIN_8,  Level::High),
-            Output::new(p.PIN_9,  Level::High),
-        ],
-        [
-            Input::new(p.PIN_10, Pull::Up),
-            Input::new(p.PIN_11, Pull::Up),
-            Input::new(p.PIN_12, Pull::Up),
-            Input::new(p.PIN_13, Pull::Up),
-        ],
-    );
-    debug!("Button matrix ready: rows GP6-9, cols GP10-13");
+    // ── Button matrix (see pico_battle_input's board tables) ─────────────────
+    // Default: stripboard — drives GP5/7/8/9, senses GP10-13.
+    // `pcb` feature: partner PCB — drives GP6/7/8/9, senses GP10-12 + GP9
+    // (GP9/GP13 are one net on that board; GP13 stays unused).
+    #[cfg(not(feature = "pcb"))]
+    let mut buttons = PicoBattleInput::new([
+        Flex::new(p.PIN_5),
+        Flex::new(p.PIN_7),
+        Flex::new(p.PIN_8),
+        Flex::new(p.PIN_9),
+        Flex::new(p.PIN_10),
+        Flex::new(p.PIN_11),
+        Flex::new(p.PIN_12),
+        Flex::new(p.PIN_13),
+    ]);
+    #[cfg(feature = "pcb")]
+    let mut buttons = PicoBattleInput::new([
+        Flex::new(p.PIN_6),
+        Flex::new(p.PIN_7),
+        Flex::new(p.PIN_8),
+        Flex::new(p.PIN_9),
+        Flex::new(p.PIN_10),
+        Flex::new(p.PIN_11),
+        Flex::new(p.PIN_12),
+    ]);
+    debug!("Button matrix ready");
 
     // ── Piezo buzzer (GP21 = PWM slice 2 channel B) ──────────────────────────
     #[cfg(feature = "buzzer")]

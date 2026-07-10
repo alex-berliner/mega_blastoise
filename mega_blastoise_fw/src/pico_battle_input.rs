@@ -1,13 +1,23 @@
-//! 4×4 button matrix driver.
+//! Button-matrix driver — table-driven, so a PCB revision is just a pin map.
 //!
-//! Physical mapping (per ELECTRONICS.md):
-//! - Row 0 (GP5):  P1 move buttons 1–4  → cols 0–3
-//! - Row 1 (GP7):  P1 party buttons 1–3 → cols 0–2  (col 3 unused)
-//! - Row 2 (GP8):  P2 move buttons 1–4  → cols 0–3
-//! - Row 3 (GP9):  P2 party buttons 1–3 → cols 0–2  (col 3 unused)
+//! Boards (select with the `pcb` cargo feature):
 //!
-//! Row pins (GP5,7,8,9) are `Output`s, driven LOW one at a time during scan.
-//! Col pins (GP10–13) are `Input`s with internal pull-ups; LOW = pressed.
+//! DEFAULT — hand-wired stripboard (per ELECTRONICS.md):
+//!   drives GP5 (P1 moves), GP7 (P1 party), GP8 (P2 moves), GP9 (P2 party);
+//!   senses GP10–GP13.
+//!
+//! `pcb` — partner-made PCB (probed 2026-07-10 with gpio_probe): GP9 and
+//!   GP13 are one net that serves as BOTH the 4th sense line for the GP6/7/8
+//!   drives AND the drive line for P2 party 2/3. GP13 is redundant (tied to
+//!   GP9) and left untouched.
+//!     GP6  × {GP10, GP11, GP12, GP9}  = P1 moves 1-4
+//!     GP7  × {GP10, GP11, GP12}       = P1 party 1-3,  GP7 × GP9 = P2 move 1
+//!     GP8  × {GP10, GP11, GP12}       = P2 moves 2-4,  GP8 × GP9 = P2 party 1
+//!     GP9  × {GP10, GP11}             = P2 party 2-3
+//!
+//! Every pin is a `Flex`: a scan drives one line low at a time (open-drain
+//! style, inputs with pull-ups otherwise) and reads the mapped sense pins.
+//! LOW = pressed.
 
 extern crate alloc;
 
@@ -15,7 +25,7 @@ use alloc::string::String;
 
 use cortex_m::asm::delay as asm_delay;
 use embassy_futures::select::{select, Either};
-use embassy_rp::gpio::{Input, Output};
+use embassy_rp::gpio::{Flex, Pull};
 use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
     ActivePrompt, ChoiceCollector, CollectEffect, InputBus, InputSource, PadEvent, PlayerChoice,
@@ -24,73 +34,144 @@ use mega_blastoise_core::{
 #[cfg(feature = "oled")]
 use crate::subsystems::oled::send as oled_send;
 
+/// One physical button's identity.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct PadBtn {
+    /// 1 or 2.
+    pub player: u8,
+    /// true = party button, false = move button.
+    pub switch: bool,
+    /// 0-based slot (move 0-3 / party 0-2).
+    pub idx: u8,
+}
+
+const fn mv(player: u8, idx: u8) -> PadBtn {
+    PadBtn { player, switch: false, idx }
+}
+const fn pt(player: u8, idx: u8) -> PadBtn {
+    PadBtn { player, switch: true, idx }
+}
+
+/// The board as data: for each drive line (index into the pin array), the
+/// sense pins to read while it is low and the button each one means.
+type ScanTable = &'static [(usize, &'static [(usize, PadBtn)])];
+
+#[cfg(not(feature = "pcb"))]
+mod board {
+    use super::{mv, pt, ScanTable};
+    /// Pin array order: GP5, GP7, GP8, GP9, GP10, GP11, GP12, GP13.
+    pub const N_PINS: usize = 8;
+    pub const SCANS: ScanTable = &[
+        (0, &[(4, mv(1, 0)), (5, mv(1, 1)), (6, mv(1, 2)), (7, mv(1, 3))]),
+        (1, &[(4, pt(1, 0)), (5, pt(1, 1)), (6, pt(1, 2))]),
+        (2, &[(4, mv(2, 0)), (5, mv(2, 1)), (6, mv(2, 2)), (7, mv(2, 3))]),
+        (3, &[(4, pt(2, 0)), (5, pt(2, 1)), (6, pt(2, 2))]),
+    ];
+}
+
+#[cfg(feature = "pcb")]
+mod board {
+    use super::{mv, pt, ScanTable};
+    /// Pin array order: GP6, GP7, GP8, GP9, GP10, GP11, GP12.
+    /// Index 3 (GP9) is both a sense (rows GP6/7/8) and a drive (last scan).
+    ///
+    /// PROVISIONAL function assignment (electrical pairs verified by
+    /// gpio_probe 2026-07-10; which pair is which game button still needs
+    /// confirmation from the physical faceplate — edit the PadBtn cells
+    /// below, the scan topology stays).
+    pub const N_PINS: usize = 7;
+    pub const SCANS: ScanTable = &[
+        (0, &[(4, mv(1, 0)), (5, mv(1, 1)), (6, mv(1, 2)), (3, mv(1, 3))]),
+        (1, &[(4, pt(1, 0)), (5, pt(1, 1)), (6, pt(1, 2)), (3, mv(2, 0))]),
+        (2, &[(4, mv(2, 1)), (5, mv(2, 2)), (6, mv(2, 3)), (3, pt(2, 0))]),
+        (3, &[(4, pt(2, 1)), (5, pt(2, 2))]),
+    ];
+}
+
+pub use board::N_PINS;
+
+/// Snapshot of every button's state from one full scan.
+/// Bit layout: `mask[player-1][kind]`, kind 0 = moves, 1 = party.
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub struct Pressed {
+    mask: [[u8; 2]; 2],
+}
+
+impl Pressed {
+    fn set(&mut self, b: PadBtn) {
+        self.mask[(b.player - 1) as usize][b.switch as usize] |= 1 << b.idx;
+    }
+    fn down(&self, b: PadBtn) -> bool {
+        self.mask[(b.player - 1) as usize][b.switch as usize] & (1 << b.idx) != 0
+    }
+    fn any(&self, player: u8) -> bool {
+        self.mask[(player - 1) as usize] != [0, 0]
+    }
+}
+
 pub struct ButtonMatrix<'d> {
-    rows: [Output<'d>; 4],
-    cols: [Input<'d>; 4],
+    pins: [Flex<'d>; board::N_PINS],
 }
 
 impl<'d> ButtonMatrix<'d> {
-    pub fn new(rows: [Output<'d>; 4], cols: [Input<'d>; 4]) -> Self {
-        Self { rows, cols }
-    }
-
-    /// Drive `row` LOW, settle ~12 µs, read all four cols, drive row HIGH again.
-    /// Returns a bitmask: bit n = col n is pressed (active LOW).
-    fn scan_row(&mut self, row: usize) -> u8 {
-        self.rows[row].set_low();
-        asm_delay(1500); // ≈ 12 µs settle at 125 MHz
-        let mut mask = 0u8;
-        for col in 0..4 {
-            if self.cols[col].is_low() {
-                mask |= 1 << col;
-            }
+    pub fn new(mut pins: [Flex<'d>; board::N_PINS]) -> Self {
+        for pin in pins.iter_mut() {
+            pin.set_pull(Pull::Up);
+            pin.set_as_input();
         }
-        self.rows[row].set_high();
-        mask
+        Self { pins }
     }
 
-    /// Wait for a button press from a specific player (rows 0+1 = P1, rows 2+3 = P2).
+    /// One full board scan: drive each table line low in turn (open-drain,
+    /// never driven high), read its mapped sense pins, restore.
+    fn scan(&mut self) -> Pressed {
+        let mut out = Pressed::default();
+        for &(drive, senses) in board::SCANS {
+            self.pins[drive].set_low();
+            self.pins[drive].set_as_output();
+            asm_delay(1500); // ≈ 12 µs settle at 125 MHz
+            for &(sense, btn) in senses {
+                if self.pins[sense].is_low() {
+                    out.set(btn);
+                }
+            }
+            self.pins[drive].set_as_input();
+            asm_delay(500);
+        }
+        out
+    }
+
+    /// Wait for a button press from either player.
     /// Short press (< 500 ms) → P1/P2; long press (≥ 500 ms) → P1Long/P2Long.
     /// Any press performs unready in the lobby; long press selects AI opponent.
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
         loop {
-            let p1 = self.scan_row(0) | self.scan_row(1);
-            let p2 = self.scan_row(2) | self.scan_row(3);
-            if p1 != 0 {
+            let snap = self.scan();
+            for player in [1u8, 2] {
+                if !snap.any(player) {
+                    continue;
+                }
                 let mut held_ms = 0u64;
                 let is_long = loop {
                     Timer::after_millis(10).await;
                     held_ms += 10;
-                    if self.scan_row(0) | self.scan_row(1) == 0 { break false; }
-                    if held_ms >= 500 { break true; }
+                    if !self.scan().any(player) {
+                        break false;
+                    }
+                    if held_ms >= 500 {
+                        break true;
+                    }
                 };
                 if is_long {
                     loop {
                         Timer::after_millis(10).await;
-                        if self.scan_row(0) | self.scan_row(1) == 0 { break; }
+                        if !self.scan().any(player) {
+                            break;
+                        }
                     }
-                    return LobbyPress::P1Long;
-                } else {
-                    return LobbyPress::P1;
+                    return if player == 1 { LobbyPress::P1Long } else { LobbyPress::P2Long };
                 }
-            }
-            if p2 != 0 {
-                let mut held_ms = 0u64;
-                let is_long = loop {
-                    Timer::after_millis(10).await;
-                    held_ms += 10;
-                    if self.scan_row(2) | self.scan_row(3) == 0 { break false; }
-                    if held_ms >= 500 { break true; }
-                };
-                if is_long {
-                    loop {
-                        Timer::after_millis(10).await;
-                        if self.scan_row(2) | self.scan_row(3) == 0 { break; }
-                    }
-                    return LobbyPress::P2Long;
-                } else {
-                    return LobbyPress::P2;
-                }
+                return if player == 1 { LobbyPress::P1 } else { LobbyPress::P2 };
             }
             Timer::after_millis(5).await;
         }
@@ -107,8 +188,8 @@ pub enum LobbyPress { P1, P2, P1Long, P2Long }
 pub struct PicoBattleInput<'d>(pub ButtonMatrix<'d>);
 
 impl<'d> PicoBattleInput<'d> {
-    pub fn new(rows: [Output<'d>; 4], cols: [Input<'d>; 4]) -> Self {
-        Self(ButtonMatrix::new(rows, cols))
+    pub fn new(pins: [Flex<'d>; board::N_PINS]) -> Self {
+        Self(ButtonMatrix::new(pins))
     }
 
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
@@ -125,30 +206,28 @@ impl<'d> PicoBattleInput<'d> {
     /// until physically released, and its release emits no event).
     pub async fn next_pad_event(&mut self, scan: &mut PadScan) -> PadEvent {
         loop {
-            let mut pressed = [0u8; 4];
-            for (r, mask) in pressed.iter_mut().enumerate() {
-                *mask = self.0.scan_row(r);
-            }
+            let pressed = self.0.scan();
             // Stale buttons stop being stale once released.
-            for r in 0..4 {
-                scan.stale[r] &= pressed[r];
+            for p in 0..2 {
+                for k in 0..2 {
+                    scan.stale[p][k] &= pressed.mask[p][k];
+                }
             }
             let now = Instant::now().as_millis();
 
             for i in 0..2usize {
                 let player = (i + 1) as u8;
-                let (move_row, switch_row) = if i == 0 { (0usize, 1usize) } else { (2, 3) };
-                let live = |row: usize, cols: u8| (pressed[row] & !scan.stale[row]) & cols;
-                let is_down = |row: usize, col: usize| pressed[row] & (1 << col) != 0;
-                // Party row takes priority, like the original collector.
-                let fresh_press = |except: Option<(usize, usize)>| -> Option<(usize, usize, bool)> {
-                    for &(row, cols, switch) in
-                        &[(switch_row, 0b0111u8, true), (move_row, 0b1111u8, false)]
-                    {
-                        if let Some(c) = (0..4).find(|&c| {
-                            live(row, cols) & (1 << c) != 0 && except != Some((row, c))
-                        }) {
-                            return Some((row, c, switch));
+                let is_stale = |b: PadBtn| {
+                    scan.stale[(b.player - 1) as usize][b.switch as usize] & (1 << b.idx) != 0
+                };
+                // Party buttons take priority, like the original collector.
+                let fresh_press = |except: Option<PadBtn>| -> Option<PadBtn> {
+                    for switch in [true, false] {
+                        for idx in 0..4u8 {
+                            let b = PadBtn { player, switch, idx };
+                            if pressed.down(b) && !is_stale(b) && except != Some(b) {
+                                return Some(b);
+                            }
                         }
                     }
                     None
@@ -156,59 +235,54 @@ impl<'d> PicoBattleInput<'d> {
 
                 match scan.st[i] {
                     PadState::Idle => {
-                        if let Some((row, col, switch)) = fresh_press(None) {
-                            scan.st[i] = PadState::Held { row, col, switch, t0: now, prev: None };
+                        if let Some(btn) = fresh_press(None) {
+                            scan.st[i] = PadState::Held { btn, t0: now, prev: None };
                         }
                     }
-                    PadState::Held { row, col, switch, t0, prev } => {
+                    PadState::Held { btn, t0, prev } => {
                         // If the previous hold's button was released while we
                         // time the new press, its view ends now.
-                        if let Some((prow, pcol)) = prev {
-                            if !is_down(prow, pcol) {
-                                scan.st[i] = PadState::Held { row, col, switch, t0, prev: None };
+                        if let Some(pb) = prev {
+                            if !pressed.down(pb) {
+                                scan.st[i] = PadState::Held { btn, t0, prev: None };
                                 return PadEvent::HoldEnd { player };
                             }
                         }
-                        if is_down(row, col) {
+                        if pressed.down(btn) {
                             if now.saturating_sub(t0) >= HOLD_THRESHOLD_MS {
                                 // This hold takes over; the previous button is
                                 // stale until physically released.
-                                if let Some((prow, pcol)) = prev {
-                                    scan.stale[prow] |= 1 << pcol;
+                                if let Some(pb) = prev {
+                                    scan.stale[(pb.player - 1) as usize][pb.switch as usize] |=
+                                        1 << pb.idx;
                                 }
-                                scan.st[i] = PadState::HoldOut { row, col };
-                                return if switch {
-                                    PadEvent::HoldSwitch { player, idx: col as u8 }
+                                scan.st[i] = PadState::HoldOut { btn };
+                                return if btn.switch {
+                                    PadEvent::HoldSwitch { player, idx: btn.idx }
                                 } else {
-                                    PadEvent::HoldMove { player, slot: col as u8 }
+                                    PadEvent::HoldMove { player, slot: btn.idx }
                                 };
                             }
                         } else {
                             scan.st[i] = match prev {
-                                Some((prow, pcol)) => PadState::HoldOut { row: prow, col: pcol },
+                                Some(pb) => PadState::HoldOut { btn: pb },
                                 None => PadState::Idle,
                             };
-                            return if switch {
-                                PadEvent::TapSwitch { player, idx: col as u8 }
+                            return if btn.switch {
+                                PadEvent::TapSwitch { player, idx: btn.idx }
                             } else {
-                                PadEvent::TapMove { player, slot: col as u8 }
+                                PadEvent::TapMove { player, slot: btn.idx }
                             };
                         }
                     }
-                    PadState::HoldOut { row, col } => {
-                        if !is_down(row, col) {
+                    PadState::HoldOut { btn } => {
+                        if !pressed.down(btn) {
                             scan.st[i] = PadState::Idle;
                             return PadEvent::HoldEnd { player };
                         }
                         // A second press starts timing while the view stays up.
-                        if let Some((nrow, ncol, nswitch)) = fresh_press(Some((row, col))) {
-                            scan.st[i] = PadState::Held {
-                                row: nrow,
-                                col: ncol,
-                                switch: nswitch,
-                                t0: now,
-                                prev: Some((row, col)),
-                            };
+                        if let Some(nb) = fresh_press(Some(btn)) {
+                            scan.st[i] = PadState::Held { btn: nb, t0: now, prev: Some(btn) };
                         }
                     }
                 }
@@ -223,9 +297,9 @@ impl<'d> PicoBattleInput<'d> {
 #[derive(Default)]
 pub struct PadScan {
     st: [PadState; 2],
-    /// Per-row bitmask of buttons overridden by a newer hold — ignored until
-    /// physically released.
-    stale: [u8; 4],
+    /// Buttons overridden by a newer hold — ignored until physically
+    /// released. `stale[player-1][kind]` bitmask, kind 0 = moves, 1 = party.
+    stale: [[u8; 2]; 2],
 }
 
 #[derive(Default, Clone, Copy)]
@@ -234,9 +308,9 @@ enum PadState {
     Idle,
     /// Button down; timing a tap vs a hold. `prev` is a still-held button
     /// whose hold view is currently showing.
-    Held { row: usize, col: usize, switch: bool, t0: u64, prev: Option<(usize, usize)> },
+    Held { btn: PadBtn, t0: u64, prev: Option<PadBtn> },
     /// Hold reported; waiting for release or a second press.
-    HoldOut { row: usize, col: usize },
+    HoldOut { btn: PadBtn },
 }
 
 /// Button-only [`InputSource`] for no-USB builds: the same shared
