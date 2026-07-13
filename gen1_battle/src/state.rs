@@ -1,8 +1,8 @@
 //! Live battle state: `Mon`, `Side`, plus the per-battle bookkeeping.
 //!
-//! Memory budget per mon ≈ 64 B; per battle (2 sides × 6 mons + bookkeeping) ≈ 1 KB.
+//! Memory budget per mon ≈ 80 B; per battle (2 sides × 6 mons + bookkeeping) ≈ 1 KB.
 
-use crate::tables::{move_by_id, species_by_id, MoveEntry, SpeciesEntry};
+use crate::tables::{move_by_id, species_by_id, SpeciesEntry};
 use crate::types::Type;
 
 /// Status (major) — exactly one at a time, plus sleep counter.
@@ -15,10 +15,11 @@ pub enum Status {
     Burn,
     Freeze,
     Paralysis,
-    /// Sleep with `turns_remaining` 1..=7.
+    /// Sleep with `turns_remaining` 1..=7 (the last turn is the lost wake turn).
     Sleep(u8),
-    /// Bad poison with `counter` 1..=15 (capped).
-    BadPoison(u8),
+    /// Bad poison. The escalating counter lives in `Volatile::toxic_counter`
+    /// so it survives Rest (Gen 1 Toxic counter glitch).
+    BadPoison,
 }
 
 /// Volatile status bitfield + small payloads.
@@ -27,18 +28,22 @@ pub struct Volatile {
     pub flags: u32,
     pub confused_turns: u8,
     pub substitute_hp: u8,
-    pub bide_damage: u16,
+    /// Bide accumulator, or a partial-trap lock's repeated per-turn damage.
+    pub stored_damage: u16,
     pub bide_turns: u8,
     pub disabled_slot: u8,
     pub disabled_turns: u8,
-    /// Move id for a locked-in multi-turn action (TwoTurn charge, Wrap, Bide).
-    /// 0 means none. Resolved via lookup against MOVES table.
+    /// Move id for a locked-in multi-turn action (TwoTurn charge, Wrap, Bide,
+    /// Thrash/Petal Dance, Rage). Empty means none.
     pub multi_turn_move: &'static str,
     pub multi_turn_turns: u8,
-    pub reflect_turns: u8,
-    pub light_screen_turns: u8,
-    pub trapping_user_side: u8,  // 0 = none, 1 = p1, 2 = p2
-    pub trapping_turns: u8,
+    /// Stored effective accuracy for the Thrash/Rage accuracy bug: stage
+    /// multipliers compound onto LAST turn's effective accuracy each turn.
+    pub locked_acc: u8,
+    /// Gen 1 Toxic counter ("residualdmg"): starts at 0 when badly poisoned,
+    /// increments on tox and Leech Seed residuals, multiplies psn/brn/seed
+    /// damage, and survives Rest. Active while `TOX_COUNTER` flag is set.
+    pub toxic_counter: u8,
 }
 
 impl Volatile {
@@ -57,6 +62,12 @@ impl Volatile {
     pub const INVULNERABLE: u32     = 1 << 12;
     pub const TRAPPED: u32          = 1 << 13;
     pub const TRANSFORMED: u32      = 1 << 14;
+    pub const RAGE: u32             = 1 << 15;
+    /// Lose the next action (Haze cured this mon's sleep/freeze mid-turn
+    /// before it acted — Gen 1 leaves it unable to move that turn).
+    pub const SKIP_TURN: u32        = 1 << 16;
+    /// Toxic counter is live (see `toxic_counter`).
+    pub const TOX_COUNTER: u32      = 1 << 17;
 
     pub fn set(&mut self, f: u32) {
         self.flags |= f;
@@ -67,6 +78,20 @@ impl Volatile {
     pub fn has(&self, f: u32) -> bool {
         (self.flags & f) != 0
     }
+}
+
+/// Battle-global registers (Gen 1 keeps these in overworked WRAM slots, which
+/// is where half its glitches come from).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Field {
+    /// Last damage dealt in the battle by anyone, to anyone: move damage,
+    /// residual poison/burn/seed, recoil, confusion self-hits, crash damage.
+    /// Persists across turns; only reset when a move outside the Gen 1
+    /// skip-list starts executing. Counter deals 2× this; Bide accumulates it.
+    pub last_damage: u16,
+    /// True while the side currently acting moves SECOND this turn (its foe
+    /// already acted). Haze's cure-slp/frz-lose-turn quirk needs to know.
+    pub foe_acted: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -84,8 +109,18 @@ pub struct Mon {
     pub level: u8,
     pub hp_cur: u16,
     pub hp_max: u16,
-    /// HP/Atk/Def/Spc/Spe — these are FINAL stats (computed from base+IV+EV+level).
+    /// HP/Atk/Def/Spc/Spe — FINAL stats (base+IV+EV+level), never modified
+    /// in battle (except by Transform). Crits read these directly.
     pub stats: [u16; 5],
+    /// Gen 1 "modified" stats: stats with stat stages and the sticky
+    /// paralysis/burn drops applied. Index 0 (HP) is unused. Recalculated
+    /// from `stats` whenever a stage changes (which ERASES par/brn drops —
+    /// the Gen 1 stat modification glitch), quartered/halved in place when
+    /// paralysis/burn lands or re-stacks.
+    pub modified: [u16; 5],
+    /// Species base Speed at team-build time — crit rate uses this, and it
+    /// survives Transform (the cartridge reads the original species).
+    pub base_spe: u16,
     pub primary_type: Type,
     pub secondary_type: Type,
     pub status: Status,
@@ -93,10 +128,11 @@ pub struct Mon {
     /// Stat stages for Atk/Def/Spc/Spe/Acc/Eva (HP doesn't stage). Range -6..=6.
     pub stages: [i8; 6],
     pub volatile: Volatile,
-    /// Move id used last turn (for Mirror Move).
+    /// Move id used last (for Mirror Move). Cleared while asleep/frozen.
     pub last_move_used: &'static str,
-    /// Last damage taken from a Normal/Fighting damaging move this turn (Counter).
-    pub counter_source_dmg: u16,
+    /// Current sleep came from the mon's own Rest — exempt from Sleep Clause
+    /// Mod. Persists across switches (sleep does too), ignored when awake.
+    pub rest_sleep: bool,
 }
 
 impl Default for Mon {
@@ -108,6 +144,8 @@ impl Default for Mon {
             hp_cur: 0,
             hp_max: 0,
             stats: [0; 5],
+            modified: [0; 5],
+            base_spe: 0,
             primary_type: Type::None,
             secondary_type: Type::None,
             status: Status::None,
@@ -115,7 +153,7 @@ impl Default for Mon {
             stages: [0; 6],
             volatile: Volatile::default(),
             last_move_used: "",
-            counter_source_dmg: 0,
+            rest_sleep: false,
         }
     }
 }
@@ -130,11 +168,21 @@ impl Mon {
         !self.empty() && self.hp_cur == 0
     }
 
+    pub fn is_type(&self, t: Type) -> bool {
+        self.primary_type == t || self.secondary_type == t
+    }
+
     /// Find the 0-based move slot containing the given move id, if any.
     pub fn find_move_slot(&self, move_id: &str) -> Option<u8> {
         self.moves.iter().enumerate()
             .find(|(_, s)| s.move_id == move_id)
             .map(|(i, _)| i as u8)
+    }
+
+    /// True when every filled move slot is out of PP (Struggle time).
+    pub fn out_of_pp(&self) -> bool {
+        self.moves.iter().all(|s| s.move_id.is_empty() || s.pp == 0)
+            && self.moves.iter().any(|s| !s.move_id.is_empty())
     }
 
     /// Initialize a mon from species id + level + chosen moves.
@@ -164,6 +212,8 @@ impl Mon {
             hp_cur: hp,
             hp_max: hp,
             stats: [hp, atk, def, spc, spe],
+            modified: [hp, atk, def, spc, spe],
+            base_spe: sp.base_stats[4],
             primary_type: sp.primary_type,
             secondary_type: sp.secondary_type,
             status: Status::None,
@@ -171,7 +221,7 @@ impl Mon {
             stages: [0; 6],
             volatile: Volatile::default(),
             last_move_used: "",
-            counter_source_dmg: 0,
+            rest_sleep: false,
         })
     }
 }
@@ -210,11 +260,12 @@ pub struct Side {
     pub name: heapless::String<16>,
     pub team: [Mon; 6],
     pub active_idx: u8,
-    pub reflect_turns: u8,
-    pub light_screen_turns: u8,
+    /// Last move this side actually USED (announced). Not cleared by sleep —
+    /// Counter reads this, which is why stale Counters work.
     pub last_move_used: &'static str,
-    pub last_move_was_normal_or_fighting: bool,
-    pub last_move_damage: u16,
+    /// Last move this side SELECTED. Counter's desync-clause check reads the
+    /// opponent's selection.
+    pub last_selected_move: &'static str,
     /// Set while the active mon is TRANSFORMED (only the active mon can be).
     pub transform_backup: Option<TransformBackup>,
 }

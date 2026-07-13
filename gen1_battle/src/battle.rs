@@ -16,12 +16,15 @@ use hashbrown::HashMap;
 use crate::data::{
     BoostTable, MonBattleData, MonSummary, MoveSlot as ApiMoveSlot, PlayerBattleData, TeamData,
 };
-use crate::dispatch::{end_of_turn, execute_move, locked_move_slot, pre_move_check, Log};
+use crate::dispatch::{
+    after_action_residuals, after_switch_in, execute_locked_move, execute_move, execute_struggle,
+    locked_move_id, pre_move_check, Log,
+};
 use crate::options::{CoreBattleEngineOptions, CoreBattleOptions};
 use crate::request::{MonTurnRequest, Request, SwitchRequest, TurnRequest};
 use crate::rng::Rng;
-use crate::state::{Mon, MoveSlot, Side, Status};
-use crate::tables::{move_by_id, species_by_id};
+use crate::state::{Field, Mon, Side, Status, Volatile};
+use crate::tables::{move_by_id, species_by_id, MoveEffectKind, MoveEntry, FLAG_PRIO_MINUS, FLAG_PRIO_PLUS};
 use crate::types::{Stat, Type};
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -45,13 +48,20 @@ pub struct Battle<'a> {
     _engine: CoreBattleEngineOptions,
     _data: core::marker::PhantomData<&'a ()>,
     sides: [Side; 2],
+    field: Field,
     pending_choice: [Option<Choice>; 2],
     pending_switch_needed: [bool; 2],
     phase: Phase,
     log: Log,
     requests: Vec<(String, Request)>,
     winner: Option<u8>,
+    turn_count: u32,
 }
+
+/// Endless Battle Clause (format rule): hard cap on battle length. Pokémon
+/// Showdown ties at turn 1000; this API has no tie, so the side with the
+/// higher remaining-HP fraction wins (coin flip on an exact tie).
+const ENDLESS_BATTLE_TURN_CAP: u32 = 1000;
 
 pub type PublicCoreBattle<'a> = Battle<'a>;
 
@@ -84,12 +94,14 @@ impl<'a> Battle<'a> {
             _engine: engine,
             _data: core::marker::PhantomData,
             sides,
+            field: Field::default(),
             pending_choice: [None, None],
             pending_switch_needed: [false, false],
             phase: Phase::Setup,
             log: Log::new(),
             requests: Vec::new(),
             winner: None,
+            turn_count: 0,
         })
     }
 
@@ -255,8 +267,8 @@ impl<'a> Battle<'a> {
                     spa: m.stages[2],
                     spd: m.stages[2],
                     spe: m.stages[3],
-                    acc: 0,
-                    eva: 0,
+                    acc: m.stages[4],
+                    eva: m.stages[5],
                 },
                 moves,
             });
@@ -314,10 +326,11 @@ impl<'a> Battle<'a> {
                 continue;
             }
             let v = &m.volatile;
-            let recharging = v.has(crate::state::Volatile::MUST_RECHARGE);
+            let recharging = v.has(Volatile::MUST_RECHARGE);
             // A recharging mon's only option is "Recharge" — shown as a real,
             // selectable move rather than auto-submitted, so the player sees
             // what's happening. Any move choice resolves to the recharge turn.
+            // Likewise a mon with no PP left anywhere is offered Struggle.
             let moves: Vec<ApiMoveSlot> = if recharging {
                 alloc::vec![ApiMoveSlot {
                     name: "Recharge".to_string(),
@@ -328,11 +341,22 @@ impl<'a> Battle<'a> {
                     disabled: false,
                     target: 0,
                 }]
+            } else if m.out_of_pp() && v.multi_turn_move.is_empty() {
+                alloc::vec![ApiMoveSlot {
+                    name: "Struggle".to_string(),
+                    id: "struggle".to_string(),
+                    typ: "Normal".to_string(),
+                    pp: 1,
+                    max_pp: 1,
+                    disabled: false,
+                    target: 0,
+                }]
             } else {
                 m.moves
                     .iter()
-                    .filter(|sl| !sl.move_id.is_empty())
-                    .map(|sl| {
+                    .enumerate()
+                    .filter(|(_, sl)| !sl.move_id.is_empty())
+                    .map(|(slot, sl)| {
                         let info = move_by_id(sl.move_id).unwrap();
                         ApiMoveSlot {
                             name: info.name.to_string(),
@@ -340,7 +364,8 @@ impl<'a> Battle<'a> {
                             typ: format!("{:?}", info.move_type),
                             pp: sl.pp,
                             max_pp: sl.max_pp,
-                            disabled: false,
+                            disabled: v.has(Volatile::DISABLED)
+                                && v.disabled_slot as usize == slot,
                             target: 0,
                         }
                     })
@@ -350,13 +375,13 @@ impl<'a> Battle<'a> {
                 team_position: s.active_idx,
                 moves,
                 trapped: recharging
-                    || v.has(crate::state::Volatile::TRAPPED)
-                    || v.has(crate::state::Volatile::BIDING)
-                    || v.has(crate::state::Volatile::CHARGING)
+                    || v.has(Volatile::TRAPPED)
+                    || v.has(Volatile::BIDING)
+                    || v.has(Volatile::CHARGING)
                     || !v.multi_turn_move.is_empty(),
                 locked_into_move: !recharging
-                    && (v.has(crate::state::Volatile::CHARGING)
-                        || v.has(crate::state::Volatile::BIDING)
+                    && (v.has(Volatile::CHARGING)
+                        || v.has(Volatile::BIDING)
                         || !v.multi_turn_move.is_empty()),
             };
             self.requests
@@ -388,6 +413,11 @@ impl<'a> Battle<'a> {
             self.winner = Some(0);
             self.log.push_board(format!("win|side:0"));
             self.phase = Phase::Ended;
+        } else if self.turn_count >= ENDLESS_BATTLE_TURN_CAP {
+            let w = self.endless_battle_winner();
+            self.winner = Some(w);
+            self.log.push_board(format!("win|side:{}", w));
+            self.phase = Phase::Ended;
         } else if self.pending_switch_needed[0] || self.pending_switch_needed[1] {
             self.phase = Phase::AwaitSwitch;
         } else {
@@ -407,8 +437,11 @@ impl<'a> Battle<'a> {
                 {
                     crate::dispatch::reset_on_switch_out(&mut self.sides[i]);
                     self.sides[i].active_idx = slot;
-                    let s = &self.sides[i];
-                    self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
+                    {
+                        let s = &self.sides[i];
+                        self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
+                    }
+                    after_switch_in(&mut self.field, &mut self.sides, i, &mut self.log);
                 }
             } else {
                 // Auto-pick first alive.
@@ -418,15 +451,42 @@ impl<'a> Battle<'a> {
                 if let Some(j) = pick {
                     crate::dispatch::reset_on_switch_out(&mut self.sides[i]);
                     self.sides[i].active_idx = j;
-                    let s = &self.sides[i];
-                    self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
+                    {
+                        let s = &self.sides[i];
+                        self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
+                    }
+                    after_switch_in(&mut self.field, &mut self.sides, i, &mut self.log);
                 }
             }
         }
     }
 
+    /// The move a side will actually use this turn: a multi-turn lock beats
+    /// the player's pick; an empty PP pool forces Struggle.
+    fn effective_move(&self, side: usize) -> Option<&'static MoveEntry> {
+        if self.sides[side].active().volatile.has(Volatile::MUST_RECHARGE) {
+            return None; // recharge turn: normal priority bracket
+        }
+        if let Some(id) = locked_move_id(&self.sides[side]) {
+            return move_by_id(id);
+        }
+        match self.pending_choice[side] {
+            Some(Choice::Move(slot)) => {
+                let m = self.sides[side].active();
+                if m.out_of_pp() {
+                    return move_by_id("struggle");
+                }
+                move_by_id(m.moves[(slot as usize).min(3)].move_id)
+            }
+            _ => None,
+        }
+    }
+
     fn do_battle_turn(&mut self) {
-        // Determine action order: switches first, then by Speed.
+        self.turn_count += 1;
+        // Determine action order: switches first; between moves, priority
+        // bracket (Quick Attack +1, Counter -1), then modified Speed, then a
+        // coin flip on ties.
         let mut order = [0usize, 1usize];
         let p0_switch = matches!(self.pending_choice[0], Some(Choice::Switch(_)));
         let p1_switch = matches!(self.pending_choice[1], Some(Choice::Switch(_)));
@@ -435,64 +495,113 @@ impl<'a> Battle<'a> {
         } else if p1_switch && !p0_switch {
             order = [1, 0];
         } else {
-            let s0 = self.sides[0].active().stats[4];
-            let s1 = self.sides[1].active().stats[4];
-            if s1 > s0 || (s1 == s0 && self.rng.coin()) {
+            let prio = |mv: Option<&MoveEntry>| -> i8 {
+                match mv {
+                    Some(m) if m.flags & FLAG_PRIO_PLUS != 0 => 1,
+                    Some(m) if m.flags & FLAG_PRIO_MINUS != 0 => -1,
+                    _ => 0,
+                }
+            };
+            let pr0 = prio(self.effective_move(0));
+            let pr1 = prio(self.effective_move(1));
+            let s0 = self.sides[0].active().modified[4];
+            let s1 = self.sides[1].active().modified[4];
+            if pr1 > pr0 || (pr1 == pr0 && (s1 > s0 || (s1 == s0 && self.rng.coin()))) {
                 order = [1, 0];
             }
         }
 
-        // Reset per-turn counter source damage.
-        for s in self.sides.iter_mut() {
-            s.active_mut().counter_source_dmg = 0;
+        // Selections register before either side moves (Counter reads the
+        // opponent's selected move).
+        for side in 0..2 {
+            if matches!(self.pending_choice[side], Some(Choice::Move(_))) {
+                if let Some(mv) = self.effective_move(side) {
+                    self.sides[side].last_selected_move = mv.id;
+                }
+            }
         }
 
-        for &side in &order {
+        for (i, &side) in order.iter().enumerate() {
             if self.sides[side].active().fainted() {
                 continue;
             }
+            self.field.foe_acted = i == 1;
             match self.pending_choice[side] {
                 Some(Choice::Switch(slot)) => {
                     let s = (slot as usize).min(5);
                     if !self.sides[side].team[s].empty() && !self.sides[side].team[s].fainted() {
                         crate::dispatch::reset_on_switch_out(&mut self.sides[side]);
                         self.sides[side].active_idx = slot;
-                        let si = &self.sides[side];
-                        self.log.push_board(format!("switch|player:{}|name:{}", si.player_id, si.active().name));
+                        {
+                            let si = &self.sides[side];
+                            self.log.push_board(format!("switch|player:{}|name:{}", si.player_id, si.active().name));
+                        }
+                        after_switch_in(&mut self.field, &mut self.sides, side, &mut self.log);
                     }
                 }
                 Some(Choice::Move(slot)) => {
-                    // Override with locked-in move if any (TwoTurn release, Bide, Wrap).
-                    let effective = locked_move_slot(&self.sides[side]).unwrap_or(slot);
-                    if pre_move_check(&mut self.rng, &mut self.sides, side, &mut self.log) {
-                        let _ = execute_move(
-                            &mut self.rng,
-                            &mut self.sides,
-                            side,
-                            effective as usize,
-                            &mut self.log,
-                        );
-                    }
+                    self.run_move_action(side, Some(slot));
                 }
                 None => {
                     // No choice (e.g. mon fainted before choice was set);
                     // honor a locked-in move if present.
-                    if let Some(forced) = locked_move_slot(&self.sides[side]) {
-                        if pre_move_check(&mut self.rng, &mut self.sides, side, &mut self.log) {
-                            let _ = execute_move(
-                                &mut self.rng,
-                                &mut self.sides,
-                                side,
-                                forced as usize,
-                                &mut self.log,
-                            );
-                        }
+                    if locked_move_id(&self.sides[side]).is_some() {
+                        self.run_move_action(side, None);
                     }
                 }
             }
+            // Gen 1: any faint ends the turn — the other side's action (and
+            // residuals) simply don't happen.
+            if self.sides[0].active().fainted() || self.sides[1].active().fainted() {
+                break;
+            }
         }
 
-        end_of_turn(&mut self.sides, &mut self.log);
+        // End-of-turn cleanup (not residuals — those ran per action).
+        for i in 0..2 {
+            self.sides[i].active_mut().volatile.clear(Volatile::FLINCHED);
+            // Free a partial-trap victim once the trapper's lock is gone
+            // (ended, cancelled, switched away, or fainted).
+            if self.sides[i].active().volatile.has(Volatile::TRAPPED) {
+                let foe = &self.sides[1 - i];
+                let lock_active = !foe.active().fainted()
+                    && !foe.active().volatile.multi_turn_move.is_empty()
+                    && move_by_id(foe.active().volatile.multi_turn_move)
+                        .map(|m| m.effect_kind == MoveEffectKind::Wrap)
+                        .unwrap_or(false);
+                if !lock_active {
+                    self.sides[i].active_mut().volatile.clear(Volatile::TRAPPED);
+                }
+            }
+        }
+    }
+
+    /// One side's move action: pre-move gate, execution (locked / struggle /
+    /// chosen slot), then Gen 1's after-action residual damage.
+    fn run_move_action(&mut self, side: usize, chosen_slot: Option<u8>) {
+        let locked = locked_move_id(&self.sides[side]);
+        // For the Disable check, the relevant slot is the one about to fire.
+        let disable_slot = match locked {
+            Some(id) => self.sides[side].active().find_move_slot(id),
+            None => chosen_slot,
+        };
+        if pre_move_check(&mut self.rng, &mut self.field, &mut self.sides, side, disable_slot, &mut self.log) {
+            if let Some(id) = locked_move_id(&self.sides[side]) {
+                let _ = execute_locked_move(&mut self.rng, &mut self.field, &mut self.sides, side, id, &mut self.log);
+            } else if self.sides[side].active().out_of_pp() {
+                let _ = execute_struggle(&mut self.rng, &mut self.field, &mut self.sides, side, &mut self.log);
+            } else if let Some(slot) = chosen_slot {
+                let _ = execute_move(
+                    &mut self.rng,
+                    &mut self.field,
+                    &mut self.sides,
+                    side,
+                    slot as usize,
+                    &mut self.log,
+                );
+            }
+        }
+        after_action_residuals(&mut self.field, &mut self.sides, side, &mut self.log);
     }
 
     fn team_wiped(&self, side: usize) -> bool {
@@ -501,13 +610,37 @@ impl<'a> Battle<'a> {
             .iter()
             .all(|m| m.empty() || m.fainted())
     }
+
+    /// Endless Battle Clause resolution: higher remaining-HP fraction wins,
+    /// exact tie decided by the battle RNG (deterministic per seed).
+    fn endless_battle_winner(&mut self) -> u8 {
+        let totals = |side: &Side| -> (u64, u64) {
+            side.team.iter().filter(|m| !m.empty()).fold((0u64, 0u64), |(c, m), mon| {
+                (c + mon.hp_cur as u64, m + mon.hp_max as u64)
+            })
+        };
+        let (cur0, max0) = totals(&self.sides[0]);
+        let (cur1, max1) = totals(&self.sides[1]);
+        // Compare cur0/max0 vs cur1/max1 without floats.
+        let lhs = cur0 * max1.max(1);
+        let rhs = cur1 * max0.max(1);
+        if lhs > rhs {
+            0
+        } else if rhs > lhs {
+            1
+        } else if self.rng.coin() {
+            0
+        } else {
+            1
+        }
+    }
 }
 
 fn status_label(s: Status) -> Option<String> {
     Some(match s {
         Status::None => return None,
         Status::Poison => "psn".to_string(),
-        Status::BadPoison(_) => "tox".to_string(),
+        Status::BadPoison => "tox".to_string(),
         Status::Burn => "brn".to_string(),
         Status::Freeze => "frz".to_string(),
         Status::Paralysis => "par".to_string(),

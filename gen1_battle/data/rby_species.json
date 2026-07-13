@@ -1,0 +1,1663 @@
+{
+ "abra": {
+  "base_stats": {
+   "atk": 20,
+   "def": 15,
+   "hp": 25,
+   "spc": 105,
+   "spe": 90
+  },
+  "primary_type": "Psychic",
+  "secondary_type": "None"
+ },
+ "aerodactyl": {
+  "base_stats": {
+   "atk": 105,
+   "def": 65,
+   "hp": 80,
+   "spc": 60,
+   "spe": 130
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Flying"
+ },
+ "alakazam": {
+  "base_stats": {
+   "atk": 50,
+   "def": 45,
+   "hp": 55,
+   "spc": 135,
+   "spe": 120
+  },
+  "primary_type": "Psychic",
+  "secondary_type": "None"
+ },
+ "arbok": {
+  "base_stats": {
+   "atk": 85,
+   "def": 69,
+   "hp": 60,
+   "spc": 65,
+   "spe": 80
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "arcanine": {
+  "base_stats": {
+   "atk": 110,
+   "def": 80,
+   "hp": 90,
+   "spc": 80,
+   "spe": 95
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "articuno": {
+  "base_stats": {
+   "atk": 85,
+   "def": 100,
+   "hp": 90,
+   "spc": 125,
+   "spe": 85
+  },
+  "primary_type": "Ice",
+  "secondary_type": "Flying"
+ },
+ "beedrill": {
+  "base_stats": {
+   "atk": 80,
+   "def": 40,
+   "hp": 65,
+   "spc": 45,
+   "spe": 75
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Poison"
+ },
+ "bellsprout": {
+  "base_stats": {
+   "atk": 75,
+   "def": 35,
+   "hp": 50,
+   "spc": 70,
+   "spe": 40
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "blastoise": {
+  "base_stats": {
+   "atk": 83,
+   "def": 100,
+   "hp": 79,
+   "spc": 85,
+   "spe": 78
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "bulbasaur": {
+  "base_stats": {
+   "atk": 49,
+   "def": 49,
+   "hp": 45,
+   "spc": 65,
+   "spe": 45
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "butterfree": {
+  "base_stats": {
+   "atk": 45,
+   "def": 50,
+   "hp": 60,
+   "spc": 80,
+   "spe": 70
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Flying"
+ },
+ "caterpie": {
+  "base_stats": {
+   "atk": 30,
+   "def": 35,
+   "hp": 45,
+   "spc": 20,
+   "spe": 45
+  },
+  "primary_type": "Bug",
+  "secondary_type": "None"
+ },
+ "chansey": {
+  "base_stats": {
+   "atk": 5,
+   "def": 5,
+   "hp": 250,
+   "spc": 105,
+   "spe": 50
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "charizard": {
+  "base_stats": {
+   "atk": 84,
+   "def": 78,
+   "hp": 78,
+   "spc": 85,
+   "spe": 100
+  },
+  "primary_type": "Fire",
+  "secondary_type": "Flying"
+ },
+ "charmander": {
+  "base_stats": {
+   "atk": 52,
+   "def": 43,
+   "hp": 39,
+   "spc": 50,
+   "spe": 65
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "charmeleon": {
+  "base_stats": {
+   "atk": 64,
+   "def": 58,
+   "hp": 58,
+   "spc": 65,
+   "spe": 80
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "clefable": {
+  "base_stats": {
+   "atk": 70,
+   "def": 73,
+   "hp": 95,
+   "spc": 85,
+   "spe": 60
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "clefairy": {
+  "base_stats": {
+   "atk": 45,
+   "def": 48,
+   "hp": 70,
+   "spc": 60,
+   "spe": 35
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "cloyster": {
+  "base_stats": {
+   "atk": 95,
+   "def": 180,
+   "hp": 50,
+   "spc": 85,
+   "spe": 70
+  },
+  "primary_type": "Water",
+  "secondary_type": "Ice"
+ },
+ "cubone": {
+  "base_stats": {
+   "atk": 50,
+   "def": 95,
+   "hp": 50,
+   "spc": 40,
+   "spe": 35
+  },
+  "primary_type": "Ground",
+  "secondary_type": "None"
+ },
+ "dewgong": {
+  "base_stats": {
+   "atk": 70,
+   "def": 80,
+   "hp": 90,
+   "spc": 95,
+   "spe": 70
+  },
+  "primary_type": "Water",
+  "secondary_type": "Ice"
+ },
+ "diglett": {
+  "base_stats": {
+   "atk": 55,
+   "def": 25,
+   "hp": 10,
+   "spc": 45,
+   "spe": 95
+  },
+  "primary_type": "Ground",
+  "secondary_type": "None"
+ },
+ "ditto": {
+  "base_stats": {
+   "atk": 48,
+   "def": 48,
+   "hp": 48,
+   "spc": 48,
+   "spe": 48
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "dodrio": {
+  "base_stats": {
+   "atk": 110,
+   "def": 70,
+   "hp": 60,
+   "spc": 60,
+   "spe": 100
+  },
+  "primary_type": "Normal",
+  "secondary_type": "Flying"
+ },
+ "doduo": {
+  "base_stats": {
+   "atk": 85,
+   "def": 45,
+   "hp": 35,
+   "spc": 35,
+   "spe": 75
+  },
+  "primary_type": "Normal",
+  "secondary_type": "Flying"
+ },
+ "dragonair": {
+  "base_stats": {
+   "atk": 84,
+   "def": 65,
+   "hp": 61,
+   "spc": 70,
+   "spe": 70
+  },
+  "primary_type": "Dragon",
+  "secondary_type": "None"
+ },
+ "dragonite": {
+  "base_stats": {
+   "atk": 134,
+   "def": 95,
+   "hp": 91,
+   "spc": 100,
+   "spe": 80
+  },
+  "primary_type": "Dragon",
+  "secondary_type": "Flying"
+ },
+ "dratini": {
+  "base_stats": {
+   "atk": 64,
+   "def": 45,
+   "hp": 41,
+   "spc": 50,
+   "spe": 50
+  },
+  "primary_type": "Dragon",
+  "secondary_type": "None"
+ },
+ "drowzee": {
+  "base_stats": {
+   "atk": 48,
+   "def": 45,
+   "hp": 60,
+   "spc": 90,
+   "spe": 42
+  },
+  "primary_type": "Psychic",
+  "secondary_type": "None"
+ },
+ "dugtrio": {
+  "base_stats": {
+   "atk": 80,
+   "def": 50,
+   "hp": 35,
+   "spc": 70,
+   "spe": 120
+  },
+  "primary_type": "Ground",
+  "secondary_type": "None"
+ },
+ "eevee": {
+  "base_stats": {
+   "atk": 55,
+   "def": 50,
+   "hp": 55,
+   "spc": 65,
+   "spe": 55
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "ekans": {
+  "base_stats": {
+   "atk": 60,
+   "def": 44,
+   "hp": 35,
+   "spc": 40,
+   "spe": 55
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "electabuzz": {
+  "base_stats": {
+   "atk": 83,
+   "def": 57,
+   "hp": 65,
+   "spc": 85,
+   "spe": 105
+  },
+  "primary_type": "Electric",
+  "secondary_type": "None"
+ },
+ "electrode": {
+  "base_stats": {
+   "atk": 50,
+   "def": 70,
+   "hp": 60,
+   "spc": 80,
+   "spe": 140
+  },
+  "primary_type": "Electric",
+  "secondary_type": "None"
+ },
+ "exeggcute": {
+  "base_stats": {
+   "atk": 40,
+   "def": 80,
+   "hp": 60,
+   "spc": 60,
+   "spe": 40
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Psychic"
+ },
+ "exeggutor": {
+  "base_stats": {
+   "atk": 95,
+   "def": 85,
+   "hp": 95,
+   "spc": 125,
+   "spe": 55
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Psychic"
+ },
+ "farfetchd": {
+  "base_stats": {
+   "atk": 65,
+   "def": 55,
+   "hp": 52,
+   "spc": 58,
+   "spe": 60
+  },
+  "primary_type": "Normal",
+  "secondary_type": "Flying"
+ },
+ "fearow": {
+  "base_stats": {
+   "atk": 90,
+   "def": 65,
+   "hp": 65,
+   "spc": 61,
+   "spe": 100
+  },
+  "primary_type": "Normal",
+  "secondary_type": "Flying"
+ },
+ "flareon": {
+  "base_stats": {
+   "atk": 130,
+   "def": 60,
+   "hp": 65,
+   "spc": 110,
+   "spe": 65
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "gastly": {
+  "base_stats": {
+   "atk": 35,
+   "def": 30,
+   "hp": 30,
+   "spc": 100,
+   "spe": 80
+  },
+  "primary_type": "Ghost",
+  "secondary_type": "Poison"
+ },
+ "gengar": {
+  "base_stats": {
+   "atk": 65,
+   "def": 60,
+   "hp": 60,
+   "spc": 130,
+   "spe": 110
+  },
+  "primary_type": "Ghost",
+  "secondary_type": "Poison"
+ },
+ "geodude": {
+  "base_stats": {
+   "atk": 80,
+   "def": 100,
+   "hp": 40,
+   "spc": 30,
+   "spe": 20
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Ground"
+ },
+ "gloom": {
+  "base_stats": {
+   "atk": 65,
+   "def": 70,
+   "hp": 60,
+   "spc": 85,
+   "spe": 40
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "golbat": {
+  "base_stats": {
+   "atk": 80,
+   "def": 70,
+   "hp": 75,
+   "spc": 75,
+   "spe": 90
+  },
+  "primary_type": "Poison",
+  "secondary_type": "Flying"
+ },
+ "goldeen": {
+  "base_stats": {
+   "atk": 67,
+   "def": 60,
+   "hp": 45,
+   "spc": 50,
+   "spe": 63
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "golduck": {
+  "base_stats": {
+   "atk": 82,
+   "def": 78,
+   "hp": 80,
+   "spc": 80,
+   "spe": 85
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "golem": {
+  "base_stats": {
+   "atk": 110,
+   "def": 130,
+   "hp": 80,
+   "spc": 55,
+   "spe": 45
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Ground"
+ },
+ "graveler": {
+  "base_stats": {
+   "atk": 95,
+   "def": 115,
+   "hp": 55,
+   "spc": 45,
+   "spe": 35
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Ground"
+ },
+ "grimer": {
+  "base_stats": {
+   "atk": 80,
+   "def": 50,
+   "hp": 80,
+   "spc": 40,
+   "spe": 25
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "growlithe": {
+  "base_stats": {
+   "atk": 70,
+   "def": 45,
+   "hp": 55,
+   "spc": 50,
+   "spe": 60
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "gyarados": {
+  "base_stats": {
+   "atk": 125,
+   "def": 79,
+   "hp": 95,
+   "spc": 100,
+   "spe": 81
+  },
+  "primary_type": "Water",
+  "secondary_type": "Flying"
+ },
+ "haunter": {
+  "base_stats": {
+   "atk": 50,
+   "def": 45,
+   "hp": 45,
+   "spc": 115,
+   "spe": 95
+  },
+  "primary_type": "Ghost",
+  "secondary_type": "Poison"
+ },
+ "hitmonchan": {
+  "base_stats": {
+   "atk": 105,
+   "def": 79,
+   "hp": 50,
+   "spc": 35,
+   "spe": 76
+  },
+  "primary_type": "Fighting",
+  "secondary_type": "None"
+ },
+ "hitmonlee": {
+  "base_stats": {
+   "atk": 120,
+   "def": 53,
+   "hp": 50,
+   "spc": 35,
+   "spe": 87
+  },
+  "primary_type": "Fighting",
+  "secondary_type": "None"
+ },
+ "horsea": {
+  "base_stats": {
+   "atk": 40,
+   "def": 70,
+   "hp": 30,
+   "spc": 70,
+   "spe": 60
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "hypno": {
+  "base_stats": {
+   "atk": 73,
+   "def": 70,
+   "hp": 85,
+   "spc": 115,
+   "spe": 67
+  },
+  "primary_type": "Psychic",
+  "secondary_type": "None"
+ },
+ "ivysaur": {
+  "base_stats": {
+   "atk": 62,
+   "def": 63,
+   "hp": 60,
+   "spc": 80,
+   "spe": 60
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "jigglypuff": {
+  "base_stats": {
+   "atk": 45,
+   "def": 20,
+   "hp": 115,
+   "spc": 25,
+   "spe": 20
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "jolteon": {
+  "base_stats": {
+   "atk": 65,
+   "def": 60,
+   "hp": 65,
+   "spc": 110,
+   "spe": 130
+  },
+  "primary_type": "Electric",
+  "secondary_type": "None"
+ },
+ "jynx": {
+  "base_stats": {
+   "atk": 50,
+   "def": 35,
+   "hp": 65,
+   "spc": 95,
+   "spe": 95
+  },
+  "primary_type": "Ice",
+  "secondary_type": "Psychic"
+ },
+ "kabuto": {
+  "base_stats": {
+   "atk": 80,
+   "def": 90,
+   "hp": 30,
+   "spc": 45,
+   "spe": 55
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Water"
+ },
+ "kabutops": {
+  "base_stats": {
+   "atk": 115,
+   "def": 105,
+   "hp": 60,
+   "spc": 70,
+   "spe": 80
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Water"
+ },
+ "kadabra": {
+  "base_stats": {
+   "atk": 35,
+   "def": 30,
+   "hp": 40,
+   "spc": 120,
+   "spe": 105
+  },
+  "primary_type": "Psychic",
+  "secondary_type": "None"
+ },
+ "kakuna": {
+  "base_stats": {
+   "atk": 25,
+   "def": 50,
+   "hp": 45,
+   "spc": 25,
+   "spe": 35
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Poison"
+ },
+ "kangaskhan": {
+  "base_stats": {
+   "atk": 95,
+   "def": 80,
+   "hp": 105,
+   "spc": 40,
+   "spe": 90
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "kingler": {
+  "base_stats": {
+   "atk": 130,
+   "def": 115,
+   "hp": 55,
+   "spc": 50,
+   "spe": 75
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "koffing": {
+  "base_stats": {
+   "atk": 65,
+   "def": 95,
+   "hp": 40,
+   "spc": 60,
+   "spe": 35
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "krabby": {
+  "base_stats": {
+   "atk": 105,
+   "def": 90,
+   "hp": 30,
+   "spc": 25,
+   "spe": 50
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "lapras": {
+  "base_stats": {
+   "atk": 85,
+   "def": 80,
+   "hp": 130,
+   "spc": 95,
+   "spe": 60
+  },
+  "primary_type": "Water",
+  "secondary_type": "Ice"
+ },
+ "lickitung": {
+  "base_stats": {
+   "atk": 55,
+   "def": 75,
+   "hp": 90,
+   "spc": 60,
+   "spe": 30
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "machamp": {
+  "base_stats": {
+   "atk": 130,
+   "def": 80,
+   "hp": 90,
+   "spc": 65,
+   "spe": 55
+  },
+  "primary_type": "Fighting",
+  "secondary_type": "None"
+ },
+ "machoke": {
+  "base_stats": {
+   "atk": 100,
+   "def": 70,
+   "hp": 80,
+   "spc": 50,
+   "spe": 45
+  },
+  "primary_type": "Fighting",
+  "secondary_type": "None"
+ },
+ "machop": {
+  "base_stats": {
+   "atk": 80,
+   "def": 50,
+   "hp": 70,
+   "spc": 35,
+   "spe": 35
+  },
+  "primary_type": "Fighting",
+  "secondary_type": "None"
+ },
+ "magikarp": {
+  "base_stats": {
+   "atk": 10,
+   "def": 55,
+   "hp": 20,
+   "spc": 20,
+   "spe": 80
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "magmar": {
+  "base_stats": {
+   "atk": 95,
+   "def": 57,
+   "hp": 65,
+   "spc": 85,
+   "spe": 93
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "magnemite": {
+  "base_stats": {
+   "atk": 35,
+   "def": 70,
+   "hp": 25,
+   "spc": 95,
+   "spe": 45
+  },
+  "primary_type": "Electric",
+  "secondary_type": "None"
+ },
+ "magneton": {
+  "base_stats": {
+   "atk": 60,
+   "def": 95,
+   "hp": 50,
+   "spc": 120,
+   "spe": 70
+  },
+  "primary_type": "Electric",
+  "secondary_type": "None"
+ },
+ "mankey": {
+  "base_stats": {
+   "atk": 80,
+   "def": 35,
+   "hp": 40,
+   "spc": 35,
+   "spe": 70
+  },
+  "primary_type": "Fighting",
+  "secondary_type": "None"
+ },
+ "marowak": {
+  "base_stats": {
+   "atk": 80,
+   "def": 110,
+   "hp": 60,
+   "spc": 50,
+   "spe": 45
+  },
+  "primary_type": "Ground",
+  "secondary_type": "None"
+ },
+ "meowth": {
+  "base_stats": {
+   "atk": 45,
+   "def": 35,
+   "hp": 40,
+   "spc": 40,
+   "spe": 90
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "metapod": {
+  "base_stats": {
+   "atk": 20,
+   "def": 55,
+   "hp": 50,
+   "spc": 25,
+   "spe": 30
+  },
+  "primary_type": "Bug",
+  "secondary_type": "None"
+ },
+ "mew": {
+  "base_stats": {
+   "atk": 100,
+   "def": 100,
+   "hp": 100,
+   "spc": 100,
+   "spe": 100
+  },
+  "primary_type": "Psychic",
+  "secondary_type": "None"
+ },
+ "mewtwo": {
+  "base_stats": {
+   "atk": 110,
+   "def": 90,
+   "hp": 106,
+   "spc": 154,
+   "spe": 130
+  },
+  "primary_type": "Psychic",
+  "secondary_type": "None"
+ },
+ "moltres": {
+  "base_stats": {
+   "atk": 100,
+   "def": 90,
+   "hp": 90,
+   "spc": 125,
+   "spe": 90
+  },
+  "primary_type": "Fire",
+  "secondary_type": "Flying"
+ },
+ "mrmime": {
+  "base_stats": {
+   "atk": 45,
+   "def": 65,
+   "hp": 40,
+   "spc": 100,
+   "spe": 90
+  },
+  "primary_type": "Psychic",
+  "secondary_type": "None"
+ },
+ "muk": {
+  "base_stats": {
+   "atk": 105,
+   "def": 75,
+   "hp": 105,
+   "spc": 65,
+   "spe": 50
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "nidoking": {
+  "base_stats": {
+   "atk": 92,
+   "def": 77,
+   "hp": 81,
+   "spc": 75,
+   "spe": 85
+  },
+  "primary_type": "Poison",
+  "secondary_type": "Ground"
+ },
+ "nidoqueen": {
+  "base_stats": {
+   "atk": 82,
+   "def": 87,
+   "hp": 90,
+   "spc": 75,
+   "spe": 76
+  },
+  "primary_type": "Poison",
+  "secondary_type": "Ground"
+ },
+ "nidoranf": {
+  "base_stats": {
+   "atk": 47,
+   "def": 52,
+   "hp": 55,
+   "spc": 40,
+   "spe": 41
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "nidoranm": {
+  "base_stats": {
+   "atk": 57,
+   "def": 40,
+   "hp": 46,
+   "spc": 40,
+   "spe": 50
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "nidorina": {
+  "base_stats": {
+   "atk": 62,
+   "def": 67,
+   "hp": 70,
+   "spc": 55,
+   "spe": 56
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "nidorino": {
+  "base_stats": {
+   "atk": 72,
+   "def": 57,
+   "hp": 61,
+   "spc": 55,
+   "spe": 65
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "ninetales": {
+  "base_stats": {
+   "atk": 76,
+   "def": 75,
+   "hp": 73,
+   "spc": 100,
+   "spe": 100
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "oddish": {
+  "base_stats": {
+   "atk": 50,
+   "def": 55,
+   "hp": 45,
+   "spc": 75,
+   "spe": 30
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "omanyte": {
+  "base_stats": {
+   "atk": 40,
+   "def": 100,
+   "hp": 35,
+   "spc": 90,
+   "spe": 35
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Water"
+ },
+ "omastar": {
+  "base_stats": {
+   "atk": 60,
+   "def": 125,
+   "hp": 70,
+   "spc": 115,
+   "spe": 55
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Water"
+ },
+ "onix": {
+  "base_stats": {
+   "atk": 45,
+   "def": 160,
+   "hp": 35,
+   "spc": 30,
+   "spe": 70
+  },
+  "primary_type": "Rock",
+  "secondary_type": "Ground"
+ },
+ "paras": {
+  "base_stats": {
+   "atk": 70,
+   "def": 55,
+   "hp": 35,
+   "spc": 55,
+   "spe": 25
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Grass"
+ },
+ "parasect": {
+  "base_stats": {
+   "atk": 95,
+   "def": 80,
+   "hp": 60,
+   "spc": 80,
+   "spe": 30
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Grass"
+ },
+ "persian": {
+  "base_stats": {
+   "atk": 70,
+   "def": 60,
+   "hp": 65,
+   "spc": 65,
+   "spe": 115
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "pidgeot": {
+  "base_stats": {
+   "atk": 80,
+   "def": 75,
+   "hp": 83,
+   "spc": 70,
+   "spe": 91
+  },
+  "primary_type": "Normal",
+  "secondary_type": "Flying"
+ },
+ "pidgeotto": {
+  "base_stats": {
+   "atk": 60,
+   "def": 55,
+   "hp": 63,
+   "spc": 50,
+   "spe": 71
+  },
+  "primary_type": "Normal",
+  "secondary_type": "Flying"
+ },
+ "pidgey": {
+  "base_stats": {
+   "atk": 45,
+   "def": 40,
+   "hp": 40,
+   "spc": 35,
+   "spe": 56
+  },
+  "primary_type": "Normal",
+  "secondary_type": "Flying"
+ },
+ "pikachu": {
+  "base_stats": {
+   "atk": 55,
+   "def": 30,
+   "hp": 35,
+   "spc": 50,
+   "spe": 90
+  },
+  "primary_type": "Electric",
+  "secondary_type": "None"
+ },
+ "pinsir": {
+  "base_stats": {
+   "atk": 125,
+   "def": 100,
+   "hp": 65,
+   "spc": 55,
+   "spe": 85
+  },
+  "primary_type": "Bug",
+  "secondary_type": "None"
+ },
+ "poliwag": {
+  "base_stats": {
+   "atk": 50,
+   "def": 40,
+   "hp": 40,
+   "spc": 40,
+   "spe": 90
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "poliwhirl": {
+  "base_stats": {
+   "atk": 65,
+   "def": 65,
+   "hp": 65,
+   "spc": 50,
+   "spe": 90
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "poliwrath": {
+  "base_stats": {
+   "atk": 85,
+   "def": 95,
+   "hp": 90,
+   "spc": 70,
+   "spe": 70
+  },
+  "primary_type": "Water",
+  "secondary_type": "Fighting"
+ },
+ "ponyta": {
+  "base_stats": {
+   "atk": 85,
+   "def": 55,
+   "hp": 50,
+   "spc": 65,
+   "spe": 90
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "porygon": {
+  "base_stats": {
+   "atk": 60,
+   "def": 70,
+   "hp": 65,
+   "spc": 75,
+   "spe": 40
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "primeape": {
+  "base_stats": {
+   "atk": 105,
+   "def": 60,
+   "hp": 65,
+   "spc": 60,
+   "spe": 95
+  },
+  "primary_type": "Fighting",
+  "secondary_type": "None"
+ },
+ "psyduck": {
+  "base_stats": {
+   "atk": 52,
+   "def": 48,
+   "hp": 50,
+   "spc": 50,
+   "spe": 55
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "raichu": {
+  "base_stats": {
+   "atk": 90,
+   "def": 55,
+   "hp": 60,
+   "spc": 90,
+   "spe": 100
+  },
+  "primary_type": "Electric",
+  "secondary_type": "None"
+ },
+ "rapidash": {
+  "base_stats": {
+   "atk": 100,
+   "def": 70,
+   "hp": 65,
+   "spc": 80,
+   "spe": 105
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "raticate": {
+  "base_stats": {
+   "atk": 81,
+   "def": 60,
+   "hp": 55,
+   "spc": 50,
+   "spe": 97
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "rattata": {
+  "base_stats": {
+   "atk": 56,
+   "def": 35,
+   "hp": 30,
+   "spc": 25,
+   "spe": 72
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "rhydon": {
+  "base_stats": {
+   "atk": 130,
+   "def": 120,
+   "hp": 105,
+   "spc": 45,
+   "spe": 40
+  },
+  "primary_type": "Ground",
+  "secondary_type": "Rock"
+ },
+ "rhyhorn": {
+  "base_stats": {
+   "atk": 85,
+   "def": 95,
+   "hp": 80,
+   "spc": 30,
+   "spe": 25
+  },
+  "primary_type": "Ground",
+  "secondary_type": "Rock"
+ },
+ "sandshrew": {
+  "base_stats": {
+   "atk": 75,
+   "def": 85,
+   "hp": 50,
+   "spc": 30,
+   "spe": 40
+  },
+  "primary_type": "Ground",
+  "secondary_type": "None"
+ },
+ "sandslash": {
+  "base_stats": {
+   "atk": 100,
+   "def": 110,
+   "hp": 75,
+   "spc": 55,
+   "spe": 65
+  },
+  "primary_type": "Ground",
+  "secondary_type": "None"
+ },
+ "scyther": {
+  "base_stats": {
+   "atk": 110,
+   "def": 80,
+   "hp": 70,
+   "spc": 55,
+   "spe": 105
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Flying"
+ },
+ "seadra": {
+  "base_stats": {
+   "atk": 65,
+   "def": 95,
+   "hp": 55,
+   "spc": 95,
+   "spe": 85
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "seaking": {
+  "base_stats": {
+   "atk": 92,
+   "def": 65,
+   "hp": 80,
+   "spc": 80,
+   "spe": 68
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "seel": {
+  "base_stats": {
+   "atk": 45,
+   "def": 55,
+   "hp": 65,
+   "spc": 70,
+   "spe": 45
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "shellder": {
+  "base_stats": {
+   "atk": 65,
+   "def": 100,
+   "hp": 30,
+   "spc": 45,
+   "spe": 40
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "slowbro": {
+  "base_stats": {
+   "atk": 75,
+   "def": 110,
+   "hp": 95,
+   "spc": 80,
+   "spe": 30
+  },
+  "primary_type": "Water",
+  "secondary_type": "Psychic"
+ },
+ "slowpoke": {
+  "base_stats": {
+   "atk": 65,
+   "def": 65,
+   "hp": 90,
+   "spc": 40,
+   "spe": 15
+  },
+  "primary_type": "Water",
+  "secondary_type": "Psychic"
+ },
+ "snorlax": {
+  "base_stats": {
+   "atk": 110,
+   "def": 65,
+   "hp": 160,
+   "spc": 65,
+   "spe": 30
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "spearow": {
+  "base_stats": {
+   "atk": 60,
+   "def": 30,
+   "hp": 40,
+   "spc": 31,
+   "spe": 70
+  },
+  "primary_type": "Normal",
+  "secondary_type": "Flying"
+ },
+ "squirtle": {
+  "base_stats": {
+   "atk": 48,
+   "def": 65,
+   "hp": 44,
+   "spc": 50,
+   "spe": 43
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "starmie": {
+  "base_stats": {
+   "atk": 75,
+   "def": 85,
+   "hp": 60,
+   "spc": 100,
+   "spe": 115
+  },
+  "primary_type": "Water",
+  "secondary_type": "Psychic"
+ },
+ "staryu": {
+  "base_stats": {
+   "atk": 45,
+   "def": 55,
+   "hp": 30,
+   "spc": 70,
+   "spe": 85
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "tangela": {
+  "base_stats": {
+   "atk": 55,
+   "def": 115,
+   "hp": 65,
+   "spc": 100,
+   "spe": 60
+  },
+  "primary_type": "Grass",
+  "secondary_type": "None"
+ },
+ "tauros": {
+  "base_stats": {
+   "atk": 100,
+   "def": 95,
+   "hp": 75,
+   "spc": 70,
+   "spe": 110
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "tentacool": {
+  "base_stats": {
+   "atk": 40,
+   "def": 35,
+   "hp": 40,
+   "spc": 100,
+   "spe": 70
+  },
+  "primary_type": "Water",
+  "secondary_type": "Poison"
+ },
+ "tentacruel": {
+  "base_stats": {
+   "atk": 70,
+   "def": 65,
+   "hp": 80,
+   "spc": 120,
+   "spe": 100
+  },
+  "primary_type": "Water",
+  "secondary_type": "Poison"
+ },
+ "vaporeon": {
+  "base_stats": {
+   "atk": 65,
+   "def": 60,
+   "hp": 130,
+   "spc": 110,
+   "spe": 65
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "venomoth": {
+  "base_stats": {
+   "atk": 65,
+   "def": 60,
+   "hp": 70,
+   "spc": 90,
+   "spe": 90
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Poison"
+ },
+ "venonat": {
+  "base_stats": {
+   "atk": 55,
+   "def": 50,
+   "hp": 60,
+   "spc": 40,
+   "spe": 45
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Poison"
+ },
+ "venusaur": {
+  "base_stats": {
+   "atk": 82,
+   "def": 83,
+   "hp": 80,
+   "spc": 100,
+   "spe": 80
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "victreebel": {
+  "base_stats": {
+   "atk": 105,
+   "def": 65,
+   "hp": 80,
+   "spc": 100,
+   "spe": 70
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "vileplume": {
+  "base_stats": {
+   "atk": 80,
+   "def": 85,
+   "hp": 75,
+   "spc": 100,
+   "spe": 50
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "voltorb": {
+  "base_stats": {
+   "atk": 30,
+   "def": 50,
+   "hp": 40,
+   "spc": 55,
+   "spe": 100
+  },
+  "primary_type": "Electric",
+  "secondary_type": "None"
+ },
+ "vulpix": {
+  "base_stats": {
+   "atk": 41,
+   "def": 40,
+   "hp": 38,
+   "spc": 65,
+   "spe": 65
+  },
+  "primary_type": "Fire",
+  "secondary_type": "None"
+ },
+ "wartortle": {
+  "base_stats": {
+   "atk": 63,
+   "def": 80,
+   "hp": 59,
+   "spc": 65,
+   "spe": 58
+  },
+  "primary_type": "Water",
+  "secondary_type": "None"
+ },
+ "weedle": {
+  "base_stats": {
+   "atk": 35,
+   "def": 30,
+   "hp": 40,
+   "spc": 20,
+   "spe": 50
+  },
+  "primary_type": "Bug",
+  "secondary_type": "Poison"
+ },
+ "weepinbell": {
+  "base_stats": {
+   "atk": 90,
+   "def": 50,
+   "hp": 65,
+   "spc": 85,
+   "spe": 55
+  },
+  "primary_type": "Grass",
+  "secondary_type": "Poison"
+ },
+ "weezing": {
+  "base_stats": {
+   "atk": 90,
+   "def": 120,
+   "hp": 65,
+   "spc": 85,
+   "spe": 60
+  },
+  "primary_type": "Poison",
+  "secondary_type": "None"
+ },
+ "wigglytuff": {
+  "base_stats": {
+   "atk": 70,
+   "def": 45,
+   "hp": 140,
+   "spc": 50,
+   "spe": 45
+  },
+  "primary_type": "Normal",
+  "secondary_type": "None"
+ },
+ "zapdos": {
+  "base_stats": {
+   "atk": 90,
+   "def": 85,
+   "hp": 90,
+   "spc": 125,
+   "spe": 100
+  },
+  "primary_type": "Electric",
+  "secondary_type": "Flying"
+ },
+ "zubat": {
+  "base_stats": {
+   "atk": 45,
+   "def": 35,
+   "hp": 40,
+   "spc": 40,
+   "spe": 55
+  },
+  "primary_type": "Poison",
+  "secondary_type": "Flying"
+ }
+}

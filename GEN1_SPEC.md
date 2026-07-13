@@ -4,10 +4,17 @@ Cartridge-accurate RBY mechanics. Goal: drop-in replacement for the `battler` cr
 
 Authoritative sources cited inline:
 - **pret/pokered** — RBY disassembly. Definitive. https://github.com/pret/pokered
+- **Pokémon Showdown gen1 mod** — `data/mods/gen1/{scripts,moves,conditions,typechart}.ts`;
+  the community's cartridge-verified reference implementation. The engine's
+  battle semantics are ported from it (2026-07: full glitch pass — sticky
+  modified stats, toxic counter, last-damage register, per-action residuals).
 - **Bulbapedia** — Gen I damage / status / move mechanics pages
 - **Smogon Gen 1 OU / RBY mechanics writeups**
 
-When this doc and pret/pokered disagree, pret wins.
+When this doc and pret/pokered disagree, pret wins. Move data (power/type/
+accuracy/pp/effect) is generated from pret's `data/moves/moves.asm`
+(vendored as `data/rby_moves.json`); species stats and Gen 1 typing from
+Showdown's gen1 pokedex (`data/rby_species.json`).
 
 ---
 
@@ -54,28 +61,36 @@ Source: pret/pokered `engine/battle/core.asm` (`DamageCalc`), Bulbapedia "Damage
 ```
 1. If move power == 0:           damage = 0; skip
 2. If self-targeted boost-only:  damage = 0; skip
-3. atk, def = effective stats (see §3); use Special for Special category, else Phys.
-   - if crit, atk = base[atk_stat] of attacker, def = base[def_stat] of defender
-     (i.e. crits IGNORE stat stages, including the attacker's drops!)
-4. If burned and Physical: atk = atk / 2  (clamped to ≥ 1)
-5. Reflect doubles Def for Physical hits against you; Light Screen doubles Spc.
-6. damage = ((((2 * level / 5 + 2) * power * atk / def) / 50) + 2)
-7. damage *= STAB:                if user has move's type:  damage = damage * 15 / 10
-8. damage *= type_effectiveness:  per multiplier from TYPE_CHART (each type slot applied separately)
-   - if final effectiveness == 0:  damage = 0; report immune; skip rest
-9. damage *= crit_multiplier:     2× if crit (see §4)
-10. if damage > 0:
-     random = rand_byte; loop until random in [217..=255]   ; pret: %byte then mask
-     damage = damage * random / 255
-11. clamp damage to [1, opponent_hp_remaining]              ; Gen 1 quirk: can't be 0 unless immune
+3. atk, def = MODIFIED stats (see §3); use Special for Special category, else Phys.
+   - if crit: level *= 2, and atk/def = the UNMODIFIED final stats
+     (crits ignore stat stages, par/brn drops, AND screens — the level
+     doubling is how Gen 1 implements the crit multiplier)
+4. Reflect doubles Def for Physical hits against you; Light Screen doubles Spc
+   (non-crit only), BEFORE the ≥256 check below.
+5. If atk ≥ 256 or def ≥ 256: atk = max(1, (atk/4) % 256); def = (def/4) % 256.
+   The %256 rollover is the cartridge 8-bit truncation (it's why Reflect can
+   INCREASE damage taken). def == 0 would crash a real cartridge (division by
+   zero freeze); we clamp to 1 like Showdown.
+6. Explosion/Self-Destruct: def = max(1, def / 2).
+7. damage = ((2*level/5 + 2) * power * atk / def / 50), capped at 997, then +2
+8. STAB: damage += damage / 2
+9. type_effectiveness per defender type slot, in order (×20/10 or ×5/10)
+   - if damage becomes 0 → the move MISSES (Gen 1 "0 damage glitch")
+10. if damage > 1: damage = damage * rand(217..=255) / 255
 ```
 
-### Notable Gen 1 quirks
-- **STAB and type are applied BEFORE crit multiplier**, not after.
-- **Crits ignore stat stages** on attacker AND defender. This means a Swords-Danced attacker still does base-attack damage on a crit, and a Defense-curled defender takes a base-defense crit. Source: pret `DamageCalc.scaleDamage`.
-- **Random factor**: roll byte, reject below 217 (= ~85%–100% spread). Done via rejection sampling against `217..=255`.
-- **Min damage = 1** if move hit and not immune. Even a 1-HP target takes the rolled damage (overkill possible).
-- **No critical-hit cap** at level 1 like later gens enforce; Gen 1 has none.
+### Notable Gen 1 quirks (all implemented)
+- **Crits double the level term** (not the final damage) and ignore stat
+  stages, sticky par/brn drops, and screens on BOTH sides.
+- **Stat ≥ 256 rollover**: both stats /4 with 8-bit truncation. At level 100
+  this fires in most matchups and materially changes damage.
+- **Random factor**: uniform 217..=255, applied only when damage > 1.
+- **Damage 0 = miss**, not min-1 (possible when a 2-3 base result meets a
+  4× resist).
+- Type immunity is checked BEFORE the accuracy roll; status moves ignore the
+  chart entirely (Thunder Wave paralyzes Ground-types), and fixed-damage /
+  trapping moves carry an ignore-immunity flag (Sonic Boom hits Gengar,
+  Wrap traps Ghosts for 0 damage).
 
 ---
 
@@ -94,10 +109,21 @@ effective = (base_stat * num) / den
 Clamp: 1..=999 (Gen 1 cap is 999, not 1023)
 ```
 
-### Gen 1 quirks
-- **PAR drop is permanent for that mon**: paralyzed mon's Speed = `base_speed * stage_mult / 4`. Even after PAR is healed mid-battle, the /4 stays applied until switch (Gen 1 bug; pret `core.asm`: `PartyHealStatusEffects` flow). Actually, the /4 is applied at *stat recalc time*, which happens after switch-in and after stat-modification moves. So a stat-boost move recalcs and the /4 is reapplied; on PAR-heal mid-battle without a recalc, /4 stays. **Document the bug: /4 is sticky unless a stat-changing move triggers a recalc.**
-- **BRN halves Atk** similarly, sticky in the same way.
-- **Stat-boost moves that try to go past +6 / below -6 still display the message and don't error.** No effect.
+### Gen 1 quirks — "stat modification errors" (all implemented)
+Each mon carries **modified stats** alongside its immutable final stats:
+- **Status drops apply once, in place**: paralysis quarters the modified
+  Speed, burn halves the modified Attack — at infliction, at switch-in, and
+  on every re-stack (below). They are NOT recomputed per damage calc.
+- **Any stage change recalculates that modified stat from scratch**, ERASING
+  the par/brn drop (a paralyzed mon using Agility loses the Speed penalty
+  entirely). Curing the status does NOT restore the stat either.
+- **Re-stack bug**: whenever a stat-affecting move lands, the non-acting
+  side's par/brn drop is applied AGAIN onto its modified stat (compounding
+  /4 Speed, /2 Attack) — so the opponent boosting against your paralyzed mon
+  keeps shrinking its Speed.
+- **Boost at 999 / drop at 1**: the stage rises then drops one, the stat
+  stays pinned, and the move counts as failed (no re-stack).
+- Boost moves already at ±6 fail outright.
 
 ---
 
@@ -146,43 +172,54 @@ Source: pret `core.asm` `MainBattleLoop`.
 ```
 Per turn:
 1. Get player choice + AI/opponent choice
-2. Choice validation (can't switch if Wrapped, must use last move if Bide/HyperBeam recharge/Wrap/Thrash/PetalDance/MultiTurnLock, etc.)
-3. Determine order:
-   priority A side > priority B side
-   else: higher effective Speed (post-PAR, post-stage)
+2. Choice validation (locked moves override; empty PP pool forces Struggle)
+3. Selections register (Counter reads the opponent's SELECTED move)
+4. Determine order:
+   switches first
+   else: priority bracket (Quick Attack +1, Counter -1)
+   else: higher MODIFIED Speed
    else: random (50/50)
-4. For each side in order:
-   a. Faint check — if user fainted earlier this turn, skip
-   b. PreMove status checks (in this order, from pret):
-      - Frozen: skip (cannot thaw on own; only Fire-type moves on you can thaw)
-      - Sleeping: decrement counter, if 0 wake, else skip. (Sleep counter rolls 1..=7.)
-      - Paralyzed: 25% chance "fully paralyzed", skip
+5. For each side in order:
+   a. Faint check — if the actor fainted earlier this turn, skip
+   b. PreMove status checks (cartridge order):
+      - Haze-cured slp/frz this turn: lose the action
+      - Frozen: skip. Never consumes the recharge flag (Hyper Beam + Freeze
+        leaves the user stuck recharging).
+      - Sleeping: decrement; at 0 wake but STILL lose the turn.
+        Sleep/freeze clear the mon's last-move (Mirror Move fails).
+      - Partially trapped: skip
       - Flinched: skip; clear flinch
-      - Confused: decrement counter; if 0 snap out;
-        else 50% chance hit self with 40-power typeless Physical attack ignoring screens
-      - Disabled: if chose disabled move, "no PP for that move" — actually in Gen 1, Disable forces no input restriction; it just makes the move fail. **Implement: Disable causes any attempt to use the disabled slot to fail silently with "<move> is disabled!".**
-      - Bide active: continue Bide (turn 2 of 3 or unleash)
-      - Multi-turn lock: continue the locked move
       - Recharge: skip; clear recharge
-   c. Use move:
-      - Deduct PP (Gen 1 quirk: PP deducted BEFORE move resolves; Mirror Move/Metronome do NOT rededuct)
-      - Run move effect (see §7)
-      - On hit: set defender's `last_move_targeted_by_normal_or_fighting` if applicable
-   d. Faint check on defender
-5. End-of-turn:
-   - Burn / Poison damage: 1/16 max HP each
-   - BadPoison: counter * 1/16 max HP; counter increments each turn
-   - Leech Seed: 1/16 from seeded, restored to seeder
-   - Wrap-like binding damage (handled at attacker's turn in Gen 1, not EOT — verify against pret)
-   - Substitute fade: no, sub persists until broken
-6. Faint resolution: forced switch from anyone at 0 HP
-7. Win check: if all of either side fainted, battle ends
+      - Disabled: tick down; if the chosen slot is the disabled one, fail
+        (drops a charge lock, keeps invulnerability)
+      - Confused (BEFORE paralysis): tick down; 50% self-hit with 40-power
+        typeless attack off MODIFIED stats — counterable, misdirected onto
+        the FOE's Substitute if the confused mon has one, cancels
+        Bide/charge/trap/Thrash locks INCLUDING invulnerability
+      - Paralyzed: 63/256 fully paralyzed — cancels the same locks but
+        LEAVES Fly/Dig invulnerability stuck (invulnerability glitch)
+   c. Use move (PP: locked continuations free; two-turn moves pay on release)
+   d. RESIDUALS for the acting side (Gen 1: after each action, NOT at EOT):
+      - brn/psn: 1/16 × toxic counter (if one is live; not incremented)
+      - tox: counter += 1, then 1/16 × counter
+      - Leech Seed: shares AND increments the toxic counter; the seeder's
+        heal is not capped by the victim's remaining HP
+      All residual damage feeds the last-damage register (Counter can
+      counter a poison tick).
+   e. If EITHER active fainted, the turn ends — the other action is lost
+6. End-of-turn cleanup: flinch clears; a partial-trap victim is freed once
+   the trapper's lock is gone
+7. Faint resolution: forced switch; switch-in reapplies the par/brn stat
+   drop and immediately ticks flat 1/16 psn/brn damage
+8. Win check
 ```
 
-### Gen 1 quirks
-- **Move order for tied speed is a 50/50** in pret. Some implementations make it deterministic; we should match the cartridge and use RNG.
-- **Quick Attack**: priority +1. Counter: priority -1. (Pursuit doesn't exist in Gen 1.)
-- **PP underflow into the next-slot's PP via Transform copy**: real Gen 1 bug; we can ignore (rare and the user probably doesn't want PP-glitches).
+### Gen 1 quirks (all implemented)
+- **Last-damage register** (`Field::last_damage`): global, persists across
+  turns, reset only by moves outside the cartridge skip-list. Counter deals
+  2× it; Bide adds it every Bide turn (stale re-adds included).
+- **Quick Attack +1 / Counter -1** priority brackets; ties are 50/50.
+- PP underflow glitches: not implemented (see §13).
 
 ---
 
@@ -190,23 +227,29 @@ Per turn:
 
 | Status | Encoding | Effect | Cure |
 |---|---|---|---|
-| PSN | bit 3 | 1/16 max HP EOT | Antidote / Heal Bell (not in Gen 1, so: switch out doesn't cure; only items/move Rest) |
-| BRN | bit 2 | 1/16 max HP EOT; halves Atk (sticky — see §3) | Rest / Full Heal |
-| FRZ | bit 1 | Cannot act. **Cannot thaw on own.** Thawed only by being hit by Fire-type damaging move | Fire damage / Rest? (Rest in Gen 1 sleeps then heals; it WOULD cure FRZ on wake but FRZ doesn't wake) — actually Rest cures FRZ in Gen 1 because Rest sets sleep + heals + clears other status. Confirm against pret. |
-| SLP | bits 0–2 (counter 1..7) | Cannot act; counter -- each turn at PreMove. Wake at 0. | Counter expiration / Rest sets a fresh counter |
-| PAR | bit 5 | 25% fail to act; halves Speed (sticky) | Rest / Paralyz Heal |
-| BAD_PSN | volatile flag + PSN bit | Counter * 1/16 dmg EOT, counter ++; counter resets to 1 on switch in (Gen 1 — confirm; Toxic counter does NOT survive switch in Gen 1). | Same as PSN |
+| PSN | `Status::Poison` | 1/16 max HP after own action (× live toxic counter) | Rest / Haze (foe's) |
+| BRN | `Status::Burn` | 1/16 after own action (× counter); halves modified Atk (sticky — see §3) | Rest / Haze |
+| FRZ | `Status::Freeze` | Cannot act. **Cannot thaw on own.** Thawed only by a Fire move with a burn chance (Ember/Flamethrower/Fire Blast/Fire Punch — NOT Fire Spin), or Haze | Fire hit / Haze / Rest overwrite |
+| SLP | `Status::Sleep(1..=7)` | Counter -- each PreMove; hitting 0 wakes but that turn is LOST | Counter expiration / Haze |
+| PAR | `Status::Paralysis` | 63/256 fail to act; quarters modified Speed (sticky) | Rest / Haze |
+| BAD_PSN | `Status::BadPoison` + `toxic_counter` volatile | counter += 1 then counter × 1/16 after own action. **The counter is a separate volatile: it survives Rest** (and then multiplies plain psn/brn damage without incrementing), Leech Seed shares AND increments it, and it dies on switch (tox downgrades to psn). | Rest keeps the counter; switch/Haze clear it |
 
-**Mutually exclusive**: only one major status at a time (the bits above one per mon).
+**Mutually exclusive**: only one major status at a time. Sleep moves used on
+a RECHARGING target bypass accuracy and overwrite any existing status.
 **Volatile** statuses (confusion, leech seed, sub, etc.) stack with major.
 
 ### Sleep mechanics
-- Counter rolls 1..7 (Gen 1, not 1..3 like later gens).
-- Each PreMove, decrement. At 0, wake; on the **same turn** the mon wakes, it can move (no "lost turn" — actually pret `core.asm` shows the wake turn IS lost in Gen 1; **confirm and document**).
-- Rest sets counter to 2 → can act 2 turns later. (Rest in Gen 1 is unbreakable except Hyper Beam recharge).
+- Counter rolls 1..=7. Each PreMove, decrement; at 0 the mon wakes and still
+  loses that turn (total lost turns = the rolled counter).
+- Rest sets counter to 2 (two lost turns), overwrites ANY status including
+  Freeze, and does NOT restore par/brn stat drops or reset the toxic counter.
+- Recovery bug: Recover/Softboiled/Rest FAIL when max−cur HP is exactly 255
+  or 511 (unless cur ≡ 0 mod 256).
 
 ### Freeze
-- 100% lockout. The only way to thaw mid-battle is being hit by a damaging Fire-type move. Hyper Beam / Body Slam / Tri Attack do NOT thaw in Gen 1 (those secondary-effect mechanics come later gens).
+- 100% lockout; thaw only via burn-chance Fire moves or Haze. A frozen mon
+  never consumes a pending Hyper Beam recharge flag (permanent-recharge bug),
+  and Haze-thawing a mon that hasn't acted costs it that turn.
 
 ---
 
@@ -426,12 +469,41 @@ pub enum Event {
 
 ---
 
-## 13. Known gaps / TODOs (called out, not implemented in v1)
+## 13. Known gaps / TODOs (deliberately not implemented)
 
-- Trapping moves clearing on switch: verify pret behavior for Wrap-user switching out.
-- Status duration on cartridge: counters for Confusion (2–5 turns), Disable (1–8), Wrap (2–5) — exact ranges per pret.
-- "Move underflow" PP glitch: Transform copy can leave PP fields uninitialized in some edge cases; cartridge bug, document as not implemented.
+- **PP underflow glitches** (0-PP forced moves rolling to 63 PP, Struggle
+  bypassing, Transform PP errors): cartridge memory corruption, out of scope.
+- **Division-by-zero freeze**: we clamp defense to 1 instead of hanging.
+- **Psywave levels 0/1/171 softlock**: range floored at 1 instead.
+- **Link-battle desyncs** (Mirror Move / Psywave / Counter desyncs): single
+  engine, nothing to desync — Counter uses Showdown's Desync Clause reading.
+- **Badge boosts**: link battles don't have them.
+
+### Format rules (Gen 1 randbats ruleset — implemented, always on)
+- **Sleep Clause Mod**: an enemy sleep move fails while the target's side
+  already has a mon sleeping from an enemy move (`Mon::rest_sleep` marks the
+  exempt Rest case). When it blocks the sleep-vs-recharge bug, the recharge
+  flag is NOT cleared (matches Showdown).
+- **Freeze Clause Mod**: a freeze secondary fizzles while the target's side
+  already has a frozen mon.
+- **Endless Battle Clause**: hard cap at 1000 turns. Showdown ties; this API
+  has no tie, so the side with the higher remaining-HP fraction wins (battle
+  RNG coin flip on an exact tie). Deliberate deviation, documented here.
+- Species/OHKO/Evasion clauses are TEAM-validation rules — the vendored
+  Showdown randbat sets already satisfy them, so the engine doesn't check.
 - AI move choice: not the engine's concern; `RandomAi` already exists outside the engine.
+
+Implemented glitch coverage (see `tests/quirks.rs`): 1/256 miss, 0-damage
+miss, Focus Energy bug, base-Speed crit with doubled-level crit formula,
+stat ≥256 rollover, sticky modified stats + re-stack, toxic counter
+(Rest/Leech Seed interactions), recovery-fail 255/511, fire-thaw,
+Hyper Beam (KO / sub-break / freeze / sleep-overwrite interactions),
+secondary-status shared-type immunity, invulnerability glitch, Swift
+through Fly/Dig, Substitute suite (exact-quarter faint, confusion
+misdirection, Explosion sub-break survival), Bide stale-register
+accumulation, Thrash/Rage locks with the compounding accuracy bug,
+partial-trap lock semantics, Counter via the last-damage register,
+per-action residuals, faint-ends-turn.
 
 ---
 

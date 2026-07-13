@@ -36,10 +36,8 @@ pub enum MoveEffectKind {
     DamageMaybeStatus,
     /// Damage + chance to flinch. `param0`=chance/256.
     DamageMaybeFlinch,
-    /// Damage + chance to boost target stat. `param0`=stat_id, `param1`=delta_i8, `param2`=chance/256.
+    /// Damage + 85/256 chance to drop a target stat. `param0`=stat_id, `param1`=delta_i8.
     DamageMaybeBoostTarget,
-    /// Damage + chance to boost user stat.
-    DamageMaybeBoostSelf,
     /// Stage change, self.    `param0`=stat_id, `param1`=delta_i8.
     BoostSelf,
     /// Stage change, target.  `param0`=stat_id, `param1`=delta_i8.
@@ -50,10 +48,16 @@ pub enum MoveEffectKind {
     MultiHit2to5,
     /// Multi-hit fixed N.     `param0`=hits.
     MultiHitFixed,
-    /// Drain HP (% of damage dealt heals user). `param0`=numerator, `param1`=denominator.
+    /// Twineedle: 2 hits, then one `param1`/256 poison roll after the last.
+    Twineedle,
+    /// Drain HP (half of damage dealt heals user).
     DrainHp,
+    /// Dream Eater: fails unless target sleeps; drains half.
+    DreamEater,
     /// Recoil 1/4 of damage dealt.
     Recoil1of4,
+    /// Struggle: recoil 1/2 of damage dealt (Gen 1).
+    StruggleRecoil,
     /// 1 HP self-damage on miss (Hi Jump Kick / Jump Kick in Gen 1).
     CrashOnMiss,
     /// OHKO. Misses if user.speed < target.speed, else 30% accuracy.
@@ -74,8 +78,12 @@ pub enum MoveEffectKind {
     Rest,
     /// Two-turn move (charge then hit). `param0`=invulnerable_during_charge (0/1).
     TwoTurn,
-    /// Bide — store damage 2–3 turns, return 2×.
+    /// Bide — store the last-damage register 2–3 turns, return 2×.
     Bide,
+    /// Thrash / Petal Dance — locked in 3–4 turns, then confusion.
+    ThrashLock,
+    /// Rage — locked in until the battle ends; +1 Atk whenever hit.
+    Rage,
     /// Hyper Beam (recharge unless KO).
     HyperBeam,
     /// Counter — mirror back 2× last Normal/Fighting damage.
@@ -108,8 +116,6 @@ pub enum MoveEffectKind {
     Haze,
     /// Metronome — choose a random move and execute it.
     Metronome,
-    /// Pay Day — damage + narration only.
-    PayDay,
     /// Self-Destruct / Explosion — halves target Def (Gen 1), KOs user.
     SelfDestruct,
     /// Splash and other status-no-ops.
@@ -129,15 +135,17 @@ pub struct MoveEntry {
     pub effect_kind: MoveEffectKind,
     pub effect_param0: u8,
     pub effect_param1: u8,
-    /// Bit flags: 0x01 high-crit, 0x02 contact, 0x04 sound, 0x08 priority_plus1, 0x10 priority_minus1.
+    /// Bit flags — see the FLAG_* constants below.
     pub flags: u8,
 }
 
 pub const FLAG_HIGH_CRIT: u8 = 0x01;
-pub const FLAG_CONTACT:   u8 = 0x02;
-pub const FLAG_SOUND:     u8 = 0x04;
 pub const FLAG_PRIO_PLUS: u8 = 0x08;
 pub const FLAG_PRIO_MINUS: u8 = 0x10;
+/// Damaging move that ignores type immunity (fixed damage, partial trapping).
+pub const FLAG_IGNORE_IMMUNITY: u8 = 0x20;
+/// Hits through Fly/Dig semi-invulnerability (Swift, Transform).
+pub const FLAG_HITS_INVULN: u8 = 0x40;
 
 /// Type-effectiveness multiplier ×10: 0 = immune, 5 = ½, 10 = 1×, 20 = 2×.
 pub type TypeEffectiveness = u8;
