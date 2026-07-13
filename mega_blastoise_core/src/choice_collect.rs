@@ -34,6 +34,10 @@ use crate::prompt_fmt::format_prompt;
 /// After every player has committed, either may still unready for this long
 /// before the choices become final.
 pub const UNREADY_GRACE_MS: u64 = 1000;
+/// An AI player "thinks" for this long before entering its move. Multiple AI
+/// players think in parallel (deadlines all armed on the first tick), so an
+/// AI-vs-AI turn costs 1× this, not 2×.
+pub const AI_THINK_MS: u64 = 1000;
 /// How long the invalid-selection screen shows before restoring.
 pub const INVALID_FLASH_MS: u64 = 600;
 /// Recommended platform cadence for [`ChoiceCollector::tick`].
@@ -223,6 +227,9 @@ pub struct ChoiceCollector {
     n_real: usize,
     grace_start: Option<u64>,
     complete: bool,
+    /// Per-slot deadline for an AI commit. Armed on the first tick after
+    /// construction (the collector has no clock until then), fired in tick.
+    ai_commit_at: [Option<u64>; 2],
 }
 
 impl ChoiceCollector {
@@ -260,9 +267,13 @@ impl ChoiceCollector {
                     fx.push(Effect::Text(s.prompt_text.clone()));
                 }
             }
+            // Forced choices commit instantly; an AI's choice is held back in
+            // Choosing until its think delay elapses (armed/fired in tick).
             if let Some(c) = &s.auto {
-                out[i] = c.clone();
-                st[i] = SlotState::Committed;
+                if !s.is_ai {
+                    out[i] = c.clone();
+                    st[i] = SlotState::Committed;
+                }
             }
         }
         // A player with no prompt this batch is waiting on the other (e.g. a
@@ -274,7 +285,7 @@ impl ChoiceCollector {
             }
         }
 
-        Self { slots, st, out, n_real, grace_start: None, complete: false }
+        Self { slots, st, out, n_real, grace_start: None, complete: false, ai_commit_at: [None; 2] }
     }
 
     fn slot_index(&self, player_num: u8) -> Option<usize> {
@@ -316,6 +327,11 @@ impl ChoiceCollector {
         let Some(i) = self.slot_index(player) else {
             return; // no prompt for this player this batch
         };
+        // Auto slots (AI, locked moves) take no physical input — including a
+        // still-thinking AI, whose slot sits in Choosing until its deadline.
+        if self.is_auto(i) {
+            return;
+        }
 
         match (self.st[i], action) {
             // Any press while committed unreadies (auto choices are fixed).
@@ -586,6 +602,23 @@ impl ChoiceCollector {
     pub fn tick(&mut self, now_ms: u64, fx: &mut Vec<Effect>) -> bool {
         if self.complete {
             return true;
+        }
+        // AI think delay: arm every AI slot's deadline on the first tick (so
+        // AI-vs-AI waits run in PARALLEL), commit each when its time is up.
+        for i in 0..self.n_real {
+            if !self.slots[i].is_ai || self.st[i] == SlotState::Committed {
+                continue;
+            }
+            match self.ai_commit_at[i] {
+                None => self.ai_commit_at[i] = Some(now_ms + AI_THINK_MS),
+                Some(at) if now_ms >= at => {
+                    // Commit without the ShowWaiting effect or a grace reset —
+                    // matching how instant AI commits behaved before the delay.
+                    self.out[i] = self.slots[i].auto.clone().unwrap_or_default();
+                    self.st[i] = SlotState::Committed;
+                }
+                Some(_) => {}
+            }
         }
         for i in 0..self.n_real {
             match self.st[i] {
@@ -983,14 +1016,47 @@ mod tests {
     }
 
     #[test]
-    fn both_auto_completes_without_grace() {
+    fn ai_vs_ai_waits_one_second_in_parallel() {
         let mut fx = Vec::new();
         let mut p1 = SlotOptions::from_prompt(&turn_prompt("p1", 4));
         let mut p2 = SlotOptions::from_prompt(&turn_prompt("p2", 4));
         p1.set_ai_choice(String::from("move 0"));
         p2.set_ai_choice(String::from("move 1"));
         let mut c = ChoiceCollector::new(alloc::vec![p1, p2], &mut fx);
-        assert!(c.tick(0, &mut fx), "no grace when nobody can unready");
+        // First tick arms BOTH think deadlines (parallel, not serial).
+        assert!(!c.tick(100, &mut fx), "AI is still thinking");
+        assert!(!c.tick(100 + AI_THINK_MS - 1, &mut fx));
+        // Both commit on the same tick: 1× the delay total, then no grace
+        // window since nobody can unready.
+        assert!(c.tick(100 + AI_THINK_MS, &mut fx), "both AIs commit together");
+        let ch = c.take_choices();
+        assert_eq!(ch[0], (String::from("p1"), String::from("move 0")));
+        assert_eq!(ch[1], (String::from("p2"), String::from("move 1")));
+    }
+
+    #[test]
+    fn ai_thinking_ignores_input_and_forced_human_still_instant() {
+        let mut fx = Vec::new();
+        let mut p2 = SlotOptions::from_prompt(&turn_prompt("p2", 4));
+        p2.set_ai_choice(String::from("move 1"));
+        let mut c = ChoiceCollector::new(
+            alloc::vec![SlotOptions::from_prompt(&turn_prompt("p1", 4)), p2],
+            &mut fx,
+        );
+        c.tick(0, &mut fx); // arm the AI deadline
+        // Buttons and typed lines can't steer or unready a thinking AI.
+        c.pad_event(PadEvent::TapMove { player: 2, slot: 3 }, 10, &mut fx);
+        assert!(c.out[1].is_empty(), "pad input must not commit for the AI");
+        fx.clear();
+        c.typed_line("p2 3", 10, &mut fx);
+        assert!(err_containing(&fx, "forced this turn"));
+        // Human commits while the AI thinks; AI lands at its deadline.
+        c.typed_line("p1 1", 20, &mut fx);
+        assert_eq!(c.out[0], "move 0");
+        assert!(!c.tick(AI_THINK_MS - 1, &mut fx));
+        assert!(!c.tick(AI_THINK_MS, &mut fx), "grace window still applies (human can unready)");
+        assert_eq!(c.out[1], "move 1", "AI committed at its deadline");
+        assert!(c.tick(AI_THINK_MS + UNREADY_GRACE_MS, &mut fx));
     }
 
     #[test]
