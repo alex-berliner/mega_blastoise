@@ -37,7 +37,7 @@ pub const UNREADY_GRACE_MS: u64 = 1000;
 /// An AI player "thinks" for this long before entering its move. Multiple AI
 /// players think in parallel (deadlines all armed on the first tick), so an
 /// AI-vs-AI turn costs 1× this, not 2×.
-pub const AI_THINK_MS: u64 = 1000;
+pub const AI_THINK_MS: u64 = 2000;
 /// How long the invalid-selection screen shows before restoring.
 pub const INVALID_FLASH_MS: u64 = 600;
 /// Recommended platform cadence for [`ChoiceCollector::tick`].
