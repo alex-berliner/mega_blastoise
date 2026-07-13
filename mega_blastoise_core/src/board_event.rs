@@ -376,9 +376,9 @@ impl BoardEvent {
             Self::SwitchIn { .. }                              => anim::SWITCH_IN_MS,
             Self::Faint { .. }                                 => anim::FAINT_MS,
             Self::Win { .. } | Self::Tie                      => anim::WIN_MS,
+            Self::SetStatus { .. }                             => anim::STATUS_MS,
             Self::SuperEffective { .. }
             | Self::CriticalHit { .. }
-            | Self::SetStatus { .. }
             | Self::CureStatus { .. }
             | Self::StatChange { .. }
             | Self::EffectStart { .. }
