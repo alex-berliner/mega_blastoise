@@ -15,7 +15,8 @@ pub mod anim {
     pub const FAINT_MS:     u32 = 3600;
     pub const WIN_MS:       u32 = 7500;
     pub const EFFECT_MS:    u32 = 1200;  // super-effective, crit, status change
-    pub const BRIEF_MS:     u32 = 900;  // miss, immune, resist, fail, cant
+    pub const BRIEF_MS:     u32 = 900;  // miss, immune, resist, fail
+    pub const CANT_MS:      u32 = 1800; // can't move (slp/par/frz/trapped/…)
 }
 
 /// Reacts to [`BoardEvent`] (sound, LEDs, prompts). Same trait on host and firmware.

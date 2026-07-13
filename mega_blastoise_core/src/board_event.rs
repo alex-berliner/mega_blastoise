@@ -383,10 +383,10 @@ impl BoardEvent {
             | Self::StatChange { .. }
             | Self::EffectStart { .. }
             | Self::EffectEnd { .. }                          => anim::EFFECT_MS,
+            Self::Cant { .. }                                  => anim::CANT_MS,
             Self::Miss { .. }
             | Self::Immune { .. }
             | Self::Resisted { .. }
-            | Self::Cant { .. }
             | Self::Fail { .. }                               => anim::BRIEF_MS,
             _ => 0,
         }
