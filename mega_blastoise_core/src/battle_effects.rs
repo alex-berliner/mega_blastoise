@@ -9,15 +9,16 @@ use crate::board_event::{parse_log_line, BoardEvent, ParsedBattleLogLine};
 
 /// Shared animation delay durations (ms). Identical on all targets for presentation parity.
 pub mod anim {
-    pub const MOVE_MS:      u32 = 2400;
-    pub const DAMAGE_MS:    u32 = 3000;
-    pub const SWITCH_IN_MS: u32 = 2100;
-    pub const FAINT_MS:     u32 = 3600;
+    // Uniform 2500ms for every battle screen except the win screen.
+    pub const MOVE_MS:      u32 = 2500;
+    pub const DAMAGE_MS:    u32 = 2500;
+    pub const SWITCH_IN_MS: u32 = 2500;
+    pub const FAINT_MS:     u32 = 2500;
     pub const WIN_MS:       u32 = 7500;
-    pub const EFFECT_MS:    u32 = 2400; // super-effective, crit, stat change
-    pub const BRIEF_MS:     u32 = 1800; // miss, immune, resist, fail
-    pub const CANT_MS:      u32 = 3600; // can't move (slp/par/frz/trapped/…)
-    pub const STATUS_MS:    u32 = 2400; // was paralyzed / burned / poisoned / …
+    pub const EFFECT_MS:    u32 = 2500; // super-effective, crit, stat change
+    pub const BRIEF_MS:     u32 = 2500; // miss, immune, resist, fail
+    pub const CANT_MS:      u32 = 2500; // can't move (slp/par/frz/trapped/…)
+    pub const STATUS_MS:    u32 = 2500; // was paralyzed / burned / poisoned / …
 }
 
 /// Reacts to [`BoardEvent`] (sound, LEDs, prompts). Same trait on host and firmware.
