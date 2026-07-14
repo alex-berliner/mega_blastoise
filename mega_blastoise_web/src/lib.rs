@@ -56,6 +56,11 @@ thread_local! {
     // "action buttons open instantly on click" behavior for Concealed).
     static CONTROL_MODES: RefCell<[ControlMode; 2]> = RefCell::new([ControlMode::Normal; 2]);
 
+    // Web stand-in for the hidden 4-corner chord: a mouse can't press four
+    // buttons at once, so tapping all four corners within 2s counts.
+    // [player][slot] = last tap time (ms).
+    static CHORD_TAPS: RefCell<[[u64; 4]; 2]> = RefCell::new([[0; 4]; 2]);
+
     // Lobby LED animation mode
     static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
 
@@ -348,6 +353,8 @@ pub enum ButtonEvent {
     Switch { player: u8, idx:  u8 },
     /// Lobby long-press: `player` wants an AI opponent.
     LongPress { player: u8 },
+    /// HIDDEN: the 4-corner chord (web: all four corners tapped within 2s).
+    Chord { player: u8 },
     /// A demo / VS-AI button set NEXT_GAME_AI; the lobby loop applies it.
     AiPreset,
     /// A typed lobby line for the ready sequence (picker grammar, sims).
@@ -435,7 +442,8 @@ fn push_button(ev: ButtonEvent) {
     let player = match &ev {
         ButtonEvent::Move   { player, .. }
         | ButtonEvent::Switch { player, .. }
-        | ButtonEvent::LongPress { player } => *player,
+        | ButtonEvent::LongPress { player }
+        | ButtonEvent::Chord { player } => *player,
         ButtonEvent::AiPreset | ButtonEvent::Line(_) => 1,
     };
     if player == 1 {
@@ -517,9 +525,32 @@ pub fn wasm_held_buttons(player: u8) -> u8 {
 
 // ── WASM exports ──────────────────────────────────────────────────────────────
 
+/// Track lobby corner taps; true when this tap completes the 4-corner set
+/// within the 2s window (fires the hidden chord).
+fn chord_tap(player: u8, slot: u8) -> bool {
+    if slot > 3 {
+        return false;
+    }
+    let now = now_ms();
+    CHORD_TAPS.with(|t| {
+        let taps = &mut t.borrow_mut()[latch_i(player)];
+        taps[slot as usize] = now;
+        if taps.iter().all(|&t0| now.saturating_sub(t0) <= 2000) {
+            *taps = [0; 4];
+            true
+        } else {
+            false
+        }
+    })
+}
+
 #[wasm_bindgen] pub fn press_move(player: u8, slot: u8) {
     if LOBBY_MODE.with(|m| *m.borrow()) {
-        push_button(ButtonEvent::Move { player, slot });
+        if chord_tap(player, slot) {
+            push_button(ButtonEvent::Chord { player });
+        } else {
+            push_button(ButtonEvent::Move { player, slot });
+        }
     } else if unlatch_if_held(player, false, slot) {
         // Clicking a latched button releases the sticky hold.
     } else {
@@ -761,6 +792,9 @@ async fn run_game_loop() {
                     }
                     Either::First(ButtonEvent::LongPress { player }) => {
                         seq.request_ai_opponent(player, &mut fx)
+                    }
+                    Either::First(ButtonEvent::Chord { player }) => {
+                        seq.pad_event(PadEvent::Chord4 { player }, &mut fx)
                     }
                     Either::First(ButtonEvent::AiPreset) => {
                         if let Some(ai) = NEXT_GAME_AI.with(|n| n.borrow_mut().take()) {
