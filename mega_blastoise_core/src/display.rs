@@ -802,10 +802,35 @@ fn split_two_lines(text: &str, max_line: usize) -> (&str, &str) {
     }
 }
 
+/// True when a move does something TO the opponent — self-buffs, heals,
+/// screens, and other self/field-only moves hide the recipient sprite on
+/// the move-used screen.
+fn move_affects_opponent(move_id: &str) -> bool {
+    use gen1_battle::MoveEffectKind as K;
+    match gen1_battle::move_by_id(move_id) {
+        Some(m) => !matches!(
+            m.effect_kind,
+            K::BoostSelf
+                | K::HealHalf
+                | K::Rest
+                | K::Substitute
+                | K::LightScreen
+                | K::Reflect
+                | K::Mist
+                | K::FocusEnergy
+                | K::Conversion
+                | K::Metronome
+                | K::MirrorMove
+                | K::NoOp
+        ),
+        None => true,
+    }
+}
+
 /// Draw the "used <move>!" screen: caption on two lines up top, then the
 /// attacker's sprite, the move's icon (flickered by the caller via
-/// `icon_on`), and — when both mons have sprites — the recipient on the
-/// icon's right.
+/// `icon_on`), and — when both mons have sprites AND the move actually
+/// affects the opponent — the recipient on the icon's right.
 ///
 /// Layout (full case, 48+32+48 = 128 exactly):
 /// ```text
@@ -836,7 +861,13 @@ pub fn render_move_used<D>(
 
     let icon = crate::move_sprites::move_sprite(move_id);
     let atk_spr = crate::sprites::mon_sprite(mon_name);
-    let rcp_spr = crate::sprites::mon_sprite(recipient);
+    // Self-buffs (Agility, Swords Dance), heals, screens etc. have no
+    // recipient to show.
+    let rcp_spr = if move_affects_opponent(move_id) {
+        crate::sprites::mon_sprite(recipient)
+    } else {
+        None
+    };
     let mon_side = crate::sprites::SPRITE_SIDE;
 
     // Column layout: attacker | icon | recipient when everything fits;
