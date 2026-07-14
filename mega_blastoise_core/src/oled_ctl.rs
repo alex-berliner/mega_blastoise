@@ -362,8 +362,9 @@ where
             render_player_screen(display, mon, moves, if *bob { -2 } else { 0 }, *spd)
         }
         Screen::MoveDetail(mv) => render_move_detail(display, mv),
-        Screen::Stats { slot, page: 0 } => render_pokemon_stats(display, slot),
-        Screen::Stats { slot, .. } => render_pokemon_stats_page2(display, slot),
+        // Page 0 = moves (shown first), page 1 = stats.
+        Screen::Stats { slot, page: 0 } => render_pokemon_stats_page2(display, slot),
+        Screen::Stats { slot, .. } => render_pokemon_stats(display, slot),
         Screen::EventText(text) => render_event_text(display, text),
         Screen::Win(msg) => render_win_screen(display, msg),
         Screen::Waiting { mon, bob, spd } => {
