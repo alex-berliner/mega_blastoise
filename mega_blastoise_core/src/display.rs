@@ -780,37 +780,87 @@ where
     draw_center_sprite(display, mon_name, 12, 0);
 }
 
-/// Draw the "used <move>!" screen: caption up top, the attacker's sprite
-/// with the move's icon in a box to its right.
+/// Split text into two lines at the space nearest its midpoint (hard split
+/// on a char boundary when there is no space). Short text stays one line.
+fn split_two_lines(text: &str, max_line: usize) -> (&str, &str) {
+    let text = text.trim();
+    if text.len() <= max_line {
+        return (text, "");
+    }
+    let mid = text.len() / 2;
+    let split = text
+        .char_indices()
+        .filter(|(_, c)| *c == ' ')
+        .map(|(i, _)| i)
+        .min_by_key(|i| i.abs_diff(mid));
+    match split {
+        Some(i) => (&text[..i], text[i..].trim_start()),
+        None => {
+            let l1 = prefix_bytes(text, mid.min(max_line));
+            (l1, &text[l1.len()..])
+        }
+    }
+}
+
+/// Draw the "used <move>!" screen: caption on two lines up top, then the
+/// attacker's sprite, the move's icon (flickered by the caller via
+/// `icon_on`), and — when both mons have sprites — the recipient on the
+/// icon's right.
 ///
-/// Layout:
+/// Layout (full case, 48+32+48 = 128 exactly):
 /// ```text
-/// Red's Tauros used Surf!      ← FONT_5X8, centered, y=0
-///    [48x48 mon]   ┌[32x32]┐   ← mon at x=24, move icon boxed at x=82
+/// Red's Tauros used            ← FONT_5X8, centered, y=0
+/// Body Slam!                   ← y=8
+/// [atk 48x48][icon 32][rcp 48] ← x=0 / 48 / 80, sprites y=16, icon y=24
 /// ```
-pub fn render_move_used<D>(display: &mut D, mon_name: &str, caption: &str, move_id: &str)
-where
+pub fn render_move_used<D>(
+    display: &mut D,
+    mon_name: &str,
+    caption: &str,
+    move_id: &str,
+    recipient: &str,
+    icon_on: bool,
+) where
     D: DrawTarget<Color = BinaryColor>,
 {
     let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
     display.clear(BinaryColor::Off).ok();
-    Text::with_text_style(prefix_bytes(caption, 25), Point::new(64, 0), sm, center_style())
+
+    let (l1, l2) = split_two_lines(caption, 25);
+    Text::with_text_style(prefix_bytes(l1, 25), Point::new(64, 0), sm, center_style())
         .draw(display).ok();
+    if !l2.is_empty() {
+        Text::with_text_style(prefix_bytes(l2, 25), Point::new(64, 8), sm, center_style())
+            .draw(display).ok();
+    }
 
     let icon = crate::move_sprites::move_sprite(move_id);
-    if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
-        let side = crate::sprites::SPRITE_SIDE;
-        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
-        // Mon on the left when there's an icon to show; centered otherwise.
-        let x = if icon.is_some() { 24 } else { (128 - side as i32) / 2 };
-        Image::new(&raw, Point::new(x, 14)).draw(display).ok();
+    let atk_spr = crate::sprites::mon_sprite(mon_name);
+    let rcp_spr = crate::sprites::mon_sprite(recipient);
+    let mon_side = crate::sprites::SPRITE_SIDE;
+
+    // Column layout: attacker | icon | recipient when everything fits;
+    // otherwise fall back to attacker + icon, or a centered attacker.
+    let (atk_x, icon_x, rcp_x) = match (atk_spr.is_some(), icon.is_some(), rcp_spr.is_some()) {
+        (true, true, true) => (0i32, 48i32, Some(80i32)),
+        (true, true, false) => (24, 84, None),
+        _ => ((128 - mon_side as i32) / 2, 84, None),
+    };
+
+    if let Some(spr) = atk_spr {
+        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), mon_side);
+        Image::new(&raw, Point::new(atk_x, 16)).draw(display).ok();
     } else {
-        draw_center_sprite(display, mon_name, 14, 0);
+        draw_center_sprite(display, mon_name, 16, 0);
     }
-    if let Some(bits) = icon {
+    if let (Some(bits), true) = (icon, icon_on) {
         let side = crate::move_sprites::MOVE_SPRITE_SIDE;
         let raw = ImageRaw::<BinaryColor>::new(bits, side);
-        Image::new(&raw, Point::new(84, 22)).draw(display).ok();
+        Image::new(&raw, Point::new(icon_x, 24)).draw(display).ok();
+    }
+    if let (Some(spr), Some(x)) = (rcp_spr, rcp_x) {
+        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), mon_side);
+        Image::new(&raw, Point::new(x, 16)).draw(display).ok();
     }
 }
 

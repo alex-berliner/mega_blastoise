@@ -94,6 +94,7 @@ pub enum OledCmd {
     /// right, under the "used X!" caption. `player` 0 = both displays.
     ShowMoveUsed {
         player: u8,
+        attacker: u8,
         name: [u8; 12],
         len: u8,
         move_id: [u8; 16],
@@ -245,16 +246,17 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
         BoardEvent::Tie => {
             cmds.push(OledCmd::Win { winner: 0 });
         }
-        BoardEvent::Move { user, name, .. } => {
+        BoardEvent::Move { user, name, player_id } => {
             // "X used MOVE!" shows the attacker's sprite with the move's
             // icon beside it on BOTH displays (shared context).
             let (text, tlen) = flash_buf(&event.description());
-            match user.as_deref() {
-                Some(mon) => {
+            match (user.as_deref(), player_id.as_deref()) {
+                (Some(mon), Some(pid)) => {
                     let (buf, len) = name_buf(mon);
                     let (mid, mlen) = move_id_buf(name);
                     cmds.push(OledCmd::ShowMoveUsed {
                         player: 0,
+                        attacker: player_id_to_num(pid),
                         name: buf,
                         len,
                         move_id: mid,
@@ -263,7 +265,7 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
                         tlen,
                     });
                 }
-                None => cmds.push(OledCmd::EventFlash { player: 0, text, len: tlen }),
+                _ => cmds.push(OledCmd::EventFlash { player: 0, text, len: tlen }),
             }
         }
         // Transient narration flashes for events without a state screen.
@@ -314,6 +316,16 @@ fn bob_period_ms(speed: u16) -> u32 {
     BOB_BASE_PERIOD_MS * 1000 / rate_pm
 }
 
+/// Move-used icon flicker over the screen's MOVE_MS hold: sevenths of
+/// ON, OFF, ON, OFF, then ON for the remaining 3/7.
+fn move_icon_on(elapsed_ms: u32) -> bool {
+    let total = crate::battle_effects::anim::MOVE_MS;
+    if elapsed_ms >= total {
+        return true;
+    }
+    !matches!(elapsed_ms * 7 / total, 1 | 3)
+}
+
 pub enum Screen<'a> {
     Lobby { ready: bool, ai: bool },
     Battle { mon: &'a str, moves: &'a [MoveSlot], bob: bool, spd: SpeedCmp },
@@ -333,8 +345,9 @@ pub enum Screen<'a> {
     ConcealedSwitch { corners: [Option<&'a PartySlotData>; 4] },
     /// Switch-in: caption + the incoming mon's sprite.
     SentOut { mon: &'a str, caption: &'a str },
-    /// Move used: caption + the attacker's sprite + the move's icon.
-    MoveUsed { mon: &'a str, caption: &'a str, move_id: &'a str },
+    /// Move used: caption + attacker sprite + (flickering) move icon +
+    /// recipient sprite.
+    MoveUsed { mon: &'a str, caption: &'a str, move_id: &'a str, recipient: &'a str, icon_on: bool },
 }
 
 /// Render a [`Screen`] onto any 128×64 target. The single dispatch point
@@ -373,8 +386,8 @@ where
         Screen::ConcealedMoves { corners } => render_concealed_moves(display, corners),
         Screen::ConcealedSwitch { corners } => render_concealed_switch(display, corners),
         Screen::SentOut { mon, caption } => render_sent_out(display, mon, caption),
-        Screen::MoveUsed { mon, caption, move_id } => {
-            render_move_used(display, mon, caption, move_id)
+        Screen::MoveUsed { mon, caption, move_id, recipient, icon_on } => {
+            render_move_used(display, mon, caption, move_id, recipient, *icon_on)
         }
     }
 }
@@ -400,7 +413,7 @@ enum View {
     /// the caption reuses the flash buffer.
     SentOut { name: [u8; 12], len: u8 },
     /// Move-used flash: attacker name + move id; caption in the flash buffer.
-    MoveUsed { name: [u8; 12], len: u8, move_id: [u8; 16], mlen: u8 },
+    MoveUsed { attacker: u8, name: [u8; 12], len: u8, move_id: [u8; 16], mlen: u8 },
 }
 
 struct Player {
@@ -419,6 +432,8 @@ struct Player {
     bob_up: bool,
     /// Milliseconds accumulated toward the next bob flip.
     bob_acc_ms: u32,
+    /// Milliseconds since a MoveUsed view appeared (drives the icon flicker).
+    move_flash_ms: u32,
 }
 
 impl Player {
@@ -438,6 +453,7 @@ impl Player {
             speed: 150,
             bob_up: false,
             bob_acc_ms: 0,
+            move_flash_ms: 0,
         }
     }
 
@@ -507,6 +523,14 @@ impl OledController {
                     p.view,
                     View::Battle | View::ActionSelect { .. } | View::Waiting
                 );
+            }
+            // Move-used icon flicker: redraw whenever visibility flips.
+            if matches!(p.view, View::MoveUsed { .. }) {
+                let before = move_icon_on(p.move_flash_ms);
+                p.move_flash_ms = p.move_flash_ms.saturating_add(dt_ms);
+                if move_icon_on(p.move_flash_ms) != before {
+                    flip[i] = true;
+                }
             }
         }
         match (flip[0], flip[1]) {
@@ -671,14 +695,15 @@ impl OledController {
                 }
                 if both { OledRedraw::Both } else { OledRedraw::for_player(player) }
             }
-            OledCmd::ShowMoveUsed { player, name, len, move_id, mlen, text, tlen } => {
+            OledCmd::ShowMoveUsed { player, attacker, name, len, move_id, mlen, text, tlen } => {
                 let both = player == 0;
                 for p in [1u8, 2] {
                     if both || player == p {
                         let pl = self.player_mut(p);
                         pl.flash = text;
                         pl.flash_len = tlen;
-                        pl.view = View::MoveUsed { name, len, move_id, mlen };
+                        pl.move_flash_ms = 0;
+                        pl.view = View::MoveUsed { attacker, name, len, move_id, mlen };
                     }
                 }
                 if both { OledRedraw::Both } else { OledRedraw::for_player(player) }
@@ -763,10 +788,12 @@ impl OledController {
                 mon: core::str::from_utf8(&name[..*len as usize]).unwrap_or("?").trim_end(),
                 caption: core::str::from_utf8(&p.flash[..p.flash_len as usize]).unwrap_or(""),
             },
-            View::MoveUsed { name, len, move_id, mlen } => Screen::MoveUsed {
+            View::MoveUsed { attacker, name, len, move_id, mlen } => Screen::MoveUsed {
                 mon: core::str::from_utf8(&name[..*len as usize]).unwrap_or("?").trim_end(),
                 caption: core::str::from_utf8(&p.flash[..p.flash_len as usize]).unwrap_or(""),
                 move_id: core::str::from_utf8(&move_id[..*mlen as usize]).unwrap_or(""),
+                recipient: if *attacker == 1 { self.p2.battle_mon() } else { self.p1.battle_mon() },
+                icon_on: move_icon_on(p.move_flash_ms),
             },
         }
     }
