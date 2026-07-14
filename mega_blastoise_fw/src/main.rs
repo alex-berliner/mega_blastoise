@@ -99,11 +99,20 @@ async fn main(spawner: Spawner) {
     // ── NeoPixel LED strips (WS2812B: P1 GP20/SM0/DMA0, P2 GP22/SM1/DMA1) ────
     #[cfg(feature = "leds")]
     {
+        #[cfg(feature = "breadboard")]
         spawner.spawn(subsystems::led::task(
             p.PIO0, p.PIN_20, p.PIN_22, p.DMA_CH0, p.DMA_CH1,
         ))
         .expect("led task spawn");
+        #[cfg(not(feature = "breadboard"))]
+        spawner.spawn(subsystems::led::task(
+            p.PIO0, p.PIN_0, p.PIN_1, p.DMA_CH0, p.DMA_CH1,
+        ))
+        .expect("led task spawn");
+        #[cfg(feature = "breadboard")]
         debug!("LEDs ready: P1 GP20, P2 GP22 / PIO0 SM0+SM1 / DMA0+DMA1");
+        #[cfg(not(feature = "breadboard"))]
+        debug!("LEDs ready: P1 GP0, P2 GP1 / PIO0 SM0+SM1 / DMA0+DMA1");
     }
 
     // ── OLED displays (SSD1306 on I2C0 + I2C1) ───────────────────────────────

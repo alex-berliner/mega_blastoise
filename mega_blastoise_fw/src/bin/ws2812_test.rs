@@ -44,14 +44,23 @@ async fn main(_spawner: Spawner) {
     };
     set_defmt_channel(channels.up.0);
 
+    #[cfg(feature = "breadboard")]
     defmt::info!("ws2812_test: driving {} LEDs on GP20 + GP22 (PIO0 SM0/SM1)", NUM_LEDS);
+    #[cfg(not(feature = "breadboard"))]
+    defmt::info!("ws2812_test: driving {} LEDs on GP0 + GP1 (PIO0 SM0/SM1)", NUM_LEDS);
 
     let Pio { mut common, sm0, sm1, .. } = Pio::new(p.PIO0, Irqs);
     let prg = PioWs2812Program::new(&mut common);
+    // Same per-board pin map as subsystems::led (PCB: GP0/GP1 per the
+    // schematic's LED_P1/LED_P2 nets; breadboard: GP20/GP22).
+    #[cfg(feature = "breadboard")]
+    let (p1_pin, p2_pin) = (p.PIN_20, p.PIN_22);
+    #[cfg(not(feature = "breadboard"))]
+    let (p1_pin, p2_pin) = (p.PIN_0, p.PIN_1);
     let mut ws: PioWs2812<'_, PIO0, 0, NUM_LEDS> =
-        PioWs2812::new(&mut common, sm0, p.DMA_CH0, p.PIN_20, &prg);
+        PioWs2812::new(&mut common, sm0, p.DMA_CH0, p1_pin, &prg);
     let mut ws2: PioWs2812<'_, PIO0, 1, NUM_LEDS> =
-        PioWs2812::new(&mut common, sm1, p.DMA_CH1, p.PIN_22, &prg);
+        PioWs2812::new(&mut common, sm1, p.DMA_CH1, p2_pin, &prg);
 
     // Make sure everything starts dark.
     ws.write(&[OFF; NUM_LEDS]).await;

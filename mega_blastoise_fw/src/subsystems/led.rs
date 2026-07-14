@@ -17,7 +17,18 @@
 //! target each player's *active* mon, tracked from the last `SwitchIn`.
 
 use embassy_rp::bind_interrupts;
-use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIN_20, PIN_22, PIO0};
+use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0};
+
+/// Per-board data-pin assignment: the partner PCB routes LED_P1/LED_P2 to
+/// GP0/GP1 (schematic nets); the hand-wired board uses GP20/GP22.
+#[cfg(feature = "breadboard")]
+mod wiring {
+    pub use embassy_rp::peripherals::{PIN_20 as P1Pin, PIN_22 as P2Pin};
+}
+#[cfg(not(feature = "breadboard"))]
+mod wiring {
+    pub use embassy_rp::peripherals::{PIN_0 as P1Pin, PIN_1 as P2Pin};
+}
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::pio_programs::ws2812::{PioWs2812, PioWs2812Program};
 use embassy_rp::Peri;
@@ -213,8 +224,8 @@ fn solid(color: RGB8) -> [RGB8; NUM_LEDS] {
 #[embassy_executor::task]
 pub async fn task(
     pio0: Peri<'static, PIO0>,
-    p1_pin: Peri<'static, PIN_20>,
-    p2_pin: Peri<'static, PIN_22>,
+    p1_pin: Peri<'static, wiring::P1Pin>,
+    p2_pin: Peri<'static, wiring::P2Pin>,
     p1_dma: Peri<'static, DMA_CH0>,
     p2_dma: Peri<'static, DMA_CH1>,
 ) {
