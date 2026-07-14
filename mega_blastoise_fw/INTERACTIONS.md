@@ -1,5 +1,8 @@
 # Firmware interactions (mega_blastoise_fw)
 
+Pre-rendered PNGs of the diagrams below live in `docs/` (GitHub also renders
+the Mermaid sources inline).
+
 How the RP2040 firmware's pieces talk to each other. Three layers:
 
 1. **Spawned embassy tasks** (`subsystems/`): OLED, LED strips, buzzer, USB
