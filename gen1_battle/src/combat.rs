@@ -104,6 +104,9 @@ pub struct DamageRoll {
     /// Type chart zeroed the damage (target immune). Callers normally
     /// pre-check immunity before rolling accuracy; this covers the rest.
     pub immune: bool,
+    /// Combined type effectiveness ×100 (100 = neutral, 200/400 = super
+    /// effective, 50/25 = resisted). 0 on non-damage results.
+    pub effectiveness: u32,
 }
 
 /// The Gen 1 damage formula, step for step.
@@ -182,20 +185,17 @@ pub fn compute_damage(
     // Type effectiveness, applied per defender type in order.
     let e1 = type_effectiveness(mv.move_type, defender.primary_type) as u32;
     dmg = dmg * e1 / 10;
-    if defender.secondary_type != Type::None {
-        let e2 = type_effectiveness(mv.move_type, defender.secondary_type) as u32;
-        dmg = dmg * e2 / 10;
-    }
-    let immune = {
-        let e2 = if defender.secondary_type == Type::None {
-            10
-        } else {
-            type_effectiveness(mv.move_type, defender.secondary_type) as u32
-        };
-        e1 == 0 || e2 == 0
+    let e2 = if defender.secondary_type == Type::None {
+        10
+    } else {
+        let e = type_effectiveness(mv.move_type, defender.secondary_type) as u32;
+        dmg = dmg * e / 10;
+        e
     };
+    let effectiveness = e1 * e2;
+    let immune = e1 == 0 || e2 == 0;
     if dmg == 0 {
-        return DamageRoll { dmg: 0, crit, immune };
+        return DamageRoll { dmg: 0, crit, immune, effectiveness };
     }
 
     // Random factor 217..=255 /255, only when damage > 1.
@@ -204,5 +204,10 @@ pub fn compute_damage(
         dmg = dmg * r / 255;
     }
 
-    DamageRoll { dmg: dmg.min(u16::MAX as u32) as u16, crit, immune: false }
+    DamageRoll {
+        dmg: dmg.min(u16::MAX as u32) as u16,
+        crit,
+        immune: false,
+        effectiveness,
+    }
 }

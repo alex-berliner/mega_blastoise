@@ -193,7 +193,11 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
         }
         BoardEvent::Faint { mon, .. } => {
             if let Some(player) = mon_player_num(mon) {
+                // The owner's display shows the FAINTED battle state; the
+                // OPPONENT gets the "<trainer>'s <mon> fainted!" dialogue.
                 cmds.push(OledCmd::Faint { player });
+                let (text, len) = flash_buf(&event.description());
+                cmds.push(OledCmd::EventFlash { player: 3 - player, text, len });
             }
         }
         BoardEvent::SwitchIn { name, player_id, moves, speed, .. } => {

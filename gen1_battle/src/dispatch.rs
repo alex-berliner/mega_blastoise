@@ -909,6 +909,13 @@ fn apply_effect(
                         let s = &sides[defender_side];
                         log.push_board(format!("crit|mon:{},{},0", s.active().name, s.player_id));
                     }
+                    if roll.effectiveness > 100 {
+                        let s = &sides[defender_side];
+                        log.push_board(format!("supereffective|mon:{},{},0", s.active().name, s.player_id));
+                    } else if roll.effectiveness > 0 && roll.effectiveness < 100 {
+                        let s = &sides[defender_side];
+                        log.push_board(format!("resisted|mon:{},{},0", s.active().name, s.player_id));
+                    }
                     let res = deal_damage(field, sides, defender_side, roll.dmg, log);
                     note_hit(&mut outcome, res, roll.dmg);
                     dealt = field.last_damage;
@@ -1204,6 +1211,14 @@ fn damage_step(
             if roll.crit {
                 let s = &sides[defender_side];
                 log.push_board(format!("crit|mon:{},{},0", s.active().name, s.player_id));
+            }
+            // Type-effectiveness dialogue (first hit only for multi-hit).
+            if roll.effectiveness > 100 {
+                let s = &sides[defender_side];
+                log.push_board(format!("supereffective|mon:{},{},0", s.active().name, s.player_id));
+            } else if roll.effectiveness > 0 && roll.effectiveness < 100 {
+                let s = &sides[defender_side];
+                log.push_board(format!("resisted|mon:{},{},0", s.active().name, s.player_id));
             }
             outcome.crit = outcome.crit || roll.crit;
             roll.dmg
