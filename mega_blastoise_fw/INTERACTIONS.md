@@ -14,7 +14,7 @@ How the RP2040 firmware's pieces talk to each other. Three layers:
 ## Task and channel topology
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph HW[hardware]
         BT[button matrix]
         HOST[USB host]
@@ -142,7 +142,7 @@ sequenceDiagram
     ENG-->>RUN: request (choose actions)
     RUN->>BUS: prompt.send(ActivePrompt) per player
     BUS-->>COL: prompt.receive
-    COL->>COL: build SlotOptions<br/>(concealed: scatter layout; AI: 2s think deadline)
+    COL->>COL: build SlotOptions<br/>(concealed: scatter layout, AI: 2s think deadline)
     COL-->>OT: action select / menus
 
     par human input
