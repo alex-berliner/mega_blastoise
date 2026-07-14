@@ -69,6 +69,23 @@ fn cap(c: RGB8) -> RGB8 {
     RGB8 { r: s(c.r), g: s(c.g), b: s(c.b) }
 }
 
+/// In-battle indicators (HP bar, party/status dots, win flash) run at HALF
+/// the master range; the lobby animations keep the full BRIGHTNESS_PCT.
+fn battle_cap(c: RGB8) -> RGB8 {
+    let s = |v: u8| ((v as u16 * BRIGHTNESS_PCT) / 200) as u8;
+    RGB8 { r: s(c.r), g: s(c.g), b: s(c.b) }
+}
+
+/// `solid`, at in-battle brightness.
+fn solid_battle(color: RGB8) -> [RGB8; NUM_LEDS] {
+    let color = battle_cap(color);
+    let mut frame = [OFF; NUM_LEDS];
+    for px in frame.iter_mut().take(USED_LEDS) {
+        *px = color;
+    }
+    frame
+}
+
 // ── Status type ───────────────────────────────────────────────────────────────
 
 #[derive(Clone, Copy)]
@@ -178,9 +195,9 @@ impl PlayerLedState {
 
         // LED 11 stays OFF (debug reserve).
 
-        // Master brightness on the driven LEDs (11 stays dark either way).
+        // In-battle brightness on the driven LEDs (11 stays dark either way).
         for px in buf.iter_mut().take(USED_LEDS) {
-            *px = cap(*px);
+            *px = battle_cap(*px);
         }
         buf
     }
@@ -304,8 +321,8 @@ pub async fn task(
                     2 => (dim, gold),
                     _ => (grey, grey),
                 };
-                ws1.write(&solid(c1)).await;
-                ws2.write(&solid(c2)).await;
+                ws1.write(&solid_battle(c1)).await;
+                ws2.write(&solid_battle(c2)).await;
                 false
             }
 
