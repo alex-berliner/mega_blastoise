@@ -236,10 +236,20 @@ impl SlotOptions {
         for (k, corner) in corner_order.iter().enumerate().take(self.n_moves.min(4)) {
             self.move_map[*corner as usize] = k as i8;
         }
-        // Eligible bench (alive, not active), shuffled once for the turn.
+        // Switch-menu contents, shuffled once for the turn: the eligible
+        // bench, plus the ACTIVE mon on in-turn menus (picking it flashes
+        // invalid, holding it shows its stats — same info as normal mode).
         self.bench = (0..6u8)
             .filter(|&i| self.party_ok[i as usize])
             .collect();
+        if !self.forced_switch {
+            if let Some(a) = self.active_slot {
+                let a = a as u8;
+                if a < 6 && !self.bench.contains(&a) {
+                    self.bench.push(a);
+                }
+            }
+        }
         let n = self.bench.len();
         for i in (1..n).rev() {
             let j = (rng.next_u64() % (i as u64 + 1)) as usize;
@@ -1225,7 +1235,11 @@ impl ReadySequence {
                 // Hidden combo: toggle 6v6 for the upcoming battle. Flash the
                 // mode on both screens; tick restores the state screens.
                 self.six_v_six = !self.six_v_six;
-                let label = if self.six_v_six { "6V6 MODE!" } else { "3V3 MODE" };
+                if self.six_v_six {
+                    // 6v6 forces concealed controls for both players.
+                    self.highlighted = [1, 1];
+                }
+                let label = if self.six_v_six { "6V6 CONCEALED!" } else { "3V3 MODE" };
                 let (text, len) = crate::oled_ctl::flash_buf(label);
                 fx.push(Effect::Oled(OledCmd::EventFlash { player: 0, text, len }));
                 fx.push(Effect::Ok(format!("hidden combo: {label}")));
@@ -1379,11 +1393,15 @@ impl ReadySequence {
         self.six_v_six
     }
 
-    /// AI assignments + chosen control modes.
+    /// AI assignments + chosen control modes. 6v6 (hidden chord) forces
+    /// concealed controls for both players.
     pub fn take(self) -> ([bool; 2], [ControlMode; 2]) {
-        let modes = self
-            .highlighted
-            .map(|h| if h == 1 { ControlMode::Concealed } else { ControlMode::Normal });
+        let modes = if self.six_v_six {
+            [ControlMode::Concealed; 2]
+        } else {
+            self.highlighted
+                .map(|h| if h == 1 { ControlMode::Concealed } else { ControlMode::Normal })
+        };
         (self.ai, modes)
     }
 }
@@ -1861,6 +1879,9 @@ mod tests {
         let mut cfx = Vec::new();
         c.pad_event(PadEvent::Chord4 { player: 1 }, 0, &mut cfx);
         assert!(cfx.is_empty());
+        // 6v6 forces concealed controls for both players.
+        let (_, modes) = seq.take();
+        assert_eq!(modes, [ControlMode::Concealed; 2]);
     }
 
     // ── Concealed controls ───────────────────────────────────────────────
@@ -1893,10 +1914,10 @@ mod tests {
                 assert!(!seen[m as usize], "seed {seed}: duplicate move on corners");
                 seen[m as usize] = true;
             }
-            // Bench = the two alive benched mons, no duplicates.
+            // Menu = the two alive benched mons + the active, no duplicates.
             let mut b = s.bench.clone();
             b.sort_unstable();
-            assert_eq!(b, alloc::vec![1u8, 2]);
+            assert_eq!(b, alloc::vec![0u8, 1, 2]);
         }
     }
 

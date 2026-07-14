@@ -705,12 +705,25 @@ where
     render_corner_menu(display, "- ATTACK -", &labels);
 }
 
-/// Concealed bench menu: shuffled benched mon names at the corner positions.
+/// Concealed bench menu: shuffled team members at the corner positions.
+/// The currently active mon is marked with a leading `*`.
 pub fn render_concealed_switch<D>(display: &mut D, corners: &[Option<&PartySlotData>; 4])
 where
     D: DrawTarget<Color = BinaryColor>,
 {
-    let labels = corners.map(|c| c.map(|s| s.name.as_str()));
+    let owned: [Option<alloc::string::String>; 4] = corners.map(|c| {
+        c.map(|s| {
+            if s.active {
+                alloc::format!("*{}", s.name)
+            } else {
+                s.name.clone()
+            }
+        })
+    });
+    let mut labels: [Option<&str>; 4] = [None; 4];
+    for (k, o) in owned.iter().enumerate() {
+        labels[k] = o.as_deref();
+    }
     render_corner_menu(display, "- SWITCH -", &labels);
 }
 
