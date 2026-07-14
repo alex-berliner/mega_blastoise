@@ -1170,7 +1170,7 @@ impl ReadySequence {
             if ai[i] {
                 self.ai[i] = true;
                 self.st[i] = SeqSlot::Ready;
-            } else if self.st[i] == SeqSlot::Idle {
+            } else if self.st[i] == SeqSlot::Idle && !self.six_v_six {
                 self.st[i] = SeqSlot::Choosing;
             }
             self.show(i, fx);
@@ -1189,7 +1189,7 @@ impl ReadySequence {
         self.ai[other] = true;
         self.st[other] = SeqSlot::Ready;
         self.show(other, fx);
-        if self.st[me] == SeqSlot::Idle {
+        if self.st[me] == SeqSlot::Idle && !self.six_v_six {
             self.st[me] = SeqSlot::Choosing;
             self.show(me, fx);
         }
@@ -1236,8 +1236,16 @@ impl ReadySequence {
                 // mode on both screens; tick restores the state screens.
                 self.six_v_six = !self.six_v_six;
                 if self.six_v_six {
-                    // 6v6 forces concealed controls for both players.
+                    // 6v6 forces concealed controls for both players, so the
+                    // picker has nothing to ask: anyone mid-pick is READY now
+                    // (Idle presses skip straight to Ready below).
                     self.highlighted = [1, 1];
+                    for i in 0..2 {
+                        if self.st[i] == SeqSlot::Choosing {
+                            self.st[i] = SeqSlot::Ready;
+                            fx.push(Effect::Ok(format!("p{} ready (concealed controls)", i + 1)));
+                        }
+                    }
                 }
                 let label = if self.six_v_six { "6V6 CONCEALED!" } else { "3V3 MODE" };
                 let (text, len) = crate::oled_ctl::flash_buf(label);
@@ -1253,10 +1261,11 @@ impl ReadySequence {
         }
         let i = (player - 1) as usize;
 
-        // A press on an AI-assigned side reclaims it for a human.
+        // A press on an AI-assigned side reclaims it for a human. (No picker
+        // in 6v6: back to the start screen, the next press readies.)
         if self.ai[i] {
             self.ai[i] = false;
-            self.st[i] = SeqSlot::Choosing;
+            self.st[i] = if self.six_v_six { SeqSlot::Idle } else { SeqSlot::Choosing };
             self.grace_start = None;
             self.show(i, fx);
             return;
@@ -1266,6 +1275,11 @@ impl ReadySequence {
             SeqSlot::Idle => {
                 if is_hold {
                     self.request_ai_opponent(player, fx);
+                } else if self.six_v_six {
+                    // Controls are forced concealed: nothing to pick.
+                    self.st[i] = SeqSlot::Ready;
+                    self.show(i, fx);
+                    fx.push(Effect::Ok(format!("p{} ready (concealed controls)", i + 1)));
                 } else {
                     self.st[i] = SeqSlot::Choosing;
                     self.show(i, fx);
@@ -1287,8 +1301,9 @@ impl ReadySequence {
                 _ => {} // corner buttons do nothing while choosing
             },
             SeqSlot::Ready => {
-                // Any press while ready: back to the picker.
-                self.st[i] = SeqSlot::Choosing;
+                // Any press while ready: back to the picker (start screen
+                // in 6v6, which has no picker).
+                self.st[i] = if self.six_v_six { SeqSlot::Idle } else { SeqSlot::Choosing };
                 self.grace_start = None;
                 self.show(i, fx);
             }
@@ -1843,6 +1858,30 @@ mod tests {
         seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx);
         assert!(!seq.ai[1]);
         assert_eq!(seq.st[1], SeqSlot::Choosing);
+    }
+
+    #[test]
+    fn ready_sequence_six_v_six_skips_picker() {
+        let mut fx = Vec::new();
+        let mut seq = ReadySequence::new(&mut fx);
+        // P1 is mid-pick when the chord lands: promoted straight to READY.
+        seq.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, &mut fx);
+        assert_eq!(seq.st[0], SeqSlot::Choosing);
+        seq.pad_event(PadEvent::Chord4 { player: 1 }, &mut fx);
+        assert!(seq.six_v_six());
+        assert_eq!(seq.st[0], SeqSlot::Ready);
+        // P2 presses from the start screen: no picker, READY immediately.
+        seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx);
+        assert_eq!(seq.st[1], SeqSlot::Ready);
+        // Unready in 6v6 returns to the start screen, not the picker.
+        seq.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
+        assert_eq!(seq.st[1], SeqSlot::Idle);
+        seq.pad_event(PadEvent::TapMove { player: 2, slot: 2 }, &mut fx);
+        assert_eq!(seq.st[1], SeqSlot::Ready);
+        assert!(!seq.tick(1000, &mut fx));
+        assert!(seq.tick(1000 + UNREADY_GRACE_MS, &mut fx));
+        let (_, modes) = seq.take();
+        assert_eq!(modes, [ControlMode::Concealed, ControlMode::Concealed]);
     }
 
     #[test]
