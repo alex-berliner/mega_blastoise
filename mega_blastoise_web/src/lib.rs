@@ -16,8 +16,8 @@ use embassy_futures::select::{select, select3, Either, Either3};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
     party_slot_from_mon, render_screen, run_battle, ActivePrompt, BoardEventQueue,
-    ChoiceCollector, CollectEffect, ControlMode, ControlsSelect, FlashDataStore, InputBus,
-    OledCmd, OledController, PadEvent, PartySlotData, PlayerChoice, RandomAi, SlotOptions,
+    ChoiceCollector, CollectEffect, ControlMode, FlashDataStore, InputBus,
+    OledCmd, OledController, PadEvent, PartySlotData, PlayerChoice, RandomAi, ReadySequence, SlotOptions,
     BATTLE_HELP, COLLECT_TICK_MS, LOBBY_DEMO_DELAY_MS,
 };
 use web_effects::WebBattleEffects;
@@ -59,7 +59,7 @@ thread_local! {
     // Lobby LED animation mode
     static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
 
-    // Per-player lobby ready state
+    // Ready flags mirrored from the ready sequence for the lobby LED frame.
     static LOBBY_READY: RefCell<[bool; 2]> = RefCell::new([false, false]);
 
     // Flash events: [p1_type, p2_type]; 1 = super-effective, 2 = crit; consumed on read
@@ -346,6 +346,12 @@ pub(crate) fn print_log(line: &str) {
 pub enum ButtonEvent {
     Move   { player: u8, slot: u8 },
     Switch { player: u8, idx:  u8 },
+    /// Lobby long-press: `player` wants an AI opponent.
+    LongPress { player: u8 },
+    /// A demo / VS-AI button set NEXT_GAME_AI; the lobby loop applies it.
+    AiPreset,
+    /// A typed lobby line for the ready sequence (picker grammar, sims).
+    Line(String),
 }
 
 // Wait for either player's button (lobby start)
@@ -428,7 +434,9 @@ impl Future for BattleInputFuture {
 fn push_button(ev: ButtonEvent) {
     let player = match &ev {
         ButtonEvent::Move   { player, .. }
-        | ButtonEvent::Switch { player, .. } => *player,
+        | ButtonEvent::Switch { player, .. }
+        | ButtonEvent::LongPress { player } => *player,
+        ButtonEvent::AiPreset | ButtonEvent::Line(_) => 1,
     };
     if player == 1 {
         P1_QUEUE.with(|q| q.borrow_mut().push_back(ev));
@@ -567,9 +575,7 @@ pub fn wasm_held_buttons(player: u8) -> u8 {
 fn enter_demo_mode() {
     DEMO_MODE.with(|d| *d.borrow_mut() = true);
     NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, true]));
-    LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
-    push_button(ButtonEvent::Move { player: 1, slot: 0 });
-    push_button(ButtonEvent::Move { player: 2, slot: 0 });
+    push_button(ButtonEvent::AiPreset);
 }
 
 #[wasm_bindgen] pub fn wasm_enter_demo_mode() {
@@ -590,29 +596,20 @@ fn enter_demo_mode() {
 
 #[wasm_bindgen] pub fn wasm_enter_vs_ai_mode() {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
-    // p1=AI (Red), p2=human (Blue)
+    // p1=AI (Red), p2=human (Blue): p2 still picks their controls.
     NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, false]));
-    LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
-    push_button(ButtonEvent::Move { player: 1, slot: 0 });
-    push_button(ButtonEvent::Move { player: 2, slot: 0 });
+    push_button(ButtonEvent::AiPreset);
 }
 
 #[wasm_bindgen] pub fn is_lobby_mode() -> bool {
     LOBBY_MODE.with(|m| *m.borrow())
 }
 
-/// Long-press lobby handler: `player` pressed long → their opponent is AI-controlled.
-/// Immediately draws the correct lobby screens and queues both players as ready.
+/// Long-press lobby handler: `player` pressed long → their opponent becomes
+/// AI-controlled (ready) and the presser proceeds to the controls picker.
 #[wasm_bindgen] pub fn wasm_lobby_long_press(player: u8) {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
-    // player is human, opponent is AI
-    let ai = if player == 1 { [false, true] } else { [true, false] };
-    NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some(ai));
-    LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
-    draw_lobby_screen(1, true, ai[0]);
-    draw_lobby_screen(2, true, ai[1]);
-    push_button(ButtonEvent::Move { player: 1, slot: 0 });
-    push_button(ButtonEvent::Move { player: 2, slot: 0 });
+    push_button(ButtonEvent::LongPress { player });
 }
 
 #[wasm_bindgen] pub fn submit_text(line: String) {
@@ -630,21 +627,22 @@ fn enter_demo_mode() {
     if LOBBY_MODE.with(|m| *m.borrow()) {
         match cmd {
             ":ready ai" | ":vs ai" | ":blue vs ai" => {
-                // VS AI: P1=AI (Red), P2=human (Blue)
+                // VS AI: P1=AI (Red), P2=human (Blue) — P2 still picks controls.
                 NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, false]));
-                LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
-                push_button(ButtonEvent::Move { player: 1, slot: 0 });
-                push_button(ButtonEvent::Move { player: 2, slot: 0 });
+                push_button(ButtonEvent::AiPreset);
             }
             ":demo" => { enter_demo_mode(); }
+            // Ready commands skip the picker: current highlight (Normal by
+            // default; `p1 concealed` first to change it).
             ":ready" | ":ready both" => {
-                LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
-                push_button(ButtonEvent::Move { player: 1, slot: 0 });
-                push_button(ButtonEvent::Move { player: 2, slot: 0 });
+                push_button(ButtonEvent::Line(String::from("p1 ok")));
+                push_button(ButtonEvent::Line(String::from("p2 ok")));
             }
-            ":ready p1" => push_button(ButtonEvent::Move { player: 1, slot: 0 }),
-            ":ready p2" => push_button(ButtonEvent::Move { player: 2, slot: 0 }),
-            _ => print_log("  unknown command — type ? for help"),
+            ":ready p1" => push_button(ButtonEvent::Line(String::from("p1 ok"))),
+            ":ready p2" => push_button(ButtonEvent::Line(String::from("p2 ok"))),
+            // Anything else goes to the ready sequence: picker grammar
+            // (pN normal|concealed|ok) and :press/:hold/:release sims.
+            other => push_button(ButtonEvent::Line(String::from(other))),
         }
         return;
     }
@@ -704,8 +702,8 @@ async fn run_game_loop() {
     let data = FlashDataStore::new();
 
     loop {
-        LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
         AI_PLAYERS.with(|a| *a.borrow_mut() = [false, false]);
+        LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
         AI_PAUSED.with(|p| *p.borrow_mut() = false);
         set_lobby_displays();
         set_lobby_mode(true);
@@ -741,34 +739,49 @@ async fn run_game_loop() {
             ));
             print_log("");
 
-            // Wait for both players to press a button (or one to long-press for AI opponent).
-            // Pressing while already ready unreadies the player and cancels any AI config.
-            loop {
-                let ev = AnyButtonFuture.await;
-                let player = match &ev {
-                    ButtonEvent::Move   { player, .. }
-                    | ButtonEvent::Switch { player, .. } => *player,
-                };
-                let already_ready = LOBBY_READY.with(|r| r.borrow()[(player - 1) as usize]);
-                if already_ready {
-                    LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = false);
-                    NEXT_GAME_AI.with(|n| *n.borrow_mut() = None);
-                    draw_lobby_screen(player, false, false);
-                } else {
-                    LOBBY_READY.with(|r| r.borrow_mut()[(player - 1) as usize] = true);
-                    let is_ai = NEXT_GAME_AI.with(|n| {
-                        n.borrow().map(|a| a[(player - 1) as usize]).unwrap_or(false)
-                    });
-                    draw_lobby_screen(player, true, is_ai);
-                }
-                if LOBBY_READY.with(|r| { let rr = r.borrow(); rr[0] && rr[1] }) { break; }
+        }
+
+        // ── Ready sequence: press → controls picker → READY, per player,
+        //    with a 1s both-ready grace. Shared state machine with the fw. ────
+        let (seq_ai, seq_modes) = {
+            let mut fx: Vec<CollectEffect> = Vec::new();
+            let mut seq = ReadySequence::new(&mut fx);
+            // AI intent from the demo / VS-AI buttons (or a pending preset).
+            if let Some(ai) = NEXT_GAME_AI.with(|n| n.borrow_mut().take()) {
+                seq.ai_preset(ai, &mut fx);
             }
-        }
+            apply_effects(&mut fx);
+            loop {
+                match select(AnyButtonFuture, sleep_ms_raw(COLLECT_TICK_MS as u32)).await {
+                    Either::First(ButtonEvent::Move { player, slot }) => {
+                        seq.pad_event(PadEvent::TapMove { player, slot }, &mut fx)
+                    }
+                    Either::First(ButtonEvent::Switch { player, idx }) => {
+                        seq.pad_event(PadEvent::TapSwitch { player, idx }, &mut fx)
+                    }
+                    Either::First(ButtonEvent::LongPress { player }) => {
+                        seq.request_ai_opponent(player, &mut fx)
+                    }
+                    Either::First(ButtonEvent::AiPreset) => {
+                        if let Some(ai) = NEXT_GAME_AI.with(|n| n.borrow_mut().take()) {
+                            seq.ai_preset(ai, &mut fx);
+                        }
+                    }
+                    Either::First(ButtonEvent::Line(line)) => seq.typed_line(line.trim(), &mut fx),
+                    Either::Second(()) => {}
+                }
+                let done = seq.tick(now_ms());
+                LOBBY_READY.with(|r| *r.borrow_mut() = seq.ready_flags());
+                apply_effects(&mut fx);
+                if done {
+                    break;
+                }
+            }
+            seq.take()
+        };
         set_lobby_mode(false);
-        // Apply any VS AI mode that was requested during the lobby.
-        if let Some(ai) = NEXT_GAME_AI.with(|n| n.borrow_mut().take()) {
-            AI_PLAYERS.with(|a| *a.borrow_mut() = ai);
-        }
+        AI_PLAYERS.with(|a| *a.borrow_mut() = seq_ai);
+        let modes = seq_modes;
         // Drain any button presses that accumulated during the lobby phase
         // so they don't get consumed as the first battle move.
         P1_QUEUE.with(|q| q.borrow_mut().clear());
@@ -776,30 +789,9 @@ async fn run_game_loop() {
         // (No detail-overlay reset needed: the shared controller redraws over
         // any leftover overlay on the first battle state command.)
 
-        // ── Controls selection — part of the ready sequence: both players
-        //    pick and confirm Normal/Concealed BEFORE the countdown. ─────────
-        let ai_now = AI_PLAYERS.with(|a| *a.borrow());
+        // Controls were chosen during the ready sequence; arm the web-side
+        // instant-hold conversion for concealed players.
         BATTLE_INPUT.with(|q| q.borrow_mut().clear());
-        clear_hold_latches();
-        CONTROL_MODES.with(|m| *m.borrow_mut() = [ControlMode::Normal; 2]);
-        let modes = {
-            let mut fx: Vec<CollectEffect> = Vec::new();
-            let mut cs = ControlsSelect::new(ai_now, &mut fx);
-            apply_effects(&mut fx);
-            loop {
-                match select(BattleInputFuture, sleep_ms_raw(COLLECT_TICK_MS as u32)).await {
-                    Either::First(BattleInput::Pad(ev)) => cs.pad_event(ev, &mut fx),
-                    Either::First(BattleInput::Line(line)) => cs.typed_line(line.trim(), &mut fx),
-                    Either::Second(()) => {}
-                }
-                let done = cs.tick(now_ms());
-                apply_effects(&mut fx);
-                if done {
-                    break;
-                }
-            }
-            cs.take_modes()
-        };
         clear_hold_latches();
         CONTROL_MODES.with(|m| *m.borrow_mut() = modes);
 

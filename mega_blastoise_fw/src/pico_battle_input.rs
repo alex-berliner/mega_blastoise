@@ -28,8 +28,8 @@ use embassy_futures::select::{select, Either};
 use embassy_rp::gpio::{Flex, Pull};
 use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
-    ActivePrompt, ChoiceCollector, CollectEffect, ControlMode, ControlsSelect, InputBus,
-    InputSource, PadEvent, PlayerChoice, SlotOptions, COLLECT_TICK_MS, HOLD_THRESHOLD_MS,
+    ActivePrompt, ChoiceCollector, CollectEffect, ControlMode, InputBus, InputSource, PadEvent,
+    PlayerChoice, SlotOptions, COLLECT_TICK_MS, HOLD_THRESHOLD_MS,
 };
 #[cfg(feature = "oled")]
 use crate::subsystems::oled::send as oled_send;
@@ -196,27 +196,6 @@ impl<'d> PicoBattleInput<'d> {
 
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
         self.matrix.wait_lobby_press().await
-    }
-
-    /// The battle-start controls picker, button-driven (no-USB builds).
-    pub async fn run_controls_select(&mut self, ai: [bool; 2]) -> [ControlMode; 2] {
-        let mut fx: alloc::vec::Vec<CollectEffect> = alloc::vec::Vec::new();
-        let mut cs = ControlsSelect::new(ai, &mut fx);
-        apply_oled_effects(&mut fx);
-        let mut scan = PadScan::default();
-        loop {
-            match select(self.next_pad_event(&mut scan), Timer::after_millis(COLLECT_TICK_MS)).await
-            {
-                Either::First(ev) => cs.pad_event(ev, &mut fx),
-                Either::Second(()) => {}
-            }
-            let done = cs.tick(Instant::now().as_millis());
-            apply_oled_effects(&mut fx);
-            if done {
-                break;
-            }
-        }
-        cs.take_modes()
     }
 
     /// Next classified button event from the matrix, for either player.

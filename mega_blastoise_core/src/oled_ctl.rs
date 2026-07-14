@@ -30,8 +30,8 @@ use crate::display::{
     render_action_select, render_concealed_moves, render_concealed_switch,
     render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
     render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2,
-    render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen,
-    PartySlotData,
+    render_sent_out, render_switch_screen, render_waiting_for_opponent, render_waiting_screen,
+    render_win_screen, PartySlotData, SpeedCmp,
 };
 
 // ── Commands ──────────────────────────────────────────────────────────────────
@@ -87,6 +87,9 @@ pub enum OledCmd {
     ShowConcealedMoves { player: u8, map: [i8; 4] },
     /// Concealed bench menu: corner → team index (-1 = dead corner).
     ShowConcealedSwitch { player: u8, map: [i8; 4] },
+    /// Switch-in flash showing the incoming mon's sprite under the
+    /// "sent out" caption. `player` 0 = both displays.
+    ShowSentOut { player: u8, name: [u8; 12], len: u8, text: [u8; 48], tlen: u8 },
 }
 
 impl OledCmd {
@@ -110,7 +113,8 @@ impl OledCmd {
             | OledCmd::ShowControlsSelect { player, .. }
             | OledCmd::ShowActionSelect { player, .. }
             | OledCmd::ShowConcealedMoves { player, .. }
-            | OledCmd::ShowConcealedSwitch { player, .. } => *player,
+            | OledCmd::ShowConcealedSwitch { player, .. }
+            | OledCmd::ShowSentOut { player, .. } => *player,
             OledCmd::Win { .. } => 0,
         }
     }
@@ -165,10 +169,11 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
         BoardEvent::SwitchIn { name, player_id, moves, speed, .. } => {
             if let Some(pid) = player_id {
                 let player = player_id_to_num(pid);
-                // Update the battle-screen data first, then flash
-                // "<trainer> sent out X!" on BOTH displays (shared context,
-                // like combat narration) — the next prompt's RestoreScreen
-                // reveals the updated battle screen.
+                // Update the battle-screen data first, then show the
+                // "<trainer> sent out X!" screen WITH the incoming mon's
+                // sprite on BOTH displays (shared context, like combat
+                // narration) — the next prompt's RestoreScreen reveals the
+                // updated battle screen.
                 let (buf, len) = name_buf(name.as_str());
                 cmds.push(OledCmd::ActiveMon {
                     player,
@@ -180,7 +185,7 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
                     cmds.push(OledCmd::MovesUpdate { player, moves: moves.clone() });
                 }
                 let (text, tlen) = flash_buf(&event.description());
-                cmds.push(OledCmd::EventFlash { player: 0, text, len: tlen });
+                cmds.push(OledCmd::ShowSentOut { player: 0, name: buf, len, text, tlen });
             }
         }
         BoardEvent::MovesUpdate { player_id, moves } => {
@@ -262,21 +267,23 @@ fn bob_period_ms(speed: u16) -> u32 {
 
 pub enum Screen<'a> {
     Lobby { ready: bool, ai: bool },
-    Battle { mon: &'a str, moves: &'a [MoveSlot], bob: bool },
+    Battle { mon: &'a str, moves: &'a [MoveSlot], bob: bool, spd: SpeedCmp },
     MoveDetail(&'a MoveSlot),
     Stats { slot: &'a PartySlotData, page: u8 },
     EventText(&'a str),
     Win(&'a str),
-    Waiting { mon: &'a str, bob: bool },
+    Waiting { mon: &'a str, bob: bool, spd: SpeedCmp },
     WaitingForOpponent,
     Switch(&'a [PartySlotData]),
     Invalid,
     ControlsSelect { highlighted: u8, confirmed: bool },
-    ActionSelect { mon: &'a str, bob: bool, attack_pos: u8, switch_pos: u8 },
+    ActionSelect { mon: &'a str, bob: bool, attack_pos: u8, switch_pos: u8, spd: SpeedCmp },
     /// Corner labels for the concealed move menu (None = dead corner).
     ConcealedMoves { corners: [Option<&'a MoveSlot>; 4] },
     /// Corner labels for the concealed bench menu (None = dead corner).
     ConcealedSwitch { corners: [Option<&'a PartySlotData>; 4] },
+    /// Switch-in: caption + the incoming mon's sprite.
+    SentOut { mon: &'a str, caption: &'a str },
 }
 
 /// Render a [`Screen`] onto any 128×64 target. The single dispatch point
@@ -287,16 +294,16 @@ where
 {
     match screen {
         Screen::Lobby { ready, ai } => render_lobby_screen(display, *ready, *ai),
-        Screen::Battle { mon, moves, bob } => {
-            render_player_screen(display, mon, moves, if *bob { -2 } else { 0 })
+        Screen::Battle { mon, moves, bob, spd } => {
+            render_player_screen(display, mon, moves, if *bob { -2 } else { 0 }, *spd)
         }
         Screen::MoveDetail(mv) => render_move_detail(display, mv),
         Screen::Stats { slot, page: 0 } => render_pokemon_stats(display, slot),
         Screen::Stats { slot, .. } => render_pokemon_stats_page2(display, slot),
         Screen::EventText(text) => render_event_text(display, text),
         Screen::Win(msg) => render_win_screen(display, msg),
-        Screen::Waiting { mon, bob } => {
-            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to unready")
+        Screen::Waiting { mon, bob, spd } => {
+            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to unready", *spd)
         }
         Screen::WaitingForOpponent => render_waiting_for_opponent(display),
         Screen::Switch(party) => render_switch_screen(display, party),
@@ -304,15 +311,17 @@ where
         Screen::ControlsSelect { highlighted, confirmed } => {
             render_controls_select(display, *highlighted, *confirmed)
         }
-        Screen::ActionSelect { mon, bob, attack_pos, switch_pos } => render_action_select(
+        Screen::ActionSelect { mon, bob, attack_pos, switch_pos, spd } => render_action_select(
             display,
             mon,
             if *bob { -2 } else { 0 },
             *attack_pos,
             *switch_pos,
+            *spd,
         ),
         Screen::ConcealedMoves { corners } => render_concealed_moves(display, corners),
         Screen::ConcealedSwitch { corners } => render_concealed_switch(display, corners),
+        Screen::SentOut { mon, caption } => render_sent_out(display, mon, caption),
     }
 }
 
@@ -333,6 +342,9 @@ enum View {
     ActionSelect { attack_pos: u8, switch_pos: u8 },
     ConcealedMoves { map: [i8; 4] },
     ConcealedSwitch { map: [i8; 4] },
+    /// Switch-in flash: `sent_name`/`sent_len` hold the incoming mon's name;
+    /// the caption reuses the flash buffer.
+    SentOut { name: [u8; 12], len: u8 },
 }
 
 struct Player {
@@ -529,8 +541,13 @@ impl OledController {
                 }
             }
             OledCmd::PartyUpdate { slots, .. } => {
-                self.player_mut(player).party = slots;
-                OledRedraw::None
+                let p = self.player_mut(player);
+                if let Some(active) = slots.iter().find(|s| s.active && s.hp > 0) {
+                    p.speed = active.spe;
+                }
+                p.party = slots;
+                // Speed feeds the badge on sprite screens.
+                OledRedraw::for_player(player)
             }
             OledCmd::RestoreScreen { .. } => {
                 self.player_mut(player).view = View::Battle;
@@ -586,22 +603,53 @@ impl OledController {
                 self.player_mut(player).view = View::ConcealedSwitch { map };
                 OledRedraw::for_player(player)
             }
+            OledCmd::ShowSentOut { player, name, len, text, tlen } => {
+                let both = player == 0;
+                for p in [1u8, 2] {
+                    if both || player == p {
+                        let pl = self.player_mut(p);
+                        pl.flash = text;
+                        pl.flash_len = tlen;
+                        pl.view = View::SentOut { name, len };
+                    }
+                }
+                if both { OledRedraw::Both } else { OledRedraw::for_player(player) }
+            }
+        }
+    }
+
+    /// Speed badge for `player`: their active mon's Speed vs the opponent's.
+    fn speed_cmp(&self, player: u8) -> SpeedCmp {
+        let (own, foe) = if player == 1 {
+            (self.p1.speed, self.p2.speed)
+        } else {
+            (self.p2.speed, self.p1.speed)
+        };
+        if own > foe {
+            SpeedCmp::Faster
+        } else if own < foe {
+            SpeedCmp::Slower
+        } else {
+            SpeedCmp::Even
         }
     }
 
     /// What `player`'s display should show right now.
     pub fn screen(&self, player: u8) -> Screen<'_> {
         let p = if player == 1 { &self.p1 } else { &self.p2 };
+        let spd = self.speed_cmp(player);
         match &p.view {
             View::Lobby { ready, ai } => Screen::Lobby { ready: *ready, ai: *ai },
-            View::Battle => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up },
+            View::Battle => {
+                Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up, spd }
+            }
             View::MoveDetail(slot) => match p.moves.get(*slot as usize) {
                 Some(mv) => Screen::MoveDetail(mv),
-                None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up },
+                None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up, spd },
             },
             View::Stats { team_idx, page } => match p.party.get(*team_idx as usize) {
                 Some(slot) => Screen::Stats { slot, page: *page },
-                None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up },
+                None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up, spd },
             },
             View::EventFlash => Screen::EventText(
                 core::str::from_utf8(&p.flash[..p.flash_len as usize]).unwrap_or(""),
@@ -610,7 +658,7 @@ impl OledController {
                 let (msg1, msg2) = BoardEvent::win_messages(self.winner);
                 Screen::Win(if player == 1 { msg1 } else { msg2 })
             }
-            View::Waiting => Screen::Waiting { mon: p.battle_mon(), bob: p.bob_up },
+            View::Waiting => Screen::Waiting { mon: p.battle_mon(), bob: p.bob_up, spd },
             View::WaitingForOpponent => Screen::WaitingForOpponent,
             View::Switch => Screen::Switch(&p.party),
             View::Invalid => Screen::Invalid,
@@ -623,6 +671,7 @@ impl OledController {
                 bob: p.bob_up,
                 attack_pos: *attack_pos,
                 switch_pos: *switch_pos,
+                spd,
             },
             View::ConcealedMoves { map } => {
                 let mut corners: [Option<&MoveSlot>; 4] = [None; 4];
@@ -642,6 +691,10 @@ impl OledController {
                 }
                 Screen::ConcealedSwitch { corners }
             }
+            View::SentOut { name, len } => Screen::SentOut {
+                mon: core::str::from_utf8(&name[..*len as usize]).unwrap_or("?").trim_end(),
+                caption: core::str::from_utf8(&p.flash[..p.flash_len as usize]).unwrap_or(""),
+            },
         }
     }
 }

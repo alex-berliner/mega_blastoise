@@ -1083,90 +1083,177 @@ impl ChoiceCollector {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Controls selection (battle start): Normal vs Concealed, per player
+// Ready sequence (lobby): press → choose controls → READY, per player
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// The battle-start controls picker. Driven exactly like [`ChoiceCollector`]:
-/// pad events + ticks in, [`Effect`]s out, complete after both players
-/// confirm and a 1-second mutual grace passes.
+/// One player's position in the ready sequence.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum SeqSlot {
+    /// Start screen ("PRESS TO READY").
+    Idle,
+    /// Controls picker is up.
+    Choosing,
+    /// Controls confirmed — READY (or AI) screen.
+    Ready,
+}
+
+/// The shared lobby ready sequence. Per player: the start screen, then any
+/// press opens the controls picker, then confirming (middle button) lands on
+/// the READY screen. Any press while ready reopens the picker. A long press
+/// from the start screen makes the OPPONENT an AI (which is instantly ready).
+/// Once both players are ready, a 1-second grace runs before completion.
 ///
-/// Bottom-row buttons: left/right swap the highlighted option, middle
-/// confirms. Any press while confirmed unconfirms. AI players auto-confirm
-/// Normal (mode is irrelevant to them) and can't be unconfirmed.
-pub struct ControlsSelect {
+/// Driven exactly like [`ChoiceCollector`]: pad events + typed lines + ticks
+/// in, [`Effect`]s out. Both platforms MUST use this — no lobby drift.
+pub struct ReadySequence {
+    st: [SeqSlot; 2],
     highlighted: [u8; 2], // 0 = Normal, 1 = Concealed
-    confirmed: [bool; 2],
     ai: [bool; 2],
     grace_start: Option<u64>,
     complete: bool,
 }
 
-impl ControlsSelect {
-    pub fn new(ai: [bool; 2], fx: &mut Vec<Effect>) -> Self {
+impl ReadySequence {
+    pub fn new(fx: &mut Vec<Effect>) -> Self {
         let s = Self {
+            st: [SeqSlot::Idle; 2],
             highlighted: [0; 2],
-            confirmed: ai,
-            ai,
+            ai: [false; 2],
             grace_start: None,
             complete: false,
         };
-        for i in 0..2usize {
-            if !s.ai[i] {
-                s.show(i, fx);
-                fx.push(Effect::Text(format!(
-                    "p{}: choose controls — left/right: swap, middle: confirm",
-                    i + 1
-                )));
-            }
-        }
+        s.show(0, fx);
+        s.show(1, fx);
         s
     }
 
     fn show(&self, i: usize, fx: &mut Vec<Effect>) {
-        fx.push(Effect::Oled(OledCmd::ShowControlsSelect {
-            player: (i + 1) as u8,
-            highlighted: self.highlighted[i],
-            confirmed: self.confirmed[i],
-        }));
+        let player = (i + 1) as u8;
+        let cmd = match self.st[i] {
+            SeqSlot::Idle => OledCmd::LobbyState { player, ready: false, ai: false },
+            SeqSlot::Choosing => OledCmd::ShowControlsSelect {
+                player,
+                highlighted: self.highlighted[i],
+                confirmed: false,
+            },
+            SeqSlot::Ready => OledCmd::LobbyState { player, ready: true, ai: self.ai[i] },
+        };
+        fx.push(Effect::Oled(cmd));
     }
 
-    /// Feed a classified physical-button event.
-    pub fn pad_event(&mut self, ev: PadEvent, fx: &mut Vec<Effect>) {
-        // Holds act like presses here; releases are ignored.
-        let (player, bottom_idx) = match ev {
-            PadEvent::TapSwitch { player, idx } | PadEvent::HoldSwitch { player, idx } => {
-                (player, Some(idx))
+    /// Pre-mark players as AI (demo mode, VS-AI buttons): AI sides are
+    /// instantly ready; human sides are dropped into the picker.
+    pub fn ai_preset(&mut self, ai: [bool; 2], fx: &mut Vec<Effect>) {
+        for i in 0..2 {
+            if ai[i] {
+                self.ai[i] = true;
+                self.st[i] = SeqSlot::Ready;
+            } else if self.st[i] == SeqSlot::Idle {
+                self.st[i] = SeqSlot::Choosing;
             }
-            PadEvent::TapMove { player, .. } | PadEvent::HoldMove { player, .. } => (player, None),
+            self.show(i, fx);
+        }
+        self.grace_start = None;
+    }
+
+    /// Long-press: `player` requests an AI opponent — the opponent becomes
+    /// AI (ready), the presser proceeds to the controls picker.
+    pub fn request_ai_opponent(&mut self, player: u8, fx: &mut Vec<Effect>) {
+        if !(1..=2).contains(&player) {
+            return;
+        }
+        let me = (player - 1) as usize;
+        let other = 1 - me;
+        self.ai[other] = true;
+        self.st[other] = SeqSlot::Ready;
+        self.show(other, fx);
+        if self.st[me] == SeqSlot::Idle {
+            self.st[me] = SeqSlot::Choosing;
+            self.show(me, fx);
+        }
+        self.grace_start = None;
+    }
+
+    /// CLI convenience (`:ready pN`): ready with the current highlight
+    /// (Normal unless the picker grammar changed it) — skips the picker.
+    pub fn set_ready_cmd(&mut self, player: u8, fx: &mut Vec<Effect>) {
+        if !(1..=2).contains(&player) {
+            return;
+        }
+        let i = (player - 1) as usize;
+        self.st[i] = SeqSlot::Ready;
+        self.show(i, fx);
+    }
+
+    /// CLI unready: back to the start screen; AI assignments are dropped
+    /// (same as the old lobby's unready semantics).
+    pub fn set_unready_cmd(&mut self, player: u8, fx: &mut Vec<Effect>) {
+        if !(1..=2).contains(&player) {
+            return;
+        }
+        let i = (player - 1) as usize;
+        self.st[i] = SeqSlot::Idle;
+        self.ai = [false, false];
+        self.grace_start = None;
+        self.show(0, fx);
+        self.show(1, fx);
+    }
+
+    /// Feed a classified physical-button event. Holds on the start screen
+    /// request an AI opponent (the classic lobby long-press); everywhere
+    /// else holds act like presses. Releases are ignored.
+    pub fn pad_event(&mut self, ev: PadEvent, fx: &mut Vec<Effect>) {
+        let (player, bottom_idx, is_hold) = match ev {
+            PadEvent::TapSwitch { player, idx } => (player, Some(idx), false),
+            PadEvent::HoldSwitch { player, idx } => (player, Some(idx), true),
+            PadEvent::TapMove { player, .. } => (player, None, false),
+            PadEvent::HoldMove { player, .. } => (player, None, true),
             PadEvent::HoldEnd { .. } => return,
         };
         if !(1..=2).contains(&player) {
             return;
         }
         let i = (player - 1) as usize;
+
+        // A press on an AI-assigned side reclaims it for a human.
         if self.ai[i] {
-            return;
-        }
-        if self.confirmed[i] {
-            // Any button unconfirms and lets the player choose again.
-            self.confirmed[i] = false;
+            self.ai[i] = false;
+            self.st[i] = SeqSlot::Choosing;
             self.grace_start = None;
             self.show(i, fx);
             return;
         }
-        match bottom_idx {
-            Some(0) | Some(2) => {
-                // Left/right: swap between the two options.
-                self.highlighted[i] ^= 1;
+
+        match self.st[i] {
+            SeqSlot::Idle => {
+                if is_hold {
+                    self.request_ai_opponent(player, fx);
+                } else {
+                    self.st[i] = SeqSlot::Choosing;
+                    self.show(i, fx);
+                }
+            }
+            SeqSlot::Choosing => match bottom_idx {
+                Some(0) | Some(2) => {
+                    // Left/right: swap between the two options.
+                    self.highlighted[i] ^= 1;
+                    self.show(i, fx);
+                }
+                Some(1) => {
+                    // Middle: confirm → READY.
+                    self.st[i] = SeqSlot::Ready;
+                    self.show(i, fx);
+                    let mode = if self.highlighted[i] == 1 { "concealed" } else { "normal" };
+                    fx.push(Effect::Ok(format!("p{} ready ({mode} controls)", i + 1)));
+                }
+                _ => {} // corner buttons do nothing while choosing
+            },
+            SeqSlot::Ready => {
+                // Any press while ready: back to the picker.
+                self.st[i] = SeqSlot::Choosing;
+                self.grace_start = None;
                 self.show(i, fx);
             }
-            Some(1) => {
-                self.confirmed[i] = true;
-                self.show(i, fx);
-                let mode = if self.highlighted[i] == 1 { "concealed" } else { "normal" };
-                fx.push(Effect::Ok(format!("p{} confirmed {mode} controls", i + 1)));
-            }
-            _ => {} // corner buttons do nothing while choosing
         }
     }
 
@@ -1191,18 +1278,18 @@ impl ControlsSelect {
                 match rest {
                     "normal" => {
                         self.highlighted[i] = 0;
-                        self.confirmed[i] = false;
+                        self.st[i] = SeqSlot::Choosing;
                         self.grace_start = None;
                         self.show(i, fx);
                     }
                     "concealed" => {
                         self.highlighted[i] = 1;
-                        self.confirmed[i] = false;
+                        self.st[i] = SeqSlot::Choosing;
                         self.grace_start = None;
                         self.show(i, fx);
                     }
                     "ok" | "confirm" => {
-                        self.confirmed[i] = true;
+                        self.st[i] = SeqSlot::Ready;
                         self.show(i, fx);
                     }
                     _ => fx.push(Effect::Err(String::from(
@@ -1217,12 +1304,12 @@ impl ControlsSelect {
         )));
     }
 
-    /// Advance the both-confirmed grace window. True once selection is final.
+    /// Advance the both-ready grace window. True once the sequence is final.
     pub fn tick(&mut self, now_ms: u64) -> bool {
         if self.complete {
             return true;
         }
-        if !(self.confirmed[0] && self.confirmed[1]) {
+        if self.st != [SeqSlot::Ready; 2] {
             self.grace_start = None;
             return false;
         }
@@ -1243,8 +1330,18 @@ impl ControlsSelect {
         }
     }
 
-    pub fn take_modes(self) -> [ControlMode; 2] {
-        self.highlighted.map(|h| if h == 1 { ControlMode::Concealed } else { ControlMode::Normal })
+    /// Which players are currently on the READY screen (for platform LED /
+    /// status displays).
+    pub fn ready_flags(&self) -> [bool; 2] {
+        [self.st[0] == SeqSlot::Ready, self.st[1] == SeqSlot::Ready]
+    }
+
+    /// AI assignments + chosen control modes.
+    pub fn take(self) -> ([bool; 2], [ControlMode; 2]) {
+        let modes = self
+            .highlighted
+            .map(|h| if h == 1 { ControlMode::Concealed } else { ControlMode::Normal });
+        (self.ai, modes)
     }
 }
 
@@ -1626,63 +1723,69 @@ mod tests {
         assert!(fx.is_empty());
     }
 
-    // ── Controls selection ───────────────────────────────────────────────
+    // ── Ready sequence (press → choose controls → READY) ────────────────
 
     #[test]
-    fn controls_select_swap_confirm_grace() {
+    fn ready_sequence_press_choose_confirm_grace() {
         let mut fx = Vec::new();
-        let mut cs = ControlsSelect::new([false, false], &mut fx);
-        // Left/right swap the highlight.
-        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, &mut fx);
-        assert_eq!(cs.highlighted[0], 1);
-        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 0 }, &mut fx);
-        assert_eq!(cs.highlighted[0], 0);
-        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, &mut fx);
-        // Middle confirms.
-        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, &mut fx);
-        assert!(cs.confirmed[0]);
-        // Any button while confirmed unconfirms.
-        cs.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, &mut fx);
-        assert!(!cs.confirmed[0]);
-        assert_eq!(cs.highlighted[0], 1, "unconfirm keeps the highlight");
-        // Confirm both; the 1s grace gates completion.
-        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, &mut fx);
-        cs.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
-        assert!(!cs.tick(1000));
-        assert!(!cs.tick(1000 + UNREADY_GRACE_MS - 1));
-        // Unconfirm during grace resets it.
-        cs.pad_event(PadEvent::TapSwitch { player: 2, idx: 3 }, &mut fx);
-        assert!(!cs.confirmed[1], "wait — idx 3 is out of range");
-        // (idx 3 doesn't exist on a 3-button row; press middle-adjacent instead)
-        cs.pad_event(PadEvent::TapSwitch { player: 2, idx: 0 }, &mut fx);
-        assert!(!cs.confirmed[1]);
-        cs.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
-        assert!(!cs.tick(5000));
-        assert!(cs.tick(5000 + UNREADY_GRACE_MS));
-        let modes = cs.take_modes();
-        assert_eq!(modes[0], ControlMode::Concealed);
+        let mut seq = ReadySequence::new(&mut fx);
+        // Start screen: any press opens the picker.
+        seq.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, &mut fx);
+        assert_eq!(seq.st[0], SeqSlot::Choosing);
+        // Left/right swap the highlight; middle readies.
+        seq.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, &mut fx);
+        assert_eq!(seq.highlighted[0], 1);
+        seq.pad_event(PadEvent::TapSwitch { player: 1, idx: 0 }, &mut fx);
+        assert_eq!(seq.highlighted[0], 0);
+        seq.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, &mut fx);
+        seq.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, &mut fx);
+        assert_eq!(seq.st[0], SeqSlot::Ready);
+        // Any press while ready reopens the picker (highlight kept).
+        seq.pad_event(PadEvent::TapMove { player: 1, slot: 3 }, &mut fx);
+        assert_eq!(seq.st[0], SeqSlot::Choosing);
+        assert_eq!(seq.highlighted[0], 1);
+        seq.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, &mut fx);
+        // P2 goes through the same flow.
+        assert!(!seq.tick(100), "p2 not ready yet");
+        seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx);
+        seq.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
+        // Both ready: 1s grace, resettable by an unready.
+        assert!(!seq.tick(1000));
+        assert!(!seq.tick(1000 + UNREADY_GRACE_MS - 1));
+        seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx); // unready
+        assert!(!seq.tick(1000 + UNREADY_GRACE_MS + 50), "grace reset");
+        seq.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
+        assert!(!seq.tick(5000));
+        assert!(seq.tick(5000 + UNREADY_GRACE_MS));
+        let (ai, modes) = seq.take();
+        assert_eq!(ai, [false, false]);
+        assert_eq!(modes, [ControlMode::Concealed, ControlMode::Normal]);
     }
 
     #[test]
-    fn controls_select_ai_auto_confirms() {
+    fn ready_sequence_long_press_grants_ai_opponent() {
         let mut fx = Vec::new();
-        let mut cs = ControlsSelect::new([false, true], &mut fx);
-        assert!(cs.confirmed[1]);
-        // AI can't be unconfirmed by button noise.
-        cs.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx);
-        assert!(cs.confirmed[1]);
-        cs.typed_line("p1 concealed", &mut fx);
-        cs.typed_line("p1 ok", &mut fx);
-        assert!(!cs.tick(0));
-        assert!(cs.tick(UNREADY_GRACE_MS));
-        assert_eq!(cs.take_modes(), [ControlMode::Concealed, ControlMode::Normal]);
+        let mut seq = ReadySequence::new(&mut fx);
+        // Hold from the start screen: opponent becomes AI (ready), presser
+        // proceeds to the picker.
+        seq.pad_event(PadEvent::HoldMove { player: 1, slot: 0 }, &mut fx);
+        assert!(seq.ai[1]);
+        assert_eq!(seq.st[1], SeqSlot::Ready);
+        assert_eq!(seq.st[0], SeqSlot::Choosing);
+        // A press on the AI side reclaims it for a human.
+        seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx);
+        assert!(!seq.ai[1]);
+        assert_eq!(seq.st[1], SeqSlot::Choosing);
     }
 
     #[test]
-    fn controls_select_both_ai_completes_instantly() {
+    fn ready_sequence_ai_preset_completes_instantly() {
         let mut fx = Vec::new();
-        let mut cs = ControlsSelect::new([true, true], &mut fx);
-        assert!(cs.tick(0));
+        let mut seq = ReadySequence::new(&mut fx);
+        seq.ai_preset([true, true], &mut fx);
+        assert!(seq.tick(0), "AI vs AI needs no grace");
+        let (ai, _) = seq.take();
+        assert_eq!(ai, [true, true]);
     }
 
     // ── Concealed controls ───────────────────────────────────────────────

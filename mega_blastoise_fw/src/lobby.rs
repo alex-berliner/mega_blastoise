@@ -8,16 +8,17 @@
 extern crate alloc;
 
 use gen1_battle::{MonData, TeamData};
-use embassy_futures::select::{select, Either};
+use embassy_futures::select::{select, select3, Either, Either3};
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::{
-    battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams,
-    ActivePrompt, BoardEventQueue, ControlMode, FlashDataStore, InputBus, InputSource,
-    PlayerChoice, RandomAi, LOBBY_DEMO_DELAY_MS, TEAM_SEED_SALT,
+    battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, parse_lobby_cmd,
+    parse_team_spec, ActivePrompt, BoardEventQueue, CollectEffect, ControlMode, FlashDataStore,
+    InputBus, InputSource, LobbyCmd, PadEvent, PlayerChoice, RandomAi, ReadySequence,
+    COLLECT_TICK_MS, LOBBY_DEMO_DELAY_MS, TEAM_SEED_SALT,
 };
 
 use crate::battle_effects::BattleEffects;
-use crate::pico_battle_input::{LobbyPress, PicoBattleInput};
+use crate::pico_battle_input::{apply_oled_effects, LobbyPress, PadScan, PicoBattleInput};
 
 #[cfg(feature = "leds")]
 use crate::subsystems::led::{send as led_send, LedCmd};
@@ -56,13 +57,25 @@ pub struct LobbyResult {
     pub team_p2: Option<alloc::vec::Vec<MonData>>,
 }
 
+/// Why [`LobbyInput::drive_ready`] returned before the sequence completed.
+pub enum SeqOutcome {
+    /// Both players are ready (controls chosen); countdown can run.
+    Done,
+    /// `:demo` — restart the demo loop.
+    Demo,
+    /// `:s` / `:stop` — no-op during the ready sequence.
+    Stop,
+    /// `:team pN …` upload — stash and resume the sequence.
+    TeamUpload { player: u8, team: alloc::vec::Vec<MonData> },
+}
+
 pub trait LobbyInput {
     async fn wait_event(&mut self) -> LobbyEvent;
     async fn write_line(&mut self, s: &str);
-    async fn write_status(&mut self, p1_ready: bool, p2_ready: bool);
-    /// The Normal/Concealed controls picker — part of the ready sequence,
-    /// run once both players are ready and before the countdown.
-    async fn choose_controls(&mut self, ai: [bool; 2]) -> [ControlMode; 2];
+    /// Drive the shared [`ReadySequence`] (press → controls picker → READY)
+    /// with this platform's IO until it completes or a lobby command
+    /// interrupts it.
+    async fn drive_ready(&mut self, seq: &mut ReadySequence) -> SeqOutcome;
 }
 
 // ── USB + button implementation ───────────────────────────────────────────────
@@ -119,12 +132,83 @@ impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
         self.usb.write_lobby_line(s).await;
     }
 
-    async fn write_status(&mut self, p1_ready: bool, p2_ready: bool) {
-        self.usb.write_lobby_ready_status(p1_ready, p2_ready).await;
-    }
-
-    async fn choose_controls(&mut self, ai: [bool; 2]) -> [ControlMode; 2] {
-        self.usb.run_controls_select(Some(&mut *self.buttons), ai).await
+    async fn drive_ready(&mut self, seq: &mut ReadySequence) -> SeqOutcome {
+        let mut fx: alloc::vec::Vec<CollectEffect> = alloc::vec::Vec::new();
+        let mut scan = PadScan::default();
+        let mut last_ready = seq.ready_flags();
+        #[cfg(feature = "leds")]
+        led_send(LedCmd::LobbyWaiting { p1_ready: last_ready[0], p2_ready: last_ready[1] });
+        loop {
+            match select3(
+                self.usb.read_line(),
+                self.buttons.next_pad_event(&mut scan),
+                Timer::after_millis(COLLECT_TICK_MS),
+            )
+            .await
+            {
+                Either3::First(line) => {
+                    let line_t = line.trim();
+                    match parse_lobby_cmd(line_t) {
+                        LobbyCmd::ReadyP1 => seq.set_ready_cmd(1, &mut fx),
+                        LobbyCmd::ReadyP2 => seq.set_ready_cmd(2, &mut fx),
+                        LobbyCmd::ReadyBoth => {
+                            seq.set_ready_cmd(1, &mut fx);
+                            seq.set_ready_cmd(2, &mut fx);
+                        }
+                        LobbyCmd::UnreadyP1 => seq.set_unready_cmd(1, &mut fx),
+                        LobbyCmd::UnreadyP2 => seq.set_unready_cmd(2, &mut fx),
+                        LobbyCmd::UnreadyBoth => {
+                            seq.set_unready_cmd(1, &mut fx);
+                            seq.set_unready_cmd(2, &mut fx);
+                        }
+                        // "pN is AI" == the OTHER player requested an AI foe.
+                        LobbyCmd::P1Ai => seq.request_ai_opponent(2, &mut fx),
+                        LobbyCmd::P2Ai => seq.request_ai_opponent(1, &mut fx),
+                        LobbyCmd::VsAi => seq.ai_preset([true, true], &mut fx),
+                        LobbyCmd::Demo => return SeqOutcome::Demo,
+                        LobbyCmd::StopDemo => return SeqOutcome::Stop,
+                        LobbyCmd::UploadTeam => match parse_team_spec(line_t) {
+                            Some((player, team)) => {
+                                return SeqOutcome::TeamUpload { player, team }
+                            }
+                            None => {
+                                self.usb
+                                    .write_lobby_line(
+                                        "Bad :team syntax. Use: :team p1 species:move:move,species:...",
+                                    )
+                                    .await
+                            }
+                        },
+                        LobbyCmd::Unknown => seq.typed_line(line_t, &mut fx),
+                    }
+                }
+                Either3::Second(ev) => seq.pad_event(ev, &mut fx),
+                Either3::Third(()) => {}
+            }
+            let done = seq.tick(Instant::now().as_millis());
+            for e in fx.drain(..) {
+                match e {
+                    CollectEffect::Oled(_cmd) => {
+                        #[cfg(feature = "oled")]
+                        oled_send(_cmd);
+                    }
+                    CollectEffect::Ok(m) | CollectEffect::Err(m) | CollectEffect::Dbg(m) => {
+                        self.usb.write_lobby_line(&m).await
+                    }
+                    CollectEffect::Text(t) => self.usb.write_lobby_line(&t).await,
+                }
+            }
+            let ready = seq.ready_flags();
+            if ready != last_ready {
+                last_ready = ready;
+                self.usb.write_lobby_ready_status(ready[0], ready[1]).await;
+                #[cfg(feature = "leds")]
+                led_send(LedCmd::LobbyWaiting { p1_ready: ready[0], p2_ready: ready[1] });
+            }
+            if done {
+                return SeqOutcome::Done;
+            }
+        }
     }
 }
 
@@ -154,10 +238,33 @@ impl LobbyInput for ButtonOnlyLobbyInput<'_, '_> {
     }
 
     async fn write_line(&mut self, _s: &str) {}
-    async fn write_status(&mut self, _p1_ready: bool, _p2_ready: bool) {}
 
-    async fn choose_controls(&mut self, ai: [bool; 2]) -> [ControlMode; 2] {
-        self.buttons.run_controls_select(ai).await
+    async fn drive_ready(&mut self, seq: &mut ReadySequence) -> SeqOutcome {
+        let mut fx: alloc::vec::Vec<CollectEffect> = alloc::vec::Vec::new();
+        let mut scan = PadScan::default();
+        #[cfg(feature = "leds")]
+        let mut last_ready = seq.ready_flags();
+        loop {
+            match select(self.buttons.next_pad_event(&mut scan), Timer::after_millis(COLLECT_TICK_MS))
+                .await
+            {
+                Either::First(ev) => seq.pad_event(ev, &mut fx),
+                Either::Second(()) => {}
+            }
+            let done = seq.tick(Instant::now().as_millis());
+            apply_oled_effects(&mut fx);
+            #[cfg(feature = "leds")]
+            {
+                let ready = seq.ready_flags();
+                if ready != last_ready {
+                    last_ready = ready;
+                    led_send(LedCmd::LobbyWaiting { p1_ready: ready[0], p2_ready: ready[1] });
+                }
+            }
+            if done {
+                return SeqOutcome::Done;
+            }
+        }
     }
 }
 
@@ -252,18 +359,6 @@ async fn run_demo_battle(data: &FlashDataStore, queue: &mut BoardEventQueue, see
 
 // ── Ready state ───────────────────────────────────────────────────────────────
 
-#[derive(Default)]
-struct ReadyState {
-    p1: bool,
-    p2: bool,
-}
-
-impl ReadyState {
-    fn both(&self) -> bool {
-        self.p1 && self.p2
-    }
-}
-
 // ── Countdown ─────────────────────────────────────────────────────────────────
 
 async fn do_countdown(input: &mut impl LobbyInput) {
@@ -297,16 +392,12 @@ async fn run_lobby_inner(
     queue: &mut BoardEventQueue,
 ) -> LobbyResult {
     let mut demo_seed = embassy_time::Instant::now().as_ticks() ^ 0xfeed_f00d_dead_beef;
-    let mut p1_ai;
-    let mut p2_ai;
     // Uploaded test teams persist across the whole lobby session until the
     // real battle starts.
     let mut uploaded_p1: Option<alloc::vec::Vec<MonData>> = None;
     let mut uploaded_p2: Option<alloc::vec::Vec<MonData>> = None;
 
     'demo: loop {
-        p1_ai = false;
-        p2_ai = false;
         #[cfg(feature = "leds")]
         led_send(LedCmd::LobbyIdle);
         // Reset both screens to the idle lobby state on every lobby entry,
@@ -315,8 +406,6 @@ async fn run_lobby_inner(
         #[cfg(feature = "oled")]
         oled_lobby_update(false, false, false, false);
         input.write_line("Demo — press any button or :ready / :ready ai to start").await;
-
-        let mut ready = ReadyState::default();
 
         // Countdown to demo start; log at each 5-second step, bail early on input.
         // `Stop` (a deliberate `:s`) cancels the countdown: it breaks out as a
@@ -379,15 +468,22 @@ async fn run_lobby_inner(
         };
         demo_seed = demo_seed.wrapping_add(TEAM_SEED_SALT);
 
-        // Apply the interrupting event to initial ready state.
+        // ── Ready sequence: press → controls picker → READY, per player ──────
+        // The interrupting event seeds it; drive_ready runs it to completion.
+        let mut seq_fx: alloc::vec::Vec<CollectEffect> = alloc::vec::Vec::new();
+        let mut seq = ReadySequence::new(&mut seq_fx);
         match event {
-            LobbyEvent::P1          => { ready.p1 = true; }
-            LobbyEvent::P2          => { ready.p2 = true; }
-            LobbyEvent::BothReady   => { ready.p1 = true; ready.p2 = true; }
-            LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = false; }
-            LobbyEvent::P2Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = false; p2_ai = true; }
-            LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = true; }
-            LobbyEvent::Demo        => { continue 'demo; }
+            LobbyEvent::P1 => seq.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, &mut seq_fx),
+            LobbyEvent::P2 => seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut seq_fx),
+            LobbyEvent::BothReady => {
+                seq.set_ready_cmd(1, &mut seq_fx);
+                seq.set_ready_cmd(2, &mut seq_fx);
+            }
+            // "pN is AI" == the other player asked for an AI opponent.
+            LobbyEvent::P1Ai => seq.request_ai_opponent(2, &mut seq_fx),
+            LobbyEvent::P2Ai => seq.request_ai_opponent(1, &mut seq_fx),
+            LobbyEvent::VsAi => seq.ai_preset([true, true], &mut seq_fx),
+            LobbyEvent::Demo => { continue 'demo; }
             LobbyEvent::TeamUpload { player, team } => {
                 if player == 0 { uploaded_p1 = Some(team); }
                 else { uploaded_p2 = Some(team); }
@@ -396,54 +492,27 @@ async fn run_lobby_inner(
             LobbyEvent::UnreadyP1 | LobbyEvent::UnreadyP2 |
             LobbyEvent::UnreadyBoth | LobbyEvent::Stop => {}
         }
-        #[cfg(feature = "oled")]
-        oled_lobby_update(ready.p1, ready.p2, p1_ai, p2_ai);
+        apply_oled_effects(&mut seq_fx);
 
-        // ── Waiting phase ─────────────────────────────────────────────────────
         loop {
-            if ready.both() {
-                // Controls choice is part of the ready sequence: pick and
-                // confirm BEFORE the countdown runs.
-                let modes = input.choose_controls([p1_ai, p2_ai]).await;
-                do_countdown(input).await;
-                return LobbyResult {
-                    ai_players: [p1_ai, p2_ai],
-                    modes,
-                    team_p1: uploaded_p1,
-                    team_p2: uploaded_p2,
-                };
-            }
-
-            #[cfg(feature = "leds")]
-            led_send(LedCmd::LobbyWaiting { p1_ready: ready.p1, p2_ready: ready.p2 });
-            input.write_status(ready.p1, ready.p2).await;
-
-            match input.wait_event().await {
-                LobbyEvent::P1 => {
-                    ready.p1 = !ready.p1;
-                    if !ready.p1 { p1_ai = false; p2_ai = false; }
-                }
-                LobbyEvent::P2 => {
-                    ready.p2 = !ready.p2;
-                    if !ready.p2 { p1_ai = false; p2_ai = false; }
-                }
-                LobbyEvent::BothReady   => { ready.p1 = true; ready.p2 = true; }
-                LobbyEvent::UnreadyP1   => { ready.p1 = false; p1_ai = false; p2_ai = false; }
-                LobbyEvent::UnreadyP2   => { ready.p2 = false; p1_ai = false; p2_ai = false; }
-                LobbyEvent::UnreadyBoth => { ready.p1 = false; ready.p2 = false; p1_ai = false; p2_ai = false; }
-                LobbyEvent::P1Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = false; }
-                LobbyEvent::P2Ai        => { ready.p1 = true; ready.p2 = true; p1_ai = false; p2_ai = true; }
-                LobbyEvent::VsAi        => { ready.p1 = true; ready.p2 = true; p1_ai = true; p2_ai = true; }
-                LobbyEvent::Demo        => { continue 'demo; }
-                LobbyEvent::TeamUpload { player, team } => {
+            match input.drive_ready(&mut seq).await {
+                SeqOutcome::Done => break,
+                SeqOutcome::Demo => continue 'demo,
+                SeqOutcome::Stop => {}
+                SeqOutcome::TeamUpload { player, team } => {
                     if player == 0 { uploaded_p1 = Some(team); }
                     else { uploaded_p2 = Some(team); }
                 }
-                LobbyEvent::Stop        => {}
             }
-            #[cfg(feature = "oled")]
-            oled_lobby_update(ready.p1, ready.p2, p1_ai, p2_ai);
         }
+        let (ai_players, modes) = seq.take();
+        do_countdown(input).await;
+        return LobbyResult {
+            ai_players,
+            modes,
+            team_p1: uploaded_p1,
+            team_p2: uploaded_p2,
+        };
     }
 }
 

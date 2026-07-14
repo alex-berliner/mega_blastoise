@@ -222,7 +222,10 @@ impl<'a> Battle<'a> {
             stats.insert(Stat::Def, m.stats[2]);
             stats.insert(Stat::SpAtk, m.stats[3]);
             stats.insert(Stat::SpDef, m.stats[3]);
-            stats.insert(Stat::Spe, m.stats[4]);
+            // Speed is reported as the Gen 1 MODIFIED stat (stages + the
+            // sticky paralysis drop): it's what actually decides turn order,
+            // and it feeds the display's speed-comparison badge.
+            stats.insert(Stat::Spe, m.modified[4]);
             let mut types = Vec::new();
             types.push(m.primary_type);
             if !matches!(m.secondary_type, Type::None) {

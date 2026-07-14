@@ -12,8 +12,8 @@ use embassy_time::Instant;
 use embassy_usb::class::cdc_acm::{Receiver, Sender};
 use mega_blastoise_core::{
     format_lobby_status, parse_lobby_cmd, parse_team_spec, ActivePrompt, ChoiceCollector,
-    CollectEffect, ControlMode, ControlsSelect, InputBus, InputSource, PlayerChoice, RandomAi,
-    SlotOptions, BATTLE_HELP, COLLECT_TICK_MS, LOBBY_HELP, TEAM_SEED_SALT,
+    CollectEffect, ControlMode, InputBus, InputSource, PlayerChoice, RandomAi, SlotOptions,
+    BATTLE_HELP, COLLECT_TICK_MS, LOBBY_HELP, TEAM_SEED_SALT,
 };
 use gen1_battle::MonData;
 use mega_blastoise_fw::usb_cdc_line::{log_usb_rx_line_str_to_rtt, write_crlf};
@@ -58,53 +58,6 @@ impl<'d> UsbBattleInput<'d> {
     /// Configure the control schemes chosen at battle start.
     pub fn set_modes(&mut self, modes: [ControlMode; 2]) {
         self.modes = modes;
-    }
-
-    /// The battle-start controls picker: buttons + the same typed grammar as
-    /// battle input (`p1 concealed`, `p1 ok`, `:press pN <btn>` sims).
-    pub async fn run_controls_select(
-        &mut self,
-        mut buttons: Option<&mut PicoBattleInput<'_>>,
-        ai: [bool; 2],
-    ) -> [ControlMode; 2] {
-        let mut fx: Vec<CollectEffect> = Vec::new();
-        let mut cs = ControlsSelect::new(ai, &mut fx);
-        self.apply_effects(&mut fx).await;
-        let mut scan = PadScan::default();
-        loop {
-            match buttons.as_mut() {
-                Some(btns) => {
-                    match select3(
-                        self.read_line(),
-                        btns.next_pad_event(&mut scan),
-                        embassy_time::Timer::after_millis(COLLECT_TICK_MS),
-                    )
-                    .await
-                    {
-                        Either3::First(line) => cs.typed_line(line.trim(), &mut fx),
-                        Either3::Second(ev) => cs.pad_event(ev, &mut fx),
-                        Either3::Third(()) => {}
-                    }
-                }
-                None => {
-                    match select(
-                        self.read_line(),
-                        embassy_time::Timer::after_millis(COLLECT_TICK_MS),
-                    )
-                    .await
-                    {
-                        Either::First(line) => cs.typed_line(line.trim(), &mut fx),
-                        Either::Second(()) => {}
-                    }
-                }
-            }
-            let done = cs.tick(Instant::now().as_millis());
-            self.apply_effects(&mut fx).await;
-            if done {
-                break;
-            }
-        }
-        cs.take_modes()
     }
 
     /// Take the most recently uploaded `:team` payload, if any.
@@ -333,7 +286,7 @@ impl<'d> UsbBattleInput<'d> {
     }
 
     /// Read a line from USB with backspace, CRLF, and RTT mirror.
-    async fn read_line(&mut self) -> String {
+    pub(crate) async fn read_line(&mut self) -> String {
         self.receiver.wait_connection().await;
         let mut buf = [0u8; 64];
         let mut skip_next_lf = false;

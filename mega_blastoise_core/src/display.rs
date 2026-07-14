@@ -27,6 +27,8 @@ use crate::board_event::MoveSlot;
 #[derive(Clone)]
 pub struct PartySlotData {
     pub name: alloc::string::String,
+    /// This mon is currently active on the field.
+    pub active: bool,
     pub level: u8,
     pub hp: u16,
     pub max_hp: u16,
@@ -54,6 +56,7 @@ pub fn party_slot_from_mon(mon: &gen1_battle::MonBattleData) -> PartySlotData {
     let get = |s: Stat| mon.stats.get(&s).copied().unwrap_or(0u16);
     PartySlotData {
         name: mon.summary.name.clone(),
+        active: mon.active,
         level: mon.summary.level,
         hp: mon.hp,
         max_hp: mon.max_hp,
@@ -101,18 +104,68 @@ fn center_style() -> TextStyle {
     TextStyleBuilder::new().alignment(Alignment::Center).baseline(Baseline::Top).build()
 }
 
+// ── Speed comparison badge ────────────────────────────────────────────────────
+
+/// How this player's active mon's Speed compares to the opponent's.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SpeedCmp {
+    Faster,
+    Even,
+    Slower,
+}
+
+/// Small boxed indicator on the right side of the active mon: a lightning
+/// bolt when faster, an equals sign when tied, an X when slower.
+fn draw_speed_badge<D>(display: &mut D, cmp: SpeedCmp)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
+    let (bx, by, bw, bh) = (113i32, 24i32, 14u32, 16u32);
+    Rectangle::new(Point::new(bx, by), Size::new(bw, bh))
+        .into_styled(stroke)
+        .draw(display)
+        .ok();
+    let seg = |d: &mut D, x0: i32, y0: i32, x1: i32, y1: i32| {
+        embedded_graphics::primitives::Line::new(
+            Point::new(bx + x0, by + y0),
+            Point::new(bx + x1, by + y1),
+        )
+        .into_styled(stroke)
+        .draw(d)
+        .ok();
+    };
+    match cmp {
+        SpeedCmp::Faster => {
+            // Lightning bolt.
+            seg(display, 8, 3, 5, 8);
+            seg(display, 5, 8, 8, 8);
+            seg(display, 8, 8, 5, 13);
+        }
+        SpeedCmp::Even => {
+            seg(display, 4, 6, 9, 6);
+            seg(display, 4, 10, 9, 10);
+        }
+        SpeedCmp::Slower => {
+            seg(display, 4, 4, 9, 12);
+            seg(display, 9, 4, 4, 12);
+        }
+    }
+}
+
 // ── Shared sprite drawing ─────────────────────────────────────────────────────
 
 /// The mon's 48×48 sprite (or a fallback name box for "FAINTED"/"---"),
-/// centered horizontally with its top edge at `top`.
-fn draw_center_sprite<D>(display: &mut D, mon_name: &str, top: i32)
+/// centered horizontally with its top edge at `top + bob_off`. The bob
+/// offset applies to the SPRITE only — the fallback text box stays put.
+fn draw_center_sprite<D>(display: &mut D, mon_name: &str, top: i32, bob_off: i32)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
     if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
         let side = crate::sprites::SPRITE_SIDE;
         let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
-        Image::new(&raw, Point::new((128 - side as i32) / 2, top))
+        Image::new(&raw, Point::new((128 - side as i32) / 2, top + bob_off))
             .draw(display).ok();
     } else {
         let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
@@ -146,8 +199,13 @@ where
 /// ```
 /// The mon's sprite fills the band between the move rows; when the name has
 /// no sprite ("FAINTED", "---") it falls back to the name in a centered box.
-pub fn render_player_screen<D>(display: &mut D, mon_name: &str, moves: &[MoveSlot], sprite_y_off: i32)
-where
+pub fn render_player_screen<D>(
+    display: &mut D,
+    mon_name: &str,
+    moves: &[MoveSlot],
+    sprite_y_off: i32,
+    spd: SpeedCmp,
+) where
     D: DrawTarget<Color = BinaryColor>,
 {
     let move_char = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
@@ -158,7 +216,8 @@ where
     // ── Mon sprite (or fallback name box), centered between the move rows ────
     // Drawn FIRST: when the bob offset shifts the sprite into a move row, its
     // black background must not overwrite the text — moves go on top.
-    draw_center_sprite(display, mon_name, move_h + sprite_y_off);
+    draw_center_sprite(display, mon_name, move_h, sprite_y_off);
+    draw_speed_badge(display, spd);
 
     // ── Corner moves, on top of the sprite ────────────────────────────────────
     #[cfg(not(feature = "wrapmoves"))]
@@ -582,6 +641,7 @@ pub fn render_action_select<D>(
     sprite_y_off: i32,
     attack_pos: u8,
     switch_pos: u8,
+    spd: SpeedCmp,
 ) where
     D: DrawTarget<Color = BinaryColor>,
 {
@@ -590,7 +650,8 @@ pub fn render_action_select<D>(
     display.clear(BinaryColor::Off).ok();
 
     // Sprite first — the labels draw on top when the bob overlaps.
-    draw_center_sprite(display, mon_name, h + sprite_y_off);
+    draw_center_sprite(display, mon_name, h, sprite_y_off);
+    draw_speed_badge(display, spd);
 
     // Bottom row: left / center / right, matching the three bottom buttons.
     for (pos, x, style) in [(0u8, 0i32, tl_style()), (1, 64, center_style()), (2, 127, tr_style())]
@@ -683,20 +744,40 @@ where
 
 /// Draw the "submitted, waiting" overlay onto any 128×64 `DrawTarget`.
 ///
-/// Shown after a player commits their choice: the mon's bobbing sprite sits
-/// high, with `cancel_hint` ("tap to unready") on the bottom line — pass
-/// `""` to omit it.
-pub fn render_waiting_screen<D>(display: &mut D, mon_name: &str, sprite_y_off: i32, cancel_hint: &str)
+/// Shown after a player commits their choice: the mon's bobbing sprite in
+/// the same position as the choice screens, with `cancel_hint`
+/// ("tap to unready") on the bottom line — pass `""` to omit it.
+pub fn render_waiting_screen<D>(
+    display: &mut D,
+    mon_name: &str,
+    sprite_y_off: i32,
+    cancel_hint: &str,
+    spd: SpeedCmp,
+) where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    let h = FONT_5X8.character_size.height as i32;
+    display.clear(BinaryColor::Off).ok();
+    draw_center_sprite(display, mon_name, h, sprite_y_off);
+    draw_speed_badge(display, spd);
+    if !cancel_hint.is_empty() {
+        Text::with_text_style(cancel_hint, Point::new(64, 64 - h), sm, center_style())
+            .draw(display).ok();
+    }
+}
+
+/// Draw the switch-in "sent out" screen: caption up top, the incoming mon's
+/// sprite below it.
+pub fn render_sent_out<D>(display: &mut D, mon_name: &str, caption: &str)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
     let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
     display.clear(BinaryColor::Off).ok();
-    // Sprite up top (2 px of headroom for the bob), hint along the bottom.
-    draw_center_sprite(display, mon_name, 2 + sprite_y_off);
-    if !cancel_hint.is_empty() {
-        Text::with_text_style(cancel_hint, Point::new(64, 55), sm, center_style()).draw(display).ok();
-    }
+    Text::with_text_style(prefix_bytes(caption, 25), Point::new(64, 0), sm, center_style())
+        .draw(display).ok();
+    draw_center_sprite(display, mon_name, 12, 0);
 }
 
 /// Draw the "waiting for other player" overlay onto any 128×64 `DrawTarget`.
@@ -878,6 +959,7 @@ mod utf8_render_tests {
     fn slot(name: &str) -> PartySlotData {
         PartySlotData {
             name: String::from(name),
+            active: false,
             level: 78,
             hp: 100,
             max_hp: 200,
