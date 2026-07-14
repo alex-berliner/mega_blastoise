@@ -140,10 +140,10 @@ async fn main(spawner: Spawner) {
         // Lobby: demo AI battle plays until a player presses ready, then the
         // controls picker (part of the ready sequence) and the countdown.
         #[cfg(feature = "usb")]
-        let LobbyResult { ai_players, modes, team_p1: up_p1, team_p2: up_p2 } =
+        let LobbyResult { ai_players, modes, six_v_six, team_p1: up_p1, team_p2: up_p2 } =
             run_lobby(&mut buttons, &mut usb_input, &data, &mut queue).await;
         #[cfg(not(feature = "usb"))]
-        let LobbyResult { ai_players, modes, team_p1: up_p1, team_p2: up_p2 } =
+        let LobbyResult { ai_players, modes, six_v_six, team_p1: up_p1, team_p2: up_p2 } =
             run_lobby(&mut buttons, &data, &mut queue).await;
 
         queue.drain_pending(); // discard any demo events still queued
@@ -177,7 +177,8 @@ async fn main(spawner: Spawner) {
         heap_snapshot("after_battle_new");
 
         // Use uploaded test teams when provided, else draw random ones.
-        let (rand_p1, rand_p2) = draw_two_randbat_teams(seed, 3);
+        let (rand_p1, rand_p2) =
+            draw_two_randbat_teams(seed, if six_v_six { 6 } else { 3 });
         let team_p1 = up_p1.unwrap_or(rand_p1);
         let team_p2 = up_p2.unwrap_or(rand_p2);
         #[cfg(feature = "leds")]

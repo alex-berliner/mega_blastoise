@@ -51,6 +51,8 @@ pub struct LobbyResult {
     pub ai_players: [bool; 2],
     /// Control scheme each player picked during the ready sequence.
     pub modes: [ControlMode; 2],
+    /// HIDDEN: 6v6 teams (4-corner chord during the ready sequence).
+    pub six_v_six: bool,
     /// Uploaded team for p1, if `:team p1 …` was issued (else random).
     pub team_p1: Option<alloc::vec::Vec<MonData>>,
     /// Uploaded team for p2, if `:team p2 …` was issued (else random).
@@ -185,7 +187,7 @@ impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
                 Either3::Second(ev) => seq.pad_event(ev, &mut fx),
                 Either3::Third(()) => {}
             }
-            let done = seq.tick(Instant::now().as_millis());
+            let done = seq.tick(Instant::now().as_millis(), &mut fx);
             for e in fx.drain(..) {
                 match e {
                     CollectEffect::Oled(_cmd) => {
@@ -251,7 +253,7 @@ impl LobbyInput for ButtonOnlyLobbyInput<'_, '_> {
                 Either::First(ev) => seq.pad_event(ev, &mut fx),
                 Either::Second(()) => {}
             }
-            let done = seq.tick(Instant::now().as_millis());
+            let done = seq.tick(Instant::now().as_millis(), &mut fx);
             apply_oled_effects(&mut fx);
             #[cfg(feature = "leds")]
             {
@@ -505,11 +507,13 @@ async fn run_lobby_inner(
                 }
             }
         }
+        let six_v_six = seq.six_v_six();
         let (ai_players, modes) = seq.take();
         do_countdown(input).await;
         return LobbyResult {
             ai_players,
             modes,
+            six_v_six,
             team_p1: uploaded_p1,
             team_p2: uploaded_p2,
         };

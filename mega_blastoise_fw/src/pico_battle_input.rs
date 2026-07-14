@@ -227,6 +227,21 @@ impl<'d> PicoBattleInput<'d> {
                     scan.pending_end[i] -= 1;
                     return PadEvent::HoldEnd { player };
                 }
+                // HIDDEN combo: all four corner buttons down at once. Fires
+                // once per press; the buttons go stale so their releases
+                // emit nothing.
+                let moves_mask = pressed.mask[i][0];
+                if moves_mask == 0x0F {
+                    if !scan.chord[i] {
+                        scan.chord[i] = true;
+                        scan.st[i] = PadState::Idle;
+                        scan.stale[i][0] |= 0x0F;
+                        scan.orphan[i] = false;
+                        return PadEvent::Chord4 { player };
+                    }
+                } else if moves_mask == 0 {
+                    scan.chord[i] = false;
+                }
                 let is_stale = |b: PadBtn| {
                     scan.stale[(b.player - 1) as usize][b.switch as usize] & (1 << b.idx) != 0
                 };
@@ -359,6 +374,9 @@ pub struct PadScan {
     /// An outer hold released underneath a still-held inner button; its
     /// HoldEnd is owed once the inner resolves.
     orphan: [bool; 2],
+    /// All four corner buttons are down (hidden 6v6 chord) — latched until
+    /// they are all released so it fires once.
+    chord: [bool; 2],
     /// Deferred HoldEnds ready to deliver.
     pending_end: [u8; 2],
 }

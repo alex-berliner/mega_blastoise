@@ -89,6 +89,9 @@ pub enum PadEvent {
     HoldSwitch { player: u8, idx: u8 },
     /// The held button was released.
     HoldEnd { player: u8 },
+    /// HIDDEN: all four corner (move) buttons pressed simultaneously.
+    /// During the lobby ready sequence this toggles 6v6 teams.
+    Chord4 { player: u8 },
 }
 
 /// What the collector wants the platform to do. Platforms map these onto
@@ -705,6 +708,7 @@ impl ChoiceCollector {
             PadEvent::HoldMove { player, slot } => (player, Pad::Hold(HoldView::Move(slot))),
             PadEvent::HoldSwitch { player, idx } => (player, Pad::Hold(HoldView::Stats(idx))),
             PadEvent::HoldEnd { player } => (player, Pad::HoldEnd),
+            PadEvent::Chord4 { .. } => return, // lobby-only combo
         };
         let Some(i) = self.slot_index(player) else {
             return; // no prompt for this player this batch
@@ -1111,6 +1115,11 @@ pub struct ReadySequence {
     ai: [bool; 2],
     grace_start: Option<u64>,
     complete: bool,
+    /// HIDDEN: 6v6 teams for the upcoming battle (4-corner chord toggle).
+    six_v_six: bool,
+    /// A mode flash is showing; tick restores the state screens at this time.
+    flash_restore_at: Option<u64>,
+    flash_pending: bool,
 }
 
 impl ReadySequence {
@@ -1121,6 +1130,9 @@ impl ReadySequence {
             ai: [false; 2],
             grace_start: None,
             complete: false,
+            six_v_six: false,
+            flash_restore_at: None,
+            flash_pending: false,
         };
         s.show(0, fx);
         s.show(1, fx);
@@ -1209,6 +1221,18 @@ impl ReadySequence {
             PadEvent::TapMove { player, .. } => (player, None, false),
             PadEvent::HoldMove { player, .. } => (player, None, true),
             PadEvent::HoldEnd { .. } => return,
+            PadEvent::Chord4 { .. } => {
+                // Hidden combo: toggle 6v6 for the upcoming battle. Flash the
+                // mode on both screens; tick restores the state screens.
+                self.six_v_six = !self.six_v_six;
+                let label = if self.six_v_six { "6V6 MODE!" } else { "3V3 MODE" };
+                let (text, len) = crate::oled_ctl::flash_buf(label);
+                fx.push(Effect::Oled(OledCmd::EventFlash { player: 0, text, len }));
+                fx.push(Effect::Ok(format!("hidden combo: {label}")));
+                self.flash_pending = true;
+                self.flash_restore_at = None;
+                return;
+            }
         };
         if !(1..=2).contains(&player) {
             return;
@@ -1304,8 +1328,22 @@ impl ReadySequence {
         )));
     }
 
-    /// Advance the both-ready grace window. True once the sequence is final.
-    pub fn tick(&mut self, now_ms: u64) -> bool {
+    /// Advance the both-ready grace window (and the mode-flash restore).
+    /// True once the sequence is final.
+    pub fn tick(&mut self, now_ms: u64, fx: &mut Vec<Effect>) -> bool {
+        // Restore the state screens after a mode-toggle flash.
+        if self.flash_pending {
+            match self.flash_restore_at {
+                None => self.flash_restore_at = Some(now_ms + 1200),
+                Some(at) if now_ms >= at => {
+                    self.flash_pending = false;
+                    self.flash_restore_at = None;
+                    self.show(0, fx);
+                    self.show(1, fx);
+                }
+                Some(_) => {}
+            }
+        }
         if self.complete {
             return true;
         }
@@ -1334,6 +1372,11 @@ impl ReadySequence {
     /// status displays).
     pub fn ready_flags(&self) -> [bool; 2] {
         [self.st[0] == SeqSlot::Ready, self.st[1] == SeqSlot::Ready]
+    }
+
+    /// HIDDEN: 6v6 teams armed via the 4-corner chord.
+    pub fn six_v_six(&self) -> bool {
+        self.six_v_six
     }
 
     /// AI assignments + chosen control modes.
@@ -1365,6 +1408,12 @@ pub fn parse_sim_pad_line(line: &str) -> Option<PadEvent> {
         return None;
     }
     let player = parse_player_ref(pref)?;
+    if bref == "all" {
+        return match kind {
+            SimKind::Tap => Some(PadEvent::Chord4 { player }),
+            SimKind::Hold => None,
+        };
+    }
     if let Some(n) = bref.strip_prefix(['s', 'S']) {
         let i: u8 = n.parse().ok()?;
         if !(1..=3).contains(&i) {
@@ -1746,17 +1795,17 @@ mod tests {
         assert_eq!(seq.highlighted[0], 1);
         seq.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, &mut fx);
         // P2 goes through the same flow.
-        assert!(!seq.tick(100), "p2 not ready yet");
+        assert!(!seq.tick(100, &mut fx), "p2 not ready yet");
         seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx);
         seq.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
         // Both ready: 1s grace, resettable by an unready.
-        assert!(!seq.tick(1000));
-        assert!(!seq.tick(1000 + UNREADY_GRACE_MS - 1));
+        assert!(!seq.tick(1000, &mut fx));
+        assert!(!seq.tick(1000 + UNREADY_GRACE_MS - 1, &mut fx));
         seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx); // unready
-        assert!(!seq.tick(1000 + UNREADY_GRACE_MS + 50), "grace reset");
+        assert!(!seq.tick(1000 + UNREADY_GRACE_MS + 50, &mut fx), "grace reset");
         seq.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
-        assert!(!seq.tick(5000));
-        assert!(seq.tick(5000 + UNREADY_GRACE_MS));
+        assert!(!seq.tick(5000, &mut fx));
+        assert!(seq.tick(5000 + UNREADY_GRACE_MS, &mut fx));
         let (ai, modes) = seq.take();
         assert_eq!(ai, [false, false]);
         assert_eq!(modes, [ControlMode::Concealed, ControlMode::Normal]);
@@ -1783,9 +1832,35 @@ mod tests {
         let mut fx = Vec::new();
         let mut seq = ReadySequence::new(&mut fx);
         seq.ai_preset([true, true], &mut fx);
-        assert!(seq.tick(0), "AI vs AI needs no grace");
+        assert!(seq.tick(0, &mut fx), "AI vs AI needs no grace");
         let (ai, _) = seq.take();
         assert_eq!(ai, [true, true]);
+    }
+
+    #[test]
+    fn ready_sequence_chord_toggles_6v6() {
+        let mut fx = Vec::new();
+        let mut seq = ReadySequence::new(&mut fx);
+        assert!(!seq.six_v_six());
+        // The hidden 4-corner chord arms 6v6 without disturbing state.
+        seq.pad_event(PadEvent::Chord4 { player: 1 }, &mut fx);
+        assert!(seq.six_v_six());
+        assert_eq!(seq.st[0], SeqSlot::Idle, "chord must not engage the picker");
+        // Works via the sim grammar too, from either player, and toggles.
+        seq.typed_line(":press p2 all", &mut fx);
+        assert!(!seq.six_v_six());
+        seq.typed_line(":press p2 all", &mut fx);
+        assert!(seq.six_v_six());
+        // The flash restores the state screens after ~1.2s.
+        fx.clear();
+        assert!(!seq.tick(0, &mut fx));
+        assert!(!seq.tick(1300, &mut fx));
+        assert!(fx.iter().any(|e| matches!(e, Effect::Oled(OledCmd::LobbyState { .. }))));
+        // Mid-battle chords are ignored by the choice collector.
+        let (mut c, _) = concealed_pair(3);
+        let mut cfx = Vec::new();
+        c.pad_event(PadEvent::Chord4 { player: 1 }, 0, &mut cfx);
+        assert!(cfx.is_empty());
     }
 
     // ── Concealed controls ───────────────────────────────────────────────

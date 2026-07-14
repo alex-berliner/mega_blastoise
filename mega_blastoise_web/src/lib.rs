@@ -743,7 +743,7 @@ async fn run_game_loop() {
 
         // ── Ready sequence: press → controls picker → READY, per player,
         //    with a 1s both-ready grace. Shared state machine with the fw. ────
-        let (seq_ai, seq_modes) = {
+        let (seq_ai, seq_modes, seq_six) = {
             let mut fx: Vec<CollectEffect> = Vec::new();
             let mut seq = ReadySequence::new(&mut fx);
             // AI intent from the demo / VS-AI buttons (or a pending preset).
@@ -770,14 +770,16 @@ async fn run_game_loop() {
                     Either::First(ButtonEvent::Line(line)) => seq.typed_line(line.trim(), &mut fx),
                     Either::Second(()) => {}
                 }
-                let done = seq.tick(now_ms());
+                let done = seq.tick(now_ms(), &mut fx);
                 LOBBY_READY.with(|r| *r.borrow_mut() = seq.ready_flags());
                 apply_effects(&mut fx);
                 if done {
                     break;
                 }
             }
-            seq.take()
+            let six = seq.six_v_six();
+            let (ai, modes) = seq.take();
+            (ai, modes, six)
         };
         set_lobby_mode(false);
         AI_PLAYERS.with(|a| *a.borrow_mut() = seq_ai);
@@ -819,7 +821,8 @@ async fn run_game_loop() {
             Err(e) => { print_log(&format!("Battle init error: {e}")); continue; }
         };
 
-        let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
+        let (team_red, team_blue) =
+            draw_two_randbat_teams(seed, if seq_six { 6 } else { 3 });
 
         let ok = battle.update_team("p1", TeamData { members: team_red,  ..Default::default() }).is_ok()
                && battle.update_team("p2", TeamData { members: team_blue, ..Default::default() }).is_ok()
