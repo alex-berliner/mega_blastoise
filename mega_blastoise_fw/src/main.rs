@@ -153,6 +153,17 @@ async fn main(spawner: Spawner) {
             usb_input.set_ai_players(ai_players, seed);
         }
 
+        // ── Controls selection: each human picks Normal or Concealed ─────────
+        #[cfg(feature = "usb")]
+        {
+            let modes = usb_input.run_controls_select(Some(&mut buttons), ai_players).await;
+            usb_input.set_modes(modes);
+        }
+        #[cfg(not(feature = "usb"))]
+        {
+            buttons.modes = buttons.run_controls_select(ai_players).await;
+        }
+
         let _ = ai_players; // used above under #[cfg(feature = "usb")]
 
         // Draw teams from timing jitter (fresh entropy each round).

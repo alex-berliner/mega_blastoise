@@ -54,11 +54,28 @@ function applyFlash(flashState) {
 
 // ── RAF render loop ───────────────────────────────────────────────────────────
 
+// Sticky web holds: mirror the wasm-side latch as a .held class so a
+// "still held down" button is visible (bit 0-3 = moves, 4-6 = party).
+function applyHeld() {
+    for (const p of [1, 2]) {
+        const mask = wasm.wasm_held_buttons(p);
+        for (let s = 0; s < 4; s++) {
+            const el = document.getElementById(`p${p}-m${s}`);
+            if (el) el.classList.toggle('held', !!(mask & (1 << s)));
+        }
+        for (let i = 0; i < 3; i++) {
+            const el = document.getElementById(`p${p}-s${i}`);
+            if (el) el.classList.toggle('held', !!(mask & (1 << (4 + i))));
+        }
+    }
+}
+
 function frame() {
     renderOled(ctx1, wasm.get_p1_pixels());
     renderOled(ctx2, wasm.get_p2_pixels());
     renderLeds(wasm.get_led_state());
     applyFlash(wasm.get_flash_state());
+    applyHeld();
     requestAnimationFrame(frame);
 }
 

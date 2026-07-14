@@ -423,3 +423,12 @@ body {
   .led.status { width: 10px; height: 10px; }
   .led-row    { gap: 3px; }
 }
+
+/* Sticky web hold: the button stays visually pressed until clicked again
+   or an option is committed (PCs can't hold + click simultaneously). */
+.move-btn.held,
+.switch-btn.held {
+  transform: scale(0.93);
+  filter: brightness(1.5);
+  outline: 2px solid var(--green, #7bd88f);
+}

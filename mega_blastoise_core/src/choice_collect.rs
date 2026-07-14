@@ -30,6 +30,7 @@ use crate::cli_parse::{parse_switch_line, parse_turn_line, TurnChoice};
 use crate::display::{party_slot_from_mon, PartySlotData};
 use crate::oled_ctl::OledCmd;
 use crate::prompt_fmt::format_prompt;
+use crate::rng::SimpleRng;
 
 /// After every player has committed, either may still unready for this long
 /// before the choices become final.
@@ -60,6 +61,19 @@ pub const BATTLE_HELP: &[&str] = &[
     ":hold pN <1-4|s1-s3>     simulate a long press down",
     ":release pN              release the held button",
 ];
+
+/// Input scheme a player chose at battle start.
+///
+/// Concealed controls exist because the players sit across from each other:
+/// which physical button you press is visible, so the meaning of every
+/// button is randomized per turn and revealed only on your own screen,
+/// behind a hold gesture.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum ControlMode {
+    #[default]
+    Normal,
+    Concealed,
+}
 
 /// A physical-input event, already classified by the platform's raw layer.
 /// `player` is 1 or 2; indices are 0-based.
@@ -113,6 +127,19 @@ pub struct SlotOptions {
     prompt_text: String,
     /// Party snapshot for the stats/switch screens.
     party: Vec<PartySlotData>,
+    /// Input scheme (see [`ControlMode`]); everything below is Concealed-only,
+    /// randomized once per combat turn by [`Self::set_concealed`].
+    mode: ControlMode,
+    /// Bottom-row position (0..3) of the Attack / Switch actions (distinct).
+    attack_pos: u8,
+    switch_pos: u8,
+    /// Corner button (TL/TR/BL/BR) → real move slot; -1 = dead corner.
+    move_map: [i8; 4],
+    /// Eligible bench team indices, pre-shuffled. When more than 4, each
+    /// menu open shows the next window of 4 (reopen to see the rest).
+    bench: Vec<u8>,
+    /// Corner order the bench entries land on (scatter).
+    switch_positions: [u8; 4],
 }
 
 impl SlotOptions {
@@ -134,6 +161,12 @@ impl SlotOptions {
             is_ai: false,
             prompt_text: String::new(),
             party: Vec::new(),
+            mode: ControlMode::Normal,
+            attack_pos: 0,
+            switch_pos: 1,
+            move_map: [-1; 4],
+            bench: Vec::new(),
+            switch_positions: [0, 1, 2, 3],
         };
         if let Some(pd) = player_data {
             for (i, ok) in s.party_ok.iter_mut().enumerate() {
@@ -173,6 +206,62 @@ impl SlotOptions {
         self.is_ai = true;
     }
 
+    /// Switch this slot to concealed controls, randomizing the action
+    /// positions and corner layouts for this combat turn. `seed` should
+    /// change every turn (e.g. a millisecond clock); layouts stay FIXED
+    /// within the turn — release/re-hold and unready always show the same
+    /// placements. No-op for auto slots (locked moves, AI): nothing to hide.
+    pub fn set_concealed(&mut self, seed: u64) {
+        if self.auto.is_some() {
+            return;
+        }
+        self.mode = ControlMode::Concealed;
+        let mut rng = SimpleRng::new(
+            seed ^ ((self.player_num as u64) << 56) ^ 0x5eed_c0de_0b5c_u64,
+        );
+        // Attack and Switch land on two distinct bottom-row buttons.
+        let a = (rng.next_u64() % 3) as u8;
+        let mut sw = (rng.next_u64() % 2) as u8;
+        if sw >= a {
+            sw += 1;
+        }
+        self.attack_pos = a;
+        self.switch_pos = sw;
+        // Scatter the moves across all 4 corners (dead corners leak nothing).
+        let corner_order = shuffled4(&mut rng);
+        self.move_map = [-1; 4];
+        for (k, corner) in corner_order.iter().enumerate().take(self.n_moves.min(4)) {
+            self.move_map[*corner as usize] = k as i8;
+        }
+        // Eligible bench (alive, not active), shuffled once for the turn.
+        self.bench = (0..6u8)
+            .filter(|&i| self.party_ok[i as usize])
+            .collect();
+        let n = self.bench.len();
+        for i in (1..n).rev() {
+            let j = (rng.next_u64() % (i as u64 + 1)) as usize;
+            self.bench.swap(i, j);
+        }
+        self.switch_positions = shuffled4(&mut rng);
+    }
+
+    /// Concealed switch-menu layout for the `opens`-th open this turn:
+    /// corner → team index (-1 dead). With more than 4 benched mons, each
+    /// open shows the next window of 4.
+    fn switch_corner_map(&self, opens: u8) -> [i8; 4] {
+        let mut map = [-1i8; 4];
+        let n = self.bench.len();
+        if n == 0 {
+            return map;
+        }
+        let base = if n > 4 { (opens as usize * 4) % n } else { 0 };
+        for k in 0..n.min(4) {
+            let team_idx = self.bench[(base + k) % n];
+            map[self.switch_positions[k] as usize] = team_idx as i8;
+        }
+        map
+    }
+
     /// Placeholder slot for a single-prompt batch: permanently committed with
     /// an empty choice, never unreadies, contributes no submission.
     fn inert() -> Self {
@@ -189,10 +278,16 @@ impl SlotOptions {
             is_ai: false,
             prompt_text: String::new(),
             party: Vec::new(),
+            mode: ControlMode::Normal,
+            attack_pos: 0,
+            switch_pos: 1,
+            move_map: [-1; 4],
+            bench: Vec::new(),
+            switch_positions: [0, 1, 2, 3],
         }
     }
 
-    /// The screen this player returns to while still choosing.
+    /// The screen this player returns to while still choosing (Normal mode).
     fn pick_screen(&self) -> OledCmd {
         if self.forced_switch {
             OledCmd::ShowSwitchScreen { player: self.player_num }
@@ -202,9 +297,36 @@ impl SlotOptions {
     }
 }
 
+/// Fisher-Yates over the 4 corner positions.
+fn shuffled4(rng: &mut SimpleRng) -> [u8; 4] {
+    let mut p = [0u8, 1, 2, 3];
+    for i in (1..4usize).rev() {
+        let j = (rng.next_u64() % (i as u64 + 1)) as usize;
+        p.swap(i, j);
+    }
+    p
+}
+
+/// Which concealed corner menu is open.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum CMenuKind {
+    Moves,
+    Switch,
+}
+
+/// Where the invalid-selection flash restores to.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum InvalidBack {
+    /// The mode's pick screen (battle screen / switch picker / action select).
+    Pick,
+    /// A concealed corner menu that was open when the invalid pick happened.
+    Menu { kind: CMenuKind, held: bool },
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum SlotState {
-    /// Waiting for a selection.
+    /// Waiting for a selection (Normal: battle screen; Concealed: the
+    /// randomized Attack/Switch action-select screen).
     Choosing,
     /// A long-press move-detail view is up; restores on HoldEnd.
     Detail,
@@ -212,9 +334,15 @@ enum SlotState {
     /// [`STATS_PAGE_CYCLE_MS`] until HoldEnd.
     Stats { team_idx: u8, page: u8, next_flip: u64 },
     /// Invalid-selection screen is up; restores at `until`.
-    Invalid { until: u64 },
+    Invalid { until: u64, back: InvalidBack },
     /// Choice locked in (waiting screen shown, unless auto).
     Committed,
+    /// Concealed corner menu (moves or bench). `held` = opened by holding an
+    /// action button, so releasing it exits; a forced-switch menu isn't held.
+    CMenu { kind: CMenuKind, held: bool },
+    /// Concealed nested detail (move detail / mon stats) with the menu's
+    /// action button still held underneath. Stats pages cycle like [`Self::Stats`].
+    CDetail { kind: CMenuKind, held: bool, real: u8, page: u8, next_flip: u64 },
 }
 
 /// The shared choice-collection state machine. Construct once per prompt
@@ -230,6 +358,11 @@ pub struct ChoiceCollector {
     /// Per-slot deadline for an AI commit. Armed on the first tick after
     /// construction (the collector has no clock until then), fired in tick.
     ai_commit_at: [Option<u64>; 2],
+    /// Concealed: how many times each slot's switch menu was opened this
+    /// turn (drives the >4-bench windowing) and the layout of the currently
+    /// open window.
+    c_opens: [u8; 2],
+    c_switch_map: [[i8; 4]; 2],
 }
 
 impl ChoiceCollector {
@@ -249,6 +382,8 @@ impl ChoiceCollector {
 
         let mut st = [SlotState::Choosing; 2];
         let mut out = [String::new(), String::new()];
+        let mut c_opens = [0u8; 2];
+        let mut c_switch_map = [[-1i8; 4]; 2];
         for i in 0..2 {
             let s = &slots[i];
             if i < n_real {
@@ -260,6 +395,24 @@ impl ChoiceCollector {
                 }
                 if s.is_ai {
                     fx.push(Effect::Dbg(format!("[AI] auto-choosing for {}", s.player_id)));
+                } else if s.mode == ControlMode::Concealed && s.auto.is_none() {
+                    if s.forced_switch {
+                        // Straight to the randomized bench menu, no hold.
+                        c_switch_map[i] = s.switch_corner_map(0);
+                        c_opens[i] = 1;
+                        st[i] = SlotState::CMenu { kind: CMenuKind::Switch, held: false };
+                        fx.push(Effect::Oled(OledCmd::ShowConcealedSwitch {
+                            player: s.player_num,
+                            map: c_switch_map[i],
+                        }));
+                    } else {
+                        fx.push(Effect::Oled(OledCmd::ShowActionSelect {
+                            player: s.player_num,
+                            attack_pos: s.attack_pos,
+                            switch_pos: s.switch_pos,
+                        }));
+                    }
+                    fx.push(Effect::Text(s.prompt_text.clone()));
                 } else {
                     if s.forced_switch {
                         fx.push(Effect::Oled(OledCmd::ShowSwitchScreen { player: s.player_num }));
@@ -285,7 +438,17 @@ impl ChoiceCollector {
             }
         }
 
-        Self { slots, st, out, n_real, grace_start: None, complete: false, ai_commit_at: [None; 2] }
+        Self {
+            slots,
+            st,
+            out,
+            n_real,
+            grace_start: None,
+            complete: false,
+            ai_commit_at: [None; 2],
+            c_opens,
+            c_switch_map,
+        }
     }
 
     fn slot_index(&self, player_num: u8) -> Option<usize> {
@@ -304,15 +467,234 @@ impl ChoiceCollector {
     }
 
     fn unready(&mut self, i: usize, fx: &mut Vec<Effect>) {
-        fx.push(Effect::Oled(self.slots[i].pick_screen()));
         self.out[i].clear();
-        self.st[i] = SlotState::Choosing;
         self.grace_start = None;
+        self.restore_pick(i, fx);
+    }
+
+    /// Show the mode's pick screen and enter its choosing state: battle
+    /// screen / switch picker (Normal), action select or the forced bench
+    /// menu (Concealed). Same randomized layouts as before — they're fixed
+    /// for the combat turn.
+    fn restore_pick(&mut self, i: usize, fx: &mut Vec<Effect>) {
+        if self.slots[i].mode == ControlMode::Concealed {
+            if self.slots[i].forced_switch {
+                self.show_menu(i, CMenuKind::Switch, false, fx);
+            } else {
+                self.show_action_select(i, fx);
+            }
+        } else {
+            fx.push(Effect::Oled(self.slots[i].pick_screen()));
+            self.st[i] = SlotState::Choosing;
+        }
     }
 
     fn reject_invalid(&mut self, i: usize, now_ms: u64, fx: &mut Vec<Effect>) {
+        self.reject_invalid_back(i, now_ms, InvalidBack::Pick, fx);
+    }
+
+    fn reject_invalid_back(&mut self, i: usize, now_ms: u64, back: InvalidBack, fx: &mut Vec<Effect>) {
         fx.push(Effect::Oled(OledCmd::ShowInvalidSelection { player: self.slots[i].player_num }));
-        self.st[i] = SlotState::Invalid { until: now_ms + INVALID_FLASH_MS };
+        self.st[i] = SlotState::Invalid { until: now_ms + INVALID_FLASH_MS, back };
+    }
+
+    // ── Concealed-mode screens/state ─────────────────────────────────────────
+
+    fn show_action_select(&mut self, i: usize, fx: &mut Vec<Effect>) {
+        let s = &self.slots[i];
+        fx.push(Effect::Oled(OledCmd::ShowActionSelect {
+            player: s.player_num,
+            attack_pos: s.attack_pos,
+            switch_pos: s.switch_pos,
+        }));
+        self.st[i] = SlotState::Choosing;
+    }
+
+    /// (Re-)show an open concealed menu with the current layout.
+    fn show_menu(&mut self, i: usize, kind: CMenuKind, held: bool, fx: &mut Vec<Effect>) {
+        let s = &self.slots[i];
+        let cmd = match kind {
+            CMenuKind::Moves => OledCmd::ShowConcealedMoves {
+                player: s.player_num,
+                map: s.move_map,
+            },
+            CMenuKind::Switch => OledCmd::ShowConcealedSwitch {
+                player: s.player_num,
+                map: self.c_switch_map[i],
+            },
+        };
+        fx.push(Effect::Oled(cmd));
+        self.st[i] = SlotState::CMenu { kind, held };
+    }
+
+    /// Open a menu fresh (switch menus advance the >4-bench window per open).
+    fn open_menu(&mut self, i: usize, kind: CMenuKind, held: bool, fx: &mut Vec<Effect>) {
+        if kind == CMenuKind::Switch {
+            self.c_switch_map[i] = self.slots[i].switch_corner_map(self.c_opens[i]);
+            self.c_opens[i] = self.c_opens[i].wrapping_add(1);
+        }
+        self.show_menu(i, kind, held, fx);
+    }
+
+    /// A corner button was tapped with a concealed menu open: map it to the
+    /// real move/mon and commit (or flash invalid). Dead corners are inert.
+    fn pick_corner(
+        &mut self,
+        i: usize,
+        kind: CMenuKind,
+        held: bool,
+        corner: usize,
+        now_ms: u64,
+        fx: &mut Vec<Effect>,
+    ) {
+        if corner >= 4 {
+            return;
+        }
+        let s = &self.slots[i];
+        match kind {
+            CMenuKind::Moves => {
+                let real = s.move_map[corner];
+                if real < 0 {
+                    return;
+                }
+                let action = PlayerAction::Move(real as usize);
+                match turn_action_choice(&action, s.n_moves, &s.usable, s.trapped, s.active_slot) {
+                    Ok(choice) => self.commit(i, choice, fx),
+                    Err(ActionReject::OutOfRange) => {}
+                    Err(_) => self.reject_invalid_back(i, now_ms, InvalidBack::Menu { kind, held }, fx),
+                }
+            }
+            CMenuKind::Switch => {
+                let real = self.c_switch_map[i][corner];
+                if real < 0 {
+                    return;
+                }
+                let idx = real as usize;
+                if s.forced_switch {
+                    // The bench menu only contains valid targets.
+                    let choice = format_switch_choice(idx);
+                    self.commit(i, choice, fx);
+                } else {
+                    let action = PlayerAction::Switch(idx);
+                    match turn_action_choice(&action, s.n_moves, &s.usable, s.trapped, s.active_slot) {
+                        Ok(choice) => self.commit(i, choice, fx),
+                        Err(_) => {
+                            self.reject_invalid_back(i, now_ms, InvalidBack::Menu { kind, held }, fx)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// A corner button crossed the hold threshold with a menu open: nested
+    /// detail view (move detail / mon stats) — release returns to the menu.
+    fn open_detail(
+        &mut self,
+        i: usize,
+        kind: CMenuKind,
+        held: bool,
+        corner: usize,
+        now_ms: u64,
+        fx: &mut Vec<Effect>,
+    ) {
+        if corner >= 4 {
+            return;
+        }
+        let s = &self.slots[i];
+        let real = match kind {
+            CMenuKind::Moves => s.move_map[corner],
+            CMenuKind::Switch => self.c_switch_map[i][corner],
+        };
+        if real < 0 {
+            return;
+        }
+        match kind {
+            CMenuKind::Moves => {
+                fx.push(Effect::Oled(OledCmd::ShowMoveDetail {
+                    player: s.player_num,
+                    slot: real as u8,
+                }));
+                self.st[i] = SlotState::CDetail {
+                    kind,
+                    held,
+                    real: real as u8,
+                    page: 0,
+                    next_flip: u64::MAX,
+                };
+            }
+            CMenuKind::Switch => {
+                fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
+                    player: s.player_num,
+                    team_idx: real as u8,
+                    page: 0,
+                }));
+                self.st[i] = SlotState::CDetail {
+                    kind,
+                    held,
+                    real: real as u8,
+                    page: 0,
+                    next_flip: now_ms + STATS_PAGE_CYCLE_MS,
+                };
+            }
+        }
+    }
+
+    /// Concealed-mode input handling (states: Choosing = action select).
+    fn pad_event_concealed(&mut self, i: usize, action: Pad, now_ms: u64, fx: &mut Vec<Effect>) {
+        match (self.st[i], action) {
+            // Any press while committed unreadies (auto slots never get here).
+            (SlotState::Committed, Pad::Tap(_) | Pad::Hold(_)) => self.unready(i, fx),
+            (SlotState::Committed, Pad::HoldEnd) => {}
+
+            // Action select: HOLD Attack/Switch on the bottom row.
+            (SlotState::Choosing, Pad::Hold(HoldView::Stats(idx))) => {
+                let s = &self.slots[i];
+                if idx == s.attack_pos {
+                    self.open_menu(i, CMenuKind::Moves, true, fx);
+                } else if idx == s.switch_pos {
+                    self.open_menu(i, CMenuKind::Switch, true, fx);
+                }
+                // The third (dead) bottom button is inert — free decoy.
+            }
+            (SlotState::Choosing, _) => {}
+
+            // Menu open: tap a corner to commit, hold it for details,
+            // release the action button to back out.
+            (SlotState::CMenu { kind, held }, Pad::Tap(PlayerAction::Move(corner))) => {
+                self.pick_corner(i, kind, held, corner, now_ms, fx);
+            }
+            (SlotState::CMenu { kind, held }, Pad::Hold(HoldView::Move(corner))) => {
+                self.open_detail(i, kind, held, corner as usize, now_ms, fx);
+            }
+            (SlotState::CMenu { held: true, .. }, Pad::HoldEnd) => {
+                self.show_action_select(i, fx);
+            }
+            (SlotState::CMenu { .. }, _) => {}
+
+            // Nested detail: release returns one level up to the menu; a
+            // different corner hold swaps the view directly.
+            (SlotState::CDetail { kind, held, .. }, Pad::HoldEnd) => {
+                self.show_menu(i, kind, held, fx);
+            }
+            (SlotState::CDetail { kind, held, .. }, Pad::Hold(HoldView::Move(corner))) => {
+                self.open_detail(i, kind, held, corner as usize, now_ms, fx);
+            }
+            (SlotState::CDetail { .. }, _) => {}
+
+            // Invalid flash: releasing the action button retargets the
+            // restore to the action-select screen.
+            (
+                SlotState::Invalid { until, back: InvalidBack::Menu { held: true, .. } },
+                Pad::HoldEnd,
+            ) => {
+                self.st[i] = SlotState::Invalid { until, back: InvalidBack::Pick };
+            }
+            (SlotState::Invalid { .. }, _) => {}
+
+            // Normal-only states (Detail/Stats) never occur in concealed mode.
+            _ => {}
+        }
     }
 
     /// Feed a classified physical-button event.
@@ -330,6 +712,10 @@ impl ChoiceCollector {
         // Auto slots (AI, locked moves) take no physical input — including a
         // still-thinking AI, whose slot sits in Choosing until its deadline.
         if self.is_auto(i) {
+            return;
+        }
+        if self.slots[i].mode == ControlMode::Concealed {
+            self.pad_event_concealed(i, action, now_ms, fx);
             return;
         }
 
@@ -622,10 +1008,10 @@ impl ChoiceCollector {
         }
         for i in 0..self.n_real {
             match self.st[i] {
-                SlotState::Invalid { until } if now_ms >= until => {
-                    fx.push(Effect::Oled(self.slots[i].pick_screen()));
-                    self.st[i] = SlotState::Choosing;
-                }
+                SlotState::Invalid { until, back } if now_ms >= until => match back {
+                    InvalidBack::Pick => self.restore_pick(i, fx),
+                    InvalidBack::Menu { kind, held } => self.show_menu(i, kind, held, fx),
+                },
                 // Held party-stats view: alternate its two pages.
                 SlotState::Stats { team_idx, page, next_flip } if now_ms >= next_flip => {
                     let page = page ^ 1;
@@ -636,6 +1022,24 @@ impl ChoiceCollector {
                     }));
                     self.st[i] = SlotState::Stats {
                         team_idx,
+                        page,
+                        next_flip: now_ms + STATS_PAGE_CYCLE_MS,
+                    };
+                }
+                // Concealed nested stats view: same page cycling.
+                SlotState::CDetail { kind: CMenuKind::Switch, held, real, page, next_flip }
+                    if now_ms >= next_flip =>
+                {
+                    let page = page ^ 1;
+                    fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
+                        player: self.slots[i].player_num,
+                        team_idx: real,
+                        page,
+                    }));
+                    self.st[i] = SlotState::CDetail {
+                        kind: CMenuKind::Switch,
+                        held,
+                        real,
                         page,
                         next_flip: now_ms + STATS_PAGE_CYCLE_MS,
                     };
@@ -675,6 +1079,213 @@ impl ChoiceCollector {
             .take(n)
             .map(|s| (s.player_id, out_iter.next().unwrap_or_default()))
             .collect()
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Controls selection (battle start): Normal vs Concealed, per player
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// The battle-start controls picker. Driven exactly like [`ChoiceCollector`]:
+/// pad events + ticks in, [`Effect`]s out, complete after both players
+/// confirm and a 1-second mutual grace passes.
+///
+/// Bottom-row buttons: left/right swap the highlighted option, middle
+/// confirms. Any press while confirmed unconfirms. AI players auto-confirm
+/// Normal (mode is irrelevant to them) and can't be unconfirmed.
+pub struct ControlsSelect {
+    highlighted: [u8; 2], // 0 = Normal, 1 = Concealed
+    confirmed: [bool; 2],
+    ai: [bool; 2],
+    grace_start: Option<u64>,
+    complete: bool,
+}
+
+impl ControlsSelect {
+    pub fn new(ai: [bool; 2], fx: &mut Vec<Effect>) -> Self {
+        let s = Self {
+            highlighted: [0; 2],
+            confirmed: ai,
+            ai,
+            grace_start: None,
+            complete: false,
+        };
+        for i in 0..2usize {
+            if !s.ai[i] {
+                s.show(i, fx);
+                fx.push(Effect::Text(format!(
+                    "p{}: choose controls — left/right: swap, middle: confirm",
+                    i + 1
+                )));
+            }
+        }
+        s
+    }
+
+    fn show(&self, i: usize, fx: &mut Vec<Effect>) {
+        fx.push(Effect::Oled(OledCmd::ShowControlsSelect {
+            player: (i + 1) as u8,
+            highlighted: self.highlighted[i],
+            confirmed: self.confirmed[i],
+        }));
+    }
+
+    /// Feed a classified physical-button event.
+    pub fn pad_event(&mut self, ev: PadEvent, fx: &mut Vec<Effect>) {
+        // Holds act like presses here; releases are ignored.
+        let (player, bottom_idx) = match ev {
+            PadEvent::TapSwitch { player, idx } | PadEvent::HoldSwitch { player, idx } => {
+                (player, Some(idx))
+            }
+            PadEvent::TapMove { player, .. } | PadEvent::HoldMove { player, .. } => (player, None),
+            PadEvent::HoldEnd { .. } => return,
+        };
+        if !(1..=2).contains(&player) {
+            return;
+        }
+        let i = (player - 1) as usize;
+        if self.ai[i] {
+            return;
+        }
+        if self.confirmed[i] {
+            // Any button unconfirms and lets the player choose again.
+            self.confirmed[i] = false;
+            self.grace_start = None;
+            self.show(i, fx);
+            return;
+        }
+        match bottom_idx {
+            Some(0) | Some(2) => {
+                // Left/right: swap between the two options.
+                self.highlighted[i] ^= 1;
+                self.show(i, fx);
+            }
+            Some(1) => {
+                self.confirmed[i] = true;
+                self.show(i, fx);
+                let mode = if self.highlighted[i] == 1 { "concealed" } else { "normal" };
+                fx.push(Effect::Ok(format!("p{} confirmed {mode} controls", i + 1)));
+            }
+            _ => {} // corner buttons do nothing while choosing
+        }
+    }
+
+    /// Typed input: `pN normal` / `pN concealed` / `pN ok`, plus the same
+    /// `:press`/`:hold`/`:release` button sims the battle collector accepts.
+    pub fn typed_line(&mut self, line: &str, fx: &mut Vec<Effect>) {
+        let line = line.trim();
+        if line.is_empty() {
+            return;
+        }
+        if let Some(ev) = parse_sim_pad_line(line) {
+            self.pad_event(ev, fx);
+            return;
+        }
+        for (i, pid) in ["p1", "p2"].iter().enumerate() {
+            if let Some(rest) = line.strip_prefix(pid) {
+                let rest = rest.trim();
+                if self.ai[i] {
+                    fx.push(Effect::Err(format!("{pid} is AI-controlled")));
+                    return;
+                }
+                match rest {
+                    "normal" => {
+                        self.highlighted[i] = 0;
+                        self.confirmed[i] = false;
+                        self.grace_start = None;
+                        self.show(i, fx);
+                    }
+                    "concealed" => {
+                        self.highlighted[i] = 1;
+                        self.confirmed[i] = false;
+                        self.grace_start = None;
+                        self.show(i, fx);
+                    }
+                    "ok" | "confirm" => {
+                        self.confirmed[i] = true;
+                        self.show(i, fx);
+                    }
+                    _ => fx.push(Effect::Err(String::from(
+                        "controls: pN normal | pN concealed | pN ok",
+                    ))),
+                }
+                return;
+            }
+        }
+        fx.push(Effect::Err(String::from(
+            "controls: pN normal | pN concealed | pN ok",
+        )));
+    }
+
+    /// Advance the both-confirmed grace window. True once selection is final.
+    pub fn tick(&mut self, now_ms: u64) -> bool {
+        if self.complete {
+            return true;
+        }
+        if !(self.confirmed[0] && self.confirmed[1]) {
+            self.grace_start = None;
+            return false;
+        }
+        if self.ai[0] && self.ai[1] {
+            self.complete = true;
+            return true;
+        }
+        match self.grace_start {
+            None => {
+                self.grace_start = Some(now_ms);
+                false
+            }
+            Some(t0) if now_ms.saturating_sub(t0) >= UNREADY_GRACE_MS => {
+                self.complete = true;
+                true
+            }
+            Some(_) => false,
+        }
+    }
+
+    pub fn take_modes(self) -> [ControlMode; 2] {
+        self.highlighted.map(|h| if h == 1 { ControlMode::Concealed } else { ControlMode::Normal })
+    }
+}
+
+/// Parse a `:press pN <btn>` / `:hold pN <btn>` / `:release pN` sim line into
+/// a [`PadEvent`] (`<btn>` = move 1-4 or party s1-s3). Shared by every input
+/// phase so headless tests can drive buttons anywhere.
+pub fn parse_sim_pad_line(line: &str) -> Option<PadEvent> {
+    let (kind, rest) = if let Some(r) = line.strip_prefix(":press ") {
+        (SimKind::Tap, r)
+    } else if let Some(r) = line.strip_prefix(":hold ") {
+        (SimKind::Hold, r)
+    } else if let Some(r) = line.strip_prefix(":release ") {
+        let player = parse_player_ref(r.trim())?;
+        return Some(PadEvent::HoldEnd { player });
+    } else {
+        return None;
+    };
+    let mut parts = rest.trim().split_whitespace();
+    let (pref, bref) = (parts.next()?, parts.next()?);
+    if parts.next().is_some() {
+        return None;
+    }
+    let player = parse_player_ref(pref)?;
+    if let Some(n) = bref.strip_prefix(['s', 'S']) {
+        let i: u8 = n.parse().ok()?;
+        if !(1..=3).contains(&i) {
+            return None;
+        }
+        Some(match kind {
+            SimKind::Tap => PadEvent::TapSwitch { player, idx: i - 1 },
+            SimKind::Hold => PadEvent::HoldSwitch { player, idx: i - 1 },
+        })
+    } else {
+        let i: u8 = bref.parse().ok()?;
+        if !(1..=4).contains(&i) {
+            return None;
+        }
+        Some(match kind {
+            SimKind::Tap => PadEvent::TapMove { player, slot: i - 1 },
+            SimKind::Hold => PadEvent::HoldMove { player, slot: i - 1 },
+        })
     }
 }
 
@@ -1013,6 +1624,247 @@ mod tests {
         fx.clear();
         c.pad_event(PadEvent::HoldEnd { player: 1 }, 400, &mut fx);
         assert!(fx.is_empty());
+    }
+
+    // ── Controls selection ───────────────────────────────────────────────
+
+    #[test]
+    fn controls_select_swap_confirm_grace() {
+        let mut fx = Vec::new();
+        let mut cs = ControlsSelect::new([false, false], &mut fx);
+        // Left/right swap the highlight.
+        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, &mut fx);
+        assert_eq!(cs.highlighted[0], 1);
+        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 0 }, &mut fx);
+        assert_eq!(cs.highlighted[0], 0);
+        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, &mut fx);
+        // Middle confirms.
+        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, &mut fx);
+        assert!(cs.confirmed[0]);
+        // Any button while confirmed unconfirms.
+        cs.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, &mut fx);
+        assert!(!cs.confirmed[0]);
+        assert_eq!(cs.highlighted[0], 1, "unconfirm keeps the highlight");
+        // Confirm both; the 1s grace gates completion.
+        cs.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, &mut fx);
+        cs.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
+        assert!(!cs.tick(1000));
+        assert!(!cs.tick(1000 + UNREADY_GRACE_MS - 1));
+        // Unconfirm during grace resets it.
+        cs.pad_event(PadEvent::TapSwitch { player: 2, idx: 3 }, &mut fx);
+        assert!(!cs.confirmed[1], "wait — idx 3 is out of range");
+        // (idx 3 doesn't exist on a 3-button row; press middle-adjacent instead)
+        cs.pad_event(PadEvent::TapSwitch { player: 2, idx: 0 }, &mut fx);
+        assert!(!cs.confirmed[1]);
+        cs.pad_event(PadEvent::TapSwitch { player: 2, idx: 1 }, &mut fx);
+        assert!(!cs.tick(5000));
+        assert!(cs.tick(5000 + UNREADY_GRACE_MS));
+        let modes = cs.take_modes();
+        assert_eq!(modes[0], ControlMode::Concealed);
+    }
+
+    #[test]
+    fn controls_select_ai_auto_confirms() {
+        let mut fx = Vec::new();
+        let mut cs = ControlsSelect::new([false, true], &mut fx);
+        assert!(cs.confirmed[1]);
+        // AI can't be unconfirmed by button noise.
+        cs.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut fx);
+        assert!(cs.confirmed[1]);
+        cs.typed_line("p1 concealed", &mut fx);
+        cs.typed_line("p1 ok", &mut fx);
+        assert!(!cs.tick(0));
+        assert!(cs.tick(UNREADY_GRACE_MS));
+        assert_eq!(cs.take_modes(), [ControlMode::Concealed, ControlMode::Normal]);
+    }
+
+    #[test]
+    fn controls_select_both_ai_completes_instantly() {
+        let mut fx = Vec::new();
+        let mut cs = ControlsSelect::new([true, true], &mut fx);
+        assert!(cs.tick(0));
+    }
+
+    // ── Concealed controls ───────────────────────────────────────────────
+
+    /// A two-human collector with p1 concealed (4 moves, bench 1/2 alive).
+    fn concealed_pair(seed: u64) -> (ChoiceCollector, Vec<Effect>) {
+        let mut fx = Vec::new();
+        let mut p1 = SlotOptions::from_prompt(&turn_prompt("p1", 4));
+        p1.party_ok = [false, true, true, false, false, false];
+        p1.active_slot = Some(0);
+        p1.set_concealed(seed);
+        let c = ChoiceCollector::new(
+            alloc::vec![p1, SlotOptions::from_prompt(&turn_prompt("p2", 4))],
+            &mut fx,
+        );
+        (c, fx)
+    }
+
+    #[test]
+    fn concealed_scatter_is_duplicate_free() {
+        for seed in 0..50u64 {
+            let (c, _) = concealed_pair(seed);
+            let s = &c.slots[0];
+            assert_ne!(s.attack_pos, s.switch_pos, "actions on distinct buttons");
+            assert!(s.attack_pos < 3 && s.switch_pos < 3);
+            // 4 moves scatter across all 4 corners without duplicates.
+            let mut seen = [false; 4];
+            for &m in &s.move_map {
+                assert!((0..4).contains(&m), "seed {seed}: bad slot {m}");
+                assert!(!seen[m as usize], "seed {seed}: duplicate move on corners");
+                seen[m as usize] = true;
+            }
+            // Bench = the two alive benched mons, no duplicates.
+            let mut b = s.bench.clone();
+            b.sort_unstable();
+            assert_eq!(b, alloc::vec![1u8, 2]);
+        }
+    }
+
+    #[test]
+    fn concealed_hold_opens_menu_and_tap_commits() {
+        let (mut c, _) = concealed_pair(7);
+        let mut fx = Vec::new();
+        let atk = c.slots[0].attack_pos;
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: atk }, 0, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedMoves { player: 1, .. })));
+        // Pick the corner mapped to real move slot 2.
+        let corner = c.slots[0].move_map.iter().position(|&m| m == 2).unwrap() as u8;
+        c.pad_event(PadEvent::TapMove { player: 1, slot: corner }, 10, &mut fx);
+        assert_eq!(c.out[0], "move 2");
+        // Releasing the action button afterwards is inert (committed).
+        fx.clear();
+        c.pad_event(PadEvent::HoldEnd { player: 1 }, 20, &mut fx);
+        assert_eq!(c.out[0], "move 2");
+    }
+
+    #[test]
+    fn concealed_release_returns_to_action_select() {
+        let (mut c, _) = concealed_pair(9);
+        let mut fx = Vec::new();
+        let atk = c.slots[0].attack_pos;
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: atk }, 0, &mut fx);
+        fx.clear();
+        c.pad_event(PadEvent::HoldEnd { player: 1 }, 100, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowActionSelect { player: 1, .. })));
+        assert_eq!(c.st[0], SlotState::Choosing);
+        // Dead bottom button opens nothing.
+        let dead = (0..3u8)
+            .find(|&p| p != c.slots[0].attack_pos && p != c.slots[0].switch_pos)
+            .unwrap();
+        fx.clear();
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: dead }, 200, &mut fx);
+        assert!(fx.is_empty());
+        // Taps (not holds) on action buttons are inert too.
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: atk }, 300, &mut fx);
+        assert!(c.out[0].is_empty());
+    }
+
+    #[test]
+    fn concealed_nested_move_detail_unwinds_by_level() {
+        let (mut c, _) = concealed_pair(11);
+        let mut fx = Vec::new();
+        let atk = c.slots[0].attack_pos;
+        let corner = c.slots[0].move_map.iter().position(|&m| m == 1).unwrap() as u8;
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: atk }, 0, &mut fx);
+        fx.clear();
+        c.pad_event(PadEvent::HoldMove { player: 1, slot: corner }, 600, &mut fx);
+        // Detail shows the REAL move slot.
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowMoveDetail { player: 1, slot: 1 })));
+        // Releasing the corner returns to the move menu…
+        fx.clear();
+        c.pad_event(PadEvent::HoldEnd { player: 1 }, 700, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedMoves { .. })));
+        // …and releasing the action button returns to action select.
+        fx.clear();
+        c.pad_event(PadEvent::HoldEnd { player: 1 }, 800, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowActionSelect { .. })));
+    }
+
+    #[test]
+    fn concealed_switch_menu_commits_team_index() {
+        let (mut c, _) = concealed_pair(13);
+        let mut fx = Vec::new();
+        let sw = c.slots[0].switch_pos;
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: sw }, 0, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedSwitch { player: 1, .. })));
+        let map = c.c_switch_map[0];
+        let corner = map.iter().position(|&m| m == 2).unwrap() as u8;
+        c.pad_event(PadEvent::TapMove { player: 1, slot: corner }, 10, &mut fx);
+        assert_eq!(c.out[0], "switch 2");
+    }
+
+    #[test]
+    fn concealed_forced_switch_shows_menu_directly() {
+        let mut fx = Vec::new();
+        let mut p1 = SlotOptions::from_prompt(&switch_prompt("p1"));
+        p1.party_ok = [false, true, true, false, false, false];
+        p1.set_concealed(3);
+        let mut c = ChoiceCollector::new(alloc::vec![p1], &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedSwitch { player: 1, .. })));
+        // No hold underneath: releases must NOT exit the menu.
+        fx.clear();
+        c.pad_event(PadEvent::HoldEnd { player: 1 }, 10, &mut fx);
+        assert!(matches!(c.st[0], SlotState::CMenu { held: false, .. }));
+        let map = c.c_switch_map[0];
+        let corner = map.iter().position(|&m| m >= 0).unwrap() as u8;
+        let real = map[corner as usize];
+        c.pad_event(PadEvent::TapMove { player: 1, slot: corner }, 20, &mut fx);
+        assert_eq!(c.out[0], alloc::format!("switch {real}"));
+        // Unready returns to the SAME menu, same layout.
+        fx.clear();
+        c.pad_event(PadEvent::TapMove { player: 1, slot: corner }, 30, &mut fx);
+        assert!(c.out[0].is_empty());
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedSwitch { .. })));
+        assert_eq!(c.c_switch_map[0], map, "layout fixed within the turn");
+    }
+
+    #[test]
+    fn concealed_unready_returns_to_action_select_same_layout() {
+        let (mut c, _) = concealed_pair(21);
+        let mut fx = Vec::new();
+        let atk = c.slots[0].attack_pos;
+        let map_before = c.slots[0].move_map;
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: atk }, 0, &mut fx);
+        let corner = c.slots[0].move_map.iter().position(|&m| m == 0).unwrap() as u8;
+        c.pad_event(PadEvent::TapMove { player: 1, slot: corner }, 10, &mut fx);
+        assert_eq!(c.out[0], "move 0");
+        fx.clear();
+        c.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, 20, &mut fx);
+        assert!(c.out[0].is_empty(), "unreadied");
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowActionSelect { player: 1, .. })));
+        assert_eq!(c.slots[0].move_map, map_before, "layout fixed within the turn");
+    }
+
+    #[test]
+    fn concealed_dead_corner_is_inert_and_no_pp_flashes_invalid() {
+        let mut fx = Vec::new();
+        let mut prompt = turn_prompt("p1", 2); // 2 moves → 2 dead corners
+        if let Request::Turn(t) = &mut prompt.request {
+            t.active[0].moves[1].pp = 0; // second move unusable
+        }
+        let mut p1 = SlotOptions::from_prompt(&prompt);
+        p1.set_concealed(5);
+        let mut c = ChoiceCollector::new(
+            alloc::vec![p1, SlotOptions::from_prompt(&turn_prompt("p2", 4))],
+            &mut fx,
+        );
+        let atk = c.slots[0].attack_pos;
+        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: atk }, 0, &mut fx);
+        let dead = c.slots[0].move_map.iter().position(|&m| m < 0).unwrap() as u8;
+        fx.clear();
+        c.pad_event(PadEvent::TapMove { player: 1, slot: dead }, 10, &mut fx);
+        assert!(fx.is_empty(), "dead corner must be inert");
+        assert!(c.out[0].is_empty());
+        // The 0-PP move flashes invalid and restores to the MENU.
+        let no_pp = c.slots[0].move_map.iter().position(|&m| m == 1).unwrap() as u8;
+        c.pad_event(PadEvent::TapMove { player: 1, slot: no_pp }, 20, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowInvalidSelection { player: 1 })));
+        fx.clear();
+        assert!(!c.tick(20 + INVALID_FLASH_MS, &mut fx));
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedMoves { .. })));
+        assert!(matches!(c.st[0], SlotState::CMenu { .. }));
     }
 
     #[test]

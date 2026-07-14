@@ -27,9 +27,11 @@ use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 
 use crate::board_event::{BoardEvent, MoveSlot};
 use crate::display::{
-    render_event_text, render_invalid_selection, render_lobby_screen, render_move_detail,
-    render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen,
-    render_waiting_for_opponent, render_waiting_screen, render_win_screen, PartySlotData,
+    render_action_select, render_concealed_moves, render_concealed_switch,
+    render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
+    render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2,
+    render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen,
+    PartySlotData,
 };
 
 // ── Commands ──────────────────────────────────────────────────────────────────
@@ -77,6 +79,14 @@ pub enum OledCmd {
     ShowSwitchScreen { player: u8 },
     /// Brief "invalid selection" feedback.
     ShowInvalidSelection { player: u8 },
+    /// Battle-start controls picker. `highlighted` 0 = Normal, 1 = Concealed.
+    ShowControlsSelect { player: u8, highlighted: u8, confirmed: bool },
+    /// Concealed mode: randomized Attack/Switch on the bottom-row buttons.
+    ShowActionSelect { player: u8, attack_pos: u8, switch_pos: u8 },
+    /// Concealed move menu: corner → move slot (-1 = dead corner).
+    ShowConcealedMoves { player: u8, map: [i8; 4] },
+    /// Concealed bench menu: corner → team index (-1 = dead corner).
+    ShowConcealedSwitch { player: u8, map: [i8; 4] },
 }
 
 impl OledCmd {
@@ -96,7 +106,11 @@ impl OledCmd {
             | OledCmd::ShowWaiting { player }
             | OledCmd::ShowWaitingForOpponent { player }
             | OledCmd::ShowSwitchScreen { player }
-            | OledCmd::ShowInvalidSelection { player } => *player,
+            | OledCmd::ShowInvalidSelection { player }
+            | OledCmd::ShowControlsSelect { player, .. }
+            | OledCmd::ShowActionSelect { player, .. }
+            | OledCmd::ShowConcealedMoves { player, .. }
+            | OledCmd::ShowConcealedSwitch { player, .. } => *player,
             OledCmd::Win { .. } => 0,
         }
     }
@@ -257,6 +271,12 @@ pub enum Screen<'a> {
     WaitingForOpponent,
     Switch(&'a [PartySlotData]),
     Invalid,
+    ControlsSelect { highlighted: u8, confirmed: bool },
+    ActionSelect { attack_pos: u8, switch_pos: u8 },
+    /// Corner labels for the concealed move menu (None = dead corner).
+    ConcealedMoves { corners: [Option<&'a MoveSlot>; 4] },
+    /// Corner labels for the concealed bench menu (None = dead corner).
+    ConcealedSwitch { corners: [Option<&'a PartySlotData>; 4] },
 }
 
 /// Render a [`Screen`] onto any 128×64 target. The single dispatch point
@@ -279,6 +299,14 @@ where
         Screen::WaitingForOpponent => render_waiting_for_opponent(display),
         Screen::Switch(party) => render_switch_screen(display, party),
         Screen::Invalid => render_invalid_selection(display),
+        Screen::ControlsSelect { highlighted, confirmed } => {
+            render_controls_select(display, *highlighted, *confirmed)
+        }
+        Screen::ActionSelect { attack_pos, switch_pos } => {
+            render_action_select(display, *attack_pos, *switch_pos)
+        }
+        Screen::ConcealedMoves { corners } => render_concealed_moves(display, corners),
+        Screen::ConcealedSwitch { corners } => render_concealed_switch(display, corners),
     }
 }
 
@@ -295,6 +323,10 @@ enum View {
     WaitingForOpponent,
     Switch,
     Invalid,
+    ControlsSelect { highlighted: u8, confirmed: bool },
+    ActionSelect { attack_pos: u8, switch_pos: u8 },
+    ConcealedMoves { map: [i8; 4] },
+    ConcealedSwitch { map: [i8; 4] },
 }
 
 struct Player {
@@ -527,6 +559,22 @@ impl OledController {
                 self.player_mut(player).view = View::Invalid;
                 OledRedraw::for_player(player)
             }
+            OledCmd::ShowControlsSelect { highlighted, confirmed, .. } => {
+                self.player_mut(player).view = View::ControlsSelect { highlighted, confirmed };
+                OledRedraw::for_player(player)
+            }
+            OledCmd::ShowActionSelect { attack_pos, switch_pos, .. } => {
+                self.player_mut(player).view = View::ActionSelect { attack_pos, switch_pos };
+                OledRedraw::for_player(player)
+            }
+            OledCmd::ShowConcealedMoves { map, .. } => {
+                self.player_mut(player).view = View::ConcealedMoves { map };
+                OledRedraw::for_player(player)
+            }
+            OledCmd::ShowConcealedSwitch { map, .. } => {
+                self.player_mut(player).view = View::ConcealedSwitch { map };
+                OledRedraw::for_player(player)
+            }
         }
     }
 
@@ -555,6 +603,32 @@ impl OledController {
             View::WaitingForOpponent => Screen::WaitingForOpponent,
             View::Switch => Screen::Switch(&p.party),
             View::Invalid => Screen::Invalid,
+            View::ControlsSelect { highlighted, confirmed } => Screen::ControlsSelect {
+                highlighted: *highlighted,
+                confirmed: *confirmed,
+            },
+            View::ActionSelect { attack_pos, switch_pos } => Screen::ActionSelect {
+                attack_pos: *attack_pos,
+                switch_pos: *switch_pos,
+            },
+            View::ConcealedMoves { map } => {
+                let mut corners: [Option<&MoveSlot>; 4] = [None; 4];
+                for (k, c) in corners.iter_mut().enumerate() {
+                    if map[k] >= 0 {
+                        *c = p.moves.get(map[k] as usize);
+                    }
+                }
+                Screen::ConcealedMoves { corners }
+            }
+            View::ConcealedSwitch { map } => {
+                let mut corners: [Option<&PartySlotData>; 4] = [None; 4];
+                for (k, c) in corners.iter_mut().enumerate() {
+                    if map[k] >= 0 {
+                        *c = p.party.get(map[k] as usize);
+                    }
+                }
+                Screen::ConcealedSwitch { corners }
+            }
         }
     }
 }

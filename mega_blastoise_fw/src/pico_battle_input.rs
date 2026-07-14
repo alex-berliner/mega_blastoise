@@ -28,8 +28,8 @@ use embassy_futures::select::{select, Either};
 use embassy_rp::gpio::{Flex, Pull};
 use embassy_time::{Instant, Timer};
 use mega_blastoise_core::{
-    ActivePrompt, ChoiceCollector, CollectEffect, InputBus, InputSource, PadEvent, PlayerChoice,
-    SlotOptions, COLLECT_TICK_MS, HOLD_THRESHOLD_MS,
+    ActivePrompt, ChoiceCollector, CollectEffect, ControlMode, ControlsSelect, InputBus,
+    InputSource, PadEvent, PlayerChoice, SlotOptions, COLLECT_TICK_MS, HOLD_THRESHOLD_MS,
 };
 #[cfg(feature = "oled")]
 use crate::subsystems::oled::send as oled_send;
@@ -182,15 +182,41 @@ pub enum LobbyPress { P1, P2, P1Long, P2Long }
 ///
 /// In the full game `BattleController` races this against USB serial.
 /// For button-only operation pass `.run(&bus)` directly to `run_battle`.
-pub struct PicoBattleInput<'d>(pub ButtonMatrix<'d>);
+pub struct PicoBattleInput<'d> {
+    matrix: ButtonMatrix<'d>,
+    /// Per-player control scheme for the current battle, chosen at battle
+    /// start (set by `main` after the controls-select phase).
+    pub modes: [ControlMode; 2],
+}
 
 impl<'d> PicoBattleInput<'d> {
     pub fn new(pins: [Flex<'d>; board::N_PINS]) -> Self {
-        Self(ButtonMatrix::new(pins))
+        Self { matrix: ButtonMatrix::new(pins), modes: [ControlMode::Normal; 2] }
     }
 
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
-        self.0.wait_lobby_press().await
+        self.matrix.wait_lobby_press().await
+    }
+
+    /// The battle-start controls picker, button-driven (no-USB builds).
+    pub async fn run_controls_select(&mut self, ai: [bool; 2]) -> [ControlMode; 2] {
+        let mut fx: alloc::vec::Vec<CollectEffect> = alloc::vec::Vec::new();
+        let mut cs = ControlsSelect::new(ai, &mut fx);
+        apply_oled_effects(&mut fx);
+        let mut scan = PadScan::default();
+        loop {
+            match select(self.next_pad_event(&mut scan), Timer::after_millis(COLLECT_TICK_MS)).await
+            {
+                Either::First(ev) => cs.pad_event(ev, &mut fx),
+                Either::Second(()) => {}
+            }
+            let done = cs.tick(Instant::now().as_millis());
+            apply_oled_effects(&mut fx);
+            if done {
+                break;
+            }
+        }
+        cs.take_modes()
     }
 
     /// Next classified button event from the matrix, for either player.
@@ -198,12 +224,14 @@ impl<'d> PicoBattleInput<'d> {
     /// [`ChoiceCollector`]. Scan state is held in `scan`, outside this future,
     /// so losing a `select` race mid-press doesn't drop the press.
     ///
-    /// While a hold is showing, a second press is timed independently: if it
-    /// becomes a hold it takes over and the first button goes STALE (ignored
-    /// until physically released, and its release emits no event).
+    /// Two hold levels are tracked per player (concealed controls hold an
+    /// action button and then hold a corner button on top): when a second
+    /// press becomes a hold it takes the view over, and each release emits
+    /// its own HoldEnd — innermost first. A THIRD simultaneous hold stales
+    /// the oldest button (ignored until physically released, no event).
     pub async fn next_pad_event(&mut self, scan: &mut PadScan) -> PadEvent {
         loop {
-            let pressed = self.0.scan();
+            let pressed = self.matrix.scan();
             // Stale buttons stop being stale once released.
             for p in 0..2 {
                 for k in 0..2 {
@@ -218,11 +246,11 @@ impl<'d> PicoBattleInput<'d> {
                     scan.stale[(b.player - 1) as usize][b.switch as usize] & (1 << b.idx) != 0
                 };
                 // Party buttons take priority, like the original collector.
-                let fresh_press = |except: Option<PadBtn>| -> Option<PadBtn> {
+                let fresh_press = |except: [Option<PadBtn>; 2]| -> Option<PadBtn> {
                     for switch in [true, false] {
                         for idx in 0..4u8 {
                             let b = PadBtn { player, switch, idx };
-                            if pressed.down(b) && !is_stale(b) && except != Some(b) {
+                            if pressed.down(b) && !is_stale(b) && !except.contains(&Some(b)) {
                                 return Some(b);
                             }
                         }
@@ -232,28 +260,25 @@ impl<'d> PicoBattleInput<'d> {
 
                 match scan.st[i] {
                     PadState::Idle => {
-                        if let Some(btn) = fresh_press(None) {
-                            scan.st[i] = PadState::Held { btn, t0: now, prev: None };
+                        if let Some(btn) = fresh_press([None, None]) {
+                            scan.st[i] = PadState::Held { btn, t0: now, outer: None };
                         }
                     }
-                    PadState::Held { btn, t0, prev } => {
-                        // If the previous hold's button was released while we
+                    PadState::Held { btn, t0, outer } => {
+                        // If the showing hold's button was released while we
                         // time the new press, its view ends now.
-                        if let Some(pb) = prev {
-                            if !pressed.down(pb) {
-                                scan.st[i] = PadState::Held { btn, t0, prev: None };
+                        if let Some(ob) = outer {
+                            if !pressed.down(ob) {
+                                scan.st[i] = PadState::Held { btn, t0, outer: None };
                                 return PadEvent::HoldEnd { player };
                             }
                         }
                         if pressed.down(btn) {
                             if now.saturating_sub(t0) >= HOLD_THRESHOLD_MS {
-                                // This hold takes over; the previous button is
-                                // stale until physically released.
-                                if let Some(pb) = prev {
-                                    scan.stale[(pb.player - 1) as usize][pb.switch as usize] |=
-                                        1 << pb.idx;
-                                }
-                                scan.st[i] = PadState::HoldOut { btn };
+                                // This hold takes the view over; the button
+                                // underneath stays tracked so its own release
+                                // still emits a HoldEnd (nested menus).
+                                scan.st[i] = PadState::HoldOut { btn, outer };
                                 return if btn.switch {
                                     PadEvent::HoldSwitch { player, idx: btn.idx }
                                 } else {
@@ -261,8 +286,8 @@ impl<'d> PicoBattleInput<'d> {
                                 };
                             }
                         } else {
-                            scan.st[i] = match prev {
-                                Some(pb) => PadState::HoldOut { btn: pb },
+                            scan.st[i] = match outer {
+                                Some(ob) => PadState::HoldOut { btn: ob, outer: None },
                                 None => PadState::Idle,
                             };
                             return if btn.switch {
@@ -272,14 +297,31 @@ impl<'d> PicoBattleInput<'d> {
                             };
                         }
                     }
-                    PadState::HoldOut { btn } => {
+                    PadState::HoldOut { btn, outer } => {
+                        // An outer button released underneath the showing
+                        // view: no event (its view isn't up), just untrack.
+                        if let Some(ob) = outer {
+                            if !pressed.down(ob) {
+                                scan.st[i] = PadState::HoldOut { btn, outer: None };
+                                continue;
+                            }
+                        }
                         if !pressed.down(btn) {
-                            scan.st[i] = PadState::Idle;
+                            scan.st[i] = match outer {
+                                Some(ob) => PadState::HoldOut { btn: ob, outer: None },
+                                None => PadState::Idle,
+                            };
                             return PadEvent::HoldEnd { player };
                         }
-                        // A second press starts timing while the view stays up.
-                        if let Some(nb) = fresh_press(Some(btn)) {
-                            scan.st[i] = PadState::Held { btn: nb, t0: now, prev: Some(btn) };
+                        // A second press starts timing while the view stays
+                        // up. If a third button is already tracked, it goes
+                        // stale (released with no event).
+                        if let Some(nb) = fresh_press([Some(btn), outer]) {
+                            if let Some(ob) = outer {
+                                scan.stale[(ob.player - 1) as usize][ob.switch as usize] |=
+                                    1 << ob.idx;
+                            }
+                            scan.st[i] = PadState::Held { btn: nb, t0: now, outer: Some(btn) };
                         }
                     }
                 }
@@ -303,11 +345,12 @@ pub struct PadScan {
 enum PadState {
     #[default]
     Idle,
-    /// Button down; timing a tap vs a hold. `prev` is a still-held button
+    /// Button down; timing a tap vs a hold. `outer` is a still-held button
     /// whose hold view is currently showing.
-    Held { btn: PadBtn, t0: u64, prev: Option<PadBtn> },
-    /// Hold reported; waiting for release or a second press.
-    HoldOut { btn: PadBtn },
+    Held { btn: PadBtn, t0: u64, outer: Option<PadBtn> },
+    /// Hold reported; waiting for release or a second press. `outer` is a
+    /// still-held earlier hold underneath this view (concealed menus).
+    HoldOut { btn: PadBtn, outer: Option<PadBtn> },
 }
 
 /// Button-only [`InputSource`] for no-USB builds: the same shared
@@ -324,8 +367,15 @@ impl InputSource for PicoBattleInput<'_> {
                 prompts.push(bus.prompt.receive().await);
             }
 
-            let batch: alloc::vec::Vec<SlotOptions> =
+            let mut batch: alloc::vec::Vec<SlotOptions> =
                 prompts.iter().map(SlotOptions::from_prompt).collect();
+            // Apply each player's chosen control scheme (fresh layouts per turn).
+            for (slot, p) in batch.iter_mut().zip(&prompts) {
+                let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
+                if self.modes[idx] == ControlMode::Concealed {
+                    slot.set_concealed(Instant::now().as_millis() ^ (idx as u64) << 33);
+                }
+            }
             let mut fx = alloc::vec::Vec::new();
             let mut col = ChoiceCollector::new(batch, &mut fx);
             apply_oled_effects(&mut fx);

@@ -16,9 +16,9 @@ use embassy_futures::select::{select, select3, Either, Either3};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
     party_slot_from_mon, render_screen, run_battle, ActivePrompt, BoardEventQueue,
-    ChoiceCollector, CollectEffect, FlashDataStore, InputBus, OledCmd, OledController, PadEvent,
-    PartySlotData, PlayerChoice, RandomAi, SlotOptions, BATTLE_HELP, COLLECT_TICK_MS,
-    LOBBY_DEMO_DELAY_MS,
+    ChoiceCollector, CollectEffect, ControlMode, ControlsSelect, FlashDataStore, InputBus,
+    OledCmd, OledController, PadEvent, PartySlotData, PlayerChoice, RandomAi, SlotOptions,
+    BATTLE_HELP, COLLECT_TICK_MS, LOBBY_DEMO_DELAY_MS,
 };
 use web_effects::WebBattleEffects;
 use web_display::WasmDisplay;
@@ -40,6 +40,12 @@ thread_local! {
     // the shared ChoiceCollector loop (mirrors the firmware's USB+matrix IO).
     static BATTLE_INPUT: RefCell<VecDeque<BattleInput>> = RefCell::new(VecDeque::new());
     static BATTLE_INPUT_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
+
+    // Sticky holds (web only): a PC mouse can't hold one button while
+    // clicking another, so a hold LATCHES — it stays "held down" until the
+    // button is clicked again or the player commits an option. Entries are
+    // (is_switch, idx), innermost last; releases are swallowed while latched.
+    static HELD_LATCH: RefCell<[Vec<(bool, u8)>; 2]> = RefCell::new([Vec::new(), Vec::new()]);
 
     // Lobby LED animation mode
     static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
@@ -424,11 +430,61 @@ fn push_button(ev: ButtonEvent) {
     }
 }
 
+// ── Sticky hold latch (web only) ──────────────────────────────────────────────
+
+fn latch_i(player: u8) -> usize {
+    (player.clamp(1, 2) - 1) as usize
+}
+
+/// True if `(is_switch, idx)` is currently latched for `player`; removes it.
+fn unlatch_if_held(player: u8, is_switch: bool, idx: u8) -> bool {
+    HELD_LATCH.with(|l| {
+        let v = &mut l.borrow_mut()[latch_i(player)];
+        if let Some(pos) = v.iter().position(|&e| e == (is_switch, idx)) {
+            v.remove(pos);
+            true
+        } else {
+            false
+        }
+    })
+}
+
+fn latch_held(player: u8, is_switch: bool, idx: u8) {
+    HELD_LATCH.with(|l| l.borrow_mut()[latch_i(player)].push((is_switch, idx)));
+}
+
+fn any_latched(player: u8) -> bool {
+    HELD_LATCH.with(|l| !l.borrow()[latch_i(player)].is_empty())
+}
+
+pub(crate) fn clear_hold_latch(player: u8) {
+    HELD_LATCH.with(|l| l.borrow_mut()[latch_i(player)].clear());
+}
+
+pub(crate) fn clear_hold_latches() {
+    clear_hold_latch(1);
+    clear_hold_latch(2);
+}
+
+/// Latched buttons per player, for the page to render as "held" — bit 0-3 =
+/// move buttons, bit 4-6 = party buttons.
+#[wasm_bindgen]
+pub fn wasm_held_buttons(player: u8) -> u8 {
+    HELD_LATCH.with(|l| {
+        l.borrow()[latch_i(player)]
+            .iter()
+            .fold(0u8, |m, &(sw, idx)| m | 1 << (if sw { 4 + idx } else { idx }))
+    })
+}
+
 // ── WASM exports ──────────────────────────────────────────────────────────────
 
 #[wasm_bindgen] pub fn press_move(player: u8, slot: u8) {
     if LOBBY_MODE.with(|m| *m.borrow()) {
         push_button(ButtonEvent::Move { player, slot });
+    } else if unlatch_if_held(player, false, slot) {
+        // Clicking a latched button releases the sticky hold.
+        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
     } else {
         push_battle_input(BattleInput::Pad(PadEvent::TapMove { player, slot }));
     }
@@ -437,24 +493,42 @@ fn push_button(ev: ButtonEvent) {
 #[wasm_bindgen] pub fn press_switch(player: u8, idx: u8) {
     if LOBBY_MODE.with(|m| *m.borrow()) {
         push_button(ButtonEvent::Switch { player, idx });
+    } else if unlatch_if_held(player, true, idx) {
+        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
     } else {
         push_battle_input(BattleInput::Pad(PadEvent::TapSwitch { player, idx }));
     }
 }
 
 /// A move button crossed the 500 ms hold threshold (battle only — the lobby
-/// long-press goes through wasm_lobby_long_press).
+/// long-press goes through wasm_lobby_long_press). On the web the hold
+/// LATCHES: the pointer-up release is swallowed (see [`hold_end`]) and the
+/// button stays held until clicked again or an option is committed.
 #[wasm_bindgen] pub fn hold_move(player: u8, slot: u8) {
+    if unlatch_if_held(player, false, slot) {
+        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
+        return;
+    }
+    latch_held(player, false, slot);
     push_battle_input(BattleInput::Pad(PadEvent::HoldMove { player, slot }));
 }
 
 /// A party button crossed the 500 ms hold threshold.
 #[wasm_bindgen] pub fn hold_switch(player: u8, idx: u8) {
+    if unlatch_if_held(player, true, idx) {
+        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
+        return;
+    }
+    latch_held(player, true, idx);
     push_battle_input(BattleInput::Pad(PadEvent::HoldSwitch { player, idx }));
 }
 
-/// The held button was released.
+/// The held button was released. Swallowed while a sticky latch is active —
+/// on the web, letting go of the mouse doesn't end a hold.
 #[wasm_bindgen] pub fn hold_end(player: u8) {
+    if any_latched(player) {
+        return;
+    }
     push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
 }
 
@@ -701,6 +775,30 @@ async fn run_game_loop() {
                && battle.start().is_ok();
         if !ok { print_log("Battle setup failed."); continue; }
 
+        // ── Controls selection: each human picks Normal or Concealed ────────
+        let ai_now = AI_PLAYERS.with(|a| *a.borrow());
+        BATTLE_INPUT.with(|q| q.borrow_mut().clear());
+        clear_hold_latches();
+        let modes = {
+            let mut fx: Vec<CollectEffect> = Vec::new();
+            let mut cs = ControlsSelect::new(ai_now, &mut fx);
+            apply_effects(&mut fx);
+            loop {
+                match select(BattleInputFuture, sleep_ms_raw(COLLECT_TICK_MS as u32)).await {
+                    Either::First(BattleInput::Pad(ev)) => cs.pad_event(ev, &mut fx),
+                    Either::First(BattleInput::Line(line)) => cs.typed_line(line.trim(), &mut fx),
+                    Either::Second(()) => {}
+                }
+                let done = cs.tick(now_ms());
+                apply_effects(&mut fx);
+                if done {
+                    break;
+                }
+            }
+            cs.take_modes()
+        };
+        clear_hold_latches();
+
         print_log("── Battle start ────────────────────────");
         print_log("");
 
@@ -712,7 +810,7 @@ async fn run_game_loop() {
             &mut battle,
             &data,
             &bus,
-            collect_battle_input(&bus, seed),
+            collect_battle_input(&bus, seed, modes),
             &mut queue,
             &mut effects,
             |b| {
@@ -742,7 +840,13 @@ fn now_ms() -> u64 {
 fn apply_effects(fx: &mut Vec<CollectEffect>) {
     for e in fx.drain(..) {
         match e {
-            CollectEffect::Oled(cmd) => oled_apply(cmd),
+            CollectEffect::Oled(cmd) => {
+                // Committing an option releases any sticky web holds.
+                if let OledCmd::ShowWaiting { player } = &cmd {
+                    clear_hold_latch(*player);
+                }
+                oled_apply(cmd)
+            }
             CollectEffect::Ok(m) => print_log(&format!("[OK]  {m}")),
             CollectEffect::Err(m) => print_log(&format!("[!!]  {m}")),
             CollectEffect::Dbg(m) => print_log(&format!("[>>]  {m}")),
@@ -758,10 +862,11 @@ fn apply_effects(fx: &mut Vec<CollectEffect>) {
     }
 }
 
-async fn collect_battle_input(bus: &InputBus, seed: u64) {
+async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]) {
     let mut ai = RandomAi::new(seed ^ 0xbad_c0ffee_dead);
     // Nothing from a previous battle is input for this one.
     BATTLE_INPUT.with(|q| q.borrow_mut().clear());
+    clear_hold_latches();
 
     loop {
         // ── Gather the whole prompt batch, narrating engine events while
@@ -812,6 +917,9 @@ async fn collect_battle_input(bus: &InputBus, seed: u64) {
             let player = mega_blastoise_core::player_id_to_num(p.player_id.as_str());
             if is_ai_player(player) {
                 slot.set_ai_choice(ai.make_choice(&p.request, p.player_data.as_ref()));
+            } else if modes[latch_i(player)] == ControlMode::Concealed {
+                // Fresh randomized layouts every combat turn.
+                slot.set_concealed(now_ms() ^ ((player as u64) << 33));
             }
             batch.push(slot);
         }

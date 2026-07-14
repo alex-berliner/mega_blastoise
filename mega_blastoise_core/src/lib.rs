@@ -26,7 +26,7 @@ pub use board_event::{
     board_prompt_event, mon_display_name, mon_player_id, parse_log_line, player_display_name,
     mon_player_num, player_id_to_num, side_display_name, status_abbrev, BoardEvent, MoveSlot, ParsedBattleLogLine, PromptKind,
 };
-pub use display::{party_slot_from_mon, render_event_text, render_invalid_selection, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, OledFrameBuffer, PartySlotData};
+pub use display::{party_slot_from_mon, render_action_select, render_concealed_moves, render_concealed_switch, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, OledFrameBuffer, PartySlotData};
 pub use oled_ctl::{flash_buf, name_buf, oled_cmds_for_event, render_screen, OledCmd, OledController, OledRedraw, Screen, BOB_TICK_MS};
 pub use battle_input::{
     format_move_choice, format_switch_choice, join_choice_parts, switch_choice_from_team_indices,
@@ -34,9 +34,9 @@ pub use battle_input::{
     ButtonSource, InputBus, InputSource, NoInput, PlayerAction, PlayerChoice,
 };
 pub use choice_collect::{
-    reject_reason, ChoiceCollector, Effect as CollectEffect, PadEvent, SlotOptions,
-    BATTLE_HELP, COLLECT_TICK_MS, HOLD_THRESHOLD_MS, INVALID_FLASH_MS, STATS_PAGE_CYCLE_MS,
-    UNREADY_GRACE_MS,
+    parse_sim_pad_line, reject_reason, ChoiceCollector, ControlMode, ControlsSelect,
+    Effect as CollectEffect, PadEvent, SlotOptions, AI_THINK_MS, BATTLE_HELP, COLLECT_TICK_MS,
+    HOLD_THRESHOLD_MS, INVALID_FLASH_MS, STATS_PAGE_CYCLE_MS, UNREADY_GRACE_MS,
 };
 pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
 pub use hp_bar::{hp_bar_color, hp_bar_count, HpBarState};

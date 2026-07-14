@@ -491,6 +491,146 @@ where
     }
 }
 
+// ── Controls picker (battle start) ────────────────────────────────────────────
+
+/// Draw the Normal/Concealed controls picker.
+///
+/// Layout:
+/// ```text
+///        CONTROLS              ← FONT_6X10, centered
+/// ┌────────┐
+/// │ NORMAL │  CONCEALED        ← boxed = highlighted
+/// └────────┘
+/// </>: swap   o: confirm       ← hint line (bottom-row buttons)
+/// ```
+pub fn render_controls_select<D>(display: &mut D, highlighted: u8, confirmed: bool)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+
+    Text::with_text_style("CONTROLS", Point::new(64, 2), lg, center_style()).draw(display).ok();
+
+    // Two options centered in each half; box around the highlighted one.
+    let opts = ["NORMAL", "CONCEALED"];
+    let centers = [32i32, 96];
+    let y = 28i32;
+    let char_w = FONT_5X8.character_size.width as i32;
+    let char_h = FONT_5X8.character_size.height as u32;
+    for (k, (label, cx)) in opts.iter().zip(centers).enumerate() {
+        Text::with_text_style(label, Point::new(cx, y), sm, center_style()).draw(display).ok();
+        if k as u8 == highlighted {
+            let w = label.len() as i32 * char_w + 8;
+            Rectangle::new(
+                Point::new(cx - w / 2, y - 4),
+                Size::new(w as u32, char_h + 8),
+            )
+            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
+            .draw(display)
+            .ok();
+        }
+    }
+
+    let hint = if confirmed { "CONFIRMED - any: change" } else { "</>: swap    o: confirm" };
+    Text::with_text_style(hint, Point::new(64, 52), sm, center_style()).draw(display).ok();
+}
+
+// ── Concealed mode screens ────────────────────────────────────────────────────
+
+/// Draw the concealed action-select screen: Attack and Switch land on
+/// randomized bottom-row buttons; the third stays blank.
+///
+/// Layout:
+/// ```text
+///     YOUR TURN
+///  HOLD an action           ← FONT_5X8, centered
+/// ┌──────┐┌──────┐┌──────┐
+/// │SWITCH││      ││ATTACK│  ← three bottom-button boxes, y=50
+/// └──────┘└──────┘└──────┘
+/// ```
+pub fn render_action_select<D>(display: &mut D, attack_pos: u8, switch_pos: u8)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+
+    Text::with_text_style("YOUR TURN", Point::new(64, 8), lg, center_style()).draw(display).ok();
+    Text::with_text_style("HOLD an action", Point::new(64, 26), sm, center_style())
+        .draw(display)
+        .ok();
+
+    for pos in 0..3u8 {
+        let x = 1 + pos as i32 * 43;
+        Rectangle::new(Point::new(x, 48), Size::new(41, 15))
+            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
+            .draw(display)
+            .ok();
+        let label = if pos == attack_pos {
+            "ATTACK"
+        } else if pos == switch_pos {
+            "SWITCH"
+        } else {
+            ""
+        };
+        if !label.is_empty() {
+            Text::with_text_style(label, Point::new(x + 20, 52), sm, center_style())
+                .draw(display)
+                .ok();
+        }
+    }
+}
+
+/// Shared corner-menu chrome: a centered title with up to four labels at the
+/// physical corner-button positions (None = dead corner, drawn empty).
+fn render_corner_menu<D>(display: &mut D, title: &str, corners: &[Option<&str>; 4])
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    let h = FONT_5X8.character_size.height as i32;
+    display.clear(BinaryColor::Off).ok();
+
+    Text::with_text_style(title, Point::new(64, 27), lg, center_style()).draw(display).ok();
+
+    let spots = [
+        (0i32, 0i32, false),      // TL
+        (127, 0, true),           // TR
+        (0, 64 - h, false),       // BL
+        (127, 64 - h, true),      // BR
+    ];
+    for (k, (x, y, right)) in spots.iter().enumerate() {
+        if let Some(name) = corners[k] {
+            let style = if *right { tr_style() } else { tl_style() };
+            Text::with_text_style(prefix_bytes(name, 12), Point::new(*x, *y), sm, style)
+                .draw(display)
+                .ok();
+        }
+    }
+}
+
+/// Concealed move menu: shuffled move names at the corner-button positions.
+pub fn render_concealed_moves<D>(display: &mut D, corners: &[Option<&MoveSlot>; 4])
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let labels = corners.map(|c| c.map(|m| m.name.as_str()));
+    render_corner_menu(display, "- ATTACK -", &labels);
+}
+
+/// Concealed bench menu: shuffled benched mon names at the corner positions.
+pub fn render_concealed_switch<D>(display: &mut D, corners: &[Option<&PartySlotData>; 4])
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let labels = corners.map(|c| c.map(|s| s.name.as_str()));
+    render_corner_menu(display, "- SWITCH -", &labels);
+}
+
 // ── Win screen ────────────────────────────────────────────────────────────────
 
 /// Draw a win/loss/tie message centered on any 128×64 `DrawTarget`.
