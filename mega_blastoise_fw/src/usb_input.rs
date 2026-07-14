@@ -174,6 +174,10 @@ impl<'d> UsbBattleInput<'d> {
             self.apply_effects(&mut fx).await;
 
             let mut scan = PadScan::default();
+            scan.instant_switch = [
+                self.modes[0] == ControlMode::Concealed && !self.ai_players[0],
+                self.modes[1] == ControlMode::Concealed && !self.ai_players[1],
+            ];
             loop {
                 match buttons.as_mut() {
                     Some(btns) => {

@@ -137,12 +137,13 @@ async fn main(spawner: Spawner) {
 
     // ── Game loop: lobby → battle → lobby → … ────────────────────────────────
     loop {
-        // Lobby: demo AI battle plays until a player presses ready, then countdown.
+        // Lobby: demo AI battle plays until a player presses ready, then the
+        // controls picker (part of the ready sequence) and the countdown.
         #[cfg(feature = "usb")]
-        let LobbyResult { ai_players, team_p1: up_p1, team_p2: up_p2 } =
+        let LobbyResult { ai_players, modes, team_p1: up_p1, team_p2: up_p2 } =
             run_lobby(&mut buttons, &mut usb_input, &data, &mut queue).await;
         #[cfg(not(feature = "usb"))]
-        let LobbyResult { ai_players, team_p1: up_p1, team_p2: up_p2 } =
+        let LobbyResult { ai_players, modes, team_p1: up_p1, team_p2: up_p2 } =
             run_lobby(&mut buttons, &data, &mut queue).await;
 
         queue.drain_pending(); // discard any demo events still queued
@@ -151,17 +152,11 @@ async fn main(spawner: Spawner) {
         {
             let seed = Instant::now().as_ticks();
             usb_input.set_ai_players(ai_players, seed);
-        }
-
-        // ── Controls selection: each human picks Normal or Concealed ─────────
-        #[cfg(feature = "usb")]
-        {
-            let modes = usb_input.run_controls_select(Some(&mut buttons), ai_players).await;
             usb_input.set_modes(modes);
         }
         #[cfg(not(feature = "usb"))]
         {
-            buttons.modes = buttons.run_controls_select(ai_players).await;
+            buttons.modes = modes;
         }
 
         let _ = ai_players; // used above under #[cfg(feature = "usb")]

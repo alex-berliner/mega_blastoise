@@ -267,12 +267,12 @@ pub enum Screen<'a> {
     Stats { slot: &'a PartySlotData, page: u8 },
     EventText(&'a str),
     Win(&'a str),
-    Waiting { mon: &'a str },
+    Waiting { mon: &'a str, bob: bool },
     WaitingForOpponent,
     Switch(&'a [PartySlotData]),
     Invalid,
     ControlsSelect { highlighted: u8, confirmed: bool },
-    ActionSelect { attack_pos: u8, switch_pos: u8 },
+    ActionSelect { mon: &'a str, bob: bool, attack_pos: u8, switch_pos: u8 },
     /// Corner labels for the concealed move menu (None = dead corner).
     ConcealedMoves { corners: [Option<&'a MoveSlot>; 4] },
     /// Corner labels for the concealed bench menu (None = dead corner).
@@ -295,16 +295,22 @@ where
         Screen::Stats { slot, .. } => render_pokemon_stats_page2(display, slot),
         Screen::EventText(text) => render_event_text(display, text),
         Screen::Win(msg) => render_win_screen(display, msg),
-        Screen::Waiting { mon } => render_waiting_screen(display, mon, "tap to unready"),
+        Screen::Waiting { mon, bob } => {
+            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to unready")
+        }
         Screen::WaitingForOpponent => render_waiting_for_opponent(display),
         Screen::Switch(party) => render_switch_screen(display, party),
         Screen::Invalid => render_invalid_selection(display),
         Screen::ControlsSelect { highlighted, confirmed } => {
             render_controls_select(display, *highlighted, *confirmed)
         }
-        Screen::ActionSelect { attack_pos, switch_pos } => {
-            render_action_select(display, *attack_pos, *switch_pos)
-        }
+        Screen::ActionSelect { mon, bob, attack_pos, switch_pos } => render_action_select(
+            display,
+            mon,
+            if *bob { -2 } else { 0 },
+            *attack_pos,
+            *switch_pos,
+        ),
         Screen::ConcealedMoves { corners } => render_concealed_moves(display, corners),
         Screen::ConcealedSwitch { corners } => render_concealed_switch(display, corners),
     }
@@ -427,7 +433,12 @@ impl OledController {
             if p.bob_acc_ms >= period {
                 p.bob_acc_ms %= period;
                 p.bob_up = !p.bob_up;
-                flip[i] = matches!(p.view, View::Battle);
+                // Every sprite-bearing view bobs: battle, concealed action
+                // select, and the committed waiting screen.
+                flip[i] = matches!(
+                    p.view,
+                    View::Battle | View::ActionSelect { .. } | View::Waiting
+                );
             }
         }
         match (flip[0], flip[1]) {
@@ -599,7 +610,7 @@ impl OledController {
                 let (msg1, msg2) = BoardEvent::win_messages(self.winner);
                 Screen::Win(if player == 1 { msg1 } else { msg2 })
             }
-            View::Waiting => Screen::Waiting { mon: p.battle_mon() },
+            View::Waiting => Screen::Waiting { mon: p.battle_mon(), bob: p.bob_up },
             View::WaitingForOpponent => Screen::WaitingForOpponent,
             View::Switch => Screen::Switch(&p.party),
             View::Invalid => Screen::Invalid,
@@ -608,6 +619,8 @@ impl OledController {
                 confirmed: *confirmed,
             },
             View::ActionSelect { attack_pos, switch_pos } => Screen::ActionSelect {
+                mon: p.battle_mon(),
+                bob: p.bob_up,
                 attack_pos: *attack_pos,
                 switch_pos: *switch_pos,
             },

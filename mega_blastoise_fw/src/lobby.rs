@@ -12,8 +12,8 @@ use embassy_futures::select::{select, Either};
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams,
-    ActivePrompt, BoardEventQueue, FlashDataStore, InputBus, InputSource, PlayerChoice, RandomAi,
-    LOBBY_DEMO_DELAY_MS, TEAM_SEED_SALT,
+    ActivePrompt, BoardEventQueue, ControlMode, FlashDataStore, InputBus, InputSource,
+    PlayerChoice, RandomAi, LOBBY_DEMO_DELAY_MS, TEAM_SEED_SALT,
 };
 
 use crate::battle_effects::BattleEffects;
@@ -48,6 +48,8 @@ pub enum LobbyEvent {
 pub struct LobbyResult {
     /// Which players are AI-controlled.
     pub ai_players: [bool; 2],
+    /// Control scheme each player picked during the ready sequence.
+    pub modes: [ControlMode; 2],
     /// Uploaded team for p1, if `:team p1 …` was issued (else random).
     pub team_p1: Option<alloc::vec::Vec<MonData>>,
     /// Uploaded team for p2, if `:team p2 …` was issued (else random).
@@ -58,6 +60,9 @@ pub trait LobbyInput {
     async fn wait_event(&mut self) -> LobbyEvent;
     async fn write_line(&mut self, s: &str);
     async fn write_status(&mut self, p1_ready: bool, p2_ready: bool);
+    /// The Normal/Concealed controls picker — part of the ready sequence,
+    /// run once both players are ready and before the countdown.
+    async fn choose_controls(&mut self, ai: [bool; 2]) -> [ControlMode; 2];
 }
 
 // ── USB + button implementation ───────────────────────────────────────────────
@@ -117,6 +122,10 @@ impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
     async fn write_status(&mut self, p1_ready: bool, p2_ready: bool) {
         self.usb.write_lobby_ready_status(p1_ready, p2_ready).await;
     }
+
+    async fn choose_controls(&mut self, ai: [bool; 2]) -> [ControlMode; 2] {
+        self.usb.run_controls_select(Some(&mut *self.buttons), ai).await
+    }
 }
 
 // ── Button-only implementation ────────────────────────────────────────────────
@@ -146,6 +155,10 @@ impl LobbyInput for ButtonOnlyLobbyInput<'_, '_> {
 
     async fn write_line(&mut self, _s: &str) {}
     async fn write_status(&mut self, _p1_ready: bool, _p2_ready: bool) {}
+
+    async fn choose_controls(&mut self, ai: [bool; 2]) -> [ControlMode; 2] {
+        self.buttons.run_controls_select(ai).await
+    }
 }
 
 // ── Demo AI ───────────────────────────────────────────────────────────────────
@@ -389,9 +402,13 @@ async fn run_lobby_inner(
         // ── Waiting phase ─────────────────────────────────────────────────────
         loop {
             if ready.both() {
+                // Controls choice is part of the ready sequence: pick and
+                // confirm BEFORE the countdown runs.
+                let modes = input.choose_controls([p1_ai, p2_ai]).await;
                 do_countdown(input).await;
                 return LobbyResult {
                     ai_players: [p1_ai, p2_ai],
+                    modes,
                     team_p1: uploaded_p1,
                     team_p2: uploaded_p2,
                 };

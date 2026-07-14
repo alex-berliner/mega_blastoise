@@ -101,6 +101,39 @@ fn center_style() -> TextStyle {
     TextStyleBuilder::new().alignment(Alignment::Center).baseline(Baseline::Top).build()
 }
 
+// ── Shared sprite drawing ─────────────────────────────────────────────────────
+
+/// The mon's 48×48 sprite (or a fallback name box for "FAINTED"/"---"),
+/// centered horizontally with its top edge at `top`.
+fn draw_center_sprite<D>(display: &mut D, mon_name: &str, top: i32)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
+        let side = crate::sprites::SPRITE_SIDE;
+        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
+        Image::new(&raw, Point::new((128 - side as i32) / 2, top))
+            .draw(display).ok();
+    } else {
+        let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+        let name_y = top + 19;
+        let char_w = FONT_6X10.character_size.width;
+        let char_h = FONT_6X10.character_size.height;
+        let pad = 3u32;
+        let text_w = mon_name.len() as u32 * char_w;
+        let box_w = (text_w + pad * 2).max(char_w);
+        let box_x = ((128u32.saturating_sub(box_w)) / 2) as i32;
+        let box_y = name_y - pad as i32;
+
+        Rectangle::new(Point::new(box_x, box_y), Size::new(box_w, char_h + pad * 2))
+            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
+            .draw(display).ok();
+
+        Text::with_text_style(mon_name, Point::new(64, name_y), name_char, center_style())
+            .draw(display).ok();
+    }
+}
+
 // ── Normal screen ─────────────────────────────────────────────────────────────
 
 /// Draw the normal battle screen onto any 128×64 `DrawTarget`.
@@ -125,30 +158,7 @@ where
     // ── Mon sprite (or fallback name box), centered between the move rows ────
     // Drawn FIRST: when the bob offset shifts the sprite into a move row, its
     // black background must not overwrite the text — moves go on top.
-    if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
-        let side = crate::sprites::SPRITE_SIDE;
-        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
-        Image::new(&raw, Point::new((128 - side as i32) / 2, move_h + sprite_y_off))
-            .draw(display).ok();
-    } else {
-        // Fallback: name in a box, centered ("FAINTED", "---").
-        let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
-        let name_y = 27i32;
-        let char_w = FONT_6X10.character_size.width;
-        let char_h = FONT_6X10.character_size.height;
-        let pad = 3u32;
-        let text_w = mon_name.len() as u32 * char_w;
-        let box_w = (text_w + pad * 2).max(char_w);
-        let box_x = ((128u32.saturating_sub(box_w)) / 2) as i32;
-        let box_y = name_y - pad as i32;
-
-        Rectangle::new(Point::new(box_x, box_y), Size::new(box_w, char_h + pad * 2))
-            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
-            .draw(display).ok();
-
-        Text::with_text_style(mon_name, Point::new(64, name_y), name_char, center_style())
-            .draw(display).ok();
-    }
+    draw_center_sprite(display, mon_name, move_h + sprite_y_off);
 
     // ── Corner moves, on top of the sprite ────────────────────────────────────
     #[cfg(not(feature = "wrapmoves"))]
@@ -499,9 +509,10 @@ where
 /// ```text
 ///        CONTROLS              ← FONT_6X10, centered
 /// ┌────────┐
-/// │ NORMAL │  CONCEALED        ← boxed = highlighted
+/// │ NORMAL │  CONCEALED        ← boxed = highlighted (filled when confirmed)
 /// └────────┘
-/// </>: swap   o: confirm       ← hint line (bottom-row buttons)
+/// Buttons pick moves and       ← blurb for the highlighted scheme
+/// party slots directly.
 /// ```
 pub fn render_controls_select<D>(display: &mut D, highlighted: u8, confirmed: bool)
 where
@@ -511,76 +522,87 @@ where
     let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
     display.clear(BinaryColor::Off).ok();
 
-    Text::with_text_style("CONTROLS", Point::new(64, 2), lg, center_style()).draw(display).ok();
+    Text::with_text_style("CONTROLS", Point::new(64, 0), lg, center_style()).draw(display).ok();
 
-    // Two options centered in each half; box around the highlighted one.
+    // Two options centered in each half; box around the highlighted one
+    // (filled with inverted text once confirmed).
     let opts = ["NORMAL", "CONCEALED"];
     let centers = [32i32, 96];
-    let y = 28i32;
+    let y = 18i32;
     let char_w = FONT_5X8.character_size.width as i32;
     let char_h = FONT_5X8.character_size.height as u32;
     for (k, (label, cx)) in opts.iter().zip(centers).enumerate() {
-        Text::with_text_style(label, Point::new(cx, y), sm, center_style()).draw(display).ok();
-        if k as u8 == highlighted {
+        let is_sel = k as u8 == highlighted;
+        if is_sel {
             let w = label.len() as i32 * char_w + 8;
-            Rectangle::new(
-                Point::new(cx - w / 2, y - 4),
-                Size::new(w as u32, char_h + 8),
-            )
-            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
-            .draw(display)
-            .ok();
+            let style = if confirmed {
+                PrimitiveStyle::with_fill(BinaryColor::On)
+            } else {
+                PrimitiveStyle::with_stroke(BinaryColor::On, 1)
+            };
+            Rectangle::new(Point::new(cx - w / 2, y - 4), Size::new(w as u32, char_h + 8))
+                .into_styled(style)
+                .draw(display)
+                .ok();
         }
+        let text_color = if is_sel && confirmed { BinaryColor::Off } else { BinaryColor::On };
+        let ts = MonoTextStyle::new(&FONT_5X8, text_color);
+        Text::with_text_style(label, Point::new(cx, y), ts, center_style()).draw(display).ok();
     }
 
-    let hint = if confirmed { "CONFIRMED - any: change" } else { "</>: swap    o: confirm" };
-    Text::with_text_style(hint, Point::new(64, 52), sm, center_style()).draw(display).ok();
+    // Blurb for the highlighted scheme.
+    let blurb: [&str; 3] = if highlighted == 1 {
+        ["Hides your inputs:", "hold an action, tap a", "corner. New layout/turn."]
+    } else {
+        ["Buttons pick moves and", "party slots directly.", ""]
+    };
+    for (j, line) in blurb.iter().enumerate() {
+        if !line.is_empty() {
+            Text::with_text_style(line, Point::new(64, 36 + j as i32 * 9), sm, center_style())
+                .draw(display)
+                .ok();
+        }
+    }
 }
 
 // ── Concealed mode screens ────────────────────────────────────────────────────
 
-/// Draw the concealed action-select screen: Attack and Switch land on
-/// randomized bottom-row buttons; the third stays blank.
+/// Draw the concealed action-select screen: the mon's bobbing sprite (same
+/// as the normal battle screen) with Attack and Switch on randomized
+/// bottom-row positions — no boxes, no instruction text.
 ///
 /// Layout:
 /// ```text
-///     YOUR TURN
-///  HOLD an action           ← FONT_5X8, centered
-/// ┌──────┐┌──────┐┌──────┐
-/// │SWITCH││      ││ATTACK│  ← three bottom-button boxes, y=50
-/// └──────┘└──────┘└──────┘
+///        [48x48 sprite]        ← y=8–55, centered, bobs
+/// ATTACK          SWITCH       ← y=56, one label per bottom button position
 /// ```
-pub fn render_action_select<D>(display: &mut D, attack_pos: u8, switch_pos: u8)
-where
+pub fn render_action_select<D>(
+    display: &mut D,
+    mon_name: &str,
+    sprite_y_off: i32,
+    attack_pos: u8,
+    switch_pos: u8,
+) where
     D: DrawTarget<Color = BinaryColor>,
 {
-    let lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
     let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    let h = FONT_5X8.character_size.height as i32;
     display.clear(BinaryColor::Off).ok();
 
-    Text::with_text_style("YOUR TURN", Point::new(64, 8), lg, center_style()).draw(display).ok();
-    Text::with_text_style("HOLD an action", Point::new(64, 26), sm, center_style())
-        .draw(display)
-        .ok();
+    // Sprite first — the labels draw on top when the bob overlaps.
+    draw_center_sprite(display, mon_name, h + sprite_y_off);
 
-    for pos in 0..3u8 {
-        let x = 1 + pos as i32 * 43;
-        Rectangle::new(Point::new(x, 48), Size::new(41, 15))
-            .into_styled(PrimitiveStyle::with_stroke(BinaryColor::On, 1))
-            .draw(display)
-            .ok();
+    // Bottom row: left / center / right, matching the three bottom buttons.
+    for (pos, x, style) in [(0u8, 0i32, tl_style()), (1, 64, center_style()), (2, 127, tr_style())]
+    {
         let label = if pos == attack_pos {
             "ATTACK"
         } else if pos == switch_pos {
             "SWITCH"
         } else {
-            ""
+            continue;
         };
-        if !label.is_empty() {
-            Text::with_text_style(label, Point::new(x + 20, 52), sm, center_style())
-                .draw(display)
-                .ok();
-        }
+        Text::with_text_style(label, Point::new(x, 64 - h), sm, style).draw(display).ok();
     }
 }
 
@@ -661,19 +683,19 @@ where
 
 /// Draw the "submitted, waiting" overlay onto any 128×64 `DrawTarget`.
 ///
-/// Shown after a player commits their choice while waiting for the turn to resolve.
-/// `cancel_hint` is shown at the bottom line; pass `""` to omit it.
-pub fn render_waiting_screen<D>(display: &mut D, mon_name: &str, cancel_hint: &str)
+/// Shown after a player commits their choice: the mon's bobbing sprite sits
+/// high, with `cancel_hint` ("tap to unready") on the bottom line — pass
+/// `""` to omit it.
+pub fn render_waiting_screen<D>(display: &mut D, mon_name: &str, sprite_y_off: i32, cancel_hint: &str)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
-    let lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
     let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
     display.clear(BinaryColor::Off).ok();
-    Text::with_text_style(mon_name,      Point::new(64, 12), lg, center_style()).draw(display).ok();
-    Text::with_text_style("Waiting...",  Point::new(64, 28), sm, center_style()).draw(display).ok();
+    // Sprite up top (2 px of headroom for the bob), hint along the bottom.
+    draw_center_sprite(display, mon_name, 2 + sprite_y_off);
     if !cancel_hint.is_empty() {
-        Text::with_text_style(cancel_hint, Point::new(64, 42), sm, center_style()).draw(display).ok();
+        Text::with_text_style(cancel_hint, Point::new(64, 55), sm, center_style()).draw(display).ok();
     }
 }
 

@@ -242,6 +242,12 @@ impl<'d> PicoBattleInput<'d> {
 
             for i in 0..2usize {
                 let player = (i + 1) as u8;
+                // Deliver a deferred HoldEnd (outer button released while an
+                // inner hold was still down) once the inner has resolved.
+                if scan.pending_end[i] > 0 {
+                    scan.pending_end[i] -= 1;
+                    return PadEvent::HoldEnd { player };
+                }
                 let is_stale = |b: PadBtn| {
                     scan.stale[(b.player - 1) as usize][b.switch as usize] & (1 << b.idx) != 0
                 };
@@ -261,16 +267,27 @@ impl<'d> PicoBattleInput<'d> {
                 match scan.st[i] {
                     PadState::Idle => {
                         if let Some(btn) = fresh_press([None, None]) {
+                            // Concealed action buttons are hold-only: report
+                            // the hold on press-down, no timing delay.
+                            if btn.switch && scan.instant_switch[i] {
+                                scan.st[i] = PadState::HoldOut { btn, outer: None };
+                                return PadEvent::HoldSwitch { player, idx: btn.idx };
+                            }
                             scan.st[i] = PadState::Held { btn, t0: now, outer: None };
                         }
                     }
                     PadState::Held { btn, t0, outer } => {
-                        // If the showing hold's button was released while we
-                        // time the new press, its view ends now.
+                        // The showing hold's button released while we time the
+                        // new press: concealed players keep the view up until
+                        // the inner button resolves; others end it now.
                         if let Some(ob) = outer {
                             if !pressed.down(ob) {
                                 scan.st[i] = PadState::Held { btn, t0, outer: None };
-                                return PadEvent::HoldEnd { player };
+                                if scan.instant_switch[i] {
+                                    scan.orphan[i] = true;
+                                } else {
+                                    return PadEvent::HoldEnd { player };
+                                }
                             }
                         }
                         if pressed.down(btn) {
@@ -288,7 +305,13 @@ impl<'d> PicoBattleInput<'d> {
                         } else {
                             scan.st[i] = match outer {
                                 Some(ob) => PadState::HoldOut { btn: ob, outer: None },
-                                None => PadState::Idle,
+                                None => {
+                                    if scan.orphan[i] {
+                                        scan.orphan[i] = false;
+                                        scan.pending_end[i] = 1;
+                                    }
+                                    PadState::Idle
+                                }
                             };
                             return if btn.switch {
                                 PadEvent::TapSwitch { player, idx: btn.idx }
@@ -299,17 +322,27 @@ impl<'d> PicoBattleInput<'d> {
                     }
                     PadState::HoldOut { btn, outer } => {
                         // An outer button released underneath the showing
-                        // view: no event (its view isn't up), just untrack.
+                        // view: the view stays until THIS button releases;
+                        // the outer's HoldEnd is owed afterwards (concealed).
                         if let Some(ob) = outer {
                             if !pressed.down(ob) {
                                 scan.st[i] = PadState::HoldOut { btn, outer: None };
+                                if scan.instant_switch[i] {
+                                    scan.orphan[i] = true;
+                                }
                                 continue;
                             }
                         }
                         if !pressed.down(btn) {
                             scan.st[i] = match outer {
                                 Some(ob) => PadState::HoldOut { btn: ob, outer: None },
-                                None => PadState::Idle,
+                                None => {
+                                    if scan.orphan[i] {
+                                        scan.orphan[i] = false;
+                                        scan.pending_end[i] = 1;
+                                    }
+                                    PadState::Idle
+                                }
                             };
                             return PadEvent::HoldEnd { player };
                         }
@@ -339,6 +372,16 @@ pub struct PadScan {
     /// Buttons overridden by a newer hold — ignored until physically
     /// released. `stale[player-1][kind]` bitmask, kind 0 = moves, 1 = party.
     stale: [[u8; 2]; 2],
+    /// Concealed-controls players: bottom (party) buttons are hold-only, so
+    /// a press-down reports HoldSwitch IMMEDIATELY (no tap-vs-hold timing),
+    /// and an action button released underneath a still-held corner defers
+    /// its HoldEnd until the corner is released too.
+    pub instant_switch: [bool; 2],
+    /// An outer hold released underneath a still-held inner button; its
+    /// HoldEnd is owed once the inner resolves.
+    orphan: [bool; 2],
+    /// Deferred HoldEnds ready to deliver.
+    pending_end: [u8; 2],
 }
 
 #[derive(Default, Clone, Copy)]
@@ -381,6 +424,10 @@ impl InputSource for PicoBattleInput<'_> {
             apply_oled_effects(&mut fx);
 
             let mut scan = PadScan::default();
+            scan.instant_switch = [
+                self.modes[0] == ControlMode::Concealed,
+                self.modes[1] == ControlMode::Concealed,
+            ];
             loop {
                 match select(self.next_pad_event(&mut scan), Timer::after_millis(COLLECT_TICK_MS)).await {
                     Either::First(ev) => col.pad_event(ev, Instant::now().as_millis(), &mut fx),

@@ -47,6 +47,15 @@ thread_local! {
     // (is_switch, idx), innermost last; releases are swallowed while latched.
     static HELD_LATCH: RefCell<[Vec<(bool, u8)>; 2]> = RefCell::new([Vec::new(), Vec::new()]);
 
+    // Unlatching an OUTER button while an inner one is still latched defers
+    // its HoldEnd until the inner unlatches (the screen must stay on the
+    // inner view until then).
+    static PENDING_END: RefCell<[u8; 2]> = RefCell::new([0; 2]);
+
+    // Control scheme each player chose this battle (drives the web-only
+    // "action buttons open instantly on click" behavior for Concealed).
+    static CONTROL_MODES: RefCell<[ControlMode; 2]> = RefCell::new([ControlMode::Normal; 2]);
+
     // Lobby LED animation mode
     static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
 
@@ -436,17 +445,37 @@ fn latch_i(player: u8) -> usize {
     (player.clamp(1, 2) - 1) as usize
 }
 
-/// True if `(is_switch, idx)` is currently latched for `player`; removes it.
+fn control_mode(player: u8) -> ControlMode {
+    CONTROL_MODES.with(|m| m.borrow()[latch_i(player)])
+}
+
+/// If `(is_switch, idx)` is latched, unlatch it and emit what it owes:
+/// the INNERMOST latch emits its HoldEnd immediately (plus any deferred
+/// outer ends); an outer latch under a still-latched inner defers its
+/// HoldEnd until the inner unlatches, so the inner view stays up.
+/// Returns true if the button was latched.
 fn unlatch_if_held(player: u8, is_switch: bool, idx: u8) -> bool {
-    HELD_LATCH.with(|l| {
-        let v = &mut l.borrow_mut()[latch_i(player)];
-        if let Some(pos) = v.iter().position(|&e| e == (is_switch, idx)) {
-            v.remove(pos);
-            true
-        } else {
-            false
+    let i = latch_i(player);
+    let (was_latched, ends) = HELD_LATCH.with(|l| {
+        let v = &mut l.borrow_mut()[i];
+        match v.iter().position(|&e| e == (is_switch, idx)) {
+            None => (false, 0u8),
+            Some(pos) if pos + 1 == v.len() => {
+                v.remove(pos);
+                let deferred = PENDING_END.with(|p| core::mem::take(&mut p.borrow_mut()[i]));
+                (true, 1 + deferred)
+            }
+            Some(pos) => {
+                v.remove(pos);
+                PENDING_END.with(|p| p.borrow_mut()[i] += 1);
+                (true, 0)
+            }
         }
-    })
+    });
+    for _ in 0..ends {
+        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
+    }
+    was_latched
 }
 
 fn latch_held(player: u8, is_switch: bool, idx: u8) {
@@ -459,6 +488,7 @@ fn any_latched(player: u8) -> bool {
 
 pub(crate) fn clear_hold_latch(player: u8) {
     HELD_LATCH.with(|l| l.borrow_mut()[latch_i(player)].clear());
+    PENDING_END.with(|p| p.borrow_mut()[latch_i(player)] = 0);
 }
 
 pub(crate) fn clear_hold_latches() {
@@ -484,7 +514,6 @@ pub fn wasm_held_buttons(player: u8) -> u8 {
         push_button(ButtonEvent::Move { player, slot });
     } else if unlatch_if_held(player, false, slot) {
         // Clicking a latched button releases the sticky hold.
-        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
     } else {
         push_battle_input(BattleInput::Pad(PadEvent::TapMove { player, slot }));
     }
@@ -494,7 +523,12 @@ pub fn wasm_held_buttons(player: u8) -> u8 {
     if LOBBY_MODE.with(|m| *m.borrow()) {
         push_button(ButtonEvent::Switch { player, idx });
     } else if unlatch_if_held(player, true, idx) {
-        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
+        // Clicking a latched button releases the sticky hold.
+    } else if control_mode(player) == ControlMode::Concealed {
+        // Concealed action buttons are hold-only, so a click toggles the
+        // hold on INSTANTLY (there is no press action to wait for).
+        latch_held(player, true, idx);
+        push_battle_input(BattleInput::Pad(PadEvent::HoldSwitch { player, idx }));
     } else {
         push_battle_input(BattleInput::Pad(PadEvent::TapSwitch { player, idx }));
     }
@@ -506,7 +540,6 @@ pub fn wasm_held_buttons(player: u8) -> u8 {
 /// button stays held until clicked again or an option is committed.
 #[wasm_bindgen] pub fn hold_move(player: u8, slot: u8) {
     if unlatch_if_held(player, false, slot) {
-        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
         return;
     }
     latch_held(player, false, slot);
@@ -516,7 +549,6 @@ pub fn wasm_held_buttons(player: u8) -> u8 {
 /// A party button crossed the 500 ms hold threshold.
 #[wasm_bindgen] pub fn hold_switch(player: u8, idx: u8) {
     if unlatch_if_held(player, true, idx) {
-        push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player }));
         return;
     }
     latch_held(player, true, idx);
@@ -744,6 +776,33 @@ async fn run_game_loop() {
         // (No detail-overlay reset needed: the shared controller redraws over
         // any leftover overlay on the first battle state command.)
 
+        // ── Controls selection — part of the ready sequence: both players
+        //    pick and confirm Normal/Concealed BEFORE the countdown. ─────────
+        let ai_now = AI_PLAYERS.with(|a| *a.borrow());
+        BATTLE_INPUT.with(|q| q.borrow_mut().clear());
+        clear_hold_latches();
+        CONTROL_MODES.with(|m| *m.borrow_mut() = [ControlMode::Normal; 2]);
+        let modes = {
+            let mut fx: Vec<CollectEffect> = Vec::new();
+            let mut cs = ControlsSelect::new(ai_now, &mut fx);
+            apply_effects(&mut fx);
+            loop {
+                match select(BattleInputFuture, sleep_ms_raw(COLLECT_TICK_MS as u32)).await {
+                    Either::First(BattleInput::Pad(ev)) => cs.pad_event(ev, &mut fx),
+                    Either::First(BattleInput::Line(line)) => cs.typed_line(line.trim(), &mut fx),
+                    Either::Second(()) => {}
+                }
+                let done = cs.tick(now_ms());
+                apply_effects(&mut fx);
+                if done {
+                    break;
+                }
+            }
+            cs.take_modes()
+        };
+        clear_hold_latches();
+        CONTROL_MODES.with(|m| *m.borrow_mut() = modes);
+
         // Countdown — same text and 500 ms cadence as the firmware lobby,
         // with a gold LED flash per tick as the web's buzzer stand-in.
         print_log("Both ready!");
@@ -774,30 +833,6 @@ async fn run_game_loop() {
                && battle.update_team("p2", TeamData { members: team_blue, ..Default::default() }).is_ok()
                && battle.start().is_ok();
         if !ok { print_log("Battle setup failed."); continue; }
-
-        // ── Controls selection: each human picks Normal or Concealed ────────
-        let ai_now = AI_PLAYERS.with(|a| *a.borrow());
-        BATTLE_INPUT.with(|q| q.borrow_mut().clear());
-        clear_hold_latches();
-        let modes = {
-            let mut fx: Vec<CollectEffect> = Vec::new();
-            let mut cs = ControlsSelect::new(ai_now, &mut fx);
-            apply_effects(&mut fx);
-            loop {
-                match select(BattleInputFuture, sleep_ms_raw(COLLECT_TICK_MS as u32)).await {
-                    Either::First(BattleInput::Pad(ev)) => cs.pad_event(ev, &mut fx),
-                    Either::First(BattleInput::Line(line)) => cs.typed_line(line.trim(), &mut fx),
-                    Either::Second(()) => {}
-                }
-                let done = cs.tick(now_ms());
-                apply_effects(&mut fx);
-                if done {
-                    break;
-                }
-            }
-            cs.take_modes()
-        };
-        clear_hold_latches();
 
         print_log("── Battle start ────────────────────────");
         print_log("");
@@ -841,9 +876,13 @@ fn apply_effects(fx: &mut Vec<CollectEffect>) {
     for e in fx.drain(..) {
         match e {
             CollectEffect::Oled(cmd) => {
-                // Committing an option releases any sticky web holds.
-                if let OledCmd::ShowWaiting { player } = &cmd {
-                    clear_hold_latch(*player);
+                // Committing an option (or landing back on a pick screen)
+                // releases any sticky web holds.
+                match &cmd {
+                    OledCmd::ShowWaiting { player }
+                    | OledCmd::ShowActionSelect { player, .. }
+                    | OledCmd::ShowControlsSelect { player, .. } => clear_hold_latch(*player),
+                    _ => {}
                 }
                 oled_apply(cmd)
             }
