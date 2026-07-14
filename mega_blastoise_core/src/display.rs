@@ -780,6 +780,40 @@ where
     draw_center_sprite(display, mon_name, 12, 0);
 }
 
+/// Draw the "used <move>!" screen: caption up top, the attacker's sprite
+/// with the move's icon in a box to its right.
+///
+/// Layout:
+/// ```text
+/// Red's Tauros used Surf!      ← FONT_5X8, centered, y=0
+///    [48x48 mon]   ┌[32x32]┐   ← mon at x=24, move icon boxed at x=82
+/// ```
+pub fn render_move_used<D>(display: &mut D, mon_name: &str, caption: &str, move_id: &str)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    Text::with_text_style(prefix_bytes(caption, 25), Point::new(64, 0), sm, center_style())
+        .draw(display).ok();
+
+    let icon = crate::move_sprites::move_sprite(move_id);
+    if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
+        let side = crate::sprites::SPRITE_SIDE;
+        let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
+        // Mon on the left when there's an icon to show; centered otherwise.
+        let x = if icon.is_some() { 24 } else { (128 - side as i32) / 2 };
+        Image::new(&raw, Point::new(x, 14)).draw(display).ok();
+    } else {
+        draw_center_sprite(display, mon_name, 14, 0);
+    }
+    if let Some(bits) = icon {
+        let side = crate::move_sprites::MOVE_SPRITE_SIDE;
+        let raw = ImageRaw::<BinaryColor>::new(bits, side);
+        Image::new(&raw, Point::new(84, 22)).draw(display).ok();
+    }
+}
+
 /// Draw the "waiting for other player" overlay onto any 128×64 `DrawTarget`.
 ///
 /// Shown on one player's screen while the other player is still choosing.

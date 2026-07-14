@@ -30,8 +30,8 @@ use crate::display::{
     render_action_select, render_concealed_moves, render_concealed_switch,
     render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
     render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2,
-    render_sent_out, render_switch_screen, render_waiting_for_opponent, render_waiting_screen,
-    render_win_screen, PartySlotData, SpeedCmp,
+    render_move_used, render_sent_out, render_switch_screen, render_waiting_for_opponent,
+    render_waiting_screen, render_win_screen, PartySlotData, SpeedCmp,
 };
 
 // ── Commands ──────────────────────────────────────────────────────────────────
@@ -90,6 +90,17 @@ pub enum OledCmd {
     /// Switch-in flash showing the incoming mon's sprite under the
     /// "sent out" caption. `player` 0 = both displays.
     ShowSentOut { player: u8, name: [u8; 12], len: u8, text: [u8; 48], tlen: u8 },
+    /// Move-used flash: the attacker's sprite with the move's icon to its
+    /// right, under the "used X!" caption. `player` 0 = both displays.
+    ShowMoveUsed {
+        player: u8,
+        name: [u8; 12],
+        len: u8,
+        move_id: [u8; 16],
+        mlen: u8,
+        text: [u8; 48],
+        tlen: u8,
+    },
 }
 
 impl OledCmd {
@@ -114,7 +125,8 @@ impl OledCmd {
             | OledCmd::ShowActionSelect { player, .. }
             | OledCmd::ShowConcealedMoves { player, .. }
             | OledCmd::ShowConcealedSwitch { player, .. }
-            | OledCmd::ShowSentOut { player, .. } => *player,
+            | OledCmd::ShowSentOut { player, .. }
+            | OledCmd::ShowMoveUsed { player, .. } => *player,
             OledCmd::Win { .. } => 0,
         }
     }
@@ -127,6 +139,23 @@ pub fn name_buf(name: &str) -> ([u8; 12], u8) {
     let mut buf = [b' '; 12];
     buf[..len as usize].copy_from_slice(&bytes[..len as usize]);
     (buf, len)
+}
+
+/// Canonicalize a move's display name to its table id ("Body Slam" →
+/// "bodyslam") in a fixed-size buffer: lowercase, alphanumerics only.
+pub fn move_id_buf(name: &str) -> ([u8; 16], u8) {
+    let mut buf = [b' '; 16];
+    let mut len = 0usize;
+    for c in name.chars() {
+        if len >= 16 {
+            break;
+        }
+        if c.is_ascii_alphanumeric() {
+            buf[len] = c.to_ascii_lowercase() as u8;
+            len += 1;
+        }
+    }
+    (buf, len as u8)
 }
 
 /// Copy up to 48 bytes of narration text into a fixed-size buffer.
@@ -216,9 +245,29 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
         BoardEvent::Tie => {
             cmds.push(OledCmd::Win { winner: 0 });
         }
+        BoardEvent::Move { user, name, .. } => {
+            // "X used MOVE!" shows the attacker's sprite with the move's
+            // icon beside it on BOTH displays (shared context).
+            let (text, tlen) = flash_buf(&event.description());
+            match user.as_deref() {
+                Some(mon) => {
+                    let (buf, len) = name_buf(mon);
+                    let (mid, mlen) = move_id_buf(name);
+                    cmds.push(OledCmd::ShowMoveUsed {
+                        player: 0,
+                        name: buf,
+                        len,
+                        move_id: mid,
+                        mlen,
+                        text,
+                        tlen,
+                    });
+                }
+                None => cmds.push(OledCmd::EventFlash { player: 0, text, len: tlen }),
+            }
+        }
         // Transient narration flashes for events without a state screen.
-        BoardEvent::Move { .. }
-        | BoardEvent::SuperEffective { .. }
+        BoardEvent::SuperEffective { .. }
         | BoardEvent::CriticalHit { .. }
         | BoardEvent::SetStatus { .. }
         | BoardEvent::CureStatus { .. }
@@ -284,6 +333,8 @@ pub enum Screen<'a> {
     ConcealedSwitch { corners: [Option<&'a PartySlotData>; 4] },
     /// Switch-in: caption + the incoming mon's sprite.
     SentOut { mon: &'a str, caption: &'a str },
+    /// Move used: caption + the attacker's sprite + the move's icon.
+    MoveUsed { mon: &'a str, caption: &'a str, move_id: &'a str },
 }
 
 /// Render a [`Screen`] onto any 128×64 target. The single dispatch point
@@ -322,6 +373,9 @@ where
         Screen::ConcealedMoves { corners } => render_concealed_moves(display, corners),
         Screen::ConcealedSwitch { corners } => render_concealed_switch(display, corners),
         Screen::SentOut { mon, caption } => render_sent_out(display, mon, caption),
+        Screen::MoveUsed { mon, caption, move_id } => {
+            render_move_used(display, mon, caption, move_id)
+        }
     }
 }
 
@@ -345,6 +399,8 @@ enum View {
     /// Switch-in flash: `sent_name`/`sent_len` hold the incoming mon's name;
     /// the caption reuses the flash buffer.
     SentOut { name: [u8; 12], len: u8 },
+    /// Move-used flash: attacker name + move id; caption in the flash buffer.
+    MoveUsed { name: [u8; 12], len: u8, move_id: [u8; 16], mlen: u8 },
 }
 
 struct Player {
@@ -615,6 +671,18 @@ impl OledController {
                 }
                 if both { OledRedraw::Both } else { OledRedraw::for_player(player) }
             }
+            OledCmd::ShowMoveUsed { player, name, len, move_id, mlen, text, tlen } => {
+                let both = player == 0;
+                for p in [1u8, 2] {
+                    if both || player == p {
+                        let pl = self.player_mut(p);
+                        pl.flash = text;
+                        pl.flash_len = tlen;
+                        pl.view = View::MoveUsed { name, len, move_id, mlen };
+                    }
+                }
+                if both { OledRedraw::Both } else { OledRedraw::for_player(player) }
+            }
         }
     }
 
@@ -694,6 +762,11 @@ impl OledController {
             View::SentOut { name, len } => Screen::SentOut {
                 mon: core::str::from_utf8(&name[..*len as usize]).unwrap_or("?").trim_end(),
                 caption: core::str::from_utf8(&p.flash[..p.flash_len as usize]).unwrap_or(""),
+            },
+            View::MoveUsed { name, len, move_id, mlen } => Screen::MoveUsed {
+                mon: core::str::from_utf8(&name[..*len as usize]).unwrap_or("?").trim_end(),
+                caption: core::str::from_utf8(&p.flash[..p.flash_len as usize]).unwrap_or(""),
+                move_id: core::str::from_utf8(&move_id[..*mlen as usize]).unwrap_or(""),
             },
         }
     }
