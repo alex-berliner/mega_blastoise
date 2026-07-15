@@ -19,15 +19,17 @@
 use embassy_rp::bind_interrupts;
 use embassy_rp::peripherals::{DMA_CH0, DMA_CH1, PIO0};
 
-/// Per-board data-pin assignment: the partner PCB routes LED_P1/LED_P2 to
-/// GP0/GP1 (schematic nets); the hand-wired board uses GP20/GP22.
+/// Per-board data-pin assignment. The PCB schematic's LED_P1/LED_P2 nets are
+/// GP0/GP1, but on the physical board those chains sit on the OPPOSITE
+/// players' sides — so player 1 is driven by GP1 and player 2 by GP0
+/// (verified on hardware). The hand-wired board uses GP20/GP22.
 #[cfg(feature = "breadboard")]
 mod wiring {
     pub use embassy_rp::peripherals::{PIN_20 as P1Pin, PIN_22 as P2Pin};
 }
 #[cfg(not(feature = "breadboard"))]
 mod wiring {
-    pub use embassy_rp::peripherals::{PIN_0 as P1Pin, PIN_1 as P2Pin};
+    pub use embassy_rp::peripherals::{PIN_1 as P1Pin, PIN_0 as P2Pin};
 }
 use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::pio_programs::ws2812::{PioWs2812, PioWs2812Program};
