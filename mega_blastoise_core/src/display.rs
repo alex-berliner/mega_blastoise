@@ -703,10 +703,11 @@ where
             .ok();
     }
 
-    // Bottom row maps the three physical bottom buttons:
-    // left/right arrows swap the highlight, the middle checkmark confirms.
-    Text::with_text_style("<--", Point::new(0, 56), sm, tl_style()).draw(display).ok();
-    Text::with_text_style("-->", Point::new(127, 56), sm, tr_style()).draw(display).ok();
+    // Bottom row maps the three physical bottom buttons: left/right arrows
+    // swap the highlight, the middle checkmark confirms. Inset from the
+    // screen corners so they can't be read as corner-button hints.
+    Text::with_text_style("<--", Point::new(21, 56), sm, center_style()).draw(display).ok();
+    Text::with_text_style("-->", Point::new(107, 56), sm, center_style()).draw(display).ok();
     let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
     let mut seg = |x0: i32, y0: i32, x1: i32, y1: i32| {
         embedded_graphics::primitives::Line::new(Point::new(x0, y0), Point::new(x1, y1))
@@ -800,26 +801,70 @@ where
     render_corner_menu(display, "- ATTACK -", &labels);
 }
 
-/// Concealed bench menu: shuffled team members at the corner positions.
+/// Concealed switch list: the whole eligible party as rows (shuffled order,
+/// chosen per turn by the collector), with the cursor row inverted. Header
+/// legend maps the bottom buttons: left/right arrows move, checkmark picks.
 /// The currently active mon is marked with a leading `*`.
-pub fn render_concealed_switch<D>(display: &mut D, corners: &[Option<&PartySlotData>; 4])
-where
+pub fn render_switch_list<D>(
+    display: &mut D,
+    rows: &[Option<&PartySlotData>; 6],
+    cursor: u8,
+) where
     D: DrawTarget<Color = BinaryColor>,
 {
-    let owned: [Option<alloc::string::String>; 4] = corners.map(|c| {
-        c.map(|s| {
-            if s.active {
-                alloc::format!("*{}", s.name)
-            } else {
-                s.name.clone()
-            }
-        })
-    });
-    let mut labels: [Option<&str>; 4] = [None; 4];
-    for (k, o) in owned.iter().enumerate() {
-        labels[k] = o.as_deref();
+    let lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+
+    // Header: inset arrows (bottom-left/right buttons), title, and a
+    // checkmark after it (bottom-middle button confirms).
+    Text::with_text_style("<--", Point::new(16, 1), sm, center_style()).draw(display).ok();
+    Text::with_text_style("-->", Point::new(112, 1), sm, center_style()).draw(display).ok();
+    Text::with_text_style("SWITCH", Point::new(60, 0), lg, center_style()).draw(display).ok();
+    let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
+    let mut seg = |x0: i32, y0: i32, x1: i32, y1: i32| {
+        embedded_graphics::primitives::Line::new(Point::new(x0, y0), Point::new(x1, y1))
+            .into_styled(stroke)
+            .draw(display)
+            .ok();
+    };
+    seg(84, 5, 87, 8);
+    seg(87, 8, 92, 1);
+
+    Rectangle::new(Point::new(0, 12), Size::new(128, 1))
+        .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+        .draw(display).ok();
+
+    for (k, slot) in rows.iter().enumerate() {
+        let Some(slot) = slot else { continue };
+        let y = 15 + k as i32 * 8;
+        let selected = k as u8 == cursor;
+        if selected {
+            Rectangle::new(Point::new(0, y), Size::new(128, 8))
+                .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+                .draw(display).ok();
+        }
+        let color = if selected { BinaryColor::Off } else { BinaryColor::On };
+        let style = MonoTextStyle::new(&FONT_5X8, color);
+        let name = prefix_bytes(&slot.name, 12);
+        let left = if slot.active {
+            alloc::format!("*{}", name)
+        } else {
+            alloc::format!("{}", name)
+        };
+        let hp_str = alloc::format!("{}/{}", slot.hp, slot.max_hp);
+        let right = match slot.status.as_deref() {
+            _ if slot.hp == 0 => alloc::format!("FNT"),
+            Some("par") => alloc::format!("PAR {}", hp_str),
+            Some("brn") => alloc::format!("BRN {}", hp_str),
+            Some("psn") | Some("tox") => alloc::format!("PSN {}", hp_str),
+            Some("slp") => alloc::format!("SLP {}", hp_str),
+            Some("frz") => alloc::format!("FRZ {}", hp_str),
+            _ => hp_str,
+        };
+        Text::with_text_style(&left, Point::new(2, y), style, tl_style()).draw(display).ok();
+        Text::with_text_style(&right, Point::new(125, y), style, tr_style()).draw(display).ok();
     }
-    render_corner_menu(display, "- SWITCH -", &labels);
 }
 
 // ── Win screen ────────────────────────────────────────────────────────────────
@@ -1079,9 +1124,7 @@ where
             // Arrows at the four corners point at the corner (move) buttons.
             Text::with_text_style("<--", Point::new(0, 0), sm, tl_style()).draw(display).ok();
             Text::with_text_style("-->", Point::new(127, 0), sm, tr_style()).draw(display).ok();
-            Text::with_text_style("choose your", Point::new(64, 21), lg, center_style())
-                .draw(display).ok();
-            Text::with_text_style("attack", Point::new(64, 33), lg, center_style())
+            Text::with_text_style("choose to attack", Point::new(64, 27), lg, center_style())
                 .draw(display).ok();
             Text::with_text_style("<--", Point::new(0, 56), sm, tl_style()).draw(display).ok();
             Text::with_text_style("-->", Point::new(127, 56), sm, tr_style()).draw(display).ok();

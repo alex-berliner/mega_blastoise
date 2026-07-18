@@ -29,7 +29,7 @@ pub use board_event::{
     board_prompt_event, mon_display_name, mon_player_id, parse_log_line, player_display_name,
     mon_player_num, player_id_to_num, side_display_name, status_abbrev, BoardEvent, MoveSlot, ParsedBattleLogLine, PromptKind,
 };
-pub use display::{party_slot_from_mon, render_action_select, render_concealed_moves, render_concealed_switch, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen, render_qr_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_sent_out, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, InvalidReason, OledFrameBuffer, PartySlotData};
+pub use display::{party_slot_from_mon, render_action_select, render_concealed_moves, render_switch_list, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen, render_qr_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_sent_out, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, InvalidReason, OledFrameBuffer, PartySlotData};
 pub use oled_ctl::{flash_buf, name_buf, oled_cmds_for_event, render_screen, OledCmd, OledController, OledRedraw, Screen, BOB_TICK_MS};
 pub use battle_input::{
     format_move_choice, format_switch_choice, join_choice_parts, switch_choice_from_team_indices,

@@ -27,11 +27,11 @@ use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 
 use crate::board_event::{BoardEvent, MoveSlot};
 use crate::display::{
-    render_action_select, render_concealed_moves, render_concealed_switch,
-    render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
+    render_action_select, render_concealed_moves, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
     render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2,
     render_move_used, render_opponent_mon, render_qr_screen, render_sent_out,
-    render_switch_screen, render_tutorial_screen, render_waiting_for_opponent,
+    render_switch_list, render_switch_screen, render_tutorial_screen,
+    render_waiting_for_opponent,
     render_waiting_screen, render_win_screen, InvalidReason, PartySlotData, SpeedCmp,
 };
 
@@ -96,8 +96,9 @@ pub enum OledCmd {
     ShowActionSelect { player: u8, attack_pos: u8, switch_pos: u8 },
     /// Concealed move menu: corner → move slot (-1 = dead corner).
     ShowConcealedMoves { player: u8, map: [i8; 4] },
-    /// Concealed bench menu: corner → team index (-1 = dead corner).
-    ShowConcealedSwitch { player: u8, map: [i8; 4] },
+    /// Concealed switch list: `order` = team indices in shuffled row order
+    /// (-1 padded), `cursor` = highlighted row.
+    ShowSwitchList { player: u8, order: [i8; 6], cursor: u8 },
     /// Concealed foe-peek: show the OPPONENT's active mon on this player's
     /// display (held unused bottom button).
     ShowOpponentMon { player: u8 },
@@ -140,7 +141,7 @@ impl OledCmd {
             | OledCmd::ShowControlsSelect { player, .. }
             | OledCmd::ShowActionSelect { player, .. }
             | OledCmd::ShowConcealedMoves { player, .. }
-            | OledCmd::ShowConcealedSwitch { player, .. }
+            | OledCmd::ShowSwitchList { player, .. }
             | OledCmd::ShowOpponentMon { player }
             | OledCmd::ShowSentOut { player, .. }
             | OledCmd::ShowMoveUsed { player, .. } => *player,
@@ -361,8 +362,8 @@ pub enum Screen<'a> {
     ActionSelect { mon: &'a str, bob: bool, attack_pos: u8, switch_pos: u8, spd: SpeedCmp },
     /// Corner labels for the concealed move menu (None = dead corner).
     ConcealedMoves { corners: [Option<&'a MoveSlot>; 4] },
-    /// Corner labels for the concealed bench menu (None = dead corner).
-    ConcealedSwitch { corners: [Option<&'a PartySlotData>; 4] },
+    /// Concealed switch list rows (party slots in shuffled order) + cursor.
+    SwitchList { rows: [Option<&'a PartySlotData>; 6], cursor: u8 },
     /// Concealed foe-peek: the opponent's active mon.
     OpponentMon { mon: &'a str, bob: bool },
     /// Switch-in: caption + the incoming mon's sprite.
@@ -413,7 +414,7 @@ where
             *spd,
         ),
         Screen::ConcealedMoves { corners } => render_concealed_moves(display, corners),
-        Screen::ConcealedSwitch { corners } => render_concealed_switch(display, corners),
+        Screen::SwitchList { rows, cursor } => render_switch_list(display, rows, *cursor),
         Screen::OpponentMon { mon, bob } => {
             render_opponent_mon(display, mon, if *bob { -2 } else { 0 })
         }
@@ -444,7 +445,7 @@ enum View {
     ControlsSelect { highlighted: u8, confirmed: bool },
     ActionSelect { attack_pos: u8, switch_pos: u8 },
     ConcealedMoves { map: [i8; 4] },
-    ConcealedSwitch { map: [i8; 4] },
+    SwitchList { order: [i8; 6], cursor: u8 },
     /// Foe-peek (concealed): the opponent's active mon.
     OpponentMon,
     /// Switch-in flash: `sent_name`/`sent_len` hold the incoming mon's name;
@@ -753,8 +754,8 @@ impl OledController {
                 self.player_mut(player).view = View::ConcealedMoves { map };
                 OledRedraw::for_player(player)
             }
-            OledCmd::ShowConcealedSwitch { map, .. } => {
-                self.player_mut(player).view = View::ConcealedSwitch { map };
+            OledCmd::ShowSwitchList { order, cursor, .. } => {
+                self.player_mut(player).view = View::SwitchList { order, cursor };
                 OledRedraw::for_player(player)
             }
             OledCmd::ShowOpponentMon { .. } => {
@@ -863,14 +864,14 @@ impl OledController {
                 }
                 Screen::ConcealedMoves { corners }
             }
-            View::ConcealedSwitch { map } => {
-                let mut corners: [Option<&PartySlotData>; 4] = [None; 4];
-                for (k, c) in corners.iter_mut().enumerate() {
-                    if map[k] >= 0 {
-                        *c = p.party.get(map[k] as usize);
+            View::SwitchList { order, cursor } => {
+                let mut rows: [Option<&PartySlotData>; 6] = [None; 6];
+                for (k, r) in rows.iter_mut().enumerate() {
+                    if order[k] >= 0 {
+                        *r = p.party.get(order[k] as usize);
                     }
                 }
-                Screen::ConcealedSwitch { corners }
+                Screen::SwitchList { rows, cursor: *cursor }
             }
             View::OpponentMon => {
                 let foe = if player == 1 { &self.p2 } else { &self.p1 };

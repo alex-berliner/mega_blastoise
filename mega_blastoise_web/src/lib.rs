@@ -872,19 +872,12 @@ async fn run_game_loop() {
         }
         print_log("GO!");
 
-        // Battle-start tutorial, 3 pages, ~3 s each (a press advances early).
+        // Battle-start tutorial, 3 pages, 2.25 s each, not skippable.
         // Real games with a human only — never before demo / AI-vs-AI games.
         if !(seq_ai[0] && seq_ai[1]) {
-            BATTLE_INPUT.with(|q| q.borrow_mut().clear());
             for page in 0..mega_blastoise_core::display::TUTORIAL_PAGES {
                 oled_apply(OledCmd::ShowTutorial { page });
-                let mut waited_ms = 0u32;
-                while waited_ms < 3_000 {
-                    match select(BattleInputFuture, sleep_ms_raw(100)).await {
-                        Either::First(_) => break,
-                        Either::Second(()) => waited_ms += 100,
-                    }
-                }
+                sleep_ms_raw(2250).await;
             }
         }
 
@@ -967,7 +960,7 @@ fn apply_effects(fx: &mut Vec<CollectEffect>) {
                     OledCmd::ShowWaiting { player }
                     | OledCmd::ShowActionSelect { player, .. }
                     | OledCmd::ShowConcealedMoves { player, .. }
-                    | OledCmd::ShowConcealedSwitch { player, .. }
+                    | OledCmd::ShowSwitchList { player, .. }
                     | OledCmd::ShowOpponentMon { player }
                     | OledCmd::ShowControlsSelect { player, .. } => clear_hold_latch(*player),
                     _ => {}

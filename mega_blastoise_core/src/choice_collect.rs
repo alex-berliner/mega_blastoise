@@ -141,11 +141,9 @@ pub struct SlotOptions {
     switch_pos: u8,
     /// Corner button (TL/TR/BL/BR) → real move slot; -1 = dead corner.
     move_map: [i8; 4],
-    /// Eligible bench team indices, pre-shuffled. When more than 4, each
-    /// menu open shows the next window of 4 (reopen to see the rest).
+    /// Switch-list rows: eligible team indices, shuffled once per turn
+    /// (press-count anonymity — the opponent can't map presses to slots).
     bench: Vec<u8>,
-    /// Corner order the bench entries land on (scatter).
-    switch_positions: [u8; 4],
 }
 
 impl SlotOptions {
@@ -172,7 +170,6 @@ impl SlotOptions {
             switch_pos: 1,
             move_map: [-1; 4],
             bench: Vec::new(),
-            switch_positions: [0, 1, 2, 3],
         };
         if let Some(pd) = player_data {
             for (i, ok) in s.party_ok.iter_mut().enumerate() {
@@ -269,24 +266,15 @@ impl SlotOptions {
             let j = (rng.next_u64() % (i as u64 + 1)) as usize;
             self.bench.swap(i, j);
         }
-        self.switch_positions = shuffled4(&mut rng);
     }
 
-    /// Concealed switch-menu layout for the `opens`-th open this turn:
-    /// corner → team index (-1 dead). With more than 4 benched mons, each
-    /// open shows the next window of 4.
-    fn switch_corner_map(&self, opens: u8) -> [i8; 4] {
-        let mut map = [-1i8; 4];
-        let n = self.bench.len();
-        if n == 0 {
-            return map;
+    /// The switch list's row order as a fixed-size buffer (-1 padded).
+    fn list_order(&self) -> [i8; 6] {
+        let mut order = [-1i8; 6];
+        for (k, &t) in self.bench.iter().take(6).enumerate() {
+            order[k] = t as i8;
         }
-        let base = if n > 4 { (opens as usize * 4) % n } else { 0 };
-        for k in 0..n.min(4) {
-            let team_idx = self.bench[(base + k) % n];
-            map[self.switch_positions[k] as usize] = team_idx as i8;
-        }
-        map
+        order
     }
 
     /// Placeholder slot for a single-prompt batch: permanently committed with
@@ -310,7 +298,6 @@ impl SlotOptions {
             switch_pos: 1,
             move_map: [-1; 4],
             bench: Vec::new(),
-            switch_positions: [0, 1, 2, 3],
         }
     }
 
@@ -334,20 +321,15 @@ fn shuffled4(rng: &mut SimpleRng) -> [u8; 4] {
     p
 }
 
-/// Which concealed corner menu is open.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum CMenuKind {
-    Moves,
-    Switch,
-}
-
 /// Where the invalid-selection flash restores to.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum InvalidBack {
     /// The mode's pick screen (battle screen / switch picker / action select).
     Pick,
-    /// A concealed corner menu that was open when the invalid pick happened.
-    Menu { kind: CMenuKind },
+    /// The concealed move menu was open when the invalid pick happened.
+    MovesMenu,
+    /// The concealed switch list was open, with this cursor position.
+    List { cursor: u8 },
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -365,14 +347,17 @@ enum SlotState {
     Invalid { until: u64, back: InvalidBack },
     /// Choice locked in (waiting screen shown, unless auto).
     Committed,
-    /// Concealed corner menu (moves or bench), opened by TAPPING its action
-    /// button; tapping that button again closes back to the action select
-    /// (no holding required). Forced-switch menus can't close.
-    CMenu { kind: CMenuKind },
-    /// Concealed nested detail (move detail / mon stats), opened by HOLDING
-    /// a corner while a menu is open; release returns to the menu. Pages
-    /// cycle like [`Self::Detail`] / [`Self::Stats`].
-    CDetail { kind: CMenuKind, real: u8, page: u8, next_flip: u64 },
+    /// Concealed move menu, opened by TAPPING the attack action button;
+    /// tapping that button again closes back to the action select.
+    CMoves,
+    /// Concealed switch list (full party, shuffled order): bottom-left/right
+    /// move the cursor, bottom-middle confirms, holding it shows stats.
+    /// Forced-switch lists can't close.
+    CList { cursor: u8 },
+    /// Nested detail view. `from_list` = mon stats opened from the switch
+    /// list (release returns there); else move detail from the move menu.
+    /// Pages cycle like [`Self::Detail`] / [`Self::Stats`].
+    CDetail { from_list: bool, real: u8, page: u8, next_flip: u64 },
     /// Concealed foe-peek: the opponent's active mon, toggled by tapping the
     /// unused bottom button (tap again — or an action button — to leave).
     CFoe,
@@ -391,11 +376,6 @@ pub struct ChoiceCollector {
     /// Per-slot deadline for an AI commit. Armed on the first tick after
     /// construction (the collector has no clock until then), fired in tick.
     ai_commit_at: [Option<u64>; 2],
-    /// Concealed: how many times each slot's switch menu was opened this
-    /// turn (drives the >4-bench windowing) and the layout of the currently
-    /// open window.
-    c_opens: [u8; 2],
-    c_switch_map: [[i8; 4]; 2],
 }
 
 impl ChoiceCollector {
@@ -415,8 +395,6 @@ impl ChoiceCollector {
 
         let mut st = [SlotState::Choosing; 2];
         let mut out = [String::new(), String::new()];
-        let mut c_opens = [0u8; 2];
-        let mut c_switch_map = [[-1i8; 4]; 2];
         for i in 0..2 {
             let s = &slots[i];
             if i < n_real {
@@ -436,13 +414,12 @@ impl ChoiceCollector {
                     )));
                 } else if s.mode == ControlMode::Concealed && s.auto.is_none() {
                     if s.forced_switch {
-                        // Straight to the randomized bench menu.
-                        c_switch_map[i] = s.switch_corner_map(0);
-                        c_opens[i] = 1;
-                        st[i] = SlotState::CMenu { kind: CMenuKind::Switch };
-                        fx.push(Effect::Oled(OledCmd::ShowConcealedSwitch {
+                        // Straight to the shuffled switch list.
+                        st[i] = SlotState::CList { cursor: 0 };
+                        fx.push(Effect::Oled(OledCmd::ShowSwitchList {
                             player: s.player_num,
-                            map: c_switch_map[i],
+                            order: s.list_order(),
+                            cursor: 0,
                         }));
                     } else {
                         fx.push(Effect::Oled(OledCmd::ShowActionSelect {
@@ -485,8 +462,6 @@ impl ChoiceCollector {
             grace_start: None,
             complete: false,
             ai_commit_at: [None; 2],
-            c_opens,
-            c_switch_map,
         }
     }
 
@@ -518,7 +493,7 @@ impl ChoiceCollector {
     fn restore_pick(&mut self, i: usize, fx: &mut Vec<Effect>) {
         if self.slots[i].mode == ControlMode::Concealed {
             if self.slots[i].forced_switch {
-                self.show_menu(i, CMenuKind::Switch, fx);
+                self.show_list(i, 0, fx);
             } else {
                 self.show_action_select(i, fx);
             }
@@ -559,169 +534,147 @@ impl ChoiceCollector {
         self.st[i] = SlotState::Choosing;
     }
 
-    /// (Re-)show an open concealed menu with the current layout.
-    fn show_menu(&mut self, i: usize, kind: CMenuKind, fx: &mut Vec<Effect>) {
+    /// (Re-)show the concealed move menu.
+    fn show_moves(&mut self, i: usize, fx: &mut Vec<Effect>) {
         let s = &self.slots[i];
-        let cmd = match kind {
-            CMenuKind::Moves => OledCmd::ShowConcealedMoves {
-                player: s.player_num,
-                map: s.move_map,
-            },
-            CMenuKind::Switch => OledCmd::ShowConcealedSwitch {
-                player: s.player_num,
-                map: self.c_switch_map[i],
-            },
-        };
-        fx.push(Effect::Oled(cmd));
-        self.st[i] = SlotState::CMenu { kind };
+        fx.push(Effect::Oled(OledCmd::ShowConcealedMoves {
+            player: s.player_num,
+            map: s.move_map,
+        }));
+        self.st[i] = SlotState::CMoves;
     }
 
-    /// Open a menu fresh (switch menus advance the >4-bench window per open).
-    fn open_menu(&mut self, i: usize, kind: CMenuKind, fx: &mut Vec<Effect>) {
-        if kind == CMenuKind::Switch {
-            self.c_switch_map[i] = self.slots[i].switch_corner_map(self.c_opens[i]);
-            self.c_opens[i] = self.c_opens[i].wrapping_add(1);
-        }
-        self.show_menu(i, kind, fx);
+    /// (Re-)show the switch list with the cursor on `cursor` (clamped).
+    fn show_list(&mut self, i: usize, cursor: u8, fx: &mut Vec<Effect>) {
+        let s = &self.slots[i];
+        let n = s.bench.len().min(6) as u8;
+        let cursor = if n == 0 { 0 } else { cursor.min(n - 1) };
+        fx.push(Effect::Oled(OledCmd::ShowSwitchList {
+            player: s.player_num,
+            order: s.list_order(),
+            cursor,
+        }));
+        self.st[i] = SlotState::CList { cursor };
     }
 
     /// A bottom-row (action) button was tapped in concealed mode while on
-    /// the action select, a menu, or the foe-peek. Tap semantics:
-    /// - the button of the open menu → close (back to action select);
-    /// - the other menu's button → switch menus;
-    /// - the unused button → toggle the foe-peek;
-    /// - during a FORCED switch any bottom tap re-deals the bench window
-    ///   (that's how a >4 bench is browsed — the menu itself can't close).
-    fn action_tap(&mut self, i: usize, open: Option<CMenuKind>, idx: u8, fx: &mut Vec<Effect>) {
+    /// the action select, the move menu, or the foe-peek:
+    /// - the attack button toggles the move menu;
+    /// - the switch button opens the switch list;
+    /// - the unused button toggles the foe-peek (a free decoy).
+    fn action_tap(&mut self, i: usize, moves_open: bool, idx: u8, fx: &mut Vec<Effect>) {
         let s = &self.slots[i];
-        if s.forced_switch {
-            self.open_menu(i, CMenuKind::Switch, fx);
-            return;
-        }
         if idx == s.attack_pos {
-            if open == Some(CMenuKind::Moves) {
+            if moves_open {
                 self.show_action_select(i, fx);
             } else {
-                self.open_menu(i, CMenuKind::Moves, fx);
+                self.show_moves(i, fx);
             }
         } else if idx == s.switch_pos {
-            if open == Some(CMenuKind::Switch) {
-                self.show_action_select(i, fx);
-            } else {
-                self.open_menu(i, CMenuKind::Switch, fx);
-            }
-        } else {
-            // The unused bottom button: foe-peek toggle (a free decoy —
-            // nothing can be committed from it).
-            if self.st[i] == SlotState::CFoe {
-                self.show_action_select(i, fx);
-            } else {
-                fx.push(Effect::Oled(OledCmd::ShowOpponentMon { player: s.player_num }));
-                self.st[i] = SlotState::CFoe;
-            }
+            self.show_list(i, 0, fx);
+        } else if self.st[i] == SlotState::CFoe {
+            self.show_action_select(i, fx);
+        } else if !moves_open {
+            fx.push(Effect::Oled(OledCmd::ShowOpponentMon { player: s.player_num }));
+            self.st[i] = SlotState::CFoe;
         }
     }
 
-    /// A corner button was tapped with a concealed menu open: map it to the
-    /// real move/mon and commit (or flash invalid). Dead corners are inert.
-    fn pick_corner(
-        &mut self,
-        i: usize,
-        kind: CMenuKind,
-        corner: usize,
-        now_ms: u64,
-        fx: &mut Vec<Effect>,
-    ) {
-        if corner >= 4 {
+    /// A bottom-row tap with the switch list open: 0 = cursor up, 2 = cursor
+    /// down (wrapping), 1 = confirm the highlighted mon.
+    fn list_tap(&mut self, i: usize, cursor: u8, idx: u8, now_ms: u64, fx: &mut Vec<Effect>) {
+        let n = self.slots[i].bench.len().min(6) as u8;
+        if n == 0 {
             return;
         }
-        let s = &self.slots[i];
-        match kind {
-            CMenuKind::Moves => {
-                let real = s.move_map[corner];
-                if real < 0 {
-                    return;
-                }
-                let action = PlayerAction::Move(real as usize);
-                match turn_action_choice(&action, s.n_moves, &s.usable, s.trapped, s.active_slot) {
-                    Ok(choice) => self.commit(i, choice, fx),
-                    Err(ActionReject::OutOfRange) => {}
-                    Err(e) => self.reject_invalid_back(
-                        i,
-                        now_ms,
-                        invalid_reason(e),
-                        InvalidBack::Menu { kind },
-                        fx,
-                    ),
-                }
-            }
-            CMenuKind::Switch => {
-                let real = self.c_switch_map[i][corner];
-                if real < 0 {
-                    return;
-                }
-                let idx = real as usize;
+        match idx {
+            0 => self.show_list(i, (cursor + n - 1) % n, fx),
+            2 => self.show_list(i, (cursor + 1) % n, fx),
+            1 => {
+                let s = &self.slots[i];
+                let Some(&team) = s.bench.get(cursor as usize) else { return };
+                let team = team as usize;
                 if s.forced_switch {
-                    // The bench menu only contains valid targets.
-                    let choice = format_switch_choice(idx);
+                    // The forced list only contains valid targets.
+                    let choice = format_switch_choice(team);
                     self.commit(i, choice, fx);
                 } else {
-                    let action = PlayerAction::Switch(idx);
-                    match turn_action_choice(&action, s.n_moves, &s.usable, s.trapped, s.active_slot) {
+                    let action = PlayerAction::Switch(team);
+                    match turn_action_choice(&action, s.n_moves, &s.usable, s.trapped, s.active_slot)
+                    {
                         Ok(choice) => self.commit(i, choice, fx),
                         Err(e) => self.reject_invalid_back(
                             i,
                             now_ms,
                             invalid_reason(e),
-                            InvalidBack::Menu { kind },
+                            InvalidBack::List { cursor },
                             fx,
                         ),
                     }
                 }
             }
+            _ => {}
         }
     }
 
-    /// A corner button crossed the hold threshold with a menu open: nested
-    /// detail view (move detail / mon stats) — release returns to the menu.
-    fn open_detail(
-        &mut self,
-        i: usize,
-        kind: CMenuKind,
-        corner: usize,
-        now_ms: u64,
-        fx: &mut Vec<Effect>,
-    ) {
+    /// A corner button was tapped with the move menu open: map it to the
+    /// real move and commit (or flash invalid). Dead corners are inert.
+    fn pick_move_corner(&mut self, i: usize, corner: usize, now_ms: u64, fx: &mut Vec<Effect>) {
         if corner >= 4 {
             return;
         }
         let s = &self.slots[i];
-        let real = match kind {
-            CMenuKind::Moves => s.move_map[corner],
-            CMenuKind::Switch => self.c_switch_map[i][corner],
-        };
+        let real = s.move_map[corner];
         if real < 0 {
             return;
         }
-        match kind {
-            CMenuKind::Moves => {
-                fx.push(Effect::Oled(OledCmd::ShowMoveDetail {
-                    player: s.player_num,
-                    slot: real as u8,
-                    page: 0,
-                }));
-            }
-            CMenuKind::Switch => {
-                fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
-                    player: s.player_num,
-                    team_idx: real as u8,
-                    page: 0,
-                }));
+        let action = PlayerAction::Move(real as usize);
+        match turn_action_choice(&action, s.n_moves, &s.usable, s.trapped, s.active_slot) {
+            Ok(choice) => self.commit(i, choice, fx),
+            Err(ActionReject::OutOfRange) => {}
+            Err(e) => {
+                self.reject_invalid_back(i, now_ms, invalid_reason(e), InvalidBack::MovesMenu, fx)
             }
         }
+    }
+
+    /// A corner button crossed the hold threshold with the move menu open:
+    /// nested move-detail view — release returns to the menu.
+    fn open_move_detail(&mut self, i: usize, corner: usize, now_ms: u64, fx: &mut Vec<Effect>) {
+        if corner >= 4 {
+            return;
+        }
+        let s = &self.slots[i];
+        let real = s.move_map[corner];
+        if real < 0 {
+            return;
+        }
+        fx.push(Effect::Oled(OledCmd::ShowMoveDetail {
+            player: s.player_num,
+            slot: real as u8,
+            page: 0,
+        }));
         self.st[i] = SlotState::CDetail {
-            kind,
+            from_list: false,
             real: real as u8,
+            page: 0,
+            next_flip: now_ms + STATS_PAGE_CYCLE_MS,
+        };
+    }
+
+    /// The confirm button is being HELD on the switch list: stats detail of
+    /// the highlighted mon — release returns to the list.
+    fn open_list_stats(&mut self, i: usize, cursor: u8, now_ms: u64, fx: &mut Vec<Effect>) {
+        let s = &self.slots[i];
+        let Some(&team) = s.bench.get(cursor as usize) else { return };
+        fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
+            player: s.player_num,
+            team_idx: team,
+            page: 0,
+        }));
+        self.st[i] = SlotState::CDetail {
+            from_list: true,
+            real: team,
             page: 0,
             next_flip: now_ms + STATS_PAGE_CYCLE_MS,
         };
@@ -729,7 +682,8 @@ impl ChoiceCollector {
 
     /// Concealed-mode input handling (states: Choosing = action select).
     /// Menus and the foe-peek TOGGLE on bottom-button taps — nothing needs
-    /// to be held down. Corner holds still open the nested detail views.
+    /// to be held down. With the switch list open the bottom buttons become
+    /// prev / confirm / next; corner holds still open nested detail views.
     fn pad_event_concealed(&mut self, i: usize, action: Pad, now_ms: u64, fx: &mut Vec<Effect>) {
         match (self.st[i], action) {
             // Any press while committed unreadies (auto slots never get here).
@@ -738,46 +692,75 @@ impl ChoiceCollector {
 
             // Action select: tap (or hold — same thing) an action button.
             (SlotState::Choosing, Pad::Tap(PlayerAction::Switch(idx))) => {
-                self.action_tap(i, None, idx as u8, fx);
+                self.action_tap(i, false, idx as u8, fx);
             }
             (SlotState::Choosing, Pad::Hold(HoldView::Stats(idx))) => {
-                self.action_tap(i, None, idx, fx);
+                self.action_tap(i, false, idx, fx);
             }
             (SlotState::Choosing, _) => {}
 
-            // Menu open: tap a corner to commit, hold it for details, tap an
-            // action button to close / switch menus / re-deal (forced bench).
-            (SlotState::CMenu { kind }, Pad::Tap(PlayerAction::Move(corner))) => {
-                self.pick_corner(i, kind, corner, now_ms, fx);
+            // Move menu: tap a corner to commit, hold it for details, tap an
+            // action button to close / open the switch list.
+            (SlotState::CMoves, Pad::Tap(PlayerAction::Move(corner))) => {
+                self.pick_move_corner(i, corner, now_ms, fx);
             }
-            (SlotState::CMenu { kind }, Pad::Hold(HoldView::Move(corner))) => {
-                self.open_detail(i, kind, corner as usize, now_ms, fx);
+            (SlotState::CMoves, Pad::Hold(HoldView::Move(corner))) => {
+                self.open_move_detail(i, corner as usize, now_ms, fx);
             }
-            (SlotState::CMenu { kind }, Pad::Tap(PlayerAction::Switch(idx))) => {
-                self.action_tap(i, Some(kind), idx as u8, fx);
+            (SlotState::CMoves, Pad::Tap(PlayerAction::Switch(idx))) => {
+                self.action_tap(i, true, idx as u8, fx);
             }
-            (SlotState::CMenu { kind }, Pad::Hold(HoldView::Stats(idx))) => {
-                self.action_tap(i, Some(kind), idx, fx);
+            (SlotState::CMoves, Pad::Hold(HoldView::Stats(idx))) => {
+                self.action_tap(i, true, idx, fx);
             }
-            (SlotState::CMenu { .. }, _) => {}
+            (SlotState::CMoves, _) => {}
 
-            // Nested detail: release returns one level up to the menu; a
-            // different corner hold swaps the view directly.
-            (SlotState::CDetail { kind, .. }, Pad::HoldEnd) => {
-                self.show_menu(i, kind, fx);
+            // Switch list: bottom buttons navigate/confirm; holding the
+            // confirm button shows the highlighted mon's stats; corner taps
+            // back out (in-turn only — a forced switch must pick).
+            (SlotState::CList { cursor }, Pad::Tap(PlayerAction::Switch(idx))) => {
+                self.list_tap(i, cursor, idx as u8, now_ms, fx);
             }
-            (SlotState::CDetail { kind, .. }, Pad::Hold(HoldView::Move(corner))) => {
-                self.open_detail(i, kind, corner as usize, now_ms, fx);
+            (SlotState::CList { cursor }, Pad::Hold(HoldView::Stats(idx))) => {
+                if idx == 1 {
+                    self.open_list_stats(i, cursor, now_ms, fx);
+                } else {
+                    self.list_tap(i, cursor, idx, now_ms, fx);
+                }
+            }
+            (SlotState::CList { .. }, Pad::Tap(PlayerAction::Move(_)))
+            | (SlotState::CList { .. }, Pad::Hold(HoldView::Move(_))) => {
+                if !self.slots[i].forced_switch {
+                    self.show_action_select(i, fx);
+                }
+            }
+            (SlotState::CList { .. }, _) => {}
+
+            // Nested detail: release returns one level up; from the move
+            // menu a different corner hold swaps the view directly.
+            (SlotState::CDetail { from_list: true, real, .. }, Pad::HoldEnd) => {
+                let cursor = self.slots[i]
+                    .bench
+                    .iter()
+                    .position(|&t| t == real)
+                    .unwrap_or(0) as u8;
+                self.show_list(i, cursor, fx);
+            }
+            (SlotState::CDetail { from_list: false, .. }, Pad::HoldEnd) => {
+                self.show_moves(i, fx);
+            }
+            (SlotState::CDetail { from_list: false, .. }, Pad::Hold(HoldView::Move(corner))) => {
+                self.open_move_detail(i, corner as usize, now_ms, fx);
             }
             (SlotState::CDetail { .. }, _) => {}
 
             // Foe-peek: any action-button tap leaves (unused = back to the
-            // action select, menu buttons = straight into that menu).
+            // action select, others = straight into that menu/list).
             (SlotState::CFoe, Pad::Tap(PlayerAction::Switch(idx))) => {
-                self.action_tap(i, None, idx as u8, fx);
+                self.action_tap(i, false, idx as u8, fx);
             }
             (SlotState::CFoe, Pad::Hold(HoldView::Stats(idx))) => {
-                self.action_tap(i, None, idx, fx);
+                self.action_tap(i, false, idx, fx);
             }
             (SlotState::CFoe, _) => {}
 
@@ -1107,7 +1090,8 @@ impl ChoiceCollector {
             match self.st[i] {
                 SlotState::Invalid { until, back } if now_ms >= until => match back {
                     InvalidBack::Pick => self.restore_pick(i, fx),
-                    InvalidBack::Menu { kind } => self.show_menu(i, kind, fx),
+                    InvalidBack::MovesMenu => self.show_moves(i, fx),
+                    InvalidBack::List { cursor } => self.show_list(i, cursor, fx),
                 },
                 // Held move-detail view: cycle through the stats page and
                 // the description pages (the renderer wraps the counter).
@@ -1139,25 +1123,23 @@ impl ChoiceCollector {
                     };
                 }
                 // Concealed nested detail views: same page cycling.
-                SlotState::CDetail { kind, real, page, next_flip } if now_ms >= next_flip => {
-                    let page = match kind {
-                        CMenuKind::Switch => page ^ 1,
-                        CMenuKind::Moves => page.wrapping_add(1),
-                    };
-                    match kind {
-                        CMenuKind::Switch => fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
+                SlotState::CDetail { from_list, real, page, next_flip } if now_ms >= next_flip => {
+                    let page = if from_list { page ^ 1 } else { page.wrapping_add(1) };
+                    if from_list {
+                        fx.push(Effect::Oled(OledCmd::ShowPokemonStats {
                             player: self.slots[i].player_num,
                             team_idx: real,
                             page,
-                        })),
-                        CMenuKind::Moves => fx.push(Effect::Oled(OledCmd::ShowMoveDetail {
+                        }));
+                    } else {
+                        fx.push(Effect::Oled(OledCmd::ShowMoveDetail {
                             player: self.slots[i].player_num,
                             slot: real,
                             page,
-                        })),
+                        }));
                     }
                     self.st[i] = SlotState::CDetail {
-                        kind,
+                        from_list,
                         real,
                         page,
                         next_flip: now_ms + STATS_PAGE_CYCLE_MS,
@@ -2171,18 +2153,20 @@ mod tests {
         assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedMoves { player: 1, .. })));
         fx.clear();
         c.pad_event(PadEvent::HoldEnd { player: 1 }, 100, &mut fx);
-        assert!(matches!(c.st[0], SlotState::CMenu { kind: CMenuKind::Moves }));
+        assert!(matches!(c.st[0], SlotState::CMoves));
         // Tapping the SAME action button closes back to the action select.
         fx.clear();
         c.pad_event(PadEvent::TapSwitch { player: 1, idx: atk }, 200, &mut fx);
         assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowActionSelect { player: 1, .. })));
         assert_eq!(c.st[0], SlotState::Choosing);
-        // Tapping the OTHER action button from an open menu switches menus.
+        // Tapping the switch button from the open move menu opens the LIST.
         c.pad_event(PadEvent::TapSwitch { player: 1, idx: atk }, 300, &mut fx);
         fx.clear();
         c.pad_event(PadEvent::TapSwitch { player: 1, idx: sw }, 400, &mut fx);
-        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedSwitch { player: 1, .. })));
-        c.pad_event(PadEvent::TapSwitch { player: 1, idx: sw }, 500, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowSwitchList { player: 1, cursor: 0, .. })));
+        // A corner tap backs out of the (in-turn) list to the action select.
+        c.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, 500, &mut fx);
+        assert_eq!(c.st[0], SlotState::Choosing);
         // The unused bottom button toggles the foe-peek.
         let dead = (0..3u8)
             .find(|&p| p != c.slots[0].attack_pos && p != c.slots[0].switch_pos)
@@ -2219,7 +2203,7 @@ mod tests {
         // …where a stray release is inert (menus stay open on their own)…
         fx.clear();
         c.pad_event(PadEvent::HoldEnd { player: 1 }, 800, &mut fx);
-        assert!(matches!(c.st[0], SlotState::CMenu { kind: CMenuKind::Moves }));
+        assert!(matches!(c.st[0], SlotState::CMoves));
         // …and tapping the action button again closes to action select.
         fx.clear();
         c.pad_event(PadEvent::TapSwitch { player: 1, idx: atk }, 900, &mut fx);
@@ -2227,41 +2211,95 @@ mod tests {
     }
 
     #[test]
-    fn concealed_switch_menu_commits_team_index() {
+    fn concealed_switch_list_navigates_and_commits() {
         let (mut c, _) = concealed_pair(13);
         let mut fx = Vec::new();
         let sw = c.slots[0].switch_pos;
-        c.pad_event(PadEvent::HoldSwitch { player: 1, idx: sw }, 0, &mut fx);
-        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedSwitch { player: 1, .. })));
-        let map = c.c_switch_map[0];
-        let corner = map.iter().position(|&m| m == 2).unwrap() as u8;
-        c.pad_event(PadEvent::TapMove { player: 1, slot: corner }, 10, &mut fx);
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: sw }, 0, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowSwitchList { player: 1, cursor: 0, .. })));
+        // Walk the cursor to the row holding team index 2, then confirm.
+        let target = c.slots[0].bench.iter().position(|&t| t == 2).unwrap() as u8;
+        for step in 0..target {
+            c.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, 10 + step as u64, &mut fx);
+        }
+        assert_eq!(c.st[0], SlotState::CList { cursor: target });
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, 100, &mut fx);
         assert_eq!(c.out[0], "switch 2");
+        // Cursor wraps: prev from row 0 lands on the last row.
+        let mut fx2 = Vec::new();
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: 0 }, 200, &mut fx2); // unready
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: sw }, 210, &mut fx2);
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: 0 }, 220, &mut fx2);
+        let n = c.slots[0].bench.len() as u8;
+        assert_eq!(c.st[0], SlotState::CList { cursor: n - 1 });
+        // Confirming the active mon flashes invalid, back to the list.
+        let active_row = c.slots[0].bench.iter().position(|&t| t == 0).unwrap() as u8;
+        let mut fx3 = Vec::new();
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, 300, &mut fx3); // wrap to 0
+        for step in 0..active_row {
+            c.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, 310 + step as u64, &mut fx3);
+        }
+        fx3.clear();
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, 400, &mut fx3);
+        assert!(has_oled(&fx3, |o| matches!(
+            o,
+            OledCmd::ShowInvalidSelection { player: 1, reason: InvalidReason::AlreadyOut }
+        )));
+        fx3.clear();
+        c.tick(400 + INVALID_FLASH_MS, &mut fx3);
+        assert_eq!(c.st[0], SlotState::CList { cursor: active_row });
     }
 
     #[test]
-    fn concealed_forced_switch_shows_menu_directly() {
+    fn concealed_forced_switch_shows_list_directly() {
         let mut fx = Vec::new();
         let mut p1 = SlotOptions::from_prompt(&switch_prompt("p1"));
         p1.party_ok = [false, true, true, false, false, false];
         p1.set_concealed(3);
         let mut c = ChoiceCollector::new(alloc::vec![p1], &mut fx);
-        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedSwitch { player: 1, .. })));
-        // No hold underneath: releases must NOT exit the menu.
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowSwitchList { player: 1, cursor: 0, .. })));
+        // Stray releases must NOT exit the list; neither do corner taps
+        // (a forced switch must pick).
         fx.clear();
         c.pad_event(PadEvent::HoldEnd { player: 1 }, 10, &mut fx);
-        assert!(matches!(c.st[0], SlotState::CMenu { .. }));
-        let map = c.c_switch_map[0];
-        let corner = map.iter().position(|&m| m >= 0).unwrap() as u8;
-        let real = map[corner as usize];
-        c.pad_event(PadEvent::TapMove { player: 1, slot: corner }, 20, &mut fx);
-        assert_eq!(c.out[0], alloc::format!("switch {real}"));
-        // Unready returns to the SAME menu, same layout.
+        c.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, 15, &mut fx);
+        assert!(matches!(c.st[0], SlotState::CList { .. }));
+        let first = c.slots[0].bench[0];
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, 20, &mut fx);
+        assert_eq!(c.out[0], alloc::format!("switch {first}"));
+        // Unready returns to the SAME list, same row order.
+        let order = c.slots[0].bench.clone();
         fx.clear();
-        c.pad_event(PadEvent::TapMove { player: 1, slot: corner }, 30, &mut fx);
+        c.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, 30, &mut fx);
         assert!(c.out[0].is_empty());
-        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedSwitch { .. })));
-        assert_eq!(c.c_switch_map[0], map, "layout fixed within the turn");
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowSwitchList { .. })));
+        assert_eq!(c.slots[0].bench, order, "row order fixed within the turn");
+    }
+
+    #[test]
+    fn concealed_forced_switch_reaches_a_full_6v6_bench() {
+        // 5 alive benched mons (6v6 after one faint): every one of them —
+        // the old corner windows capped at 4 — must be reachable.
+        let mut fx = Vec::new();
+        let mut p1 = SlotOptions::from_prompt(&switch_prompt("p1"));
+        p1.party_ok = [true, true, true, true, true, false];
+        p1.set_concealed(41);
+        let mut c = ChoiceCollector::new(alloc::vec![p1], &mut fx);
+        assert_eq!(c.slots[0].bench.len(), 5);
+        for want in 0..5usize {
+            // Walk right to each row and read the highlighted team index.
+            let target = c.slots[0].bench[want];
+            let SlotState::CList { cursor } = c.st[0] else { panic!("not in list") };
+            let n = c.slots[0].bench.len() as u8;
+            let steps = (want as u8 + n - cursor) % n;
+            for k in 0..steps {
+                c.pad_event(PadEvent::TapSwitch { player: 1, idx: 2 }, 100 + k as u64, &mut fx);
+            }
+            c.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, 200, &mut fx);
+            assert_eq!(c.out[0], alloc::format!("switch {target}"), "row {want} reachable");
+            // Unready for the next round.
+            c.pad_event(PadEvent::TapSwitch { player: 1, idx: 1 }, 210, &mut fx);
+        }
     }
 
     #[test]
@@ -2308,7 +2346,7 @@ mod tests {
         fx.clear();
         assert!(!c.tick(20 + INVALID_FLASH_MS, &mut fx));
         assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowConcealedMoves { .. })));
-        assert!(matches!(c.st[0], SlotState::CMenu { .. }));
+        assert!(matches!(c.st[0], SlotState::CMoves));
     }
 
     #[test]
