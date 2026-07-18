@@ -692,18 +692,31 @@ where
     }
 
     // Blurb for the highlighted scheme.
-    let blurb: [&str; 3] = if highlighted == 1 {
-        ["Hides your inputs:", "tap an action, tap a", "corner. New layout/turn."]
+    let blurb: [&str; 2] = if highlighted == 1 {
+        ["Hides inputs: tap action,", "tap corner. New each turn"]
     } else {
-        ["Buttons pick moves and", "party slots directly.", ""]
+        ["Buttons pick moves and", "party slots directly.", ]
     };
     for (j, line) in blurb.iter().enumerate() {
-        if !line.is_empty() {
-            Text::with_text_style(line, Point::new(64, 36 + j as i32 * 9), sm, center_style())
-                .draw(display)
-                .ok();
-        }
+        Text::with_text_style(line, Point::new(64, 34 + j as i32 * 9), sm, center_style())
+            .draw(display)
+            .ok();
     }
+
+    // Bottom row maps the three physical bottom buttons:
+    // left/right arrows swap the highlight, the middle checkmark confirms.
+    Text::with_text_style("<--", Point::new(0, 56), sm, tl_style()).draw(display).ok();
+    Text::with_text_style("-->", Point::new(127, 56), sm, tr_style()).draw(display).ok();
+    let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
+    let mut seg = |x0: i32, y0: i32, x1: i32, y1: i32| {
+        embedded_graphics::primitives::Line::new(Point::new(x0, y0), Point::new(x1, y1))
+            .into_styled(stroke)
+            .draw(display)
+            .ok();
+    };
+    // Checkmark, centered on the middle button.
+    seg(59, 59, 63, 63);
+    seg(63, 63, 70, 55);
 }
 
 // ── Concealed mode screens ────────────────────────────────────────────────────
