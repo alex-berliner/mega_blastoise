@@ -60,21 +60,24 @@ const OFF: RGB8 = RGB8 { r: 0, g: 0, b: 0 };
 /// Party dot color for a healthy (un-statused) member, before HP dimming.
 const OK_GREEN: RGB8 = RGB8 { r: 0, g: 90, b: 0 };
 
-/// Master brightness, applied to every frame just before it is written. Keeps
+/// THE brightness knob: hard ceiling for every LED state — lobby idle /
+/// ready / countdown, battle indicators, win flash. Every frame is scaled by
+/// this on its way out (via `cap`/`battle_cap`), so nothing can exceed it and
+/// one edit dims the whole device uniformly. Keeps
 /// current draw (and thus voltage droop / color shift on long or weakly-powered
 /// strips) low, and keeps the whole thing easy on the eyes. Percent of full.
-const BRIGHTNESS_PCT: u16 = 35;
+const MAX_BRIGHTNESS_PCT: u16 = 100;
 
 /// Scale a color by the master brightness.
 fn cap(c: RGB8) -> RGB8 {
-    let s = |v: u8| ((v as u16 * BRIGHTNESS_PCT) / 100) as u8;
+    let s = |v: u8| ((v as u16 * MAX_BRIGHTNESS_PCT) / 100) as u8;
     RGB8 { r: s(c.r), g: s(c.g), b: s(c.b) }
 }
 
 /// In-battle indicators (HP bar, party/status dots, win flash) run at HALF
-/// the master range; the lobby animations keep the full BRIGHTNESS_PCT.
+/// the ceiling; the lobby animations use the full MAX_BRIGHTNESS_PCT.
 fn battle_cap(c: RGB8) -> RGB8 {
-    let s = |v: u8| ((v as u16 * BRIGHTNESS_PCT) / 200) as u8;
+    let s = |v: u8| ((v as u16 * MAX_BRIGHTNESS_PCT) / 200) as u8;
     RGB8 { r: s(c.r), g: s(c.g), b: s(c.b) }
 }
 
@@ -333,20 +336,24 @@ pub async fn task(
                 // frame is one small monotonic step of a triangle wave, so even
                 // if the demo battle briefly starves this task the animation
                 // just pauses and resumes — it never jumps, so no strobe. The
-                // base color is pre-cap; both BRIGHTNESS_PCT and the per-frame
+                // base color is pre-cap; both MAX_BRIGHTNESS_PCT and the per-frame
                 // breath factor scale it down further.
                 const STEPS: u8 = 60; // full breath ≈ STEPS * frame_ms
                 const HALF: u8 = STEPS / 2;
-                let base = RGB8 { r: 60, g: 10, b: 230 };
+                // Per-player identity colors: P1 white, P2 red (web lobby
+                // mirrors this in lobby_led_frame).
+                let base_p1 = RGB8 { r: 230, g: 230, b: 230 };
+                let base_p2 = RGB8 { r: 230, g: 0, b: 0 };
                 let mut step: u8 = 0;
                 loop {
                     // Triangle 0..HALF..0 → breath factor 25..100 %.
                     let tri = if step <= HALF { step } else { STEPS - step };
                     let factor = 25 + (tri as u16 * 75 / HALF as u16);
                     let s = |v: u8| ((v as u16 * factor) / 100) as u8;
-                    let frame = solid(RGB8 { r: s(base.r), g: s(base.g), b: s(base.b) });
-                    ws1.write(&frame).await;
-                    ws2.write(&frame).await;
+                    let breathe =
+                        |c: RGB8| solid(RGB8 { r: s(c.r), g: s(c.g), b: s(c.b) });
+                    ws1.write(&breathe(base_p1)).await;
+                    ws2.write(&breathe(base_p2)).await;
                     step = (step + 1) % STEPS;
                     match select(Timer::after_millis(45), CMD.receive()).await {
                         Either::First(_) => {}                       // next breath frame

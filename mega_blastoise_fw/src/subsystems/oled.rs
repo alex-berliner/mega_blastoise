@@ -1,4 +1,8 @@
-//! SSD1306 OLED driver, one display per player.
+//! OLED display task, one panel per player.
+//!
+//! Panel driver differs per board: the PCB carries 1.3" SH1106 panels
+//! (see `subsystems::sh1106`), the breadboard rig 0.96" SSD1306 ones
+//! (ssd1306 crate). Same `DrawTarget`/`init`/`flush` surface either way.
 //!
 //! Wiring (default = partner PCB; `breadboard` = the hand-wired rig):
 //!   PCB:        P1 on I2C1 (GP2 SDA, GP3 SCL);  P2 on I2C0 (GP4 SDA, GP5 SCL)
@@ -50,7 +54,10 @@ use embassy_sync::{blocking_mutex::{raw::CriticalSectionRawMutex, Mutex as Block
 use embedded_graphics::{draw_target::DrawTarget, geometry::{OriginDimensions, Size}, pixelcolor::BinaryColor, Pixel};
 use mega_blastoise_core::{render_screen, OledController, BOB_TICK_MS};
 pub use mega_blastoise_core::OledCmd;
+#[cfg(feature = "breadboard")]
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306Async};
+#[cfg(not(feature = "breadboard"))]
+use super::sh1106::Sh1106;
 
 bind_interrupts!(struct OledIrqs {
     I2C0_IRQ => InterruptHandler<I2C0>;
@@ -230,19 +237,23 @@ pub async fn task(
     let bus0 = I2c::new_async(p1_bus, p1_scl, p1_sda, OledIrqs, cfg);
     let bus1 = I2c::new_async(p2_bus, p2_scl, p2_sda, OledIrqs, cfg);
 
-    let mut disp0 = Ssd1306Async::new(
-        I2CDisplayInterface::new(bus0),
-        DisplaySize128x64,
-        DisplayRotation::Rotate0,
-    )
-    .into_buffered_graphics_mode();
-
-    let mut disp1 = Ssd1306Async::new(
-        I2CDisplayInterface::new(bus1),
-        DisplaySize128x64,
-        DisplayRotation::Rotate0,
-    )
-    .into_buffered_graphics_mode();
+    #[cfg(feature = "breadboard")]
+    let (mut disp0, mut disp1) = (
+        Ssd1306Async::new(
+            I2CDisplayInterface::new(bus0),
+            DisplaySize128x64,
+            DisplayRotation::Rotate0,
+        )
+        .into_buffered_graphics_mode(),
+        Ssd1306Async::new(
+            I2CDisplayInterface::new(bus1),
+            DisplaySize128x64,
+            DisplayRotation::Rotate0,
+        )
+        .into_buffered_graphics_mode(),
+    );
+    #[cfg(not(feature = "breadboard"))]
+    let (mut disp0, mut disp1) = (Sh1106::new(bus0), Sh1106::new(bus1));
 
     // Bound init: embassy async I²C blocks forever waiting for an ACK from an
     // absent display, which would wedge this whole task (and starve the other,
