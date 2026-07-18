@@ -31,7 +31,7 @@ use crate::display::{
     render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
     render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2,
     render_move_used, render_opponent_mon, render_qr_screen, render_sent_out,
-    render_switch_screen, render_waiting_for_opponent,
+    render_switch_screen, render_tutorial_screen, render_waiting_for_opponent,
     render_waiting_screen, render_win_screen, InvalidReason, PartySlotData, SpeedCmp,
 };
 
@@ -88,6 +88,8 @@ pub enum OledCmd {
     SetControlMode { player: u8, concealed: bool },
     /// Post-game feedback QR code on BOTH displays.
     ShowQr,
+    /// Battle-start tutorial page (0..TUTORIAL_PAGES) on BOTH displays.
+    ShowTutorial { page: u8 },
     /// Battle-start controls picker. `highlighted` 0 = Normal, 1 = Concealed.
     ShowControlsSelect { player: u8, highlighted: u8, confirmed: bool },
     /// Concealed mode: randomized Attack/Switch on the bottom-row buttons.
@@ -142,7 +144,7 @@ impl OledCmd {
             | OledCmd::ShowOpponentMon { player }
             | OledCmd::ShowSentOut { player, .. }
             | OledCmd::ShowMoveUsed { player, .. } => *player,
-            OledCmd::Win { .. } | OledCmd::ShowQr => 0,
+            OledCmd::Win { .. } | OledCmd::ShowQr | OledCmd::ShowTutorial { .. } => 0,
         }
     }
 }
@@ -370,6 +372,8 @@ pub enum Screen<'a> {
     MoveUsed { mon: &'a str, caption: &'a str, move_id: &'a str, recipient: &'a str, icon_on: bool },
     /// Post-game feedback QR code.
     Qr,
+    /// Battle-start tutorial page.
+    Tutorial(u8),
 }
 
 /// Render a [`Screen`] onto any 128×64 target. The single dispatch point
@@ -418,6 +422,7 @@ where
             render_move_used(display, mon, caption, move_id, recipient, *icon_on)
         }
         Screen::Qr => render_qr_screen(display),
+        Screen::Tutorial(page) => render_tutorial_screen(display, *page),
     }
 }
 
@@ -435,6 +440,7 @@ enum View {
     Switch,
     Invalid(InvalidReason),
     Qr,
+    Tutorial(u8),
     ControlsSelect { highlighted: u8, confirmed: bool },
     ActionSelect { attack_pos: u8, switch_pos: u8 },
     ConcealedMoves { map: [i8; 4] },
@@ -730,6 +736,11 @@ impl OledController {
                 self.p2.view = View::Qr;
                 OledRedraw::Both
             }
+            OledCmd::ShowTutorial { page } => {
+                self.p1.view = View::Tutorial(page);
+                self.p2.view = View::Tutorial(page);
+                OledRedraw::Both
+            }
             OledCmd::ShowControlsSelect { highlighted, confirmed, .. } => {
                 self.player_mut(player).view = View::ControlsSelect { highlighted, confirmed };
                 OledRedraw::for_player(player)
@@ -831,6 +842,7 @@ impl OledController {
             View::Switch => Screen::Switch(&p.party),
             View::Invalid(reason) => Screen::Invalid(*reason),
             View::Qr => Screen::Qr,
+            View::Tutorial(page) => Screen::Tutorial(*page),
             View::ControlsSelect { highlighted, confirmed } => Screen::ControlsSelect {
                 highlighted: *highlighted,
                 confirmed: *confirmed,

@@ -872,6 +872,22 @@ async fn run_game_loop() {
         }
         print_log("GO!");
 
+        // Battle-start tutorial, 3 pages, ~3 s each (a press advances early).
+        // Real games with a human only — never before demo / AI-vs-AI games.
+        if !(seq_ai[0] && seq_ai[1]) {
+            BATTLE_INPUT.with(|q| q.borrow_mut().clear());
+            for page in 0..mega_blastoise_core::display::TUTORIAL_PAGES {
+                oled_apply(OledCmd::ShowTutorial { page });
+                let mut waited_ms = 0u32;
+                while waited_ms < 3_000 {
+                    match select(BattleInputFuture, sleep_ms_raw(100)).await {
+                        Either::First(_) => break,
+                        Either::Second(()) => waited_ms += 100,
+                    }
+                }
+            }
+        }
+
         let seed = (Date::now() as u64) ^ 0xdead_beef_cafe_babe;
 
         let mut battle = match gen1_battle::PublicCoreBattle::new(

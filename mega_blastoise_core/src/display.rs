@@ -1046,6 +1046,59 @@ where
         .draw(display).ok();
 }
 
+// ── Tutorial screens (battle start) ──────────────────────────────────────────
+
+/// How many battle-start tutorial pages exist.
+pub const TUTORIAL_PAGES: u8 = 3;
+
+/// Draw one battle-start tutorial page:
+/// 0 — corner buttons pick attacks, 1 — bottom buttons switch,
+/// 2 — hold buttons for details.
+pub fn render_tutorial_screen<D>(display: &mut D, page: u8)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let lg = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+    match page {
+        0 => {
+            // Arrows at the four corners point at the corner (move) buttons.
+            Text::with_text_style("<--", Point::new(0, 0), sm, tl_style()).draw(display).ok();
+            Text::with_text_style("-->", Point::new(127, 0), sm, tr_style()).draw(display).ok();
+            Text::with_text_style("choose your", Point::new(64, 21), lg, center_style())
+                .draw(display).ok();
+            Text::with_text_style("attack", Point::new(64, 33), lg, center_style())
+                .draw(display).ok();
+            Text::with_text_style("<--", Point::new(0, 56), sm, tl_style()).draw(display).ok();
+            Text::with_text_style("-->", Point::new(127, 56), sm, tr_style()).draw(display).ok();
+        }
+        1 => {
+            Text::with_text_style("switch Pokemon", Point::new(64, 2), lg, center_style())
+                .draw(display).ok();
+            // Three arrows point down at the bottom-row (party) buttons.
+            let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
+            let mut seg = |x0: i32, y0: i32, x1: i32, y1: i32| {
+                embedded_graphics::primitives::Line::new(Point::new(x0, y0), Point::new(x1, y1))
+                    .into_styled(stroke)
+                    .draw(display)
+                    .ok();
+            };
+            for cx in [21i32, 64, 107] {
+                seg(cx, 22, cx, 56);
+                seg(cx - 4, 51, cx, 56);
+                seg(cx + 4, 51, cx, 56);
+            }
+        }
+        _ => {
+            Text::with_text_style("hold buttons", Point::new(64, 21), lg, center_style())
+                .draw(display).ok();
+            Text::with_text_style("for more info", Point::new(64, 33), lg, center_style())
+                .draw(display).ok();
+        }
+    }
+}
+
 // ── Feedback QR screen ────────────────────────────────────────────────────────
 
 /// Post-game feedback screen: the QR code (generated at build time from
@@ -1160,8 +1213,10 @@ where
     let style_sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
     display.clear(BinaryColor::Off).ok();
     if !ready {
-        Text::with_text_style("PRESS TO READY", Point::new(64, 16), style_lg, center_style()).draw(display).ok();
-        Text::with_text_style("HOLD: FIGHT AI", Point::new(64, 36), style_sm, center_style()).draw(display).ok();
+        Text::with_text_style("Press any button", Point::new(64, 8), style_lg, center_style()).draw(display).ok();
+        Text::with_text_style("to ready up", Point::new(64, 20), style_lg, center_style()).draw(display).ok();
+        Text::with_text_style("Hold any button", Point::new(64, 40), style_sm, center_style()).draw(display).ok();
+        Text::with_text_style("to fight AI", Point::new(64, 50), style_sm, center_style()).draw(display).ok();
     } else if ai {
         Text::with_text_style("AI",     Point::new(64, 27), style_lg, center_style()).draw(display).ok();
     } else {

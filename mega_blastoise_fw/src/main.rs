@@ -183,6 +183,23 @@ async fn main(spawner: Spawner) {
             }
         }
 
+        // Battle-start tutorial, 3 pages, ~3 s each (a press advances early).
+        // Real games with a human only — never before demo / AI-vs-AI games.
+        #[cfg(feature = "oled")]
+        if !(ai_players[0] && ai_players[1]) {
+            use mega_blastoise_core::display::TUTORIAL_PAGES;
+            use pico_battle_input::PadScan;
+            let mut tut_scan = PadScan::default();
+            for page in 0..TUTORIAL_PAGES {
+                subsystems::oled::send(mega_blastoise_core::OledCmd::ShowTutorial { page });
+                let _ = embassy_futures::select::select(
+                    buttons.next_pad_event(&mut tut_scan),
+                    Timer::after_secs(3),
+                )
+                .await;
+            }
+        }
+
         // Draw teams from timing jitter (fresh entropy each round).
         let seed = Instant::now().as_ticks();
 
