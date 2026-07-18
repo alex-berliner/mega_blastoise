@@ -181,10 +181,10 @@ impl LobbyInput for UsbButtonLobbyInput<'_, '_, '_> {
                                     .await
                             }
                         },
-                        LobbyCmd::Unknown => seq.typed_line(line_t, &mut fx),
+                        LobbyCmd::Unknown => seq.typed_line(line_t, Instant::now().as_millis(), &mut fx),
                     }
                 }
-                Either3::Second(ev) => seq.pad_event(ev, &mut fx),
+                Either3::Second(ev) => seq.pad_event(ev, Instant::now().as_millis(), &mut fx),
                 Either3::Third(()) => {}
             }
             let done = seq.tick(Instant::now().as_millis(), &mut fx);
@@ -250,7 +250,7 @@ impl LobbyInput for ButtonOnlyLobbyInput<'_, '_> {
             match select(self.buttons.next_pad_event(&mut scan), Timer::after_millis(COLLECT_TICK_MS))
                 .await
             {
-                Either::First(ev) => seq.pad_event(ev, &mut fx),
+                Either::First(ev) => seq.pad_event(ev, Instant::now().as_millis(), &mut fx),
                 Either::Second(()) => {}
             }
             let done = seq.tick(Instant::now().as_millis(), &mut fx);
@@ -338,6 +338,13 @@ async fn run_demo_battle(data: &FlashDataStore, queue: &mut BoardEventQueue, see
 
     #[cfg(feature = "trace")]
     defmt::info!("[trace] run_demo_battle: battle started");
+
+    // Demo battles always run normal-mode screens (a previous battle may
+    // have left a player's display controller in concealed mode).
+    #[cfg(feature = "oled")]
+    for player in [1u8, 2] {
+        oled_send(OledCmd::SetControlMode { player, concealed: false });
+    }
 
     // Demo battle drives no hardware LEDs — the lobby idle animation owns the
     // strips while we're here.
@@ -475,8 +482,8 @@ async fn run_lobby_inner(
         let mut seq_fx: alloc::vec::Vec<CollectEffect> = alloc::vec::Vec::new();
         let mut seq = ReadySequence::new(&mut seq_fx);
         match event {
-            LobbyEvent::P1 => seq.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, &mut seq_fx),
-            LobbyEvent::P2 => seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, &mut seq_fx),
+            LobbyEvent::P1 => seq.pad_event(PadEvent::TapMove { player: 1, slot: 0 }, Instant::now().as_millis(), &mut seq_fx),
+            LobbyEvent::P2 => seq.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, Instant::now().as_millis(), &mut seq_fx),
             LobbyEvent::BothReady => {
                 seq.set_ready_cmd(1, &mut seq_fx);
                 seq.set_ready_cmd(2, &mut seq_fx);

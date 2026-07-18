@@ -45,7 +45,7 @@ pub enum Event {
 
 impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let side_name = |s: u8| if s == 0 { "Red" } else { "Blue" };
+        let side_name = |s: u8| if s == 0 { "White" } else { "Red" };
         match self {
             Event::MoveUsed { side, move_id } => write!(f, "{} used {}!", side_name(*side), move_id),
             Event::MoveDisabled { side, move_id } => write!(f, "{}'s {} is disabled!", side_name(*side), move_id),

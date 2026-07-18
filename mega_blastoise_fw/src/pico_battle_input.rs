@@ -67,6 +67,8 @@ mod board {
         (2, &[(4, mv(2, 0)), (5, mv(2, 1)), (6, mv(2, 2)), (7, mv(2, 3))]),
         (3, &[(4, pt(2, 0)), (5, pt(2, 1)), (6, pt(2, 2))]),
     ];
+    /// Pure 4x4 matrix, no dual-role lines: two presses can never ghost.
+    pub const GHOST_TRIANGLES: &[(super::PadBtn, super::PadBtn, super::PadBtn)] = &[];
 }
 
 #[cfg(not(feature = "breadboard"))]
@@ -82,6 +84,19 @@ mod board {
         (1, &[(4, pt(1, 0)), (5, pt(1, 1)), (6, pt(1, 2)), (3, mv(2, 0))]),
         (2, &[(4, mv(2, 2)), (5, mv(2, 1)), (6, mv(2, 3)), (3, pt(2, 0))]),
         (3, &[(4, pt(2, 1)), (5, pt(2, 2))]),
+    ];
+    /// The matrix has NO isolation diodes and GP9 is both a sense column
+    /// (rows GP6/7/8) and a drive row (P2 party 2/3), so each triple
+    /// {(R,GP9), (GP9,C), (R,C)} is an electrical triangle: any TWO closed
+    /// switches conduct a phantom press of the third. Tuple order is
+    /// ((R,GP9), (GP9,C), (R,C)) — suppression preference when ambiguous.
+    pub const GHOST_TRIANGLES: &[(super::PadBtn, super::PadBtn, super::PadBtn)] = &[
+        (mv(1, 3), pt(2, 1), mv(1, 0)), // GP6 x GP10
+        (mv(1, 3), pt(2, 2), mv(1, 2)), // GP6 x GP11
+        (mv(2, 0), pt(2, 1), pt(1, 0)), // GP7 x GP10
+        (mv(2, 0), pt(2, 2), pt(1, 1)), // GP7 x GP11
+        (pt(2, 0), pt(2, 1), mv(2, 2)), // GP8 x GP10
+        (pt(2, 0), pt(2, 2), mv(2, 1)), // GP8 x GP11
     ];
 }
 
@@ -100,6 +115,9 @@ impl Pressed {
     }
     fn down(&self, b: PadBtn) -> bool {
         self.mask[(b.player - 1) as usize][b.switch as usize] & (1 << b.idx) != 0
+    }
+    fn clear_btn(&mut self, b: PadBtn) {
+        self.mask[(b.player - 1) as usize][b.switch as usize] &= !(1 << b.idx);
     }
     fn any(&self, player: u8) -> bool {
         self.mask[(player - 1) as usize] != [0, 0]
@@ -139,9 +157,11 @@ impl<'d> ButtonMatrix<'d> {
     }
 
     /// Wait for a button press from either player.
-    /// Short press (< 500 ms) → P1/P2; long press (≥ 500 ms) → P1Long/P2Long.
-    /// Any press performs unready in the lobby; long press selects AI opponent.
+    /// Release before [`AI_HOLD_MS`] → P1/P2; a hold that reaches
+    /// [`AI_HOLD_MS`] returns P1Long/P2Long IMMEDIATELY (fight-AI triggers
+    /// while the button is still down, not on release).
     pub async fn wait_lobby_press(&mut self) -> LobbyPress {
+        use mega_blastoise_core::AI_HOLD_MS;
         loop {
             let snap = self.scan();
             for player in [1u8, 2] {
@@ -155,17 +175,11 @@ impl<'d> ButtonMatrix<'d> {
                     if !self.scan().any(player) {
                         break false;
                     }
-                    if held_ms >= 500 {
+                    if held_ms >= AI_HOLD_MS {
                         break true;
                     }
                 };
                 if is_long {
-                    loop {
-                        Timer::after_millis(10).await;
-                        if !self.scan().any(player) {
-                            break;
-                        }
-                    }
                     return if player == 1 { LobbyPress::P1Long } else { LobbyPress::P2Long };
                 }
                 return if player == 1 { LobbyPress::P1 } else { LobbyPress::P2 };
@@ -210,7 +224,51 @@ impl<'d> PicoBattleInput<'d> {
     /// the oldest button (ignored until physically released, no event).
     pub async fn next_pad_event(&mut self, scan: &mut PadScan) -> PadEvent {
         loop {
-            let pressed = self.matrix.scan();
+            let mut pressed = self.matrix.scan();
+
+            // ── Ghost-triangle filter (see board::GHOST_TRIANGLES) ──────────
+            // A press is only CONFIRMED while no triangle containing it is
+            // fully lit. When one lights, its unconfirmed members are the
+            // candidates and the phantom is dropped: the party button of a
+            // mixed pair (a phantom party press would otherwise outrank the
+            // real corner press and eat concealed menu taps), else the
+            // earliest vertex in table order.
+            let raw = pressed;
+            let mut in_tri = Pressed::default();
+            for &(a, b, c) in board::GHOST_TRIANGLES {
+                if raw.down(a) && raw.down(b) && raw.down(c) {
+                    for m in [a, b, c] {
+                        in_tri.set(m);
+                    }
+                    let mut cand = [a; 2];
+                    let mut n = 0;
+                    for m in [a, b, c] {
+                        if !scan.confirmed.down(m) && n < 2 {
+                            cand[n] = m;
+                            n += 1;
+                        }
+                    }
+                    let victim = match n {
+                        1 => Some(cand[0]),
+                        2 => Some(match (cand[0].switch, cand[1].switch) {
+                            (true, false) => cand[0],
+                            (false, true) => cand[1],
+                            _ => cand[0],
+                        }),
+                        _ => None,
+                    };
+                    if let Some(v) = victim {
+                        pressed.clear_btn(v);
+                    }
+                }
+            }
+            for p in 0..2 {
+                for k in 0..2 {
+                    scan.confirmed.mask[p][k] =
+                        raw.mask[p][k] & (scan.confirmed.mask[p][k] | !in_tri.mask[p][k]);
+                }
+            }
+
             // Stale buttons stop being stale once released.
             for p in 0..2 {
                 for k in 0..2 {
@@ -379,6 +437,9 @@ pub struct PadScan {
     chord: [bool; 2],
     /// Deferred HoldEnds ready to deliver.
     pending_end: [u8; 2],
+    /// Buttons seen pressed while outside any fully-lit ghost triangle —
+    /// trusted as real when a triangle later lights up around them.
+    confirmed: Pressed,
 }
 
 #[derive(Default, Clone, Copy)]
@@ -399,7 +460,17 @@ enum PadState {
 impl InputSource for PicoBattleInput<'_> {
     async fn run(&mut self, bus: &InputBus) {
         loop {
-            let first = bus.prompt.receive().await;
+            // Between collections the matrix still listens: any press skips
+            // the battle dialog currently on screen.
+            let first = {
+                let mut idle_scan = PadScan::default();
+                loop {
+                    match select(bus.prompt.receive(), self.next_pad_event(&mut idle_scan)).await {
+                        Either::First(p) => break p,
+                        Either::Second(_) => crate::battle_effects::skip_dialog(),
+                    }
+                }
+            };
             let batch_total = first.batch_total.max(1);
             let mut prompts: alloc::vec::Vec<ActivePrompt> = alloc::vec::Vec::with_capacity(batch_total);
             prompts.push(first);
@@ -421,10 +492,6 @@ impl InputSource for PicoBattleInput<'_> {
             apply_oled_effects(&mut fx);
 
             let mut scan = PadScan::default();
-            scan.instant_switch = [
-                self.modes[0] == ControlMode::Concealed,
-                self.modes[1] == ControlMode::Concealed,
-            ];
             loop {
                 match select(self.next_pad_event(&mut scan), Timer::after_millis(COLLECT_TICK_MS)).await {
                     Either::First(ev) => col.pad_event(ev, Instant::now().as_millis(), &mut fx),

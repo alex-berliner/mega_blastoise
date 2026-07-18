@@ -84,16 +84,46 @@ impl<'d> UsbBattleInput<'d> {
         self.write("=== Battle CLI ready — waiting for first prompt ===\r\n").await;
         loop {
             // ── Gather the whole prompt batch (1 or 2 players) before acting,
-            //    so both boards can be driven simultaneously. ─────────────────
-            let first = loop {
-                match select(bus.prompt.receive(), bus.log.receive()).await {
-                    Either::First(p) => {
+            //    so both boards can be driven simultaneously. Between prompts
+            //    the matrix still listens: any press skips the current battle
+            //    dialog. ─────────────────────────────────────────────────────
+            let first = {
+                let mut idle_scan = PadScan::default();
+                loop {
+                    let got = match buttons.as_mut() {
+                        Some(btns) => {
+                            match select3(
+                                bus.prompt.receive(),
+                                bus.log.receive(),
+                                btns.next_pad_event(&mut idle_scan),
+                            )
+                            .await
+                            {
+                                Either3::First(p) => Some(p),
+                                Either3::Second(line) => {
+                                    self.write_event(&line).await;
+                                    None
+                                }
+                                Either3::Third(_) => {
+                                    crate::battle_effects::skip_dialog();
+                                    None
+                                }
+                            }
+                        }
+                        None => match select(bus.prompt.receive(), bus.log.receive()).await {
+                            Either::First(p) => Some(p),
+                            Either::Second(line) => {
+                                self.write_event(&line).await;
+                                None
+                            }
+                        },
+                    };
+                    if let Some(p) = got {
                         while let Ok(line) = bus.log.try_receive() {
                             self.write_event(&line).await;
                         }
                         break p;
                     }
-                    Either::Second(line) => self.write_event(&line).await,
                 }
             };
             let batch_total = first.batch_total.max(1);
@@ -127,10 +157,6 @@ impl<'d> UsbBattleInput<'d> {
             self.apply_effects(&mut fx).await;
 
             let mut scan = PadScan::default();
-            scan.instant_switch = [
-                self.modes[0] == ControlMode::Concealed && !self.ai_players[0],
-                self.modes[1] == ControlMode::Concealed && !self.ai_players[1],
-            ];
             loop {
                 match buttons.as_mut() {
                     Some(btns) => {

@@ -93,10 +93,16 @@ function setupButton(el, player, tap, holdStart) {
         clearTimeout(timer);
         fired = false;
         timer = setTimeout(() => {
-            fired = true;
             if (wasm.is_lobby_mode()) {
-                wasm.wasm_lobby_long_press(player);
+                // Lobby fight-AI needs a deliberate 2 s hold; it fires while
+                // the button is still down (mirrors the firmware). Releasing
+                // earlier falls through to a plain tap.
+                timer = setTimeout(() => {
+                    fired = true;
+                    wasm.wasm_lobby_long_press(player);
+                }, 1500);
             } else {
+                fired = true;
                 holdStart();
             }
         }, 500);

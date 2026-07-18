@@ -36,12 +36,12 @@ pub fn battle_options_with_seed(seed: u64) -> CoreBattleOptions {
         },
         field: Default::default(),
         side_1: SideData {
-            name: "Red".to_string(),
-            players: alloc::vec![make_player("p1", "Red")],
+            name: "White".to_string(),
+            players: alloc::vec![make_player("p1", "White")],
         },
         side_2: SideData {
-            name: "Blue".to_string(),
-            players: alloc::vec![make_player("p2", "Blue")],
+            name: "Red".to_string(),
+            players: alloc::vec![make_player("p2", "Red")],
         },
     }
 }
@@ -58,12 +58,12 @@ pub fn demo_battle_options() -> CoreBattleOptions {
         },
         field: Default::default(),
         side_1: SideData {
-            name: "Red".to_string(),
-            players: alloc::vec![make_player("p1", "Red")],
+            name: "White".to_string(),
+            players: alloc::vec![make_player("p1", "White")],
         },
         side_2: SideData {
-            name: "Blue".to_string(),
-            players: alloc::vec![make_player("p2", "Blue")],
+            name: "Red".to_string(),
+            players: alloc::vec![make_player("p2", "Red")],
         },
     }
 }

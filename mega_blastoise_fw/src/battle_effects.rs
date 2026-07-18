@@ -1,10 +1,23 @@
 use core::sync::atomic::{AtomicBool, Ordering};
+use embassy_futures::select::select;
+use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+use embassy_sync::signal::Signal;
 use embassy_time::Timer;
 use mega_blastoise_core::{mon_player_num, BoardEffects, BoardEvent, HpBarState, InputBus};
 #[cfg(feature = "leds")]
 use mega_blastoise_core::player_id_to_num;
 
 pub static ANIM_ENABLED: AtomicBool = AtomicBool::new(true);
+
+/// Any button press while battle dialog is on screen cuts the current
+/// animation delay short. Raised by the input loops whenever a pad event
+/// arrives OUTSIDE choice collection; consumed per delay below.
+static DIALOG_SKIP: Signal<CriticalSectionRawMutex, ()> = Signal::new();
+
+/// Called by the input loops on a button press between prompts.
+pub fn skip_dialog() {
+    DIALOG_SKIP.signal(());
+}
 
 #[cfg(feature = "buzzer")]
 use crate::subsystems::buzzer::{buzz, BuzzerCmd};
@@ -139,12 +152,14 @@ impl BoardEffects for BattleEffects<'_> {
         // ── Animation delay ───────────────────────────────────────────────────
         // Skipped under `trace` (fast hardware-verification builds) — same
         // rationale as DemoAi's pacing delay. Normal builds keep animations,
-        // runtime-toggleable via `:anim off`.
+        // runtime-toggleable via `:anim off`. Any button press cuts the
+        // current dialog's delay short (DIALOG_SKIP, one press per dialog).
         #[cfg(not(feature = "trace"))]
         {
             let delay_ms = event.anim_delay_ms();
             if delay_ms > 0 && ANIM_ENABLED.load(Ordering::Relaxed) {
-                Timer::after_millis(delay_ms as u64).await;
+                DIALOG_SKIP.reset();
+                let _ = select(Timer::after_millis(delay_ms as u64), DIALOG_SKIP.wait()).await;
             }
         }
 

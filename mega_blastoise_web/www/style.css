@@ -72,8 +72,8 @@ body {
   width: 100%;
 }
 
-.p1-color { color: var(--red);  border-color: #331111; }
-.p2-color { color: var(--blue); border-color: #112233; }
+.p1-color { color: #e8e8e8;  border-color: #333333; }
+.p2-color { color: var(--red); border-color: #331111; }
 
 /* ── OLED + flanking move button columns ──────────────────────── */
 

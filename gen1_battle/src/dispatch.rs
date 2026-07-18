@@ -274,7 +274,9 @@ fn run_move(
         && (mv.flags & FLAG_HITS_INVULN) == 0
     {
         {
-            let s = &sides[attacker_side];
+            // The board `miss` event names the DEFENDER — narration reads
+            // "The attack missed <defender>!".
+            let s = &sides[defender_side];
             log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
         }
         return miss_aftermath(rng, field, mv, sides, attacker_side, log);
@@ -348,7 +350,7 @@ fn run_move(
         }
         if !hit {
             {
-                let s = &sides[attacker_side];
+                let s = &sides[defender_side];
                 log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
             }
             field.last_damage = 0;
@@ -899,7 +901,7 @@ fn apply_effect(
                 );
                 if roll.dmg == 0 && !roll.immune {
                     // 0-damage glitch: the trap move outright misses.
-                    let s = &sides[attacker_side];
+                    let s = &sides[defender_side];
                     log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
                     return outcome;
                 }
@@ -1202,7 +1204,7 @@ fn damage_step(
                     log.push_board(format!("immune|mon:{},{},0", s.active().name, s.player_id));
                 } else {
                     // Gen 1 "0 damage glitch": a damage roll of 0 is a miss.
-                    let s = &sides[attacker_side];
+                    let s = &sides[defender_side];
                     log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
                 }
                 outcome.hit = false;

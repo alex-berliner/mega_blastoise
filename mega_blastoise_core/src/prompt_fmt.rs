@@ -8,8 +8,8 @@ use gen1_battle::{PlayerBattleData, Request};
 
 fn player_label(id: &str) -> &'static str {
     match id {
-        "p1" => "Red",
-        "p2" => "Blue",
+        "p1" => "White",
+        "p2" => "Red",
         _ => "?",
     }
 }

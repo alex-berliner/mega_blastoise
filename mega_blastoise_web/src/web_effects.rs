@@ -153,10 +153,10 @@ impl BoardEffects for WebBattleEffects<'_> {
         }
 
         // ── Animation delay (same canonical per-event delay as firmware;
-        //    sleep_ms is a no-op when :anim off) ────────────────────────────────
+        //    no-op when :anim off, cut short by any button press) ──────────────
         let delay_ms = event.anim_delay_ms();
         if delay_ms > 0 {
-            crate::sleep_ms(delay_ms).await;
+            crate::sleep_ms_skippable(delay_ms).await;
         }
 
         // ── Log narration ─────────────────────────────────────────────────────

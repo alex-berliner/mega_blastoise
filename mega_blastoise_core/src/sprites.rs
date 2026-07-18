@@ -18,3 +18,17 @@ pub fn mon_sprite(name: &str) -> Option<&'static [u8; SPRITE_BYTES]> {
         .find(|(n, _)| n.eq_ignore_ascii_case(name))
         .map(|(_, spr)| spr)
 }
+
+/// Look up a species' BACK sprite (the player's own mon on choose/wait
+/// screens). Falls back to the front sprite if the back art is missing, and
+/// `None` for non-species strings like "FAINTED" or "---".
+pub fn mon_back_sprite(name: &str) -> Option<&'static [u8; SPRITE_BYTES]> {
+    if let Ok(i) = MON_BACK_SPRITES.binary_search_by(|(n, _)| (*n).cmp(name)) {
+        return Some(&MON_BACK_SPRITES[i].1);
+    }
+    MON_BACK_SPRITES
+        .iter()
+        .find(|(n, _)| n.eq_ignore_ascii_case(name))
+        .map(|(_, spr)| spr)
+        .or_else(|| mon_sprite(name))
+}

@@ -30,8 +30,9 @@ use crate::display::{
     render_action_select, render_concealed_moves, render_concealed_switch,
     render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
     render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2,
-    render_move_used, render_sent_out, render_switch_screen, render_waiting_for_opponent,
-    render_waiting_screen, render_win_screen, PartySlotData, SpeedCmp,
+    render_move_used, render_opponent_mon, render_qr_screen, render_sent_out,
+    render_switch_screen, render_waiting_for_opponent,
+    render_waiting_screen, render_win_screen, InvalidReason, PartySlotData, SpeedCmp,
 };
 
 // ── Commands ──────────────────────────────────────────────────────────────────
@@ -54,8 +55,10 @@ pub enum OledCmd {
     Faint { player: u8 },
     /// Battle ended — winner is 1 (p1) or 2 (p2); 0 means tie.
     Win { winner: u8 },
-    /// Long-press detail view for a move slot (0-based).
-    ShowMoveDetail { player: u8, slot: u8 },
+    /// Long-press detail view for a move slot (0-based). `page` 0 = stats;
+    /// higher pages show the move's description text (the renderer wraps
+    /// the counter around the real page count).
+    ShowMoveDetail { player: u8, slot: u8, page: u8 },
     /// Long-press stats view for a party slot (0-based team index).
     /// `page` 0 = stats, 1 = moves/PP page.
     ShowPokemonStats { player: u8, team_idx: u8, page: u8 },
@@ -77,8 +80,14 @@ pub enum OledCmd {
     ShowWaitingForOpponent { player: u8 },
     /// Forced-switch party picker (uses the PartyUpdate snapshot).
     ShowSwitchScreen { player: u8 },
-    /// Brief "invalid selection" feedback.
-    ShowInvalidSelection { player: u8 },
+    /// Brief "invalid selection" feedback; `reason` picks the message.
+    ShowInvalidSelection { player: u8, reason: InvalidReason },
+    /// Tell the controller which control scheme this player uses for the
+    /// current battle. Concealed battle screens hide the move list (the
+    /// randomized corner menus are the only move UI in that mode).
+    SetControlMode { player: u8, concealed: bool },
+    /// Post-game feedback QR code on BOTH displays.
+    ShowQr,
     /// Battle-start controls picker. `highlighted` 0 = Normal, 1 = Concealed.
     ShowControlsSelect { player: u8, highlighted: u8, confirmed: bool },
     /// Concealed mode: randomized Attack/Switch on the bottom-row buttons.
@@ -87,6 +96,9 @@ pub enum OledCmd {
     ShowConcealedMoves { player: u8, map: [i8; 4] },
     /// Concealed bench menu: corner → team index (-1 = dead corner).
     ShowConcealedSwitch { player: u8, map: [i8; 4] },
+    /// Concealed foe-peek: show the OPPONENT's active mon on this player's
+    /// display (held unused bottom button).
+    ShowOpponentMon { player: u8 },
     /// Switch-in flash showing the incoming mon's sprite under the
     /// "sent out" caption. `player` 0 = both displays.
     ShowSentOut { player: u8, name: [u8; 12], len: u8, text: [u8; 48], tlen: u8 },
@@ -121,14 +133,16 @@ impl OledCmd {
             | OledCmd::ShowWaiting { player }
             | OledCmd::ShowWaitingForOpponent { player }
             | OledCmd::ShowSwitchScreen { player }
-            | OledCmd::ShowInvalidSelection { player }
+            | OledCmd::ShowInvalidSelection { player, .. }
+            | OledCmd::SetControlMode { player, .. }
             | OledCmd::ShowControlsSelect { player, .. }
             | OledCmd::ShowActionSelect { player, .. }
             | OledCmd::ShowConcealedMoves { player, .. }
             | OledCmd::ShowConcealedSwitch { player, .. }
+            | OledCmd::ShowOpponentMon { player }
             | OledCmd::ShowSentOut { player, .. }
             | OledCmd::ShowMoveUsed { player, .. } => *player,
-            OledCmd::Win { .. } => 0,
+            OledCmd::Win { .. } | OledCmd::ShowQr => 0,
         }
     }
 }
@@ -333,25 +347,29 @@ fn move_icon_on(elapsed_ms: u32) -> bool {
 pub enum Screen<'a> {
     Lobby { ready: bool, ai: bool },
     Battle { mon: &'a str, moves: &'a [MoveSlot], bob: bool, spd: SpeedCmp },
-    MoveDetail(&'a MoveSlot),
+    MoveDetail { mv: &'a MoveSlot, page: u8 },
     Stats { slot: &'a PartySlotData, page: u8 },
     EventText(&'a str),
     Win(&'a str),
     Waiting { mon: &'a str, bob: bool, spd: SpeedCmp },
-    WaitingForOpponent,
+    WaitingForOpponent { mon: &'a str, bob: bool },
     Switch(&'a [PartySlotData]),
-    Invalid,
+    Invalid(InvalidReason),
     ControlsSelect { highlighted: u8, confirmed: bool },
     ActionSelect { mon: &'a str, bob: bool, attack_pos: u8, switch_pos: u8, spd: SpeedCmp },
     /// Corner labels for the concealed move menu (None = dead corner).
     ConcealedMoves { corners: [Option<&'a MoveSlot>; 4] },
     /// Corner labels for the concealed bench menu (None = dead corner).
     ConcealedSwitch { corners: [Option<&'a PartySlotData>; 4] },
+    /// Concealed foe-peek: the opponent's active mon.
+    OpponentMon { mon: &'a str, bob: bool },
     /// Switch-in: caption + the incoming mon's sprite.
     SentOut { mon: &'a str, caption: &'a str },
     /// Move used: caption + attacker sprite + (flickering) move icon +
     /// recipient sprite.
     MoveUsed { mon: &'a str, caption: &'a str, move_id: &'a str, recipient: &'a str, icon_on: bool },
+    /// Post-game feedback QR code.
+    Qr,
 }
 
 /// Render a [`Screen`] onto any 128×64 target. The single dispatch point
@@ -365,7 +383,7 @@ where
         Screen::Battle { mon, moves, bob, spd } => {
             render_player_screen(display, mon, moves, if *bob { -2 } else { 0 }, *spd)
         }
-        Screen::MoveDetail(mv) => render_move_detail(display, mv),
+        Screen::MoveDetail { mv, page } => render_move_detail(display, mv, *page),
         // Page 0 = moves (shown first), page 1 = stats.
         Screen::Stats { slot, page: 0 } => render_pokemon_stats_page2(display, slot),
         Screen::Stats { slot, .. } => render_pokemon_stats(display, slot),
@@ -374,9 +392,11 @@ where
         Screen::Waiting { mon, bob, spd } => {
             render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to unready", *spd)
         }
-        Screen::WaitingForOpponent => render_waiting_for_opponent(display),
+        Screen::WaitingForOpponent { mon, bob } => {
+            render_waiting_for_opponent(display, mon, if *bob { -2 } else { 0 })
+        }
         Screen::Switch(party) => render_switch_screen(display, party),
-        Screen::Invalid => render_invalid_selection(display),
+        Screen::Invalid(reason) => render_invalid_selection(display, *reason),
         Screen::ControlsSelect { highlighted, confirmed } => {
             render_controls_select(display, *highlighted, *confirmed)
         }
@@ -390,10 +410,14 @@ where
         ),
         Screen::ConcealedMoves { corners } => render_concealed_moves(display, corners),
         Screen::ConcealedSwitch { corners } => render_concealed_switch(display, corners),
+        Screen::OpponentMon { mon, bob } => {
+            render_opponent_mon(display, mon, if *bob { -2 } else { 0 })
+        }
         Screen::SentOut { mon, caption } => render_sent_out(display, mon, caption),
         Screen::MoveUsed { mon, caption, move_id, recipient, icon_on } => {
             render_move_used(display, mon, caption, move_id, recipient, *icon_on)
         }
+        Screen::Qr => render_qr_screen(display),
     }
 }
 
@@ -402,18 +426,21 @@ where
 enum View {
     Lobby { ready: bool, ai: bool },
     Battle,
-    MoveDetail(u8),
+    MoveDetail { slot: u8, page: u8 },
     Stats { team_idx: u8, page: u8 },
     EventFlash,
     Win,
     Waiting,
     WaitingForOpponent,
     Switch,
-    Invalid,
+    Invalid(InvalidReason),
+    Qr,
     ControlsSelect { highlighted: u8, confirmed: bool },
     ActionSelect { attack_pos: u8, switch_pos: u8 },
     ConcealedMoves { map: [i8; 4] },
     ConcealedSwitch { map: [i8; 4] },
+    /// Foe-peek (concealed): the opponent's active mon.
+    OpponentMon,
     /// Switch-in flash: `sent_name`/`sent_len` hold the incoming mon's name;
     /// the caption reuses the flash buffer.
     SentOut { name: [u8; 12], len: u8 },
@@ -426,6 +453,9 @@ struct Player {
     name_len: u8,
     hp_pct: u8,
     fainted: bool,
+    /// Concealed controls this battle: the battle screen hides the move
+    /// list (set via [`OledCmd::SetControlMode`] at battle start).
+    concealed: bool,
     moves: Vec<MoveSlot>,
     party: Vec<PartySlotData>,
     flash: [u8; 48],
@@ -450,6 +480,7 @@ impl Player {
             name_len: 3,
             hp_pct: 100,
             fainted: false,
+            concealed: false,
             moves: Vec::new(),
             party: Vec::new(),
             flash: [b' '; 48],
@@ -516,17 +547,22 @@ impl OledController {
     /// battle screen and need a redraw.
     pub fn tick_bob(&mut self, dt_ms: u32) -> OledRedraw {
         let mut flip = [false; 2];
+        let mut bobbed = [false; 2];
         for (i, p) in [&mut self.p1, &mut self.p2].into_iter().enumerate() {
             p.bob_acc_ms += dt_ms;
             let period = bob_period_ms(p.speed);
             if p.bob_acc_ms >= period {
                 p.bob_acc_ms %= period;
                 p.bob_up = !p.bob_up;
+                bobbed[i] = true;
                 // Every sprite-bearing view bobs: battle, concealed action
-                // select, and the committed waiting screen.
+                // select, and the waiting screens.
                 flip[i] = matches!(
                     p.view,
-                    View::Battle | View::ActionSelect { .. } | View::Waiting
+                    View::Battle
+                        | View::ActionSelect { .. }
+                        | View::Waiting
+                        | View::WaitingForOpponent
                 );
             }
             // Move-used icon flicker: redraw whenever visibility flips.
@@ -536,6 +572,14 @@ impl OledController {
                 if move_icon_on(p.move_flash_ms) != before {
                     flip[i] = true;
                 }
+            }
+        }
+        // The foe-peek view shows the OTHER player's sprite, so that
+        // sprite's bob flip redraws the PEEKING display.
+        for i in 0..2 {
+            let p = if i == 0 { &self.p1 } else { &self.p2 };
+            if matches!(p.view, View::OpponentMon) && bobbed[1 - i] {
+                flip[i] = true;
             }
         }
         match (flip[0], flip[1]) {
@@ -607,10 +651,10 @@ impl OledController {
                 self.p2.view = View::Win;
                 OledRedraw::Both
             }
-            OledCmd::ShowMoveDetail { slot, .. } => {
+            OledCmd::ShowMoveDetail { slot, page, .. } => {
                 let p = self.player_mut(player);
                 if (slot as usize) < p.moves.len() {
-                    p.view = View::MoveDetail(slot);
+                    p.view = View::MoveDetail { slot, page };
                     OledRedraw::for_player(player)
                 } else {
                     OledRedraw::None
@@ -668,9 +712,23 @@ impl OledController {
                 self.player_mut(player).view = View::Switch;
                 OledRedraw::for_player(player)
             }
-            OledCmd::ShowInvalidSelection { .. } => {
-                self.player_mut(player).view = View::Invalid;
+            OledCmd::ShowInvalidSelection { reason, .. } => {
+                self.player_mut(player).view = View::Invalid(reason);
                 OledRedraw::for_player(player)
+            }
+            OledCmd::SetControlMode { concealed, .. } => {
+                let p = self.player_mut(player);
+                p.concealed = concealed;
+                if matches!(p.view, View::Battle) {
+                    OledRedraw::for_player(player)
+                } else {
+                    OledRedraw::None
+                }
+            }
+            OledCmd::ShowQr => {
+                self.p1.view = View::Qr;
+                self.p2.view = View::Qr;
+                OledRedraw::Both
             }
             OledCmd::ShowControlsSelect { highlighted, confirmed, .. } => {
                 self.player_mut(player).view = View::ControlsSelect { highlighted, confirmed };
@@ -686,6 +744,10 @@ impl OledController {
             }
             OledCmd::ShowConcealedSwitch { map, .. } => {
                 self.player_mut(player).view = View::ConcealedSwitch { map };
+                OledRedraw::for_player(player)
+            }
+            OledCmd::ShowOpponentMon { .. } => {
+                self.player_mut(player).view = View::OpponentMon;
                 OledRedraw::for_player(player)
             }
             OledCmd::ShowSentOut { player, name, len, text, tlen } => {
@@ -735,14 +797,20 @@ impl OledController {
     /// What `player`'s display should show right now.
     pub fn screen(&self, player: u8) -> Screen<'_> {
         let p = if player == 1 { &self.p1 } else { &self.p2 };
-        let spd = self.speed_cmp(player);
+        // No speed badge on a fainted mon's screens — nothing left to race.
+        let spd = if p.fainted { SpeedCmp::Hidden } else { self.speed_cmp(player) };
         match &p.view {
             View::Lobby { ready, ai } => Screen::Lobby { ready: *ready, ai: *ai },
-            View::Battle => {
-                Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up, spd }
-            }
-            View::MoveDetail(slot) => match p.moves.get(*slot as usize) {
-                Some(mv) => Screen::MoveDetail(mv),
+            View::Battle => Screen::Battle {
+                mon: p.battle_mon(),
+                // Concealed controls: moves only ever appear on the
+                // randomized corner menus, never the battle screen.
+                moves: if p.concealed { &[] } else { &p.moves },
+                bob: p.bob_up,
+                spd,
+            },
+            View::MoveDetail { slot, page } => match p.moves.get(*slot as usize) {
+                Some(mv) => Screen::MoveDetail { mv, page: *page },
                 None => Screen::Battle { mon: p.battle_mon(), moves: &p.moves, bob: p.bob_up, spd },
             },
             View::Stats { team_idx, page } => match p.party.get(*team_idx as usize) {
@@ -757,9 +825,12 @@ impl OledController {
                 Screen::Win(if player == 1 { msg1 } else { msg2 })
             }
             View::Waiting => Screen::Waiting { mon: p.battle_mon(), bob: p.bob_up, spd },
-            View::WaitingForOpponent => Screen::WaitingForOpponent,
+            View::WaitingForOpponent => {
+                Screen::WaitingForOpponent { mon: p.battle_mon(), bob: p.bob_up }
+            }
             View::Switch => Screen::Switch(&p.party),
-            View::Invalid => Screen::Invalid,
+            View::Invalid(reason) => Screen::Invalid(*reason),
+            View::Qr => Screen::Qr,
             View::ControlsSelect { highlighted, confirmed } => Screen::ControlsSelect {
                 highlighted: *highlighted,
                 confirmed: *confirmed,
@@ -788,6 +859,10 @@ impl OledController {
                     }
                 }
                 Screen::ConcealedSwitch { corners }
+            }
+            View::OpponentMon => {
+                let foe = if player == 1 { &self.p2 } else { &self.p1 };
+                Screen::OpponentMon { mon: foe.battle_mon(), bob: foe.bob_up }
             }
             View::SentOut { name, len } => Screen::SentOut {
                 mon: core::str::from_utf8(&name[..*len as usize]).unwrap_or("?").trim_end(),

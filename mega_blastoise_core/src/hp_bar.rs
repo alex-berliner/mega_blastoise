@@ -35,7 +35,13 @@ impl HpBarState {
     }
 
     pub fn pct(&self) -> u8 {
-        if self.max > 0 { (self.current as u32 * 100 / self.max as u32) as u8 } else { 0 }
+        if self.max == 0 {
+            return 0;
+        }
+        let pct = (self.current as u32 * 100 / self.max as u32) as u8;
+        // Never round a living mon down to 0%: 0 means fainted everywhere
+        // downstream (the HP LED bar goes fully dark at 0).
+        if pct == 0 && self.current > 0 { 1 } else { pct }
     }
 }
 

@@ -96,6 +96,10 @@ thread_local! {
     // When false, all animation sleeps are skipped (useful for CLI testing).
     static ANIM_ENABLED: RefCell<bool> = RefCell::new(true);
 
+    // A button press during battle dialog skips the current animation delay
+    // (consumed at the start of each delay so stale presses don't skip).
+    static SKIP_DIALOG: RefCell<bool> = RefCell::new(false);
+
 }
 
 // ── State accessors (pub(crate)) ──────────────────────────────────────────────
@@ -290,6 +294,27 @@ pub(crate) async fn sleep_ms(ms: u32) {
     wasm_bindgen_futures::JsFuture::from(promise).await.ok();
 }
 
+pub(crate) fn request_dialog_skip() {
+    SKIP_DIALOG.with(|s| *s.borrow_mut() = true);
+}
+
+/// Animation-gated sleep that any button press cuts short (mirrors the
+/// firmware's DIALOG_SKIP): polls in 50 ms slices, consuming the skip flag
+/// at the start so only presses made DURING the dialog skip it.
+pub(crate) async fn sleep_ms_skippable(ms: u32) {
+    if !ANIM_ENABLED.with(|a| *a.borrow()) { return; }
+    SKIP_DIALOG.with(|s| *s.borrow_mut() = false);
+    let mut left = ms;
+    while left > 0 {
+        let step = left.min(50);
+        sleep_ms_raw(step).await;
+        if SKIP_DIALOG.with(|s| core::mem::take(&mut *s.borrow_mut())) {
+            return;
+        }
+        left -= step;
+    }
+}
+
 pub(crate) fn set_flash(player: u8, flash_type: u8) {
     FLASH.with(|f| f.borrow_mut()[(player - 1) as usize] = flash_type);
 }
@@ -298,11 +323,13 @@ fn lobby_led_frame() -> [u32; 24] {
     let ready = LOBBY_READY.with(|r| *r.borrow());
     let t = (Date::now() as u64 / 30) as u8;
     let v = (if t < 128 { t / 2 } else { (255u8.wrapping_sub(t)) / 2 }) as u32 * 2;
-    let breathe = ((v / 3) << 16) | v;
+    // Per-player identity colors, mirroring the fw lobby: P1 white, P2 red.
+    let breathe_p1 = pack_rgb(v as u8, v as u8, v as u8);
+    let breathe_p2 = pack_rgb(v as u8, 0, 0);
     let done = pack_rgb(0, 200, 50);
     let mut frame = [0u32; 24];
-    let c1 = if ready[0] { done } else { breathe };
-    let c2 = if ready[1] { done } else { breathe };
+    let c1 = if ready[0] { done } else { breathe_p1 };
+    let c2 = if ready[1] { done } else { breathe_p2 };
     for i in 0..12  { frame[i] = c1; }
     for i in 12..24 { frame[i] = c2; }
     frame
@@ -316,7 +343,7 @@ fn print_help() {
     for l in [
         ":ready            both players ready (human)",
         ":ready p1|p2      one player ready (human)",
-        ":ready ai         P1 is AI (play as P2; also the BLUE VS AI button)",
+        ":ready ai         P1 is AI (play as P2; also the RED VS AI button)",
         ":demo             AI vs AI demo (also the DEMO button)",
     ] {
         print_log(&format!("    {l}"));
@@ -461,10 +488,6 @@ fn latch_i(player: u8) -> usize {
     (player.clamp(1, 2) - 1) as usize
 }
 
-fn control_mode(player: u8) -> ControlMode {
-    CONTROL_MODES.with(|m| m.borrow()[latch_i(player)])
-}
-
 /// If `(is_switch, idx)` is latched, unlatch it and emit what it owes:
 /// the INNERMOST latch emits its HoldEnd immediately (plus any deferred
 /// outer ends); an outer latch under a still-latched inner defers its
@@ -554,6 +577,7 @@ fn chord_tap(player: u8, slot: u8) -> bool {
     } else if unlatch_if_held(player, false, slot) {
         // Clicking a latched button releases the sticky hold.
     } else {
+        request_dialog_skip();
         push_battle_input(BattleInput::Pad(PadEvent::TapMove { player, slot }));
     }
 }
@@ -563,12 +587,9 @@ fn chord_tap(player: u8, slot: u8) -> bool {
         push_button(ButtonEvent::Switch { player, idx });
     } else if unlatch_if_held(player, true, idx) {
         // Clicking a latched button releases the sticky hold.
-    } else if control_mode(player) == ControlMode::Concealed {
-        // Concealed action buttons are hold-only, so a click toggles the
-        // hold on INSTANTLY (there is no press action to wait for).
-        latch_held(player, true, idx);
-        push_battle_input(BattleInput::Pad(PadEvent::HoldSwitch { player, idx }));
     } else {
+        // (Concealed menus toggle on plain taps now — no hold conversion.)
+        request_dialog_skip();
         push_battle_input(BattleInput::Pad(PadEvent::TapSwitch { player, idx }));
     }
 }
@@ -627,7 +648,7 @@ fn enter_demo_mode() {
 
 #[wasm_bindgen] pub fn wasm_enter_vs_ai_mode() {
     if !LOBBY_MODE.with(|m| *m.borrow()) { return; }
-    // p1=AI (Red), p2=human (Blue): p2 still picks their controls.
+    // p1=AI (White), p2=human (Red): p2 still picks their controls.
     NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, false]));
     push_button(ButtonEvent::AiPreset);
 }
@@ -657,8 +678,8 @@ fn enter_demo_mode() {
 
     if LOBBY_MODE.with(|m| *m.borrow()) {
         match cmd {
-            ":ready ai" | ":vs ai" | ":blue vs ai" => {
-                // VS AI: P1=AI (Red), P2=human (Blue) — P2 still picks controls.
+            ":ready ai" | ":vs ai" | ":red vs ai" | ":blue vs ai" => {
+                // VS AI: P1=AI (White), P2=human (Red) — P2 still picks controls.
                 NEXT_GAME_AI.with(|n| *n.borrow_mut() = Some([true, false]));
                 push_button(ButtonEvent::AiPreset);
             }
@@ -785,23 +806,23 @@ async fn run_game_loop() {
             loop {
                 match select(AnyButtonFuture, sleep_ms_raw(COLLECT_TICK_MS as u32)).await {
                     Either::First(ButtonEvent::Move { player, slot }) => {
-                        seq.pad_event(PadEvent::TapMove { player, slot }, &mut fx)
+                        seq.pad_event(PadEvent::TapMove { player, slot }, now_ms(), &mut fx)
                     }
                     Either::First(ButtonEvent::Switch { player, idx }) => {
-                        seq.pad_event(PadEvent::TapSwitch { player, idx }, &mut fx)
+                        seq.pad_event(PadEvent::TapSwitch { player, idx }, now_ms(), &mut fx)
                     }
                     Either::First(ButtonEvent::LongPress { player }) => {
                         seq.request_ai_opponent(player, &mut fx)
                     }
                     Either::First(ButtonEvent::Chord { player }) => {
-                        seq.pad_event(PadEvent::Chord4 { player }, &mut fx)
+                        seq.pad_event(PadEvent::Chord4 { player }, now_ms(), &mut fx)
                     }
                     Either::First(ButtonEvent::AiPreset) => {
                         if let Some(ai) = NEXT_GAME_AI.with(|n| n.borrow_mut().take()) {
                             seq.ai_preset(ai, &mut fx);
                         }
                     }
-                    Either::First(ButtonEvent::Line(line)) => seq.typed_line(line.trim(), &mut fx),
+                    Either::First(ButtonEvent::Line(line)) => seq.typed_line(line.trim(), now_ms(), &mut fx),
                     Either::Second(()) => {}
                 }
                 let done = seq.tick(now_ms(), &mut fx);
@@ -825,11 +846,18 @@ async fn run_game_loop() {
         // (No detail-overlay reset needed: the shared controller redraws over
         // any leftover overlay on the first battle state command.)
 
-        // Controls were chosen during the ready sequence; arm the web-side
-        // instant-hold conversion for concealed players.
+        // Controls were chosen during the ready sequence.
         BATTLE_INPUT.with(|q| q.borrow_mut().clear());
         clear_hold_latches();
         CONTROL_MODES.with(|m| *m.borrow_mut() = modes);
+        // Tell the shared display controller each player's scheme (concealed
+        // battle screens hide the move list) — mirrors the firmware.
+        for player in [1u8, 2] {
+            oled_apply(OledCmd::SetControlMode {
+                player,
+                concealed: modes[latch_i(player)] == ControlMode::Concealed,
+            });
+        }
 
         // Countdown — same text and 500 ms cadence as the firmware lobby,
         // with a gold LED flash per tick as the web's buzzer stand-in.
@@ -887,6 +915,18 @@ async fn run_game_loop() {
         print_log("");
         print_log("── Battle over — press any button for a new game ───");
         print_log("");
+
+        // Post-game feedback QR on both displays: stays up until any button
+        // press or 30 seconds, whichever comes first (mirrors the firmware).
+        BATTLE_INPUT.with(|q| q.borrow_mut().clear());
+        oled_apply(OledCmd::ShowQr);
+        let mut waited_ms = 0u32;
+        while waited_ms < 30_000 {
+            match select(BattleInputFuture, sleep_ms_raw(100)).await {
+                Either::First(_) => break,
+                Either::Second(()) => waited_ms += 100,
+            }
+        }
     }
 }
 
@@ -905,11 +945,14 @@ fn apply_effects(fx: &mut Vec<CollectEffect>) {
     for e in fx.drain(..) {
         match e {
             CollectEffect::Oled(cmd) => {
-                // Committing an option (or landing back on a pick screen)
-                // releases any sticky web holds.
+                // Committing an option (or landing on a screen where nothing
+                // is held) releases any sticky web holds.
                 match &cmd {
                     OledCmd::ShowWaiting { player }
                     | OledCmd::ShowActionSelect { player, .. }
+                    | OledCmd::ShowConcealedMoves { player, .. }
+                    | OledCmd::ShowConcealedSwitch { player, .. }
+                    | OledCmd::ShowOpponentMon { player }
                     | OledCmd::ShowControlsSelect { player, .. } => clear_hold_latch(*player),
                     _ => {}
                 }

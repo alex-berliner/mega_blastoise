@@ -173,8 +173,10 @@ pub fn player_id_to_num(player_id: &str) -> u8 {
 
 pub fn player_display_name(player_id: &str) -> &'static str {
     match player_id {
-        "p1" => "Red",
-        "p2" => "Blue",
+        // Trainer names match the players' LED identity colors:
+        // P1 glows white, P2 glows red.
+        "p1" => "White",
+        "p2" => "Red",
         _ => "?",
     }
 }
@@ -182,8 +184,8 @@ pub fn player_display_name(player_id: &str) -> &'static str {
 /// Friendly label for battler **side index** in the stock 1v1 demo (`0` / `1`).
 pub fn side_display_name(side: &str) -> &'static str {
     match side {
-        "0" => "Red",
-        "1" => "Blue",
+        "0" => "White",
+        "1" => "Red",
         _ => "?",
     }
 }
@@ -492,7 +494,13 @@ impl BoardEvent {
                 match reason.as_str() {
                     "confusion" => format!("{label} hurt itself in its confusion!"),
                     "disabled" => format!("{label}'s move is disabled!"),
-                    _ => format!("{label} can't move! ({reason})"),
+                    "par" => format!("{label} is fully paralyzed!"),
+                    "frz" => format!("{label} is frozen solid!"),
+                    "slp" => format!("{label} is sound asleep!"),
+                    "trapped" => format!("{label} is trapped!"),
+                    "flinch" => format!("{label} flinched!"),
+                    "recharge" => format!("{label} must recharge!"),
+                    _ => format!("{label} can't move!"),
                 }
             }
             BoardEvent::StatChange { mon, stat, delta } => {

@@ -11,7 +11,7 @@
   <!-- Demo mode trigger -->
   <div id="demo-row">
     <span class="demo-label">DEBUG</span>
-    <button id="vs-ai-btn" class="demo-btn">BLUE VS AI</button>
+    <button id="vs-ai-btn" class="demo-btn">RED VS AI</button>
     <button id="demo-btn" class="demo-btn">DEMO</button>
     <button id="pause-btn" class="demo-btn">PAUSE</button>
     <button id="restart-btn" class="demo-btn">RESTART</button>
@@ -25,7 +25,7 @@
     <div id="players">
 
       <div class="player-panel" id="panel-p1" data-player="1">
-        <div class="panel-header p1-color">RED</div>
+        <div class="panel-header p1-color">WHITE</div>
         <!-- OLED flanked by move button columns -->
         <div class="oled-area">
 <div class="move-col">
@@ -66,7 +66,7 @@
       </div>
 
       <div class="player-panel" id="panel-p2" data-player="2">
-        <div class="panel-header p2-color">BLUE</div>
+        <div class="panel-header p2-color">RED</div>
         <div class="oled-area">
 <div class="move-col">
             <button class="btn move-btn" id="p2-m0"></button>
@@ -157,7 +157,7 @@
       <section>
         <h3>BUTTONS</h3>
         <table>
-          <tr><td>BLUE VS AI</td><td>Blue player controlled by AI</td></tr>
+          <tr><td>RED VS AI</td><td>Play as Red (P2) against an AI opponent</td></tr>
           <tr><td>DEMO</td><td>Both players AI-controlled</td></tr>
           <tr><td>PAUSE / RESUME</td><td>Pause AI between turns</td></tr>
           <tr><td>RESTART</td><td>Start a new battle</td></tr>
@@ -169,7 +169,7 @@
         <h3>CLI</h3>
         <p>The log below mirrors the battle narration. Type commands and press Enter.</p>
         <table>
-          <tr><td>:vs ai</td><td>Blue (you) vs AI opponent</td></tr>
+          <tr><td>:vs ai</td><td>Red (you) vs AI opponent</td></tr>
           <tr><td>:ready</td><td>Both players ready (human vs human)</td></tr>
           <tr><td>:demo</td><td>AI vs AI demo loop</td></tr>
           <tr><td>:restart</td><td>Start a new battle</td></tr>

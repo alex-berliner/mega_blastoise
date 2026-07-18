@@ -170,6 +170,19 @@ async fn main(spawner: Spawner) {
 
         let _ = ai_players; // used above under #[cfg(feature = "usb")]
 
+        // Tell the shared display controller each player's control scheme
+        // (concealed battle screens hide the move list).
+        #[cfg(feature = "oled")]
+        {
+            use mega_blastoise_core::{ControlMode, OledCmd};
+            for player in [1u8, 2] {
+                subsystems::oled::send(OledCmd::SetControlMode {
+                    player,
+                    concealed: modes[(player - 1) as usize] == ControlMode::Concealed,
+                });
+            }
+        }
+
         // Draw teams from timing jitter (fresh entropy each round).
         let seed = Instant::now().as_ticks();
 
@@ -247,7 +260,21 @@ async fn main(spawner: Spawner) {
         .await;
 
         debug!("=== Battle over ===");
-        // Brief pause so win effects finish before the lobby resets the LEDs.
+        // Brief pause so the win screen lingers after its 7.5 s hold.
         Timer::after_secs(4).await;
+
+        // Post-game feedback QR on both displays: stays up until any button
+        // press or 30 seconds, whichever comes first.
+        #[cfg(feature = "oled")]
+        {
+            use pico_battle_input::PadScan;
+            subsystems::oled::send(mega_blastoise_core::OledCmd::ShowQr);
+            let mut qr_scan = PadScan::default();
+            let _ = embassy_futures::select::select(
+                buttons.next_pad_event(&mut qr_scan),
+                Timer::after_secs(30),
+            )
+            .await;
+        }
     }
 }

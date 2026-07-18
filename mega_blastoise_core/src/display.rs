@@ -112,6 +112,8 @@ pub enum SpeedCmp {
     Faster,
     Even,
     Slower,
+    /// Draw no badge (e.g. the mon has fainted — there is nothing to race).
+    Hidden,
 }
 
 /// Small boxed indicator on the right side of the active mon: a lightning
@@ -120,6 +122,9 @@ fn draw_speed_badge<D>(display: &mut D, cmp: SpeedCmp)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
+    if cmp == SpeedCmp::Hidden {
+        return;
+    }
     let stroke = PrimitiveStyle::with_stroke(BinaryColor::On, 1);
     let (bx, by, bw, bh) = (113i32, 24i32, 14u32, 16u32);
     Rectangle::new(Point::new(bx, by), Size::new(bw, bh))
@@ -150,19 +155,38 @@ where
             seg(display, 4, 4, 9, 12);
             seg(display, 9, 4, 4, 12);
         }
+        SpeedCmp::Hidden => unreachable!("early return above"),
     }
 }
 
 // ── Shared sprite drawing ─────────────────────────────────────────────────────
 
+/// Which way the drawn mon faces: `Front` on combat/foe screens, `Back` on
+/// the player's own choose/wait screens (you stand behind your mon, gen1
+/// style).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Facing {
+    Front,
+    Back,
+}
+
 /// The mon's 48×48 sprite (or a fallback name box for "FAINTED"/"---"),
 /// centered horizontally with its top edge at `top + bob_off`. The bob
 /// offset applies to the SPRITE only — the fallback text box stays put.
-fn draw_center_sprite<D>(display: &mut D, mon_name: &str, top: i32, bob_off: i32)
-where
+fn draw_center_sprite_facing<D>(
+    display: &mut D,
+    mon_name: &str,
+    top: i32,
+    bob_off: i32,
+    facing: Facing,
+) where
     D: DrawTarget<Color = BinaryColor>,
 {
-    if let Some(spr) = crate::sprites::mon_sprite(mon_name) {
+    let spr = match facing {
+        Facing::Front => crate::sprites::mon_sprite(mon_name),
+        Facing::Back => crate::sprites::mon_back_sprite(mon_name),
+    };
+    if let Some(spr) = spr {
         let side = crate::sprites::SPRITE_SIDE;
         let raw = ImageRaw::<BinaryColor>::new(spr.as_slice(), side);
         Image::new(&raw, Point::new((128 - side as i32) / 2, top + bob_off))
@@ -185,6 +209,13 @@ where
         Text::with_text_style(mon_name, Point::new(64, name_y), name_char, center_style())
             .draw(display).ok();
     }
+}
+
+fn draw_center_sprite<D>(display: &mut D, mon_name: &str, top: i32, bob_off: i32)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    draw_center_sprite_facing(display, mon_name, top, bob_off, Facing::Front);
 }
 
 // ── Normal screen ─────────────────────────────────────────────────────────────
@@ -216,7 +247,8 @@ pub fn render_player_screen<D>(
     // ── Mon sprite (or fallback name box), centered between the move rows ────
     // Drawn FIRST: when the bob offset shifts the sprite into a move row, its
     // black background must not overwrite the text — moves go on top.
-    draw_center_sprite(display, mon_name, move_h, sprite_y_off);
+    // Your own choose-screen shows your mon from BEHIND (gen1 player view).
+    draw_center_sprite_facing(display, mon_name, move_h, sprite_y_off, Facing::Back);
     draw_speed_badge(display, spd);
 
     // ── Corner moves, on top of the sprite ────────────────────────────────────
@@ -318,11 +350,41 @@ fn wrap_move_name(name: &str) -> alloc::vec::Vec<alloc::string::String> {
 
 // ── Move detail screen ────────────────────────────────────────────────────────
 
+/// Max description chars per FONT_5X8 line on the detail screen.
+const DESC_CHARS_PER_LINE: usize = 25;
+/// Description lines per detail page (rows y=14..62).
+const DESC_LINES_PER_PAGE: usize = 6;
+
+/// Word-wrap a description into display lines (borrowed slices).
+fn wrap_desc(text: &str) -> alloc::vec::Vec<&str> {
+    let mut lines = alloc::vec::Vec::new();
+    let mut rest = text.trim();
+    while !rest.is_empty() {
+        if rest.len() <= DESC_CHARS_PER_LINE {
+            lines.push(rest);
+            break;
+        }
+        let window = prefix_bytes(rest, DESC_CHARS_PER_LINE + 1);
+        let at = match window.rfind(' ') {
+            Some(0) | None => prefix_bytes(rest, DESC_CHARS_PER_LINE).len(),
+            Some(i) => i,
+        };
+        let (line, tail) = rest.split_at(at);
+        lines.push(line.trim_end());
+        rest = tail.trim_start();
+    }
+    lines
+}
+
 /// Draw the move detail screen onto any 128×64 `DrawTarget`.
 ///
-/// Layout (long-press view):
+/// Page 0 is the stat sheet; further pages show the move's description
+/// (Showdown text, wrapped), as many as the text needs. The `page` counter
+/// wraps, so callers can increment it forever while the view is held.
+///
+/// Layout (page 0):
 /// ```text
-/// Thunder Wave            ← FONT_6X10
+/// Thunder Wave       1/3  ← FONT_6X10 name, page indicator (FONT_5X8)
 /// ────────────────────
 /// Type: Electric
 /// Cat:  Status
@@ -330,50 +392,70 @@ fn wrap_move_name(name: &str) -> alloc::vec::Vec<alloc::string::String> {
 /// Acc:  100
 /// PP:   19/20             ← FONT_5X8, one line each
 /// ```
-pub fn render_move_detail<D>(display: &mut D, mv: &MoveSlot)
+pub fn render_move_detail<D>(display: &mut D, mv: &MoveSlot, page: u8)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
     let name_char = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
     let info_char = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
 
+    let desc_lines = crate::move_descs::move_desc(&mv.name)
+        .map(wrap_desc)
+        .unwrap_or_default();
+    let desc_pages = desc_lines.len().div_ceil(DESC_LINES_PER_PAGE);
+    let total = 1 + desc_pages;
+    let page = (page as usize) % total;
+
     display.clear(BinaryColor::Off).ok();
 
-    // Move name
+    // Move name + page indicator
     Text::with_text_style(&mv.name, Point::new(0, 0), name_char, tl_style())
         .draw(display).ok();
+    if total > 1 {
+        let ind = alloc::format!("{}/{}", page + 1, total);
+        Text::with_text_style(&ind, Point::new(127, 2), info_char, tr_style())
+            .draw(display).ok();
+    }
 
     // Separator line
     Rectangle::new(Point::new(0, 11), Size::new(128, 1))
         .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
         .draw(display).ok();
 
-    // Info lines
-    let type_line = alloc::format!("Type: {}", mv.type_name);
-    Text::with_text_style(&type_line, Point::new(0, 14), info_char, tl_style())
-        .draw(display).ok();
+    if page == 0 {
+        // Info lines
+        let type_line = alloc::format!("Type: {}", mv.type_name);
+        Text::with_text_style(&type_line, Point::new(0, 14), info_char, tl_style())
+            .draw(display).ok();
 
-    let cat_line = alloc::format!("Cat:  {}", mv.category);
-    Text::with_text_style(&cat_line, Point::new(0, 22), info_char, tl_style())
-        .draw(display).ok();
+        let cat_line = alloc::format!("Cat:  {}", mv.category);
+        Text::with_text_style(&cat_line, Point::new(0, 22), info_char, tl_style())
+            .draw(display).ok();
 
-    let pow_line = match mv.power {
-        Some(p) => alloc::format!("Pow:  {}", p),
-        None => alloc::format!("Pow:  ---"),
-    };
-    Text::with_text_style(&pow_line, Point::new(0, 30), info_char, tl_style())
-        .draw(display).ok();
+        let pow_line = match mv.power {
+            Some(p) => alloc::format!("Pow:  {}", p),
+            None => alloc::format!("Pow:  ---"),
+        };
+        Text::with_text_style(&pow_line, Point::new(0, 30), info_char, tl_style())
+            .draw(display).ok();
 
-    let acc_line = match mv.accuracy {
-        Some(a) => alloc::format!("Acc:  {}", a),
-        None => alloc::format!("Acc:  ---"),
-    };
-    Text::with_text_style(&acc_line, Point::new(0, 38), info_char, tl_style())
-        .draw(display).ok();
+        let acc_line = match mv.accuracy {
+            Some(a) => alloc::format!("Acc:  {}", a),
+            None => alloc::format!("Acc:  ---"),
+        };
+        Text::with_text_style(&acc_line, Point::new(0, 38), info_char, tl_style())
+            .draw(display).ok();
 
-    let pp_line = alloc::format!("PP:   {}/{}", mv.pp, mv.max_pp);
-    Text::with_text_style(&pp_line, Point::new(0, 46), info_char, tl_style())
-        .draw(display).ok();
+        let pp_line = alloc::format!("PP:   {}/{}", mv.pp, mv.max_pp);
+        Text::with_text_style(&pp_line, Point::new(0, 46), info_char, tl_style())
+            .draw(display).ok();
+    } else {
+        let start = (page - 1) * DESC_LINES_PER_PAGE;
+        for (j, line) in desc_lines.iter().skip(start).take(DESC_LINES_PER_PAGE).enumerate() {
+            Text::with_text_style(line, Point::new(0, 14 + j as i32 * 8), info_char, tl_style())
+                .draw(display).ok();
+        }
+    }
 }
 
 // ── Shared header for pokémon stat/move pages ─────────────────────────────────
@@ -611,7 +693,7 @@ where
 
     // Blurb for the highlighted scheme.
     let blurb: [&str; 3] = if highlighted == 1 {
-        ["Hides your inputs:", "hold an action, tap a", "corner. New layout/turn."]
+        ["Hides your inputs:", "tap an action, tap a", "corner. New layout/turn."]
     } else {
         ["Buttons pick moves and", "party slots directly.", ""]
     };
@@ -650,7 +732,7 @@ pub fn render_action_select<D>(
     display.clear(BinaryColor::Off).ok();
 
     // Sprite first — the labels draw on top when the bob overlaps.
-    draw_center_sprite(display, mon_name, h, sprite_y_off);
+    draw_center_sprite_facing(display, mon_name, h, sprite_y_off, Facing::Back);
     draw_speed_badge(display, spd);
 
     // Bottom row: left / center / right, matching the three bottom buttons.
@@ -743,16 +825,40 @@ where
 
 // ── In-game overlay screens ───────────────────────────────────────────────────
 
-/// Draw an "invalid selection" flash onto any 128×64 `DrawTarget`.
-///
-/// Shown briefly when the player tries to switch to a fainted Pokémon.
-pub fn render_invalid_selection<D>(display: &mut D)
+/// Why a selection was rejected — picks the invalid-flash message.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum InvalidReason {
+    /// Switch target has fainted.
+    #[default]
+    Fainted,
+    /// Switch target is the mon already on the field.
+    AlreadyOut,
+    /// Move has no PP left (or is disabled).
+    NoPp,
+    /// Trapped — cannot switch out.
+    Trapped,
+}
+
+/// Draw an "invalid selection" flash onto any 128×64 `DrawTarget`, with a
+/// message specific to WHY the pick was rejected.
+pub fn render_invalid_selection<D>(display: &mut D, reason: InvalidReason)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
     let style = MonoTextStyle::new(&FONT_6X10, BinaryColor::On);
     display.clear(BinaryColor::Off).ok();
-    Text::with_text_style("Already fainted!", Point::new(64, 27), style, center_style()).draw(display).ok();
+    let (l1, l2) = match reason {
+        InvalidReason::Fainted => ("Already fainted!", ""),
+        InvalidReason::AlreadyOut => ("Already out!", ""),
+        InvalidReason::NoPp => ("No power remaining", "for that move!"),
+        InvalidReason::Trapped => ("Trapped -", "can't switch out!"),
+    };
+    if l2.is_empty() {
+        Text::with_text_style(l1, Point::new(64, 27), style, center_style()).draw(display).ok();
+    } else {
+        Text::with_text_style(l1, Point::new(64, 21), style, center_style()).draw(display).ok();
+        Text::with_text_style(l2, Point::new(64, 33), style, center_style()).draw(display).ok();
+    }
 }
 
 /// Draw the "submitted, waiting" overlay onto any 128×64 `DrawTarget`.
@@ -772,12 +878,28 @@ pub fn render_waiting_screen<D>(
     let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
     let h = FONT_5X8.character_size.height as i32;
     display.clear(BinaryColor::Off).ok();
-    draw_center_sprite(display, mon_name, h, sprite_y_off);
+    draw_center_sprite_facing(display, mon_name, h, sprite_y_off, Facing::Back);
     draw_speed_badge(display, spd);
     if !cancel_hint.is_empty() {
         Text::with_text_style(cancel_hint, Point::new(64, 64 - h), sm, center_style())
             .draw(display).ok();
     }
+}
+
+/// Concealed foe-peek: "FOE" caption up top, the opponent's active mon's
+/// (bobbing) sprite in the middle, its name along the bottom.
+pub fn render_opponent_mon<D>(display: &mut D, mon_name: &str, sprite_y_off: i32)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    let h = FONT_5X8.character_size.height as i32;
+    display.clear(BinaryColor::Off).ok();
+    Text::with_text_style("FOE", Point::new(64, 0), sm, center_style())
+        .draw(display).ok();
+    draw_center_sprite(display, mon_name, 12, sprite_y_off);
+    Text::with_text_style(prefix_bytes(mon_name, 25), Point::new(64, 64 - h), sm, center_style())
+        .draw(display).ok();
 }
 
 /// Draw the switch-in "sent out" screen: caption up top, the incoming mon's
@@ -910,15 +1032,70 @@ pub fn render_move_used<D>(
 
 /// Draw the "waiting for other player" overlay onto any 128×64 `DrawTarget`.
 ///
-/// Shown on one player's screen while the other player is still choosing.
-pub fn render_waiting_for_opponent<D>(display: &mut D)
+/// Shown on one player's screen while the other player is still choosing:
+/// your own mon's (bobbing, back-facing) sprite with the caption below.
+pub fn render_waiting_for_opponent<D>(display: &mut D, mon_name: &str, sprite_y_off: i32)
 where
     D: DrawTarget<Color = BinaryColor>,
 {
     let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    let h = FONT_5X8.character_size.height as i32;
     display.clear(BinaryColor::Off).ok();
-    Text::with_text_style("Waiting for",  Point::new(64, 20), sm, center_style()).draw(display).ok();
-    Text::with_text_style("opponent...", Point::new(64, 32), sm, center_style()).draw(display).ok();
+    draw_center_sprite_facing(display, mon_name, 0, sprite_y_off, Facing::Back);
+    Text::with_text_style("Waiting for opponent...", Point::new(64, 64 - h), sm, center_style())
+        .draw(display).ok();
+}
+
+// ── Feedback QR screen ────────────────────────────────────────────────────────
+
+/// Post-game feedback screen: the QR code (generated at build time from
+/// [`crate::qr::FEEDBACK_URL`]) drawn dark-on-light on the left, with a
+/// short caption on the right. Shown after the win screen until a button
+/// press or timeout (platform-driven).
+pub fn render_qr_screen<D>(display: &mut D)
+where
+    D: DrawTarget<Color = BinaryColor>,
+{
+    use crate::qr::{qr_module, QR_SIZE};
+    let sm = MonoTextStyle::new(&FONT_5X8, BinaryColor::On);
+    display.clear(BinaryColor::Off).ok();
+
+    // Largest integer scale that fits the 64px height with a 1-module quiet
+    // border on each side (real spec wants 4, but screen real estate wins;
+    // phones scan screen-rendered codes with slim borders fine).
+    let scale = (64 / (QR_SIZE + 2)).max(1) as i32;
+    let quiet = scale; // 1 module
+    let side = QR_SIZE as i32 * scale + 2 * quiet;
+    let (x0, y0) = (2i32, (64 - side) / 2);
+
+    // Light background panel; dark modules stay unlit.
+    Rectangle::new(Point::new(x0, y0), Size::new(side as u32, side as u32))
+        .into_styled(PrimitiveStyle::with_fill(BinaryColor::On))
+        .draw(display)
+        .ok();
+    for my in 0..QR_SIZE {
+        for mx in 0..QR_SIZE {
+            if qr_module(mx, my) {
+                Rectangle::new(
+                    Point::new(
+                        x0 + quiet + mx as i32 * scale,
+                        y0 + quiet + my as i32 * scale,
+                    ),
+                    Size::new(scale as u32, scale as u32),
+                )
+                .into_styled(PrimitiveStyle::with_fill(BinaryColor::Off))
+                .draw(display)
+                .ok();
+            }
+        }
+    }
+
+    let text_cx = x0 + side + (128 - x0 - side) / 2;
+    for (i, line) in ["GG!", "Scan to", "leave", "feedback"].iter().enumerate() {
+        Text::with_text_style(line, Point::new(text_cx, 12 + i as i32 * 11), sm, center_style())
+            .draw(display)
+            .ok();
+    }
 }
 
 // ── Battle event flash screen ─────────────────────────────────────────────────
