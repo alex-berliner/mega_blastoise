@@ -12,6 +12,7 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 6. [Memory and Debugging](./06-memory-and-debugging.md)
 7. [Design Principles and Extension Guide](./07-design-principles.md)
 8. [Feature Map: Core vs. Target-Specific](./08-feature-map.md)
+9. [Single-Screen Redesign](./09-single-screen.md) — target design for the next hardware generation
 
 ## Quick Links
 
