@@ -552,6 +552,62 @@ where
     }
 }
 
+/// Blit a sprite scaled to fit a box, centered, clipped to the box.
+///
+/// Sprite dimensions vary by era — the Game Boy back sprites were 32x32 and
+/// wanted 2x, Gen 3's are 64x64 and want 1x — so callers give a box and let
+/// this pick the scale. Clipping is the belt and braces: art can never spill
+/// over the move grid no matter what a future sprite set does.
+#[allow(clippy::too_many_arguments)]
+fn draw_sprite_fit<D>(
+    d: &mut D,
+    spr: &ColorSprite,
+    bx: i32,
+    by: i32,
+    bw: u32,
+    bh: u32,
+    mirror: bool,
+    bias_bottom: bool,
+) where
+    D: DrawTarget<Color = Rgb565>,
+{
+    let (sw, sh) = (spr.w as u32, spr.h as u32);
+    if sw == 0 || sh == 0 {
+        return;
+    }
+    // Halves are expressed as a numerator over 2 so half-scale is available
+    // without floating point.
+    let num: u32 = if sw * 2 <= bw && sh * 2 <= bh {
+        4
+    } else if sw <= bw && sh <= bh {
+        2
+    } else {
+        1
+    };
+    let ow = sw * num / 2;
+    let oh = sh * num / 2;
+    let ox = bx + (bw as i32 - ow as i32) / 2;
+    let oy = if bias_bottom { by + bh as i32 - oh as i32 } else { by + (bh as i32 - oh as i32) / 2 };
+
+    for oy_i in 0..oh {
+        for ox_i in 0..ow {
+            let sx = ox_i * 2 / num;
+            let sy = oy_i * 2 / num;
+            let sx = if mirror { sw.saturating_sub(1).saturating_sub(sx) } else { sx };
+            let i = spr.index_at(sx, sy);
+            if i == 0 {
+                continue;
+            }
+            let px = ox + ox_i as i32;
+            let py = oy + oy_i as i32;
+            if px < bx || py < by || px >= bx + bw as i32 || py >= by + bh as i32 {
+                continue;
+            }
+            fill(d, px, py, 1, 1, Rgb565::from(RawU16::new(spr.color(i))));
+        }
+    }
+}
+
 /// Draw a species' front art centered in a box. Returns false if unknown.
 fn front_sprite_in<D>(d: &mut D, name: &str, cx: i32, cy: i32, scale: u32) -> bool
 where
@@ -724,12 +780,16 @@ where
     d.clear(C_BG).ok();
     foe_hud(d, ctx);
 
-    // Own mon, back view, bobbing.
+    // Own mon, back view, bobbing — boxed into the left column so it can
+    // never reach the move grid.
     let bob = if ctx.bob { -2 } else { 0 };
-    if !back_sprite_in(d, ctx.own_name, 38, 88 + bob, 2) {
-        text_center(d, clip(ctx.own_name, 9), 38, 84, &FONT_6X10, C_INK);
+    match mon_back_sprite_color(ctx.own_name) {
+        Some(spr) => draw_sprite_fit(d, spr, 4, 44 + bob, 68, 78, false, true),
+        None => {
+            text_center(d, clip(ctx.own_name, 9), 38, 84, &FONT_6X10, C_INK);
+        }
     }
-    hp_bar(d, 8, 126, 60, ctx.own_hp);
+    hp_bar(d, 6, 126, 64, ctx.own_hp);
 
     // 2x2 move grid.
     const GX: [i32; 2] = [76, 158];
@@ -786,7 +846,9 @@ where
     d.clear(C_BG).ok();
     foe_hud(d, ctx);
     let bob = if ctx.bob { -2 } else { 0 };
-    back_sprite_in(d, ctx.own_name, 60, 92 + bob, 2);
+    if let Some(spr) = mon_back_sprite_color(ctx.own_name) {
+        draw_sprite_fit(d, spr, 12, 52 + bob, 84, 82, false, true);
+    }
     text_center(d, "LOCKED IN", 160, 60, &FONT_8X13, C_INK);
     if let Some(c) = chosen {
         panel(d, 100, 78, 128, 20, C_BOX, C_INK);
@@ -872,7 +934,9 @@ where
     // Foe on the far platform, own mon on the near one.
     draw_platform(d, 178, 78, 40);
     draw_platform(d, 58, 128, 46);
-    front_sprite_in(d, ctx.foe_name, 178, 62, 1);
+    if let Some(spr) = mon_sprite_color(ctx.foe_name) {
+        draw_sprite_fit(d, spr, 142, 26, 72, 58, false, true);
+    }
     draw_status_plate(
         d,
         4,
@@ -886,7 +950,9 @@ where
     );
 
     let bob = if ctx.bob { -2 } else { 0 };
-    back_sprite_in(d, ctx.own_name, 58, 112 + bob, 2);
+    if let Some(spr) = mon_back_sprite_color(ctx.own_name) {
+        draw_sprite_fit(d, spr, 20, 74 + bob, 76, 62, false, true);
+    }
     draw_status_plate(
         d,
         116,
@@ -930,7 +996,9 @@ where
     d.clear(C_BG).ok();
     let win = msg.starts_with("WIN");
     text_center(d, msg, 120, 22, &FONT_8X13, if win { C_HP_G } else { C_INK });
-    front_sprite_in(d, ctx.own_name, 120, 92, 1);
+    if let Some(spr) = mon_sprite_color(ctx.own_name) {
+        draw_sprite_fit(d, spr, 76, 46, 88, 76, false, true);
+    }
     legend(d, &["A REMATCH", "? BATTLE LOG"]);
 }
 
