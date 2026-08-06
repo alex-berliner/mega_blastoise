@@ -49,6 +49,7 @@ jobs:
           cp mega_blastoise_web/www/index.html _site/
           cp mega_blastoise_web/www/style.css  _site/
           cp mega_blastoise_web/www/app.js     _site/
+          cp mega_blastoise_web/www/ui_flow.html _site/
           cp mega_blastoise_web/pkg/*.js       _site/pkg/
           cp mega_blastoise_web/pkg/*.wasm     _site/pkg/
 
