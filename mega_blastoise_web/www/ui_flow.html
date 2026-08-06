@@ -96,8 +96,9 @@
   .dpad::before, .dpad::after { content: ""; position: absolute; background: var(--ink-soft); border-radius: 3px; }
   .dpad::before { left: 11px; top: 0; width: 12px; height: 34px; }
   .dpad::after { left: 0; top: 11px; width: 34px; height: 12px; }
-  .ab { position: absolute; display: flex; gap: 7px; }
-  .ab i { width: 17px; height: 17px; border-radius: 50%; background: var(--accent); display: block; }
+  .ab { position: absolute; display: flex; gap: 6px; }
+  .ab i { width: 17px; height: 17px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--mono); font-style: normal; font-size: 9.5px; font-weight: 700; }
+  .ab i.q { background: #3d6fa5; }
   .hwnote { flex: 1; min-width: 260px; font-size: 14.5px; color: var(--ink-soft); }
   .hwnote b { color: var(--ink); }
   .hwnote ul { padding-left: 20px; margin: 8px 0 0; }
@@ -115,9 +116,9 @@
 <header>
   <p class="eyebrow">UI Concept Mockups</p>
   <h1>Mega Blastoise: one screen, two players</h1>
-  <p class="sub">Flow mockups for the single-screen redesign: a 2.8" IPS 240x320 panel laid flat between the seats, split into two 240x160 halves. The far player's half is rendered rotated 180 degrees, so both players always read upright. Open information by design: no hidden choice. Each seat gets a D-pad plus A and B.</p>
+  <p class="sub">Flow mockups for the single-screen redesign: a 2.8" IPS 240x320 panel laid flat between the seats, split into two 240x160 halves. The far player's half is rendered rotated 180 degrees, so both players always read upright. Open information by design: no hidden choice. Each seat gets a D-pad plus A, B, and a dedicated ? info button.</p>
   <div class="premise">
-    <span>2.8" IPS ST7789, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B per seat</span><span>rotationally symmetric seats</span><span>landscape only for attract</span>
+    <span>2.8" IPS ST7789, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B/? per seat</span><span>rotationally symmetric seats</span><span>landscape only for attract</span>
   </div>
 </header>
 
@@ -127,14 +128,15 @@
     <div class="dev">
       <div class="dscr"></div>
       <div class="dpad" style="right: 18px; top: 26px;"></div>
-      <div class="ab" style="left: 20px; top: 34px;"><i></i><i></i></div>
+      <div class="ab" style="left: 16px; top: 34px; transform: rotate(180deg);"><i>A</i><i>B</i><i class="q">?</i></div>
       <div class="dpad" style="left: 18px; bottom: 26px;"></div>
-      <div class="ab" style="right: 20px; bottom: 34px;"><i></i><i></i></div>
+      <div class="ab" style="right: 16px; bottom: 34px;"><i class="q">?</i><i>B</i><i>A</i></div>
     </div>
     <div class="hwnote">
-      <b>Controls are placed with rotational symmetry, not mirrored.</b> Each seat gets D-pad on the left, A/B on the right, in its own reading orientation (the far cluster looks upside down from here, which is correct). Notes:
+      <b>Controls are placed with rotational symmetry, not mirrored.</b> Each seat gets D-pad on the left and three buttons on the right (B, A, and a blue <b>?</b>), in its own reading orientation (the far cluster looks upside down from here, which is correct). Notes:
       <ul>
         <li>D-pad moves the cursor, <b>A confirms, B backs out</b>: every state now has an explicit back path, and nothing commits on a stray tap.</li>
+        <li><b>? explains whatever the cursor is on</b>: full move description on the move grid, full stats on a party row, foe details on the HUD. Hold or press again to leave. One dedicated "tell me more" verb, discoverable by its label alone.</li>
         <li>Panel must be <b>IPS</b>; a TN panel shows inverted contrast to one of the two seats.</li>
         <li>The WS2812 strips are dropped; HP lives on-screen. Optionally keep one status LED per seat.</li>
       </ul>
@@ -174,7 +176,7 @@
         <div class="half p2"><div class="halfin">
           <div class="ttl" style="margin-top:28px;">PRESS A TO READY</div>
           <div class="ctr small dimtx" style="margin-top:8px;">HOLD A: FIGHT THE AI</div>
-          <div class="ctr small dimtx">D-PAD: RULES + CONTROLS</div>
+          <div class="ctr small dimtx">?: RULES + CONTROLS</div>
           <div class="legend"><span>Ⓐ READY</span><span>Ⓐ hold AI</span></div>
         </div></div>
         <div class="split"></div>
@@ -219,7 +221,7 @@
 
 <section>
   <h2><span class="n">03</span>Move choice, the core screen</h2>
-  <p class="secdesc">Foe HUD on top of every choice half: species, level, HP, status. Cursor on a 2x2 move grid; the info bar always describes the highlighted move, so inspect costs nothing and needs no hold gesture.</p>
+  <p class="secdesc">Foe HUD on top of every choice half: species, level, HP, status. Cursor on a 2x2 move grid; the info bar gives at-a-glance stats for the highlighted move; the ? button opens the full description (secondary effects, flavor) for whatever the cursor is on.</p>
   <div class="row">
     <figure class="mock">
       <div class="scr"><div class="lcd">
@@ -242,7 +244,7 @@
             </div>
           </div>
           <div class="infobar"><span class="chip" style="background: var(--t-fire);">FIRE</span><span>POW 120</span><span>ACC 85</span><span>PP 5/5</span><span class="dimtx">½× vs WTR</span></div>
-          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span></div>
+          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span><span>? INFO</span></div>
         </div></div>
         <div class="split"></div>
         <div class="half p1"><div class="halfin">
@@ -264,11 +266,11 @@
             </div>
           </div>
           <div class="infobar"><span class="chip" style="background: var(--t-ice);">ICE</span><span>POW 95</span><span>ACC 100</span><span>PP 10/10</span><span class="dimtx">½× vs FIR</span></div>
-          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span></div>
+          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span><span>? INFO</span></div>
         </div></div>
       </div></div>
       <figcaption><b>Both players choosing at once.</b> Disabled moves (no PP, recharge) render dim and the cursor explains why in the info bar instead of silently ignoring the press. Effectiveness hint is optional flavor for a teaching mode.
-      <br><span class="fix">fixes: no foe info during choice</span><span class="fix">fixes: silent invalid presses</span><span class="fix">fixes: hold-to-inspect timing</span></figcaption>
+      <br><span class="fix">fixes: no foe info during choice</span><span class="fix">fixes: silent invalid presses</span><span class="fix">fixes: hold-to-inspect timing (? is explicit)</span></figcaption>
     </figure>
     <figure class="mock">
       <div class="scr"><div class="lcd">
@@ -277,7 +279,7 @@
           <div class="prow sel"><div class="spr s-f6" style="width:22px;height:22px;"></div><span style="flex:none;">CHARIZARD</span><div class="hpbar"><i style="width:88%; background: var(--hp-g);"></i></div><span class="dimtx">OUT</span></div>
           <div class="prow"><div class="ball"></div><span style="flex:none;">SNORLAX</span><div class="hpbar"><i style="width:100%; background: var(--hp-g);"></i></div></div>
           <div class="prow"><div class="ball"></div><span style="flex:none;">GENGAR</span><div class="hpbar"><i style="width:34%; background: var(--hp-y);"></i></div><span class="chip" style="background: var(--t-psy);">PSN</span></div>
-          <div class="legend"><span>✚ PICK</span><span>Ⓐ SWITCH IN</span><span>Ⓑ BACK</span></div>
+          <div class="legend"><span>✚ PICK</span><span>Ⓐ SWITCH IN</span><span>Ⓑ BACK</span><span>? INFO</span></div>
         </div></div>
         <div class="split"></div>
         <div class="half p1"><div class="halfin">
@@ -299,7 +301,7 @@
             </div>
           </div>
           <div class="infobar"><span class="chip" style="background: var(--t-water);">WTR</span><span>POW 120</span><span>ACC 80</span><span>PP 8/8</span></div>
-          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span></div>
+          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span><span>? INFO</span></div>
         </div></div>
       </div></div>
       <figcaption><b>Far player browsing party while near player is still on moves.</b> B always returns to moves; switching costs the turn as usual. The active mon is listed but marked OUT.</figcaption>
@@ -338,7 +340,7 @@
             </div>
           </div>
           <div class="infobar"><span class="chip" style="background: var(--t-ice);">ICE</span><span>POW 95</span><span>ACC 100</span><span>PP 10/10</span></div>
-          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span></div>
+          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span><span>? INFO</span></div>
         </div></div>
       </div></div>
       <figcaption><b>Far player committed; near player sees "LOCKED ✓" in their foe HUD.</b> Both locked starts a visible 1 s grace ring, then the turn plays. Note the far half deliberately does NOT show which move, only that they are done; what stays hidden is a design dial, and this is the honest single-screen compromise.
@@ -391,7 +393,7 @@
           <div class="ttl small" style="margin-top:4px;">SEND WHO NEXT?</div>
           <div class="prow sel"><div class="ball"></div><span style="flex:none;">SNORLAX</span><div class="hpbar"><i style="width:100%; background: var(--hp-g);"></i></div></div>
           <div class="prow"><div class="ball"></div><span style="flex:none;">GENGAR</span><div class="hpbar"><i style="width:34%; background: var(--hp-y);"></i></div><span class="chip" style="background: var(--t-psy);">PSN</span></div>
-          <div class="legend"><span>✚ PICK</span><span>Ⓐ SEND IN</span></div>
+          <div class="legend"><span>✚ PICK</span><span>Ⓐ SEND IN</span><span>? INFO</span></div>
         </div></div>
         <div class="split"></div>
         <div class="half p1"><div class="halfin">
@@ -454,7 +456,7 @@ flowchart LR
   </div>
   <div class="note"><b>Pixel preview:</b> click any screen mockup to toggle between the idealized rendering and a true-resolution preview: the mockup is rasterized down to 240x320 (the panel's native grid) and scaled back up with nearest-neighbor, so you see exactly how much detail the real display resolves. Click again to go back.</div>
 
-  <div class="note"><b>What this buys, against the audit:</b> foe visibility at all times (HUD + front sprites + open bench scouting), explicit confirm/back everywhere, opponent-locked signal, per-event pacing floor with intentional fast-forward, no rematch deadtime, one panel so no cross-screen skew, and the LED power problem disappears with the strips. <b>What it costs:</b> hidden choice is gone (the locked state hides only the move name, and only until playback), and the corner-button = corner-move mapping is replaced by cursor + confirm, which is more familiar but less magic. Total inputs: 12 switches vs 14 today.</div>
+  <div class="note"><b>What this buys, against the audit:</b> foe visibility at all times (HUD + front sprites + open bench scouting), explicit confirm/back everywhere, opponent-locked signal, per-event pacing floor with intentional fast-forward, no rematch deadtime, one panel so no cross-screen skew, and the LED power problem disappears with the strips. <b>What it costs:</b> hidden choice is gone (the locked state hides only the move name, and only until playback), and the corner-button = corner-move mapping is replaced by cursor + confirm, which is more familiar but less magic. Total inputs: 14 switches (4 D-pad + A/B/? per seat), same count as today.</div>
 </section>
 
 </div>
