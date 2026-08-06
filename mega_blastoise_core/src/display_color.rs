@@ -55,6 +55,31 @@ pub const C_SEL: Rgb565 = rgb(0x2B2A24);
 pub const C_ACCENT: Rgb565 = rgb(0xD8383E);
 pub const C_TRACK: Rgb565 = rgb(0xE8DFC8);
 
+// Gen 3 battle furniture. The message box is teal behind a heavy warm
+// border; HP plates are parchment with a hard drop shadow; the field is a
+// pair of olive platforms.
+pub const C_MSG_FILL: Rgb565 = rgb(0x4E8E96);
+pub const C_MSG_EDGE: Rgb565 = rgb(0xD8483E);
+pub const C_MSG_TEXT: Rgb565 = rgb(0xF8F8F0);
+pub const C_SHADOW: Rgb565 = rgb(0xB9AF95);
+pub const C_PLATFORM: Rgb565 = rgb(0xC8C08C);
+pub const C_PLATFORM_HI: Rgb565 = rgb(0xDCD5A6);
+pub const C_HPCHIP: Rgb565 = rgb(0xD03028);
+
+/// Seat colors. Player 1 is White and player 2 is Red, matching the trainer
+/// names the engine already uses in its narration.
+pub const C_TRIM_P1: Rgb565 = rgb(0xF4F4EC);
+pub const C_TRIM_P2: Rgb565 = rgb(0xD8383E);
+
+/// Trim color for a seat: 1 = White, 2 = Red, anything else = neutral.
+pub fn seat_trim(seat: u8) -> Rgb565 {
+    match seat {
+        1 => C_TRIM_P1,
+        2 => C_TRIM_P2,
+        _ => C_DIM,
+    }
+}
+
 /// Type badge color, by Gen 1 type display name.
 fn type_color(name: &str) -> Rgb565 {
     match name {
@@ -92,6 +117,8 @@ fn hp_color(pct: u8) -> Rgb565 {
 /// the foe HUD (open information is the point of this design) and the cursor.
 #[derive(Clone, Copy, Default)]
 pub struct HalfCtx<'a> {
+    /// Which seat this half belongs to — drives the White / Red trim.
+    pub seat: u8,
     pub own_name: &'a str,
     pub own_hp: u8,
     pub own_level: u8,
@@ -223,6 +250,108 @@ where
     }
 }
 
+/// Integer square root — `f32::sqrt` is not available in `no_std`.
+fn isqrt(n: i64) -> i32 {
+    if n <= 0 {
+        return 0;
+    }
+    let mut x = n;
+    let mut y = (x + 1) / 2;
+    while y < x {
+        x = y;
+        y = (x + n / x) / 2;
+    }
+    x as i32
+}
+
+/// Filled ellipse, used for the platforms the mons stand on.
+fn ellipse<D>(d: &mut D, cx: i32, cy: i32, rx: i32, ry: i32, c: Rgb565)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    if rx <= 0 || ry <= 0 {
+        return;
+    }
+    for dy in -ry..=ry {
+        // Half-width at this row, from the ellipse equation.
+        let t = (ry * ry - dy * dy).max(0);
+        let half = isqrt(t as i64 * (rx * rx) as i64 / (ry * ry) as i64);
+        if half > 0 {
+            fill(d, cx - half, cy + dy, (half * 2) as u32, 1, c);
+        }
+    }
+}
+
+/// The field a mon stands on: a lit platform with a shadowed underside.
+pub fn draw_platform<D>(d: &mut D, cx: i32, cy: i32, rx: i32)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    let ry = (rx / 3).max(4);
+    ellipse(d, cx, cy, rx, ry, C_PLATFORM);
+    ellipse(d, cx, cy - 2, rx - 3, ry - 2, C_PLATFORM_HI);
+}
+
+/// A Gen 3 status plate: parchment panel with a hard drop shadow, the name
+/// and level on top, and an HP chip beside the bar. `trim` colors a tab on
+/// the plate so each seat's boxes are identifiable at a glance.
+#[allow(clippy::too_many_arguments)]
+pub fn draw_status_plate<D>(
+    d: &mut D,
+    x: i32,
+    y: i32,
+    w: u32,
+    name: &str,
+    level: u8,
+    pct: u8,
+    numbers: Option<(u16, u16)>,
+    trim: Rgb565,
+) where
+    D: DrawTarget<Color = Rgb565>,
+{
+    let h: u32 = if numbers.is_some() { 40 } else { 32 };
+    // Drop shadow, offset down-right like the reference art.
+    fill(d, x + 3, y + 3, w, h, C_SHADOW);
+    panel(d, x, y, w, h, C_BOX, C_INK);
+    // Seat tab down the left edge.
+    fill(d, x + 2, y + 2, 4, h - 4, trim);
+
+    text_at(d, clip(name, 13), x + 10, y + 4, &FONT_6X10, C_INK);
+    if level > 0 {
+        let mut b = LvBuf::new();
+        text_right(d, b.fmt(level), x + w as i32 - 6, y + 5, &FONT_5X8, C_INK);
+    }
+
+    // HP chip, then the bar in a dark track.
+    let bar_y = y + 17;
+    fill(d, x + 10, bar_y - 1, 16, 10, C_HPCHIP);
+    text_at(d, "HP", x + 12, bar_y + 1, &FONT_5X8, C_MSG_TEXT);
+    let bar_x = x + 29;
+    let bar_w = w - 39;
+    fill(d, bar_x, bar_y, bar_w, 8, C_INK);
+    fill(d, bar_x + 1, bar_y + 1, bar_w - 2, 6, C_TRACK);
+    let filled = ((bar_w - 2) as u32 * pct.min(100) as u32) / 100;
+    if filled > 0 {
+        fill(d, bar_x + 1, bar_y + 1, filled, 6, hp_color(pct));
+    }
+
+    if let Some((cur, max)) = numbers {
+        let mut n = NumBuf::new();
+        text_right(d, n.pair(cur as u32, max as u32), x + w as i32 - 6, y + 28, &FONT_5X8, C_INK);
+    }
+}
+
+/// The Gen 3 message box: teal behind a heavy warm border. Returns the inset
+/// where text should be drawn, in [`C_MSG_TEXT`].
+pub fn draw_message_box<D>(d: &mut D, x: i32, y: i32, w: u32, h: u32)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    fill(d, x, y, w, h, C_MSG_EDGE);
+    fill(d, x + 3, y + 3, w - 6, h - 6, C_INK);
+    fill(d, x + 4, y + 4, w - 8, h - 8, C_MSG_FILL);
+}
+
 /// Blit a color sprite at an integer scale, skipping transparent pixels.
 fn draw_sprite<D>(d: &mut D, spr: &ColorSprite, x: i32, y: i32, scale: u32)
 where
@@ -331,6 +460,9 @@ fn foe_hud<D>(d: &mut D, ctx: &HalfCtx<'_>)
 where
     D: DrawTarget<Color = Rgb565>,
 {
+    // A stripe of this seat's color down the outer edge, so a player can
+    // always tell at a glance which half is theirs.
+    fill(d, 0, 0, 3, HALF_H, seat_trim(ctx.seat));
     panel(d, 3, 3, 234, 38, C_BOX, C_INK);
     if let Some(s) = mon_sprite_color(ctx.foe_name) {
         // Half scale: native art is ~54px, the HUD slot is 34px.
@@ -582,8 +714,8 @@ where
 {
     d.clear(C_BG).ok();
 
-    // Narration, up to two lines of 36 chars.
-    panel(d, 3, 3, 234, 36, C_BOX, C_INK);
+    // Narration, up to two lines of 36 chars, in the Gen 3 message box.
+    draw_message_box(d, 3, 3, 234, 36);
     let line1_len = 36.min(caption.len());
     let (l1, l2) = if caption.len() <= 36 {
         (caption, "")
@@ -591,23 +723,40 @@ where
         let cut = caption[..line1_len].rfind(' ').unwrap_or(line1_len);
         (&caption[..cut], caption[cut..].trim_start())
     };
-    text_at(d, clip(l1, 36), 9, 9, &FONT_6X10, C_INK);
+    text_at(d, clip(l1, 36), 11, 10, &FONT_6X10, C_MSG_TEXT);
     if !l2.is_empty() {
-        text_at(d, clip(l2, 36), 9, 21, &FONT_6X10, C_INK);
+        text_at(d, clip(l2, 36), 11, 22, &FONT_6X10, C_MSG_TEXT);
     }
 
-    // Foe: front art, upper right; their HP box upper left.
-    front_sprite_in(d, ctx.foe_name, 186, 74, 1);
-    panel(d, 6, 46, 118, 26, C_BOX, C_INK);
-    text_at(d, clip(ctx.foe_name, 12), 11, 49, &FONT_5X8, C_INK);
-    hp_bar(d, 11, 60, 108, ctx.foe_hp);
+    // Foe on the far platform, own mon on the near one.
+    draw_platform(d, 178, 78, 40);
+    draw_platform(d, 58, 128, 46);
+    front_sprite_in(d, ctx.foe_name, 178, 62, 1);
+    draw_status_plate(
+        d,
+        4,
+        44,
+        120,
+        ctx.foe_name,
+        ctx.foe_level,
+        ctx.foe_hp,
+        None,
+        seat_trim(3 - ctx.seat.max(1).min(2)),
+    );
 
-    // Own: back art at 2x, lower left; own HP box lower right.
     let bob = if ctx.bob { -2 } else { 0 };
-    back_sprite_in(d, ctx.own_name, 56, 118 + bob, 2);
-    panel(d, 116, 100, 118, 26, C_BOX, C_INK);
-    text_at(d, clip(ctx.own_name, 12), 121, 103, &FONT_5X8, C_INK);
-    hp_bar(d, 121, 114, 108, ctx.own_hp);
+    back_sprite_in(d, ctx.own_name, 58, 112 + bob, 2);
+    draw_status_plate(
+        d,
+        116,
+        98,
+        120,
+        ctx.own_name,
+        ctx.own_level,
+        ctx.own_hp,
+        None,
+        seat_trim(ctx.seat),
+    );
 
     legend(d, &["A NEXT", "? BATTLE LOG"]);
 }
@@ -771,8 +920,8 @@ where
 /// Turn playback laid out for the full panel in landscape (320x240).
 ///
 /// Playback is the one moment both players watch the same thing, so it gets
-/// the whole screen instead of two 240x160 halves. Sprites are drawn at 2x
-/// and the narration runs across the top at full width.
+/// the whole screen instead of two 240x160 halves, dressed in the same Gen 3
+/// furniture as the versus screen.
 pub fn render_playback_wide<D>(d: &mut D, caption: &str, ctx: &HalfCtx<'_>, w: u32, h: u32)
 where
     D: DrawTarget<Color = Rgb565>,
@@ -781,52 +930,83 @@ where
     let wi = w as i32;
     let hi = h as i32;
 
-    // Narration across the top, up to two lines of 48 characters.
-    panel(d, 4, 4, w - 8, 42, C_BOX, C_INK);
-    let (l1, l2) = if caption.len() <= 48 {
+    let far_cx = wi * 3 / 4;
+    let far_cy = hi / 2 - 10;
+    let near_cx = wi / 4;
+    let near_cy = hi - 78;
+    draw_platform(d, far_cx, far_cy, 56);
+    draw_platform(d, near_cx, near_cy, 70);
+
+    // Foe: front art on the far platform, plate on the near side of the field.
+    if let Some(spr) = mon_sprite_color(ctx.foe_name) {
+        draw_sprite(
+            d,
+            spr,
+            far_cx - (spr.w as u32) as i32,
+            far_cy - (spr.h as u32 * 2) as i32 + 10,
+            2,
+        );
+    }
+    draw_status_plate(
+        d,
+        8,
+        14,
+        150,
+        ctx.foe_name,
+        ctx.foe_level,
+        ctx.foe_hp,
+        None,
+        seat_trim(3 - ctx.seat.max(1).min(2)),
+    );
+
+    // Own mon: back art at 3x on the near platform, plate with numbers.
+    let bob = if ctx.bob { -3 } else { 0 };
+    if let Some(spr) = mon_back_sprite_color(ctx.own_name) {
+        draw_sprite(
+            d,
+            spr,
+            near_cx - (spr.w as u32 * 3 / 2) as i32,
+            near_cy - (spr.h as u32 * 3) as i32 + 14 + bob,
+            3,
+        );
+    }
+    draw_status_plate(
+        d,
+        wi - 158,
+        hi - 84,
+        150,
+        ctx.own_name,
+        ctx.own_level,
+        ctx.own_hp,
+        None,
+        seat_trim(ctx.seat),
+    );
+
+    draw_message_box(d, 4, hi - 34, w - 8, 30);
+    let (l1, l2) = if caption.len() <= 46 {
         (caption, "")
     } else {
-        let cut = caption[..48].rfind(' ').unwrap_or(48);
+        let cut = caption[..46].rfind(' ').unwrap_or(46);
         (&caption[..cut], caption[cut..].trim_start())
     };
-    text_at(d, clip(l1, 48), 12, 11, &FONT_8X13, C_INK);
+    text_at(d, clip(l1, 46), 12, hi - 29, &FONT_6X10, C_MSG_TEXT);
     if !l2.is_empty() {
-        text_at(d, clip(l2, 56), 12, 28, &FONT_6X10, C_INK);
+        text_at(d, clip(l2, 46), 12, hi - 18, &FONT_6X10, C_MSG_TEXT);
     }
-
-    // Foe upper right, own mon lower left — the Game Boy arrangement, with
-    // each side's status box on the opposite side so nothing overlaps.
-    let foe_cx = wi - 78;
-    let foe_cy = 96;
-    if mon_sprite_color(ctx.foe_name).is_some() {
-        front_sprite_in(d, ctx.foe_name, foe_cx, foe_cy, 2);
-    }
-    panel(d, 10, 56, 150, 34, C_BOX, C_INK);
-    text_at(d, clip(ctx.foe_name, 15), 16, 60, &FONT_6X10, C_INK);
-    hp_bar(d, 16, 74, 138, ctx.foe_hp);
-
-    let bob = if ctx.bob { -3 } else { 0 };
-    back_sprite_in(d, ctx.own_name, 82, hi - 62 + bob, 3);
-    panel(d, wi - 162, hi - 78, 152, 34, C_BOX, C_INK);
-    text_at(d, clip(ctx.own_name, 15), wi - 156, hi - 74, &FONT_6X10, C_INK);
-    hp_bar(d, wi - 156, hi - 60, 140, ctx.own_hp);
-
-    text_at(d, "A NEXT", 10, hi - 16, &FONT_5X8, C_DIM);
-    text_at(d, "? BATTLE LOG", 62, hi - 16, &FONT_5X8, C_DIM);
 }
 
-/// Battle-begin versus screen: both mons on the field facing each other.
+/// Battle-begin versus screen: the field, then each side as it is sent out.
 ///
 /// Deliberately not one seat's view — this is the shared moment before the
-/// first turn, so neither mon is drawn from behind. Gen 1 front sprites all
-/// face the same direction, so the left-hand one is mirrored to square them
-/// up against each other.
+/// first turn, so neither mon is drawn from behind. Sides are optional so the
+/// screen can open on an empty field and introduce the two trainers one at a
+/// time as the engine announces them. Gen 1 front sprites all face the same
+/// direction, so the left-hand one is mirrored to square them up.
+#[allow(clippy::too_many_arguments)]
 pub fn render_battle_begin<D>(
     d: &mut D,
-    left_name: &str,
-    right_name: &str,
-    left_level: u8,
-    right_level: u8,
+    left: Option<(&str, u8, u8)>,
+    right: Option<(&str, u8, u8)>,
     caption: &str,
     w: u32,
     h: u32,
@@ -836,63 +1016,43 @@ pub fn render_battle_begin<D>(
     d.clear(C_BG).ok();
     let wi = w as i32;
     let hi = h as i32;
-    let cx = wi / 2;
 
-    // Ground line, so the two mons read as standing on the same field.
-    fill(d, 12, hi / 2 + 46, w - 24, 2, C_DIM);
+    // The field: two platforms, the far one smaller and higher.
+    let far_cx = wi * 3 / 4;
+    let far_cy = hi / 2 - 6;
+    let near_cx = wi / 4;
+    let near_cy = hi - 74;
+    draw_platform(d, far_cx, far_cy, 58);
+    draw_platform(d, near_cx, near_cy, 70);
 
-    let sprite_y = hi / 2 + 6;
-    if let Some(s) = mon_sprite_color(left_name) {
-        draw_sprite_mirrored(
-            d,
-            s,
-            wi / 4 - (s.w as u32 * 2 / 2) as i32,
-            sprite_y - (s.h as u32 * 2) as i32 + 40,
-            2,
-        );
-    }
-    if let Some(s) = mon_sprite_color(right_name) {
-        draw_sprite(
-            d,
-            s,
-            wi * 3 / 4 - (s.w as u32 * 2 / 2) as i32,
-            sprite_y - (s.h as u32 * 2) as i32 + 40,
-            2,
-        );
+    if let Some((name, level, pct)) = left {
+        if let Some(spr) = mon_sprite_color(name) {
+            draw_sprite_mirrored(
+                d,
+                spr,
+                near_cx - (spr.w as u32) as i32,
+                near_cy - (spr.h as u32 * 2) as i32 + 10,
+                2,
+            );
+        }
+        draw_status_plate(d, 8, hi - 58, 148, name, level, pct, None, C_TRIM_P1);
     }
 
-    // Name plates under each side.
-    let plate_w = (w / 2) - 30;
-    panel(d, 16, hi - 62, plate_w, 30, C_BOX, C_INK);
-    text_at(d, clip(left_name, 14), 22, hi - 57, &FONT_8X13, C_INK);
-    if left_level > 0 {
-        let mut b = LvBuf::new();
-        text_right(d, b.fmt(left_level), 16 + plate_w as i32 - 6, hi - 45, &FONT_5X8, C_DIM);
+    if let Some((name, level, pct)) = right {
+        if let Some(spr) = mon_sprite_color(name) {
+            draw_sprite(
+                d,
+                spr,
+                far_cx - (spr.w as u32) as i32,
+                far_cy - (spr.h as u32 * 2) as i32 + 10,
+                2,
+            );
+        }
+        draw_status_plate(d, wi - 156, 44, 148, name, level, pct, None, C_TRIM_P2);
     }
 
-    panel(d, cx + 14, hi - 62, plate_w, 30, C_BOX, C_INK);
-    text_at(d, clip(right_name, 14), cx + 20, hi - 57, &FONT_8X13, C_INK);
-    if right_level > 0 {
-        let mut b = LvBuf::new();
-        text_right(d, b.fmt(right_level), cx + 14 + plate_w as i32 - 6, hi - 45, &FONT_5X8, C_DIM);
-    }
-
-    // VS between them, and the engine's line across the top.
-    text_center(d, "VS", cx, hi - 56, &FONT_8X13, C_ACCENT);
-    panel(d, 4, 4, w - 8, 26, C_BOX, C_INK);
-    text_center(d, clip(caption, 48), cx, 11, &FONT_6X10, C_INK);
+    // Engine line along the bottom, Gen 3 message box.
+    draw_message_box(d, 4, hi - 26, w - 8, 22);
+    text_at(d, clip(caption, 46), 12, hi - 19, &FONT_6X10, C_MSG_TEXT);
 }
 
-/// Shown between "GO!" and the first mon appearing. Without it the battle
-/// screen renders for a few frames with no mon and no moves, which reads as
-/// a broken UI right at the moment a new player is deciding whether this
-/// thing works.
-pub fn render_battle_intro<D>(d: &mut D, w: u32, h: u32)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    d.clear(C_BG).ok();
-    let cx = (w / 2) as i32;
-    text_center(d, "BATTLE START", cx, (h / 2) as i32 - 16, &FONT_8X13, C_INK);
-    text_center(d, "trainers are sending out...", cx, (h / 2) as i32 + 6, &FONT_5X8, C_DIM);
-}
