@@ -172,9 +172,23 @@ where
         foe_locked: ui.locked,
         bob: me.bob,
     };
+    // A switch-in is the one shared moment where neither mon should be drawn
+    // from behind, so it gets the versus layout instead of a seat's view.
+    if let Screen::SentOut { caption, .. } = ctl.screen(1) {
+        dc::render_battle_begin(
+            d,
+            me.name,
+            foe.name,
+            me.level,
+            foe.level,
+            caption,
+            320,
+            240,
+        );
+        return;
+    }
     let caption = match ctl.screen(1) {
         Screen::EventText(t) => t,
-        Screen::SentOut { caption, .. } => caption,
         Screen::MoveUsed { caption, .. } => caption,
         Screen::Win(msg) => msg,
         _ => "",

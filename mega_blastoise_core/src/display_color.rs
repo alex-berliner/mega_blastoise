@@ -263,6 +263,25 @@ where
     }
 }
 
+/// Blit horizontally mirrored. Gen 1 front sprites all face the same way, so
+/// one side has to be flipped for the two mons to face each other.
+fn draw_sprite_mirrored<D>(d: &mut D, spr: &ColorSprite, x: i32, y: i32, scale: u32)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    for sy in 0..spr.h as u32 {
+        for sx in 0..spr.w as u32 {
+            let i = spr.index_at(sx, sy);
+            if i == 0 {
+                continue;
+            }
+            let c = Rgb565::from(RawU16::new(spr.color(i)));
+            let mx = spr.w as u32 - 1 - sx;
+            fill(d, x + (mx * scale) as i32, y + (sy * scale) as i32, scale, scale, c);
+        }
+    }
+}
+
 /// Draw a species' front art centered in a box. Returns false if unknown.
 fn front_sprite_in<D>(d: &mut D, name: &str, cx: i32, cy: i32, scale: u32) -> bool
 where
@@ -794,4 +813,72 @@ where
 
     text_at(d, "A NEXT", 10, hi - 16, &FONT_5X8, C_DIM);
     text_at(d, "? BATTLE LOG", 62, hi - 16, &FONT_5X8, C_DIM);
+}
+
+/// Battle-begin versus screen: both mons on the field facing each other.
+///
+/// Deliberately not one seat's view — this is the shared moment before the
+/// first turn, so neither mon is drawn from behind. Gen 1 front sprites all
+/// face the same direction, so the right-hand one is mirrored to square them
+/// up against each other.
+pub fn render_battle_begin<D>(
+    d: &mut D,
+    left_name: &str,
+    right_name: &str,
+    left_level: u8,
+    right_level: u8,
+    caption: &str,
+    w: u32,
+    h: u32,
+) where
+    D: DrawTarget<Color = Rgb565>,
+{
+    d.clear(C_BG).ok();
+    let wi = w as i32;
+    let hi = h as i32;
+    let cx = wi / 2;
+
+    // Ground line, so the two mons read as standing on the same field.
+    fill(d, 12, hi / 2 + 46, w - 24, 2, C_DIM);
+
+    let sprite_y = hi / 2 + 6;
+    if let Some(s) = mon_sprite_color(left_name) {
+        draw_sprite(
+            d,
+            s,
+            wi / 4 - (s.w as u32 * 2 / 2) as i32,
+            sprite_y - (s.h as u32 * 2) as i32 + 40,
+            2,
+        );
+    }
+    if let Some(s) = mon_sprite_color(right_name) {
+        draw_sprite_mirrored(
+            d,
+            s,
+            wi * 3 / 4 - (s.w as u32 * 2 / 2) as i32,
+            sprite_y - (s.h as u32 * 2) as i32 + 40,
+            2,
+        );
+    }
+
+    // Name plates under each side.
+    let plate_w = (w / 2) - 30;
+    panel(d, 16, hi - 62, plate_w, 30, C_BOX, C_INK);
+    text_at(d, clip(left_name, 14), 22, hi - 57, &FONT_8X13, C_INK);
+    if left_level > 0 {
+        let mut b = LvBuf::new();
+        text_right(d, b.fmt(left_level), 16 + plate_w as i32 - 6, hi - 45, &FONT_5X8, C_DIM);
+    }
+
+    panel(d, cx + 14, hi - 62, plate_w, 30, C_BOX, C_INK);
+    text_at(d, clip(right_name, 14), cx + 20, hi - 57, &FONT_8X13, C_INK);
+    if right_level > 0 {
+        let mut b = LvBuf::new();
+        text_right(d, b.fmt(right_level), cx + 14 + plate_w as i32 - 6, hi - 45, &FONT_5X8, C_DIM);
+    }
+
+    // VS between them, and the engine's line across the top.
+    text_center(d, "VS", cx, hi - 56, &FONT_8X13, C_ACCENT);
+    panel(d, 4, 4, w - 8, 26, C_BOX, C_INK);
+    text_center(d, clip(caption, 48), cx, 11, &FONT_6X10, C_INK);
 }
