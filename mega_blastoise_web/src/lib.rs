@@ -1311,6 +1311,14 @@ fn seat_is_choosing(player: u8) -> bool {
     OLED_CTL.with(|c| c.borrow().screen(player).is_choosing())
 }
 
+fn alloc_ready_line(player: u8) -> String {
+    if player == 2 { String::from("p2 ok") } else { String::from("p1 ok") }
+}
+
+fn alloc_unready_line(player: u8) -> String {
+    if player == 2 { String::from("p2 unready") } else { String::from("p1 unready") }
+}
+
 /// True while a pre-lobby menu owns the screen and the input.
 #[wasm_bindgen]
 pub fn menu_active() -> bool {
@@ -1349,7 +1357,11 @@ pub fn nav_a(player: u8) {
         return;
     }
     if is_lobby_mode() {
-        press_move(player, 0);
+        // Ready up directly. The old flow routed a corner press into the
+        // Normal/Concealed picker, but concealed mode is gone in this
+        // design, so the picker has nothing to ask and would strand the
+        // player on a screen this UI does not draw.
+        push_button(ButtonEvent::Line(alloc_ready_line(player)));
         return;
     }
     with_nav(player, |n| n.confirm());
@@ -1365,6 +1377,14 @@ pub fn nav_b(player: u8) {
     if log_view(player).is_some() {
         log_close(player);
         return;
+    }
+    if is_lobby_mode() {
+        // Ready players un-ready first; only an idle seat reopens the menus.
+        let ready = LOBBY_READY.with(|r| r.borrow()[(player == 2) as usize]);
+        if ready {
+            push_button(ButtonEvent::Line(alloc_unready_line(player)));
+            return;
+        }
     }
     // Reopening the menus is only offered in the lobby, never mid-battle.
     if is_lobby_mode() {

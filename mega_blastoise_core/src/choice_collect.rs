@@ -1481,15 +1481,18 @@ impl ReadySequence {
                         self.st[i] = SeqSlot::Ready;
                         self.show(i, fx);
                     }
+                    "unready" | "cancel" => {
+                        self.set_unready_cmd((i + 1) as u8, fx);
+                    }
                     _ => fx.push(Effect::Err(String::from(
-                        "controls: pN normal | pN concealed | pN ok",
+                        "controls: pN normal | pN concealed | pN ok | pN unready",
                     ))),
                 }
                 return;
             }
         }
         fx.push(Effect::Err(String::from(
-            "controls: pN normal | pN concealed | pN ok",
+            "controls: pN normal | pN concealed | pN ok | pN unready",
         )));
     }
 
@@ -2033,6 +2036,20 @@ mod tests {
     }
 
     #[test]
+    #[test]
+    fn typed_ok_readies_without_the_picker_and_unready_undoes_it() {
+        // The cursor UI readies directly: the Normal/Concealed picker has
+        // nothing to ask once concealed mode is gone.
+        let mut fx = Vec::new();
+        let mut seq = ReadySequence::new(&mut fx);
+        fx.clear();
+        seq.typed_line("p1 ok", 0, &mut fx);
+        assert!(seq.ready_flags()[0], "p1 should be ready after `p1 ok`");
+        fx.clear();
+        seq.typed_line("p1 unready", 0, &mut fx);
+        assert!(!seq.ready_flags()[0], "p1 should be idle after `p1 unready`");
+    }
+
     fn ready_sequence_six_v_six_skips_picker() {
         let mut fx = Vec::new();
         let mut seq = ReadySequence::new(&mut fx);

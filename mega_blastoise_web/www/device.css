@@ -47,9 +47,11 @@ html, body {
 
 /* ── Seats ─────────────────────────────────────────────────────────────── */
 
+/* The pads are part of the device, so they match the panel's width exactly
+   and are always both present — a real board does not grow a second
+   controller when a battle starts. JS sets --panel-px from the canvas. */
 .seat {
-  width: 100%;
-  max-width: 560px;
+  width: var(--panel-px, 240px);
   flex: none;
 }
 
@@ -59,10 +61,11 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 12px;
+  width: 100%;
   background: var(--case);
   border-radius: 12px;
-  padding: 10px 16px;
+  padding: 10px 14px;
 }
 
 /* D-pad: a 3x3 grid with the arms filled in. */

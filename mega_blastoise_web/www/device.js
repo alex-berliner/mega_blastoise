@@ -39,6 +39,9 @@ function fitCanvas() {
   canvas.style.width = `${PANEL_W * scale}px`;
   canvas.style.height = `${PANEL_H * scale}px`;
   canvas.style.transform = landscape ? 'rotate(-90deg)' : 'none';
+  // Pads span exactly the panel's on-screen width, in every orientation.
+  const shownW = landscape ? PANEL_H * scale : PANEL_W * scale;
+  document.documentElement.style.setProperty('--panel-px', `${shownW}px`);
   // A rotated element still reserves its unrotated box, so reserve the
   // rotated footprint explicitly and let the transform overflow into it.
   canvas.style.margin = landscape
@@ -50,10 +53,10 @@ function applyOrientation(mode) {
   orientation = mode;
   wasm.set_orientation(mode);
   fitCanvas();
+  // Both pads are always present: the physical board has two seats wired in
+  // no matter what is on screen. Only the far pad's rotation changes.
   document.getElementById('seat2').style.transform =
     mode === 0 ? 'rotate(180deg)' : 'none';
-  // Landscape is a one-person screen, so the far seat's pad is not usable.
-  document.getElementById('seat2').style.visibility = mode === 2 ? 'hidden' : 'visible';
 }
 
 function frame() {
@@ -249,6 +252,11 @@ async function run() {
   if (params.has('demo')) setTimeout(() => wasm.wasm_enter_demo_mode(), 300);
   // Debug aid: open P1's battle log after a delay, so a headless capture can
   // reach a screen that normally needs a button press.
+  if (params.has('ready')) {
+    // Debug aid: A on the gen picker, then A on both seats to ready up.
+    setTimeout(() => wasm.nav_a(1), 400);
+    setTimeout(() => { wasm.nav_a(1); wasm.nav_a(2); }, 900);
+  }
   if (params.has('log')) {
     setTimeout(() => wasm.nav_info(1), Number(params.get('log')) || 12000);
   }
