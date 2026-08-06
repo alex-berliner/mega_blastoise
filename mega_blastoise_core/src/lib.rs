@@ -3,6 +3,7 @@
 extern crate alloc;
 
 pub mod battle_effects;
+pub mod battle_log;
 pub mod cli_parse;
 pub mod display;
 pub mod display_color;
@@ -63,3 +64,4 @@ pub use device_view::{DeviceFrame, HalfFrame, Orientation, Region, DEV_H, DEV_W}
 pub use cursor_nav::{CursorNav, Dir, NavMode, NavOut};
 pub use sprites_color::{mon_back_sprite_color, mon_sprite_color, ColorSprite};
 pub use menu::{Gen, GameOptions, Menu, MenuOut, MenuScreen, TextSpeed, OPTION_ROWS};
+pub use battle_log::{BattleLog, LOG_CAPACITY, LOG_ROWS};

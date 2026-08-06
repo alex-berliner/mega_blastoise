@@ -377,6 +377,20 @@ pub enum Screen<'a> {
     Tutorial(u8),
 }
 
+impl Screen<'_> {
+    /// True while this seat is picking a move or a switch. `?` explains the
+    /// cursor here; anywhere else it opens the battle log.
+    pub fn is_choosing(&self) -> bool {
+        matches!(
+            self,
+            Screen::Battle { .. }
+                | Screen::Switch(_)
+                | Screen::MoveDetail { .. }
+                | Screen::Stats { .. }
+        )
+    }
+}
+
 /// Render a [`Screen`] onto any 128×64 target. The single dispatch point
 /// from screen state to the shared `render_*` functions.
 pub fn render_screen<D>(display: &mut D, screen: &Screen<'_>)

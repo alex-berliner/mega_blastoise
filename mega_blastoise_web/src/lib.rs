@@ -46,6 +46,13 @@ thread_local! {
         RefCell::new(mega_blastoise_core::menu::Menu::new());
     static MENU_ACTIVE: RefCell<bool> = RefCell::new(true);
 
+    // Battle log: every narration line, so `?` can show what actually
+    // happened with the numbers instead of a 2.5 s flash. Per-seat scroll
+    // offset; None means the log is closed for that seat.
+    static BATTLE_LOG: RefCell<mega_blastoise_core::BattleLog> =
+        RefCell::new(mega_blastoise_core::BattleLog::new());
+    static LOG_VIEW: RefCell<[Option<usize>; 2]> = RefCell::new([None, None]);
+
     // Per-player button queues — both players can pre-queue independently
     static P1_QUEUE: RefCell<VecDeque<ButtonEvent>> = RefCell::new(VecDeque::new());
     static P1_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
@@ -849,6 +856,7 @@ async fn run_game_loop() {
                 }
             }
             // Either the hidden chord or the options menu can ask for 6v6.
+            log_reset();
             let six = seq.six_v_six() || menu_six_v_six();
             let (ai, modes) = seq.take();
             (ai, modes, six)
@@ -1134,9 +1142,17 @@ pub fn get_device_pixels() -> Vec<u8> {
         return MENU.with(|m| device_ui::render_menu(&m.borrow()));
     }
     let orientation = ORIENTATION.with(|o| *o.borrow());
-    SEAT_UI.with(|u| {
-        let ui = u.borrow();
-        OLED_CTL.with(|c| device_ui::render_device(&c.borrow(), orientation, &ui[0], &ui[1]))
+    BATTLE_LOG.with(|l| {
+        let log = l.borrow();
+        let lines = log.lines();
+        let l1 = device_ui::LogView { lines, offset: log_view(1) };
+        let l2 = device_ui::LogView { lines, offset: log_view(2) };
+        SEAT_UI.with(|u| {
+            let ui = u.borrow();
+            OLED_CTL.with(|c| {
+                device_ui::render_device(&c.borrow(), orientation, &ui[0], &ui[1], l1, l2)
+            })
+        })
     })
 }
 
@@ -1248,7 +1264,51 @@ pub fn nav_dpad(player: u8, dir: u8) {
     if is_lobby_mode() {
         return;
     }
+    if log_view(player).is_some() {
+        log_scroll(player, if matches!(d, Dir::Up | Dir::Left) { -1 } else { 1 });
+        return;
+    }
     with_nav(player, |n| n.dpad(d));
+}
+
+/// Record a narration line. Called from the effects sink.
+pub(crate) fn log_battle_line(line: &str) {
+    BATTLE_LOG.with(|l| l.borrow_mut().push(line));
+}
+
+pub(crate) fn log_reset() {
+    BATTLE_LOG.with(|l| l.borrow_mut().clear());
+    LOG_VIEW.with(|v| *v.borrow_mut() = [None, None]);
+}
+
+/// Scroll offset for a seat, or None when the log is closed.
+pub(crate) fn log_view(player: u8) -> Option<usize> {
+    LOG_VIEW.with(|v| v.borrow()[(player == 2) as usize])
+}
+
+fn log_open(player: u8) {
+    let bottom = BATTLE_LOG.with(|l| l.borrow().bottom());
+    LOG_VIEW.with(|v| v.borrow_mut()[(player == 2) as usize] = Some(bottom));
+}
+
+fn log_close(player: u8) {
+    LOG_VIEW.with(|v| v.borrow_mut()[(player == 2) as usize] = None);
+}
+
+fn log_scroll(player: u8, delta: i32) {
+    let max = BATTLE_LOG.with(|l| l.borrow().max_scroll());
+    LOG_VIEW.with(|v| {
+        let mut view = v.borrow_mut();
+        if let Some(off) = view[(player == 2) as usize] {
+            let next = (off as i32 + delta).clamp(0, max as i32) as usize;
+            view[(player == 2) as usize] = Some(next);
+        }
+    });
+}
+
+/// Is this seat currently picking a move or a switch?
+fn seat_is_choosing(player: u8) -> bool {
+    OLED_CTL.with(|c| c.borrow().screen(player).is_choosing())
 }
 
 /// True while a pre-lobby menu owns the screen and the input.
@@ -1302,6 +1362,10 @@ pub fn nav_b(player: u8) {
         MENU.with(|m| m.borrow_mut().back());
         return;
     }
+    if log_view(player).is_some() {
+        log_close(player);
+        return;
+    }
     // Reopening the menus is only offered in the lobby, never mid-battle.
     if is_lobby_mode() {
         MENU_ACTIVE.with(|a| *a.borrow_mut() = true);
@@ -1332,7 +1396,15 @@ pub fn nav_info(player: u8) {
         });
         return;
     }
-    with_nav(player, |n| n.info());
+    // `?` explains the cursor while choosing, and opens the log everywhere
+    // else — including turn playback, which is where the numbers matter.
+    if log_view(player).is_some() {
+        log_close(player);
+    } else if seat_is_choosing(player) {
+        with_nav(player, |n| n.info());
+    } else {
+        log_open(player);
+    }
 }
 
 /// Hold A in the lobby to get an AI opponent, same as the hardware.

@@ -154,6 +154,7 @@ impl BoardEffects for WebBattleEffects<'_> {
 
         // ── Animation delay (same canonical per-event delay as firmware;
         //    no-op when :anim off, cut short by any button press) ──────────────
+        crate::log_battle_line(&event.description());
         // Text speed is a menu setting, applied to every narration hold.
         let delay_ms = crate::menu_text_scale(event.anim_delay_ms());
         if delay_ms > 0 {

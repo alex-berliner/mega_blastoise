@@ -8,12 +8,22 @@
 //! with one addition the old model has no concept of: which list the player's
 //! cursor is currently in, which lives in core's [`CursorNav`].
 
+extern crate alloc;
+
 use mega_blastoise_core::{
     cursor_nav::{CursorNav, NavMode},
     device_view::{DeviceFrame, Orientation, Region},
     display_color as dc,
     OledController, Screen,
 };
+
+/// A seat's battle-log overlay: the shared lines plus that seat's scroll
+/// offset, or `None` when the seat has the log closed.
+#[derive(Clone, Copy)]
+pub struct LogView<'a> {
+    pub lines: &'a [alloc::string::String],
+    pub offset: Option<usize>,
+}
 
 /// Per-seat state the controller does not carry.
 #[derive(Clone, Copy, Default)]
@@ -26,10 +36,17 @@ pub struct SeatUi {
 }
 
 /// Draw one seat's half.
-pub fn render_seat<D>(d: &mut D, ctl: &OledController, player: u8, ui: &SeatUi)
+pub fn render_seat<D>(d: &mut D, ctl: &OledController, player: u8, ui: &SeatUi, log: LogView<'_>)
 where
     D: embedded_graphics::draw_target::DrawTarget<Color = embedded_graphics::pixelcolor::Rgb565>,
 {
+    // The log is a per-seat overlay: one player can read it while the other
+    // keeps playing, so it never stalls the game.
+    if let Some(offset) = log.offset {
+        let lines: Vec<&str> = log.lines.iter().map(|s| s.as_str()).collect();
+        dc::render_log(d, &lines, offset);
+        return;
+    }
     let me = ctl.seat(player);
     let foe = ctl.seat(3 - player);
     let ctx = dc::HalfCtx {
@@ -95,30 +112,32 @@ pub fn render_device(
     orientation: Orientation,
     ui1: &SeatUi,
     ui2: &SeatUi,
+    log1: LogView<'_>,
+    log2: LogView<'_>,
 ) -> Vec<u8> {
     let mut frame = DeviceFrame::new();
     match orientation {
         Orientation::HeadToHead => {
             {
                 let mut top = Region::half(&mut frame, false, true);
-                render_seat(&mut top, ctl, 2, ui2);
+                render_seat(&mut top, ctl, 2, ui2, log2);
             }
             let mut bottom = Region::half(&mut frame, true, false);
-            render_seat(&mut bottom, ctl, 1, ui1);
+            render_seat(&mut bottom, ctl, 1, ui1, log1);
         }
         Orientation::SameWay => {
             {
                 let mut top = Region::half(&mut frame, false, false);
-                render_seat(&mut top, ctl, 2, ui2);
+                render_seat(&mut top, ctl, 2, ui2, log2);
             }
             let mut bottom = Region::half(&mut frame, true, false);
-            render_seat(&mut bottom, ctl, 1, ui1);
+            render_seat(&mut bottom, ctl, 1, ui1, log1);
         }
         // Landscape shows P1's view across the full panel: attract, lobby,
         // and the menus are one-person screens.
         Orientation::Landscape => {
             let mut r = Region::landscape(&mut frame);
-            render_seat(&mut r, ctl, 1, ui1);
+            render_seat(&mut r, ctl, 1, ui1, log1);
         }
     }
     frame.to_rgba()

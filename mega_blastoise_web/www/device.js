@@ -247,6 +247,11 @@ async function run() {
     applyOrientation(0);
   }
   if (params.has('demo')) setTimeout(() => wasm.wasm_enter_demo_mode(), 300);
+  // Debug aid: open P1's battle log after a delay, so a headless capture can
+  // reach a screen that normally needs a button press.
+  if (params.has('log')) {
+    setTimeout(() => wasm.nav_info(1), Number(params.get('log')) || 12000);
+  }
   if (params.has('ai')) setTimeout(() => wasm.wasm_enter_vs_ai_mode(), 300);
   wireSeat(1);
   wireSeat(2);
