@@ -43,7 +43,7 @@ where
         foe_status: foe.status,
         cursor: ui.nav.cursor,
         foe_locked: ui.locked,
-        bob: false,
+        bob: me.bob,
     };
 
     match ctl.screen(player) {

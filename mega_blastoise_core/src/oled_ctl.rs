@@ -435,6 +435,8 @@ pub struct SeatInfo<'a> {
     pub status: Option<&'a str>,
     pub party: &'a [PartySlotData],
     pub moves: &'a [MoveSlot],
+    /// Sprite bob phase (true = raised), paced by this mon's Speed stat.
+    pub bob: bool,
 }
 
 // ── Per-player state ──────────────────────────────────────────────────────────
@@ -813,6 +815,7 @@ impl OledController {
             status: active.and_then(|s| s.status.as_deref()),
             party: &p.party,
             moves: &p.moves,
+            bob: p.bob_up,
         }
     }
 
