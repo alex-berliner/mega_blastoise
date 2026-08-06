@@ -819,7 +819,7 @@ where
 ///
 /// Deliberately not one seat's view — this is the shared moment before the
 /// first turn, so neither mon is drawn from behind. Gen 1 front sprites all
-/// face the same direction, so the right-hand one is mirrored to square them
+/// face the same direction, so the left-hand one is mirrored to square them
 /// up against each other.
 pub fn render_battle_begin<D>(
     d: &mut D,
@@ -843,7 +843,7 @@ pub fn render_battle_begin<D>(
 
     let sprite_y = hi / 2 + 6;
     if let Some(s) = mon_sprite_color(left_name) {
-        draw_sprite(
+        draw_sprite_mirrored(
             d,
             s,
             wi / 4 - (s.w as u32 * 2 / 2) as i32,
@@ -852,7 +852,7 @@ pub fn render_battle_begin<D>(
         );
     }
     if let Some(s) = mon_sprite_color(right_name) {
-        draw_sprite_mirrored(
+        draw_sprite(
             d,
             s,
             wi * 3 / 4 - (s.w as u32 * 2 / 2) as i32,
@@ -881,4 +881,18 @@ pub fn render_battle_begin<D>(
     text_center(d, "VS", cx, hi - 56, &FONT_8X13, C_ACCENT);
     panel(d, 4, 4, w - 8, 26, C_BOX, C_INK);
     text_center(d, clip(caption, 48), cx, 11, &FONT_6X10, C_INK);
+}
+
+/// Shown between "GO!" and the first mon appearing. Without it the battle
+/// screen renders for a few frames with no mon and no moves, which reads as
+/// a broken UI right at the moment a new player is deciding whether this
+/// thing works.
+pub fn render_battle_intro<D>(d: &mut D, w: u32, h: u32)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    d.clear(C_BG).ok();
+    let cx = (w / 2) as i32;
+    text_center(d, "BATTLE START", cx, (h / 2) as i32 - 16, &FONT_8X13, C_INK);
+    text_center(d, "trainers are sending out...", cx, (h / 2) as i32 + 6, &FONT_5X8, C_DIM);
 }

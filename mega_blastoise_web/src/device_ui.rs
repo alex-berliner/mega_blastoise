@@ -17,6 +17,15 @@ use mega_blastoise_core::{
     OledController, Screen,
 };
 
+/// True before the first switch-in: the controller still holds its boot
+/// placeholder, so any battle screen drawn now would be empty.
+fn awaiting_first_mon(ctl: &OledController) -> bool {
+    let me = ctl.seat(1);
+    let foe = ctl.seat(2);
+    let unset = |n: &str| n == "---" || n.is_empty();
+    unset(me.name) || unset(foe.name)
+}
+
 /// A seat's battle-log overlay: the shared lines plus that seat's scroll
 /// offset, or `None` when the seat has the log closed.
 #[derive(Clone, Copy)]
@@ -62,6 +71,13 @@ where
         foe_locked: ui.locked,
         bob: me.bob,
     };
+
+    // The split view has the same gap: no mon on the field yet means the
+    // battle screen would draw empty.
+    if !matches!(ctl.screen(player), Screen::Lobby { .. }) && awaiting_first_mon(ctl) {
+        dc::render_battle_intro(d, dc::HALF_W, dc::HALF_H);
+        return;
+    }
 
     match ctl.screen(player) {
         Screen::Lobby { ready, ai } => dc::render_lobby(d, ready, ai),
@@ -172,6 +188,10 @@ where
         foe_locked: ui.locked,
         bob: me.bob,
     };
+    if awaiting_first_mon(ctl) {
+        dc::render_battle_intro(d, 320, 240);
+        return;
+    }
     // A switch-in is the one shared moment where neither mon should be drawn
     // from behind, so it gets the versus layout instead of a seat's view.
     if let Screen::SentOut { caption, .. } = ctl.screen(1) {
