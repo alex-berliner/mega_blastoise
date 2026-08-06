@@ -6,6 +6,17 @@ import init, * as wasm from './pkg/mega_blastoise_web.js';
 
 const canvas = document.getElementById('panel');
 const ctx = canvas.getContext('2d');
+// Core hands us a 240x320 image. Painting it straight into a canvas that CSS
+// then rotates and fractionally scales makes the browser resample it, which
+// is what turns crisp 1px strokes into grey mush. Instead we blow the frame
+// up by a whole-number factor with smoothing off, so CSS only ever has to
+// shrink it slightly — downscaling a sharp image looks far better than
+// upscaling a small one.
+const UPSCALE = 3;
+const raw = document.createElement('canvas');
+raw.width = 240;
+raw.height = 320;
+const rawCtx = raw.getContext('2d');
 const PANEL_W = 240;
 const PANEL_H = 320;
 
@@ -37,6 +48,11 @@ function fitCanvas() {
   const debug = document.getElementById('debug');
   const debugH = debug ? debug.getBoundingClientRect().height : 30;
 
+  // Backing store is a whole multiple of the panel grid.
+  if (canvas.width !== PANEL_W * UPSCALE) {
+    canvas.width = PANEL_W * UPSCALE;
+    canvas.height = PANEL_H * UPSCALE;
+  }
   device.style.transform = 'none';
   const rect = device.getBoundingClientRect();
   const natW = rect.width;
@@ -69,6 +85,14 @@ function applyOrientation(mode) {
   // never move, in any orientation. Only what the panel draws changes.
 }
 
+function paint(px) {
+  const img = rawCtx.createImageData(PANEL_W, PANEL_H);
+  img.data.set(px);
+  rawCtx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(raw, 0, 0, canvas.width, canvas.height);
+}
+
 function frame() {
   if (autoOrient) {
     // Landscape for the one-person menus, and for turn playback, which both
@@ -78,10 +102,7 @@ function frame() {
     const want = menus || wasm.is_playback() ? 2 : 0;
     if (want !== orientation) applyOrientation(want);
   }
-  const px = wasm.get_device_pixels();
-  const img = ctx.createImageData(PANEL_W, PANEL_H);
-  img.data.set(px);
-  ctx.putImageData(img, 0, 0);
+  paint(wasm.get_device_pixels());
   requestAnimationFrame(frame);
 }
 

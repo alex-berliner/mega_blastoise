@@ -274,46 +274,74 @@ fn mix(bg: Rgb565, fg: Rgb565, t: u32) -> Rgb565 {
     Rgb565::new(l(bg.r(), fg.r()), l(bg.g(), fg.g()), l(bg.b(), fg.b()))
 }
 
-/// Draw antialiased text. `bg` must be the color actually behind the text —
-/// coverage is blended toward it, so passing the wrong one shows as a halo.
-pub fn text_aa<D>(d: &mut D, s: &str, x: i32, y: i32, fg: Rgb565, bg: Rgb565)
-where
+/// Draw text with softened diagonals.
+///
+/// Supersampling a double-size glyph and filtering it down would grey the
+/// whole stroke and shrink the text, which reads as blurry rather than
+/// smooth. Instead the glyph is drawn at full size and crisp, and only the
+/// staircase corners on diagonals and curves get a half-strength pixel — the
+/// jaggedness goes without the letters losing weight.
+///
+/// `bg` must be the color actually behind the text; the softened corners are
+/// blended toward it, so a wrong value shows as a halo.
+pub fn text_aa_font<D>(
+    d: &mut D,
+    s: &str,
+    x: i32,
+    y: i32,
+    font: &'static MonoFont<'static>,
+    fg: Rgb565,
+    bg: Rgb565,
+) where
     D: DrawTarget<Color = Rgb565>,
 {
     if s.is_empty() {
         return;
     }
-    // FONT_10X20 is exactly double FONT_5X10's cell, so a 2x2 box filter
-    // lands back on the small grid with no resampling error.
-    let cw = 10u32;
-    let ch = 20u32;
-    let mut mask = MaskBuf::new(s.chars().count() as u32 * cw, ch);
+    let cw = font.character_size.width;
+    let ch = font.character_size.height;
+    let n = s.chars().count() as u32;
+    let mut mask = MaskBuf::new(n * cw + 2, ch + 2);
     Text::with_text_style(
         s,
         Point::new(0, 0),
-        MonoTextStyle::new(&embedded_graphics::mono_font::ascii::FONT_10X20, embedded_graphics::pixelcolor::BinaryColor::On),
+        MonoTextStyle::new(font, embedded_graphics::pixelcolor::BinaryColor::On),
         TextStyleBuilder::new().baseline(Baseline::Top).build(),
     )
     .draw(&mut mask)
     .ok();
 
-    for oy in 0..ch / 2 {
-        for ox in 0..mask.w / 2 {
-            let mut cov = 0u32;
-            for dy in 0..2 {
-                for dx in 0..2 {
-                    if mask.get(ox * 2 + dx, oy * 2 + dy) {
-                        cov += 1;
-                    }
-                }
-            }
-            if cov == 0 {
+    for my in 0..mask.h {
+        for mx in 0..mask.w {
+            let px = x + mx as i32;
+            let py = y + my as i32;
+            if mask.get(mx, my) {
+                fill(d, px, py, 1, 1, fg);
                 continue;
             }
-            // 4 samples give 5 levels; scale to the 0..=4 mix range.
-            fill(d, x + ox as i32, y + oy as i32, 1, 1, mix(bg, fg, cov));
+            // An empty pixel wedged into a staircase corner: on both one
+            // side and one of top/bottom, with the matching diagonal set.
+            let l = mx > 0 && mask.get(mx - 1, my);
+            let r = mask.get(mx + 1, my);
+            let u = my > 0 && mask.get(mx, my - 1);
+            let dn = mask.get(mx, my + 1);
+            let diag = (l && u && mx > 0 && my > 0 && mask.get(mx - 1, my - 1))
+                || (r && u && my > 0 && mask.get(mx + 1, my - 1))
+                || (l && dn && mx > 0 && mask.get(mx - 1, my + 1))
+                || (r && dn && mask.get(mx + 1, my + 1));
+            if ((l || r) && (u || dn)) && !diag {
+                fill(d, px, py, 1, 1, mix(bg, fg, 2));
+            }
         }
     }
+}
+
+/// Softened text at the body size.
+pub fn text_aa<D>(d: &mut D, s: &str, x: i32, y: i32, fg: Rgb565, bg: Rgb565)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    text_aa_font(d, s, x, y, &FONT_6X10, fg, bg);
 }
 
 /// Centered variant of [`text_aa`].
@@ -321,7 +349,7 @@ pub fn text_aa_center<D>(d: &mut D, s: &str, cx: i32, y: i32, fg: Rgb565, bg: Rg
 where
     D: DrawTarget<Color = Rgb565>,
 {
-    let w = s.chars().count() as i32 * 5;
+    let w = s.chars().count() as i32 * 6;
     text_aa(d, s, cx - w / 2, y, fg, bg);
 }
 

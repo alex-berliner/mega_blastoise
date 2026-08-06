@@ -35,11 +35,13 @@ body {
 }
 
 #panel {
-  /* Natural size is 2x the panel grid; the whole device is then scaled to
-     fit the viewport. */
+  /* Displayed at 2x the panel grid; the backing store is a whole multiple
+     larger and drawn nearest-neighbour, so rotation and fractional page
+     scaling resample a sharp image instead of a tiny one. */
   width: 480px;
   height: 640px;
   image-rendering: pixelated;
+  image-rendering: crisp-edges;
   background: #000;
   border: 3px solid var(--case);
   border-radius: 8px;
