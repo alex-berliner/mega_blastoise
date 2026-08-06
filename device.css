@@ -1,0 +1,163 @@
+/* Single-screen device page. Sized for a tablet lying flat between two
+   players: the panel in the middle, one control cluster per seat, the far
+   seat's cluster rotated 180 so both hands sit the same way round. */
+
+:root {
+  --u: 66px;
+  --bg: #15171c;
+  --case: #23252a;
+  --case-hi: #2f333a;
+  --btn: #3a3f47;
+  --btn-lit: #d8383e;
+  --ink: #e6e4de;
+  --dim: #8a8f98;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Bottom padding clears the fixed debug bar. */
+  padding: 8px 8px 64px;
+}
+
+#panel {
+  /* Displayed at 2x the panel grid; the backing store is a whole multiple
+     larger and drawn nearest-neighbour, so rotation and fractional page
+     scaling resample a sharp image instead of a tiny one. */
+  width: 480px;
+  height: 640px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+  border: 3px solid var(--case);
+  border-radius: 8px;
+  flex: none;
+  touch-action: none;
+}
+
+/* ── Device body ───────────────────────────────────────────────────────── */
+
+/* Panel centred, four control clusters at the corners — the arrangement on
+   the whiteboard sketch. Two columns, three rows: the panel spans both
+   columns of the middle row, so each corner cell holds one cluster. */
+#device {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  justify-items: center;
+  align-items: center;
+  gap: calc(var(--u, 28px) * 0.5);
+  background: var(--case);
+  border-radius: calc(var(--u, 28px) * 0.7);
+  padding: calc(var(--u, 28px) * 0.55);
+}
+
+#panel { grid-column: 1 / span 2; }
+
+.cluster { display: flex; }
+.c-tl { grid-area: 1 / 1; justify-self: start; }
+.c-tr { grid-area: 1 / 2; justify-self: end; }
+.c-bl { grid-area: 3 / 1; justify-self: start; }
+.c-br { grid-area: 3 / 2; justify-self: end; }
+
+/* D-pad: a 3x3 grid with the arms filled in. */
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, var(--u, 28px));
+  grid-template-rows: repeat(3, var(--u, 28px));
+  flex: none;
+}
+.dpad .d {
+  border: none;
+  background: var(--btn);
+  color: transparent;
+  padding: 0;
+  touch-action: none;
+}
+.dpad .up    { grid-area: 1 / 2; border-radius: 20% 20% 0 0; }
+.dpad .left  { grid-area: 2 / 1; border-radius: 20% 0 0 20%; }
+.dpad .right { grid-area: 2 / 3; border-radius: 0 20% 20% 0; }
+.dpad .down  { grid-area: 3 / 2; border-radius: 0 0 20% 20%; }
+.dpad::after {
+  content: "";
+  grid-area: 2 / 2;
+  background: var(--btn);
+}
+
+/* A / B / ? as a compact triangle, A on the outer corner. */
+.abq {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: calc(var(--u, 28px) * 0.22);
+  flex: none;
+}
+.abq .q { grid-area: 1 / 1; }
+.abq .b { grid-area: 1 / 2; }
+.abq .a { grid-area: 2 / 2; }
+/* Player 2's cluster is player 1's turned around, so their labels read
+   upright from their own seat. */
+.abq.flip { transform: rotate(180deg); }
+
+.rb {
+  touch-action: none;
+  width: calc(var(--u, 28px) * 1.3);
+  height: calc(var(--u, 28px) * 1.3);
+  border-radius: 50%;
+  border: none;
+  font-family: var(--mono);
+  font-size: calc(var(--u, 28px) * 0.5);
+  font-weight: 700;
+  color: #fff;
+  background: var(--btn-lit);
+}
+.rb.q { background: #3d6fa5; }
+.rb.b { background: #6b6f78; }
+
+.d:active, .rb:active { filter: brightness(1.5); transform: scale(0.94); }
+.abq.flip .rb:active { transform: scale(0.94); }
+
+/* ── Debug bar ─────────────────────────────────────────────────────────── */
+
+#debug {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(20, 22, 26, 0.94);
+  border-top: 1px solid #31353c;
+  font-size: 11px;
+}
+#debug .lbl { color: var(--dim); letter-spacing: 0.1em; }
+#debug .sep { width: 12px; }
+#debug .hint { color: var(--dim); margin-left: auto; }
+#debug button {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--case-hi);
+  border: 1px solid #3d424a;
+  border-radius: 5px;
+  padding: 3px 9px;
+}
+#debug button.on { background: var(--btn-lit); border-color: var(--btn-lit); }
+
+

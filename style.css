@@ -1,0 +1,434 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --green:   #39ff14;
+  --green-dk:#1a3a0a;
+  --red:     #ff4444;
+  --blue:    #4488ff;
+  --bg:      #0d0d0d;
+  --panel:   #141414;
+  --border:  #2a2a2a;
+}
+
+body {
+  background: var(--bg);
+  color: var(--green);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Upper area: game panels + instructions side by side ─────── */
+
+#upper-area {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 0;
+  min-height: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Player panels ────────────────────────────────────────────── */
+
+#players {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.player-panel {
+  display: grid;
+  grid-template-areas:
+    "header"
+    "oled-area"
+    "switches"
+    "leds";
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 10px 12px;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.player-panel:last-child { border-bottom: none; }
+
+.panel-header {
+  grid-area: header;
+  font-size: 11px;
+  letter-spacing: 3px;
+  font-weight: bold;
+  text-align: center;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+}
+
+.p1-color { color: #e8e8e8;  border-color: #333333; }
+.p2-color { color: var(--red); border-color: #331111; }
+
+/* ── OLED + flanking move button columns ──────────────────────── */
+
+.oled-area {
+  grid-area: oled-area;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.move-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+
+.oled {
+  width: 256px;
+  height: 128px;
+  image-rendering: pixelated;
+  border: 2px solid #1a3a1a;
+  border-radius: 3px;
+  background: #0a190a;
+  display: block;
+  flex-shrink: 0;
+}
+
+.move-btn {
+  flex: 1;
+  width: 52px;
+  background: rgba(13, 26, 13, 0.88);
+  color: var(--green);
+  border: 2px solid #1a3a1a;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  user-select: none;
+  transition: background 0.08s, transform 0.05s, box-shadow 0.08s;
+}
+
+.move-btn:hover  { filter: brightness(1.4); }
+.move-btn:active { transform: scale(0.93); filter: brightness(0.8); }
+
+/* ── Switch row ───────────────────────────────────────────────── */
+
+.switch-row {
+  grid-area: switches;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.switch-btn {
+  width: 42px;
+  height: 32px;
+  background: #0d0d1a;
+  color: var(--blue);
+  border: 2px solid #111a33;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  user-select: none;
+  transition: background 0.08s, transform 0.05s, box-shadow 0.08s;
+}
+
+.switch-btn:hover  { filter: brightness(1.4); }
+.switch-btn:active { transform: scale(0.93); filter: brightness(0.8); }
+
+/* ── LED row ──────────────────────────────────────────────────── */
+
+.led-row {
+  grid-area: leds;
+  display: flex;
+  gap: 20px;
+  padding: 2px 0;
+  align-items: center;
+}
+
+.led-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.led-label {
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: #444;
+  user-select: none;
+}
+
+.led-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.led {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #111;
+  border: 1px solid #222;
+  transition: background-color 0.1s, box-shadow 0.1s;
+  flex-shrink: 0;
+}
+
+.led.party  { width: 13px; height: 13px; align-self: center; }
+.led.status { width: 13px; height: 13px; align-self: center; }
+
+/* ── OLED flash animations ────────────────────────────────────── */
+
+@keyframes flash-super {
+    0%   { border-color: #ffee00; box-shadow: 0 0 14px #ffee00; }
+    100% { border-color: #1a3a1a; box-shadow: none; }
+}
+@keyframes flash-crit {
+    0%   { border-color: #ff4444; box-shadow: 0 0 14px #ff4444; }
+    100% { border-color: #1a3a1a; box-shadow: none; }
+}
+.oled.flash-super { animation: flash-super 0.5s ease-out forwards; }
+.oled.flash-crit  { animation: flash-crit  0.5s ease-out forwards; }
+
+/* ── Instructions panel ───────────────────────────────────────── */
+
+#instructions {
+  flex: 0 0 33%;
+  min-width: 120px;
+  max-width: 60%;
+  overflow-y: auto;
+  padding: 18px 22px;
+  line-height: 1.75;
+  scrollbar-width: thin;
+  scrollbar-color: var(--green-dk) var(--bg);
+}
+
+#instructions h2 {
+  font-size: 12px;
+  letter-spacing: 4px;
+  color: var(--green);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+#instructions h3 {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #555;
+  margin: 14px 0 5px;
+}
+
+#instructions section:first-of-type h3 { margin-top: 0; }
+
+#instructions p {
+  color: #7a7a7a;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+
+#instructions table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#instructions td {
+  color: #7a7a7a;
+  font-size: 13px;
+  padding: 2px 0;
+  vertical-align: top;
+}
+
+#instructions td:first-child {
+  color: #aee;
+  white-space: nowrap;
+  padding-right: 14px;
+  min-width: 80px;
+}
+
+.kbd {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #444;
+  font-weight: normal;
+}
+
+/* ── Terminal ─────────────────────────────────────────────────── */
+
+#terminal {
+  flex: 0 0 180px;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 14px 8px;
+  min-height: 0;
+  background: #080808;
+}
+
+#log {
+  flex: 1;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  scrollbar-width: thin;
+  scrollbar-color: var(--green-dk) var(--bg);
+  font-size: 12px;
+  color: #aee;
+  min-height: 0;
+}
+
+#log::-webkit-scrollbar { width: 5px; }
+#log::-webkit-scrollbar-track { background: var(--bg); }
+#log::-webkit-scrollbar-thumb { background: var(--green-dk); border-radius: 3px; }
+
+#input-row {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+#prompt {
+  color: var(--green);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+#input {
+  background: transparent;
+  border: none;
+  color: var(--green);
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+  flex: 1;
+  caret-color: var(--green);
+  min-width: 0;
+}
+
+#input::placeholder { color: #333; }
+
+#demo-row {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0 4px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.demo-label {
+  font-size: 8px;
+  letter-spacing: 3px;
+  color: #2a2a2a;
+  user-select: none;
+  align-self: center;
+  margin-right: 6px;
+}
+
+.demo-btn {
+  background: transparent;
+  color: #444;
+  border: 1px solid #2a2a2a;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 3px 16px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color 0.1s, border-color 0.1s;
+}
+.demo-btn:hover  { color: var(--green); border-color: var(--green-dk); }
+.demo-btn:active { opacity: 0.6; }
+
+/* ── Resize handles ───────────────────────────────────────────── */
+
+#col-resizer {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  background: var(--border);
+  transition: background 0.1s;
+  align-self: stretch;
+}
+#col-resizer:hover, #col-resizer.dragging { background: var(--green-dk); }
+
+#row-resizer {
+  flex: 0 0 5px;
+  cursor: row-resize;
+  background: var(--border);
+  transition: background 0.1s;
+  width: 100%;
+}
+#row-resizer:hover, #row-resizer.dragging { background: var(--green-dk); }
+
+/* ── Responsive: narrow screens ───────────────────────────────── */
+
+@media (max-width: 680px) {
+  body {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  #upper-area {
+    flex-direction: column;
+    flex: 0 0 auto;
+    border-bottom: none;
+    overflow: visible;
+  }
+
+  #players {
+    border-right: none;
+    overflow-y: visible;
+  }
+
+  #instructions {
+    flex: 0 0 auto;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+    /* Let it grow to its full content height; the body scrolls on mobile,
+       so an inner max-height/scroll box just clips the text in half. */
+    overflow-y: visible;
+  }
+
+  #terminal {
+    flex: 0 0 auto;
+    height: 45dvh;
+    min-height: 160px;
+  }
+
+  .player-panel { padding: 8px; }
+
+  .oled { width: min(60vw, 256px); height: min(30vw, 128px); }
+
+  .move-btn   { width: 36px; font-size: 9px; }
+  .switch-btn { width: 34px; height: 28px; font-size: 11px; }
+
+  .led        { width: 12px; height: 12px; }
+  .led.party  { width: 10px; height: 10px; }
+  .led.status { width: 10px; height: 10px; }
+  .led-row    { gap: 3px; }
+}
+
+/* Sticky web hold: the button stays visually pressed until clicked again
+   or an option is committed (PCs can't hold + click simultaneously). */
+.move-btn.held,
+.switch-btn.held {
+  transform: scale(0.93);
+  filter: brightness(1.5);
+  outline: 2px solid var(--green, #7bd88f);
+}

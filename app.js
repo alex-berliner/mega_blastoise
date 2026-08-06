@@ -1,0 +1,279 @@
+import init, * as wasm from './pkg/mega_blastoise_web.js';
+
+// ── Canvas contexts ───────────────────────────────────────────────────────────
+
+const oled1 = document.getElementById('oled-p1');
+const oled2 = document.getElementById('oled-p2');
+const ctx1  = oled1.getContext('2d');
+const ctx2  = oled2.getContext('2d');
+
+function renderOled(ctx, pixels) {
+    const img = ctx.createImageData(128, 64);
+    img.data.set(pixels);
+    ctx.putImageData(img, 0, 0);
+}
+
+// ── LED strip rendering ───────────────────────────────────────────────────────
+
+// LED IDs in display order: P1 = 0-7 HP, 8-10 party, 11 status
+//                           P2 = 12-23 (mirrored)
+// We re-map to match firmware layout (P1 leds 0-11, P2 leds 12-23).
+const ledEls = Array.from({ length: 24 }, (_, i) => document.getElementById(`led-${i}`));
+
+function renderLeds(leds) {
+    for (let i = 0; i < 24; i++) {
+        const rgb = leds[i];
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8)  & 0xff;
+        const b =  rgb        & 0xff;
+        const el = ledEls[i];
+        if (!el) continue;
+        if (r === 0 && g === 0 && b === 0) {
+            el.style.background = '#111';
+            el.style.boxShadow  = 'none';
+        } else {
+            const col = `rgb(${r},${g},${b})`;
+            el.style.background = col;
+            el.style.boxShadow  = `0 0 7px ${col}`;
+        }
+    }
+}
+
+// ── Flash effects (super-effective / crit) ────────────────────────────────────
+
+function applyFlash(flashState) {
+    for (let p = 1; p <= 2; p++) {
+        const type = flashState[p - 1];
+        if (type === 0) continue;
+        const el = document.getElementById(`oled-p${p}`);
+        el.classList.remove('flash-super', 'flash-crit');
+        void el.offsetWidth; // restart animation
+        el.classList.add(type === 1 ? 'flash-super' : 'flash-crit');
+    }
+}
+
+// ── RAF render loop ───────────────────────────────────────────────────────────
+
+// Sticky web holds: mirror the wasm-side latch as a .held class so a
+// "still held down" button is visible (bit 0-3 = moves, 4-6 = party).
+function applyHeld() {
+    for (const p of [1, 2]) {
+        const mask = wasm.wasm_held_buttons(p);
+        for (let s = 0; s < 4; s++) {
+            const el = document.getElementById(`p${p}-m${s}`);
+            if (el) el.classList.toggle('held', !!(mask & (1 << s)));
+        }
+        for (let i = 0; i < 3; i++) {
+            const el = document.getElementById(`p${p}-s${i}`);
+            if (el) el.classList.toggle('held', !!(mask & (1 << (4 + i))));
+        }
+    }
+}
+
+function frame() {
+    renderOled(ctx1, wasm.get_p1_pixels());
+    renderOled(ctx2, wasm.get_p2_pixels());
+    renderLeds(wasm.get_led_state());
+    applyFlash(wasm.get_flash_state());
+    applyHeld();
+    requestAnimationFrame(frame);
+}
+
+// ── Button handlers ────────────────────────────────────────────────────────────
+
+// Press classification only (tap vs 500 ms hold) — mirrors the firmware's
+// matrix scan layer. What a tap or hold DOES is decided by the shared
+// collector inside the wasm; this file must never call screen functions.
+function setupButton(el, player, tap, holdStart) {
+    let timer = null;
+    let fired = false;
+
+    el.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        clearTimeout(timer);
+        fired = false;
+        timer = setTimeout(() => {
+            if (wasm.is_lobby_mode()) {
+                // Lobby fight-AI needs a deliberate 2 s hold; it fires while
+                // the button is still down (mirrors the firmware). Releasing
+                // earlier falls through to a plain tap.
+                timer = setTimeout(() => {
+                    fired = true;
+                    wasm.wasm_lobby_long_press(player);
+                }, 1500);
+            } else {
+                fired = true;
+                holdStart();
+            }
+        }, 500);
+    });
+
+    const finish = () => {
+        clearTimeout(timer);
+        timer = null;
+        if (fired) {
+            if (!wasm.is_lobby_mode()) wasm.hold_end(player);
+        } else {
+            tap();
+        }
+        fired = false;
+    };
+    el.addEventListener('pointerup', finish);
+    el.addEventListener('pointercancel', () => {
+        clearTimeout(timer);
+        timer = null;
+        if (fired && !wasm.is_lobby_mode()) wasm.hold_end(player);
+        fired = false;
+    });
+}
+
+function setupSwitchLongPress(el, player, idx) {
+    setupButton(el, player,
+        () => wasm.press_switch(player, idx),
+        () => wasm.hold_switch(player, idx));
+}
+
+function setupMoveLongPress(el, player, slot) {
+    setupButton(el, player,
+        () => wasm.press_move(player, slot),
+        () => wasm.hold_move(player, slot));
+}
+
+// ── Text input ────────────────────────────────────────────────────────────────
+
+const inputEl = document.getElementById('input');
+
+inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        const line = inputEl.value;
+        inputEl.value = '';
+        wasm.submit_text(line);
+    }
+});
+
+document.addEventListener('click', e => {
+    const ids = ['demo-btn', 'vs-ai-btn', 'pause-btn', 'restart-btn', 'reset-btn'];
+    if (!e.target.closest('.btn') && !ids.includes(e.target.id)) inputEl.focus();
+});
+
+document.getElementById('vs-ai-btn').addEventListener('click', () => {
+    wasm.wasm_enter_vs_ai_mode();
+});
+
+document.getElementById('demo-btn').addEventListener('click', () => {
+    wasm.wasm_enter_demo_mode();
+});
+
+const pauseBtn = document.getElementById('pause-btn');
+pauseBtn.addEventListener('click', () => {
+    const paused = wasm.wasm_toggle_ai_pause();
+    pauseBtn.textContent = paused ? 'RESUME' : 'PAUSE';
+});
+
+document.getElementById('restart-btn').addEventListener('click', () => {
+    wasm.wasm_reset();
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+    wasm.wasm_reset();
+});
+inputEl.focus();
+
+// ── Drag-to-resize handles ────────────────────────────────────────────────────
+
+(function() {
+    const colHandle = document.getElementById('col-resizer');
+    const rowHandle = document.getElementById('row-resizer');
+    const instructions = document.getElementById('instructions');
+    const terminal = document.getElementById('terminal');
+
+    function endDrag(handle) {
+        handle.classList.remove('dragging');
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+    }
+
+    function setupColResize(handle) {
+        let dragging = false, startX, startWidth;
+        handle.addEventListener('pointerdown', e => {
+            dragging = true;
+            startX = e.clientX;
+            startWidth = instructions.getBoundingClientRect().width;
+            handle.classList.add('dragging');
+            handle.setPointerCapture(e.pointerId);
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
+            e.preventDefault();
+        });
+        handle.addEventListener('pointermove', e => {
+            if (!dragging) return;
+            const newWidth = Math.max(120, startWidth - (e.clientX - startX));
+            instructions.style.flexGrow = '0';
+            instructions.style.flexShrink = '0';
+            instructions.style.flexBasis = `${newWidth}px`;
+        });
+        handle.addEventListener('pointerup', () => { dragging = false; endDrag(handle); });
+        handle.addEventListener('pointercancel', () => { dragging = false; endDrag(handle); });
+    }
+
+    function setupRowResize(handle) {
+        let dragging = false, startY, startHeight;
+        handle.addEventListener('pointerdown', e => {
+            dragging = true;
+            startY = e.clientY;
+            startHeight = terminal.getBoundingClientRect().height;
+            handle.classList.add('dragging');
+            handle.setPointerCapture(e.pointerId);
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'row-resize';
+            e.preventDefault();
+        });
+        handle.addEventListener('pointermove', e => {
+            if (!dragging) return;
+            const newHeight = Math.max(80, startHeight - (e.clientY - startY));
+            terminal.style.flexGrow = '0';
+            terminal.style.flexShrink = '0';
+            terminal.style.flexBasis = `${newHeight}px`;
+        });
+        handle.addEventListener('pointerup', () => { dragging = false; endDrag(handle); });
+        handle.addEventListener('pointercancel', () => { dragging = false; endDrag(handle); });
+    }
+
+    setupColResize(colHandle);
+    setupRowResize(rowHandle);
+})();
+
+// Scroll input into view when virtual keyboard appears on mobile.
+// Skipped on the initial page-load focus so the player panels stay visible.
+let pageLoadFocusDone = false;
+inputEl.addEventListener('focus', () => {
+    if (!pageLoadFocusDone) { pageLoadFocusDone = true; return; }
+    setTimeout(() => inputEl.scrollIntoView({ behavior: 'smooth', block: 'end' }), 150);
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
+async function run() {
+    try {
+        await init();
+        // Wire up long-press detection for all move buttons.
+        [[1,0],[1,1],[1,2],[1,3],[2,0],[2,1],[2,2],[2,3]].forEach(([p, s]) => {
+            const el = document.getElementById(`p${p}-m${s}`);
+            if (el) setupMoveLongPress(el, p, s);
+        });
+        // Wire up switch buttons (long press = party stats view).
+        [[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]].forEach(([p, i]) => {
+            const el = document.getElementById(`p${p}-s${i}`);
+            if (el) setupSwitchLongPress(el, p, i);
+        });
+        requestAnimationFrame(frame);
+        // Battle-screen sprite bob — mirrors the firmware's tick cadence
+        // (BOB_TICK_MS in mega_blastoise_core; rate scales with Speed).
+        setInterval(() => wasm.wasm_tick_bob(), 75);
+    } catch (err) {
+        document.getElementById('log').textContent += `\nFailed to load WASM: ${err}\n`;
+        console.error(err);
+    }
+}
+
+run();

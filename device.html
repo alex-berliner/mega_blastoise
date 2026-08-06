@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Mega Blastoise — single screen</title>
+<link rel="stylesheet" href="device.css">
+</head>
+<body>
+
+<!-- The physical device: one portrait panel in the middle, four control
+     clusters at the corners. Player 2 sits at the top edge, so their cluster
+     is player 1's rotated 180 — each seat gets the d-pad on its own left and
+     the buttons on its own right. This layout is FIXED: screen content
+     rotates, the controls never do. -->
+<div id="device">
+
+  <div class="cluster c-tl">
+    <div class="abq flip" data-player="2">
+      <button class="rb q" data-player="2" data-btn="q">?</button>
+      <button class="rb b" data-player="2" data-btn="b">B</button>
+      <button class="rb a" data-player="2" data-btn="a">A</button>
+    </div>
+  </div>
+
+  <div class="cluster c-tr">
+    <div class="dpad" data-player="2">
+      <button class="d up"    data-dir="1" aria-label="player 2 up"></button>
+      <button class="d left"  data-dir="3" aria-label="player 2 left"></button>
+      <button class="d right" data-dir="2" aria-label="player 2 right"></button>
+      <button class="d down"  data-dir="0" aria-label="player 2 down"></button>
+    </div>
+  </div>
+
+  <canvas id="panel" width="240" height="320"></canvas>
+
+  <div class="cluster c-bl">
+    <div class="dpad" data-player="1">
+      <button class="d up"    data-dir="0" aria-label="player 1 up"></button>
+      <button class="d left"  data-dir="2" aria-label="player 1 left"></button>
+      <button class="d right" data-dir="3" aria-label="player 1 right"></button>
+      <button class="d down"  data-dir="1" aria-label="player 1 down"></button>
+    </div>
+  </div>
+
+  <div class="cluster c-br">
+    <div class="abq" data-player="1">
+      <button class="rb q" data-player="1" data-btn="q">?</button>
+      <button class="rb b" data-player="1" data-btn="b">B</button>
+      <button class="rb a" data-player="1" data-btn="a">A</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="debug">
+  <span class="lbl">ORIENTATION</span>
+  <button id="auto-btn" class="on">auto</button>
+  <button data-orient="0">head-to-head</button>
+  <button data-orient="1">same-way</button>
+  <button data-orient="2">landscape</button>
+  <span class="sep"></span>
+  <button id="turn-btn" title="Rotate the console on screen without changing the game's orientation">rotate view &#8635;</button>
+  <span class="sep"></span>
+  <button id="ai-btn">vs AI</button>
+  <button id="demo-btn">demo</button>
+  <button id="reset-btn">reset</button>
+  <span class="sep"></span>
+  <a href="index.html" style="color:#8a8f98;font-size:11px">&larr; old two-OLED UI</a>
+  <span class="hint">P1: WASD + Z X C &nbsp;·&nbsp; P2: arrows + , . /</span>
+</div>
+
+<script type="module" src="device.js"></script>
+</body>
+</html>

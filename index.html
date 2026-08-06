@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mega Blastoise — Gen 1 Randbat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Demo mode trigger -->
+  <div id="demo-row">
+    <span class="demo-label">DEBUG</span>
+      <a href="device.html" class="btn" style="text-decoration:none;padding:3px 9px">NEW UI &rarr;</a>
+    <button id="vs-ai-btn" class="demo-btn">RED VS AI</button>
+    <button id="demo-btn" class="demo-btn">DEMO</button>
+    <button id="pause-btn" class="demo-btn">PAUSE</button>
+    <button id="restart-btn" class="demo-btn">RESTART</button>
+    <button id="reset-btn" class="demo-btn">RESET</button>
+  </div>
+
+  <!-- Upper area: game panels (left) + instructions (right) -->
+  <div id="upper-area">
+
+    <!-- Player panels -->
+    <div id="players">
+
+      <div class="player-panel" id="panel-p1" data-player="1">
+        <div class="panel-header p1-color">WHITE</div>
+        <!-- OLED flanked by move button columns -->
+        <div class="oled-area">
+<div class="move-col">
+            <button class="btn move-btn" id="p1-m0"></button>
+            <button class="btn move-btn" id="p1-m2"></button>
+          </div>
+          <canvas id="oled-p1" width="128" height="64" class="oled"></canvas>
+          <div class="move-col">
+            <button class="btn move-btn" id="p1-m1"></button>
+            <button class="btn move-btn" id="p1-m3"></button>
+          </div>
+        </div>
+        <div class="switch-row">
+          <button class="btn switch-btn" id="p1-s0" >S1</button>
+          <button class="btn switch-btn" id="p1-s1" >S2</button>
+          <button class="btn switch-btn" id="p1-s2" >S3</button>
+        </div>
+        <!-- P1 LEDs: HP 0-7, party 8-10 -->
+        <div class="led-row" id="leds-p1">
+          <div class="led-group">
+            <span class="led-label">HEALTH</span>
+            <div class="led-dots">
+              <div class="led" id="led-0"></div><div class="led" id="led-1"></div>
+              <div class="led" id="led-2"></div><div class="led" id="led-3"></div>
+              <div class="led" id="led-4"></div><div class="led" id="led-5"></div>
+              <div class="led" id="led-6"></div><div class="led" id="led-7"></div>
+            </div>
+          </div>
+          <div class="led-group">
+            <span class="led-label">TEAM</span>
+            <div class="led-dots">
+              <div class="led party" id="led-8"></div>
+              <div class="led party" id="led-9"></div>
+              <div class="led party" id="led-10"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="player-panel" id="panel-p2" data-player="2">
+        <div class="panel-header p2-color">RED</div>
+        <div class="oled-area">
+<div class="move-col">
+            <button class="btn move-btn" id="p2-m0"></button>
+            <button class="btn move-btn" id="p2-m2"></button>
+          </div>
+          <canvas id="oled-p2" width="128" height="64" class="oled"></canvas>
+          <div class="move-col">
+            <button class="btn move-btn" id="p2-m1"></button>
+            <button class="btn move-btn" id="p2-m3"></button>
+          </div>
+        </div>
+        <div class="switch-row">
+          <button class="btn switch-btn" id="p2-s0" >S1</button>
+          <button class="btn switch-btn" id="p2-s1" >S2</button>
+          <button class="btn switch-btn" id="p2-s2" >S3</button>
+        </div>
+        <!-- P2 LEDs: reversed, party innermost (near divider), HP outermost -->
+        <div class="led-row" id="leds-p2">
+          <div class="led-group">
+            <span class="led-label">TEAM</span>
+            <div class="led-dots">
+              <div class="led party" id="led-22"></div>
+              <div class="led party" id="led-21"></div>
+              <div class="led party" id="led-20"></div>
+            </div>
+          </div>
+          <div class="led-group">
+            <span class="led-label">HEALTH</span>
+            <div class="led-dots">
+              <div class="led" id="led-19"></div><div class="led" id="led-18"></div>
+              <div class="led" id="led-17"></div><div class="led" id="led-16"></div>
+              <div class="led" id="led-15"></div><div class="led" id="led-14"></div>
+              <div class="led" id="led-13"></div><div class="led" id="led-12"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Drag handle between players and instructions -->
+    <div id="col-resizer"></div>
+
+    <!-- Instructions panel -->
+    <div id="instructions">
+      <h2>HOW TO PLAY</h2>
+
+      <section>
+        <h3>OVERVIEW</h3>
+        <p>Gen 1 random battle. Each player gets 3 random Pokémon. Last team standing wins.</p>
+      </section>
+
+      <section>
+        <h3>STARTING</h3>
+        <p>Press any button to ready up. Battle begins once both players are ready.</p>
+      </section>
+
+      <section>
+        <h3>EACH TURN</h3>
+        <p>Both players choose simultaneously — your opponent can't see your pick. After both choose, the turn resolves.</p>
+        <p>Tap any button within 1 second of choosing to cancel and reselect.</p>
+      </section>
+
+      <section>
+        <h3>MOVE BUTTONS</h3>
+        <table>
+          <tr><td>Tap</td><td>Select that move</td></tr>
+          <tr><td>Hold</td><td>View move details (type, power, accuracy, PP) — release to go back</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h3>SWITCH BUTTONS  <span class="kbd">S1 S2 S3</span></h3>
+        <table>
+          <tr><td>Tap</td><td>Switch to that party slot</td></tr>
+          <tr><td>Hold</td><td>Cycle through party stats pages — release to go back</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h3>LEDS</h3>
+        <table>
+          <tr><td>HP bar (8)</td><td>Current HP — green &gt; 50%, yellow &gt; 25%, red ≤ 25%</td></tr>
+          <tr><td>Party (3)</td><td>Alive / fainted status for each Pokémon</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h3>BUTTONS</h3>
+        <table>
+          <tr><td>RED VS AI</td><td>Play as Red (P2) against an AI opponent</td></tr>
+          <tr><td>DEMO</td><td>Both players AI-controlled</td></tr>
+          <tr><td>PAUSE / RESUME</td><td>Pause AI between turns</td></tr>
+          <tr><td>RESTART</td><td>Start a new battle</td></tr>
+          <tr><td>RESET</td><td>Full page reload</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h3>CLI</h3>
+        <p>The log below mirrors the battle narration. Type commands and press Enter.</p>
+        <table>
+          <tr><td>:vs ai</td><td>Red (you) vs AI opponent</td></tr>
+          <tr><td>:ready</td><td>Both players ready (human vs human)</td></tr>
+          <tr><td>:demo</td><td>AI vs AI demo loop</td></tr>
+          <tr><td>:restart</td><td>Start a new battle</td></tr>
+        </table>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- Drag handle between upper area and terminal -->
+  <div id="row-resizer"></div>
+
+  <!-- CLI terminal output -->
+  <div id="terminal">
+    <pre id="log"></pre>
+    <div id="input-row">
+      <span id="prompt">&gt;</span><input
+        id="input"
+        type="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="type or press buttons above"
+      >
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

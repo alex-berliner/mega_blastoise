@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mega Blastoise: One-Screen UI Flow</title>
+<style>
+  :root {
+    --paper: #f7f5f0; --panel: #ffffff; --ink: #1c1e21; --ink-soft: #56595f;
+    --line: #e2ded4; --accent: #d8383e; --band: #23252a; --code-bg: #efece4;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    /* screen palette (GBC-flavored, shown on the mock ST7789) */
+    --scr-bg: #f8f0dc; --scr-ink: #2b2a24; --scr-box: #fffaf0; --scr-dim: #9a917c;
+    --hp-g: #4caf50; --hp-y: #d9b826; --hp-r: #d8383e;
+    --t-water: #3d8fd8; --t-fire: #e0703d; --t-elec: #d9b826; --t-ice: #6cc4cf; --t-normal: #a8a08a; --t-psy: #d06fa8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #101317; --panel: #171b20; --ink: #e6e4de; --ink-soft: #a0a4ab;
+      --line: #2a2f36; --accent: #e05257; --band: #0a0c0e; --code-bg: #1e232a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #101317; --panel: #171b20; --ink: #e6e4de; --ink-soft: #a0a4ab;
+    --line: #2a2f36; --accent: #e05257; --band: #0a0c0e; --code-bg: #1e232a;
+  }
+  :root[data-theme="light"] {
+    --paper: #f7f5f0; --panel: #ffffff; --ink: #1c1e21; --ink-soft: #56595f;
+    --line: #e2ded4; --accent: #d8383e; --band: #23252a; --code-bg: #efece4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.55; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 90px; }
+  header { padding: 38px 0 22px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h1 { font-family: var(--mono); font-size: clamp(24px, 4vw, 34px); margin: 0 0 10px; letter-spacing: -.01em; text-wrap: balance; }
+  .sub { color: var(--ink-soft); max-width: 72ch; margin: 0; }
+  .premise { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .premise span { font-family: var(--mono); font-size: 12px; background: var(--code-bg); border: 1px solid var(--line); border-radius: 20px; padding: 3px 11px; }
+  h2 { font-family: var(--mono); font-size: 20px; margin: 44px 0 4px; }
+  h2 .n { color: var(--accent); margin-right: 8px; }
+  .secdesc { color: var(--ink-soft); margin: 0 0 18px; max-width: 74ch; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
+  figure.mock { margin: 0; width: 304px; }
+  figcaption { font-size: 13.5px; color: var(--ink-soft); margin-top: 10px; }
+  figcaption b { color: var(--ink); font-family: var(--mono); font-size: 12.5px; }
+  .fix { display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 4px; padding: 1px 6px; margin: 6px 4px 0 0; }
+
+  /* ── device screen ── */
+  .scr { width: 304px; height: 404px; background: var(--band); border-radius: 14px; padding: 12px; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+  .lcd { position: absolute; inset: 12px; background: var(--scr-bg); border-radius: 4px; overflow: hidden; color: var(--scr-ink); font-family: var(--mono); }
+  .half { position: absolute; left: 0; width: 280px; height: 189px; overflow: hidden; }
+  .half.p2 { top: 0; }
+  .half.p1 { bottom: 0; }
+  .halfin { position: absolute; inset: 0; padding: 7px 8px; }
+  .half.p2 .halfin { transform: rotate(180deg); }
+  .split { position: absolute; top: 189px; left: 0; right: 0; height: 2px; background: var(--scr-ink); opacity: .55; }
+
+  /* screen furniture */
+  .hud { display: flex; align-items: center; gap: 7px; border: 2px solid var(--scr-ink); border-radius: 6px; background: var(--scr-box); padding: 3px 7px; height: 40px; }
+  .hud .nm { font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+  .hpbar { height: 7px; border: 1.5px solid var(--scr-ink); border-radius: 4px; background: #e8dfc8; position: relative; margin-top: 3px; }
+  .hpbar i { position: absolute; inset: 1px; border-radius: 2px; display: block; }
+  .chip { display: inline-block; font-size: 9.5px; font-weight: 700; color: #fff; border-radius: 3px; padding: 0 5px; letter-spacing: .04em; }
+  .spr { image-rendering: pixelated; background-size: contain; background-repeat: no-repeat; background-position: center; }
+  .s-b9  { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAgMAAAAOFJJnAAAADFBMVEWtzu9znM7///8ZEBB/gpnpAAAAvElEQVQYlWNYBQUM5DL2r/+/+h+I8erXqn+LQYzHqxYwi4MYm1YxMNSBGLsYGBjBjB1ARhWIcfoPgyhQZPWrf6u/huatYli3+9UC+1CgObPWr2Jg/r5uFcMuvfX/L9g6r2LY/f7Xynor41UM2+Y8YJD/xQ+UUv//t2493yqGHfbyq3+tegdU86COaX3DrlUM+xp/MDB+ATJ2MT9gYI0FmryD/QGDaDjQrgfyDYyh4dWrGI7WM4SGhv4myoMAeuGWmjVIHxgAAAAASUVORK5CYII=); }
+  .s-b6  { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgAgMAAAAOFJJnAAAADFBMVEX/////pVIZEBDWUjGjU/pQAAAAvElEQVQY02NgwAL4DkAZPApQBhMHmGLewNAEZnDwMSg0gEUWLOCAKLLi28YHEWpwaEgAC+kzJkpAzBENrYboCw1NAjN4Q0STwQzTANZKsHWqAYFxYP1TA0PDK4DGMFwNuxrKDtR8OPTt25BLDAycTXGcWVeLGBi4DmVw3dhqzMCgojwz4pl2DAODQpZfDUfvAwYGw7msW4CuZGA4FCmWYgEyrj1GPKUJZHBvSWw2hxWQ0ZkSmWag2MBADAAAMSMtA/l1L6wAAAAASUVORK5CYII=); }
+  .s-f9  { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAD1BMVEUAAAASCwtok8mlye3/7f+aVmd4AAAAAXRSTlMAQObYZgAAAn1JREFUeNrt1oGmM0kcRPGcU/X+z7x2+m/Ssgtp+ZZlCpLA+ZnbfZnXs/9uz549e/bs2TP4w/3IS2Y3+jsVAU2bJFcYmvxMAJz+PARNVH4GqJJCArL68GsA0hbVyA/7GYHCAHLtN2cNmGSi774JROG8Lb5WPpDEe2AiEfBUUICUNrM3gQkJnAtm9f9e7jkDJZVzgAJMfxeCCpC0gseAyNUXAIdo0Ok3enrOtrmAkCTOybYZ4OpHhTOBJjL9RQi5+3n31XMBk7ZvAkXC3pcjYITtJnkNQ8oFAKbRE8AlOMIAgqEt4PQTTvpKA5gNALAsG+DqxzNAgCGSKPNLmL5t4olAlFvZlyQySxNNOLlDK/VppH0L9hwI7Wq9B8yBjJr5fgLQtcwuYfWV/QHOANpPYQCBNgFyDOC/CiQRpElcgNf4vi98AmCERBIHOOuLUdkEQBSWpYKZ/ncAEZOo3FshIdstxbgkvgUyl3HbgG0TBp9PvwOM9OOfYE55ZObHzO8AA3we8BtIa9pN8EuAKtLOdgBIQubpJp98BdhIhE+BtQHmeYJJDg453sTUnQMlZPWFli/6M5D9b3znBdjuPwkk/RpIoEmczSauYbT2pP+yhH/eUpaiSQUaIMk3/RkWPi8pSQZoW2kxOXyFB3rv7idvoN7n4hnAB9DewCUE9PjtF4GP/iZc3wE4AUYQzPQjO2CS6Fl/RlzEam3ACOpxf4Qo90GyvwG7dtif0a4aM6ev3qxw3qf5FO4+zMfrvN/QwFaB6c9O89NvhNS9w9qtvM4HiXIxuxsU4Fy4x7XGvZ8IjQKJN34++ERpl5NkgB/vEljan+hP+dmzZ8+ePXv2f9pfbOsS8+bBN58AAAAASUVORK5CYII=); }
+  .s-f6  { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAASUExURQAAAP+cRxILC//t/9FHKAAAAF3LkGEAAAAGdFJOU///////ALO/pL8AAAAJcEhZcwAADsMAAA7DAcdvqGQAAANwSURBVGhD7ZfZdqMwEESHxf//y1ObFAsjKYHM01CxQTRWXXU31nH+vP6xHsBUD2CqBzDVA5jqAUz1AKb67wHLkkFX3wSs65pRq98CrNuygHECuQFo3NYNiH3vJTJQF7BuR8IufSLGSXwX8FrtfoIY96EHQNXPAPjjKTGvfoF8daYu4N2GowAOSch6SOgC2NIyZrXkS8gxiWuAVc9MuWgBHwQCuoQRoJgcAQeC/LuELkCGGq4AuPL7TqcjQfZQLg/qAfS8cOE8bTzgFaeWkODPAEgAjyksvHKnU/zVHgJESAjy1KN6ABMAoASoCUC7IyQkQmVyqz6ABEjOOi2nhASoTG41AIjAtu6qCQbrsnHTUyhZBaDuZ3KrHgCOKM1bXzUSQYyaAsOXATgtWTHEM/yMqCno9s8BfExwkJsdVCO4JomtScH0TG41AmS1qggaTQ8oiKbNVwGyJ4DjAgBC0bcUcGQ8k1udAujOl4yYAB+pAHZcC/2WggGZfFAXACevFA0EK4CNQecATxGuAZg3t7gAtGfIH8YiYFhT4KHn3wfACBR+2+TCnNwTQUmoKfCdmZ8aAVAJ1iaEAnAKuLwPEAG2qI0A9ncKArg6KN5VAAjsrPQF0A0sXq2R/xVA9cleQTfZIyfd4OrZ+on/AIDHSMXRUTUygGABLLMz8UR9QEkBA5hwvXSuCQRg+A0AimCC/dUJeQpg+5H/NwBesr5z1TH+Hl0D0BUEjCTCmAhz8fL9loa/6acAEmSPCyQiQrHWGfcz7VSnAPwa0tcWHBnYH0CE7ZpCMTkos07VA8AKTi5HEiBQXz2nIcQdAOtkQOwh7E98yd/3Zv4dAAnqhDziToGW8n0RMqWjDgAEAtxje1fpASiEywD8V6MqUfKrKh0pgHy+py7AjfCWFkurXoWQT/c0ALzQAzww8Iij9YsA5ACb9jnSJhvdB+CfJ7g0BJi2KdwDYLVaprcOOfJS9hATuAdwCiYU0ZQIRDi8CQDBprCKPRcNBPqTy3yyoxmgEvSNkBx2bnPCpAc0xN4JGw0TplilANY9sTMNAawDbehPo4Qt+OIOqOj1IIkRgL/tbKD1t+tk6dBsmPNp6hNGAOycrEL21ASL1AOb85Dop2YlqkroS7i5l8OgCeMm/4IewFQPYKoHMNUDmOoBTPUApvrHgNfrL8yrnos+2svBAAAAAElFTkSuQmCC); }
+  .s-f121 { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAD1BMVEUAAAASCwtwcIrRpa3/7f+il0fRAAAAAXRSTlMAQObYZgAAAdtJREFUeNrt1TGO4zAAQ9F8kvc/82JECUYGW0VKs6tfJS74IhiOX7fb7Xa73W7/ZvDt/e8KxOi8AKz93wAc4BBmAa7QwD4CuAJ5AyA+BFToAZZAv+kQYAx5ACamQ0CFBFSh85Y4BoiEGA1A3T8HyGQBFea+TgJKbGkBOgr0ALFZgo4AEi2BAiAjYHtfQPrDg8jKzAOxB5AZHoqARTKckfy54AlUcFtXbZBtA/oUsL0Eop8g+NnPDD4X7ECIYlvCFd72bW8JWJnhKRj5mYfXBkCUWAAYHmGuG/Drc0FEc38JVgWPEN56ijERK9sMIGhvvwExARIABJgBgGw2XwkkAwiJ9AbU2N8vAEjSA8zY3AfbfwNWsAMQATKmAr+AXtjY74aRmQlJBRjJrrD1IMOaA8AasgSyPxfQaAADk2A9aBYywtsCIQQBICDGiZB9RCBvQvcd5ALSnkBSoUD3179pAUkbN5qxHxM3bCcpMAXYepaVPHdY9hJ6EHbmC2Ab/AR2ghML9NqJDIDRen0B9jrCCQBsS5DYIEnYExC7gEeSVEBTOwQ8+wAxwLziDGET8E+0BYDbAF57AbA+ChA8RIFjIaZQeAi8jgqSEG+nOxrd/2IAr9vtdrvdbrfb/9gf8RMNTHZhF48AAAAASUVORK5CYII=); }
+  .s-f145 { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAElBMVEUAAAASCwvRnAD/5Gj/7f////+snQQxAAAAAXRSTlMAQObYZgAAAj9JREFUeNrt1oFK3zAAhPF+d7f3f+XhJdTsPxiQdIDQAzEF+H5GtXi9e/fu3bt3796t43/3zU8E4Lv/AYgHv2z+BogeAZol9PR8fwpK8AqU/JhgEzAwgH/0hb0LJChZAyT6zO/1G/saCXeBhD/zSXb7E9ACkFgf+dE/vQJ3nzV/0pcWIMz+fQFBTvotqGmiAZCZE62f9UeGUCJm9MWIH/eZU+OJ3b7VKICW/v4fGRJuvL0SYNt3XwK0J0xkAEs9YfbHtPsrWsEaQlpf8vF+vqMRIzC2QWs+XvLngi0YTJZ+8+cCYCXgJGH2l+lEKGAguMD39+h7m4SgPZIqZeYlFkOwm28QlMTYFdAqLPVNQTENCXAZgTTr8OsXsKmAmkkihA0VxkR3ks/XzOiraWQX5Zn8fOsYhMfWn+52vv1ZpH0moCy7Ee0ICW45EZj7Pn/OnbQliITEEBNaQ1m3eYOuSTTaBBObW2Du7D/HGol6MjZhCj7sVyCKEsWFJjAF7ffh+woznW/guoZgdgUSGAImEWYKBaZgLu0KxFCh4a4A8aDlcdp/k9owAGxAWEQR1xRcYXtgYwxpPwO4o6jAyXCJhCQpmCVKsaMJ2579yDaBRRDX4bCZfTwBLwLXuYDaD9YEFuEcaLR9mR6Fc3d1HQ/TPi6ADQWeGqF9DAPqp0eB9mVwIYUHgdYUGG2A8KRA4ItRYC7PXgHmRS6MubjI+Hh0RCtQ98m1Kcu6NJ4enqIv5mJ5enb6eHr37t27d+/e/bT9Bi6EDzItUosCAAAAAElFTkSuQmCC); }
+  .ball { width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(to bottom, var(--hp-r) 46%, #2b2a24 46%, #2b2a24 56%, #fff 56%); border: 1.5px solid #2b2a24; flex: none; }
+  .movegrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .mv { border: 2px solid var(--scr-ink); border-radius: 6px; background: var(--scr-box); font-size: 10.5px; font-weight: 700; padding: 4px 6px; letter-spacing: .01em; }
+  .mv.sel { background: var(--scr-ink); color: var(--scr-bg); position: relative; }
+  .mv.sel::before { content: "▶"; font-size: 8px; margin-right: 3px; }
+  .mv.dim { color: var(--scr-dim); border-color: var(--scr-dim); }
+  .legend { position: absolute; left: 8px; right: 8px; bottom: 5px; font-size: 9.5px; letter-spacing: .05em; color: var(--scr-ink); opacity: .85; display: flex; gap: 10px; justify-content: center; }
+  .infobar { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700; margin-top: 6px; }
+  .ttl { font-size: 13px; font-weight: 800; letter-spacing: .06em; text-align: center; }
+  .ctr { text-align: center; }
+  .small { font-size: 10px; }
+  .dimtx { color: var(--scr-dim); }
+  .narr { border: 2px solid var(--scr-ink); border-radius: 6px; background: var(--scr-box); padding: 4px 8px; font-size: 11px; font-weight: 700; line-height: 1.35; min-height: 38px; }
+  .prow { display: flex; align-items: center; gap: 7px; border: 2px solid var(--scr-ink); border-radius: 6px; background: var(--scr-box); padding: 3px 7px; margin-top: 5px; font-size: 11px; font-weight: 700; }
+  .prow.sel { background: var(--scr-ink); color: var(--scr-bg); }
+  .prow .hpbar { flex: 1; margin-top: 0; }
+
+  /* hardware sketch */
+  .hw { display: flex; gap: 26px; flex-wrap: wrap; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px; margin: 18px 0; }
+  .dev { width: 210px; height: 340px; border-radius: 18px; background: var(--code-bg); border: 2px solid var(--ink-soft); position: relative; flex: none; }
+  .dev .dscr { position: absolute; left: 45px; right: 45px; top: 92px; bottom: 92px; background: var(--band); border-radius: 6px; }
+  .dev .dscr::after { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 1px; background: #777; }
+  .dpad { position: absolute; width: 34px; height: 34px; }
+  .dpad::before, .dpad::after { content: ""; position: absolute; background: var(--ink-soft); border-radius: 3px; }
+  .dpad::before { left: 11px; top: 0; width: 12px; height: 34px; }
+  .dpad::after { left: 0; top: 11px; width: 34px; height: 12px; }
+  .ab { position: absolute; display: flex; gap: 6px; }
+  .ab i { width: 17px; height: 17px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--mono); font-style: normal; font-size: 9.5px; font-weight: 700; }
+  .ab i.q { background: #3d6fa5; }
+  .hwnote { flex: 1; min-width: 260px; font-size: 14.5px; color: var(--ink-soft); }
+  .hwnote b { color: var(--ink); }
+  .hwnote ul { padding-left: 20px; margin: 8px 0 0; }
+  .hwnote li { margin: 5px 0; }
+  li::marker { color: var(--accent); }
+
+  .att-in { position: absolute; left: 50%; top: 50%; width: 380px; height: 280px; transform: translate(-50%, -50%) rotate(-90deg); padding: 14px; font-family: var(--mono); }
+  .note { border: 1px dashed var(--line); border-radius: 10px; background: var(--panel); padding: 12px 16px; color: var(--ink-soft); font-size: 14px; margin: 18px 0; max-width: 80ch; }
+  .mermaid-box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; }
+  .pixcv { position: absolute; inset: 12px; border-radius: 4px; z-index: 2; background: var(--scr-bg); width: 280px; height: 380px; }
+  .pixhint { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--ink-soft); text-align: center; margin-top: 7px; text-transform: uppercase; }
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">UI Concept Mockups</p>
+  <h1>Mega Blastoise: one screen, two players</h1>
+  <p class="sub">Flow mockups for the single-screen redesign: a 2.8" IPS 240x320 panel laid flat between the seats, split into two 240x160 halves. The far player's half is rendered rotated 180 degrees, so both players always read upright. Open information by design: no hidden choice. Each seat gets a D-pad plus A, B, and a dedicated ? info button.</p>
+  <div class="premise">
+    <span>2.8" IPS ST7789, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B/? per seat</span><span>rotationally symmetric seats</span><span>landscape only for attract</span>
+  </div>
+</header>
+
+<section>
+  <h2><span class="n">00</span>Hardware frame</h2>
+  <div class="hw">
+    <div class="dev">
+      <div class="dscr"></div>
+      <div class="dpad" style="right: 18px; top: 26px;"></div>
+      <div class="ab" style="left: 16px; top: 34px; transform: rotate(180deg);"><i>A</i><i>B</i><i class="q">?</i></div>
+      <div class="dpad" style="left: 18px; bottom: 26px;"></div>
+      <div class="ab" style="right: 16px; bottom: 34px;"><i class="q">?</i><i>B</i><i>A</i></div>
+    </div>
+    <div class="hwnote">
+      <b>Controls are placed with rotational symmetry, not mirrored.</b> Each seat gets D-pad on the left and three buttons on the right (B, A, and a blue <b>?</b>), in its own reading orientation (the far cluster looks upside down from here, which is correct). Notes:
+      <ul>
+        <li>D-pad moves the cursor, <b>A confirms, B backs out</b>: every state now has an explicit back path, and nothing commits on a stray tap.</li>
+        <li><b>? explains whatever the cursor is on</b>: full move description on the move grid, full stats on a party row, foe details on the HUD. Hold or press again to leave. One dedicated "tell me more" verb, discoverable by its label alone.</li>
+        <li>Panel must be <b>IPS</b>; a TN panel shows inverted contrast to one of the two seats.</li>
+        <li>The WS2812 strips are dropped; HP lives on-screen. Optionally keep one status LED per seat.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">01</span>Attract, landscape for bystanders</h2>
+  <p class="secdesc">The only landscape state. Bystanders view the table from the side, so the demo battle plays oriented toward them. Any button enters the lobby.</p>
+  <div class="row">
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="att-in">
+          <div class="ttl" style="font-size:17px; letter-spacing:.12em;">MEGA BLASTOISE</div>
+          <div class="ctr small dimtx" style="margin-top:2px;">GEN 1 BATTLES · 2 PLAYERS · 3 VS 3</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:0 16px;">
+            <div class="spr s-b9" style="width:84px;height:84px;"></div>
+            <div style="font-size:20px;">⚡</div>
+            <div class="spr s-f6" style="width:84px;height:84px;"></div>
+          </div>
+          <div class="narr ctr" style="margin-top:8px;">BLASTOISE used HYDRO PUMP!</div>
+          <div class="ctr small" style="margin-top:8px; font-weight:800; letter-spacing:.08em;">PRESS ANY BUTTON TO PLAY</div>
+        </div>
+      </div></div>
+      <figcaption><b>Demo battle plays itself after 15 s idle.</b> Sprites and narration face the aisle, not the seats.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">02</span>Lobby and ready-up</h2>
+  <p class="secdesc">First button press flips the screen to split mode. Each half readies independently; a countdown starts when both are ready.</p>
+  <div class="row">
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="half p2"><div class="halfin">
+          <div class="ttl" style="margin-top:28px;">PRESS A TO READY</div>
+          <div class="ctr small dimtx" style="margin-top:8px;">HOLD A: FIGHT THE AI</div>
+          <div class="ctr small dimtx">?: RULES + CONTROLS</div>
+          <div class="legend"><span>Ⓐ READY</span><span>Ⓐ hold AI</span></div>
+        </div></div>
+        <div class="split"></div>
+        <div class="half p1"><div class="halfin">
+          <div class="ttl" style="margin-top:22px;">READY!</div>
+          <div class="ctr small" style="margin-top:8px;">waiting for rival…</div>
+          <div class="ctr small dimtx" style="margin-top:4px;">B to un-ready</div>
+          <div class="legend"><span>Ⓑ BACK OUT</span></div>
+        </div></div>
+      </div></div>
+      <figcaption><b>Near player readied, far player still idle.</b> Both halves always show their own state; no shared-button capture, both seats are polled at once.
+      <br><span class="fix">fixes: lobby captures one player at a time</span></figcaption>
+    </figure>
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="half p2"><div class="halfin">
+          <div class="ttl" style="margin-top:14px;">YOUR TEAM</div>
+          <div style="display:flex; justify-content:center; gap:12px; margin-top:10px; align-items:center;">
+            <div class="spr s-f6" style="width:64px;height:64px;"></div>
+            <div class="ball" style="width:22px;height:22px;"></div>
+            <div class="ball" style="width:22px;height:22px;"></div>
+          </div>
+          <div class="ctr small" style="margin-top:6px; font-weight:800;">CHARIZARD</div>
+          <div class="legend"><span>revealing 1 / 3…</span></div>
+        </div></div>
+        <div class="split"></div>
+        <div class="half p1"><div class="halfin">
+          <div class="ttl" style="margin-top:14px;">YOUR TEAM</div>
+          <div style="display:flex; justify-content:center; gap:12px; margin-top:10px; align-items:center;">
+            <div class="spr s-f9" style="width:64px;height:64px;"></div>
+            <div class="spr s-f145" style="width:64px;height:64px;"></div>
+            <div class="ball" style="width:22px;height:22px;"></div>
+          </div>
+          <div class="ctr small" style="margin-top:6px; font-weight:800;">ZAPDOS</div>
+          <div class="legend"><span>revealing 2 / 3…</span></div>
+        </div></div>
+      </div></div>
+      <figcaption><b>Mystery draft, per half.</b> Reveals are timed theatre (about 5 s total), then straight into turn 1. Teams are open information; the reveal is pacing, not secrecy.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">03</span>Move choice, the core screen</h2>
+  <p class="secdesc">Foe HUD on top of every choice half: species, level, HP, status. Cursor on a 2x2 move grid; the info bar gives at-a-glance stats for the highlighted move; the ? button opens the full description (secondary effects, flavor) for whatever the cursor is on.</p>
+  <div class="row">
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="half p2"><div class="halfin">
+          <div class="hud">
+            <div class="spr s-f9" style="width:30px;height:30px;"></div>
+            <div style="flex:1;">
+              <div class="nm">FOE BLASTOISE <span class="dimtx">Lv55</span></div>
+              <div class="hpbar"><i style="width:72%; background: var(--hp-g);"></i></div>
+            </div>
+            <span class="chip" style="background: var(--t-water);">WTR</span>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:7px; align-items:center;">
+            <div class="spr s-b6" style="width:58px;height:58px; flex:none;"></div>
+            <div class="movegrid" style="flex:1;">
+              <div class="mv sel">FIRE BLAST</div>
+              <div class="mv">SLASH</div>
+              <div class="mv">EARTHQUAKE</div>
+              <div class="mv dim">HYPER BEAM</div>
+            </div>
+          </div>
+          <div class="infobar"><span class="chip" style="background: var(--t-fire);">FIRE</span><span>POW 120</span><span>ACC 85</span><span>PP 5/5</span><span class="dimtx">½× vs WTR</span></div>
+          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span><span>? INFO</span></div>
+        </div></div>
+        <div class="split"></div>
+        <div class="half p1"><div class="halfin">
+          <div class="hud">
+            <div class="spr s-f6" style="width:30px;height:30px;"></div>
+            <div style="flex:1;">
+              <div class="nm">FOE CHARIZARD <span class="dimtx">Lv53</span></div>
+              <div class="hpbar"><i style="width:88%; background: var(--hp-g);"></i></div>
+            </div>
+            <span class="chip" style="background: var(--t-fire);">FIR</span>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:7px; align-items:center;">
+            <div class="spr s-b9" style="width:58px;height:58px; flex:none;"></div>
+            <div class="movegrid" style="flex:1;">
+              <div class="mv">HYDRO PUMP</div>
+              <div class="mv sel">ICE BEAM</div>
+              <div class="mv">BODY SLAM</div>
+              <div class="mv">REST</div>
+            </div>
+          </div>
+          <div class="infobar"><span class="chip" style="background: var(--t-ice);">ICE</span><span>POW 95</span><span>ACC 100</span><span>PP 10/10</span><span class="dimtx">½× vs FIR</span></div>
+          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span><span>? INFO</span></div>
+        </div></div>
+      </div></div>
+      <figcaption><b>Both players choosing at once.</b> Disabled moves (no PP, recharge) render dim and the cursor explains why in the info bar instead of silently ignoring the press. Effectiveness hint is optional flavor for a teaching mode.
+      <br><span class="fix">fixes: no foe info during choice</span><span class="fix">fixes: silent invalid presses</span><span class="fix">fixes: hold-to-inspect timing (? is explicit)</span></figcaption>
+    </figure>
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="half p2"><div class="halfin">
+          <div class="ttl">PARTY</div>
+          <div class="prow sel"><div class="spr s-f6" style="width:22px;height:22px;"></div><span style="flex:none;">CHARIZARD</span><div class="hpbar"><i style="width:88%; background: var(--hp-g);"></i></div><span class="dimtx">OUT</span></div>
+          <div class="prow"><div class="ball"></div><span style="flex:none;">SNORLAX</span><div class="hpbar"><i style="width:100%; background: var(--hp-g);"></i></div></div>
+          <div class="prow"><div class="ball"></div><span style="flex:none;">GENGAR</span><div class="hpbar"><i style="width:34%; background: var(--hp-y);"></i></div><span class="chip" style="background: var(--t-psy);">PSN</span></div>
+          <div class="legend"><span>✚ PICK</span><span>Ⓐ SWITCH IN</span><span>Ⓑ BACK</span><span>? INFO</span></div>
+        </div></div>
+        <div class="split"></div>
+        <div class="half p1"><div class="halfin">
+          <div class="hud">
+            <div class="spr s-f6" style="width:30px;height:30px;"></div>
+            <div style="flex:1;">
+              <div class="nm">FOE CHARIZARD <span class="dimtx">Lv53</span></div>
+              <div class="hpbar"><i style="width:88%; background: var(--hp-g);"></i></div>
+            </div>
+            <span class="chip" style="background: var(--t-fire);">FIR</span>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:7px; align-items:center;">
+            <div class="spr s-b9" style="width:58px;height:58px; flex:none;"></div>
+            <div class="movegrid" style="flex:1;">
+              <div class="mv sel">HYDRO PUMP</div>
+              <div class="mv">ICE BEAM</div>
+              <div class="mv">BODY SLAM</div>
+              <div class="mv">REST</div>
+            </div>
+          </div>
+          <div class="infobar"><span class="chip" style="background: var(--t-water);">WTR</span><span>POW 120</span><span>ACC 80</span><span>PP 8/8</span></div>
+          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span><span>? INFO</span></div>
+        </div></div>
+      </div></div>
+      <figcaption><b>Far player browsing party while near player is still on moves.</b> B always returns to moves; switching costs the turn as usual. The active mon is listed but marked OUT.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">04</span>Locked in</h2>
+  <div class="row">
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="half p2"><div class="halfin">
+          <div class="ttl" style="margin-top:26px;">LOCKED IN</div>
+          <div class="ctr" style="margin-top:6px;"><span class="chip" style="background: var(--t-fire);">FIRE BLAST</span></div>
+          <div class="ctr small dimtx" style="margin-top:10px;">rival is choosing…</div>
+          <div class="legend"><span>Ⓑ CHANGE CHOICE</span></div>
+        </div></div>
+        <div class="split"></div>
+        <div class="half p1"><div class="halfin">
+          <div class="hud">
+            <div class="spr s-f6" style="width:30px;height:30px;"></div>
+            <div style="flex:1;">
+              <div class="nm">FOE CHARIZARD <span class="dimtx">Lv53</span></div>
+              <div class="hpbar"><i style="width:88%; background: var(--hp-g);"></i></div>
+            </div>
+            <span class="chip" style="background: #777;">LOCKED ✓</span>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:7px; align-items:center;">
+            <div class="spr s-b9" style="width:58px;height:58px; flex:none;"></div>
+            <div class="movegrid" style="flex:1;">
+              <div class="mv">HYDRO PUMP</div>
+              <div class="mv sel">ICE BEAM</div>
+              <div class="mv">BODY SLAM</div>
+              <div class="mv">REST</div>
+            </div>
+          </div>
+          <div class="infobar"><span class="chip" style="background: var(--t-ice);">ICE</span><span>POW 95</span><span>ACC 100</span><span>PP 10/10</span></div>
+          <div class="legend"><span>✚ MOVE</span><span>Ⓐ LOCK IN</span><span>Ⓑ PARTY</span><span>? INFO</span></div>
+        </div></div>
+      </div></div>
+      <figcaption><b>Far player committed; near player sees "LOCKED ✓" in their foe HUD.</b> Both locked starts a visible 1 s grace ring, then the turn plays. Note the far half deliberately does NOT show which move, only that they are done; what stays hidden is a design dial, and this is the honest single-screen compromise.
+      <br><span class="fix">fixes: no opponent-committed signal</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">05</span>Turn playback, mirrored per half</h2>
+  <p class="secdesc">No 90-degree flip. Both halves play the same event simultaneously, each from its own seat's perspective: your mon in back view, the foe in front view, exactly like the two-OLED build but with color, HP boxes, and both mons on one canvas.</p>
+  <div class="row">
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="half p2"><div class="halfin">
+          <div class="narr">FOE BLASTOISE used ICE BEAM!<br><span class="small dimtx">It's not very effective…</span></div>
+          <div style="position:relative; height:96px; margin-top:4px;">
+            <div class="spr s-f9" style="width:70px;height:70px; position:absolute; right:6px; top:0;"></div>
+            <div class="spr s-b6" style="width:64px;height:64px; position:absolute; left:8px; bottom:0;"></div>
+            <div style="position:absolute; left:88px; top:34px; font-size:18px;">❄</div>
+            <div style="position:absolute; left:4px; top:2px; width:104px;">
+              <div class="small" style="font-weight:800;">CHARIZARD</div>
+              <div class="hpbar"><i style="width:64%; background: var(--hp-y);"></i></div>
+            </div>
+          </div>
+          <div class="legend"><span>Ⓐ next</span><span>hold Ⓐ fast-forward</span></div>
+        </div></div>
+        <div class="split"></div>
+        <div class="half p1"><div class="halfin">
+          <div class="narr">BLASTOISE used ICE BEAM!<br><span class="small dimtx">It's not very effective…</span></div>
+          <div style="position:relative; height:96px; margin-top:4px;">
+            <div class="spr s-f6" style="width:70px;height:70px; position:absolute; right:6px; top:0;"></div>
+            <div class="spr s-b9" style="width:64px;height:64px; position:absolute; left:8px; bottom:0;"></div>
+            <div style="position:absolute; right:80px; top:30px; font-size:18px;">❄</div>
+            <div style="position:absolute; right:2px; top:2px; width:104px;">
+              <div class="small" style="font-weight:800;">FOE CHARIZARD</div>
+              <div class="hpbar"><i style="width:64%; background: var(--hp-y);"></i></div>
+            </div>
+          </div>
+          <div class="legend"><span>Ⓐ next</span><span>hold Ⓐ fast-forward</span></div>
+        </div></div>
+      </div></div>
+      <figcaption><b>Same instant, two perspectives.</b> Pacing rule change: each event holds at least 800 ms; a tap advances only after both players have had the floor, and fast-forward requires an intentional hold instead of any stray tap.
+      <br><span class="fix">fixes: one tap erases text for both</span><span class="fix">fixes: 2.5 s fixed crawl</span></figcaption>
+    </figure>
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="half p2"><div class="halfin">
+          <div class="narr ctr">CHARIZARD fainted!</div>
+          <div class="ttl small" style="margin-top:4px;">SEND WHO NEXT?</div>
+          <div class="prow sel"><div class="ball"></div><span style="flex:none;">SNORLAX</span><div class="hpbar"><i style="width:100%; background: var(--hp-g);"></i></div></div>
+          <div class="prow"><div class="ball"></div><span style="flex:none;">GENGAR</span><div class="hpbar"><i style="width:34%; background: var(--hp-y);"></i></div><span class="chip" style="background: var(--t-psy);">PSN</span></div>
+          <div class="legend"><span>✚ PICK</span><span>Ⓐ SEND IN</span><span>? INFO</span></div>
+        </div></div>
+        <div class="split"></div>
+        <div class="half p1"><div class="halfin">
+          <div class="narr ctr">FOE CHARIZARD fainted!</div>
+          <div class="ttl small" style="margin-top:4px;">RIVAL'S BENCH</div>
+          <div class="prow"><div class="ball"></div><span style="flex:none;">SNORLAX</span><div class="hpbar"><i style="width:100%; background: var(--hp-g);"></i></div></div>
+          <div class="prow"><div class="ball"></div><span style="flex:none;">GENGAR</span><div class="hpbar"><i style="width:34%; background: var(--hp-y);"></i></div><span class="chip" style="background: var(--t-psy);">PSN</span></div>
+          <div class="legend"><span>tactical timeout…</span></div>
+        </div></div>
+      </div></div>
+      <figcaption><b>Faint: forced switch for one, open scouting for the other.</b> This is the "tactical timeout" from DESIGN.md, and open information makes it a feature: the waiting player studies the rival's bench while the pick happens.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">06</span>Endgame</h2>
+  <div class="row">
+    <figure class="mock">
+      <div class="scr"><div class="lcd">
+        <div class="half p2"><div class="halfin">
+          <div class="ttl" style="margin-top:10px;">GG!</div>
+          <div class="ctr small" style="margin-top:6px;">dealt 312 · took 468 · crits 1</div>
+          <div class="ctr" style="margin-top:10px;"><div class="spr s-f6" style="width:44px;height:44px; display:inline-block; filter:grayscale(1) opacity(.55);"></div></div>
+          <div class="legend"><span>Ⓐ REMATCH</span><span>Ⓑ SCAN + QUIT</span></div>
+        </div></div>
+        <div class="split"></div>
+        <div class="half p1"><div class="halfin">
+          <div class="ttl" style="margin-top:10px;">WINNER!</div>
+          <div class="ctr small" style="margin-top:6px;">dealt 468 · took 312 · crits 3 · 14 turns</div>
+          <div class="ctr" style="margin-top:10px;"><div class="spr s-f9" style="width:44px;height:44px; display:inline-block;"></div></div>
+          <div class="legend"><span>Ⓐ REMATCH</span><span>Ⓑ SCAN + QUIT</span></div>
+        </div></div>
+      </div></div>
+      <figcaption><b>Recap with rematch as the primary action.</b> Either player pressing A queues an instant rematch (tutorial never replays after the first game). B shows the feedback QR; 15 s of silence falls back to attract.
+      <br><span class="fix">fixes: 18 s rematch deadtime</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">07</span>Flow map</h2>
+  <div class="mermaid-box">
+<pre class="mermaid">
+flowchart LR
+  ATT["Attract<br/>(landscape demo)"] -->|any button| LOB["Lobby<br/>ready-up"]
+  LOB -->|both ready| REV["Team reveal"]
+  REV --> CHO["Move choice<br/>(split, foe HUD)"]
+  CHO -->|A| LCK["Locked in<br/>+ grace 1s"]
+  LCK -->|B| CHO
+  LCK -->|both locked| PLY["Turn playback<br/>(mirrored halves)"]
+  PLY -->|faint| SW["Forced switch<br/>/ rival scouting"]
+  SW --> CHO
+  PLY -->|mons remain| CHO
+  PLY -->|last mon falls| END["Recap + QR"]
+  END -->|A: rematch| REV
+  END -->|15s idle| ATT
+  LOB -->|15s idle| ATT
+</pre>
+  </div>
+  <div class="note"><b>Pixel preview:</b> click any screen mockup to toggle between the idealized rendering and a true-resolution preview: the mockup is rasterized down to 240x320 (the panel's native grid) and scaled back up with nearest-neighbor, so you see exactly how much detail the real display resolves. Click again to go back.</div>
+
+  <div class="note"><b>What this buys, against the audit:</b> foe visibility at all times (HUD + front sprites + open bench scouting), explicit confirm/back everywhere, opponent-locked signal, per-event pacing floor with intentional fast-forward, no rematch deadtime, one panel so no cross-screen skew, and the LED power problem disappears with the strips. <b>What it costs:</b> hidden choice is gone (the locked state hides only the move name, and only until playback), and the corner-button = corner-move mapping is replaced by cursor + confirm, which is more familiar but less magic. Total inputs: 14 switches (4 D-pad + A/B/? per seat), same count as today.</div>
+</section>
+
+</div>
+
+<script>
+(() => {
+  const css = Array.from(document.querySelectorAll('style')).map((s) => s.textContent).join('\n')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const HINT_OFF = 'click: 240×320 pixel preview';
+  const HINT_ON = 'pixel preview · click: idealized';
+  document.querySelectorAll('.scr').forEach((scr) => {
+    const hint = document.createElement('div');
+    hint.className = 'pixhint';
+    hint.textContent = HINT_OFF;
+    scr.insertAdjacentElement('afterend', hint);
+    scr.style.cursor = 'pointer';
+    scr.setAttribute('title', 'Toggle 240x320 pixel preview');
+    scr.addEventListener('click', () => {
+      const existing = scr.querySelector('canvas.pixcv');
+      if (existing) {
+        const on = existing.style.display !== 'none';
+        existing.style.display = on ? 'none' : 'block';
+        hint.textContent = on ? HINT_OFF : HINT_ON;
+        return;
+      }
+      const lcd = scr.querySelector('.lcd');
+      if (!lcd) return;
+      const clone = lcd.cloneNode(true);
+      clone.style.position = 'relative';
+      clone.style.inset = 'auto';
+      clone.style.width = '280px';
+      clone.style.height = '380px';
+      const markup = new XMLSerializer().serializeToString(clone);
+      const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="280" height="380">' +
+        '<foreignObject width="100%" height="100%">' +
+        '<div xmlns="http://www.w3.org/1999/xhtml">' +
+        '<style>' + css + '</style>' +
+        markup +
+        '</div></foreignObject></svg>';
+      const img = new Image();
+      img.onload = () => {
+        const native = document.createElement('canvas');
+        native.width = 240; native.height = 320;
+        native.getContext('2d').drawImage(img, 0, 0, 240, 320);
+        const dpr = Math.min(window.devicePixelRatio || 1, 3);
+        const cv = document.createElement('canvas');
+        cv.className = 'pixcv';
+        cv.width = Math.round(280 * dpr); cv.height = Math.round(380 * dpr);
+        const ctx = cv.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(native, 0, 0, cv.width, cv.height);
+        scr.appendChild(cv);
+        hint.textContent = HINT_ON;
+      };
+      img.onerror = () => { hint.textContent = 'pixel preview not supported in this browser'; };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    });
+  });
+})();
+</script>
+
+<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"; mermaid.initialize({startOnLoad:true});</script>
+</html>
