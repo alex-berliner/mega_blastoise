@@ -22,9 +22,13 @@ let autoOrient = true;
 
 function fitCanvas() {
   // Integer scale only, so pixels stay square and crisp.
+  // Reserve the real height of both pads and the debug bar (which wraps to
+  // two rows on narrow windows) so nothing ends up clipped behind them.
   const pad = document.querySelector('.pad');
-  const controls = pad ? pad.getBoundingClientRect().height * 2 + 60 : 200;
-  const availH = window.innerHeight - controls;
+  const debug = document.getElementById('debug');
+  const padH = pad ? pad.getBoundingClientRect().height : 70;
+  const debugH = debug ? debug.getBoundingClientRect().height : 30;
+  const availH = window.innerHeight - (padH * 2 + debugH + 40);
   const availW = window.innerWidth - 24;
 
   // Core always renders what the physical panel shows, and the panel is
@@ -42,6 +46,13 @@ function fitCanvas() {
   // Pads span exactly the panel's on-screen width, in every orientation.
   const shownW = landscape ? PANEL_H * scale : PANEL_W * scale;
   document.documentElement.style.setProperty('--panel-px', `${shownW}px`);
+
+  // Derive the control unit so the whole cluster fits the case interior.
+  // Widths in units: d-pad 3, gap 0.35, three round buttons 3 x 1.35, two
+  // gaps between them 2 x 0.28, and the case padding 2 x 0.5.
+  const UNITS = 3 + 0.35 + 3 * 1.35 + 2 * 0.28 + 2 * 0.5;
+  const unit = Math.max(16, Math.min(42, Math.floor(shownW / UNITS)));
+  document.documentElement.style.setProperty('--u', `${unit}px`);
   // A rotated element still reserves its unrotated box, so reserve the
   // rotated footprint explicitly and let the transform overflow into it.
   canvas.style.margin = landscape
@@ -264,6 +275,9 @@ async function run() {
   wireSeat(1);
   wireSeat(2);
   fitCanvas();
+  // Sizing the controls changes the pad height, which changes the budget the
+  // panel was fitted against — settle it with a second pass.
+  requestAnimationFrame(() => fitCanvas());
   requestAnimationFrame(frame);
   setInterval(() => wasm.wasm_tick_bob(), 75);
 }

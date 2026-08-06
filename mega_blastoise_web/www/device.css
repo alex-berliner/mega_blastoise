@@ -31,8 +31,9 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 8px 8px 0;
+  gap: 8px;
+  /* Bottom padding clears the fixed debug bar. */
+  padding: 8px 8px 64px;
 }
 
 #panel {
@@ -57,22 +58,24 @@ html, body {
 
 .seat-far { transform: rotate(180deg); }
 
+/* Every control is sized from --u, a unit JS derives from the panel width,
+   so the cluster always fits inside the case instead of spilling out of it. */
 .pad {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: calc(var(--u, 28px) * 0.35);
   width: 100%;
   background: var(--case);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: calc(var(--u, 28px) * 0.30) calc(var(--u, 28px) * 0.5);
 }
 
 /* D-pad: a 3x3 grid with the arms filled in. */
 .dpad {
   display: grid;
-  grid-template-columns: repeat(3, 34px);
-  grid-template-rows: repeat(3, 34px);
+  grid-template-columns: repeat(3, var(--u, 28px));
+  grid-template-rows: repeat(3, var(--u, 28px));
   flex: none;
 }
 .dpad .d {
@@ -81,25 +84,25 @@ html, body {
   color: transparent;
   padding: 0;
 }
-.dpad .up    { grid-area: 1 / 2; border-radius: 7px 7px 0 0; }
-.dpad .left  { grid-area: 2 / 1; border-radius: 7px 0 0 7px; }
-.dpad .right { grid-area: 2 / 3; border-radius: 0 7px 7px 0; }
-.dpad .down  { grid-area: 3 / 2; border-radius: 0 0 7px 7px; }
+.dpad .up    { grid-area: 1 / 2; border-radius: 20% 20% 0 0; }
+.dpad .left  { grid-area: 2 / 1; border-radius: 20% 0 0 20%; }
+.dpad .right { grid-area: 2 / 3; border-radius: 0 20% 20% 0; }
+.dpad .down  { grid-area: 3 / 2; border-radius: 0 0 20% 20%; }
 .dpad::after {
   content: "";
   grid-area: 2 / 2;
   background: var(--btn);
 }
 
-.abq { display: flex; align-items: center; gap: 10px; flex: none; }
+.abq { display: flex; align-items: center; gap: calc(var(--u, 28px) * 0.28); flex: none; }
 
 .rb {
-  width: 46px;
-  height: 46px;
+  width: calc(var(--u, 28px) * 1.35);
+  height: calc(var(--u, 28px) * 1.35);
   border-radius: 50%;
   border: none;
   font-family: var(--mono);
-  font-size: 15px;
+  font-size: calc(var(--u, 28px) * 0.52);
   font-weight: 700;
   color: #fff;
   background: var(--btn-lit);
@@ -139,8 +142,4 @@ html, body {
 }
 #debug button.on { background: var(--btn-lit); border-color: var(--btn-lit); }
 
-@media (max-height: 700px) {
-  .dpad { grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(3, 28px); }
-  .rb { width: 38px; height: 38px; font-size: 13px; }
-  .pad { padding: 6px 12px; }
-}
+
