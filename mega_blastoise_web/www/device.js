@@ -25,6 +25,10 @@ function fitCanvas() {
   // piece to fill the viewport. Scaling the whole body keeps the panel and
   // the controls in exact proportion, and fills the screen instead of
   // stepping down to the nearest whole pixel multiple and leaving bars.
+  //
+  // In landscape the whole console turns, exactly like picking the real
+  // device up and rotating it: the controls stay bolted to the case, and
+  // core keeps drawing the same pixels the hardware panel would show.
   const device = document.getElementById('device');
   const debug = document.getElementById('debug');
   const debugH = debug ? debug.getBoundingClientRect().height : 30;
@@ -35,15 +39,20 @@ function fitCanvas() {
   const natH = rect.height;
   if (!natW || !natH) return;
 
+  const turned = orientation === 2;
   const availW = window.innerWidth - 16;
   const availH = window.innerHeight - debugH - 16;
-  const k = Math.min(availW / natW, availH / natH);
 
-  device.style.transform = `scale(${k})`;
+  // Turned, the case occupies its own height across and its width down.
+  const footW = turned ? natH : natW;
+  const footH = turned ? natW : natH;
+  const k = Math.min(availW / footW, availH / footH);
+
   device.style.transformOrigin = 'center center';
-  // A scaled element still reserves its unscaled box, so pull the layout in
-  // by the difference to keep it centred without overflow.
-  device.style.margin = `${(natH * k - natH) / 2}px ${(natW * k - natW) / 2}px`;
+  device.style.transform = turned ? `rotate(-90deg) scale(${k})` : `scale(${k})`;
+  // A transformed element still reserves its untransformed box, so pull the
+  // layout in by the difference to keep it centred without overflow.
+  device.style.margin = `${(footH * k - natH) / 2}px ${(footW * k - natW) / 2}px`;
 }
 
 function applyOrientation(mode) {
