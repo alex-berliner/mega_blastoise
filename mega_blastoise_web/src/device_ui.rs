@@ -123,3 +123,27 @@ pub fn render_device(
     }
     frame.to_rgba()
 }
+
+/// Menus are landscape, full-panel, one-person screens.
+pub fn render_menu(menu: &mega_blastoise_core::menu::Menu) -> Vec<u8> {
+    use mega_blastoise_core::menu::{MenuScreen, OPTION_ROWS};
+    let mut frame = DeviceFrame::new();
+    {
+        let mut r = Region::landscape(&mut frame);
+        match menu.screen {
+            MenuScreen::GenPicker => dc::render_gen_picker(&mut r, menu.cursor, 320, 240),
+            MenuScreen::Options => {
+                let mut rows: Vec<dc::OptionRow<'_>> = Vec::with_capacity(OPTION_ROWS);
+                for i in 0..OPTION_ROWS {
+                    let (label, value) = menu.opts.row(i);
+                    rows.push(dc::OptionRow { label, value });
+                }
+                dc::render_options(&mut r, &rows, menu.cursor, 320)
+            }
+            // The lobby is drawn by the normal path; this is only reached if a
+            // caller renders a menu while none is open.
+            MenuScreen::Lobby => dc::render_lobby(&mut r, false, false),
+        }
+    }
+    frame.to_rgba()
+}

@@ -17,6 +17,7 @@ pub mod data_store;
 pub mod demo_teams;
 pub mod prompt_fmt;
 pub mod oled_ctl;
+pub mod menu;
 pub mod move_descs;
 pub mod move_sprites;
 pub mod randbat;
@@ -61,3 +62,4 @@ pub use display_color::{render_choice, render_gen_picker, render_locked, render_
 pub use device_view::{DeviceFrame, HalfFrame, Orientation, Region, DEV_H, DEV_W};
 pub use cursor_nav::{CursorNav, Dir, NavMode, NavOut};
 pub use sprites_color::{mon_back_sprite_color, mon_sprite_color, ColorSprite};
+pub use menu::{Gen, GameOptions, Menu, MenuOut, MenuScreen, TextSpeed, OPTION_ROWS};

@@ -26,14 +26,30 @@ function fitCanvas() {
   const controls = pad ? pad.getBoundingClientRect().height * 2 + 60 : 200;
   const availH = window.innerHeight - controls;
   const availW = window.innerWidth - 24;
-  const scale = Math.max(1, Math.floor(Math.min(availW / PANEL_W, availH / PANEL_H)));
+
+  // Core always renders what the physical panel shows, and the panel is
+  // portrait — so landscape content arrives rotated a quarter turn. On real
+  // hardware you turn the device; in a browser we turn the canvas, so the
+  // pixels stay byte-identical to the device's.
+  const landscape = orientation === 2;
+  const boxW = landscape ? PANEL_H : PANEL_W;
+  const boxH = landscape ? PANEL_W : PANEL_H;
+  const scale = Math.max(1, Math.floor(Math.min(availW / boxW, availH / boxH)));
+
   canvas.style.width = `${PANEL_W * scale}px`;
   canvas.style.height = `${PANEL_H * scale}px`;
+  canvas.style.transform = landscape ? 'rotate(-90deg)' : 'none';
+  // A rotated element still reserves its unrotated box, so reserve the
+  // rotated footprint explicitly and let the transform overflow into it.
+  canvas.style.margin = landscape
+    ? `${(PANEL_W * scale - PANEL_H * scale) / 2}px ${(PANEL_H * scale - PANEL_W * scale) / 2}px`
+    : '0';
 }
 
 function applyOrientation(mode) {
   orientation = mode;
   wasm.set_orientation(mode);
+  fitCanvas();
   document.getElementById('seat2').style.transform =
     mode === 0 ? 'rotate(180deg)' : 'none';
   // Landscape is a one-person screen, so the far seat's pad is not usable.
@@ -42,7 +58,9 @@ function applyOrientation(mode) {
 
 function frame() {
   if (autoOrient) {
-    const want = wasm.is_lobby_mode() ? 2 : 0;
+    // Only the gen picker and options are one-person screens. Ready-up is a
+    // two-player moment, so the lobby stays split like the battle does.
+    const want = wasm.menu_active() && wasm.is_lobby_mode() ? 2 : 0;
     if (want !== orientation) applyOrientation(want);
   }
   const px = wasm.get_device_pixels();

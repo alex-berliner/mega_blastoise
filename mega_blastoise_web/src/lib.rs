@@ -39,6 +39,13 @@ thread_local! {
     static ORIENTATION: RefCell<mega_blastoise_core::device_view::Orientation> =
         RefCell::new(mega_blastoise_core::device_view::Orientation::HeadToHead);
 
+    // Pre-lobby menus. Boots on the gen picker; the lobby loop runs
+    // underneath but menu mode swallows its input, so nothing readies up by
+    // accident while a menu is open.
+    static MENU: RefCell<mega_blastoise_core::menu::Menu> =
+        RefCell::new(mega_blastoise_core::menu::Menu::new());
+    static MENU_ACTIVE: RefCell<bool> = RefCell::new(true);
+
     // Per-player button queues — both players can pre-queue independently
     static P1_QUEUE: RefCell<VecDeque<ButtonEvent>> = RefCell::new(VecDeque::new());
     static P1_WAKER: RefCell<Option<Waker>> = RefCell::new(None);
@@ -841,7 +848,8 @@ async fn run_game_loop() {
                     break;
                 }
             }
-            let six = seq.six_v_six();
+            // Either the hidden chord or the options menu can ask for 6v6.
+            let six = seq.six_v_six() || menu_six_v_six();
             let (ai, modes) = seq.take();
             (ai, modes, six)
         };
@@ -1120,6 +1128,11 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
 /// ~1 ms and it keeps the browser from ever showing stale halves.
 #[wasm_bindgen]
 pub fn get_device_pixels() -> Vec<u8> {
+    // A menu can only own the screen while the lobby is idle — a battle
+    // (including the attract demo) always wins the panel.
+    if menu_active() && is_lobby_mode() {
+        return MENU.with(|m| device_ui::render_menu(&m.borrow()));
+    }
     let orientation = ORIENTATION.with(|o| *o.borrow());
     SEAT_UI.with(|u| {
         let ui = u.borrow();
@@ -1228,15 +1241,53 @@ pub fn nav_dpad(player: u8, dir: u8) {
         2 => Dir::Left,
         _ => Dir::Right,
     };
+    if menu_active() && is_lobby_mode() {
+        MENU.with(|m| m.borrow_mut().dpad(d));
+        return;
+    }
     if is_lobby_mode() {
         return;
     }
     with_nav(player, |n| n.dpad(d));
 }
 
+/// True while a pre-lobby menu owns the screen and the input.
+#[wasm_bindgen]
+pub fn menu_active() -> bool {
+    MENU_ACTIVE.with(|m| *m.borrow())
+}
+
+/// 0 gen picker, 1 lobby, 2 options — for the page's orientation logic.
+#[wasm_bindgen]
+pub fn menu_screen() -> u8 {
+    use mega_blastoise_core::menu::MenuScreen::*;
+    MENU.with(|m| match m.borrow().screen {
+        GenPicker => 0,
+        Lobby => 1,
+        Options => 2,
+    })
+}
+
+/// Team size the menu selected, so the battle setup can honor it.
+pub(crate) fn menu_six_v_six() -> bool {
+    MENU.with(|m| m.borrow().opts.team_size == 6)
+}
+
+/// Scale an animation delay by the chosen text speed.
+pub(crate) fn menu_text_scale(ms: u32) -> u32 {
+    MENU.with(|m| m.borrow().opts.text_speed.scale(ms))
+}
+
 /// A — confirm. In the lobby this is the ready-up press.
 #[wasm_bindgen]
 pub fn nav_a(player: u8) {
+    if menu_active() && is_lobby_mode() {
+        let out = MENU.with(|m| m.borrow_mut().confirm());
+        if out == mega_blastoise_core::menu::MenuOut::EnterLobby {
+            MENU_ACTIVE.with(|a| *a.borrow_mut() = false);
+        }
+        return;
+    }
     if is_lobby_mode() {
         press_move(player, 0);
         return;
@@ -1247,7 +1298,18 @@ pub fn nav_a(player: u8) {
 /// B — back out.
 #[wasm_bindgen]
 pub fn nav_b(player: u8) {
+    if menu_active() && is_lobby_mode() {
+        MENU.with(|m| m.borrow_mut().back());
+        return;
+    }
+    // Reopening the menus is only offered in the lobby, never mid-battle.
     if is_lobby_mode() {
+        MENU_ACTIVE.with(|a| *a.borrow_mut() = true);
+        MENU.with(|m| {
+            let mut menu = m.borrow_mut();
+            menu.screen = mega_blastoise_core::menu::MenuScreen::GenPicker;
+            menu.cursor = 0;
+        });
         return;
     }
     with_nav(player, |n| n.back());
@@ -1256,7 +1318,18 @@ pub fn nav_b(player: u8) {
 /// ? — explain whatever the cursor is on.
 #[wasm_bindgen]
 pub fn nav_info(player: u8) {
+    if menu_active() && is_lobby_mode() {
+        MENU.with(|m| m.borrow_mut().info());
+        return;
+    }
     if is_lobby_mode() {
+        // ? in the lobby opens the options, matching the hardware legend.
+        MENU_ACTIVE.with(|a| *a.borrow_mut() = true);
+        MENU.with(|m| {
+            let mut menu = m.borrow_mut();
+            menu.screen = mega_blastoise_core::menu::MenuScreen::Options;
+            menu.cursor = 0;
+        });
         return;
     }
     with_nav(player, |n| n.info());
