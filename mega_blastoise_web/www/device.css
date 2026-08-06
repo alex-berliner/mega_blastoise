@@ -25,13 +25,10 @@ html, body {
   touch-action: manipulation;
 }
 
-#stage {
-  height: 100%;
+body {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   /* Bottom padding clears the fixed debug bar. */
   padding: 8px 8px 64px;
 }
@@ -46,30 +43,30 @@ html, body {
   touch-action: none;
 }
 
-/* ── Seats ─────────────────────────────────────────────────────────────── */
+/* ── Device body ───────────────────────────────────────────────────────── */
 
-/* The pads are part of the device, so they match the panel's width exactly
-   and are always both present — a real board does not grow a second
-   controller when a battle starts. JS sets --panel-px from the canvas. */
-.seat {
-  width: var(--panel-px, 240px);
-  flex: none;
-}
-
-.seat-far { transform: rotate(180deg); }
-
-/* Every control is sized from --u, a unit JS derives from the panel width,
-   so the cluster always fits inside the case instead of spilling out of it. */
-.pad {
-  display: flex;
+/* Panel centred, four control clusters at the corners — the arrangement on
+   the whiteboard sketch. Two columns, three rows: the panel spans both
+   columns of the middle row, so each corner cell holds one cluster. */
+#device {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  justify-items: center;
   align-items: center;
-  justify-content: space-between;
-  gap: calc(var(--u, 28px) * 0.35);
-  width: 100%;
+  gap: calc(var(--u, 28px) * 0.5);
   background: var(--case);
-  border-radius: 12px;
-  padding: calc(var(--u, 28px) * 0.30) calc(var(--u, 28px) * 0.5);
+  border-radius: calc(var(--u, 28px) * 0.7);
+  padding: calc(var(--u, 28px) * 0.55);
 }
+
+#panel { grid-column: 1 / span 2; }
+
+.cluster { display: flex; }
+.c-tl { grid-area: 1 / 1; justify-self: start; }
+.c-tr { grid-area: 1 / 2; justify-self: end; }
+.c-bl { grid-area: 3 / 1; justify-self: start; }
+.c-br { grid-area: 3 / 2; justify-self: end; }
 
 /* D-pad: a 3x3 grid with the arms filled in. */
 .dpad {
@@ -94,15 +91,27 @@ html, body {
   background: var(--btn);
 }
 
-.abq { display: flex; align-items: center; gap: calc(var(--u, 28px) * 0.28); flex: none; }
+/* A / B / ? as a compact triangle, A on the outer corner. */
+.abq {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: calc(var(--u, 28px) * 0.22);
+  flex: none;
+}
+.abq .q { grid-area: 1 / 1; }
+.abq .b { grid-area: 1 / 2; }
+.abq .a { grid-area: 2 / 2; }
+/* Player 2's cluster is player 1's turned around, so their labels read
+   upright from their own seat. */
+.abq.flip { transform: rotate(180deg); }
 
 .rb {
-  width: calc(var(--u, 28px) * 1.35);
-  height: calc(var(--u, 28px) * 1.35);
+  width: calc(var(--u, 28px) * 1.3);
+  height: calc(var(--u, 28px) * 1.3);
   border-radius: 50%;
   border: none;
   font-family: var(--mono);
-  font-size: calc(var(--u, 28px) * 0.52);
+  font-size: calc(var(--u, 28px) * 0.5);
   font-weight: 700;
   color: #fff;
   background: var(--btn-lit);
@@ -111,6 +120,7 @@ html, body {
 .rb.b { background: #6b6f78; }
 
 .d:active, .rb:active { filter: brightness(1.5); transform: scale(0.94); }
+.abq.flip .rb:active { transform: scale(0.94); }
 
 /* ── Debug bar ─────────────────────────────────────────────────────────── */
 

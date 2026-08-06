@@ -22,52 +22,39 @@ let autoOrient = true;
 
 function fitCanvas() {
   // Integer scale only, so pixels stay square and crisp.
-  // Reserve the real height of both pads and the debug bar (which wraps to
-  // two rows on narrow windows) so nothing ends up clipped behind them.
-  const pad = document.querySelector('.pad');
+  // Reserve the corner clusters (two rows of them) and the debug bar, which
+  // wraps to two rows on narrow windows.
+  const cluster = document.querySelector('.cluster');
   const debug = document.getElementById('debug');
-  const padH = pad ? pad.getBoundingClientRect().height : 70;
+  const clusterH = cluster ? cluster.getBoundingClientRect().height : 90;
   const debugH = debug ? debug.getBoundingClientRect().height : 30;
-  const availH = window.innerHeight - (padH * 2 + debugH + 40);
-  const availW = window.innerWidth - 24;
+  const availH = window.innerHeight - (clusterH * 2 + debugH + 56);
+  const availW = window.innerWidth - 32;
 
-  // Core always renders what the physical panel shows, and the panel is
-  // portrait — so landscape content arrives rotated a quarter turn. On real
-  // hardware you turn the device; in a browser we turn the canvas, so the
-  // pixels stay byte-identical to the device's.
-  const landscape = orientation === 2;
-  const boxW = landscape ? PANEL_H : PANEL_W;
-  const boxH = landscape ? PANEL_W : PANEL_H;
-  const scale = Math.max(1, Math.floor(Math.min(availW / boxW, availH / boxH)));
+  // The device body never rotates, so neither does the canvas. Landscape
+  // content is drawn rotated onto the portrait panel by core, exactly as the
+  // real hardware shows it — you turn your head, not the device.
+  const scale = Math.max(1, Math.floor(Math.min(availW / PANEL_W, availH / PANEL_H)));
 
   canvas.style.width = `${PANEL_W * scale}px`;
   canvas.style.height = `${PANEL_H * scale}px`;
-  canvas.style.transform = landscape ? 'rotate(-90deg)' : 'none';
-  // Pads span exactly the panel's on-screen width, in every orientation.
-  const shownW = landscape ? PANEL_H * scale : PANEL_W * scale;
+  const shownW = PANEL_W * scale;
   document.documentElement.style.setProperty('--panel-px', `${shownW}px`);
 
-  // Derive the control unit so the whole cluster fits the case interior.
-  // Widths in units: d-pad 3, gap 0.35, three round buttons 3 x 1.35, two
-  // gaps between them 2 x 0.28, and the case padding 2 x 0.5.
-  const UNITS = 3 + 0.35 + 3 * 1.35 + 2 * 0.28 + 2 * 0.5;
-  const unit = Math.max(16, Math.min(42, Math.floor(shownW / UNITS)));
+  // One corner cluster per side has to fit in half the panel width: the
+  // d-pad is 3 units, the A/B/? triangle is 2 x 1.3 plus a 0.22 gap, and the
+  // case adds 0.55 of padding on each edge.
+  const UNITS = 3 + 2 * 1.3 + 0.22 + 2 * 0.55;
+  const unit = Math.max(15, Math.min(40, Math.floor((shownW / 2) / UNITS * 2)));
   document.documentElement.style.setProperty('--u', `${unit}px`);
-  // A rotated element still reserves its unrotated box, so reserve the
-  // rotated footprint explicitly and let the transform overflow into it.
-  canvas.style.margin = landscape
-    ? `${(PANEL_W * scale - PANEL_H * scale) / 2}px ${(PANEL_H * scale - PANEL_W * scale) / 2}px`
-    : '0';
 }
 
 function applyOrientation(mode) {
   orientation = mode;
   wasm.set_orientation(mode);
   fitCanvas();
-  // Both pads are always present: the physical board has two seats wired in
-  // no matter what is on screen. Only the far pad's rotation changes.
-  document.getElementById('seat2').style.transform =
-    mode === 0 ? 'rotate(180deg)' : 'none';
+  // Nothing to do to the controls: they are anchored to the device body and
+  // never move, in any orientation. Only what the panel draws changes.
 }
 
 function frame() {
