@@ -112,7 +112,14 @@ pub enum Effect {
     Text(String),
 }
 
-/// One player's distilled options for a single decision point.
+/// What one player can legally do at a single decision point (a combat
+/// turn, a forced switch after a faint, or team preview), plus how their
+/// buttons map onto those choices this turn.
+///
+/// Built by [`Self::from_prompt`] from the engine's [`ActivePrompt`], which
+/// carries full battle state; this keeps only what input handling and the
+/// screens depend on: which move/party buttons are valid, whether the choice
+/// is forced or AI-made (`auto`), and the per-turn Concealed mappings.
 pub struct SlotOptions {
     player_num: u8,
     player_id: String,

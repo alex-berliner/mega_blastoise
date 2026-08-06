@@ -1,0 +1,180 @@
+//! Render every single-screen UI state to PPM files for visual review.
+//!
+//! The color renderer is `DrawTarget`-generic, so the exact pixels the device
+//! and the browser will show can be produced on a host with no hardware and
+//! no browser. Run: `cargo run -p mega-blastoise-test --bin screens -- <dir>`
+
+use std::fs;
+use std::io::Write;
+
+use mega_blastoise_core::board_event::MoveSlot;
+use mega_blastoise_core::display::PartySlotData;
+use mega_blastoise_core::display_color as dc;
+use mega_blastoise_core::device_view::{DeviceFrame, HalfFrame, Region};
+
+fn mv(name: &str, ty: &str, cat: &str, pow: Option<u32>, acc: Option<u8>, pp: u8, max: u8) -> MoveSlot {
+    MoveSlot {
+        name: name.into(),
+        type_name: ty.into(),
+        category: cat.into(),
+        power: pow,
+        accuracy: acc,
+        pp,
+        max_pp: max,
+    }
+}
+
+fn slot(name: &str, hp: u16, max: u16, active: bool, status: Option<&str>) -> PartySlotData {
+    PartySlotData {
+        name: name.into(),
+        active,
+        level: 55,
+        hp,
+        max_hp: max,
+        status: status.map(|s| s.to_string()),
+        atk: 180,
+        def: 200,
+        spe: 160,
+        spc: 190,
+        types: Vec::new(),
+        moves: Vec::new(),
+        boost_atk: 0,
+        boost_def: 0,
+        boost_spe: 0,
+        boost_spc: 0,
+        item: None,
+    }
+}
+
+fn write_ppm(path: &str, w: u32, h: u32, rgba: &[u8]) {
+    let mut f = fs::File::create(path).unwrap();
+    write!(f, "P6\n{w} {h}\n255\n").unwrap();
+    for px in rgba.chunks(4) {
+        f.write_all(&px[..3]).unwrap();
+    }
+    println!("wrote {path}");
+}
+
+fn half(name: &str, dir: &str, draw: impl FnOnce(&mut HalfFrame)) {
+    let mut f = HalfFrame::new(dc::HALF_W, dc::HALF_H);
+    draw(&mut f);
+    write_ppm(&format!("{dir}/half_{name}.ppm"), f.w, f.h, &f.to_rgba());
+}
+
+fn main() {
+    let dir = std::env::args().nth(1).unwrap_or_else(|| ".".into());
+    fs::create_dir_all(&dir).unwrap();
+
+    let blastoise_moves = vec![
+        mv("Hydro Pump", "Water", "Special", Some(120), Some(80), 8, 8),
+        mv("Ice Beam", "Ice", "Special", Some(95), Some(100), 10, 10),
+        mv("Body Slam", "Normal", "Physical", Some(85), Some(100), 15, 15),
+        mv("Rest", "Psychic", "Status", None, None, 0, 10),
+    ];
+    let party = vec![
+        slot("Blastoise", 210, 260, true, None),
+        slot("Snorlax", 380, 380, false, None),
+        slot("Gengar", 90, 260, false, Some("PSN")),
+    ];
+
+    let ctx = dc::HalfCtx {
+        own_name: "Blastoise",
+        own_hp: 81,
+        own_level: 55,
+        foe_name: "Charizard",
+        foe_hp: 88,
+        foe_level: 53,
+        foe_status: None,
+        own_status: None,
+        cursor: 1,
+        foe_locked: true,
+        bob: false,
+    };
+
+    half("choice", &dir, |f| dc::render_choice(f, &blastoise_moves, &ctx));
+    half("party", &dir, |f| dc::render_party(f, &party, &ctx, false));
+    half("forced_switch", &dir, |f| dc::render_party(f, &party, &ctx, true));
+    half("locked", &dir, |f| dc::render_locked(f, Some("Ice Beam"), &ctx));
+    half("playback", &dir, |f| {
+        dc::render_playback(f, "Blue's Charizard used Fire Blast! It's not very effective...", &ctx)
+    });
+    half("lobby_idle", &dir, |f| dc::render_lobby(f, false, false));
+    half("lobby_ready", &dir, |f| dc::render_lobby(f, true, false));
+    half("result", &dir, |f| dc::render_result(f, "WINNER!", &ctx));
+    half("move_info", &dir, |f| {
+        dc::render_move_info(
+            f,
+            &blastoise_moves[1],
+            "Has a 10% chance to freeze the target. Ice-type damage, special category.",
+        )
+    });
+    half("log", &dir, |f| {
+        let lines = [
+            "Turn 3",
+            "Blue's Charizard used Fire Blast!",
+            "  92 damage (1.0x, no crit)",
+            "White's Blastoise used Hydro Pump!",
+            "  It's super effective!",
+            "  148 damage (2.0x, no crit)",
+            "Blue's Charizard fainted!",
+        ];
+        dc::render_log(f, &lines, 0)
+    });
+
+    // Composed 240x320 panel, head-to-head: far half rotated 180.
+    let mut dev = DeviceFrame::new();
+    {
+        let mut top = Region::half(&mut dev, false, true);
+        let foe_ctx = dc::HalfCtx {
+            own_name: "Charizard",
+            own_hp: 88,
+            own_level: 53,
+            foe_name: "Blastoise",
+            foe_hp: 81,
+            foe_level: 55,
+            cursor: 0,
+            foe_locked: false,
+            ..Default::default()
+        };
+        let charizard_moves = vec![
+            mv("Fire Blast", "Fire", "Special", Some(120), Some(85), 5, 5),
+            mv("Slash", "Normal", "Physical", Some(70), Some(100), 20, 20),
+            mv("Earthquake", "Ground", "Physical", Some(100), Some(100), 10, 10),
+            mv("Hyper Beam", "Normal", "Special", Some(150), Some(90), 0, 5),
+        ];
+        dc::render_choice(&mut top, &charizard_moves, &foe_ctx);
+    }
+    {
+        let mut bottom = Region::half(&mut dev, true, false);
+        dc::render_choice(&mut bottom, &blastoise_moves, &ctx);
+    }
+    write_ppm(&format!("{dir}/device_headtohead.ppm"), 240, 320, &dev.to_rgba());
+
+    // Landscape: gen picker and options fill the whole panel.
+    let mut lp = DeviceFrame::new();
+    {
+        let mut r = Region::landscape(&mut lp);
+        dc::render_gen_picker(&mut r, 0, 320, 240);
+    }
+    write_ppm(&format!("{dir}/device_gen_picker.ppm"), 240, 320, &lp.to_rgba());
+
+    // Same view unrotated, so the layout is reviewable as designed.
+    let mut gp = HalfFrame::new(320, 240);
+    dc::render_gen_picker(&mut gp, 0, 320, 240);
+    write_ppm(&format!("{dir}/landscape_gen_picker.ppm"), 320, 240, &gp.to_rgba());
+
+    let mut op = HalfFrame::new(320, 240);
+    dc::render_options(
+        &mut op,
+        &[
+            dc::OptionRow { label: "Team size", value: "3 v 3" },
+            dc::OptionRow { label: "Text speed", value: "Normal" },
+            dc::OptionRow { label: "Sound", value: "On" },
+            dc::OptionRow { label: "Tutorial", value: "First game" },
+            dc::OptionRow { label: "Turn timer", value: "60 s" },
+        ],
+        2,
+        320,
+    );
+    write_ppm(&format!("{dir}/landscape_options.ppm"), 320, 240, &op.to_rgba());
+}

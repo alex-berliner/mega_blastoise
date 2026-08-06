@@ -1,3 +1,4 @@
+mod device_ui;
 mod web_display;
 mod web_effects;
 
@@ -13,6 +14,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 
 use embassy_futures::select::{select, select3, Either, Either3};
+use mega_blastoise_core::cursor_nav::CursorNav;
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
     party_slot_from_mon, render_screen, run_battle, ActivePrompt, BoardEventQueue,
@@ -29,6 +31,13 @@ thread_local! {
     static P1_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
     static P2_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
     static LED_STATE: RefCell<[u32; 24]> = RefCell::new([0u32; 24]);
+
+    // Single-screen redesign: one 240x320 panel, per-seat cursor state, and a
+    // runtime orientation so the arrangement can be settled by playing.
+    static SEAT_UI: RefCell<[device_ui::SeatUi; 2]> =
+        RefCell::new([device_ui::SeatUi::default(), device_ui::SeatUi::default()]);
+    static ORIENTATION: RefCell<mega_blastoise_core::device_view::Orientation> =
+        RefCell::new(mega_blastoise_core::device_view::Orientation::HeadToHead);
 
     // Per-player button queues — both players can pre-queue independently
     static P1_QUEUE: RefCell<VecDeque<ButtonEvent>> = RefCell::new(VecDeque::new());
@@ -957,6 +966,15 @@ fn apply_effects(fx: &mut Vec<CollectEffect>) {
                 // Committing an option (or landing on a screen where nothing
                 // is held) releases any sticky web holds.
                 match &cmd {
+                    OledCmd::ShowWaiting { player } => {
+                        // Committing locks this seat; the OTHER seat's HUD is
+                        // what shows the LOCK chip, so mark it there.
+                        nav_set_locked(3 - *player, true);
+                        clear_hold_latch(*player);
+                    }
+                    _ => {}
+                }
+                match &cmd {
                     OledCmd::ShowWaiting { player }
                     | OledCmd::ShowActionSelect { player, .. }
                     | OledCmd::ShowConcealedMoves { player, .. }
@@ -1041,6 +1059,18 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
                 // Fresh randomized layouts every combat turn.
                 slot.set_concealed(now_ms() ^ ((player as u64) << 33));
             }
+            if !is_ai_player(player) {
+                let n_moves = p
+                    .player_data
+                    .as_ref()
+                    .and_then(|d| d.mons.iter().find(|m| m.active && m.hp > 0))
+                    .map(|m| m.moves.len().min(4) as u8)
+                    .unwrap_or(4);
+                let n_party =
+                    p.player_data.as_ref().map(|d| d.mons.len().min(6) as u8).unwrap_or(3);
+                let forced = matches!(p.request, gen1_battle::Request::Switch(_));
+                nav_begin_turn(player, n_moves.max(1), n_party.max(1), forced);
+            }
             batch.push(slot);
         }
         // Pad presses made between turns are dropped, exactly like the
@@ -1076,5 +1106,166 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
             let choice = if choice.is_empty() { String::from("pass") } else { choice };
             bus.choices.send(PlayerChoice { player_id, choice }).await;
         }
+    }
+}
+
+
+// ── Single-screen device view ────────────────────────────────────────────────
+//
+// The old two-OLED exports stay live so the legacy page keeps working during
+// the migration; these are additive.
+
+/// RGBA8888 for the whole 240x320 panel, composed for the current
+/// orientation. Rendered on demand rather than cached: one full frame is
+/// ~1 ms and it keeps the browser from ever showing stale halves.
+#[wasm_bindgen]
+pub fn get_device_pixels() -> Vec<u8> {
+    let orientation = ORIENTATION.with(|o| *o.borrow());
+    SEAT_UI.with(|u| {
+        let ui = u.borrow();
+        OLED_CTL.with(|c| device_ui::render_device(&c.borrow(), orientation, &ui[0], &ui[1]))
+    })
+}
+
+/// 0 = head-to-head (hardware), 1 = both halves upright, 2 = landscape.
+#[wasm_bindgen]
+pub fn set_orientation(mode: u8) {
+    use mega_blastoise_core::device_view::Orientation::*;
+    let o = match mode {
+        1 => SameWay,
+        2 => Landscape,
+        _ => HeadToHead,
+    };
+    ORIENTATION.with(|c| *c.borrow_mut() = o);
+}
+
+#[wasm_bindgen]
+pub fn get_orientation() -> String {
+    ORIENTATION.with(|o| o.borrow().as_str().to_string())
+}
+
+/// Cursor position for a seat, so the page can highlight its on-screen pad.
+#[wasm_bindgen]
+pub fn nav_cursor(player: u8) -> u8 {
+    SEAT_UI.with(|u| u.borrow()[(player == 2) as usize].nav.cursor)
+}
+
+/// Which list the cursor is in: 0 moves, 1 party, 2 detail.
+#[wasm_bindgen]
+pub fn nav_mode(player: u8) -> u8 {
+    use mega_blastoise_core::cursor_nav::NavMode::*;
+    SEAT_UI.with(|u| match u.borrow()[(player == 2) as usize].nav.mode {
+        Moves => 0,
+        Party => 1,
+        Detail => 2,
+    })
+}
+
+/// Sync the cursor's bounds to the live prompt. Called when a turn starts so
+/// the cursor can never point at a move slot the mon does not have.
+pub(crate) fn nav_begin_turn(player: u8, n_moves: u8, n_party: u8, forced: bool) {
+    SEAT_UI.with(|u| {
+        let mut ui = u.borrow_mut();
+        let s = &mut ui[(player == 2) as usize];
+        s.nav.begin_turn(n_moves, n_party, forced);
+        s.locked = false;
+        s.chosen = None;
+    });
+}
+
+pub(crate) fn nav_set_locked(player: u8, locked: bool) {
+    SEAT_UI.with(|u| u.borrow_mut()[(player == 2) as usize].locked = locked);
+}
+
+fn apply_nav_out(player: u8, out: mega_blastoise_core::cursor_nav::NavOut) {
+    use mega_blastoise_core::cursor_nav::NavOut;
+    match out {
+        NavOut::None | NavOut::Redraw => {}
+        NavOut::TapMove(slot) => press_move(player, slot),
+        NavOut::TapSwitch(idx) => press_switch(player, idx),
+        NavOut::HoldMove(slot) => hold_move(player, slot),
+        NavOut::HoldSwitch(idx) => hold_switch(player, idx),
+        NavOut::HoldEnd => hold_end(player),
+    }
+}
+
+fn with_nav(player: u8, f: impl FnOnce(&mut CursorNav) -> mega_blastoise_core::cursor_nav::NavOut) {
+    let out = SEAT_UI.with(|u| {
+        let mut ui = u.borrow_mut();
+        f(&mut ui[(player == 2) as usize].nav)
+    });
+    apply_nav_out(player, out);
+}
+
+/// Point the cursor straight at an item — what a direct tap on the screen
+/// does. Bounded by the same limits the D-pad respects.
+#[wasm_bindgen]
+pub fn nav_set_cursor(player: u8, idx: u8) {
+    if is_lobby_mode() {
+        return;
+    }
+    SEAT_UI.with(|u| {
+        let mut ui = u.borrow_mut();
+        let n = &mut ui[(player == 2) as usize].nav;
+        let limit = match n.mode {
+            mega_blastoise_core::cursor_nav::NavMode::Moves => n.n_moves,
+            mega_blastoise_core::cursor_nav::NavMode::Party => n.n_party,
+            mega_blastoise_core::cursor_nav::NavMode::Detail => 1,
+        };
+        if idx < limit {
+            n.cursor = idx;
+        }
+    });
+}
+
+/// D-pad: 0 up, 1 down, 2 left, 3 right.
+#[wasm_bindgen]
+pub fn nav_dpad(player: u8, dir: u8) {
+    use mega_blastoise_core::cursor_nav::Dir;
+    let d = match dir {
+        0 => Dir::Up,
+        1 => Dir::Down,
+        2 => Dir::Left,
+        _ => Dir::Right,
+    };
+    if is_lobby_mode() {
+        return;
+    }
+    with_nav(player, |n| n.dpad(d));
+}
+
+/// A — confirm. In the lobby this is the ready-up press.
+#[wasm_bindgen]
+pub fn nav_a(player: u8) {
+    if is_lobby_mode() {
+        press_move(player, 0);
+        return;
+    }
+    with_nav(player, |n| n.confirm());
+}
+
+/// B — back out.
+#[wasm_bindgen]
+pub fn nav_b(player: u8) {
+    if is_lobby_mode() {
+        return;
+    }
+    with_nav(player, |n| n.back());
+}
+
+/// ? — explain whatever the cursor is on.
+#[wasm_bindgen]
+pub fn nav_info(player: u8) {
+    if is_lobby_mode() {
+        return;
+    }
+    with_nav(player, |n| n.info());
+}
+
+/// Hold A in the lobby to get an AI opponent, same as the hardware.
+#[wasm_bindgen]
+pub fn nav_a_hold(player: u8) {
+    if is_lobby_mode() {
+        wasm_lobby_long_press(player);
     }
 }

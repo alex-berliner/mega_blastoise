@@ -53,7 +53,7 @@ impl HostOled {
 
     /// Show the move detail screen for `move_idx` on `player`'s display.
     pub fn show_move_detail(&mut self, player: u8, move_idx: usize) {
-        self.apply(OledCmd::ShowMoveDetail { player, slot: move_idx as u8 });
+        self.apply(OledCmd::ShowMoveDetail { player, slot: move_idx as u8, page: 0 });
     }
 
     pub fn win(&mut self, winner: u8) {

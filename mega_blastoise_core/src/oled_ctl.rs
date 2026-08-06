@@ -427,6 +427,16 @@ where
     }
 }
 
+/// One seat's battle state, as the color renderer needs it.
+pub struct SeatInfo<'a> {
+    pub name: &'a str,
+    pub hp: u8,
+    pub level: u8,
+    pub status: Option<&'a str>,
+    pub party: &'a [PartySlotData],
+    pub moves: &'a [MoveSlot],
+}
+
 // ── Per-player state ──────────────────────────────────────────────────────────
 
 enum View {
@@ -787,6 +797,22 @@ impl OledController {
                 }
                 if both { OledRedraw::Both } else { OledRedraw::for_player(player) }
             }
+        }
+    }
+
+    /// Everything the color renderer's foe HUD needs about one seat.
+    /// Open information is the point of the new design, so this is public
+    /// for both seats — a half draws its own state AND its opponent's.
+    pub fn seat(&self, player: u8) -> SeatInfo<'_> {
+        let p = if player == 1 { &self.p1 } else { &self.p2 };
+        let active = p.party.iter().find(|s| s.active && s.hp > 0);
+        SeatInfo {
+            name: p.battle_mon(),
+            hp: if p.fainted { 0 } else { p.hp_pct },
+            level: active.map(|s| s.level).unwrap_or(0),
+            status: active.and_then(|s| s.status.as_deref()),
+            party: &p.party,
+            moves: &p.moves,
         }
     }
 

@@ -5,6 +5,9 @@ extern crate alloc;
 pub mod battle_effects;
 pub mod cli_parse;
 pub mod display;
+pub mod display_color;
+pub mod device_view;
+pub mod cursor_nav;
 pub mod hp_bar;
 pub mod board_event;
 pub mod battle_input;
@@ -20,6 +23,7 @@ pub mod randbat;
 pub mod rng;
 pub mod random_ai;
 pub mod sprites;
+pub mod sprites_color;
 pub mod qr;
 
 pub use battle_effects::{
@@ -30,7 +34,7 @@ pub use board_event::{
     mon_player_num, player_id_to_num, side_display_name, status_abbrev, BoardEvent, MoveSlot, ParsedBattleLogLine, PromptKind,
 };
 pub use display::{party_slot_from_mon, render_action_select, render_concealed_moves, render_switch_list, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen, render_qr_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_sent_out, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, InvalidReason, OledFrameBuffer, PartySlotData};
-pub use oled_ctl::{flash_buf, name_buf, oled_cmds_for_event, render_screen, OledCmd, OledController, OledRedraw, Screen, BOB_TICK_MS};
+pub use oled_ctl::{SeatInfo, flash_buf, name_buf, oled_cmds_for_event, render_screen, OledCmd, OledController, OledRedraw, Screen, BOB_TICK_MS};
 pub use battle_input::{
     format_move_choice, format_switch_choice, join_choice_parts, switch_choice_from_team_indices,
     turn_action_choice, turn_choice_from_move_slots, ActionReject, ActivePrompt, ButtonController,
@@ -53,3 +57,7 @@ pub use random_ai::RandomAi;
 pub use cli_parse::{
     parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, LobbyCmd, TurnChoice, LOBBY_HELP,
 };
+pub use display_color::{render_choice, render_gen_picker, render_locked, render_log, render_lobby as render_lobby_color, render_move_info, render_options, render_party, render_playback, render_result, HalfCtx, OptionRow, HALF_H, HALF_W};
+pub use device_view::{DeviceFrame, HalfFrame, Orientation, Region, DEV_H, DEV_W};
+pub use cursor_nav::{CursorNav, Dir, NavMode, NavOut};
+pub use sprites_color::{mon_back_sprite_color, mon_sprite_color, ColorSprite};
