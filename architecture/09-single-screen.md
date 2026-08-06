@@ -227,6 +227,12 @@ iterating on flashed firmware does not.
 Before starting: **tag the last commit that carries the mono renderer**, since
 this branch deletes it.
 
+Status as of 2026-08-06: stages 1 and 2 are done, stage 3 is done for the
+foe HUD, stage 4 is done as an additive `cursor_nav` module (the old
+collector is untouched), and stage 6 has a working client at
+`mega_blastoise_web/www/device.html`. Stages 7 through 9 are untouched, and
+the firmware still runs the mono path.
+
 1. **New renderer beside the old one.** `render_half()` consuming the same
    `Screen` enum, drawing to a 240x160 `Rgb565` target, matching
    `ui_flow.html`. Plus a compose step that writes two halves into one 240x320

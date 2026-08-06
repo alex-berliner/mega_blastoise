@@ -219,7 +219,12 @@ async function run() {
   const params = new URLSearchParams(location.search);
   if (params.has('orient')) {
     autoOrient = false;
-    applyOrientation(Number(params.get('orient')));
+    const mode = Number(params.get('orient'));
+    applyOrientation(mode);
+    document.getElementById('auto-btn').classList.remove('on');
+    document.querySelectorAll('#debug button[data-orient]').forEach((b) => {
+      b.classList.toggle('on', Number(b.dataset.orient) === mode);
+    });
   } else {
     applyOrientation(0);
   }
