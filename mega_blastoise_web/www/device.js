@@ -21,32 +21,29 @@ let autoOrient = true;
 // ── Painting ──────────────────────────────────────────────────────────────
 
 function fitCanvas() {
-  // Integer scale only, so pixels stay square and crisp.
-  // Reserve the corner clusters (two rows of them) and the debug bar, which
-  // wraps to two rows on narrow windows.
-  const cluster = document.querySelector('.cluster');
+  // The device is laid out at a fixed natural size and then scaled as one
+  // piece to fill the viewport. Scaling the whole body keeps the panel and
+  // the controls in exact proportion, and fills the screen instead of
+  // stepping down to the nearest whole pixel multiple and leaving bars.
+  const device = document.getElementById('device');
   const debug = document.getElementById('debug');
-  const clusterH = cluster ? cluster.getBoundingClientRect().height : 90;
   const debugH = debug ? debug.getBoundingClientRect().height : 30;
-  const availH = window.innerHeight - (clusterH * 2 + debugH + 56);
-  const availW = window.innerWidth - 32;
 
-  // The device body never rotates, so neither does the canvas. Landscape
-  // content is drawn rotated onto the portrait panel by core, exactly as the
-  // real hardware shows it — you turn your head, not the device.
-  const scale = Math.max(1, Math.floor(Math.min(availW / PANEL_W, availH / PANEL_H)));
+  device.style.transform = 'none';
+  const rect = device.getBoundingClientRect();
+  const natW = rect.width;
+  const natH = rect.height;
+  if (!natW || !natH) return;
 
-  canvas.style.width = `${PANEL_W * scale}px`;
-  canvas.style.height = `${PANEL_H * scale}px`;
-  const shownW = PANEL_W * scale;
-  document.documentElement.style.setProperty('--panel-px', `${shownW}px`);
+  const availW = window.innerWidth - 16;
+  const availH = window.innerHeight - debugH - 16;
+  const k = Math.min(availW / natW, availH / natH);
 
-  // One corner cluster per side has to fit in half the panel width: the
-  // d-pad is 3 units, the A/B/? triangle is 2 x 1.3 plus a 0.22 gap, and the
-  // case adds 0.55 of padding on each edge.
-  const UNITS = 3 + 2 * 1.3 + 0.22 + 2 * 0.55;
-  const unit = Math.max(15, Math.min(40, Math.floor((shownW / 2) / UNITS * 2)));
-  document.documentElement.style.setProperty('--u', `${unit}px`);
+  device.style.transform = `scale(${k})`;
+  device.style.transformOrigin = 'center center';
+  // A scaled element still reserves its unscaled box, so pull the layout in
+  // by the difference to keep it centred without overflow.
+  device.style.margin = `${(natH * k - natH) / 2}px ${(natW * k - natW) / 2}px`;
 }
 
 function applyOrientation(mode) {
@@ -59,9 +56,11 @@ function applyOrientation(mode) {
 
 function frame() {
   if (autoOrient) {
-    // Only the gen picker and options are one-person screens. Ready-up is a
-    // two-player moment, so the lobby stays split like the battle does.
-    const want = wasm.menu_active() && wasm.is_lobby_mode() ? 2 : 0;
+    // Landscape for the one-person menus, and for turn playback, which both
+    // players watch together and so gets the whole panel. Choosing is
+    // private per seat, so that stays split head-to-head.
+    const menus = wasm.menu_active() && wasm.is_lobby_mode();
+    const want = menus || wasm.is_playback() ? 2 : 0;
     if (want !== orientation) applyOrientation(want);
   }
   const px = wasm.get_device_pixels();
@@ -168,20 +167,31 @@ function panelTap(ev) {
     hx = x;
     hy = y - PANEL_H / 2;
   }
-  if (orientation === 2) return; // landscape menus are one-person screens
+  if (orientation === 2) {
+    // Landscape is the shared view; a tap acts for the near seat.
+    if (wasm.seat_is_waiting(1)) wasm.nav_unready(1);
+    return;
+  }
+
+  // After committing, a tap anywhere on your own half takes it back.
+  if (wasm.seat_is_waiting(player)) {
+    wasm.nav_unready(player);
+    return;
+  }
 
   const mode = wasm.nav_mode(player);
   if (mode === 0) {
-    // 2x2 move grid: x 76..236, y 46..126.
+    // 2x2 move grid: x 76..236, y 46..126. A tap is a whole decision, so it
+    // commits rather than only moving the cursor.
     if (hx < 76 || hy < 46 || hy > 126) return;
     const col = hx < 158 ? 0 : 1;
     const row = hy < 88 ? 0 : 1;
-    wasm.nav_set_cursor(player, row * 2 + col);
+    wasm.nav_tap_commit(player, row * 2 + col);
   } else if (mode === 1) {
     // Party rows start at y 26, 21px pitch.
     if (hy < 26) return;
     const idx = Math.floor((hy - 26) / 21);
-    if (idx >= 0 && idx < 6) wasm.nav_set_cursor(player, idx);
+    if (idx >= 0 && idx < 6) wasm.nav_tap_commit(player, idx);
   }
 }
 canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); panelTap(e); });

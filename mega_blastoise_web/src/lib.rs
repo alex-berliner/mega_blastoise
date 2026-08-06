@@ -897,9 +897,10 @@ async fn run_game_loop() {
         }
         print_log("GO!");
 
-        // Battle-start tutorial, 3 pages, 2.25 s each, not skippable.
-        // Real games with a human only — never before demo / AI-vs-AI games.
-        if !(seq_ai[0] && seq_ai[1]) {
+        // Battle-start tutorial, off by default: the cursor UI carries its
+        // own legend on every screen, so 6.75 s of unskippable pages before
+        // each match is pure dead time. Re-enable it in the options menu.
+        if menu_tutorial() && !(seq_ai[0] && seq_ai[1]) {
             for page in 0..mega_blastoise_core::display::TUTORIAL_PAGES {
                 oled_apply(OledCmd::ShowTutorial { page });
                 sleep_ms_raw(2250).await;
@@ -1306,6 +1307,56 @@ fn log_scroll(player: u8, delta: i32) {
     });
 }
 
+/// True when neither seat is choosing: turn playback, which is the shared
+/// moment both players watch, so it wants the full-panel landscape view.
+#[wasm_bindgen]
+pub fn is_playback() -> bool {
+    if is_lobby_mode() || menu_active() {
+        return false;
+    }
+    !seat_is_choosing(1) && !seat_is_choosing(2) && !seat_is_waiting(1) && !seat_is_waiting(2)
+}
+
+/// Has this seat committed and is now on the locked-in screen?
+#[wasm_bindgen]
+pub fn seat_is_waiting(player: u8) -> bool {
+    OLED_CTL.with(|c| {
+        matches!(
+            c.borrow().screen(player),
+            mega_blastoise_core::Screen::Waiting { .. }
+                | mega_blastoise_core::Screen::WaitingForOpponent { .. }
+        )
+    })
+}
+
+/// Point at a slot and commit it in one action — what a direct tap on a move
+/// cell does, so a tap is a whole turn decision rather than half of one.
+#[wasm_bindgen]
+pub fn nav_tap_commit(player: u8, idx: u8) {
+    if is_lobby_mode() || menu_active() {
+        return;
+    }
+    nav_set_cursor(player, idx);
+    let out = SEAT_UI.with(|u| {
+        let mut ui = u.borrow_mut();
+        ui[(player == 2) as usize].nav.confirm()
+    });
+    apply_nav_out(player, out);
+}
+
+/// Tapping the panel after committing takes the choice back.
+#[wasm_bindgen]
+pub fn nav_unready(player: u8) {
+    if is_lobby_mode() || menu_active() {
+        return;
+    }
+    if seat_is_waiting(player) {
+        // Any pad event while committed unreadies, which is exactly what the
+        // collector already does with a tap on the current cursor slot.
+        press_move(player, SEAT_UI.with(|u| u.borrow()[(player == 2) as usize].nav.cursor));
+    }
+}
+
 /// Is this seat currently picking a move or a switch?
 fn seat_is_choosing(player: u8) -> bool {
     OLED_CTL.with(|c| c.borrow().screen(player).is_choosing())
@@ -1339,6 +1390,11 @@ pub fn menu_screen() -> u8 {
 /// Team size the menu selected, so the battle setup can honor it.
 pub(crate) fn menu_six_v_six() -> bool {
     MENU.with(|m| m.borrow().opts.team_size == 6)
+}
+
+/// Is the battle-start tutorial switched on in the options?
+pub(crate) fn menu_tutorial() -> bool {
+    MENU.with(|m| m.borrow().opts.tutorial)
 }
 
 /// Scale an animation delay by the chosen text speed.

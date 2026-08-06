@@ -85,6 +85,19 @@ impl DeviceFrame {
     }
 }
 
+/// Draw the seam between the two seats. On the real panel there is no bezel
+/// in the middle, so without a drawn divider the two halves read as one
+/// confusing screen.
+pub fn draw_split_divider(frame: &mut DeviceFrame) {
+    let mid = DEV_H / 2;
+    for x in 0..DEV_W {
+        frame.set(x, mid - 2, 0x0000);
+        frame.set(x, mid - 1, 0xFFFF);
+        frame.set(x, mid, 0xFFFF);
+        frame.set(x, mid + 1, 0x0000);
+    }
+}
+
 /// A transformed window onto a [`DeviceFrame`]: draws in local coordinates
 /// and maps them to panel coordinates, optionally rotated.
 pub struct Region<'a> {

@@ -748,3 +748,50 @@ where
     }
     text_center(d, "+ CHOOSE    A START", cx, (h - 18) as i32, &FONT_5X8, C_DIM);
 }
+
+/// Turn playback laid out for the full panel in landscape (320x240).
+///
+/// Playback is the one moment both players watch the same thing, so it gets
+/// the whole screen instead of two 240x160 halves. Sprites are drawn at 2x
+/// and the narration runs across the top at full width.
+pub fn render_playback_wide<D>(d: &mut D, caption: &str, ctx: &HalfCtx<'_>, w: u32, h: u32)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    d.clear(C_BG).ok();
+    let wi = w as i32;
+    let hi = h as i32;
+
+    // Narration across the top, up to two lines of 48 characters.
+    panel(d, 4, 4, w - 8, 42, C_BOX, C_INK);
+    let (l1, l2) = if caption.len() <= 48 {
+        (caption, "")
+    } else {
+        let cut = caption[..48].rfind(' ').unwrap_or(48);
+        (&caption[..cut], caption[cut..].trim_start())
+    };
+    text_at(d, clip(l1, 48), 12, 11, &FONT_8X13, C_INK);
+    if !l2.is_empty() {
+        text_at(d, clip(l2, 56), 12, 28, &FONT_6X10, C_INK);
+    }
+
+    // Foe upper right, own mon lower left — the Game Boy arrangement, with
+    // each side's status box on the opposite side so nothing overlaps.
+    let foe_cx = wi - 78;
+    let foe_cy = 96;
+    if mon_sprite_color(ctx.foe_name).is_some() {
+        front_sprite_in(d, ctx.foe_name, foe_cx, foe_cy, 2);
+    }
+    panel(d, 10, 56, 150, 34, C_BOX, C_INK);
+    text_at(d, clip(ctx.foe_name, 15), 16, 60, &FONT_6X10, C_INK);
+    hp_bar(d, 16, 74, 138, ctx.foe_hp);
+
+    let bob = if ctx.bob { -3 } else { 0 };
+    back_sprite_in(d, ctx.own_name, 82, hi - 62 + bob, 3);
+    panel(d, wi - 162, hi - 78, 152, 34, C_BOX, C_INK);
+    text_at(d, clip(ctx.own_name, 15), wi - 156, hi - 74, &FONT_6X10, C_INK);
+    hp_bar(d, wi - 156, hi - 60, 140, ctx.own_hp);
+
+    text_at(d, "A NEXT", 10, hi - 16, &FONT_5X8, C_DIM);
+    text_at(d, "? BATTLE LOG", 62, hi - 16, &FONT_5X8, C_DIM);
+}

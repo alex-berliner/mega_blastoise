@@ -59,8 +59,8 @@ pub use random_ai::RandomAi;
 pub use cli_parse::{
     parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, LobbyCmd, TurnChoice, LOBBY_HELP,
 };
-pub use display_color::{render_choice, render_gen_picker, render_locked, render_log, render_lobby as render_lobby_color, render_move_info, render_options, render_party, render_playback, render_result, HalfCtx, OptionRow, HALF_H, HALF_W};
-pub use device_view::{DeviceFrame, HalfFrame, Orientation, Region, DEV_H, DEV_W};
+pub use display_color::{render_playback_wide, render_choice, render_gen_picker, render_locked, render_log, render_lobby as render_lobby_color, render_move_info, render_options, render_party, render_playback, render_result, HalfCtx, OptionRow, HALF_H, HALF_W};
+pub use device_view::{draw_split_divider, DeviceFrame, HalfFrame, Orientation, Region, DEV_H, DEV_W};
 pub use cursor_nav::{CursorNav, Dir, NavMode, NavOut};
 pub use sprites_color::{mon_back_sprite_color, mon_sprite_color, ColorSprite};
 pub use menu::{Gen, GameOptions, Menu, MenuOut, MenuScreen, TextSpeed, OPTION_ROWS};

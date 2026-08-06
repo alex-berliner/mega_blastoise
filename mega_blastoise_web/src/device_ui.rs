@@ -133,14 +133,53 @@ pub fn render_device(
             let mut bottom = Region::half(&mut frame, true, false);
             render_seat(&mut bottom, ctl, 1, ui1, log1);
         }
-        // Landscape shows P1's view across the full panel: attract, lobby,
-        // and the menus are one-person screens.
+        // Landscape is the shared view: turn playback, which both players
+        // watch together, gets the whole panel instead of two halves.
         Orientation::Landscape => {
             let mut r = Region::landscape(&mut frame);
-            render_seat(&mut r, ctl, 1, ui1, log1);
+            render_wide(&mut r, ctl, ui1, log1);
         }
     }
+    if orientation != Orientation::Landscape {
+        mega_blastoise_core::device_view::draw_split_divider(&mut frame);
+    }
     frame.to_rgba()
+}
+
+/// The full-panel landscape view. Player 1's perspective is the shared one:
+/// both players are watching the same resolution play out.
+fn render_wide<D>(d: &mut D, ctl: &OledController, ui: &SeatUi, log: LogView<'_>)
+where
+    D: embedded_graphics::draw_target::DrawTarget<Color = embedded_graphics::pixelcolor::Rgb565>,
+{
+    if let Some(offset) = log.offset {
+        let lines: Vec<&str> = log.lines.iter().map(|s| s.as_str()).collect();
+        dc::render_log(d, &lines, offset);
+        return;
+    }
+    let me = ctl.seat(1);
+    let foe = ctl.seat(2);
+    let ctx = dc::HalfCtx {
+        own_name: me.name,
+        own_hp: me.hp,
+        own_level: me.level,
+        own_status: me.status,
+        foe_name: foe.name,
+        foe_hp: foe.hp,
+        foe_level: foe.level,
+        foe_status: foe.status,
+        cursor: ui.nav.cursor,
+        foe_locked: ui.locked,
+        bob: me.bob,
+    };
+    let caption = match ctl.screen(1) {
+        Screen::EventText(t) => t,
+        Screen::SentOut { caption, .. } => caption,
+        Screen::MoveUsed { caption, .. } => caption,
+        Screen::Win(msg) => msg,
+        _ => "",
+    };
+    dc::render_playback_wide(d, caption, &ctx, 320, 240);
 }
 
 /// Menus are landscape, full-panel, one-person screens.

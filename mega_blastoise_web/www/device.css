@@ -3,6 +3,7 @@
    seat's cluster rotated 180 so both hands sit the same way round. */
 
 :root {
+  --u: 66px;
   --bg: #15171c;
   --case: #23252a;
   --case-hi: #2f333a;
@@ -34,7 +35,10 @@ body {
 }
 
 #panel {
-  /* Integer-scaled so the 240x320 grid never blurs. JS sets the exact size. */
+  /* Natural size is 2x the panel grid; the whole device is then scaled to
+     fit the viewport. */
+  width: 480px;
+  height: 640px;
   image-rendering: pixelated;
   background: #000;
   border: 3px solid var(--case);

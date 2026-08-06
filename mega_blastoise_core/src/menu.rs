@@ -82,7 +82,7 @@ impl Default for GameOptions {
             team_size: 3,
             text_speed: TextSpeed::Normal,
             sound: true,
-            tutorial: true,
+            tutorial: false,
             turn_timer: 60,
         }
     }
