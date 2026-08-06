@@ -212,6 +212,119 @@ where
 
 use embedded_graphics::mono_font::MonoFont;
 
+// ── Antialiased text ─────────────────────────────────────────────────────────
+//
+// The mono fonts are 1-bit, so text has hard stair-stepped edges. Rendering a
+// double-size glyph into an offscreen mask and box-filtering it back down to
+// the target size gives five coverage levels per pixel, which is enough to
+// take the jaggedness off diagonals and curves without touching the sprites.
+
+extern crate alloc as _alloc_aa;
+
+struct MaskBuf {
+    w: u32,
+    h: u32,
+    px: _alloc_aa::vec::Vec<bool>,
+}
+
+impl MaskBuf {
+    fn new(w: u32, h: u32) -> Self {
+        Self { w, h, px: _alloc_aa::vec![false; (w * h) as usize] }
+    }
+    #[inline]
+    fn get(&self, x: u32, y: u32) -> bool {
+        if x >= self.w || y >= self.h {
+            false
+        } else {
+            self.px[(y * self.w + x) as usize]
+        }
+    }
+}
+
+impl DrawTarget for MaskBuf {
+    type Color = embedded_graphics::pixelcolor::BinaryColor;
+    type Error = core::convert::Infallible;
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
+    {
+        for embedded_graphics::Pixel(p, c) in pixels {
+            if p.x >= 0 && p.y >= 0 && (p.x as u32) < self.w && (p.y as u32) < self.h {
+                if c == embedded_graphics::pixelcolor::BinaryColor::On {
+                    self.px[(p.y as u32 * self.w + p.x as u32) as usize] = true;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+impl OriginDimensions for MaskBuf {
+    fn size(&self) -> Size {
+        Size::new(self.w, self.h)
+    }
+}
+
+use embedded_graphics::geometry::OriginDimensions;
+
+/// Blend two colors, `t` in 0..=4.
+fn mix(bg: Rgb565, fg: Rgb565, t: u32) -> Rgb565 {
+    let l = |a: u8, b: u8| -> u8 { ((a as u32 * (4 - t) + b as u32 * t) / 4) as u8 };
+    Rgb565::new(l(bg.r(), fg.r()), l(bg.g(), fg.g()), l(bg.b(), fg.b()))
+}
+
+/// Draw antialiased text. `bg` must be the color actually behind the text —
+/// coverage is blended toward it, so passing the wrong one shows as a halo.
+pub fn text_aa<D>(d: &mut D, s: &str, x: i32, y: i32, fg: Rgb565, bg: Rgb565)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    if s.is_empty() {
+        return;
+    }
+    // FONT_10X20 is exactly double FONT_5X10's cell, so a 2x2 box filter
+    // lands back on the small grid with no resampling error.
+    let cw = 10u32;
+    let ch = 20u32;
+    let mut mask = MaskBuf::new(s.chars().count() as u32 * cw, ch);
+    Text::with_text_style(
+        s,
+        Point::new(0, 0),
+        MonoTextStyle::new(&embedded_graphics::mono_font::ascii::FONT_10X20, embedded_graphics::pixelcolor::BinaryColor::On),
+        TextStyleBuilder::new().baseline(Baseline::Top).build(),
+    )
+    .draw(&mut mask)
+    .ok();
+
+    for oy in 0..ch / 2 {
+        for ox in 0..mask.w / 2 {
+            let mut cov = 0u32;
+            for dy in 0..2 {
+                for dx in 0..2 {
+                    if mask.get(ox * 2 + dx, oy * 2 + dy) {
+                        cov += 1;
+                    }
+                }
+            }
+            if cov == 0 {
+                continue;
+            }
+            // 4 samples give 5 levels; scale to the 0..=4 mix range.
+            fill(d, x + ox as i32, y + oy as i32, 1, 1, mix(bg, fg, cov));
+        }
+    }
+}
+
+/// Centered variant of [`text_aa`].
+pub fn text_aa_center<D>(d: &mut D, s: &str, cx: i32, y: i32, fg: Rgb565, bg: Rgb565)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    let w = s.chars().count() as i32 * 5;
+    text_aa(d, s, cx - w / 2, y, fg, bg);
+}
+
 /// Truncate to `n` bytes on a char boundary (never split a multi-byte char —
 /// a byte-level cut on a curly apostrophe is a real crash source).
 fn clip(s: &str, n: usize) -> &str {
@@ -659,7 +772,7 @@ where
         &FONT_5X8,
         C_DIM,
     );
-    legend(d, &["B CHANGE CHOICE"]);
+    legend(d, &["B CANCEL"]);
 }
 
 /// Party list with a cursor: switching, or the forced pick after a faint.
@@ -773,7 +886,7 @@ where
     } else if ready {
         text_center(d, "READY!", 120, 56, &FONT_8X13, C_HP_G);
         text_center(d, "waiting for rival...", 120, 80, &FONT_6X10, C_DIM);
-        text_center(d, "B to un-ready", 120, 96, &FONT_5X8, C_DIM);
+        text_center(d, "B to cancel", 120, 96, &FONT_5X8, C_DIM);
     } else {
         text_center(d, "PRESS A TO READY", 120, 52, &FONT_8X13, C_INK);
         text_center(d, "HOLD A: FIGHT THE AI", 120, 78, &FONT_6X10, C_DIM);
@@ -917,96 +1030,18 @@ where
     text_center(d, "+ CHOOSE    A START", cx, (h - 18) as i32, &FONT_5X8, C_DIM);
 }
 
-/// Turn playback laid out for the full panel in landscape (320x240).
+/// The shared battle view: both mons front-facing on level ground.
 ///
-/// Playback is the one moment both players watch the same thing, so it gets
-/// the whole screen instead of two 240x160 halves, dressed in the same Gen 3
-/// furniture as the versus screen.
-pub fn render_playback_wide<D>(d: &mut D, caption: &str, ctx: &HalfCtx<'_>, w: u32, h: u32)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    d.clear(C_BG).ok();
-    let wi = w as i32;
-    let hi = h as i32;
-
-    let far_cx = wi * 3 / 4;
-    let far_cy = hi / 2 - 10;
-    let near_cx = wi / 4;
-    let near_cy = hi - 78;
-    draw_platform(d, far_cx, far_cy, 56);
-    draw_platform(d, near_cx, near_cy, 70);
-
-    // Foe: front art on the far platform, plate on the near side of the field.
-    if let Some(spr) = mon_sprite_color(ctx.foe_name) {
-        draw_sprite(
-            d,
-            spr,
-            far_cx - (spr.w as u32) as i32,
-            far_cy - (spr.h as u32 * 2) as i32 + 10,
-            2,
-        );
-    }
-    draw_status_plate(
-        d,
-        8,
-        14,
-        150,
-        ctx.foe_name,
-        ctx.foe_level,
-        ctx.foe_hp,
-        None,
-        seat_trim(3 - ctx.seat.max(1).min(2)),
-    );
-
-    // Own mon: back art at 3x on the near platform, plate with numbers.
-    let bob = if ctx.bob { -3 } else { 0 };
-    if let Some(spr) = mon_back_sprite_color(ctx.own_name) {
-        draw_sprite(
-            d,
-            spr,
-            near_cx - (spr.w as u32 * 3 / 2) as i32,
-            near_cy - (spr.h as u32 * 3) as i32 + 14 + bob,
-            3,
-        );
-    }
-    draw_status_plate(
-        d,
-        wi - 158,
-        hi - 84,
-        150,
-        ctx.own_name,
-        ctx.own_level,
-        ctx.own_hp,
-        None,
-        seat_trim(ctx.seat),
-    );
-
-    draw_message_box(d, 4, hi - 34, w - 8, 30);
-    let (l1, l2) = if caption.len() <= 46 {
-        (caption, "")
-    } else {
-        let cut = caption[..46].rfind(' ').unwrap_or(46);
-        (&caption[..cut], caption[cut..].trim_start())
-    };
-    text_at(d, clip(l1, 46), 12, hi - 29, &FONT_6X10, C_MSG_TEXT);
-    if !l2.is_empty() {
-        text_at(d, clip(l2, 46), 12, hi - 18, &FONT_6X10, C_MSG_TEXT);
-    }
-}
-
-/// Battle-begin versus screen: the field, then each side as it is sent out.
-///
-/// Deliberately not one seat's view — this is the shared moment before the
-/// first turn, so neither mon is drawn from behind. Sides are optional so the
-/// screen can open on an empty field and introduce the two trainers one at a
-/// time as the engine announces them. Gen 1 front sprites all face the same
-/// direction, so the left-hand one is mirrored to square them up.
-#[allow(clippy::too_many_arguments)]
-pub fn render_battle_begin<D>(
+/// Used for the opening, for every switch-in, and for turn playback. Both
+/// players read this at once, so neither mon is drawn from behind and
+/// neither side gets the nearer, larger spot. Gen 3 sprites all face the
+/// same way, so the left one is mirrored to square them up. Sides are
+/// optional, letting the screen open on empty ground and introduce the two
+/// trainers one at a time.
+pub fn render_versus<D>(
     d: &mut D,
-    left: Option<(&str, u8, u8)>,
-    right: Option<(&str, u8, u8)>,
+    left: Option<&str>,
+    right: Option<&str>,
     caption: &str,
     w: u32,
     h: u32,
@@ -1017,42 +1052,35 @@ pub fn render_battle_begin<D>(
     let wi = w as i32;
     let hi = h as i32;
 
-    // The field: two platforms, the far one smaller and higher.
-    let far_cx = wi * 3 / 4;
-    let far_cy = hi / 2 - 6;
-    let near_cx = wi / 4;
-    let near_cy = hi - 74;
-    draw_platform(d, far_cx, far_cy, 58);
-    draw_platform(d, near_cx, near_cy, 70);
+    // Level ground: identical platforms at the same height, mirrored about
+    // the centre line, so neither player is "closer" to the action.
+    let ground_y = hi - 66;
+    let rx = (wi / 5).clamp(34, 74);
+    let left_cx = wi / 4;
+    let right_cx = wi - wi / 4;
+    draw_platform(d, left_cx, ground_y, rx);
+    draw_platform(d, right_cx, ground_y, rx);
 
-    if let Some((name, level, pct)) = left {
+    let scale: u32 = if w >= 300 { 2 } else { 1 };
+    let mut side = |name: &str, cx: i32, mirror: bool| {
         if let Some(spr) = mon_sprite_color(name) {
-            draw_sprite_mirrored(
-                d,
-                spr,
-                near_cx - (spr.w as u32) as i32,
-                near_cy - (spr.h as u32 * 2) as i32 + 10,
-                2,
-            );
+            let x = cx - (spr.w as u32 * scale / 2) as i32;
+            let y = ground_y - (spr.h as u32 * scale) as i32 + 10;
+            if mirror {
+                draw_sprite_mirrored(d, spr, x, y, scale);
+            } else {
+                draw_sprite(d, spr, x, y, scale);
+            }
         }
-        draw_status_plate(d, 8, hi - 58, 148, name, level, pct, None, C_TRIM_P1);
+        text_aa_center(d, clip(name, 16), cx, ground_y + 16, C_INK, C_BG);
+    };
+    if let Some(name) = left {
+        side(name, left_cx, true);
+    }
+    if let Some(name) = right {
+        side(name, right_cx, false);
     }
 
-    if let Some((name, level, pct)) = right {
-        if let Some(spr) = mon_sprite_color(name) {
-            draw_sprite(
-                d,
-                spr,
-                far_cx - (spr.w as u32) as i32,
-                far_cy - (spr.h as u32 * 2) as i32 + 10,
-                2,
-            );
-        }
-        draw_status_plate(d, wi - 156, 44, 148, name, level, pct, None, C_TRIM_P2);
-    }
-
-    // Engine line along the bottom, Gen 3 message box.
-    draw_message_box(d, 4, hi - 26, w - 8, 22);
-    text_at(d, clip(caption, 46), 12, hi - 19, &FONT_6X10, C_MSG_TEXT);
+    draw_message_box(d, 4, hi - 32, w - 8, 28);
+    text_aa(d, clip(caption, 56), 12, hi - 24, C_MSG_TEXT, C_MSG_FILL);
 }
-

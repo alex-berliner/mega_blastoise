@@ -84,6 +84,7 @@ body {
   background: var(--btn);
   color: transparent;
   padding: 0;
+  touch-action: none;
 }
 .dpad .up    { grid-area: 1 / 2; border-radius: 20% 20% 0 0; }
 .dpad .left  { grid-area: 2 / 1; border-radius: 20% 0 0 20%; }
@@ -110,6 +111,7 @@ body {
 .abq.flip { transform: rotate(180deg); }
 
 .rb {
+  touch-action: none;
   width: calc(var(--u, 28px) * 1.3);
   height: calc(var(--u, 28px) * 1.3);
   border-radius: 50%;

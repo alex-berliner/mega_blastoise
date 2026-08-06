@@ -158,7 +158,7 @@ pub fn render_device(
 
 /// The full-panel landscape view. Player 1's perspective is the shared one:
 /// both players are watching the same resolution play out.
-fn render_wide<D>(d: &mut D, ctl: &OledController, ui: &SeatUi, log: LogView<'_>)
+fn render_wide<D>(d: &mut D, ctl: &OledController, _ui: &SeatUi, log: LogView<'_>)
 where
     D: embedded_graphics::draw_target::DrawTarget<Color = embedded_graphics::pixelcolor::Rgb565>,
 {
@@ -167,47 +167,20 @@ where
         dc::render_log(d, &lines, offset);
         return;
     }
+    // Everything both players watch together — the opening, switch-ins and
+    // turn playback — is the same shared scene, so it is one renderer.
     let me = ctl.seat(1);
     let foe = ctl.seat(2);
-    let ctx = dc::HalfCtx {
-        seat: 1,
-        own_name: me.name,
-        own_hp: me.hp,
-        own_level: me.level,
-        own_status: me.status,
-        foe_name: foe.name,
-        foe_hp: foe.hp,
-        foe_level: foe.level,
-        foe_status: foe.status,
-        cursor: ui.nav.cursor,
-        foe_locked: ui.locked,
-        bob: me.bob,
-    };
-    // The opening beat: an empty field that fills in as the engine announces
-    // each trainer, then the versus stand-off. Also used for mid-battle
-    // switch-ins, the other moment neither mon should be drawn from behind.
-    fn side<'a>(s: &mega_blastoise_core::SeatInfo<'a>) -> Option<(&'a str, u8, u8)> {
-        if s.name == "---" || s.name.is_empty() {
-            None
-        } else {
-            Some((s.name, s.level, s.hp))
-        }
-    }
-    if awaiting_first_mon(ctl) || matches!(ctl.screen(1), Screen::SentOut { .. }) {
-        let caption = match ctl.screen(1) {
-            Screen::SentOut { caption, .. } => caption,
-            _ => "",
-        };
-        dc::render_battle_begin(d, side(&me), side(&foe), caption, 320, 240);
-        return;
-    }
+    let left = if me.name == "---" || me.name.is_empty() { None } else { Some(me.name) };
+    let right = if foe.name == "---" || foe.name.is_empty() { None } else { Some(foe.name) };
     let caption = match ctl.screen(1) {
         Screen::EventText(t) => t,
+        Screen::SentOut { caption, .. } => caption,
         Screen::MoveUsed { caption, .. } => caption,
         Screen::Win(msg) => msg,
         _ => "",
     };
-    dc::render_playback_wide(d, caption, &ctx, 320, 240);
+    dc::render_versus(d, left, right, caption, 320, 240);
 }
 
 /// Menus are landscape, full-panel, one-person screens.

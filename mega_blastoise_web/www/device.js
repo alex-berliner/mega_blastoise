@@ -17,6 +17,10 @@ let orientation = 0;
 // Auto mode follows the spec: landscape for the lobby and menus, split
 // head-to-head once a battle starts. The debug buttons pin it manually.
 let autoOrient = true;
+// Purely cosmetic rotation of the console on the page, in 90-degree steps.
+// Independent of the game's orientation: it turns the whole device the way
+// you would turn the real one on a table, without changing what it draws.
+let viewTurns = 0;
 
 // ── Painting ──────────────────────────────────────────────────────────────
 
@@ -39,7 +43,9 @@ function fitCanvas() {
   const natH = rect.height;
   if (!natW || !natH) return;
 
-  const turned = orientation === 2;
+  // The game's landscape mode counts as one turn, plus any the viewer added.
+  const quarter = ((orientation === 2 ? 1 : 0) + viewTurns) % 4;
+  const turned = quarter % 2 === 1;
   const availW = window.innerWidth - 16;
   const availH = window.innerHeight - debugH - 16;
 
@@ -49,7 +55,7 @@ function fitCanvas() {
   const k = Math.min(availW / footW, availH / footH);
 
   device.style.transformOrigin = 'center center';
-  device.style.transform = turned ? `rotate(-90deg) scale(${k})` : `scale(${k})`;
+  device.style.transform = `rotate(${-90 * quarter}deg) scale(${k})`;
   // A transformed element still reserves its untransformed box, so pull the
   // layout in by the difference to keep it centred without overflow.
   device.style.margin = `${(footH * k - natH) / 2}px ${(footW * k - natW) / 2}px`;
@@ -157,6 +163,24 @@ function wireSeat(player) {
 // which keeps a stray touch from committing a turn.
 
 function panelTap(ev) {
+  // Menus are one-person landscape screens: a tap picks a row and confirms.
+  if (wasm.menu_active() && wasm.is_lobby_mode()) {
+    wasm.nav_a(1);
+    return;
+  }
+  // Lobby: tapping your own half readies you up.
+  if (wasm.is_lobby_mode()) {
+    const r0 = canvas.getBoundingClientRect();
+    const half = (ev.clientY - r0.top) / r0.height < 0.5 ? 2 : 1;
+    wasm.nav_a(half);
+    return;
+  }
+  // Shared landscape view: a tap advances the narration.
+  if (orientation === 2) {
+    if (wasm.seat_is_waiting(1)) wasm.nav_cancel(1);
+    else wasm.nav_a(1);
+    return;
+  }
   const r = canvas.getBoundingClientRect();
   let x = ((ev.clientX - r.left) / r.width) * PANEL_W;
   let y = ((ev.clientY - r.top) / r.height) * PANEL_H;
@@ -176,15 +200,10 @@ function panelTap(ev) {
     hx = x;
     hy = y - PANEL_H / 2;
   }
-  if (orientation === 2) {
-    // Landscape is the shared view; a tap acts for the near seat.
-    if (wasm.seat_is_waiting(1)) wasm.nav_unready(1);
-    return;
-  }
 
   // After committing, a tap anywhere on your own half takes it back.
   if (wasm.seat_is_waiting(player)) {
-    wasm.nav_unready(player);
+    wasm.nav_cancel(player);
     return;
   }
 
@@ -242,6 +261,11 @@ document.getElementById('auto-btn').addEventListener('click', (e) => {
   e.currentTarget.classList.add('on');
   document.querySelectorAll('#debug button[data-orient]')
     .forEach((b) => b.classList.remove('on'));
+});
+
+document.getElementById('turn-btn').addEventListener('click', () => {
+  viewTurns = (viewTurns + 1) % 4;
+  fitCanvas();
 });
 
 document.getElementById('ai-btn').addEventListener('click', () => wasm.wasm_enter_vs_ai_mode());

@@ -923,7 +923,7 @@ where
 ///
 /// Shown after a player commits their choice: the mon's bobbing sprite in
 /// the same position as the choice screens, with `cancel_hint`
-/// ("tap to unready") on the bottom line — pass `""` to omit it.
+/// ("tap to cancel") on the bottom line — pass `""` to omit it.
 pub fn render_waiting_screen<D>(
     display: &mut D,
     mon_name: &str,

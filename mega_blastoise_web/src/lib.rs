@@ -1344,9 +1344,9 @@ pub fn nav_tap_commit(player: u8, idx: u8) {
     apply_nav_out(player, out);
 }
 
-/// Tapping the panel after committing takes the choice back.
+/// Tapping the panel after committing cancels it.
 #[wasm_bindgen]
-pub fn nav_unready(player: u8) {
+pub fn nav_cancel(player: u8) {
     if is_lobby_mode() || menu_active() {
         return;
     }
@@ -1366,8 +1366,8 @@ fn alloc_ready_line(player: u8) -> String {
     if player == 2 { String::from("p2 ok") } else { String::from("p1 ok") }
 }
 
-fn alloc_unready_line(player: u8) -> String {
-    if player == 2 { String::from("p2 unready") } else { String::from("p1 unready") }
+fn alloc_cancel_line(player: u8) -> String {
+    if player == 2 { String::from("p2 cancel") } else { String::from("p1 cancel") }
 }
 
 /// True while a pre-lobby menu owns the screen and the input.
@@ -1435,10 +1435,10 @@ pub fn nav_b(player: u8) {
         return;
     }
     if is_lobby_mode() {
-        // Ready players un-ready first; only an idle seat reopens the menus.
+        // A ready player cancels first; only an idle seat reopens the menus.
         let ready = LOBBY_READY.with(|r| r.borrow()[(player == 2) as usize]);
         if ready {
-            push_button(ButtonEvent::Line(alloc_unready_line(player)));
+            push_button(ButtonEvent::Line(alloc_cancel_line(player)));
             return;
         }
     }

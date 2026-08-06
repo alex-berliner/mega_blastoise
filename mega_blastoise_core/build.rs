@@ -847,7 +847,8 @@ fn color_pixels(path: &Path, back: bool) -> (usize, usize, Vec<Option<[u8; 3]>>)
             clear[y][x] = rgba(x, y)[3] == 0;
         }
     }
-    if back {
+    let border_opaque = rgba(0, 0)[3] != 0;
+    if back && border_opaque {
         let luma = |x: usize, y: usize| {
             let p = rgba(x, y);
             (299 * p[0] as u32 + 587 * p[1] as u32 + 114 * p[2] as u32) / 1000
@@ -952,6 +953,48 @@ fn pack_color_sprite(
     (pal_off, pal.len(), data_off, blob.len() - data_off)
 }
 
+/// Gen 3 front art (Emerald). Cached under `vendor/sprites_gen3/`.
+fn fetch_gen3_front(manifest: &Path, dex: usize) -> PathBuf {
+    fetch_cached(
+        manifest,
+        "vendor/sprites_gen3",
+        dex,
+        &format!(
+            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iii/emerald/{dex}.png"
+        ),
+    )
+}
+
+/// Gen 3 back art. Emerald ships no backs on PokeAPI, so FireRed/LeafGreen
+/// supplies them — same era, same style.
+fn fetch_gen3_back(manifest: &Path, dex: usize) -> PathBuf {
+    fetch_cached(
+        manifest,
+        "vendor/sprites_gen3/back",
+        dex,
+        &format!(
+            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iii/firered-leafgreen/back/{dex}.png"
+        ),
+    )
+}
+
+fn fetch_cached(manifest: &Path, dir: &str, dex: usize, url: &str) -> PathBuf {
+    let dir = manifest.join(dir);
+    fs::create_dir_all(&dir).unwrap();
+    let cached = dir.join(format!("{dex}.png"));
+    if !cached.exists() {
+        let mut bytes = Vec::new();
+        ureq::get(url)
+            .call()
+            .unwrap_or_else(|e| panic!("failed to fetch {url}: {e}"))
+            .into_reader()
+            .read_to_end(&mut bytes)
+            .unwrap_or_else(|e| panic!("failed to read {url}: {e}"));
+        fs::write(&cached, &bytes).unwrap();
+    }
+    cached
+}
+
 fn emit_color_sprites(out: &mut String, manifest: &Path, blob: &mut Vec<u8>) {
     for (table, back) in [("MON_SPRITES_COLOR", false), ("MON_BACK_SPRITES_COLOR", true)] {
         let mut entries: Vec<(&str, String)> = GEN1_DEX
@@ -959,9 +1002,9 @@ fn emit_color_sprites(out: &mut String, manifest: &Path, blob: &mut Vec<u8>) {
             .enumerate()
             .map(|(i, name)| {
                 let path = if back {
-                    fetch_back_sprite(manifest, i + 1)
+                    fetch_gen3_back(manifest, i + 1)
                 } else {
-                    fetch_sprite(manifest, i + 1)
+                    fetch_gen3_front(manifest, i + 1)
                 };
                 let (w, h, px) = color_pixels(&path, back);
                 let (po, pl, dobj, dl) = pack_color_sprite(w, h, &px, blob);

@@ -409,7 +409,7 @@ where
         Screen::EventText(text) => render_event_text(display, text),
         Screen::Win(msg) => render_win_screen(display, msg),
         Screen::Waiting { mon, bob, spd } => {
-            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to unready", *spd)
+            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to cancel", *spd)
         }
         Screen::WaitingForOpponent { mon, bob } => {
             render_waiting_for_opponent(display, mon, if *bob { -2 } else { 0 })
