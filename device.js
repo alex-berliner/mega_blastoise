@@ -95,11 +95,11 @@ function paint(px) {
 
 function frame() {
   if (autoOrient) {
-    // Landscape for the one-person menus, and for turn playback, which both
-    // players watch together and so gets the whole panel. Choosing is
-    // private per seat, so that stays split head-to-head.
+    // Head-to-head is the default and covers the whole battle: turn playback
+    // is one shared field across both halves, and choosing is the same halves
+    // showing private menus. Landscape is only for the one-person menus.
     const menus = wasm.menu_active() && wasm.is_lobby_mode();
-    const want = menus || wasm.is_playback() ? 2 : 0;
+    const want = menus ? 2 : 0;
     if (want !== orientation) applyOrientation(want);
   }
   paint(wasm.get_device_pixels());
