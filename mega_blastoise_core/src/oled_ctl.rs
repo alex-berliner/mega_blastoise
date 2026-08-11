@@ -389,6 +389,21 @@ impl Screen<'_> {
                 | Screen::Stats { .. }
         )
     }
+
+    /// True when this seat is showing the shared battle scene — the one view
+    /// both players read at once, drawn head-to-head across the whole panel.
+    /// Composition depends on it: the scene runs the seam between the halves
+    /// as one field, everything else keeps the hard divider.
+    pub fn is_scene(&self) -> bool {
+        matches!(
+            self,
+            Screen::EventText(_)
+                | Screen::SentOut { .. }
+                | Screen::MoveUsed { .. }
+                | Screen::Qr
+                | Screen::Tutorial(_)
+        )
+    }
 }
 
 /// Render a [`Screen`] onto any 128×64 target. The single dispatch point

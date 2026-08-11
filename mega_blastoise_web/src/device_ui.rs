@@ -17,15 +17,6 @@ use mega_blastoise_core::{
     OledController, Screen,
 };
 
-/// True before the first switch-in: the controller still holds its boot
-/// placeholder, so any battle screen drawn now would be empty.
-fn awaiting_first_mon(ctl: &OledController) -> bool {
-    let me = ctl.seat(1);
-    let foe = ctl.seat(2);
-    let unset = |n: &str| n == "---" || n.is_empty();
-    unset(me.name) || unset(foe.name)
-}
-
 /// A seat's battle-log overlay: the shared lines plus that seat's scroll
 /// offset, or `None` when the seat has the log closed.
 #[derive(Clone, Copy)]
@@ -44,8 +35,15 @@ pub struct SeatUi {
     pub chosen: Option<&'static str>,
 }
 
-/// Draw one seat's half.
-pub fn render_seat<D>(d: &mut D, ctl: &OledController, player: u8, ui: &SeatUi, log: LogView<'_>)
+/// Draw one seat's half. Returns true when it drew the shared battle scene,
+/// which is what decides whether the two halves join into one field.
+pub fn render_seat<D>(
+    d: &mut D,
+    ctl: &OledController,
+    player: u8,
+    ui: &SeatUi,
+    log: LogView<'_>,
+) -> bool
 where
     D: embedded_graphics::draw_target::DrawTarget<Color = embedded_graphics::pixelcolor::Rgb565>,
 {
@@ -54,7 +52,7 @@ where
     if let Some(offset) = log.offset {
         let lines: Vec<&str> = log.lines.iter().map(|s| s.as_str()).collect();
         dc::render_log(d, &lines, offset);
-        return;
+        return false;
     }
     let me = ctl.seat(player);
     let foe = ctl.seat(3 - player);
@@ -73,7 +71,9 @@ where
         bob: me.bob,
     };
 
-    match ctl.screen(player) {
+    let screen = ctl.screen(player);
+    let scene = screen.is_scene();
+    match screen {
         Screen::Lobby { ready, ai } => dc::render_lobby(d, ready, ai),
 
         // The cursor can be pointing into the party list while the battle
@@ -114,6 +114,7 @@ where
         // Concealed mode is gone in this design; these cannot be reached.
         _ => dc::render_playback(d, "", &ctx),
     }
+    scene
 }
 
 /// Compose the whole panel for the current orientation.
@@ -126,32 +127,41 @@ pub fn render_device(
     log2: LogView<'_>,
 ) -> Vec<u8> {
     let mut frame = DeviceFrame::new();
+    let mut scene = false;
     match orientation {
         Orientation::HeadToHead => {
             {
                 let mut top = Region::half(&mut frame, false, true);
-                render_seat(&mut top, ctl, 2, ui2, log2);
+                scene = render_seat(&mut top, ctl, 2, ui2, log2);
             }
             let mut bottom = Region::half(&mut frame, true, false);
-            render_seat(&mut bottom, ctl, 1, ui1, log1);
+            scene &= render_seat(&mut bottom, ctl, 1, ui1, log1);
         }
         Orientation::SameWay => {
             {
                 let mut top = Region::half(&mut frame, false, false);
-                render_seat(&mut top, ctl, 2, ui2, log2);
+                scene = render_seat(&mut top, ctl, 2, ui2, log2);
             }
             let mut bottom = Region::half(&mut frame, true, false);
-            render_seat(&mut bottom, ctl, 1, ui1, log1);
+            scene &= render_seat(&mut bottom, ctl, 1, ui1, log1);
         }
-        // Landscape is the shared view: turn playback, which both players
-        // watch together, gets the whole panel instead of two halves.
+        // Landscape stays reachable from the debug toggle: one full-panel
+        // view for a single person holding the device.
         Orientation::Landscape => {
             let mut r = Region::landscape(&mut frame);
             render_wide(&mut r, ctl, ui1, log1);
         }
     }
     if orientation != Orientation::Landscape {
-        mega_blastoise_core::device_view::draw_split_divider(&mut frame);
+        // The battle scene is one field spanning both halves, so it gets a
+        // horizon rather than the divider that separates two private views.
+        // If either seat has left the scene — a log overlay, a forced switch —
+        // the halves are private again and the hard divider comes back.
+        if scene {
+            mega_blastoise_core::device_view::draw_field_seam(&mut frame);
+        } else {
+            mega_blastoise_core::device_view::draw_split_divider(&mut frame);
+        }
     }
     frame.to_rgba()
 }

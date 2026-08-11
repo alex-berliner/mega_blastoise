@@ -78,6 +78,7 @@ fn main() {
     ];
 
     let ctx = dc::HalfCtx {
+        seat: 1,
         own_name: "Blastoise",
         own_hp: 81,
         own_level: 55,
@@ -121,11 +122,38 @@ fn main() {
         dc::render_log(f, &lines, 0)
     });
 
+    // The default view: one battle across both halves, each seat's mon
+    // upright to that seat with its HP plate under it and the same narration
+    // at the bottom of the screen from either side.
+    let caption = "Blue's Charizard used Fire Blast! It's not very effective...";
+    let mut scene = DeviceFrame::new();
+    {
+        let mut top = Region::half(&mut scene, false, true);
+        let p2 = dc::HalfCtx {
+            seat: 2,
+            own_name: "Charizard",
+            own_hp: 88,
+            own_level: 53,
+            foe_name: "Blastoise",
+            foe_hp: 81,
+            foe_level: 55,
+            ..Default::default()
+        };
+        dc::render_playback(&mut top, caption, &p2);
+    }
+    {
+        let mut bottom = Region::half(&mut scene, true, false);
+        dc::render_playback(&mut bottom, caption, &ctx);
+    }
+    mega_blastoise_core::device_view::draw_field_seam(&mut scene);
+    write_ppm(&format!("{dir}/device_battle.ppm"), 240, 320, &scene.to_rgba());
+
     // Composed 240x320 panel, head-to-head: far half rotated 180.
     let mut dev = DeviceFrame::new();
     {
         let mut top = Region::half(&mut dev, false, true);
         let foe_ctx = dc::HalfCtx {
+            seat: 2,
             own_name: "Charizard",
             own_hp: 88,
             own_level: 53,

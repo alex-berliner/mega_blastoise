@@ -63,6 +63,15 @@ is aimed at bystanders standing beside the table.
 **Split portrait** — everything from battle start onward. Two 240x160 halves,
 and the far half is rendered rotated 180 degrees so both players read upright.
 
+The battle itself is one view, not two. During playback both halves draw the
+same shared scene: each seat's own mon stands near the centre line reading
+upright with its HP plate directly under it, so the rival's mon reads upside
+down from across the table, and the narration is drawn in both halves so it
+sits at the bottom of the screen from either seat. The halves join across the
+seam into a single field, so the divider between them softens to a horizon
+line; it returns as a hard divider the moment the halves show private views
+again (move choice, party list, battle log).
+
 Orientation switches automatically on battle start and back on battle end.
 Debug toggles for every orientation combination ship hidden in the release
 build, with web UI buttons that send the same flip commands, because which

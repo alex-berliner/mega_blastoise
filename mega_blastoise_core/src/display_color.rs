@@ -909,16 +909,63 @@ where
     }
 }
 
-/// Turn playback: narration on top, both mons on the field, each seat seeing
-/// its own mon from behind and the foe from the front.
+/// True once a name is a real species rather than the controller's boot
+/// placeholder — the opening plays on empty ground before either side is in.
+fn has_mon(name: &str) -> bool {
+    !name.is_empty() && name != "---"
+}
+
+/// One seat's half of the shared head-to-head battle scene.
+///
+/// Both halves draw this at the same time and the far one is rotated 180, so
+/// the result is a single battlefield rather than two private views: each
+/// player's own mon stands near the centre line reading upright, with its HP
+/// plate directly under it, and the rival's mon stands opposite reading upside
+/// down from across the table. The caption is drawn in both halves, which puts
+/// the narration at the bottom of the screen from either seat.
 pub fn render_playback<D>(d: &mut D, caption: &str, ctx: &HalfCtx<'_>)
 where
     D: DrawTarget<Color = Rgb565>,
 {
     d.clear(C_BG).ok();
+    // A stripe of this seat's color down the outer edge, the same marker the
+    // choice screens carry, so a half is always identifiable as yours.
+    fill(d, 0, 0, 3, HALF_H, seat_trim(ctx.seat));
 
-    // Narration, up to two lines of 36 chars, in the Gen 3 message box.
-    draw_message_box(d, 3, 3, 234, 36);
+    // The mon stands toward the seam, so the two of them meet in the middle
+    // of the panel instead of each sitting in its own box.
+    draw_platform(d, 88, 76, 44);
+    let bob = if ctx.bob { -2 } else { 0 };
+    if has_mon(ctx.own_name) {
+        if let Some(spr) = mon_sprite_color(ctx.own_name) {
+            draw_sprite_fit(d, spr, 28, 2 + bob, 120, 76, false, true);
+        } else {
+            text_center(d, clip(ctx.own_name, 13), 88, 60, &FONT_8X13, C_INK);
+        }
+
+        // HP plate directly under the mon, in this seat's frame.
+        draw_status_plate(
+            d,
+            6,
+            92,
+            152,
+            ctx.own_name,
+            ctx.own_level,
+            ctx.own_hp,
+            None,
+            seat_trim(ctx.seat),
+        );
+        if let Some(st) = ctx.own_status {
+            chip(d, 166, 94, clip(st, 3), C_ACCENT);
+        }
+    }
+
+    text_at(d, "A NEXT", 166, 108, &FONT_5X8, C_DIM);
+    text_at(d, "? BATTLE LOG", 166, 118, &FONT_5X8, C_DIM);
+
+    // Narration, up to two lines of 36 chars, at the bottom of this seat's
+    // half — which is the bottom of the screen from where they are sitting.
+    draw_message_box(d, 3, 128, 234, 30);
     let line1_len = 36.min(caption.len());
     let (l1, l2) = if caption.len() <= 36 {
         (caption, "")
@@ -926,46 +973,10 @@ where
         let cut = caption[..line1_len].rfind(' ').unwrap_or(line1_len);
         (&caption[..cut], caption[cut..].trim_start())
     };
-    text_at(d, clip(l1, 36), 11, 10, &FONT_6X10, C_MSG_TEXT);
+    text_aa(d, clip(l1, 36), 11, 134, C_MSG_TEXT, C_MSG_FILL);
     if !l2.is_empty() {
-        text_at(d, clip(l2, 36), 11, 22, &FONT_6X10, C_MSG_TEXT);
+        text_aa(d, clip(l2, 36), 11, 145, C_MSG_TEXT, C_MSG_FILL);
     }
-
-    // Foe on the far platform, own mon on the near one.
-    draw_platform(d, 178, 78, 40);
-    draw_platform(d, 58, 128, 46);
-    if let Some(spr) = mon_sprite_color(ctx.foe_name) {
-        draw_sprite_fit(d, spr, 142, 26, 72, 58, false, true);
-    }
-    draw_status_plate(
-        d,
-        4,
-        44,
-        120,
-        ctx.foe_name,
-        ctx.foe_level,
-        ctx.foe_hp,
-        None,
-        seat_trim(3 - ctx.seat.max(1).min(2)),
-    );
-
-    let bob = if ctx.bob { -2 } else { 0 };
-    if let Some(spr) = mon_back_sprite_color(ctx.own_name) {
-        draw_sprite_fit(d, spr, 20, 74 + bob, 76, 62, false, true);
-    }
-    draw_status_plate(
-        d,
-        116,
-        98,
-        120,
-        ctx.own_name,
-        ctx.own_level,
-        ctx.own_hp,
-        None,
-        seat_trim(ctx.seat),
-    );
-
-    legend(d, &["A NEXT", "? BATTLE LOG"]);
 }
 
 /// Lobby half (also used, unrotated, for the landscape lobby).
