@@ -159,6 +159,15 @@ body {
   padding: 3px 9px;
 }
 #debug button.on { background: var(--btn-lit); border-color: var(--btn-lit); }
+#debug select {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--case-hi);
+  border: 1px solid #3d424a;
+  border-radius: 5px;
+  padding: 3px 6px;
+}
 
 
 /* ── Console panel ─────────────────────────────────────────────────────── */

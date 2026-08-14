@@ -22,10 +22,58 @@ raw.height = 320;
 const rawCtx = raw.getContext('2d');
 const PANEL_W = 240;
 const PANEL_H = 320;
+// Laid-out size of the panel element, which the physical-size presets scale
+// against. Mirrors #panel in device.css.
+const PANEL_CSS_H = 640;
 
 // Hold thresholds mirror core: HOLD_THRESHOLD_MS and AI_HOLD_MS.
 const HOLD_MS = 500;
 const AI_HOLD_MS = 2000;
+
+// ── Candidate panels ──────────────────────────────────────────────────────
+//
+// Real parts you might put in the physical build, so the page can show the
+// case at the size it would actually be. `res` is the panel's own pixel grid:
+// core renders 240x320 and nothing else, so a panel with a different grid is
+// shown at its true physical size with the 240x320 image stretched onto it —
+// the case size is honest, the pixel density is not.
+const PANEL_NATIVE = { w: 240, h: 320 };
+const PANELS = [
+  { id: '1.69', diag: 1.69, res: [240, 280], part: 'ST7789' },
+  { id: '2.0', diag: 2.0, res: [240, 320], part: 'ST7789' },
+  { id: '2.4', diag: 2.4, res: [240, 320], part: 'ILI9341' },
+  { id: '2.8', diag: 2.8, res: [240, 320], part: 'ST7789 / ILI9341' },
+  { id: '3.2', diag: 3.2, res: [240, 320], part: 'ILI9341' },
+  { id: '3.5', diag: 3.5, res: [320, 480], part: 'ILI9488' },
+  { id: '4.0', diag: 4.0, res: [320, 480], part: 'ST7796' },
+  { id: '5.0', diag: 5.0, res: [800, 480], part: 'RGB parallel' },
+];
+
+const MM_PER_IN = 25.4;
+// CSS defines an inch as 96px. Screens lie about their real DPI, so this is
+// nominal — good enough to compare candidates side by side, and close to life
+// size on a typical desktop monitor.
+const PX_PER_MM = 96 / MM_PER_IN;
+
+/// Active-area size in mm from the diagonal and the panel's pixel aspect.
+function panelSizeMm(p) {
+  const [pw, ph] = p.res;
+  const diagMm = p.diag * MM_PER_IN;
+  const h = diagMm / Math.sqrt(1 + (pw / ph) ** 2);
+  return { w: h * (pw / ph), h };
+}
+
+function panelLabel(p) {
+  const mm = panelSizeMm(p);
+  const ppi = Math.round(Math.hypot(p.res[0], p.res[1]) / p.diag);
+  const native = p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h;
+  return `${p.diag.toFixed(2).replace(/0$/, '')}" ${p.res[0]}x${p.res[1]} · `
+    + `${Math.round(mm.w)}x${Math.round(mm.h)}mm · ${ppi}ppi${native ? '' : ' · stretched'}`;
+}
+
+// 'auto' keeps the original behaviour: scale the whole case to fill the
+// window. Anything else pins the panel to that part's real size.
+let panelChoice = localStorage.getItem('mb-screen') || 'auto';
 
 // Purely cosmetic rotation of the console on the page, in 90-degree steps.
 // The device itself has one arrangement and never turns: the two players sit
@@ -77,7 +125,16 @@ function fitCanvas() {
   // Turned, the case occupies its own height across and its width down.
   const footW = turned ? natH : natW;
   const footH = turned ? natW : natH;
-  const k = Math.min(availW / footW, availH / footH);
+  const fit = Math.min(availW / footW, availH / footH);
+  // A pinned panel scales the case so the SCREEN comes out life size; auto
+  // fills the window as before. The panel element is laid out at a fixed CSS
+  // size, so the case scale that makes it `target` tall is target/that size.
+  // Pinned still yields to the viewport: a case running off the edge tells
+  // you nothing about the part.
+  const pinned = PANELS.find((p) => p.id === panelChoice);
+  const k = pinned
+    ? Math.min((panelSizeMm(pinned).h * PX_PER_MM) / PANEL_CSS_H, fit)
+    : fit;
 
   device.style.transformOrigin = 'center center';
   device.style.transform = `rotate(${-90 * quarter}deg) scale(${k})`;
@@ -261,6 +318,43 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ── Debug bar ─────────────────────────────────────────────────────────────
+
+// The screen picker: auto, then every candidate part.
+{
+  const sel = document.getElementById('size-sel');
+  const opt = (value, label) => {
+    const o = document.createElement('option');
+    o.value = value;
+    o.textContent = label;
+    sel.appendChild(o);
+  };
+  opt('auto', 'auto (fit window)');
+  PANELS.forEach((p) => opt(p.id, panelLabel(p)));
+  const params = new URLSearchParams(location.search);
+  if (params.has('screen')) panelChoice = params.get('screen');
+  sel.value = panelChoice;
+  // An unknown id (stale storage, typo in the URL) falls back to auto rather
+  // than leaving the select showing nothing.
+  if (!sel.value) {
+    panelChoice = 'auto';
+    sel.value = 'auto';
+  }
+  sel.addEventListener('change', () => {
+    panelChoice = sel.value;
+    localStorage.setItem('mb-screen', panelChoice);
+    const p = PANELS.find((x) => x.id === panelChoice);
+    if (p) {
+      const mm = panelSizeMm(p);
+      const note = p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h
+        ? 'native grid'
+        : `NOT the render grid — 240x320 stretched onto ${p.res[0]}x${p.res[1]}`;
+      console.log(
+        `[screen] ${p.diag}" ${p.part}: ${mm.w.toFixed(1)}x${mm.h.toFixed(1)}mm, ${note}`,
+      );
+    }
+    fitCanvas();
+  });
+}
 
 document.getElementById('turn-btn').addEventListener('click', () => {
   viewTurns = (viewTurns + 1) % 4;
