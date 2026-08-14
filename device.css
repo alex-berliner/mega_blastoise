@@ -161,3 +161,100 @@ body {
 #debug button.on { background: var(--btn-lit); border-color: var(--btn-lit); }
 
 
+/* ── Console panel ─────────────────────────────────────────────────────── */
+
+#console-btn.has-warn { border-color: #d1a13a; color: #d1a13a; }
+#console-btn.has-error { border-color: #e05257; color: #e05257; }
+
+#console {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Sits above the debug bar rather than over it, so the controls that raised
+     it stay reachable while it is open. The exact offset is set from JS,
+     because the bar wraps to two rows on a narrow screen. */
+  bottom: 30px;
+  max-height: 45vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(14, 16, 19, 0.97);
+  border-top: 1px solid #31353c;
+  z-index: 20;
+}
+#console[hidden] { display: none; }
+
+#console .chead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-bottom: 1px solid #262a30;
+  flex: none;
+}
+#console .lbl {
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+#console .cfilter { display: flex; gap: 4px; margin-left: 8px; }
+#console .cclose { margin-left: auto; }
+#console button {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--case-hi);
+  border: 1px solid #3d424a;
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+#console button.on { background: var(--btn-lit); border-color: var(--btn-lit); }
+
+#console .clog {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px 10px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.45;
+  user-select: text;
+  /* Shrinks before the command line does, so the prompt survives a short
+     viewport instead of being pushed out of the panel. */
+  flex: 1 1 auto;
+  min-height: 60px;
+}
+#console .crow {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink);
+}
+#console .crow.debug { color: var(--dim); }
+#console .crow.info { color: #7fb2e5; }
+#console .crow.warn { color: #d1a13a; }
+#console .crow.error { color: #e05257; }
+#console .crow.cmd { color: #7fd18a; }
+
+#console .cinput {
+  display: flex;
+  background: #171a1f;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-top: 1px solid #262a30;
+  flex: none;
+}
+#console .cprompt { color: #7fd18a; font-family: var(--mono); font-size: 12px; }
+#console .cinput input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 2px 0;
+}
+#console .cinput input::placeholder { color: #565c66; }

@@ -105,7 +105,6 @@
   .hwnote li { margin: 5px 0; }
   li::marker { color: var(--accent); }
 
-  .att-in { position: absolute; left: 50%; top: 50%; width: 380px; height: 280px; transform: translate(-50%, -50%) rotate(-90deg); padding: 14px; font-family: var(--mono); }
   .note { border: 1px dashed var(--line); border-radius: 10px; background: var(--panel); padding: 12px 16px; color: var(--ink-soft); font-size: 14px; margin: 18px 0; max-width: 80ch; }
   .mermaid-box { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; }
   .pixcv { position: absolute; inset: 12px; border-radius: 4px; z-index: 2; background: var(--scr-bg); width: 280px; height: 380px; }
@@ -118,7 +117,7 @@
   <h1>Mega Blastoise: one screen, two players</h1>
   <p class="sub">Flow mockups for the single-screen redesign: a 2.8" IPS 240x320 panel laid flat between the seats, split into two 240x160 halves. The far player's half is rendered rotated 180 degrees, so both players always read upright. Open information by design: no hidden choice. Each seat gets a D-pad plus A, B, and a dedicated ? info button.</p>
   <div class="premise">
-    <span>2.8" IPS ST7789, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B/? per seat</span><span>rotationally symmetric seats</span><span>landscape only for attract</span>
+    <span>2.8" IPS ST7789, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B/? per seat</span><span>rotationally symmetric seats</span><span>one orientation, no flips</span>
   </div>
 </header>
 
@@ -136,7 +135,7 @@
       <b>Controls are placed with rotational symmetry, not mirrored.</b> Each seat gets D-pad on the left and three buttons on the right (B, A, and a blue <b>?</b>), in its own reading orientation (the far cluster looks upside down from here, which is correct). Notes:
       <ul>
         <li>D-pad moves the cursor, <b>A confirms, B backs out</b>: every state now has an explicit back path, and nothing commits on a stray tap.</li>
-        <li><b>? explains whatever the cursor is on</b>: full move description on the move grid, full stats on a party row, foe details on the HUD. Hold or press again to leave. One dedicated "tell me more" verb, discoverable by its label alone.</li>
+        <li><b>? explains whatever the cursor is on</b>: full move description on the move row, full stats on a party row, foe details on the HUD. Hold or press again to leave. One dedicated "tell me more" verb, discoverable by its label alone.</li>
         <li>Panel must be <b>IPS</b>; a TN panel shows inverted contrast to one of the two seats.</li>
         <li>The WS2812 strips are dropped; HP lives on-screen. Optionally keep one status LED per seat.</li>
       </ul>
@@ -145,31 +144,34 @@
 </section>
 
 <section>
-  <h2><span class="n">01</span>Attract, landscape for bystanders</h2>
-  <p class="secdesc">The only landscape state. Bystanders view the table from the side, so the demo battle plays oriented toward them. Any button enters the lobby.</p>
+  <h2><span class="n">01</span>Attract, head-to-head like everything else</h2>
+  <p class="secdesc">There is no landscape state. The console sits flat between two seats and is never picked up or turned, so the demo battle plays across both halves exactly as a real one does. A bystander standing at either end reads the half nearest them. Any button enters the lobby.</p>
   <div class="row">
     <figure class="mock">
       <div class="scr"><div class="lcd">
-        <div class="att-in">
-          <div class="ttl" style="font-size:17px; letter-spacing:.12em;">MEGA BLASTOISE</div>
-          <div class="ctr small dimtx" style="margin-top:2px;">GEN 1 BATTLES · 2 PLAYERS · 3 VS 3</div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:0 16px;">
-            <div class="spr s-b9" style="width:84px;height:84px;"></div>
-            <div style="font-size:20px;">⚡</div>
-            <div class="spr s-f6" style="width:84px;height:84px;"></div>
-          </div>
-          <div class="narr ctr" style="margin-top:8px;">BLASTOISE used HYDRO PUMP!</div>
-          <div class="ctr small" style="margin-top:8px; font-weight:800; letter-spacing:.08em;">PRESS ANY BUTTON TO PLAY</div>
-        </div>
+        <div class="half p2"><div class="halfin">
+          <div class="ttl" style="font-size:15px; letter-spacing:.12em;">MEGA BLASTOISE</div>
+          <div class="ctr small dimtx" style="margin-top:2px;">GEN 1 · 2 PLAYERS · 3 VS 3</div>
+          <div class="spr s-f6" style="width:76px;height:76px;margin:4px auto;"></div>
+          <div class="narr ctr" style="margin-top:4px;">BLASTOISE used HYDRO PUMP!</div>
+        </div></div>
+        <div class="half p1"><div class="halfin">
+          <div class="ttl" style="font-size:15px; letter-spacing:.12em;">MEGA BLASTOISE</div>
+          <div class="ctr small dimtx" style="margin-top:2px;">GEN 1 · 2 PLAYERS · 3 VS 3</div>
+          <div class="spr s-b9" style="width:76px;height:76px;margin:4px auto;"></div>
+          <div class="narr ctr" style="margin-top:4px;">BLASTOISE used HYDRO PUMP!</div>
+          <div class="ctr small" style="margin-top:4px; font-weight:800; letter-spacing:.08em;">PRESS ANY BUTTON TO PLAY</div>
+        </div></div>
+        <div class="split"></div>
       </div></div>
-      <figcaption><b>Demo battle plays itself after 15 s idle.</b> Sprites and narration face the aisle, not the seats.</figcaption>
+      <figcaption><b>Demo battle plays itself after 15 s idle.</b> Each seat's half reads upright to that seat, and the narration is drawn in both so it sits at the bottom of the screen from either side.</figcaption>
     </figure>
   </div>
 </section>
 
 <section>
   <h2><span class="n">02</span>Lobby and ready-up</h2>
-  <p class="secdesc">First button press flips the screen to split mode. Each half readies independently; a countdown starts when both are ready.</p>
+  <p class="secdesc">Each half readies independently; a countdown starts when both are ready.</p>
   <div class="row">
     <figure class="mock">
       <div class="scr"><div class="lcd">
@@ -221,7 +223,7 @@
 
 <section>
   <h2><span class="n">03</span>Move choice, the core screen</h2>
-  <p class="secdesc">Foe HUD on top of every choice half: species, level, HP, status. Cursor on a 2x2 move grid; the info bar gives at-a-glance stats for the highlighted move; the ? button opens the full description (secondary effects, flavor) for whatever the cursor is on.</p>
+  <p class="secdesc">Every choice half is the Gen 3 battle screen: the rival's status plate top left with their mon opposite on the far platform, your own mon from behind on the near platform with your plate bottom right. The bottom third is a 2x2 move menu with the cursor triangle, beside a box giving the highlighted move's PP and type; the ? button opens the full description (secondary effects, flavor) for whatever the cursor is on.</p>
   <div class="row">
     <figure class="mock">
       <div class="scr"><div class="lcd">
@@ -439,7 +441,7 @@
   <div class="mermaid-box">
 <pre class="mermaid">
 flowchart LR
-  ATT["Attract<br/>(landscape demo)"] -->|any button| LOB["Lobby<br/>ready-up"]
+  ATT["Attract<br/>(head-to-head demo)"] -->|any button| LOB["Lobby<br/>ready-up"]
   LOB -->|both ready| REV["Team reveal"]
   REV --> CHO["Move choice<br/>(split, foe HUD)"]
   CHO -->|A| LCK["Locked in<br/>+ grace 1s"]

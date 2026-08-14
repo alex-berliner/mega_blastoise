@@ -1,9 +1,6 @@
 /* @ts-self-types="./mega_blastoise_web.d.ts" */
 
 /**
- * RGBA8888 for the whole 240x320 panel, composed for the current
- * orientation. Rendered on demand rather than cached: one full frame is
- * ~1 ms and it keeps the browser from ever showing stale halves.
  * @returns {Uint8Array}
  */
 export function get_device_pixels() {
@@ -31,22 +28,6 @@ export function get_led_state() {
     var v1 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
-}
-
-/**
- * @returns {string}
- */
-export function get_orientation() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_orientation();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
 }
 
 /**
@@ -225,6 +206,19 @@ export function nav_tap_commit(player, idx) {
 }
 
 /**
+ * A tap on `player`'s own half, outside a battle: it confirms the row when
+ * that seat has the options open, and otherwise toggles readiness.
+ *
+ * A press of A only readies and B only cancels, matching the button legend
+ * and the hardware, but a tap has no second button to pair with: the thing
+ * you touched to ready up has to be the thing you touch to take it back.
+ * @param {number} player
+ */
+export function nav_tap_seat(player) {
+    wasm.nav_tap_seat(player);
+}
+
+/**
  * @param {number} player
  * @param {number} slot
  */
@@ -241,6 +235,25 @@ export function press_switch(player, idx) {
 }
 
 /**
+ * Current screen state by seat: 1 or 2 for a player, anything else for the
+ * panel as a whole.
+ * @param {number} player
+ * @returns {string}
+ */
+export function screen_state(player) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.screen_state(player);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * Has this seat committed and is now on the locked-in screen?
  * @param {number} player
  * @returns {boolean}
@@ -248,14 +261,6 @@ export function press_switch(player, idx) {
 export function seat_is_waiting(player) {
     const ret = wasm.seat_is_waiting(player);
     return ret !== 0;
-}
-
-/**
- * 0 = head-to-head (hardware), 1 = both halves upright, 2 = landscape.
- * @param {number} mode
- */
-export function set_orientation(mode) {
-    wasm.set_orientation(mode);
 }
 
 export function start() {
@@ -379,6 +384,9 @@ function __wbg_get_imports() {
             const ret = arg0.location;
             return ret;
         },
+        __wbg_log_eb752234eec406d1: function(arg0) {
+            console.log(arg0);
+        },
         __wbg_new_227d7c05414eb861: function() {
             const ret = new Error();
             return ret;
@@ -462,8 +470,13 @@ function __wbg_get_imports() {
             return ret;
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 92, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 96, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
             const ret = makeMutClosure(arg0, arg1, wasm_bindgen_1d8011bae8ecbaf0___convert__closures_____invoke___wasm_bindgen_1d8011bae8ecbaf0___JsValue__core_fccf67792830db87___result__Result_____wasm_bindgen_1d8011bae8ecbaf0___JsError___true_);
+            return ret;
+        },
+        __wbindgen_cast_0000000000000002: function(arg0, arg1) {
+            // Cast intrinsic for `Ref(String) -> Externref`.
+            const ret = getStringFromWasm0(arg0, arg1);
             return ret;
         },
         __wbindgen_init_externref_table: function() {

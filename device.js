@@ -2,6 +2,9 @@
 // framebuffer core hands it and forwards button presses. Every decision about
 // what appears on screen, and what a press means, lives in the Rust core.
 
+// Imported before the wasm glue so the console patch is in place for anything
+// the module emits while it loads.
+import { setCommandHandler, isOpen as consoleOpen } from './devconsole.js';
 import init, * as wasm from './pkg/mega_blastoise_web.js';
 
 const canvas = document.getElementById('panel');
@@ -24,13 +27,9 @@ const PANEL_H = 320;
 const HOLD_MS = 500;
 const AI_HOLD_MS = 2000;
 
-let orientation = 0;
-// Auto mode follows the spec: landscape for the lobby and menus, split
-// head-to-head once a battle starts. The debug buttons pin it manually.
-let autoOrient = true;
 // Purely cosmetic rotation of the console on the page, in 90-degree steps.
-// Independent of the game's orientation: it turns the whole device the way
-// you would turn the real one on a table, without changing what it draws.
+// The device itself has one arrangement and never turns: the two players sit
+// across from each other. This only moves where *you* are standing.
 let viewTurns = 0;
 
 // ── Painting ──────────────────────────────────────────────────────────────
@@ -40,13 +39,24 @@ function fitCanvas() {
   // piece to fill the viewport. Scaling the whole body keeps the panel and
   // the controls in exact proportion, and fills the screen instead of
   // stepping down to the nearest whole pixel multiple and leaving bars.
-  //
-  // In landscape the whole console turns, exactly like picking the real
-  // device up and rotating it: the controls stay bolted to the case, and
-  // core keeps drawing the same pixels the hardware panel would show.
   const device = document.getElementById('device');
   const debug = document.getElementById('debug');
   const debugH = debug ? debug.getBoundingClientRect().height : 30;
+  // The console panel is fixed above the debug bar and can take up to 45vh.
+  // Reserve its height so the case shrinks to what is left instead of hiding
+  // behind it — a console you have to close to see the screen you are
+  // debugging is no use.
+  const consoleEl = document.getElementById('console');
+  const consoleH = consoleEl && !consoleEl.hidden
+    ? consoleEl.getBoundingClientRect().height
+    : 0;
+  // The body flex-centres the device, so the same reserve has to come off the
+  // bottom padding too; taking it off only the scale would centre the smaller
+  // case in the full viewport and put it back under the panel. Written only
+  // when it changes: the console watches the debug bar and we watch the
+  // console, so an unconditional write feeds that loop every pass.
+  const pad = `${debugH + consoleH + 8}px`;
+  if (document.body.style.paddingBottom !== pad) document.body.style.paddingBottom = pad;
 
   // Backing store is a whole multiple of the panel grid.
   if (canvas.width !== PANEL_W * UPSCALE) {
@@ -59,11 +69,10 @@ function fitCanvas() {
   const natH = rect.height;
   if (!natW || !natH) return;
 
-  // The game's landscape mode counts as one turn, plus any the viewer added.
-  const quarter = ((orientation === 2 ? 1 : 0) + viewTurns) % 4;
+  const quarter = viewTurns % 4;
   const turned = quarter % 2 === 1;
   const availW = window.innerWidth - 16;
-  const availH = window.innerHeight - debugH - 16;
+  const availH = window.innerHeight - debugH - consoleH - 16;
 
   // Turned, the case occupies its own height across and its width down.
   const footW = turned ? natH : natW;
@@ -74,15 +83,8 @@ function fitCanvas() {
   device.style.transform = `rotate(${-90 * quarter}deg) scale(${k})`;
   // A transformed element still reserves its untransformed box, so pull the
   // layout in by the difference to keep it centred without overflow.
-  device.style.margin = `${(footH * k - natH) / 2}px ${(footW * k - natW) / 2}px`;
-}
-
-function applyOrientation(mode) {
-  orientation = mode;
-  wasm.set_orientation(mode);
-  fitCanvas();
-  // Nothing to do to the controls: they are anchored to the device body and
-  // never move, in any orientation. Only what the panel draws changes.
+  const margin = `${(footH * k - natH) / 2}px ${(footW * k - natW) / 2}px`;
+  if (device.style.margin !== margin) device.style.margin = margin;
 }
 
 function paint(px) {
@@ -94,14 +96,6 @@ function paint(px) {
 }
 
 function frame() {
-  if (autoOrient) {
-    // Head-to-head is the default and covers the whole battle: turn playback
-    // is one shared field across both halves, and choosing is the same halves
-    // showing private menus. Landscape is only for the one-person menus.
-    const menus = wasm.menu_active() && wasm.is_lobby_mode();
-    const want = menus ? 2 : 0;
-    if (want !== orientation) applyOrientation(want);
-  }
   paint(wasm.get_device_pixels());
   requestAnimationFrame(frame);
 }
@@ -184,22 +178,19 @@ function wireSeat(player) {
 // which keeps a stray touch from committing a turn.
 
 function panelTap(ev) {
-  // Menus are one-person landscape screens: a tap picks a row and confirms.
+  // The gen picker owns the whole panel, so a tap on either half confirms the
+  // same row.
   if (wasm.menu_active() && wasm.is_lobby_mode()) {
     wasm.nav_a(1);
     return;
   }
-  // Lobby: tapping your own half readies you up.
+  // Lobby: a tap on your own half readies you up, and taking it back is the
+  // same tap. Core decides which — the seat may have its options open, in
+  // which case the tap belongs to that menu instead.
   if (wasm.is_lobby_mode()) {
     const r0 = canvas.getBoundingClientRect();
     const half = (ev.clientY - r0.top) / r0.height < 0.5 ? 2 : 1;
-    wasm.nav_a(half);
-    return;
-  }
-  // Shared landscape view: a tap advances the narration.
-  if (orientation === 2) {
-    if (wasm.seat_is_waiting(1)) wasm.nav_cancel(1);
-    else wasm.nav_a(1);
+    wasm.nav_tap_seat(half);
     return;
   }
   const r = canvas.getBoundingClientRect();
@@ -207,15 +198,15 @@ function panelTap(ev) {
   let y = ((ev.clientY - r.top) / r.height) * PANEL_H;
   if (x < 0 || y < 0 || x >= PANEL_W || y >= PANEL_H) return;
 
-  // Which half, and where inside it. The far half is rotated 180 when the
-  // device is in head-to-head mode.
+  // Which half, and where inside it. The far half is always rotated 180, so
+  // undo that to get a tap back into that seat's own coordinates.
   let player;
   let hx;
   let hy;
   if (y < PANEL_H / 2) {
     player = 2;
-    hx = orientation === 0 ? PANEL_W - 1 - x : x;
-    hy = orientation === 0 ? PANEL_H / 2 - 1 - y : y;
+    hx = PANEL_W - 1 - x;
+    hy = PANEL_H / 2 - 1 - y;
   } else {
     player = 1;
     hx = x;
@@ -230,16 +221,17 @@ function panelTap(ev) {
 
   const mode = wasm.nav_mode(player);
   if (mode === 0) {
-    // 2x2 move grid: x 76..236, y 46..126. A tap is a whole decision, so it
-    // commits rather than only moving the cursor.
-    if (hx < 76 || hy < 46 || hy > 126) return;
-    const col = hx < 158 ? 0 : 1;
-    const row = hy < 88 ? 0 : 1;
+    // The 2x2 move menu: box at x 8..156, y 108..148, split down the middle
+    // both ways. A tap is a whole decision, so it commits rather than only
+    // moving the cursor. Geometry mirrors MENU_Y in display_color.rs.
+    if (hx < 8 || hx > 156 || hy < 108 || hy > 148) return;
+    const col = hx < 82 ? 0 : 1;
+    const row = hy < 128 ? 0 : 1;
     wasm.nav_tap_commit(player, row * 2 + col);
   } else if (mode === 1) {
-    // Party rows start at y 26, 21px pitch.
-    if (hy < 26) return;
-    const idx = Math.floor((hy - 26) / 21);
+    // Party rows start at y 36, 18px pitch — PARTY_Y and PARTY_PITCH.
+    if (hy < 36) return;
+    const idx = Math.floor((hy - 36) / 18);
     if (idx >= 0 && idx < 6) wasm.nav_tap_commit(player, idx);
   }
 }
@@ -255,6 +247,9 @@ const KEYS = {
 };
 
 window.addEventListener('keydown', (e) => {
+  // An open console owns the keyboard: every key is text for the command
+  // line, never a seat's button. Close it to play with the keys again.
+  if (consoleOpen() || e.target instanceof HTMLInputElement) return;
   const k = KEYS[e.code];
   if (!k) return;
   e.preventDefault();
@@ -267,23 +262,6 @@ window.addEventListener('keydown', (e) => {
 
 // ── Debug bar ─────────────────────────────────────────────────────────────
 
-document.querySelectorAll('#debug button[data-orient]').forEach((el) => {
-  el.addEventListener('click', () => {
-    autoOrient = false;
-    applyOrientation(Number(el.dataset.orient));
-    document.querySelectorAll('#debug button[data-orient]')
-      .forEach((b) => b.classList.toggle('on', b === el));
-    document.getElementById('auto-btn').classList.remove('on');
-  });
-});
-
-document.getElementById('auto-btn').addEventListener('click', (e) => {
-  autoOrient = true;
-  e.currentTarget.classList.add('on');
-  document.querySelectorAll('#debug button[data-orient]')
-    .forEach((b) => b.classList.remove('on'));
-});
-
 document.getElementById('turn-btn').addEventListener('click', () => {
   viewTurns = (viewTurns + 1) % 4;
   fitCanvas();
@@ -295,22 +273,46 @@ document.getElementById('reset-btn').addEventListener('click', () => wasm.wasm_r
 
 window.addEventListener('resize', fitCanvas);
 
+// Raising, closing or growing the console changes the height the case has to
+// fit in. Watching the panel itself covers every way it opens — the debug-bar
+// button, the backtick shortcut, `?console` — without the console module
+// having to call back.
+{
+  const consoleEl = document.getElementById('console');
+  let queued = false;
+  // Deferred out of the callback rather than run inside it: refitting writes
+  // layout, and doing that during delivery is what makes the browser report
+  // "ResizeObserver loop completed with undelivered notifications" — an error
+  // line in the very panel being opened. A timeout, not rAF: a page whose
+  // frames are throttled (background tab, headless capture) would leave the
+  // refit pending forever.
+  const refit = () => {
+    if (queued) return;
+    queued = true;
+    setTimeout(() => { queued = false; fitCanvas(); }, 0);
+  };
+  if (consoleEl) {
+    // The panel opens and closes by toggling `hidden`, and a ResizeObserver
+    // does NOT fire for display:none flips — verified in Chrome, it reports
+    // 0 once at registration and then stays silent. So the attribute is what
+    // is watched for open/close; the ResizeObserver only catches the panel
+    // growing or the debug bar rewrapping underneath it while it is up.
+    new MutationObserver(refit).observe(consoleEl, {
+      attributes: true,
+      attributeFilter: ['hidden', 'style'],
+    });
+    new ResizeObserver(refit).observe(consoleEl);
+  }
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────
 
 async function run() {
   await init();
+  // The console's command line drives the same entry point the two-OLED page
+  // types into, which is the firmware's USB grammar.
+  setCommandHandler((line) => wasm.submit_text(line));
   const params = new URLSearchParams(location.search);
-  if (params.has('orient')) {
-    autoOrient = false;
-    const mode = Number(params.get('orient'));
-    applyOrientation(mode);
-    document.getElementById('auto-btn').classList.remove('on');
-    document.querySelectorAll('#debug button[data-orient]').forEach((b) => {
-      b.classList.toggle('on', Number(b.dataset.orient) === mode);
-    });
-  } else {
-    applyOrientation(0);
-  }
   if (params.has('demo')) setTimeout(() => wasm.wasm_enter_demo_mode(), 300);
   // Debug aid: open P1's battle log after a delay, so a headless capture can
   // reach a screen that normally needs a button press.
@@ -323,6 +325,11 @@ async function run() {
     setTimeout(() => wasm.nav_info(1), Number(params.get('log')) || 12000);
   }
   if (params.has('ai')) setTimeout(() => wasm.wasm_enter_vs_ai_mode(), 300);
+  // Debug aid: ?cmd=:ready ai runs console commands at boot, so a headless
+  // capture can reach a state that otherwise needs typing. Repeatable.
+  params.getAll('cmd').forEach((line, i) => {
+    setTimeout(() => wasm.submit_text(line), 500 + i * 200);
+  });
   wireSeat(1);
   wireSeat(2);
   fitCanvas();
@@ -334,6 +341,7 @@ async function run() {
 }
 
 run().catch((err) => {
+  console.error('boot failed:', err);
   document.body.insertAdjacentHTML(
     'beforeend',
     `<pre style="color:#e05257;padding:12px">Failed to load: ${err}</pre>`,
