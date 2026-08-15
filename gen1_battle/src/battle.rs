@@ -285,6 +285,20 @@ impl<'a> Battle<'a> {
         Some(a.moves.iter().map(|s| (s.pp, s.max_pp)).collect())
     }
 
+    /// Script the RNG's forced outcomes for the coming turn(s). Testing
+    /// seam for the Showdown parity suites; play never calls this.
+    #[doc(hidden)]
+    pub fn set_turn_force(&mut self, force: Option<[crate::rng::SeatForce; 2]>) {
+        self.rng.force = force;
+    }
+
+    /// Direct access to the sides for test setup (pre-set statuses). The
+    /// index is side order: 0 for the first player registered.
+    #[doc(hidden)]
+    pub fn testing_sides_mut(&mut self) -> &mut [crate::state::Side; 2] {
+        &mut self.sides
+    }
+
     pub fn drain_action_timings(&mut self) -> alloc::vec::IntoIter<(&'static str, u32)> {
         Vec::new().into_iter()
     }
@@ -509,7 +523,10 @@ impl<'a> Battle<'a> {
             let pr1 = prio(self.effective_move(1));
             let s0 = self.sides[0].active().modified[4];
             let s1 = self.sides[1].active().modified[4];
-            if pr1 > pr0 || (pr1 == pr0 && (s1 > s0 || (s1 == s0 && self.rng.coin()))) {
+            // A scripted battle breaks Speed ties toward player 1, matching
+            // the reference sim with its tie-shuffle pinned; play flips a coin.
+            let tie_to_p2 = s1 == s0 && self.rng.force.is_none() && self.rng.coin();
+            if pr1 > pr0 || (pr1 == pr0 && (s1 > s0 || tie_to_p2)) {
                 order = [1, 0];
             }
         }
@@ -604,7 +621,12 @@ impl<'a> Battle<'a> {
                 );
             }
         }
-        after_action_residuals(&mut self.field, &mut self.sides, side, &mut self.log);
+        // A knockout that ends the battle ends it NOW: the winner's burn or
+        // poison never ticks after the decisive hit. Found by the gen 1 turn
+        // fuzzer against the reference sim.
+        if !self.team_wiped(0) && !self.team_wiped(1) {
+            after_action_residuals(&mut self.field, &mut self.sides, side, &mut self.log);
+        }
     }
 
     fn team_wiped(&self, side: usize) -> bool {

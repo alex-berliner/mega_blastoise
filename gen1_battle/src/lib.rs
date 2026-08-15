@@ -28,7 +28,7 @@ mod types;
 pub mod testing {
     pub use crate::combat::*;
     pub use crate::dispatch::*;
-    pub use crate::rng::Rng;
+    pub use crate::rng::{Rng, SeatForce};
     pub use crate::state::*;
 }
 

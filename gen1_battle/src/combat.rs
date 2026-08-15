@@ -63,6 +63,9 @@ pub fn apply_status_drop(mon: &mut Mon) {
 /// multiply (the famous bug), otherwise ×2 capped at 255; high-crit moves ×4
 /// capped, normal moves ÷2. Roll a byte under the threshold.
 pub fn crit_roll(rng: &mut Rng, attacker: &Mon, mv: &MoveEntry) -> bool {
+    if let Some(c) = rng.forced_crit() {
+        return c;
+    }
     let mut c = (attacker.base_spe as u32) / 2;
     if attacker.volatile.has(Volatile::FOCUS_ENERGY) {
         c /= 2;
@@ -93,7 +96,11 @@ pub fn hit_roll(rng: &mut Rng, base_acc_255: u32, acc_stage: i8, eva_stage: i8) 
     let (en, ed) = stage_mult(-eva_stage);
     acc = acc * en / ed;
     let acc = acc.clamp(1, 255);
-    ((rng.byte() as u32) < acc, acc as u8)
+    let hit = match rng.forced_hit() {
+        Some(h) => h,
+        None => (rng.byte() as u32) < acc,
+    };
+    (hit, acc as u8)
 }
 
 /// Result of the damage formula.
@@ -124,7 +131,10 @@ pub fn compute_damage(
         return DamageRoll::default();
     }
     let crit = crit_roll(rng, attacker, mv);
-    let r = 217 + rng.range(39);
+    let r = match rng.forced_roll() {
+        Some(r) => r.clamp(217, 255) as u32,
+        None => 217 + rng.range(39),
+    };
     compute_damage_scripted(attacker, defender, mv, selfdestruct, crit, r as u8)
 }
 

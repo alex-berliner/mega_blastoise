@@ -55,7 +55,7 @@ fn status_from_param(rng: &mut Rng, p: u8) -> Status {
         2 => Status::Burn,
         3 => Status::Freeze,
         4 => Status::Paralysis,
-        5 => Status::Sleep((rng.range(7) as u8) + 1), // 1..=7, last is the wake turn
+        5 => Status::Sleep(if rng.force.is_some() { 1 } else { (rng.range(7) as u8) + 1 }), // 1..=7, last is the wake turn
         7 => Status::BadPoison,
         _ => Status::None,
     }
@@ -159,6 +159,7 @@ fn execute_move_entry(
     locked: bool,
     log: &mut Log,
 ) -> MoveOutcome {
+    rng.acting = attacker_side;
     let outcome = run_move(rng, field, sides, attacker_side, mv, pp_slot, locked, log);
 
     // Disable and Self-Destruct/Explosion build Rage on the target even when
@@ -1073,14 +1074,14 @@ fn apply_status_move(
                 }
                 let d = sides[defender_side].active_mut();
                 d.volatile.clear(Volatile::MUST_RECHARGE);
-                d.status = Status::Sleep((rng.range(7) as u8) + 1);
+                d.status = Status::Sleep(if rng.force.is_some() { 1 } else { (rng.range(7) as u8) + 1 });
                 d.rest_sleep = false;
                 let s = &sides[defender_side];
                 log.push_board(format!("status|mon:{},{},0|status:slp", s.active().name, s.player_id));
             } else if !matches!(sides[defender_side].active().status, Status::None) {
                 fail_log(sides, attacker_side, log);
             } else {
-                let st = Status::Sleep((rng.range(7) as u8) + 1);
+                let st = Status::Sleep(if rng.force.is_some() { 1 } else { (rng.range(7) as u8) + 1 });
                 if !try_apply_status(sides, defender_side, st, true, log) {
                     fail_log(sides, attacker_side, log);
                 }
@@ -1099,8 +1100,19 @@ fn apply_status_move(
             }
         }
         _ => {
-            // Paralysis (and any other primary status): goes through subs,
-            // ignores type immunity (Thunder Wave hits Ground-types).
+            // Paralysis (and any other primary status): goes through subs.
+            // Thunder Wave alone respects the type chart — a Ground-type is
+            // immune to the Electric-typed status move (cartridge rule; the
+            // gen 1 turn fuzzer corrected this arm's old claim otherwise).
+            let d = sides[defender_side].active();
+            let immune = mv.id == "thunderwave"
+                && (crate::tables::type_effectiveness(mv.move_type, d.primary_type) == 0
+                    || crate::tables::type_effectiveness(mv.move_type, d.secondary_type) == 0);
+            if immune {
+                let s = &sides[defender_side];
+                log.push_board(format!("immune|mon:{},{},0", s.active().name, s.player_id));
+                return;
+            }
             let st = status_from_param(rng, mv.effect_param0);
             if !try_apply_status(sides, defender_side, st, true, log) {
                 fail_log(sides, attacker_side, log);
@@ -1157,6 +1169,12 @@ fn apply_haze(field: &mut Field, sides: &mut [Side; 2], user_side: usize, log: &
 // ─────────────────────────────────────────────────────────────────────────────
 
 fn roll_chance_byte(rng: &mut Rng, threshold: u8) -> bool {
+    // Every caller is a secondary-class chance (status/confusion/flinch
+    // procs, stat-drop odds, Twineedle's poison), so the scripted channel
+    // answers for all of them.
+    if let Some(sec) = rng.forced_secondary() {
+        return sec;
+    }
     rng.byte() < threshold
 }
 
@@ -1228,7 +1246,11 @@ fn damage_step(
     };
 
     let res = deal_damage(field, sides, defender_side, dmg, log);
-    note_hit(&mut outcome, res, dmg);
+    // Recoil and drain read the damage the cartridge stored, which is
+    // clamped to the HP actually removed (deal_damage just set it) — an
+    // overkill Double-Edge recoils off the target's remaining HP, not the
+    // full roll. Found by the gen 1 turn fuzzer.
+    note_hit(&mut outcome, res, field.last_damage);
     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
 
     // A raging target's Attack climbs every time it's hit by a damaging,
@@ -1643,6 +1665,7 @@ pub fn pre_move_check(
     chosen_slot: Option<u8>,
     log: &mut Log,
 ) -> bool {
+    rng.acting = side;
     // Haze cured this mon's sleep/freeze before it acted: turn forfeited.
     if sides[side].active().volatile.has(Volatile::SKIP_TURN) {
         sides[side].active_mut().volatile.clear(Volatile::SKIP_TURN);
@@ -1772,7 +1795,12 @@ pub fn pre_move_check(
     // 8. Full paralysis: 63/256. Cancels Bide, charge and trap locks, and
     //    Thrash — but the Fly/Dig INVULNERABILITY stays stuck until the mon
     //    switches or completes the move (the Gen 1 invulnerability glitch).
-    if sides[side].active().status == Status::Paralysis && rng.byte() < 63 {
+    let full_para = sides[side].active().status == Status::Paralysis
+        && match rng.forced_immobile() {
+            Some(i) => i,
+            None => rng.byte() < 63,
+        };
+    if full_para {
         {
             let s = &sides[side];
             log.push_board(format!("cant|mon:{},{},0|from:par", s.active().name, s.player_id));

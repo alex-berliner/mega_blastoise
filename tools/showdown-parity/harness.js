@@ -72,6 +72,10 @@ function scriptRandomness(battle, script) {
   const origRun = actions.runMove;
   actions.runMove = function (moveOrMoveName, pokemon, ...rest) {
     battle.__act = forSide(pokemon);
+    // A new action begins: any stale pending-accuracy flag is dead. (A
+    // type-immune gen 1 move skips its accuracy roll entirely, and the
+    // stale flag would otherwise eat the next action's paralysis roll.)
+    battle.__accPending = false;
     return origRun.call(this, moveOrMoveName, pokemon, ...rest);
   };
 
@@ -97,16 +101,26 @@ function scriptRandomness(battle, script) {
       battle.__accPending = false;
       return battle.__cur.hit;
     }
+    // Gen 1/2 crit: rolled inside getDamage as randomChance(critChance, 256);
+    // the wrapper below flags the window so this roll never reads the
+    // accuracy or secondary knobs.
+    if (battle.__critPending && denominator === 256) {
+      battle.__critPending = false;
+      return battle.__cur.crit;
+    }
+    // Full paralysis: rolled in onBeforeMove for the acting side —
+    // (1,4) in gen 3+, (63,256) in gens 1-2. Checked before the
+    // sub-certain branch so the par roll never reads the secondary knob.
+    if ((numerator === 1 && denominator === 4) ||
+        (numerator === 63 && denominator === 256)) {
+      return battle.__act?.immobile ?? false;
+    }
     // After the accuracy roll, a sub-certain chance out of 100 (gen 3+) or
     // 256 (gen 1) during a move is its secondary proc; the script decides.
     // Thaw (1,5) and wake rolls have other denominators and stay pinned
     // off, matching the engines' scripted turns.
     if ((denominator === 100 || denominator === 256) && numerator < denominator) {
       return battle.__cur.secondary ?? false;
-    }
-    // Full paralysis: rolled in onBeforeMove for the acting side.
-    if (numerator === 1 && denominator === 4) {
-      return battle.__act?.immobile ?? false;
     }
     return false;
   };
@@ -154,7 +168,12 @@ function scriptRandomness(battle, script) {
       active.willCrit = forSide(source).crit;
       move = active;
     }
-    return origGetDamage(source, target, move, suppressMessages);
+    // Gens 1-2 ignore willCrit and roll their own randomChance(x, 256)
+    // inside; flag the window so that roll answers from the crit knob.
+    battle.__critPending = true;
+    const dmg = origGetDamage(source, target, move, suppressMessages);
+    battle.__critPending = false;
+    return dmg;
   };
 }
 
@@ -208,7 +227,16 @@ function runTurn(sc) {
   for (const id of ['p1', 'p2']) {
     const mon = b.getSide(id).pokemon[0];
     const want = sc[id];
-    if (want.status) mon.setStatus(want.status);
+    if (want.status) {
+      mon.setStatus(want.status);
+      // Gens 1-2 apply the par/brn stat drops at the moment of infliction
+      // (scripts.js does it inside the move); a bare setStatus skips them,
+      // so a pre-set status re-applies the cartridge drop by hand.
+      if (sc.gen <= 2 && mon.modifyStat) {
+        if (want.status === 'par') mon.modifyStat('spe', 0.25);
+        if (want.status === 'brn') mon.modifyStat('atk', 0.5);
+      }
+    }
     if (want.boosts) b.boost(want.boosts, mon, mon, null, true, true);
     for (const cond of want.sideConditions ?? []) {
       b.getSide(id).addSideCondition(cond, mon);
