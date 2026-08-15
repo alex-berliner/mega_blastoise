@@ -15,7 +15,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use crate::damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
-use crate::data::{move_by_id, species_by_id, Boost, FixedDamage, MoveEntry, SecondaryEffect, SpeciesEntry, Status, StatusAction};
+use crate::data::{move_by_id, species_by_id, Boost, FixedDamage, MoveEntry, SecondaryEffect, SideCondition, SpeciesEntry, Status, StatusAction};
 use crate::stats::{hp_stat, other_stat, Invest, Nature, Stat};
 use crate::types::Type;
 
@@ -229,16 +229,30 @@ impl Mon {
     }
 }
 
-/// One player's party.
+/// One player's party, plus the team-wide conditions protecting it. Each
+/// counter is turns remaining; zero means down.
 #[derive(Clone, Debug)]
 pub struct Side {
     pub party: Vec<Mon>,
     pub active: usize,
+    pub reflect_n: u8,
+    pub light_screen_n: u8,
+    pub safeguard_n: u8,
+    pub mist_n: u8,
 }
 
 impl Side {
     pub fn new(party: Vec<Mon>) -> Side {
-        Side { party, active: 0 }
+        Side { party, active: 0, reflect_n: 0, light_screen_n: 0, safeguard_n: 0, mist_n: 0 }
+    }
+
+    fn condition_n(&mut self, cond: SideCondition) -> &mut u8 {
+        match cond {
+            SideCondition::Reflect => &mut self.reflect_n,
+            SideCondition::LightScreen => &mut self.light_screen_n,
+            SideCondition::Safeguard => &mut self.safeguard_n,
+            SideCondition::Mist => &mut self.mist_n,
+        }
     }
 
     pub fn mon(&self) -> &Mon {
@@ -310,6 +324,10 @@ pub enum Event {
     Boosted { side: u8, boost: Boost, delta: i8 },
     /// `side` spent the turn charging a two-turn move.
     Charging { side: u8 },
+    /// A five-turn team condition went up on `side`.
+    SideStarted { side: u8, condition: SideCondition },
+    /// `side`'s team condition ran out.
+    SideEnded { side: u8, condition: SideCondition },
     /// `side` spent the turn recharging after Hyper Beam and kin.
     Recharging { side: u8 },
     /// `side`'s mon flinched and lost its action.
@@ -433,6 +451,25 @@ impl Battle {
                 if let Some(next) = self.sides[side].first_healthy() {
                     self.sides[side].active = next;
                     events.push(Event::Switched { side: side as u8 + 1, party_index: next });
+                }
+            }
+        }
+
+        // Team conditions run out: five end-of-turn ticks including the
+        // turn they went up.
+        for side in 0..2 {
+            for cond in [
+                SideCondition::Reflect,
+                SideCondition::LightScreen,
+                SideCondition::Safeguard,
+                SideCondition::Mist,
+            ] {
+                let n = self.sides[side].condition_n(cond);
+                if *n > 0 {
+                    *n -= 1;
+                    if *n == 0 {
+                        events.push(Event::SideEnded { side: side as u8 + 1, condition: cond });
+                    }
                 }
             }
         }
@@ -843,6 +880,10 @@ impl Battle {
     /// the clocks that come with it: Toxic restarts its count, sleep draws
     /// its duration (pinned to the reference sim's floor under a script).
     fn inflict(&mut self, foe: usize, status: Status, scripted: bool, events: &mut Vec<Event>) {
+        // Safeguard shields the whole team from foe-inflicted statuses.
+        if self.sides[foe].safeguard_n > 0 {
+            return;
+        }
         if !self.sides[foe].mon().can_receive(status) {
             return;
         }
@@ -862,6 +903,10 @@ impl Battle {
     /// confused. The clock is 2 under a script (the sim's pinned floor),
     /// 2..=5 in play.
     fn confuse(&mut self, foe: usize, scripted: bool, events: &mut Vec<Event>) {
+        // Safeguard blocks foe-inflicted confusion too in this era.
+        if self.sides[foe].safeguard_n > 0 {
+            return;
+        }
         let target = self.sides[foe].mon();
         if target.fainted() || target.confusion_n > 0 {
             return;
@@ -922,6 +967,13 @@ impl Battle {
                     events.push(Event::Healed { side: side as u8 + 1, amount: heal });
                 }
             }
+            StatusAction::Team(cond) => {
+                let n = self.sides[side].condition_n(cond);
+                if *n == 0 {
+                    *n = 5;
+                    events.push(Event::SideStarted { side: side as u8 + 1, condition: cond });
+                }
+            }
             StatusAction::Confuse => {
                 let immune = slot.entry.respects_immunity
                     && crate::types::effectiveness_against(
@@ -943,8 +995,12 @@ impl Battle {
                 }
             }
             StatusAction::BoostFoe(list) => {
+                let misted = self.sides[foe].mist_n > 0;
                 if hit && !self.sides[foe].mon().fainted() {
                     for &(boost, delta) in list {
+                        if misted && delta < 0 {
+                            continue;
+                        }
                         self.sides[foe].mon_mut().apply_boost(boost, delta);
                         events.push(Event::Boosted { side: foe as u8 + 1, boost, delta });
                     }
@@ -983,8 +1039,13 @@ impl Battle {
                     self.inflict(foe, status, script.is_some(), events);
                 }
                 Some(SecondaryEffect::Boosts(list)) => {
+                    // Mist blocks foe-caused stat drops for the whole team.
+                    let misted = self.sides[foe].mist_n > 0;
                     if !self.sides[foe].mon().fainted() {
                         for &(boost, delta) in list {
+                            if misted && delta < 0 {
+                                continue;
+                            }
                             self.sides[foe].mon_mut().apply_boost(boost, delta);
                             events.push(Event::Boosted { side: foe as u8 + 1, boost, delta });
                         }
@@ -1033,8 +1094,8 @@ impl Battle {
                 def_stage: d.stage(Stat::Def),
                 sp_def_stage: d.stage(Stat::SpDef),
                 types: d.types(),
-                reflect: false,
-                light_screen: false,
+                reflect: self.sides[1 - side].reflect_n > 0,
+                light_screen: self.sides[1 - side].light_screen_n > 0,
             },
         )
     }
@@ -1425,6 +1486,36 @@ mod tests {
         b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
         let pierced = hp - b.sides[0].mon().hp;
         assert!(pierced > normal_hit * 3 / 2, "doubled: {pierced} vs {normal_hit}");
+    }
+
+    #[test]
+    fn screens_halve_safeguard_shields_and_mist_holds_stages() {
+        // Reflect roughly halves a physical hit.
+        let mut plain = battle(mon("snorlax", 50, &["tackle"]), mon("chansey", 50, &["splash"]));
+        let hp = plain.sides[1].mon().hp;
+        plain.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let open_hit = hp - plain.sides[1].mon().hp;
+
+        let mut b = battle(mon("snorlax", 50, &["tackle"]), mon("chansey", 50, &["reflect"]));
+        assert!(b.sides[1].mon().spe > b.sides[0].mon().spe, "chansey screens first");
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let hp = b.sides[1].mon().hp;
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let screened = hp - b.sides[1].mon().hp;
+        assert!(screened < open_hit * 2 / 3, "reflected: {screened} vs {open_hit}");
+
+        // Safeguard blocks Thunder Wave for the whole team. (Snorlax is
+        // slower than Chansey, so the shield is up before the wave.)
+        let mut b = battle(mon("snorlax", 50, &["thunderwave"]), mon("chansey", 50, &["safeguard"]));
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert_eq!(b.sides[1].mon().status, None);
+
+        // Mist holds Growl off.
+        let mut b = battle(mon("snorlax", 50, &["growl"]), mon("chansey", 50, &["mist"]));
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert_eq!(b.sides[1].mon().stages[Stat::Atk as usize], 0);
     }
 
     #[test]

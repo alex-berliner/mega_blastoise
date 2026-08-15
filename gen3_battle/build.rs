@@ -444,6 +444,15 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::HealHalf)")
                 } else if act.get("confuse").is_some() {
                     String::from("Some(StatusAction::Confuse)")
+                } else if let Some(side) = act.get("side").and_then(|v| v.as_str()) {
+                    let cond = match side {
+                        "reflect" => "SideCondition::Reflect",
+                        "lightscreen" => "SideCondition::LightScreen",
+                        "safeguard" => "SideCondition::Safeguard",
+                        "mist" => "SideCondition::Mist",
+                        other => panic!("{id}: unknown side condition {other:?}"),
+                    };
+                    format!("Some(StatusAction::Team({cond}))")
                 } else if let Some(boosts) = act.get("boosts").and_then(|v| v.as_object()) {
                     let variant = if act.get("self").and_then(|v| v.as_bool()).unwrap_or(false) {
                         "BoostSelf"

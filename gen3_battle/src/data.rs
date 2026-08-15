@@ -162,6 +162,27 @@ pub enum FixedDamage {
     Half,
 }
 
+/// A team-wide condition a status move raises for five turns.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum SideCondition {
+    Reflect,
+    LightScreen,
+    Safeguard,
+    Mist,
+}
+
+impl SideCondition {
+    /// The display name the battle log uses.
+    pub fn label(self) -> &'static str {
+        match self {
+            SideCondition::Reflect => "Reflect",
+            SideCondition::LightScreen => "Light Screen",
+            SideCondition::Safeguard => "Safeguard",
+            SideCondition::Mist => "Mist",
+        }
+    }
+}
+
 /// A status move's whole effect: what a zero-power move does instead of
 /// damage. Thunder Wave inflicts, Swords Dance raises the user, Growl drops
 /// the target, Recover heals half.
@@ -172,6 +193,7 @@ pub enum StatusAction {
     BoostFoe(&'static [(Boost, i8)]),
     HealHalf,
     Confuse,
+    Team(SideCondition),
 }
 
 /// One move.

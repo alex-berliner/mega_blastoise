@@ -2156,7 +2156,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"side": "lightscreen"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2244,7 +2246,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"side": "mist"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2488,7 +2492,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"side": "reflect"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2557,7 +2563,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"side": "safeguard"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
