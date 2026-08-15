@@ -308,6 +308,14 @@ pub enum StatusAction {
     /// The itemless/teamless format makes these fail outright: Assist,
     /// Sleep Talk (awake), Recycle, Trick, Role Play, Skill Swap.
     NoopFail,
+    /// Mirror Move: use the foe's last move.
+    MirrorMove,
+    /// Mimic: the slot becomes the foe's last move, five PP.
+    Mimic,
+    /// Sketch: the slot permanently becomes the foe's last move.
+    Sketch,
+    /// Transform: copy the foe's stats, stages, types and moves.
+    Transform,
 }
 
 /// One move.

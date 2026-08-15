@@ -131,6 +131,10 @@ pub struct Mon {
     pub fury_n: u8,
     /// The last move slot this mon successfully USED (for Spite/Torment).
     pub last_used: Option<u8>,
+    /// The last move this mon used MISSED (Mirror Move refuses those).
+    pub last_missed: bool,
+    /// Mimic's overlay: the original slot to restore on faint or switch.
+    pub mimic_backup: Option<(u8, MoveSlot)>,
     /// Bide: damage stored and turns of storing left.
     pub bide: Option<(u16, u8)>,
     /// Rollout/Ice Ball: consecutive uses so far (0..=4).
@@ -228,6 +232,8 @@ impl Mon {
             raging: false,
             fury_n: 0,
             last_used: None,
+            last_missed: false,
+            mimic_backup: None,
             bide: None,
             rolling: None,
             curled: false,
@@ -356,6 +362,9 @@ pub struct Side {
     /// Wish clock and the amount that arrives when it hits zero.
     pub wish_n: u8,
     pub wish_amount: u16,
+    /// A Future Sight/Doom Desire aimed at THIS side: countdown, the
+    /// launcher's snapshot, and which of the two moves it was.
+    pub incoming: Option<(u8, crate::damage::Attacker, &'static str)>,
 }
 
 impl Side {
@@ -370,6 +379,7 @@ impl Side {
             spikes: 0,
             wish_n: 0,
             wish_amount: 0,
+            incoming: None,
         }
     }
 
@@ -604,6 +614,10 @@ impl Battle {
                     out.raging = false;
                     out.fury_n = 0;
                     out.last_used = None;
+                    out.last_missed = false;
+                    if let Some((i, orig)) = out.mimic_backup.take() {
+                        out.moves[i as usize] = orig;
+                    }
                     out.bide = None;
                     out.rolling = None;
                     out.curled = false;
@@ -786,6 +800,74 @@ impl Battle {
             }
         }
 
+        // A Future Sight lands at the end of its third turn, computed from
+        // the launcher's snapshot against the target now standing.
+        for side in 0..2 {
+            if self.over() {
+                break;
+            }
+            if let Some((n, attacker, id)) = self.sides[side].incoming {
+                if n > 1 {
+                    self.sides[side].incoming = Some((n - 1, attacker, id));
+                } else {
+                    self.sides[side].incoming = None;
+                    let mon = self.sides[side].mon();
+                    if !mon.fainted() {
+                        let (move_type, power) = if id == "doomdesire" {
+                            (Type::Steel, 120)
+                        } else {
+                            (Type::Psychic, 80)
+                        };
+                        let defender = crate::damage::Defender {
+                            def: mon.def,
+                            sp_def: mon.spd,
+                            def_stage: mon.stages[Stat::Def as usize],
+                            sp_def_stage: mon.stages[Stat::SpDef as usize],
+                            types: mon.types(),
+                            reflect: false,
+                            light_screen: false,
+                        };
+                        let m = MoveUse { move_type, power, halve_def: false, weather: 0 };
+                        // The damage roll happens at RESOLUTION, off the
+                        // launcher's seat script for that turn.
+                        let random = match script.seats[1 - side] {
+                            Some(sc) => sc.random,
+                            None => 85 + self.rng.below(16) as u8,
+                        };
+                        let dealt =
+                            damage(&attacker, &defender, &m, Roll { crit: false, random }) as u16;
+                        if dealt > 0 {
+                            let mon = self.sides[side].mon_mut();
+                            let hit_sub = mon.sub_hp > 0;
+                            if hit_sub {
+                                let amount = dealt.min(mon.sub_hp);
+                                mon.sub_hp -= amount;
+                                events.push(Event::SubDamage { side: side as u8 + 1, amount });
+                                if self.sides[side].mon().sub_hp == 0 {
+                                    events.push(Event::SubBroke { side: side as u8 + 1 });
+                                }
+                            } else {
+                                let cap = if mon.enduring {
+                                    mon.hp.saturating_sub(1)
+                                } else {
+                                    mon.hp
+                                };
+                                let amount = dealt.min(cap);
+                                mon.hp -= amount;
+                                events.push(Event::Damage {
+                                    side: side as u8 + 1,
+                                    amount,
+                                    effectiveness: 100,
+                                    crit: false,
+                                });
+                                self.faint_and_replace(side, &mut events);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Yawn drops the drowsy at the end of the turn AFTER it landed.
         for side in 0..2 {
             if self.over() {
@@ -937,7 +1019,9 @@ impl Battle {
         // zero the mon wakes and moves that same turn.
         let mut asleep_now = false;
         if self.sides[side].mon().status == Some(Status::Sleep) {
-            let snoring = self.sides[side].mon().moves.get(index).is_some_and(|m| m.entry.id == "snore");
+            let snoring = self.sides[side].mon().moves.get(index).is_some_and(|m| {
+                matches!(m.entry.id, "snore" | "sleeptalk")
+            });
             let mon = self.sides[side].mon_mut();
             mon.sleep_n = mon.sleep_n.saturating_sub(1);
             if mon.sleep_n == 0 {
@@ -1127,6 +1211,7 @@ impl Battle {
         {
             let mon = self.sides[side].mon_mut();
             mon.last_used = if struggling { None } else { Some(index as u8) };
+            mon.last_missed = false;
             mon.raging = slot.entry.id == "rage";
             if slot.entry.id != "furycutter" {
                 mon.fury_n = 0;
@@ -1462,6 +1547,48 @@ impl Battle {
             return;
         }
 
+        // Psywave's spread collapses the same way: level/2 or level*3/2.
+        if slot.entry.id == "psywave" {
+            if !hit {
+                return;
+            }
+            if crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types())
+                == 0
+            {
+                events.push(Event::Damage { side: foe as u8 + 1, amount: 0, effectiveness: 0, crit: false });
+                return;
+            }
+            let level = self.sides[side].mon().level as u32;
+            let i = match script {
+                Some(s) => {
+                    if s.secondary {
+                        0
+                    } else {
+                        10
+                    }
+                }
+                None => self.rng.below(11),
+            };
+            let amount = ((level * (10 * i as u32 + 50)) / 100).max(1) as u16;
+            let target = self.sides[foe].mon_mut();
+            if target.sub_hp > 0 {
+                let amount = amount.min(target.sub_hp);
+                target.sub_hp -= amount;
+                events.push(Event::SubDamage { side: foe as u8 + 1, amount });
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke { side: foe as u8 + 1 });
+                }
+                return;
+            }
+            let cap = if target.enduring { target.hp.saturating_sub(1) } else { target.hp };
+            let amount = amount.min(cap);
+            target.hp -= amount;
+            self.taken_special[foe] = amount;
+            events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.resolve_faints(side, foe, events);
+            return;
+        }
+
         // Counter and Mirror Coat bounce back double the last hit this mon
         // took this turn — physical for Counter, special for Mirror Coat —
         // through the type chart (a Ghost shrugs Counter off) and into a
@@ -1508,6 +1635,61 @@ impl Battle {
             return;
         }
 
+        // Future Sight and Doom Desire: aim a delayed hit two turns out.
+        if matches!(slot.entry.id, "futuresight" | "doomdesire") {
+            if self.sides[foe].incoming.is_some() {
+                events.push(Event::Failed { side: side as u8 + 1 });
+                return;
+            }
+            let (attacker, _) = self.attack_pair(side);
+            self.sides[foe].incoming = Some((3, attacker, slot.entry.id));
+            events.push(Event::Charging { side: side as u8 + 1 });
+            return;
+        }
+
+        // Mirror Move plays back the foe's last move (both get announced);
+        // Mimic and Sketch write it into the slot instead.
+        let slot = if matches!(slot.entry.id, "mirrormove" | "mimic" | "sketch") {
+            let foe_last = self.sides[foe].mon().last_used.and_then(|i| {
+                self.sides[foe].mon().moves.get(i as usize).map(|m| m.entry)
+            });
+            match (slot.entry.id, foe_last) {
+                (_, None) => {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
+                (_, Some(e)) if e.id == slot.entry.id => {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
+                ("mirrormove", Some(_)) if self.sides[foe].mon().last_missed => {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
+                ("mimic", Some(e)) => {
+                    // A five-PP overlay; the original slot returns when the
+                    // mon leaves the field or faints.
+                    let orig = self.sides[side].mon().moves[index];
+                    let mon = self.sides[side].mon_mut();
+                    mon.mimic_backup = Some((index as u8, orig));
+                    mon.moves[index] = MoveSlot { entry: e, pp: 5, typed_as: None };
+                    return;
+                }
+                ("sketch", Some(e)) => {
+                    self.sides[side].mon_mut().moves[index] =
+                        MoveSlot { entry: e, pp: e.pp, typed_as: None };
+                    return;
+                }
+                ("mirrormove", Some(e)) => {
+                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
+                    MoveSlot { entry: e, pp: 1, typed_as: None }
+                }
+                _ => unreachable!(),
+            }
+        } else {
+            slot
+        };
+
         // A zero-power move is its status action, nothing more.
         if slot.entry.power == 0 {
             self.status_move(
@@ -1524,6 +1706,7 @@ impl Battle {
         if !hit {
             // A miss ends a rampage quietly — no fatigue confusion — and
             // resets Fury Cutter's ramp and a Rollout.
+            self.sides[side].mon_mut().last_missed = true;
             self.sides[side].mon_mut().rampage = None;
             self.sides[side].mon_mut().fury_n = 0;
             self.sides[side].mon_mut().rolling = None;
@@ -1649,6 +1832,29 @@ impl Battle {
                 }
                 "weatherball" if self.weather.is_some() => 100,
                 "hiddenpower" => 70,
+                "magnitude" => {
+                    // The spread collapses under a script: the secondary knob
+                    // picks Magnitude 4 (10) or 10 (150); play rolls the table.
+                    let i = match script {
+                        Some(s) => {
+                            if s.secondary {
+                                0
+                            } else {
+                                99
+                            }
+                        }
+                        None => self.rng.below(100) as u8,
+                    };
+                    match i {
+                        0..=4 => 10,
+                        5..=14 => 30,
+                        15..=34 => 50,
+                        35..=64 => 70,
+                        65..=84 => 90,
+                        85..=94 => 110,
+                        _ => 150,
+                    }
+                }
                 "rollout" | "iceball" => {
                     let n = self.sides[side].mon().rolling.unwrap_or(0)
                         + self.sides[side].mon().curled as u8;
@@ -1841,6 +2047,9 @@ impl Battle {
     /// Announce and replace one side's active if it just fainted.
     fn faint_and_replace(&mut self, side: usize, events: &mut Vec<Event>) {
         if self.sides[side].mon().fainted() {
+            if let Some((i, orig)) = self.sides[side].mon_mut().mimic_backup.take() {
+                self.sides[side].mon_mut().moves[i as usize] = orig;
+            }
             // A fainted trapper/gazer releases its victim.
             self.sides[1 - side].mon_mut().trapped_n = 0;
             self.sides[1 - side].mon_mut().mean_looked = false;
@@ -1898,6 +2107,9 @@ impl Battle {
         }
         for who in [foe, side] {
             if self.sides[who].mon().fainted() {
+                if let Some((i, orig)) = self.sides[who].mon_mut().mimic_backup.take() {
+                    self.sides[who].mon_mut().moves[i as usize] = orig;
+                }
                 self.sides[1 - who].mon_mut().trapped_n = 0;
                 events.push(Event::Fainted { side: who as u8 + 1 });
                 if let Some(next) = self.sides[who].first_healthy() {
@@ -2299,6 +2511,31 @@ impl Battle {
             StatusAction::Imprison => {
                 self.sides[side].mon_mut().imprisoning = true;
             }
+            StatusAction::MirrorMove | StatusAction::Mimic | StatusAction::Sketch => {
+                // Handled before the status path; unreachable here.
+            }
+            StatusAction::Transform => {
+                let foe_mon = self.sides[foe].mon().clone();
+                if foe_mon.fainted() {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                } else {
+                    let mon = self.sides[side].mon_mut();
+                    mon.atk = foe_mon.atk;
+                    mon.def = foe_mon.def;
+                    mon.spa = foe_mon.spa;
+                    mon.spd = foe_mon.spd;
+                    mon.spe = foe_mon.spe;
+                    mon.stages = foe_mon.stages;
+                    mon.acc_stage = foe_mon.acc_stage;
+                    mon.eva_stage = foe_mon.eva_stage;
+                    mon.type_override = Some(foe_mon.types());
+                    mon.moves = foe_mon
+                        .moves
+                        .iter()
+                        .map(|ms| MoveSlot { entry: ms.entry, pp: 5, typed_as: ms.typed_as })
+                        .collect();
+                }
+            }
             StatusAction::NoopFail => {
                 events.push(Event::Failed { side: side as u8 + 1 });
             }
@@ -2511,9 +2748,11 @@ impl Battle {
             self.sides[foe].mon_mut().status = None;
         }
 
-        // Smelling Salts spends the paralysis it fed on.
+        // Smelling Salts spends the paralysis it fed on — unless the hit
+        // was also the KO; a corpse keeps its status.
         if slot.entry.id == "smellingsalts"
             && self.sides[foe].mon().status == Some(Status::Paralysis)
+            && !self.sides[foe].mon().fainted()
         {
             self.sides[foe].mon_mut().status = None;
         }

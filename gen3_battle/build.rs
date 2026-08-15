@@ -562,6 +562,14 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Imprison)")
                 } else if act.get("noopfail").is_some() {
                     String::from("Some(StatusAction::NoopFail)")
+                } else if act.get("mirror").is_some() {
+                    String::from("Some(StatusAction::MirrorMove)")
+                } else if act.get("mimic").is_some() {
+                    String::from("Some(StatusAction::Mimic)")
+                } else if act.get("sketch").is_some() {
+                    String::from("Some(StatusAction::Sketch)")
+                } else if act.get("transform").is_some() {
+                    String::from("Some(StatusAction::Transform)")
                 } else if act.get("sub").is_some() {
                     String::from("Some(StatusAction::Substitute)")
                 } else if act.get("rest").is_some() {

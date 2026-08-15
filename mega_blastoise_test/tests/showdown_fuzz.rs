@@ -137,7 +137,8 @@ fn fuzz_gen3_single_hits() {
                             | "secretpower" | "snore" | "uproar" | "bide" | "rollout"
                             | "iceball" | "hiddenpower" | "furycutter" | "rage"
                             | "thrash" | "petaldance" | "outrage" | "counter"
-                            | "mirrorcoat"
+                            | "mirrorcoat" | "futuresight" | "doomdesire" | "magnitude"
+                            | "psywave"
                     )
             })
             .unwrap_or(false)

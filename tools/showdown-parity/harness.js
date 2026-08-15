@@ -176,10 +176,11 @@ function scriptRandomness(battle, script) {
       return Math.min(255, Math.max(217, battle.__cur.roll));
     }
     if (b === undefined) {
-      // One-arg random(n) compared against a chance: some secondary paths
-      // roll this way instead of randomChance. Scripted proc returns the
-      // bottom (always under the chance), otherwise the top (never under).
-      return battle.__cur.secondary ? 0 : Math.max(0, a - 1);
+      // One-arg random(n) compared against a chance: secondary procs, and
+      // Magnitude/Psywave's spreads (rolled in onModifyMove, BEFORE __cur
+      // updates — hence the acting seat's knob). Scripted proc returns the
+      // bottom, otherwise the top.
+      return ((battle.__act ?? battle.__cur).secondary) ? 0 : Math.max(0, a - 1);
     }
     return a; // two-arg minimums: multi-hit counts, sleep turns
   };
@@ -399,6 +400,10 @@ function runDump(sc) {
           : m.id === 'imprison' ? {imprison: true}
           : ['assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap'].includes(m.id)
             ? {noopfail: m.id}
+          : m.id === 'mirrormove' ? {mirror: true}
+          : m.id === 'mimic' ? {mimic: true}
+          : m.id === 'sketch' ? {sketch: true}
+          : m.id === 'transform' ? {transform: true}
           : m.id === 'rest' ? {rest: true}
           : m.id === 'focusenergy' ? {focus: true}
           : m.id === 'minimize' ? {minimize: true}
@@ -474,6 +479,7 @@ function runMovelist(sc) {
         'mindreader', 'charge', 'spite', 'grudge', 'torment', 'encore',
         'disable', 'naturepower', 'camouflage', 'conversion', 'imprison',
         'assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap',
+        'mimic', 'sketch', 'transform',
       ] : [
         // Gen 1: the cartridge engine implements all of these; their sim
         // hooks are the era mechanics themselves.
@@ -510,7 +516,8 @@ function runMovelist(sc) {
       'revenge', 'focuspunch', 'triattack', 'superpower', 'overheat',
       'psychoboost', 'knockoff', 'thief', 'covet', 'endeavor', 'flail',
       'thrash', 'petaldance', 'outrage', 'rage', 'furycutter', 'snore',
-      'uproar', 'bide', 'rollout', 'iceball', 'hiddenpower',
+      'bide', 'rollout', 'iceball', 'hiddenpower', 'magnitude',
+      'psywave', 'futuresight', 'doomdesire',
       'reversal', 'weatherball', 'secretpower', 'highjumpkick', 'jumpkick',
       'spitup',
     ].includes(move.id);
@@ -521,7 +528,7 @@ function runMovelist(sc) {
     if (move.mindBlownRecoil) continue;
     if (move.willCrit !== undefined && !counterish) continue;
     if ((move.hasCrashDamage && !g3special) || move.struggleRecoil) continue;
-    if (move.flags['futuremove']) continue;
+    if (move.flags['futuremove'] && !g3special) continue;
     // Gen 3 partial traps are modelled; other damaging volatiles are not.
     if (move.volatileStatus &&
         !(move.volatileStatus === 'partiallytrapped' && sc.gen >= 3) &&

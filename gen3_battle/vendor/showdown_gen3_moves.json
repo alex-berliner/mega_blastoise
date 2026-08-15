@@ -1066,7 +1066,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"mimic": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1114,7 +1116,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"mirror": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1423,7 +1427,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"sketch": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3239,7 +3245,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"transform": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
