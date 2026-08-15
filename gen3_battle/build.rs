@@ -384,10 +384,12 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
             None => String::from("None"),
         };
         let (drain, recoil) = (fraction("drain"), fraction("recoil"));
+        let multihit = fraction("multihit");
         out.push_str(&format!(
             "    MoveEntry {{ id: {id:?}, name: {name:?}, move_type: {}, \
              power: {power}, accuracy: {accuracy}, pp: {pp}, priority: {priority}, \
-             secondary: {secondary}, drain: {drain}, recoil: {recoil} }},\n",
+             secondary: {secondary}, drain: {drain}, recoil: {recoil}, \
+             multihit: {multihit} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

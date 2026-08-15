@@ -112,6 +112,17 @@ function scriptRandomness(battle, script) {
   };
   battle.prng.randomChance = () => false;
 
+  // The 2-5 multi-hit count is drawn via battle.sample from a weighted
+  // list; the acting seat's script decides it. Anything else sampled is
+  // pinned to the first entry.
+  battle.sample = (items) => {
+    if (Array.isArray(items) && items.length === 8 && items[0] === 2 && items[7] === 5) {
+      const hits = (battle.__act ?? battle.__cur).hits;
+      return hits || 2;
+    }
+    return items[0];
+  };
+
   // The damage roll: gen 3+ multiplies by roll/100 via battle.randomizer;
   // gen 1 multiplies by battle.random(217, 256)/255, so there the script's
   // roll is the 217..255 value itself.
@@ -265,6 +276,9 @@ function runDump(sc) {
         secondary,
         drain: m.drain ?? null,
         recoil: m.recoil ?? null,
+        multihit: m.multihit
+          ? (Array.isArray(m.multihit) ? m.multihit : [m.multihit, m.multihit])
+          : null,
       };
     });
   return {species, moves};
@@ -288,7 +302,7 @@ function runMovelist(sc) {
     if (!move.exists || move.isNonstandard) continue;
     if (move.category === 'Status' || !move.basePower || move.basePower <= 0) continue;
     if (move.basePowerCallback || move.damageCallback || move.damage) continue;
-    if (move.multihit || move.mindBlownRecoil) continue;
+    if (move.mindBlownRecoil) continue;
     if (move.selfdestruct || move.ohko || move.willCrit !== undefined) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
     if (move.flags['charge'] || move.flags['recharge'] || move.flags['futuremove']) continue;
@@ -304,10 +318,10 @@ function runMovelist(sc) {
     // Any on* hook means conditional behaviour (Facade's doubling is an
     // onBasePower handler, not a callback property).
     const hooky = Object.keys(raw).some((k) => k.startsWith('on') || /Callback/.test(k));
-    if (hooky || raw.self || raw.multihit) continue;
+    if (hooky || raw.self) continue;
     if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes'].includes(move.target)) continue;
     if (move.id === 'struggle') continue;
-    out.push({id: move.id, priority: move.priority, boostsSelf: !!move.self});
+    out.push({id: move.id, priority: move.priority, boostsSelf: !!move.self, multihit: !!move.multihit});
   }
   return {moves: out};
 }

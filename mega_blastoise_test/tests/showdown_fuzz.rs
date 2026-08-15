@@ -8,10 +8,10 @@
 //! the full scenario JSON, so a finding replays with
 //! `FUZZ_SEED=<n> cargo test ...` and can be pinned into the static table.
 //!
-//! The move pool is the harness's "vanilla" list — plain single-hit fixed
-//! base-power damage, derived from Showdown's own dex properties — because
-//! that is the surface both engines implement. Fuzzing recoil or multi-hit
-//! moves today would only measure what is knowingly unbuilt.
+//! The move pool is the harness's "vanilla" list — fixed base-power damage
+//! with the effects the engines model (secondaries, drain, recoil,
+//! multi-hit), derived from Showdown's own dex properties. Anything needing
+//! a bespoke sim hook stays out so the fuzz measures mechanics, not stubs.
 //!
 //! Volume via `FUZZ_N` (default 200 per suite). Skips loudly when the harness
 //! is unarmed, like the parity suite.
@@ -91,13 +91,16 @@ fn fuzz_n() -> usize {
 }
 
 /// Vanilla move ids for a gen, intersected with our table so both sides can
-/// run every sampled move. Returns (id, priority).
-fn vanilla_moves(gen: u8, ours: impl Fn(&str) -> bool) -> Vec<(String, i8)> {
+/// run every sampled move. Returns (id, priority). `multihit` keeps or drops
+/// the multi-strike moves: the single-hit suites compare one strike's damage,
+/// so a move the sim lands twice would only measure the miscount.
+fn vanilla_moves(gen: u8, multihit: bool, ours: impl Fn(&str) -> bool) -> Vec<(String, i8)> {
     let results = showdown(&json!([{"kind": "movelist", "gen": gen}]));
     results[0]["moves"]
         .as_array()
         .unwrap()
         .iter()
+        .filter(|m| multihit || !m["multihit"].as_bool().unwrap_or(false))
         .map(|m| (m["id"].as_str().unwrap().to_string(), m["priority"].as_i64().unwrap() as i8))
         .filter(|(id, _)| ours(id))
         .collect()
@@ -115,7 +118,7 @@ fn fuzz_gen3_single_hits() {
         Roll, Stat, SPECIES,
     };
 
-    let moves = vanilla_moves(3, |id| {
+    let moves = vanilla_moves(3, false, |id| {
         gen3_battle::move_by_id(id).map(|m| m.power > 0).unwrap_or(false)
     });
     assert!(moves.len() > 80, "gen3 vanilla pool too small: {}", moves.len());
@@ -253,7 +256,7 @@ fn fuzz_gen3_turns() {
         Battle, Choice, Event, Invest, Mon, Nature, SPECIES,
     };
 
-    let moves = vanilla_moves(3, |id| {
+    let moves = vanilla_moves(3, true, |id| {
         gen3_battle::move_by_id(id).map(|m| m.power > 0).unwrap_or(false)
     });
     let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
@@ -287,14 +290,21 @@ fn fuzz_gen3_turns() {
         };
         let st1 = legal_status(&mut fz, s1);
         let st2 = legal_status(&mut fz, s2);
-        // hit, crit, roll, secondary, immobile — the last only when the seat
-        // is paralyzed going in, matching when the sim would roll it.
-        let mut script: Vec<(bool, bool, u8, bool, bool)> = (0..2)
-            .map(|_| (!fz.chance(10), fz.chance(25), 85 + fz.below(16) as u8, fz.chance(40), false))
+        // hit, crit, roll, secondary, immobile, hits — immobile only when
+        // the seat is paralyzed going in, hits only for a 2-5 multi-hit
+        // move, matching when the sim would roll each.
+        let mut script: Vec<(bool, bool, u8, bool, bool, u8)> = (0..2)
+            .map(|_| (!fz.chance(10), fz.chance(25), 85 + fz.below(16) as u8, fz.chance(40), false, 0))
             .collect();
         for (seat, st) in [st1, st2].iter().enumerate() {
             if matches!(st, Some((_, gen3_battle::data::Status::Paralysis))) {
                 script[seat].4 = fz.chance(25);
+            }
+            let mv = if seat == 0 { &m1 } else { &m2 };
+            if let Some(e) = gen3_battle::move_by_id(mv) {
+                if e.multihit.is_some_and(|(lo, hi)| lo != hi) {
+                    script[seat].5 = 2 + fz.below(4) as u8;
+                }
             }
         }
 
@@ -303,8 +313,8 @@ fn fuzz_gen3_turns() {
             "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0)},
             "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0)},
             "moves": [m1, m2],
-            "script": {"p1": {"hit": script[0].0, "crit": script[0].1, "roll": script[0].2, "secondary": script[0].3, "immobile": script[0].4},
-                       "p2": {"hit": script[1].0, "crit": script[1].1, "roll": script[1].2, "secondary": script[1].3, "immobile": script[1].4}},
+            "script": {"p1": {"hit": script[0].0, "crit": script[0].1, "roll": script[0].2, "secondary": script[0].3, "immobile": script[0].4, "hits": script[0].5},
+                       "p2": {"hit": script[1].0, "crit": script[1].1, "roll": script[1].2, "secondary": script[1].3, "immobile": script[1].4, "hits": script[1].5}},
         }));
         cases.push((s1.id, s2.id, level, m1, m2, script, [st1.map(|s| s.1), st2.map(|s| s.1)]));
     }
@@ -329,8 +339,8 @@ fn fuzz_gen3_turns() {
         }
         let ts = TurnScript {
             seats: [
-                Some(SeatScript { hit: script[0].0, crit: script[0].1, random: script[0].2, secondary: script[0].3, immobile: script[0].4 }),
-                Some(SeatScript { hit: script[1].0, crit: script[1].1, random: script[1].2, secondary: script[1].3, immobile: script[1].4 }),
+                Some(SeatScript { hit: script[0].0, crit: script[0].1, random: script[0].2, secondary: script[0].3, immobile: script[0].4, hits: script[0].5 }),
+                Some(SeatScript { hit: script[1].0, crit: script[1].1, random: script[1].2, secondary: script[1].3, immobile: script[1].4, hits: script[1].5 }),
             ],
         };
         let events = battle.step_with([Choice::Move(0), Choice::Move(0)], &ts);
@@ -378,7 +388,7 @@ fn fuzz_gen1_single_hits() {
     }
     use gen1_battle::testing::{compute_damage_scripted, Mon};
 
-    let moves = vanilla_moves(1, |id| {
+    let moves = vanilla_moves(1, false, |id| {
         gen1_battle::move_by_id(id).map(|m| m.power > 0).unwrap_or(false)
     });
     assert!(moves.len() > 30, "gen1 vanilla pool too small: {}", moves.len());

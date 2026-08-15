@@ -169,6 +169,9 @@ pub struct MoveEntry {
     pub drain: Option<(u16, u16)>,
     /// The user takes this fraction of the damage dealt (Double-Edge's 1/3).
     pub recoil: Option<(u16, u16)>,
+    /// Hits this many times: (2,2) fixed double, (2,5) the weighted
+    /// 2-to-5 spread. None is the ordinary single hit.
+    pub multihit: Option<(u16, u16)>,
 }
 
 impl MoveEntry {

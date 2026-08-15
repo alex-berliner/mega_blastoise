@@ -244,6 +244,9 @@ pub struct SeatScript {
     /// Full paralysis: the mon is paralyzed and this turn's 25% "can't move"
     /// roll comes up against it.
     pub immobile: bool,
+    /// Strike count for a 2-5 multi-hit move; 0 lets the battle roll it.
+    /// Fixed-count moves (Double Kick's 2) ignore it.
+    pub hits: u8,
 }
 
 /// Per-turn RNG script; see [`Battle::step_with`].
@@ -516,37 +519,100 @@ impl Battle {
                 85 + self.rng.below(16) as u8,
             ),
         };
-        let (attacker, defender) = self.attack_pair(side);
-        let m = MoveUse { move_type: slot.move_type(), power: slot.entry.power };
-        let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
-        if dealt == 0 {
+        // How many times this move strikes. The 2-5 spread is the games'
+        // weighted table (2 and 3 hits three-eighths each, 4 and 5 an eighth
+        // each); a script pins the count for the tests.
+        let hits = match slot.entry.multihit {
+            None => 1,
+            Some((lo, hi)) if lo == hi => lo,
+            Some(_) => match script {
+                Some(s) if s.hits > 0 => s.hits as u16,
+                _ => [2u16, 2, 2, 3, 3, 3, 4, 5][self.rng.below(8) as usize],
+            },
+        };
+
+        let mut total = 0u16;
+        for _ in 0..hits {
+            let (attacker, defender) = self.attack_pair(side);
+            let m = MoveUse { move_type: slot.move_type(), power: slot.entry.power };
+            let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
+            if dealt == 0 {
+                break; // immune: later strikes land no better
+            }
+
+            let eff =
+                crate::types::effectiveness_against(m.move_type, self.sides[foe].mon().types());
+            let target = self.sides[foe].mon_mut();
+            let amount = (dealt as u16).min(target.hp);
+            target.hp -= amount;
+            total += amount;
+            events.push(Event::Damage {
+                side: foe as u8 + 1,
+                amount,
+                effectiveness: eff,
+                crit,
+            });
+            // Drain heals off the damage actually dealt: floor, but at least 1.
+            if let Some((num, den)) = slot.entry.drain {
+                let heal = (amount * num / den).max(1);
+                let user = self.sides[side].mon_mut();
+                let heal = heal.min(user.max_hp - user.hp);
+                if heal > 0 {
+                    user.hp += heal;
+                    events.push(Event::Drained { side: side as u8 + 1, amount: heal });
+                }
+            }
+            self.hit_effects(side, foe, &slot, script, events);
+            if self.sides[foe].mon().fainted() {
+                break;
+            }
+        }
+        if total == 0 {
             return;
         }
 
-        let eff = crate::types::effectiveness_against(m.move_type, self.sides[foe].mon().types());
-        let target = self.sides[foe].mon_mut();
-        let amount = (dealt as u16).min(target.hp);
-        target.hp -= amount;
-        events.push(Event::Damage {
-            side: foe as u8 + 1,
-            amount,
-            effectiveness: eff,
-            crit,
-        });
-        // Drain heals off the damage actually dealt: floor, but at least 1.
-        if let Some((num, den)) = slot.entry.drain {
-            let heal = (amount * num / den).max(1);
-            let user = self.sides[side].mon_mut();
-            let heal = heal.min(user.max_hp - user.hp);
-            if heal > 0 {
-                user.hp += heal;
-                events.push(Event::Drained { side: side as u8 + 1, amount: heal });
-            }
-        }
-        // The move's secondary, decided by the script (or the RNG in play).
         // This runs BEFORE the thaw below, matching the reference sim: a
         // Fire move's burn chance is blocked by the freeze it is about to
         // cure, because the target still carries frz when secondaries apply.
+        // Recoil comes off the damage actually dealt: floored (this era's
+        // rule; the fuzzer rejected round-to-nearest), but at least 1 — and
+        // it can knock the user out.
+        if let Some((num, den)) = slot.entry.recoil {
+            let hurt = (total * num / den).max(1);
+            let user = self.sides[side].mon_mut();
+            let hurt = hurt.min(user.hp);
+            user.hp -= hurt;
+            events.push(Event::Recoil { side: side as u8 + 1, amount: hurt });
+        }
+
+        // Target first, then the user (recoil can faint it too): whoever is
+        // down is announced and replaced. A side that already replaced this
+        // turn has a healthy active here, so nothing double-fires.
+        for who in [foe, side] {
+            if self.sides[who].mon().fainted() {
+                events.push(Event::Fainted { side: who as u8 + 1 });
+                // The next living party member steps in. A real forced-switch
+                // prompt belongs to the caller; this keeps the battle legal.
+                if let Some(next) = self.sides[who].first_healthy() {
+                    self.sides[who].active = next;
+                    events.push(Event::Switched { side: who as u8 + 1, party_index: next });
+                }
+            }
+        }
+    }
+
+
+    /// The per-strike aftermath of a landed hit: the secondary (script or
+    /// RNG-decided), then the Fire thaw. Runs once per strike of a
+    /// multi-hit move, which is also how the reference sim rolls it.
+    fn hit_effects(
+        &mut self,
+        side: usize,
+        foe: usize,
+        slot: &MoveSlot,
+        script: Option<SeatScript>,
+        events: &mut Vec<Event>,
+    ) {
         // A 100% secondary (Zap Cannon's paralysis) is a certainty, not a
         // roll, so the script has no say in it — matching the reference sim,
         // whose sub-certain roll can't come up short of 100.
@@ -597,33 +663,9 @@ impl Battle {
         {
             self.sides[foe].mon_mut().status = None;
         }
-
-        // Recoil comes off the damage actually dealt: floored (this era's
-        // rule; the fuzzer rejected round-to-nearest), but at least 1 — and
-        // it can knock the user out.
-        if let Some((num, den)) = slot.entry.recoil {
-            let hurt = (amount * num / den).max(1);
-            let user = self.sides[side].mon_mut();
-            let hurt = hurt.min(user.hp);
-            user.hp -= hurt;
-            events.push(Event::Recoil { side: side as u8 + 1, amount: hurt });
-        }
-
-        // Target first, then the user (recoil can faint it too): whoever is
-        // down is announced and replaced. A side that already replaced this
-        // turn has a healthy active here, so nothing double-fires.
-        for who in [foe, side] {
-            if self.sides[who].mon().fainted() {
-                events.push(Event::Fainted { side: who as u8 + 1 });
-                // The next living party member steps in. A real forced-switch
-                // prompt belongs to the caller; this keeps the battle legal.
-                if let Some(next) = self.sides[who].first_healthy() {
-                    self.sides[who].active = next;
-                    events.push(Event::Switched { side: who as u8 + 1, party_index: next });
-                }
-            }
-        }
     }
+
+
 
     fn attack_pair(&self, side: usize) -> (Attacker, Defender) {
         let a = self.sides[side].mon();
@@ -774,8 +816,14 @@ mod tests {
         TurnScript { seats: [Some(script[0]), Some(script[1])] }
     }
 
-    const PLAIN: SeatScript =
-        SeatScript { hit: true, crit: false, random: 100, secondary: false, immobile: false };
+    const PLAIN: SeatScript = SeatScript {
+        hit: true,
+        crit: false,
+        random: 100,
+        secondary: false,
+        immobile: false,
+        hits: 0,
+    };
 
     #[test]
     fn a_flinched_mon_loses_its_action_for_exactly_one_turn() {
@@ -853,6 +901,31 @@ mod tests {
         assert_eq!(b.sides[1].mon().hp, hp2 - to_snorlax + (to_blaziken / 2).max(1));
         assert!(events.iter().any(|e| matches!(e, Event::Recoil { side: 1, .. })));
         assert!(events.iter().any(|e| matches!(e, Event::Drained { side: 2, .. })));
+    }
+
+    #[test]
+    fn a_multi_hit_move_strikes_the_scripted_count() {
+        // Fury Attack at 4 scripted strikes: four damage events, one PP.
+        let mut b = battle(mon("blaziken", 50, &["furyattack"]), mon("snorlax", 50, &["pound"]));
+        let miss = SeatScript { hit: false, ..PLAIN };
+        let events = b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([SeatScript { hits: 4, ..PLAIN }, miss]),
+        );
+        let strikes =
+            events.iter().filter(|e| matches!(e, Event::Damage { side: 2, .. })).count();
+        assert_eq!(strikes, 4);
+        assert_eq!(b.sides[0].mon().moves[0].pp, b.sides[0].mon().moves[0].entry.pp - 1);
+
+        // Double Kick is a fixed two: the script's count does not move it.
+        let mut b = battle(mon("blaziken", 50, &["doublekick"]), mon("snorlax", 50, &["pound"]));
+        let events = b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([SeatScript { hits: 5, ..PLAIN }, miss]),
+        );
+        let strikes =
+            events.iter().filter(|e| matches!(e, Event::Damage { side: 2, .. })).count();
+        assert_eq!(strikes, 2);
     }
 
     #[test]
