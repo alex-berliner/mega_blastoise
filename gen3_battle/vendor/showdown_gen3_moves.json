@@ -5425,7 +5425,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"weather": "hail"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -7602,7 +7604,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"weather": "raindance"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -7789,7 +7793,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"weather": "sandstorm"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -8276,7 +8282,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"weather": "sunnyday"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,

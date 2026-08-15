@@ -162,6 +162,27 @@ pub enum FixedDamage {
     Half,
 }
 
+/// The four five-turn weathers.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Weather {
+    Sun,
+    Rain,
+    Sandstorm,
+    Hail,
+}
+
+impl Weather {
+    /// The display name the battle log uses.
+    pub fn label(self) -> &'static str {
+        match self {
+            Weather::Sun => "harsh sunlight",
+            Weather::Rain => "rain",
+            Weather::Sandstorm => "sandstorm",
+            Weather::Hail => "hail",
+        }
+    }
+}
+
 /// A team-wide condition a status move raises for five turns.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SideCondition {
@@ -197,6 +218,7 @@ pub enum StatusAction {
     /// Leech Seed: plant on the target; every end of turn it bleeds an
     /// eighth of its max HP to the opposing active. Grass types are immune.
     Seed,
+    SetWeather(Weather),
 }
 
 /// One move.

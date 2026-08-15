@@ -15,7 +15,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use crate::damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
-use crate::data::{move_by_id, species_by_id, Boost, FixedDamage, MoveEntry, SecondaryEffect, SideCondition, SpeciesEntry, Status, StatusAction};
+use crate::data::{move_by_id, species_by_id, Boost, FixedDamage, MoveEntry, SecondaryEffect, SideCondition, SpeciesEntry, Status, StatusAction, Weather};
 use crate::stats::{hp_stat, other_stat, Invest, Nature, Stat};
 use crate::types::Type;
 
@@ -335,6 +335,10 @@ pub enum Event {
     SideStarted { side: u8, condition: SideCondition },
     /// Leech Seed took root on `side`'s active mon.
     Seeded { side: u8 },
+    WeatherStarted { weather: Weather },
+    WeatherEnded { weather: Weather },
+    /// Sandstorm or hail chipped `side`'s mon.
+    WeatherDamage { side: u8, amount: u16 },
     /// Leech Seed drained `amount` from `side`'s mon to the other active.
     SeedDrain { side: u8, amount: u16 },
     /// `side`'s team condition ran out.
@@ -372,11 +376,14 @@ pub struct Battle {
     pub sides: [Side; 2],
     pub rng: Rng,
     pub turn: u32,
+    /// Active weather and its remaining end-of-turn ticks.
+    pub weather: Option<Weather>,
+    pub weather_n: u8,
 }
 
 impl Battle {
     pub fn new(side1: Side, side2: Side, seed: u64) -> Battle {
-        Battle { sides: [side1, side2], rng: Rng::new(seed), turn: 0 }
+        Battle { sides: [side1, side2], rng: Rng::new(seed), turn: 0, weather: None, weather_n: 0 }
     }
 
     pub fn over(&self) -> bool {
@@ -428,6 +435,40 @@ impl Battle {
             }
             if let Choice::Move(index) = choices[side] {
                 self.use_move(side, index, script.seats[side], &mut events);
+            }
+        }
+
+        // Weather chips first — the games' upkeep slot: sandstorm hits
+        // anything not Rock/Ground/Steel, hail anything not Ice, a
+        // sixteenth each, faster side first.
+        if matches!(self.weather, Some(Weather::Sandstorm | Weather::Hail)) {
+            let sand = self.weather == Some(Weather::Sandstorm);
+            let first = self.faster_side(scripted);
+            for side in [first, 1 - first] {
+                if self.over() {
+                    break;
+                }
+                let mon = self.sides[side].mon();
+                if mon.fainted() {
+                    continue;
+                }
+                let (t1, t2) = mon.types();
+                let immune = if sand {
+                    [t1, t2].iter().any(|t| {
+                        matches!(t, Type::Rock | Type::Ground | Type::Steel)
+                    })
+                } else {
+                    t1 == Type::Ice || t2 == Type::Ice
+                };
+                if immune {
+                    continue;
+                }
+                let amount = (self.sides[side].mon().max_hp / 16).max(1);
+                let mon = self.sides[side].mon_mut();
+                let amount = amount.min(mon.hp);
+                mon.hp -= amount;
+                events.push(Event::WeatherDamage { side: side as u8 + 1, amount });
+                self.faint_and_replace(side, &mut events);
             }
         }
 
@@ -497,6 +538,15 @@ impl Battle {
                         events.push(Event::SideEnded { side: side as u8 + 1, condition: cond });
                     }
                 }
+            }
+        }
+
+        // Weather runs out on the same five-tick clock.
+        if let Some(weather) = self.weather {
+            self.weather_n = self.weather_n.saturating_sub(1);
+            if self.weather_n == 0 {
+                self.weather = None;
+                events.push(Event::WeatherEnded { weather });
             }
         }
 
@@ -667,7 +717,8 @@ impl Battle {
 
         // The charge turn of a two-turn move: announce, tuck the slot away,
         // and stop. Skull Bash's era perk raises Defense on the way down.
-        if slot.entry.charge && !releasing {
+        let instant_solar = slot.entry.id == "solarbeam" && self.weather == Some(Weather::Sun);
+        if slot.entry.charge && !releasing && !instant_solar {
             events.push(Event::Charging { side: side as u8 + 1 });
             if slot.entry.id == "skullbash" {
                 self.sides[side].mon_mut().apply_boost(Boost::Def, 1);
@@ -819,10 +870,22 @@ impl Battle {
         let mut total = 0u16;
         for _ in 0..hits {
             let (attacker, defender) = self.attack_pair(side);
+            let weather_mod = match (self.weather, slot.move_type()) {
+                (Some(Weather::Rain), Type::Water) | (Some(Weather::Sun), Type::Fire) => 1,
+                (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
+                _ => 0,
+            };
+            // Solar Beam sputters outside the sun it was made for.
+            let solar_cut = slot.entry.id == "solarbeam"
+                && matches!(
+                    self.weather,
+                    Some(Weather::Rain | Weather::Sandstorm | Weather::Hail)
+                );
             let m = MoveUse {
                 move_type: slot.move_type(),
-                power: slot.entry.power * pierce_mult,
+                power: slot.entry.power * pierce_mult / if solar_cut { 2 } else { 1 },
                 halve_def: slot.entry.selfdestruct,
+                weather: weather_mod,
             };
             let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
             if dealt == 0 {
@@ -1010,6 +1073,13 @@ impl Battle {
                 if hit && !grass && !target.fainted() && !target.seeded {
                     self.sides[foe].mon_mut().seeded = true;
                     events.push(Event::Seeded { side: foe as u8 + 1 });
+                }
+            }
+            StatusAction::SetWeather(weather) => {
+                if self.weather != Some(weather) {
+                    self.weather = Some(weather);
+                    self.weather_n = 5;
+                    events.push(Event::WeatherStarted { weather });
                 }
             }
             StatusAction::Team(cond) => {

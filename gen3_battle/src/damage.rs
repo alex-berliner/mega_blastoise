@@ -51,6 +51,9 @@ pub struct MoveUse {
     /// Explosion/Self-Destruct: the target's Defense is halved (floored, at
     /// least 1) after stages, per this era's rule.
     pub halve_def: bool,
+    /// Weather's damage factor for this move: +1 boosts half again (rain on
+    /// Water, sun on Fire), -1 halves (the crossed pairs), 0 leaves it be.
+    pub weather: i8,
 }
 
 impl MoveUse {
@@ -145,6 +148,13 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
     if screened && !roll.crit {
         dmg /= 2;
     }
+    // Weather, after screens and before the physical floor — the reference
+    // sim's modifyDamage order.
+    if m.weather > 0 {
+        dmg = dmg * 3 / 2;
+    } else if m.weather < 0 {
+        dmg /= 2;
+    }
     // A PHYSICAL hit whose base floored to zero becomes 1 before the +2;
     // a special one stays 0 and lands for exactly 2. Straight from the
     // reference implementation, via the fuzzer.
@@ -197,7 +207,7 @@ mod tests {
         }
     }
 
-    const TACKLE: MoveUse = MoveUse { halve_def: false, move_type: Type::Normal, power: 100 };
+    const TACKLE: MoveUse = MoveUse { halve_def: false, weather: 0, move_type: Type::Normal, power: 100 };
 
     /// Worked by hand: level term 42; 42*100*299/200 = 6279; /50 = 125; +2 = 127.
     #[test]
@@ -255,8 +265,8 @@ mod tests {
         let mut d = defender();
         d.def = 1000;
         d.sp_def = 100;
-        let bite = MoveUse { halve_def: false, move_type: Type::Dark, power: 100 };
-        let physical = MoveUse { halve_def: false, move_type: Type::Rock, power: 100 };
+        let bite = MoveUse { halve_def: false, weather: 0, move_type: Type::Dark, power: 100 };
+        let physical = MoveUse { halve_def: false, weather: 0, move_type: Type::Rock, power: 100 };
         assert!(damage(&attacker(), &d, &bite, Roll::MAX) > damage(&attacker(), &d, &physical, Roll::MAX));
     }
 
@@ -264,7 +274,7 @@ mod tests {
     fn burn_halves_physical_only() {
         let mut a = attacker();
         a.burned = true;
-        let special = MoveUse { halve_def: false, move_type: Type::Water, power: 100 };
+        let special = MoveUse { halve_def: false, weather: 0, move_type: Type::Water, power: 100 };
         let burned_physical = damage(&a, &defender(), &TACKLE, Roll::MAX);
         let healthy_physical = damage(&attacker(), &defender(), &TACKLE, Roll::MAX);
         assert!(burned_physical < healthy_physical);
@@ -289,7 +299,7 @@ mod tests {
         let mut d = defender();
         d.types = (Type::Ghost, Type::None);
         assert_eq!(damage(&attacker(), &d, &TACKLE, Roll::MAX), 0);
-        let status = MoveUse { halve_def: false, move_type: Type::Normal, power: 0 };
+        let status = MoveUse { halve_def: false, weather: 0, move_type: Type::Normal, power: 0 };
         assert_eq!(damage(&attacker(), &defender(), &status, Roll::MAX), 0);
     }
 

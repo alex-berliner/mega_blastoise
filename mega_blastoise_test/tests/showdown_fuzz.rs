@@ -225,7 +225,7 @@ fn fuzz_gen3_single_hits() {
         // as the sim's accuracy step never runs for it.
         let hit = *hit || entry.accuracy == 0;
         let dealt = if hit {
-            damage(&attacker, &defender, &MoveUse { move_type: entry.move_type, power: entry.power, halve_def: entry.selfdestruct },
+            damage(&attacker, &defender, &MoveUse { move_type: entry.move_type, power: entry.power, halve_def: entry.selfdestruct, weather: 0 },
                    Roll { crit: *crit, random: *roll })
         } else {
             0

@@ -43,7 +43,7 @@ pub use damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
 pub use stats::{apply_stage, hp_stat, other_stat, Invest, Nature, Stat};
 pub use data::{
     move_by_id, species_by_id, BaseStats, Boost, MoveEntry, Secondary, SecondaryEffect,
-    SideCondition, SpeciesEntry, Status, MOVES, SPECIES, TYPE_COUNT,
+    SideCondition, SpeciesEntry, Status, Weather, MOVES, SPECIES, TYPE_COUNT,
 };
 pub use types::{category_of, effectiveness, effectiveness_against, Category, Type};
 

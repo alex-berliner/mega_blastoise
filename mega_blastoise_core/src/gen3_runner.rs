@@ -236,6 +236,31 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::WeatherStarted { weather } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: String::new(),
+                        what: weather.label().into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::WeatherEnded { weather } => {
+                effects
+                    .on_event(BoardEvent::EffectEnd {
+                        mon: String::new(),
+                        what: weather.label().into(),
+                    })
+                    .await;
+            }
+            Event::WeatherDamage { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Damage {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
             Event::Seeded { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {

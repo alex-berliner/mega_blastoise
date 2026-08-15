@@ -446,6 +446,15 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Confuse)")
                 } else if act.get("seed").is_some() {
                     String::from("Some(StatusAction::Seed)")
+                } else if let Some(w) = act.get("weather").and_then(|v| v.as_str()) {
+                    let weather = match w {
+                        "sunnyday" => "Weather::Sun",
+                        "raindance" => "Weather::Rain",
+                        "sandstorm" => "Weather::Sandstorm",
+                        "hail" => "Weather::Hail",
+                        other => panic!("{id}: unknown weather {other:?}"),
+                    };
+                    format!("Some(StatusAction::SetWeather({weather}))")
                 } else if let Some(side) = act.get("side").and_then(|v| v.as_str()) {
                     let cond = match side {
                         "reflect" => "SideCondition::Reflect",
