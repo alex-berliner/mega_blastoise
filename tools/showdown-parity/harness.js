@@ -33,7 +33,10 @@ function teamMon(dex, m) {
     species: species.name,
     level: m.level ?? 50,
     nature: m.nature ?? 'Hardy',
-    ability: species.abilities['0'] ?? '',
+    // The core engines model no abilities yet, so the reference sim runs
+    // without them too: otherwise Pressure, Levitate and Huge Power dominate
+    // every diff with knowingly-unbuilt behaviour.
+    ability: 'noability',
     ivs: m.ivs ?? {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31},
     evs: m.evs ?? {hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0},
     moves: m.moves,
@@ -181,6 +184,77 @@ function runTurn(sc) {
   };
 }
 
+/// The moves whose WHOLE behaviour both core engines implement: plain,
+/// single-hit, fixed-base-power damage. Everything else (recoil, drain,
+/// multi-hit, charge/recharge turns, fixed damage, OHKO, self-KO, callbacks)
+/// would fuzz unimplemented surface and drown real findings in noise.
+/// Secondaries are allowed because the harness pins their rolls off.
+/// Era-accurate species and move tables straight from the gen's dex, for the
+/// core engines' build scripts to consume. This replaced hand-layering the
+/// per-gen delta files, whose direction the fuzzer proved wrong (modern PP
+/// counts and even Gen 6 base-stat buffs were leaking into "gen 3" tables).
+function runDump(sc) {
+  const dex = Dex.mod(`gen${sc.gen}`);
+  const species = dex.species.all()
+    .filter((s) => s.exists && !s.isNonstandard && s.num > 0)
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      types: s.types,
+      baseStats: s.baseStats,
+    }));
+  const moves = dex.moves.all()
+    .filter((m) => m.exists && !m.isNonstandard && m.id !== 'struggle')
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      type: m.type,
+      basePower: m.basePower,
+      accuracy: m.accuracy === true ? 0 : m.accuracy,
+      pp: m.pp,
+      category: m.category,
+    }));
+  return {species, moves};
+}
+
+function runMovelist(sc) {
+  const dex = Dex.mod(`gen${sc.gen}`);
+  // Dist Move objects strip function-valued properties, so callback-driven
+  // moves (Facade's status doubling, Flail's HP curve) are invisible on the
+  // dex view. The raw data files still carry them; overlay the gen's mod
+  // file on the base data and filter on that.
+  const rawBase = require('pokemon-showdown/dist/data/moves').Moves;
+  let rawMod = {};
+  try {
+    rawMod = require(`pokemon-showdown/dist/data/mods/gen${sc.gen}/moves`).Moves;
+  } catch (e) { /* no mod overrides for this gen */ }
+  const rawOf = (id) => ({...(rawBase[id] ?? {}), ...(rawMod[id] ?? {})});
+
+  const out = [];
+  for (const move of dex.moves.all()) {
+    if (!move.exists || move.isNonstandard) continue;
+    if (move.category === 'Status' || !move.basePower || move.basePower <= 0) continue;
+    if (move.basePowerCallback || move.damageCallback || move.damage) continue;
+    if (move.multihit || move.drain || move.recoil || move.mindBlownRecoil) continue;
+    if (move.selfdestruct || move.ohko || move.willCrit !== undefined) continue;
+    if (move.hasCrashDamage || move.struggleRecoil) continue;
+    if (move.flags['charge'] || move.flags['recharge'] || move.flags['futuremove']) continue;
+    if (move.volatileStatus) continue; // partial traps tick extra end-of-turn damage
+    if (move.sleepUsable || move.id === 'dreameater') continue; // fail unless asleep
+    const raw = rawOf(move.id);
+    // Conditional base power, self-effects (Superpower's drop, Overheat's),
+    // and on-hit hooks are behaviour the core engines do not model.
+    // Any on* hook means conditional behaviour (Facade's doubling is an
+    // onBasePower handler, not a callback property).
+    const hooky = Object.keys(raw).some((k) => k.startsWith('on') || /Callback/.test(k));
+    if (hooky || raw.self || raw.recoil || raw.drain || raw.multihit) continue;
+    if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes'].includes(move.target)) continue;
+    if (move.id === 'struggle') continue;
+    out.push({id: move.id, priority: move.priority, boostsSelf: !!move.self});
+  }
+  return {moves: out};
+}
+
 function main() {
   let input = '';
   process.stdin.on('data', (d) => (input += d));
@@ -191,6 +265,8 @@ function main() {
         if (sc.kind === 'stats') return runStats(sc);
         if (sc.kind === 'chart') return runChart(sc);
         if (sc.kind === 'turn') return runTurn(sc);
+        if (sc.kind === 'movelist') return runMovelist(sc);
+        if (sc.kind === 'dump') return runDump(sc);
         return {error: `unknown kind ${sc.kind}`};
       } catch (e) {
         return {error: String(e && e.stack ? e.stack.split('\n')[0] : e)};

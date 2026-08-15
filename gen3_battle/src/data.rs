@@ -192,7 +192,10 @@ mod tests {
     #[test]
     fn no_move_claims_a_type_this_generation_lacks() {
         // `build.rs` panics on an unknown type name, so reaching here at all
-        // means every entry mapped; this pins the intent.
-        assert!(MOVES.iter().all(|m| m.move_type != Type::None));
+        // means every entry mapped. Curse is the era's one "???"-typed move
+        // and maps to Type::None; nothing else may.
+        assert!(MOVES
+            .iter()
+            .all(|m| m.move_type != Type::None || m.id == "curse"));
     }
 }

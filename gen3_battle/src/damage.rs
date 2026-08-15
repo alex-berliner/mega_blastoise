@@ -138,6 +138,12 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
     if screened && !roll.crit {
         dmg /= 2;
     }
+    // A PHYSICAL hit whose base floored to zero becomes 1 before the +2;
+    // a special one stays 0 and lands for exactly 2. Straight from the
+    // reference implementation, via the fuzzer.
+    if dmg == 0 && category == Category::Physical {
+        dmg = 1;
+    }
     dmg += 2;
 
     if roll.crit {
