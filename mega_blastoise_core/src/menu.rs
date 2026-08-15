@@ -1,6 +1,7 @@
 //! Pre-lobby menus: the generation picker and the options screen.
 //!
-//! Both are one-person, landscape screens shown before a battle starts, per
+//! Both are shown before a battle starts, drawn head-to-head like every other
+//! screen so either seat can read and change them, per
 //! `architecture/09-single-screen.md`. Keeping the state machine in core means
 //! the browser and the firmware present identical menus and identical
 //! defaults, the same rule the battle screens already follow.
@@ -123,6 +124,11 @@ pub enum MenuScreen {
 }
 
 /// What the caller should do after handling an input.
+///
+/// [`MenuOut::EnterLobby`] is the only way out of the menus, and every path
+/// that lands on [`MenuScreen::Lobby`] must return it: the menu layer has no
+/// lobby screen of its own to draw, so a caller that keeps the menu open on
+/// that state strands the player on a screen no button can leave.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum MenuOut {
     None,
@@ -132,11 +138,15 @@ pub enum MenuOut {
 }
 
 /// The pre-lobby menu state machine.
+///
+/// This is cursor state only. The settings it edits live outside it and are
+/// passed in, because a seat's cursor is private — one player opening the
+/// options must not drag the other into them — while the settings themselves
+/// are shared: either player may change one and it applies to the match.
 #[derive(Clone, Copy, Debug)]
 pub struct Menu {
     pub screen: MenuScreen,
     pub cursor: u8,
-    pub opts: GameOptions,
 }
 
 impl Default for Menu {
@@ -147,7 +157,7 @@ impl Default for Menu {
 
 impl Menu {
     pub fn new() -> Self {
-        Self { screen: MenuScreen::GenPicker, cursor: 0, opts: GameOptions::default() }
+        Self { screen: MenuScreen::GenPicker, cursor: 0 }
     }
 
     fn limit(&self) -> u8 {
@@ -158,7 +168,7 @@ impl Menu {
         }
     }
 
-    pub fn dpad(&mut self, dir: Dir) -> MenuOut {
+    pub fn dpad(&mut self, dir: Dir, opts: &mut GameOptions) -> MenuOut {
         let limit = self.limit();
         if limit <= 1 {
             return MenuOut::None;
@@ -175,7 +185,7 @@ impl Menu {
                     MenuOut::Redraw
                 }
                 _ => {
-                    self.opts.cycle(self.cursor as usize);
+                    opts.cycle(self.cursor as usize);
                     MenuOut::Redraw
                 }
             },
@@ -192,16 +202,16 @@ impl Menu {
         }
     }
 
-    pub fn confirm(&mut self) -> MenuOut {
+    pub fn confirm(&mut self, opts: &mut GameOptions) -> MenuOut {
         match self.screen {
             MenuScreen::GenPicker => {
-                self.opts.gen = if self.cursor == 0 { Gen::One } else { Gen::ThreePreview };
+                opts.gen = if self.cursor == 0 { Gen::One } else { Gen::ThreePreview };
                 self.screen = MenuScreen::Lobby;
                 self.cursor = 0;
                 MenuOut::EnterLobby
             }
             MenuScreen::Options => {
-                self.opts.cycle(self.cursor as usize);
+                opts.cycle(self.cursor as usize);
                 MenuOut::Redraw
             }
             MenuScreen::Lobby => MenuOut::None,
@@ -213,7 +223,7 @@ impl Menu {
             MenuScreen::Options => {
                 self.screen = MenuScreen::Lobby;
                 self.cursor = 0;
-                MenuOut::Redraw
+                MenuOut::EnterLobby
             }
             MenuScreen::Lobby => {
                 self.screen = MenuScreen::GenPicker;
@@ -235,7 +245,7 @@ impl Menu {
             MenuScreen::Options => {
                 self.screen = MenuScreen::Lobby;
                 self.cursor = 0;
-                MenuOut::Redraw
+                MenuOut::EnterLobby
             }
             MenuScreen::GenPicker => MenuOut::None,
         }
@@ -249,50 +259,83 @@ mod tests {
     #[test]
     fn gen_picker_leads_into_the_lobby() {
         let mut m = Menu::new();
+        let mut o = GameOptions::default();
         assert_eq!(m.screen, MenuScreen::GenPicker);
-        assert_eq!(m.confirm(), MenuOut::EnterLobby);
+        assert_eq!(m.confirm(&mut o), MenuOut::EnterLobby);
         assert_eq!(m.screen, MenuScreen::Lobby);
-        assert_eq!(m.opts.gen, Gen::One);
+        assert_eq!(o.gen, Gen::One);
     }
 
     #[test]
     fn picking_gen_three_records_the_preview_choice() {
         let mut m = Menu::new();
-        m.dpad(Dir::Down);
-        m.confirm();
-        assert_eq!(m.opts.gen, Gen::ThreePreview);
+        let mut o = GameOptions::default();
+        m.dpad(Dir::Down, &mut o);
+        m.confirm(&mut o);
+        assert_eq!(o.gen, Gen::ThreePreview);
+    }
+
+    /// Two seats each have their own cursor, and neither is dragged into the
+    /// other's menu, but a setting either one changes applies to both.
+    #[test]
+    fn seats_have_private_cursors_over_shared_settings() {
+        let mut o = GameOptions::default();
+        let mut p1 = Menu { screen: MenuScreen::Options, cursor: 0 };
+        let p2 = Menu { screen: MenuScreen::Lobby, cursor: 0 };
+        p1.dpad(Dir::Down, &mut o);
+        assert_eq!(p1.cursor, 1);
+        assert_eq!(p2.cursor, 0, "one seat moving its cursor must not move the other's");
+        assert_eq!(p2.screen, MenuScreen::Lobby, "and must not open the other's menu");
+        p1.dpad(Dir::Right, &mut o);
+        assert_eq!(o.text_speed, TextSpeed::Fast, "settings are shared, not per seat");
     }
 
     #[test]
     fn options_open_from_the_lobby_and_close_again() {
         let mut m = Menu::new();
-        m.confirm();
+        let mut o = GameOptions::default();
+        m.confirm(&mut o);
         assert_eq!(m.info(), MenuOut::Redraw);
         assert_eq!(m.screen, MenuScreen::Options);
+        assert_eq!(m.info(), MenuOut::EnterLobby, "closing must hand the screen back");
+        assert_eq!(m.screen, MenuScreen::Lobby);
+    }
+
+    #[test]
+    fn b_out_of_the_options_hands_the_screen_back_to_the_lobby() {
+        let mut m = Menu::new();
+        let mut o = GameOptions::default();
+        m.confirm(&mut o);
         m.info();
+        assert_eq!(m.screen, MenuScreen::Options);
+        // Returning Redraw here would leave the menu layer owning the panel on
+        // a screen it cannot draw and no button can leave.
+        assert_eq!(m.back(), MenuOut::EnterLobby);
         assert_eq!(m.screen, MenuScreen::Lobby);
     }
 
     #[test]
     fn left_right_cycles_a_setting_without_moving_the_cursor() {
         let mut m = Menu::new();
-        m.confirm();
+        let mut o = GameOptions::default();
+        m.confirm(&mut o);
         m.info();
-        assert_eq!(m.opts.team_size, 3);
-        m.dpad(Dir::Right);
-        assert_eq!(m.opts.team_size, 6);
+        assert_eq!(o.team_size, 3);
+        m.dpad(Dir::Right, &mut o);
+        assert_eq!(o.team_size, 6);
         assert_eq!(m.cursor, 0, "cycling a value must not move the cursor");
     }
 
     #[test]
     fn turn_timer_toggles_between_off_and_sixty() {
         let mut m = Menu::new();
-        m.confirm();
+        let mut o = GameOptions::default();
+        m.confirm(&mut o);
         m.info();
         m.cursor = 4;
-        assert_eq!(m.opts.turn_timer, 60);
-        m.confirm();
-        assert_eq!(m.opts.turn_timer, 0);
+        assert_eq!(o.turn_timer, 60);
+        m.confirm(&mut o);
+        assert_eq!(o.turn_timer, 0);
     }
 
     #[test]

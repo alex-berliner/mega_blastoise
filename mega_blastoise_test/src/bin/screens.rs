@@ -58,6 +58,9 @@ fn write_ppm(path: &str, w: u32, h: u32, rgba: &[u8]) {
 fn half(name: &str, dir: &str, draw: impl FnOnce(&mut HalfFrame)) {
     let mut f = HalfFrame::new(dc::HALF_W, dc::HALF_H);
     draw(&mut f);
+    // Same last pass the compositor does, so a dump shows what the device
+    // shows rather than a spill the device would have covered.
+    dc::draw_play_frame_edge(&mut f, 1);
     write_ppm(&format!("{dir}/half_{name}.ppm"), f.w, f.h, &f.to_rgba());
 }
 
@@ -85,8 +88,10 @@ fn main() {
         foe_name: "Charizard",
         foe_hp: 88,
         foe_level: 53,
-        foe_status: None,
-        own_status: None,
+        foe_status: Some("PSN"),
+        foe_bob: false,
+        own_status: Some("PAR"),
+        own_hp_numbers: Some((210, 260)),
         cursor: 1,
         foe_locked: true,
         bob: false,
@@ -99,14 +104,15 @@ fn main() {
     half("playback", &dir, |f| {
         dc::render_playback(f, "Blue's Charizard used Fire Blast! It's not very effective...", &ctx)
     });
-    half("lobby_idle", &dir, |f| dc::render_lobby(f, false, false));
-    half("lobby_ready", &dir, |f| dc::render_lobby(f, true, false));
+    half("lobby_idle", &dir, |f| dc::render_lobby(f, false, false, 1));
+    half("lobby_ready", &dir, |f| dc::render_lobby(f, true, false, 1));
     half("result", &dir, |f| dc::render_result(f, "WINNER!", &ctx));
     half("move_info", &dir, |f| {
         dc::render_move_info(
             f,
             &blastoise_moves[1],
             "Has a 10% chance to freeze the target. Ice-type damage, special category.",
+            1,
         )
     });
     half("log", &dir, |f| {
@@ -119,7 +125,7 @@ fn main() {
             "  148 damage (2.0x, no crit)",
             "Blue's Charizard fainted!",
         ];
-        dc::render_log(f, &lines, 0)
+        dc::render_log(f, &lines, 0, 1)
     });
 
     // The default view: one battle across both halves, each seat's mon
@@ -145,7 +151,9 @@ fn main() {
         let mut bottom = Region::half(&mut scene, true, false);
         dc::render_playback(&mut bottom, caption, &ctx);
     }
-    mega_blastoise_core::device_view::draw_field_seam(&mut scene);
+    mega_blastoise_core::device_view::draw_scene_mons(
+        &mut scene, "Blastoise", "Charizard", false, false, [(0, 0); 2],
+    );
     write_ppm(&format!("{dir}/device_battle.ppm"), 240, 320, &scene.to_rgba());
 
     // Composed 240x320 panel, head-to-head: far half rotated 180.
@@ -176,33 +184,95 @@ fn main() {
         let mut bottom = Region::half(&mut dev, true, false);
         dc::render_choice(&mut bottom, &blastoise_moves, &ctx);
     }
+    mega_blastoise_core::device_view::draw_split_divider(&mut dev);
     write_ppm(&format!("{dir}/device_headtohead.ppm"), 240, 320, &dev.to_rgba());
 
-    // Landscape: gen picker and options fill the whole panel.
-    let mut lp = DeviceFrame::new();
-    {
-        let mut r = Region::landscape(&mut lp);
-        dc::render_gen_picker(&mut r, 0, 320, 240);
+    // Attack effects, sampled across their window so the motion is reviewable
+    // as a strip rather than by watching the browser.
+    for (id, label) in [
+        ("watergun", "beam"),
+        ("razorleaf", "projectile"),
+        ("earthquake", "quake"),
+        ("swordsdance", "aura"),
+        ("bodyslam", "impact"),
+        ("thunderbolt", "strike"),
+        ("surf", "wave"),
+        ("explosion", "nova"),
+    ] {
+        for (i, t) in [200u32, 500, 750, 950].iter().enumerate() {
+            let mut f = DeviceFrame::new();
+            {
+                let mut top = Region::half(&mut f, false, true);
+                let p2 = dc::HalfCtx {
+                    seat: 2,
+                    own_name: "Charizard",
+                    own_hp: 88,
+                    own_level: 53,
+                    foe_name: "Blastoise",
+                    foe_hp: 81,
+                    foe_level: 55,
+                    ..Default::default()
+                };
+                dc::render_playback(&mut top, caption, &p2);
+            }
+            {
+                let mut bottom = Region::half(&mut f, true, false);
+                dc::render_playback(&mut bottom, caption, &ctx);
+            }
+            let a = mega_blastoise_core::move_anim::anim(id, 1, *t, 1000).unwrap();
+            let shake = [
+                mega_blastoise_core::move_anim::band_shake(&a, 1),
+                mega_blastoise_core::move_anim::band_shake(&a, 2),
+            ];
+            mega_blastoise_core::device_view::draw_scene_mons(
+                &mut f, "Blastoise", "Charizard", false, false, shake,
+            );
+            mega_blastoise_core::move_anim::draw(&mut f, &a);
+            write_ppm(&format!("{dir}/fx_{label}_{i}.ppm"), 240, 320, &f.to_rgba());
+        }
     }
-    write_ppm(&format!("{dir}/device_gen_picker.ppm"), 240, 320, &lp.to_rgba());
 
-    // Same view unrotated, so the layout is reviewable as designed.
-    let mut gp = HalfFrame::new(320, 240);
-    dc::render_gen_picker(&mut gp, 0, 320, 240);
-    write_ppm(&format!("{dir}/landscape_gen_picker.ppm"), 320, 240, &gp.to_rgba());
+    // Menus are head-to-head like everything else: the same screen in both
+    // halves, each upright to the seat reading it.
+    let rows = [
+        dc::OptionRow { label: "Team size", value: "3 v 3" },
+        dc::OptionRow { label: "Text speed", value: "Normal" },
+        dc::OptionRow { label: "Sound", value: "On" },
+        dc::OptionRow { label: "Tutorial", value: "First game" },
+        dc::OptionRow { label: "Turn timer", value: "60 s" },
+    ];
 
-    let mut op = HalfFrame::new(320, 240);
-    dc::render_options(
-        &mut op,
-        &[
-            dc::OptionRow { label: "Team size", value: "3 v 3" },
-            dc::OptionRow { label: "Text speed", value: "Normal" },
-            dc::OptionRow { label: "Sound", value: "On" },
-            dc::OptionRow { label: "Tutorial", value: "First game" },
-            dc::OptionRow { label: "Turn timer", value: "60 s" },
-        ],
-        2,
-        320,
-    );
-    write_ppm(&format!("{dir}/landscape_options.ppm"), 320, 240, &op.to_rgba());
+    let mut gp_dev = DeviceFrame::new();
+    {
+        let mut top = Region::half(&mut gp_dev, false, true);
+        dc::render_gen_picker(&mut top, 0, dc::HALF_W, dc::HALF_H, 2);
+    }
+    {
+        let mut bottom = Region::half(&mut gp_dev, true, false);
+        dc::render_gen_picker(&mut bottom, 0, dc::HALF_W, dc::HALF_H, 1);
+    }
+    mega_blastoise_core::device_view::draw_split_divider(&mut gp_dev);
+    write_ppm(&format!("{dir}/device_gen_picker.ppm"), 240, 320, &gp_dev.to_rgba());
+
+    let mut op_dev = DeviceFrame::new();
+    {
+        let mut top = Region::half(&mut op_dev, false, true);
+        dc::render_options(&mut top, &rows, 2, dc::HALF_W, dc::HALF_H, 2);
+    }
+    {
+        let mut bottom = Region::half(&mut op_dev, true, false);
+        dc::render_options(&mut bottom, &rows, 2, dc::HALF_W, dc::HALF_H, 1);
+    }
+    mega_blastoise_core::device_view::draw_split_divider(&mut op_dev);
+    write_ppm(&format!("{dir}/device_options.ppm"), 240, 320, &op_dev.to_rgba());
+
+    // The same halves unrotated, so a single menu layout is reviewable at the
+    // size it is actually drawn.
+    let mut gp = HalfFrame::new(dc::HALF_W, dc::HALF_H);
+    dc::render_gen_picker(&mut gp, 0, dc::HALF_W, dc::HALF_H, 1);
+    write_ppm(&format!("{dir}/gen_picker.ppm"), dc::HALF_W, dc::HALF_H, &gp.to_rgba());
+
+    let mut op = HalfFrame::new(dc::HALF_W, dc::HALF_H);
+    dc::render_options(&mut op, &rows, 2, dc::HALF_W, dc::HALF_H, 1);
+    write_ppm(&format!("{dir}/options.ppm"), dc::HALF_W, dc::HALF_H, &op.to_rgba());
 }

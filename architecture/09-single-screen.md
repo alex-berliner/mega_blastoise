@@ -54,37 +54,64 @@ the device serving its own web build. It is not needed for space.
 
 ## 3. Screen model
 
-The panel lies flat between the seats. Two orientations exist:
-
-**Landscape** — attract mode, the Gen picker, the lobby, and the options menu.
-One person reads it upright; configuring is a one-person job, and attract mode
-is aimed at bystanders standing beside the table.
-
-**Split portrait** — everything from battle start onward. Two 240x160 halves,
+The panel lies flat between the seats and there is exactly one orientation:
+**split portrait**, from attract mode through the recap. Two 240x160 halves,
 and the far half is rendered rotated 180 degrees so both players read upright.
 
-The battle itself is one view, not two. During playback both halves draw the
-same shared scene: each seat's own mon stands near the centre line reading
-upright with its HP plate directly under it, so the rival's mon reads upside
-down from across the table, and the narration is drawn in both halves so it
-sits at the bottom of the screen from either seat. The halves join across the
-seam into a single field, so the divider between them softens to a horizon
-line; it returns as a hard divider the moment the halves show private views
-again (move choice, party list, battle log).
+The players sit across from each other and the console is never picked up or
+turned, so no screen may assume one reader. The Gen picker draws the same
+content into both halves, each upright to the seat reading it, and either
+player can drive it. The options are per seat instead: `?` opens them on the
+half of the player who pressed it, over settings both players share.
 
-Orientation switches automatically on battle start and back on battle end.
-Debug toggles for every orientation combination ship hidden in the release
-build, with web UI buttons that send the same flip commands, because which
-arrangement actually feels best is still an open question that needs play
-testing rather than argument.
+The battle itself is one view, not two. The two mons stand **side by side at
+the same height**, in a band across the middle of the panel: one seat's mon to
+the left, the other's to the right, each upright to its owner and mirrored so
+the pair faces each other. That band is drawn by the compositor
+(`device_view::draw_scene_mons`), not by either half, because a half can only
+touch its own 160 rows — anything drawn per half is pushed to one side of the
+seam and the pair comes out staggered. The halves own the chrome around it:
+each seat's HP plate sits directly under its own mon, and the narration is
+drawn in both so it lands at the bottom of the screen from either seat.
+
+Nothing at all is drawn across the middle during that shared scene: any line
+there cuts the one field back into two boxes. The divider returns the moment
+either half shows a private view again (move choice, party list, battle log,
+one seat's options), which is what tells the players the halves are no longer
+the same picture.
+
+Every private half is framed in **its own seat's colour** — White's half is
+edged white, Red's red — with a black hairline inside it and the beige field
+within. The two frames meet at the seam, so the divider only has to add the
+band and the button and the whole device reads as one pokeball: red half,
+white half, black equator. It doubles as seat identity, which is what the old
+colour stripe down the edge used to do. The frame reaches 8 px in from each
+edge and the button 11 px into each half, so no private screen draws above
+`display_color::TOP`.
+
+The move-choice half copies the Gen 3 battle screen directly: the rival's
+status plate at the top left with their mon opposite it on the far platform,
+your own mon from behind on the near platform with your plate — the one
+carrying the HP numbers, as in the games — at the bottom right, and the bottom
+third given to a 2x2 move menu with the cursor triangle beside the highlighted
+row and a second box holding that move's PP and type. Both menus are the same
+teal as the narration box behind a blue double border with gold corner pins;
+the narration box keeps the red border. There is no button legend on this
+screen, for the same reason the games have none.
+
+There is no orientation setting and no runtime flip: nothing about the console
+turns, so there is nothing to switch. The web build keeps one cosmetic "rotate
+view" button, which walks the viewer around the table without changing a pixel
+the device draws.
 
 ### Screens
 
-Landscape: attract demo, Gen picker (Gen 1 / Gen 3), lobby with ready-up,
-options menu.
+Shared, drawn identically into both halves: attract demo, Gen picker
+(Gen 1 / Gen 3).
 
-Split portrait, per half: team reveal, move choice, party list, locked-in,
-turn playback, forced switch with rival scouting, battle log, recap.
+Private, per half: lobby ready-up, options menu, team reveal, move choice,
+party list, locked-in, turn playback, forced switch with rival scouting,
+battle log, recap.
 
 The `Screen` enum in `oled_ctl.rs` is the seam for all of this and survives the
 migration. Variants tied to concealed mode (`ActionSelect`, `ConcealedMoves`,
@@ -179,15 +206,20 @@ Showdown's animation sets are the eventual target.
   lands, and the Gen 3 info fields (abilities, held items, natures, the
   Sp.Atk / Sp.Def split) must sit behind the same ruleset flag as the engine so
   the UI never advertises data the engine cannot fill.
-- **Options menu**, lobby only, landscape: team size (3v3 / 6v6), text speed,
-  sound, tutorial, turn timer. Either player can change settings; changes apply
-  to both and are shown on both halves.
+- **Options menu**, lobby only, and per seat: `?` opens it on the half of the
+  player who pressed it and leaves the other player in the lobby. Both may have
+  it open at once. The settings themselves — team size (3v3 / 6v6), text speed,
+  sound, tutorial, turn timer — are shared, so a change by either player
+  applies to the match and shows on the other's screen if they are looking.
+  The Gen picker is the exception: it chooses the game both players are about
+  to be in, so it owns the whole panel and is drawn into both halves.
 - **Teams are a fresh random draft** every battle, including rematches.
 - **Turn timer**, optional, default 60 s, with a visible countdown over the
   final 10 s. Today a stalled player can freeze the game permanently.
 - **Hold to fight the AI** in the lobby stays — it is how a lone visitor tries
   the device.
-- **Landscape attract demo** stays; it is the only thing aimed at bystanders.
+- **Attract demo** stays; it is the only thing aimed at bystanders, and like
+  everything else it plays head-to-head across the two halves.
 - Animation scope: sprite bob, HP bar drain, damage flash, faint fade. Per-move
   attack animations are out of scope for now.
 
@@ -262,8 +294,7 @@ the firmware still runs the mono path.
 5. **Options menu, Gen picker, battle log, turn timer.**
 6. **Web build to full fidelity.** 240x320 canvas, on-screen D-pad and buttons
    per seat rotated to their player, direct tap on UI elements as a shortcut,
-   WebAudio driven by the same note tables the buzzer uses, and the orientation
-   debug toggles.
+   and WebAudio driven by the same note tables the buzzer uses.
 7. **Firmware: ST7789 over SPI with DMA**, replacing `subsystems/oled.rs` and
    `sh1106.rs`. One display task now, so the two-panel skew disappears.
 8. **Firmware: buttons**, matrix with diodes, real debounce, D-pad repeat.
@@ -279,8 +310,6 @@ Gen 1 device is the milestone that de-risks everything else.
 
 ## 9. Open questions
 
-- Which orientation arrangement actually feels best in play. Resolved by the
-  shipped debug toggles and a real session, not by discussion.
 - Font: whether to keep embedded-graphics `FONT_6X10` / `FONT_5X8` or bake an
   authentic Game Boy bitmap font. Expected to need iteration either way.
 - Whether upstream `battler` fits on RP2350 (§7).

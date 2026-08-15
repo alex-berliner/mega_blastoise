@@ -32,19 +32,24 @@ thread_local! {
     static P2_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![10, 25, 10, 255].repeat(128 * 64));
     static LED_STATE: RefCell<[u32; 24]> = RefCell::new([0u32; 24]);
 
-    // Single-screen redesign: one 240x320 panel, per-seat cursor state, and a
-    // runtime orientation so the arrangement can be settled by playing.
+    // Single-screen redesign: one 240x320 panel, always composed head-to-head,
+    // plus per-seat cursor state.
     static SEAT_UI: RefCell<[device_ui::SeatUi; 2]> =
         RefCell::new([device_ui::SeatUi::default(), device_ui::SeatUi::default()]);
-    static ORIENTATION: RefCell<mega_blastoise_core::device_view::Orientation> =
-        RefCell::new(mega_blastoise_core::device_view::Orientation::HeadToHead);
 
-    // Pre-lobby menus. Boots on the gen picker; the lobby loop runs
-    // underneath but menu mode swallows its input, so nothing readies up by
-    // accident while a menu is open.
+    // The gen picker. It chooses the game both players are about to be in, so
+    // unlike the options it owns the whole panel: it boots active, and the
+    // lobby loop runs underneath but has its input swallowed, so nothing
+    // readies up by accident while the picker is open.
     static MENU: RefCell<mega_blastoise_core::menu::Menu> =
         RefCell::new(mega_blastoise_core::menu::Menu::new());
     static MENU_ACTIVE: RefCell<bool> = RefCell::new(true);
+
+    // Settings are shared even though the options screen is per seat: either
+    // player may change one and it applies to the match. The per-seat cursor
+    // lives in SEAT_UI.options.
+    static OPTS: RefCell<mega_blastoise_core::menu::GameOptions> =
+        RefCell::new(mega_blastoise_core::menu::GameOptions::default());
 
     // Battle log: every narration line, so `?` can show what actually
     // happened with the numbers instead of a 2.5 s flash. Per-seat scroll
@@ -90,6 +95,11 @@ thread_local! {
     // Ready flags mirrored from the ready sequence for the lobby LED frame.
     static LOBBY_READY: RefCell<[bool; 2]> = RefCell::new([false, false]);
 
+    // Which seats are AI this lobby, mirrored the same way. A seat can read
+    // as ready because a person pressed A or because someone held A for a
+    // robot rival, and B has to tell those apart.
+    static LOBBY_AI: RefCell<[bool; 2]> = RefCell::new([false, false]);
+
     // Flash events: [p1_type, p2_type]; 1 = super-effective, 2 = crit; consumed on read
     static FLASH: RefCell<[u8; 2]> = RefCell::new([0, 0]);
 
@@ -121,7 +131,12 @@ thread_local! {
 
     // A button press during battle dialog skips the current animation delay
     // (consumed at the start of each delay so stale presses don't skip).
-    static SKIP_DIALOG: RefCell<bool> = RefCell::new(false);
+    static SKIP_DIALOG: RefCell<[bool; 2]> = RefCell::new([false, false]);
+
+    // Screen tracer: the last [p1, p2, view] labels, so a state change logs
+    // once instead of once per frame.
+    static LAST_SCREEN_STATE: RefCell<[String; 3]> =
+        RefCell::new([String::new(), String::new(), String::new()]);
 
 }
 
@@ -317,8 +332,21 @@ pub(crate) async fn sleep_ms(ms: u32) {
     wasm_bindgen_futures::JsFuture::from(promise).await.ok();
 }
 
-pub(crate) fn request_dialog_skip() {
-    SKIP_DIALOG.with(|s| *s.borrow_mut() = true);
+/// `player` wants the current narration to move on. It only does once BOTH
+/// seats have asked: a shared screen that either player can skip means one of
+/// them reads half a battle. An AI seat is always willing, so a lone human
+/// playing the robot still skips at their own pace.
+pub(crate) fn request_dialog_skip(player: u8) {
+    if (1..=2).contains(&player) {
+        SKIP_DIALOG.with(|s| s.borrow_mut()[(player - 1) as usize] = true);
+    }
+}
+
+fn both_want_to_skip() -> bool {
+    SKIP_DIALOG.with(|s| {
+        let want = s.borrow();
+        (0..2).all(|i| want[i] || is_ai_player(i as u8 + 1))
+    })
 }
 
 /// Animation-gated sleep that any button press cuts short (mirrors the
@@ -326,12 +354,13 @@ pub(crate) fn request_dialog_skip() {
 /// at the start so only presses made DURING the dialog skip it.
 pub(crate) async fn sleep_ms_skippable(ms: u32) {
     if !ANIM_ENABLED.with(|a| *a.borrow()) { return; }
-    SKIP_DIALOG.with(|s| *s.borrow_mut() = false);
+    SKIP_DIALOG.with(|s| *s.borrow_mut() = [false, false]);
     let mut left = ms;
     while left > 0 {
         let step = left.min(50);
         sleep_ms_raw(step).await;
-        if SKIP_DIALOG.with(|s| core::mem::take(&mut *s.borrow_mut())) {
+        if both_want_to_skip() {
+            SKIP_DIALOG.with(|s| *s.borrow_mut() = [false, false]);
             return;
         }
         left -= step;
@@ -375,6 +404,7 @@ fn print_help() {
     for l in [
         ":help / :h / ?    this list",
         ":anim on|off      battle animations",
+        ":screens          what each seat is looking at right now",
         ":reset            reload (new battle)",
     ] {
         print_log(&format!("    {l}"));
@@ -385,7 +415,15 @@ fn print_help() {
     }
 }
 
+/// Mirror a diagnostic line into the browser console, where the in-page
+/// console panel picks it up. The device UI has no `#log` element, so without
+/// this every event line the two-OLED page shows would vanish there.
+pub(crate) fn console_log(line: &str) {
+    web_sys::console::log_1(&line.into());
+}
+
 pub(crate) fn print_log(line: &str) {
+    console_log(line);
     let doc = match web_sys::window().and_then(|w| w.document()) {
         Some(d) => d,
         None => return,
@@ -600,7 +638,7 @@ fn chord_tap(player: u8, slot: u8) -> bool {
     } else if unlatch_if_held(player, false, slot) {
         // Clicking a latched button releases the sticky hold.
     } else {
-        request_dialog_skip();
+        request_dialog_skip(player);
         push_battle_input(BattleInput::Pad(PadEvent::TapMove { player, slot }));
     }
 }
@@ -612,7 +650,7 @@ fn chord_tap(player: u8, slot: u8) -> bool {
         // Clicking a latched button releases the sticky hold.
     } else {
         // (Concealed menus toggle on plain taps now — no hold conversion.)
-        request_dialog_skip();
+        request_dialog_skip(player);
         push_battle_input(BattleInput::Pad(PadEvent::TapSwitch { player, idx }));
     }
 }
@@ -696,6 +734,11 @@ fn enter_demo_mode() {
         ":anim off" => { ANIM_ENABLED.with(|a| *a.borrow_mut() = false); print_log("[anim] animations OFF"); return; }
         ":anim on"  => { ANIM_ENABLED.with(|a| *a.borrow_mut() = true);  print_log("[anim] animations ON");  return; }
         "?" | ":help" | ":h" => { print_help(); return; }
+        ":screens" | ":screen" => {
+            let s = screen_states();
+            print_log(&format!("[screen] p1 {} | p2 {} | view {}", s[0], s[1], s[2]));
+            return;
+        }
         _ => {}
     }
 
@@ -779,6 +822,7 @@ async fn run_game_loop() {
     loop {
         AI_PLAYERS.with(|a| *a.borrow_mut() = [false, false]);
         LOBBY_READY.with(|r| *r.borrow_mut() = [false, false]);
+        LOBBY_AI.with(|a| *a.borrow_mut() = [false, false]);
         AI_PAUSED.with(|p| *p.borrow_mut() = false);
         set_lobby_displays();
         set_lobby_mode(true);
@@ -850,6 +894,7 @@ async fn run_game_loop() {
                 }
                 let done = seq.tick(now_ms(), &mut fx);
                 LOBBY_READY.with(|r| *r.borrow_mut() = seq.ready_flags());
+                LOBBY_AI.with(|a| *a.borrow_mut() = seq.ai_flags());
                 apply_effects(&mut fx);
                 if done {
                     break;
@@ -984,9 +1029,14 @@ fn apply_effects(fx: &mut Vec<CollectEffect>) {
                 // is held) releases any sticky web holds.
                 match &cmd {
                     OledCmd::ShowWaiting { player } => {
-                        // Committing locks this seat; the OTHER seat's HUD is
-                        // what shows the LOCK chip, so mark it there.
-                        nav_set_locked(3 - *player, true);
+                        // `SeatUi.locked` means THIS seat has committed, and
+                        // the renderer reads the rival's flag to decide where
+                        // the LOCK chip goes. Storing it on the other seat —
+                        // which is what this did while the flag was consumed
+                        // as `foe_locked` directly — makes the seat that has
+                        // NOT chosen draw the locked screen, and then neither
+                        // side can finish the turn.
+                        nav_set_locked(*player, true);
                         clear_hold_latch(*player);
                     }
                     _ => {}
@@ -1072,6 +1122,10 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
             let player = mega_blastoise_core::player_id_to_num(p.player_id.as_str());
             if is_ai_player(player) {
                 slot.set_ai_choice(ai.make_choice(&p.request, p.player_data.as_ref()));
+                // Its choice is made the instant the turn opens, so say so:
+                // an AI that sits on a move menu until the human moves reads
+                // as a game waiting on nobody.
+                nav_set_locked(player, true);
             } else if modes[latch_i(player)] == ControlMode::Concealed {
                 // Fresh randomized layouts every combat turn.
                 slot.set_concealed(now_ms() ^ ((player as u64) << 33));
@@ -1132,17 +1186,150 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
 // The old two-OLED exports stay live so the legacy page keeps working during
 // the migration; these are additive.
 
-/// RGBA8888 for the whole 240x320 panel, composed for the current
-/// orientation. Rendered on demand rather than cached: one full frame is
-/// ~1 ms and it keeps the browser from ever showing stale halves.
+/// RGBA8888 for the whole 240x320 panel, always composed head-to-head.
+/// Rendered on demand rather than cached: one full frame is ~1 ms and it
+/// keeps the browser from ever showing stale halves.
+// ── Screen-state trace ───────────────────────────────────────────────────────
+//
+// Every state the panel can be in has a name. The controller's own states come
+// from `Screen::name()`, shared with the firmware so traces from the two
+// platforms read the same. Three more are the web view's own composition, and
+// have no `Screen` variant behind them:
+//
+//   BATTLE_LOG      a seat opened the log overlay with `?`
+//   PARTY           the cursor moved into the party list while the controller
+//                   still says the seat is on the move grid
+//   MENU_*          the pre-lobby menus, which own the whole panel
+//
+// Screens the controller can produce but this view has no arm for are reported
+// as UNMAPPED:<name> — those draw blank, so seeing one is a bug, not a state.
+
+/// Controller screens the single-screen view does not draw. Kept as a list
+/// rather than a wildcard so adding an arm in `device_ui` makes this stale
+/// entry obvious.
+const UNMAPPED_SCREENS: [&str; 5] = [
+    "CONTROLS_PICK",
+    "ACTION_PICK",
+    "CONCEALED_MOVES",
+    "CONCEALED_SWITCH",
+    "FOE_PEEK",
+];
+
+/// What `player` is actually looking at right now.
+fn seat_state_name(player: u8) -> String {
+    // Menus this seat is in are its own state, not the panel's: with the
+    // options per seat, one global label cannot describe two seats looking at
+    // different things.
+    if menu_active() && is_lobby_mode() {
+        return String::from("MENU_GEN_PICKER");
+    }
+    if seat_options(player).is_some() {
+        return String::from("MENU_OPTIONS");
+    }
+    if log_view(player).is_some() {
+        return String::from("BATTLE_LOG");
+    }
+    let in_party = SEAT_UI.with(|u| {
+        matches!(
+            u.borrow()[(player == 2) as usize].nav.mode,
+            mega_blastoise_core::cursor_nav::NavMode::Party
+        )
+    });
+    // A committed seat is showing the locked screen whatever the controller
+    // still reports — the renderer branches on the same flag, and the two
+    // must not disagree.
+    let locked = SEAT_UI.with(|u| u.borrow()[(player == 2) as usize].locked);
+    let name = OLED_CTL.with(|c| c.borrow().screen(player).name());
+    if locked && name == "MOVES" {
+        return String::from("LOCKED_IN");
+    }
+    // The cursor sitting in the party list is a presentation state: the
+    // controller still reports the move grid.
+    let name = if name == "MOVES" && in_party { "PARTY" } else { name };
+    if UNMAPPED_SCREENS.contains(&name) {
+        format!("UNMAPPED:{name}")
+    } else {
+        String::from(name)
+    }
+}
+
+/// What owns the panel as a whole: a menu, or the two halves — joined into one
+/// field when both seats are watching the same scene, split when either has a
+/// private view up. Mirrors the seam-vs-divider rule in `render_device`.
+fn view_state_name() -> String {
+    use mega_blastoise_core::menu::MenuScreen;
+    // The gen picker is the one menu that owns the whole panel, so it is the
+    // one menu that names the view. The options are a per-seat overlay and
+    // leave the view as the two halves.
+    if menu_active() && is_lobby_mode() {
+        return String::from(MENU.with(|m| match m.borrow().screen {
+            MenuScreen::GenPicker => "MENU_GEN_PICKER",
+            // Unreachable: the picker hands the panel back on these.
+            MenuScreen::Options => "MENU_OPTIONS",
+            MenuScreen::Lobby => "MENU_LOBBY",
+        }));
+    }
+    // Same predicate the renderer composes with, not a second copy of it.
+    // SEAT_UI is read out first: it is a third thread_local, and borrowing it
+    // inside the other two only invites a double-borrow panic later.
+    let seats = SEAT_UI.with(|u| *u.borrow());
+    let shared = BATTLE_LOG.with(|l| {
+        let log = l.borrow();
+        let lines = log.lines();
+        OLED_CTL.with(|c| {
+            let ctl = c.borrow();
+            [1u8, 2].iter().all(|&p| {
+                let view = device_ui::LogView { lines, offset: log_view(p) };
+                device_ui::seat_shows_scene(&ctl, p, &seats[(p == 2) as usize], view)
+            })
+        })
+    });
+    String::from(if shared { "SHARED_SCENE" } else { "SPLIT_HALVES" })
+}
+
+/// All three at once, in the order [p1, p2, view].
+fn screen_states() -> [String; 3] {
+    [seat_state_name(1), seat_state_name(2), view_state_name()]
+}
+
+/// Print a line whenever any of the three changes. Called once per rendered
+/// frame, so a state that lasts a single frame still shows up.
+fn trace_screen_states() {
+    let now = screen_states();
+    LAST_SCREEN_STATE.with(|l| {
+        let mut last = l.borrow_mut();
+        for (i, label) in ["p1", "p2", "view"].iter().enumerate() {
+            if last[i] == now[i] {
+                continue;
+            }
+            if last[i].is_empty() {
+                console_log(&format!("[SCREEN] {label}: {}", now[i]));
+            } else {
+                console_log(&format!("[SCREEN] {label}: {} -> {}", last[i], now[i]));
+            }
+            last[i] = now[i].clone();
+        }
+    });
+}
+
+/// Current screen state by seat: 1 or 2 for a player, anything else for the
+/// panel as a whole.
+#[wasm_bindgen]
+pub fn screen_state(player: u8) -> String {
+    match player {
+        1 | 2 => seat_state_name(player),
+        _ => view_state_name(),
+    }
+}
+
 #[wasm_bindgen]
 pub fn get_device_pixels() -> Vec<u8> {
+    trace_screen_states();
     // A menu can only own the screen while the lobby is idle — a battle
     // (including the attract demo) always wins the panel.
     if menu_active() && is_lobby_mode() {
-        return MENU.with(|m| device_ui::render_menu(&m.borrow()));
+        return OPTS.with(|o| MENU.with(|m| device_ui::render_menu(&m.borrow(), &o.borrow())));
     }
-    let orientation = ORIENTATION.with(|o| *o.borrow());
     BATTLE_LOG.with(|l| {
         let log = l.borrow();
         let lines = log.lines();
@@ -1150,28 +1337,13 @@ pub fn get_device_pixels() -> Vec<u8> {
         let l2 = device_ui::LogView { lines, offset: log_view(2) };
         SEAT_UI.with(|u| {
             let ui = u.borrow();
-            OLED_CTL.with(|c| {
-                device_ui::render_device(&c.borrow(), orientation, &ui[0], &ui[1], l1, l2)
+            OPTS.with(|o| {
+                OLED_CTL.with(|c| {
+                    device_ui::render_device(&c.borrow(), &ui[0], &ui[1], l1, l2, &o.borrow())
+                })
             })
         })
     })
-}
-
-/// 0 = head-to-head (hardware), 1 = both halves upright, 2 = landscape.
-#[wasm_bindgen]
-pub fn set_orientation(mode: u8) {
-    use mega_blastoise_core::device_view::Orientation::*;
-    let o = match mode {
-        1 => SameWay,
-        2 => Landscape,
-        _ => HeadToHead,
-    };
-    ORIENTATION.with(|c| *c.borrow_mut() = o);
-}
-
-#[wasm_bindgen]
-pub fn get_orientation() -> String {
-    ORIENTATION.with(|o| o.borrow().as_str().to_string())
 }
 
 /// Cursor position for a seat, so the page can highlight its on-screen pad.
@@ -1213,9 +1385,22 @@ fn apply_nav_out(player: u8, out: mega_blastoise_core::cursor_nav::NavOut) {
         NavOut::None | NavOut::Redraw => {}
         NavOut::TapMove(slot) => press_move(player, slot),
         NavOut::TapSwitch(idx) => press_switch(player, idx),
-        NavOut::HoldMove(slot) => hold_move(player, slot),
-        NavOut::HoldSwitch(idx) => hold_switch(player, idx),
-        NavOut::HoldEnd => hold_end(player),
+        // Straight to the collector, NOT through hold_move/hold_switch/
+        // hold_end. Those carry the sticky latch, a web-only affordance for
+        // the old click-a-corner scheme where a mouse could not hold one
+        // button while clicking another. Under the cursor UI `?` is a plain
+        // toggle, and routing it through the latch desynced the two: the
+        // second `?` was swallowed as a latched hold, leaving `CursorNav` back
+        // on the move row while the controller still showed the description.
+        // From there `?` looked like it needed a double press, and B moved the
+        // cursor instead of opening the party.
+        NavOut::HoldMove(slot) => {
+            push_battle_input(BattleInput::Pad(PadEvent::HoldMove { player, slot }))
+        }
+        NavOut::HoldSwitch(idx) => {
+            push_battle_input(BattleInput::Pad(PadEvent::HoldSwitch { player, idx }))
+        }
+        NavOut::HoldEnd => push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player })),
     }
 }
 
@@ -1259,7 +1444,11 @@ pub fn nav_dpad(player: u8, dir: u8) {
         _ => Dir::Right,
     };
     if menu_active() && is_lobby_mode() {
-        MENU.with(|m| m.borrow_mut().dpad(d));
+        OPTS.with(|o| MENU.with(|m| m.borrow_mut().dpad(d, &mut o.borrow_mut())));
+        return;
+    }
+    if let Some(cursor) = seat_options(player) {
+        with_seat_options(player, cursor, |m, o| m.dpad(d, o));
         return;
     }
     if is_lobby_mode() {
@@ -1274,6 +1463,7 @@ pub fn nav_dpad(player: u8, dir: u8) {
 
 /// Record a narration line. Called from the effects sink.
 pub(crate) fn log_battle_line(line: &str) {
+    console_log(&format!("[BATTLE] {line}"));
     BATTLE_LOG.with(|l| l.borrow_mut().push(line));
 }
 
@@ -1389,27 +1579,82 @@ pub fn menu_screen() -> u8 {
 
 /// Team size the menu selected, so the battle setup can honor it.
 pub(crate) fn menu_six_v_six() -> bool {
-    MENU.with(|m| m.borrow().opts.team_size == 6)
+    OPTS.with(|o| o.borrow().team_size == 6)
 }
 
 /// Is the battle-start tutorial switched on in the options?
 pub(crate) fn menu_tutorial() -> bool {
-    MENU.with(|m| m.borrow().opts.tutorial)
+    OPTS.with(|o| o.borrow().tutorial)
 }
 
 /// Scale an animation delay by the chosen text speed.
 pub(crate) fn menu_text_scale(ms: u32) -> u32 {
-    MENU.with(|m| m.borrow().opts.text_speed.scale(ms))
+    OPTS.with(|o| o.borrow().text_speed.scale(ms))
+}
+
+/// Hand the panel back to the lobby when the gen picker says it is done. The
+/// menu layer cannot draw `MenuScreen::Lobby`, so every path that lands there
+/// must clear `MENU_ACTIVE` or the player is stuck on a screen with no way out.
+///
+/// Leaving the picker is also what starts a lobby, and a lobby always starts
+/// with nobody ready: readiness from before the picker was opened would
+/// otherwise carry into a match neither player agreed to.
+fn close_menu_on(out: mega_blastoise_core::menu::MenuOut) {
+    if out == mega_blastoise_core::menu::MenuOut::EnterLobby {
+        MENU_ACTIVE.with(|a| *a.borrow_mut() = false);
+        unready_both();
+    }
+}
+
+/// Clear both seats' readiness by the same route a player pressing B takes,
+/// so the shared `ReadySequence` — which is what actually decides when the
+/// battle starts — agrees with the lobby halves being drawn.
+fn unready_both() {
+    for player in [1u8, 2] {
+        if LOBBY_READY.with(|r| r.borrow()[(player == 2) as usize]) {
+            push_button(ButtonEvent::Line(alloc_cancel_line(player)));
+        }
+    }
+}
+
+/// Cursor row of this seat's options screen, `None` when it has them closed.
+fn seat_options(player: u8) -> Option<u8> {
+    SEAT_UI.with(|u| u.borrow()[(player == 2) as usize].options)
+}
+
+fn set_seat_options(player: u8, cursor: Option<u8>) {
+    SEAT_UI.with(|u| u.borrow_mut()[(player == 2) as usize].options = cursor);
+}
+
+/// Run one input through this seat's options screen. The screen state itself
+/// is core's, borrowed for the call and written back to the seat, so the
+/// browser never reimplements what a press means.
+fn with_seat_options(
+    player: u8,
+    cursor: u8,
+    f: impl FnOnce(
+        &mut mega_blastoise_core::menu::Menu,
+        &mut mega_blastoise_core::menu::GameOptions,
+    ) -> mega_blastoise_core::menu::MenuOut,
+) {
+    use mega_blastoise_core::menu::{Menu, MenuOut, MenuScreen};
+    let mut menu = Menu { screen: MenuScreen::Options, cursor };
+    let out = OPTS.with(|o| f(&mut menu, &mut o.borrow_mut()));
+    // EnterLobby out of the options means this seat closed them. Only this
+    // seat: the other one keeps whatever it was looking at.
+    set_seat_options(player, if out == MenuOut::EnterLobby { None } else { Some(menu.cursor) });
 }
 
 /// A — confirm. In the lobby this is the ready-up press.
 #[wasm_bindgen]
 pub fn nav_a(player: u8) {
     if menu_active() && is_lobby_mode() {
-        let out = MENU.with(|m| m.borrow_mut().confirm());
-        if out == mega_blastoise_core::menu::MenuOut::EnterLobby {
-            MENU_ACTIVE.with(|a| *a.borrow_mut() = false);
-        }
+        let out = OPTS.with(|o| MENU.with(|m| m.borrow_mut().confirm(&mut o.borrow_mut())));
+        close_menu_on(out);
+        return;
+    }
+    if let Some(cursor) = seat_options(player) {
+        with_seat_options(player, cursor, |m, o| m.confirm(o));
         return;
     }
     if is_lobby_mode() {
@@ -1427,7 +1672,13 @@ pub fn nav_a(player: u8) {
 #[wasm_bindgen]
 pub fn nav_b(player: u8) {
     if menu_active() && is_lobby_mode() {
-        MENU.with(|m| m.borrow_mut().back());
+        let out = MENU.with(|m| m.borrow_mut().back());
+        close_menu_on(out);
+        return;
+    }
+    // B closes this seat's options, and only this seat's.
+    if let Some(cursor) = seat_options(player) {
+        with_seat_options(player, cursor, |m, _| m.back());
         return;
     }
     if log_view(player).is_some() {
@@ -1439,6 +1690,15 @@ pub fn nav_b(player: u8) {
         let ready = LOBBY_READY.with(|r| r.borrow()[(player == 2) as usize]);
         if ready {
             push_button(ButtonEvent::Line(alloc_cancel_line(player)));
+            return;
+        }
+        // Not ready, but the other side is a robot you asked for: B sends it
+        // home and puts both halves back on the normal ready-up screen. A
+        // human opponent's readiness is theirs, and is left alone.
+        let foe = 3 - player;
+        let foe_is_ai = LOBBY_AI.with(|a| a.borrow()[(foe == 2) as usize]);
+        if foe_is_ai {
+            push_button(ButtonEvent::Line(alloc_cancel_line(foe)));
             return;
         }
     }
@@ -1459,17 +1719,18 @@ pub fn nav_b(player: u8) {
 #[wasm_bindgen]
 pub fn nav_info(player: u8) {
     if menu_active() && is_lobby_mode() {
-        MENU.with(|m| m.borrow_mut().info());
+        let out = MENU.with(|m| m.borrow_mut().info());
+        close_menu_on(out);
+        return;
+    }
+    if let Some(cursor) = seat_options(player) {
+        with_seat_options(player, cursor, |m, _| m.info());
         return;
     }
     if is_lobby_mode() {
-        // ? in the lobby opens the options, matching the hardware legend.
-        MENU_ACTIVE.with(|a| *a.borrow_mut() = true);
-        MENU.with(|m| {
-            let mut menu = m.borrow_mut();
-            menu.screen = mega_blastoise_core::menu::MenuScreen::Options;
-            menu.cursor = 0;
-        });
+        // ? in the lobby opens the options, matching the hardware legend —
+        // on this seat's half only. The other player is left in the lobby.
+        set_seat_options(player, Some(0));
         return;
     }
     // `?` explains the cursor while choosing, and opens the log everywhere
@@ -1483,9 +1744,34 @@ pub fn nav_info(player: u8) {
     }
 }
 
+/// A tap on `player`'s own half, outside a battle: it confirms the row when
+/// that seat has the options open, and otherwise toggles readiness.
+///
+/// A press of A only readies and B only cancels, matching the button legend
+/// and the hardware, but a tap has no second button to pair with: the thing
+/// you touched to ready up has to be the thing you touch to take it back.
+#[wasm_bindgen]
+pub fn nav_tap_seat(player: u8) {
+    if let Some(cursor) = seat_options(player) {
+        with_seat_options(player, cursor, |m, o| m.confirm(o));
+        return;
+    }
+    if !is_lobby_mode() || menu_active() {
+        return;
+    }
+    let ready = LOBBY_READY.with(|r| r.borrow()[(player == 2) as usize]);
+    let line = if ready { alloc_cancel_line(player) } else { alloc_ready_line(player) };
+    push_button(ButtonEvent::Line(line));
+}
+
 /// Hold A in the lobby to get an AI opponent, same as the hardware.
 #[wasm_bindgen]
 pub fn nav_a_hold(player: u8) {
+    // Not while this seat is reading the options: a hold there is a held A on
+    // a settings row, not a request for a robot opponent.
+    if seat_options(player).is_some() {
+        return;
+    }
     if is_lobby_mode() {
         wasm_lobby_long_press(player);
     }

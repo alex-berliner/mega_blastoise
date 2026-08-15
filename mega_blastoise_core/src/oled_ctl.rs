@@ -370,7 +370,17 @@ pub enum Screen<'a> {
     SentOut { mon: &'a str, caption: &'a str },
     /// Move used: caption + attacker sprite + (flickering) move icon +
     /// recipient sprite.
-    MoveUsed { mon: &'a str, caption: &'a str, move_id: &'a str, recipient: &'a str, icon_on: bool },
+    MoveUsed {
+        mon: &'a str,
+        caption: &'a str,
+        move_id: &'a str,
+        recipient: &'a str,
+        icon_on: bool,
+        /// Seat that used the move, and how long its window has been up —
+        /// what the colour renderer's attack effects animate against.
+        attacker: u8,
+        elapsed_ms: u32,
+    },
     /// Post-game feedback QR code.
     Qr,
     /// Battle-start tutorial page.
@@ -403,6 +413,34 @@ impl Screen<'_> {
                 | Screen::Qr
                 | Screen::Tutorial(_)
         )
+    }
+
+    /// Short stable name for diagnostics: what a seat is looking at, without
+    /// the payload. Every variant answers, so a new screen cannot be added
+    /// without naming it. Both platforms log transitions with this, which is
+    /// what keeps a trace from the web build comparable to one from the pico.
+    pub fn name(&self) -> &'static str {
+        match self {
+            Screen::Lobby { .. } => "LOBBY",
+            Screen::Battle { .. } => "MOVES",
+            Screen::MoveDetail { .. } => "MOVE_INFO",
+            Screen::Stats { .. } => "STATS",
+            Screen::EventText(_) => "EVENT_TEXT",
+            Screen::Win(_) => "WIN",
+            Screen::Waiting { .. } => "LOCKED_IN",
+            Screen::WaitingForOpponent { .. } => "WAIT_OPPONENT",
+            Screen::Switch(_) => "FORCED_SWITCH",
+            Screen::Invalid(_) => "INVALID",
+            Screen::ControlsSelect { .. } => "CONTROLS_PICK",
+            Screen::ActionSelect { .. } => "ACTION_PICK",
+            Screen::ConcealedMoves { .. } => "CONCEALED_MOVES",
+            Screen::SwitchList { .. } => "CONCEALED_SWITCH",
+            Screen::OpponentMon { .. } => "FOE_PEEK",
+            Screen::SentOut { .. } => "SENT_OUT",
+            Screen::MoveUsed { .. } => "MOVE_USED",
+            Screen::Qr => "QR",
+            Screen::Tutorial(_) => "TUTORIAL",
+        }
     }
 }
 
@@ -448,7 +486,7 @@ where
             render_opponent_mon(display, mon, if *bob { -2 } else { 0 })
         }
         Screen::SentOut { mon, caption } => render_sent_out(display, mon, caption),
-        Screen::MoveUsed { mon, caption, move_id, recipient, icon_on } => {
+        Screen::MoveUsed { mon, caption, move_id, recipient, icon_on, .. } => {
             render_move_used(display, mon, caption, move_id, recipient, *icon_on)
         }
         Screen::Qr => render_qr_screen(display),
@@ -500,6 +538,10 @@ struct Player {
     name: [u8; 12],
     name_len: u8,
     hp_pct: u8,
+    /// What the bar is currently showing. Chases `hp_pct` a few points per
+    /// tick so a hit drains the bar the way the games do, rather than
+    /// snapping — the drain is most of what sells a big hit.
+    hp_shown: u8,
     fainted: bool,
     /// Concealed controls this battle: the battle screen hides the move
     /// list (set via [`OledCmd::SetControlMode`] at battle start).
@@ -527,6 +569,7 @@ impl Player {
             name,
             name_len: 3,
             hp_pct: 100,
+            hp_shown: 100,
             fainted: false,
             concealed: false,
             moves: Vec::new(),
@@ -622,6 +665,25 @@ impl OledController {
                 }
             }
         }
+        // Drain (or refill) the bars toward their true value. Three points a
+        // tick is about a second for a big hit at the 75 ms cadence both
+        // platforms drive this at.
+        for (i, p) in [&mut self.p1, &mut self.p2].into_iter().enumerate() {
+            let target = if p.fainted { 0 } else { p.hp_pct };
+            if p.hp_shown != target {
+                let step = 3;
+                p.hp_shown = if p.hp_shown > target {
+                    p.hp_shown.saturating_sub(step).max(target)
+                } else {
+                    (p.hp_shown + step).min(target)
+                };
+                flip[i] = true;
+                // The rival's bar is on this seat's screen too, so a drain on
+                // one side redraws both.
+                flip[1 - i] = true;
+            }
+        }
+
         // The foe-peek view shows the OTHER player's sprite, so that
         // sprite's bob flip redraws the PEEKING display.
         for i in 0..2 {
@@ -668,6 +730,7 @@ impl OledController {
                 p.name_len = len;
                 p.fainted = false;
                 p.hp_pct = 100;
+                p.hp_shown = 100;
                 p.speed = speed;
                 if matches!(p.view, View::Battle) {
                     OledRedraw::for_player(player)
@@ -839,7 +902,7 @@ impl OledController {
         let active = p.party.iter().find(|s| s.active && s.hp > 0);
         SeatInfo {
             name: p.battle_mon(),
-            hp: if p.fainted { 0 } else { p.hp_pct },
+            hp: if p.fainted { 0 } else { p.hp_shown },
             level: active.map(|s| s.level).unwrap_or(0),
             status: active.and_then(|s| s.status.as_deref()),
             party: &p.party,
@@ -945,6 +1008,8 @@ impl OledController {
                 move_id: core::str::from_utf8(&move_id[..*mlen as usize]).unwrap_or(""),
                 recipient: if *attacker == 1 { self.p2.battle_mon() } else { self.p1.battle_mon() },
                 icon_on: move_icon_on(p.move_flash_ms),
+                attacker: *attacker,
+                elapsed_ms: p.move_flash_ms,
             },
         }
     }

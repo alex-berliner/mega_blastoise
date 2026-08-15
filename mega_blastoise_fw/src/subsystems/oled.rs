@@ -13,8 +13,9 @@
 //! = SCL), so this driver uses the only hardware-valid orientation. If the
 //! copper really is crossed the displays won't ACK — check with i2c_scan.
 //!
-//! Uses embassy async I²C — the 20 ms framebuffer flush is spread across
-//! ~64 small executor yields instead of blocking the task solid.
+//! Uses embassy async I²C — the ~95 ms framebuffer flush (1 KB at 100 kHz)
+//! is spread across ~64 small executor yields instead of blocking the task
+//! solid.
 //!
 //! Call [`send`] from `BattleEffects::on_event` to queue a display update.
 //!

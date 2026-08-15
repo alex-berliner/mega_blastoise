@@ -460,7 +460,7 @@ where
 
 // ── Shared header for pokémon stat/move pages ─────────────────────────────────
 
-fn type_abbr(t: gen1_battle::Type) -> &'static str {
+pub fn type_abbr(t: gen1_battle::Type) -> &'static str {
     match t {
         gen1_battle::Type::Normal   => "NRM",
         gen1_battle::Type::Fighting => "FGT",

@@ -13,6 +13,7 @@ pub mod hp_bar;
 pub mod board_event;
 pub mod battle_input;
 pub mod battle_runner;
+pub mod gen3_runner;
 pub mod choice_collect;
 pub mod data_store;
 pub mod demo_teams;
@@ -20,6 +21,7 @@ pub mod prompt_fmt;
 pub mod oled_ctl;
 pub mod menu;
 pub mod move_descs;
+pub mod move_anim;
 pub mod move_sprites;
 pub mod randbat;
 pub mod rng;
@@ -47,6 +49,7 @@ pub use choice_collect::{
     PadEvent, ReadySequence, SlotOptions, AI_HOLD_MS, AI_THINK_MS, BATTLE_HELP, COLLECT_TICK_MS,
     HOLD_THRESHOLD_MS, INVALID_FLASH_MS, STATS_PAGE_CYCLE_MS, UNREADY_GRACE_MS,
 };
+pub use gen3_battle::Ruleset;
 pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
 pub use hp_bar::{hp_bar_color, hp_bar_count, HpBarState};
 pub use prompt_fmt::{format_active_state, format_lobby_status, format_player_state, format_prompt};
@@ -59,8 +62,9 @@ pub use random_ai::RandomAi;
 pub use cli_parse::{
     parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, LobbyCmd, TurnChoice, LOBBY_HELP,
 };
-pub use display_color::{text_aa, text_aa_center, text_aa_font, draw_platform, draw_status_plate, draw_message_box, seat_trim, render_versus, render_choice, render_gen_picker, render_locked, render_log, render_lobby as render_lobby_color, render_move_info, render_options, render_party, render_playback, render_result, HalfCtx, OptionRow, HALF_H, HALF_W};
-pub use device_view::{draw_split_divider, DeviceFrame, HalfFrame, Orientation, Region, DEV_H, DEV_W};
+pub use display_color::{text_aa, text_aa_center, text_aa_font, draw_platform, draw_status_plate, draw_message_box, seat_trim, render_versus, render_choice, render_gen_picker, render_locked, render_log, render_lobby as render_lobby_color, render_move_info, render_options, render_party, render_playback, render_result, render_stats, HalfCtx, OptionRow, HALF_H, HALF_W};
+pub use move_anim::{anim as move_anim_for, band_shake, Anim, Effect};
+pub use device_view::{draw_split_divider, DeviceFrame, HalfFrame, Region, DEV_H, DEV_W};
 pub use cursor_nav::{CursorNav, Dir, NavMode, NavOut};
 pub use sprites_color::{mon_back_sprite_color, mon_sprite_color, ColorSprite};
 pub use menu::{Gen, GameOptions, Menu, MenuOut, MenuScreen, TextSpeed, OPTION_ROWS};

@@ -14,7 +14,7 @@
 /// Which list the cursor is currently pointing into.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NavMode {
-    /// 2x2 move grid.
+    /// The move row along the bottom of the half.
     Moves,
     /// Party list.
     Party,
@@ -97,8 +97,9 @@ impl CursorNav {
         }
     }
 
-    /// D-pad. The move grid is 2x2, so left/right step within a row and
-    /// up/down jump a row; the party list is linear and wraps.
+    /// D-pad. The move menu is a 2x2 grid like the games', so left/right step
+    /// within a row and up/down jump a row; the party list is a column and
+    /// wraps.
     pub fn dpad(&mut self, dir: Dir) -> NavOut {
         let limit = self.limit();
         if limit == 0 {
@@ -114,8 +115,8 @@ impl CursorNav {
                     Dir::Up => row = row.wrapping_sub(1) & 1,
                     Dir::Down => row = (row + 1) & 1,
                 }
-                let want = row * 2 + col;
                 // Skip past empty grid cells when a mon has fewer than 4 moves.
+                let want = row * 2 + col;
                 self.cursor = if want < limit { want } else { self.cursor };
             }
             NavMode::Party => match dir {
@@ -146,7 +147,7 @@ impl CursorNav {
         }
     }
 
-    /// B — back out. From the move grid this opens the party list, since
+    /// B — back out. From the move row this opens the party list, since
     /// there is nothing above it to return to during a turn.
     pub fn back(&mut self) -> NavOut {
         match self.mode {
@@ -202,7 +203,7 @@ mod tests {
         n.dpad(Dir::Right);
         assert_eq!(n.cursor, 1);
         n.dpad(Dir::Down);
-        assert_eq!(n.cursor, 3);
+        assert_eq!(n.cursor, 3, "down jumps a row of the 2x2 menu");
         n.dpad(Dir::Left);
         assert_eq!(n.cursor, 2);
         n.dpad(Dir::Up);

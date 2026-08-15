@@ -1266,23 +1266,23 @@ impl ReadySequence {
         fx.push(Effect::Oled(cmd));
     }
 
-    /// Pre-mark players as AI (demo mode, VS-AI buttons): AI sides are
-    /// instantly ready; human sides are dropped into the picker.
+    /// Pre-mark players as AI (demo mode, VS-AI buttons): AI sides go
+    /// instantly ready and human sides are left exactly where they were,
+    /// which for an untouched seat is its own ready-up screen.
     pub fn ai_preset(&mut self, ai: [bool; 2], fx: &mut Vec<Effect>) {
         for i in 0..2 {
             if ai[i] {
                 self.ai[i] = true;
                 self.st[i] = SeqSlot::Ready;
-            } else if self.st[i] == SeqSlot::Idle && !self.six_v_six {
-                self.st[i] = SeqSlot::Choosing;
             }
             self.show(i, fx);
         }
         self.grace_start = None;
     }
 
-    /// Long-press: `player` requests an AI opponent — the opponent becomes
-    /// AI (ready), the presser proceeds to the controls picker.
+    /// Long-press: `player` requests an AI opponent — the opponent becomes an
+    /// AI and readies instantly, and the presser is left on their own ready-up
+    /// screen to press A like any other game.
     pub fn request_ai_opponent(&mut self, player: u8, fx: &mut Vec<Effect>) {
         if !(1..=2).contains(&player) {
             return;
@@ -1292,10 +1292,10 @@ impl ReadySequence {
         self.ai[other] = true;
         self.st[other] = SeqSlot::Ready;
         self.show(other, fx);
-        if self.st[me] == SeqSlot::Idle && !self.six_v_six {
-            self.st[me] = SeqSlot::Choosing;
-            self.show(me, fx);
-        }
+        // The presser is deliberately untouched. Routing them into the
+        // controls picker — which the single-screen UI cannot draw, since
+        // concealed mode is gone — left them staring at a blank half.
+        self.show(me, fx);
         self.grace_start = None;
     }
 
@@ -1460,6 +1460,13 @@ impl ReadySequence {
         for (i, pid) in ["p1", "p2"].iter().enumerate() {
             if let Some(rest) = line.strip_prefix(pid) {
                 let rest = rest.trim();
+                // Unready is the one command an AI seat still answers: it is
+                // how the player who asked for a robot rival sends it home.
+                // Everything else aimed at an AI slot is a mistake.
+                if matches!(rest, "unready" | "cancel") {
+                    self.set_unready_cmd((i + 1) as u8, fx);
+                    return;
+                }
                 if self.ai[i] {
                     fx.push(Effect::Err(format!("{pid} is AI-controlled")));
                     return;
@@ -1480,9 +1487,6 @@ impl ReadySequence {
                     "ok" | "confirm" => {
                         self.st[i] = SeqSlot::Ready;
                         self.show(i, fx);
-                    }
-                    "unready" | "cancel" => {
-                        self.set_unready_cmd((i + 1) as u8, fx);
                     }
                     _ => fx.push(Effect::Err(String::from(
                         "controls: pN normal | pN concealed | pN ok | pN unready",
@@ -1550,6 +1554,13 @@ impl ReadySequence {
     /// status displays).
     pub fn ready_flags(&self) -> [bool; 2] {
         [self.st[0] == SeqSlot::Ready, self.st[1] == SeqSlot::Ready]
+    }
+
+    /// Which sides are AI-controlled. A seat can be ready because a person
+    /// pressed A or because someone asked for a robot rival, and B means
+    /// different things in those two cases.
+    pub fn ai_flags(&self) -> [bool; 2] {
+        self.ai
     }
 
     /// HIDDEN: 6v6 teams armed via the 4-corner chord.
