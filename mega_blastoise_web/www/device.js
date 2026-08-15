@@ -39,7 +39,15 @@ let AI_HOLD_MS = 2000;
 // shown at its true physical size with the 240x320 image stretched onto it —
 // the case size is honest, the pixel density is not.
 const PANEL_NATIVE = { w: 240, h: 320 };
+// The panel the firmware is actually being built for, per
+// architecture/09-single-screen.md: 2.8" IPS ST7789, 240x320, SPI. Its own
+// entry (rather than reusing the generic 2.8" row) so that layout judgements
+// are made against THE target — if the hardware spec ever changes, change
+// this one line and the picker follows.
+const FW_TARGET = { id: 'fw', diag: 2.8, res: [240, 320], part: 'ST7789 IPS', fw: true };
+
 const PANELS = [
+  FW_TARGET,
   { id: '1.69', diag: 1.69, res: [240, 280], part: 'ST7789' },
   { id: '2.0', diag: 2.0, res: [240, 320], part: 'ST7789' },
   { id: '2.4', diag: 2.4, res: [240, 320], part: 'ILI9341' },
@@ -68,8 +76,9 @@ function panelLabel(p) {
   const mm = panelSizeMm(p);
   const ppi = Math.round(Math.hypot(p.res[0], p.res[1]) / p.diag);
   const native = p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h;
-  return `${p.diag.toFixed(2).replace(/0$/, '')}" ${p.res[0]}x${p.res[1]} · `
+  const base = `${p.diag.toFixed(2).replace(/0$/, '')}" ${p.res[0]}x${p.res[1]} · `
     + `${Math.round(mm.w)}x${Math.round(mm.h)}mm · ${ppi}ppi${native ? '' : ' · stretched'}`;
+  return p.fw ? `firmware — ${base}` : base;
 }
 
 // 'auto' keeps the original behaviour: scale the whole case to fill the
@@ -296,9 +305,11 @@ window.addEventListener('keydown', (e) => {
     const p = PANELS.find((x) => x.id === panelChoice);
     if (p) {
       const mm = panelSizeMm(p);
-      const note = p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h
-        ? 'native grid'
-        : `NOT the render grid — 240x320 stretched onto ${p.res[0]}x${p.res[1]}`;
+      const note = p.fw
+        ? 'the firmware target (architecture/09-single-screen.md) — what you see is the panel, true size'
+        : p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h
+          ? 'native grid'
+          : `NOT the render grid — 240x320 stretched onto ${p.res[0]}x${p.res[1]}`;
       console.log(
         `[screen] ${p.diag}" ${p.part}: ${mm.w.toFixed(1)}x${mm.h.toFixed(1)}mm, ${note}`,
       );
