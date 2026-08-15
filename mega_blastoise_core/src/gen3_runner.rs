@@ -5,12 +5,16 @@
 //! exactly the code it always ran, and picking a ruleset picks which of the
 //! two a caller drives.
 //!
-//! The two runners differ in who owns the loop. Gen 1's engine hands out
-//! requests and wants to be polled, so `run_battle` owns an async loop. The
-//! Gen 3 engine resolves a whole turn from two choices, so this side exposes
-//! one turn at a time and leaves the loop to the platform, which already has
-//! the input plumbing. That keeps this module free of async generics and, more
-//! usefully, testable without a bus.
+//! Both runners own their loop, so a platform drives either the same way:
+//! hand it a battle, somewhere to read choices from, and somewhere to narrate
+//! to. [`run_battle`] here is the counterpart of [`crate::battle_runner`]'s.
+//!
+//! Narration pacing is deliberately absent: [`BoardEffects`] sinks already
+//! delay per event, so both engines inherit identical timing by emitting the
+//! same events. A loop that slept as well would pace everything twice.
+//!
+//! [`play_turn`] stays public underneath, because a turn resolved without a
+//! bus is what the tests use.
 
 extern crate alloc;
 
@@ -22,16 +26,21 @@ use gen3_battle::{
 };
 
 use crate::battle_effects::BoardEffects;
-use crate::board_event::{BoardEvent, MoveSlot};
+use crate::board_event::{BoardEvent, MoveSlot, PromptKind};
 
 /// `"p1"` / `"p2"` for a 1-based side.
 fn player_id(side: u8) -> String {
     if side == 1 { "p1".to_string() } else { "p2".to_string() }
 }
 
-/// The active mon's display name on `side` (1-based).
+/// The active mon as a board position string: `"Name,p1"`.
+///
+/// The display and LED layers route by parsing the player id back out of this
+/// field ([`crate::board_event::mon_player_num`]), so a bare species name
+/// would leave HP updates, faints and party syncing silently doing nothing.
 fn active_name(battle: &Battle, side: u8) -> String {
-    battle.sides[(side - 1) as usize].mon().species.name.to_string()
+    let name = battle.sides[(side - 1) as usize].mon().species.name;
+    format!("{name},{}", player_id(side))
 }
 
 /// `"cur/max"`, the health string the display layer already parses.
@@ -67,7 +76,7 @@ async fn switch_in<E: BoardEffects>(battle: &Battle, side: u8, effects: &mut E) 
     let mon = battle.sides[i].mon();
     effects
         .on_event(BoardEvent::SwitchIn {
-            name: mon.species.name.to_string(),
+            name: format!("{},{}", mon.species.name, player_id(side)),
             species: Some(mon.species.name.to_string()),
             player_id: Some(player_id(side)),
             team_slot: Some(battle.sides[i].active as u8),
@@ -160,6 +169,68 @@ pub async fn play_turn<E: BoardEffects>(
     battle.over()
 }
 
+/// What a seat may choose from this turn. Platforms use it to bound their
+/// cursor before blocking on a press.
+#[derive(Clone, Copy, Debug)]
+pub struct SeatPrompt {
+    /// 1 or 2.
+    pub player: u8,
+    pub n_moves: u8,
+    pub n_party: u8,
+    /// The active mon fainted: this seat must switch, not attack.
+    pub forced_switch: bool,
+}
+
+/// Where a turn's choices come from.
+///
+/// The platform implements this over whatever it already has: the web reads
+/// its pad queue, the firmware its button matrix. An AI seat resolves inside
+/// the implementation, which is why this module holds no AI policy.
+pub trait ChoiceSource {
+    async fn choices(&mut self, prompts: [SeatPrompt; 2]) -> [Choice; 2];
+}
+
+fn prompts_for(battle: &Battle) -> [SeatPrompt; 2] {
+    [1u8, 2].map(|player| {
+        let side = &battle.sides[(player - 1) as usize];
+        SeatPrompt {
+            player,
+            n_moves: side.mon().moves.len().max(1) as u8,
+            n_party: side.party.len().max(1) as u8,
+            forced_switch: side.mon().fainted(),
+        }
+    })
+}
+
+/// Run a Gen 3 battle to its end.
+///
+/// The counterpart of the Gen 1 runner: same responsibilities, same place in
+/// the stack, so a caller picks an engine rather than a shape.
+pub async fn run_battle<E: BoardEffects, C: ChoiceSource>(
+    battle: &mut Battle,
+    inputs: &mut C,
+    effects: &mut E,
+) {
+    announce_start(battle, effects).await;
+    while !battle.over() {
+        let prompts = prompts_for(battle);
+        // Cue both seats before blocking. This is what takes a display off
+        // the narration and back to the choice screen.
+        for p in prompts {
+            effects
+                .on_event(BoardEvent::Prompt {
+                    player_id: player_id(p.player),
+                    kind: PromptKind::ChooseMove,
+                })
+                .await;
+        }
+        let choices = inputs.choices(prompts).await;
+        if play_turn(battle, choices, effects).await {
+            break;
+        }
+    }
+}
+
 /// A move's type, for callers that colour a badge without reaching into the
 /// engine's types themselves.
 pub fn move_type_name(t: Type) -> &'static str {
@@ -241,6 +312,30 @@ mod tests {
         assert!(rec.0.iter().any(|e| matches!(e, BoardEvent::Faint { .. })));
         assert!(rec.0.iter().any(|e| matches!(e, BoardEvent::Win { .. })));
         assert!(over);
+    }
+
+    #[test]
+    fn every_mon_field_routes_back_to_a_player() {
+        // The sinks parse the player id out of the mon string. A bare species
+        // name parses to nothing and the HP bar never moves.
+        use crate::board_event::mon_player_num;
+        let mut b = battle();
+        let mut rec = Recorder::default();
+        block_on(announce_start(&b, &mut rec));
+        block_on(play_turn(&mut b, [Choice::Move(0), Choice::Move(0)], &mut rec));
+        for e in &rec.0 {
+            let mon = match e {
+                BoardEvent::Damage { mon, .. }
+                | BoardEvent::Faint { mon, .. }
+                | BoardEvent::SuperEffective { mon }
+                | BoardEvent::CriticalHit { mon } => Some(mon),
+                BoardEvent::SwitchIn { name, .. } => Some(name),
+                _ => None,
+            };
+            if let Some(mon) = mon {
+                assert!(mon_player_num(mon).is_some(), "{mon:?} does not name a player");
+            }
+        }
     }
 
     #[test]

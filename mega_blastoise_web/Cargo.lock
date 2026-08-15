@@ -403,6 +403,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "serde_json",
+ "ureq",
 ]
 
 [[package]]
@@ -703,6 +704,7 @@ dependencies = [
  "embassy-futures",
  "embedded-graphics",
  "gen1_battle",
+ "gen3_battle",
  "getrandom 0.4.2",
  "js-sys",
  "mega-blastoise-core",

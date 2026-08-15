@@ -19,9 +19,11 @@ use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
     party_slot_from_mon, render_screen, run_battle, ActivePrompt, BoardEventQueue,
     ChoiceCollector, CollectEffect, ControlMode, FlashDataStore, InputBus,
-    OledCmd, OledController, PadEvent, PartySlotData, PlayerChoice, RandomAi, ReadySequence, SlotOptions,
+    BoardEffects, BoardEvent, OledCmd, OledController, PadEvent, PartySlotData, PlayerChoice, PromptKind,
+    RandomAi, ReadySequence, SlotOptions,
     BATTLE_HELP, COLLECT_TICK_MS, LOBBY_DEMO_DELAY_MS,
 };
+use gen3_battle::Ruleset;
 use web_effects::WebBattleEffects;
 use web_display::WasmDisplay;
 
@@ -816,6 +818,93 @@ fn set_lobby_displays() {
 
 // ── Game loop ─────────────────────────────────────────────────────────────────
 
+/// Which engine the menu's game choice selects.
+pub(crate) fn menu_ruleset() -> Ruleset {
+    use mega_blastoise_core::menu::Gen;
+    OPTS.with(|o| match o.borrow().gen {
+        Gen::One => Ruleset::Gen1,
+        Gen::ThreePreview => Ruleset::Gen3,
+    })
+}
+
+/// Reads a Gen 3 turn's choices off the pad queue the cursor UI already fills.
+///
+/// An AI seat resolves here rather than in core, which is what keeps the
+/// engine's runner free of AI policy.
+struct WebGen3Choices {
+    ai: gen3_battle::Rng,
+}
+
+impl mega_blastoise_core::gen3_runner::ChoiceSource for WebGen3Choices {
+    async fn choices(
+        &mut self,
+        prompts: [mega_blastoise_core::gen3_runner::SeatPrompt; 2],
+    ) -> [gen3_battle::Choice; 2] {
+        use gen3_battle::Choice;
+        let mut chosen: [Option<Choice>; 2] = [None, None];
+
+        for p in prompts {
+            let i = (p.player == 2) as usize;
+            nav_begin_turn(p.player, p.n_moves, p.n_party, p.forced_switch);
+            if is_ai_player(p.player) {
+                chosen[i] = Some(if p.forced_switch {
+                    Choice::Switch(self.ai.below(p.n_party as u32) as usize)
+                } else {
+                    Choice::Move(self.ai.below(p.n_moves as u32) as usize)
+                });
+                nav_set_locked(p.player, true);
+            }
+        }
+
+        while chosen[0].is_none() || chosen[1].is_none() {
+            let pad = match BattleInputFuture.await {
+                BattleInput::Pad(p) => p,
+                // Typed lines drive the Gen 1 grammar; nothing reads them here.
+                BattleInput::Line(_) => continue,
+            };
+            let (player, choice) = match pad {
+                PadEvent::TapMove { player, slot } => (player, Choice::Move(slot as usize)),
+                PadEvent::TapSwitch { player, idx } => (player, Choice::Switch(idx as usize)),
+                _ => continue,
+            };
+            if !(1..=2).contains(&player) {
+                continue;
+            }
+            let i = (player == 2) as usize;
+            if chosen[i].is_none() {
+                chosen[i] = Some(choice);
+                nav_set_locked(player, true);
+            }
+        }
+        [chosen[0].unwrap(), chosen[1].unwrap()]
+    }
+}
+
+/// Draft two teams and hand the battle to the Gen 3 runner, which owns the
+/// loop exactly as the Gen 1 runner does.
+async fn run_gen3_web_battle(seed: u64, six: bool, effects: &mut WebBattleEffects<'_>) {
+    use gen3_battle::{battle::Side, Battle, Rng};
+
+    let size = if six { 6 } else { 3 };
+    let mut draft = Rng::new(seed);
+    let (t1, t2) = (
+        gen3_battle::draft_team(&mut draft, size),
+        gen3_battle::draft_team(&mut draft, size),
+    );
+    if t1.is_empty() || t2.is_empty() {
+        print_log("Gen 3: could not draft teams.");
+        return;
+    }
+    for (label, team) in [("White", &t1), ("Red", &t2)] {
+        let names: Vec<&str> = team.iter().map(|m| m.species.name).collect();
+        print_log(&format!("{label}: {}", names.join(", ")));
+    }
+
+    let mut battle = Battle::new(Side::new(t1), Side::new(t2), seed);
+    let mut inputs = WebGen3Choices { ai: Rng::new(seed ^ 0x5DEE_CE66_D000_0001) };
+    mega_blastoise_core::gen3_runner::run_battle(&mut battle, &mut inputs, effects).await;
+}
+
 async fn run_game_loop() {
     let data = FlashDataStore::new();
 
@@ -954,43 +1043,52 @@ async fn run_game_loop() {
 
         let seed = (Date::now() as u64) ^ 0xdead_beef_cafe_babe;
 
-        let mut battle = match gen1_battle::PublicCoreBattle::new(
-            battle_options_with_seed(seed),
-            &data,
-            demo_engine_opts(),
-        ) {
-            Ok(b) => b,
-            Err(e) => { print_log(&format!("Battle init error: {e}")); continue; }
-        };
+        // The ruleset the players picked decides which engine runs. Gen 1
+        // takes the path it always took; Gen 3 is a separate engine with its
+        // own turn loop, so it is a fork here rather than a swapped argument.
+        if menu_ruleset() == Ruleset::Gen3 {
+            let bus = InputBus::new();
+            let mut effects = WebBattleEffects::new(&bus);
+            run_gen3_web_battle(seed, seq_six, &mut effects).await;
+        } else {
+            let mut battle = match gen1_battle::PublicCoreBattle::new(
+                battle_options_with_seed(seed),
+                &data,
+                demo_engine_opts(),
+            ) {
+                Ok(b) => b,
+                Err(e) => { print_log(&format!("Battle init error: {e}")); continue; }
+            };
 
-        let (team_red, team_blue) =
-            draw_two_randbat_teams(seed, if seq_six { 6 } else { 3 });
+            let (team_red, team_blue) =
+                draw_two_randbat_teams(seed, if seq_six { 6 } else { 3 });
 
-        let ok = battle.update_team("p1", TeamData { members: team_red,  ..Default::default() }).is_ok()
-               && battle.update_team("p2", TeamData { members: team_blue, ..Default::default() }).is_ok()
-               && battle.start().is_ok();
-        if !ok { print_log("Battle setup failed."); continue; }
+            let ok = battle.update_team("p1", TeamData { members: team_red,  ..Default::default() }).is_ok()
+                   && battle.update_team("p2", TeamData { members: team_blue, ..Default::default() }).is_ok()
+                   && battle.start().is_ok();
+            if !ok { print_log("Battle setup failed."); continue; }
 
-        print_log("── Battle start ────────────────────────");
-        print_log("");
+            print_log("── Battle start ────────────────────────");
+            print_log("");
 
-        let bus = InputBus::new();
-        let mut queue = BoardEventQueue::new();
-        let mut effects = WebBattleEffects::new(&bus);
+            let bus = InputBus::new();
+            let mut queue = BoardEventQueue::new();
+            let mut effects = WebBattleEffects::new(&bus);
 
-        run_battle(
-            &mut battle,
-            &data,
-            &bus,
-            collect_battle_input(&bus, seed, modes),
-            &mut queue,
-            &mut effects,
-            |b| {
-                let state = format_active_state(b);
-                for line in state.lines() { print_log(line); }
-            },
-        )
-        .await;
+            run_battle(
+                &mut battle,
+                &data,
+                &bus,
+                collect_battle_input(&bus, seed, modes),
+                &mut queue,
+                &mut effects,
+                |b| {
+                    let state = format_active_state(b);
+                    for line in state.lines() { print_log(line); }
+                },
+            )
+            .await;
+        }
 
         print_log("");
         print_log("── Battle over — press any button for a new game ───");

@@ -21,6 +21,7 @@ embassy-futures = "0.1"
 
 mega-blastoise-core = { path = "../mega_blastoise_core" }
 gen1_battle = { path = "../gen1_battle" }
+gen3_battle = { path = "../gen3_battle" }
 battler = { path = "../battler/battler" }
 battler-data = { path = "../battler/battler-data" }
 anyhow = "1.0"
