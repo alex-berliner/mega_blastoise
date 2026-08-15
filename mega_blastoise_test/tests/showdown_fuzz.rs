@@ -260,7 +260,13 @@ fn fuzz_gen3_turns() {
 
     let moves = vanilla_moves(3, true, |id| {
         gen3_battle::move_by_id(id)
-            .map(|m| m.power > 0 || m.status_action.is_some() || m.fixed.is_some() || m.ohko)
+            .map(|m| {
+                m.power > 0
+                    || m.status_action.is_some()
+                    || m.fixed.is_some()
+                    || m.ohko
+                    || matches!(m.id, "counter" | "mirrorcoat")
+            })
             .unwrap_or(false)
     });
     let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
@@ -427,7 +433,7 @@ fn fuzz_gen1_single_hits() {
     use gen1_battle::testing::{compute_damage_scripted, Mon};
 
     let moves = vanilla_moves(1, false, |id| {
-        use gen1_battle::MoveEffectKind::{FlatDamage, HalfHp, LevelDamage, Ohko, TwoTurn};
+        use gen1_battle::MoveEffectKind::{Counter, FlatDamage, HalfHp, LevelDamage, Ohko, TwoTurn};
         gen1_battle::move_by_id(id)
             .map(|m| {
                 // Formula damage only: fixed-damage and OHKO moves resolve
@@ -436,7 +442,7 @@ fn fuzz_gen1_single_hits() {
                 m.power > 0
                     && !matches!(
                         m.effect_kind,
-                        FlatDamage | LevelDamage | HalfHp | Ohko | TwoTurn
+                        FlatDamage | LevelDamage | HalfHp | Ohko | TwoTurn | Counter
                     )
             })
             .unwrap_or(false)

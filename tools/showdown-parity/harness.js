@@ -175,7 +175,9 @@ function scriptRandomness(battle, script) {
     // move silently ate their boosts (fuzz-found via Metal Claw).
     if (typeof move === 'string' || (typeof move !== 'number' && move.id)) {
       const active = this.dex.getActiveMove(typeof move === 'string' ? move : move.id);
-      active.willCrit = forSide(source).crit;
+      // Moves that inherently never crit (Counter) keep that; only an
+      // undecided willCrit takes the script's.
+      if (active.willCrit === undefined) active.willCrit = forSide(source).crit;
       move = active;
     }
     // Gens 1-2 ignore willCrit and roll their own randomChance(x, 256)
@@ -433,11 +435,13 @@ function runMovelist(sc) {
     // callback stays out. OHKO moves KO on their scripted hit.
     const fixedDamage = typeof move.damage === 'number' || move.damage === 'level' ||
       move.id === 'superfang';
-    if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko) continue;
+    // Counter (both eras) and Mirror Coat (gen 3) bounce the turn's damage.
+    const counterish = move.id === 'counter' || (sc.gen >= 3 && move.id === 'mirrorcoat');
+    if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish) continue;
     if (move.basePowerCallback) continue;
-    if ((move.damageCallback || move.damage) && !fixedDamage) continue;
+    if ((move.damageCallback || move.damage) && !fixedDamage && !counterish) continue;
     if (move.mindBlownRecoil) continue;
-    if (move.willCrit !== undefined) continue;
+    if (move.willCrit !== undefined && !counterish) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
     if (move.flags['futuremove']) continue;
     // Gen 3 partial traps are modelled; other damaging volatiles are not.
@@ -467,14 +471,15 @@ function runMovelist(sc) {
     // Gen 1: coins are cosmetic, and Blizzard/Thunder predate weather.
     const g1plain = sc.gen === 1 && ['payday', 'blizzard', 'thunder'].includes(move.id);
     const chargey = move.flags['charge'] || move.flags['recharge'];
-    const hooky = !chargey && !thundery && !g1plain && Object.keys(raw).some((k) =>
+    const hooky = !chargey && !thundery && !g1plain && !counterish && Object.keys(raw).some((k) =>
       k.startsWith('on') ||
       (/Callback/.test(k) && !(k === 'damageCallback' && fixedDamage)));
     // A recharge move's raw.self IS the mustrecharge volatile — machinery,
     // not an unmodelled self-effect.
     if (hooky || (raw.self && !chargey)) continue;
     // allAdjacent only differs from allAdjacentFoes in doubles; this is 1v1.
-    if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes', 'allAdjacent'].includes(move.target)) continue;
+    if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes', 'allAdjacent'].includes(move.target)
+        && !(counterish && move.target === 'scripted')) continue;
     if (move.id === 'struggle') continue;
     out.push({id: move.id, priority: move.priority, boostsSelf: !!move.self, multihit: !!move.multihit});
   }

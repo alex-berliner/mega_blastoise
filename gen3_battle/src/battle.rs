@@ -411,11 +411,23 @@ pub struct Battle {
     /// Active weather and its remaining end-of-turn ticks.
     pub weather: Option<Weather>,
     pub weather_n: u8,
+    /// Last damage each side's mon took THIS turn from the foe's move,
+    /// split physical/special — what Counter and Mirror Coat bounce.
+    taken_physical: [u16; 2],
+    taken_special: [u16; 2],
 }
 
 impl Battle {
     pub fn new(side1: Side, side2: Side, seed: u64) -> Battle {
-        Battle { sides: [side1, side2], rng: Rng::new(seed), turn: 0, weather: None, weather_n: 0 }
+        Battle {
+            sides: [side1, side2],
+            rng: Rng::new(seed),
+            turn: 0,
+            weather: None,
+            weather_n: 0,
+            taken_physical: [0; 2],
+            taken_special: [0; 2],
+        }
     }
 
     pub fn over(&self) -> bool {
@@ -440,6 +452,8 @@ impl Battle {
     pub fn step_with(&mut self, choices: [Choice; 2], script: &TurnScript) -> Vec<Event> {
         let mut events = Vec::new();
         self.turn += 1;
+        self.taken_physical = [0; 2];
+        self.taken_special = [0; 2];
 
         // Switches resolve before any move, in side order. Leaving the field
         // resets a Toxic count: the poison stays, the clock starts over.
@@ -910,6 +924,55 @@ impl Battle {
             }
             let amount = amount.min(target.hp);
             target.hp -= amount;
+            match crate::types::category_of(slot.move_type()) {
+                crate::types::Category::Physical => self.taken_physical[foe] = amount,
+                _ => self.taken_special[foe] = amount,
+            }
+            events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.resolve_faints(side, foe, events);
+            return;
+        }
+
+        // Counter and Mirror Coat bounce back double the last hit this mon
+        // took this turn — physical for Counter, special for Mirror Coat —
+        // through the type chart (a Ghost shrugs Counter off) and into a
+        // substitute if one stands. Nothing taken means they fail.
+        if matches!(slot.entry.id, "counter" | "mirrorcoat") {
+            if !hit {
+                return;
+            }
+            let taken = if slot.entry.id == "counter" {
+                self.taken_physical[side]
+            } else {
+                self.taken_special[side]
+            };
+            if taken == 0 {
+                events.push(Event::Failed { side: side as u8 + 1 });
+                return;
+            }
+            let eff =
+                crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types());
+            if eff == 0 {
+                events.push(Event::Damage { side: foe as u8 + 1, amount: 0, effectiveness: 0, crit: false });
+                return;
+            }
+            let amount = taken.saturating_mul(2);
+            let target = self.sides[foe].mon_mut();
+            if target.sub_hp > 0 {
+                let amount = amount.min(target.sub_hp);
+                target.sub_hp -= amount;
+                events.push(Event::SubDamage { side: foe as u8 + 1, amount });
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke { side: foe as u8 + 1 });
+                }
+                return;
+            }
+            let amount = amount.min(target.hp);
+            target.hp -= amount;
+            match crate::types::category_of(slot.move_type()) {
+                crate::types::Category::Physical => self.taken_physical[foe] = amount,
+                _ => self.taken_special[foe] = amount,
+            }
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
             self.resolve_faints(side, foe, events);
             return;
@@ -1002,6 +1065,10 @@ impl Battle {
                     events.push(Event::SubBroke { side: foe as u8 + 1 });
                 }
             } else {
+                match m.category() {
+                    crate::types::Category::Physical => self.taken_physical[foe] = amount,
+                    _ => self.taken_special[foe] = amount,
+                }
                 events.push(Event::Damage {
                     side: foe as u8 + 1,
                     amount,

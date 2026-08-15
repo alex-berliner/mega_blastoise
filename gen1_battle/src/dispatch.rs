@@ -581,7 +581,9 @@ fn apply_effect(
             if outcome.hit && outcome.damage_dealt > 0 && !outcome.sub_broke {
                 let div = if mv.effect_kind == StruggleRecoil { 2 } else { 4 };
                 let recoil = (outcome.damage_dealt / div).max(1);
-                direct_hp_loss(field, sides, attacker_side, recoil, true, log);
+                // Recoil does NOT touch the last-damage register (so Counter
+                // bounces the move's own damage, not the recoil).
+                direct_hp_loss(field, sides, attacker_side, recoil, false, log);
                 outcome.fainted_user = sides[attacker_side].active().hp_cur == 0;
             }
         }
@@ -1386,7 +1388,8 @@ fn self_hit_with_sub_redirect(
         }
         // No sub on the foe: the damage vanishes entirely.
     } else {
-        direct_hp_loss(field, sides, side, dmg, false, log);
+        // A confusion self-hit DOES set the register — Counter can bounce it.
+        direct_hp_loss(field, sides, side, dmg, true, log);
     }
 }
 
@@ -1619,7 +1622,7 @@ pub fn after_switch_in(field: &mut Field, sides: &mut [Side; 2], side: usize, lo
     apply_status_drop(sides[side].active_mut());
     if matches!(sides[side].active().status, Status::Poison | Status::Burn) {
         let max = sides[side].active().hp_max;
-        direct_hp_loss(field, sides, side, (max / 16).max(1), true, log);
+        direct_hp_loss(field, sides, side, (max / 16).max(1), false, log);
     }
 }
 
@@ -1629,8 +1632,9 @@ pub fn after_switch_in(field: &mut Field, sides: &mut [Side; 2], side: usize, lo
 
 /// Gen 1 applies residual damage right after the afflicted mon's own action
 /// (even one spent asleep/trapped/paralyzed). Order: brn/psn/tox, then Leech
-/// Seed. All of it updates the last-damage register — Counter can counter
-/// poison ticks.
+/// Seed. None of it touches the last-damage register — the reference sim
+/// (non-Stadium) leaves status and seed ticks uncounterable, and the fuzzer
+/// sided with it against this file's previous claim.
 pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: usize, log: &mut Log) {
     if sides[side].active().hp_cur == 0 || sides[side].active().empty() {
         return;
@@ -1646,14 +1650,14 @@ pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: us
             } else {
                 1
             };
-            direct_hp_loss(field, sides, side, base.saturating_mul(mult), true, log);
+            direct_hp_loss(field, sides, side, base.saturating_mul(mult), false, log);
         }
         Status::BadPoison => {
             let m = sides[side].active_mut();
             m.volatile.set(Volatile::TOX_COUNTER);
             m.volatile.toxic_counter = m.volatile.toxic_counter.saturating_add(1);
             let mult = m.volatile.toxic_counter as u16;
-            direct_hp_loss(field, sides, side, base.saturating_mul(mult), true, log);
+            direct_hp_loss(field, sides, side, base.saturating_mul(mult), false, log);
         }
         _ => {}
     }
@@ -1668,7 +1672,7 @@ pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: us
             1
         };
         let drain = base.saturating_mul(mult);
-        direct_hp_loss(field, sides, side, drain, true, log);
+        direct_hp_loss(field, sides, side, drain, false, log);
         // The seeder heals the full drain amount, not capped by the victim's
         // remaining HP (Gen 1 quirk).
         let healer = 1 - side;
