@@ -181,13 +181,21 @@ pub struct SeatPrompt {
     pub forced_switch: bool,
 }
 
-/// Where a turn's choices come from.
-///
-/// The platform implements this over whatever it already has: the web reads
-/// its pad queue, the firmware its button matrix. An AI seat resolves inside
-/// the implementation, which is why this module holds no AI policy.
-pub trait ChoiceSource {
-    async fn choices(&mut self, prompts: [SeatPrompt; 2]) -> [Choice; 2];
+/// One committed press from a seat, already classified by the platform's
+/// cursor UI: a move slot or a party index. This is ALL a platform supplies —
+/// the turn's lifecycle (who is prompted, when an AI commits, when a seat
+/// locks) lives in [`run_battle`], so the two platforms cannot order it
+/// differently.
+pub trait PadSource {
+    async fn next(&mut self) -> (u8, Choice);
+}
+
+/// The per-seat UI state the runner drives as the turn progresses. The web
+/// backs this with its `DeviceSession`; the firmware will back it with the
+/// same one.
+pub trait UiHook {
+    fn begin_turn(&mut self, prompt: SeatPrompt);
+    fn set_locked(&mut self, player: u8, locked: bool);
 }
 
 fn prompts_for(battle: &Battle) -> [SeatPrompt; 2] {
@@ -202,33 +210,82 @@ fn prompts_for(battle: &Battle) -> [SeatPrompt; 2] {
     })
 }
 
+/// The stock policy for a robot seat: a random legal pick, forced switches
+/// honoured. Core owns it for the same reason `RandomAi` is core on the Gen 1
+/// side — an AI that picked differently per platform would be drift.
+fn ai_choice(rng: &mut gen3_battle::Rng, p: SeatPrompt) -> Choice {
+    if p.forced_switch {
+        Choice::Switch(rng.below(p.n_party as u32) as usize)
+    } else {
+        Choice::Move(rng.below(p.n_moves as u32) as usize)
+    }
+}
+
 /// Run a Gen 3 battle to its end.
 ///
 /// The counterpart of the Gen 1 runner: same responsibilities, same place in
-/// the stack, so a caller picks an engine rather than a shape.
-pub async fn run_battle<E: BoardEffects, C: ChoiceSource>(
+/// the stack, so a caller picks an engine rather than a shape. Per turn: both
+/// seats' cursors are re-bounded, AI seats commit instantly and lock, human
+/// seats are prompted, and each human commit locks its seat.
+pub async fn run_battle<E: BoardEffects, P: PadSource, U: UiHook>(
     battle: &mut Battle,
-    inputs: &mut C,
+    ai: [bool; 2],
+    ai_rng: &mut gen3_battle::Rng,
+    pads: &mut P,
+    ui: &mut U,
     effects: &mut E,
 ) {
     announce_start(battle, effects).await;
     while !battle.over() {
         let prompts = prompts_for(battle);
-        // Cue both seats before blocking. This is what takes a display off
-        // the narration and back to the choice screen.
+        let mut chosen: [Option<Choice>; 2] = [None, None];
         for p in prompts {
-            effects
-                .on_event(BoardEvent::Prompt {
-                    player_id: player_id(p.player),
-                    kind: PromptKind::ChooseMove,
-                })
-                .await;
+            let i = (p.player - 1) as usize;
+            ui.begin_turn(p);
+            if ai[i] {
+                chosen[i] = Some(ai_choice(ai_rng, p));
+                ui.set_locked(p.player, true);
+            } else {
+                // Cue the human seat. This is what takes a display off the
+                // narration and back to the choice screen.
+                effects
+                    .on_event(BoardEvent::Prompt {
+                        player_id: player_id(p.player),
+                        kind: PromptKind::ChooseMove,
+                    })
+                    .await;
+            }
         }
-        let choices = inputs.choices(prompts).await;
-        if play_turn(battle, choices, effects).await {
+        while chosen[0].is_none() || chosen[1].is_none() {
+            let (player, choice) = pads.next().await;
+            if !(1..=2).contains(&player) {
+                continue;
+            }
+            let i = (player - 1) as usize;
+            if chosen[i].is_none() && !ai[i] {
+                chosen[i] = Some(choice);
+                ui.set_locked(player, true);
+            }
+        }
+        if play_turn(battle, [chosen[0].unwrap(), chosen[1].unwrap()], effects).await {
             break;
         }
     }
+}
+
+/// Draft two random-battle teams from one seed and build the battle. The
+/// setup half of a Gen 3 game, in core so both platforms construct battles
+/// identically; the caller only decides the seed and the team size.
+pub fn drafted_battle(seed: u64, six: bool) -> Option<Battle> {
+    use gen3_battle::battle::Side;
+    let size = if six { 6 } else { 3 };
+    let mut rng = gen3_battle::Rng::new(seed);
+    let t1 = gen3_battle::draft_team(&mut rng, size);
+    let t2 = gen3_battle::draft_team(&mut rng, size);
+    if t1.is_empty() || t2.is_empty() {
+        return None;
+    }
+    Some(Battle::new(Side::new(t1), Side::new(t2), seed))
 }
 
 /// A move's type, for callers that colour a badge without reaching into the

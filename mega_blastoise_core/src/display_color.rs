@@ -926,15 +926,15 @@ where
 pub const TOP: i32 = crate::device_view::DIVIDER_REACH as i32 + PAD;
 
 /// The bottom third, where Gen 3 puts its menus and its narration.
-const MENU_Y: i32 = 112;
-const MENU_H: u32 = 36;
+pub(crate) const MENU_Y: i32 = 112;
+pub(crate) const MENU_H: u32 = 36;
 
 /// First row of the type-effectiveness rows on the move-info screen.
 const CHART_Y: i32 = 96;
 
 /// Party list geometry, shared with the tap hit-test in the web client.
-const PARTY_Y: i32 = TOP + 22;
-const PARTY_PITCH: i32 = 17;
+pub(crate) const PARTY_Y: i32 = TOP + 22;
+pub(crate) const PARTY_PITCH: i32 = 17;
 
 /// The play area's frame, in this seat's own color: White's half is edged in
 /// white and Red's in red. The two halves meet at the seam, so the divider's

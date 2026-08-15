@@ -269,3 +269,22 @@ pub fn render_menu(
     crate::device_view::draw_split_divider(&mut frame);
     frame.to_rgba()
 }
+
+/// Compose the whole panel from the session, given the platform's one fact
+/// (lobby phase). The menu-vs-battle decision lives here with the rest of the
+/// display logic rather than at each platform's call site.
+pub fn render_session(
+    session: &crate::device_session::DeviceSession,
+    ctl: &OledController,
+    lobby: bool,
+) -> Vec<u8> {
+    // A menu can only own the screen while the lobby is idle — a battle
+    // (including the attract demo) always wins the panel.
+    if session.menu_active && lobby {
+        return render_menu(&session.menu, &session.opts);
+    }
+    let lines = session.log.lines();
+    let l1 = LogView { lines, offset: session.log_view(1) };
+    let l2 = LogView { lines, offset: session.log_view(2) };
+    render_device(ctl, &session.seats[0], &session.seats[1], l1, l2, &session.opts)
+}

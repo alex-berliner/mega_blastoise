@@ -66,10 +66,6 @@ thread_local! {
     // "action buttons open instantly on click" behavior for Concealed).
     static CONTROL_MODES: RefCell<[ControlMode; 2]> = RefCell::new([ControlMode::Normal; 2]);
 
-    // Web stand-in for the hidden 4-corner chord: a mouse can't press four
-    // buttons at once, so tapping all four corners within 2s counts.
-    // [player][slot] = last tap time (ms).
-    static CHORD_TAPS: RefCell<[[u64; 4]; 2]> = RefCell::new([[0; 4]; 2]);
 
     // Lobby LED animation mode
     static LOBBY_MODE: RefCell<bool> = RefCell::new(false);
@@ -584,32 +580,11 @@ pub fn wasm_held_buttons(player: u8) -> u8 {
 
 // ── WASM exports ──────────────────────────────────────────────────────────────
 
-/// Track lobby corner taps; true when this tap completes the 4-corner set
-/// within the 2s window (fires the hidden chord).
-fn chord_tap(player: u8, slot: u8) -> bool {
-    if slot > 3 {
-        return false;
-    }
-    let now = now_ms();
-    CHORD_TAPS.with(|t| {
-        let taps = &mut t.borrow_mut()[latch_i(player)];
-        taps[slot as usize] = now;
-        if taps.iter().all(|&t0| now.saturating_sub(t0) <= 2000) {
-            *taps = [0; 4];
-            true
-        } else {
-            false
-        }
-    })
-}
-
 #[wasm_bindgen] pub fn press_move(player: u8, slot: u8) {
     if LOBBY_MODE.with(|m| *m.borrow()) {
-        if chord_tap(player, slot) {
-            push_button(ButtonEvent::Chord { player });
-        } else {
-            push_button(ButtonEvent::Move { player, slot });
-        }
+        // The hidden 4-corner chord is gone with the corner buttons; 6v6
+        // lives in the options menu.
+        push_button(ButtonEvent::Move { player, slot });
     } else if unlatch_if_held(player, false, slot) {
         // Clicking a latched button releases the sticky hold.
     } else {
@@ -797,82 +772,65 @@ pub(crate) fn menu_ruleset() -> Ruleset {
     SESSION.with(|s| s.borrow().ruleset())
 }
 
-/// Reads a Gen 3 turn's choices off the pad queue the cursor UI already fills.
-///
-/// An AI seat resolves here rather than in core, which is what keeps the
-/// engine's runner free of AI policy.
-struct WebGen3Choices {
-    ai: gen3_battle::Rng,
-}
+/// The web's raw pad feed for the Gen 3 runner: nothing but committed
+/// presses. Turn lifecycle, AI, and locking all live in core.
+struct WebPads;
 
-impl mega_blastoise_core::gen3_runner::ChoiceSource for WebGen3Choices {
-    async fn choices(
-        &mut self,
-        prompts: [mega_blastoise_core::gen3_runner::SeatPrompt; 2],
-    ) -> [gen3_battle::Choice; 2] {
+impl mega_blastoise_core::gen3_runner::PadSource for WebPads {
+    async fn next(&mut self) -> (u8, gen3_battle::Choice) {
         use gen3_battle::Choice;
-        let mut chosen: [Option<Choice>; 2] = [None, None];
-
-        for p in prompts {
-            let i = (p.player == 2) as usize;
-            nav_begin_turn(p.player, p.n_moves, p.n_party, p.forced_switch);
-            if is_ai_player(p.player) {
-                chosen[i] = Some(if p.forced_switch {
-                    Choice::Switch(self.ai.below(p.n_party as u32) as usize)
-                } else {
-                    Choice::Move(self.ai.below(p.n_moves as u32) as usize)
-                });
-                nav_set_locked(p.player, true);
-            }
-        }
-
-        while chosen[0].is_none() || chosen[1].is_none() {
+        loop {
             let pad = match BattleInputFuture.await {
                 BattleInput::Pad(p) => p,
                 // Typed lines drive the Gen 1 grammar; nothing reads them here.
                 BattleInput::Line(_) => continue,
             };
-            let (player, choice) = match pad {
-                PadEvent::TapMove { player, slot } => (player, Choice::Move(slot as usize)),
-                PadEvent::TapSwitch { player, idx } => (player, Choice::Switch(idx as usize)),
+            match pad {
+                PadEvent::TapMove { player, slot } => return (player, Choice::Move(slot as usize)),
+                PadEvent::TapSwitch { player, idx } => {
+                    return (player, Choice::Switch(idx as usize))
+                }
                 _ => continue,
-            };
-            if !(1..=2).contains(&player) {
-                continue;
-            }
-            let i = (player == 2) as usize;
-            if chosen[i].is_none() {
-                chosen[i] = Some(choice);
-                nav_set_locked(player, true);
             }
         }
-        [chosen[0].unwrap(), chosen[1].unwrap()]
     }
 }
 
-/// Draft two teams and hand the battle to the Gen 3 runner, which owns the
-/// loop exactly as the Gen 1 runner does.
-async fn run_gen3_web_battle(seed: u64, six: bool, effects: &mut WebBattleEffects<'_>) {
-    use gen3_battle::{battle::Side, Battle, Rng};
+/// The runner's view of the per-seat UI: dumb setters over the session.
+struct WebUiHook;
 
-    let size = if six { 6 } else { 3 };
-    let mut draft = Rng::new(seed);
-    let (t1, t2) = (
-        gen3_battle::draft_team(&mut draft, size),
-        gen3_battle::draft_team(&mut draft, size),
-    );
-    if t1.is_empty() || t2.is_empty() {
+impl mega_blastoise_core::gen3_runner::UiHook for WebUiHook {
+    fn begin_turn(&mut self, p: mega_blastoise_core::gen3_runner::SeatPrompt) {
+        nav_begin_turn(p.player, p.n_moves, p.n_party, p.forced_switch);
+    }
+
+    fn set_locked(&mut self, player: u8, locked: bool) {
+        nav_set_locked(player, locked);
+    }
+}
+
+/// One Gen 3 battle: core drafts, constructs and drives it; this function is
+/// the seed, the wiring, and a team-list line on the console.
+async fn run_gen3_web_battle(seed: u64, six: bool, effects: &mut WebBattleEffects<'_>) {
+    let Some(mut battle) = mega_blastoise_core::gen3_runner::drafted_battle(seed, six) else {
         print_log("Gen 3: could not draft teams.");
         return;
-    }
-    for (label, team) in [("White", &t1), ("Red", &t2)] {
-        let names: Vec<&str> = team.iter().map(|m| m.species.name).collect();
+    };
+    for (label, side) in [("White", &battle.sides[0]), ("Red", &battle.sides[1])] {
+        let names: Vec<&str> = side.party.iter().map(|m| m.species.name).collect();
         print_log(&format!("{label}: {}", names.join(", ")));
     }
-
-    let mut battle = Battle::new(Side::new(t1), Side::new(t2), seed);
-    let mut inputs = WebGen3Choices { ai: Rng::new(seed ^ 0x5DEE_CE66_D000_0001) };
-    mega_blastoise_core::gen3_runner::run_battle(&mut battle, &mut inputs, effects).await;
+    let ai = AI_PLAYERS.with(|a| *a.borrow());
+    let mut ai_rng = gen3_battle::Rng::new(seed ^ 0x5DEE_CE66_D000_0001);
+    mega_blastoise_core::gen3_runner::run_battle(
+        &mut battle,
+        ai,
+        &mut ai_rng,
+        &mut WebPads,
+        &mut WebUiHook,
+        effects,
+    )
+    .await;
 }
 
 async fn run_game_loop() {
@@ -1389,17 +1347,9 @@ pub fn get_device_pixels() -> Vec<u8> {
     trace_screen_states();
     // A menu can only own the screen while the lobby is idle — a battle
     // (including the attract demo) always wins the panel.
+    let lobby = is_lobby_mode();
     SESSION.with(|se| {
-        let se = se.borrow();
-        if se.menu_active && is_lobby_mode() {
-            return device_ui::render_menu(&se.menu, &se.opts);
-        }
-        let lines = se.log.lines();
-        let l1 = device_ui::LogView { lines, offset: se.log_view(1) };
-        let l2 = device_ui::LogView { lines, offset: se.log_view(2) };
-        OLED_CTL.with(|c| {
-            device_ui::render_device(&c.borrow(), &se.seats[0], &se.seats[1], l1, l2, &se.opts)
-        })
+        OLED_CTL.with(|c| device_ui::render_session(&se.borrow(), &c.borrow(), lobby))
     })
 }
 
@@ -1453,6 +1403,30 @@ fn apply_nav_out(player: u8, out: mega_blastoise_core::cursor_nav::NavOut) {
         }
         NavOut::HoldEnd => push_battle_input(BattleInput::Pad(PadEvent::HoldEnd { player })),
     }
+}
+
+/// A raw tap on the panel, in 240x320 panel coordinates. Core decides which
+/// half it landed on, un-rotates the far half, and maps the pixel to a
+/// meaning; the page only scales client coordinates to the panel grid.
+#[wasm_bindgen]
+pub fn panel_tap(x: u32, y: u32) {
+    let ctx = mega_blastoise_core::device_session::TapCtx {
+        lobby: is_lobby_mode(),
+        waiting: [seat_is_waiting(1), seat_is_waiting(2)],
+    };
+    run_outs(SESSION.with(|s| s.borrow_mut().panel_tap(x, y, ctx)));
+}
+
+/// Hold thresholds, exported so the page classifies presses with the same
+/// numbers the firmware's matrix scan uses.
+#[wasm_bindgen]
+pub fn hold_threshold_ms() -> u32 {
+    mega_blastoise_core::HOLD_THRESHOLD_MS as u32
+}
+
+#[wasm_bindgen]
+pub fn ai_hold_ms() -> u32 {
+    mega_blastoise_core::AI_HOLD_MS as u32
 }
 
 /// Point the cursor straight at an item — what a direct tap on the screen

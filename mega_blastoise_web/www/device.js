@@ -26,9 +26,10 @@ const PANEL_H = 320;
 // against. Mirrors #panel in device.css.
 const PANEL_CSS_H = 640;
 
-// Hold thresholds mirror core: HOLD_THRESHOLD_MS and AI_HOLD_MS.
-const HOLD_MS = 500;
-const AI_HOLD_MS = 2000;
+// Hold thresholds are core's numbers, read out after the wasm loads, so the
+// page classifies presses exactly like the firmware's matrix scan.
+let HOLD_MS = 500;
+let AI_HOLD_MS = 2000;
 
 // ── Candidate panels ──────────────────────────────────────────────────────
 //
@@ -230,67 +231,17 @@ function wireSeat(player) {
 
 // ── Direct tap on the panel ───────────────────────────────────────────────
 //
-// Tablet players will reach for the thing they want, so a tap on a move cell
-// or party row points the cursor at it. Confirming is still an explicit A,
-// which keeps a stray touch from committing a turn.
+// The page only scales the pointer to the 240x320 grid. Which half was hit,
+// the far half's rotation, and what the pixel means are core's decisions
+// (DeviceSession::panel_tap) — the hit boxes are derived from the same layout
+// constants the renderer draws with, so they cannot go stale here.
 
 function panelTap(ev) {
-  // The gen picker owns the whole panel, so a tap on either half confirms the
-  // same row.
-  if (wasm.menu_active() && wasm.is_lobby_mode()) {
-    wasm.nav_a(1);
-    return;
-  }
-  // Lobby: a tap on your own half readies you up, and taking it back is the
-  // same tap. Core decides which — the seat may have its options open, in
-  // which case the tap belongs to that menu instead.
-  if (wasm.is_lobby_mode()) {
-    const r0 = canvas.getBoundingClientRect();
-    const half = (ev.clientY - r0.top) / r0.height < 0.5 ? 2 : 1;
-    wasm.nav_tap_seat(half);
-    return;
-  }
   const r = canvas.getBoundingClientRect();
-  let x = ((ev.clientX - r.left) / r.width) * PANEL_W;
-  let y = ((ev.clientY - r.top) / r.height) * PANEL_H;
+  const x = Math.floor(((ev.clientX - r.left) / r.width) * PANEL_W);
+  const y = Math.floor(((ev.clientY - r.top) / r.height) * PANEL_H);
   if (x < 0 || y < 0 || x >= PANEL_W || y >= PANEL_H) return;
-
-  // Which half, and where inside it. The far half is always rotated 180, so
-  // undo that to get a tap back into that seat's own coordinates.
-  let player;
-  let hx;
-  let hy;
-  if (y < PANEL_H / 2) {
-    player = 2;
-    hx = PANEL_W - 1 - x;
-    hy = PANEL_H / 2 - 1 - y;
-  } else {
-    player = 1;
-    hx = x;
-    hy = y - PANEL_H / 2;
-  }
-
-  // After committing, a tap anywhere on your own half takes it back.
-  if (wasm.seat_is_waiting(player)) {
-    wasm.nav_cancel(player);
-    return;
-  }
-
-  const mode = wasm.nav_mode(player);
-  if (mode === 0) {
-    // The 2x2 move menu: box at x 8..156, y 108..148, split down the middle
-    // both ways. A tap is a whole decision, so it commits rather than only
-    // moving the cursor. Geometry mirrors MENU_Y in display_color.rs.
-    if (hx < 8 || hx > 156 || hy < 108 || hy > 148) return;
-    const col = hx < 82 ? 0 : 1;
-    const row = hy < 128 ? 0 : 1;
-    wasm.nav_tap_commit(player, row * 2 + col);
-  } else if (mode === 1) {
-    // Party rows start at y 36, 18px pitch — PARTY_Y and PARTY_PITCH.
-    if (hy < 36) return;
-    const idx = Math.floor((hy - 36) / 18);
-    if (idx >= 0 && idx < 6) wasm.nav_tap_commit(player, idx);
-  }
+  wasm.panel_tap(x, y);
 }
 canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); panelTap(e); });
 
@@ -403,6 +354,8 @@ window.addEventListener('resize', fitCanvas);
 
 async function run() {
   await init();
+  HOLD_MS = wasm.hold_threshold_ms();
+  AI_HOLD_MS = wasm.ai_hold_ms();
   // The console's command line drives the same entry point the two-OLED page
   // types into, which is the firmware's USB grammar.
   setCommandHandler((line) => wasm.submit_text(line));

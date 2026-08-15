@@ -50,6 +50,16 @@ pub enum Out {
     LobbyLongPress(u8),
 }
 
+/// Context for a direct tap on the panel, which routes per half rather than
+/// per button.
+#[derive(Clone, Copy, Debug)]
+pub struct TapCtx {
+    pub lobby: bool,
+    /// Each seat's "committed and waiting" state, read off the live battle
+    /// screen: a tap on your own half while waiting takes the choice back.
+    pub waiting: [bool; 2],
+}
+
 /// What the session cannot know on its own this instant, passed per call.
 #[derive(Clone, Copy, Debug)]
 pub struct Ctx {
@@ -296,6 +306,87 @@ impl DeviceSession {
         } else {
             false
         }
+    }
+
+    /// A raw tap on the composed 240x320 panel, in panel coordinates.
+    ///
+    /// This is the single mapping from a point to a meaning — which half was
+    /// touched, the far half's 180° flip, and what the touched pixel is over.
+    /// It lives here because every hit box is derived from the layout
+    /// constants in [`crate::display_color`]; the web previously mirrored
+    /// them by hand in JS and was already four pixels stale.
+    pub fn panel_tap(&mut self, x: u32, y: u32, ctx: TapCtx) -> Vec<Out> {
+        use crate::device_view::{DEV_H, DEV_W};
+        use crate::display_color as dc;
+        let mut outs = Vec::new();
+        if x >= DEV_W || y >= DEV_H {
+            return outs;
+        }
+
+        // The gen picker owns the whole panel: a tap anywhere confirms.
+        if self.menu_active && ctx.lobby {
+            let out = self.menu.confirm(&mut self.opts);
+            self.close_menu_on(out, &mut outs);
+            return outs;
+        }
+
+        // Which half, and where inside it. The far half is drawn rotated 180,
+        // so its taps un-rotate into that seat's own coordinates.
+        let (player, hx, hy) = if y < DEV_H / 2 {
+            (2u8, DEV_W - 1 - x, DEV_H / 2 - 1 - y)
+        } else {
+            (1u8, x, y - DEV_H / 2)
+        };
+        let i = idx(player);
+
+        // This seat's options overlay: a tap confirms the row.
+        if self.seats[i].options.is_some() {
+            return self.button(player, Button::TapSeat, Ctx { lobby: ctx.lobby, choosing: false });
+        }
+
+        if ctx.lobby {
+            return self.button(player, Button::TapSeat, Ctx { lobby: true, choosing: false });
+        }
+
+        // Committed: a tap on your own half takes the choice back, by the
+        // same path the collector already treats as an un-ready (re-tapping
+        // the committed slot).
+        if ctx.waiting[i] {
+            let cursor = self.seats[i].nav.cursor;
+            outs.push(Out::Nav(player, NavOut::TapMove(cursor)));
+            return outs;
+        }
+
+        // Over the move menu or the party list: a tap is a whole decision.
+        use crate::cursor_nav::NavMode;
+        let target = match self.seats[i].nav.mode {
+            NavMode::Moves => {
+                let (bx, by) = (dc::LEFT as u32, dc::MENU_Y as u32);
+                let (bw, bh) = (148u32, dc::MENU_H);
+                if hx < bx || hx >= bx + bw || hy < by || hy >= by + bh {
+                    None
+                } else {
+                    let col = ((hx - bx) * 2 / bw) as u8;
+                    let row = ((hy - by) * 2 / bh) as u8;
+                    Some(row * 2 + col)
+                }
+            }
+            NavMode::Party => {
+                let top = dc::PARTY_Y as u32;
+                let pitch = dc::PARTY_PITCH as u32;
+                if hy < top || hy >= top + pitch * 6 {
+                    None
+                } else {
+                    Some(((hy - top) / pitch) as u8)
+                }
+            }
+            NavMode::Detail => None,
+        };
+        if let Some(index) = target {
+            let bctx = Ctx { lobby: false, choosing: true };
+            outs.extend(self.tap_commit(player, index, bctx));
+        }
+        outs
     }
 
     /// A tap that is a whole decision: point at `index` and commit it. An
