@@ -2134,7 +2134,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"seed": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,

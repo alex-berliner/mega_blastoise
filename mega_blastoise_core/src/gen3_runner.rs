@@ -236,6 +236,23 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Seeded { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "Leech Seed".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::SeedDrain { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Damage {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
             Event::Charging { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {

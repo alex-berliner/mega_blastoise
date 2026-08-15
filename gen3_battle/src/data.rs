@@ -194,6 +194,9 @@ pub enum StatusAction {
     HealHalf,
     Confuse,
     Team(SideCondition),
+    /// Leech Seed: plant on the target; every end of turn it bleeds an
+    /// eighth of its max HP to the opposing active. Grass types are immune.
+    Seed,
 }
 
 /// One move.

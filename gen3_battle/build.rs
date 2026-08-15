@@ -444,6 +444,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::HealHalf)")
                 } else if act.get("confuse").is_some() {
                     String::from("Some(StatusAction::Confuse)")
+                } else if act.get("seed").is_some() {
+                    String::from("Some(StatusAction::Seed)")
                 } else if let Some(side) = act.get("side").and_then(|v| v.as_str()) {
                     let cond = match side {
                         "reflect" => "SideCondition::Reflect",

@@ -111,6 +111,8 @@ pub struct Mon {
     /// confusion lands — 2 under a script (the sim's pinned floor), 2..=5
     /// in play. Cleared by switching out.
     pub confusion_n: u8,
+    /// Leech Seed planted on this mon. Cleared by switching out.
+    pub seeded: bool,
     /// Mid two-turn move: the slot charged last turn, releasing this turn.
     /// Any Cant loses the charge. Cleared by switching out.
     pub charging: Option<u8>,
@@ -146,6 +148,7 @@ impl Mon {
             sleep_n: 0,
             flinched: false,
             confusion_n: 0,
+            seeded: false,
             charging: None,
             must_recharge: false,
         })
@@ -174,12 +177,16 @@ impl Mon {
     }
 
     /// Speed after paralysis: quartered in Gen 3 — with the reference sim's
-    /// round-to-nearest modify(), not a plain floor. (spe+2)/4 is exactly
-    /// that arithmetic; the fuzzer caught a Deoxys at 239 landing on 60,
-    /// not 59, and winning a "tie" it was never in.
+    /// modify() rounding, which is round-half-DOWN: 146 quarters to 36
+    /// (36.5 down), 239 to 60 (59.75 up). (2·spe+3)/8 is that arithmetic
+    /// exactly; the fuzzer caught both directions.
     pub fn effective_speed(&self) -> u16 {
         let spe = crate::stats::apply_stage(self.spe, self.stages[Stat::Spe as usize]);
-        if self.status == Some(Status::Paralysis) { (spe + 2) / 4 } else { spe }
+        if self.status == Some(Status::Paralysis) {
+            ((spe as u32 * 2 + 3) / 8) as u16
+        } else {
+            spe
+        }
     }
 
     /// Whether `status` can land on this mon under Gen 3 rules: nothing
@@ -326,6 +333,10 @@ pub enum Event {
     Charging { side: u8 },
     /// A five-turn team condition went up on `side`.
     SideStarted { side: u8, condition: SideCondition },
+    /// Leech Seed took root on `side`'s active mon.
+    Seeded { side: u8 },
+    /// Leech Seed drained `amount` from `side`'s mon to the other active.
+    SeedDrain { side: u8, amount: u16 },
     /// `side`'s team condition ran out.
     SideEnded { side: u8, condition: SideCondition },
     /// `side` spent the turn recharging after Hyper Beam and kin.
@@ -399,6 +410,7 @@ impl Battle {
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
+                    out.seeded = false;
                     out.charging = None;
                     out.must_recharge = false;
                     self.sides[side].active = idx;
@@ -419,14 +431,34 @@ impl Battle {
             }
         }
 
-        // End of turn: burn and poison tick 1/8 max HP, Toxic a sixteenth
-        // times the turns it has held, faster side first — the same order the
-        // games resolve residuals in.
+        // End of turn: residuals run per MON in speed order, each mon
+        // resolving all of its own effects before the next mon's — Leech
+        // Seed (the games' order 8) before the status tick (order 9). The
+        // fuzzer caught the wrong shape: looping per effect let a poisoned
+        // seeder tick first and then heal itself back off its victim.
         let first = self.faster_side(scripted);
         for side in [first, 1 - first] {
             if self.over() {
                 break;
             }
+            // Leech Seed bleeds an eighth of max HP to the opposing active.
+            if self.sides[side].mon().seeded && !self.sides[side].mon().fainted() {
+                let drain = (self.sides[side].mon().max_hp / 8).max(1);
+                let mon = self.sides[side].mon_mut();
+                let drain = drain.min(mon.hp);
+                mon.hp -= drain;
+                events.push(Event::SeedDrain { side: side as u8 + 1, amount: drain });
+                let foe = self.sides[1 - side].mon_mut();
+                if !foe.fainted() {
+                    let heal = drain.min(foe.max_hp - foe.hp);
+                    if heal > 0 {
+                        foe.hp += heal;
+                        events.push(Event::Healed { side: (1 - side) as u8 + 1, amount: heal });
+                    }
+                }
+                self.faint_and_replace(side, &mut events);
+            }
+            // Burn and poison tick 1/8 max HP, Toxic a growing sixteenth.
             let mon = self.sides[side].mon();
             if mon.fainted() {
                 continue;
@@ -446,13 +478,7 @@ impl Battle {
             let amount = amount.min(mon.hp);
             mon.hp -= amount;
             events.push(Event::Residual { side: side as u8 + 1, amount, status });
-            if mon.fainted() {
-                events.push(Event::Fainted { side: side as u8 + 1 });
-                if let Some(next) = self.sides[side].first_healthy() {
-                    self.sides[side].active = next;
-                    events.push(Event::Switched { side: side as u8 + 1, party_index: next });
-                }
-            }
+            self.faint_and_replace(side, &mut events);
         }
 
         // Team conditions run out: five end-of-turn ticks including the
@@ -686,7 +712,7 @@ impl Battle {
         let mut pierce_mult: u16 = 1;
         let self_targeted = matches!(
             slot.entry.status_action,
-            Some(StatusAction::BoostSelf(_) | StatusAction::HealHalf)
+            Some(StatusAction::BoostSelf(_) | StatusAction::HealHalf | StatusAction::Team(_))
         );
         if !self_targeted {
             if let Some(via) = self.sides[foe].mon().semi_invulnerable() {
@@ -859,6 +885,17 @@ impl Battle {
         self.resolve_faints(side, foe, events);
     }
 
+    /// Announce and replace one side's active if it just fainted.
+    fn faint_and_replace(&mut self, side: usize, events: &mut Vec<Event>) {
+        if self.sides[side].mon().fainted() {
+            events.push(Event::Fainted { side: side as u8 + 1 });
+            if let Some(next) = self.sides[side].first_healthy() {
+                self.sides[side].active = next;
+                events.push(Event::Switched { side: side as u8 + 1, party_index: next });
+            }
+        }
+    }
+
     /// Announce and replace whoever is down — target first, then the user
     /// (recoil can faint it too). A side that already replaced this turn has
     /// a healthy active here, so nothing double-fires. A real forced-switch
@@ -965,6 +1002,14 @@ impl Battle {
                 if heal > 0 {
                     mon.hp += heal;
                     events.push(Event::Healed { side: side as u8 + 1, amount: heal });
+                }
+            }
+            StatusAction::Seed => {
+                let target = self.sides[foe].mon();
+                let grass = target.types().0 == Type::Grass || target.types().1 == Type::Grass;
+                if hit && !grass && !target.fainted() && !target.seeded {
+                    self.sides[foe].mon_mut().seeded = true;
+                    events.push(Event::Seeded { side: foe as u8 + 1 });
                 }
             }
             StatusAction::Team(cond) => {

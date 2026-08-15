@@ -335,6 +335,7 @@ function runDump(sc) {
           : m.volatileStatus === 'confusion' && !m.boosts ? {confuse: true}
           : ['reflect', 'lightscreen', 'safeguard', 'mist'].includes(m.sideCondition)
             ? {side: m.sideCondition}
+          : m.id === 'leechseed' ? {seed: true}
           : null,
         multihit: m.multihit
           ? (Array.isArray(m.multihit) ? m.multihit : [m.multihit, m.multihit])
@@ -378,13 +379,14 @@ function runMovelist(sc) {
       const hooky = Object.keys(raw).some((k) => k.startsWith('on') || /Callback/.test(k));
       const confuseOnly = raw.volatileStatus === 'confusion' &&
         !raw.status && !raw.boosts && !raw.heal && sc.gen >= 3;
+      const seed = raw.volatileStatus === 'leechseed' && move.id === 'leechseed';
       const teamCond = sc.gen >= 3 &&
         ['reflect', 'lightscreen', 'safeguard', 'mist'].includes(raw.sideCondition);
-      const entangled = hooky || (raw.volatileStatus && !confuseOnly) ||
+      const entangled = (hooky && !seed) || (raw.volatileStatus && !confuseOnly && !seed) ||
         (raw.sideCondition && !teamCond) ||
         raw.weather || raw.forceSwitch || raw.selfSwitch || raw.pseudoWeather ||
         raw.slotCondition || raw.terrain || raw.self || raw.selfdestruct || raw.ohko;
-      const modelable = raw.status || raw.boosts || raw.heal || confuseOnly || teamCond;
+      const modelable = raw.status || raw.boosts || raw.heal || confuseOnly || teamCond || seed;
       if (entangled || !modelable) continue;
       if (!['normal', 'any', 'self', 'allAdjacentFoes', 'allySide'].includes(move.target)) continue;
       out.push({id: move.id, priority: move.priority, boostsSelf: false, multihit: false});
