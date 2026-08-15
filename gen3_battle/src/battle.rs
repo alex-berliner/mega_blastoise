@@ -177,6 +177,23 @@ impl Side {
     }
 }
 
+/// A scripted set of random outcomes for one seat's move, used by the parity
+/// tests to force the engine down the same branch a reference simulator was
+/// forced down. `None` for a seat means "use the battle's own RNG".
+#[derive(Clone, Copy, Debug)]
+pub struct SeatScript {
+    pub hit: bool,
+    pub crit: bool,
+    /// 85..=100.
+    pub random: u8,
+}
+
+/// Per-turn RNG script; see [`Battle::step_with`].
+#[derive(Clone, Copy, Debug, Default)]
+pub struct TurnScript {
+    pub seats: [Option<SeatScript>; 2],
+}
+
 /// What a player does with their turn.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Choice {
@@ -226,6 +243,13 @@ impl Battle {
     /// abilities, held items, weather, move priority, secondary effects, and
     /// multi-turn moves.
     pub fn step(&mut self, choices: [Choice; 2]) -> Vec<Event> {
+        self.step_with(choices, &TurnScript::default())
+    }
+
+    /// [`Battle::step`], with any scripted seats forced down their scripted
+    /// branch instead of rolling. The play path always passes an empty script;
+    /// the parity tests pass the same script they gave the reference sim.
+    pub fn step_with(&mut self, choices: [Choice; 2], script: &TurnScript) -> Vec<Event> {
         let mut events = Vec::new();
         self.turn += 1;
 
@@ -246,7 +270,7 @@ impl Battle {
                 break;
             }
             if let Choice::Move(index) = choices[side] {
-                self.use_move(side, index, &mut events);
+                self.use_move(side, index, script.seats[side], &mut events);
             }
         }
 
@@ -267,7 +291,13 @@ impl Battle {
         }
     }
 
-    fn use_move(&mut self, side: usize, index: usize, events: &mut Vec<Event>) {
+    fn use_move(
+        &mut self,
+        side: usize,
+        index: usize,
+        script: Option<SeatScript>,
+        events: &mut Vec<Event>,
+    ) {
         let foe = 1 - side;
         if self.sides[side].mon().fainted() {
             return;
@@ -283,14 +313,25 @@ impl Battle {
         self.sides[side].mon_mut().moves[index].pp -= 1;
         events.push(Event::Used { side: side as u8 + 1, move_index: index });
 
-        // Accuracy: 0 in the table means the move never misses.
+        // Accuracy: 0 in the table means the move never misses. A scripted
+        // seat's hit/miss is decided by the script, but only for moves that
+        // CAN miss, matching how the reference sim's accuracy step works.
         let acc = slot.entry.accuracy;
-        if acc > 0 && self.rng.below(100) >= acc as u32 {
+        let hit = match script {
+            Some(s) => acc == 0 || s.hit,
+            None => acc == 0 || self.rng.below(100) < acc as u32,
+        };
+        if !hit {
             return;
         }
 
-        let crit = self.rng.below(crit_denominator(0)) == 0;
-        let random = 85 + self.rng.below(16) as u8;
+        let (crit, random) = match script {
+            Some(s) => (s.crit, s.random),
+            None => (
+                self.rng.below(crit_denominator(0)) == 0,
+                85 + self.rng.below(16) as u8,
+            ),
+        };
         let (attacker, defender) = self.attack_pair(side);
         let m = MoveUse { move_type: slot.move_type(), power: slot.entry.power };
         let dealt = damage(&attacker, &defender, &m, Roll { crit, random });

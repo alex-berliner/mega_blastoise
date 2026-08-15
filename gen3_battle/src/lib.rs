@@ -37,7 +37,7 @@ pub mod draft;
 pub mod stats;
 pub mod types;
 
-pub use battle::{Battle, Choice, Event, Mon, MoveSlot, Rng, Side};
+pub use battle::{Battle, Choice, Event, Mon, MoveSlot, Rng, SeatScript, Side, TurnScript};
 pub use draft::{draft_mon, draft_team};
 pub use damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
 pub use stats::{apply_stage, hp_stat, other_stat, Invest, Nature, Stat};

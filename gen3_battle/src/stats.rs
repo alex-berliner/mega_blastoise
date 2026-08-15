@@ -139,7 +139,14 @@ pub struct Invest {
 }
 
 /// HP at `level`. HP takes no nature and uses its own tail.
+///
+/// A base HP of 1 IS 1 at every level and investment: that is Shedinja's
+/// rule, and the formula would otherwise hand it a liveable number. Found by
+/// the Showdown parity suite.
 pub fn hp_stat(base: u16, inv: Invest, level: u8) -> u16 {
+    if base == 1 {
+        return 1;
+    }
     let common = 2 * base as u32 + inv.iv as u32 + (inv.ev as u32 / 4);
     ((common * level as u32) / 100 + level as u32 + 10) as u16
 }
@@ -197,6 +204,8 @@ mod tests {
         // A level 50 mon with base 100 HP and nothing invested:
         // 200*50/100 = 100; +50+10 = 160.
         assert_eq!(hp_stat(100, BLANK, 50), 160);
+        // Shedinja: base 1 means 1, not what the formula says.
+        assert_eq!(hp_stat(1, MAXED, 100), 1);
 
         // Base 100 attack, level 100, maxed, neutral: 2*100+31+63 = 294;
         // 294*100/100 = 294; +5 = 299.

@@ -123,8 +123,26 @@ pub fn compute_damage(
     if mv.power == 0 {
         return DamageRoll::default();
     }
-
     let crit = crit_roll(rng, attacker, mv);
+    let r = 217 + rng.range(39);
+    compute_damage_scripted(attacker, defender, mv, selfdestruct, crit, r as u8)
+}
+
+/// [`compute_damage`] with the two random outcomes supplied instead of
+/// rolled: whether it crits, and the 217..=255 damage factor. The play path
+/// above rolls and delegates; the Showdown parity suite passes the same
+/// script it forced on the reference simulator.
+pub fn compute_damage_scripted(
+    attacker: &Mon,
+    defender: &Mon,
+    mv: &MoveEntry,
+    selfdestruct: bool,
+    crit: bool,
+    r: u8,
+) -> DamageRoll {
+    if mv.power == 0 {
+        return DamageRoll::default();
+    }
 
     let (atk_idx, def_idx) = match mv.category {
         MoveCategory::Physical => (1usize, 2usize),
@@ -200,8 +218,7 @@ pub fn compute_damage(
 
     // Random factor 217..=255 /255, only when damage > 1.
     if dmg > 1 {
-        let r = 217 + rng.range(39);
-        dmg = dmg * r / 255;
+        dmg = dmg * (r as u32).clamp(217, 255) / 255;
     }
 
     DamageRoll {

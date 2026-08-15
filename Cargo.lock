@@ -1486,8 +1486,10 @@ dependencies = [
  "embassy-futures",
  "embedded-graphics",
  "gen1_battle",
+ "gen3_battle",
  "mega-blastoise-core",
  "pollster",
+ "serde_json",
  "serialport",
 ]
 

@@ -4,10 +4,12 @@
 //! implementation detail: each step floors, so moving one changes results by a
 //! point or two. Gen 3 applies them as
 //!
-//!   base -> burn and screens -> critical hit -> random roll -> STAB -> type
+//!   base -> burn and screens -> critical hit -> STAB -> type -> random roll
 //!
 //! and this module does the same, in integer arithmetic, flooring where the
-//! games floor.
+//! games floor. The random roll comes LAST in Gen 3 — Gen 5 moved it before
+//! STAB, and implementing the later order was a real one-point-per-hit bug
+//! here until the Showdown parity suite caught it.
 //!
 //! The random roll is an input rather than something drawn here, so a caller
 //! can replay a turn, and so tests can pin an exact number.
@@ -123,9 +125,11 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
     };
     let defence = defence.max(1) as u32;
 
-    // Base damage.
+    // Base damage. The trailing +2 lands AFTER burn and screens halve — one
+    // more ordering the parity suite caught: putting it before is a point of
+    // phantom damage on every halved hit.
     let level_term = (2 * a.level as u32) / 5 + 2;
-    let mut dmg = ((level_term * m.power as u32 * attack as u32 / defence) / 50) + 2;
+    let mut dmg = (level_term * m.power as u32 * attack as u32 / defence) / 50;
 
     // Burn, then screens. A critical hit goes through a screen in Gen 3.
     if a.burned && category == Category::Physical {
@@ -134,18 +138,19 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
     if screened && !roll.crit {
         dmg /= 2;
     }
+    dmg += 2;
 
     if roll.crit {
         dmg *= 2;
     }
 
-    // The roll, then STAB, then type. Each floors.
-    let r = roll.random.clamp(85, 100) as u32;
-    dmg = dmg * r / 100;
+    // STAB, then type, then the roll LAST — the Gen 3 order. Each floors.
     if m.move_type == a.types.0 || m.move_type == a.types.1 {
         dmg = dmg * 3 / 2;
     }
     dmg = dmg * eff / 100;
+    let r = roll.random.clamp(85, 100) as u32;
+    dmg = dmg * r / 100;
 
     // A hit that connects always takes at least one HP.
     dmg.max(1)
@@ -201,13 +206,14 @@ mod tests {
     }
 
     #[test]
-    fn the_low_roll_is_eighty_five_percent() {
-        // 127 * 85/100 = 107, then STAB: floor(107 * 3/2) = 160.
-        assert_eq!(damage(&attacker(), &defender(), &TACKLE, Roll::MIN), 160);
+    fn the_low_roll_is_eighty_five_percent_and_applies_last() {
+        // STAB first (127 -> 190), THEN the roll: floor(190 * 85/100) = 161.
+        // The other order gives 160; Showdown agrees with 161.
+        assert_eq!(damage(&attacker(), &defender(), &TACKLE, Roll::MIN), 161);
         let out_of_range = Roll { crit: false, random: 3 };
         assert_eq!(
             damage(&attacker(), &defender(), &TACKLE, out_of_range),
-            160,
+            161,
             "a roll below the range clamps rather than dealing nothing",
         );
     }

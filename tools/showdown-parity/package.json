@@ -1,0 +1,8 @@
+{
+  "name": "showdown-parity",
+  "private": true,
+  "description": "Runs the real pokemon-showdown sim for parity tests against the core engines",
+  "dependencies": {
+    "pokemon-showdown": "^0.11.9"
+  }
+}

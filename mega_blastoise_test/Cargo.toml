@@ -10,6 +10,8 @@ mega-blastoise-core = { path = "../mega_blastoise_core" }
 battler = { path = "../battler/battler" }
 battler-data = { path = "../battler/battler-data" }
 gen1_battle = { path = "../gen1_battle" }
+gen3_battle = { path = "../gen3_battle" }
+serde_json = "1.0"
 anyhow = "1.0"
 pollster = "0.3"
 embassy-futures = "0.1"
