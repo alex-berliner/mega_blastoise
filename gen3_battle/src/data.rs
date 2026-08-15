@@ -230,6 +230,9 @@ pub enum StatusAction {
     Rest,
     /// Minimize: evasion up one, and the stomping moves hit doubled after.
     Minimize,
+    /// Substitute: a quarter of max HP buys a decoy that soaks hits and
+    /// blocks the foe's statuses, drops and volatiles until it breaks.
+    Substitute,
 }
 
 /// One move.

@@ -465,6 +465,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Confuse)")
                 } else if act.get("seed").is_some() {
                     String::from("Some(StatusAction::Seed)")
+                } else if act.get("sub").is_some() {
+                    String::from("Some(StatusAction::Substitute)")
                 } else if act.get("rest").is_some() {
                     String::from("Some(StatusAction::Rest)")
                 } else if act.get("focus").is_some() {

@@ -354,6 +354,7 @@ function runDump(sc) {
           : m.id === 'leechseed' ? {seed: true}
           : ['sunnyday', 'raindance', 'sandstorm', 'hail'].includes(m.id)
             ? {weather: m.id}
+          : m.id === 'substitute' ? {sub: true}
           : null,
         multihit: m.multihit
           ? (Array.isArray(m.multihit) ? m.multihit : [m.multihit, m.multihit])
@@ -405,13 +406,13 @@ function runMovelist(sc) {
       const allowlisted = (sc.gen >= 3 ? [
         'sleeppowder', 'stunspore', 'poisonpowder', 'spore', 'cottonspore',
         'growth', 'toxic', 'swagger', 'flatter', 'defensecurl', 'minimize',
-        'focusenergy', 'rest', 'splash', 'teleport',
+        'focusenergy', 'rest', 'splash', 'teleport', 'substitute',
       ] : [
         // Gen 1: the cartridge engine implements all of these; their sim
         // hooks are the era mechanics themselves.
         'recover', 'softboiled', 'reflect', 'lightscreen', 'haze', 'growth',
         'defensecurl', 'minimize', 'focusenergy', 'splash', 'teleport',
-        'toxic', 'poisonpowder', 'sleeppowder', 'stunspore',
+        'toxic', 'poisonpowder', 'sleeppowder', 'stunspore', 'substitute',
       ]).includes(move.id);
       const weather = sc.gen >= 3 &&
         ['sunnyday', 'raindance', 'sandstorm', 'hail'].includes(move.id);

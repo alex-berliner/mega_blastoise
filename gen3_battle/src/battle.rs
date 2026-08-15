@@ -111,6 +111,9 @@ pub struct Mon {
     /// confusion lands — 2 under a script (the sim's pinned floor), 2..=5
     /// in play. Cleared by switching out.
     pub confusion_n: u8,
+    /// Substitute hit points; 0 means no substitute. Cleared by switching
+    /// out. While up, foe damage and effects land here instead.
+    pub sub_hp: u16,
     /// Focus Energy is up: crits start two stages higher. Cleared by
     /// switching out.
     pub focused: bool,
@@ -157,6 +160,7 @@ impl Mon {
             sleep_n: 0,
             flinched: false,
             confusion_n: 0,
+            sub_hp: 0,
             focused: false,
             minimized: false,
             seeded: false,
@@ -357,6 +361,12 @@ pub enum Event {
     Trapped { side: u8 },
     /// `side`'s mon is getting pumped (Focus Energy).
     Focused { side: u8 },
+    /// `side` put up a substitute.
+    SubStarted { side: u8 },
+    /// `side`'s substitute soaked `amount`.
+    SubDamage { side: u8, amount: u16 },
+    /// `side`'s substitute broke.
+    SubBroke { side: u8 },
     /// `side`'s mon went to sleep with Rest.
     Rested { side: u8 },
     /// The bind chipped `side`'s mon.
@@ -445,6 +455,7 @@ impl Battle {
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
+                    out.sub_hp = 0;
                     out.focused = false;
                     out.minimized = false;
                     out.seeded = false;
@@ -856,6 +867,13 @@ impl Battle {
             if !hit {
                 return;
             }
+            if self.sides[foe].mon().sub_hp > 0 {
+                let amount = self.sides[foe].mon().sub_hp;
+                self.sides[foe].mon_mut().sub_hp = 0;
+                events.push(Event::SubDamage { side: foe as u8 + 1, amount });
+                events.push(Event::SubBroke { side: foe as u8 + 1 });
+                return;
+            }
             let amount = self.sides[foe].mon().hp;
             self.sides[foe].mon_mut().hp = 0;
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
@@ -881,6 +899,15 @@ impl Battle {
                 FixedDamage::Half => (self.sides[foe].mon().hp / 2).max(1),
             };
             let target = self.sides[foe].mon_mut();
+            if target.sub_hp > 0 {
+                let amount = amount.min(target.sub_hp);
+                target.sub_hp -= amount;
+                events.push(Event::SubDamage { side: foe as u8 + 1, amount });
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke { side: foe as u8 + 1 });
+                }
+                return;
+            }
             let amount = amount.min(target.hp);
             target.hp -= amount;
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
@@ -958,15 +985,30 @@ impl Battle {
             let eff =
                 crate::types::effectiveness_against(m.move_type, self.sides[foe].mon().types());
             let target = self.sides[foe].mon_mut();
-            let amount = (dealt as u16).min(target.hp);
-            target.hp -= amount;
+            let hit_sub = target.sub_hp > 0;
+            let amount = if hit_sub {
+                let amount = (dealt as u16).min(target.sub_hp);
+                target.sub_hp -= amount;
+                amount
+            } else {
+                let amount = (dealt as u16).min(target.hp);
+                target.hp -= amount;
+                amount
+            };
             total += amount;
-            events.push(Event::Damage {
-                side: foe as u8 + 1,
-                amount,
-                effectiveness: eff,
-                crit,
-            });
+            if hit_sub {
+                events.push(Event::SubDamage { side: foe as u8 + 1, amount });
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke { side: foe as u8 + 1 });
+                }
+            } else {
+                events.push(Event::Damage {
+                    side: foe as u8 + 1,
+                    amount,
+                    effectiveness: eff,
+                    crit,
+                });
+            }
             // Drain heals off the damage actually dealt: floor, but at least 1.
             if let Some((num, den)) = slot.entry.drain {
                 let heal = (amount * num / den).max(1);
@@ -977,7 +1019,9 @@ impl Battle {
                     events.push(Event::Drained { side: side as u8 + 1, amount: heal });
                 }
             }
-            self.hit_effects(side, foe, &slot, script, events);
+            if !hit_sub {
+                self.hit_effects(side, foe, &slot, script, events);
+            }
             if self.sides[foe].mon().fainted() {
                 break;
             }
@@ -1134,6 +1178,9 @@ impl Battle {
                 }
             }
             StatusAction::Seed => {
+                if self.sides[foe].mon().sub_hp > 0 {
+                    return;
+                }
                 let target = self.sides[foe].mon();
                 let grass = target.types().0 == Type::Grass || target.types().1 == Type::Grass;
                 if hit && !grass && !target.fainted() && !target.seeded {
@@ -1142,6 +1189,9 @@ impl Battle {
                 }
             }
             StatusAction::BoostConfuse(list) => {
+                if self.sides[foe].mon().sub_hp > 0 {
+                    return;
+                }
                 // Swagger and Flatter: the gift lands (Mist still blocks
                 // drops, not raises), then the confusion (Safeguard's job).
                 if hit && !self.sides[foe].mon().fainted() {
@@ -1176,6 +1226,18 @@ impl Battle {
                 self.sides[side].mon_mut().apply_boost(Boost::Eva, 1);
                 events.push(Event::Boosted { side: side as u8 + 1, boost: Boost::Eva, delta: 1 });
             }
+            StatusAction::Substitute => {
+                let mon = self.sides[side].mon();
+                let cost = mon.max_hp / 4;
+                if mon.sub_hp == 0 && mon.hp > cost {
+                    let mon = self.sides[side].mon_mut();
+                    mon.hp -= cost;
+                    mon.sub_hp = cost;
+                    events.push(Event::SubStarted { side: side as u8 + 1 });
+                } else {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
             StatusAction::SetWeather(weather) => {
                 if self.weather != Some(weather) {
                     self.weather = Some(weather);
@@ -1191,6 +1253,9 @@ impl Battle {
                 }
             }
             StatusAction::Confuse => {
+                if self.sides[foe].mon().sub_hp > 0 {
+                    return;
+                }
                 let immune = slot.entry.respects_immunity
                     && crate::types::effectiveness_against(
                         slot.move_type(),
@@ -1201,6 +1266,9 @@ impl Battle {
                 }
             }
             StatusAction::Inflict(status) => {
+                if self.sides[foe].mon().sub_hp > 0 {
+                    return;
+                }
                 let immune = slot.entry.respects_immunity
                     && crate::types::effectiveness_against(
                         slot.move_type(),
@@ -1211,6 +1279,9 @@ impl Battle {
                 }
             }
             StatusAction::BoostFoe(list) => {
+                if self.sides[foe].mon().sub_hp > 0 {
+                    return;
+                }
                 let misted = self.sides[foe].mist_n > 0;
                 if hit && !self.sides[foe].mon().fainted() {
                     for &(boost, delta) in list {

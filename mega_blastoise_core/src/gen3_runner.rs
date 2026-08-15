@@ -261,6 +261,24 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::SubStarted { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "Substitute".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::SubDamage { .. } => {}
+            Event::SubBroke { side } => {
+                effects
+                    .on_event(BoardEvent::EffectEnd {
+                        mon: active_name(battle, side),
+                        what: "Substitute".into(),
+                    })
+                    .await;
+            }
             Event::Focused { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {

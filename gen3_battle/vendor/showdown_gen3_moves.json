@@ -2861,7 +2861,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"sub": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
