@@ -13,6 +13,8 @@ pub mod hp_bar;
 pub mod board_event;
 pub mod battle_input;
 pub mod battle_runner;
+pub mod device_session;
+pub mod device_ui;
 pub mod gen3_runner;
 pub mod choice_collect;
 pub mod data_store;

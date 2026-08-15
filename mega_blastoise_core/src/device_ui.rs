@@ -1,16 +1,13 @@
-//! Single-screen device view for the web client.
+//! Composition for the single-screen device: which renderer draws each half.
 //!
-//! Renders the shared [`OledController`] state through core's color renderer
-//! onto one 240x320 panel. The browser is raw IO only: it gets an RGBA buffer
-//! and paints it, exactly as the firmware will get a framebuffer and flush it.
-//!
-//! Screen selection maps the existing `Screen` variants onto the new layouts,
-//! with one addition the old model has no concept of: which list the player's
-//! cursor is currently in, which lives in core's [`CursorNav`].
-
+//! Lives in core because everything that appears on the panel must be decided
+//! identically on both platforms. The web build and the firmware both call
+//! [`render_device`] / [`render_menu`] and only differ in where the RGBA goes.
 extern crate alloc;
 
-use mega_blastoise_core::{
+use alloc::vec::Vec;
+
+use crate::{
     cursor_nav::{CursorNav, NavMode},
     device_view::{DeviceFrame, Region},
     display_color as dc,
@@ -53,9 +50,9 @@ pub struct SeatUi {
 
 /// Build the options rows for the renderer. The labels and values are
 /// `&'static str`, so this borrows nothing from `opts`.
-fn option_rows(opts: &mega_blastoise_core::menu::GameOptions) -> Vec<dc::OptionRow<'static>> {
-    let mut rows = Vec::with_capacity(mega_blastoise_core::menu::OPTION_ROWS);
-    for i in 0..mega_blastoise_core::menu::OPTION_ROWS {
+fn option_rows(opts: &crate::menu::GameOptions) -> Vec<dc::OptionRow<'static>> {
+    let mut rows = Vec::with_capacity(crate::menu::OPTION_ROWS);
+    for i in 0..crate::menu::OPTION_ROWS {
         let (label, value) = opts.row(i);
         rows.push(dc::OptionRow { label, value });
     }
@@ -87,7 +84,7 @@ pub fn render_seat<D>(
     player: u8,
     ui: &SeatUi,
     log: LogView<'_>,
-    opts: &mega_blastoise_core::menu::GameOptions,
+    opts: &crate::menu::GameOptions,
     foe_locked: bool,
 ) -> bool
 where
@@ -158,7 +155,7 @@ where
         Screen::Win(msg) => dc::render_result(d, msg, &ctx),
 
         Screen::MoveDetail { mv, .. } => {
-            let desc = mega_blastoise_core::move_descs::move_desc(&mv.name).unwrap_or("");
+            let desc = crate::move_descs::move_desc(&mv.name).unwrap_or("");
             dc::render_move_info(d, mv, desc, player)
         }
         Screen::Stats { slot, .. } => dc::render_stats(d, slot, player),
@@ -191,7 +188,7 @@ pub fn render_device(
     ui2: &SeatUi,
     log1: LogView<'_>,
     log2: LogView<'_>,
-    opts: &mega_blastoise_core::menu::GameOptions,
+    opts: &crate::menu::GameOptions,
 ) -> Vec<u8> {
     let mut frame = DeviceFrame::new();
     let mut scene = true;
@@ -221,11 +218,11 @@ pub fn render_device(
         // the shake, since they are drawn before the effect is.
         let anim = match ctl.screen(1) {
             Screen::MoveUsed { move_id, attacker, elapsed_ms, .. } => {
-                mega_blastoise_core::move_anim::anim(
+                crate::move_anim::anim(
                     move_id,
                     attacker,
                     elapsed_ms,
-                    mega_blastoise_core::battle_effects::anim::MOVE_MS,
+                    crate::battle_effects::anim::MOVE_MS,
                 )
             }
             _ => None,
@@ -233,19 +230,19 @@ pub fn render_device(
         let shake = anim
             .map(|a| {
                 [
-                    mega_blastoise_core::move_anim::band_shake(&a, 1),
-                    mega_blastoise_core::move_anim::band_shake(&a, 2),
+                    crate::move_anim::band_shake(&a, 1),
+                    crate::move_anim::band_shake(&a, 2),
                 ]
             })
             .unwrap_or([(0, 0); 2]);
-        mega_blastoise_core::device_view::draw_scene_mons(
+        crate::device_view::draw_scene_mons(
             &mut frame, p1.name, p2.name, p1.bob, p2.bob, shake,
         );
         if let Some(a) = anim {
-            mega_blastoise_core::move_anim::draw(&mut frame, &a);
+            crate::move_anim::draw(&mut frame, &a);
         }
     } else {
-        mega_blastoise_core::device_view::draw_split_divider(&mut frame);
+        crate::device_view::draw_split_divider(&mut frame);
     }
     frame.to_rgba()
 }
@@ -254,11 +251,11 @@ pub fn render_device(
 /// both players are about to be in, so it owns the whole panel and is drawn
 /// into both halves, each the right way up, and either player can drive it.
 pub fn render_menu(
-    menu: &mega_blastoise_core::menu::Menu,
-    opts: &mega_blastoise_core::menu::GameOptions,
+    menu: &crate::menu::Menu,
+    opts: &crate::menu::GameOptions,
 ) -> Vec<u8> {
-    use mega_blastoise_core::menu::MenuScreen;
-    use mega_blastoise_core::display_color::{HALF_H, HALF_W};
+    use crate::menu::MenuScreen;
+    use crate::display_color::{HALF_H, HALF_W};
     let rows = option_rows(opts);
     let mut frame = DeviceFrame::new();
     both_halves(&mut frame, |r, seat| match menu.screen {
@@ -269,6 +266,6 @@ pub fn render_menu(
         MenuScreen::Lobby => dc::render_lobby(r, false, false, seat),
     });
     both_halves(&mut frame, |r, seat| dc::draw_play_frame_edge(r, seat));
-    mega_blastoise_core::device_view::draw_split_divider(&mut frame);
+    crate::device_view::draw_split_divider(&mut frame);
     frame.to_rgba()
 }
