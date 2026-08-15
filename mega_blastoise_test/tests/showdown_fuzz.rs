@@ -547,17 +547,25 @@ fn fuzz_gen1_turns() {
             st2 = None;
         }
         let n_turns = 1 + fz.below(3) as usize;
-        let mut turns: Vec<[(bool, bool, u8, bool, bool); 2]> = Vec::new();
+        let mut turns: Vec<[(bool, bool, u8, bool, bool, u8); 2]> = Vec::new();
         for _ in 0..n_turns {
-            let mut pair = [(true, false, 255u8, false, false); 2];
-            for slot in pair.iter_mut() {
+            let mut pair = [(true, false, 255u8, false, false, 0u8); 2];
+            for (seat, slot) in pair.iter_mut().enumerate() {
                 *slot = (
                     !fz.chance(10),
                     fz.chance(25),
                     217 + fz.below(39) as u8,
                     fz.chance(40),
                     fz.chance(15),
+                    0,
                 );
+                // Script the 2-5 strike count so both sides land the same.
+                let mv = if seat == 0 { &m1 } else { &m2 };
+                if gen1_battle::move_by_id(mv)
+                    .is_some_and(|e| e.effect_kind == gen1_battle::MoveEffectKind::MultiHit2to5)
+                {
+                    slot.5 = 2 + fz.below(4) as u8;
+                }
             }
             turns.push(pair);
         }
@@ -567,8 +575,8 @@ fn fuzz_gen1_turns() {
         let turn_json: Vec<Value> = turns
             .iter()
             .map(|pair| {
-                let seat = |t: &(bool, bool, u8, bool, bool)| {
-                    json!({"hit": t.0, "crit": t.1, "roll": t.2, "secondary": t.3, "immobile": t.4})
+                let seat = |t: &(bool, bool, u8, bool, bool, u8)| {
+                    json!({"hit": t.0, "crit": t.1, "roll": t.2, "secondary": t.3, "immobile": t.4, "hits": t.5})
                 };
                 json!({"p1": seat(&pair[0]), "p2": seat(&pair[1])})
             })
@@ -646,12 +654,13 @@ fn fuzz_gen1_turns() {
             if battle.ended() {
                 break;
             }
-            let seat = |t: &(bool, bool, u8, bool, bool)| SeatForce {
+            let seat = |t: &(bool, bool, u8, bool, bool, u8)| SeatForce {
                 hit: Some(t.0),
                 crit: Some(t.1),
                 roll: Some(t.2),
                 secondary: Some(t.3),
                 immobile: Some(t.4),
+                hits: (t.5 > 0).then_some(t.5),
             };
             battle.set_turn_force(Some([seat(&pair[0]), seat(&pair[1])]));
             battle.set_player_choice("p1", "move 0").unwrap();

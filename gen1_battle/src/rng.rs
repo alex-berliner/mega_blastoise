@@ -18,6 +18,8 @@ pub struct SeatForce {
     pub secondary: Option<bool>,
     /// Full paralysis.
     pub immobile: Option<bool>,
+    /// Strike count for a 2-5 multi-hit move.
+    pub hits: Option<u8>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -56,6 +58,10 @@ impl Rng {
 
     pub fn forced_immobile(&self) -> Option<bool> {
         self.seat().and_then(|s| s.immobile)
+    }
+
+    pub fn forced_hits(&self) -> Option<u8> {
+        self.seat().and_then(|s| s.hits)
     }
 
     pub fn next_u64(&mut self) -> u64 {

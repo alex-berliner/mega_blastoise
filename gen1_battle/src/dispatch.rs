@@ -502,7 +502,10 @@ fn apply_effect(
         }
         MultiHit2to5 | MultiHitFixed | Twineedle => {
             let hits: u8 = match mv.effect_kind {
-                MultiHit2to5 => *pick(rng, &[2, 2, 2, 3, 3, 3, 4, 5]),
+                MultiHit2to5 => match rng.forced_hits() {
+                    Some(h) => h.clamp(2, 5),
+                    None => *pick(rng, &[2, 2, 2, 3, 3, 3, 4, 5]),
+                },
                 _ => mv.effect_param0.max(1),
             };
             // Gen 1: every hit of a multi-hit move deals the SAME damage as
