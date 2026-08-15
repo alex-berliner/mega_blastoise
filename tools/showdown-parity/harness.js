@@ -302,6 +302,7 @@ function runDump(sc) {
       // secondaries (Tri Attack picks its status in an onHit) stay null.
       let secondary = null;
       if (m.id === 'triattack') secondary = {chance: 20, tri: true};
+      if (m.id === 'secretpower') secondary = {chance: 30, status: 'par'};
       const secs = m.secondaries ?? (m.secondary ? [m.secondary] : []);
       for (const s of secs) {
         if (!s || !s.chance || s.onHit) continue;
@@ -359,6 +360,10 @@ function runDump(sc) {
           : m.id === 'spikes' ? {spikes: true}
           : m.id === 'memento' ? {memento: true}
           : m.id === 'painsplit' ? {painsplit: true}
+          : m.id === 'taunt' ? {taunt: true}
+          : m.id === 'nightmare' ? {nightmare: true}
+          : m.id === 'stockpile' ? {stockpile: true}
+          : m.id === 'swallow' ? {swallow: true}
           : m.id === 'rest' ? {rest: true}
           : m.id === 'focusenergy' ? {focus: true}
           : m.id === 'minimize' ? {minimize: true}
@@ -429,13 +434,13 @@ function runMovelist(sc) {
         'moonlight', 'morningsun', 'synthesis', 'refresh', 'bellydrum',
         'psychup', 'yawn', 'wish', 'perishsong', 'destinybond', 'block',
         'meanlook', 'spiderweb', 'mudsport', 'watersport', 'spikes',
-        'memento', 'painsplit',
+        'memento', 'painsplit', 'taunt', 'nightmare', 'stockpile', 'swallow',
       ] : [
         // Gen 1: the cartridge engine implements all of these; their sim
         // hooks are the era mechanics themselves.
         'recover', 'softboiled', 'reflect', 'lightscreen', 'haze', 'growth',
         'defensecurl', 'minimize', 'focusenergy', 'splash', 'teleport',
-        'toxic', 'poisonpowder', 'sleeppowder', 'stunspore', 'substitute',
+        'toxic', 'poisonpowder', 'sleeppowder', 'stunspore', 'substitute', 'rest',
       ]).includes(move.id);
       const weather = sc.gen >= 3 &&
         ['sunnyday', 'raindance', 'sandstorm', 'hail'].includes(move.id);
@@ -464,7 +469,9 @@ function runMovelist(sc) {
       'brickbreak', 'payday', 'return', 'frustration', 'falseswipe', 'facade',
       'smellingsalts', 'eruption', 'waterspout', 'pursuit', 'rapidspin',
       'revenge', 'focuspunch', 'triattack', 'superpower', 'overheat',
-      'psychoboost', 'knockoff', 'thief', 'covet', 'endeavor',
+      'psychoboost', 'knockoff', 'thief', 'covet', 'endeavor', 'flail',
+      'reversal', 'weatherball', 'secretpower', 'highjumpkick', 'jumpkick',
+      'spitup',
     ].includes(move.id);
     if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish
         && !g3special) continue;
@@ -472,12 +479,13 @@ function runMovelist(sc) {
     if ((move.damageCallback || move.damage) && !fixedDamage && !counterish && !g3special) continue;
     if (move.mindBlownRecoil) continue;
     if (move.willCrit !== undefined && !counterish) continue;
-    if (move.hasCrashDamage || move.struggleRecoil) continue;
+    if ((move.hasCrashDamage && !g3special) || move.struggleRecoil) continue;
     if (move.flags['futuremove']) continue;
     // Gen 3 partial traps are modelled; other damaging volatiles are not.
     if (move.volatileStatus &&
         !(move.volatileStatus === 'partiallytrapped' && sc.gen >= 3)) continue;
-    if (move.sleepUsable || move.id === 'dreameater') continue; // fail unless asleep
+    if ((move.sleepUsable || move.id === 'dreameater') &&
+        !(sc.gen === 1 && move.id === 'dreameater')) continue; // fail unless asleep
     const raw = rawOf(move.id);
     const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);
     const selfBoostOk = (sec) => sc.gen >= 3 && sec.self && sec.self.boosts &&
@@ -499,7 +507,8 @@ function runMovelist(sc) {
     // halved in sun).
     const thundery = sc.gen >= 3 && move.id === 'thunder';
     // Gen 1: coins are cosmetic, and Blizzard/Thunder predate weather.
-    const g1plain = sc.gen === 1 && ['payday', 'blizzard', 'thunder'].includes(move.id);
+    const g1plain = sc.gen === 1 &&
+      ['payday', 'blizzard', 'thunder', 'dreameater'].includes(move.id);
     const chargey = move.flags['charge'] || move.flags['recharge'];
     const hooky = !chargey && !thundery && !g1plain && !counterish && !g3special &&
       Object.keys(raw).some((k) =>

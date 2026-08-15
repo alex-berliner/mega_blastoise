@@ -114,6 +114,12 @@ pub struct Mon {
     /// Substitute hit points; 0 means no substitute. Cleared by switching
     /// out. While up, foe damage and effects land here instead.
     pub sub_hp: u16,
+    /// Taunt clock: while above zero, status moves are refused.
+    pub taunt_n: u8,
+    /// Nightmare rides this mon's sleep, a quarter of max HP per turn.
+    pub nightmared: bool,
+    /// Stockpile charges banked (0..=3).
+    pub stockpile_n: u8,
     /// Yawn clock: at zero-after-decrement the drowsy mon falls asleep.
     pub yawn_n: u8,
     /// Perish Song clock: fainting at zero. 0 also means "not singing".
@@ -170,6 +176,9 @@ impl Mon {
             sleep_n: 0,
             flinched: false,
             confusion_n: 0,
+            taunt_n: 0,
+            nightmared: false,
+            stockpile_n: 0,
             yawn_n: 0,
             perish_n: 0,
             destiny: false,
@@ -518,6 +527,9 @@ impl Battle {
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
+                    out.taunt_n = 0;
+                    out.nightmared = false;
+                    out.stockpile_n = 0;
                     out.yawn_n = 0;
                     out.perish_n = 0;
                     out.destiny = false;
@@ -549,6 +561,10 @@ impl Battle {
             }
         }
 
+        // The whole end-of-turn phase is skipped once the battle is decided
+        // — but a wipe DURING the phase does not cut it short (the sim
+        // finishes both weather chips even when the first one ends it).
+        if !self.over() {
         // Weather chips first — the games' upkeep slot: sandstorm hits
         // anything not Rock/Ground/Steel, hail anything not Ice, a
         // sixteenth each, faster side first.
@@ -556,9 +572,6 @@ impl Battle {
             let sand = self.weather == Some(Weather::Sandstorm);
             let first = self.faster_side(scripted);
             for side in [first, 1 - first] {
-                if self.over() {
-                    break;
-                }
                 let mon = self.sides[side].mon();
                 if mon.fainted() {
                     continue;
@@ -610,6 +623,8 @@ impl Battle {
         // seeder tick first and then heal itself back off its victim.
         let first = self.faster_side(scripted);
         for side in [first, 1 - first] {
+            // Unlike the field-wide weather handler, the per-mon residuals
+            // stop the moment the battle is decided.
             if self.over() {
                 break;
             }
@@ -649,6 +664,22 @@ impl Battle {
                 events.push(Event::Residual { side: side as u8 + 1, amount, status });
                 self.faint_and_replace(side, &mut events);
             }
+            // Nightmare rides the sleep: a quarter per turn while it lasts.
+            if self.sides[side].mon().nightmared && !self.sides[side].mon().fainted() {
+                if self.sides[side].mon().status == Some(Status::Sleep) {
+                    let mon = self.sides[side].mon_mut();
+                    let amount = (mon.max_hp / 4).max(1).min(mon.hp);
+                    mon.hp -= amount;
+                    events.push(Event::Residual {
+                        side: side as u8 + 1,
+                        amount,
+                        status: Status::Sleep,
+                    });
+                    self.faint_and_replace(side, &mut events);
+                } else {
+                    self.sides[side].mon_mut().nightmared = false;
+                }
+            }
             // The bind (order 10, after the status tick): the clock ticks
             // down, and every surviving tick chips a sixteenth.
             if self.sides[side].mon().trapped_n > 0 && !self.sides[side].mon().fainted() {
@@ -667,6 +698,9 @@ impl Battle {
 
         // Yawn drops the drowsy at the end of the turn AFTER it landed.
         for side in 0..2 {
+            if self.over() {
+                break;
+            }
             if self.sides[side].mon().yawn_n > 0 && !self.sides[side].mon().fainted() {
                 self.sides[side].mon_mut().yawn_n -= 1;
                 if self.sides[side].mon().yawn_n == 0 {
@@ -677,6 +711,9 @@ impl Battle {
 
         // The perish count falls; at zero the song collects.
         for side in 0..2 {
+            if self.over() {
+                break;
+            }
             if self.sides[side].mon().perish_n > 0 && !self.sides[side].mon().fainted() {
                 self.sides[side].mon_mut().perish_n -= 1;
                 let n = self.sides[side].mon().perish_n;
@@ -714,6 +751,16 @@ impl Battle {
                 self.weather = None;
                 events.push(Event::WeatherEnded { weather });
             }
+        }
+
+        // Taunt wears off on its own short clock.
+        for side in 0..2 {
+            let mon = self.sides[side].mon_mut();
+            if mon.taunt_n > 0 {
+                mon.taunt_n -= 1;
+            }
+        }
+
         }
 
         // A flinch lasts exactly the turn it landed in.
@@ -875,6 +922,16 @@ impl Battle {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
         };
+        // Taunted: status moves are refused outright.
+        if self.sides[side].mon().taunt_n > 0
+            && slot.entry.power == 0
+            && slot.entry.fixed.is_none()
+            && !slot.entry.ohko
+            && !matches!(slot.entry.id, "counter" | "mirrorcoat" | "spitup")
+        {
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
         if slot.pp == 0 && !releasing {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
@@ -895,6 +952,15 @@ impl Battle {
             }
             self.sides[side].mon_mut().charging = Some(index as u8);
             return;
+        }
+
+        // Spit Up with an empty bank simply fails; otherwise the bank is
+        // spent whatever happens next.
+        if slot.entry.id == "spitup" {
+            if self.sides[side].mon().stockpile_n == 0 {
+                events.push(Event::Failed { side: side as u8 + 1 });
+                return;
+            }
         }
 
         // Focus Punch loses its focus — and the turn — if anything hit the
@@ -1134,6 +1200,28 @@ impl Battle {
             return;
         }
         if !hit {
+            // The kicks crash for half the damage they would have dealt.
+            if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
+                let random = match script {
+                    Some(s) => s.random,
+                    None => 85 + self.rng.below(16) as u8,
+                };
+                let (attacker, defender) = self.attack_pair(side);
+                let m = MoveUse {
+                    move_type: slot.move_type(),
+                    power: slot.entry.power,
+                    halve_def: false,
+                    weather: 0,
+                };
+                let would = damage(&attacker, &defender, &m, Roll { crit: false, random });
+                let crash = ((would / 2) as u16).max(1);
+                let user = self.sides[side].mon_mut();
+                let crash = crash.min(user.hp);
+                user.hp -= crash;
+                events.push(Event::Recoil { side: side as u8 + 1, amount: crash });
+                self.resolve_faints(side, foe, events);
+                return;
+            }
             if boom {
                 self.resolve_faints(side, foe, events);
             }
@@ -1164,13 +1252,25 @@ impl Battle {
         let mut total = 0u16;
         for _ in 0..hits {
             let (attacker, defender) = self.attack_pair(side);
-            let mut weather_mod = match (self.weather, slot.move_type()) {
+            // Weather Ball wears the sky: retyped and doubled under weather.
+            let move_type = if slot.entry.id == "weatherball" {
+                match self.weather {
+                    Some(Weather::Sun) => Type::Fire,
+                    Some(Weather::Rain) => Type::Water,
+                    Some(Weather::Sandstorm) => Type::Rock,
+                    Some(Weather::Hail) => Type::Ice,
+                    None => Type::Normal,
+                }
+            } else {
+                slot.move_type()
+            };
+            let mut weather_mod = match (self.weather, move_type) {
                 (Some(Weather::Rain), Type::Water) | (Some(Weather::Sun), Type::Fire) => 1,
                 (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
                 _ => 0,
             };
             // Mud/Water Sport hum from EITHER active halves the matching type.
-            if (0..2).any(|w| self.sides[w].mon().sport == Some(slot.move_type())) {
+            if (0..2).any(|w| self.sides[w].mon().sport == Some(move_type)) {
                 weather_mod = -1;
             }
             // The stomping moves land doubled on a minimized target.
@@ -1213,10 +1313,24 @@ impl Battle {
                 {
                     slot.entry.power * 2
                 }
+                "weatherball" if self.weather.is_some() => 100,
+                "spitup" => 100 * self.sides[side].mon().stockpile_n as u16,
+                "flail" | "reversal" => {
+                    let mon = self.sides[side].mon();
+                    let p = 48 * mon.hp as u32 / mon.max_hp as u32;
+                    match p {
+                        0..=1 => 200,
+                        2..=4 => 150,
+                        5..=9 => 100,
+                        10..=16 => 80,
+                        17..=32 => 40,
+                        _ => 20,
+                    }
+                }
                 _ => slot.entry.power,
             };
             let m = MoveUse {
-                move_type: slot.move_type(),
+                move_type,
                 power: base_power * pierce_mult * stomp_mult
                     / if solar_cut { 2 } else { 1 },
                 halve_def: slot.entry.selfdestruct,
@@ -1279,6 +1393,9 @@ impl Battle {
             if self.sides[foe].mon().fainted() {
                 break;
             }
+        }
+        if slot.entry.id == "spitup" {
+            self.sides[side].mon_mut().stockpile_n = 0;
         }
         if total == 0 {
             if boom {
@@ -1649,6 +1766,51 @@ impl Battle {
                     mon.hp = (avg as u16).min(mon.max_hp);
                 }
                 events.push(Event::Healed { side: side as u8 + 1, amount: 0 });
+            }
+            StatusAction::Taunt => {
+                let target = self.sides[foe].mon();
+                if hit && target.sub_hp == 0 && target.taunt_n == 0 && !target.fainted() {
+                    self.sides[foe].mon_mut().taunt_n = 2;
+                }
+            }
+            StatusAction::Nightmare => {
+                let target = self.sides[foe].mon();
+                if hit
+                    && target.sub_hp == 0
+                    && target.status == Some(Status::Sleep)
+                    && !target.nightmared
+                {
+                    self.sides[foe].mon_mut().nightmared = true;
+                } else {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Stockpile => {
+                let mon = self.sides[side].mon_mut();
+                if mon.stockpile_n < 3 {
+                    mon.stockpile_n += 1;
+                } else {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Swallow => {
+                let n = self.sides[side].mon().stockpile_n;
+                if n == 0 {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                } else {
+                    let mon = self.sides[side].mon_mut();
+                    mon.stockpile_n = 0;
+                    let heal = match n {
+                        1 => mon.max_hp / 4,
+                        2 => mon.max_hp / 2,
+                        _ => mon.max_hp,
+                    }
+                    .min(mon.max_hp - mon.hp);
+                    if heal > 0 {
+                        mon.hp += heal;
+                        events.push(Event::Healed { side: side as u8 + 1, amount: heal });
+                    }
+                }
             }
             StatusAction::Haze => {
                 for who in 0..2 {

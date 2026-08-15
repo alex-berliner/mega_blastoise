@@ -268,6 +268,14 @@ pub enum StatusAction {
     Memento,
     /// Pain Split: both actives' HP averaged.
     PainSplit,
+    /// Taunt: two turns without status moves.
+    Taunt,
+    /// Nightmare: a sleeping target bleeds a quarter each turn.
+    Nightmare,
+    /// Stockpile: bank a charge (up to three) for Spit Up or Swallow.
+    Stockpile,
+    /// Swallow: cash the stockpile for healing.
+    Swallow,
 }
 
 /// One move.

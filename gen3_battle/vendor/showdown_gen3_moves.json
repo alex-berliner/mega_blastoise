@@ -1173,7 +1173,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"nightmare": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1473,7 +1475,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"stockpile": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1521,7 +1525,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"taunt": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3018,7 +3024,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"swallow": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,

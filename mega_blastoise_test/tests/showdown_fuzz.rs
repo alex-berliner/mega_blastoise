@@ -132,7 +132,9 @@ fn fuzz_gen3_single_hits() {
                         m.id,
                         "facade" | "smellingsalts" | "revenge" | "focuspunch" | "falseswipe"
                             | "eruption" | "waterspout" | "return" | "frustration" | "triattack"
-                            | "brickbreak" | "endeavor"
+                            | "brickbreak" | "endeavor" | "flail" | "reversal"
+                            | "weatherball" | "spitup" | "highjumpkick" | "jumpkick"
+                            | "secretpower"
                     )
             })
             .unwrap_or(false)
@@ -447,7 +449,9 @@ fn fuzz_gen1_single_hits() {
     use gen1_battle::testing::{compute_damage_scripted, Mon};
 
     let moves = vanilla_moves(1, false, |id| {
-        use gen1_battle::MoveEffectKind::{Counter, FlatDamage, HalfHp, LevelDamage, Ohko, TwoTurn};
+        use gen1_battle::MoveEffectKind::{
+            Counter, DreamEater, FlatDamage, HalfHp, LevelDamage, Ohko, TwoTurn,
+        };
         gen1_battle::move_by_id(id)
             .map(|m| {
                 // Formula damage only: fixed-damage and OHKO moves resolve
@@ -456,7 +460,7 @@ fn fuzz_gen1_single_hits() {
                 m.power > 0
                     && !matches!(
                         m.effect_kind,
-                        FlatDamage | LevelDamage | HalfHp | Ohko | TwoTurn | Counter
+                        FlatDamage | LevelDamage | HalfHp | Ohko | TwoTurn | Counter | DreamEater
                     )
             })
             .unwrap_or(false)

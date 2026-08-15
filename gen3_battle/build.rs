@@ -524,6 +524,14 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Memento)")
                 } else if act.get("painsplit").is_some() {
                     String::from("Some(StatusAction::PainSplit)")
+                } else if act.get("taunt").is_some() {
+                    String::from("Some(StatusAction::Taunt)")
+                } else if act.get("nightmare").is_some() {
+                    String::from("Some(StatusAction::Nightmare)")
+                } else if act.get("stockpile").is_some() {
+                    String::from("Some(StatusAction::Stockpile)")
+                } else if act.get("swallow").is_some() {
+                    String::from("Some(StatusAction::Swallow)")
                 } else if act.get("sub").is_some() {
                     String::from("Some(StatusAction::Substitute)")
                 } else if act.get("rest").is_some() {
