@@ -6,7 +6,9 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "acid",
@@ -15,7 +17,14 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 30,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"boosts": {
+"def": -1
+}
+}
 },
 {
 "id": "ancientpower",
@@ -24,7 +33,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "assist",
@@ -33,7 +44,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "astonish",
@@ -42,7 +55,9 @@
 "basePower": 30,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "beatup",
@@ -51,7 +66,9 @@
 "basePower": 10,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "bide",
@@ -60,7 +77,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "blizzard",
@@ -69,7 +88,12 @@
 "basePower": 120,
 "accuracy": 70,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "frz"
+}
 },
 {
 "id": "brickbreak",
@@ -78,7 +102,9 @@
 "basePower": 75,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "charge",
@@ -87,7 +113,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "conversion",
@@ -96,7 +124,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "conversion2",
@@ -105,7 +135,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "counter",
@@ -114,7 +146,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": -5,
+"secondary": null
 },
 {
 "id": "covet",
@@ -123,7 +157,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 40,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "crunch",
@@ -132,7 +168,14 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 20,
+"boosts": {
+"spd": -1
+}
+}
 },
 {
 "id": "dig",
@@ -141,7 +184,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "disable",
@@ -150,7 +195,9 @@
 "basePower": 0,
 "accuracy": 55,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "dive",
@@ -159,7 +206,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "doomdesire",
@@ -168,7 +217,9 @@
 "basePower": 120,
 "accuracy": 85,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "encore",
@@ -177,7 +228,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "extrasensory",
@@ -186,7 +239,9 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 30,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "fakeout",
@@ -195,7 +250,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 1,
+"secondary": null
 },
 {
 "id": "feintattack",
@@ -204,7 +261,9 @@
 "basePower": 60,
 "accuracy": 0,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "flail",
@@ -213,7 +272,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "flash",
@@ -222,7 +283,9 @@
 "basePower": 0,
 "accuracy": 70,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "fly",
@@ -231,7 +294,9 @@
 "basePower": 70,
 "accuracy": 95,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "followme",
@@ -240,7 +305,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 3,
+"secondary": null
 },
 {
 "id": "foresight",
@@ -249,7 +316,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "furycutter",
@@ -258,7 +327,9 @@
 "basePower": 10,
 "accuracy": 95,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "gigadrain",
@@ -267,7 +338,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "glare",
@@ -276,7 +349,9 @@
 "basePower": 0,
 "accuracy": 75,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "haze",
@@ -285,7 +360,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -294,7 +371,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "highjumpkick",
@@ -303,7 +382,9 @@
 "basePower": 85,
 "accuracy": 90,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hypnosis",
@@ -312,7 +393,9 @@
 "basePower": 0,
 "accuracy": 60,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "jumpkick",
@@ -321,7 +404,9 @@
 "basePower": 70,
 "accuracy": 95,
 "pp": 25,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "leafblade",
@@ -330,7 +415,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "lockon",
@@ -339,7 +426,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "megadrain",
@@ -348,7 +437,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "memento",
@@ -357,7 +448,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "mindreader",
@@ -366,7 +459,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "mimic",
@@ -375,7 +470,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "mirrorcoat",
@@ -384,7 +481,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": -5,
+"secondary": null
 },
 {
 "id": "mirrormove",
@@ -393,7 +492,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "naturepower",
@@ -402,7 +503,9 @@
 "basePower": 0,
 "accuracy": 95,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "needlearm",
@@ -411,7 +514,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "nightmare",
@@ -420,7 +525,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "odorsleuth",
@@ -429,7 +536,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "outrage",
@@ -438,7 +547,9 @@
 "basePower": 90,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "overheat",
@@ -447,7 +558,9 @@
 "basePower": 140,
 "accuracy": 90,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "petaldance",
@@ -456,7 +569,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "pursuit",
@@ -465,7 +580,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "recover",
@@ -474,7 +591,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "reversal",
@@ -483,7 +602,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "rocksmash",
@@ -492,7 +613,14 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 50,
+"boosts": {
+"def": -1
+}
+}
 },
 {
 "id": "sketch",
@@ -501,7 +629,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 1,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sleeptalk",
@@ -510,7 +640,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "spite",
@@ -519,7 +651,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "stockpile",
@@ -528,7 +662,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "surf",
@@ -537,7 +673,9 @@
 "basePower": 95,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "taunt",
@@ -546,7 +684,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "teeterdance",
@@ -555,7 +695,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "tickle",
@@ -564,7 +706,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "uproar",
@@ -573,7 +717,9 @@
 "basePower": 50,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "vinewhip",
@@ -582,7 +728,9 @@
 "basePower": 35,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "volttackle",
@@ -591,7 +739,9 @@
 "basePower": 120,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "waterfall",
@@ -600,7 +750,9 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "weatherball",
@@ -609,7 +761,9 @@
 "basePower": 50,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "zapcannon",
@@ -618,7 +772,12 @@
 "basePower": 100,
 "accuracy": 50,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 100,
+"status": "par"
+}
 },
 {
 "id": "aromatherapy",
@@ -627,7 +786,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "bind",
@@ -636,7 +797,9 @@
 "basePower": 15,
 "accuracy": 75,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "bonerush",
@@ -645,7 +808,9 @@
 "basePower": 25,
 "accuracy": 80,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "bulletseed",
@@ -654,7 +819,9 @@
 "basePower": 10,
 "accuracy": 100,
 "pp": 30,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "camouflage",
@@ -663,7 +830,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "clamp",
@@ -672,7 +841,9 @@
 "basePower": 35,
 "accuracy": 75,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "cottonspore",
@@ -681,7 +852,9 @@
 "basePower": 0,
 "accuracy": 85,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "crabhammer",
@@ -690,7 +863,9 @@
 "basePower": 90,
 "accuracy": 85,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "curse",
@@ -699,7 +874,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "detect",
@@ -708,7 +885,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 3,
+"secondary": null
 },
 {
 "id": "doubleedge",
@@ -717,7 +896,9 @@
 "basePower": 120,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "dreameater",
@@ -726,7 +907,9 @@
 "basePower": 100,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "endeavor",
@@ -735,7 +918,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "extremespeed",
@@ -744,7 +929,9 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 1,
+"secondary": null
 },
 {
 "id": "firespin",
@@ -753,7 +940,9 @@
 "basePower": 15,
 "accuracy": 70,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "focuspunch",
@@ -762,7 +951,9 @@
 "basePower": 150,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": -3,
+"secondary": null
 },
 {
 "id": "futuresight",
@@ -771,7 +962,9 @@
 "basePower": 80,
 "accuracy": 90,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "growth",
@@ -780,7 +973,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "healbell",
@@ -789,7 +984,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "iciclespear",
@@ -798,7 +995,9 @@
 "basePower": 10,
 "accuracy": 100,
 "pp": 30,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "imprison",
@@ -807,7 +1006,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "ingrain",
@@ -816,7 +1017,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "knockoff",
@@ -825,7 +1028,9 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "leechseed",
@@ -834,7 +1039,9 @@
 "basePower": 0,
 "accuracy": 90,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "lightscreen",
@@ -843,7 +1050,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "magiccoat",
@@ -852,7 +1061,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 4,
+"secondary": null
 },
 {
 "id": "metronome",
@@ -861,7 +1072,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "minimize",
@@ -870,7 +1083,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "mist",
@@ -879,7 +1094,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "moonlight",
@@ -888,7 +1105,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "morningsun",
@@ -897,7 +1116,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "mudsport",
@@ -906,7 +1127,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "payday",
@@ -915,7 +1138,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "perishsong",
@@ -924,7 +1149,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "poisongas",
@@ -933,7 +1160,9 @@
 "basePower": 0,
 "accuracy": 55,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "protect",
@@ -942,7 +1171,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 3,
+"secondary": null
 },
 {
 "id": "psychup",
@@ -951,7 +1182,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "rapidspin",
@@ -960,7 +1193,9 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 40,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "recycle",
@@ -969,7 +1204,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "reflect",
@@ -978,7 +1215,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "roar",
@@ -987,7 +1226,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": -6,
+"secondary": null
 },
 {
 "id": "rockblast",
@@ -996,7 +1237,9 @@
 "basePower": 25,
 "accuracy": 80,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "safeguard",
@@ -1005,7 +1248,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 25,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sandtomb",
@@ -1014,7 +1259,9 @@
 "basePower": 15,
 "accuracy": 70,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "scaryface",
@@ -1023,7 +1270,9 @@
 "basePower": 0,
 "accuracy": 90,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "secretpower",
@@ -1032,7 +1281,12 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "par"
+}
 },
 {
 "id": "snatch",
@@ -1041,7 +1295,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 4,
+"secondary": null
 },
 {
 "id": "snore",
@@ -1050,7 +1306,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "spikes",
@@ -1059,7 +1317,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "substitute",
@@ -1068,7 +1328,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "swallow",
@@ -1077,7 +1339,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "synthesis",
@@ -1086,7 +1350,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "tackle",
@@ -1095,7 +1361,9 @@
 "basePower": 35,
 "accuracy": 95,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "tailglow",
@@ -1104,7 +1372,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "thrash",
@@ -1113,7 +1383,9 @@
 "basePower": 90,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "torment",
@@ -1122,7 +1394,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "toxic",
@@ -1131,7 +1405,9 @@
 "basePower": 0,
 "accuracy": 85,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "transform",
@@ -1140,7 +1416,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "watersport",
@@ -1149,7 +1427,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "whirlpool",
@@ -1158,7 +1438,9 @@
 "basePower": 15,
 "accuracy": 70,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "whirlwind",
@@ -1167,7 +1449,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": -6,
+"secondary": null
 },
 {
 "id": "wish",
@@ -1176,7 +1460,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "wrap",
@@ -1185,7 +1471,9 @@
 "basePower": 15,
 "accuracy": 85,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "yawn",
@@ -1194,7 +1482,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "acidarmor",
@@ -1203,7 +1493,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "aircutter",
@@ -1212,7 +1504,9 @@
 "basePower": 55,
 "accuracy": 95,
 "pp": 25,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "barrier",
@@ -1221,7 +1515,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "block",
@@ -1230,7 +1526,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "bodyslam",
@@ -1239,7 +1537,12 @@
 "basePower": 85,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "par"
+}
 },
 {
 "id": "bounce",
@@ -1248,7 +1551,12 @@
 "basePower": 85,
 "accuracy": 85,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "par"
+}
 },
 {
 "id": "bubble",
@@ -1257,7 +1565,14 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 30,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"boosts": {
+"spe": -1
+}
+}
 },
 {
 "id": "charm",
@@ -1266,7 +1581,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "fireblast",
@@ -1275,7 +1592,12 @@
 "basePower": 120,
 "accuracy": 85,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "brn"
+}
 },
 {
 "id": "flamethrower",
@@ -1284,7 +1606,12 @@
 "basePower": 95,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "brn"
+}
 },
 {
 "id": "grasswhistle",
@@ -1293,7 +1620,9 @@
 "basePower": 0,
 "accuracy": 55,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "growl",
@@ -1302,7 +1631,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "heatwave",
@@ -1311,7 +1642,12 @@
 "basePower": 100,
 "accuracy": 90,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "brn"
+}
 },
 {
 "id": "hiddenpower",
@@ -1320,7 +1656,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1329,7 +1667,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1338,7 +1678,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1347,7 +1689,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1356,7 +1700,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1365,7 +1711,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1374,7 +1722,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1383,7 +1733,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1392,7 +1744,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1401,7 +1755,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1410,7 +1766,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1419,7 +1777,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1428,7 +1788,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1437,7 +1799,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1446,7 +1810,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hiddenpower",
@@ -1455,7 +1821,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hydropump",
@@ -1464,7 +1832,9 @@
 "basePower": 120,
 "accuracy": 80,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hypervoice",
@@ -1473,7 +1843,9 @@
 "basePower": 90,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "icebeam",
@@ -1482,7 +1854,12 @@
 "basePower": 95,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "frz"
+}
 },
 {
 "id": "leechlife",
@@ -1491,7 +1868,9 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "lick",
@@ -1500,7 +1879,12 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 30,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "par"
+}
 },
 {
 "id": "meanlook",
@@ -1509,7 +1893,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "metalsound",
@@ -1518,7 +1904,9 @@
 "basePower": 0,
 "accuracy": 85,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "meteormash",
@@ -1527,7 +1915,9 @@
 "basePower": 100,
 "accuracy": 85,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "muddywater",
@@ -1536,7 +1926,14 @@
 "basePower": 95,
 "accuracy": 85,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"boosts": {
+"accuracy": -1
+}
+}
 },
 {
 "id": "pinmissile",
@@ -1545,7 +1942,9 @@
 "basePower": 14,
 "accuracy": 85,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "poisonfang",
@@ -1554,7 +1953,12 @@
 "basePower": 50,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "tox"
+}
 },
 {
 "id": "poisonpowder",
@@ -1563,7 +1967,9 @@
 "basePower": 0,
 "accuracy": 75,
 "pp": 35,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "psywave",
@@ -1572,7 +1978,9 @@
 "basePower": 0,
 "accuracy": 80,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "rocktomb",
@@ -1581,7 +1989,14 @@
 "basePower": 50,
 "accuracy": 80,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 100,
+"boosts": {
+"spe": -1
+}
+}
 },
 {
 "id": "screech",
@@ -1590,7 +2005,9 @@
 "basePower": 0,
 "accuracy": 85,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sing",
@@ -1599,7 +2016,9 @@
 "basePower": 0,
 "accuracy": 55,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "skullbash",
@@ -1608,7 +2027,9 @@
 "basePower": 100,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sleeppowder",
@@ -1617,7 +2038,9 @@
 "basePower": 0,
 "accuracy": 75,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "smellingsalts",
@@ -1626,7 +2049,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "smog",
@@ -1635,7 +2060,12 @@
 "basePower": 20,
 "accuracy": 70,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 40,
+"status": "psn"
+}
 },
 {
 "id": "spore",
@@ -1644,7 +2074,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "stringshot",
@@ -1653,7 +2085,9 @@
 "basePower": 0,
 "accuracy": 95,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "stunspore",
@@ -1662,7 +2096,9 @@
 "basePower": 0,
 "accuracy": 75,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "submission",
@@ -1671,7 +2107,9 @@
 "basePower": 80,
 "accuracy": 80,
 "pp": 25,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "supersonic",
@@ -1680,7 +2118,9 @@
 "basePower": 0,
 "accuracy": 55,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sweetkiss",
@@ -1689,7 +2129,9 @@
 "basePower": 0,
 "accuracy": 75,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sweetscent",
@@ -1698,7 +2140,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "swordsdance",
@@ -1707,7 +2151,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "thief",
@@ -1716,7 +2162,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "thunder",
@@ -1725,7 +2173,12 @@
 "basePower": 120,
 "accuracy": 70,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "par"
+}
 },
 {
 "id": "thunderbolt",
@@ -1734,7 +2187,12 @@
 "basePower": 95,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "par"
+}
 },
 {
 "id": "willowisp",
@@ -1743,7 +2201,9 @@
 "basePower": 0,
 "accuracy": 75,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "destinybond",
@@ -1752,7 +2212,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sheercold",
@@ -1761,7 +2223,9 @@
 "basePower": 0,
 "accuracy": 30,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "swagger",
@@ -1770,7 +2234,9 @@
 "basePower": 0,
 "accuracy": 90,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "thunderwave",
@@ -1779,7 +2245,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "barrage",
@@ -1788,7 +2256,9 @@
 "basePower": 15,
 "accuracy": 85,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "boneclub",
@@ -1797,7 +2267,9 @@
 "basePower": 65,
 "accuracy": 85,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "cometpunch",
@@ -1806,7 +2278,9 @@
 "basePower": 18,
 "accuracy": 85,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "constrict",
@@ -1815,7 +2289,14 @@
 "basePower": 10,
 "accuracy": 100,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"boosts": {
+"spe": -1
+}
+}
 },
 {
 "id": "dizzypunch",
@@ -1824,7 +2305,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "doubleslap",
@@ -1833,7 +2316,9 @@
 "basePower": 15,
 "accuracy": 85,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "dragonrage",
@@ -1842,7 +2327,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "eggbomb",
@@ -1851,7 +2338,9 @@
 "basePower": 100,
 "accuracy": 75,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "frustration",
@@ -1860,7 +2349,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "howl",
@@ -1869,7 +2360,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hyperfang",
@@ -1878,7 +2371,9 @@
 "basePower": 80,
 "accuracy": 90,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "iceball",
@@ -1887,7 +2382,9 @@
 "basePower": 30,
 "accuracy": 90,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "karatechop",
@@ -1896,7 +2393,9 @@
 "basePower": 50,
 "accuracy": 100,
 "pp": 25,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "lowkick",
@@ -1905,7 +2404,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "magnitude",
@@ -1914,7 +2415,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 30,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "meditate",
@@ -1923,7 +2426,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "psychoboost",
@@ -1932,7 +2437,9 @@
 "basePower": 140,
 "accuracy": 90,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "rage",
@@ -1941,7 +2448,9 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "razorwind",
@@ -1950,7 +2459,9 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "refresh",
@@ -1959,7 +2470,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "return",
@@ -1968,7 +2481,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "rollingkick",
@@ -1977,7 +2492,9 @@
 "basePower": 60,
 "accuracy": 85,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sharpen",
@@ -1986,7 +2503,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "signalbeam",
@@ -1995,7 +2514,9 @@
 "basePower": 75,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "silverwind",
@@ -2004,7 +2525,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "skyuppercut",
@@ -2013,7 +2536,9 @@
 "basePower": 85,
 "accuracy": 90,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sonicboom",
@@ -2022,7 +2547,9 @@
 "basePower": 0,
 "accuracy": 90,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "spiderweb",
@@ -2031,7 +2558,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "spikecannon",
@@ -2040,7 +2569,9 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "teleport",
@@ -2049,7 +2580,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "twineedle",
@@ -2058,7 +2591,12 @@
 "basePower": 25,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 20,
+"status": "psn"
+}
 },
 {
 "id": "bonemerang",
@@ -2067,7 +2605,9 @@
 "basePower": 50,
 "accuracy": 90,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "cut",
@@ -2076,7 +2616,9 @@
 "basePower": 50,
 "accuracy": 95,
 "pp": 30,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "grudge",
@@ -2085,7 +2627,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hail",
@@ -2094,7 +2638,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "kinesis",
@@ -2103,7 +2649,9 @@
 "basePower": 0,
 "accuracy": 80,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "lovelykiss",
@@ -2112,7 +2660,9 @@
 "basePower": 0,
 "accuracy": 75,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "lusterpurge",
@@ -2121,7 +2671,14 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 50,
+"boosts": {
+"spd": -1
+}
+}
 },
 {
 "id": "milkdrink",
@@ -2130,7 +2687,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "mistball",
@@ -2139,7 +2698,14 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 50,
+"boosts": {
+"spa": -1
+}
+}
 },
 {
 "id": "octazooka",
@@ -2148,7 +2714,14 @@
 "basePower": 65,
 "accuracy": 85,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 50,
+"boosts": {
+"accuracy": -1
+}
+}
 },
 {
 "id": "rest",
@@ -2157,7 +2730,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "revenge",
@@ -2166,7 +2741,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": -4,
+"secondary": null
 },
 {
 "id": "slackoff",
@@ -2175,7 +2752,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "softboiled",
@@ -2184,7 +2763,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "vitalthrow",
@@ -2193,7 +2774,9 @@
 "basePower": 70,
 "accuracy": 0,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": -1,
+"secondary": null
 },
 {
 "id": "aerialace",
@@ -2202,7 +2785,9 @@
 "basePower": 60,
 "accuracy": 0,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "aeroblast",
@@ -2211,7 +2796,9 @@
 "basePower": 100,
 "accuracy": 95,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "agility",
@@ -2220,7 +2807,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "amnesia",
@@ -2229,7 +2818,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "armthrust",
@@ -2238,7 +2829,9 @@
 "basePower": 15,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "attract",
@@ -2247,7 +2840,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "aurorabeam",
@@ -2256,7 +2851,14 @@
 "basePower": 65,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"boosts": {
+"atk": -1
+}
+}
 },
 {
 "id": "batonpass",
@@ -2265,7 +2867,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "bellydrum",
@@ -2274,7 +2878,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "bite",
@@ -2283,7 +2889,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 25,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "blastburn",
@@ -2292,7 +2900,9 @@
 "basePower": 150,
 "accuracy": 90,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "blazekick",
@@ -2301,7 +2911,12 @@
 "basePower": 85,
 "accuracy": 90,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "brn"
+}
 },
 {
 "id": "bubblebeam",
@@ -2310,7 +2925,14 @@
 "basePower": 65,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"boosts": {
+"spe": -1
+}
+}
 },
 {
 "id": "bulkup",
@@ -2319,7 +2941,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "calmmind",
@@ -2328,7 +2952,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "confuseray",
@@ -2337,7 +2963,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "confusion",
@@ -2346,7 +2974,9 @@
 "basePower": 50,
 "accuracy": 100,
 "pp": 25,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "cosmicpower",
@@ -2355,7 +2985,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "crosschop",
@@ -2364,7 +2996,9 @@
 "basePower": 100,
 "accuracy": 80,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "crushclaw",
@@ -2373,7 +3007,14 @@
 "basePower": 75,
 "accuracy": 95,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 50,
+"boosts": {
+"def": -1
+}
+}
 },
 {
 "id": "defensecurl",
@@ -2382,7 +3023,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "doublekick",
@@ -2391,7 +3034,9 @@
 "basePower": 30,
 "accuracy": 100,
 "pp": 30,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "doubleteam",
@@ -2400,7 +3045,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "dragonbreath",
@@ -2409,7 +3056,12 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "par"
+}
 },
 {
 "id": "dragonclaw",
@@ -2418,7 +3070,9 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "dragondance",
@@ -2427,7 +3081,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "drillpeck",
@@ -2436,7 +3092,9 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "dynamicpunch",
@@ -2445,7 +3103,9 @@
 "basePower": 100,
 "accuracy": 50,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "earthquake",
@@ -2454,7 +3114,9 @@
 "basePower": 100,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "ember",
@@ -2463,7 +3125,12 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 25,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "brn"
+}
 },
 {
 "id": "endure",
@@ -2472,7 +3139,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 4,
+"secondary": null
 },
 {
 "id": "eruption",
@@ -2481,7 +3150,9 @@
 "basePower": 150,
 "accuracy": 100,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "explosion",
@@ -2490,7 +3161,9 @@
 "basePower": 250,
 "accuracy": 100,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "facade",
@@ -2499,7 +3172,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "faketears",
@@ -2508,7 +3183,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "falseswipe",
@@ -2517,7 +3194,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 40,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "featherdance",
@@ -2526,7 +3205,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "firepunch",
@@ -2535,7 +3216,12 @@
 "basePower": 75,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "brn"
+}
 },
 {
 "id": "fissure",
@@ -2544,7 +3230,9 @@
 "basePower": 0,
 "accuracy": 30,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "flamewheel",
@@ -2553,7 +3241,12 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 25,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "brn"
+}
 },
 {
 "id": "flatter",
@@ -2562,7 +3255,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "focusenergy",
@@ -2571,7 +3266,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "frenzyplant",
@@ -2580,7 +3277,9 @@
 "basePower": 150,
 "accuracy": 90,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "furyattack",
@@ -2589,7 +3288,9 @@
 "basePower": 15,
 "accuracy": 85,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "furyswipes",
@@ -2598,7 +3299,9 @@
 "basePower": 18,
 "accuracy": 80,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "guillotine",
@@ -2607,7 +3310,9 @@
 "basePower": 0,
 "accuracy": 30,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "gust",
@@ -2616,7 +3321,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "harden",
@@ -2625,7 +3332,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "headbutt",
@@ -2634,7 +3343,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "helpinghand",
@@ -2643,7 +3354,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 5,
+"secondary": null
 },
 {
 "id": "hornattack",
@@ -2652,7 +3365,9 @@
 "basePower": 65,
 "accuracy": 100,
 "pp": 25,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "horndrill",
@@ -2661,7 +3376,9 @@
 "basePower": 0,
 "accuracy": 30,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hydrocannon",
@@ -2670,7 +3387,9 @@
 "basePower": 150,
 "accuracy": 90,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "hyperbeam",
@@ -2679,7 +3398,9 @@
 "basePower": 150,
 "accuracy": 90,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "icepunch",
@@ -2688,7 +3409,12 @@
 "basePower": 75,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "frz"
+}
 },
 {
 "id": "icywind",
@@ -2697,7 +3423,14 @@
 "basePower": 55,
 "accuracy": 95,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 100,
+"boosts": {
+"spe": -1
+}
+}
 },
 {
 "id": "irondefense",
@@ -2706,7 +3439,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "irontail",
@@ -2715,7 +3450,14 @@
 "basePower": 100,
 "accuracy": 75,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"boosts": {
+"def": -1
+}
+}
 },
 {
 "id": "leer",
@@ -2724,7 +3466,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "machpunch",
@@ -2733,7 +3477,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 30,
-"category": "Physical"
+"category": "Physical",
+"priority": 1,
+"secondary": null
 },
 {
 "id": "magicalleaf",
@@ -2742,7 +3488,9 @@
 "basePower": 60,
 "accuracy": 0,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "megahorn",
@@ -2751,7 +3499,9 @@
 "basePower": 120,
 "accuracy": 85,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "megakick",
@@ -2760,7 +3510,9 @@
 "basePower": 120,
 "accuracy": 75,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "megapunch",
@@ -2769,7 +3521,9 @@
 "basePower": 80,
 "accuracy": 85,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "metalclaw",
@@ -2778,7 +3532,9 @@
 "basePower": 50,
 "accuracy": 95,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "mudshot",
@@ -2787,7 +3543,14 @@
 "basePower": 55,
 "accuracy": 95,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 100,
+"boosts": {
+"spe": -1
+}
+}
 },
 {
 "id": "mudslap",
@@ -2796,7 +3559,14 @@
 "basePower": 20,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 100,
+"boosts": {
+"accuracy": -1
+}
+}
 },
 {
 "id": "nightshade",
@@ -2805,7 +3575,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "painsplit",
@@ -2814,7 +3586,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "peck",
@@ -2823,7 +3597,9 @@
 "basePower": 35,
 "accuracy": 100,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "poisonsting",
@@ -2832,7 +3608,12 @@
 "basePower": 15,
 "accuracy": 100,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "psn"
+}
 },
 {
 "id": "poisontail",
@@ -2841,7 +3622,12 @@
 "basePower": 50,
 "accuracy": 100,
 "pp": 25,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "psn"
+}
 },
 {
 "id": "pound",
@@ -2850,7 +3636,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "powdersnow",
@@ -2859,7 +3647,12 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 25,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "frz"
+}
 },
 {
 "id": "present",
@@ -2868,7 +3661,9 @@
 "basePower": 0,
 "accuracy": 90,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "psybeam",
@@ -2877,7 +3672,9 @@
 "basePower": 65,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "psychic",
@@ -2886,7 +3683,14 @@
 "basePower": 90,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"boosts": {
+"spd": -1
+}
+}
 },
 {
 "id": "quickattack",
@@ -2895,7 +3699,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 30,
-"category": "Physical"
+"category": "Physical",
+"priority": 1,
+"secondary": null
 },
 {
 "id": "raindance",
@@ -2904,7 +3710,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "razorleaf",
@@ -2913,7 +3721,9 @@
 "basePower": 55,
 "accuracy": 95,
 "pp": 25,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "rockslide",
@@ -2922,7 +3732,9 @@
 "basePower": 75,
 "accuracy": 90,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "rockthrow",
@@ -2931,7 +3743,9 @@
 "basePower": 50,
 "accuracy": 90,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "roleplay",
@@ -2940,7 +3754,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "rollout",
@@ -2949,7 +3765,9 @@
 "basePower": 30,
 "accuracy": 90,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sacredfire",
@@ -2958,7 +3776,12 @@
 "basePower": 100,
 "accuracy": 95,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 50,
+"status": "brn"
+}
 },
 {
 "id": "sandattack",
@@ -2967,7 +3790,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 15,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sandstorm",
@@ -2976,7 +3801,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "scratch",
@@ -2985,7 +3812,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "seismictoss",
@@ -2994,7 +3823,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "selfdestruct",
@@ -3003,7 +3834,9 @@
 "basePower": 200,
 "accuracy": 100,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "shadowball",
@@ -3012,7 +3845,14 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 20,
+"boosts": {
+"spd": -1
+}
+}
 },
 {
 "id": "shadowpunch",
@@ -3021,7 +3861,9 @@
 "basePower": 60,
 "accuracy": 0,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "shockwave",
@@ -3030,7 +3872,9 @@
 "basePower": 60,
 "accuracy": 0,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "skillswap",
@@ -3039,7 +3883,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "skyattack",
@@ -3048,7 +3894,9 @@
 "basePower": 140,
 "accuracy": 90,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "slam",
@@ -3057,7 +3905,9 @@
 "basePower": 80,
 "accuracy": 75,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "slash",
@@ -3066,7 +3916,9 @@
 "basePower": 70,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sludge",
@@ -3075,7 +3927,12 @@
 "basePower": 65,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "psn"
+}
 },
 {
 "id": "sludgebomb",
@@ -3084,7 +3941,12 @@
 "basePower": 90,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "psn"
+}
 },
 {
 "id": "smokescreen",
@@ -3093,7 +3955,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 20,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "solarbeam",
@@ -3102,7 +3966,9 @@
 "basePower": 120,
 "accuracy": 100,
 "pp": 10,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "spark",
@@ -3111,7 +3977,12 @@
 "basePower": 65,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 30,
+"status": "par"
+}
 },
 {
 "id": "spitup",
@@ -3120,7 +3991,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "splash",
@@ -3129,7 +4002,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "steelwing",
@@ -3138,7 +4013,9 @@
 "basePower": 70,
 "accuracy": 90,
 "pp": 25,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "stomp",
@@ -3147,7 +4024,9 @@
 "basePower": 65,
 "accuracy": 100,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "strength",
@@ -3156,7 +4035,9 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 15,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "sunnyday",
@@ -3165,7 +4046,9 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 5,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "superfang",
@@ -3174,7 +4057,9 @@
 "basePower": 0,
 "accuracy": 90,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "superpower",
@@ -3183,7 +4068,9 @@
 "basePower": 120,
 "accuracy": 100,
 "pp": 5,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "swift",
@@ -3192,7 +4079,9 @@
 "basePower": 60,
 "accuracy": 0,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "tailwhip",
@@ -3201,7 +4090,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 30,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "takedown",
@@ -3210,7 +4101,9 @@
 "basePower": 90,
 "accuracy": 85,
 "pp": 20,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "thunderpunch",
@@ -3219,7 +4112,12 @@
 "basePower": 75,
 "accuracy": 100,
 "pp": 15,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "par"
+}
 },
 {
 "id": "thundershock",
@@ -3228,7 +4126,12 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 30,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": {
+"chance": 10,
+"status": "par"
+}
 },
 {
 "id": "triattack",
@@ -3237,7 +4140,9 @@
 "basePower": 80,
 "accuracy": 100,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "trick",
@@ -3246,7 +4151,9 @@
 "basePower": 0,
 "accuracy": 100,
 "pp": 10,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "triplekick",
@@ -3255,7 +4162,9 @@
 "basePower": 10,
 "accuracy": 90,
 "pp": 10,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "twister",
@@ -3264,7 +4173,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "visegrip",
@@ -3273,7 +4184,9 @@
 "basePower": 55,
 "accuracy": 100,
 "pp": 30,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "watergun",
@@ -3282,7 +4195,9 @@
 "basePower": 40,
 "accuracy": 100,
 "pp": 25,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "waterpulse",
@@ -3291,7 +4206,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 20,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "waterspout",
@@ -3300,7 +4217,9 @@
 "basePower": 150,
 "accuracy": 100,
 "pp": 5,
-"category": "Special"
+"category": "Special",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "wingattack",
@@ -3309,7 +4228,9 @@
 "basePower": 60,
 "accuracy": 100,
 "pp": 35,
-"category": "Physical"
+"category": "Physical",
+"priority": 0,
+"secondary": null
 },
 {
 "id": "withdraw",
@@ -3318,6 +4239,8 @@
 "basePower": 0,
 "accuracy": 0,
 "pp": 40,
-"category": "Status"
+"category": "Status",
+"priority": 0,
+"secondary": null
 }
 ]

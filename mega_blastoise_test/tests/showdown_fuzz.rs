@@ -253,40 +253,59 @@ fn fuzz_gen3_turns() {
         Battle, Choice, Event, Invest, Mon, Nature, SPECIES,
     };
 
-    // Priority is not modelled in the engine yet, so the turn fuzz keeps to
-    // priority-0 moves; the single-hit fuzz still samples the rest.
     let moves = vanilla_moves(3, |id| {
         gen3_battle::move_by_id(id).map(|m| m.power > 0).unwrap_or(false)
     });
-    let moves: Vec<String> =
-        moves.into_iter().filter(|(_, p)| *p == 0).map(|(id, _)| id).collect();
+    let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
 
     let mut fz = Fuzz::new("gen3-turns");
     let mut scenarios = Vec::new();
     let mut cases = Vec::new();
+    let statuses: [Option<&str>; 6] = [None, None, Some("brn"), Some("psn"), Some("par"), Some("frz")];
     for _ in 0..fuzz_n() / 2 {
         let (s1, s2) = (fz.pick(SPECIES), fz.pick(SPECIES));
         let level = 40 + fz.below(61) as u8;
         let (m1, m2) = (fz.pick(&moves).clone(), fz.pick(&moves).clone());
-        let script: Vec<(bool, bool, u8)> = (0..2)
-            .map(|_| (!fz.chance(10), fz.chance(25), 85 + fz.below(16) as u8))
+        // A pre-set status must be legal for the species, or the sim refuses
+        // it and the two sides diverge on setup rather than mechanics.
+        let legal_status = |fz: &mut Fuzz, sp: &gen3_battle::SpeciesEntry| {
+            use gen3_battle::{data::Status, Type};
+            let pick = *fz.pick(&statuses);
+            let has = |t: Type| sp.types.0 == t || sp.types.1 == t;
+            match pick {
+                Some("brn") if has(Type::Fire) => None,
+                Some("frz") if has(Type::Ice) => None,
+                Some("psn") if has(Type::Poison) || has(Type::Steel) => None,
+                other => other.map(|s| match s {
+                    "brn" => (s, Status::Burn),
+                    "psn" => (s, Status::Poison),
+                    "par" => (s, Status::Paralysis),
+                    "frz" => (s, Status::Freeze),
+                    _ => unreachable!(),
+                }),
+            }
+        };
+        let st1 = legal_status(&mut fz, s1);
+        let st2 = legal_status(&mut fz, s2);
+        let script: Vec<(bool, bool, u8, bool)> = (0..2)
+            .map(|_| (!fz.chance(10), fz.chance(25), 85 + fz.below(16) as u8, fz.chance(40)))
             .collect();
 
         scenarios.push(json!({
             "kind": "turn", "gen": 3,
-            "p1": {"species": s1.id, "level": level},
-            "p2": {"species": s2.id, "level": level},
+            "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0)},
+            "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0)},
             "moves": [m1, m2],
-            "script": {"p1": {"hit": script[0].0, "crit": script[0].1, "roll": script[0].2},
-                       "p2": {"hit": script[1].0, "crit": script[1].1, "roll": script[1].2}},
+            "script": {"p1": {"hit": script[0].0, "crit": script[0].1, "roll": script[0].2, "secondary": script[0].3},
+                       "p2": {"hit": script[1].0, "crit": script[1].1, "roll": script[1].2, "secondary": script[1].3}},
         }));
-        cases.push((s1.id, s2.id, level, m1, m2, script));
+        cases.push((s1.id, s2.id, level, m1, m2, script, [st1.map(|s| s.1), st2.map(|s| s.1)]));
     }
 
     let results = showdown(&Value::Array(scenarios.clone()));
     let inv = Invest { iv: 31, ev: 0 };
     let mut bad = 0;
-    for (i, ((s1, s2, level, m1, m2, script), got)) in cases.iter().zip(&results).enumerate() {
+    for (i, ((s1, s2, level, m1, m2, script, statuses), got)) in cases.iter().zip(&results).enumerate() {
         if got.get("error").is_some() {
             eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
             bad += 1;
@@ -295,14 +314,16 @@ fn fuzz_gen3_turns() {
         let mk = |id: &str, mv: &str| Mon::new(id, *level, Nature::Hardy, inv, &[mv]).unwrap();
         let mut battle =
             Battle::new(Side::new(vec![mk(s1, m1)]), Side::new(vec![mk(s2, m2)]), 1);
+        battle.sides[0].party[0].status = statuses[0];
+        battle.sides[1].party[0].status = statuses[1];
         // Skip speed ties: the tie-break is each side's own RNG.
         if battle.sides[0].mon().spe == battle.sides[1].mon().spe {
             continue;
         }
         let ts = TurnScript {
             seats: [
-                Some(SeatScript { hit: script[0].0, crit: script[0].1, random: script[0].2 }),
-                Some(SeatScript { hit: script[1].0, crit: script[1].1, random: script[1].2 }),
+                Some(SeatScript { hit: script[0].0, crit: script[0].1, random: script[0].2, secondary: script[0].3 }),
+                Some(SeatScript { hit: script[1].0, crit: script[1].1, random: script[1].2, secondary: script[1].3 }),
             ],
         };
         let events = battle.step_with([Choice::Move(0), Choice::Move(0)], &ts);
@@ -320,10 +341,13 @@ fn fuzz_gen3_turns() {
         let ok = ["p1", "p2"].iter().enumerate().all(|(s, _)| {
             let ours = &battle.sides[s];
             let want = &got[if s == 0 { "p1" } else { "p2" }];
+            let our_status = ours.mon().status.map(|st| st.abbr());
+            let their_status = want["status"].as_str();
             ours.mon().hp == want["hp"].as_u64().unwrap() as u16
                 && ours.mon().max_hp == want["maxhp"].as_u64().unwrap() as u16
                 && ours.mon().moves[0].pp as u64 == want["pp"][0].as_u64().unwrap()
                 && ours.mon().fainted() == want["fainted"].as_bool().unwrap()
+                && our_status == their_status
         }) && our_order == their_order;
         if !ok {
             eprintln!(

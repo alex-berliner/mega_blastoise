@@ -61,7 +61,8 @@ function newBattle(gen, p1mon, p2mon) {
 /// tryMoveHit (to know whose script applies), randomChance (accuracy), and
 /// randomizer (the 85..100 roll); crits ride getDamage's willCrit.
 function scriptRandomness(battle, script) {
-  const forSide = (source) => script[source.side.id] ?? {hit: true, crit: false, roll: 100};
+  const forSide = (source) =>
+    script[source.side.id] ?? {hit: true, crit: false, roll: 100, secondary: false};
   battle.__cur = {hit: true, crit: false, roll: 100};
 
   const actions = battle.actions;
@@ -88,6 +89,13 @@ function scriptRandomness(battle, script) {
       battle.__accPending = false;
       return battle.__cur.hit;
     }
+    // After the accuracy roll, a sub-certain chance out of 100 (gen 3+) or
+    // 256 (gen 1) during a move is its secondary proc; the script decides.
+    // Full-paralysis (1,4) and thaw (1,5) rolls have other denominators and
+    // stay pinned off, matching the engines' scripted turns.
+    if ((denominator === 100 || denominator === 256) && numerator < denominator) {
+      return battle.__cur.secondary ?? false;
+    }
     return false;
   };
   battle.prng.randomChance = () => false;
@@ -100,7 +108,13 @@ function scriptRandomness(battle, script) {
     if (a === 217 && b === 256) {
       return Math.min(255, Math.max(217, battle.__cur.roll));
     }
-    return a; // other uses (multi-hit counts) pin to the minimum
+    if (b === undefined) {
+      // One-arg random(n) compared against a chance: some secondary paths
+      // roll this way instead of randomChance. Scripted proc returns the
+      // bottom (always under the chance), otherwise the top (never under).
+      return battle.__cur.secondary ? 0 : Math.max(0, a - 1);
+    }
+    return a; // two-arg minimums: multi-hit counts, sleep turns
   };
 
   // Crits: pin willCrit on an active copy of the move, which every gen's
@@ -205,15 +219,35 @@ function runDump(sc) {
     }));
   const moves = dex.moves.all()
     .filter((m) => m.exists && !m.isNonstandard && m.id !== 'struggle')
-    .map((m) => ({
-      id: m.id,
-      name: m.name,
-      type: m.type,
-      basePower: m.basePower,
-      accuracy: m.accuracy === true ? 0 : m.accuracy,
-      pp: m.pp,
-      category: m.category,
-    }));
+    .map((m) => {
+      // A move's one modelled secondary: a status, or stat drops on the
+      // target. Self-boosts, volatiles and hook-driven secondaries (Tri
+      // Attack picks its status in an onHit) stay null.
+      let secondary = null;
+      const secs = m.secondaries ?? (m.secondary ? [m.secondary] : []);
+      for (const s of secs) {
+        if (!s || !s.chance || s.self || s.onHit || s.volatileStatus) continue;
+        if (s.status) {
+          secondary = {chance: s.chance, status: s.status};
+          break;
+        }
+        if (s.boosts) {
+          secondary = {chance: s.chance, boosts: s.boosts};
+          break;
+        }
+      }
+      return {
+        id: m.id,
+        name: m.name,
+        type: m.type,
+        basePower: m.basePower,
+        accuracy: m.accuracy === true ? 0 : m.accuracy,
+        pp: m.pp,
+        category: m.category,
+        priority: m.priority,
+        secondary,
+      };
+    });
   return {species, moves};
 }
 
@@ -242,6 +276,8 @@ function runMovelist(sc) {
     if (move.volatileStatus) continue; // partial traps tick extra end-of-turn damage
     if (move.sleepUsable || move.id === 'dreameater') continue; // fail unless asleep
     const raw = rawOf(move.id);
+    const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);
+    if (rawSecs.some((sec) => sec && (sec.onHit || sec.volatileStatus || sec.self))) continue;
     // Conditional base power, self-effects (Superpower's drop, Overheat's),
     // and on-hit hooks are behaviour the core engines do not model.
     // Any on* hook means conditional behaviour (Facade's doubling is an

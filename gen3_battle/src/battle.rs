@@ -15,7 +15,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use crate::damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
-use crate::data::{move_by_id, species_by_id, MoveEntry, SpeciesEntry};
+use crate::data::{move_by_id, species_by_id, Boost, MoveEntry, SecondaryEffect, SpeciesEntry, Status};
 use crate::stats::{hp_stat, other_stat, Invest, Nature, Stat};
 use crate::types::Type;
 
@@ -91,8 +91,14 @@ pub struct Mon {
     pub spe: u16,
     /// Stat stages in [`Stat`] order.
     pub stages: [i8; 5],
+    /// Accuracy and evasion stages, which live outside the five stats.
+    pub acc_stage: i8,
+    pub eva_stage: i8,
     pub moves: Vec<MoveSlot>,
-    pub burned: bool,
+    pub status: Option<Status>,
+    /// Turns badly poisoned, driving Toxic's growing residual. Meaningless
+    /// unless `status` is [`Status::Toxic`]; resets when the mon leaves.
+    pub toxic_n: u8,
 }
 
 impl Mon {
@@ -115,8 +121,11 @@ impl Mon {
             spd: stat(b.spd, Stat::SpDef),
             spe: stat(b.spe, Stat::Spe),
             stages: [0; 5],
+            acc_stage: 0,
+            eva_stage: 0,
             moves: moves.iter().filter_map(|m| MoveSlot::new(m)).collect(),
-            burned: false,
+            status: None,
+            toxic_n: 0,
         })
     }
 
@@ -136,6 +145,46 @@ impl Mon {
 
     pub fn fainted(&self) -> bool {
         self.hp == 0
+    }
+
+    pub fn burned(&self) -> bool {
+        self.status == Some(Status::Burn)
+    }
+
+    /// Speed after paralysis: quartered in Gen 3.
+    pub fn effective_speed(&self) -> u16 {
+        let spe = crate::stats::apply_stage(self.spe, self.stages[Stat::Spe as usize]);
+        if self.status == Some(Status::Paralysis) { spe / 4 } else { spe }
+    }
+
+    /// Whether `status` can land on this mon under Gen 3 rules: nothing
+    /// stacks on an existing status, Fire types cannot burn, Ice types
+    /// cannot freeze, and Poison/Steel types cannot be poisoned.
+    pub fn can_receive(&self, status: Status) -> bool {
+        if self.status.is_some() || self.fainted() {
+            return false;
+        }
+        let has = |t: Type| self.types().0 == t || self.types().1 == t;
+        match status {
+            Status::Burn => !has(Type::Fire),
+            Status::Freeze => !has(Type::Ice),
+            Status::Poison | Status::Toxic => !has(Type::Poison) && !has(Type::Steel),
+            Status::Paralysis | Status::Sleep => true,
+        }
+    }
+
+    /// Move one stage by `delta`, clamped to ±6 like every stage is.
+    pub fn apply_boost(&mut self, boost: Boost, delta: i8) {
+        let slot = match boost {
+            Boost::Atk => &mut self.stages[Stat::Atk as usize],
+            Boost::Def => &mut self.stages[Stat::Def as usize],
+            Boost::Spe => &mut self.stages[Stat::Spe as usize],
+            Boost::SpAtk => &mut self.stages[Stat::SpAtk as usize],
+            Boost::SpDef => &mut self.stages[Stat::SpDef as usize],
+            Boost::Acc => &mut self.acc_stage,
+            Boost::Eva => &mut self.eva_stage,
+        };
+        *slot = (*slot + delta).clamp(-6, 6);
     }
 
     pub fn types(&self) -> (Type, Type) {
@@ -186,6 +235,8 @@ pub struct SeatScript {
     pub crit: bool,
     /// 85..=100.
     pub random: u8,
+    /// The move's secondary effect procs this turn.
+    pub secondary: bool,
 }
 
 /// Per-turn RNG script; see [`Battle::step_with`].
@@ -212,6 +263,14 @@ pub enum Event {
     /// The move could not be used: no PP, or nothing to use.
     Failed { side: u8 },
     Damage { side: u8, amount: u16, effectiveness: u32, crit: bool },
+    /// A status landed on `side`'s active mon.
+    Statused { side: u8, status: Status },
+    /// A secondary moved one of `side`'s active mon's stat stages.
+    Boosted { side: u8, boost: Boost, delta: i8 },
+    /// `side`'s mon could not move: frozen solid or fast asleep.
+    Cant { side: u8, status: Status },
+    /// End-of-turn burn or poison damage.
+    Residual { side: u8, amount: u16, status: Status },
     Fainted { side: u8 },
     /// 1 or 2, or 0 for a draw.
     Win { side: u8 },
@@ -253,18 +312,20 @@ impl Battle {
         let mut events = Vec::new();
         self.turn += 1;
 
-        // Switches resolve before any move, in side order.
+        // Switches resolve before any move, in side order. Leaving the field
+        // resets a Toxic count: the poison stays, the clock starts over.
         for side in 0..2 {
             if let Choice::Switch(idx) = choices[side] {
                 if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
+                    self.sides[side].mon_mut().toxic_n = 0;
                     self.sides[side].active = idx;
                     events.push(Event::Switched { side: side as u8 + 1, party_index: idx });
                 }
             }
         }
 
-        // Then moves, faster first.
-        let first = self.faster_side();
+        // Then moves: priority bracket first, Speed inside a bracket.
+        let first = self.first_mover(&choices);
         for side in [first, 1 - first] {
             if self.over() {
                 break;
@@ -274,16 +335,71 @@ impl Battle {
             }
         }
 
+        // End of turn: burn and poison tick 1/8 max HP, Toxic a sixteenth
+        // times the turns it has held, faster side first — the same order the
+        // games resolve residuals in.
+        let first = self.faster_side();
+        for side in [first, 1 - first] {
+            if self.over() {
+                break;
+            }
+            let mon = self.sides[side].mon();
+            if mon.fainted() {
+                continue;
+            }
+            let status = match mon.status {
+                Some(s @ (Status::Burn | Status::Poison | Status::Toxic)) => s,
+                _ => continue,
+            };
+            let amount = if status == Status::Toxic {
+                let mon = self.sides[side].mon_mut();
+                mon.toxic_n = (mon.toxic_n + 1).min(15);
+                (mon.max_hp / 16).max(1) * mon.toxic_n as u16
+            } else {
+                (self.sides[side].mon().max_hp / 8).max(1)
+            };
+            let mon = self.sides[side].mon_mut();
+            let amount = amount.min(mon.hp);
+            mon.hp -= amount;
+            events.push(Event::Residual { side: side as u8 + 1, amount, status });
+            if mon.fainted() {
+                events.push(Event::Fainted { side: side as u8 + 1 });
+                if let Some(next) = self.sides[side].first_healthy() {
+                    self.sides[side].active = next;
+                    events.push(Event::Switched { side: side as u8 + 1, party_index: next });
+                }
+            }
+        }
+
         if let Some(win) = self.winner() {
             events.push(Event::Win { side: win });
         }
         events
     }
 
-    /// Which side moves first this turn: higher Speed, RNG on a tie.
+    /// Who moves first given the chosen moves: higher priority bracket, then
+    /// [`Battle::faster_side`] within it. A switch resolves before moves and
+    /// takes no bracket.
+    fn first_mover(&mut self, choices: &[Choice; 2]) -> usize {
+        let prio = |side: usize| match choices[side] {
+            Choice::Move(i) => {
+                self.sides[side].mon().moves.get(i).map(|s| s.entry.priority).unwrap_or(0)
+            }
+            Choice::Switch(_) => 0,
+        };
+        let (p0, p1) = (prio(0), prio(1));
+        match p0.cmp(&p1) {
+            core::cmp::Ordering::Greater => 0,
+            core::cmp::Ordering::Less => 1,
+            core::cmp::Ordering::Equal => self.faster_side(),
+        }
+    }
+
+    /// Which side moves first this turn: higher Speed (paralysis included),
+    /// RNG on a tie.
     fn faster_side(&mut self) -> usize {
-        let s0 = crate::stats::apply_stage(self.sides[0].mon().spe, self.sides[0].mon().stage(Stat::Spe));
-        let s1 = crate::stats::apply_stage(self.sides[1].mon().spe, self.sides[1].mon().stage(Stat::Spe));
+        let s0 = self.sides[0].mon().effective_speed();
+        let s1 = self.sides[1].mon().effective_speed();
         match s0.cmp(&s1) {
             core::cmp::Ordering::Greater => 0,
             core::cmp::Ordering::Less => 1,
@@ -302,6 +418,22 @@ impl Battle {
         if self.sides[side].mon().fainted() {
             return;
         }
+        // Frozen solid or fast asleep: the turn is spent, no PP moves. Thaw
+        // and wake chances are turn-level RNG the scripts pin off, matching
+        // the reference runs. Flame Wheel and Sacred Fire are the era's two
+        // moves usable while frozen: they cure the user and proceed.
+        if let Some(s @ (Status::Freeze | Status::Sleep)) = self.sides[side].mon().status {
+            let self_thaw = s == Status::Freeze
+                && self.sides[side].mon().moves.get(index).is_some_and(|slot| {
+                    matches!(slot.entry.id, "flamewheel" | "sacredfire")
+                });
+            if self_thaw {
+                self.sides[side].mon_mut().status = None;
+            } else {
+                events.push(Event::Cant { side: side as u8 + 1, status: s });
+                return;
+            }
+        }
         let Some(slot) = self.sides[side].mon().moves.get(index).copied() else {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
@@ -316,10 +448,23 @@ impl Battle {
         // Accuracy: 0 in the table means the move never misses. A scripted
         // seat's hit/miss is decided by the script, but only for moves that
         // CAN miss, matching how the reference sim's accuracy step works.
+        // Unscripted rolls fold in the accuracy/evasion stages the Gen 3
+        // way: one combined stage, (3+s)/3 above zero and 3/(3-s) below.
         let acc = slot.entry.accuracy;
         let hit = match script {
             Some(s) => acc == 0 || s.hit,
-            None => acc == 0 || self.rng.below(100) < acc as u32,
+            None => {
+                acc == 0 || {
+                    let s = (self.sides[side].mon().acc_stage - self.sides[foe].mon().eva_stage)
+                        .clamp(-6, 6) as i32;
+                    let eff = if s >= 0 {
+                        acc as u32 * (3 + s as u32) / 3
+                    } else {
+                        acc as u32 * 3 / (3 - s) as u32
+                    };
+                    self.rng.below(100) < eff
+                }
+            }
         };
         if !hit {
             return;
@@ -349,6 +494,57 @@ impl Battle {
             effectiveness: eff,
             crit,
         });
+        // The move's secondary, decided by the script (or the RNG in play).
+        // This runs BEFORE the thaw below, matching the reference sim: a
+        // Fire move's burn chance is blocked by the freeze it is about to
+        // cure, because the target still carries frz when secondaries apply.
+        // A 100% secondary (Zap Cannon's paralysis) is a certainty, not a
+        // roll, so the script has no say in it — matching the reference sim,
+        // whose sub-certain roll can't come up short of 100.
+        let certain = slot.entry.secondary.is_some_and(|sec| sec.chance >= 100);
+        let proc = certain
+            || match script {
+                Some(s) => s.secondary,
+                None => slot
+                    .entry
+                    .secondary
+                    .map(|sec| self.rng.below(100) < sec.chance as u32)
+                    .unwrap_or(false),
+            };
+        if proc {
+            match slot.entry.secondary.map(|sec| sec.effect) {
+                Some(SecondaryEffect::Status(status)) => {
+                    if self.sides[foe].mon().can_receive(status) {
+                        let target = self.sides[foe].mon_mut();
+                        target.status = Some(status);
+                        if status == Status::Toxic {
+                            target.toxic_n = 0;
+                        }
+                        events.push(Event::Statused { side: foe as u8 + 1, status });
+                    }
+                }
+                Some(SecondaryEffect::Boosts(list)) => {
+                    if !self.sides[foe].mon().fainted() {
+                        for &(boost, delta) in list {
+                            self.sides[foe].mon_mut().apply_boost(boost, delta);
+                            events.push(Event::Boosted { side: foe as u8 + 1, boost, delta });
+                        }
+                    }
+                }
+                None => {}
+            }
+        }
+
+        // A Fire-type hit thaws a frozen target — game rule, not RNG. A
+        // knocked-out target keeps its freeze; there is nothing left to thaw.
+        if self.sides[foe].mon().status == Some(Status::Freeze)
+            && slot.move_type() == Type::Fire
+            && !self.sides[foe].mon().fainted()
+        {
+            self.sides[foe].mon_mut().status = None;
+        }
+
+        let target = self.sides[foe].mon_mut();
         if target.fainted() {
             events.push(Event::Fainted { side: foe as u8 + 1 });
             // The next living party member steps in. A real forced-switch
@@ -371,7 +567,7 @@ impl Battle {
                 atk_stage: a.stage(Stat::Atk),
                 sp_atk_stage: a.stage(Stat::SpAtk),
                 types: a.types(),
-                burned: a.burned,
+                burned: a.burned(),
             },
             Defender {
                 def: d.def,

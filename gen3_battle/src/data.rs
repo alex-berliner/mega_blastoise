@@ -79,6 +79,76 @@ impl RandbatSet {
     }
 }
 
+/// A status condition a move can inflict. Toxic is bad poison: its residual
+/// grows each turn instead of holding at an eighth.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Status {
+    Burn,
+    Paralysis,
+    Poison,
+    Toxic,
+    Freeze,
+    Sleep,
+}
+
+impl Status {
+    /// The board's three-letter tag, matching what the display layer shows.
+    pub fn abbr(self) -> &'static str {
+        match self {
+            Status::Burn => "brn",
+            Status::Paralysis => "par",
+            Status::Poison => "psn",
+            Status::Toxic => "tox",
+            Status::Freeze => "frz",
+            Status::Sleep => "slp",
+        }
+    }
+}
+
+/// A stat a secondary effect can move, including the two battle-only stages
+/// that live outside [`crate::stats::Stat`].
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Boost {
+    Atk,
+    Def,
+    Spe,
+    SpAtk,
+    SpDef,
+    Acc,
+    Eva,
+}
+
+impl Boost {
+    /// The display name the battle log uses.
+    pub fn label(self) -> &'static str {
+        match self {
+            Boost::Atk => "Attack",
+            Boost::Def => "Defense",
+            Boost::Spe => "Speed",
+            Boost::SpAtk => "Sp. Atk",
+            Boost::SpDef => "Sp. Def",
+            Boost::Acc => "accuracy",
+            Boost::Eva => "evasiveness",
+        }
+    }
+}
+
+/// What a secondary does when it procs: inflict a status, or move the
+/// target's stat stages (Mist Ball's Sp. Atk drop, Octazooka's accuracy cut).
+#[derive(Clone, Copy, Debug)]
+pub enum SecondaryEffect {
+    Status(Status),
+    Boosts(&'static [(Boost, i8)]),
+}
+
+/// A move's secondary effect.
+#[derive(Clone, Copy, Debug)]
+pub struct Secondary {
+    /// Percent chance.
+    pub chance: u8,
+    pub effect: SecondaryEffect,
+}
+
 /// One move.
 #[derive(Clone, Copy, Debug)]
 pub struct MoveEntry {
@@ -90,6 +160,9 @@ pub struct MoveEntry {
     /// 0 means it never misses.
     pub accuracy: u8,
     pub pp: u8,
+    /// Move priority bracket; higher moves first regardless of Speed.
+    pub priority: i8,
+    pub secondary: Option<Secondary>,
 }
 
 impl MoveEntry {
@@ -181,6 +254,36 @@ mod tests {
         // Showdown's Gen 3 sets are high level, which is the giveaway that
         // these are its sets rather than anything derived here.
         assert!(RANDBAT.iter().all(|s| s.level >= 60));
+    }
+
+    #[test]
+    fn moves_carry_priority_and_secondaries() {
+        assert_eq!(move_by_id("quickattack").unwrap().priority, 1);
+        assert_eq!(move_by_id("tackle").unwrap().priority, 0);
+        let ember = move_by_id("ember").unwrap().secondary.unwrap();
+        assert_eq!(ember.chance, 10);
+        assert!(matches!(ember.effect, SecondaryEffect::Status(Status::Burn)));
+        let bodyslam = move_by_id("bodyslam").unwrap().secondary.unwrap();
+        assert_eq!(bodyslam.chance, 30);
+        assert!(matches!(bodyslam.effect, SecondaryEffect::Status(Status::Paralysis)));
+        assert!(move_by_id("tackle").unwrap().secondary.is_none());
+
+        // Poison Fang badly poisons — tox, not plain psn. Found by the fuzzer:
+        // the tick is a growing sixteenth, not a flat eighth.
+        let fang = move_by_id("poisonfang").unwrap().secondary.unwrap();
+        assert!(matches!(fang.effect, SecondaryEffect::Status(Status::Toxic)));
+
+        // Boost secondaries carry the target's stage change. Crunch drops
+        // Sp. Def in this era, not Defense.
+        let crunch = move_by_id("crunch").unwrap().secondary.unwrap();
+        assert_eq!(crunch.chance, 20);
+        assert!(
+            matches!(crunch.effect, SecondaryEffect::Boosts(&[(Boost::SpDef, -1)])),
+            "crunch: {:?}",
+            crunch.effect
+        );
+        let octazooka = move_by_id("octazooka").unwrap().secondary.unwrap();
+        assert!(matches!(octazooka.effect, SecondaryEffect::Boosts(&[(Boost::Acc, -1)])));
     }
 
     #[test]

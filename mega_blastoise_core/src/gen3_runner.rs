@@ -153,6 +153,39 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Statused { side, status } => {
+                effects
+                    .on_event(BoardEvent::SetStatus {
+                        mon: active_name(battle, side),
+                        status: status.abbr().to_string(),
+                    })
+                    .await;
+            }
+            Event::Boosted { side, boost, delta } => {
+                effects
+                    .on_event(BoardEvent::StatChange {
+                        mon: active_name(battle, side),
+                        stat: boost.label().into(),
+                        delta,
+                    })
+                    .await;
+            }
+            Event::Cant { side, status } => {
+                effects
+                    .on_event(BoardEvent::Cant {
+                        mon: active_name(battle, side),
+                        reason: status.abbr().to_string(),
+                    })
+                    .await;
+            }
+            Event::Residual { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Damage {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
             Event::Switched { side, .. } => switch_in(battle, side, effects).await,
             Event::Failed { side } => {
                 effects.on_event(BoardEvent::Fail { mon: active_name(battle, side) }).await;

@@ -41,7 +41,10 @@ pub use battle::{Battle, Choice, Event, Mon, MoveSlot, Rng, SeatScript, Side, Tu
 pub use draft::{draft_mon, draft_team};
 pub use damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
 pub use stats::{apply_stage, hp_stat, other_stat, Invest, Nature, Stat};
-pub use data::{move_by_id, species_by_id, BaseStats, MoveEntry, SpeciesEntry, MOVES, SPECIES, TYPE_COUNT};
+pub use data::{
+    move_by_id, species_by_id, BaseStats, Boost, MoveEntry, Secondary, SecondaryEffect,
+    SpeciesEntry, Status, MOVES, SPECIES, TYPE_COUNT,
+};
 pub use types::{category_of, effectiveness, effectiveness_against, Category, Type};
 
 /// Which generation's rules a battle runs under.

@@ -333,9 +333,50 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
         let power = m["basePower"].as_u64().unwrap_or(0) as u16;
         let accuracy = m["accuracy"].as_u64().unwrap_or(0) as u8;
         let pp = m["pp"].as_u64().unwrap_or(0) as u8;
+        let priority = m["priority"].as_i64().unwrap_or(0) as i8;
+        let secondary = match m["secondary"].as_object() {
+            Some(sec) => {
+                let chance = sec["chance"].as_u64().unwrap_or(0) as u8;
+                let effect = if let Some(status) = sec.get("status").and_then(|v| v.as_str()) {
+                    let status = match status {
+                        "brn" => "Status::Burn",
+                        "par" => "Status::Paralysis",
+                        "psn" => "Status::Poison",
+                        "tox" => "Status::Toxic",
+                        "frz" => "Status::Freeze",
+                        "slp" => "Status::Sleep",
+                        other => panic!("{id}: unknown secondary status {other:?}"),
+                    };
+                    format!("SecondaryEffect::Status({status})")
+                } else if let Some(boosts) = sec.get("boosts").and_then(|v| v.as_object()) {
+                    let items: Vec<String> = boosts
+                        .iter()
+                        .map(|(stat, delta)| {
+                            let boost = match stat.as_str() {
+                                "atk" => "Boost::Atk",
+                                "def" => "Boost::Def",
+                                "spa" => "Boost::SpAtk",
+                                "spd" => "Boost::SpDef",
+                                "spe" => "Boost::Spe",
+                                "accuracy" => "Boost::Acc",
+                                "evasion" => "Boost::Eva",
+                                other => panic!("{id}: unknown boost stat {other:?}"),
+                            };
+                            format!("({boost}, {})", delta.as_i64().unwrap())
+                        })
+                        .collect();
+                    format!("SecondaryEffect::Boosts(&[{}])", items.join(", "))
+                } else {
+                    panic!("{id}: secondary carries neither status nor boosts")
+                };
+                format!("Some(Secondary {{ chance: {chance}, effect: {effect} }})")
+            }
+            None => String::from("None"),
+        };
         out.push_str(&format!(
             "    MoveEntry {{ id: {id:?}, name: {name:?}, move_type: {}, \
-             power: {power}, accuracy: {accuracy}, pp: {pp} }},\n",
+             power: {power}, accuracy: {accuracy}, pp: {pp}, priority: {priority}, \
+             secondary: {secondary} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

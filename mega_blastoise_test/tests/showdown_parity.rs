@@ -215,7 +215,7 @@ fn gen3_turns_match_showdown() {
         };
         let mut p1 = mk(c.p1.0, c.p1.1);
         let p2 = mk(c.p2.0, c.p2.1);
-        p1.burned = c.p1_status == Some("brn");
+        p1.status = (c.p1_status == Some("brn")).then_some(gen3_battle::data::Status::Burn);
         let mut battle = Battle::new(Side::new(vec![p1]), Side::new(vec![p2]), 1);
 
         // Screens are defender state in our damage model; the engine has no
@@ -224,8 +224,8 @@ fn gen3_turns_match_showdown() {
         let light_screen = c.p2_conditions.contains(&"lightscreen");
         let script = TurnScript {
             seats: [
-                Some(SeatScript { hit: c.script[0].0, crit: c.script[0].1, random: c.script[0].2 }),
-                Some(SeatScript { hit: c.script[1].0, crit: c.script[1].1, random: c.script[1].2 }),
+                Some(SeatScript { hit: c.script[0].0, crit: c.script[0].1, random: c.script[0].2, secondary: false }),
+                Some(SeatScript { hit: c.script[1].0, crit: c.script[1].1, random: c.script[1].2, secondary: false }),
             ],
         };
         let (ours_hp, ours_pp) = {
@@ -240,7 +240,7 @@ fn gen3_turns_match_showdown() {
                 let dealt = damage(
                     &Attacker {
                         level: a.level, atk: a.atk, sp_atk: a.spa,
-                        atk_stage: 0, sp_atk_stage: 0, types: a.types(), burned: a.burned,
+                        atk_stage: 0, sp_atk_stage: 0, types: a.types(), burned: a.burned(),
                     },
                     &Defender {
                         def: d.def, sp_def: d.spd, def_stage: 0, sp_def_stage: 0,
