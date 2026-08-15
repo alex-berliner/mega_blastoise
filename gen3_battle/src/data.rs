@@ -133,12 +133,14 @@ impl Boost {
     }
 }
 
-/// What a secondary does when it procs: inflict a status, or move the
-/// target's stat stages (Mist Ball's Sp. Atk drop, Octazooka's accuracy cut).
+/// What a secondary does when it procs: inflict a status, move the target's
+/// stat stages (Mist Ball's Sp. Atk drop, Octazooka's accuracy cut), or make
+/// the target flinch out of a move it has not used yet.
 #[derive(Clone, Copy, Debug)]
 pub enum SecondaryEffect {
     Status(Status),
     Boosts(&'static [(Boost, i8)]),
+    Flinch,
 }
 
 /// A move's secondary effect.

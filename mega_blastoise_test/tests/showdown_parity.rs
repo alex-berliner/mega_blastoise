@@ -224,8 +224,8 @@ fn gen3_turns_match_showdown() {
         let light_screen = c.p2_conditions.contains(&"lightscreen");
         let script = TurnScript {
             seats: [
-                Some(SeatScript { hit: c.script[0].0, crit: c.script[0].1, random: c.script[0].2, secondary: false }),
-                Some(SeatScript { hit: c.script[1].0, crit: c.script[1].1, random: c.script[1].2, secondary: false }),
+                Some(SeatScript { hit: c.script[0].0, crit: c.script[0].1, random: c.script[0].2, secondary: false, immobile: false }),
+                Some(SeatScript { hit: c.script[1].0, crit: c.script[1].1, random: c.script[1].2, secondary: false, immobile: false }),
             ],
         };
         let (ours_hp, ours_pp) = {

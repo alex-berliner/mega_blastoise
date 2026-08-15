@@ -287,17 +287,24 @@ fn fuzz_gen3_turns() {
         };
         let st1 = legal_status(&mut fz, s1);
         let st2 = legal_status(&mut fz, s2);
-        let script: Vec<(bool, bool, u8, bool)> = (0..2)
-            .map(|_| (!fz.chance(10), fz.chance(25), 85 + fz.below(16) as u8, fz.chance(40)))
+        // hit, crit, roll, secondary, immobile — the last only when the seat
+        // is paralyzed going in, matching when the sim would roll it.
+        let mut script: Vec<(bool, bool, u8, bool, bool)> = (0..2)
+            .map(|_| (!fz.chance(10), fz.chance(25), 85 + fz.below(16) as u8, fz.chance(40), false))
             .collect();
+        for (seat, st) in [st1, st2].iter().enumerate() {
+            if matches!(st, Some((_, gen3_battle::data::Status::Paralysis))) {
+                script[seat].4 = fz.chance(25);
+            }
+        }
 
         scenarios.push(json!({
             "kind": "turn", "gen": 3,
             "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0)},
             "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0)},
             "moves": [m1, m2],
-            "script": {"p1": {"hit": script[0].0, "crit": script[0].1, "roll": script[0].2, "secondary": script[0].3},
-                       "p2": {"hit": script[1].0, "crit": script[1].1, "roll": script[1].2, "secondary": script[1].3}},
+            "script": {"p1": {"hit": script[0].0, "crit": script[0].1, "roll": script[0].2, "secondary": script[0].3, "immobile": script[0].4},
+                       "p2": {"hit": script[1].0, "crit": script[1].1, "roll": script[1].2, "secondary": script[1].3, "immobile": script[1].4}},
         }));
         cases.push((s1.id, s2.id, level, m1, m2, script, [st1.map(|s| s.1), st2.map(|s| s.1)]));
     }
@@ -322,8 +329,8 @@ fn fuzz_gen3_turns() {
         }
         let ts = TurnScript {
             seats: [
-                Some(SeatScript { hit: script[0].0, crit: script[0].1, random: script[0].2, secondary: script[0].3 }),
-                Some(SeatScript { hit: script[1].0, crit: script[1].1, random: script[1].2, secondary: script[1].3 }),
+                Some(SeatScript { hit: script[0].0, crit: script[0].1, random: script[0].2, secondary: script[0].3, immobile: script[0].4 }),
+                Some(SeatScript { hit: script[1].0, crit: script[1].1, random: script[1].2, secondary: script[1].3, immobile: script[1].4 }),
             ],
         };
         let events = battle.step_with([Choice::Move(0), Choice::Move(0)], &ts);

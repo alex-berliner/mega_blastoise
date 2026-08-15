@@ -67,6 +67,14 @@ function scriptRandomness(battle, script) {
 
   const actions = battle.actions;
 
+  // Whose ACTION is starting — set earlier than tryMoveHit, because the
+  // full-paralysis roll happens in onBeforeMove, before any hit step.
+  const origRun = actions.runMove;
+  actions.runMove = function (moveOrMoveName, pokemon, ...rest) {
+    battle.__act = forSide(pokemon);
+    return origRun.call(this, moveOrMoveName, pokemon, ...rest);
+  };
+
   // Whose move is resolving right now. Old gens go through the mod's own
   // tryMoveHit; modern gens through spreadMoveHit — hook whichever exists.
   for (const name of ['tryMoveHit', 'trySpreadMoveHit']) {
@@ -91,10 +99,14 @@ function scriptRandomness(battle, script) {
     }
     // After the accuracy roll, a sub-certain chance out of 100 (gen 3+) or
     // 256 (gen 1) during a move is its secondary proc; the script decides.
-    // Full-paralysis (1,4) and thaw (1,5) rolls have other denominators and
-    // stay pinned off, matching the engines' scripted turns.
+    // Thaw (1,5) and wake rolls have other denominators and stay pinned
+    // off, matching the engines' scripted turns.
     if ((denominator === 100 || denominator === 256) && numerator < denominator) {
       return battle.__cur.secondary ?? false;
+    }
+    // Full paralysis: rolled in onBeforeMove for the acting side.
+    if (numerator === 1 && denominator === 4) {
+      return battle.__act?.immobile ?? false;
     }
     return false;
   };
@@ -220,13 +232,18 @@ function runDump(sc) {
   const moves = dex.moves.all()
     .filter((m) => m.exists && !m.isNonstandard && m.id !== 'struggle')
     .map((m) => {
-      // A move's one modelled secondary: a status, or stat drops on the
-      // target. Self-boosts, volatiles and hook-driven secondaries (Tri
-      // Attack picks its status in an onHit) stay null.
+      // A move's one modelled secondary: a status, stat drops on the target,
+      // or a flinch. Self-boosts, other volatiles and hook-driven
+      // secondaries (Tri Attack picks its status in an onHit) stay null.
       let secondary = null;
       const secs = m.secondaries ?? (m.secondary ? [m.secondary] : []);
       for (const s of secs) {
-        if (!s || !s.chance || s.self || s.onHit || s.volatileStatus) continue;
+        if (!s || !s.chance || s.self || s.onHit) continue;
+        if (s.volatileStatus === 'flinch') {
+          secondary = {chance: s.chance, flinch: true};
+          break;
+        }
+        if (s.volatileStatus) continue;
         if (s.status) {
           secondary = {chance: s.chance, status: s.status};
           break;
@@ -277,7 +294,9 @@ function runMovelist(sc) {
     if (move.sleepUsable || move.id === 'dreameater') continue; // fail unless asleep
     const raw = rawOf(move.id);
     const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);
-    if (rawSecs.some((sec) => sec && (sec.onHit || sec.volatileStatus || sec.self))) continue;
+    if (rawSecs.some((sec) =>
+      sec && (sec.onHit || sec.self || (sec.volatileStatus && sec.volatileStatus !== 'flinch'))
+    )) continue;
     // Conditional base power, self-effects (Superpower's drop, Overheat's),
     // and on-hit hooks are behaviour the core engines do not model.
     // Any on* hook means conditional behaviour (Facade's doubling is an

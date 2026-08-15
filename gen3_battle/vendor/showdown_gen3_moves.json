@@ -57,7 +57,10 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "beatup",
@@ -241,7 +244,10 @@
 "pp": 30,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 10,
+"flinch": true
+}
 },
 {
 "id": "fakeout",
@@ -252,7 +258,10 @@
 "pp": 10,
 "category": "Physical",
 "priority": 1,
-"secondary": null
+"secondary": {
+"chance": 100,
+"flinch": true
+}
 },
 {
 "id": "feintattack",
@@ -516,7 +525,10 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "nightmare",
@@ -1308,7 +1320,10 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "spikes",
@@ -2269,7 +2284,10 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 10,
+"flinch": true
+}
 },
 {
 "id": "cometpunch",
@@ -2373,7 +2391,10 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 10,
+"flinch": true
+}
 },
 {
 "id": "iceball",
@@ -2494,7 +2515,10 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "sharpen",
@@ -2891,7 +2915,10 @@
 "pp": 25,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "blastburn",
@@ -3345,7 +3372,10 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "helpinghand",
@@ -3734,7 +3764,10 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "rockthrow",
@@ -3896,7 +3929,10 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "slam",
@@ -4026,7 +4062,10 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 30,
+"flinch": true
+}
 },
 {
 "id": "strength",
@@ -4175,7 +4214,10 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": {
+"chance": 20,
+"flinch": true
+}
 },
 {
 "id": "visegrip",

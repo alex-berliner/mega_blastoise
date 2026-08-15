@@ -348,6 +348,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                         other => panic!("{id}: unknown secondary status {other:?}"),
                     };
                     format!("SecondaryEffect::Status({status})")
+                } else if sec.get("flinch").is_some() {
+                    String::from("SecondaryEffect::Flinch")
                 } else if let Some(boosts) = sec.get("boosts").and_then(|v| v.as_object()) {
                     let items: Vec<String> = boosts
                         .iter()

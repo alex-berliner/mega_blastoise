@@ -99,6 +99,9 @@ pub struct Mon {
     /// Turns badly poisoned, driving Toxic's growing residual. Meaningless
     /// unless `status` is [`Status::Toxic`]; resets when the mon leaves.
     pub toxic_n: u8,
+    /// Flinched this turn and loses its action if it has not moved yet.
+    /// Cleared when the turn ends.
+    pub flinched: bool,
 }
 
 impl Mon {
@@ -126,6 +129,7 @@ impl Mon {
             moves: moves.iter().filter_map(|m| MoveSlot::new(m)).collect(),
             status: None,
             toxic_n: 0,
+            flinched: false,
         })
     }
 
@@ -237,6 +241,9 @@ pub struct SeatScript {
     pub random: u8,
     /// The move's secondary effect procs this turn.
     pub secondary: bool,
+    /// Full paralysis: the mon is paralyzed and this turn's 25% "can't move"
+    /// roll comes up against it.
+    pub immobile: bool,
 }
 
 /// Per-turn RNG script; see [`Battle::step_with`].
@@ -267,6 +274,10 @@ pub enum Event {
     Statused { side: u8, status: Status },
     /// A secondary moved one of `side`'s active mon's stat stages.
     Boosted { side: u8, boost: Boost, delta: i8 },
+    /// `side`'s mon flinched and lost its action.
+    Flinched { side: u8 },
+    /// `side`'s paralyzed mon was fully paralyzed and lost its action.
+    FullyParalyzed { side: u8 },
     /// `side`'s mon could not move: frozen solid or fast asleep.
     Cant { side: u8, status: Status },
     /// End-of-turn burn or poison damage.
@@ -371,6 +382,11 @@ impl Battle {
             }
         }
 
+        // A flinch lasts exactly the turn it landed in.
+        for side in 0..2 {
+            self.sides[side].mon_mut().flinched = false;
+        }
+
         if let Some(win) = self.winner() {
             events.push(Event::Win { side: win });
         }
@@ -431,6 +447,25 @@ impl Battle {
                 self.sides[side].mon_mut().status = None;
             } else {
                 events.push(Event::Cant { side: side as u8 + 1, status: s });
+                return;
+            }
+        }
+        // Flinch: the hit that caused it resolved earlier this turn, so a
+        // flinched mon that has not moved yet loses its action. Freeze and
+        // sleep outrank it in the games' gate order, hence checking second.
+        if self.sides[side].mon().flinched {
+            events.push(Event::Flinched { side: side as u8 + 1 });
+            return;
+        }
+        // Full paralysis: a quarter of a paralyzed mon's actions, decided by
+        // the script under test and the RNG in play. No PP is spent.
+        if self.sides[side].mon().status == Some(Status::Paralysis) {
+            let immobile = match script {
+                Some(s) => s.immobile,
+                None => self.rng.below(4) == 0,
+            };
+            if immobile {
+                events.push(Event::FullyParalyzed { side: side as u8 + 1 });
                 return;
             }
         }
@@ -529,6 +564,11 @@ impl Battle {
                             self.sides[foe].mon_mut().apply_boost(boost, delta);
                             events.push(Event::Boosted { side: foe as u8 + 1, boost, delta });
                         }
+                    }
+                }
+                Some(SecondaryEffect::Flinch) => {
+                    if !self.sides[foe].mon().fainted() {
+                        self.sides[foe].mon_mut().flinched = true;
                     }
                 }
                 None => {}
@@ -699,6 +739,82 @@ mod tests {
         let events = b.step([Choice::Move(0), Choice::Move(0)]);
         assert!(events.iter().any(|e| matches!(e, Event::Failed { side: 1 })));
         assert!(!events.iter().any(|e| matches!(e, Event::Used { side: 1, .. })));
+    }
+
+    fn scripted(script: [SeatScript; 2]) -> TurnScript {
+        TurnScript { seats: [Some(script[0]), Some(script[1])] }
+    }
+
+    const PLAIN: SeatScript =
+        SeatScript { hit: true, crit: false, random: 100, secondary: false, immobile: false };
+
+    #[test]
+    fn a_flinched_mon_loses_its_action_for_exactly_one_turn() {
+        // Blaziken outspeeds and Headbutt's flinch procs: Snorlax never moves.
+        // (Snorlax rather than Treecko so two Headbutts cannot KO it.)
+        let mut b = battle(mon("blaziken", 50, &["headbutt"]), mon("snorlax", 50, &["pound"]));
+        assert!(b.sides[0].mon().spe > b.sides[1].mon().spe);
+        let events = b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([SeatScript { secondary: true, ..PLAIN }, PLAIN]),
+        );
+        assert!(events.iter().any(|e| matches!(e, Event::Flinched { side: 2 })));
+        assert!(!events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
+        // The flinch does not leak into the next turn.
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
+    }
+
+    #[test]
+    fn full_paralysis_spends_the_turn_but_no_pp() {
+        let mut b = battle(mon("blaziken", 50, &["ember"]), mon("treecko", 50, &["pound"]));
+        b.sides[0].party[0].status = Some(Status::Paralysis);
+        let pp = b.sides[0].mon().moves[0].pp;
+        let events = b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([SeatScript { immobile: true, ..PLAIN }, PLAIN]),
+        );
+        assert!(events.iter().any(|e| matches!(e, Event::FullyParalyzed { side: 1 })));
+        assert!(!events.iter().any(|e| matches!(e, Event::Used { side: 1, .. })));
+        assert_eq!(b.sides[0].mon().moves[0].pp, pp, "full paralysis spends no PP");
+    }
+
+    #[test]
+    fn toxic_ticks_grow_and_reset_on_switching_out() {
+        let side1 = Side::new(alloc::vec![mon("snorlax", 50, &["pound"]), mon("mudkip", 50, &["pound"])]);
+        let side2 = Side::new(alloc::vec![mon("treecko", 50, &["pound"])]);
+        let mut b = Battle::new(side1, side2, 3);
+        b.sides[0].party[0].status = Some(Status::Toxic);
+        let max = b.sides[0].mon().max_hp;
+        let hp0 = b.sides[0].mon().hp;
+        let miss = SeatScript { hit: false, ..PLAIN };
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([miss, miss]));
+        let tick1 = hp0 - b.sides[0].mon().hp;
+        assert_eq!(tick1, (max / 16).max(1), "first tick is one sixteenth");
+        let hp1 = b.sides[0].mon().hp;
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([miss, miss]));
+        assert_eq!(hp1 - b.sides[0].mon().hp, tick1 * 2, "second tick doubles");
+        // Switching out resets the clock; the turn Snorlax comes back in,
+        // its tick is a sixteenth again rather than a third multiple.
+        b.step_with([Choice::Switch(1), Choice::Move(0)], &scripted([miss, miss]));
+        let hp = b.sides[0].party[0].hp;
+        b.step_with([Choice::Switch(0), Choice::Move(0)], &scripted([miss, miss]));
+        assert_eq!(hp - b.sides[0].party[0].hp, tick1, "the counter restarted");
+    }
+
+    #[test]
+    fn a_fire_hit_thaws_the_target_but_its_burn_chance_is_blocked() {
+        let mut b = battle(mon("blaziken", 50, &["ember"]), mon("treecko", 50, &["pound"]));
+        b.sides[1].party[0].status = Some(Status::Freeze);
+        let events = b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([SeatScript { secondary: true, ..PLAIN }, PLAIN]),
+        );
+        assert_eq!(b.sides[1].mon().status, None, "the freeze thawed");
+        assert!(
+            !events.iter().any(|e| matches!(e, Event::Statused { side: 2, .. })),
+            "the burn chance was blocked by the freeze it cured"
+        );
     }
 
     #[test]

@@ -170,6 +170,16 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Flinched { side } => {
+                effects
+                    .on_event(BoardEvent::Cant { mon: active_name(battle, side), reason: "flinch".into() })
+                    .await;
+            }
+            Event::FullyParalyzed { side } => {
+                effects
+                    .on_event(BoardEvent::Cant { mon: active_name(battle, side), reason: "par".into() })
+                    .await;
+            }
             Event::Cant { side, status } => {
                 effects
                     .on_event(BoardEvent::Cant {
