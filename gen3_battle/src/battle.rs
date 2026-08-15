@@ -114,6 +114,16 @@ pub struct Mon {
     /// Substitute hit points; 0 means no substitute. Cleared by switching
     /// out. While up, foe damage and effects land here instead.
     pub sub_hp: u16,
+    /// Yawn clock: at zero-after-decrement the drowsy mon falls asleep.
+    pub yawn_n: u8,
+    /// Perish Song clock: fainting at zero. 0 also means "not singing".
+    pub perish_n: u8,
+    /// Destiny Bond is armed until this mon's next action.
+    pub destiny: bool,
+    /// Mean Look and kin: cannot switch while the gazer stays.
+    pub mean_looked: bool,
+    /// Mud/Water Sport: which attack type this mon's field-hum halves.
+    pub sport: Option<Type>,
     /// Focus Energy is up: crits start two stages higher. Cleared by
     /// switching out.
     pub focused: bool,
@@ -160,6 +170,11 @@ impl Mon {
             sleep_n: 0,
             flinched: false,
             confusion_n: 0,
+            yawn_n: 0,
+            perish_n: 0,
+            destiny: false,
+            mean_looked: false,
+            sport: None,
             sub_hp: 0,
             focused: false,
             minimized: false,
@@ -262,11 +277,26 @@ pub struct Side {
     pub light_screen_n: u8,
     pub safeguard_n: u8,
     pub mist_n: u8,
+    /// Spikes layers on THIS side's floor (0..=3).
+    pub spikes: u8,
+    /// Wish clock and the amount that arrives when it hits zero.
+    pub wish_n: u8,
+    pub wish_amount: u16,
 }
 
 impl Side {
     pub fn new(party: Vec<Mon>) -> Side {
-        Side { party, active: 0, reflect_n: 0, light_screen_n: 0, safeguard_n: 0, mist_n: 0 }
+        Side {
+            party,
+            active: 0,
+            reflect_n: 0,
+            light_screen_n: 0,
+            safeguard_n: 0,
+            mist_n: 0,
+            spikes: 0,
+            wish_n: 0,
+            wish_amount: 0,
+        }
     }
 
     fn condition_n(&mut self, cond: SideCondition) -> &mut u8 {
@@ -357,6 +387,18 @@ pub enum Event {
     WeatherDamage { side: u8, amount: u16 },
     /// Haze wiped every stat stage on both actives.
     HazeCleared,
+    /// `side`'s mon grew drowsy (Yawn).
+    Drowsy { side: u8 },
+    /// The perish count on `side`'s mon: 3, 2, 1 — and 0 is the faint.
+    PerishCount { side: u8, n: u8 },
+    /// `side`'s mon armed Destiny Bond.
+    DestinyArmed { side: u8 },
+    /// `side`'s mon can no longer escape (Mean Look and kin).
+    NoEscape { side: u8 },
+    /// A layer of Spikes scattered on `side`'s floor.
+    SpikesLaid { side: u8 },
+    /// `side`'s switch-in stepped on Spikes for `amount`.
+    SpikesDamage { side: u8, amount: u16 },
     /// Leech Seed drained `amount` from `side`'s mon to the other active.
     SeedDrain { side: u8, amount: u16 },
     /// `side`'s mon was bound by Wrap and kin.
@@ -461,16 +503,26 @@ impl Battle {
         // resets a Toxic count: the poison stays, the clock starts over.
         for side in 0..2 {
             if let Choice::Switch(idx) = choices[side] {
-                if self.sides[side].mon().trapped_n > 0 && !self.sides[side].mon().fainted() {
-                    // Bound: switching is refused; the turn is forfeit.
+                if (self.sides[side].mon().trapped_n > 0 || self.sides[side].mon().mean_looked)
+                    && !self.sides[side].mon().fainted()
+                {
+                    // Bound or gazed: switching is refused; the turn is forfeit.
                     continue;
                 }
                 if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
-                    // The trapper leaving the field releases its victim.
+                    // The trapper/gazer leaving the field releases its
+                    // victim; a sport leaves with its hummer (handled by
+                    // the outgoing mon's own field reset below).
                     self.sides[1 - side].mon_mut().trapped_n = 0;
+                    self.sides[1 - side].mon_mut().mean_looked = false;
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
+                    out.yawn_n = 0;
+                    out.perish_n = 0;
+                    out.destiny = false;
+                    out.mean_looked = false;
+                    out.sport = None;
                     out.sub_hp = 0;
                     out.focused = false;
                     out.minimized = false;
@@ -480,6 +532,7 @@ impl Battle {
                     out.must_recharge = false;
                     self.sides[side].active = idx;
                     events.push(Event::Switched { side: side as u8 + 1, party_index: idx });
+                    self.spikes_greet(side, &mut events);
                 }
             }
         }
@@ -527,6 +580,26 @@ impl Battle {
                 mon.hp -= amount;
                 events.push(Event::WeatherDamage { side: side as u8 + 1, amount });
                 self.faint_and_replace(side, &mut events);
+            }
+        }
+
+        // Wish arrives at the end of the turn after it was made — at the
+        // games' order 4, BEFORE the status ticks — healing whoever is
+        // active then.
+        for side in 0..2 {
+            if self.sides[side].wish_n > 0 {
+                self.sides[side].wish_n -= 1;
+                if self.sides[side].wish_n == 0 {
+                    let amount = self.sides[side].wish_amount;
+                    let mon = self.sides[side].mon_mut();
+                    if !mon.fainted() {
+                        let heal = amount.min(mon.max_hp - mon.hp);
+                        if heal > 0 {
+                            mon.hp += heal;
+                            events.push(Event::Healed { side: side as u8 + 1, amount: heal });
+                        }
+                    }
+                }
             }
         }
 
@@ -588,6 +661,29 @@ impl Battle {
                     self.faint_and_replace(side, &mut events);
                 } else {
                     events.push(Event::TrapEnded { side: side as u8 + 1 });
+                }
+            }
+        }
+
+        // Yawn drops the drowsy at the end of the turn AFTER it landed.
+        for side in 0..2 {
+            if self.sides[side].mon().yawn_n > 0 && !self.sides[side].mon().fainted() {
+                self.sides[side].mon_mut().yawn_n -= 1;
+                if self.sides[side].mon().yawn_n == 0 {
+                    self.inflict(side, Status::Sleep, scripted, &mut events);
+                }
+            }
+        }
+
+        // The perish count falls; at zero the song collects.
+        for side in 0..2 {
+            if self.sides[side].mon().perish_n > 0 && !self.sides[side].mon().fainted() {
+                self.sides[side].mon_mut().perish_n -= 1;
+                let n = self.sides[side].mon().perish_n;
+                events.push(Event::PerishCount { side: side as u8 + 1, n });
+                if n == 0 {
+                    self.sides[side].mon_mut().hp = 0;
+                    self.faint_and_replace(side, &mut events);
                 }
             }
         }
@@ -674,6 +770,9 @@ impl Battle {
         if self.sides[side].mon().fainted() {
             return;
         }
+        // Destiny Bond lasts exactly until the user's next action begins.
+        self.sides[side].mon_mut().destiny = false;
+
         // Recharging after Hyper Beam and kin: the whole action is spent,
         // gated even above sleep, matching the games' priority order.
         if self.sides[side].mon().must_recharge {
@@ -959,6 +1058,31 @@ impl Battle {
             return;
         }
 
+        // Endeavor drags the target's HP down to the user's — through the
+        // chart, never a substitute, and failing upward.
+        if slot.entry.id == "endeavor" {
+            if !hit {
+                return;
+            }
+            if crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types())
+                == 0
+            {
+                events.push(Event::Damage { side: foe as u8 + 1, amount: 0, effectiveness: 0, crit: false });
+                return;
+            }
+            let (uhp, thp) = (self.sides[side].mon().hp, self.sides[foe].mon().hp);
+            if self.sides[foe].mon().sub_hp > 0 || uhp >= thp {
+                events.push(Event::Failed { side: side as u8 + 1 });
+                return;
+            }
+            let amount = thp - uhp;
+            self.sides[foe].mon_mut().hp = uhp;
+            self.taken_physical[foe] = amount;
+            events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.resolve_faints(side, foe, events);
+            return;
+        }
+
         // Counter and Mirror Coat bounce back double the last hit this mon
         // took this turn — physical for Counter, special for Mirror Coat —
         // through the type chart (a Ghost shrugs Counter off) and into a
@@ -1040,11 +1164,15 @@ impl Battle {
         let mut total = 0u16;
         for _ in 0..hits {
             let (attacker, defender) = self.attack_pair(side);
-            let weather_mod = match (self.weather, slot.move_type()) {
+            let mut weather_mod = match (self.weather, slot.move_type()) {
                 (Some(Weather::Rain), Type::Water) | (Some(Weather::Sun), Type::Fire) => 1,
                 (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
                 _ => 0,
             };
+            // Mud/Water Sport hum from EITHER active halves the matching type.
+            if (0..2).any(|w| self.sides[w].mon().sport == Some(slot.move_type())) {
+                weather_mod = -1;
+            }
             // The stomping moves land doubled on a minimized target.
             let stomp_mult: u16 = if self.sides[foe].mon().minimized
                 && matches!(slot.entry.id, "stomp" | "extrasensory" | "needlearm" | "astonish")
@@ -1201,14 +1329,42 @@ impl Battle {
     /// Announce and replace one side's active if it just fainted.
     fn faint_and_replace(&mut self, side: usize, events: &mut Vec<Event>) {
         if self.sides[side].mon().fainted() {
-            // A fainted trapper releases its victim.
+            // A fainted trapper/gazer releases its victim.
             self.sides[1 - side].mon_mut().trapped_n = 0;
+            self.sides[1 - side].mon_mut().mean_looked = false;
             events.push(Event::Fainted { side: side as u8 + 1 });
             if let Some(next) = self.sides[side].first_healthy() {
                 self.sides[side].active = next;
                 events.push(Event::Switched { side: side as u8 + 1, party_index: next });
+                self.spikes_greet(side, events);
             }
         }
+    }
+
+    /// Spikes bite a grounded switch-in: an eighth, a sixth, a quarter for
+    /// one, two, three layers. Flying types float over.
+    fn spikes_greet(&mut self, side: usize, events: &mut Vec<Event>) {
+        let layers = self.sides[side].spikes;
+        if layers == 0 {
+            return;
+        }
+        let mon = self.sides[side].mon();
+        let (t1, t2) = mon.types();
+        if t1 == Type::Flying || t2 == Type::Flying {
+            return;
+        }
+        let max = mon.max_hp;
+        let amount = match layers {
+            1 => max / 8,
+            2 => max / 6,
+            _ => max / 4,
+        }
+        .max(1);
+        let mon = self.sides[side].mon_mut();
+        let amount = amount.min(mon.hp);
+        mon.hp -= amount;
+        events.push(Event::SpikesDamage { side: side as u8 + 1, amount });
+        self.faint_and_replace(side, events);
     }
 
     /// Announce and replace whoever is down — target first, then the user
@@ -1216,6 +1372,10 @@ impl Battle {
     /// a healthy active here, so nothing double-fires. A real forced-switch
     /// prompt belongs to the caller; this keeps the battle legal.
     fn resolve_faints(&mut self, side: usize, foe: usize, events: &mut Vec<Event>) {
+        // Destiny Bond: KO the bonded target with a move, go down with it.
+        if self.sides[foe].mon().fainted() && self.sides[foe].mon().destiny {
+            self.sides[side].mon_mut().hp = 0;
+        }
         for who in [foe, side] {
             if self.sides[who].mon().fainted() {
                 self.sides[1 - who].mon_mut().trapped_n = 0;
@@ -1368,6 +1528,127 @@ impl Battle {
                 self.sides[side].mon_mut().minimized = true;
                 self.sides[side].mon_mut().apply_boost(Boost::Eva, 1);
                 events.push(Event::Boosted { side: side as u8 + 1, boost: Boost::Eva, delta: 1 });
+            }
+            StatusAction::WeatherHeal => {
+                let mult = match self.weather {
+                    None => (1, 2),
+                    Some(Weather::Sun) => (2, 3),
+                    Some(_) => (1, 4),
+                };
+                let mon = self.sides[side].mon_mut();
+                let heal = ((mon.max_hp as u32 * mult.0 / mult.1) as u16)
+                    .min(mon.max_hp - mon.hp);
+                if heal > 0 {
+                    mon.hp += heal;
+                    events.push(Event::Healed { side: side as u8 + 1, amount: heal });
+                }
+            }
+            StatusAction::Refresh => {
+                let mon = self.sides[side].mon_mut();
+                if matches!(
+                    mon.status,
+                    Some(Status::Burn | Status::Paralysis | Status::Poison | Status::Toxic)
+                ) {
+                    mon.status = None;
+                    mon.toxic_n = 0;
+                }
+            }
+            StatusAction::BellyDrum => {
+                let mon = self.sides[side].mon();
+                let cost = mon.max_hp / 2;
+                if mon.hp > cost && mon.stages[Stat::Atk as usize] < 6 {
+                    let mon = self.sides[side].mon_mut();
+                    mon.hp -= cost;
+                    mon.stages[Stat::Atk as usize] = 6;
+                    events.push(Event::Boosted { side: side as u8 + 1, boost: Boost::Atk, delta: 6 });
+                } else {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::PsychUp => {
+                let stages = self.sides[foe].mon().stages;
+                let acc = self.sides[foe].mon().acc_stage;
+                let eva = self.sides[foe].mon().eva_stage;
+                let mon = self.sides[side].mon_mut();
+                mon.stages = stages;
+                mon.acc_stage = acc;
+                mon.eva_stage = eva;
+            }
+            StatusAction::Yawn => {
+                let target = self.sides[foe].mon();
+                if hit
+                    && target.sub_hp == 0
+                    && target.status.is_none()
+                    && target.yawn_n == 0
+                    && self.sides[foe].safeguard_n == 0
+                    && !target.fainted()
+                {
+                    self.sides[foe].mon_mut().yawn_n = 2;
+                    events.push(Event::Drowsy { side: foe as u8 + 1 });
+                }
+            }
+            StatusAction::Wish => {
+                if self.sides[side].wish_n == 0 {
+                    self.sides[side].wish_n = 2;
+                    self.sides[side].wish_amount = self.sides[side].mon().max_hp / 2;
+                }
+            }
+            StatusAction::PerishSong => {
+                for who in 0..2 {
+                    let mon = self.sides[who].mon_mut();
+                    if mon.perish_n == 0 && !mon.fainted() {
+                        mon.perish_n = 4;
+                    }
+                }
+            }
+            StatusAction::DestinyBond => {
+                self.sides[side].mon_mut().destiny = true;
+                events.push(Event::DestinyArmed { side: side as u8 + 1 });
+            }
+            StatusAction::MeanLook => {
+                let target = self.sides[foe].mon();
+                if hit && target.sub_hp == 0 && !target.mean_looked && !target.fainted() {
+                    self.sides[foe].mon_mut().mean_looked = true;
+                    events.push(Event::NoEscape { side: foe as u8 + 1 });
+                }
+            }
+            StatusAction::Sport(kind) => {
+                self.sides[side].mon_mut().sport = Some(kind);
+            }
+            StatusAction::Spikes => {
+                if self.sides[foe].spikes < 3 {
+                    self.sides[foe].spikes += 1;
+                    events.push(Event::SpikesLaid { side: foe as u8 + 1 });
+                } else {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Memento => {
+                if !hit || self.sides[foe].mon().sub_hp > 0 || self.sides[foe].mon().fainted() {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
+                let misted = self.sides[foe].mist_n > 0;
+                if !misted {
+                    for (boost, delta) in [(Boost::Atk, -2i8), (Boost::SpAtk, -2)] {
+                        self.sides[foe].mon_mut().apply_boost(boost, delta);
+                        events.push(Event::Boosted { side: foe as u8 + 1, boost, delta });
+                    }
+                }
+                self.sides[side].mon_mut().hp = 0;
+                self.faint_and_replace(side, events);
+            }
+            StatusAction::PainSplit => {
+                if !hit || self.sides[foe].mon().sub_hp > 0 || self.sides[foe].mon().fainted() {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
+                let avg = (self.sides[side].mon().hp as u32 + self.sides[foe].mon().hp as u32) / 2;
+                for who in [side, foe] {
+                    let mon = self.sides[who].mon_mut();
+                    mon.hp = (avg as u16).min(mon.max_hp);
+                }
+                events.push(Event::Healed { side: side as u8 + 1, amount: 0 });
             }
             StatusAction::Haze => {
                 for who in 0..2 {

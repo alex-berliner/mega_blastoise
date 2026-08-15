@@ -132,7 +132,7 @@ fn fuzz_gen3_single_hits() {
                         m.id,
                         "facade" | "smellingsalts" | "revenge" | "focuspunch" | "falseswipe"
                             | "eruption" | "waterspout" | "return" | "frustration" | "triattack"
-                            | "brickbreak"
+                            | "brickbreak" | "endeavor"
                     )
             })
             .unwrap_or(false)

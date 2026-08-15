@@ -1001,11 +1001,7 @@
 "respectsImmunity": false,
 "selfDrop": null,
 "statusAction": {
-"boosts": {
-"atk": -2,
-"spa": -2
-},
-"self": false
+"memento": true
 },
 "multihit": null,
 "fixed": null,
@@ -2484,7 +2480,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"wheal": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2508,7 +2506,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"wheal": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2532,7 +2532,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"sport": "mud"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2580,7 +2582,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"perish": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2654,7 +2658,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"psychup": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2960,7 +2966,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"spikes": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3034,7 +3042,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"wheal": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3209,7 +3219,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"sport": "water"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3281,7 +3293,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"wish": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3329,7 +3343,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"yawn": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3435,7 +3451,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"meanlook": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -4220,7 +4238,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"meanlook": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -4942,7 +4962,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"destiny": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -5536,7 +5558,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"refresh": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -5748,7 +5772,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"meanlook": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -6467,7 +6493,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"bellydrum": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -8049,7 +8077,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"painsplit": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,

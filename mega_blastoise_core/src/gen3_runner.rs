@@ -261,6 +261,59 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Drowsy { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "drowsy".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::PerishCount { side, n } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: alloc::format!("perish{n}"),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::DestinyArmed { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "Destiny Bond".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::NoEscape { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "trapped".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::SpikesLaid { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "Spikes".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::SpikesDamage { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Damage {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
             Event::HazeCleared => {
                 effects
                     .on_event(BoardEvent::EffectStart {

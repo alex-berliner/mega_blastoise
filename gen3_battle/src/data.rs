@@ -238,6 +238,36 @@ pub enum StatusAction {
     Substitute,
     /// Haze: every stat stage on both actives, gone.
     Haze,
+    /// Moonlight/Morning Sun/Synthesis: half in clear skies, two thirds in
+    /// sun, a quarter under anything else.
+    WeatherHeal,
+    /// Refresh: cure the user's own burn, paralysis or poison.
+    Refresh,
+    /// Belly Drum: half of max HP buys a maximized Attack.
+    BellyDrum,
+    /// Psych Up: copy the foe's stat stages wholesale.
+    PsychUp,
+    /// Yawn: the target falls asleep at the end of the NEXT turn.
+    Yawn,
+    /// Wish: half the user's max HP arrives at the end of the next turn.
+    Wish,
+    /// Perish Song: both actives faint in three turns unless they leave.
+    PerishSong,
+    /// Destiny Bond: if the user is KO'd before its next action, the
+    /// attacker goes down with it.
+    DestinyBond,
+    /// Mean Look and kin: the target cannot switch while the user stays.
+    MeanLook,
+    /// Mud/Water Sport: Electric (mud) or Fire (water) damage halved while
+    /// the user stays on the field.
+    Sport(Type),
+    /// Spikes: a layer on the foe's floor; grounded switch-ins pay.
+    Spikes,
+    /// Memento: the user faints to drop the target's Attack and Sp. Atk
+    /// two stages each. A substitute blocks it and spares the user.
+    Memento,
+    /// Pain Split: both actives' HP averaged.
+    PainSplit,
 }
 
 /// One move.

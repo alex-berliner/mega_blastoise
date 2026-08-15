@@ -494,6 +494,36 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Seed)")
                 } else if act.get("haze").is_some() {
                     String::from("Some(StatusAction::Haze)")
+                } else if act.get("wheal").is_some() {
+                    String::from("Some(StatusAction::WeatherHeal)")
+                } else if act.get("refresh").is_some() {
+                    String::from("Some(StatusAction::Refresh)")
+                } else if act.get("bellydrum").is_some() {
+                    String::from("Some(StatusAction::BellyDrum)")
+                } else if act.get("psychup").is_some() {
+                    String::from("Some(StatusAction::PsychUp)")
+                } else if act.get("yawn").is_some() {
+                    String::from("Some(StatusAction::Yawn)")
+                } else if act.get("wish").is_some() {
+                    String::from("Some(StatusAction::Wish)")
+                } else if act.get("perish").is_some() {
+                    String::from("Some(StatusAction::PerishSong)")
+                } else if act.get("destiny").is_some() {
+                    String::from("Some(StatusAction::DestinyBond)")
+                } else if act.get("meanlook").is_some() {
+                    String::from("Some(StatusAction::MeanLook)")
+                } else if let Some(sport) = act.get("sport").and_then(|v| v.as_str()) {
+                    match sport {
+                        "mud" => String::from("Some(StatusAction::Sport(Type::Electric))"),
+                        "water" => String::from("Some(StatusAction::Sport(Type::Fire))"),
+                        other => panic!("{id}: unknown sport {other:?}"),
+                    }
+                } else if act.get("spikes").is_some() {
+                    String::from("Some(StatusAction::Spikes)")
+                } else if act.get("memento").is_some() {
+                    String::from("Some(StatusAction::Memento)")
+                } else if act.get("painsplit").is_some() {
+                    String::from("Some(StatusAction::PainSplit)")
                 } else if act.get("sub").is_some() {
                     String::from("Some(StatusAction::Substitute)")
                 } else if act.get("rest").is_some() {

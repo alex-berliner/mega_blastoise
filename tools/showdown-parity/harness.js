@@ -345,6 +345,20 @@ function runDump(sc) {
         selfDrop: m.self && m.self.boosts && m.category !== 'Status' ? m.self.boosts : null,
         statusAction: m.category !== 'Status' ? null
           : m.id === 'haze' ? {haze: true}
+          : ['moonlight', 'morningsun', 'synthesis'].includes(m.id) ? {wheal: true}
+          : m.id === 'refresh' ? {refresh: true}
+          : m.id === 'bellydrum' ? {bellydrum: true}
+          : m.id === 'psychup' ? {psychup: true}
+          : m.id === 'yawn' ? {yawn: true}
+          : m.id === 'wish' ? {wish: true}
+          : m.id === 'perishsong' ? {perish: true}
+          : m.id === 'destinybond' ? {destiny: true}
+          : ['block', 'meanlook', 'spiderweb'].includes(m.id) ? {meanlook: true}
+          : m.id === 'mudsport' ? {sport: 'mud'}
+          : m.id === 'watersport' ? {sport: 'water'}
+          : m.id === 'spikes' ? {spikes: true}
+          : m.id === 'memento' ? {memento: true}
+          : m.id === 'painsplit' ? {painsplit: true}
           : m.id === 'rest' ? {rest: true}
           : m.id === 'focusenergy' ? {focus: true}
           : m.id === 'minimize' ? {minimize: true}
@@ -412,6 +426,10 @@ function runMovelist(sc) {
         'sleeppowder', 'stunspore', 'poisonpowder', 'spore', 'cottonspore',
         'growth', 'toxic', 'swagger', 'flatter', 'defensecurl', 'minimize',
         'focusenergy', 'rest', 'splash', 'teleport', 'substitute', 'haze',
+        'moonlight', 'morningsun', 'synthesis', 'refresh', 'bellydrum',
+        'psychup', 'yawn', 'wish', 'perishsong', 'destinybond', 'block',
+        'meanlook', 'spiderweb', 'mudsport', 'watersport', 'spikes',
+        'memento', 'painsplit',
       ] : [
         // Gen 1: the cartridge engine implements all of these; their sim
         // hooks are the era mechanics themselves.
@@ -429,7 +447,7 @@ function runMovelist(sc) {
         raw.slotCondition || raw.terrain || raw.self || raw.selfdestruct || raw.ohko;
       const modelable = raw.status || raw.boosts || raw.heal || confuseOnly || teamCond || seed || weather;
       if (!allowlisted && (entangled || !modelable)) continue;
-      if (!['normal', 'any', 'self', 'allAdjacentFoes', 'allySide', 'all'].includes(move.target)) continue;
+      if (!['normal', 'any', 'self', 'allAdjacentFoes', 'allySide', 'all', 'foeSide'].includes(move.target)) continue;
       out.push({id: move.id, priority: move.priority, boostsSelf: false, multihit: false});
       continue;
     }
@@ -446,12 +464,12 @@ function runMovelist(sc) {
       'brickbreak', 'payday', 'return', 'frustration', 'falseswipe', 'facade',
       'smellingsalts', 'eruption', 'waterspout', 'pursuit', 'rapidspin',
       'revenge', 'focuspunch', 'triattack', 'superpower', 'overheat',
-      'psychoboost',
+      'psychoboost', 'knockoff', 'thief', 'covet', 'endeavor',
     ].includes(move.id);
     if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish
         && !g3special) continue;
     if (move.basePowerCallback && !g3special) continue;
-    if ((move.damageCallback || move.damage) && !fixedDamage && !counterish) continue;
+    if ((move.damageCallback || move.damage) && !fixedDamage && !counterish && !g3special) continue;
     if (move.mindBlownRecoil) continue;
     if (move.willCrit !== undefined && !counterish) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
