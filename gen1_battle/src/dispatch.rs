@@ -238,7 +238,8 @@ fn run_move(
                 a.volatile.multi_turn_move = "";
                 a.volatile.locked_acc = 0;
                 a.volatile.set(Volatile::CONFUSED);
-                a.volatile.confused_turns = (rng.range(4) as u8) + 1;
+                a.volatile.confused_turns =
+                    if rng.force.is_some() { 1 } else { (rng.range(4) as u8) + 1 };
                 let s = &sides[attacker_side];
                 log.push_board(format!("start|mon:{},{},0|what:confusion", s.active().name, s.player_id));
             }
@@ -1508,7 +1509,8 @@ fn try_apply_confusion(rng: &mut Rng, sides: &mut [Side; 2], side: usize, log: &
         return;
     }
     d.volatile.set(Volatile::CONFUSED);
-    d.volatile.confused_turns = (rng.range(4) as u8) + 1;
+    d.volatile.confused_turns =
+        if rng.force.is_some() { 1 } else { (rng.range(4) as u8) + 1 };
     let s = &sides[side];
     log.push_board(format!("start|mon:{},{},0|what:confusion", s.active().name, s.player_id));
 }
@@ -1784,7 +1786,11 @@ pub fn pre_move_check(
             log.push_board(format!("end|mon:{},{},0|what:confusion", s.active().name, s.player_id));
         } else {
             sides[side].active_mut().volatile.confused_turns -= 1;
-            if rng.byte() < 128 {
+            let selfhit = match rng.forced_selfhit() {
+                Some(s) => s,
+                None => rng.byte() < 128,
+            };
+            if selfhit {
                 {
                     let s = &sides[side];
                     log.push_board(format!("cant|mon:{},{},0|from:confusion", s.active().name, s.player_id));

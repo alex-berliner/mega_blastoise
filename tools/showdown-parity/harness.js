@@ -108,9 +108,11 @@ function scriptRandomness(battle, script) {
       battle.__critPending = false;
       return battle.__cur.crit;
     }
-    // Confusion (gens 3-4): randomChance(1,2) true means "acts normally",
-    // false means the 40 BP self-hit. The script's selfhit knob decides.
-    if (numerator === 1 && denominator === 2) {
+    // Confusion: randomChance(1,2) in gens 3-4, randomChance(128,256) in
+    // gen 1 — true means "acts normally", false the 40 BP self-hit. The
+    // script's selfhit knob decides.
+    if ((numerator === 1 && denominator === 2) ||
+        (numerator === 128 && denominator === 256)) {
       return !((battle.__act ?? battle.__cur).selfhit);
     }
     // Full paralysis: rolled in onBeforeMove for the acting side —
@@ -395,16 +397,22 @@ function runMovelist(sc) {
       const raw = rawOf(move.id);
       const hooky = Object.keys(raw).some((k) => k.startsWith('on') || /Callback/.test(k));
       const confuseOnly = raw.volatileStatus === 'confusion' &&
-        !raw.status && !raw.boosts && !raw.heal && sc.gen >= 3;
+        !raw.status && !raw.boosts && !raw.heal;
       const seed = raw.volatileStatus === 'leechseed' && move.id === 'leechseed';
       // These carry hooks that either self-guard by generation (the powders'
       // Grass immunity is gen 6+) or ARE the modelled effect (Rest, Focus
       // Energy, Swagger's boost+confuse pair).
-      const allowlisted = sc.gen >= 3 && [
+      const allowlisted = (sc.gen >= 3 ? [
         'sleeppowder', 'stunspore', 'poisonpowder', 'spore', 'cottonspore',
         'growth', 'toxic', 'swagger', 'flatter', 'defensecurl', 'minimize',
         'focusenergy', 'rest', 'splash', 'teleport',
-      ].includes(move.id);
+      ] : [
+        // Gen 1: the cartridge engine implements all of these; their sim
+        // hooks are the era mechanics themselves.
+        'recover', 'softboiled', 'reflect', 'lightscreen', 'haze', 'growth',
+        'defensecurl', 'minimize', 'focusenergy', 'splash', 'teleport',
+        'toxic', 'poisonpowder', 'sleeppowder', 'stunspore',
+      ]).includes(move.id);
       const weather = sc.gen >= 3 &&
         ['sunnyday', 'raindance', 'sandstorm', 'hail'].includes(move.id);
       const teamCond = sc.gen >= 3 &&
@@ -442,7 +450,7 @@ function runMovelist(sc) {
     if (rawSecs.some((sec) =>
       sec && (sec.onHit || (sec.self && !selfBoostOk(sec)) ||
         (sec.volatileStatus && sec.volatileStatus !== 'flinch' &&
-         !(sec.volatileStatus === 'confusion' && sc.gen >= 3)))
+         sec.volatileStatus !== 'confusion'))
     )) continue;
     // Conditional base power, self-effects (Superpower's drop, Overheat's),
     // and on-hit hooks are behaviour the core engines do not model.
@@ -455,8 +463,10 @@ function runMovelist(sc) {
     // Thunder's weather-accuracy hook is modelled (never-miss in rain,
     // halved in sun).
     const thundery = sc.gen >= 3 && move.id === 'thunder';
+    // Gen 1: coins are cosmetic, and Blizzard/Thunder predate weather.
+    const g1plain = sc.gen === 1 && ['payday', 'blizzard', 'thunder'].includes(move.id);
     const chargey = move.flags['charge'] || move.flags['recharge'];
-    const hooky = !chargey && !thundery && Object.keys(raw).some((k) =>
+    const hooky = !chargey && !thundery && !g1plain && Object.keys(raw).some((k) =>
       k.startsWith('on') ||
       (/Callback/.test(k) && !(k === 'damageCallback' && fixedDamage)));
     // A recharge move's raw.self IS the mustrecharge volatile — machinery,

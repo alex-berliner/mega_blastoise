@@ -20,6 +20,8 @@ pub struct SeatForce {
     pub immobile: Option<bool>,
     /// Strike count for a 2-5 multi-hit move.
     pub hits: Option<u8>,
+    /// A confused mon's coin comes up "hit yourself" this action.
+    pub selfhit: Option<bool>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -62,6 +64,10 @@ impl Rng {
 
     pub fn forced_hits(&self) -> Option<u8> {
         self.seat().and_then(|s| s.hits)
+    }
+
+    pub fn forced_selfhit(&self) -> Option<bool> {
+        self.seat().and_then(|s| s.selfhit)
     }
 
     pub fn next_u64(&mut self) -> u64 {
