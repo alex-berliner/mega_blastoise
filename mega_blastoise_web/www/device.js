@@ -2,9 +2,19 @@
 // framebuffer core hands it and forwards button presses. Every decision about
 // what appears on screen, and what a press means, lives in the Rust core.
 
-// Imported before the wasm glue so the console patch is in place for anything
-// the module emits while it loads.
-import { setCommandHandler, isOpen as consoleOpen } from './devconsole.js';
+// The console is loaded before the wasm glue so its patch catches anything
+// the module emits while loading — but dynamically, with a stub fallback: a
+// static import would take the whole page down if this one debug file ever
+// 404s, which is exactly what a broken Pages deploy did once.
+let setCommandHandler = () => {};
+let consoleOpen = () => false;
+try {
+  const dc = await import('./devconsole.js');
+  setCommandHandler = dc.setCommandHandler;
+  consoleOpen = dc.isOpen;
+} catch (e) {
+  console.warn('devconsole unavailable, running without it:', e);
+}
 import init, * as wasm from './pkg/mega_blastoise_web.js';
 
 const canvas = document.getElementById('panel');
@@ -250,7 +260,7 @@ function panelTap(ev) {
   const x = Math.floor(((ev.clientX - r.left) / r.width) * PANEL_W);
   const y = Math.floor(((ev.clientY - r.top) / r.height) * PANEL_H);
   if (x < 0 || y < 0 || x >= PANEL_W || y >= PANEL_H) return;
-  wasm.panel_tap(x, y);
+  wasm.panel_tap?.(x, y);
 }
 canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); panelTap(e); });
 
@@ -365,8 +375,10 @@ window.addEventListener('resize', fitCanvas);
 
 async function run() {
   await init();
-  HOLD_MS = wasm.hold_threshold_ms();
-  AI_HOLD_MS = wasm.ai_hold_ms();
+  // Optional-chained: a stale cached wasm bundle missing newer exports must
+  // degrade to defaults, not throw and black-screen the boot.
+  HOLD_MS = wasm.hold_threshold_ms?.() ?? HOLD_MS;
+  AI_HOLD_MS = wasm.ai_hold_ms?.() ?? AI_HOLD_MS;
   // The console's command line drives the same entry point the two-OLED page
   // types into, which is the firmware's USB grammar.
   setCommandHandler((line) => wasm.submit_text(line));
