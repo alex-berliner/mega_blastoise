@@ -19,7 +19,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "acid",
@@ -43,7 +44,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "ancientpower",
@@ -62,7 +64,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "assist",
@@ -81,7 +84,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "astonish",
@@ -103,7 +107,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "beatup",
@@ -122,7 +127,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bide",
@@ -141,7 +147,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "blizzard",
@@ -163,7 +170,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "brickbreak",
@@ -182,7 +190,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "charge",
@@ -201,7 +210,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "conversion",
@@ -220,7 +230,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "conversion2",
@@ -239,7 +250,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "counter",
@@ -258,7 +270,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "covet",
@@ -277,7 +290,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "crunch",
@@ -301,7 +315,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dig",
@@ -320,7 +335,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "disable",
@@ -339,7 +355,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dive",
@@ -358,7 +375,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "doomdesire",
@@ -377,7 +395,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "encore",
@@ -396,7 +415,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "extrasensory",
@@ -418,7 +438,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "fakeout",
@@ -440,7 +461,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "feintattack",
@@ -459,7 +481,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "flail",
@@ -478,7 +501,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "flash",
@@ -502,7 +526,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "fly",
@@ -521,7 +546,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "followme",
@@ -540,7 +566,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "foresight",
@@ -559,7 +586,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "furycutter",
@@ -578,7 +606,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "gigadrain",
@@ -600,7 +629,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "glare",
@@ -621,7 +651,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "haze",
@@ -640,7 +671,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -659,7 +691,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "highjumpkick",
@@ -678,7 +711,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hypnosis",
@@ -699,7 +733,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "jumpkick",
@@ -718,7 +753,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "leafblade",
@@ -737,7 +773,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "lockon",
@@ -756,7 +793,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "megadrain",
@@ -778,7 +816,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "memento",
@@ -803,7 +842,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mindreader",
@@ -822,7 +862,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mimic",
@@ -841,7 +882,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mirrorcoat",
@@ -860,7 +902,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mirrormove",
@@ -879,7 +922,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "naturepower",
@@ -898,7 +942,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "needlearm",
@@ -920,7 +965,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "nightmare",
@@ -939,7 +985,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "odorsleuth",
@@ -958,7 +1005,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "outrage",
@@ -977,7 +1025,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "overheat",
@@ -996,7 +1045,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "petaldance",
@@ -1015,7 +1065,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "pursuit",
@@ -1034,7 +1085,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "recover",
@@ -1058,7 +1110,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "reversal",
@@ -1077,7 +1130,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rocksmash",
@@ -1101,7 +1155,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sketch",
@@ -1120,7 +1175,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sleeptalk",
@@ -1139,7 +1195,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "spite",
@@ -1158,7 +1215,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "stockpile",
@@ -1177,7 +1235,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "surf",
@@ -1196,7 +1255,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "taunt",
@@ -1215,7 +1275,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "teeterdance",
@@ -1236,7 +1297,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "tickle",
@@ -1261,7 +1323,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "uproar",
@@ -1280,7 +1343,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "vinewhip",
@@ -1299,7 +1363,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "volttackle",
@@ -1321,7 +1386,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "waterfall",
@@ -1340,7 +1406,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "weatherball",
@@ -1359,7 +1426,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "zapcannon",
@@ -1381,7 +1449,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "aromatherapy",
@@ -1400,7 +1469,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bind",
@@ -1419,7 +1489,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bonerush",
@@ -1441,7 +1512,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bulletseed",
@@ -1463,7 +1535,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "camouflage",
@@ -1482,7 +1555,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "clamp",
@@ -1501,7 +1575,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "cottonspore",
@@ -1525,7 +1600,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "crabhammer",
@@ -1544,7 +1620,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "curse",
@@ -1563,7 +1640,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "detect",
@@ -1582,7 +1660,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "doubleedge",
@@ -1604,7 +1683,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dreameater",
@@ -1626,7 +1706,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "endeavor",
@@ -1645,7 +1726,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "extremespeed",
@@ -1664,7 +1746,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "firespin",
@@ -1683,7 +1766,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "focuspunch",
@@ -1702,7 +1786,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "futuresight",
@@ -1721,7 +1806,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "growth",
@@ -1745,7 +1831,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "healbell",
@@ -1764,7 +1851,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "iciclespear",
@@ -1786,7 +1874,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "imprison",
@@ -1805,7 +1894,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "ingrain",
@@ -1824,7 +1914,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "knockoff",
@@ -1843,7 +1934,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "leechseed",
@@ -1862,7 +1954,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "lightscreen",
@@ -1881,7 +1974,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "magiccoat",
@@ -1900,7 +1994,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "metronome",
@@ -1919,7 +2014,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "minimize",
@@ -1938,7 +2034,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mist",
@@ -1957,7 +2054,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "moonlight",
@@ -1976,7 +2074,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "morningsun",
@@ -1995,7 +2094,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mudsport",
@@ -2014,7 +2114,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "payday",
@@ -2033,7 +2134,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "perishsong",
@@ -2052,7 +2154,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "poisongas",
@@ -2073,7 +2176,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "protect",
@@ -2092,7 +2196,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "psychup",
@@ -2111,7 +2216,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rapidspin",
@@ -2130,7 +2236,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "recycle",
@@ -2149,7 +2256,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "reflect",
@@ -2168,7 +2276,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "roar",
@@ -2187,7 +2296,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rockblast",
@@ -2209,7 +2319,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "safeguard",
@@ -2228,7 +2339,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sandtomb",
@@ -2247,7 +2359,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "scaryface",
@@ -2271,7 +2384,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "secretpower",
@@ -2293,7 +2407,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "snatch",
@@ -2312,7 +2427,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "snore",
@@ -2334,7 +2450,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "spikes",
@@ -2353,7 +2470,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "substitute",
@@ -2372,7 +2490,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "swallow",
@@ -2391,7 +2510,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "synthesis",
@@ -2410,7 +2530,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "tackle",
@@ -2429,7 +2550,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "tailglow",
@@ -2453,7 +2575,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "thrash",
@@ -2472,7 +2595,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "torment",
@@ -2491,7 +2615,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "toxic",
@@ -2512,7 +2637,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "transform",
@@ -2531,7 +2657,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "watersport",
@@ -2550,7 +2677,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "whirlpool",
@@ -2569,7 +2697,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "whirlwind",
@@ -2588,7 +2717,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "wish",
@@ -2607,7 +2737,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "wrap",
@@ -2626,7 +2757,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "yawn",
@@ -2645,7 +2777,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "acidarmor",
@@ -2669,7 +2802,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "aircutter",
@@ -2688,7 +2822,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "barrier",
@@ -2712,7 +2847,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "block",
@@ -2731,7 +2867,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bodyslam",
@@ -2753,7 +2890,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bounce",
@@ -2775,7 +2913,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bubble",
@@ -2799,7 +2938,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "charm",
@@ -2823,7 +2963,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "fireblast",
@@ -2845,7 +2986,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "flamethrower",
@@ -2867,7 +3009,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "grasswhistle",
@@ -2888,7 +3031,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "growl",
@@ -2912,7 +3056,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "heatwave",
@@ -2934,7 +3079,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -2953,7 +3099,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -2972,7 +3119,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -2991,7 +3139,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3010,7 +3159,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3029,7 +3179,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3048,7 +3199,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3067,7 +3219,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3086,7 +3239,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3105,7 +3259,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3124,7 +3279,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3143,7 +3299,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3162,7 +3319,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3181,7 +3339,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3200,7 +3359,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3219,7 +3379,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hiddenpower",
@@ -3238,7 +3399,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hydropump",
@@ -3257,7 +3419,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hypervoice",
@@ -3276,7 +3439,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "icebeam",
@@ -3298,7 +3462,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "leechlife",
@@ -3320,7 +3485,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "lick",
@@ -3342,7 +3508,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "meanlook",
@@ -3361,7 +3528,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "metalsound",
@@ -3385,7 +3553,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "meteormash",
@@ -3404,7 +3573,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "muddywater",
@@ -3428,7 +3598,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "pinmissile",
@@ -3450,7 +3621,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "poisonfang",
@@ -3472,7 +3644,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "poisonpowder",
@@ -3493,7 +3666,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "psywave",
@@ -3512,7 +3686,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rocktomb",
@@ -3536,7 +3711,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "screech",
@@ -3560,7 +3736,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sing",
@@ -3581,7 +3758,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "skullbash",
@@ -3600,7 +3778,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sleeppowder",
@@ -3621,7 +3800,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "smellingsalts",
@@ -3640,7 +3820,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "smog",
@@ -3662,7 +3843,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "spore",
@@ -3683,7 +3865,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "stringshot",
@@ -3707,7 +3890,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "stunspore",
@@ -3728,7 +3912,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "submission",
@@ -3750,7 +3935,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "supersonic",
@@ -3771,7 +3957,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sweetkiss",
@@ -3792,7 +3979,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sweetscent",
@@ -3816,7 +4004,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "swordsdance",
@@ -3840,7 +4029,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "thief",
@@ -3859,7 +4049,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "thunder",
@@ -3881,7 +4072,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "thunderbolt",
@@ -3903,7 +4095,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "willowisp",
@@ -3924,7 +4117,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "destinybond",
@@ -3943,7 +4137,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sheercold",
@@ -3962,7 +4157,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": true,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "swagger",
@@ -3981,7 +4177,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "thunderwave",
@@ -4002,7 +4199,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "barrage",
@@ -4024,7 +4222,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "boneclub",
@@ -4046,7 +4245,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "cometpunch",
@@ -4068,7 +4268,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "constrict",
@@ -4092,7 +4293,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dizzypunch",
@@ -4114,7 +4316,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "doubleslap",
@@ -4136,7 +4339,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dragonrage",
@@ -4155,7 +4359,8 @@
 "multihit": null,
 "fixed": 40,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "eggbomb",
@@ -4174,7 +4379,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "frustration",
@@ -4193,7 +4399,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "howl",
@@ -4217,7 +4424,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hyperfang",
@@ -4239,7 +4447,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "iceball",
@@ -4258,7 +4467,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "karatechop",
@@ -4277,7 +4487,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "lowkick",
@@ -4296,7 +4507,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "magnitude",
@@ -4315,7 +4527,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "meditate",
@@ -4339,7 +4552,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "psychoboost",
@@ -4358,7 +4572,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rage",
@@ -4377,7 +4592,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "razorwind",
@@ -4396,7 +4612,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "refresh",
@@ -4415,7 +4632,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "return",
@@ -4434,7 +4652,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rollingkick",
@@ -4456,7 +4675,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sharpen",
@@ -4480,7 +4700,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "signalbeam",
@@ -4502,7 +4723,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "silverwind",
@@ -4521,7 +4743,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "skyuppercut",
@@ -4540,7 +4763,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sonicboom",
@@ -4559,7 +4783,8 @@
 "multihit": null,
 "fixed": 20,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "spiderweb",
@@ -4578,7 +4803,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "spikecannon",
@@ -4600,7 +4826,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "teleport",
@@ -4619,7 +4846,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "twineedle",
@@ -4644,7 +4872,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bonemerang",
@@ -4666,7 +4895,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "cut",
@@ -4685,7 +4915,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "grudge",
@@ -4704,7 +4935,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hail",
@@ -4723,7 +4955,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "kinesis",
@@ -4747,7 +4980,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "lovelykiss",
@@ -4768,7 +5002,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "lusterpurge",
@@ -4792,7 +5027,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "milkdrink",
@@ -4816,7 +5052,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mistball",
@@ -4840,7 +5077,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "octazooka",
@@ -4864,7 +5102,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rest",
@@ -4883,7 +5122,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "revenge",
@@ -4902,7 +5142,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "slackoff",
@@ -4926,7 +5167,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "softboiled",
@@ -4950,7 +5192,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "vitalthrow",
@@ -4969,7 +5212,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "aerialace",
@@ -4988,7 +5232,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "aeroblast",
@@ -5007,7 +5252,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "agility",
@@ -5031,7 +5277,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "amnesia",
@@ -5055,7 +5302,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "armthrust",
@@ -5077,7 +5325,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "attract",
@@ -5096,7 +5345,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "aurorabeam",
@@ -5120,7 +5370,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "batonpass",
@@ -5139,7 +5390,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bellydrum",
@@ -5158,7 +5410,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bite",
@@ -5180,7 +5433,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "blastburn",
@@ -5199,7 +5453,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "blazekick",
@@ -5221,7 +5476,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "bubblebeam",
@@ -5245,7 +5501,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "bulkup",
@@ -5270,7 +5527,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "calmmind",
@@ -5295,7 +5553,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "confuseray",
@@ -5316,7 +5575,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "confusion",
@@ -5338,7 +5598,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "cosmicpower",
@@ -5363,7 +5624,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "crosschop",
@@ -5382,7 +5644,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "crushclaw",
@@ -5406,7 +5669,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "defensecurl",
@@ -5425,7 +5689,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "doublekick",
@@ -5447,7 +5712,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "doubleteam",
@@ -5471,7 +5737,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dragonbreath",
@@ -5493,7 +5760,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dragonclaw",
@@ -5512,7 +5780,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dragondance",
@@ -5537,7 +5806,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "drillpeck",
@@ -5556,7 +5826,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "dynamicpunch",
@@ -5578,7 +5849,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "earthquake",
@@ -5597,7 +5869,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "ember",
@@ -5619,7 +5892,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "endure",
@@ -5638,7 +5912,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "eruption",
@@ -5657,7 +5932,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "explosion",
@@ -5676,7 +5952,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": true
 },
 {
 "id": "facade",
@@ -5695,7 +5972,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "faketears",
@@ -5719,7 +5997,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "falseswipe",
@@ -5738,7 +6017,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "featherdance",
@@ -5762,7 +6042,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "firepunch",
@@ -5784,7 +6065,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "fissure",
@@ -5803,7 +6085,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": true,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "flamewheel",
@@ -5825,7 +6108,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "flatter",
@@ -5844,7 +6128,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "focusenergy",
@@ -5863,7 +6148,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "frenzyplant",
@@ -5882,7 +6168,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "furyattack",
@@ -5904,7 +6191,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "furyswipes",
@@ -5926,7 +6214,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "guillotine",
@@ -5945,7 +6234,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": true,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "gust",
@@ -5964,7 +6254,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "harden",
@@ -5988,7 +6279,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "headbutt",
@@ -6010,7 +6302,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "helpinghand",
@@ -6029,7 +6322,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hornattack",
@@ -6048,7 +6342,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "horndrill",
@@ -6067,7 +6362,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": true,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hydrocannon",
@@ -6086,7 +6382,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "hyperbeam",
@@ -6105,7 +6402,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "icepunch",
@@ -6127,7 +6425,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "icywind",
@@ -6151,7 +6450,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "irondefense",
@@ -6175,7 +6475,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "irontail",
@@ -6199,7 +6500,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "leer",
@@ -6223,7 +6525,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "machpunch",
@@ -6242,7 +6545,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "magicalleaf",
@@ -6261,7 +6565,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "megahorn",
@@ -6280,7 +6585,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "megakick",
@@ -6299,7 +6605,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "megapunch",
@@ -6318,7 +6625,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "metalclaw",
@@ -6337,7 +6645,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mudshot",
@@ -6361,7 +6670,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "mudslap",
@@ -6385,7 +6695,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "nightshade",
@@ -6404,7 +6715,8 @@
 "multihit": null,
 "fixed": "level",
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "painsplit",
@@ -6423,7 +6735,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "peck",
@@ -6442,7 +6755,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "poisonsting",
@@ -6464,7 +6778,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "poisontail",
@@ -6486,7 +6801,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "pound",
@@ -6505,7 +6821,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "powdersnow",
@@ -6527,7 +6844,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "present",
@@ -6546,7 +6864,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "psybeam",
@@ -6568,7 +6887,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "psychic",
@@ -6592,7 +6912,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "quickattack",
@@ -6611,7 +6932,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "raindance",
@@ -6630,7 +6952,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "razorleaf",
@@ -6649,7 +6972,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "rockslide",
@@ -6671,7 +6995,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rockthrow",
@@ -6690,7 +7015,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "roleplay",
@@ -6709,7 +7035,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "rollout",
@@ -6728,7 +7055,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sacredfire",
@@ -6750,7 +7078,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sandattack",
@@ -6774,7 +7103,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sandstorm",
@@ -6793,7 +7123,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "scratch",
@@ -6812,7 +7143,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "seismictoss",
@@ -6831,7 +7163,8 @@
 "multihit": null,
 "fixed": "level",
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "selfdestruct",
@@ -6850,7 +7183,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": true
 },
 {
 "id": "shadowball",
@@ -6874,7 +7208,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "shadowpunch",
@@ -6893,7 +7228,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "shockwave",
@@ -6912,7 +7248,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "skillswap",
@@ -6931,7 +7268,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "skyattack",
@@ -6953,7 +7291,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "slam",
@@ -6972,7 +7311,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "slash",
@@ -6991,7 +7331,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": true
+"highCrit": true,
+"selfdestruct": false
 },
 {
 "id": "sludge",
@@ -7013,7 +7354,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sludgebomb",
@@ -7035,7 +7377,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "smokescreen",
@@ -7059,7 +7402,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "solarbeam",
@@ -7078,7 +7422,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "spark",
@@ -7100,7 +7445,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "spitup",
@@ -7119,7 +7465,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "splash",
@@ -7138,7 +7485,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "steelwing",
@@ -7157,7 +7505,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "stomp",
@@ -7179,7 +7528,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "strength",
@@ -7198,7 +7548,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "sunnyday",
@@ -7217,7 +7568,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "superfang",
@@ -7236,7 +7588,8 @@
 "multihit": null,
 "fixed": "half",
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "superpower",
@@ -7255,7 +7608,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "swift",
@@ -7274,7 +7628,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "tailwhip",
@@ -7298,7 +7653,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "takedown",
@@ -7320,7 +7676,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "thunderpunch",
@@ -7342,7 +7699,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "thundershock",
@@ -7364,7 +7722,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "triattack",
@@ -7383,7 +7742,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "trick",
@@ -7402,7 +7762,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "triplekick",
@@ -7424,7 +7785,8 @@
 ],
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "twister",
@@ -7446,7 +7808,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "visegrip",
@@ -7465,7 +7828,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "watergun",
@@ -7484,7 +7848,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "waterpulse",
@@ -7506,7 +7871,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "waterspout",
@@ -7525,7 +7891,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "wingattack",
@@ -7544,7 +7911,8 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 },
 {
 "id": "withdraw",
@@ -7568,6 +7936,7 @@
 "multihit": null,
 "fixed": null,
 "ohko": false,
-"highCrit": false
+"highCrit": false,
+"selfdestruct": false
 }
 ]

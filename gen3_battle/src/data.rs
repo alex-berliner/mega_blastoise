@@ -208,6 +208,9 @@ pub struct MoveEntry {
     pub ohko: bool,
     /// High critical-hit ratio (Slash and kin): one crit stage up in play.
     pub high_crit: bool,
+    /// Explosion and Self-Destruct: the user faints on use — before the hit
+    /// resolves — and the target's Defense is halved in this era.
+    pub selfdestruct: bool,
 }
 
 impl MoveEntry {

@@ -557,6 +557,13 @@ impl Battle {
         self.sides[side].mon_mut().moves[index].pp -= 1;
         events.push(Event::Used { side: side as u8 + 1, move_index: index });
 
+        // Explosion/Self-Destruct: the user faints ON USE, before the hit
+        // resolves — a miss or an immune target changes nothing about that.
+        let boom = slot.entry.selfdestruct;
+        if boom {
+            self.sides[side].mon_mut().hp = 0;
+        }
+
         // Accuracy: 0 in the table means the move never misses. A scripted
         // seat's hit/miss is decided by the script, but only for moves that
         // CAN miss, matching how the reference sim's accuracy step works.
@@ -632,6 +639,9 @@ impl Battle {
             return;
         }
         if !hit {
+            if boom {
+                self.resolve_faints(side, foe, events);
+            }
             return;
         }
 
@@ -657,7 +667,11 @@ impl Battle {
         let mut total = 0u16;
         for _ in 0..hits {
             let (attacker, defender) = self.attack_pair(side);
-            let m = MoveUse { move_type: slot.move_type(), power: slot.entry.power };
+            let m = MoveUse {
+                move_type: slot.move_type(),
+                power: slot.entry.power,
+                halve_def: slot.entry.selfdestruct,
+            };
             let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
             if dealt == 0 {
                 break; // immune: later strikes land no better
@@ -691,6 +705,9 @@ impl Battle {
             }
         }
         if total == 0 {
+            if boom {
+                self.resolve_faints(side, foe, events);
+            }
             return;
         }
 

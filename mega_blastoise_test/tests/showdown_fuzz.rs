@@ -224,7 +224,7 @@ fn fuzz_gen3_single_hits() {
         // as the sim's accuracy step never runs for it.
         let hit = *hit || entry.accuracy == 0;
         let dealt = if hit {
-            damage(&attacker, &defender, &MoveUse { move_type: entry.move_type, power: entry.power },
+            damage(&attacker, &defender, &MoveUse { move_type: entry.move_type, power: entry.power, halve_def: entry.selfdestruct },
                    Roll { crit: *crit, random: *roll })
         } else {
             0
@@ -482,8 +482,9 @@ fn fuzz_gen1_single_hits() {
         let attacker = Mon::from_species(*atk, *level, &[mv_entry.id]).unwrap();
         let defender = Mon::from_species(*def, *level, &["splash"]).unwrap();
         let hit = *hit || mv_entry.accuracy == 0;
+        let boom = matches!(mv_entry.effect_kind, gen1_battle::MoveEffectKind::SelfDestruct);
         let dealt = if hit {
-            compute_damage_scripted(&attacker, &defender, mv_entry, false, *crit, *roll).dmg
+            compute_damage_scripted(&attacker, &defender, mv_entry, boom, *crit, *roll).dmg
         } else {
             0
         };

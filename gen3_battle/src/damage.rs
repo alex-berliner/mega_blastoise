@@ -48,6 +48,9 @@ pub struct Defender {
 pub struct MoveUse {
     pub move_type: Type,
     pub power: u16,
+    /// Explosion/Self-Destruct: the target's Defense is halved (floored, at
+    /// least 1) after stages, per this era's rule.
+    pub halve_def: bool,
 }
 
 impl MoveUse {
@@ -123,7 +126,11 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
             d.light_screen,
         ),
     };
-    let defence = defence.max(1) as u32;
+    let defence = if m.halve_def && category == Category::Physical {
+        (defence / 2).max(1) as u32
+    } else {
+        defence.max(1) as u32
+    };
 
     // Base damage. The trailing +2 lands AFTER burn and screens halve — one
     // more ordering the parity suite caught: putting it before is a point of
@@ -190,7 +197,7 @@ mod tests {
         }
     }
 
-    const TACKLE: MoveUse = MoveUse { move_type: Type::Normal, power: 100 };
+    const TACKLE: MoveUse = MoveUse { halve_def: false, move_type: Type::Normal, power: 100 };
 
     /// Worked by hand: level term 42; 42*100*299/200 = 6279; /50 = 125; +2 = 127.
     #[test]
@@ -248,8 +255,8 @@ mod tests {
         let mut d = defender();
         d.def = 1000;
         d.sp_def = 100;
-        let bite = MoveUse { move_type: Type::Dark, power: 100 };
-        let physical = MoveUse { move_type: Type::Rock, power: 100 };
+        let bite = MoveUse { halve_def: false, move_type: Type::Dark, power: 100 };
+        let physical = MoveUse { halve_def: false, move_type: Type::Rock, power: 100 };
         assert!(damage(&attacker(), &d, &bite, Roll::MAX) > damage(&attacker(), &d, &physical, Roll::MAX));
     }
 
@@ -257,7 +264,7 @@ mod tests {
     fn burn_halves_physical_only() {
         let mut a = attacker();
         a.burned = true;
-        let special = MoveUse { move_type: Type::Water, power: 100 };
+        let special = MoveUse { halve_def: false, move_type: Type::Water, power: 100 };
         let burned_physical = damage(&a, &defender(), &TACKLE, Roll::MAX);
         let healthy_physical = damage(&attacker(), &defender(), &TACKLE, Roll::MAX);
         assert!(burned_physical < healthy_physical);
@@ -282,7 +289,7 @@ mod tests {
         let mut d = defender();
         d.types = (Type::Ghost, Type::None);
         assert_eq!(damage(&attacker(), &d, &TACKLE, Roll::MAX), 0);
-        let status = MoveUse { move_type: Type::Normal, power: 0 };
+        let status = MoveUse { halve_def: false, move_type: Type::Normal, power: 0 };
         assert_eq!(damage(&attacker(), &defender(), &status, Roll::MAX), 0);
     }
 

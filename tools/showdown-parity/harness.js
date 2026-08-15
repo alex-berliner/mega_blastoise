@@ -343,6 +343,7 @@ function runDump(sc) {
           : null,
         ohko: !!m.ohko,
         highCrit: (m.critRatio ?? 1) >= 2,
+        selfdestruct: m.selfdestruct === 'always',
       };
     });
   return {species, moves};
@@ -391,7 +392,7 @@ function runMovelist(sc) {
     if (move.basePowerCallback) continue;
     if ((move.damageCallback || move.damage) && !fixedDamage) continue;
     if (move.mindBlownRecoil) continue;
-    if (move.selfdestruct || move.willCrit !== undefined) continue;
+    if (move.willCrit !== undefined) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
     if (move.flags['charge'] || move.flags['recharge'] || move.flags['futuremove']) continue;
     if (move.volatileStatus) continue; // partial traps tick extra end-of-turn damage
@@ -411,7 +412,8 @@ function runMovelist(sc) {
       k.startsWith('on') ||
       (/Callback/.test(k) && !(k === 'damageCallback' && fixedDamage)));
     if (hooky || raw.self) continue;
-    if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes'].includes(move.target)) continue;
+    // allAdjacent only differs from allAdjacentFoes in doubles; this is 1v1.
+    if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes', 'allAdjacent'].includes(move.target)) continue;
     if (move.id === 'struggle') continue;
     out.push({id: move.id, priority: move.priority, boostsSelf: !!move.self, multihit: !!move.multihit});
   }
