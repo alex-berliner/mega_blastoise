@@ -1,6 +1,14 @@
 /* @ts-self-types="./mega_blastoise_web.d.ts" */
 
 /**
+ * @returns {number}
+ */
+export function ai_hold_ms() {
+    const ret = wasm.ai_hold_ms();
+    return ret >>> 0;
+}
+
+/**
  * @returns {Uint8Array}
  */
 export function get_device_pixels() {
@@ -81,6 +89,16 @@ export function hold_switch(player, idx) {
 }
 
 /**
+ * Hold thresholds, exported so the page classifies presses with the same
+ * numbers the firmware's matrix scan uses.
+ * @returns {number}
+ */
+export function hold_threshold_ms() {
+    const ret = wasm.hold_threshold_ms();
+    return ret >>> 0;
+}
+
+/**
  * @returns {boolean}
  */
 export function is_lobby_mode() {
@@ -99,7 +117,7 @@ export function is_playback() {
 }
 
 /**
- * True while a pre-lobby menu owns the screen and the input.
+ * True while the gen picker owns the screen and the input.
  * @returns {boolean}
  */
 export function menu_active() {
@@ -108,7 +126,7 @@ export function menu_active() {
 }
 
 /**
- * 0 gen picker, 1 lobby, 2 options — for the page's orientation logic.
+ * 0 gen picker, 1 lobby, 2 options — for the page's debug tooling.
  * @returns {number}
  */
 export function menu_screen() {
@@ -117,7 +135,6 @@ export function menu_screen() {
 }
 
 /**
- * A — confirm. In the lobby this is the ready-up press.
  * @param {number} player
  */
 export function nav_a(player) {
@@ -125,7 +142,6 @@ export function nav_a(player) {
 }
 
 /**
- * Hold A in the lobby to get an AI opponent, same as the hardware.
  * @param {number} player
  */
 export function nav_a_hold(player) {
@@ -133,7 +149,6 @@ export function nav_a_hold(player) {
 }
 
 /**
- * B — back out.
  * @param {number} player
  */
 export function nav_b(player) {
@@ -168,7 +183,6 @@ export function nav_dpad(player, dir) {
 }
 
 /**
- * ? — explain whatever the cursor is on.
  * @param {number} player
  */
 export function nav_info(player) {
@@ -206,16 +220,21 @@ export function nav_tap_commit(player, idx) {
 }
 
 /**
- * A tap on `player`'s own half, outside a battle: it confirms the row when
- * that seat has the options open, and otherwise toggles readiness.
- *
- * A press of A only readies and B only cancels, matching the button legend
- * and the hardware, but a tap has no second button to pair with: the thing
- * you touched to ready up has to be the thing you touch to take it back.
  * @param {number} player
  */
 export function nav_tap_seat(player) {
     wasm.nav_tap_seat(player);
+}
+
+/**
+ * A raw tap on the panel, in 240x320 panel coordinates. Core decides which
+ * half it landed on, un-rotates the far half, and maps the pixel to a
+ * meaning; the page only scales client coordinates to the panel grid.
+ * @param {number} x
+ * @param {number} y
+ */
+export function panel_tap(x, y) {
+    wasm.panel_tap(x, y);
 }
 
 /**
@@ -470,7 +489,7 @@ function __wbg_get_imports() {
             return ret;
         },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
-            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 100, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
+            // Cast intrinsic for `Closure(Closure { owned: true, function: Function { arguments: [Externref], shim_idx: 87, ret: Result(Unit), inner_ret: Some(Result(Unit)) }, mutable: true }) -> Externref`.
             const ret = makeMutClosure(arg0, arg1, wasm_bindgen_1d8011bae8ecbaf0___convert__closures_____invoke___wasm_bindgen_1d8011bae8ecbaf0___JsValue__core_fccf67792830db87___result__Result_____wasm_bindgen_1d8011bae8ecbaf0___JsError___true_);
             return ret;
         },
