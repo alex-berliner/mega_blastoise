@@ -1,0 +1,403 @@
+//! Emits the Gen 3 tables into `OUT_DIR/gen3_tables.rs`.
+//!
+//! Two sources, both already vendored in this repo:
+//!
+//!   * `../gen1_battle/data/type-chart.json` — the modern chart, read from the
+//!     sibling crate rather than copied so the two generations cannot drift
+//!     apart on the shared entries.
+//!   * `../battler/battle-data/data/{mons,moves}/gen{1,2,3}.json` — species and
+//!     move tables as per-generation layers, the same source
+//!     `mega_blastoise_core` already generates from.
+//!
+//! Gen 3's dex is the three layers merged in order, later winning per field:
+//! `gen3.json` is a delta over `gen2.json` over `gen1.json`, not a standalone
+//! table. Merging is why a Gen 1 species carries Gen 3 stats here without the
+//! Gen 3 file having to repeat it.
+//!
+//! Gen 3 differs from the modern type chart in exactly two ways, both applied
+//! below: Fairy does not exist yet (simply absent from `TYPE_NAMES`), and
+//! Steel still resists Ghost and Dark, which both became neutral in Gen 6.
+//!
+//! Emits:
+//!   pub const TYPE_COUNT: usize;
+//!   pub static TYPE_CHART: [[TypeEffectiveness; TYPE_COUNT]; TYPE_COUNT];
+//!   * `vendor/gen3randombattle.json` — Showdown's Gen 3 random battle sets,
+//!     from pkmn.github.io, cached beside this crate so builds are offline.
+//!     This is what a random battle actually draws from, and it is the same
+//!     source `mega_blastoise_core` uses for Gen 1. Its sets are curated
+//!     movesets per role, which is a different thing from "everything the
+//!     species can learn by that level".
+//!
+//! Emits:
+//!   pub const TYPE_COUNT: usize;
+//!   pub static TYPE_CHART: [[TypeEffectiveness; TYPE_COUNT]; TYPE_COUNT];
+//!   pub static SPECIES: &[SpeciesEntry];   // sorted by id
+//!   pub static MOVES: &[MoveEntry];        // sorted by id
+//!   pub static RANDBAT: &[RandbatSet];     // one per species/role pair
+
+use std::{collections::BTreeMap, env, fs, path::PathBuf};
+
+use serde_json::{Map, Value};
+
+/// Attack/defence order for the chart. Must match `types::Type`'s discriminants.
+const TYPE_NAMES: &[&str] = &[
+    "Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting", "Poison", "Ground",
+    "Flying", "Psychic", "Bug", "Rock", "Ghost", "Dragon", "Dark", "Steel",
+];
+
+/// (attacker, defender, x10 multiplier) where Gen 3 disagrees with the modern
+/// chart the JSON describes.
+const GEN3_PATCHES: &[(&str, &str, u8)] = &[("Ghost", "Steel", 5), ("Dark", "Steel", 5)];
+
+/// The generations that make up Gen 3's tables, in merge order.
+const LAYERS: &[&str] = &["gen1", "gen2", "gen3"];
+
+/// Sentinel in a randbat slot meaning "use the move's own type".
+const NO_TYPE_OVERRIDE: u8 = 17;
+
+/// The vendored files are keyed by the generation a species DEBUTED in, but
+/// their field values are current. So `mons/gen3.json` holds Ralts with the
+/// Fairy typing it gained in Gen 6, and carries Mega forms that did not exist
+/// until Gen 6 either. Neither belongs in a Gen 3 dex.
+///
+/// Name markers for forms introduced after Gen 3. Anything matching is dropped.
+const LATER_FORMS: &[&str] =
+    &["-Mega", "-Primal", "-Alola", "-Galar", "-Hisui", "-Paldea", "-Gmax", "-Totem"];
+
+/// Gen 3 typing for the species Gen 6 retyped to Fairy. Empty secondary means
+/// single-typed. Without this the dex would be quietly wrong for eighteen
+/// familiar species.
+const FAIRY_RETCON: &[(&str, &str, &str)] = &[
+    ("azumarill", "Water", ""),
+    ("azurill", "Normal", ""),
+    ("clefable", "Normal", ""),
+    ("clefairy", "Normal", ""),
+    ("cleffa", "Normal", ""),
+    ("gardevoir", "Psychic", ""),
+    ("granbull", "Normal", ""),
+    ("igglybuff", "Normal", ""),
+    ("jigglypuff", "Normal", ""),
+    ("kirlia", "Psychic", ""),
+    ("marill", "Water", ""),
+    ("mawile", "Steel", ""),
+    ("mrmime", "Psychic", ""),
+    ("ralts", "Psychic", ""),
+    ("snubbull", "Normal", ""),
+    ("togepi", "Normal", ""),
+    ("togetic", "Normal", "Flying"),
+    ("wigglytuff", "Normal", ""),
+];
+
+/// Same retcon for moves: these three were Normal until Gen 6.
+const FAIRY_MOVE_RETCON: &[(&str, &str)] =
+    &[("charm", "Normal"), ("moonlight", "Normal"), ("sweetkiss", "Normal")];
+
+/// True when this entry is a form that postdates Gen 3.
+fn is_later_form(name: &str) -> bool {
+    LATER_FORMS.iter().any(|m| name.contains(m))
+}
+
+fn main() {
+    let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let chart_path = manifest.join("../gen1_battle/data/type-chart.json");
+    let data_dir = manifest.join("../battler/battle-data/data");
+    println!("cargo:rerun-if-changed=../gen1_battle/data/type-chart.json");
+    for layer in LAYERS {
+        println!("cargo:rerun-if-changed=../battler/battle-data/data/mons/{layer}.json");
+        println!("cargo:rerun-if-changed=../battler/battle-data/data/moves/{layer}.json");
+    }
+
+    let mut out = String::from(
+        "// @generated by gen3_battle/build.rs — do not edit.\n\n",
+    );
+    emit_type_chart(&read_json(&chart_path), &mut out);
+    let mons = merge_layers(&data_dir.join("mons"));
+    let moves = merge_layers(&data_dir.join("moves"));
+    emit_species(&mons, &moves, &mut out);
+    emit_moves(&moves, &mut out);
+    emit_randbat(&fetch_randbats(&manifest), &moves, &mut out);
+
+    let dest = PathBuf::from(env::var("OUT_DIR").unwrap()).join("gen3_tables.rs");
+    fs::write(&dest, out).unwrap_or_else(|e| panic!("write {}: {e}", dest.display()));
+}
+
+/// Showdown's Gen 3 random battle sets, cached so a build never needs the
+/// network twice. Mirrors what `mega_blastoise_core` does for Gen 1.
+fn fetch_randbats(manifest: &PathBuf) -> Value {
+    let vendor = manifest.join("vendor");
+    fs::create_dir_all(&vendor).unwrap();
+    let cached = vendor.join("gen3randombattle.json");
+    println!("cargo:rerun-if-changed=vendor/gen3randombattle.json");
+    if !cached.exists() {
+        let text = ureq::get("https://pkmn.github.io/randbats/data/gen3randombattle.json")
+            .call()
+            .unwrap_or_else(|e| panic!("fetch gen3 randbats: {e}"))
+            .into_string()
+            .unwrap_or_else(|e| panic!("read gen3 randbats: {e}"));
+        fs::write(&cached, text).unwrap();
+    }
+    read_json(&cached)
+}
+
+/// Showdown keys its sets by display name ("Mr. Mime"); the dex is keyed by
+/// id ("mrmime").
+fn species_id(display: &str) -> String {
+    display.chars().filter(|c| c.is_ascii_alphanumeric()).flat_map(|c| c.to_lowercase()).collect()
+}
+
+fn read_json(path: &PathBuf) -> Value {
+    let raw =
+        fs::read_to_string(path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
+    serde_json::from_str(&raw).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()))
+}
+
+/// Merge `gen1`, `gen2` and `gen3` from `dir`, later layers overriding earlier
+/// ones field by field.
+fn merge_layers(dir: &PathBuf) -> BTreeMap<String, Map<String, Value>> {
+    let mut merged: BTreeMap<String, Map<String, Value>> = BTreeMap::new();
+    for layer in LAYERS {
+        let path = dir.join(format!("{layer}.json"));
+        let obj = read_json(&path);
+        let obj = obj.as_object().unwrap_or_else(|| panic!("{} is not an object", path.display()));
+        for (id, entry) in obj {
+            let entry = match entry.as_object() {
+                Some(e) => e,
+                None => continue,
+            };
+            let slot = merged.entry(id.clone()).or_default();
+            for (k, v) in entry {
+                slot.insert(k.clone(), v.clone());
+            }
+        }
+    }
+    merged
+}
+
+fn emit_type_chart(chart: &Value, out: &mut String) {
+    let types = chart
+        .get("types")
+        .and_then(|x| x.as_object())
+        .expect("type chart is missing its 'types' key");
+
+    out.push_str(&format!("pub const TYPE_COUNT: usize = {};\n", TYPE_NAMES.len()));
+    out.push_str("pub static TYPE_CHART: [[TypeEffectiveness; TYPE_COUNT]; TYPE_COUNT] = [\n");
+    for atk in TYPE_NAMES {
+        out.push_str("    [");
+        for def in TYPE_NAMES {
+            let mut e = types
+                .get(*atk)
+                .and_then(|m| m.get(*def))
+                .and_then(|v| v.as_f64())
+                .map(|mult| (mult * 10.0) as u8)
+                .unwrap_or(10);
+            for (a, d, patched) in GEN3_PATCHES {
+                if a == atk && d == def {
+                    e = *patched;
+                }
+            }
+            out.push_str(&format!("{e}, "));
+        }
+        out.push_str("],\n");
+    }
+    out.push_str("];\n\n");
+}
+
+/// `Type::Foo` for a type name, or a build failure. Never silently Normal: a
+/// typo or a type this generation does not have has to stop the build.
+fn type_variant(name: &str, ctx: &str) -> String {
+    if !TYPE_NAMES.contains(&name) {
+        panic!("{ctx}: '{name}' is not a Gen 3 type");
+    }
+    format!("Type::{name}")
+}
+
+fn emit_species(
+    mons: &BTreeMap<String, Map<String, Value>>,
+    moves: &BTreeMap<String, Map<String, Value>>,
+    out: &mut String,
+) {
+    // Move ids that survived into the Gen 3 table, in the same sorted order
+    // `emit_moves` writes, so a learnset can index it.
+    let move_ids: Vec<&String> = moves
+        .iter()
+        .filter(|(_, m)| m.get("name").is_some() && m.get("primary_type").is_some())
+        .map(|(id, _)| id)
+        .collect();
+    let move_index = |id: &str| move_ids.iter().position(|m| m.as_str() == id);
+
+    // Flat (move index, level) pairs; each species points at a run of them.
+    let mut learn_flat: Vec<(usize, u64)> = Vec::new();
+    let mut learn_span: BTreeMap<String, (usize, usize)> = BTreeMap::new();
+    for (id, m) in mons {
+        let start = learn_flat.len();
+        if let Some(ls) = m.get("learnset").and_then(|v| v.as_object()) {
+            let mut rows: Vec<(usize, u64)> = Vec::new();
+            for (move_id, sources) in ls {
+                // Level-up entries only ("L12"); a move the Gen 3 table does
+                // not have is a later addition and is skipped.
+                let Some(idx) = move_index(move_id) else { continue };
+                let Some(list) = sources.as_array() else { continue };
+                for src in list {
+                    let Some(tag) = src.as_str() else { continue };
+                    if let Some(level) = tag.strip_prefix('L').and_then(|n| n.parse::<u64>().ok()) {
+                        rows.push((idx, level));
+                        break;
+                    }
+                }
+            }
+            rows.sort();
+            learn_flat.extend(rows);
+        }
+        learn_span.insert(id.clone(), (start, learn_flat.len() - start));
+    }
+
+    out.push_str("pub static LEARNSET: &[(u16, u8)] = &[\n");
+    for (idx, level) in &learn_flat {
+        out.push_str(&format!("({idx}, {level}), "));
+    }
+    out.push_str("\n];\n\n");
+    println!("cargo:warning=gen3_battle: {} learnset rows", learn_flat.len());
+
+    out.push_str("pub static SPECIES: &[SpeciesEntry] = &[\n");
+    let mut count = 0;
+    for (id, m) in mons {
+        let (Some(name), Some(stats), Some(primary)) = (
+            m.get("name").and_then(|v| v.as_str()),
+            m.get("base_stats").and_then(|v| v.as_object()),
+            m.get("primary_type").and_then(|v| v.as_str()),
+        ) else {
+            continue;
+        };
+        let stat = |k: &str| stats.get(k).and_then(|v| v.as_u64()).unwrap_or(0) as u16;
+        if is_later_form(name) {
+            continue;
+        }
+        // Era-accurate typing wins over the file's modern values.
+        let retcon = FAIRY_RETCON.iter().find(|(rid, _, _)| rid == id);
+        let primary = retcon.map(|(_, p, _)| *p).unwrap_or(primary);
+        let secondary = match retcon.map(|(_, _, s)| *s) {
+            Some("") => String::from("Type::None"),
+            Some(s) => type_variant(s, id),
+            None => match m.get("secondary_type").and_then(|v| v.as_str()) {
+                Some(t) => type_variant(t, id),
+                None => String::from("Type::None"),
+            },
+        };
+        let (ls_start, ls_len) = learn_span.get(id).copied().unwrap_or((0, 0));
+        out.push_str(&format!(
+            "    SpeciesEntry {{ id: {id:?}, name: {name:?}, types: ({}, {}), \
+             base: BaseStats {{ hp: {}, atk: {}, def: {}, spa: {}, spd: {}, spe: {} }}, \
+             learn_start: {ls_start}, learn_len: {ls_len} }},\n",
+            type_variant(primary, id),
+            secondary,
+            stat("hp"),
+            stat("atk"),
+            stat("def"),
+            stat("spa"),
+            stat("spd"),
+            stat("spe"),
+        ));
+        count += 1;
+    }
+    out.push_str("];\n\n");
+    println!("cargo:warning=gen3_battle: {count} species");
+}
+
+/// One drafted set: a species, the level it is drafted at, and a role's move
+/// pool as indices into `MOVES`.
+fn emit_randbat(
+    randbats: &Value,
+    moves: &BTreeMap<String, Map<String, Value>>,
+    out: &mut String,
+) {
+    let move_ids: Vec<&String> = moves
+        .iter()
+        .filter(|(_, m)| m.get("name").is_some() && m.get("primary_type").is_some())
+        .map(|(id, _)| id)
+        .collect();
+    // A set names Hidden Power by the type its IVs give it ("Hidden Power
+    // Ice"). The move table has one `hiddenpower`, because in Gen 3 the type
+    // is a property of the mon, not of the move. So a set slot carries an
+    // optional type override, and Hidden Power is the only thing that uses it.
+    let move_index = |display: &str| -> Option<(usize, u8)> {
+        let id = species_id(display);
+        if let Some(i) = move_ids.iter().position(|m| m.as_str() == id) {
+            return Some((i, NO_TYPE_OVERRIDE));
+        }
+        let rest = display.strip_prefix("Hidden Power ")?;
+        let hp = move_ids.iter().position(|m| m.as_str() == "hiddenpower")?;
+        let ty = TYPE_NAMES.iter().position(|t| *t == rest)? as u8;
+        Some((hp, ty))
+    };
+
+    let obj = randbats.as_object().expect("randbats is an object");
+    let mut flat: Vec<(usize, u8)> = Vec::new();
+    let mut sets: Vec<(String, u64, usize, usize)> = Vec::new();
+    let mut dropped = 0;
+    for (display, entry) in obj {
+        let id = species_id(display);
+        let level = entry.get("level").and_then(|v| v.as_u64()).unwrap_or(50);
+        let Some(roles) = entry.get("roles").and_then(|v| v.as_object()) else { continue };
+        for role in roles.values() {
+            let Some(list) = role.get("moves").and_then(|v| v.as_array()) else { continue };
+            let start = flat.len();
+            for m in list {
+                let Some(name) = m.as_str() else { continue };
+                match move_index(name) {
+                    Some(pair) => flat.push(pair),
+                    // A set naming a move this generation's table lacks is a
+                    // data mismatch worth seeing, not worth failing on.
+                    None => dropped += 1,
+                }
+            }
+            if flat.len() > start {
+                sets.push((id.clone(), level, start, flat.len() - start));
+            }
+        }
+    }
+
+    out.push_str("pub static RANDBAT_MOVES: &[(u16, u8)] = &[\n");
+    for (i, ty) in &flat {
+        out.push_str(&format!("({i}, {ty}), "));
+    }
+    out.push_str("\n];\n\n");
+    out.push_str("pub static RANDBAT: &[RandbatSet] = &[\n");
+    for (id, level, start, len) in &sets {
+        out.push_str(&format!(
+            "    RandbatSet {{ species: {id:?}, level: {level}, move_start: {start}, move_len: {len} }},\n"
+        ));
+    }
+    out.push_str("];\n\n");
+    println!("cargo:warning=gen3_battle: {} randbat sets, {dropped} moves not in the gen3 table", sets.len());
+}
+
+fn emit_moves(moves: &BTreeMap<String, Map<String, Value>>, out: &mut String) {
+    out.push_str("pub static MOVES: &[MoveEntry] = &[\n");
+    let mut count = 0;
+    for (id, m) in moves {
+        let (Some(name), Some(mtype)) = (
+            m.get("name").and_then(|v| v.as_str()),
+            m.get("primary_type").and_then(|v| v.as_str()),
+        ) else {
+            continue;
+        };
+        // A move whose accuracy is absent or non-numeric never misses, which
+        // is how the data spells Swift and friends.
+        let mtype = FAIRY_MOVE_RETCON
+            .iter()
+            .find(|(rid, _)| rid == id)
+            .map(|(_, t)| *t)
+            .unwrap_or(mtype);
+        let accuracy = m.get("accuracy").and_then(|v| v.as_u64()).unwrap_or(0) as u8;
+        let power = m.get("base_power").and_then(|v| v.as_u64()).unwrap_or(0) as u16;
+        let pp = m.get("pp").and_then(|v| v.as_u64()).unwrap_or(0) as u8;
+        out.push_str(&format!(
+            "    MoveEntry {{ id: {id:?}, name: {name:?}, move_type: {}, \
+             power: {power}, accuracy: {accuracy}, pp: {pp} }},\n",
+            type_variant(mtype, id),
+        ));
+        count += 1;
+    }
+    out.push_str("];\n\n");
+    println!("cargo:warning=gen3_battle: {count} moves");
+}

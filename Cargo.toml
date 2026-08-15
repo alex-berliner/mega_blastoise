@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "gen1_battle",
+    "gen3_battle",
     "mega_blastoise_core",
     "mega_blastoise_fw",
     "mega_blastoise_test",

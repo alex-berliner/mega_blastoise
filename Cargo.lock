@@ -1014,6 +1014,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gen3_battle"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "defmt 1.0.1",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1429,6 +1439,7 @@ dependencies = [
  "embassy-time",
  "embedded-graphics",
  "gen1_battle",
+ "gen3_battle",
  "png",
  "qrcode",
  "serde",
