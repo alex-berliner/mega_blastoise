@@ -15,7 +15,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use crate::damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
-use crate::data::{move_by_id, species_by_id, Boost, MoveEntry, SecondaryEffect, SpeciesEntry, Status};
+use crate::data::{move_by_id, species_by_id, Boost, MoveEntry, SecondaryEffect, SpeciesEntry, Status, StatusAction};
 use crate::stats::{hp_stat, other_stat, Invest, Nature, Stat};
 use crate::types::Type;
 
@@ -283,6 +283,8 @@ pub enum Event {
     Drained { side: u8, amount: u16 },
     /// `side` took `amount` recoil from its own move.
     Recoil { side: u8, amount: u16 },
+    /// `side` healed itself for `amount` (Recover and kin).
+    Healed { side: u8, amount: u16 },
     /// `side`'s paralyzed mon was fully paralyzed and lost its action.
     FullyParalyzed { side: u8 },
     /// `side`'s mon could not move: frozen solid or fast asleep.
@@ -508,6 +510,11 @@ impl Battle {
                 }
             }
         };
+        // A zero-power move is its status action, nothing more.
+        if slot.entry.power == 0 {
+            self.status_move(side, foe, &slot, hit, events);
+            return;
+        }
         if !hit {
             return;
         }
@@ -601,6 +608,57 @@ impl Battle {
         }
     }
 
+
+    /// Resolve a zero-power move. `hit` already includes the accuracy roll;
+    /// self-targeted actions cannot miss (their table accuracy is 0, the
+    /// never-miss sentinel). A status move with no modelled action — Splash —
+    /// does nothing, honestly.
+    fn status_move(
+        &mut self,
+        side: usize,
+        foe: usize,
+        slot: &MoveSlot,
+        hit: bool,
+        events: &mut Vec<Event>,
+    ) {
+        let Some(action) = slot.entry.status_action else {
+            return;
+        };
+        match action {
+            StatusAction::BoostSelf(list) => {
+                for &(boost, delta) in list {
+                    self.sides[side].mon_mut().apply_boost(boost, delta);
+                    events.push(Event::Boosted { side: side as u8 + 1, boost, delta });
+                }
+            }
+            StatusAction::HealHalf => {
+                let mon = self.sides[side].mon_mut();
+                let heal = (mon.max_hp / 2).min(mon.max_hp - mon.hp);
+                if heal > 0 {
+                    mon.hp += heal;
+                    events.push(Event::Healed { side: side as u8 + 1, amount: heal });
+                }
+            }
+            StatusAction::Inflict(status) => {
+                if hit && self.sides[foe].mon().can_receive(status) {
+                    let target = self.sides[foe].mon_mut();
+                    target.status = Some(status);
+                    if status == Status::Toxic {
+                        target.toxic_n = 0;
+                    }
+                    events.push(Event::Statused { side: foe as u8 + 1, status });
+                }
+            }
+            StatusAction::BoostFoe(list) => {
+                if hit && !self.sides[foe].mon().fainted() {
+                    for &(boost, delta) in list {
+                        self.sides[foe].mon_mut().apply_boost(boost, delta);
+                        events.push(Event::Boosted { side: foe as u8 + 1, boost, delta });
+                    }
+                }
+            }
+        }
+    }
 
     /// The per-strike aftermath of a landed hit: the secondary (script or
     /// RNG-decided), then the Fire thaw. Runs once per strike of a
@@ -926,6 +984,49 @@ mod tests {
         let strikes =
             events.iter().filter(|e| matches!(e, Event::Damage { side: 2, .. })).count();
         assert_eq!(strikes, 2);
+    }
+
+    #[test]
+    fn status_moves_inflict_boost_and_heal() {
+        // Thunder Wave: paralysis lands through the status-move path.
+        let mut b = battle(mon("blaziken", 50, &["thunderwave"]), mon("snorlax", 50, &["pound"]));
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(
+            e,
+            Event::Statused { side: 2, status: Status::Paralysis }
+        )));
+        assert_eq!(b.sides[1].mon().status, Some(Status::Paralysis));
+
+        // Swords Dance doubles the next physical hit: +2 Attack stages.
+        let mut b = battle(mon("blaziken", 50, &["swordsdance", "doublekick"]), mon("snorlax", 50, &["splash"]));
+        b.step_with([Choice::Move(0), Choice::Move(1)], &scripted([PLAIN, PLAIN]));
+        assert_eq!(b.sides[0].mon().stages[Stat::Atk as usize], 2);
+        let hp_before = b.sides[1].mon().hp;
+        b.step_with([Choice::Move(1), Choice::Move(1)], &scripted([PLAIN, PLAIN]));
+        let boosted = hp_before - b.sides[1].mon().hp;
+        let mut plain = battle(mon("blaziken", 50, &["doublekick"]), mon("snorlax", 50, &["splash"]));
+        let hp_before = plain.sides[1].mon().hp;
+        plain.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let unboosted = hp_before - plain.sides[1].mon().hp;
+        // Not exactly double: the flat +2 and the floors sit outside the
+        // stage multiply. Meaningfully bigger is the claim.
+        assert!(boosted > unboosted * 3 / 2, "+2 Atk hits harder: {boosted} vs {unboosted}");
+
+        // Recover heals half of max, capped at full.
+        let mut b = battle(mon("blaziken", 50, &["recover"]), mon("snorlax", 50, &["splash"]));
+        let max = b.sides[0].mon().max_hp;
+        b.sides[0].party[0].hp = 1;
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert_eq!(b.sides[0].mon().hp, 1 + max / 2);
+        assert!(events.iter().any(|e| matches!(e, Event::Healed { side: 1, .. })));
+
+        // A scripted miss keeps Growl off the target's stages.
+        let mut b = battle(mon("blaziken", 50, &["growl"]), mon("snorlax", 50, &["splash"]));
+        let miss = SeatScript { hit: false, ..PLAIN };
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([miss, PLAIN]));
+        assert_eq!(b.sides[1].mon().stages[Stat::Atk as usize], 0);
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert_eq!(b.sides[1].mon().stages[Stat::Atk as usize], -1);
     }
 
     #[test]

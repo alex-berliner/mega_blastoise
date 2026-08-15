@@ -385,11 +385,63 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
         };
         let (drain, recoil) = (fraction("drain"), fraction("recoil"));
         let multihit = fraction("multihit");
+        let boost_list = |boosts: &Map<String, Value>| -> String {
+            let items: Vec<String> = boosts
+                .iter()
+                .map(|(stat, delta)| {
+                    let boost = match stat.as_str() {
+                        "atk" => "Boost::Atk",
+                        "def" => "Boost::Def",
+                        "spa" => "Boost::SpAtk",
+                        "spd" => "Boost::SpDef",
+                        "spe" => "Boost::Spe",
+                        "accuracy" => "Boost::Acc",
+                        "evasion" => "Boost::Eva",
+                        other => panic!("{id}: unknown boost stat {other:?}"),
+                    };
+                    format!("({boost}, {})", delta.as_i64().unwrap())
+                })
+                .collect();
+            format!("&[{}]", items.join(", "))
+        };
+        let status_action = match m["statusAction"].as_object() {
+            None => String::from("None"),
+            Some(act) => {
+                if let Some(status) = act.get("status").and_then(|v| v.as_str()) {
+                    let status = match status {
+                        "brn" => "Status::Burn",
+                        "par" => "Status::Paralysis",
+                        "psn" => "Status::Poison",
+                        "tox" => "Status::Toxic",
+                        "frz" => "Status::Freeze",
+                        "slp" => "Status::Sleep",
+                        other => panic!("{id}: unknown inflicted status {other:?}"),
+                    };
+                    format!("Some(StatusAction::Inflict({status}))")
+                } else if let Some(heal) = act.get("heal").and_then(|v| v.as_array()) {
+                    assert_eq!(
+                        (heal[0].as_u64(), heal[1].as_u64()),
+                        (Some(1), Some(2)),
+                        "{id}: only half heals are modelled"
+                    );
+                    String::from("Some(StatusAction::HealHalf)")
+                } else if let Some(boosts) = act.get("boosts").and_then(|v| v.as_object()) {
+                    let variant = if act.get("self").and_then(|v| v.as_bool()).unwrap_or(false) {
+                        "BoostSelf"
+                    } else {
+                        "BoostFoe"
+                    };
+                    format!("Some(StatusAction::{variant}({}))", boost_list(boosts))
+                } else {
+                    panic!("{id}: statusAction carries nothing modelled")
+                }
+            }
+        };
         out.push_str(&format!(
             "    MoveEntry {{ id: {id:?}, name: {name:?}, move_type: {}, \
              power: {power}, accuracy: {accuracy}, pp: {pp}, priority: {priority}, \
              secondary: {secondary}, drain: {drain}, recoil: {recoil}, \
-             multihit: {multihit} }},\n",
+             multihit: {multihit}, status_action: {status_action} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

@@ -14,6 +14,7 @@
 2
 ],
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -33,6 +34,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -47,6 +49,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -61,6 +64,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -78,6 +82,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -92,6 +97,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -106,6 +112,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -123,6 +130,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -137,6 +145,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -151,6 +160,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -165,6 +175,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -179,6 +190,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -193,6 +205,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -207,6 +220,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -226,6 +240,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -240,6 +255,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -254,6 +270,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -268,6 +285,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -282,6 +300,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -296,6 +315,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -313,6 +333,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -330,6 +351,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -344,6 +366,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -358,6 +381,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -372,6 +396,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"accuracy": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -386,6 +416,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -400,6 +431,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -414,6 +446,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -428,6 +461,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -445,6 +479,7 @@
 2
 ],
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -459,6 +494,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "par"
+},
 "multihit": null
 },
 {
@@ -473,6 +511,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -487,6 +526,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -501,6 +541,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -515,6 +556,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "slp"
+},
 "multihit": null
 },
 {
@@ -529,6 +573,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -543,6 +588,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -557,6 +603,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -574,6 +621,7 @@
 2
 ],
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -588,6 +636,13 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": -2,
+"spa": -2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -602,6 +657,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -616,6 +672,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -630,6 +687,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -644,6 +702,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -658,6 +717,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -675,6 +735,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -689,6 +750,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -703,6 +765,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -717,6 +780,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -731,6 +795,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -745,6 +810,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -759,6 +825,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -773,6 +840,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"heal": [
+1,
+2
+]
+},
 "multihit": null
 },
 {
@@ -787,6 +860,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -806,6 +880,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -820,6 +895,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -834,6 +910,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -848,6 +925,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -862,6 +940,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -876,6 +955,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -890,6 +970,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -904,6 +985,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -918,6 +1000,13 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": -1,
+"def": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -932,6 +1021,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -946,6 +1036,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -963,6 +1054,7 @@
 1,
 3
 ],
+"statusAction": null,
 "multihit": null
 },
 {
@@ -977,6 +1069,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -991,6 +1084,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1008,6 +1102,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1022,6 +1117,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1036,6 +1132,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1050,6 +1147,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -1067,6 +1165,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -1084,6 +1183,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1098,6 +1198,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1112,6 +1213,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spe": -2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -1126,6 +1233,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1140,6 +1248,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1154,6 +1263,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1171,6 +1281,7 @@
 1,
 3
 ],
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1188,6 +1299,7 @@
 2
 ],
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1202,6 +1314,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1216,6 +1329,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1230,6 +1344,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1244,6 +1359,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1258,6 +1374,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1272,6 +1389,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spa": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -1286,6 +1409,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1300,6 +1424,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -1317,6 +1442,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1331,6 +1457,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1345,6 +1472,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1359,6 +1487,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1373,6 +1502,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1387,6 +1517,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1401,6 +1532,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1415,6 +1547,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"evasion": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -1429,6 +1567,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1443,6 +1582,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1457,6 +1597,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1471,6 +1612,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1485,6 +1627,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1499,6 +1642,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1513,6 +1657,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "psn"
+},
 "multihit": null
 },
 {
@@ -1527,6 +1674,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1541,6 +1689,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1555,6 +1704,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1569,6 +1719,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1583,6 +1734,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1597,6 +1749,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1611,6 +1764,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -1628,6 +1782,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1642,6 +1797,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1656,6 +1812,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spe": -2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -1673,6 +1835,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1687,6 +1850,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1704,6 +1868,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1718,6 +1883,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1732,6 +1898,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1746,6 +1913,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1760,6 +1928,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1774,6 +1943,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1788,6 +1958,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spa": 2
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -1802,6 +1978,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1816,6 +1993,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1830,6 +2008,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "tox"
+},
 "multihit": null
 },
 {
@@ -1844,6 +2025,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1858,6 +2040,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1872,6 +2055,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1886,6 +2070,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1900,6 +2085,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1914,6 +2100,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1928,6 +2115,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1942,6 +2130,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": 2
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -1956,6 +2150,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -1970,6 +2165,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": 2
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -1984,6 +2185,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2001,6 +2203,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2018,6 +2221,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2037,6 +2241,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2051,6 +2256,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": -2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -2068,6 +2279,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2085,6 +2297,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2099,6 +2312,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "slp"
+},
 "multihit": null
 },
 {
@@ -2113,6 +2329,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -2130,6 +2352,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2144,6 +2367,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2158,6 +2382,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2172,6 +2397,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2186,6 +2412,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2200,6 +2427,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2214,6 +2442,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2228,6 +2457,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2242,6 +2472,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2256,6 +2487,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2270,6 +2502,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2284,6 +2517,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2298,6 +2532,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2312,6 +2547,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2326,6 +2562,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2340,6 +2577,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2354,6 +2592,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2368,6 +2607,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2382,6 +2622,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2399,6 +2640,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2416,6 +2658,7 @@
 2
 ],
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2433,6 +2676,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2447,6 +2691,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2461,6 +2706,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spd": -2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -2475,6 +2726,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2494,6 +2746,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2508,6 +2761,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -2528,6 +2782,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2542,6 +2797,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "psn"
+},
 "multihit": null
 },
 {
@@ -2556,6 +2814,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2575,6 +2834,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2589,6 +2849,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": -2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -2603,6 +2869,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "slp"
+},
 "multihit": null
 },
 {
@@ -2617,6 +2886,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2631,6 +2901,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "slp"
+},
 "multihit": null
 },
 {
@@ -2645,6 +2918,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2662,6 +2936,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2676,6 +2951,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "slp"
+},
 "multihit": null
 },
 {
@@ -2690,6 +2968,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spe": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -2704,6 +2988,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "par"
+},
 "multihit": null
 },
 {
@@ -2721,6 +3008,7 @@
 1,
 4
 ],
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2735,6 +3023,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2749,6 +3038,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2763,6 +3053,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"evasion": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -2777,6 +3073,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": 2
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -2791,6 +3093,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2808,6 +3111,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2825,6 +3129,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2839,6 +3144,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "brn"
+},
 "multihit": null
 },
 {
@@ -2853,6 +3161,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2867,6 +3176,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2881,6 +3191,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": 2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -2895,6 +3211,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "par"
+},
 "multihit": null
 },
 {
@@ -2909,6 +3228,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -2929,6 +3249,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2943,6 +3264,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -2965,6 +3287,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2979,6 +3302,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -2993,6 +3317,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -3010,6 +3335,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3024,6 +3350,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3038,6 +3365,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3052,6 +3380,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3069,6 +3403,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3083,6 +3418,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3097,6 +3433,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3111,6 +3448,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3125,6 +3463,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3139,6 +3478,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3153,6 +3498,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3167,6 +3513,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3181,6 +3528,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3195,6 +3543,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3209,6 +3558,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3226,6 +3576,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3240,6 +3591,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3254,6 +3611,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3268,6 +3626,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3282,6 +3641,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3296,6 +3656,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3310,6 +3671,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3324,6 +3686,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -3341,6 +3704,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3358,6 +3722,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 2
@@ -3375,6 +3740,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 2
@@ -3392,6 +3758,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3406,6 +3773,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3420,6 +3788,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3434,6 +3803,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"accuracy": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -3448,6 +3823,9 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"status": "slp"
+},
 "multihit": null
 },
 {
@@ -3467,6 +3845,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3481,6 +3860,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"heal": [
+1,
+2
+]
+},
 "multihit": null
 },
 {
@@ -3500,6 +3885,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3519,6 +3905,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3533,6 +3920,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3547,6 +3935,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3561,6 +3950,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"heal": [
+1,
+2
+]
+},
 "multihit": null
 },
 {
@@ -3575,6 +3970,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"heal": [
+1,
+2
+]
+},
 "multihit": null
 },
 {
@@ -3589,6 +3990,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3603,6 +4005,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3617,6 +4020,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3631,6 +4035,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spe": 2
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3645,6 +4055,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spd": 2
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3659,6 +4075,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -3676,6 +4093,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3695,6 +4113,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3709,6 +4128,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3723,6 +4143,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3740,6 +4161,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3754,6 +4176,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3771,6 +4194,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3790,6 +4214,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3804,6 +4229,13 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": 1,
+"def": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3818,6 +4250,13 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spa": 1,
+"spd": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3832,6 +4271,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3846,6 +4286,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3860,6 +4301,13 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": 1,
+"spd": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3874,6 +4322,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3893,6 +4342,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3907,6 +4357,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3921,6 +4377,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 2
@@ -3938,6 +4395,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"evasion": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3955,6 +4418,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3969,6 +4433,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3983,6 +4448,13 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": 1,
+"spe": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -3997,6 +4469,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4011,6 +4484,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4025,6 +4499,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4042,6 +4517,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4056,6 +4532,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4070,6 +4547,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4084,6 +4562,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4098,6 +4577,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4112,6 +4592,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spd": -2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -4126,6 +4612,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4140,6 +4627,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"atk": -2
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -4157,6 +4650,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4171,6 +4665,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4188,6 +4683,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4202,6 +4698,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"spa": 1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -4216,6 +4718,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4230,6 +4733,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4244,6 +4748,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -4261,6 +4766,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 2,
 5
@@ -4278,6 +4784,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4292,6 +4799,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4306,6 +4814,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": 1
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -4323,6 +4837,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4337,6 +4852,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4351,6 +4867,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4365,6 +4882,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4379,6 +4897,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4393,6 +4912,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4410,6 +4930,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4429,6 +4950,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4443,6 +4965,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": 2
+},
+"self": true
+},
 "multihit": null
 },
 {
@@ -4462,6 +4990,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4476,6 +5005,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -4490,6 +5025,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4504,6 +5040,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4518,6 +5055,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4532,6 +5070,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4546,6 +5085,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4560,6 +5100,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4579,6 +5120,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4598,6 +5140,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4612,6 +5155,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4626,6 +5170,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4640,6 +5185,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4657,6 +5203,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4674,6 +5221,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4688,6 +5236,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4705,6 +5254,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4719,6 +5269,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4733,6 +5284,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4752,6 +5304,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4766,6 +5319,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4780,6 +5334,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4794,6 +5349,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4811,6 +5367,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4825,6 +5382,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4839,6 +5397,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4853,6 +5412,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4870,6 +5430,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4884,6 +5445,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"accuracy": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -4898,6 +5465,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4912,6 +5480,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4926,6 +5495,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4940,6 +5510,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4959,6 +5530,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4973,6 +5545,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4987,6 +5560,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5001,6 +5575,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5018,6 +5593,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5032,6 +5608,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5046,6 +5623,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5063,6 +5641,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5080,6 +5659,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5094,6 +5674,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"accuracy": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -5108,6 +5694,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5125,6 +5712,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5139,6 +5727,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5153,6 +5742,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5167,6 +5757,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5184,6 +5775,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5198,6 +5790,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5212,6 +5805,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5226,6 +5820,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5240,6 +5835,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5254,6 +5850,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5268,6 +5865,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": -1
+},
+"self": false
+},
 "multihit": null
 },
 {
@@ -5285,6 +5888,7 @@
 1,
 4
 ],
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5302,6 +5906,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5319,6 +5924,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5333,6 +5939,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5347,6 +5954,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5361,6 +5969,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": [
 3,
 3
@@ -5381,6 +5990,7 @@
 },
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5395,6 +6005,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5409,6 +6020,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5423,6 +6035,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5437,6 +6050,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5451,6 +6065,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5465,6 +6080,12 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"statusAction": {
+"boosts": {
+"def": 1
+},
+"self": true
+},
 "multihit": null
 }
 ]

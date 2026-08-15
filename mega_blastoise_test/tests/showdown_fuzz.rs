@@ -257,7 +257,9 @@ fn fuzz_gen3_turns() {
     };
 
     let moves = vanilla_moves(3, true, |id| {
-        gen3_battle::move_by_id(id).map(|m| m.power > 0).unwrap_or(false)
+        gen3_battle::move_by_id(id)
+            .map(|m| m.power > 0 || m.status_action.is_some())
+            .unwrap_or(false)
     });
     let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
 

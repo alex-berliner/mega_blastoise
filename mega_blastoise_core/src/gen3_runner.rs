@@ -178,6 +178,14 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Healed { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Heal {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
             Event::Recoil { side, .. } => {
                 effects
                     .on_event(BoardEvent::Damage {

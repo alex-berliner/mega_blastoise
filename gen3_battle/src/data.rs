@@ -151,6 +151,17 @@ pub struct Secondary {
     pub effect: SecondaryEffect,
 }
 
+/// A status move's whole effect: what a zero-power move does instead of
+/// damage. Thunder Wave inflicts, Swords Dance raises the user, Growl drops
+/// the target, Recover heals half.
+#[derive(Clone, Copy, Debug)]
+pub enum StatusAction {
+    Inflict(Status),
+    BoostSelf(&'static [(Boost, i8)]),
+    BoostFoe(&'static [(Boost, i8)]),
+    HealHalf,
+}
+
 /// One move.
 #[derive(Clone, Copy, Debug)]
 pub struct MoveEntry {
@@ -172,6 +183,9 @@ pub struct MoveEntry {
     /// Hits this many times: (2,2) fixed double, (2,5) the weighted
     /// 2-to-5 spread. None is the ordinary single hit.
     pub multihit: Option<(u16, u16)>,
+    /// What a zero-power move does. None on damaging moves, and on status
+    /// moves whose effect is not modelled yet (they no-op like Splash).
+    pub status_action: Option<StatusAction>,
 }
 
 impl MoveEntry {

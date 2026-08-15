@@ -276,6 +276,11 @@ function runDump(sc) {
         secondary,
         drain: m.drain ?? null,
         recoil: m.recoil ?? null,
+        statusAction: m.category !== 'Status' ? null
+          : m.status ? {status: m.status}
+          : m.heal ? {heal: m.heal}
+          : m.boosts ? {boosts: m.boosts, self: m.target === 'self'}
+          : null,
         multihit: m.multihit
           ? (Array.isArray(m.multihit) ? m.multihit : [m.multihit, m.multihit])
           : null,
@@ -300,7 +305,23 @@ function runMovelist(sc) {
   const out = [];
   for (const move of dex.moves.all()) {
     if (!move.exists || move.isNonstandard) continue;
-    if (move.category === 'Status' || !move.basePower || move.basePower <= 0) continue;
+    if (move.category === 'Status') {
+      // A status move joins the pool when its whole effect is one the
+      // engines model — a status, stat stages, or a half heal — with no
+      // hooks. (Toxic and the powders carry modern-gen hooks in the base
+      // data, so they filter out and stay reference-honest.)
+      const raw = rawOf(move.id);
+      const hooky = Object.keys(raw).some((k) => k.startsWith('on') || /Callback/.test(k));
+      const entangled = hooky || raw.volatileStatus || raw.sideCondition || raw.weather ||
+        raw.forceSwitch || raw.selfSwitch || raw.pseudoWeather || raw.slotCondition ||
+        raw.terrain || raw.self || raw.selfdestruct || raw.ohko;
+      const modelable = raw.status || raw.boosts || raw.heal;
+      if (entangled || !modelable) continue;
+      if (!['normal', 'any', 'self', 'allAdjacentFoes'].includes(move.target)) continue;
+      out.push({id: move.id, priority: move.priority, boostsSelf: false, multihit: false});
+      continue;
+    }
+    if (!move.basePower || move.basePower <= 0) continue;
     if (move.basePowerCallback || move.damageCallback || move.damage) continue;
     if (move.mindBlownRecoil) continue;
     if (move.selfdestruct || move.ohko || move.willCrit !== undefined) continue;
