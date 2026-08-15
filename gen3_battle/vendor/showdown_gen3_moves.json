@@ -62,7 +62,16 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 10,
+"selfBoosts": {
+"atk": 1,
+"def": 1,
+"spa": 1,
+"spd": 1,
+"spe": 1
+}
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -2322,7 +2331,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"minimize": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -4082,7 +4093,12 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 20,
+"selfBoosts": {
+"atk": 1
+}
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -4771,7 +4787,12 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"boosts": {
+"atk": 2
+},
+"confuse": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -5411,7 +5432,16 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 10,
+"selfBoosts": {
+"atk": 1,
+"def": 1,
+"spa": 1,
+"spd": 1,
+"spe": 1
+}
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -5847,7 +5877,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"rest": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -6489,7 +6521,12 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"boosts": {
+"def": 1
+},
+"self": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -6988,7 +7025,12 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"boosts": {
+"spa": 1
+},
+"confuse": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -7011,7 +7053,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"focus": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -7573,7 +7617,12 @@
 "pp": 35,
 "category": "Physical",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 10,
+"selfBoosts": {
+"atk": 1
+}
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -8557,7 +8606,12 @@
 "pp": 25,
 "category": "Physical",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 10,
+"selfBoosts": {
+"def": 1
+}
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,

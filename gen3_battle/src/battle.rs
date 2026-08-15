@@ -111,6 +111,11 @@ pub struct Mon {
     /// confusion lands — 2 under a script (the sim's pinned floor), 2..=5
     /// in play. Cleared by switching out.
     pub confusion_n: u8,
+    /// Focus Energy is up: crits start two stages higher. Cleared by
+    /// switching out.
+    pub focused: bool,
+    /// Minimized: the stomping moves land doubled. Cleared by switching out.
+    pub minimized: bool,
     /// Leech Seed planted on this mon. Cleared by switching out.
     pub seeded: bool,
     /// Partial-trap clock (Wrap and kin): while above zero the mon cannot
@@ -152,6 +157,8 @@ impl Mon {
             sleep_n: 0,
             flinched: false,
             confusion_n: 0,
+            focused: false,
+            minimized: false,
             seeded: false,
             trapped_n: 0,
             charging: None,
@@ -348,6 +355,10 @@ pub enum Event {
     SeedDrain { side: u8, amount: u16 },
     /// `side`'s mon was bound by Wrap and kin.
     Trapped { side: u8 },
+    /// `side`'s mon is getting pumped (Focus Energy).
+    Focused { side: u8 },
+    /// `side`'s mon went to sleep with Rest.
+    Rested { side: u8 },
     /// The bind chipped `side`'s mon.
     TrapDamage { side: u8, amount: u16 },
     /// The bind on `side`'s mon ran out.
@@ -434,6 +445,8 @@ impl Battle {
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
+                    out.focused = false;
+                    out.minimized = false;
                     out.seeded = false;
                     out.trapped_n = 0;
                     out.charging = None;
@@ -770,7 +783,16 @@ impl Battle {
         // CAN miss, matching how the reference sim's accuracy step works.
         // Unscripted rolls fold in the accuracy/evasion stages the Gen 3
         // way: one combined stage, (3+s)/3 above zero and 3/(3-s) below.
-        let acc = slot.entry.accuracy;
+        // Thunder rides the weather: unmissable in rain, halved in sun.
+        let acc = if slot.entry.id == "thunder" {
+            match self.weather {
+                Some(Weather::Rain) => 0,
+                Some(Weather::Sun) => 50,
+                _ => slot.entry.accuracy,
+            }
+        } else {
+            slot.entry.accuracy
+        };
         let hit = match script {
             Some(s) => acc == 0 || s.hit,
             None => {
@@ -881,7 +903,9 @@ impl Battle {
         let (crit, random) = match script {
             Some(s) => (s.crit, s.random),
             None => (
-                self.rng.below(crit_denominator(slot.entry.high_crit as u8)) == 0,
+                self.rng.below(crit_denominator(
+                    slot.entry.high_crit as u8 + if self.sides[side].mon().focused { 2 } else { 0 },
+                )) == 0,
                 85 + self.rng.below(16) as u8,
             ),
         };
@@ -905,6 +929,14 @@ impl Battle {
                 (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
                 _ => 0,
             };
+            // The stomping moves land doubled on a minimized target.
+            let stomp_mult: u16 = if self.sides[foe].mon().minimized
+                && matches!(slot.entry.id, "stomp" | "extrasensory" | "needlearm" | "astonish")
+            {
+                2
+            } else {
+                1
+            };
             // Solar Beam sputters outside the sun it was made for.
             let solar_cut = slot.entry.id == "solarbeam"
                 && matches!(
@@ -913,7 +945,8 @@ impl Battle {
                 );
             let m = MoveUse {
                 move_type: slot.move_type(),
-                power: slot.entry.power * pierce_mult / if solar_cut { 2 } else { 1 },
+                power: slot.entry.power * pierce_mult * stomp_mult
+                    / if solar_cut { 2 } else { 1 },
                 halve_def: slot.entry.selfdestruct,
                 weather: weather_mod,
             };
@@ -1108,6 +1141,41 @@ impl Battle {
                     events.push(Event::Seeded { side: foe as u8 + 1 });
                 }
             }
+            StatusAction::BoostConfuse(list) => {
+                // Swagger and Flatter: the gift lands (Mist still blocks
+                // drops, not raises), then the confusion (Safeguard's job).
+                if hit && !self.sides[foe].mon().fainted() {
+                    for &(boost, delta) in list {
+                        self.sides[foe].mon_mut().apply_boost(boost, delta);
+                        events.push(Event::Boosted { side: foe as u8 + 1, boost, delta });
+                    }
+                    self.confuse(foe, scripted, events);
+                }
+            }
+            StatusAction::Focus => {
+                if !self.sides[side].mon().focused {
+                    self.sides[side].mon_mut().focused = true;
+                    events.push(Event::Focused { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Rest => {
+                let mon = self.sides[side].mon();
+                if mon.hp < mon.max_hp {
+                    let mon = self.sides[side].mon_mut();
+                    mon.hp = mon.max_hp;
+                    mon.status = Some(Status::Sleep);
+                    // The games' Rest sleeps two full turns: clock of 3,
+                    // the same shape as the sim's pinned setStatus.
+                    mon.sleep_n = 3;
+                    mon.toxic_n = 0;
+                    events.push(Event::Rested { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Minimize => {
+                self.sides[side].mon_mut().minimized = true;
+                self.sides[side].mon_mut().apply_boost(Boost::Eva, 1);
+                events.push(Event::Boosted { side: side as u8 + 1, boost: Boost::Eva, delta: 1 });
+            }
             StatusAction::SetWeather(weather) => {
                 if self.weather != Some(weather) {
                     self.weather = Some(weather);
@@ -1206,6 +1274,14 @@ impl Battle {
                 }
                 Some(SecondaryEffect::Confuse) => {
                     self.confuse(foe, script.is_some(), events);
+                }
+                Some(SecondaryEffect::SelfBoosts(list)) => {
+                    if !self.sides[side].mon().fainted() {
+                        for &(boost, delta) in list {
+                            self.sides[side].mon_mut().apply_boost(boost, delta);
+                            events.push(Event::Boosted { side: side as u8 + 1, boost, delta });
+                        }
+                    }
                 }
                 None => {}
             }

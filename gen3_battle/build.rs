@@ -352,6 +352,24 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("SecondaryEffect::Flinch")
                 } else if sec.get("confusion").is_some() {
                     String::from("SecondaryEffect::Confuse")
+                } else if let Some(boosts) = sec.get("selfBoosts").and_then(|v| v.as_object()) {
+                    let items: Vec<String> = boosts
+                        .iter()
+                        .map(|(stat, delta)| {
+                            let boost = match stat.as_str() {
+                                "atk" => "Boost::Atk",
+                                "def" => "Boost::Def",
+                                "spa" => "Boost::SpAtk",
+                                "spd" => "Boost::SpDef",
+                                "spe" => "Boost::Spe",
+                                "accuracy" => "Boost::Acc",
+                                "evasion" => "Boost::Eva",
+                                other => panic!("{id}: unknown boost stat {other:?}"),
+                            };
+                            format!("({boost}, {})", delta.as_i64().unwrap())
+                        })
+                        .collect();
+                    format!("SecondaryEffect::SelfBoosts(&[{}])", items.join(", "))
                 } else if let Some(boosts) = sec.get("boosts").and_then(|v| v.as_object()) {
                     let items: Vec<String> = boosts
                         .iter()
@@ -443,10 +461,19 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                         "{id}: only half heals are modelled"
                     );
                     String::from("Some(StatusAction::HealHalf)")
-                } else if act.get("confuse").is_some() {
+                } else if act.get("confuse").is_some() && act.get("boosts").is_none() {
                     String::from("Some(StatusAction::Confuse)")
                 } else if act.get("seed").is_some() {
                     String::from("Some(StatusAction::Seed)")
+                } else if act.get("rest").is_some() {
+                    String::from("Some(StatusAction::Rest)")
+                } else if act.get("focus").is_some() {
+                    String::from("Some(StatusAction::Focus)")
+                } else if act.get("minimize").is_some() {
+                    String::from("Some(StatusAction::Minimize)")
+                } else if act.get("confuse").is_some() && act.get("boosts").is_some() {
+                    let boosts = act.get("boosts").and_then(|v| v.as_object()).unwrap();
+                    format!("Some(StatusAction::BoostConfuse({}))", boost_list(boosts))
                 } else if let Some(w) = act.get("weather").and_then(|v| v.as_str()) {
                     let weather = match w {
                         "sunnyday" => "Weather::Sun",

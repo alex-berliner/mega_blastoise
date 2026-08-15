@@ -168,7 +168,10 @@ function scriptRandomness(battle, script) {
   const origGetDamage = actions.getDamage.bind(actions);
   actions.getDamage = function (source, target, move, suppressMessages) {
     battle.__cur = forSide(source);
-    if (typeof move !== 'number') {
+    // Only real moves get the willCrit-pinned copy: secondary/self-boost
+    // moveData blobs carry no id, and swapping them for a broken active
+    // move silently ate their boosts (fuzz-found via Metal Claw).
+    if (typeof move === 'string' || (typeof move !== 'number' && move.id)) {
       const active = this.dex.getActiveMove(typeof move === 'string' ? move : move.id);
       active.willCrit = forSide(source).crit;
       move = active;
@@ -296,7 +299,13 @@ function runDump(sc) {
       let secondary = null;
       const secs = m.secondaries ?? (m.secondary ? [m.secondary] : []);
       for (const s of secs) {
-        if (!s || !s.chance || s.self || s.onHit) continue;
+        if (!s || !s.chance || s.onHit) continue;
+        if (s.self && s.self.boosts && !s.self.volatileStatus &&
+            !s.status && !s.boosts && !s.volatileStatus) {
+          secondary = {chance: s.chance, selfBoosts: s.self.boosts};
+          break;
+        }
+        if (s.self) continue;
         if (s.volatileStatus === 'flinch') {
           secondary = {chance: s.chance, flinch: true};
           break;
@@ -329,6 +338,11 @@ function runDump(sc) {
         recoil: m.recoil ?? null,
         respectsImmunity: m.category === 'Status' && m.ignoreImmunity === false,
         statusAction: m.category !== 'Status' ? null
+          : m.id === 'rest' ? {rest: true}
+          : m.id === 'focusenergy' ? {focus: true}
+          : m.id === 'minimize' ? {minimize: true}
+          : m.id === 'defensecurl' ? {boosts: m.boosts, self: true}
+          : m.volatileStatus === 'confusion' && m.boosts ? {boosts: m.boosts, confuse: true}
           : m.status ? {status: m.status}
           : m.heal ? {heal: m.heal}
           : m.boosts && !m.volatileStatus ? {boosts: m.boosts, self: m.target === 'self'}
@@ -383,6 +397,14 @@ function runMovelist(sc) {
       const confuseOnly = raw.volatileStatus === 'confusion' &&
         !raw.status && !raw.boosts && !raw.heal && sc.gen >= 3;
       const seed = raw.volatileStatus === 'leechseed' && move.id === 'leechseed';
+      // These carry hooks that either self-guard by generation (the powders'
+      // Grass immunity is gen 6+) or ARE the modelled effect (Rest, Focus
+      // Energy, Swagger's boost+confuse pair).
+      const allowlisted = sc.gen >= 3 && [
+        'sleeppowder', 'stunspore', 'poisonpowder', 'spore', 'cottonspore',
+        'growth', 'toxic', 'swagger', 'flatter', 'defensecurl', 'minimize',
+        'focusenergy', 'rest', 'splash', 'teleport',
+      ].includes(move.id);
       const weather = sc.gen >= 3 &&
         ['sunnyday', 'raindance', 'sandstorm', 'hail'].includes(move.id);
       const teamCond = sc.gen >= 3 &&
@@ -392,7 +414,7 @@ function runMovelist(sc) {
         (raw.weather && !weather) || raw.forceSwitch || raw.selfSwitch || raw.pseudoWeather ||
         raw.slotCondition || raw.terrain || raw.self || raw.selfdestruct || raw.ohko;
       const modelable = raw.status || raw.boosts || raw.heal || confuseOnly || teamCond || seed || weather;
-      if (entangled || !modelable) continue;
+      if (!allowlisted && (entangled || !modelable)) continue;
       if (!['normal', 'any', 'self', 'allAdjacentFoes', 'allySide', 'all'].includes(move.target)) continue;
       out.push({id: move.id, priority: move.priority, boostsSelf: false, multihit: false});
       continue;
@@ -415,8 +437,10 @@ function runMovelist(sc) {
     if (move.sleepUsable || move.id === 'dreameater') continue; // fail unless asleep
     const raw = rawOf(move.id);
     const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);
+    const selfBoostOk = (sec) => sc.gen >= 3 && sec.self && sec.self.boosts &&
+      !sec.self.volatileStatus && !sec.status && !sec.boosts && !sec.volatileStatus;
     if (rawSecs.some((sec) =>
-      sec && (sec.onHit || sec.self ||
+      sec && (sec.onHit || (sec.self && !selfBoostOk(sec)) ||
         (sec.volatileStatus && sec.volatileStatus !== 'flinch' &&
          !(sec.volatileStatus === 'confusion' && sc.gen >= 3)))
     )) continue;
@@ -428,8 +452,11 @@ function runMovelist(sc) {
     // exactly the machinery being modelled, so they skip the hook filter.
     // (Solar Beam's weather halving rides along unexercised: the fuzz never
     // sets weather.)
+    // Thunder's weather-accuracy hook is modelled (never-miss in rain,
+    // halved in sun).
+    const thundery = sc.gen >= 3 && move.id === 'thunder';
     const chargey = move.flags['charge'] || move.flags['recharge'];
-    const hooky = !chargey && Object.keys(raw).some((k) =>
+    const hooky = !chargey && !thundery && Object.keys(raw).some((k) =>
       k.startsWith('on') ||
       (/Callback/.test(k) && !(k === 'damageCallback' && fixedDamage)));
     // A recharge move's raw.self IS the mustrecharge volatile — machinery,

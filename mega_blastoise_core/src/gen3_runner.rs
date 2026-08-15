@@ -261,6 +261,29 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Focused { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "Focus Energy".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::Rested { side } => {
+                effects
+                    .on_event(BoardEvent::Heal {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+                effects
+                    .on_event(BoardEvent::SetStatus {
+                        mon: active_name(battle, side),
+                        status: "slp".into(),
+                    })
+                    .await;
+            }
             Event::Trapped { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {

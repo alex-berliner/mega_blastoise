@@ -142,6 +142,8 @@ pub enum SecondaryEffect {
     Boosts(&'static [(Boost, i8)]),
     Flinch,
     Confuse,
+    /// Metal Claw's Attack, Ancient Power's everything: stages on the USER.
+    SelfBoosts(&'static [(Boost, i8)]),
 }
 
 /// A move's secondary effect.
@@ -219,6 +221,15 @@ pub enum StatusAction {
     /// eighth of its max HP to the opposing active. Grass types are immune.
     Seed,
     SetWeather(Weather),
+    /// Swagger and Flatter: a stat gift and a confusion, in that order.
+    BoostConfuse(&'static [(Boost, i8)]),
+    /// Focus Energy: the user's crits start two stages up.
+    Focus,
+    /// Rest: full heal, two turns of self-inflicted sleep, any status
+    /// overwritten. Fails at full HP.
+    Rest,
+    /// Minimize: evasion up one, and the stomping moves hit doubled after.
+    Minimize,
 }
 
 /// One move.
