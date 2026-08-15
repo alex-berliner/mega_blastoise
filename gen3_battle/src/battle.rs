@@ -114,6 +114,23 @@ pub struct Mon {
     /// Substitute hit points; 0 means no substitute. Cleared by switching
     /// out. While up, foe damage and effects land here instead.
     pub sub_hp: u16,
+    /// Foresight landed: Ghost immunity to Normal/Fighting lifted, evasion
+    /// stages ignored against this mon.
+    pub identified: bool,
+    /// Lock-On: the next move cannot miss.
+    pub sure_hit: bool,
+    /// Charge: the next Electric move doubles.
+    pub charged_elec: bool,
+    /// Grudge is armed until this mon's next action.
+    pub grudged: bool,
+    /// Torment: the same move twice in a row is refused.
+    pub tormented: bool,
+    /// Rage is rolling: hits taken raise Attack.
+    pub raging: bool,
+    /// Fury Cutter's consecutive-hit ramp (0..=4).
+    pub fury_n: u8,
+    /// The last move slot this mon successfully USED (for Spite/Torment).
+    pub last_used: Option<u8>,
     /// Protect's stall gamble: 0 fresh, then the era's 2-4-8 ladder.
     pub stall_counter: u8,
     /// Untouchable this turn (Protect/Detect). Cleared when the turn ends.
@@ -186,6 +203,14 @@ impl Mon {
             sleep_n: 0,
             flinched: false,
             confusion_n: 0,
+            identified: false,
+            sure_hit: false,
+            charged_elec: false,
+            grudged: false,
+            tormented: false,
+            raging: false,
+            fury_n: 0,
+            last_used: None,
             stall_counter: 0,
             protected: false,
             enduring: false,
@@ -545,6 +570,14 @@ impl Battle {
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
+                    out.identified = false;
+                    out.sure_hit = false;
+                    out.charged_elec = false;
+                    out.grudged = false;
+                    out.tormented = false;
+                    out.raging = false;
+                    out.fury_n = 0;
+                    out.last_used = None;
                     out.stall_counter = 0;
                     out.protected = false;
                     out.enduring = false;
@@ -843,13 +876,15 @@ impl Battle {
         if self.sides[side].mon().fainted() {
             return;
         }
-        // Destiny Bond lasts exactly until the user's next action begins.
+        // Destiny Bond and Grudge last exactly until the user's next action.
         self.sides[side].mon_mut().destiny = false;
+        self.sides[side].mon_mut().grudged = false;
 
         // Recharging after Hyper Beam and kin: the whole action is spent,
         // gated even above sleep, matching the games' priority order.
         if self.sides[side].mon().must_recharge {
             self.sides[side].mon_mut().must_recharge = false;
+            self.sides[side].mon_mut().stall_counter = 0;
             events.push(Event::Recharging { side: side as u8 + 1 });
             return;
         }
@@ -863,6 +898,7 @@ impl Battle {
             } else {
                 mon.charging = None;
                 mon.rampage = None;
+                mon.stall_counter = 0;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Sleep });
                 return;
             }
@@ -883,6 +919,7 @@ impl Battle {
             } else {
                 self.sides[side].mon_mut().charging = None;
                 self.sides[side].mon_mut().rampage = None;
+                self.sides[side].mon_mut().stall_counter = 0;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Freeze });
                 return;
             }
@@ -893,6 +930,7 @@ impl Battle {
         if self.sides[side].mon().flinched {
             self.sides[side].mon_mut().charging = None;
             self.sides[side].mon_mut().rampage = None;
+            self.sides[side].mon_mut().stall_counter = 0;
             events.push(Event::Flinched { side: side as u8 + 1 });
             return;
         }
@@ -911,6 +949,7 @@ impl Battle {
                 if selfhit {
                     self.sides[side].mon_mut().charging = None;
                     self.sides[side].mon_mut().rampage = None;
+                    self.sides[side].mon_mut().stall_counter = 0;
                     let amount = self.confusion_self_hit(side, random);
                     events.push(Event::ConfusedHit { side: side as u8 + 1, amount });
                     let mon = self.sides[side].mon();
@@ -935,6 +974,7 @@ impl Battle {
             if immobile {
                 self.sides[side].mon_mut().charging = None;
                 self.sides[side].mon_mut().rampage = None;
+                self.sides[side].mon_mut().stall_counter = 0;
                 events.push(Event::FullyParalyzed { side: side as u8 + 1 });
                 return;
             }
@@ -978,7 +1018,12 @@ impl Battle {
             return;
         }
         let taunted_out = self.sides[side].mon().taunt_n == 1 && status_movish;
-        let struggling = (taunted_out || (slot.pp == 0 && !releasing)) && !releasing;
+        // Torment: the same move twice in a row becomes Struggle.
+        let tormented_out = self.sides[side].mon().tormented
+            && self.sides[side].mon().last_used == Some(index as u8)
+            && !releasing;
+        let struggling =
+            (taunted_out || tormented_out || (slot.pp == 0 && !releasing)) && !releasing;
         let slot = if struggling {
             MoveSlot { entry: &crate::data::STRUGGLE, pp: 1, typed_as: None }
         } else {
@@ -988,6 +1033,14 @@ impl Battle {
             self.sides[side].mon_mut().moves[index].pp -= 1;
         }
         events.push(Event::Used { side: side as u8 + 1, move_index: index });
+        {
+            let mon = self.sides[side].mon_mut();
+            mon.last_used = if struggling { None } else { Some(index as u8) };
+            mon.raging = slot.entry.id == "rage";
+            if slot.entry.id != "furycutter" {
+                mon.fury_n = 0;
+            }
+        }
 
         // The charge turn of a two-turn move: announce, tuck the slot away,
         // and stop. Skull Bash's era perk raises Defense on the way down.
@@ -1067,12 +1120,20 @@ impl Battle {
         } else {
             slot.entry.accuracy
         };
-        let hit = match script {
+        let sure = self.sides[side].mon().sure_hit;
+        if sure {
+            self.sides[side].mon_mut().sure_hit = false;
+        }
+        let hit = sure || match script {
             Some(s) => acc == 0 || s.hit,
             None => {
                 acc == 0 || {
-                    let s = (self.sides[side].mon().acc_stage - self.sides[foe].mon().eva_stage)
-                        .clamp(-6, 6) as i32;
+                    let eva = if self.sides[foe].mon().identified {
+                        0
+                    } else {
+                        self.sides[foe].mon().eva_stage
+                    };
+                    let s = (self.sides[side].mon().acc_stage - eva).clamp(-6, 6) as i32;
                     let eff = if s >= 0 {
                         acc as u32 * (3 + s as u32) / 3
                     } else {
@@ -1089,7 +1150,31 @@ impl Battle {
         let mut pierce_mult: u16 = 1;
         let self_targeted = matches!(
             slot.entry.status_action,
-            Some(StatusAction::BoostSelf(_) | StatusAction::HealHalf | StatusAction::Team(_))
+            Some(
+                StatusAction::BoostSelf(_)
+                    | StatusAction::HealHalf
+                    | StatusAction::Team(_)
+                    | StatusAction::SetWeather(_)
+                    | StatusAction::Protect
+                    | StatusAction::Endure
+                    | StatusAction::Focus
+                    | StatusAction::Rest
+                    | StatusAction::BellyDrum
+                    | StatusAction::Stockpile
+                    | StatusAction::Swallow
+                    | StatusAction::WeatherHeal
+                    | StatusAction::Refresh
+                    | StatusAction::Wish
+                    | StatusAction::DestinyBond
+                    | StatusAction::Grudge
+                    | StatusAction::ChargeUp
+                    | StatusAction::Sport(_)
+                    | StatusAction::Spikes
+                    | StatusAction::Haze
+                    | StatusAction::PerishSong
+                    | StatusAction::Minimize
+                    | StatusAction::PsychUp
+            )
         );
         if !self_targeted && self.sides[foe].mon().protected {
             // A shielded target disrupts a rampage: no fatigue, fresh start.
@@ -1279,8 +1364,10 @@ impl Battle {
             return;
         }
         if !hit {
-            // A miss ends a rampage quietly — no fatigue confusion.
+            // A miss ends a rampage quietly — no fatigue confusion — and
+            // resets Fury Cutter's ramp.
             self.sides[side].mon_mut().rampage = None;
+            self.sides[side].mon_mut().fury_n = 0;
             // The kicks crash for half the damage they would have dealt.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                 let random = match script {
@@ -1332,7 +1419,7 @@ impl Battle {
 
         let mut total = 0u16;
         for _ in 0..hits {
-            let (attacker, defender) = self.attack_pair(side);
+            let (attacker, mut defender) = self.attack_pair(side);
             // Weather Ball wears the sky: retyped and doubled under weather.
             let move_type = if slot.entry.id == "weatherball" {
                 match self.weather {
@@ -1345,6 +1432,13 @@ impl Battle {
             } else {
                 slot.move_type()
             };
+            // Foresight lifts the Ghost immunity to Normal and Fighting.
+            if self.sides[foe].mon().identified
+                && matches!(move_type, Type::Normal | Type::Fighting)
+            {
+                let strip = |t: Type| if t == Type::Ghost { Type::None } else { t };
+                defender.types = (strip(defender.types.0), strip(defender.types.1));
+            }
             let mut weather_mod = match (self.weather, move_type) {
                 (Some(Weather::Rain), Type::Water) | (Some(Weather::Sun), Type::Fire) => 1,
                 (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
@@ -1395,6 +1489,10 @@ impl Battle {
                     slot.entry.power * 2
                 }
                 "weatherball" if self.weather.is_some() => 100,
+                "furycutter" => {
+                    let n = self.sides[side].mon().fury_n;
+                    (10u16 << n).min(160)
+                }
                 "spitup" => 100 * self.sides[side].mon().stockpile_n as u16,
                 "flail" | "reversal" => {
                     let mon = self.sides[side].mon();
@@ -1410,9 +1508,17 @@ impl Battle {
                 }
                 _ => slot.entry.power,
             };
+            // Charge doubles the next Electric move, then is spent.
+            let charge_mult: u16 = if move_type == Type::Electric && self.sides[side].mon().charged_elec
+            {
+                self.sides[side].mon_mut().charged_elec = false;
+                2
+            } else {
+                1
+            };
             let m = MoveUse {
                 move_type,
-                power: base_power * pierce_mult * stomp_mult
+                power: base_power * pierce_mult * stomp_mult * charge_mult
                     / if solar_cut { 2 } else { 1 },
                 halve_def: slot.entry.selfdestruct,
                 weather: weather_mod,
@@ -1457,6 +1563,11 @@ impl Battle {
                     effectiveness: eff,
                     crit,
                 });
+                // A raging target's Attack climbs with every hit it takes.
+                if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
+                    self.sides[foe].mon_mut().apply_boost(Boost::Atk, 1);
+                    events.push(Event::Boosted { side: foe as u8 + 1, boost: Boost::Atk, delta: 1 });
+                }
             }
             // Drain heals off the damage actually dealt: floor, but at least 1.
             if let Some((num, den)) = slot.entry.drain {
@@ -1503,6 +1614,12 @@ impl Battle {
             } else {
                 self.sides[side].mon_mut().rampage = Some((slot_i, left - 1));
             }
+        }
+
+        // Fury Cutter ramps on every landed use, resetting elsewhere.
+        if slot.entry.id == "furycutter" {
+            let mon = self.sides[side].mon_mut();
+            mon.fury_n = (mon.fury_n + 1).min(4);
         }
 
         // Rapid Spin flings off the user's own bind and Leech Seed.
@@ -1590,6 +1707,14 @@ impl Battle {
         // Destiny Bond: KO the bonded target with a move, go down with it.
         if self.sides[foe].mon().fainted() && self.sides[foe].mon().destiny {
             self.sides[side].mon_mut().hp = 0;
+        }
+        // Grudge: the killing move's PP drains to nothing.
+        if self.sides[foe].mon().fainted() && self.sides[foe].mon().grudged {
+            if let Some(slot_i) = self.sides[side].mon().last_used {
+                if let Some(ms) = self.sides[side].mon_mut().moves.get_mut(slot_i as usize) {
+                    ms.pp = 0;
+                }
+            }
         }
         for who in [foe, side] {
             if self.sides[who].mon().fainted() {
@@ -1884,6 +2009,55 @@ impl Battle {
                     events.push(Event::Protected { side: side as u8 + 1 });
                 } else {
                     self.sides[side].mon_mut().stall_counter = 0;
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Identify => {
+                if hit && self.sides[foe].mon().sub_hp == 0 && !self.sides[foe].mon().fainted() {
+                    self.sides[foe].mon_mut().identified = true;
+                }
+            }
+            StatusAction::LockOn => {
+                if hit && !self.sides[foe].mon().fainted() {
+                    self.sides[side].mon_mut().sure_hit = true;
+                }
+            }
+            StatusAction::ChargeUp => {
+                self.sides[side].mon_mut().charged_elec = true;
+            }
+            StatusAction::Spite => {
+                let drained = if hit && self.sides[foe].mon().sub_hp == 0 {
+                    if let Some(slot_i) = self.sides[foe].mon().last_used {
+                        let mon = self.sides[foe].mon_mut();
+                        if let Some(ms) = mon.moves.get_mut(slot_i as usize) {
+                            if ms.pp > 0 {
+                                // The games shave 2..5 PP; a script pins 2.
+                                let cut = if scripted { 2 } else { 2 + self.rng.below(4) as u8 };
+                                ms.pp = ms.pp.saturating_sub(cut);
+                                true
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+                if !drained {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Grudge => {
+                self.sides[side].mon_mut().grudged = true;
+            }
+            StatusAction::Torment => {
+                if hit && self.sides[foe].mon().sub_hp == 0 && !self.sides[foe].mon().tormented {
+                    self.sides[foe].mon_mut().tormented = true;
+                } else {
                     events.push(Event::Failed { side: side as u8 + 1 });
                 }
             }

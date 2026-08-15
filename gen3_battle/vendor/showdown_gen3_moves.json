@@ -252,7 +252,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"charge": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -700,7 +702,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"identify": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -949,7 +953,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"lockon": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1026,7 +1032,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"lockon": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1199,7 +1207,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"identify": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1451,7 +1461,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"spite": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3157,7 +3169,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"torment": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -5942,7 +5956,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"grudge": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,

@@ -280,6 +280,19 @@ pub enum StatusAction {
     Protect,
     /// Endure: whatever lands this turn leaves at least 1 HP.
     Endure,
+    /// Foresight/Odor Sleuth: Ghost immunity to Normal/Fighting lifted,
+    /// evasion ignored.
+    Identify,
+    /// Lock-On/Mind Reader: the user's next move cannot miss.
+    LockOn,
+    /// Charge: the user's next Electric move doubles.
+    ChargeUp,
+    /// Spite: the target's last move loses PP.
+    Spite,
+    /// Grudge: a KO before the user's next action drains the killer's move.
+    Grudge,
+    /// Torment: the target cannot use the same move twice in a row.
+    Torment,
 }
 
 /// One move.
@@ -340,13 +353,14 @@ impl MoveEntry {
     }
 }
 
-/// Struggle: the fallback when nothing else is usable. Typeless 50-power
-/// with a quarter recoil, outside the generated table because the pool
-/// deliberately excludes it.
+/// Struggle: the fallback when nothing else is usable. Normal-typed
+/// 50-power with a quarter recoil in this era (the chart applies — Rock
+/// resists it; typeless Struggle is a later generation), outside the
+/// generated table because the pool deliberately excludes it.
 pub static STRUGGLE: MoveEntry = MoveEntry {
     id: "struggle",
     name: "Struggle",
-    move_type: Type::None,
+    move_type: Type::Normal,
     power: 50,
     accuracy: 100,
     pp: 1,

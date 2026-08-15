@@ -536,6 +536,18 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Protect)")
                 } else if act.get("endure").is_some() {
                     String::from("Some(StatusAction::Endure)")
+                } else if act.get("identify").is_some() {
+                    String::from("Some(StatusAction::Identify)")
+                } else if act.get("lockon").is_some() {
+                    String::from("Some(StatusAction::LockOn)")
+                } else if act.get("charge").is_some() {
+                    String::from("Some(StatusAction::ChargeUp)")
+                } else if act.get("spite").is_some() {
+                    String::from("Some(StatusAction::Spite)")
+                } else if act.get("grudge").is_some() {
+                    String::from("Some(StatusAction::Grudge)")
+                } else if act.get("torment").is_some() {
+                    String::from("Some(StatusAction::Torment)")
                 } else if act.get("sub").is_some() {
                     String::from("Some(StatusAction::Substitute)")
                 } else if act.get("rest").is_some() {

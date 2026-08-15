@@ -385,6 +385,12 @@ function runDump(sc) {
           : m.id === 'swallow' ? {swallow: true}
           : ['protect', 'detect'].includes(m.id) ? {protect: true}
           : m.id === 'endure' ? {endure: true}
+          : ['foresight', 'odorsleuth'].includes(m.id) ? {identify: true}
+          : ['lockon', 'mindreader'].includes(m.id) ? {lockon: true}
+          : m.id === 'charge' ? {charge: true}
+          : m.id === 'spite' ? {spite: true}
+          : m.id === 'grudge' ? {grudge: true}
+          : m.id === 'torment' ? {torment: true}
           : m.id === 'rest' ? {rest: true}
           : m.id === 'focusenergy' ? {focus: true}
           : m.id === 'minimize' ? {minimize: true}
@@ -456,7 +462,8 @@ function runMovelist(sc) {
         'psychup', 'yawn', 'wish', 'perishsong', 'destinybond', 'block',
         'meanlook', 'spiderweb', 'mudsport', 'watersport', 'spikes',
         'memento', 'painsplit', 'taunt', 'nightmare', 'stockpile', 'swallow',
-        'protect', 'detect', 'endure',
+        'protect', 'detect', 'endure', 'foresight', 'odorsleuth', 'lockon',
+        'mindreader', 'charge', 'spite', 'grudge', 'torment',
       ] : [
         // Gen 1: the cartridge engine implements all of these; their sim
         // hooks are the era mechanics themselves.
@@ -492,7 +499,7 @@ function runMovelist(sc) {
       'smellingsalts', 'eruption', 'waterspout', 'pursuit', 'rapidspin',
       'revenge', 'focuspunch', 'triattack', 'superpower', 'overheat',
       'psychoboost', 'knockoff', 'thief', 'covet', 'endeavor', 'flail',
-      'thrash', 'petaldance', 'outrage',
+      'thrash', 'petaldance', 'outrage', 'rage', 'furycutter',
       'reversal', 'weatherball', 'secretpower', 'highjumpkick', 'jumpkick',
       'spitup',
     ].includes(move.id);
