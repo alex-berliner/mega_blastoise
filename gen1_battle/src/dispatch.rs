@@ -245,7 +245,8 @@ fn run_move(
             }
         } else if !locked {
             a.volatile.multi_turn_move = mv.id;
-            a.volatile.multi_turn_turns = 1 + (rng.coin() as u8); // 2..=3 total uses + final
+            a.volatile.multi_turn_turns =
+                1 + if rng.force.is_some() { 0 } else { rng.coin() as u8 }; // 2..=3 uses + final
             a.volatile.multi_turn_turns += 1;
             a.volatile.locked_acc = 255;
         }
@@ -880,7 +881,7 @@ fn apply_effect(
                 fail_log(sides, attacker_side, log);
             } else {
                 let pick = candidates[(rng.range(candidates.len() as u32)) as usize];
-                let turns = (rng.range(8) as u8) + 1; // 1..=8
+                let turns = if rng.force.is_some() { 1 } else { (rng.range(8) as u8) + 1 }; // 1..=8
                 let d = sides[defender_side].active_mut();
                 d.volatile.set(Volatile::DISABLED);
                 d.volatile.disabled_slot = pick;
@@ -953,7 +954,10 @@ fn apply_effect(
                     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
                 }
                 if !outcome.fainted_target {
-                    let total = *pick(rng, &[2, 2, 2, 3, 3, 3, 4, 5]);
+                    let total = match rng.forced_hits() {
+                        Some(h) => h.clamp(2, 5),
+                        None => *pick(rng, &[2, 2, 2, 3, 3, 3, 4, 5]),
+                    };
                     {
                         let a = sides[attacker_side].active_mut();
                         a.volatile.multi_turn_move = mv.id;

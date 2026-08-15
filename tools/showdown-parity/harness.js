@@ -486,6 +486,7 @@ function runMovelist(sc) {
         'recover', 'softboiled', 'reflect', 'lightscreen', 'haze', 'growth',
         'defensecurl', 'minimize', 'focusenergy', 'splash', 'teleport',
         'toxic', 'poisonpowder', 'sleeppowder', 'stunspore', 'substitute', 'rest',
+        'roar', 'whirlwind',
       ]).includes(move.id);
       const weather = sc.gen >= 3 &&
         ['sunnyday', 'raindance', 'sandstorm', 'hail'].includes(move.id);
@@ -504,6 +505,10 @@ function runMovelist(sc) {
     // Fixed-damage moves are deterministic and modelled: flat (Sonic Boom),
     // level (Seismic Toss), half-current (Super Fang). Psywave's random
     // callback stays out. OHKO moves KO on their scripted hit.
+    const g1plain = sc.gen === 1 && [
+      'payday', 'blizzard', 'thunder', 'dreameater', 'highjumpkick',
+      'jumpkick', 'lowkick', 'triattack',
+    ].includes(move.id);
     const fixedDamage = typeof move.damage === 'number' || move.damage === 'level' ||
       move.id === 'superfang';
     // Counter (both eras) and Mirror Coat (gen 3) bounce the turn's damage.
@@ -527,10 +532,10 @@ function runMovelist(sc) {
     if ((move.damageCallback || move.damage) && !fixedDamage && !counterish && !g3special) continue;
     if (move.mindBlownRecoil) continue;
     if (move.willCrit !== undefined && !counterish) continue;
-    if ((move.hasCrashDamage && !g3special) || move.struggleRecoil) continue;
+    if ((move.hasCrashDamage && !g3special && !g1plain) || move.struggleRecoil) continue;
     if (move.flags['futuremove'] && !g3special) continue;
     // Gen 3 partial traps are modelled; other damaging volatiles are not.
-    if (move.volatileStatus &&
+    if (move.volatileStatus && !g1plain &&
         !(move.volatileStatus === 'partiallytrapped' && sc.gen >= 3) &&
         !(move.volatileStatus === 'bide' && sc.gen >= 3)) continue;
     if ((move.sleepUsable || move.id === 'dreameater') &&
@@ -557,8 +562,7 @@ function runMovelist(sc) {
     // halved in sun).
     const thundery = sc.gen >= 3 && move.id === 'thunder';
     // Gen 1: coins are cosmetic, and Blizzard/Thunder predate weather.
-    const g1plain = sc.gen === 1 &&
-      ['payday', 'blizzard', 'thunder', 'dreameater'].includes(move.id);
+
     const chargey = move.flags['charge'] || move.flags['recharge'];
     const hooky = !chargey && !thundery && !g1plain && !counterish && !g3special &&
       Object.keys(raw).some((k) =>
@@ -566,7 +570,7 @@ function runMovelist(sc) {
       (/Callback/.test(k) && !(k === 'damageCallback' && fixedDamage)));
     // A recharge move's raw.self IS the mustrecharge volatile — machinery,
     // not an unmodelled self-effect.
-    if (hooky || (raw.self && !chargey && !g3special)) continue;
+    if (hooky || (raw.self && !chargey && !g3special && !g1plain)) continue;
     // allAdjacent only differs from allAdjacentFoes in doubles; this is 1v1.
     if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes', 'allAdjacent'].includes(move.target)
         && !(counterish && move.target === 'scripted')
