@@ -219,6 +219,23 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Charging { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "charge".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::Recharging { side } => {
+                effects
+                    .on_event(BoardEvent::Cant {
+                        mon: active_name(battle, side),
+                        reason: "recharge".into(),
+                    })
+                    .await;
+            }
             Event::Flinched { side } => {
                 effects
                     .on_event(BoardEvent::Cant { mon: active_name(battle, side), reason: "flinch".into() })

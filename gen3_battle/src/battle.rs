@@ -111,6 +111,11 @@ pub struct Mon {
     /// confusion lands — 2 under a script (the sim's pinned floor), 2..=5
     /// in play. Cleared by switching out.
     pub confusion_n: u8,
+    /// Mid two-turn move: the slot charged last turn, releasing this turn.
+    /// Any Cant loses the charge. Cleared by switching out.
+    pub charging: Option<u8>,
+    /// Hyper Beam landed last turn: this action is spent recharging.
+    pub must_recharge: bool,
 }
 
 impl Mon {
@@ -141,6 +146,8 @@ impl Mon {
             sleep_n: 0,
             flinched: false,
             confusion_n: 0,
+            charging: None,
+            must_recharge: false,
         })
     }
 
@@ -293,6 +300,10 @@ pub enum Event {
     Statused { side: u8, status: Status },
     /// A secondary moved one of `side`'s active mon's stat stages.
     Boosted { side: u8, boost: Boost, delta: i8 },
+    /// `side` spent the turn charging a two-turn move.
+    Charging { side: u8 },
+    /// `side` spent the turn recharging after Hyper Beam and kin.
+    Recharging { side: u8 },
     /// `side`'s mon flinched and lost its action.
     Flinched { side: u8 },
     /// `side`'s mon became confused.
@@ -362,6 +373,8 @@ impl Battle {
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
+                    out.charging = None;
+                    out.must_recharge = false;
                     self.sides[side].active = idx;
                     events.push(Event::Switched { side: side as u8 + 1, party_index: idx });
                 }
@@ -470,6 +483,13 @@ impl Battle {
         if self.sides[side].mon().fainted() {
             return;
         }
+        // Recharging after Hyper Beam and kin: the whole action is spent,
+        // gated even above sleep, matching the games' priority order.
+        if self.sides[side].mon().must_recharge {
+            self.sides[side].mon_mut().must_recharge = false;
+            events.push(Event::Recharging { side: side as u8 + 1 });
+            return;
+        }
         // Fast asleep: the sleep clock ticks down before each action, and at
         // zero the mon wakes and moves that same turn.
         if self.sides[side].mon().status == Some(Status::Sleep) {
@@ -478,6 +498,7 @@ impl Battle {
             if mon.sleep_n == 0 {
                 mon.status = None;
             } else {
+                mon.charging = None;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Sleep });
                 return;
             }
@@ -496,6 +517,7 @@ impl Battle {
             if self_thaw || lucky {
                 self.sides[side].mon_mut().status = None;
             } else {
+                self.sides[side].mon_mut().charging = None;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Freeze });
                 return;
             }
@@ -504,6 +526,7 @@ impl Battle {
         // flinched mon that has not moved yet loses its action. Freeze and
         // sleep outrank it in the games' gate order, hence checking second.
         if self.sides[side].mon().flinched {
+            self.sides[side].mon_mut().charging = None;
             events.push(Event::Flinched { side: side as u8 + 1 });
             return;
         }
@@ -520,6 +543,7 @@ impl Battle {
                     None => (self.rng.below(2) == 0, 85 + self.rng.below(16) as u8),
                 };
                 if selfhit {
+                    self.sides[side].mon_mut().charging = None;
                     let amount = self.confusion_self_hit(side, random);
                     events.push(Event::ConfusedHit { side: side as u8 + 1, amount });
                     let mon = self.sides[side].mon();
@@ -542,20 +566,45 @@ impl Battle {
                 None => self.rng.below(4) == 0,
             };
             if immobile {
+                self.sides[side].mon_mut().charging = None;
                 events.push(Event::FullyParalyzed { side: side as u8 + 1 });
                 return;
             }
         }
+        // Mid two-turn move: the release is forced to the charged slot and
+        // its PP was already paid on the charge turn.
+        let releasing = self.sides[side].mon().charging.is_some();
+        let index = match self.sides[side].mon().charging {
+            Some(i) => {
+                self.sides[side].mon_mut().charging = None;
+                i as usize
+            }
+            None => index,
+        };
         let Some(slot) = self.sides[side].mon().moves.get(index).copied() else {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
         };
-        if slot.pp == 0 {
+        if slot.pp == 0 && !releasing {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
         }
-        self.sides[side].mon_mut().moves[index].pp -= 1;
+        if !releasing {
+            self.sides[side].mon_mut().moves[index].pp -= 1;
+        }
         events.push(Event::Used { side: side as u8 + 1, move_index: index });
+
+        // The charge turn of a two-turn move: announce, tuck the slot away,
+        // and stop. Skull Bash's era perk raises Defense on the way down.
+        if slot.entry.charge && !releasing {
+            events.push(Event::Charging { side: side as u8 + 1 });
+            if slot.entry.id == "skullbash" {
+                self.sides[side].mon_mut().apply_boost(Boost::Def, 1);
+                events.push(Event::Boosted { side: side as u8 + 1, boost: Boost::Def, delta: 1 });
+            }
+            self.sides[side].mon_mut().charging = Some(index as u8);
+            return;
+        }
 
         // Explosion/Self-Destruct: the user faints ON USE, before the hit
         // resolves — a miss or an immune target changes nothing about that.
@@ -723,6 +772,11 @@ impl Battle {
             let hurt = hurt.min(user.hp);
             user.hp -= hurt;
             events.push(Event::Recoil { side: side as u8 + 1, amount: hurt });
+        }
+
+        // A landed Hyper Beam costs the next action.
+        if slot.entry.recharge {
+            self.sides[side].mon_mut().must_recharge = true;
         }
 
         self.resolve_faints(side, foe, events);
@@ -1277,6 +1331,36 @@ mod tests {
         assert_eq!(b.sides[1].mon().stages[Stat::Atk as usize], 0);
         b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
         assert_eq!(b.sides[1].mon().stages[Stat::Atk as usize], -1);
+    }
+
+    #[test]
+    fn charge_moves_take_two_turns_and_recharge_costs_one() {
+        // Solar Beam: turn 1 charges (one PP, no damage), turn 2 releases.
+        let mut b = battle(mon("venusaur", 50, &["solarbeam"]), mon("snorlax", 50, &["splash"]));
+        let hp = b.sides[1].mon().hp;
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(e, Event::Charging { side: 1 })));
+        assert!(!events.iter().any(|e| matches!(e, Event::Damage { side: 2, .. })));
+        assert_eq!(b.sides[0].mon().moves[0].pp, b.sides[0].mon().moves[0].entry.pp - 1);
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(e, Event::Damage { side: 2, .. })));
+        assert!(b.sides[1].mon().hp < hp);
+        assert_eq!(
+            b.sides[0].mon().moves[0].pp,
+            b.sides[0].mon().moves[0].entry.pp - 1,
+            "the release costs no second PP"
+        );
+
+        // Hyper Beam: the landed hit costs the next action. (Snorlax's own
+        // bulk keeps the target alive to see the recharge.)
+        let mut b = battle(mon("snorlax", 50, &["hyperbeam"]), mon("snorlax", 50, &["splash"]));
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(e, Event::Recharging { side: 1 })));
+        assert!(!events.iter().any(|e| matches!(e, Event::Used { side: 1, .. })));
+        // And the turn after, it attacks again.
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(e, Event::Used { side: 1, .. })));
     }
 
     #[test]

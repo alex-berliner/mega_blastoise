@@ -344,6 +344,8 @@ function runDump(sc) {
         ohko: !!m.ohko,
         highCrit: (m.critRatio ?? 1) >= 2,
         selfdestruct: m.selfdestruct === 'always',
+        charge: !!m.flags['charge'],
+        recharge: !!m.flags['recharge'],
       };
     });
   return {species, moves};
@@ -394,7 +396,10 @@ function runMovelist(sc) {
     if (move.mindBlownRecoil) continue;
     if (move.willCrit !== undefined) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
-    if (move.flags['charge'] || move.flags['recharge'] || move.flags['futuremove']) continue;
+    if (move.flags['futuremove']) continue;
+    // Charge and recharge moves are modelled; the semi-invulnerable four
+    // (their turn-1 dodge plus per-move pierce rules) wait their turn.
+    if (['fly', 'dig', 'bounce', 'dive'].includes(move.id)) continue;
     if (move.volatileStatus) continue; // partial traps tick extra end-of-turn damage
     if (move.sleepUsable || move.id === 'dreameater') continue; // fail unless asleep
     const raw = rawOf(move.id);
@@ -408,10 +413,17 @@ function runMovelist(sc) {
     // and on-hit hooks are behaviour the core engines do not model.
     // Any on* hook means conditional behaviour (Facade's doubling is an
     // onBasePower handler, not a callback property).
-    const hooky = Object.keys(raw).some((k) =>
+    // Charge/recharge machinery lives in on* hooks; those moves' hooks are
+    // exactly the machinery being modelled, so they skip the hook filter.
+    // (Solar Beam's weather halving rides along unexercised: the fuzz never
+    // sets weather.)
+    const chargey = move.flags['charge'] || move.flags['recharge'];
+    const hooky = !chargey && Object.keys(raw).some((k) =>
       k.startsWith('on') ||
       (/Callback/.test(k) && !(k === 'damageCallback' && fixedDamage)));
-    if (hooky || raw.self) continue;
+    // A recharge move's raw.self IS the mustrecharge volatile — machinery,
+    // not an unmodelled self-effect.
+    if (hooky || (raw.self && !chargey)) continue;
     // allAdjacent only differs from allAdjacentFoes in doubles; this is 1v1.
     if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes', 'allAdjacent'].includes(move.target)) continue;
     if (move.id === 'struggle') continue;

@@ -519,8 +519,17 @@ impl<'a> Battle<'a> {
                     _ => 0,
                 }
             };
-            let pr0 = prio(self.effective_move(0));
-            let pr1 = prio(self.effective_move(1));
+            // A mon that cannot SELECT a move — asleep, frozen, or stuck
+            // recharging — queues a no-move action with no priority bracket:
+            // a sleeping Quick Attack holder does not keep its +1. (The gen 1
+            // turn fuzzer caught this against the reference sim.)
+            let cannot_select = |b: &Self, i: usize| {
+                let m = b.sides[i].active();
+                matches!(m.status, Status::Sleep(_) | Status::Freeze)
+                    || m.volatile.has(Volatile::MUST_RECHARGE)
+            };
+            let pr0 = if cannot_select(self, 0) { 0 } else { prio(self.effective_move(0)) };
+            let pr1 = if cannot_select(self, 1) { 0 } else { prio(self.effective_move(1)) };
             let s0 = self.sides[0].active().modified[4];
             let s1 = self.sides[1].active().modified[4];
             // A scripted battle breaks Speed ties toward player 1, matching

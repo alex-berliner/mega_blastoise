@@ -294,9 +294,15 @@ fn run_move(
     // Gen 1 status moves ignore the chart entirely (Thunder Wave paralyzes
     // Ground-types), and fixed-damage / trapping moves carry an explicit
     // ignore flag (Sonic Boom hits Gengar; Wrap traps Ghosts).
+    // The charge turn of a two-turn move happens regardless of the target:
+    // immunity is discovered on release (Razor Wind still spends a turn
+    // "whipping up a whirlwind" at a Ghost). Found by the gen 1 turn fuzzer.
+    let charging_turn =
+        ek == TwoTurn && !sides[attacker_side].active().volatile.has(Volatile::CHARGING);
     if mv.category != MoveCategory::Status
         && (mv.flags & FLAG_IGNORE_IMMUNITY) == 0
         && ek != Counter
+        && !charging_turn
     {
         let d = sides[defender_side].active();
         let immune = crate::tables::type_effectiveness(mv.move_type, d.primary_type) == 0

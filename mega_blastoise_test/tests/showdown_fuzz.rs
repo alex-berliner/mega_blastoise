@@ -119,7 +119,8 @@ fn fuzz_gen3_single_hits() {
     };
 
     let moves = vanilla_moves(3, false, |id| {
-        gen3_battle::move_by_id(id).map(|m| m.power > 0).unwrap_or(false)
+        // One scripted hit only: charge moves spend the single turn charging.
+        gen3_battle::move_by_id(id).map(|m| m.power > 0 && !m.charge).unwrap_or(false)
     });
     assert!(moves.len() > 80, "gen3 vanilla pool too small: {}", moves.len());
 
@@ -425,12 +426,17 @@ fn fuzz_gen1_single_hits() {
     use gen1_battle::testing::{compute_damage_scripted, Mon};
 
     let moves = vanilla_moves(1, false, |id| {
-        use gen1_battle::MoveEffectKind::{FlatDamage, HalfHp, LevelDamage, Ohko};
+        use gen1_battle::MoveEffectKind::{FlatDamage, HalfHp, LevelDamage, Ohko, TwoTurn};
         gen1_battle::move_by_id(id)
             .map(|m| {
                 // Formula damage only: fixed-damage and OHKO moves resolve
-                // outside compute_damage, which is all this suite runs.
-                m.power > 0 && !matches!(m.effect_kind, FlatDamage | LevelDamage | HalfHp | Ohko)
+                // outside compute_damage, which is all this suite runs — and
+                // charge moves spend the suite's single turn charging.
+                m.power > 0
+                    && !matches!(
+                        m.effect_kind,
+                        FlatDamage | LevelDamage | HalfHp | Ohko | TwoTurn
+                    )
             })
             .unwrap_or(false)
     });

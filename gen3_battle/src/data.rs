@@ -211,6 +211,10 @@ pub struct MoveEntry {
     /// Explosion and Self-Destruct: the user faints on use — before the hit
     /// resolves — and the target's Defense is halved in this era.
     pub selfdestruct: bool,
+    /// Two-turn move: a charge turn, then the release.
+    pub charge: bool,
+    /// Hyper Beam and kin: a landed hit costs the next turn to recharge.
+    pub recharge: bool,
 }
 
 impl MoveEntry {
