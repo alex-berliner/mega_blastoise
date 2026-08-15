@@ -260,6 +260,8 @@ pub struct MoveEntry {
     pub selfdestruct: bool,
     /// Two-turn move: a charge turn, then the release.
     pub charge: bool,
+    /// Wrap and kin: a landed hit binds the target for end-of-turn chip.
+    pub trap: bool,
     /// Hyper Beam and kin: a landed hit costs the next turn to recharge.
     pub recharge: bool,
 }

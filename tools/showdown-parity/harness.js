@@ -351,6 +351,7 @@ function runDump(sc) {
         selfdestruct: m.selfdestruct === 'always',
         charge: !!m.flags['charge'],
         recharge: !!m.flags['recharge'],
+        trap: m.volatileStatus === 'partiallytrapped',
       };
     });
   return {species, moves};
@@ -408,7 +409,9 @@ function runMovelist(sc) {
     if (move.willCrit !== undefined) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
     if (move.flags['futuremove']) continue;
-    if (move.volatileStatus) continue; // partial traps tick extra end-of-turn damage
+    // Gen 3 partial traps are modelled; other damaging volatiles are not.
+    if (move.volatileStatus &&
+        !(move.volatileStatus === 'partiallytrapped' && sc.gen >= 3)) continue;
     if (move.sleepUsable || move.id === 'dreameater') continue; // fail unless asleep
     const raw = rawOf(move.id);
     const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);

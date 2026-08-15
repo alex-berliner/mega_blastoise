@@ -22,7 +22,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "acid",
@@ -49,7 +50,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "ancientpower",
@@ -71,7 +73,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "assist",
@@ -93,7 +96,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "astonish",
@@ -118,7 +122,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "beatup",
@@ -140,7 +145,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bide",
@@ -162,7 +168,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "blizzard",
@@ -187,7 +194,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "brickbreak",
@@ -209,7 +217,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "charge",
@@ -231,7 +240,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "conversion",
@@ -253,7 +263,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "conversion2",
@@ -275,7 +286,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "counter",
@@ -297,7 +309,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "covet",
@@ -319,7 +332,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "crunch",
@@ -346,7 +360,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dig",
@@ -368,7 +383,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": true,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "disable",
@@ -390,7 +406,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dive",
@@ -412,7 +429,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": true,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "doomdesire",
@@ -434,7 +452,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "encore",
@@ -456,7 +475,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "extrasensory",
@@ -481,7 +501,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "fakeout",
@@ -506,7 +527,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "feintattack",
@@ -528,7 +550,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "flail",
@@ -550,7 +573,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "flash",
@@ -577,7 +601,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "fly",
@@ -599,7 +624,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": true,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "followme",
@@ -621,7 +647,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "foresight",
@@ -643,7 +670,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "furycutter",
@@ -665,7 +693,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "gigadrain",
@@ -690,7 +719,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "glare",
@@ -714,7 +744,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "haze",
@@ -736,7 +767,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -758,7 +790,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "highjumpkick",
@@ -780,7 +813,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hypnosis",
@@ -804,7 +838,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "jumpkick",
@@ -826,7 +861,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "leafblade",
@@ -848,7 +884,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "lockon",
@@ -870,7 +907,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "megadrain",
@@ -895,7 +933,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "memento",
@@ -923,7 +962,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mindreader",
@@ -945,7 +985,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mimic",
@@ -967,7 +1008,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mirrorcoat",
@@ -989,7 +1031,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mirrormove",
@@ -1011,7 +1054,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "naturepower",
@@ -1033,7 +1077,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "needlearm",
@@ -1058,7 +1103,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "nightmare",
@@ -1080,7 +1126,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "odorsleuth",
@@ -1102,7 +1149,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "outrage",
@@ -1124,7 +1172,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "overheat",
@@ -1146,7 +1195,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "petaldance",
@@ -1168,7 +1218,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "pursuit",
@@ -1190,7 +1241,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "recover",
@@ -1217,7 +1269,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "reversal",
@@ -1239,7 +1292,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rocksmash",
@@ -1266,7 +1320,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sketch",
@@ -1288,7 +1343,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sleeptalk",
@@ -1310,7 +1366,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "spite",
@@ -1332,7 +1389,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "stockpile",
@@ -1354,7 +1412,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "surf",
@@ -1376,7 +1435,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "taunt",
@@ -1398,7 +1458,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "teeterdance",
@@ -1422,7 +1483,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "tickle",
@@ -1450,7 +1512,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "uproar",
@@ -1472,7 +1535,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "vinewhip",
@@ -1494,7 +1558,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "volttackle",
@@ -1519,7 +1584,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "waterfall",
@@ -1541,7 +1607,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "weatherball",
@@ -1563,7 +1630,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "zapcannon",
@@ -1588,7 +1656,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "aromatherapy",
@@ -1610,7 +1679,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bind",
@@ -1632,7 +1702,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": true
 },
 {
 "id": "bonerush",
@@ -1657,7 +1728,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bulletseed",
@@ -1682,7 +1754,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "camouflage",
@@ -1704,7 +1777,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "clamp",
@@ -1726,7 +1800,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": true
 },
 {
 "id": "cottonspore",
@@ -1753,7 +1828,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "crabhammer",
@@ -1775,7 +1851,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "curse",
@@ -1797,7 +1874,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "detect",
@@ -1819,7 +1897,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "doubleedge",
@@ -1844,7 +1923,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dreameater",
@@ -1869,7 +1949,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "endeavor",
@@ -1891,7 +1972,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "extremespeed",
@@ -1913,7 +1995,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "firespin",
@@ -1935,7 +2018,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": true
 },
 {
 "id": "focuspunch",
@@ -1957,7 +2041,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "futuresight",
@@ -1979,7 +2064,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "growth",
@@ -2006,7 +2092,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "healbell",
@@ -2028,7 +2115,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "iciclespear",
@@ -2053,7 +2141,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "imprison",
@@ -2075,7 +2164,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "ingrain",
@@ -2097,7 +2187,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "knockoff",
@@ -2119,7 +2210,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "leechseed",
@@ -2143,7 +2235,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "lightscreen",
@@ -2167,7 +2260,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "magiccoat",
@@ -2189,7 +2283,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "metronome",
@@ -2211,7 +2306,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "minimize",
@@ -2233,7 +2329,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mist",
@@ -2257,7 +2354,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "moonlight",
@@ -2279,7 +2377,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "morningsun",
@@ -2301,7 +2400,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mudsport",
@@ -2323,7 +2423,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "payday",
@@ -2345,7 +2446,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "perishsong",
@@ -2367,7 +2469,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "poisongas",
@@ -2391,7 +2494,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "protect",
@@ -2413,7 +2517,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "psychup",
@@ -2435,7 +2540,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rapidspin",
@@ -2457,7 +2563,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "recycle",
@@ -2479,7 +2586,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "reflect",
@@ -2503,7 +2611,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "roar",
@@ -2525,7 +2634,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rockblast",
@@ -2550,7 +2660,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "safeguard",
@@ -2574,7 +2685,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sandtomb",
@@ -2596,7 +2708,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": true
 },
 {
 "id": "scaryface",
@@ -2623,7 +2736,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "secretpower",
@@ -2648,7 +2762,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "snatch",
@@ -2670,7 +2785,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "snore",
@@ -2695,7 +2811,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "spikes",
@@ -2717,7 +2834,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "substitute",
@@ -2739,7 +2857,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "swallow",
@@ -2761,7 +2880,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "synthesis",
@@ -2783,7 +2903,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "tackle",
@@ -2805,7 +2926,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "tailglow",
@@ -2832,7 +2954,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "thrash",
@@ -2854,7 +2977,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "torment",
@@ -2876,7 +3000,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "toxic",
@@ -2900,7 +3025,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "transform",
@@ -2922,7 +3048,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "watersport",
@@ -2944,7 +3071,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "whirlpool",
@@ -2966,7 +3094,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": true
 },
 {
 "id": "whirlwind",
@@ -2988,7 +3117,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "wish",
@@ -3010,7 +3140,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "wrap",
@@ -3032,7 +3163,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": true
 },
 {
 "id": "yawn",
@@ -3054,7 +3186,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "acidarmor",
@@ -3081,7 +3214,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "aircutter",
@@ -3103,7 +3237,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "barrier",
@@ -3130,7 +3265,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "block",
@@ -3152,7 +3288,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bodyslam",
@@ -3177,7 +3314,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bounce",
@@ -3202,7 +3340,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": true,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bubble",
@@ -3229,7 +3368,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "charm",
@@ -3256,7 +3396,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "fireblast",
@@ -3281,7 +3422,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "flamethrower",
@@ -3306,7 +3448,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "grasswhistle",
@@ -3330,7 +3473,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "growl",
@@ -3357,7 +3501,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "heatwave",
@@ -3382,7 +3527,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3404,7 +3550,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3426,7 +3573,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3448,7 +3596,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3470,7 +3619,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3492,7 +3642,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3514,7 +3665,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3536,7 +3688,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3558,7 +3711,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3580,7 +3734,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3602,7 +3757,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3624,7 +3780,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3646,7 +3803,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3668,7 +3826,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3690,7 +3849,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3712,7 +3872,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hiddenpower",
@@ -3734,7 +3895,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hydropump",
@@ -3756,7 +3918,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hypervoice",
@@ -3778,7 +3941,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "icebeam",
@@ -3803,7 +3967,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "leechlife",
@@ -3828,7 +3993,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "lick",
@@ -3853,7 +4019,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "meanlook",
@@ -3875,7 +4042,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "metalsound",
@@ -3902,7 +4070,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "meteormash",
@@ -3924,7 +4093,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "muddywater",
@@ -3951,7 +4121,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "pinmissile",
@@ -3976,7 +4147,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "poisonfang",
@@ -4001,7 +4173,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "poisonpowder",
@@ -4025,7 +4198,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "psywave",
@@ -4047,7 +4221,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rocktomb",
@@ -4074,7 +4249,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "screech",
@@ -4101,7 +4277,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sing",
@@ -4125,7 +4302,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "skullbash",
@@ -4147,7 +4325,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": true,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sleeppowder",
@@ -4171,7 +4350,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "smellingsalts",
@@ -4193,7 +4373,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "smog",
@@ -4218,7 +4399,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "spore",
@@ -4242,7 +4424,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "stringshot",
@@ -4269,7 +4452,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "stunspore",
@@ -4293,7 +4477,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "submission",
@@ -4318,7 +4503,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "supersonic",
@@ -4342,7 +4528,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sweetkiss",
@@ -4366,7 +4553,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sweetscent",
@@ -4393,7 +4581,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "swordsdance",
@@ -4420,7 +4609,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "thief",
@@ -4442,7 +4632,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "thunder",
@@ -4467,7 +4658,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "thunderbolt",
@@ -4492,7 +4684,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "willowisp",
@@ -4516,7 +4709,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "destinybond",
@@ -4538,7 +4732,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sheercold",
@@ -4560,7 +4755,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "swagger",
@@ -4582,7 +4778,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "thunderwave",
@@ -4606,7 +4803,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "barrage",
@@ -4631,7 +4829,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "boneclub",
@@ -4656,7 +4855,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "cometpunch",
@@ -4681,7 +4881,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "constrict",
@@ -4708,7 +4909,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dizzypunch",
@@ -4733,7 +4935,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "doubleslap",
@@ -4758,7 +4961,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dragonrage",
@@ -4780,7 +4984,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "eggbomb",
@@ -4802,7 +5007,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "frustration",
@@ -4824,7 +5030,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "howl",
@@ -4851,7 +5058,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hyperfang",
@@ -4876,7 +5084,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "iceball",
@@ -4898,7 +5107,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "karatechop",
@@ -4920,7 +5130,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "lowkick",
@@ -4942,7 +5153,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "magnitude",
@@ -4964,7 +5176,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "meditate",
@@ -4991,7 +5204,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "psychoboost",
@@ -5013,7 +5227,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rage",
@@ -5035,7 +5250,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "razorwind",
@@ -5057,7 +5273,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": true,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "refresh",
@@ -5079,7 +5296,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "return",
@@ -5101,7 +5319,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rollingkick",
@@ -5126,7 +5345,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sharpen",
@@ -5153,7 +5373,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "signalbeam",
@@ -5178,7 +5399,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "silverwind",
@@ -5200,7 +5422,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "skyuppercut",
@@ -5222,7 +5445,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sonicboom",
@@ -5244,7 +5468,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "spiderweb",
@@ -5266,7 +5491,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "spikecannon",
@@ -5291,7 +5517,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "teleport",
@@ -5313,7 +5540,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "twineedle",
@@ -5341,7 +5569,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bonemerang",
@@ -5366,7 +5595,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "cut",
@@ -5388,7 +5618,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "grudge",
@@ -5410,7 +5641,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hail",
@@ -5434,7 +5666,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "kinesis",
@@ -5461,7 +5694,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "lovelykiss",
@@ -5485,7 +5719,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "lusterpurge",
@@ -5512,7 +5747,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "milkdrink",
@@ -5539,7 +5775,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mistball",
@@ -5566,7 +5803,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "octazooka",
@@ -5593,7 +5831,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rest",
@@ -5615,7 +5854,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "revenge",
@@ -5637,7 +5877,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "slackoff",
@@ -5664,7 +5905,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "softboiled",
@@ -5691,7 +5933,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "vitalthrow",
@@ -5713,7 +5956,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "aerialace",
@@ -5735,7 +5979,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "aeroblast",
@@ -5757,7 +6002,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "agility",
@@ -5784,7 +6030,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "amnesia",
@@ -5811,7 +6058,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "armthrust",
@@ -5836,7 +6084,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "attract",
@@ -5858,7 +6107,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "aurorabeam",
@@ -5885,7 +6135,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "batonpass",
@@ -5907,7 +6158,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bellydrum",
@@ -5929,7 +6181,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bite",
@@ -5954,7 +6207,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "blastburn",
@@ -5976,7 +6230,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": true
+"recharge": true,
+"trap": false
 },
 {
 "id": "blazekick",
@@ -6001,7 +6256,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bubblebeam",
@@ -6028,7 +6284,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "bulkup",
@@ -6056,7 +6313,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "calmmind",
@@ -6084,7 +6342,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "confuseray",
@@ -6108,7 +6367,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "confusion",
@@ -6133,7 +6393,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "cosmicpower",
@@ -6161,7 +6422,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "crosschop",
@@ -6183,7 +6445,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "crushclaw",
@@ -6210,7 +6473,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "defensecurl",
@@ -6232,7 +6496,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "doublekick",
@@ -6257,7 +6522,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "doubleteam",
@@ -6284,7 +6550,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dragonbreath",
@@ -6309,7 +6576,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dragonclaw",
@@ -6331,7 +6599,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dragondance",
@@ -6359,7 +6628,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "drillpeck",
@@ -6381,7 +6651,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "dynamicpunch",
@@ -6406,7 +6677,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "earthquake",
@@ -6428,7 +6700,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "ember",
@@ -6453,7 +6726,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "endure",
@@ -6475,7 +6749,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "eruption",
@@ -6497,7 +6772,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "explosion",
@@ -6519,7 +6795,8 @@
 "highCrit": false,
 "selfdestruct": true,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "facade",
@@ -6541,7 +6818,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "faketears",
@@ -6568,7 +6846,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "falseswipe",
@@ -6590,7 +6869,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "featherdance",
@@ -6617,7 +6897,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "firepunch",
@@ -6642,7 +6923,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "fissure",
@@ -6664,7 +6946,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "flamewheel",
@@ -6689,7 +6972,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "flatter",
@@ -6711,7 +6995,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "focusenergy",
@@ -6733,7 +7018,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "frenzyplant",
@@ -6755,7 +7041,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": true
+"recharge": true,
+"trap": false
 },
 {
 "id": "furyattack",
@@ -6780,7 +7067,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "furyswipes",
@@ -6805,7 +7093,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "guillotine",
@@ -6827,7 +7116,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "gust",
@@ -6849,7 +7139,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "harden",
@@ -6876,7 +7167,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "headbutt",
@@ -6901,7 +7193,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "helpinghand",
@@ -6923,7 +7216,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hornattack",
@@ -6945,7 +7239,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "horndrill",
@@ -6967,7 +7262,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "hydrocannon",
@@ -6989,7 +7285,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": true
+"recharge": true,
+"trap": false
 },
 {
 "id": "hyperbeam",
@@ -7011,7 +7308,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": true
+"recharge": true,
+"trap": false
 },
 {
 "id": "icepunch",
@@ -7036,7 +7334,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "icywind",
@@ -7063,7 +7362,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "irondefense",
@@ -7090,7 +7390,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "irontail",
@@ -7117,7 +7418,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "leer",
@@ -7144,7 +7446,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "machpunch",
@@ -7166,7 +7469,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "magicalleaf",
@@ -7188,7 +7492,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "megahorn",
@@ -7210,7 +7515,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "megakick",
@@ -7232,7 +7538,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "megapunch",
@@ -7254,7 +7561,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "metalclaw",
@@ -7276,7 +7584,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mudshot",
@@ -7303,7 +7612,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "mudslap",
@@ -7330,7 +7640,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "nightshade",
@@ -7352,7 +7663,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "painsplit",
@@ -7374,7 +7686,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "peck",
@@ -7396,7 +7709,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "poisonsting",
@@ -7421,7 +7735,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "poisontail",
@@ -7446,7 +7761,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "pound",
@@ -7468,7 +7784,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "powdersnow",
@@ -7493,7 +7810,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "present",
@@ -7515,7 +7833,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "psybeam",
@@ -7540,7 +7859,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "psychic",
@@ -7567,7 +7887,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "quickattack",
@@ -7589,7 +7910,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "raindance",
@@ -7613,7 +7935,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "razorleaf",
@@ -7635,7 +7958,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rockslide",
@@ -7660,7 +7984,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rockthrow",
@@ -7682,7 +8007,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "roleplay",
@@ -7704,7 +8030,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "rollout",
@@ -7726,7 +8053,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sacredfire",
@@ -7751,7 +8079,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sandattack",
@@ -7778,7 +8107,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sandstorm",
@@ -7802,7 +8132,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "scratch",
@@ -7824,7 +8155,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "seismictoss",
@@ -7846,7 +8178,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "selfdestruct",
@@ -7868,7 +8201,8 @@
 "highCrit": false,
 "selfdestruct": true,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "shadowball",
@@ -7895,7 +8229,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "shadowpunch",
@@ -7917,7 +8252,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "shockwave",
@@ -7939,7 +8275,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "skillswap",
@@ -7961,7 +8298,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "skyattack",
@@ -7986,7 +8324,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": true,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "slam",
@@ -8008,7 +8347,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "slash",
@@ -8030,7 +8370,8 @@
 "highCrit": true,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sludge",
@@ -8055,7 +8396,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sludgebomb",
@@ -8080,7 +8422,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "smokescreen",
@@ -8107,7 +8450,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "solarbeam",
@@ -8129,7 +8473,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": true,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "spark",
@@ -8154,7 +8499,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "spitup",
@@ -8176,7 +8522,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "splash",
@@ -8198,7 +8545,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "steelwing",
@@ -8220,7 +8568,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "stomp",
@@ -8245,7 +8594,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "strength",
@@ -8267,7 +8617,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "sunnyday",
@@ -8291,7 +8642,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "superfang",
@@ -8313,7 +8665,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "superpower",
@@ -8335,7 +8688,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "swift",
@@ -8357,7 +8711,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "tailwhip",
@@ -8384,7 +8739,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "takedown",
@@ -8409,7 +8765,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "thunderpunch",
@@ -8434,7 +8791,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "thundershock",
@@ -8459,7 +8817,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "triattack",
@@ -8481,7 +8840,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "trick",
@@ -8503,7 +8863,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "triplekick",
@@ -8528,7 +8889,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "twister",
@@ -8553,7 +8915,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "visegrip",
@@ -8575,7 +8938,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "watergun",
@@ -8597,7 +8961,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "waterpulse",
@@ -8622,7 +8987,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "waterspout",
@@ -8644,7 +9010,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "wingattack",
@@ -8666,7 +9033,8 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 },
 {
 "id": "withdraw",
@@ -8693,6 +9061,7 @@
 "highCrit": false,
 "selfdestruct": false,
 "charge": false,
-"recharge": false
+"recharge": false,
+"trap": false
 }
 ]

@@ -420,6 +420,7 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
         let high_crit = m["highCrit"].as_bool().unwrap_or(false);
         let selfdestruct = m["selfdestruct"].as_bool().unwrap_or(false);
         let charge = m["charge"].as_bool().unwrap_or(false);
+        let trap = m["trap"].as_bool().unwrap_or(false);
         let recharge = m["recharge"].as_bool().unwrap_or(false);
         let status_action = match m["statusAction"].as_object() {
             None => String::from("None"),
@@ -483,7 +484,7 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
              multihit: {multihit}, status_action: {status_action}, \
              respects_immunity: {respects_immunity}, fixed: {fixed}, \
              ohko: {ohko}, high_crit: {high_crit}, selfdestruct: {selfdestruct}, \
-             charge: {charge}, recharge: {recharge} }},\n",
+             charge: {charge}, recharge: {recharge}, trap: {trap} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

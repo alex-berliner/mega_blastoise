@@ -113,6 +113,10 @@ pub struct Mon {
     pub confusion_n: u8,
     /// Leech Seed planted on this mon. Cleared by switching out.
     pub seeded: bool,
+    /// Partial-trap clock (Wrap and kin): while above zero the mon cannot
+    /// switch and takes a sixteenth of max HP after each surviving tick.
+    /// Released when it runs out or the trapper leaves the field.
+    pub trapped_n: u8,
     /// Mid two-turn move: the slot charged last turn, releasing this turn.
     /// Any Cant loses the charge. Cleared by switching out.
     pub charging: Option<u8>,
@@ -149,6 +153,7 @@ impl Mon {
             flinched: false,
             confusion_n: 0,
             seeded: false,
+            trapped_n: 0,
             charging: None,
             must_recharge: false,
         })
@@ -341,6 +346,12 @@ pub enum Event {
     WeatherDamage { side: u8, amount: u16 },
     /// Leech Seed drained `amount` from `side`'s mon to the other active.
     SeedDrain { side: u8, amount: u16 },
+    /// `side`'s mon was bound by Wrap and kin.
+    Trapped { side: u8 },
+    /// The bind chipped `side`'s mon.
+    TrapDamage { side: u8, amount: u16 },
+    /// The bind on `side`'s mon ran out.
+    TrapEnded { side: u8 },
     /// `side`'s team condition ran out.
     SideEnded { side: u8, condition: SideCondition },
     /// `side` spent the turn recharging after Hyper Beam and kin.
@@ -413,11 +424,18 @@ impl Battle {
         // resets a Toxic count: the poison stays, the clock starts over.
         for side in 0..2 {
             if let Choice::Switch(idx) = choices[side] {
+                if self.sides[side].mon().trapped_n > 0 && !self.sides[side].mon().fainted() {
+                    // Bound: switching is refused; the turn is forfeit.
+                    continue;
+                }
                 if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
+                    // The trapper leaving the field releases its victim.
+                    self.sides[1 - side].mon_mut().trapped_n = 0;
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
                     out.seeded = false;
+                    out.trapped_n = 0;
                     out.charging = None;
                     out.must_recharge = false;
                     self.sides[side].active = idx;
@@ -504,22 +522,34 @@ impl Battle {
             if mon.fainted() {
                 continue;
             }
-            let status = match mon.status {
-                Some(s @ (Status::Burn | Status::Poison | Status::Toxic)) => s,
-                _ => continue,
-            };
-            let amount = if status == Status::Toxic {
+            if let Some(status @ (Status::Burn | Status::Poison | Status::Toxic)) = mon.status {
+                let amount = if status == Status::Toxic {
+                    let mon = self.sides[side].mon_mut();
+                    mon.toxic_n = (mon.toxic_n + 1).min(15);
+                    (mon.max_hp / 16).max(1) * mon.toxic_n as u16
+                } else {
+                    (self.sides[side].mon().max_hp / 8).max(1)
+                };
                 let mon = self.sides[side].mon_mut();
-                mon.toxic_n = (mon.toxic_n + 1).min(15);
-                (mon.max_hp / 16).max(1) * mon.toxic_n as u16
-            } else {
-                (self.sides[side].mon().max_hp / 8).max(1)
-            };
-            let mon = self.sides[side].mon_mut();
-            let amount = amount.min(mon.hp);
-            mon.hp -= amount;
-            events.push(Event::Residual { side: side as u8 + 1, amount, status });
-            self.faint_and_replace(side, &mut events);
+                let amount = amount.min(mon.hp);
+                mon.hp -= amount;
+                events.push(Event::Residual { side: side as u8 + 1, amount, status });
+                self.faint_and_replace(side, &mut events);
+            }
+            // The bind (order 10, after the status tick): the clock ticks
+            // down, and every surviving tick chips a sixteenth.
+            if self.sides[side].mon().trapped_n > 0 && !self.sides[side].mon().fainted() {
+                let mon = self.sides[side].mon_mut();
+                mon.trapped_n -= 1;
+                if mon.trapped_n > 0 {
+                    let amount = ((mon.max_hp / 16).max(1)).min(mon.hp);
+                    mon.hp -= amount;
+                    events.push(Event::TrapDamage { side: side as u8 + 1, amount });
+                    self.faint_and_replace(side, &mut events);
+                } else {
+                    events.push(Event::TrapEnded { side: side as u8 + 1 });
+                }
+            }
         }
 
         // Team conditions run out: five end-of-turn ticks including the
@@ -951,6 +981,8 @@ impl Battle {
     /// Announce and replace one side's active if it just fainted.
     fn faint_and_replace(&mut self, side: usize, events: &mut Vec<Event>) {
         if self.sides[side].mon().fainted() {
+            // A fainted trapper releases its victim.
+            self.sides[1 - side].mon_mut().trapped_n = 0;
             events.push(Event::Fainted { side: side as u8 + 1 });
             if let Some(next) = self.sides[side].first_healthy() {
                 self.sides[side].active = next;
@@ -966,6 +998,7 @@ impl Battle {
     fn resolve_faints(&mut self, side: usize, foe: usize, events: &mut Vec<Event>) {
         for who in [foe, side] {
             if self.sides[who].mon().fainted() {
+                self.sides[1 - who].mon_mut().trapped_n = 0;
                 events.push(Event::Fainted { side: who as u8 + 1 });
                 if let Some(next) = self.sides[who].first_healthy() {
                     self.sides[who].active = next;
@@ -1185,6 +1218,21 @@ impl Battle {
             && !self.sides[foe].mon().fainted()
         {
             self.sides[foe].mon_mut().status = None;
+        }
+
+        // Wrap and kin bind the target: the games roll 3..6 end-of-turn
+        // ticks (a script pins the floor), and a fresh bind cannot stack
+        // on a running one.
+        if slot.entry.trap
+            && !self.sides[foe].mon().fainted()
+            && self.sides[foe].mon().trapped_n == 0
+        {
+            let n = match script {
+                Some(_) => 3,
+                None => 3 + self.rng.below(4) as u8,
+            };
+            self.sides[foe].mon_mut().trapped_n = n;
+            events.push(Event::Trapped { side: foe as u8 + 1 });
         }
     }
 

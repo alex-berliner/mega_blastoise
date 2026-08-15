@@ -261,6 +261,31 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Trapped { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "bind".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::TrapDamage { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Damage {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
+            Event::TrapEnded { side } => {
+                effects
+                    .on_event(BoardEvent::EffectEnd {
+                        mon: active_name(battle, side),
+                        what: "bind".into(),
+                    })
+                    .await;
+            }
             Event::Seeded { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {

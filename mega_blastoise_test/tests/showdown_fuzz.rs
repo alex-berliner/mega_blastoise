@@ -119,8 +119,9 @@ fn fuzz_gen3_single_hits() {
     };
 
     let moves = vanilla_moves(3, false, |id| {
-        // One scripted hit only: charge moves spend the single turn charging.
-        gen3_battle::move_by_id(id).map(|m| m.power > 0 && !m.charge).unwrap_or(false)
+        // One scripted hit only: charge moves spend the single turn
+        // charging, and a bind's end-of-turn chip would smear the number.
+        gen3_battle::move_by_id(id).map(|m| m.power > 0 && !m.charge && !m.trap).unwrap_or(false)
     });
     assert!(moves.len() > 80, "gen3 vanilla pool too small: {}", moves.len());
 
