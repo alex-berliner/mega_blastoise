@@ -340,6 +340,33 @@ impl MoveEntry {
     }
 }
 
+/// Struggle: the fallback when nothing else is usable. Typeless 50-power
+/// with a quarter recoil, outside the generated table because the pool
+/// deliberately excludes it.
+pub static STRUGGLE: MoveEntry = MoveEntry {
+    id: "struggle",
+    name: "Struggle",
+    move_type: Type::None,
+    power: 50,
+    accuracy: 100,
+    pp: 1,
+    priority: 0,
+    secondary: None,
+    drain: None,
+    recoil: Some((1, 4)),
+    multihit: None,
+    status_action: None,
+    respects_immunity: false,
+    fixed: None,
+    ohko: false,
+    high_crit: false,
+    selfdestruct: false,
+    charge: false,
+    recharge: false,
+    trap: false,
+    self_drop: None,
+};
+
 /// Chart order, so a randbat slot's type index resolves back to a [`Type`].
 static TYPE_BY_INDEX: [Type; 17] = [
     Type::Normal, Type::Fire, Type::Water, Type::Electric, Type::Grass, Type::Ice,

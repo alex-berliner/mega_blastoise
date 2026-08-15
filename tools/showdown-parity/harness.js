@@ -492,6 +492,7 @@ function runMovelist(sc) {
       'smellingsalts', 'eruption', 'waterspout', 'pursuit', 'rapidspin',
       'revenge', 'focuspunch', 'triattack', 'superpower', 'overheat',
       'psychoboost', 'knockoff', 'thief', 'covet', 'endeavor', 'flail',
+      'thrash', 'petaldance', 'outrage',
       'reversal', 'weatherball', 'secretpower', 'highjumpkick', 'jumpkick',
       'spitup',
     ].includes(move.id);

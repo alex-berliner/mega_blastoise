@@ -150,6 +150,10 @@ pub struct Mon {
     /// Mid two-turn move: the slot charged last turn, releasing this turn.
     /// Any Cant loses the charge. Cleared by switching out.
     pub charging: Option<u8>,
+    /// Thrash-family rampage: (slot, attacks left AFTER this turn's).
+    /// Ends in fatigue confusion if it runs its course; any disruption
+    /// (a Cant, a miss) ends it quietly. Cleared by switching out.
+    pub rampage: Option<(u8, u8)>,
     /// Hyper Beam landed last turn: this action is spent recharging.
     pub must_recharge: bool,
 }
@@ -199,6 +203,7 @@ impl Mon {
             seeded: false,
             trapped_n: 0,
             charging: None,
+            rampage: None,
             must_recharge: false,
         })
     }
@@ -557,6 +562,7 @@ impl Battle {
                     out.seeded = false;
                     out.trapped_n = 0;
                     out.charging = None;
+                    out.rampage = None;
                     out.must_recharge = false;
                     self.sides[side].active = idx;
                     events.push(Event::Switched { side: side as u8 + 1, party_index: idx });
@@ -856,6 +862,7 @@ impl Battle {
                 mon.status = None;
             } else {
                 mon.charging = None;
+                mon.rampage = None;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Sleep });
                 return;
             }
@@ -875,6 +882,7 @@ impl Battle {
                 self.sides[side].mon_mut().status = None;
             } else {
                 self.sides[side].mon_mut().charging = None;
+                self.sides[side].mon_mut().rampage = None;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Freeze });
                 return;
             }
@@ -884,6 +892,7 @@ impl Battle {
         // sleep outrank it in the games' gate order, hence checking second.
         if self.sides[side].mon().flinched {
             self.sides[side].mon_mut().charging = None;
+            self.sides[side].mon_mut().rampage = None;
             events.push(Event::Flinched { side: side as u8 + 1 });
             return;
         }
@@ -901,6 +910,7 @@ impl Battle {
                 };
                 if selfhit {
                     self.sides[side].mon_mut().charging = None;
+                    self.sides[side].mon_mut().rampage = None;
                     let amount = self.confusion_self_hit(side, random);
                     events.push(Event::ConfusedHit { side: side as u8 + 1, amount });
                     let mon = self.sides[side].mon();
@@ -924,19 +934,25 @@ impl Battle {
             };
             if immobile {
                 self.sides[side].mon_mut().charging = None;
+                self.sides[side].mon_mut().rampage = None;
                 events.push(Event::FullyParalyzed { side: side as u8 + 1 });
                 return;
             }
         }
         // Mid two-turn move: the release is forced to the charged slot and
-        // its PP was already paid on the charge turn.
-        let releasing = self.sides[side].mon().charging.is_some();
+        // its PP was already paid on the charge turn. A rampage forces its
+        // slot the same way.
+        let ramping = self.sides[side].mon().rampage.is_some();
+        let releasing = self.sides[side].mon().charging.is_some() || ramping;
         let index = match self.sides[side].mon().charging {
             Some(i) => {
                 self.sides[side].mon_mut().charging = None;
                 i as usize
             }
-            None => index,
+            None => match self.sides[side].mon().rampage {
+                Some((i, _)) => i as usize,
+                None => index,
+            },
         };
         let Some(slot) = self.sides[side].mon().moves.get(index).copied() else {
             events.push(Event::Failed { side: side as u8 + 1 });
@@ -949,21 +965,26 @@ impl Battle {
         ) {
             self.sides[side].mon_mut().stall_counter = 0;
         }
-        // Taunted: status moves are refused outright.
-        if self.sides[side].mon().taunt_n > 0
-            && slot.entry.power == 0
+        // Taunt semantics split on WHEN it landed: the turn it lands, the
+        // victim's already-chosen status move is simply blocked (a lost
+        // turn); a status move CHOSEN while taunted becomes Struggle —
+        // typeless 50 power, a quarter recoil — as does running out of PP.
+        let status_movish = slot.entry.power == 0
             && slot.entry.fixed.is_none()
             && !slot.entry.ohko
-            && !matches!(slot.entry.id, "counter" | "mirrorcoat" | "spitup")
-        {
+            && !matches!(slot.entry.id, "counter" | "mirrorcoat" | "spitup");
+        if self.sides[side].mon().taunt_n == 2 && status_movish {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
         }
-        if slot.pp == 0 && !releasing {
-            events.push(Event::Failed { side: side as u8 + 1 });
-            return;
-        }
-        if !releasing {
+        let taunted_out = self.sides[side].mon().taunt_n == 1 && status_movish;
+        let struggling = (taunted_out || (slot.pp == 0 && !releasing)) && !releasing;
+        let slot = if struggling {
+            MoveSlot { entry: &crate::data::STRUGGLE, pp: 1, typed_as: None }
+        } else {
+            slot
+        };
+        if !releasing && !struggling {
             self.sides[side].mon_mut().moves[index].pp -= 1;
         }
         events.push(Event::Used { side: side as u8 + 1, move_index: index });
@@ -979,6 +1000,16 @@ impl Battle {
             }
             self.sides[side].mon_mut().charging = Some(index as u8);
             return;
+        }
+
+        // The thrash family locks in: the games roll 2..3 total attacks
+        // (a script pins the floor). The lock starts on first use.
+        if matches!(slot.entry.id, "thrash" | "petaldance" | "outrage") && !ramping {
+            let total: u8 = match script {
+                Some(_) => 2,
+                None => 2 + self.rng.below(2) as u8,
+            };
+            self.sides[side].mon_mut().rampage = Some((index as u8, total - 1));
         }
 
         // Spit Up with an empty bank simply fails; otherwise the bank is
@@ -1061,6 +1092,8 @@ impl Battle {
             Some(StatusAction::BoostSelf(_) | StatusAction::HealHalf | StatusAction::Team(_))
         );
         if !self_targeted && self.sides[foe].mon().protected {
+            // A shielded target disrupts a rampage: no fatigue, fresh start.
+            self.sides[side].mon_mut().rampage = None;
             events.push(Event::Failed { side: side as u8 + 1 });
             if boom {
                 self.resolve_faints(side, foe, events);
@@ -1078,6 +1111,7 @@ impl Battle {
                     _ => false,
                 };
                 if !pierces {
+                    self.sides[side].mon_mut().rampage = None;
                     if boom {
                         self.resolve_faints(side, foe, events);
                     }
@@ -1245,6 +1279,8 @@ impl Battle {
             return;
         }
         if !hit {
+            // A miss ends a rampage quietly — no fatigue confusion.
+            self.sides[side].mon_mut().rampage = None;
             // The kicks crash for half the damage they would have dealt.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                 let random = match script {
@@ -1452,6 +1488,23 @@ impl Battle {
         // This runs BEFORE the thaw below, matching the reference sim: a
         // Fire move's burn chance is blocked by the freeze it is about to
         // cure, because the target still carries frz when secondaries apply.
+        // A rampage counts down after each attack; running its course ends
+        // in fatigue confusion (which asks nobody's permission — not
+        // Safeguard's, not a substitute's).
+        if let Some((slot_i, left)) = self.sides[side].mon().rampage {
+            if left == 0 {
+                let scripted = script.is_some();
+                let mon = self.sides[side].mon_mut();
+                mon.rampage = None;
+                if mon.confusion_n == 0 && !mon.fainted() {
+                    mon.confusion_n = if scripted { 2 } else { 2 + self.rng.below(4) as u8 };
+                    events.push(Event::ConfusionStarted { side: side as u8 + 1 });
+                }
+            } else {
+                self.sides[side].mon_mut().rampage = Some((slot_i, left - 1));
+            }
+        }
+
         // Rapid Spin flings off the user's own bind and Leech Seed.
         if slot.entry.id == "rapidspin" {
             let user = self.sides[side].mon_mut();
@@ -2201,12 +2254,16 @@ mod tests {
     }
 
     #[test]
-    fn a_move_with_no_pp_fails_rather_than_hitting() {
+    fn a_move_with_no_pp_struggles_instead() {
         let mut b = battle(mon("blaziken", 50, &["ember"]), mon("treecko", 50, &["pound"]));
         b.sides[0].party[0].moves[0].pp = 0;
+        let hp = b.sides[1].mon().hp;
+        let before = b.sides[0].mon().hp;
         let events = b.step([Choice::Move(0), Choice::Move(0)]);
-        assert!(events.iter().any(|e| matches!(e, Event::Failed { side: 1 })));
-        assert!(!events.iter().any(|e| matches!(e, Event::Used { side: 1, .. })));
+        assert!(events.iter().any(|e| matches!(e, Event::Used { side: 1, .. })));
+        assert!(b.sides[1].mon().hp < hp, "Struggle landed");
+        assert!(b.sides[0].mon().hp < before, "and recoiled");
+        assert_eq!(b.sides[0].mon().moves[0].pp, 0, "no PP moved");
     }
 
     fn scripted(script: [SeatScript; 2]) -> TurnScript {

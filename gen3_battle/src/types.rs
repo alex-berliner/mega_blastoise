@@ -118,7 +118,9 @@ pub fn category_of(t: Type) -> Category {
         | Type::Ice
         | Type::Dragon
         | Type::Dark => Category::Special,
-        Type::None => Category::Status,
+        // Typeless DAMAGE is physical in this era — Struggle is the one
+        // case, since zero-power moves resolve as Status before this.
+        Type::None => Category::Physical,
     }
 }
 
