@@ -186,6 +186,10 @@ pub struct MoveEntry {
     /// What a zero-power move does. None on damaging moves, and on status
     /// moves whose effect is not modelled yet (they no-op like Splash).
     pub status_action: Option<StatusAction>,
+    /// A status move that type immunity blocks: Thunder Wave fails on
+    /// Ground, Glare on Ghost. Almost every other status move ignores the
+    /// chart in this era.
+    pub respects_immunity: bool,
 }
 
 impl MoveEntry {

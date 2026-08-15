@@ -404,6 +404,7 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                 .collect();
             format!("&[{}]", items.join(", "))
         };
+        let respects_immunity = m["respectsImmunity"].as_bool().unwrap_or(false);
         let status_action = match m["statusAction"].as_object() {
             None => String::from("None"),
             Some(act) => {
@@ -441,7 +442,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
             "    MoveEntry {{ id: {id:?}, name: {name:?}, move_type: {}, \
              power: {power}, accuracy: {accuracy}, pp: {pp}, priority: {priority}, \
              secondary: {secondary}, drain: {drain}, recoil: {recoil}, \
-             multihit: {multihit}, status_action: {status_action} }},\n",
+             multihit: {multihit}, status_action: {status_action}, \
+             respects_immunity: {respects_immunity} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

@@ -266,7 +266,8 @@ fn fuzz_gen3_turns() {
     let mut fz = Fuzz::new("gen3-turns");
     let mut scenarios = Vec::new();
     let mut cases = Vec::new();
-    let statuses: [Option<&str>; 6] = [None, None, Some("brn"), Some("psn"), Some("par"), Some("frz")];
+    let statuses: [Option<&str>; 7] =
+        [None, None, Some("brn"), Some("psn"), Some("par"), Some("frz"), Some("slp")];
     for _ in 0..fuzz_n() / 2 {
         let (s1, s2) = (fz.pick(SPECIES), fz.pick(SPECIES));
         let level = 40 + fz.below(61) as u8;
@@ -286,45 +287,64 @@ fn fuzz_gen3_turns() {
                     "psn" => (s, Status::Poison),
                     "par" => (s, Status::Paralysis),
                     "frz" => (s, Status::Freeze),
+                    "slp" => (s, Status::Sleep),
                     _ => unreachable!(),
                 }),
             }
         };
         let st1 = legal_status(&mut fz, s1);
         let st2 = legal_status(&mut fz, s2);
-        // hit, crit, roll, secondary, immobile, hits — immobile only when
-        // the seat is paralyzed going in, hits only for a 2-5 multi-hit
-        // move, matching when the sim would roll each.
-        let mut script: Vec<(bool, bool, u8, bool, bool, u8)> = (0..2)
-            .map(|_| (!fz.chance(10), fz.chance(25), 85 + fz.below(16) as u8, fz.chance(40), false, 0))
-            .collect();
-        for (seat, st) in [st1, st2].iter().enumerate() {
-            if matches!(st, Some((_, gen3_battle::data::Status::Paralysis))) {
-                script[seat].4 = fz.chance(25);
-            }
-            let mv = if seat == 0 { &m1 } else { &m2 };
-            if let Some(e) = gen3_battle::move_by_id(mv) {
-                if e.multihit.is_some_and(|(lo, hi)| lo != hi) {
-                    script[seat].5 = 2 + fz.below(4) as u8;
+        // 1-3 whole turns, each seat scripted per turn: hit, crit, roll,
+        // secondary, immobile, hits. The immobile and hits knobs only fire
+        // when their condition holds (paralysis, a 2-5 multi-hit move), so
+        // generating them unconditionally is harmless and covers statuses
+        // that land mid-battle.
+        let n_turns = 1 + fz.below(3) as usize;
+        let mut turns: Vec<[(bool, bool, u8, bool, bool, u8); 2]> = Vec::new();
+        for _ in 0..n_turns {
+            let mut pair = [(true, false, 100u8, false, false, 0u8); 2];
+            for (seat, slot) in pair.iter_mut().enumerate() {
+                *slot = (
+                    !fz.chance(10),
+                    fz.chance(25),
+                    85 + fz.below(16) as u8,
+                    fz.chance(40),
+                    fz.chance(15),
+                    0,
+                );
+                let mv = if seat == 0 { &m1 } else { &m2 };
+                if let Some(e) = gen3_battle::move_by_id(mv) {
+                    if e.multihit.is_some_and(|(lo, hi)| lo != hi) {
+                        slot.5 = 2 + fz.below(4) as u8;
+                    }
                 }
             }
+            turns.push(pair);
         }
 
+        let turn_json: Vec<Value> = turns
+            .iter()
+            .map(|pair| {
+                let seat = |t: &(bool, bool, u8, bool, bool, u8)| {
+                    json!({"hit": t.0, "crit": t.1, "roll": t.2, "secondary": t.3, "immobile": t.4, "hits": t.5})
+                };
+                json!({"p1": seat(&pair[0]), "p2": seat(&pair[1])})
+            })
+            .collect();
         scenarios.push(json!({
             "kind": "turn", "gen": 3,
             "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0)},
             "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0)},
             "moves": [m1, m2],
-            "script": {"p1": {"hit": script[0].0, "crit": script[0].1, "roll": script[0].2, "secondary": script[0].3, "immobile": script[0].4, "hits": script[0].5},
-                       "p2": {"hit": script[1].0, "crit": script[1].1, "roll": script[1].2, "secondary": script[1].3, "immobile": script[1].4, "hits": script[1].5}},
+            "turns": turn_json,
         }));
-        cases.push((s1.id, s2.id, level, m1, m2, script, [st1.map(|s| s.1), st2.map(|s| s.1)]));
+        cases.push((s1.id, s2.id, level, m1, m2, turns, [st1.map(|s| s.1), st2.map(|s| s.1)]));
     }
 
     let results = showdown(&Value::Array(scenarios.clone()));
     let inv = Invest { iv: 31, ev: 0 };
     let mut bad = 0;
-    for (i, ((s1, s2, level, m1, m2, script, statuses), got)) in cases.iter().zip(&results).enumerate() {
+    for (i, ((s1, s2, level, m1, m2, turns, statuses), got)) in cases.iter().zip(&results).enumerate() {
         if got.get("error").is_some() {
             eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
             bad += 1;
@@ -333,27 +353,39 @@ fn fuzz_gen3_turns() {
         let mk = |id: &str, mv: &str| Mon::new(id, *level, Nature::Hardy, inv, &[mv]).unwrap();
         let mut battle =
             Battle::new(Side::new(vec![mk(s1, m1)]), Side::new(vec![mk(s2, m2)]), 1);
-        battle.sides[0].party[0].status = statuses[0];
-        battle.sides[1].party[0].status = statuses[1];
+        for (seat, st) in statuses.iter().enumerate() {
+            battle.sides[seat].party[0].status = *st;
+            if *st == Some(gen3_battle::data::Status::Sleep) {
+                // The sim's pinned duration roll: asleep for one skipped
+                // action, awake on the second.
+                battle.sides[seat].party[0].sleep_n = 2;
+            }
+        }
         // Skip speed ties: the tie-break is each side's own RNG.
         if battle.sides[0].mon().spe == battle.sides[1].mon().spe {
             continue;
         }
-        let ts = TurnScript {
-            seats: [
-                Some(SeatScript { hit: script[0].0, crit: script[0].1, random: script[0].2, secondary: script[0].3, immobile: script[0].4, hits: script[0].5 }),
-                Some(SeatScript { hit: script[1].0, crit: script[1].1, random: script[1].2, secondary: script[1].3, immobile: script[1].4, hits: script[1].5 }),
-            ],
-        };
-        let events = battle.step_with([Choice::Move(0), Choice::Move(0)], &ts);
-        let our_order: Vec<&str> = events
-            .iter()
-            .filter_map(|e| match e {
+        let mut our_order: Vec<&str> = Vec::new();
+        for pair in turns {
+            if battle.over() {
+                break;
+            }
+            let seat = |t: &(bool, bool, u8, bool, bool, u8)| SeatScript {
+                hit: t.0,
+                crit: t.1,
+                random: t.2,
+                secondary: t.3,
+                immobile: t.4,
+                hits: t.5,
+            };
+            let ts = TurnScript { seats: [Some(seat(&pair[0])), Some(seat(&pair[1]))] };
+            let events = battle.step_with([Choice::Move(0), Choice::Move(0)], &ts);
+            our_order.extend(events.iter().filter_map(|e| match e {
                 Event::Used { side: 1, .. } => Some("p1"),
                 Event::Used { side: 2, .. } => Some("p2"),
                 _ => None,
-            })
-            .collect();
+            }));
+        }
         let their_order: Vec<&str> =
             got["order"].as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
 

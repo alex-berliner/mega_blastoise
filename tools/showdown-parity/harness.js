@@ -111,6 +111,10 @@ function scriptRandomness(battle, script) {
     return false;
   };
   battle.prng.randomChance = () => false;
+  // Speed ties: the sim shuffles tied actors with its own PRNG. Pin the
+  // shuffle to a no-op so a tie keeps insertion order (p1 first), which the
+  // engines mirror under a script.
+  battle.prng.shuffle = () => {};
 
   // The 2-5 multi-hit count is drawn via battle.sample from a weighted
   // list; the acting seat's script decides it. Anything else sampled is
@@ -199,7 +203,8 @@ function runChart(sc) {
 function runTurn(sc) {
   const b = newBattle(sc.gen, {...sc.p1, moves: [sc.moves[0]]}, {...sc.p2, moves: [sc.moves[1]]});
   normalizePp(b, Dex.mod(`gen${sc.gen}`));
-  scriptRandomness(b, sc.script ?? {});
+  const script = {...(sc.script ?? {})};
+  scriptRandomness(b, script);
   for (const id of ['p1', 'p2']) {
     const mon = b.getSide(id).pokemon[0];
     const want = sc[id];
@@ -209,7 +214,16 @@ function runTurn(sc) {
       b.getSide(id).addSideCondition(cond, mon);
     }
   }
-  b.makeChoices('move 1', 'move 1');
+  // One turn under sc.script, or several under sc.turns — a list of per-turn
+  // {p1, p2} scripts. The scriptRandomness hooks read the same object every
+  // roll, so each turn swaps its script in by mutation.
+  const turnScripts = sc.turns ?? [script];
+  for (const ts of turnScripts) {
+    if (b.ended) break;
+    if (ts.p1) script.p1 = ts.p1;
+    if (ts.p2) script.p2 = ts.p2;
+    b.makeChoices('move 1', 'move 1');
+  }
   const order = b.log
     .filter((l) => l.startsWith('|move|'))
     .map((l) => (l.includes('|move|p1a') ? 'p1' : 'p2'));
@@ -276,6 +290,7 @@ function runDump(sc) {
         secondary,
         drain: m.drain ?? null,
         recoil: m.recoil ?? null,
+        respectsImmunity: m.category === 'Status' && m.ignoreImmunity === false,
         statusAction: m.category !== 'Status' ? null
           : m.status ? {status: m.status}
           : m.heal ? {heal: m.heal}

@@ -14,6 +14,7 @@
 2
 ],
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -34,6 +35,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -49,6 +51,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -64,6 +67,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -82,6 +86,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -97,6 +102,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -112,6 +118,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -130,6 +137,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -145,6 +153,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -160,6 +169,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -175,6 +185,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -190,6 +201,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -205,6 +217,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -220,6 +233,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -240,6 +254,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -255,6 +270,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -270,6 +286,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -285,6 +302,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -300,6 +318,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -315,6 +334,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -333,6 +353,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -351,6 +372,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -366,6 +388,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -381,6 +404,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -396,6 +420,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "accuracy": -1
@@ -416,6 +441,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -431,6 +457,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -446,6 +473,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -461,6 +489,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -479,6 +508,7 @@
 2
 ],
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -494,6 +524,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": true,
 "statusAction": {
 "status": "par"
 },
@@ -511,6 +542,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -526,6 +558,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -541,6 +574,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -556,6 +590,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "slp"
 },
@@ -573,6 +608,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -588,6 +624,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -603,6 +640,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -621,6 +659,7 @@
 2
 ],
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -636,6 +675,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": -2,
@@ -657,6 +697,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -672,6 +713,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -687,6 +729,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -702,6 +745,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -717,6 +761,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -735,6 +780,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -750,6 +796,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -765,6 +812,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -780,6 +828,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -795,6 +844,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -810,6 +860,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -825,6 +876,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -840,6 +892,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "heal": [
 1,
@@ -860,6 +913,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -880,6 +934,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -895,6 +950,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -910,6 +966,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -925,6 +982,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -940,6 +998,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -955,6 +1014,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -970,6 +1030,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -985,6 +1046,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1000,6 +1062,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": -1,
@@ -1021,6 +1084,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1036,6 +1100,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1054,6 +1119,7 @@
 1,
 3
 ],
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1069,6 +1135,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1084,6 +1151,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1102,6 +1170,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1117,6 +1186,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1132,6 +1202,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1147,6 +1218,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -1165,6 +1237,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -1183,6 +1256,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1198,6 +1272,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1213,6 +1288,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spe": -2
@@ -1233,6 +1309,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1248,6 +1325,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1263,6 +1341,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1281,6 +1360,7 @@
 1,
 3
 ],
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1299,6 +1379,7 @@
 2
 ],
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1314,6 +1395,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1329,6 +1411,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1344,6 +1427,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1359,6 +1443,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1374,6 +1459,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1389,6 +1475,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spa": 1
@@ -1409,6 +1496,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1424,6 +1512,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -1442,6 +1531,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1457,6 +1547,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1472,6 +1563,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1487,6 +1579,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1502,6 +1595,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1517,6 +1611,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1532,6 +1627,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1547,6 +1643,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "evasion": 1
@@ -1567,6 +1664,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1582,6 +1680,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1597,6 +1696,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1612,6 +1712,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1627,6 +1728,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1642,6 +1744,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1657,6 +1760,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "psn"
 },
@@ -1674,6 +1778,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1689,6 +1794,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1704,6 +1810,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1719,6 +1826,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1734,6 +1842,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1749,6 +1858,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1764,6 +1874,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -1782,6 +1893,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1797,6 +1909,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1812,6 +1925,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spe": -2
@@ -1835,6 +1949,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1850,6 +1965,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1868,6 +1984,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1883,6 +2000,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1898,6 +2016,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1913,6 +2032,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1928,6 +2048,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1943,6 +2064,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1958,6 +2080,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spa": 2
@@ -1978,6 +2101,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -1993,6 +2117,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2008,6 +2133,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "tox"
 },
@@ -2025,6 +2151,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2040,6 +2167,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2055,6 +2183,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2070,6 +2199,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2085,6 +2215,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2100,6 +2231,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2115,6 +2247,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2130,6 +2263,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": 2
@@ -2150,6 +2284,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2165,6 +2300,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": 2
@@ -2185,6 +2321,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2203,6 +2340,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2221,6 +2359,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2241,6 +2380,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2256,6 +2396,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": -2
@@ -2279,6 +2420,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2297,6 +2439,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2312,6 +2455,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "slp"
 },
@@ -2329,6 +2473,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": -1
@@ -2352,6 +2497,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2367,6 +2513,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2382,6 +2529,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2397,6 +2545,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2412,6 +2561,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2427,6 +2577,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2442,6 +2593,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2457,6 +2609,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2472,6 +2625,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2487,6 +2641,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2502,6 +2657,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2517,6 +2673,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2532,6 +2689,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2547,6 +2705,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2562,6 +2721,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2577,6 +2737,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2592,6 +2753,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2607,6 +2769,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2622,6 +2785,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2640,6 +2804,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2658,6 +2823,7 @@
 2
 ],
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2676,6 +2842,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2691,6 +2858,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2706,6 +2874,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spd": -2
@@ -2726,6 +2895,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2746,6 +2916,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2761,6 +2932,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -2782,6 +2954,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2797,6 +2970,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "psn"
 },
@@ -2814,6 +2988,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2834,6 +3009,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2849,6 +3025,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": -2
@@ -2869,6 +3046,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "slp"
 },
@@ -2886,6 +3064,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2901,6 +3080,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "slp"
 },
@@ -2918,6 +3098,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2936,6 +3117,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -2951,6 +3133,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "slp"
 },
@@ -2968,6 +3151,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spe": -1
@@ -2988,6 +3172,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "par"
 },
@@ -3008,6 +3193,7 @@
 1,
 4
 ],
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3023,6 +3209,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3038,6 +3225,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3053,6 +3241,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "evasion": -1
@@ -3073,6 +3262,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": 2
@@ -3093,6 +3283,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3111,6 +3302,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3129,6 +3321,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3144,6 +3337,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "brn"
 },
@@ -3161,6 +3355,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3176,6 +3371,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3191,6 +3387,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": 2
@@ -3211,6 +3408,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": true,
 "statusAction": {
 "status": "par"
 },
@@ -3228,6 +3426,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -3249,6 +3448,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3264,6 +3464,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -3287,6 +3488,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3302,6 +3504,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3317,6 +3520,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -3335,6 +3539,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3350,6 +3555,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3365,6 +3571,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3380,6 +3587,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": 1
@@ -3403,6 +3611,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3418,6 +3627,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3433,6 +3643,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3448,6 +3659,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3463,6 +3675,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3478,6 +3691,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": 1
@@ -3498,6 +3712,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3513,6 +3728,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3528,6 +3744,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3543,6 +3760,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3558,6 +3776,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3576,6 +3795,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3591,6 +3811,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": 1
@@ -3611,6 +3832,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3626,6 +3848,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3641,6 +3864,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3656,6 +3880,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3671,6 +3896,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3686,6 +3912,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -3704,6 +3931,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3722,6 +3950,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -3740,6 +3969,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -3758,6 +3988,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3773,6 +4004,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3788,6 +4020,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3803,6 +4036,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "accuracy": -1
@@ -3823,6 +4057,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "status": "slp"
 },
@@ -3845,6 +4080,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3860,6 +4096,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "heal": [
 1,
@@ -3885,6 +4122,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3905,6 +4143,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3920,6 +4159,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3935,6 +4175,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -3950,6 +4191,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "heal": [
 1,
@@ -3970,6 +4212,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "heal": [
 1,
@@ -3990,6 +4233,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4005,6 +4249,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4020,6 +4265,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4035,6 +4281,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spe": 2
@@ -4055,6 +4302,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spd": 2
@@ -4075,6 +4323,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -4093,6 +4342,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4113,6 +4363,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4128,6 +4379,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4143,6 +4395,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4161,6 +4414,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4176,6 +4430,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4194,6 +4449,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4214,6 +4470,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4229,6 +4486,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": 1,
@@ -4250,6 +4508,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spa": 1,
@@ -4271,6 +4530,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4286,6 +4546,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4301,6 +4562,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": 1,
@@ -4322,6 +4584,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4342,6 +4605,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4357,6 +4621,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": 1
@@ -4377,6 +4642,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -4395,6 +4661,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "evasion": 1
@@ -4418,6 +4685,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4433,6 +4701,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4448,6 +4717,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": 1,
@@ -4469,6 +4739,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4484,6 +4755,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4499,6 +4771,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4517,6 +4790,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4532,6 +4806,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4547,6 +4822,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4562,6 +4838,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4577,6 +4854,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4592,6 +4870,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spd": -2
@@ -4612,6 +4891,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4627,6 +4907,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "atk": -2
@@ -4650,6 +4931,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4665,6 +4947,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4683,6 +4966,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4698,6 +4982,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "spa": 1
@@ -4718,6 +5003,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4733,6 +5019,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4748,6 +5035,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -4766,6 +5054,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 2,
@@ -4784,6 +5073,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4799,6 +5089,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4814,6 +5105,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": 1
@@ -4837,6 +5129,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4852,6 +5145,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4867,6 +5161,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4882,6 +5177,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4897,6 +5193,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4912,6 +5209,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4930,6 +5228,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4950,6 +5249,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -4965,6 +5265,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": 2
@@ -4990,6 +5291,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5005,6 +5307,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": -1
@@ -5025,6 +5328,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5040,6 +5344,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5055,6 +5360,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5070,6 +5376,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5085,6 +5392,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5100,6 +5408,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5120,6 +5429,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5140,6 +5450,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5155,6 +5466,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5170,6 +5482,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5185,6 +5498,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5203,6 +5517,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5221,6 +5536,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5236,6 +5552,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5254,6 +5571,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5269,6 +5587,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5284,6 +5603,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5304,6 +5624,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5319,6 +5640,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5334,6 +5656,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5349,6 +5672,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5367,6 +5691,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5382,6 +5707,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5397,6 +5723,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5412,6 +5739,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5430,6 +5758,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5445,6 +5774,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "accuracy": -1
@@ -5465,6 +5795,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5480,6 +5811,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5495,6 +5827,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5510,6 +5843,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5530,6 +5864,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5545,6 +5880,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5560,6 +5896,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5575,6 +5912,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5593,6 +5931,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5608,6 +5947,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5623,6 +5963,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5641,6 +5982,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5659,6 +6001,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5674,6 +6017,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "accuracy": -1
@@ -5694,6 +6038,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5712,6 +6057,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5727,6 +6073,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5742,6 +6089,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5757,6 +6105,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5775,6 +6124,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5790,6 +6140,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5805,6 +6156,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5820,6 +6172,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5835,6 +6188,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5850,6 +6204,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5865,6 +6220,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": -1
@@ -5888,6 +6244,7 @@
 1,
 4
 ],
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5906,6 +6263,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5924,6 +6282,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5939,6 +6298,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5954,6 +6314,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -5969,6 +6330,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": [
 3,
@@ -5990,6 +6352,7 @@
 },
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -6005,6 +6368,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -6020,6 +6384,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -6035,6 +6400,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -6050,6 +6416,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -6065,6 +6432,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": null,
 "multihit": null
 },
@@ -6080,6 +6448,7 @@
 "secondary": null,
 "drain": null,
 "recoil": null,
+"respectsImmunity": false,
 "statusAction": {
 "boosts": {
 "def": 1

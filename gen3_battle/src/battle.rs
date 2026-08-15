@@ -99,6 +99,10 @@ pub struct Mon {
     /// Turns badly poisoned, driving Toxic's growing residual. Meaningless
     /// unless `status` is [`Status::Toxic`]; resets when the mon leaves.
     pub toxic_n: u8,
+    /// Sleep clock: decremented before each action while asleep, waking at
+    /// zero (and acting that turn). Set when sleep lands — 2 under a script,
+    /// matching the pinned reference roll; 2..=5 in play.
+    pub sleep_n: u8,
     /// Flinched this turn and loses its action if it has not moved yet.
     /// Cleared when the turn ends.
     pub flinched: bool,
@@ -129,6 +133,7 @@ impl Mon {
             moves: moves.iter().filter_map(|m| MoveSlot::new(m)).collect(),
             status: None,
             toxic_n: 0,
+            sleep_n: 0,
             flinched: false,
         })
     }
@@ -345,7 +350,8 @@ impl Battle {
         }
 
         // Then moves: priority bracket first, Speed inside a bracket.
-        let first = self.first_mover(&choices);
+        let scripted = script.seats.iter().any(|s| s.is_some());
+        let first = self.first_mover(&choices, scripted);
         for side in [first, 1 - first] {
             if self.over() {
                 break;
@@ -358,7 +364,7 @@ impl Battle {
         // End of turn: burn and poison tick 1/8 max HP, Toxic a sixteenth
         // times the turns it has held, faster side first — the same order the
         // games resolve residuals in.
-        let first = self.faster_side();
+        let first = self.faster_side(scripted);
         for side in [first, 1 - first] {
             if self.over() {
                 break;
@@ -405,7 +411,7 @@ impl Battle {
     /// Who moves first given the chosen moves: higher priority bracket, then
     /// [`Battle::faster_side`] within it. A switch resolves before moves and
     /// takes no bracket.
-    fn first_mover(&mut self, choices: &[Choice; 2]) -> usize {
+    fn first_mover(&mut self, choices: &[Choice; 2], scripted: bool) -> usize {
         let prio = |side: usize| match choices[side] {
             Choice::Move(i) => {
                 self.sides[side].mon().moves.get(i).map(|s| s.entry.priority).unwrap_or(0)
@@ -416,18 +422,20 @@ impl Battle {
         match p0.cmp(&p1) {
             core::cmp::Ordering::Greater => 0,
             core::cmp::Ordering::Less => 1,
-            core::cmp::Ordering::Equal => self.faster_side(),
+            core::cmp::Ordering::Equal => self.faster_side(scripted),
         }
     }
 
     /// Which side moves first this turn: higher Speed (paralysis included),
-    /// RNG on a tie.
-    fn faster_side(&mut self) -> usize {
+    /// RNG on a tie in play. Under a script a tie goes to player 1, matching
+    /// the reference sim with its tie-shuffle pinned to insertion order.
+    fn faster_side(&mut self, scripted: bool) -> usize {
         let s0 = self.sides[0].mon().effective_speed();
         let s1 = self.sides[1].mon().effective_speed();
         match s0.cmp(&s1) {
             core::cmp::Ordering::Greater => 0,
             core::cmp::Ordering::Less => 1,
+            core::cmp::Ordering::Equal if scripted => 0,
             core::cmp::Ordering::Equal => self.rng.below(2) as usize,
         }
     }
@@ -443,19 +451,33 @@ impl Battle {
         if self.sides[side].mon().fainted() {
             return;
         }
-        // Frozen solid or fast asleep: the turn is spent, no PP moves. Thaw
-        // and wake chances are turn-level RNG the scripts pin off, matching
-        // the reference runs. Flame Wheel and Sacred Fire are the era's two
-        // moves usable while frozen: they cure the user and proceed.
-        if let Some(s @ (Status::Freeze | Status::Sleep)) = self.sides[side].mon().status {
-            let self_thaw = s == Status::Freeze
-                && self.sides[side].mon().moves.get(index).is_some_and(|slot| {
-                    matches!(slot.entry.id, "flamewheel" | "sacredfire")
-                });
-            if self_thaw {
+        // Fast asleep: the sleep clock ticks down before each action, and at
+        // zero the mon wakes and moves that same turn.
+        if self.sides[side].mon().status == Some(Status::Sleep) {
+            let mon = self.sides[side].mon_mut();
+            mon.sleep_n = mon.sleep_n.saturating_sub(1);
+            if mon.sleep_n == 0 {
+                mon.status = None;
+            } else {
+                events.push(Event::Cant { side: side as u8 + 1, status: Status::Sleep });
+                return;
+            }
+        }
+        // Frozen solid: a 1-in-5 thaw each action in play (scripts pin it
+        // off, matching the reference runs). Flame Wheel and Sacred Fire are
+        // the era's two moves usable while frozen: they cure the user.
+        if self.sides[side].mon().status == Some(Status::Freeze) {
+            let self_thaw = self.sides[side].mon().moves.get(index).is_some_and(|slot| {
+                matches!(slot.entry.id, "flamewheel" | "sacredfire")
+            });
+            let lucky = match script {
+                Some(_) => false,
+                None => self.rng.below(5) == 0,
+            };
+            if self_thaw || lucky {
                 self.sides[side].mon_mut().status = None;
             } else {
-                events.push(Event::Cant { side: side as u8 + 1, status: s });
+                events.push(Event::Cant { side: side as u8 + 1, status: Status::Freeze });
                 return;
             }
         }
@@ -512,7 +534,7 @@ impl Battle {
         };
         // A zero-power move is its status action, nothing more.
         if slot.entry.power == 0 {
-            self.status_move(side, foe, &slot, hit, events);
+            self.status_move(side, foe, &slot, hit, script.is_some(), events);
             return;
         }
         if !hit {
@@ -609,6 +631,25 @@ impl Battle {
     }
 
 
+    /// Land `status` on `foe`'s active mon if Gen 3 rules allow it, setting
+    /// the clocks that come with it: Toxic restarts its count, sleep draws
+    /// its duration (pinned to the reference sim's floor under a script).
+    fn inflict(&mut self, foe: usize, status: Status, scripted: bool, events: &mut Vec<Event>) {
+        if !self.sides[foe].mon().can_receive(status) {
+            return;
+        }
+        let sleep = match status {
+            Status::Sleep if scripted => 2,
+            Status::Sleep => 2 + self.rng.below(4) as u8,
+            _ => 0,
+        };
+        let target = self.sides[foe].mon_mut();
+        target.status = Some(status);
+        target.toxic_n = 0;
+        target.sleep_n = sleep;
+        events.push(Event::Statused { side: foe as u8 + 1, status });
+    }
+
     /// Resolve a zero-power move. `hit` already includes the accuracy roll;
     /// self-targeted actions cannot miss (their table accuracy is 0, the
     /// never-miss sentinel). A status move with no modelled action — Splash —
@@ -619,6 +660,7 @@ impl Battle {
         foe: usize,
         slot: &MoveSlot,
         hit: bool,
+        scripted: bool,
         events: &mut Vec<Event>,
     ) {
         let Some(action) = slot.entry.status_action else {
@@ -640,13 +682,13 @@ impl Battle {
                 }
             }
             StatusAction::Inflict(status) => {
-                if hit && self.sides[foe].mon().can_receive(status) {
-                    let target = self.sides[foe].mon_mut();
-                    target.status = Some(status);
-                    if status == Status::Toxic {
-                        target.toxic_n = 0;
-                    }
-                    events.push(Event::Statused { side: foe as u8 + 1, status });
+                let immune = slot.entry.respects_immunity
+                    && crate::types::effectiveness_against(
+                        slot.move_type(),
+                        self.sides[foe].mon().types(),
+                    ) == 0;
+                if hit && !immune {
+                    self.inflict(foe, status, scripted, events);
                 }
             }
             StatusAction::BoostFoe(list) => {
@@ -687,14 +729,7 @@ impl Battle {
         if proc {
             match slot.entry.secondary.map(|sec| sec.effect) {
                 Some(SecondaryEffect::Status(status)) => {
-                    if self.sides[foe].mon().can_receive(status) {
-                        let target = self.sides[foe].mon_mut();
-                        target.status = Some(status);
-                        if status == Status::Toxic {
-                            target.toxic_n = 0;
-                        }
-                        events.push(Event::Statused { side: foe as u8 + 1, status });
-                    }
+                    self.inflict(foe, status, script.is_some(), events);
                 }
                 Some(SecondaryEffect::Boosts(list)) => {
                     if !self.sides[foe].mon().fainted() {
@@ -898,6 +933,37 @@ mod tests {
         // The flinch does not leak into the next turn.
         let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
         assert!(events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
+    }
+
+    #[test]
+    fn sleep_lasts_its_clock_and_the_mon_acts_the_turn_it_wakes() {
+        let mut b = battle(mon("blaziken", 50, &["sing"]), mon("snorlax", 50, &["pound"]));
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(
+            e,
+            Event::Statused { side: 2, status: Status::Sleep }
+        )));
+        assert_eq!(b.sides[1].mon().sleep_n, 2, "scripted sleep sleeps the pinned duration");
+        // Next turn: the clock ticks 2 -> 1, Snorlax stays asleep.
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, Event::Cant { side: 2, status: Status::Sleep })));
+        assert!(!events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
+        // Turn after: 1 -> 0, it wakes and moves that same turn. The turn's
+        // earlier Sing could not re-land — Snorlax still carried slp when it
+        // resolved — so the wake leaves it clean.
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
+        assert_eq!(b.sides[1].mon().status, None);
+    }
+
+    #[test]
+    fn thunder_wave_respects_ground_immunity() {
+        let mut b = battle(mon("pikachu", 50, &["thunderwave"]), mon("golem", 50, &["splash"]));
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(!events.iter().any(|e| matches!(e, Event::Statused { .. })));
+        assert_eq!(b.sides[1].mon().status, None, "a Ground type shrugs off Thunder Wave");
     }
 
     #[test]
