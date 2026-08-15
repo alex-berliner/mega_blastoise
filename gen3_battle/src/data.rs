@@ -276,6 +276,10 @@ pub enum StatusAction {
     Stockpile,
     /// Swallow: cash the stockpile for healing.
     Swallow,
+    /// Protect/Detect: untouchable this turn; consecutive uses gamble.
+    Protect,
+    /// Endure: whatever lands this turn leaves at least 1 HP.
+    Endure,
 }
 
 /// One move.

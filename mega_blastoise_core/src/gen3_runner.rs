@@ -314,6 +314,15 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Protected { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "Protect".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
             Event::HazeCleared => {
                 effects
                     .on_event(BoardEvent::EffectStart {

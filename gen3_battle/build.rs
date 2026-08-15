@@ -532,6 +532,10 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Stockpile)")
                 } else if act.get("swallow").is_some() {
                     String::from("Some(StatusAction::Swallow)")
+                } else if act.get("protect").is_some() {
+                    String::from("Some(StatusAction::Protect)")
+                } else if act.get("endure").is_some() {
+                    String::from("Some(StatusAction::Endure)")
                 } else if act.get("sub").is_some() {
                     String::from("Some(StatusAction::Substitute)")
                 } else if act.get("rest").is_some() {

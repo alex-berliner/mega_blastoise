@@ -1984,7 +1984,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"protect": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2640,7 +2642,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"protect": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -7098,7 +7102,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"endure": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,

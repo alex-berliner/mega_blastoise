@@ -114,6 +114,12 @@ pub struct Mon {
     /// Substitute hit points; 0 means no substitute. Cleared by switching
     /// out. While up, foe damage and effects land here instead.
     pub sub_hp: u16,
+    /// Protect's stall gamble: 0 fresh, then the era's 2-4-8 ladder.
+    pub stall_counter: u8,
+    /// Untouchable this turn (Protect/Detect). Cleared when the turn ends.
+    pub protected: bool,
+    /// Whatever lands this turn leaves 1 HP (Endure). Cleared at turn end.
+    pub enduring: bool,
     /// Taunt clock: while above zero, status moves are refused.
     pub taunt_n: u8,
     /// Nightmare rides this mon's sleep, a quarter of max HP per turn.
@@ -176,6 +182,9 @@ impl Mon {
             sleep_n: 0,
             flinched: false,
             confusion_n: 0,
+            stall_counter: 0,
+            protected: false,
+            enduring: false,
             taunt_n: 0,
             nightmared: false,
             stockpile_n: 0,
@@ -354,6 +363,8 @@ pub struct SeatScript {
     pub hits: u8,
     /// A confused mon's coin comes up "hit yourself" this action.
     pub selfhit: bool,
+    /// The consecutive Protect/Endure gamble comes up heads.
+    pub stall: bool,
 }
 
 /// Per-turn RNG script; see [`Battle::step_with`].
@@ -396,6 +407,8 @@ pub enum Event {
     WeatherDamage { side: u8, amount: u16 },
     /// Haze wiped every stat stage on both actives.
     HazeCleared,
+    /// `side` tucked behind Protect (or braced with Endure).
+    Protected { side: u8 },
     /// `side`'s mon grew drowsy (Yawn).
     Drowsy { side: u8 },
     /// The perish count on `side`'s mon: 3, 2, 1 — and 0 is the faint.
@@ -527,6 +540,9 @@ impl Battle {
                     let out = self.sides[side].mon_mut();
                     out.toxic_n = 0;
                     out.confusion_n = 0;
+                    out.stall_counter = 0;
+                    out.protected = false;
+                    out.enduring = false;
                     out.taunt_n = 0;
                     out.nightmared = false;
                     out.stockpile_n = 0;
@@ -763,9 +779,13 @@ impl Battle {
 
         }
 
-        // A flinch lasts exactly the turn it landed in.
+        // A flinch lasts exactly the turn it landed in — as do Protect's
+        // shield and Endure's brace.
         for side in 0..2 {
-            self.sides[side].mon_mut().flinched = false;
+            let mon = self.sides[side].mon_mut();
+            mon.flinched = false;
+            mon.protected = false;
+            mon.enduring = false;
         }
 
         if let Some(win) = self.winner() {
@@ -922,6 +942,13 @@ impl Battle {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
         };
+        // Anything but another Protect/Endure resets the stall gamble.
+        if !matches!(
+            slot.entry.status_action,
+            Some(StatusAction::Protect | StatusAction::Endure)
+        ) {
+            self.sides[side].mon_mut().stall_counter = 0;
+        }
         // Taunted: status moves are refused outright.
         if self.sides[side].mon().taunt_n > 0
             && slot.entry.power == 0
@@ -1033,6 +1060,13 @@ impl Battle {
             slot.entry.status_action,
             Some(StatusAction::BoostSelf(_) | StatusAction::HealHalf | StatusAction::Team(_))
         );
+        if !self_targeted && self.sides[foe].mon().protected {
+            events.push(Event::Failed { side: side as u8 + 1 });
+            if boom {
+                self.resolve_faints(side, foe, events);
+            }
+            return;
+        }
         if !self_targeted {
             if let Some(via) = self.sides[foe].mon().semi_invulnerable() {
                 let pierces = match via {
@@ -1079,8 +1113,9 @@ impl Battle {
                 events.push(Event::SubBroke { side: foe as u8 + 1 });
                 return;
             }
-            let amount = self.sides[foe].mon().hp;
-            self.sides[foe].mon_mut().hp = 0;
+            let mon = self.sides[foe].mon_mut();
+            let amount = if mon.enduring { mon.hp.saturating_sub(1) } else { mon.hp };
+            mon.hp -= amount;
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
             self.resolve_faints(side, foe, events);
             return;
@@ -1113,7 +1148,8 @@ impl Battle {
                 }
                 return;
             }
-            let amount = amount.min(target.hp);
+            let cap = if target.enduring { target.hp.saturating_sub(1) } else { target.hp };
+            let amount = amount.min(cap);
             target.hp -= amount;
             match crate::types::category_of(slot.move_type()) {
                 crate::types::Category::Physical => self.taken_physical[foe] = amount,
@@ -1183,7 +1219,8 @@ impl Battle {
                 }
                 return;
             }
-            let amount = amount.min(target.hp);
+            let cap = if target.enduring { target.hp.saturating_sub(1) } else { target.hp };
+            let amount = amount.min(cap);
             target.hp -= amount;
             match crate::types::category_of(slot.move_type()) {
                 crate::types::Category::Physical => self.taken_physical[foe] = amount,
@@ -1196,7 +1233,15 @@ impl Battle {
 
         // A zero-power move is its status action, nothing more.
         if slot.entry.power == 0 {
-            self.status_move(side, foe, &slot, hit, script.is_some(), events);
+            self.status_move(
+                side,
+                foe,
+                &slot,
+                hit,
+                script.is_some(),
+                script.map(|s| s.stall),
+                events,
+            );
             return;
         }
         if !hit {
@@ -1350,7 +1395,7 @@ impl Battle {
                 target.sub_hp -= amount;
                 amount
             } else {
-                let cap = if slot.entry.id == "falseswipe" {
+                let cap = if slot.entry.id == "falseswipe" || target.enduring {
                     target.hp.saturating_sub(1)
                 } else {
                     target.hp
@@ -1577,6 +1622,7 @@ impl Battle {
         slot: &MoveSlot,
         hit: bool,
         scripted: bool,
+        script_stall: Option<bool>,
         events: &mut Vec<Event>,
     ) {
         let Some(action) = slot.entry.status_action else {
@@ -1766,6 +1812,27 @@ impl Battle {
                     mon.hp = (avg as u16).min(mon.max_hp);
                 }
                 events.push(Event::Healed { side: side as u8 + 1, amount: 0 });
+            }
+            StatusAction::Protect | StatusAction::Endure => {
+                let counter = self.sides[side].mon().stall_counter;
+                let ok = counter == 0
+                    || match script_stall {
+                        Some(stall) => stall,
+                        None => self.rng.below(counter as u32) == 0,
+                    };
+                if ok {
+                    let mon = self.sides[side].mon_mut();
+                    if matches!(action, StatusAction::Protect) {
+                        mon.protected = true;
+                    } else {
+                        mon.enduring = true;
+                    }
+                    mon.stall_counter = if counter == 0 { 2 } else { (counter * 2).min(8) };
+                    events.push(Event::Protected { side: side as u8 + 1 });
+                } else {
+                    self.sides[side].mon_mut().stall_counter = 0;
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
             }
             StatusAction::Taunt => {
                 let target = self.sides[foe].mon();
@@ -2154,6 +2221,7 @@ mod tests {
         immobile: false,
         hits: 0,
         selfhit: false,
+        stall: false,
     };
 
     #[test]

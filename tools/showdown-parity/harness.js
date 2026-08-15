@@ -72,6 +72,12 @@ function scriptRandomness(battle, script) {
   const origRun = actions.runMove;
   actions.runMove = function (moveOrMoveName, pokemon, ...rest) {
     battle.__act = forSide(pokemon);
+    battle.__actMon = pokemon;
+    // Per-action once-only rolls: confusion's (1,2) and full paralysis's
+    // (1,4) fire at most once each in onBeforeMove; later same-shape rolls
+    // are Protect's stall ladder.
+    battle.__confRolled = false;
+    battle.__paraRolled = false;
     // A new action begins: any stale pending-accuracy flag is dead. (A
     // type-immune gen 1 move skips its accuracy roll entirely, and the
     // stale flag would otherwise eat the next action's paralysis roll.)
@@ -108,19 +114,32 @@ function scriptRandomness(battle, script) {
       battle.__critPending = false;
       return battle.__cur.crit;
     }
-    // Confusion: randomChance(1,2) in gens 3-4, randomChance(128,256) in
-    // gen 1 — true means "acts normally", false the 40 BP self-hit. The
-    // script's selfhit knob decides.
-    if ((numerator === 1 && denominator === 2) ||
-        (numerator === 128 && denominator === 256)) {
+    // Confusion: randomChance(1,2) in gens 3-4 (once, in onBeforeMove,
+    // only for a confused actor), randomChance(128,256) in gen 1 — true
+    // means "acts normally", false the 40 BP self-hit.
+    if (((numerator === 1 && denominator === 2 &&
+          battle.__actMon?.volatiles['confusion'] && !battle.__confRolled) ||
+         (numerator === 128 && denominator === 256))) {
+      battle.__confRolled = true;
       return !((battle.__act ?? battle.__cur).selfhit);
     }
-    // Full paralysis: rolled in onBeforeMove for the acting side —
-    // (1,4) in gen 3+, (63,256) in gens 1-2. Checked before the
-    // sub-certain branch so the par roll never reads the secondary knob.
-    if ((numerator === 1 && denominator === 4) ||
-        (numerator === 63 && denominator === 256)) {
+    // Full paralysis: (1,4) in gen 3+ (once, in onBeforeMove, only for a
+    // paralyzed actor), (63,256) in gens 1-2. Later (1,4)s are Protect's
+    // stall ladder.
+    if (numerator === 1 && denominator === 4 &&
+        battle.__actMon?.status === 'par' && !battle.__paraRolled) {
+      battle.__paraRolled = true;
       return battle.__act?.immobile ?? false;
+    }
+    if (numerator === 63 && denominator === 256) {
+      return battle.__act?.immobile ?? false;
+    }
+    // Protect/Detect/Endure's consecutive-use stall ladder: 1/2, 1/4, 1/8
+    // in this era. Reached for (1,2) only when the actor is not confused
+    // (that roll went to the selfhit knob above) and for (1,4)/(1,8) after
+    // the paralysis check. The script's stall knob decides.
+    if (numerator === 1 && (denominator === 2 || denominator === 4 || denominator === 8)) {
+      return (battle.__act ?? battle.__cur).stall ?? false;
     }
     // After the accuracy roll, a sub-certain chance out of 100 (gen 3+) or
     // 256 (gen 1) during a move is its secondary proc; the script decides.
@@ -364,6 +383,8 @@ function runDump(sc) {
           : m.id === 'nightmare' ? {nightmare: true}
           : m.id === 'stockpile' ? {stockpile: true}
           : m.id === 'swallow' ? {swallow: true}
+          : ['protect', 'detect'].includes(m.id) ? {protect: true}
+          : m.id === 'endure' ? {endure: true}
           : m.id === 'rest' ? {rest: true}
           : m.id === 'focusenergy' ? {focus: true}
           : m.id === 'minimize' ? {minimize: true}
@@ -435,6 +456,7 @@ function runMovelist(sc) {
         'psychup', 'yawn', 'wish', 'perishsong', 'destinybond', 'block',
         'meanlook', 'spiderweb', 'mudsport', 'watersport', 'spikes',
         'memento', 'painsplit', 'taunt', 'nightmare', 'stockpile', 'swallow',
+        'protect', 'detect', 'endure',
       ] : [
         // Gen 1: the cartridge engine implements all of these; their sim
         // hooks are the era mechanics themselves.
