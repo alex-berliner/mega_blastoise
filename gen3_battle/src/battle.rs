@@ -131,6 +131,23 @@ pub struct Mon {
     pub fury_n: u8,
     /// The last move slot this mon successfully USED (for Spite/Torment).
     pub last_used: Option<u8>,
+    /// Bide: damage stored and turns of storing left.
+    pub bide: Option<(u16, u8)>,
+    /// Rollout/Ice Ball: consecutive uses so far (0..=4).
+    pub rolling: Option<u8>,
+    /// Defense Curl was used: Rollout and Ice Ball double.
+    pub curled: bool,
+    /// Encore clock: repeats the last move while above zero.
+    pub encore_n: u8,
+    /// Disable: which slot is sealed, and for how long. The turn it lands
+    /// the victim's already-chosen move is just a lost turn.
+    pub disabled_slot: Option<u8>,
+    pub disable_n: u8,
+    pub disable_fresh: bool,
+    /// Imprison is up: the foe cannot use moves this mon also knows.
+    pub imprisoning: bool,
+    /// Camouflage/Conversion retyping.
+    pub type_override: Option<(Type, Type)>,
     /// Protect's stall gamble: 0 fresh, then the era's 2-4-8 ladder.
     pub stall_counter: u8,
     /// Untouchable this turn (Protect/Detect). Cleared when the turn ends.
@@ -211,6 +228,15 @@ impl Mon {
             raging: false,
             fury_n: 0,
             last_used: None,
+            bide: None,
+            rolling: None,
+            curled: false,
+            encore_n: 0,
+            disabled_slot: None,
+            disable_n: 0,
+            disable_fresh: false,
+            imprisoning: false,
+            type_override: None,
             stall_counter: 0,
             protected: false,
             enduring: false,
@@ -307,7 +333,7 @@ impl Mon {
     }
 
     pub fn types(&self) -> (Type, Type) {
-        self.species.types
+        self.type_override.unwrap_or(self.species.types)
     }
 
     fn stage(&self, s: Stat) -> i8 {
@@ -578,6 +604,15 @@ impl Battle {
                     out.raging = false;
                     out.fury_n = 0;
                     out.last_used = None;
+                    out.bide = None;
+                    out.rolling = None;
+                    out.curled = false;
+                    out.encore_n = 0;
+                    out.disabled_slot = None;
+                    out.disable_n = 0;
+                    out.disable_fresh = false;
+                    out.imprisoning = false;
+                    out.type_override = None;
                     out.stall_counter = 0;
                     out.protected = false;
                     out.enduring = false;
@@ -808,11 +843,21 @@ impl Battle {
             }
         }
 
-        // Taunt wears off on its own short clock.
+        // Taunt, Encore and Disable wear off on their own short clocks.
         for side in 0..2 {
             let mon = self.sides[side].mon_mut();
             if mon.taunt_n > 0 {
                 mon.taunt_n -= 1;
+            }
+            if mon.encore_n > 0 {
+                mon.encore_n -= 1;
+            }
+            if mon.disable_n > 0 {
+                mon.disable_n -= 1;
+                mon.disable_fresh = false;
+                if mon.disable_n == 0 {
+                    mon.disabled_slot = None;
+                }
             }
         }
 
@@ -890,11 +935,17 @@ impl Battle {
         }
         // Fast asleep: the sleep clock ticks down before each action, and at
         // zero the mon wakes and moves that same turn.
+        let mut asleep_now = false;
         if self.sides[side].mon().status == Some(Status::Sleep) {
+            let snoring = self.sides[side].mon().moves.get(index).is_some_and(|m| m.entry.id == "snore");
             let mon = self.sides[side].mon_mut();
             mon.sleep_n = mon.sleep_n.saturating_sub(1);
             if mon.sleep_n == 0 {
                 mon.status = None;
+            } else if snoring {
+                // Snore attacks straight out of sleep.
+                asleep_now = true;
+                events.push(Event::Cant { side: side as u8 + 1, status: Status::Sleep });
             } else {
                 mon.charging = None;
                 mon.rampage = None;
@@ -979,10 +1030,17 @@ impl Battle {
                 return;
             }
         }
+        // Encore overrides the choice with the last move used.
+        let index = match (self.sides[side].mon().encore_n > 0, self.sides[side].mon().last_used) {
+            (true, Some(i)) => i as usize,
+            _ => index,
+        };
         // Mid two-turn move: the release is forced to the charged slot and
         // its PP was already paid on the charge turn. A rampage forces its
-        // slot the same way.
-        let ramping = self.sides[side].mon().rampage.is_some();
+        // slot the same way. Bide and a rolling Rollout force theirs too.
+        let ramping = self.sides[side].mon().rampage.is_some()
+            || self.sides[side].mon().bide.is_some()
+            || self.sides[side].mon().rolling.is_some();
         let releasing = self.sides[side].mon().charging.is_some() || ramping;
         let index = match self.sides[side].mon().charging {
             Some(i) => {
@@ -998,6 +1056,15 @@ impl Battle {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
         };
+        // A storing Bide sits silent — the games log nothing for the two
+        // storing turns — and cannot be re-chosen out of.
+        if let Some((stored, left)) = self.sides[side].mon().bide {
+            if left > 0 {
+                self.sides[side].mon_mut().bide = Some((stored, left - 1));
+                return;
+            }
+        }
+
         // Anything but another Protect/Endure resets the stall gamble.
         if !matches!(
             slot.entry.status_action,
@@ -1018,12 +1085,36 @@ impl Battle {
             return;
         }
         let taunted_out = self.sides[side].mon().taunt_n == 1 && status_movish;
-        // Torment: the same move twice in a row becomes Struggle.
+        // Torment: the same move twice in a row becomes Struggle. So does
+        // a Disabled slot, or a move the imprisoning foe also knows.
         let tormented_out = self.sides[side].mon().tormented
             && self.sides[side].mon().last_used == Some(index as u8)
             && !releasing;
-        let struggling =
-            (taunted_out || tormented_out || (slot.pp == 0 && !releasing)) && !releasing;
+        if self.sides[side].mon().disabled_slot == Some(index as u8)
+            && self.sides[side].mon().disable_fresh
+            && !releasing
+        {
+            // Disabled mid-turn: the chosen move is simply lost.
+            self.sides[side].mon_mut().disable_fresh = false;
+            self.sides[side].mon_mut().stall_counter = 0;
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
+        let disabled_out =
+            self.sides[side].mon().disabled_slot == Some(index as u8) && !releasing;
+        let imprisoned_out = !releasing
+            && self.sides[foe].mon().imprisoning
+            && self.sides[foe]
+                .mon()
+                .moves
+                .iter()
+                .any(|m| m.entry.id == slot.entry.id);
+        let struggling = (taunted_out
+            || tormented_out
+            || disabled_out
+            || imprisoned_out
+            || (slot.pp == 0 && !releasing))
+            && !releasing;
         let slot = if struggling {
             MoveSlot { entry: &crate::data::STRUGGLE, pp: 1, typed_as: None }
         } else {
@@ -1042,6 +1133,33 @@ impl Battle {
             }
         }
 
+        // Snore only works out of a snore-filled sleep.
+        if slot.entry.id == "snore" && !asleep_now {
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
+
+        // Nature Power becomes Swift in the sim's default arena; Hidden
+        // Power under the fuzz's uniform maxed IVs is Dark 70.
+        let slot = if slot.entry.id == "naturepower" {
+            // Nature Power rolls its own 95 accuracy; a miss stops before
+            // Swift is even called (one log line, not two).
+            let np_hit = match script {
+                Some(s) => s.hit,
+                None => self.rng.below(100) < 95,
+            };
+            if !np_hit {
+                return;
+            }
+            // The games announce both: Nature Power, then the called Swift.
+            events.push(Event::Used { side: side as u8 + 1, move_index: index });
+            MoveSlot { entry: move_by_id("swift").expect("swift"), pp: 1, typed_as: None }
+        } else if slot.entry.id == "hiddenpower" && slot.typed_as.is_none() {
+            MoveSlot { entry: slot.entry, pp: slot.pp, typed_as: Some(Type::Dark) }
+        } else {
+            slot
+        };
+
         // The charge turn of a two-turn move: announce, tuck the slot away,
         // and stop. Skull Bash's era perk raises Defense on the way down.
         let instant_solar = slot.entry.id == "solarbeam" && self.weather == Some(Weather::Sun);
@@ -1055,11 +1173,51 @@ impl Battle {
             return;
         }
 
+        // Rollout and Ice Ball lock five doubling uses; Bide stores for two
+        // turns; Uproar rolls like a rampage without the hangover.
+        if matches!(slot.entry.id, "rollout" | "iceball") && self.sides[side].mon().rolling.is_none()
+        {
+            self.sides[side].mon_mut().rolling = Some(0);
+        }
+        if slot.entry.id == "bide" && self.sides[side].mon().bide.is_none() {
+            self.sides[side].mon_mut().bide = Some((0, 2));
+            events.push(Event::Charging { side: side as u8 + 1 });
+            return;
+        }
+        // The unleash: double everything stored, typeless, at the foe.
+        if slot.entry.id == "bide" {
+            let (stored, _) = self.sides[side].mon().bide.unwrap();
+            self.sides[side].mon_mut().bide = None;
+            let amount = stored.saturating_mul(2);
+            if amount == 0 {
+                events.push(Event::Failed { side: side as u8 + 1 });
+                return;
+            }
+            let target = self.sides[foe].mon_mut();
+            if target.sub_hp > 0 {
+                let amount = amount.min(target.sub_hp);
+                target.sub_hp -= amount;
+                events.push(Event::SubDamage { side: foe as u8 + 1, amount });
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke { side: foe as u8 + 1 });
+                }
+                return;
+            }
+            let cap = if target.enduring { target.hp.saturating_sub(1) } else { target.hp };
+            let amount = amount.min(cap);
+            target.hp -= amount;
+            self.taken_physical[foe] = amount;
+            events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.resolve_faints(side, foe, events);
+            return;
+        }
         // The thrash family locks in: the games roll 2..3 total attacks
-        // (a script pins the floor). The lock starts on first use.
-        if matches!(slot.entry.id, "thrash" | "petaldance" | "outrage") && !ramping {
+        // (a script pins the floor). The lock starts on first use. Uproar
+        // rides the same lock for its pinned 2 (2..5 in play) turns.
+        if matches!(slot.entry.id, "thrash" | "petaldance" | "outrage" | "uproar") && !ramping {
             let total: u8 = match script {
                 Some(_) => 2,
+                None if slot.entry.id == "uproar" => 2 + self.rng.below(4) as u8,
                 None => 2 + self.rng.below(2) as u8,
             };
             self.sides[side].mon_mut().rampage = Some((index as u8, total - 1));
@@ -1365,9 +1523,10 @@ impl Battle {
         }
         if !hit {
             // A miss ends a rampage quietly — no fatigue confusion — and
-            // resets Fury Cutter's ramp.
+            // resets Fury Cutter's ramp and a Rollout.
             self.sides[side].mon_mut().rampage = None;
             self.sides[side].mon_mut().fury_n = 0;
+            self.sides[side].mon_mut().rolling = None;
             // The kicks crash for half the damage they would have dealt.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                 let random = match script {
@@ -1489,6 +1648,12 @@ impl Battle {
                     slot.entry.power * 2
                 }
                 "weatherball" if self.weather.is_some() => 100,
+                "hiddenpower" => 70,
+                "rollout" | "iceball" => {
+                    let n = self.sides[side].mon().rolling.unwrap_or(0)
+                        + self.sides[side].mon().curled as u8;
+                    30u16 << n.min(5)
+                }
                 "furycutter" => {
                     let n = self.sides[side].mon().fury_n;
                     (10u16 << n).min(160)
@@ -1563,6 +1728,10 @@ impl Battle {
                     effectiveness: eff,
                     crit,
                 });
+                // A biding target banks what it just took.
+                if let Some((stored, left)) = self.sides[foe].mon().bide {
+                    self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
+                }
                 // A raging target's Attack climbs with every hit it takes.
                 if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
                     self.sides[foe].mon_mut().apply_boost(Boost::Atk, 1);
@@ -1605,9 +1774,10 @@ impl Battle {
         if let Some((slot_i, left)) = self.sides[side].mon().rampage {
             if left == 0 {
                 let scripted = script.is_some();
+                let fatigue = slot.entry.id != "uproar";
                 let mon = self.sides[side].mon_mut();
                 mon.rampage = None;
-                if mon.confusion_n == 0 && !mon.fainted() {
+                if fatigue && mon.confusion_n == 0 && !mon.fainted() {
                     mon.confusion_n = if scripted { 2 } else { 2 + self.rng.below(4) as u8 };
                     events.push(Event::ConfusionStarted { side: side as u8 + 1 });
                 }
@@ -1620,6 +1790,16 @@ impl Battle {
         if slot.entry.id == "furycutter" {
             let mon = self.sides[side].mon_mut();
             mon.fury_n = (mon.fury_n + 1).min(4);
+        }
+        // Rollout counts its landed uses and lets go after five.
+        if matches!(slot.entry.id, "rollout" | "iceball") {
+            let mon = self.sides[side].mon_mut();
+            let n = mon.rolling.unwrap_or(0) + 1;
+            mon.rolling = if n >= 5 { None } else { Some(n) };
+        }
+        // Defense Curl primes Rollout.
+        if slot.entry.id == "defensecurl" {
+            self.sides[side].mon_mut().curled = true;
         }
 
         // Rapid Spin flings off the user's own bind and Leech Seed.
@@ -1735,6 +1915,16 @@ impl Battle {
     fn inflict(&mut self, foe: usize, status: Status, scripted: bool, events: &mut Vec<Event>) {
         // Safeguard shields the whole team from foe-inflicted statuses.
         if self.sides[foe].safeguard_n > 0 {
+            return;
+        }
+        // No one sleeps through an Uproar.
+        if status == Status::Sleep
+            && (0..2).any(|w| {
+                self.sides[w].mon().rampage.is_some_and(|(i, _)| {
+                    self.sides[w].mon().moves.get(i as usize).is_some_and(|m| m.entry.id == "uproar")
+                })
+            })
+        {
             return;
         }
         if !self.sides[foe].mon().can_receive(status) {
@@ -2055,15 +2245,70 @@ impl Battle {
                 self.sides[side].mon_mut().grudged = true;
             }
             StatusAction::Torment => {
-                if hit && self.sides[foe].mon().sub_hp == 0 && !self.sides[foe].mon().tormented {
+                if hit && !self.sides[foe].mon().tormented {
                     self.sides[foe].mon_mut().tormented = true;
                 } else {
                     events.push(Event::Failed { side: side as u8 + 1 });
                 }
             }
-            StatusAction::Taunt => {
+            StatusAction::Encore => {
                 let target = self.sides[foe].mon();
-                if hit && target.sub_hp == 0 && target.taunt_n == 0 && !target.fainted() {
+                if hit
+                    && target.encore_n == 0
+                    && target.last_used.is_some()
+                    && !target.fainted()
+                {
+                    // The games run 3..6 encored turns; a script pins 3.
+                    let n = if scripted { 3 } else { 3 + self.rng.below(4) as u8 };
+                    self.sides[foe].mon_mut().encore_n = n;
+                } else {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Disable => {
+                let target = self.sides[foe].mon();
+                if hit
+                    && target.sub_hp == 0
+                    && target.disabled_slot.is_none()
+                    && target.last_used.is_some()
+                    && !target.fainted()
+                {
+                    // Four sealed turns pinned; 4..7 in play.
+                    let slot_i = target.last_used;
+                    let n = if scripted { 4 } else { 4 + self.rng.below(4) as u8 };
+                    let mon = self.sides[foe].mon_mut();
+                    mon.disabled_slot = slot_i;
+                    mon.disable_n = n;
+                    mon.disable_fresh = true;
+                } else {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
+            }
+            StatusAction::Camouflage => {
+                self.sides[side].mon_mut().type_override = Some((Type::Normal, Type::None));
+            }
+            StatusAction::Conversion => {
+                let ty = self.sides[side].mon().moves.first().map(|m| m.move_type());
+                match ty {
+                    Some(t) if t != Type::None => {
+                        self.sides[side].mon_mut().type_override = Some((t, Type::None));
+                    }
+                    _ => events.push(Event::Failed { side: side as u8 + 1 }),
+                }
+            }
+            StatusAction::Imprison => {
+                self.sides[side].mon_mut().imprisoning = true;
+            }
+            StatusAction::NoopFail => {
+                events.push(Event::Failed { side: side as u8 + 1 });
+            }
+            StatusAction::NaturePower => {
+                // Handled before the status path; unreachable here.
+            }
+            StatusAction::Taunt => {
+                // Taunt is one of the era's sub-piercers.
+                let target = self.sides[foe].mon();
+                if hit && target.taunt_n == 0 && !target.fainted() {
                     self.sides[foe].mon_mut().taunt_n = 2;
                 }
             }

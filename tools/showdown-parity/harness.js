@@ -391,6 +391,14 @@ function runDump(sc) {
           : m.id === 'spite' ? {spite: true}
           : m.id === 'grudge' ? {grudge: true}
           : m.id === 'torment' ? {torment: true}
+          : m.id === 'encore' ? {encore: true}
+          : m.id === 'disable' ? {disable: true}
+          : m.id === 'naturepower' ? {naturepower: true}
+          : m.id === 'camouflage' ? {camouflage: true}
+          : m.id === 'conversion' ? {conversion: true}
+          : m.id === 'imprison' ? {imprison: true}
+          : ['assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap'].includes(m.id)
+            ? {noopfail: m.id}
           : m.id === 'rest' ? {rest: true}
           : m.id === 'focusenergy' ? {focus: true}
           : m.id === 'minimize' ? {minimize: true}
@@ -463,7 +471,9 @@ function runMovelist(sc) {
         'meanlook', 'spiderweb', 'mudsport', 'watersport', 'spikes',
         'memento', 'painsplit', 'taunt', 'nightmare', 'stockpile', 'swallow',
         'protect', 'detect', 'endure', 'foresight', 'odorsleuth', 'lockon',
-        'mindreader', 'charge', 'spite', 'grudge', 'torment',
+        'mindreader', 'charge', 'spite', 'grudge', 'torment', 'encore',
+        'disable', 'naturepower', 'camouflage', 'conversion', 'imprison',
+        'assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap',
       ] : [
         // Gen 1: the cartridge engine implements all of these; their sim
         // hooks are the era mechanics themselves.
@@ -499,7 +509,8 @@ function runMovelist(sc) {
       'smellingsalts', 'eruption', 'waterspout', 'pursuit', 'rapidspin',
       'revenge', 'focuspunch', 'triattack', 'superpower', 'overheat',
       'psychoboost', 'knockoff', 'thief', 'covet', 'endeavor', 'flail',
-      'thrash', 'petaldance', 'outrage', 'rage', 'furycutter',
+      'thrash', 'petaldance', 'outrage', 'rage', 'furycutter', 'snore',
+      'uproar', 'bide', 'rollout', 'iceball', 'hiddenpower',
       'reversal', 'weatherball', 'secretpower', 'highjumpkick', 'jumpkick',
       'spitup',
     ].includes(move.id);
@@ -513,9 +524,11 @@ function runMovelist(sc) {
     if (move.flags['futuremove']) continue;
     // Gen 3 partial traps are modelled; other damaging volatiles are not.
     if (move.volatileStatus &&
-        !(move.volatileStatus === 'partiallytrapped' && sc.gen >= 3)) continue;
+        !(move.volatileStatus === 'partiallytrapped' && sc.gen >= 3) &&
+        !(move.volatileStatus === 'bide' && sc.gen >= 3)) continue;
     if ((move.sleepUsable || move.id === 'dreameater') &&
-        !(sc.gen === 1 && move.id === 'dreameater')) continue; // fail unless asleep
+        !(sc.gen === 1 && move.id === 'dreameater') &&
+        !(sc.gen >= 3 && move.id === 'snore')) continue; // fail unless asleep
     const raw = rawOf(move.id);
     const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);
     const selfBoostOk = (sec) => sc.gen >= 3 && sec.self && sec.self.boosts &&
@@ -549,7 +562,8 @@ function runMovelist(sc) {
     if (hooky || (raw.self && !chargey && !g3special)) continue;
     // allAdjacent only differs from allAdjacentFoes in doubles; this is 1v1.
     if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes', 'allAdjacent'].includes(move.target)
-        && !(counterish && move.target === 'scripted')) continue;
+        && !(counterish && move.target === 'scripted')
+        && !(g3special && move.target === 'self')) continue;
     if (move.id === 'struggle') continue;
     out.push({id: move.id, priority: move.priority, boostsSelf: !!move.self, multihit: !!move.multihit});
   }

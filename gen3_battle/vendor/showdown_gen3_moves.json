@@ -102,7 +102,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "assist"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -278,7 +280,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"conversion": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -427,7 +431,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"disable": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -499,7 +505,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"encore": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1130,7 +1138,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"naturepower": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1437,7 +1447,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "sleeptalk"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1871,7 +1883,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"camouflage": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2276,7 +2290,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"imprison": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2730,7 +2746,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "recycle"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -8467,7 +8485,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "roleplay"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -8746,7 +8766,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "skillswap"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -9345,7 +9367,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "trick"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,

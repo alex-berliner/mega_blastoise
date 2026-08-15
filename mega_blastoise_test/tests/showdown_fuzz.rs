@@ -134,7 +134,10 @@ fn fuzz_gen3_single_hits() {
                             | "eruption" | "waterspout" | "return" | "frustration" | "triattack"
                             | "brickbreak" | "endeavor" | "flail" | "reversal"
                             | "weatherball" | "spitup" | "highjumpkick" | "jumpkick"
-                            | "secretpower"
+                            | "secretpower" | "snore" | "uproar" | "bide" | "rollout"
+                            | "iceball" | "hiddenpower" | "furycutter" | "rage"
+                            | "thrash" | "petaldance" | "outrage" | "counter"
+                            | "mirrorcoat"
                     )
             })
             .unwrap_or(false)

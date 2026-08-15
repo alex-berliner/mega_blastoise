@@ -293,6 +293,21 @@ pub enum StatusAction {
     Grudge,
     /// Torment: the target cannot use the same move twice in a row.
     Torment,
+    /// Encore: the target repeats its last move for a few turns.
+    Encore,
+    /// Disable: the target's last move is off the menu for a few turns.
+    Disable,
+    /// Nature Power: Swift, in the sim's default arena.
+    NaturePower,
+    /// Camouflage: the user turns Normal in the sim's default arena.
+    Camouflage,
+    /// Conversion: the user takes its first move's type.
+    Conversion,
+    /// Imprison: moves the user also knows are sealed for the foe.
+    Imprison,
+    /// The itemless/teamless format makes these fail outright: Assist,
+    /// Sleep Talk (awake), Recycle, Trick, Role Play, Skill Swap.
+    NoopFail,
 }
 
 /// One move.

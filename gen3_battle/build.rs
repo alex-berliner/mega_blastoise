@@ -548,6 +548,20 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Grudge)")
                 } else if act.get("torment").is_some() {
                     String::from("Some(StatusAction::Torment)")
+                } else if act.get("encore").is_some() {
+                    String::from("Some(StatusAction::Encore)")
+                } else if act.get("disable").is_some() {
+                    String::from("Some(StatusAction::Disable)")
+                } else if act.get("naturepower").is_some() {
+                    String::from("Some(StatusAction::NaturePower)")
+                } else if act.get("camouflage").is_some() {
+                    String::from("Some(StatusAction::Camouflage)")
+                } else if act.get("conversion").is_some() {
+                    String::from("Some(StatusAction::Conversion)")
+                } else if act.get("imprison").is_some() {
+                    String::from("Some(StatusAction::Imprison)")
+                } else if act.get("noopfail").is_some() {
+                    String::from("Some(StatusAction::NoopFail)")
                 } else if act.get("sub").is_some() {
                     String::from("Some(StatusAction::Substitute)")
                 } else if act.get("rest").is_some() {
