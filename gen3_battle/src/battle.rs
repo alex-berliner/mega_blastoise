@@ -938,19 +938,18 @@ mod tests {
     #[test]
     fn sleep_lasts_its_clock_and_the_mon_acts_the_turn_it_wakes() {
         let mut b = battle(mon("blaziken", 50, &["sing"]), mon("snorlax", 50, &["pound"]));
+        // Turn 1: Sing lands (clock 2), and slower Snorlax's own action
+        // already ticks it to 1 — a Cant the very turn it fell asleep.
         let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
         assert!(events.iter().any(|e| matches!(
             e,
             Event::Statused { side: 2, status: Status::Sleep }
         )));
-        assert_eq!(b.sides[1].mon().sleep_n, 2, "scripted sleep sleeps the pinned duration");
-        // Next turn: the clock ticks 2 -> 1, Snorlax stays asleep.
-        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
         assert!(events
             .iter()
             .any(|e| matches!(e, Event::Cant { side: 2, status: Status::Sleep })));
-        assert!(!events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
-        // Turn after: 1 -> 0, it wakes and moves that same turn. The turn's
+        assert_eq!(b.sides[1].mon().sleep_n, 1);
+        // Turn 2: 1 -> 0, it wakes and moves that same turn. The turn's
         // earlier Sing could not re-land — Snorlax still carried slp when it
         // resolved — so the wake leaves it clean.
         let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
