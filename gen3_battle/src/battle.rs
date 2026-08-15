@@ -212,6 +212,14 @@ impl Mon {
         *slot = (*slot + delta).clamp(-6, 6);
     }
 
+    /// Which semi-invulnerable move this mon is mid-way through, if any:
+    /// the charge turn of Fly, Dig, Bounce or Dive puts it out of reach.
+    pub fn semi_invulnerable(&self) -> Option<&'static str> {
+        let i = self.charging? as usize;
+        let id = self.moves.get(i)?.entry.id;
+        matches!(id, "fly" | "dig" | "bounce" | "dive").then_some(id)
+    }
+
     pub fn types(&self) -> (Type, Type) {
         self.species.types
     }
@@ -634,6 +642,38 @@ impl Battle {
                 }
             }
         };
+        // A semi-invulnerable target (mid Fly/Dig/Bounce/Dive) dodges
+        // everything aimed at it — no accuracy roll happens — except its
+        // pierce moves, which land and double their power. Self-targeted
+        // actions ignore the dodge; they never aim at the foe.
+        let mut pierce_mult: u16 = 1;
+        let self_targeted = matches!(
+            slot.entry.status_action,
+            Some(StatusAction::BoostSelf(_) | StatusAction::HealHalf)
+        );
+        if !self_targeted {
+            if let Some(via) = self.sides[foe].mon().semi_invulnerable() {
+                let pierces = match via {
+                    "fly" | "bounce" => {
+                        matches!(slot.entry.id, "gust" | "twister" | "thunder" | "skyuppercut")
+                    }
+                    "dig" => matches!(slot.entry.id, "earthquake" | "magnitude"),
+                    "dive" => matches!(slot.entry.id, "surf" | "whirlpool"),
+                    _ => false,
+                };
+                if !pierces {
+                    if boom {
+                        self.resolve_faints(side, foe, events);
+                    }
+                    return;
+                }
+                if matches!(slot.entry.id, "gust" | "twister" | "earthquake" | "magnitude" | "surf")
+                {
+                    pierce_mult = 2;
+                }
+            }
+        }
+
         // One-hit KO: fails outright against a higher-level target, is
         // stopped by type immunity, and otherwise its hit IS the KO.
         if slot.entry.ohko {
@@ -718,7 +758,7 @@ impl Battle {
             let (attacker, defender) = self.attack_pair(side);
             let m = MoveUse {
                 move_type: slot.move_type(),
-                power: slot.entry.power,
+                power: slot.entry.power * pierce_mult,
                 halve_def: slot.entry.selfdestruct,
             };
             let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
@@ -1361,6 +1401,30 @@ mod tests {
         // And the turn after, it attacks again.
         let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
         assert!(events.iter().any(|e| matches!(e, Event::Used { side: 1, .. })));
+    }
+
+    #[test]
+    fn semi_invulnerability_dodges_and_earthquake_pierces_dig_doubled() {
+        // Mid-Dig, Tackle whiffs without even rolling accuracy.
+        let mut b = battle(mon("sandslash", 50, &["dig"]), mon("snorlax", 50, &["tackle"]));
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(events.iter().any(|e| matches!(e, Event::Charging { side: 1 })));
+        assert!(!events.iter().any(|e| matches!(e, Event::Damage { side: 1, .. })));
+        assert_eq!(b.sides[0].mon().hp, b.sides[0].mon().max_hp);
+
+        // Mid-Dig, Earthquake connects — at double power.
+        let mut plain = battle(mon("snorlax", 50, &["earthquake"]), mon("sandslash", 50, &["splash"]));
+        let hp = plain.sides[1].mon().hp;
+        plain.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let normal_hit = hp - plain.sides[1].mon().hp;
+
+        let mut b = battle(mon("sandslash", 50, &["dig"]), mon("snorlax", 50, &["earthquake"]));
+        // Snorlax is slower: Sandslash digs, then Earthquake lands doubled.
+        assert!(b.sides[0].mon().spe > b.sides[1].mon().spe);
+        let hp = b.sides[0].mon().hp;
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let pierced = hp - b.sides[0].mon().hp;
+        assert!(pierced > normal_hit * 3 / 2, "doubled: {pierced} vs {normal_hit}");
     }
 
     #[test]

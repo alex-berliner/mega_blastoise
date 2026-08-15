@@ -269,8 +269,14 @@ fn run_move(
             | Haze | Metronome | MirrorMove | NoOp | Bide | ThrashLock
     );
 
+    // The charge turn of a two-turn move targets nobody: neither the type
+    // chart nor the foe's semi-invulnerability can abort it.
+    let charging_turn =
+        ek == TwoTurn && !sides[attacker_side].active().volatile.has(Volatile::CHARGING);
+
     // Fly/Dig semi-invulnerability (Swift, Transform and Bide bypass it).
     if targets_foe
+        && !charging_turn
         && sides[defender_side].active().volatile.has(Volatile::INVULNERABLE)
         && (mv.flags & FLAG_HITS_INVULN) == 0
     {
@@ -294,11 +300,9 @@ fn run_move(
     // Gen 1 status moves ignore the chart entirely (Thunder Wave paralyzes
     // Ground-types), and fixed-damage / trapping moves carry an explicit
     // ignore flag (Sonic Boom hits Gengar; Wrap traps Ghosts).
-    // The charge turn of a two-turn move happens regardless of the target:
-    // immunity is discovered on release (Razor Wind still spends a turn
-    // "whipping up a whirlwind" at a Ghost). Found by the gen 1 turn fuzzer.
-    let charging_turn =
-        ek == TwoTurn && !sides[attacker_side].active().volatile.has(Volatile::CHARGING);
+    // Type immunity is likewise discovered on release: Razor Wind still
+    // spends a turn "whipping up a whirlwind" at a Ghost. Found by the
+    // gen 1 turn fuzzer.
     if mv.category != MoveCategory::Status
         && (mv.flags & FLAG_IGNORE_IMMUNITY) == 0
         && ek != Counter
@@ -379,6 +383,17 @@ fn miss_aftermath(
     log: &mut Log,
 ) -> MoveOutcome {
     let mut outcome = MoveOutcome::default();
+    // A two-turn move's RELEASE attempt ends the cycle whatever happens: a
+    // missed or immune-blocked Sky Attack does not stay charged. (Found by
+    // the gen 1 turn fuzzer once immunity stopped pre-empting the charge.)
+    if mv.effect_kind == MoveEffectKind::TwoTurn
+        && sides[attacker_side].active().volatile.has(Volatile::CHARGING)
+    {
+        sides[attacker_side]
+            .active_mut()
+            .volatile
+            .clear(Volatile::CHARGING | Volatile::INVULNERABLE);
+    }
     match mv.effect_kind {
         MoveEffectKind::CrashOnMiss => {
             // Gen 1 quirk: crash damage is exactly 1 HP — and it obeys the

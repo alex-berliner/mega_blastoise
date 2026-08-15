@@ -397,9 +397,6 @@ function runMovelist(sc) {
     if (move.willCrit !== undefined) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
     if (move.flags['futuremove']) continue;
-    // Charge and recharge moves are modelled; the semi-invulnerable four
-    // (their turn-1 dodge plus per-move pierce rules) wait their turn.
-    if (['fly', 'dig', 'bounce', 'dive'].includes(move.id)) continue;
     if (move.volatileStatus) continue; // partial traps tick extra end-of-turn damage
     if (move.sleepUsable || move.id === 'dreameater') continue; // fail unless asleep
     const raw = rawOf(move.id);
