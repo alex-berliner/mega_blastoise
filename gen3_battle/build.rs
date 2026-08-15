@@ -407,6 +407,17 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
             format!("&[{}]", items.join(", "))
         };
         let respects_immunity = m["respectsImmunity"].as_bool().unwrap_or(false);
+        let fixed = match &m["fixed"] {
+            Value::Number(n) => format!("Some(FixedDamage::Flat({}))", n.as_u64().unwrap()),
+            Value::String(kind) => match kind.as_str() {
+                "level" => String::from("Some(FixedDamage::Level)"),
+                "half" => String::from("Some(FixedDamage::Half)"),
+                other => panic!("{id}: unknown fixed damage kind {other:?}"),
+            },
+            _ => String::from("None"),
+        };
+        let ohko = m["ohko"].as_bool().unwrap_or(false);
+        let high_crit = m["highCrit"].as_bool().unwrap_or(false);
         let status_action = match m["statusAction"].as_object() {
             None => String::from("None"),
             Some(act) => {
@@ -447,7 +458,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
              power: {power}, accuracy: {accuracy}, pp: {pp}, priority: {priority}, \
              secondary: {secondary}, drain: {drain}, recoil: {recoil}, \
              multihit: {multihit}, status_action: {status_action}, \
-             respects_immunity: {respects_immunity} }},\n",
+             respects_immunity: {respects_immunity}, fixed: {fixed}, \
+             ohko: {ohko}, high_crit: {high_crit} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

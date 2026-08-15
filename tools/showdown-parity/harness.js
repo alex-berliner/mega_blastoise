@@ -337,6 +337,12 @@ function runDump(sc) {
         multihit: m.multihit
           ? (Array.isArray(m.multihit) ? m.multihit : [m.multihit, m.multihit])
           : null,
+        fixed: typeof m.damage === 'number' ? m.damage
+          : m.damage === 'level' ? 'level'
+          : m.id === 'superfang' ? 'half'
+          : null,
+        ohko: !!m.ohko,
+        highCrit: (m.critRatio ?? 1) >= 2,
       };
     });
   return {species, moves};
@@ -376,10 +382,16 @@ function runMovelist(sc) {
       out.push({id: move.id, priority: move.priority, boostsSelf: false, multihit: false});
       continue;
     }
-    if (!move.basePower || move.basePower <= 0) continue;
-    if (move.basePowerCallback || move.damageCallback || move.damage) continue;
+    // Fixed-damage moves are deterministic and modelled: flat (Sonic Boom),
+    // level (Seismic Toss), half-current (Super Fang). Psywave's random
+    // callback stays out. OHKO moves KO on their scripted hit.
+    const fixedDamage = typeof move.damage === 'number' || move.damage === 'level' ||
+      move.id === 'superfang';
+    if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko) continue;
+    if (move.basePowerCallback) continue;
+    if ((move.damageCallback || move.damage) && !fixedDamage) continue;
     if (move.mindBlownRecoil) continue;
-    if (move.selfdestruct || move.ohko || move.willCrit !== undefined) continue;
+    if (move.selfdestruct || move.willCrit !== undefined) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
     if (move.flags['charge'] || move.flags['recharge'] || move.flags['futuremove']) continue;
     if (move.volatileStatus) continue; // partial traps tick extra end-of-turn damage
@@ -395,7 +407,9 @@ function runMovelist(sc) {
     // and on-hit hooks are behaviour the core engines do not model.
     // Any on* hook means conditional behaviour (Facade's doubling is an
     // onBasePower handler, not a callback property).
-    const hooky = Object.keys(raw).some((k) => k.startsWith('on') || /Callback/.test(k));
+    const hooky = Object.keys(raw).some((k) =>
+      k.startsWith('on') ||
+      (/Callback/.test(k) && !(k === 'damageCallback' && fixedDamage)));
     if (hooky || raw.self) continue;
     if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes'].includes(move.target)) continue;
     if (move.id === 'struggle') continue;

@@ -15,7 +15,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use crate::damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
-use crate::data::{move_by_id, species_by_id, Boost, MoveEntry, SecondaryEffect, SpeciesEntry, Status, StatusAction};
+use crate::data::{move_by_id, species_by_id, Boost, FixedDamage, MoveEntry, SecondaryEffect, SpeciesEntry, Status, StatusAction};
 use crate::stats::{hp_stat, other_stat, Invest, Nature, Stat};
 use crate::types::Type;
 
@@ -166,10 +166,13 @@ impl Mon {
         self.status == Some(Status::Burn)
     }
 
-    /// Speed after paralysis: quartered in Gen 3.
+    /// Speed after paralysis: quartered in Gen 3 — with the reference sim's
+    /// round-to-nearest modify(), not a plain floor. (spe+2)/4 is exactly
+    /// that arithmetic; the fuzzer caught a Deoxys at 239 landing on 60,
+    /// not 59, and winning a "tie" it was never in.
     pub fn effective_speed(&self) -> u16 {
         let spe = crate::stats::apply_stage(self.spe, self.stages[Stat::Spe as usize]);
-        if self.status == Some(Status::Paralysis) { spe / 4 } else { spe }
+        if self.status == Some(Status::Paralysis) { (spe + 2) / 4 } else { spe }
     }
 
     /// Whether `status` can land on this mon under Gen 3 rules: nothing
@@ -575,6 +578,54 @@ impl Battle {
                 }
             }
         };
+        // One-hit KO: fails outright against a higher-level target, is
+        // stopped by type immunity, and otherwise its hit IS the KO.
+        if slot.entry.ohko {
+            let eff =
+                crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types());
+            if eff == 0 {
+                events.push(Event::Damage { side: foe as u8 + 1, amount: 0, effectiveness: 0, crit: false });
+                return;
+            }
+            if self.sides[foe].mon().level > self.sides[side].mon().level {
+                events.push(Event::Failed { side: side as u8 + 1 });
+                return;
+            }
+            if !hit {
+                return;
+            }
+            let amount = self.sides[foe].mon().hp;
+            self.sides[foe].mon_mut().hp = 0;
+            events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.resolve_faints(side, foe, events);
+            return;
+        }
+
+        // Fixed damage skips the formula but not the type chart: Seismic
+        // Toss still bounces off a Ghost in this era.
+        if let Some(kind) = slot.entry.fixed {
+            if !hit {
+                return;
+            }
+            let eff =
+                crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types());
+            if eff == 0 {
+                events.push(Event::Damage { side: foe as u8 + 1, amount: 0, effectiveness: 0, crit: false });
+                return;
+            }
+            let amount = match kind {
+                FixedDamage::Flat(n) => n,
+                FixedDamage::Level => self.sides[side].mon().level as u16,
+                FixedDamage::Half => (self.sides[foe].mon().hp / 2).max(1),
+            };
+            let target = self.sides[foe].mon_mut();
+            let amount = amount.min(target.hp);
+            target.hp -= amount;
+            events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.resolve_faints(side, foe, events);
+            return;
+        }
+
         // A zero-power move is its status action, nothing more.
         if slot.entry.power == 0 {
             self.status_move(side, foe, &slot, hit, script.is_some(), events);
@@ -587,7 +638,7 @@ impl Battle {
         let (crit, random) = match script {
             Some(s) => (s.crit, s.random),
             None => (
-                self.rng.below(crit_denominator(0)) == 0,
+                self.rng.below(crit_denominator(slot.entry.high_crit as u8)) == 0,
                 85 + self.rng.below(16) as u8,
             ),
         };
@@ -657,14 +708,17 @@ impl Battle {
             events.push(Event::Recoil { side: side as u8 + 1, amount: hurt });
         }
 
-        // Target first, then the user (recoil can faint it too): whoever is
-        // down is announced and replaced. A side that already replaced this
-        // turn has a healthy active here, so nothing double-fires.
+        self.resolve_faints(side, foe, events);
+    }
+
+    /// Announce and replace whoever is down — target first, then the user
+    /// (recoil can faint it too). A side that already replaced this turn has
+    /// a healthy active here, so nothing double-fires. A real forced-switch
+    /// prompt belongs to the caller; this keeps the battle legal.
+    fn resolve_faints(&mut self, side: usize, foe: usize, events: &mut Vec<Event>) {
         for who in [foe, side] {
             if self.sides[who].mon().fainted() {
                 events.push(Event::Fainted { side: who as u8 + 1 });
-                // The next living party member steps in. A real forced-switch
-                // prompt belongs to the caller; this keeps the battle legal.
                 if let Some(next) = self.sides[who].first_healthy() {
                     self.sides[who].active = next;
                     events.push(Event::Switched { side: who as u8 + 1, party_index: next });

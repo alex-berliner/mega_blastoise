@@ -258,7 +258,7 @@ fn fuzz_gen3_turns() {
 
     let moves = vanilla_moves(3, true, |id| {
         gen3_battle::move_by_id(id)
-            .map(|m| m.power > 0 || m.status_action.is_some())
+            .map(|m| m.power > 0 || m.status_action.is_some() || m.fixed.is_some() || m.ohko)
             .unwrap_or(false)
     });
     let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
@@ -425,7 +425,14 @@ fn fuzz_gen1_single_hits() {
     use gen1_battle::testing::{compute_damage_scripted, Mon};
 
     let moves = vanilla_moves(1, false, |id| {
-        gen1_battle::move_by_id(id).map(|m| m.power > 0).unwrap_or(false)
+        use gen1_battle::MoveEffectKind::{FlatDamage, HalfHp, LevelDamage, Ohko};
+        gen1_battle::move_by_id(id)
+            .map(|m| {
+                // Formula damage only: fixed-damage and OHKO moves resolve
+                // outside compute_damage, which is all this suite runs.
+                m.power > 0 && !matches!(m.effect_kind, FlatDamage | LevelDamage | HalfHp | Ohko)
+            })
+            .unwrap_or(false)
     });
     assert!(moves.len() > 30, "gen1 vanilla pool too small: {}", moves.len());
 

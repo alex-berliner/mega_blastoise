@@ -152,6 +152,16 @@ pub struct Secondary {
     pub effect: SecondaryEffect,
 }
 
+/// Damage that ignores the formula entirely: a flat number (Sonic Boom's
+/// 20), the user's level (Seismic Toss), or half the target's current HP
+/// (Super Fang). Type immunity still applies in this era.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum FixedDamage {
+    Flat(u16),
+    Level,
+    Half,
+}
+
 /// A status move's whole effect: what a zero-power move does instead of
 /// damage. Thunder Wave inflicts, Swords Dance raises the user, Growl drops
 /// the target, Recover heals half.
@@ -192,6 +202,12 @@ pub struct MoveEntry {
     /// Ground, Glare on Ghost. Almost every other status move ignores the
     /// chart in this era.
     pub respects_immunity: bool,
+    /// Fixed damage instead of the formula. `power` is 0 on these.
+    pub fixed: Option<FixedDamage>,
+    /// One-hit KO (Fissure and kin): fails against a higher-level target.
+    pub ohko: bool,
+    /// High critical-hit ratio (Slash and kin): one crit stage up in play.
+    pub high_crit: bool,
 }
 
 impl MoveEntry {
