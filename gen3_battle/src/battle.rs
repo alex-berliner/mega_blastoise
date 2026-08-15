@@ -355,6 +355,8 @@ pub enum Event {
     WeatherEnded { weather: Weather },
     /// Sandstorm or hail chipped `side`'s mon.
     WeatherDamage { side: u8, amount: u16 },
+    /// Haze wiped every stat stage on both actives.
+    HazeCleared,
     /// Leech Seed drained `amount` from `side`'s mon to the other active.
     SeedDrain { side: u8, amount: u16 },
     /// `side`'s mon was bound by Wrap and kin.
@@ -796,6 +798,30 @@ impl Battle {
             return;
         }
 
+        // Focus Punch loses its focus — and the turn — if anything hit the
+        // user before it moved. The PP is already spent.
+        if slot.entry.id == "focuspunch"
+            && (self.taken_physical[side] > 0 || self.taken_special[side] > 0)
+        {
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
+
+        // Brick Break smashes the target's screens before it hits, unless
+        // the target is outright immune.
+        if slot.entry.id == "brickbreak"
+            && crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types())
+                != 0
+        {
+            for cond in [SideCondition::Reflect, SideCondition::LightScreen] {
+                let n = self.sides[foe].condition_n(cond);
+                if *n > 0 {
+                    *n = 0;
+                    events.push(Event::SideEnded { side: foe as u8 + 1, condition: cond });
+                }
+            }
+        }
+
         // Explosion/Self-Destruct: the user faints ON USE, before the hit
         // resolves — a miss or an immune target changes nothing about that.
         let boom = slot.entry.selfdestruct;
@@ -1033,9 +1059,37 @@ impl Battle {
                     self.weather,
                     Some(Weather::Rain | Weather::Sandstorm | Weather::Hail)
                 );
+            // Conditional powers the era defines by id.
+            let base_power = match slot.entry.id {
+                "return" => 102,   // the sim's default full happiness
+                "frustration" => 1,
+                "eruption" | "waterspout" => {
+                    let mon = self.sides[side].mon();
+                    ((150 * mon.hp as u32) / mon.max_hp as u32).max(1) as u16
+                }
+                "facade"
+                    if matches!(
+                        self.sides[side].mon().status,
+                        Some(Status::Burn | Status::Poison | Status::Toxic | Status::Paralysis)
+                    ) =>
+                {
+                    slot.entry.power * 2
+                }
+                "smellingsalts"
+                    if self.sides[foe].mon().status == Some(Status::Paralysis) =>
+                {
+                    slot.entry.power * 2
+                }
+                "revenge"
+                    if self.taken_physical[side] > 0 || self.taken_special[side] > 0 =>
+                {
+                    slot.entry.power * 2
+                }
+                _ => slot.entry.power,
+            };
             let m = MoveUse {
                 move_type: slot.move_type(),
-                power: slot.entry.power * pierce_mult * stomp_mult
+                power: base_power * pierce_mult * stomp_mult
                     / if solar_cut { 2 } else { 1 },
                 halve_def: slot.entry.selfdestruct,
                 weather: weather_mod,
@@ -1054,7 +1108,12 @@ impl Battle {
                 target.sub_hp -= amount;
                 amount
             } else {
-                let amount = (dealt as u16).min(target.hp);
+                let cap = if slot.entry.id == "falseswipe" {
+                    target.hp.saturating_sub(1)
+                } else {
+                    target.hp
+                };
+                let amount = (dealt as u16).min(cap);
                 target.hp -= amount;
                 amount
             };
@@ -1103,6 +1162,23 @@ impl Battle {
         // This runs BEFORE the thaw below, matching the reference sim: a
         // Fire move's burn chance is blocked by the freeze it is about to
         // cure, because the target still carries frz when secondaries apply.
+        // Rapid Spin flings off the user's own bind and Leech Seed.
+        if slot.entry.id == "rapidspin" {
+            let user = self.sides[side].mon_mut();
+            user.seeded = false;
+            user.trapped_n = 0;
+        }
+
+        // Superpower and kin always pay their stat bill on a landed hit.
+        if let Some(list) = slot.entry.self_drop {
+            if !self.sides[side].mon().fainted() {
+                for &(boost, delta) in list {
+                    self.sides[side].mon_mut().apply_boost(boost, delta);
+                    events.push(Event::Boosted { side: side as u8 + 1, boost, delta });
+                }
+            }
+        }
+
         // Recoil comes off the damage actually dealt: floored (this era's
         // rule; the fuzzer rejected round-to-nearest), but at least 1 — and
         // it can knock the user out.
@@ -1293,6 +1369,15 @@ impl Battle {
                 self.sides[side].mon_mut().apply_boost(Boost::Eva, 1);
                 events.push(Event::Boosted { side: side as u8 + 1, boost: Boost::Eva, delta: 1 });
             }
+            StatusAction::Haze => {
+                for who in 0..2 {
+                    let mon = self.sides[who].mon_mut();
+                    mon.stages = [0; 5];
+                    mon.acc_stage = 0;
+                    mon.eva_stage = 0;
+                }
+                events.push(Event::HazeCleared);
+            }
             StatusAction::Substitute => {
                 let mon = self.sides[side].mon();
                 let cost = mon.max_hp / 4;
@@ -1413,6 +1498,16 @@ impl Battle {
                 Some(SecondaryEffect::Confuse) => {
                     self.confuse(foe, script.is_some(), events);
                 }
+                Some(SecondaryEffect::TriAttack) => {
+                    let status = match script {
+                        Some(_) => Status::Burn, // the sim's pinned sample
+                        None => *[Status::Burn, Status::Paralysis, Status::Freeze]
+                            .iter()
+                            .nth(self.rng.below(3) as usize)
+                            .unwrap(),
+                    };
+                    self.inflict(foe, status, script.is_some(), events);
+                }
                 Some(SecondaryEffect::SelfBoosts(list)) => {
                     if !self.sides[side].mon().fainted() {
                         for &(boost, delta) in list {
@@ -1430,6 +1525,13 @@ impl Battle {
         if self.sides[foe].mon().status == Some(Status::Freeze)
             && slot.move_type() == Type::Fire
             && !self.sides[foe].mon().fainted()
+        {
+            self.sides[foe].mon_mut().status = None;
+        }
+
+        // Smelling Salts spends the paralysis it fed on.
+        if slot.entry.id == "smellingsalts"
+            && self.sides[foe].mon().status == Some(Status::Paralysis)
         {
             self.sides[foe].mon_mut().status = None;
         }

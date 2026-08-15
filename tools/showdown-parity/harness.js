@@ -301,6 +301,7 @@ function runDump(sc) {
       // or a flinch. Self-boosts, other volatiles and hook-driven
       // secondaries (Tri Attack picks its status in an onHit) stay null.
       let secondary = null;
+      if (m.id === 'triattack') secondary = {chance: 20, tri: true};
       const secs = m.secondaries ?? (m.secondary ? [m.secondary] : []);
       for (const s of secs) {
         if (!s || !s.chance || s.onHit) continue;
@@ -341,7 +342,9 @@ function runDump(sc) {
         drain: m.drain ?? null,
         recoil: m.recoil ?? null,
         respectsImmunity: m.category === 'Status' && m.ignoreImmunity === false,
+        selfDrop: m.self && m.self.boosts && m.category !== 'Status' ? m.self.boosts : null,
         statusAction: m.category !== 'Status' ? null
+          : m.id === 'haze' ? {haze: true}
           : m.id === 'rest' ? {rest: true}
           : m.id === 'focusenergy' ? {focus: true}
           : m.id === 'minimize' ? {minimize: true}
@@ -408,7 +411,7 @@ function runMovelist(sc) {
       const allowlisted = (sc.gen >= 3 ? [
         'sleeppowder', 'stunspore', 'poisonpowder', 'spore', 'cottonspore',
         'growth', 'toxic', 'swagger', 'flatter', 'defensecurl', 'minimize',
-        'focusenergy', 'rest', 'splash', 'teleport', 'substitute',
+        'focusenergy', 'rest', 'splash', 'teleport', 'substitute', 'haze',
       ] : [
         // Gen 1: the cartridge engine implements all of these; their sim
         // hooks are the era mechanics themselves.
@@ -437,8 +440,17 @@ function runMovelist(sc) {
       move.id === 'superfang';
     // Counter (both eras) and Mirror Coat (gen 3) bounce the turn's damage.
     const counterish = move.id === 'counter' || (sc.gen >= 3 && move.id === 'mirrorcoat');
-    if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish) continue;
-    if (move.basePowerCallback) continue;
+    // Modelled specials: conditional powers, self-drops, screen-breaking,
+    // spin-away, Tri Attack's status pick.
+    const g3special = sc.gen >= 3 && [
+      'brickbreak', 'payday', 'return', 'frustration', 'falseswipe', 'facade',
+      'smellingsalts', 'eruption', 'waterspout', 'pursuit', 'rapidspin',
+      'revenge', 'focuspunch', 'triattack', 'superpower', 'overheat',
+      'psychoboost',
+    ].includes(move.id);
+    if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish
+        && !g3special) continue;
+    if (move.basePowerCallback && !g3special) continue;
     if ((move.damageCallback || move.damage) && !fixedDamage && !counterish) continue;
     if (move.mindBlownRecoil) continue;
     if (move.willCrit !== undefined && !counterish) continue;
@@ -452,7 +464,7 @@ function runMovelist(sc) {
     const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);
     const selfBoostOk = (sec) => sc.gen >= 3 && sec.self && sec.self.boosts &&
       !sec.self.volatileStatus && !sec.status && !sec.boosts && !sec.volatileStatus;
-    if (rawSecs.some((sec) =>
+    if (!g3special && rawSecs.some((sec) =>
       sec && (sec.onHit || (sec.self && !selfBoostOk(sec)) ||
         (sec.volatileStatus && sec.volatileStatus !== 'flinch' &&
          sec.volatileStatus !== 'confusion'))
@@ -471,12 +483,13 @@ function runMovelist(sc) {
     // Gen 1: coins are cosmetic, and Blizzard/Thunder predate weather.
     const g1plain = sc.gen === 1 && ['payday', 'blizzard', 'thunder'].includes(move.id);
     const chargey = move.flags['charge'] || move.flags['recharge'];
-    const hooky = !chargey && !thundery && !g1plain && !counterish && Object.keys(raw).some((k) =>
+    const hooky = !chargey && !thundery && !g1plain && !counterish && !g3special &&
+      Object.keys(raw).some((k) =>
       k.startsWith('on') ||
       (/Callback/.test(k) && !(k === 'damageCallback' && fixedDamage)));
     // A recharge move's raw.self IS the mustrecharge volatile — machinery,
     // not an unmodelled self-effect.
-    if (hooky || (raw.self && !chargey)) continue;
+    if (hooky || (raw.self && !chargey && !g3special)) continue;
     // allAdjacent only differs from allAdjacentFoes in doubles; this is 1v1.
     if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes', 'allAdjacent'].includes(move.target)
         && !(counterish && move.target === 'scripted')) continue;

@@ -314,6 +314,27 @@ fn emit_randbat(randbats: &Value, move_ids: &[String], out: &mut String) {
     println!("cargo:warning=gen3_battle: {} randbat sets, {dropped} moves not in the gen3 table", sets.len());
 }
 
+/// `&[(Boost, i8)]` literal from a dump boosts object.
+fn boost_list_top(boosts: &Map<String, Value>) -> String {
+    let items: Vec<String> = boosts
+        .iter()
+        .map(|(stat, delta)| {
+            let boost = match stat.as_str() {
+                "atk" => "Boost::Atk",
+                "def" => "Boost::Def",
+                "spa" => "Boost::SpAtk",
+                "spd" => "Boost::SpDef",
+                "spe" => "Boost::Spe",
+                "accuracy" => "Boost::Acc",
+                "evasion" => "Boost::Eva",
+                other => panic!("unknown boost stat {other:?}"),
+            };
+            format!("({boost}, {})", delta.as_i64().unwrap())
+        })
+        .collect();
+    format!("&[{}]", items.join(", "))
+}
+
 fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
     let mut moves: Vec<&Map<String, Value>> = dump
         .as_array()
@@ -352,6 +373,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("SecondaryEffect::Flinch")
                 } else if sec.get("confusion").is_some() {
                     String::from("SecondaryEffect::Confuse")
+                } else if sec.get("tri").is_some() {
+                    String::from("SecondaryEffect::TriAttack")
                 } else if let Some(boosts) = sec.get("selfBoosts").and_then(|v| v.as_object()) {
                     let items: Vec<String> = boosts
                         .iter()
@@ -439,6 +462,10 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
         let selfdestruct = m["selfdestruct"].as_bool().unwrap_or(false);
         let charge = m["charge"].as_bool().unwrap_or(false);
         let trap = m["trap"].as_bool().unwrap_or(false);
+        let self_drop = match m["selfDrop"].as_object() {
+            Some(boosts) => format!("Some({})", boost_list_top(boosts)),
+            None => String::from("None"),
+        };
         let recharge = m["recharge"].as_bool().unwrap_or(false);
         let status_action = match m["statusAction"].as_object() {
             None => String::from("None"),
@@ -465,6 +492,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Confuse)")
                 } else if act.get("seed").is_some() {
                     String::from("Some(StatusAction::Seed)")
+                } else if act.get("haze").is_some() {
+                    String::from("Some(StatusAction::Haze)")
                 } else if act.get("sub").is_some() {
                     String::from("Some(StatusAction::Substitute)")
                 } else if act.get("rest").is_some() {
@@ -513,7 +542,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
              multihit: {multihit}, status_action: {status_action}, \
              respects_immunity: {respects_immunity}, fixed: {fixed}, \
              ohko: {ohko}, high_crit: {high_crit}, selfdestruct: {selfdestruct}, \
-             charge: {charge}, recharge: {recharge}, trap: {trap} }},\n",
+             charge: {charge}, recharge: {recharge}, trap: {trap}, \
+             self_drop: {self_drop} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

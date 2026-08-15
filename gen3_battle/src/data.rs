@@ -144,6 +144,9 @@ pub enum SecondaryEffect {
     Confuse,
     /// Metal Claw's Attack, Ancient Power's everything: stages on the USER.
     SelfBoosts(&'static [(Boost, i8)]),
+    /// Tri Attack: burn, paralysis or freeze, the games' pick. A script
+    /// pins the sim's sampled first (burn).
+    TriAttack,
 }
 
 /// A move's secondary effect.
@@ -233,6 +236,8 @@ pub enum StatusAction {
     /// Substitute: a quarter of max HP buys a decoy that soaks hits and
     /// blocks the foe's statuses, drops and volatiles until it breaks.
     Substitute,
+    /// Haze: every stat stage on both actives, gone.
+    Haze,
 }
 
 /// One move.
@@ -278,6 +283,8 @@ pub struct MoveEntry {
     pub trap: bool,
     /// Hyper Beam and kin: a landed hit costs the next turn to recharge.
     pub recharge: bool,
+    /// Superpower and kin: a landed hit costs the user these stages, always.
+    pub self_drop: Option<&'static [(Boost, i8)]>,
 }
 
 impl MoveEntry {

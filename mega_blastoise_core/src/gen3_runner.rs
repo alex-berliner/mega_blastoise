@@ -261,6 +261,15 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::HazeCleared => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: String::new(),
+                        what: "Haze".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
             Event::SubStarted { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
