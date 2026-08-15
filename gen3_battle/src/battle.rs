@@ -276,6 +276,10 @@ pub enum Event {
     Boosted { side: u8, boost: Boost, delta: i8 },
     /// `side`'s mon flinched and lost its action.
     Flinched { side: u8 },
+    /// `side` healed `amount` by draining the damage it just dealt.
+    Drained { side: u8, amount: u16 },
+    /// `side` took `amount` recoil from its own move.
+    Recoil { side: u8, amount: u16 },
     /// `side`'s paralyzed mon was fully paralyzed and lost its action.
     FullyParalyzed { side: u8 },
     /// `side`'s mon could not move: frozen solid or fast asleep.
@@ -529,6 +533,16 @@ impl Battle {
             effectiveness: eff,
             crit,
         });
+        // Drain heals off the damage actually dealt: floor, but at least 1.
+        if let Some((num, den)) = slot.entry.drain {
+            let heal = (amount * num / den).max(1);
+            let user = self.sides[side].mon_mut();
+            let heal = heal.min(user.max_hp - user.hp);
+            if heal > 0 {
+                user.hp += heal;
+                events.push(Event::Drained { side: side as u8 + 1, amount: heal });
+            }
+        }
         // The move's secondary, decided by the script (or the RNG in play).
         // This runs BEFORE the thaw below, matching the reference sim: a
         // Fire move's burn chance is blocked by the freeze it is about to
@@ -584,14 +598,29 @@ impl Battle {
             self.sides[foe].mon_mut().status = None;
         }
 
-        let target = self.sides[foe].mon_mut();
-        if target.fainted() {
-            events.push(Event::Fainted { side: foe as u8 + 1 });
-            // The next living party member steps in. A real forced-switch
-            // prompt belongs to the caller; this keeps the battle legal.
-            if let Some(next) = self.sides[foe].first_healthy() {
-                self.sides[foe].active = next;
-                events.push(Event::Switched { side: foe as u8 + 1, party_index: next });
+        // Recoil comes off the damage actually dealt: floored (this era's
+        // rule; the fuzzer rejected round-to-nearest), but at least 1 — and
+        // it can knock the user out.
+        if let Some((num, den)) = slot.entry.recoil {
+            let hurt = (amount * num / den).max(1);
+            let user = self.sides[side].mon_mut();
+            let hurt = hurt.min(user.hp);
+            user.hp -= hurt;
+            events.push(Event::Recoil { side: side as u8 + 1, amount: hurt });
+        }
+
+        // Target first, then the user (recoil can faint it too): whoever is
+        // down is announced and replaced. A side that already replaced this
+        // turn has a healthy active here, so nothing double-fires.
+        for who in [foe, side] {
+            if self.sides[who].mon().fainted() {
+                events.push(Event::Fainted { side: who as u8 + 1 });
+                // The next living party member steps in. A real forced-switch
+                // prompt belongs to the caller; this keeps the battle legal.
+                if let Some(next) = self.sides[who].first_healthy() {
+                    self.sides[who].active = next;
+                    events.push(Event::Switched { side: who as u8 + 1, party_index: next });
+                }
             }
         }
     }
@@ -800,6 +829,42 @@ mod tests {
         let hp = b.sides[0].party[0].hp;
         b.step_with([Choice::Switch(0), Choice::Move(0)], &scripted([miss, miss]));
         assert_eq!(hp - b.sides[0].party[0].hp, tick1, "the counter restarted");
+    }
+
+    #[test]
+    fn drain_heals_half_the_damage_and_recoil_floors_a_third() {
+        let mut b = battle(mon("blaziken", 50, &["doubleedge"]), mon("snorlax", 50, &["gigadrain"]));
+        b.sides[1].party[0].hp -= 40; // room to heal into
+        let (hp1, hp2) = (b.sides[0].mon().hp, b.sides[1].mon().hp);
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let dealt = |events: &[Event], to: u8| {
+            events
+                .iter()
+                .find_map(|e| match e {
+                    Event::Damage { side, amount, .. } if *side == to => Some(*amount),
+                    _ => None,
+                })
+                .unwrap()
+        };
+        let (to_snorlax, to_blaziken) = (dealt(&events, 2), dealt(&events, 1));
+        // Blaziken: hit by Giga Drain, and its own Double-Edge recoil.
+        assert_eq!(b.sides[0].mon().hp, hp1 - to_blaziken - (to_snorlax / 3).max(1));
+        // Snorlax: hit by Double-Edge, healed half of its own Giga Drain.
+        assert_eq!(b.sides[1].mon().hp, hp2 - to_snorlax + (to_blaziken / 2).max(1));
+        assert!(events.iter().any(|e| matches!(e, Event::Recoil { side: 1, .. })));
+        assert!(events.iter().any(|e| matches!(e, Event::Drained { side: 2, .. })));
+    }
+
+    #[test]
+    fn recoil_can_knock_the_user_out() {
+        let side1 = Side::new(alloc::vec![mon("blaziken", 100, &["doubleedge"]), mon("mudkip", 50, &["pound"])]);
+        let side2 = Side::new(alloc::vec![mon("snorlax", 100, &["pound"])]);
+        let mut b = Battle::new(side1, side2, 3);
+        b.sides[0].party[0].hp = 1;
+        let miss = SeatScript { hit: false, ..PLAIN };
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, miss]));
+        assert!(events.iter().any(|e| matches!(e, Event::Fainted { side: 1 })));
+        assert_eq!(b.sides[0].active, 1, "the bench replaced the recoil faint");
     }
 
     #[test]

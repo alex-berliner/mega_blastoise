@@ -170,6 +170,22 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::Drained { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Heal {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
+            Event::Recoil { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Damage {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
             Event::Flinched { side } => {
                 effects
                     .on_event(BoardEvent::Cant { mon: active_name(battle, side), reason: "flinch".into() })

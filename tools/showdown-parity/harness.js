@@ -263,6 +263,8 @@ function runDump(sc) {
         category: m.category,
         priority: m.priority,
         secondary,
+        drain: m.drain ?? null,
+        recoil: m.recoil ?? null,
       };
     });
   return {species, moves};
@@ -286,7 +288,7 @@ function runMovelist(sc) {
     if (!move.exists || move.isNonstandard) continue;
     if (move.category === 'Status' || !move.basePower || move.basePower <= 0) continue;
     if (move.basePowerCallback || move.damageCallback || move.damage) continue;
-    if (move.multihit || move.drain || move.recoil || move.mindBlownRecoil) continue;
+    if (move.multihit || move.mindBlownRecoil) continue;
     if (move.selfdestruct || move.ohko || move.willCrit !== undefined) continue;
     if (move.hasCrashDamage || move.struggleRecoil) continue;
     if (move.flags['charge'] || move.flags['recharge'] || move.flags['futuremove']) continue;
@@ -302,7 +304,7 @@ function runMovelist(sc) {
     // Any on* hook means conditional behaviour (Facade's doubling is an
     // onBasePower handler, not a callback property).
     const hooky = Object.keys(raw).some((k) => k.startsWith('on') || /Callback/.test(k));
-    if (hooky || raw.self || raw.recoil || raw.drain || raw.multihit) continue;
+    if (hooky || raw.self || raw.multihit) continue;
     if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes'].includes(move.target)) continue;
     if (move.id === 'struggle') continue;
     out.push({id: move.id, priority: move.priority, boostsSelf: !!move.self});

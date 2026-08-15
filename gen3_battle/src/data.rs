@@ -165,6 +165,10 @@ pub struct MoveEntry {
     /// Move priority bracket; higher moves first regardless of Speed.
     pub priority: i8,
     pub secondary: Option<Secondary>,
+    /// The user heals this fraction of the damage dealt (Giga Drain's 1/2).
+    pub drain: Option<(u16, u16)>,
+    /// The user takes this fraction of the damage dealt (Double-Edge's 1/3).
+    pub recoil: Option<(u16, u16)>,
 }
 
 impl MoveEntry {

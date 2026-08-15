@@ -375,10 +375,19 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
             }
             None => String::from("None"),
         };
+        let fraction = |key: &str| match m[key].as_array() {
+            Some(pair) => format!(
+                "Some(({}, {}))",
+                pair[0].as_u64().unwrap(),
+                pair[1].as_u64().unwrap()
+            ),
+            None => String::from("None"),
+        };
+        let (drain, recoil) = (fraction("drain"), fraction("recoil"));
         out.push_str(&format!(
             "    MoveEntry {{ id: {id:?}, name: {name:?}, move_type: {}, \
              power: {power}, accuracy: {accuracy}, pp: {pp}, priority: {priority}, \
-             secondary: {secondary} }},\n",
+             secondary: {secondary}, drain: {drain}, recoil: {recoil} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

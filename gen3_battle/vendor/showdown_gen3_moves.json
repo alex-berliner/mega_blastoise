@@ -8,7 +8,12 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": [
+1,
+2
+],
+"recoil": null
 },
 {
 "id": "acid",
@@ -24,7 +29,9 @@
 "boosts": {
 "def": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "ancientpower",
@@ -35,7 +42,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "assist",
@@ -46,7 +55,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "astonish",
@@ -60,7 +71,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "beatup",
@@ -71,7 +84,9 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "bide",
@@ -82,7 +97,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "blizzard",
@@ -96,7 +113,9 @@
 "secondary": {
 "chance": 10,
 "status": "frz"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "brickbreak",
@@ -107,7 +126,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "charge",
@@ -118,7 +139,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "conversion",
@@ -129,7 +152,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "conversion2",
@@ -140,7 +165,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "counter",
@@ -151,7 +178,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": -5,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "covet",
@@ -162,7 +191,9 @@
 "pp": 40,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "crunch",
@@ -178,7 +209,9 @@
 "boosts": {
 "spd": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "dig",
@@ -189,7 +222,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "disable",
@@ -200,7 +235,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "dive",
@@ -211,7 +248,9 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "doomdesire",
@@ -222,7 +261,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "encore",
@@ -233,7 +274,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "extrasensory",
@@ -247,7 +290,9 @@
 "secondary": {
 "chance": 10,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "fakeout",
@@ -261,7 +306,9 @@
 "secondary": {
 "chance": 100,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "feintattack",
@@ -272,7 +319,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "flail",
@@ -283,7 +332,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "flash",
@@ -294,7 +345,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "fly",
@@ -305,7 +358,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "followme",
@@ -316,7 +371,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 3,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "foresight",
@@ -327,7 +384,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "furycutter",
@@ -338,7 +397,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "gigadrain",
@@ -349,7 +410,12 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": [
+1,
+2
+],
+"recoil": null
 },
 {
 "id": "glare",
@@ -360,7 +426,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "haze",
@@ -371,7 +439,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -382,7 +452,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "highjumpkick",
@@ -393,7 +465,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hypnosis",
@@ -404,7 +478,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "jumpkick",
@@ -415,7 +491,9 @@
 "pp": 25,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "leafblade",
@@ -426,7 +504,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "lockon",
@@ -437,7 +517,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "megadrain",
@@ -448,7 +530,12 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": [
+1,
+2
+],
+"recoil": null
 },
 {
 "id": "memento",
@@ -459,7 +546,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "mindreader",
@@ -470,7 +559,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "mimic",
@@ -481,7 +572,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "mirrorcoat",
@@ -492,7 +585,9 @@
 "pp": 20,
 "category": "Special",
 "priority": -5,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "mirrormove",
@@ -503,7 +598,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "naturepower",
@@ -514,7 +611,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "needlearm",
@@ -528,7 +627,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "nightmare",
@@ -539,7 +640,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "odorsleuth",
@@ -550,7 +653,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "outrage",
@@ -561,7 +666,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "overheat",
@@ -572,7 +679,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "petaldance",
@@ -583,7 +692,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "pursuit",
@@ -594,7 +705,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "recover",
@@ -605,7 +718,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "reversal",
@@ -616,7 +731,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "rocksmash",
@@ -632,7 +749,9 @@
 "boosts": {
 "def": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "sketch",
@@ -643,7 +762,9 @@
 "pp": 1,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sleeptalk",
@@ -654,7 +775,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "spite",
@@ -665,7 +788,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "stockpile",
@@ -676,7 +801,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "surf",
@@ -687,7 +814,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "taunt",
@@ -698,7 +827,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "teeterdance",
@@ -709,7 +840,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "tickle",
@@ -720,7 +853,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "uproar",
@@ -731,7 +866,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "vinewhip",
@@ -742,7 +879,9 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "volttackle",
@@ -753,7 +892,12 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": [
+1,
+3
+]
 },
 {
 "id": "waterfall",
@@ -764,7 +908,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "weatherball",
@@ -775,7 +921,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "zapcannon",
@@ -789,7 +937,9 @@
 "secondary": {
 "chance": 100,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "aromatherapy",
@@ -800,7 +950,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "bind",
@@ -811,7 +963,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "bonerush",
@@ -822,7 +976,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "bulletseed",
@@ -833,7 +989,9 @@
 "pp": 30,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "camouflage",
@@ -844,7 +1002,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "clamp",
@@ -855,7 +1015,9 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "cottonspore",
@@ -866,7 +1028,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "crabhammer",
@@ -877,7 +1041,9 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "curse",
@@ -888,7 +1054,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "detect",
@@ -899,7 +1067,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 3,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "doubleedge",
@@ -910,7 +1080,12 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": [
+1,
+3
+]
 },
 {
 "id": "dreameater",
@@ -921,7 +1096,12 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": [
+1,
+2
+],
+"recoil": null
 },
 {
 "id": "endeavor",
@@ -932,7 +1112,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "extremespeed",
@@ -943,7 +1125,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 1,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "firespin",
@@ -954,7 +1138,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "focuspunch",
@@ -965,7 +1151,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": -3,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "futuresight",
@@ -976,7 +1164,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "growth",
@@ -987,7 +1177,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "healbell",
@@ -998,7 +1190,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "iciclespear",
@@ -1009,7 +1203,9 @@
 "pp": 30,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "imprison",
@@ -1020,7 +1216,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "ingrain",
@@ -1031,7 +1229,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "knockoff",
@@ -1042,7 +1242,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "leechseed",
@@ -1053,7 +1255,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "lightscreen",
@@ -1064,7 +1268,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "magiccoat",
@@ -1075,7 +1281,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 4,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "metronome",
@@ -1086,7 +1294,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "minimize",
@@ -1097,7 +1307,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "mist",
@@ -1108,7 +1320,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "moonlight",
@@ -1119,7 +1333,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "morningsun",
@@ -1130,7 +1346,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "mudsport",
@@ -1141,7 +1359,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "payday",
@@ -1152,7 +1372,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "perishsong",
@@ -1163,7 +1385,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "poisongas",
@@ -1174,7 +1398,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "protect",
@@ -1185,7 +1411,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 3,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "psychup",
@@ -1196,7 +1424,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "rapidspin",
@@ -1207,7 +1437,9 @@
 "pp": 40,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "recycle",
@@ -1218,7 +1450,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "reflect",
@@ -1229,7 +1463,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "roar",
@@ -1240,7 +1476,9 @@
 "pp": 20,
 "category": "Status",
 "priority": -6,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "rockblast",
@@ -1251,7 +1489,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "safeguard",
@@ -1262,7 +1502,9 @@
 "pp": 25,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sandtomb",
@@ -1273,7 +1515,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "scaryface",
@@ -1284,7 +1528,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "secretpower",
@@ -1298,7 +1544,9 @@
 "secondary": {
 "chance": 30,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "snatch",
@@ -1309,7 +1557,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 4,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "snore",
@@ -1323,7 +1573,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "spikes",
@@ -1334,7 +1586,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "substitute",
@@ -1345,7 +1599,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "swallow",
@@ -1356,7 +1612,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "synthesis",
@@ -1367,7 +1625,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "tackle",
@@ -1378,7 +1638,9 @@
 "pp": 35,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "tailglow",
@@ -1389,7 +1651,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "thrash",
@@ -1400,7 +1664,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "torment",
@@ -1411,7 +1677,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "toxic",
@@ -1422,7 +1690,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "transform",
@@ -1433,7 +1703,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "watersport",
@@ -1444,7 +1716,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "whirlpool",
@@ -1455,7 +1729,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "whirlwind",
@@ -1466,7 +1742,9 @@
 "pp": 20,
 "category": "Status",
 "priority": -6,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "wish",
@@ -1477,7 +1755,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "wrap",
@@ -1488,7 +1768,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "yawn",
@@ -1499,7 +1781,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "acidarmor",
@@ -1510,7 +1794,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "aircutter",
@@ -1521,7 +1807,9 @@
 "pp": 25,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "barrier",
@@ -1532,7 +1820,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "block",
@@ -1543,7 +1833,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "bodyslam",
@@ -1557,7 +1849,9 @@
 "secondary": {
 "chance": 30,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "bounce",
@@ -1571,7 +1865,9 @@
 "secondary": {
 "chance": 30,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "bubble",
@@ -1587,7 +1883,9 @@
 "boosts": {
 "spe": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "charm",
@@ -1598,7 +1896,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "fireblast",
@@ -1612,7 +1912,9 @@
 "secondary": {
 "chance": 10,
 "status": "brn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "flamethrower",
@@ -1626,7 +1928,9 @@
 "secondary": {
 "chance": 10,
 "status": "brn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "grasswhistle",
@@ -1637,7 +1941,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "growl",
@@ -1648,7 +1954,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "heatwave",
@@ -1662,7 +1970,9 @@
 "secondary": {
 "chance": 10,
 "status": "brn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1673,7 +1983,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1684,7 +1996,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1695,7 +2009,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1706,7 +2022,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1717,7 +2035,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1728,7 +2048,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1739,7 +2061,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1750,7 +2074,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1761,7 +2087,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1772,7 +2100,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1783,7 +2113,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1794,7 +2126,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1805,7 +2139,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1816,7 +2152,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1827,7 +2165,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hiddenpower",
@@ -1838,7 +2178,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hydropump",
@@ -1849,7 +2191,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hypervoice",
@@ -1860,7 +2204,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "icebeam",
@@ -1874,7 +2220,9 @@
 "secondary": {
 "chance": 10,
 "status": "frz"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "leechlife",
@@ -1885,7 +2233,12 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": [
+1,
+2
+],
+"recoil": null
 },
 {
 "id": "lick",
@@ -1899,7 +2252,9 @@
 "secondary": {
 "chance": 30,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "meanlook",
@@ -1910,7 +2265,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "metalsound",
@@ -1921,7 +2278,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "meteormash",
@@ -1932,7 +2291,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "muddywater",
@@ -1948,7 +2309,9 @@
 "boosts": {
 "accuracy": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "pinmissile",
@@ -1959,7 +2322,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "poisonfang",
@@ -1973,7 +2338,9 @@
 "secondary": {
 "chance": 30,
 "status": "tox"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "poisonpowder",
@@ -1984,7 +2351,9 @@
 "pp": 35,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "psywave",
@@ -1995,7 +2364,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "rocktomb",
@@ -2011,7 +2382,9 @@
 "boosts": {
 "spe": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "screech",
@@ -2022,7 +2395,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sing",
@@ -2033,7 +2408,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "skullbash",
@@ -2044,7 +2421,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sleeppowder",
@@ -2055,7 +2434,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "smellingsalts",
@@ -2066,7 +2447,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "smog",
@@ -2080,7 +2463,9 @@
 "secondary": {
 "chance": 40,
 "status": "psn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "spore",
@@ -2091,7 +2476,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "stringshot",
@@ -2102,7 +2489,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "stunspore",
@@ -2113,7 +2502,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "submission",
@@ -2124,7 +2515,12 @@
 "pp": 25,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": [
+1,
+4
+]
 },
 {
 "id": "supersonic",
@@ -2135,7 +2531,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sweetkiss",
@@ -2146,7 +2544,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sweetscent",
@@ -2157,7 +2557,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "swordsdance",
@@ -2168,7 +2570,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "thief",
@@ -2179,7 +2583,9 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "thunder",
@@ -2193,7 +2599,9 @@
 "secondary": {
 "chance": 30,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "thunderbolt",
@@ -2207,7 +2615,9 @@
 "secondary": {
 "chance": 10,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "willowisp",
@@ -2218,7 +2628,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "destinybond",
@@ -2229,7 +2641,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sheercold",
@@ -2240,7 +2654,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "swagger",
@@ -2251,7 +2667,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "thunderwave",
@@ -2262,7 +2680,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "barrage",
@@ -2273,7 +2693,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "boneclub",
@@ -2287,7 +2709,9 @@
 "secondary": {
 "chance": 10,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "cometpunch",
@@ -2298,7 +2722,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "constrict",
@@ -2314,7 +2740,9 @@
 "boosts": {
 "spe": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "dizzypunch",
@@ -2325,7 +2753,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "doubleslap",
@@ -2336,7 +2766,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "dragonrage",
@@ -2347,7 +2779,9 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "eggbomb",
@@ -2358,7 +2792,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "frustration",
@@ -2369,7 +2805,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "howl",
@@ -2380,7 +2818,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hyperfang",
@@ -2394,7 +2834,9 @@
 "secondary": {
 "chance": 10,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "iceball",
@@ -2405,7 +2847,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "karatechop",
@@ -2416,7 +2860,9 @@
 "pp": 25,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "lowkick",
@@ -2427,7 +2873,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "magnitude",
@@ -2438,7 +2886,9 @@
 "pp": 30,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "meditate",
@@ -2449,7 +2899,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "psychoboost",
@@ -2460,7 +2912,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "rage",
@@ -2471,7 +2925,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "razorwind",
@@ -2482,7 +2938,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "refresh",
@@ -2493,7 +2951,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "return",
@@ -2504,7 +2964,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "rollingkick",
@@ -2518,7 +2980,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "sharpen",
@@ -2529,7 +2993,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "signalbeam",
@@ -2540,7 +3006,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "silverwind",
@@ -2551,7 +3019,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "skyuppercut",
@@ -2562,7 +3032,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sonicboom",
@@ -2573,7 +3045,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "spiderweb",
@@ -2584,7 +3058,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "spikecannon",
@@ -2595,7 +3071,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "teleport",
@@ -2606,7 +3084,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "twineedle",
@@ -2620,7 +3100,9 @@
 "secondary": {
 "chance": 20,
 "status": "psn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "bonemerang",
@@ -2631,7 +3113,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "cut",
@@ -2642,7 +3126,9 @@
 "pp": 30,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "grudge",
@@ -2653,7 +3139,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hail",
@@ -2664,7 +3152,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "kinesis",
@@ -2675,7 +3165,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "lovelykiss",
@@ -2686,7 +3178,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "lusterpurge",
@@ -2702,7 +3196,9 @@
 "boosts": {
 "spd": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "milkdrink",
@@ -2713,7 +3209,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "mistball",
@@ -2729,7 +3227,9 @@
 "boosts": {
 "spa": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "octazooka",
@@ -2745,7 +3245,9 @@
 "boosts": {
 "accuracy": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "rest",
@@ -2756,7 +3258,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "revenge",
@@ -2767,7 +3271,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": -4,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "slackoff",
@@ -2778,7 +3284,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "softboiled",
@@ -2789,7 +3297,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "vitalthrow",
@@ -2800,7 +3310,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": -1,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "aerialace",
@@ -2811,7 +3323,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "aeroblast",
@@ -2822,7 +3336,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "agility",
@@ -2833,7 +3349,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "amnesia",
@@ -2844,7 +3362,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "armthrust",
@@ -2855,7 +3375,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "attract",
@@ -2866,7 +3388,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "aurorabeam",
@@ -2882,7 +3406,9 @@
 "boosts": {
 "atk": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "batonpass",
@@ -2893,7 +3419,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "bellydrum",
@@ -2904,7 +3432,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "bite",
@@ -2918,7 +3448,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "blastburn",
@@ -2929,7 +3461,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "blazekick",
@@ -2943,7 +3477,9 @@
 "secondary": {
 "chance": 10,
 "status": "brn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "bubblebeam",
@@ -2959,7 +3495,9 @@
 "boosts": {
 "spe": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "bulkup",
@@ -2970,7 +3508,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "calmmind",
@@ -2981,7 +3521,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "confuseray",
@@ -2992,7 +3534,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "confusion",
@@ -3003,7 +3547,9 @@
 "pp": 25,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "cosmicpower",
@@ -3014,7 +3560,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "crosschop",
@@ -3025,7 +3573,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "crushclaw",
@@ -3041,7 +3591,9 @@
 "boosts": {
 "def": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "defensecurl",
@@ -3052,7 +3604,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "doublekick",
@@ -3063,7 +3617,9 @@
 "pp": 30,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "doubleteam",
@@ -3074,7 +3630,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "dragonbreath",
@@ -3088,7 +3646,9 @@
 "secondary": {
 "chance": 30,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "dragonclaw",
@@ -3099,7 +3659,9 @@
 "pp": 15,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "dragondance",
@@ -3110,7 +3672,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "drillpeck",
@@ -3121,7 +3685,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "dynamicpunch",
@@ -3132,7 +3698,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "earthquake",
@@ -3143,7 +3711,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "ember",
@@ -3157,7 +3727,9 @@
 "secondary": {
 "chance": 10,
 "status": "brn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "endure",
@@ -3168,7 +3740,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 4,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "eruption",
@@ -3179,7 +3753,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "explosion",
@@ -3190,7 +3766,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "facade",
@@ -3201,7 +3779,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "faketears",
@@ -3212,7 +3792,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "falseswipe",
@@ -3223,7 +3805,9 @@
 "pp": 40,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "featherdance",
@@ -3234,7 +3818,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "firepunch",
@@ -3248,7 +3834,9 @@
 "secondary": {
 "chance": 10,
 "status": "brn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "fissure",
@@ -3259,7 +3847,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "flamewheel",
@@ -3273,7 +3863,9 @@
 "secondary": {
 "chance": 10,
 "status": "brn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "flatter",
@@ -3284,7 +3876,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "focusenergy",
@@ -3295,7 +3889,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "frenzyplant",
@@ -3306,7 +3902,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "furyattack",
@@ -3317,7 +3915,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "furyswipes",
@@ -3328,7 +3928,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "guillotine",
@@ -3339,7 +3941,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "gust",
@@ -3350,7 +3954,9 @@
 "pp": 35,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "harden",
@@ -3361,7 +3967,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "headbutt",
@@ -3375,7 +3983,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "helpinghand",
@@ -3386,7 +3996,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 5,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hornattack",
@@ -3397,7 +4009,9 @@
 "pp": 25,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "horndrill",
@@ -3408,7 +4022,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hydrocannon",
@@ -3419,7 +4035,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "hyperbeam",
@@ -3430,7 +4048,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "icepunch",
@@ -3444,7 +4064,9 @@
 "secondary": {
 "chance": 10,
 "status": "frz"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "icywind",
@@ -3460,7 +4082,9 @@
 "boosts": {
 "spe": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "irondefense",
@@ -3471,7 +4095,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "irontail",
@@ -3487,7 +4113,9 @@
 "boosts": {
 "def": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "leer",
@@ -3498,7 +4126,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "machpunch",
@@ -3509,7 +4139,9 @@
 "pp": 30,
 "category": "Physical",
 "priority": 1,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "magicalleaf",
@@ -3520,7 +4152,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "megahorn",
@@ -3531,7 +4165,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "megakick",
@@ -3542,7 +4178,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "megapunch",
@@ -3553,7 +4191,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "metalclaw",
@@ -3564,7 +4204,9 @@
 "pp": 35,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "mudshot",
@@ -3580,7 +4222,9 @@
 "boosts": {
 "spe": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "mudslap",
@@ -3596,7 +4240,9 @@
 "boosts": {
 "accuracy": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "nightshade",
@@ -3607,7 +4253,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "painsplit",
@@ -3618,7 +4266,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "peck",
@@ -3629,7 +4279,9 @@
 "pp": 35,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "poisonsting",
@@ -3643,7 +4295,9 @@
 "secondary": {
 "chance": 30,
 "status": "psn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "poisontail",
@@ -3657,7 +4311,9 @@
 "secondary": {
 "chance": 10,
 "status": "psn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "pound",
@@ -3668,7 +4324,9 @@
 "pp": 35,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "powdersnow",
@@ -3682,7 +4340,9 @@
 "secondary": {
 "chance": 10,
 "status": "frz"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "present",
@@ -3693,7 +4353,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "psybeam",
@@ -3704,7 +4366,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "psychic",
@@ -3720,7 +4384,9 @@
 "boosts": {
 "spd": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "quickattack",
@@ -3731,7 +4397,9 @@
 "pp": 30,
 "category": "Physical",
 "priority": 1,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "raindance",
@@ -3742,7 +4410,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "razorleaf",
@@ -3753,7 +4423,9 @@
 "pp": 25,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "rockslide",
@@ -3767,7 +4439,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "rockthrow",
@@ -3778,7 +4452,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "roleplay",
@@ -3789,7 +4465,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "rollout",
@@ -3800,7 +4478,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sacredfire",
@@ -3814,7 +4494,9 @@
 "secondary": {
 "chance": 50,
 "status": "brn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "sandattack",
@@ -3825,7 +4507,9 @@
 "pp": 15,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sandstorm",
@@ -3836,7 +4520,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "scratch",
@@ -3847,7 +4533,9 @@
 "pp": 35,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "seismictoss",
@@ -3858,7 +4546,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "selfdestruct",
@@ -3869,7 +4559,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "shadowball",
@@ -3885,7 +4577,9 @@
 "boosts": {
 "spd": -1
 }
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "shadowpunch",
@@ -3896,7 +4590,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "shockwave",
@@ -3907,7 +4603,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "skillswap",
@@ -3918,7 +4616,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "skyattack",
@@ -3932,7 +4632,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "slam",
@@ -3943,7 +4645,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "slash",
@@ -3954,7 +4658,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sludge",
@@ -3968,7 +4674,9 @@
 "secondary": {
 "chance": 30,
 "status": "psn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "sludgebomb",
@@ -3982,7 +4690,9 @@
 "secondary": {
 "chance": 30,
 "status": "psn"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "smokescreen",
@@ -3993,7 +4703,9 @@
 "pp": 20,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "solarbeam",
@@ -4004,7 +4716,9 @@
 "pp": 10,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "spark",
@@ -4018,7 +4732,9 @@
 "secondary": {
 "chance": 30,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "spitup",
@@ -4029,7 +4745,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "splash",
@@ -4040,7 +4758,9 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "steelwing",
@@ -4051,7 +4771,9 @@
 "pp": 25,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "stomp",
@@ -4065,7 +4787,9 @@
 "secondary": {
 "chance": 30,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "strength",
@@ -4076,7 +4800,9 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "sunnyday",
@@ -4087,7 +4813,9 @@
 "pp": 5,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "superfang",
@@ -4098,7 +4826,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "superpower",
@@ -4109,7 +4839,9 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "swift",
@@ -4120,7 +4852,9 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "tailwhip",
@@ -4131,7 +4865,9 @@
 "pp": 30,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "takedown",
@@ -4142,7 +4878,12 @@
 "pp": 20,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": [
+1,
+4
+]
 },
 {
 "id": "thunderpunch",
@@ -4156,7 +4897,9 @@
 "secondary": {
 "chance": 10,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "thundershock",
@@ -4170,7 +4913,9 @@
 "secondary": {
 "chance": 10,
 "status": "par"
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "triattack",
@@ -4181,7 +4926,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "trick",
@@ -4192,7 +4939,9 @@
 "pp": 10,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "triplekick",
@@ -4203,7 +4952,9 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "twister",
@@ -4217,7 +4968,9 @@
 "secondary": {
 "chance": 20,
 "flinch": true
-}
+},
+"drain": null,
+"recoil": null
 },
 {
 "id": "visegrip",
@@ -4228,7 +4981,9 @@
 "pp": 30,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "watergun",
@@ -4239,7 +4994,9 @@
 "pp": 25,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "waterpulse",
@@ -4250,7 +5007,9 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "waterspout",
@@ -4261,7 +5020,9 @@
 "pp": 5,
 "category": "Special",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "wingattack",
@@ -4272,7 +5033,9 @@
 "pp": 35,
 "category": "Physical",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 },
 {
 "id": "withdraw",
@@ -4283,6 +5046,8 @@
 "pp": 40,
 "category": "Status",
 "priority": 0,
-"secondary": null
+"secondary": null,
+"drain": null,
+"recoil": null
 }
 ]
