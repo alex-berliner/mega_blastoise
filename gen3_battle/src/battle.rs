@@ -106,6 +106,11 @@ pub struct Mon {
     /// Flinched this turn and loses its action if it has not moved yet.
     /// Cleared when the turn ends.
     pub flinched: bool,
+    /// Confusion clock: 0 means not confused. Decremented before each
+    /// action; at zero the confusion lifts and the move proceeds. Set when
+    /// confusion lands — 2 under a script (the sim's pinned floor), 2..=5
+    /// in play. Cleared by switching out.
+    pub confusion_n: u8,
 }
 
 impl Mon {
@@ -135,6 +140,7 @@ impl Mon {
             toxic_n: 0,
             sleep_n: 0,
             flinched: false,
+            confusion_n: 0,
         })
     }
 
@@ -252,6 +258,8 @@ pub struct SeatScript {
     /// Strike count for a 2-5 multi-hit move; 0 lets the battle roll it.
     /// Fixed-count moves (Double Kick's 2) ignore it.
     pub hits: u8,
+    /// A confused mon's coin comes up "hit yourself" this action.
+    pub selfhit: bool,
 }
 
 /// Per-turn RNG script; see [`Battle::step_with`].
@@ -284,6 +292,12 @@ pub enum Event {
     Boosted { side: u8, boost: Boost, delta: i8 },
     /// `side`'s mon flinched and lost its action.
     Flinched { side: u8 },
+    /// `side`'s mon became confused.
+    ConfusionStarted { side: u8 },
+    /// `side`'s mon hurt itself in confusion.
+    ConfusedHit { side: u8, amount: u16 },
+    /// `side`'s mon snapped out of confusion.
+    ConfusionEnded { side: u8 },
     /// `side` healed `amount` by draining the damage it just dealt.
     Drained { side: u8, amount: u16 },
     /// `side` took `amount` recoil from its own move.
@@ -342,7 +356,9 @@ impl Battle {
         for side in 0..2 {
             if let Choice::Switch(idx) = choices[side] {
                 if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
-                    self.sides[side].mon_mut().toxic_n = 0;
+                    let out = self.sides[side].mon_mut();
+                    out.toxic_n = 0;
+                    out.confusion_n = 0;
                     self.sides[side].active = idx;
                     events.push(Event::Switched { side: side as u8 + 1, party_index: idx });
                 }
@@ -487,6 +503,33 @@ impl Battle {
         if self.sides[side].mon().flinched {
             events.push(Event::Flinched { side: side as u8 + 1 });
             return;
+        }
+        // Confusion: the clock ticks before the action; at zero it lifts
+        // and the move proceeds. Otherwise a coin (the script's selfhit
+        // knob) decides between acting and the 40 BP typeless self-hit.
+        if self.sides[side].mon().confusion_n > 0 {
+            self.sides[side].mon_mut().confusion_n -= 1;
+            if self.sides[side].mon().confusion_n == 0 {
+                events.push(Event::ConfusionEnded { side: side as u8 + 1 });
+            } else {
+                let (selfhit, random) = match script {
+                    Some(s) => (s.selfhit, s.random),
+                    None => (self.rng.below(2) == 0, 85 + self.rng.below(16) as u8),
+                };
+                if selfhit {
+                    let amount = self.confusion_self_hit(side, random);
+                    events.push(Event::ConfusedHit { side: side as u8 + 1, amount });
+                    let mon = self.sides[side].mon();
+                    if mon.fainted() {
+                        events.push(Event::Fainted { side: side as u8 + 1 });
+                        if let Some(next) = self.sides[side].first_healthy() {
+                            self.sides[side].active = next;
+                            events.push(Event::Switched { side: side as u8 + 1, party_index: next });
+                        }
+                    }
+                    return;
+                }
+            }
         }
         // Full paralysis: a quarter of a paralyzed mon's actions, decided by
         // the script under test and the RNG in play. No PP is spent.
@@ -650,6 +693,39 @@ impl Battle {
         events.push(Event::Statused { side: foe as u8 + 1, status });
     }
 
+    /// Confuse `foe`'s active mon if it can be: not fainted, not already
+    /// confused. The clock is 2 under a script (the sim's pinned floor),
+    /// 2..=5 in play.
+    fn confuse(&mut self, foe: usize, scripted: bool, events: &mut Vec<Event>) {
+        let target = self.sides[foe].mon();
+        if target.fainted() || target.confusion_n > 0 {
+            return;
+        }
+        let n = if scripted { 2 } else { 2 + self.rng.below(4) as u8 };
+        self.sides[foe].mon_mut().confusion_n = n;
+        events.push(Event::ConfusionStarted { side: foe as u8 + 1 });
+    }
+
+    /// The confusion self-hit: 40 base power, typeless, physical, against
+    /// the mon's own Defense — stages and burn apply, nothing else does.
+    fn confusion_self_hit(&mut self, side: usize, random: u8) -> u16 {
+        let mon = self.sides[side].mon();
+        let atk = crate::stats::apply_stage(mon.atk, mon.stages[Stat::Atk as usize]) as u32;
+        let def = crate::stats::apply_stage(mon.def, mon.stages[Stat::Def as usize]).max(1) as u32;
+        let mut dmg = ((2 * mon.level as u32 / 5 + 2) * 40 * atk / def) / 50;
+        if mon.burned() {
+            dmg /= 2;
+        }
+        if dmg == 0 {
+            dmg = 1;
+        }
+        dmg += 2;
+        dmg = (dmg * random.clamp(85, 100) as u32) / 100;
+        let dmg = (dmg.max(1) as u16).min(mon.hp);
+        self.sides[side].mon_mut().hp -= dmg;
+        dmg
+    }
+
     /// Resolve a zero-power move. `hit` already includes the accuracy roll;
     /// self-targeted actions cannot miss (their table accuracy is 0, the
     /// never-miss sentinel). A status move with no modelled action — Splash —
@@ -679,6 +755,16 @@ impl Battle {
                 if heal > 0 {
                     mon.hp += heal;
                     events.push(Event::Healed { side: side as u8 + 1, amount: heal });
+                }
+            }
+            StatusAction::Confuse => {
+                let immune = slot.entry.respects_immunity
+                    && crate::types::effectiveness_against(
+                        slot.move_type(),
+                        self.sides[foe].mon().types(),
+                    ) == 0;
+                if hit && !immune {
+                    self.confuse(foe, scripted, events);
                 }
             }
             StatusAction::Inflict(status) => {
@@ -743,6 +829,9 @@ impl Battle {
                     if !self.sides[foe].mon().fainted() {
                         self.sides[foe].mon_mut().flinched = true;
                     }
+                }
+                Some(SecondaryEffect::Confuse) => {
+                    self.confuse(foe, script.is_some(), events);
                 }
                 None => {}
             }
@@ -916,6 +1005,7 @@ mod tests {
         secondary: false,
         immobile: false,
         hits: 0,
+        selfhit: false,
     };
 
     #[test]
@@ -963,6 +1053,30 @@ mod tests {
         let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
         assert!(!events.iter().any(|e| matches!(e, Event::Statused { .. })));
         assert_eq!(b.sides[1].mon().status, None, "a Ground type shrugs off Thunder Wave");
+    }
+
+    #[test]
+    fn confusion_ticks_selfhits_and_lifts() {
+        // Gengar confuses Snorlax; the scripted coin says "hit yourself".
+        let mut b = battle(mon("gengar", 50, &["confuseray"]), mon("snorlax", 50, &["pound"]));
+        let hp = b.sides[1].mon().hp;
+        let events = b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([PLAIN, SeatScript { selfhit: true, ..PLAIN }]),
+        );
+        assert!(events.iter().any(|e| matches!(e, Event::ConfusionStarted { side: 2 })));
+        assert!(events.iter().any(|e| matches!(e, Event::ConfusedHit { side: 2, .. })));
+        assert!(!events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
+        assert!(b.sides[1].mon().hp < hp, "the self-hit landed");
+        // Next turn the clock hits zero: confusion lifts and Snorlax acts,
+        // and the re-Confuse Ray fails against the still-confused target
+        // (it resolved before the clock ticked).
+        let events = b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([PLAIN, SeatScript { selfhit: true, ..PLAIN }]),
+        );
+        assert!(events.iter().any(|e| matches!(e, Event::ConfusionEnded { side: 2 })));
+        assert!(events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
     }
 
     #[test]

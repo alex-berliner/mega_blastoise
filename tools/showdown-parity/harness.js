@@ -108,6 +108,11 @@ function scriptRandomness(battle, script) {
       battle.__critPending = false;
       return battle.__cur.crit;
     }
+    // Confusion (gens 3-4): randomChance(1,2) true means "acts normally",
+    // false means the 40 BP self-hit. The script's selfhit knob decides.
+    if (numerator === 1 && denominator === 2) {
+      return !((battle.__act ?? battle.__cur).selfhit);
+    }
     // Full paralysis: rolled in onBeforeMove for the acting side —
     // (1,4) in gen 3+, (63,256) in gens 1-2. Checked before the
     // sub-certain branch so the par roll never reads the secondary knob.
@@ -296,6 +301,10 @@ function runDump(sc) {
           secondary = {chance: s.chance, flinch: true};
           break;
         }
+        if (s.volatileStatus === 'confusion') {
+          secondary = {chance: s.chance, confusion: true};
+          break;
+        }
         if (s.volatileStatus) continue;
         if (s.status) {
           secondary = {chance: s.chance, status: s.status};
@@ -322,7 +331,8 @@ function runDump(sc) {
         statusAction: m.category !== 'Status' ? null
           : m.status ? {status: m.status}
           : m.heal ? {heal: m.heal}
-          : m.boosts ? {boosts: m.boosts, self: m.target === 'self'}
+          : m.boosts && !m.volatileStatus ? {boosts: m.boosts, self: m.target === 'self'}
+          : m.volatileStatus === 'confusion' && !m.boosts ? {confuse: true}
           : null,
         multihit: m.multihit
           ? (Array.isArray(m.multihit) ? m.multihit : [m.multihit, m.multihit])
@@ -355,10 +365,12 @@ function runMovelist(sc) {
       // data, so they filter out and stay reference-honest.)
       const raw = rawOf(move.id);
       const hooky = Object.keys(raw).some((k) => k.startsWith('on') || /Callback/.test(k));
-      const entangled = hooky || raw.volatileStatus || raw.sideCondition || raw.weather ||
-        raw.forceSwitch || raw.selfSwitch || raw.pseudoWeather || raw.slotCondition ||
-        raw.terrain || raw.self || raw.selfdestruct || raw.ohko;
-      const modelable = raw.status || raw.boosts || raw.heal;
+      const confuseOnly = raw.volatileStatus === 'confusion' &&
+        !raw.status && !raw.boosts && !raw.heal && sc.gen >= 3;
+      const entangled = hooky || (raw.volatileStatus && !confuseOnly) || raw.sideCondition ||
+        raw.weather || raw.forceSwitch || raw.selfSwitch || raw.pseudoWeather ||
+        raw.slotCondition || raw.terrain || raw.self || raw.selfdestruct || raw.ohko;
+      const modelable = raw.status || raw.boosts || raw.heal || confuseOnly;
       if (entangled || !modelable) continue;
       if (!['normal', 'any', 'self', 'allAdjacentFoes'].includes(move.target)) continue;
       out.push({id: move.id, priority: move.priority, boostsSelf: false, multihit: false});
@@ -375,7 +387,9 @@ function runMovelist(sc) {
     const raw = rawOf(move.id);
     const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);
     if (rawSecs.some((sec) =>
-      sec && (sec.onHit || sec.self || (sec.volatileStatus && sec.volatileStatus !== 'flinch'))
+      sec && (sec.onHit || sec.self ||
+        (sec.volatileStatus && sec.volatileStatus !== 'flinch' &&
+         !(sec.volatileStatus === 'confusion' && sc.gen >= 3)))
     )) continue;
     // Conditional base power, self-effects (Superpower's drop, Overheat's),
     // and on-hit hooks are behaviour the core engines do not model.

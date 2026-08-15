@@ -141,6 +141,7 @@ pub enum SecondaryEffect {
     Status(Status),
     Boosts(&'static [(Boost, i8)]),
     Flinch,
+    Confuse,
 }
 
 /// A move's secondary effect.
@@ -160,6 +161,7 @@ pub enum StatusAction {
     BoostSelf(&'static [(Boost, i8)]),
     BoostFoe(&'static [(Boost, i8)]),
     HealHalf,
+    Confuse,
 }
 
 /// One move.

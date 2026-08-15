@@ -1047,7 +1047,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"confuse": true
+},
 "multihit": null
 },
 {
@@ -1644,12 +1646,7 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": {
-"boosts": {
-"evasion": 1
-},
-"self": true
-},
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3210,7 +3207,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"confuse": true
+},
 "multihit": null
 },
 {
@@ -3226,7 +3225,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"confuse": true
+},
 "multihit": null
 },
 {
@@ -3388,12 +3389,7 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": {
-"boosts": {
-"atk": 2
-},
-"self": false
-},
+"statusAction": null,
 "multihit": null
 },
 {
@@ -3501,7 +3497,10 @@
 "pp": 10,
 "category": "Physical",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 20,
+"confusion": true
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -3829,7 +3828,10 @@
 "pp": 15,
 "category": "Physical",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 10,
+"confusion": true
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -4531,7 +4533,9 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": null,
+"statusAction": {
+"confuse": true
+},
 "multihit": null
 },
 {
@@ -4543,7 +4547,10 @@
 "pp": 25,
 "category": "Special",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 10,
+"confusion": true
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -4622,12 +4629,7 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": {
-"boosts": {
-"def": 1
-},
-"self": true
-},
+"statusAction": null,
 "multihit": null
 },
 {
@@ -4752,7 +4754,10 @@
 "pp": 5,
 "category": "Physical",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 100,
+"confusion": true
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -4983,12 +4988,7 @@
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
-"statusAction": {
-"boosts": {
-"spa": 1
-},
-"self": false
-},
+"statusAction": null,
 "multihit": null
 },
 {
@@ -5600,7 +5600,10 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 10,
+"confusion": true
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,
@@ -6397,7 +6400,10 @@
 "pp": 20,
 "category": "Special",
 "priority": 0,
-"secondary": null,
+"secondary": {
+"chance": 20,
+"confusion": true
+},
 "drain": null,
 "recoil": null,
 "respectsImmunity": false,

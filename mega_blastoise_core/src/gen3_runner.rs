@@ -194,6 +194,31 @@ pub async fn play_turn<E: BoardEffects>(
                     })
                     .await;
             }
+            Event::ConfusionStarted { side } => {
+                effects
+                    .on_event(BoardEvent::EffectStart {
+                        mon: active_name(battle, side),
+                        what: "confusion".into(),
+                        detail: None,
+                    })
+                    .await;
+            }
+            Event::ConfusedHit { side, .. } => {
+                effects
+                    .on_event(BoardEvent::Damage {
+                        mon: active_name(battle, side),
+                        health: health(battle, side),
+                    })
+                    .await;
+            }
+            Event::ConfusionEnded { side } => {
+                effects
+                    .on_event(BoardEvent::EffectEnd {
+                        mon: active_name(battle, side),
+                        what: "confusion".into(),
+                    })
+                    .await;
+            }
             Event::Flinched { side } => {
                 effects
                     .on_event(BoardEvent::Cant { mon: active_name(battle, side), reason: "flinch".into() })
