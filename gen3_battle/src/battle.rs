@@ -794,6 +794,10 @@ pub struct Battle {
     /// it: its clock counts the target's next N ACTIONS, so landing on a mon
     /// that has already moved does not spend one of them.
     acted_this_turn: [bool; 2],
+    /// A side whose active was dragged off this turn by Roar or Whirlwind.
+    /// Its queued action goes with the mon that left, exactly as a faint's
+    /// does, and the replacement does not inherit it.
+    dragged: [bool; 2],
     /// Whether an action is still queued behind the one resolving now. The
     /// sim's Protect and Endure both start with `!!this.queue.willAct()`, so
     /// the last mon to act in a turn cannot shield: a foe that switched has
@@ -820,6 +824,7 @@ impl Battle {
             taken_special: [0; 2],
             pp0_at_choice: [false; 2],
             acted_this_turn: [false; 2],
+            dragged: [false; 2],
             will_act: false,
             pursuing: false,
             deferred_switch: [None; 2],
@@ -923,6 +928,7 @@ impl Battle {
         let mut events = Vec::new();
         self.turn += 1;
         self.acted_this_turn = [false; 2];
+        self.dragged = [false; 2];
         self.taken_physical = [0; 2];
         self.taken_special = [0; 2];
 
@@ -1067,6 +1073,11 @@ impl Battle {
             // one-mon battle could never show this: the faint ended it.
             if (0..2).any(|s| self.sides[s].mon().fainted()) {
                 cancelled = [true; 2];
+            }
+            // A mon dragged off by Roar or Whirlwind takes its action with
+            // it; whoever the drag brought in does not get to use it.
+            for s in 0..2 {
+                cancelled[s] |= self.dragged[s];
             }
             // The sim checks for faints at every action boundary in this
             // era (`gen <= 3` in checkFainted's guard), so a replacement is
@@ -3479,6 +3490,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             let user = self.sides[side].mon_mut();
             user.seeded = false;
             user.trapped_n = 0;
+            // It sweeps the floor as well as the user: the sim's onHit runs
+            // removeSideCondition('spikes') before it touches the volatiles,
+            // so every later switch-in on this side walks in clean.
+            self.sides[side].spikes = 0;
         }
 
         // Superpower and kin always pay their stat bill on a landed hit.
@@ -3731,8 +3746,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // No one sleeps through an Uproar.
         if status == Status::Sleep
             && (0..2).any(|w| {
-                self.sides[w].mon().uproar_ending
-                    || self.sides[w].mon().rampage.is_some_and(|(i, _)| {
+                // NOT `uproar_ending`: the din's own residual sits at
+                // subOrder 11 and Yawn's at 19, so by the time Yawn puts its
+                // victim under, the Uproar has already ended and has nothing
+                // left to say about it.
+                self.sides[w].mon().rampage.is_some_and(|(i, _)| {
                         self.sides[w]
                             .mon()
                             .moves
@@ -3894,8 +3912,19 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
             }
             StatusAction::Rest => {
+                // Nothing sleeps through an Uproar, a self-inflicted sleep
+                // included: the din answers the sim's SetStatus event
+                // wherever the sleep came from.
+                let uproar = (0..2).any(|w| {
+                    let m = self.sides[w].mon();
+                    m.uproar_ending
+                        || (m.rampage.is_some() && m.locked_move == Some("uproar"))
+                        || m.rampage.is_some_and(|(i, _)| {
+                            m.moves.get(i as usize).is_some_and(|s| s.entry.id == "uproar")
+                        })
+                });
                 let mon = self.sides[side].mon();
-                if mon.hp < mon.max_hp {
+                if mon.hp < mon.max_hp && !uproar {
                     let mon = self.sides[side].mon_mut();
                     mon.hp = mon.max_hp;
                     mon.status = Some(Status::Sleep);
@@ -4216,6 +4245,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         self.switch_out_reset(foe);
                         self.sides[foe].reorder_for_switch(next);
                         self.sides[foe].active = next;
+                        self.dragged[foe] = true;
                         events.push(Event::Switched {
                             side: foe as u8 + 1,
                             party_index: next,
