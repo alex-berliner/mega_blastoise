@@ -560,6 +560,16 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Conversion)")
                 } else if act.get("imprison").is_some() {
                     String::from("Some(StatusAction::Imprison)")
+                } else if act.get("curse").is_some() {
+                    String::from("Some(StatusAction::Curse)")
+                } else if act.get("conversion2").is_some() {
+                    String::from("Some(StatusAction::Conversion2)")
+                } else if act.get("ingrain").is_some() {
+                    String::from("Some(StatusAction::Ingrain)")
+                } else if act.get("healbell").is_some() {
+                    String::from("Some(StatusAction::HealBell)")
+                } else if act.get("noopsuccess").is_some() {
+                    String::from("Some(StatusAction::NoopSuccess)")
                 } else if act.get("noopfail").is_some() {
                     String::from("Some(StatusAction::NoopFail)")
                 } else if act.get("mirror").is_some() {

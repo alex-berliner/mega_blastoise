@@ -306,7 +306,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"conversion2": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -686,7 +688,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopsuccess": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1787,7 +1791,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"healbell": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -1992,7 +1998,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"curse": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2245,7 +2253,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"healbell": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2322,7 +2332,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"ingrain": true
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -2804,7 +2816,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "roar"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -3321,7 +3335,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "whirlwind"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,
@@ -6523,7 +6539,9 @@
 "recoil": null,
 "respectsImmunity": false,
 "selfDrop": null,
-"statusAction": null,
+"statusAction": {
+"noopfail": "batonpass"
+},
 "multihit": null,
 "fixed": null,
 "ohko": false,

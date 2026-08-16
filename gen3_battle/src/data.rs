@@ -307,6 +307,17 @@ pub enum StatusAction {
     Imprison,
     /// The itemless/teamless format makes these fail outright: Assist,
     /// Sleep Talk (awake), Recycle, Trick, Role Play, Skill Swap.
+    /// Curse: Ghost-types pay half max HP to curse the foe (a quarter max
+    /// chip each turn); everyone else trades Speed for Attack and Defense.
+    Curse,
+    /// Conversion 2: retype to the first type resisting the foe's last move.
+    Conversion2,
+    /// Ingrain: root down — a sixteenth of max HP back every turn.
+    Ingrain,
+    /// Heal Bell / Aromatherapy: cure the user's team (here: itself).
+    HealBell,
+    /// A move that succeeds and does nothing in singles (Follow Me).
+    NoopSuccess,
     NoopFail,
     /// Mirror Move: use the foe's last move.
     MirrorMove,

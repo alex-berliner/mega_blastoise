@@ -118,7 +118,9 @@ pub struct Mon {
     /// stages ignored against this mon.
     pub identified: bool,
     /// Lock-On: the next move cannot miss.
-    pub sure_hit: bool,
+    /// Lock-On/Mind Reader: 2 while armed (cast turn + the next); the
+    /// next move consumes it, the end-of-turn clock expires it.
+    pub sure_hit: u8,
     /// Charge: the next Electric move doubles.
     pub charged_elec: bool,
     /// Grudge is armed until this mon's next action.
@@ -164,6 +166,12 @@ pub struct Mon {
     pub imprison_fresh: bool,
     /// Camouflage/Conversion retyping.
     pub type_override: Option<(Type, Type)>,
+    /// Ghost-Curse victim: a quarter of max HP every end of turn.
+    pub cursed: bool,
+    /// Ingrain roots: a sixteenth of max HP back every end of turn.
+    pub ingrained: bool,
+    /// Whether this mon has taken any move action yet (Fake Out's window).
+    pub acted: bool,
     /// Protect's stall gamble: 0 fresh, then the era's 2-4-8 ladder.
     pub stall_counter: u8,
     /// Untouchable this turn (Protect/Detect). Cleared when the turn ends.
@@ -240,7 +248,7 @@ impl Mon {
             flinched: false,
             confusion_n: 0,
             identified: false,
-            sure_hit: false,
+            sure_hit: 0,
             charged_elec: false,
             grudged: false,
             tormented: false,
@@ -262,6 +270,9 @@ impl Mon {
             imprisoning: false,
             imprison_fresh: false,
             type_override: None,
+            cursed: false,
+            ingrained: false,
+            acted: false,
             stall_counter: 0,
             protected: false,
             enduring: false,
@@ -567,6 +578,10 @@ pub struct Battle {
     /// split physical/special — what Counter and Mirror Coat bounce.
     taken_physical: [u16; 2],
     taken_special: [u16; 2],
+    /// Whether each seat's CHOSEN slot was already out of PP at choice
+    /// time — that (and only that) is what Struggle substitution reads;
+    /// a mid-turn Spite draining it to zero is a silent lost turn.
+    pp0_at_choice: [bool; 2],
 }
 
 impl Battle {
@@ -579,6 +594,7 @@ impl Battle {
             weather_n: 0,
             taken_physical: [0; 2],
             taken_special: [0; 2],
+            pp0_at_choice: [false; 2],
         }
     }
 
@@ -607,6 +623,17 @@ impl Battle {
         self.taken_physical = [0; 2];
         self.taken_special = [0; 2];
 
+        for side in 0..2 {
+            self.pp0_at_choice[side] = match choices[side] {
+                Choice::Move(i) => self
+                    .sides[side]
+                    .mon()
+                    .moves
+                    .get(i)
+                    .is_some_and(|m| m.pp == 0),
+                _ => false,
+            };
+        }
         // A seat that chose Focus Punch starts tightening its focus before
         // anything else happens this turn (the sim's priority charge step);
         // while focusing, the flinch volatile is refused outright.
@@ -640,7 +667,7 @@ impl Battle {
                     out.toxic_n = 0;
                     out.confusion_n = 0;
                     out.identified = false;
-                    out.sure_hit = false;
+                    out.sure_hit = 0;
                     out.charged_elec = false;
                     out.grudged = false;
                     out.tormented = false;
@@ -666,6 +693,8 @@ impl Battle {
                     out.imprisoning = false;
                     out.imprison_fresh = false;
                     out.type_override = None;
+                    out.cursed = false;
+                    out.ingrained = false;
                     out.stall_counter = 0;
                     out.protected = false;
                     out.enduring = false;
@@ -777,6 +806,16 @@ impl Battle {
             if self.over() {
                 break;
             }
+            // Ingrain sips a sixteenth of max HP back (the games' order 7,
+            // ahead of Leech Seed).
+            if self.sides[side].mon().ingrained && !self.sides[side].mon().fainted() {
+                let mon = self.sides[side].mon_mut();
+                let amount = ((mon.max_hp / 16).max(1)).min(mon.max_hp - mon.hp);
+                if amount > 0 {
+                    mon.hp += amount;
+                    events.push(Event::Healed { side: side as u8 + 1, amount });
+                }
+            }
             // Leech Seed bleeds an eighth of max HP to the opposing active.
             if self.sides[side].mon().seeded && !self.sides[side].mon().fainted() {
                 let drain = (self.sides[side].mon().max_hp / 8).max(1);
@@ -846,6 +885,14 @@ impl Battle {
                 } else {
                     events.push(Event::TrapEnded { side: side as u8 + 1 });
                 }
+            }
+            // Ghost-Curse chips a quarter of max HP in this mon's slot.
+            if self.sides[side].mon().cursed && !self.sides[side].mon().fainted() {
+                let mon = self.sides[side].mon_mut();
+                let amount = ((mon.max_hp / 4).max(1)).min(mon.hp);
+                mon.hp -= amount;
+                events.push(Event::Residual { side: side as u8 + 1, amount, status: Status::Poison });
+                self.faint_and_replace(side, &mut events);
             }
             // Yawn rides THIS mon's residual slot, right after its bind:
             // a faster mon's yawn resolves before a slower mon's poison,
@@ -993,6 +1040,7 @@ impl Battle {
             mon.torment_fresh = false;
             mon.imprison_fresh = false;
             mon.focusing = false;
+            mon.sure_hit = mon.sure_hit.saturating_sub(1);
         }
 
         if let Some(win) = self.winner() {
@@ -1025,7 +1073,7 @@ impl Battle {
         let foe_mon = self.sides[1 - side].mon();
         slot.pp == 0
             || mon.disabled_slot == Some(i as u8)
-            || (mon.tormented && mon.last_used == Some(i as u8))
+            || (mon.tormented && mon.last_used_id == Some(slot.entry.id))
             || (mon.taunt_n == 1 && status_movish)
             || (foe_mon.imprisoning
                 && foe_mon.moves.iter().any(|m| m.entry.id == slot.entry.id))
@@ -1075,6 +1123,10 @@ impl Battle {
         if self.sides[side].mon().fainted() {
             return;
         }
+        // Fake Out's window is ACTIONS, not moves: a sleep-lost turn still
+        // burns it (the sim counts every action taken from the queue).
+        let had_acted = self.sides[side].mon().acted;
+        self.sides[side].mon_mut().acted = true;
         // In Gen 3 a rampage broken by flinch or full paralysis still ends
         // in fatigue confusion, on the spot. (A miss or a protecting target
         // ends it quietly — those sites clear `rampage` directly.)
@@ -1131,6 +1183,7 @@ impl Battle {
                 mon.rampage = None;
                 mon.rolling = None;
                 mon.fury_n = 0;
+                mon.raging = false;
                 mon.stall_counter = 0;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Sleep });
                 return;
@@ -1156,6 +1209,7 @@ impl Battle {
                 self.sides[side].mon_mut().rampage = None;
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
+                self.sides[side].mon_mut().raging = false;
                 self.sides[side].mon_mut().stall_counter = 0;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Freeze });
                 return;
@@ -1169,6 +1223,7 @@ impl Battle {
             break_rampage(self, side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().fury_n = 0;
+            self.sides[side].mon_mut().raging = false;
             self.sides[side].mon_mut().stall_counter = 0;
             events.push(Event::Flinched { side: side as u8 + 1 });
             return;
@@ -1190,6 +1245,7 @@ impl Battle {
                     self.sides[side].mon_mut().rampage = None;
                     self.sides[side].mon_mut().rolling = None;
                     self.sides[side].mon_mut().fury_n = 0;
+                    self.sides[side].mon_mut().raging = false;
                     self.sides[side].mon_mut().stall_counter = 0;
                     let amount = self.confusion_self_hit(side, random);
                     events.push(Event::ConfusedHit { side: side as u8 + 1, amount });
@@ -1217,6 +1273,7 @@ impl Battle {
                 break_rampage(self, side, script.is_some(), events);
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
+                self.sides[side].mon_mut().raging = false;
                 self.sides[side].mon_mut().stall_counter = 0;
                 events.push(Event::FullyParalyzed { side: side as u8 + 1 });
                 return;
@@ -1245,9 +1302,13 @@ impl Battle {
                 None => index,
             },
         };
-        // A two-turn move Disabled mid-charge cannot release: the turn is
-        // simply lost — no move line, no Struggle, no PP.
-        if was_charging && self.sides[side].mon().disabled_slot == Some(index as u8) {
+        // A Disabled locked move cannot continue — a mid-charge release, a
+        // rolling Rollout or a rampage all lose the turn silently (the
+        // sim's disable cant; a broken rampage still fatigues).
+        if releasing && self.sides[side].mon().disabled_slot == Some(index as u8) {
+            let _ = was_charging;
+            break_rampage(self, side, script.is_some(), events);
+            self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().stall_counter = 0;
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
@@ -1289,7 +1350,7 @@ impl Battle {
         // a Disabled slot, or a move the imprisoning foe also knows.
         let tormented_out = self.sides[side].mon().tormented
             && !self.sides[side].mon().torment_fresh
-            && self.sides[side].mon().last_used == Some(index as u8)
+            && self.sides[side].mon().last_used_id == Some(slot.entry.id)
             && !releasing;
         if self.sides[side].mon().disabled_slot == Some(index as u8)
             && self.sides[side].mon().disable_fresh
@@ -1317,11 +1378,21 @@ impl Battle {
             return;
         }
         let imprisoned_out = sealed && !releasing;
+        if slot.pp == 0
+            && !releasing
+            && !self.pp0_at_choice[side]
+            && !(taunted_out || tormented_out || disabled_out || imprisoned_out)
+        {
+            // Drained to zero AFTER the choice was made: the sim's runMove
+            // hits "cant: nopp" — a silent lost turn, no Struggle.
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
         let struggling = (taunted_out
             || tormented_out
             || disabled_out
             || imprisoned_out
-            || (slot.pp == 0 && !releasing))
+            || (slot.pp == 0 && !releasing && self.pp0_at_choice[side]))
             && !releasing;
         let slot = if struggling {
             MoveSlot { entry: &crate::data::STRUGGLE, pp: 1, typed_as: None }
@@ -1460,6 +1531,39 @@ impl Battle {
             return;
         }
 
+        // Fake Out only works on the user's first action on the field.
+        if slot.entry.id == "fakeout" && had_acted {
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
+        // Dream Eater only bites a sleeping target.
+        if slot.entry.id == "dreameater"
+            && self.sides[foe].mon().status != Some(Status::Sleep)
+        {
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
+        // Present: the sim's random(10) picks heal or a power tier; the
+        // pinned roll routes to the secondary knob — floor is the HEAL
+        // branch (a quarter of the target's max, failing at full HP).
+        if slot.entry.id == "present" {
+            let heal_branch = match script {
+                Some(sc) => sc.secondary,
+                None => self.rng.below(10) < 2,
+            };
+            if heal_branch {
+                let target = self.sides[foe].mon_mut();
+                let amount = (target.max_hp / 4).max(1).min(target.max_hp - target.hp);
+                if amount == 0 {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                } else {
+                    target.hp += amount;
+                    events.push(Event::Healed { side: foe as u8 + 1, amount });
+                }
+                return;
+            }
+        }
+
         // Brick Break smashes the target's screens before it hits, unless
         // the target is outright immune.
         if slot.entry.id == "brickbreak"
@@ -1497,9 +1601,9 @@ impl Battle {
         } else {
             slot.entry.accuracy
         };
-        let sure = self.sides[side].mon().sure_hit;
+        let sure = self.sides[side].mon().sure_hit > 0;
         if sure {
-            self.sides[side].mon_mut().sure_hit = false;
+            self.sides[side].mon_mut().sure_hit = 0;
         }
         let hit = sure || match script {
             Some(s) => acc == 0 || s.hit,
@@ -1525,6 +1629,7 @@ impl Battle {
         // pierce moves, which land and double their power. Self-targeted
         // actions ignore the dodge; they never aim at the foe.
         let mut pierce_mult: u16 = 1;
+        let mut pierce_power_mult: u16 = 1;
         let self_targeted = matches!(
             slot.entry.status_action,
             Some(
@@ -1555,15 +1660,31 @@ impl Battle {
                     | StatusAction::Conversion
                     | StatusAction::Imprison
                     | StatusAction::Substitute
+                    | StatusAction::Ingrain
+                    | StatusAction::HealBell
+                    | StatusAction::NoopSuccess
             )
-        );
+        ) || (matches!(slot.entry.status_action, Some(StatusAction::Curse)) && {
+            // Non-Ghost Curse retargets SELF (the sim's nonGhostTarget):
+            // no shield and no semi-invulnerable foe can stop it.
+            let (t1, t2) = self.sides[side].mon().types();
+            t1 != Type::Ghost && t2 != Type::Ghost
+        });
         // Sketch and Transform carry no protect flag: straight through a shield.
         if !self_targeted
             && !matches!(slot.entry.id, "sketch" | "transform")
             && self.sides[foe].mon().protected
         {
-            // A shielded target disrupts a rampage: no fatigue, fresh start.
-            self.sides[side].mon_mut().rampage = None;
+            // A shielded target breaks a rampage the way a miss does —
+            // quietly on first use, with fatigue confusion once the lock
+            // is running — and a rolling Rollout resets to a fresh choice.
+            if ramping {
+                break_rampage(self, side, script.is_some(), events);
+            } else {
+                self.sides[side].mon_mut().rampage = None;
+            }
+            self.sides[side].mon_mut().rolling = None;
+            self.sides[side].mon_mut().fury_n = 0;
             events.push(Event::Failed { side: side as u8 + 1 });
             // The kicks crash into the shield all the same.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
@@ -1586,10 +1707,15 @@ impl Battle {
                     _ => false,
                 };
                 if !pierces {
-                    // A dodge IS a miss: same bookkeeping, and the kicks
-                    // still crash for half what they would have dealt.
+                    // A dodge IS a miss: same bookkeeping — including the
+                    // fatigue confusion of a broken rampage lock — and the
+                    // kicks still crash for half what they would have dealt.
                     self.sides[side].mon_mut().last_missed = true;
-                    self.sides[side].mon_mut().rampage = None;
+                    if ramping {
+                        break_rampage(self, side, script.is_some(), events);
+                    } else {
+                        self.sides[side].mon_mut().rampage = None;
+                    }
                     self.sides[side].mon_mut().fury_n = 0;
                     self.sides[side].mon_mut().rolling = None;
                     if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
@@ -1601,8 +1727,15 @@ impl Battle {
                     }
                     return;
                 }
-                if matches!(slot.entry.id, "gust" | "twister" | "earthquake" | "magnitude" | "surf")
-                {
+                // WHERE the pierce doubles depends on the hideout: Bounce
+                // doubles gust/twister at BASE POWER, while Fly, Dig and
+                // Dive all double at the sim's ModifyDamage stage.
+                if via == "bounce" && matches!(slot.entry.id, "gust" | "twister") {
+                    pierce_power_mult = 2;
+                } else if matches!(
+                    slot.entry.id,
+                    "gust" | "twister" | "earthquake" | "magnitude" | "surf" | "whirlpool"
+                ) {
                     pierce_mult = 2;
                 }
             }
@@ -1826,7 +1959,7 @@ impl Battle {
                 Some(s) => s.random,
                 None => 85 + self.rng.below(16) as u8,
             };
-            let m = MoveUse { move_type: Type::None, power, halve_def: false, weather: 0 };
+            let m = MoveUse { move_type: Type::None, power, halve_def: false, late_mult: 1, weather: 0 };
             let dealt = damage(&attacker, &defender, &m, Roll { crit: false, random }) as u16;
             self.sides[foe].incoming = Some((3, dealt, slot.entry.id));
             events.push(Event::Charging { side: side as u8 + 1 });
@@ -1836,9 +1969,14 @@ impl Battle {
         // Mirror Move plays back the foe's last move (both get announced);
         // Mimic and Sketch write it into the slot instead.
         let slot = if matches!(slot.entry.id, "mirrormove" | "mimic" | "sketch") {
-            let foe_last = self.sides[foe].mon().last_used.and_then(|i| {
-                self.sides[foe].mon().moves.get(i as usize).map(|m| m.entry)
-            });
+            // The foe's last move BY ID — a Transform that rewrote its
+            // slots doesn't change what it last used.
+            let foe_last = self
+                .sides[foe]
+                .mon()
+                .last_used_id
+                .filter(|&i| i != "struggle")
+                .and_then(crate::data::move_by_id);
             match (slot.entry.id, foe_last) {
                 (_, None) => {
                     events.push(Event::Failed { side: side as u8 + 1 });
@@ -1855,8 +1993,14 @@ impl Battle {
                 ("mimic", Some(e)) => {
                     // A five-PP overlay; the original slot returns when the
                     // mon leaves the field or faints. A substitute blocks
-                    // the copy outright (the sim's, flags notwithstanding).
-                    if self.sides[foe].mon().sub_hp > 0 {
+                    // the copy outright (the sim's, flags notwithstanding),
+                    // a TRANSFORMED user cannot Mimic at all, and the
+                    // failmimic set (Mimic, Metronome, Sketch, Struggle)
+                    // refuses to be copied.
+                    if self.sides[foe].mon().sub_hp > 0
+                        || self.sides[side].mon().transform_backup.is_some()
+                        || matches!(e.id, "mimic" | "metronome" | "sketch" | "struggle")
+                    {
                         events.push(Event::Failed { side: side as u8 + 1 });
                         return;
                     }
@@ -1973,19 +2117,29 @@ impl Battle {
         // How many times this move strikes. The 2-5 spread is the games'
         // weighted table (2 and 3 hits three-eighths each, 4 and 5 an eighth
         // each); a script pins the count for the tests.
-        let hits = match slot.entry.multihit {
-            None => 1,
-            Some((lo, hi)) if lo == hi => lo,
-            Some(_) => match script {
-                // An unset (zero) hits knob means the table minimum, 2 —
-                // the same reading the reference harness uses.
-                Some(s) => if s.hits > 0 { s.hits as u16 } else { 2 },
-                None => [2u16, 2, 2, 3, 3, 3, 4, 5][self.rng.below(8) as usize],
-            },
+        let hits = if slot.entry.id == "triplekick" {
+            // Each kick re-rolls accuracy in the sim; under a script the
+            // follow-up rolls read the secondary knob — false stops after
+            // the first kick, true lands all three.
+            match script {
+                Some(s) => if s.secondary { 3 } else { 1 },
+                None => 3,
+            }
+        } else {
+            match slot.entry.multihit {
+                None => 1,
+                Some((lo, hi)) if lo == hi => lo,
+                Some(_) => match script {
+                    // An unset (zero) hits knob means the table minimum, 2 —
+                    // the same reading the reference harness uses.
+                    Some(s) => if s.hits > 0 { s.hits as u16 } else { 2 },
+                    None => [2u16, 2, 2, 3, 3, 3, 4, 5][self.rng.below(8) as usize],
+                },
+            }
         };
 
         let mut total = 0u16;
-        for _ in 0..hits {
+        for hit_i in 0..hits {
             let (attacker, mut defender) = self.attack_pair(side);
             // Weather Ball wears the sky: retyped and doubled under weather.
             let move_type = if slot.entry.id == "weatherball" {
@@ -2011,10 +2165,15 @@ impl Battle {
                 (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
                 _ => 0,
             };
-            // Mud/Water Sport hum from EITHER active halves the matching type.
-            if (0..2).any(|w| self.sides[w].mon().sport == Some(move_type)) {
-                weather_mod = -1;
-            }
+            // Mud/Water Sport hum from EITHER active halves the matching
+            // type at BASE POWER (the sim's onBasePower chain), not at the
+            // damage stage — the floor lands one point differently.
+            let sport_div: u16 =
+                if (0..2).any(|w| self.sides[w].mon().sport == Some(move_type)) {
+                    2
+                } else {
+                    1
+                };
             // The stomping moves land doubled on a minimized target.
             let stomp_mult: u16 = if self.sides[foe].mon().minimized
                 && matches!(slot.entry.id, "stomp" | "extrasensory" | "needlearm" | "astonish")
@@ -2031,6 +2190,8 @@ impl Battle {
                 );
             // Conditional powers the era defines by id.
             let base_power = match slot.entry.id {
+                "triplekick" => 10 * (hit_i + 1),
+                "present" => 120,
                 "return" => 102,   // the sim's default full happiness
                 "frustration" => 1,
                 "eruption" | "waterspout" => {
@@ -2114,10 +2275,14 @@ impl Battle {
             };
             let m = MoveUse {
                 move_type,
-                power: base_power * pierce_mult * stomp_mult * charge_mult
-                    / if solar_cut { 2 } else { 1 },
+                power: base_power * charge_mult * pierce_power_mult
+                    / if solar_cut { 2 } else { 1 }
+                    / sport_div,
                 halve_def: slot.entry.selfdestruct,
                 weather: weather_mod,
+                // Pierce and stomp double at the sim's ModifyDamage stage,
+                // just before the roll — not on base power.
+                late_mult: pierce_mult * stomp_mult,
             };
             let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
             if dealt == 0 {
@@ -2173,9 +2338,15 @@ impl Battle {
                     self.sides[side].mon_mut().raging = true;
                 }
             }
-            // Drain heals off the damage actually dealt: floor, but at least 1.
+            // Drain heals off the damage actually dealt: floor, but at
+            // least 1 — EXCEPT off a substitute, where the sim's sub hook
+            // heals with a CEILING instead.
             if let Some((num, den)) = slot.entry.drain {
-                let heal = (amount * num / den).max(1);
+                let heal = if hit_sub {
+                    ((amount * num + den - 1) / den).max(1)
+                } else {
+                    (amount * num / den).max(1)
+                };
                 let user = self.sides[side].mon_mut();
                 let heal = heal.min(user.max_hp - user.hp);
                 if heal > 0 {
@@ -2386,6 +2557,10 @@ impl Battle {
         target.status = Some(status);
         target.toxic_n = 0;
         target.sleep_n = sleep;
+        if status == Status::Sleep {
+            // A fresh sleep shakes off a Nightmare.
+            target.nightmared = false;
+        }
         events.push(Event::Statused { side: foe as u8 + 1, status });
     }
 
@@ -2496,9 +2671,11 @@ impl Battle {
                     mon.hp = mon.max_hp;
                     mon.status = Some(Status::Sleep);
                     // The games' Rest sleeps two full turns: clock of 3,
-                    // the same shape as the sim's pinned setStatus.
+                    // the same shape as the sim's pinned setStatus. A fresh
+                    // sleep also shakes off a Nightmare.
                     mon.sleep_n = 3;
                     mon.toxic_n = 0;
+                    mon.nightmared = false;
                     events.push(Event::Rested { side: side as u8 + 1 });
                 }
             }
@@ -2656,7 +2833,7 @@ impl Battle {
             }
             StatusAction::LockOn => {
                 if hit && !self.sides[foe].mon().fainted() {
-                    self.sides[side].mon_mut().sure_hit = true;
+                    self.sides[side].mon_mut().sure_hit = 2;
                 }
             }
             StatusAction::ChargeUp => {
@@ -2720,11 +2897,18 @@ impl Battle {
             }
             StatusAction::Disable => {
                 // Disable pierces a substitute in this era, but fails when
-                // the target's last move has no PP left to seal.
+                // the target's last move has no PP left to seal — and it
+                // finds that move BY ID, so a Transform that rewrote the
+                // slots leaves nothing to disable.
                 let target = self.sides[foe].mon();
-                let last_has_pp = target
-                    .last_used
-                    .and_then(|i| target.moves.get(i as usize))
+                let slot_by_id = target
+                    .last_used_id
+                    .filter(|&i| i != "struggle")
+                    .and_then(|id| {
+                        target.moves.iter().position(|m| m.entry.id == id)
+                    });
+                let last_has_pp = slot_by_id
+                    .and_then(|i| target.moves.get(i))
                     .is_some_and(|m| m.pp > 0);
                 if hit
                     && target.disabled_slot.is_none()
@@ -2732,7 +2916,7 @@ impl Battle {
                     && !target.fainted()
                 {
                     // Four sealed turns pinned; 4..7 in play.
-                    let slot_i = target.last_used;
+                    let slot_i = slot_by_id.map(|i| i as u8);
                     let n = if scripted { 4 } else { 4 + self.rng.below(4) as u8 };
                     let mon = self.sides[foe].mon_mut();
                     mon.disabled_slot = slot_i;
@@ -2819,6 +3003,77 @@ impl Battle {
             }
             StatusAction::NoopFail => {
                 events.push(Event::Failed { side: side as u8 + 1 });
+            }
+            StatusAction::NoopSuccess => {}
+            StatusAction::HealBell => {
+                // Cures the user's whole team; with one mon, itself.
+                let mon = self.sides[side].mon_mut();
+                mon.status = None;
+                mon.toxic_n = 0;
+                mon.sleep_n = 0;
+                mon.nightmared = false;
+            }
+            StatusAction::Ingrain => {
+                if self.sides[side].mon().ingrained {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                } else {
+                    self.sides[side].mon_mut().ingrained = true;
+                }
+            }
+            StatusAction::Conversion2 => {
+                // Retype to the FIRST type (the sim's pinned sample walks
+                // the dex order) that resists the foe's last-used move.
+                // The sim walks dex.types.names() — the typechart file's
+                // key order — and the pinned sample takes the first.
+                const DEX_ORDER: [Type; 17] = [
+                    Type::Electric, Type::Ghost, Type::Grass, Type::Steel,
+                    Type::Dark, Type::Bug, Type::Dragon, Type::Fighting,
+                    Type::Fire, Type::Flying, Type::Ground, Type::Ice,
+                    Type::Normal, Type::Poison, Type::Psychic, Type::Rock,
+                    Type::Water,
+                ];
+                let last = self
+                    .sides[foe]
+                    .mon()
+                    .last_used_id
+                    .and_then(crate::data::move_by_id)
+                    .map(|m| m.move_type);
+                match last {
+                    Some(atk_type) if atk_type != Type::None => {
+                        let pick = DEX_ORDER.iter().copied().find(|&t| {
+                            crate::types::effectiveness(atk_type, t) < 10
+                        });
+                        match pick {
+                            Some(t) => {
+                                self.sides[side].mon_mut().type_override =
+                                    Some((t, Type::None));
+                            }
+                            None => events.push(Event::Failed { side: side as u8 + 1 }),
+                        }
+                    }
+                    _ => events.push(Event::Failed { side: side as u8 + 1 }),
+                }
+            }
+            StatusAction::Curse => {
+                let (t1, t2) = self.sides[side].mon().types();
+                if t1 == Type::Ghost || t2 == Type::Ghost {
+                    // The Ghost pays half its max HP to lay the curse.
+                    if self.sides[foe].mon().cursed || self.sides[foe].mon().fainted() {
+                        events.push(Event::Failed { side: side as u8 + 1 });
+                    } else {
+                        let cost = (self.sides[side].mon().max_hp / 2).max(1);
+                        let user = self.sides[side].mon_mut();
+                        let cost = cost.min(user.hp);
+                        user.hp -= cost;
+                        self.sides[foe].mon_mut().cursed = true;
+                        self.faint_and_replace(side, events);
+                    }
+                } else {
+                    let mon = self.sides[side].mon_mut();
+                    mon.apply_boost(Boost::Atk, 1);
+                    mon.apply_boost(Boost::Def, 1);
+                    mon.apply_boost(Boost::Spe, -1);
+                }
             }
             StatusAction::NaturePower => {
                 // Handled before the status path; unreachable here.
@@ -3077,7 +3332,7 @@ impl Battle {
             move_type: slot.move_type(),
             power: slot.entry.power,
             halve_def: false,
-            weather: 0,
+            late_mult: 1, weather: 0,
         };
         let would = damage(&attacker, &defender, &m, Roll { crit, random });
         // The sim clamps the crash into [1, target's max HP / 2].

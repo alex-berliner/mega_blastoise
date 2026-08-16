@@ -54,6 +54,10 @@ pub struct MoveUse {
     /// Weather's damage factor for this move: +1 boosts half again (rain on
     /// Water, sun on Fire), -1 halves (the crossed pairs), 0 leaves it be.
     pub weather: i8,
+    /// Late damage doubling (semi-invulnerable pierce, stomp-vs-minimize):
+    /// the sim chains these at the ModifyDamage stage — after the type
+    /// step, right before the random roll. 1 means none.
+    pub late_mult: u16,
 }
 
 impl MoveUse {
@@ -174,6 +178,7 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
         dmg = dmg * 3 / 2;
     }
     dmg = dmg * eff / 100;
+    dmg *= m.late_mult.max(1) as u32;
     let r = roll.random.clamp(85, 100) as u32;
     dmg = dmg * r / 100;
 
@@ -209,7 +214,7 @@ mod tests {
         }
     }
 
-    const TACKLE: MoveUse = MoveUse { halve_def: false, weather: 0, move_type: Type::Normal, power: 100 };
+    const TACKLE: MoveUse = MoveUse { halve_def: false, late_mult: 1, weather: 0, move_type: Type::Normal, power: 100 };
 
     /// Worked by hand: level term 42; 42*100*299/200 = 6279; /50 = 125; +2 = 127.
     #[test]
@@ -267,8 +272,8 @@ mod tests {
         let mut d = defender();
         d.def = 1000;
         d.sp_def = 100;
-        let bite = MoveUse { halve_def: false, weather: 0, move_type: Type::Dark, power: 100 };
-        let physical = MoveUse { halve_def: false, weather: 0, move_type: Type::Rock, power: 100 };
+        let bite = MoveUse { halve_def: false, late_mult: 1, weather: 0, move_type: Type::Dark, power: 100 };
+        let physical = MoveUse { halve_def: false, late_mult: 1, weather: 0, move_type: Type::Rock, power: 100 };
         assert!(damage(&attacker(), &d, &bite, Roll::MAX) > damage(&attacker(), &d, &physical, Roll::MAX));
     }
 
@@ -276,7 +281,7 @@ mod tests {
     fn burn_halves_physical_only() {
         let mut a = attacker();
         a.burned = true;
-        let special = MoveUse { halve_def: false, weather: 0, move_type: Type::Water, power: 100 };
+        let special = MoveUse { halve_def: false, late_mult: 1, weather: 0, move_type: Type::Water, power: 100 };
         let burned_physical = damage(&a, &defender(), &TACKLE, Roll::MAX);
         let healthy_physical = damage(&attacker(), &defender(), &TACKLE, Roll::MAX);
         assert!(burned_physical < healthy_physical);
@@ -301,7 +306,7 @@ mod tests {
         let mut d = defender();
         d.types = (Type::Ghost, Type::None);
         assert_eq!(damage(&attacker(), &d, &TACKLE, Roll::MAX), 0);
-        let status = MoveUse { halve_def: false, weather: 0, move_type: Type::Normal, power: 0 };
+        let status = MoveUse { halve_def: false, late_mult: 1, weather: 0, move_type: Type::Normal, power: 0 };
         assert_eq!(damage(&attacker(), &defender(), &status, Roll::MAX), 0);
     }
 

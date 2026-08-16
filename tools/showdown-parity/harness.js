@@ -148,6 +148,10 @@ function scriptRandomness(battle, script) {
     if ((denominator === 100 || denominator === 256) && numerator < denominator) {
       return battle.__cur.secondary ?? false;
     }
+    // A CERTAIN chance (Fake Out's 100% flinch) is no roll at all.
+    if ((denominator === 100 || denominator === 256) && numerator >= denominator) {
+      return true;
+    }
     return false;
   };
   battle.prng.randomChance = () => false;
@@ -409,6 +413,12 @@ function runDump(sc) {
           : m.id === 'disable' ? {disable: true}
           : m.id === 'naturepower' ? {naturepower: true}
           : m.id === 'camouflage' ? {camouflage: true}
+          : m.id === 'curse' ? {curse: true}
+          : m.id === 'conversion2' ? {conversion2: true}
+          : m.id === 'ingrain' ? {ingrain: true}
+          : ['healbell', 'aromatherapy'].includes(m.id) ? {healbell: true}
+          : m.id === 'followme' ? {noopsuccess: true}
+          : ['roar', 'whirlwind', 'batonpass'].includes(m.id) && sc.gen >= 3 ? {noopfail: m.id}
           : m.id === 'conversion' ? {conversion: true}
           : m.id === 'imprison' ? {imprison: true}
           : ['assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap'].includes(m.id)
@@ -491,6 +501,8 @@ function runMovelist(sc) {
         'protect', 'detect', 'endure', 'foresight', 'odorsleuth', 'lockon',
         'mindreader', 'charge', 'spite', 'grudge', 'torment', 'encore',
         'disable', 'naturepower', 'camouflage', 'conversion', 'imprison',
+        'curse', 'conversion2', 'ingrain', 'healbell', 'aromatherapy',
+        'followme', 'roar', 'whirlwind', 'batonpass', 'teeterdance',
         'assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap',
         'mimic', 'sketch', 'transform',
       ] : [
@@ -512,7 +524,8 @@ function runMovelist(sc) {
         raw.slotCondition || raw.terrain || raw.self || raw.selfdestruct || raw.ohko;
       const modelable = raw.status || raw.boosts || raw.heal || confuseOnly || teamCond || seed || weather;
       if (!allowlisted && (entangled || !modelable)) continue;
-      if (!['normal', 'any', 'self', 'allAdjacentFoes', 'allySide', 'all', 'foeSide'].includes(move.target)) continue;
+      if (!['normal', 'any', 'self', 'allAdjacentFoes', 'allAdjacent', 'allySide', 'allyTeam',
+            'all', 'foeSide'].includes(move.target)) continue;
       out.push({id: move.id, priority: move.priority, boostsSelf: false, multihit: false});
       continue;
     }
@@ -539,7 +552,7 @@ function runMovelist(sc) {
       'bide', 'rollout', 'iceball', 'hiddenpower', 'magnitude',
       'psywave', 'futuresight', 'doomdesire',
       'reversal', 'weatherball', 'secretpower', 'highjumpkick', 'jumpkick',
-      'spitup',
+      'spitup', 'blizzard', 'dreameater', 'fakeout', 'present', 'triplekick',
     ].includes(move.id);
     if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish
         && !g3special && !(g1plain && move.id === 'bide')) continue;
@@ -555,7 +568,7 @@ function runMovelist(sc) {
         !(move.volatileStatus === 'partiallytrapped' && sc.gen >= 3) &&
         !(move.volatileStatus === 'bide' && sc.gen >= 3)) continue;
     if ((move.sleepUsable || move.id === 'dreameater') &&
-        !(sc.gen === 1 && move.id === 'dreameater') &&
+        !(move.id === 'dreameater') &&
         !(sc.gen >= 3 && move.id === 'snore')) continue; // fail unless asleep
     const raw = rawOf(move.id);
     const rawSecs = raw.secondaries ?? (raw.secondary ? [raw.secondary] : []);
