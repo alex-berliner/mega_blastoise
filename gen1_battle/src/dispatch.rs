@@ -216,8 +216,13 @@ fn run_move(
         return apply_effect(rng, field, mv, sides, attacker_side, locked, false, log);
     }
 
-    // Any move outside the cartridge skip-list zeroes the last-damage register.
-    if !skips_last_damage(mv.id) {
+    // Any move outside the cartridge skip-list zeroes the last-damage
+    // register — but a two-turn move's CHARGE turn aborts before the sim
+    // ever reaches that reset, so the register survives it (a Counter can
+    // still double a stale read while Razor Wind whips up).
+    let charge_turn_now = ek == MoveEffectKind::TwoTurn
+        && !sides[attacker_side].active().volatile.has(Volatile::CHARGING);
+    if !skips_last_damage(mv.id) && !charge_turn_now {
         field.last_damage = 0;
     }
 

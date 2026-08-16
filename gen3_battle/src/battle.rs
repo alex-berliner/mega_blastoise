@@ -1911,6 +1911,15 @@ impl Battle {
                     effectiveness: 0,
                     crit: false,
                 });
+                // An immune target never locks a rampage in — and breaks
+                // a running one the way a miss does.
+                if ramping {
+                    break_rampage(self, side, script.is_some(), events);
+                } else {
+                    self.sides[side].mon_mut().rampage = None;
+                }
+                self.sides[side].mon_mut().rolling = None;
+                self.sides[side].mon_mut().fury_n = 0;
                 if boom {
                     self.resolve_faints(side, foe, events);
                 }
@@ -2642,7 +2651,8 @@ impl Battle {
                 self.sides[side].mon_mut().charged_elec = true;
             }
             StatusAction::Spite => {
-                let drained = if hit && self.sides[foe].mon().sub_hp == 0 {
+                // Spite reaches through a substitute in this era.
+                let drained = if hit {
                     if let Some(slot_i) = self.sides[foe].mon().last_used {
                         let mon = self.sides[foe].mon_mut();
                         if let Some(ms) = mon.moves.get_mut(slot_i as usize) {
@@ -2776,7 +2786,13 @@ impl Battle {
                     mon.moves = foe_mon
                         .moves
                         .iter()
-                        .map(|ms| MoveSlot { entry: ms.entry, pp: 5, typed_as: ms.typed_as })
+                        .map(|ms| MoveSlot {
+                            entry: ms.entry,
+                            // Five PP per copied move, but never more than
+                            // the move's own maximum (a copied Sketch has 1).
+                            pp: 5.min(ms.entry.pp),
+                            typed_as: ms.typed_as,
+                        })
                         .collect();
                 }
             }
