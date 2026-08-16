@@ -754,6 +754,10 @@ fn apply_effect(
                         let dmg = stored.saturating_mul(2);
                         let res = deal_damage(field, sides, defender_side, dmg, log);
                         note_hit(&mut outcome, res, dmg);
+                        // An unleash stokes a raging target like any other
+                        // hit that lands: the Attack it earns is on before
+                        // the raging mon swings back.
+                        rage_build(sides, defender_side, log);
                         outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
                     }
                 }
@@ -815,6 +819,7 @@ fn apply_effect(
                 // move's own fresh-action bookkeeping would wipe it.
                 let was_charging =
                     sides[attacker_side].active().volatile.has(Volatile::CHARGING);
+                transformed_call_refunds_pp(sides, attacker_side);
                 outcome = execute_move_entry(rng, field, sides, attacker_side, mv2, None, false, log);
                 if mv2.effect_kind == MoveEffectKind::TwoTurn
                     && !was_charging
@@ -1151,6 +1156,7 @@ fn apply_effect(
                 }
                 &MOVES[idx]
             };
+            transformed_call_refunds_pp(sides, attacker_side);
             outcome = execute_move_entry(rng, field, sides, attacker_side, cand, None, false, log);
         }
         SelfDestruct => {
@@ -1845,6 +1851,20 @@ pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: us
 /// The seeded mon's Leech Seed tick: drain (a no-op on a corpse) and the
 /// seeder's heal — which the sim pays IN FULL even when the seeded mon just
 /// fainted to its own Explosion, as long as the seeder stands.
+/// A Gen 1 glitch the sim models: a TRANSFORMED mon calling a move through
+/// Metronome or Mirror Move hands one PP back to the base move slot at the
+/// index it selected — the slot it will get back when the transform ends,
+/// which is a different move entirely. It wraps at 64, like the cartridge's
+/// six-bit PP counter.
+fn transformed_call_refunds_pp(sides: &mut [Side; 2], side: usize) {
+    let slot = sides[side].last_selected_slot as usize;
+    if let Some(backup) = sides[side].transform_backup.as_mut() {
+        if let Some(ms) = backup.moves.get_mut(slot) {
+            ms.pp = (ms.pp + 1) % 64;
+        }
+    }
+}
+
 pub fn leech_seed_residual(field: &mut Field, sides: &mut [Side; 2], side: usize, log: &mut Log) {
     // A seed with nobody to feed takes nothing at all — the sim bails on
     // "Nothing to leech into" before the victim loses a point, which is what

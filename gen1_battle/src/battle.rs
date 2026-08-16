@@ -611,6 +611,9 @@ impl<'a> Battle<'a> {
                 if let Some(mv) = self.effective_move(side) {
                     self.sides[side].last_selected_move = mv.id;
                 }
+                if let Some(Choice::Move(slot)) = self.pending_choice[side] {
+                    self.sides[side].last_selected_slot = slot.min(3);
+                }
             }
         }
 
@@ -694,6 +697,24 @@ impl<'a> Battle<'a> {
                 if !lock_active {
                     self.sides[i].active_mut().volatile.clear(Volatile::TRAPPED);
                 }
+            }
+            // And the converse: a Wrap-family lock ends once there is nobody
+            // held by it. The victim fainting (or being dragged off) frees
+            // the trapper as surely as the trapper leaving frees the victim,
+            // so the next turn is a free choice rather than another squeeze.
+            let holding = {
+                let m = self.sides[i].active();
+                !m.volatile.multi_turn_move.is_empty()
+                    && move_by_id(m.volatile.multi_turn_move)
+                        .map(|e| e.effect_kind == MoveEffectKind::Wrap)
+                        .unwrap_or(false)
+            };
+            let victim_gone = self.sides[1 - i].active().fainted()
+                || !self.sides[1 - i].active().volatile.has(Volatile::TRAPPED);
+            if holding && victim_gone {
+                let m = self.sides[i].active_mut();
+                m.volatile.multi_turn_move = "";
+                m.volatile.multi_turn_turns = 0;
             }
         }
     }

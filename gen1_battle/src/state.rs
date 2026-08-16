@@ -283,6 +283,11 @@ pub struct Side {
     /// Last move this side SELECTED. Counter's desync-clause check reads the
     /// opponent's selection.
     pub last_selected_move: &'static str,
+    /// Which move SLOT this side last selected. The sim keeps
+    /// `side.lastSelectedMoveSlot` and a Gen 1 glitch reads it: a transformed
+    /// mon using Metronome or Mirror Move hands a PP back to the base slot at
+    /// that index.
+    pub last_selected_slot: u8,
     /// Set while the active mon is TRANSFORMED (only the active mon can be).
     pub transform_backup: Option<TransformBackup>,
 }
