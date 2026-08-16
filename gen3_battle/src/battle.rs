@@ -2339,9 +2339,6 @@ impl Battle {
             // Using any move ends an ongoing rage; Rage itself re-arms it
             // only once it actually lands (a missed Rage never rages).
             mon.raging = false;
-            if slot.entry.id != "furycutter" {
-                mon.fury_n = 0;
-            }
         }
 
         // No living foe to aim at: the sim logs the move and stops there
@@ -2559,6 +2556,15 @@ impl Battle {
         } else {
             slot
         };
+
+        // Fury Cutter's count belongs to the move that ACTUALLY goes off,
+        // not the one announced: a Mirror Move or a Sleep Talk that plays
+        // Fury Cutter back keeps the ramp climbing, which is why this sits
+        // after the call substitutions rather than with the other
+        // announced-move bookkeeping.
+        if slot.entry.id != "furycutter" {
+            self.sides[side].mon_mut().fury_n = 0;
+        }
 
         // The charge turn of a two-turn move: announce, tuck the slot away,
         // and stop. Skull Bash's era perk raises Defense on the way down.
@@ -3903,7 +3909,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // The stats, once their stages are in. Gen 3 reads the category
             // off the move's type, so that is what decides whether an
             // Attack ability speaks at all.
-            let physical = slot.entry.id != "beatup" && ability::physical_type(move_type);
+            let physical = slot.entry.id != "beatup" && ability::physical_category(move_type);
             let user_i = self.sides[side].mon().holder();
             let foe_i = self.sides[foe].mon().holder();
             attacker.stat_mod = ability::attack_chain(&user_b, physical);
@@ -5876,7 +5882,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         let (mut attacker, mut defender) = self.attack_pair(side);
         let user_b = self.sides[side].mon().bearer();
         let foe_b = self.sides[foe].mon().bearer();
-        let physical = ability::physical_type(slot.move_type());
+        let physical = ability::physical_category(slot.move_type());
         attacker.stat_mod = ability::attack_chain(&user_b, physical);
         attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
         defender.stat_mod = ability::defence_chain(&foe_b, physical);

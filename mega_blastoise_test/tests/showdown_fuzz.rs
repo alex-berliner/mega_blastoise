@@ -601,7 +601,11 @@ fn fuzz_gen3_turns() {
             continue;
         }
         let mut our_order: Vec<&str> = Vec::new();
-        for pair in turns {
+        // What our engine actually did, turn by turn. The battle suite has
+        // carried this since it was written, and every turn case diagnosed
+        // without it was diagnosed by guesswork.
+        let mut our_log: Vec<String> = Vec::new();
+        for (turn_i, pair) in turns.iter().enumerate() {
             if battle.over() {
                 break;
             }
@@ -617,6 +621,8 @@ fn fuzz_gen3_turns() {
             };
             let ts = TurnScript { seats: [Some(seat(&pair[0])), Some(seat(&pair[1]))] };
             let events = battle.step_with([Choice::Move(0), Choice::Move(0)], &ts);
+            our_log.push(format!("-- turn {turn_i}"));
+            our_log.extend(events.iter().map(|e| format!("   {e:?}")));
             our_order.extend(events.iter().filter_map(|e| match e {
                 Event::Used { side: 1, .. } => Some("p1"),
                 Event::Used { side: 2, .. } => Some("p2"),
@@ -644,6 +650,7 @@ fn fuzz_gen3_turns() {
                 battle.sides[1].mon().hp, battle.sides[1].mon().max_hp, battle.sides[1].mon().moves[0].pp,
                 our_order, got["p1"], got["p2"], their_order, scenarios[i], got["log"],
             );
+            eprintln!("  ours-log:\n{}", our_log.join("\n"));
             bad += 1;
         }
     }

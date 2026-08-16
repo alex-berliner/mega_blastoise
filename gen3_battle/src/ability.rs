@@ -163,7 +163,9 @@ pub fn accuracy_chain(user: &Bearer, target: &Bearer, move_type: Type, sand: boo
     chain
 }
 
-/// Gen 3 splits the categories by type, not per move.
+/// The nine types Hustle's accuracy cut names. The sim writes them out as a
+/// list rather than as "not special", and Struggle's typeless hit is not on
+/// it — so this is NOT the same question as the category one below.
 pub fn physical_type(t: Type) -> bool {
     matches!(
         t,
@@ -176,6 +178,23 @@ pub fn physical_type(t: Type) -> bool {
             | Type::Bug
             | Type::Ghost
             | Type::Steel
+    )
+}
+
+/// Whether a move of this type is PHYSICAL in Gen 3, which the era decides by
+/// excluding the eight special types. A typeless hit — Struggle, a delayed
+/// Future Sight — is physical, so a Choice Band swings it half again as hard.
+pub fn physical_category(t: Type) -> bool {
+    !matches!(
+        t,
+        Type::Fire
+            | Type::Water
+            | Type::Grass
+            | Type::Ice
+            | Type::Electric
+            | Type::Dark
+            | Type::Psychic
+            | Type::Dragon
     )
 }
 
