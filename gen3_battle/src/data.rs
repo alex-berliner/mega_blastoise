@@ -32,6 +32,8 @@ pub struct SpeciesEntry {
     /// Slice of [`LEARNSET`] holding this species' level-up moves.
     pub learn_start: u32,
     pub learn_len: u16,
+    /// Weight in hectograms (kg × 10) — Low Kick's tiers read this.
+    pub weight_hg: u16,
 }
 
 impl SpeciesEntry {

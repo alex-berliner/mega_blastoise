@@ -246,7 +246,7 @@ fn gen3_turns_match_showdown() {
                         def: d.def, sp_def: d.spd, def_stage: 0, sp_def_stage: 0,
                         types: d.types(), reflect, light_screen,
                     },
-                    &MoveUse { move_type: slot.move_type(), power: slot.entry.power, halve_def: slot.entry.selfdestruct, late_mult: 1, weather: 0 },
+                    &MoveUse { move_type: slot.move_type(), power: slot.entry.power, halve_def: slot.entry.selfdestruct, late_mult: 1, special: false, weather: 0 },
                     Roll { crit: c.script[0].1, random: c.script[0].2 },
                 );
                 (d.hp.saturating_sub(dealt as u16), a.moves[0].pp - 1)

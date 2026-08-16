@@ -330,6 +330,7 @@ function runDump(sc) {
       name: s.name,
       types: s.types,
       baseStats: s.baseStats,
+      weightkg: s.weightkg,
     }));
   const moves = dex.moves.all()
     .filter((m) => m.exists && !m.isNonstandard && m.id !== 'struggle')
@@ -503,6 +504,7 @@ function runMovelist(sc) {
         'disable', 'naturepower', 'camouflage', 'conversion', 'imprison',
         'curse', 'conversion2', 'ingrain', 'healbell', 'aromatherapy',
         'followme', 'roar', 'whirlwind', 'batonpass', 'teeterdance',
+        'metronome', 'mirrormove',
         'assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap',
         'mimic', 'sketch', 'transform',
       ] : [
@@ -553,6 +555,7 @@ function runMovelist(sc) {
       'psywave', 'futuresight', 'doomdesire',
       'reversal', 'weatherball', 'secretpower', 'highjumpkick', 'jumpkick',
       'spitup', 'blizzard', 'dreameater', 'fakeout', 'present', 'triplekick',
+      'lowkick', 'beatup', 'uproar',
     ].includes(move.id);
     if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish
         && !g3special && !(g1plain && move.id === 'bide')) continue;

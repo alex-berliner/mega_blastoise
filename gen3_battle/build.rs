@@ -244,10 +244,11 @@ fn emit_species(
         };
         let stats = m["baseStats"].as_object().unwrap();
         let stat = |k: &str| stats[k].as_u64().unwrap() as u16;
+        let weight_hg = (m["weightkg"].as_f64().unwrap_or(0.0) * 10.0).round() as u16;
         out.push_str(&format!(
             "    SpeciesEntry {{ id: {id:?}, name: {name:?}, types: ({primary}, {secondary}), \
              base: BaseStats {{ hp: {}, atk: {}, def: {}, spa: {}, spd: {}, spe: {} }}, \
-             learn_start: {ls_start}, learn_len: {ls_len} }},\n",
+             learn_start: {ls_start}, learn_len: {ls_len}, weight_hg: {weight_hg} }},\n",
             stat("hp"), stat("atk"), stat("def"), stat("spa"), stat("spd"), stat("spe"),
         ));
     }

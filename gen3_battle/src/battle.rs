@@ -134,6 +134,8 @@ pub struct Mon {
     pub raging: bool,
     /// Fury Cutter's consecutive-hit ramp (0..=4).
     pub fury_n: u8,
+    /// The move id this mon was last HIT by (Mirror Move's source).
+    pub last_hit_by: Option<&'static str>,
     /// The id of the move this mon last used — survives Transform/Mimic
     /// rewriting the slots, which is exactly when the slot index lies.
     pub last_used_id: Option<&'static str>,
@@ -211,6 +213,15 @@ pub struct Mon {
     /// Mid two-turn move: the slot charged last turn, releasing this turn.
     /// Any Cant loses the charge. Cleared by switching out.
     pub charging: Option<u8>,
+    /// The uproar swung its last turn just now: the din still blocks sleep
+    /// until this turn's residuals finish (the sim removes the volatile at
+    /// residual order 28, after every action).
+    pub uproar_ending: bool,
+    /// What a multi-turn lock (rampage, Rollout, Bide, a charge move) is
+    /// actually swinging: normally the slot's own move, but a lock taken
+    /// through Mirror Move carries the CALLED move, and the follow-up turns
+    /// must run it directly (one announced line, no re-call).
+    pub locked_move: Option<&'static str>,
     /// Thrash-family rampage: (slot, attacks left AFTER this turn's).
     /// Ends in fatigue confusion if it runs its course; any disruption
     /// (a Cant, a miss) ends it quietly. Cleared by switching out.
@@ -257,6 +268,7 @@ impl Mon {
             fury_n: 0,
             last_used: None,
             last_used_id: None,
+            last_hit_by: None,
             last_missed: false,
             mimic_backup: None,
             transform_backup: None,
@@ -291,6 +303,8 @@ impl Mon {
             seeded: false,
             trapped_n: 0,
             charging: None,
+            uproar_ending: false,
+            locked_move: None,
             rampage: None,
             must_recharge: false,
         })
@@ -676,6 +690,7 @@ impl Battle {
                     out.fury_n = 0;
                     out.last_used = None;
                     out.last_used_id = None;
+                    out.last_hit_by = None;
                     out.last_missed = false;
                     if let Some((i, orig)) = out.mimic_backup.take() {
                         out.moves[i as usize] = orig;
@@ -1039,6 +1054,7 @@ impl Battle {
             mon.enduring = false;
             mon.torment_fresh = false;
             mon.imprison_fresh = false;
+            mon.uproar_ending = false;
             mon.focusing = false;
             mon.sure_hit = mon.sure_hit.saturating_sub(1);
         }
@@ -1317,6 +1333,19 @@ impl Battle {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
         };
+        // A rampage locked in through Mirror Move keeps swinging the CALLED
+        // move on its follow-up turns — run it directly, one announced line.
+        let slot = if releasing {
+            match self.sides[side].mon().locked_move {
+                Some(id) if id != slot.entry.id => match crate::data::move_by_id(id) {
+                    Some(e) => MoveSlot { entry: e, pp: 1, typed_as: None },
+                    None => slot,
+                },
+                _ => slot,
+            }
+        } else {
+            slot
+        };
         // A storing Bide sits silent — the games log nothing for the two
         // storing turns — and cannot be re-chosen out of.
         if let Some((stored, left)) = self.sides[side].mon().bide {
@@ -1430,7 +1459,31 @@ impl Battle {
 
         // Nature Power becomes Swift in the sim's default arena; Hidden
         // Power under the fuzz's uniform maxed IVs is Dark 70.
-        let slot = if slot.entry.id == "naturepower" {
+        let slot = if slot.entry.id == "metronome" {
+            // The sim samples the num-sorted eligible list; pinned, that is
+            // its first entry — Pound. Play keeps a real random pick.
+            let called: &'static MoveEntry = match script {
+                Some(_) => move_by_id("pound").expect("pound"),
+                None => {
+                    let mut pick = move_by_id("pound").expect("pound");
+                    for _ in 0..16 {
+                        let i = self.rng.below(crate::data::MOVES.len() as u32) as usize;
+                        let cand = &crate::data::MOVES[i];
+                        if !matches!(
+                            cand.id,
+                            "metronome" | "struggle" | "mirrormove" | "sketch" | "mimic"
+                        ) {
+                            pick = cand;
+                            break;
+                        }
+                    }
+                    pick
+                }
+            };
+            // Both lines are announced: Metronome, then the call.
+            events.push(Event::Used { side: side as u8 + 1, move_index: index });
+            MoveSlot { entry: called, pp: 1, typed_as: None }
+        } else if slot.entry.id == "naturepower" {
             // Nature Power rolls its own 95 accuracy; a miss stops before
             // Swift is even called (one log line, not two).
             let np_hit = match script {
@@ -1449,6 +1502,41 @@ impl Battle {
             slot
         };
 
+        // Mirror Move plays back the move the foe last HIT this mon with
+        // (the sim's attacked-by book, damaging or status alike) — refusing
+        // the noMirror set and a move the foe no longer knows. It swaps in
+        // EARLY, before every gate, so the called move runs the whole
+        // pipeline: its own accuracy, protect, immunity, fixed-damage arms.
+        let slot = if slot.entry.id == "mirrormove" {
+            let hit_by = self.sides[side].mon().last_hit_by;
+            let callable = hit_by
+                .filter(|id| {
+                    !matches!(
+                        *id,
+                        "assist" | "curse" | "doomdesire" | "focuspunch"
+                            | "futuresight" | "magiccoat" | "metronome"
+                            | "mimic" | "mirrormove" | "naturepower"
+                            | "psychup" | "roleplay" | "sketch"
+                            | "sleeptalk" | "spikes" | "spitup" | "taunt"
+                            | "teeterdance" | "transform"
+                    ) && self.sides[foe].mon().moves.iter().any(|m| m.entry.id == *id)
+                })
+                .and_then(crate::data::move_by_id);
+            match callable {
+                None => {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
+                Some(e) => {
+                    // Both lines are announced: Mirror Move, then the call.
+                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
+                    MoveSlot { entry: e, pp: 1, typed_as: None }
+                }
+            }
+        } else {
+            slot
+        };
+
         // The charge turn of a two-turn move: announce, tuck the slot away,
         // and stop. Skull Bash's era perk raises Defense on the way down.
         let instant_solar = slot.entry.id == "solarbeam" && self.weather == Some(Weather::Sun);
@@ -1459,6 +1547,7 @@ impl Battle {
                 events.push(Event::Boosted { side: side as u8 + 1, boost: Boost::Def, delta: 1 });
             }
             self.sides[side].mon_mut().charging = Some(index as u8);
+            self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
             return;
         }
 
@@ -1467,9 +1556,11 @@ impl Battle {
         if matches!(slot.entry.id, "rollout" | "iceball") && self.sides[side].mon().rolling.is_none()
         {
             self.sides[side].mon_mut().rolling = Some(0);
+            self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
         }
         if slot.entry.id == "bide" && self.sides[side].mon().bide.is_none() {
             self.sides[side].mon_mut().bide = Some((0, 2));
+            self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
             events.push(Event::Charging { side: side as u8 + 1 });
             return;
         }
@@ -1497,6 +1588,7 @@ impl Battle {
             target.hp -= amount;
             self.taken_physical[foe] = amount;
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
             self.resolve_faints(side, foe, events);
             return;
         }
@@ -1510,6 +1602,7 @@ impl Battle {
                 None => 2 + self.rng.below(2) as u8,
             };
             self.sides[side].mon_mut().rampage = Some((index as u8, total - 1));
+            self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
         }
 
         // Spit Up with an empty bank simply fails; otherwise the bank is
@@ -1533,6 +1626,12 @@ impl Battle {
 
         // Fake Out only works on the user's first action on the field.
         if slot.entry.id == "fakeout" && had_acted {
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
+        // Beat Up calls only healthy allies; a statused user (sole party
+        // member here) leaves nobody to strike, and the move fails.
+        if slot.entry.id == "beatup" && self.sides[side].mon().status.is_some() {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
         }
@@ -1767,6 +1866,7 @@ impl Battle {
             let mon = self.sides[foe].mon_mut();
             let amount = if mon.enduring { mon.hp.saturating_sub(1) } else { mon.hp };
             mon.hp -= amount;
+            mon.last_hit_by = Some(slot.entry.id);
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
             self.resolve_faints(side, foe, events);
             return;
@@ -1807,6 +1907,7 @@ impl Battle {
                 _ => self.taken_special[foe] = amount,
             }
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
             // Fixed damage still stokes a raging target and banks in a Bide.
             if let Some((stored, left)) = self.sides[foe].mon().bide {
                 self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
@@ -1833,11 +1934,15 @@ impl Battle {
             }
             let (uhp, thp) = (self.sides[side].mon().hp, self.sides[foe].mon().hp);
             if self.sides[foe].mon().sub_hp > 0 || uhp >= thp {
+                if self.sides[foe].mon().sub_hp == 0 {
+                    self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
+                }
                 events.push(Event::Failed { side: side as u8 + 1 });
                 return;
             }
             let amount = thp - uhp;
             self.sides[foe].mon_mut().hp = uhp;
+            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
             self.taken_physical[foe] = amount;
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
             self.resolve_faints(side, foe, events);
@@ -1882,6 +1987,7 @@ impl Battle {
             target.hp -= amount;
             self.taken_special[foe] = amount;
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
             self.resolve_faints(side, foe, events);
             return;
         }
@@ -1900,6 +2006,9 @@ impl Battle {
                 self.taken_special[side]
             };
             if taken == 0 {
+                // A whiffed Counter still goes in the attacked-by book —
+                // the gen 3 sim records after the accuracy pass, hit or not.
+                self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
                 events.push(Event::Failed { side: side as u8 + 1 });
                 return;
             }
@@ -1928,6 +2037,7 @@ impl Battle {
                 _ => self.taken_special[foe] = amount,
             }
             events.push(Event::Damage { side: foe as u8 + 1, amount, effectiveness: 100, crit: false });
+            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
             self.resolve_faints(side, foe, events);
             return;
         }
@@ -1959,16 +2069,17 @@ impl Battle {
                 Some(s) => s.random,
                 None => 85 + self.rng.below(16) as u8,
             };
-            let m = MoveUse { move_type: Type::None, power, halve_def: false, late_mult: 1, weather: 0 };
+            let m = MoveUse { move_type: Type::None, power, halve_def: false, late_mult: 1, special: false, weather: 0 };
             let dealt = damage(&attacker, &defender, &m, Roll { crit: false, random }) as u16;
             self.sides[foe].incoming = Some((3, dealt, slot.entry.id));
             events.push(Event::Charging { side: side as u8 + 1 });
             return;
         }
 
-        // Mirror Move plays back the foe's last move (both get announced);
-        // Mimic and Sketch write it into the slot instead.
-        let slot = if matches!(slot.entry.id, "mirrormove" | "mimic" | "sketch") {
+
+        // Mimic and Sketch write the foe's last move into the slot — after
+        // the dodge and protect gates above, where the sim's copy happens.
+        if matches!(slot.entry.id, "mimic" | "sketch") {
             // The foe's last move BY ID — a Transform that rewrote its
             // slots doesn't change what it last used.
             let foe_last = self
@@ -1983,10 +2094,6 @@ impl Battle {
                     return;
                 }
                 (_, Some(e)) if e.id == slot.entry.id => {
-                    events.push(Event::Failed { side: side as u8 + 1 });
-                    return;
-                }
-                ("mirrormove", Some(_)) if self.sides[foe].mon().last_missed => {
                     events.push(Event::Failed { side: side as u8 + 1 });
                     return;
                 }
@@ -2015,18 +2122,38 @@ impl Battle {
                         MoveSlot { entry: e, pp: e.pp, typed_as: None };
                     return;
                 }
-                ("mirrormove", Some(e)) => {
-                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
-                    MoveSlot { entry: e, pp: 1, typed_as: None }
-                }
                 _ => unreachable!(),
             }
-        } else {
-            slot
-        };
+        }
 
-        // A zero-power move is its status action, nothing more.
+        // A zero-power move is its status action, nothing more. A
+        // foe-aimed one that gets this far still goes in the target's
+        // attacked-by book (the sim records at the hit loop, whether or
+        // not the effect then succeeds) — that is what Mirror Move reads.
         if slot.entry.power == 0 {
+            // …except one the target is outright IMMUNE to (Leech Seed on
+            // Grass, a chart-zero Thunder Wave or Glare): the sim filters
+            // those at the type-immunity step, before the book is written.
+            let immune = match slot.entry.id {
+                "leechseed" => {
+                    let (t1, t2) = self.sides[foe].mon().types();
+                    t1 == Type::Grass || t2 == Type::Grass
+                }
+                "thunderwave" | "glare" => {
+                    crate::types::effectiveness_against(
+                        slot.move_type(),
+                        self.sides[foe].mon().types(),
+                    ) == 0
+                }
+                _ => false,
+            };
+            // ...and a handful of self-aimed moves ride the NoopFail action
+            // without being in the self-target list: they never touch the foe.
+            let self_aimed = self_targeted
+                || matches!(slot.entry.id, "batonpass" | "assist" | "sleeptalk" | "recycle");
+            if !self_aimed && hit && !immune && self.sides[foe].mon().sub_hp == 0 {
+                self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
+            }
             self.status_move(
                 side,
                 foe,
@@ -2105,6 +2232,20 @@ impl Battle {
             return;
         }
 
+        // Uproar's din wakes every active sleeper — the gen 3 sim cures in
+        // moveHit's TryHit, which only runs once the move got PAST immunity
+        // and the accuracy roll: an immune target or a miss wakes nobody.
+        if slot.entry.id == "uproar" {
+            for w in 0..2 {
+                if self.sides[w].mon().status == Some(Status::Sleep) {
+                    let mon = self.sides[w].mon_mut();
+                    mon.status = None;
+                    mon.sleep_n = 0;
+                    mon.nightmared = false;
+                }
+            }
+        }
+
         let (crit, random) = match script {
             Some(s) => (s.crit, s.random),
             None => (
@@ -2140,7 +2281,16 @@ impl Battle {
 
         let mut total = 0u16;
         for hit_i in 0..hits {
-            let (attacker, mut defender) = self.attack_pair(side);
+            let (mut attacker, mut defender) = self.attack_pair(side);
+            // Beat Up strikes with each ally's BASE Attack against the
+            // target's BASE Defence — no stages, no burn — as a typeless
+            // SPECIAL hit (Light Screen counts, and a zero base stays zero).
+            if slot.entry.id == "beatup" {
+                attacker.sp_atk = self.sides[side].mon().species.base.atk as u16;
+                attacker.sp_atk_stage = 0;
+                defender.sp_def = self.sides[foe].mon().species.base.def as u16;
+                defender.sp_def_stage = 0;
+            }
             // Weather Ball wears the sky: retyped and doubled under weather.
             let move_type = if slot.entry.id == "weatherball" {
                 match self.weather {
@@ -2150,6 +2300,8 @@ impl Battle {
                     Some(Weather::Hail) => Type::Ice,
                     None => Type::Normal,
                 }
+            } else if slot.entry.id == "beatup" {
+                Type::None // typeless: no STAB, no effectiveness
             } else {
                 slot.move_type()
             };
@@ -2192,6 +2344,19 @@ impl Battle {
             let base_power = match slot.entry.id {
                 "triplekick" => 10 * (hit_i + 1),
                 "present" => 120,
+                "beatup" => 10,
+                "lowkick" => {
+                    // Weight tiers, in hectograms.
+                    let w = self.sides[foe].mon().species.weight_hg;
+                    match w {
+                        0..=99 => 20,
+                        100..=249 => 40,
+                        250..=499 => 60,
+                        500..=999 => 80,
+                        1000..=1999 => 100,
+                        _ => 120,
+                    }
+                }
                 "return" => 102,   // the sim's default full happiness
                 "frustration" => 1,
                 "eruption" | "waterspout" => {
@@ -2283,6 +2448,7 @@ impl Battle {
                 // Pierce and stomp double at the sim's ModifyDamage stage,
                 // just before the roll — not on base power.
                 late_mult: pierce_mult * stomp_mult,
+                special: slot.entry.id == "beatup",
             };
             let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
             if dealt == 0 {
@@ -2324,6 +2490,8 @@ impl Battle {
                     effectiveness: eff,
                     crit,
                 });
+                // What just hit this mon (Mirror Move's playback source).
+                self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
                 // A biding target banks what it just took.
                 if let Some((stored, left)) = self.sides[foe].mon().bide {
                     self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
@@ -2383,6 +2551,9 @@ impl Battle {
                 let fatigue = slot.entry.id != "uproar";
                 let mon = self.sides[side].mon_mut();
                 mon.rampage = None;
+                if !fatigue {
+                    mon.uproar_ending = true;
+                }
                 if fatigue && mon.confusion_n == 0 && !mon.fainted() {
                     mon.confusion_n = if scripted { 2 } else { 2 + self.rng.below(4) as u8 };
                     events.push(Event::ConfusionStarted { side: side as u8 + 1 });
@@ -2538,14 +2709,22 @@ impl Battle {
         // No one sleeps through an Uproar.
         if status == Status::Sleep
             && (0..2).any(|w| {
-                self.sides[w].mon().rampage.is_some_and(|(i, _)| {
-                    self.sides[w].mon().moves.get(i as usize).is_some_and(|m| m.entry.id == "uproar")
-                })
+                self.sides[w].mon().uproar_ending
+                    || self.sides[w].mon().rampage.is_some_and(|(i, _)| {
+                        self.sides[w].mon().moves.get(i as usize).is_some_and(|m| m.entry.id == "uproar")
+                    })
+                    || (self.sides[w].mon().rampage.is_some()
+                        && self.sides[w].mon().locked_move == Some("uproar"))
             })
         {
             return;
         }
         if !self.sides[foe].mon().can_receive(status) {
+            return;
+        }
+        // Bright sunlight prevents freezing outright (the sim's Sunny Day
+        // onImmunity hook).
+        if status == Status::Freeze && self.weather == Some(Weather::Sun) {
             return;
         }
         let sleep = match status {
@@ -3332,7 +3511,7 @@ impl Battle {
             move_type: slot.move_type(),
             power: slot.entry.power,
             halve_def: false,
-            late_mult: 1, weather: 0,
+            late_mult: 1, special: false, weather: 0,
         };
         let would = damage(&attacker, &defender, &m, Roll { crit, random });
         // The sim clamps the crash into [1, target's max HP / 2].

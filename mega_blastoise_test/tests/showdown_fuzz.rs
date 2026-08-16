@@ -224,7 +224,7 @@ fn fuzz_gen3_single_hits() {
         let d_inv = Invest { iv: *d_iv, ev: *d_ev };
         let entry = gen3_battle::move_by_id(mv).unwrap();
 
-        let attacker = Attacker {
+        let mut attacker = Attacker {
             level: *level,
             atk: other_stat(a_sp.base.atk, a_inv, *level, *a_nat, Stat::Atk),
             sp_atk: other_stat(a_sp.base.spa, a_inv, *level, *a_nat, Stat::SpAtk),
@@ -233,7 +233,7 @@ fn fuzz_gen3_single_hits() {
             types: a_sp.types,
             burned: *burned,
         };
-        let defender = Defender {
+        let mut defender = Defender {
             def: other_stat(d_sp.base.def, d_inv, *level, *d_nat, Stat::Def),
             sp_def: other_stat(d_sp.base.spd, d_inv, *level, *d_nat, Stat::SpDef),
             def_stage: stages[2],
@@ -242,12 +242,24 @@ fn fuzz_gen3_single_hits() {
             reflect: *reflect,
             light_screen: *light_screen,
         };
+        // Beat Up is its own calc: each healthy ally strikes typeless with
+        // its BASE Attack against the target's BASE Defence — no stages, no
+        // burn — and Light Screen is the screen that counts. A statused
+        // user (the only party member here) leaves nobody, and it fails.
+        let mut move_type = entry.move_type;
+        if *mv == "beatup" {
+            attacker.sp_atk = a_sp.base.atk as u16;
+            attacker.sp_atk_stage = 0;
+            defender.sp_def = d_sp.base.def as u16;
+            defender.sp_def_stage = 0;
+            move_type = gen3_battle::Type::None;
+        }
         let max_hp = hp_stat(d_sp.base.hp, d_inv, *level);
         // A never-miss move (accuracy 0) ignores the scripted miss, exactly
         // as the sim's accuracy step never runs for it.
-        let hit = *hit || entry.accuracy == 0;
+        let hit = (*hit || entry.accuracy == 0) && !(*mv == "beatup" && *burned);
         let dealt = if hit {
-            damage(&attacker, &defender, &MoveUse { move_type: entry.move_type, power: entry.power, halve_def: entry.selfdestruct, late_mult: 1, weather: 0 },
+            damage(&attacker, &defender, &MoveUse { move_type, power: entry.power, halve_def: entry.selfdestruct, late_mult: 1, special: *mv == "beatup", weather: 0 },
                    Roll { crit: *crit, random: *roll })
         } else {
             0
