@@ -3561,7 +3561,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 );
             // The try-hit abilities answer a status move too: Growl is a
             // sound move whatever its power, and Will-O-Wisp is a Fire one.
-            if !self_aimed {
+            if !self_aimed && hit {
                 match ability::absorbs(
                     &self.sides[foe].mon().bearer(),
                     slot.entry.id,
@@ -3643,10 +3643,16 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // rather than before it. Wonder Guard is asked here because this
             // is the only place that knows what the chart said.
             let effective = crate::types::effectiveness_against(move_type, dtypes) > 100;
+            // A move that MISSED is never absorbed: the reference logs the
+            // miss and stops, so a Water Absorb mon gets nothing out of an
+            // Octazooka that went wide. The chart's own immunity is not
+            // conditional that way — it is decided before anyone aims.
             let absorb = if chart_immune {
                 ability::Absorb::None
             } else if foe_b.ability == "wonderguard" && !effective && move_type != Type::None {
                 ability::Absorb::Immune
+            } else if !hit {
+                ability::Absorb::None
             } else {
                 ability::absorbs(&foe_b, slot.entry.id, move_type, slot.entry.sound)
             };
