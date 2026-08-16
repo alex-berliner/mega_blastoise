@@ -1519,18 +1519,37 @@ impl Battle {
                         side: side as u8 + 1,
                         amount: drain,
                     });
+                    // Liquid Ooze turns the seed sour: the sip the seeder
+                    // was owed is taken off it instead. The sim hangs that
+                    // on the HEAL, not on the move, so Leech Seed's drip
+                    // poisons exactly as a Giga Drain does.
+                    let ooze = ability::ooze_reverses_drain(
+                        &self.sides[side].mon().bearer(),
+                        "leechseed",
+                    );
                     let foe = self.sides[1 - side].mon_mut();
                     if !foe.fainted() {
-                        let heal = drain.min(foe.max_hp - foe.hp);
-                        if heal > 0 {
-                            foe.hp += heal;
-                            events.push(Event::Healed {
+                        if ooze {
+                            let hurt = drain.min(foe.hp);
+                            foe.hp -= hurt;
+                            events.push(Event::Residual {
                                 side: (1 - side) as u8 + 1,
-                                amount: heal,
+                                amount: hurt,
+                                status: Status::Poison,
                             });
+                        } else {
+                            let heal = drain.min(foe.max_hp - foe.hp);
+                            if heal > 0 {
+                                foe.hp += heal;
+                                events.push(Event::Healed {
+                                    side: (1 - side) as u8 + 1,
+                                    amount: heal,
+                                });
+                            }
                         }
                     }
                     self.announce_faint(side, &mut events);
+                    self.announce_faint(1 - side, &mut events);
                 }
                 // Burn and poison tick 1/8 max HP, Toxic a growing sixteenth.
                 let mon = self.sides[side].mon();
@@ -4893,7 +4912,12 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         })
                 });
                 let mon = self.sides[side].mon();
-                if mon.hp < mon.max_hp && !uproar {
+                // A mon that cannot be put to sleep cannot Rest either:
+                // the sim's Rest goes through setStatus, and Insomnia
+                // refuses it there — so the heal never happens at all.
+                let sleepless =
+                    ability::blocks_status(&self.sides[side].mon().bearer(), Status::Sleep);
+                if mon.hp < mon.max_hp && !uproar && !sleepless {
                     let mon = self.sides[side].mon_mut();
                     mon.hp = mon.max_hp;
                     mon.status = Some(Status::Sleep);
