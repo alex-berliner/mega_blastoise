@@ -859,7 +859,7 @@ pub struct Battle {
 
 impl Battle {
     pub fn new(side1: Side, side2: Side, seed: u64) -> Battle {
-        Battle {
+        let mut battle = Battle {
             sides: [side1, side2],
             rng: Rng::new(seed),
             turn: 0,
@@ -873,7 +873,32 @@ impl Battle {
             will_act: false,
             pursuing: false,
             deferred_switch: [None; 2],
+        };
+        // The battle's opening switch-ins are switch-ins, and the sim runs
+        // them as part of starting: Intimidate cows, Trace copies, a weather
+        // ability lays its sky down, all in speed order. They belong here
+        // rather than on the first turn, because what a player is allowed to
+        // CHOOSE on turn one already depends on them — an Arena Trap staring
+        // across the field takes the switch off the menu before anyone has
+        // moved.
+        let mut opening = Vec::new();
+        let first = battle.faster_side(true);
+        for side in [first, 1 - first] {
+            battle.switch_in_greet(side, &mut opening);
         }
+        // A status a mon was handed before the battle is still subject to the
+        // sky those openers just laid down: nothing freezes under sun, and
+        // the sim refuses the status rather than thawing it later.
+        if battle.effective_weather() == Some(Weather::Sun) {
+            for w in 0..2 {
+                for mon in battle.sides[w].party.iter_mut() {
+                    if mon.status == Some(Status::Freeze) {
+                        mon.status = None;
+                    }
+                }
+            }
+        }
+        battle
     }
 
     /// Whether `side`'s active mon may switch out at all. The sim marks a
@@ -1032,29 +1057,6 @@ impl Battle {
     /// the parity tests pass the same script they gave the reference sim.
     pub fn step_with(&mut self, choices: [Choice; 2], script: &TurnScript) -> Vec<Event> {
         let mut events = Vec::new();
-        // The battle's opening switch-ins happen before turn one, and the
-        // abilities that greet the field fire then: Intimidate cows, Trace
-        // copies, a weather ability lays down its sky. The sim runs them in
-        // speed order, like any other switch-in.
-        if self.turn == 0 {
-            let first = self.faster_side(script.seats.iter().any(|s| s.is_some()));
-            for side in [first, 1 - first] {
-                self.switch_in_greet(side, &mut events);
-            }
-            // A status a mon was handed before the battle is still subject
-            // to the sky those openers just laid down: nothing freezes under
-            // sun, and the sim refuses the status outright rather than
-            // thawing it later.
-            if self.effective_weather() == Some(Weather::Sun) {
-                for w in 0..2 {
-                    for mon in self.sides[w].party.iter_mut() {
-                        if mon.status == Some(Status::Freeze) {
-                            mon.status = None;
-                        }
-                    }
-                }
-            }
-        }
         for side in 0..2 {
             self.ability_update(side);
             if !self.sides[side].mon().fainted() {
@@ -1100,13 +1102,19 @@ impl Battle {
         // sim cancels the queued move), and if the strike lands a KO the
         // chosen switch is not cancelled — this era re-queues it for the end
         // of the turn, so the slot simply stays empty until then.
+        // Whether each side MAY switch is settled once, before anything
+        // moves. The sim decides it when it builds the turn's request, so
+        // two mons can trade places even though each would hold the other
+        // in place once it arrived — re-asking mid-turn let the first
+        // switch-in's Shadow Tag cancel the second side's answer.
+        let may_switch = [self.can_switch(0), self.can_switch(1)];
         let mut pursued = [false; 2];
         self.deferred_switch = [None; 2];
         for side in 0..2 {
             let Choice::Switch(idx) = choices[side] else {
                 continue;
             };
-            if !self.can_switch(side) || self.sides[side].mon().fainted() {
+            if !may_switch[side] || self.sides[side].mon().fainted() {
                 continue;
             }
             let foe = 1 - side;
@@ -1155,7 +1163,7 @@ impl Battle {
                 continue;
             }
             if let Choice::Switch(idx) = choices[side] {
-                if !self.can_switch(side) {
+                if !may_switch[side] {
                     // Held in place, or locked into a move of its own:
                     // switching is refused and the turn is forfeit.
                     continue;

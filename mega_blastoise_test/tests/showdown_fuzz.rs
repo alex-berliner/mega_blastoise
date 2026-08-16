@@ -509,18 +509,24 @@ fn fuzz_gen3_turns() {
             bad += 1;
             continue;
         }
-        let mk = |id: &str, mv: &str| Mon::new(id, *level, Nature::Hardy, inv, &[mv]).unwrap();
-        let mut battle =
-            Battle::new(Side::new(vec![mk(s1, m1)]), Side::new(vec![mk(s2, m2)]), 1);
-        for (seat, st) in statuses.iter().enumerate() {
-            battle.sides[seat].party[0].ability = abilities[seat];
-            battle.sides[seat].party[0].status = *st;
-            if *st == Some(gen3_battle::data::Status::Sleep) {
+        // Ability and status go on BEFORE the battle exists: constructing it
+        // runs the opening switch-ins, and those read both.
+        let mk = |id: &str, mv: &str, ability: &'static str, st: Option<_>| {
+            let mut mon = Mon::new(id, *level, Nature::Hardy, inv, &[mv]).unwrap();
+            mon.ability = ability;
+            mon.status = st;
+            if st == Some(gen3_battle::data::Status::Sleep) {
                 // The sim's pinned duration roll: asleep for one skipped
                 // action, awake on the second.
-                battle.sides[seat].party[0].sleep_n = 2;
+                mon.sleep_n = 2;
             }
-        }
+            mon
+        };
+        let mut battle = Battle::new(
+            Side::new(vec![mk(s1, m1, abilities[0], statuses[0])]),
+            Side::new(vec![mk(s2, m2, abilities[1], statuses[1])]),
+            1,
+        );
         // Skip speed ties: the tie-break is each side's own RNG.
         if battle.sides[0].mon().spe == battle.sides[1].mon().spe {
             continue;

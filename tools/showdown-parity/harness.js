@@ -117,6 +117,13 @@ function scriptRandomness(battle, script) {
   // Everything else random (secondary procs, full paralysis, crit rolls that
   // escaped willCrit) is pinned to "no".
   battle.randomChance = (numerator, denominator) => {
+    // Shed Skin's end-of-turn third of a chance is not one of the scenario's
+    // knobs, and it fires outside any move — after an accuracy window that a
+    // never-rolling move may have left open, and with `__cur` still holding
+    // whichever action ran last. Nothing else in this era rolls 33 out of
+    // 100, so pin it off first; the engines leave it alone under a script
+    // for the same reason.
+    if (numerator === 33 && denominator === 100) return false;
     if (battle.__accPending && (denominator === 100 || denominator === 256)) {
       battle.__accPending = false;
       return battle.__cur.hit;
@@ -155,11 +162,6 @@ function scriptRandomness(battle, script) {
     if (numerator === 1 && (denominator === 2 || denominator === 4 || denominator === 8)) {
       return (battle.__act ?? battle.__cur).stall ?? false;
     }
-    // Shed Skin's end-of-turn third of a chance is not one of the scenario's
-    // knobs, and it fires outside any move, so the generic secondary rule
-    // below would read whichever action happened to run last. Pin it off;
-    // the engines leave it alone under a script for the same reason.
-    if (numerator === 33 && denominator === 100) return false;
     // After the accuracy roll, a sub-certain chance out of 100 (gen 3+) or
     // 256 (gen 1) during a move is its secondary proc; the script decides.
     // Thaw (1,5) and wake rolls have other denominators and stay pinned
