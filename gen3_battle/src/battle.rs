@@ -1847,7 +1847,12 @@ impl Battle {
                 }
                 ("mimic", Some(e)) => {
                     // A five-PP overlay; the original slot returns when the
-                    // mon leaves the field or faints.
+                    // mon leaves the field or faints. A substitute blocks
+                    // the copy outright (the sim's, flags notwithstanding).
+                    if self.sides[foe].mon().sub_hp > 0 {
+                        events.push(Event::Failed { side: side as u8 + 1 });
+                        return;
+                    }
                     let orig = self.sides[side].mon().moves[index];
                     let mon = self.sides[side].mon_mut();
                     mon.mimic_backup = Some((index as u8, orig));
@@ -2729,6 +2734,12 @@ impl Battle {
                 }
             }
             StatusAction::Camouflage => {
+                // Fails on anything already carrying Normal (either slot).
+                let (t1, t2) = self.sides[side].mon().types();
+                if t1 == Type::Normal || t2 == Type::Normal {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
                 self.sides[side].mon_mut().type_override = Some((Type::Normal, Type::None));
             }
             StatusAction::Conversion => {
