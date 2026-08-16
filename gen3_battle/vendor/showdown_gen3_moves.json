@@ -16,6 +16,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -46,6 +47,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -80,6 +82,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -105,6 +108,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "assist"
@@ -135,6 +139,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -160,6 +165,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -185,6 +191,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -213,6 +220,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -238,6 +246,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -263,6 +272,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "charge": true
@@ -290,6 +300,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "conversion": true
@@ -317,6 +328,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "conversion2": true
@@ -344,6 +356,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -369,6 +382,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -399,6 +413,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -424,6 +439,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -449,6 +465,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "disable": true
@@ -476,6 +493,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -501,6 +519,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -526,6 +545,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "encore": true
@@ -556,6 +576,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -584,6 +605,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -609,6 +631,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -634,6 +657,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -659,6 +683,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -689,6 +714,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -714,6 +740,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "noopsuccess": true
@@ -741,6 +768,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "identify": true
@@ -768,6 +796,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -796,6 +825,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -821,6 +851,7 @@
 "recoil": null,
 "respectsImmunity": true,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "par"
@@ -848,6 +879,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "haze": true
@@ -875,6 +907,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -900,6 +933,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -925,6 +959,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "slp"
@@ -952,6 +987,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -977,6 +1013,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1002,6 +1039,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "lockon": true
@@ -1032,6 +1070,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1057,6 +1096,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "memento": true
@@ -1084,6 +1124,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "lockon": true
@@ -1111,6 +1152,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "mimic": true
@@ -1138,6 +1180,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1163,6 +1206,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "mirror": true
@@ -1190,6 +1234,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "naturepower": true
@@ -1220,6 +1265,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1245,6 +1291,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "nightmare": true
@@ -1272,6 +1319,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "identify": true
@@ -1299,6 +1347,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1324,6 +1373,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": {
 "spa": -2
 },
@@ -1351,6 +1401,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1376,6 +1427,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1401,6 +1453,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "heal": [
@@ -1431,6 +1484,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1461,6 +1515,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1486,6 +1541,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "sketch": true
@@ -1513,6 +1569,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "sleeptalk"
@@ -1540,6 +1597,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "spite": true
@@ -1567,6 +1625,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "stockpile": true
@@ -1594,6 +1653,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1619,6 +1679,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "taunt": true
@@ -1646,6 +1707,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "confuse": true
@@ -1673,6 +1735,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -1704,6 +1767,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1729,6 +1793,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1757,6 +1822,7 @@
 ],
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1782,6 +1848,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1807,6 +1874,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1835,6 +1903,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1860,6 +1929,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "healbell": true
@@ -1887,6 +1957,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -1912,6 +1983,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -1940,6 +2012,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -1968,6 +2041,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "camouflage": true
@@ -1995,6 +2069,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2020,6 +2095,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -2050,6 +2126,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2075,6 +2152,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "curse": true
@@ -2102,6 +2180,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "protect": true
@@ -2132,6 +2211,7 @@
 ],
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2160,6 +2240,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2185,6 +2266,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2210,6 +2292,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2235,6 +2318,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2260,6 +2344,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2285,6 +2370,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2310,6 +2396,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -2340,6 +2427,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "healbell": true
@@ -2367,6 +2455,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -2395,6 +2484,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "imprison": true
@@ -2422,6 +2512,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "ingrain": true
@@ -2449,6 +2540,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2474,6 +2566,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "seed": true
@@ -2501,6 +2594,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "side": "lightscreen"
@@ -2528,6 +2622,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2553,6 +2648,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2578,6 +2674,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "minimize": true
@@ -2605,6 +2702,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "side": "mist"
@@ -2632,6 +2730,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "wheal": true
@@ -2659,6 +2758,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "wheal": true
@@ -2686,6 +2786,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "sport": "mud"
@@ -2713,6 +2814,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2738,6 +2840,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "perish": true
@@ -2765,6 +2868,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "psn"
@@ -2792,6 +2896,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "protect": true
@@ -2819,6 +2924,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "psychup": true
@@ -2846,6 +2952,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -2871,6 +2978,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "recycle"
@@ -2898,6 +3006,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "side": "reflect"
@@ -2925,6 +3034,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "roar"
@@ -2952,6 +3062,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -2980,6 +3091,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "side": "safeguard"
@@ -3007,6 +3119,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3032,6 +3145,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -3065,6 +3179,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3090,6 +3205,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3118,6 +3234,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3143,6 +3260,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "spikes": true
@@ -3170,6 +3288,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "sub": true
@@ -3197,6 +3316,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "swallow": true
@@ -3224,6 +3344,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "wheal": true
@@ -3251,6 +3372,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3276,6 +3398,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -3306,6 +3429,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3331,6 +3455,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "torment": true
@@ -3358,6 +3483,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "tox"
@@ -3385,6 +3511,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "transform": true
@@ -3412,6 +3539,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "sport": "water"
@@ -3439,6 +3567,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3464,6 +3593,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "whirlwind"
@@ -3491,6 +3621,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "wish": true
@@ -3518,6 +3649,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3543,6 +3675,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "yawn": true
@@ -3570,6 +3703,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -3600,6 +3734,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3625,6 +3760,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -3655,6 +3791,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "meanlook": true
@@ -3685,6 +3822,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3713,6 +3851,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3743,6 +3882,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3768,6 +3908,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -3801,6 +3942,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3829,6 +3971,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3854,6 +3997,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "slp"
@@ -3881,6 +4025,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -3914,6 +4059,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3939,6 +4085,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3964,6 +4111,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -3989,6 +4137,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4014,6 +4163,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4039,6 +4189,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4064,6 +4215,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4089,6 +4241,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4114,6 +4267,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4139,6 +4293,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4164,6 +4319,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4189,6 +4345,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4214,6 +4371,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4239,6 +4397,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4264,6 +4423,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4289,6 +4449,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4314,6 +4475,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4339,6 +4501,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4364,6 +4527,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4392,6 +4556,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4420,6 +4585,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4448,6 +4614,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4473,6 +4640,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "meanlook": true
@@ -4500,6 +4668,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -4535,6 +4704,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4565,6 +4735,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4590,6 +4761,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -4621,6 +4793,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4646,6 +4819,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "psn"
@@ -4673,6 +4847,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4703,6 +4878,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4728,6 +4904,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -4758,6 +4935,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "slp"
@@ -4785,6 +4963,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4810,6 +4989,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "slp"
@@ -4837,6 +5017,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4865,6 +5046,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -4890,6 +5072,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "slp"
@@ -4917,6 +5100,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -4947,6 +5131,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "par"
@@ -4977,6 +5162,7 @@
 ],
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5002,6 +5188,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "confuse": true
@@ -5029,6 +5216,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "confuse": true
@@ -5056,6 +5244,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -5086,6 +5275,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -5116,6 +5306,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5144,6 +5335,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5172,6 +5364,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5197,6 +5390,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "brn"
@@ -5224,6 +5418,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "destiny": true
@@ -5251,6 +5446,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5276,6 +5472,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -5306,6 +5503,7 @@
 "recoil": null,
 "respectsImmunity": true,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "par"
@@ -5333,6 +5531,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -5364,6 +5563,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5389,6 +5589,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -5422,6 +5623,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5450,6 +5652,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5475,6 +5678,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -5503,6 +5707,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5528,6 +5733,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5553,6 +5759,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5578,6 +5785,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -5611,6 +5819,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5636,6 +5845,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5661,6 +5871,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5686,6 +5897,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5711,6 +5923,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5736,6 +5949,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -5766,6 +5980,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": {
 "spa": -2
 },
@@ -5793,6 +6008,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5818,6 +6034,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5843,6 +6060,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "refresh": true
@@ -5870,6 +6088,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5898,6 +6117,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5923,6 +6143,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -5956,6 +6177,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -5990,6 +6212,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6015,6 +6238,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6040,6 +6264,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6065,6 +6290,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "meanlook": true
@@ -6092,6 +6318,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -6120,6 +6347,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6148,6 +6376,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -6176,6 +6405,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -6204,6 +6434,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6229,6 +6460,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "grudge": true
@@ -6256,6 +6488,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "weather": "hail"
@@ -6283,6 +6516,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -6313,6 +6547,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "status": "slp"
@@ -6345,6 +6580,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6370,6 +6606,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "heal": [
@@ -6405,6 +6642,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6435,6 +6673,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6460,6 +6699,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "rest": true
@@ -6487,6 +6727,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6512,6 +6753,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "heal": [
@@ -6542,6 +6784,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "heal": [
@@ -6572,6 +6815,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6597,6 +6841,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6622,6 +6867,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6647,6 +6893,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -6677,6 +6924,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -6707,6 +6955,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -6735,6 +6984,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6765,6 +7015,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6790,6 +7041,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "batonpass"
@@ -6817,6 +7069,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "bellydrum": true
@@ -6847,6 +7100,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6872,6 +7126,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6900,6 +7155,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6930,6 +7186,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -6955,6 +7212,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -6986,6 +7244,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7017,6 +7276,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "confuse": true
@@ -7047,6 +7307,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7072,6 +7333,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7103,6 +7365,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7133,6 +7396,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7158,6 +7422,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7188,6 +7453,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -7216,6 +7482,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7249,6 +7516,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7274,6 +7542,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7299,6 +7568,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7330,6 +7600,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7358,6 +7629,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7383,6 +7655,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7411,6 +7684,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7436,6 +7710,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "endure": true
@@ -7463,6 +7738,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7488,6 +7764,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7513,6 +7790,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7538,6 +7816,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7568,6 +7847,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7593,6 +7873,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7626,6 +7907,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7651,6 +7933,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7679,6 +7962,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7704,6 +7988,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7734,6 +8019,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "focus": true
@@ -7761,6 +8047,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7786,6 +8073,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -7814,6 +8102,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -7842,6 +8131,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7867,6 +8157,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7892,6 +8183,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -7925,6 +8217,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7950,6 +8243,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -7975,6 +8269,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8000,6 +8295,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8025,6 +8321,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8050,6 +8347,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8078,6 +8376,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8108,6 +8407,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8133,6 +8433,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -8168,6 +8469,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8193,6 +8495,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -8223,6 +8526,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8248,6 +8552,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8273,6 +8578,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8298,6 +8604,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8323,6 +8630,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8353,6 +8661,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8383,6 +8692,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8413,6 +8723,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8438,6 +8749,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8463,6 +8775,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "painsplit": true
@@ -8490,6 +8803,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8518,6 +8832,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8546,6 +8861,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8571,6 +8887,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8599,6 +8916,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8624,6 +8942,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8652,6 +8971,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8682,6 +9002,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8707,6 +9028,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8732,6 +9054,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "weather": "raindance"
@@ -8759,6 +9082,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8787,6 +9111,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8812,6 +9137,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8837,6 +9163,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "roleplay"
@@ -8864,6 +9191,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8892,6 +9220,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8917,6 +9246,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -8947,6 +9277,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "weather": "sandstorm"
@@ -8974,6 +9305,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -8999,6 +9331,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9024,6 +9357,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9054,6 +9388,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9079,6 +9414,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9104,6 +9440,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9129,6 +9466,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "skillswap"
@@ -9159,6 +9497,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9184,6 +9523,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9209,6 +9549,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9237,6 +9578,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9265,6 +9607,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9290,6 +9633,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -9320,6 +9664,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9348,6 +9693,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9373,6 +9719,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9398,6 +9745,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9428,6 +9776,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9456,6 +9805,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9481,6 +9831,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9506,6 +9857,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "weather": "sunnyday"
@@ -9533,6 +9885,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9558,6 +9911,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": {
 "atk": -1,
 "def": -1
@@ -9586,6 +9940,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9611,6 +9966,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "boosts": {
@@ -9644,6 +10000,7 @@
 ],
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9672,6 +10029,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9700,6 +10058,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9728,6 +10087,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9753,6 +10113,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": {
 "noopfail": "trick"
@@ -9780,6 +10141,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": [
@@ -9811,6 +10173,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9836,6 +10199,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9861,6 +10225,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9889,6 +10254,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9914,6 +10280,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9939,6 +10306,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": true,
+"protectable": true,
 "selfDrop": null,
 "statusAction": null,
 "multihit": null,
@@ -9964,6 +10332,7 @@
 "recoil": null,
 "respectsImmunity": false,
 "needsTarget": false,
+"protectable": false,
 "selfDrop": null,
 "statusAction": {
 "boosts": {

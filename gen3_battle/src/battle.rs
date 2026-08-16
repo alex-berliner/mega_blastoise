@@ -131,6 +131,10 @@ pub struct Mon {
     /// Lock-On: the next move cannot miss.
     /// Lock-On/Mind Reader: 2 while armed (cast turn + the next); the
     /// next move consumes it, the end-of-turn clock expires it.
+    /// Taken aim AT THIS MON (Lock-On, Mind Reader): while it is above zero
+    /// the other side's active cannot miss it, and cannot be dodged by it.
+    /// The sim keeps the volatile on the TARGET, which is why leaving the
+    /// field ends the lock — including for a mon that comes straight back.
     pub sure_hit: u8,
     /// Charge: the next Electric move doubles.
     pub charged_elec: bool,
@@ -182,6 +186,9 @@ pub struct Mon {
     pub disabled_slot: Option<u8>,
     pub disable_n: u8,
     pub disable_fresh: bool,
+    /// The seal landed after its victim had already moved, so this turn's
+    /// end does not spend one of the two actions it blocks.
+    pub disable_skip_tick: bool,
     /// Imprison is up: the foe cannot use moves this mon also knows.
     pub imprisoning: bool,
     /// True only for the remainder of the turn Imprison landed in: the
@@ -236,6 +243,11 @@ pub struct Mon {
     /// happens — a faint cancelled the action, say — lets the charge lapse
     /// rather than holding the mon forever.
     pub charge_fresh: bool,
+    /// The rolling lock swung THIS turn. The sim refreshes Rollout's and Ice
+    /// Ball's one-turn volatile from inside the base-power callback, which
+    /// only runs when the move actually goes off — so a turn the user never
+    /// got (a faint cancelled it, say) lets the lock lapse.
+    pub rolling_fresh: bool,
     /// Mid two-turn move: the slot charged last turn, releasing this turn.
     /// Any Cant loses the charge. Cleared by switching out.
     pub charging: Option<u8>,
@@ -313,6 +325,7 @@ impl Mon {
             disabled_slot: None,
             disable_n: 0,
             disable_fresh: false,
+            disable_skip_tick: false,
             imprisoning: false,
             imprison_fresh: false,
             type_override: None,
@@ -337,6 +350,7 @@ impl Mon {
             seeded: false,
             trapped_n: 0,
             charge_fresh: false,
+            rolling_fresh: false,
             charging: None,
             uproar_ending: false,
             locked_move: None,
@@ -741,6 +755,10 @@ pub struct Battle {
     /// time — that (and only that) is what Struggle substitution reads;
     /// a mid-turn Spite draining it to zero is a silent lost turn.
     pp0_at_choice: [bool; 2],
+    /// Which sides have already taken their action this turn. Disable needs
+    /// it: its clock counts the target's next N ACTIONS, so landing on a mon
+    /// that has already moved does not spend one of them.
+    acted_this_turn: [bool; 2],
     /// Whether an action is still queued behind the one resolving now. The
     /// sim's Protect and Endure both start with `!!this.queue.willAct()`, so
     /// the last mon to act in a turn cannot shield: a foe that switched has
@@ -766,6 +784,7 @@ impl Battle {
             taken_physical: [0; 2],
             taken_special: [0; 2],
             pp0_at_choice: [false; 2],
+            acted_this_turn: [false; 2],
             will_act: false,
             pursuing: false,
             deferred_switch: [None; 2],
@@ -868,6 +887,7 @@ impl Battle {
     pub fn step_with(&mut self, choices: [Choice; 2], script: &TurnScript) -> Vec<Event> {
         let mut events = Vec::new();
         self.turn += 1;
+        self.acted_this_turn = [false; 2];
         self.taken_physical = [0; 2];
         self.taken_special = [0; 2];
 
@@ -1006,6 +1026,7 @@ impl Battle {
                     out.disabled_slot = None;
                     out.disable_n = 0;
                     out.disable_fresh = false;
+                    out.disable_skip_tick = false;
                     out.imprisoning = false;
                     out.imprison_fresh = false;
                     out.type_override = None;
@@ -1042,6 +1063,7 @@ impl Battle {
                     out.charging = None;
                     out.charge_fresh = false;
                     out.charge_fresh = false;
+                    out.rolling_fresh = false;
                     out.rampage = None;
                     out.must_recharge = false;
                     self.sides[side].active = idx;
@@ -1074,6 +1096,7 @@ impl Battle {
             }
             if !cancelled[side] {
                 if let Choice::Move(index) = choices[side] {
+                    self.acted_this_turn[side] = true;
                     // Whoever is left in the order still has an action; the
                     // second mover has nobody behind it.
                     let foe = 1 - side;
@@ -1095,6 +1118,25 @@ impl Battle {
             // already on the field when the residual phase runs.
             self.replace_fainted(&mut events);
         }
+
+        // The switch a Pursuit KO pushed back takes its turn now, once the
+        // moves are done and BEFORE the residuals — the sim re-queues it at
+        // priority -101, so the mon it brings in is on the field to take its
+        // own poison tick.
+        for side in 0..2 {
+            if let Some(idx) = self.deferred_switch[side].take() {
+                if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
+                    self.sides[side].mon_mut().status = None;
+                    self.sides[side].active = idx;
+                    events.push(Event::Switched {
+                        side: side as u8 + 1,
+                        party_index: idx,
+                    });
+                    self.spikes_greet(side, &mut events);
+                }
+            }
+        }
+        self.replace_fainted(&mut events);
 
         // The whole end-of-turn phase is skipped once the battle is decided
         // — but a wipe DURING the phase does not cut it short (the sim
@@ -1433,31 +1475,18 @@ impl Battle {
                     mon.encore_n -= 1;
                 }
                 if mon.disable_n > 0 {
-                    mon.disable_n -= 1;
                     mon.disable_fresh = false;
+                    if mon.disable_skip_tick {
+                        mon.disable_skip_tick = false;
+                        continue;
+                    }
+                    mon.disable_n -= 1;
                     if mon.disable_n == 0 {
                         mon.disabled_slot = None;
                     }
                 }
             }
         }
-
-        // The switch a Pursuit KO pushed back now takes its turn, ahead of
-        // the residuals.
-        for side in 0..2 {
-            if let Some(idx) = self.deferred_switch[side].take() {
-                if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
-                    self.sides[side].mon_mut().status = None;
-                    self.sides[side].active = idx;
-                    events.push(Event::Switched {
-                        side: side as u8 + 1,
-                        party_index: idx,
-                    });
-                    self.spikes_greet(side, &mut events);
-                }
-            }
-        }
-        self.replace_fainted(&mut events);
 
         // The residual phase is one action as far as the queue is concerned:
         // whoever it knocked out is replaced when it finishes, not between
@@ -1474,6 +1503,15 @@ impl Battle {
             mon.torment_fresh = false;
             mon.imprison_fresh = false;
             mon.uproar_ending = false;
+            // A rolling lock that did not swing this turn is over.
+            if mon.rolling.is_some() {
+                if mon.rolling_fresh {
+                    mon.rolling_fresh = false;
+                } else {
+                    mon.rolling = None;
+                    mon.locked_move = None;
+                }
+            }
             // A charge only gets the one turn to come down.
             if mon.charging.is_some() {
                 if mon.charge_fresh {
@@ -2331,10 +2369,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // Pursuit's onModifyMove sets accuracy true against a mon that is
         // already leaving, so the interception cannot whiff.
         let sure =
-            self.sides[side].mon().sure_hit > 0 || (self.pursuing && slot.entry.id == "pursuit");
-        if sure {
-            self.sides[side].mon_mut().sure_hit = 0;
-        }
+            self.sides[foe].mon().sure_hit > 0 || (self.pursuing && slot.entry.id == "pursuit");
+        // Nothing consumes the lock: the sim's volatile simply runs out its
+        // two-turn duration, so clearing it here both let a second Mind
+        // Reader re-apply it and cut it short by a turn.
         let hit = sure
             || match script {
                 Some(s) => acc == 0 || s.hit,
@@ -2402,11 +2440,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 let (t1, t2) = self.sides[side].mon().types();
                 t1 != Type::Ghost && t2 != Type::Ghost
             });
-        // Sketch and Transform carry no protect flag: straight through a shield.
-        if !self_targeted
-            && !matches!(slot.entry.id, "sketch" | "transform")
-            && self.sides[foe].mon().protected
-        {
+        // A shield only stops what carries the protect flag — Sketch,
+        // Transform and the delayed hits all go straight through one.
+        if !self_targeted && slot.entry.protectable && self.sides[foe].mon().protected {
             // A shielded target breaks a rampage the way a miss does —
             // quietly on first use, with fatigue confusion once the lock
             // is running — and a rolling Rollout resets to a fresh choice.
@@ -2737,10 +2773,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 self.taken_special[side]
             };
             if taken == 0 {
-                // A whiffed Counter still goes in the attacked-by book —
-                // the gen 3 sim records after the accuracy pass, hit or not.
-                self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+                // Nothing recorded against the target: with nothing to
+                // bounce back the sim fails this in the move's own `onTry`,
+                // which runs before the hit step ever writes the
+                // attacked-by book. A Mirror Move aimed back finds nothing.
                 events.push(Event::Failed {
                     side: side as u8 + 1,
                 });
@@ -2876,7 +2912,16 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     });
                     return;
                 }
-                (_, Some(e)) if e.id == slot.entry.id => {
+                // The user must not be transformed, must not already know
+                // the move, and Sketch refuses the nosketch set (itself and
+                // Struggle) just as Mimic refuses its own failmimic set.
+                (_, Some(e))
+                    if e.id == slot.entry.id
+                        || self.sides[side].mon().transform_backup.is_some()
+                        || self.sides[side].mon().moves.iter().any(|m| m.entry.id == e.id)
+                        || (slot.entry.id == "sketch"
+                            && matches!(e.id, "sketch" | "struggle")) =>
+                {
                     events.push(Event::Failed {
                         side: side as u8 + 1,
                     });
@@ -3410,6 +3455,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             let mon = self.sides[side].mon_mut();
             let n = mon.rolling.unwrap_or(0) + 1;
             mon.rolling = if n >= 5 { None } else { Some(n) };
+            mon.rolling_fresh = true;
         }
         // Defense Curl primes Rollout.
         if slot.entry.id == "defensecurl" {
@@ -3846,7 +3892,14 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
             }
             StatusAction::PerishSong => {
+                // The song sweeps the field, but its onHitField loop still
+                // runs the Invulnerability event per target: a mon that is
+                // underground or in the air is missed and never picks up a
+                // count, however loud the singing.
                 for who in 0..2 {
+                    if self.sides[who].mon().semi_invulnerable().is_some() {
+                        continue;
+                    }
                     let mon = self.sides[who].mon_mut();
                     if mon.perish_n == 0 && !mon.fainted() {
                         mon.perish_n = 4;
@@ -3965,8 +4018,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
             }
             StatusAction::LockOn => {
-                if hit && !self.sides[foe].mon().fainted() {
-                    self.sides[side].mon_mut().sure_hit = 2;
+                // Taking aim at a mon already in your sights does nothing:
+                // addVolatile refuses a lock that is still up, and the move
+                // fails rather than refreshing it.
+                if hit && !self.sides[foe].mon().fainted() && self.sides[foe].mon().sure_hit == 0 {
+                    self.sides[foe].mon_mut().sure_hit = 2;
+                } else {
+                    events.push(Event::Failed {
+                        side: side as u8 + 1,
+                    });
                 }
             }
             StatusAction::ChargeUp => {
@@ -4070,20 +4130,25 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     .and_then(|i| target.moves.get(i))
                     .is_some_and(|m| m.pp > 0);
                 if hit && target.disabled_slot.is_none() && last_has_pp && !target.fainted() {
-                    // This era's clock is `random(2, 6)` — two sealed turns
-                    // pinned, two to five in play. The modern four-to-seven
-                    // is a later generation's, and using it here let a
-                    // second Disable find the first seal still running.
+                    // This era's clock is `random(2, 6)`, and it counts the
+                    // victim's next N ACTIONS rather than N turns. Measured
+                    // against the sim: a Disable from a FASTER mon blocks the
+                    // victim's move that same turn and the next, and ends; a
+                    // Disable from a slower one lands after the victim has
+                    // moved and blocks the following two turns instead. (The
+                    // modern four-to-seven belongs to a later generation.)
                     let slot_i = slot_by_id.map(|i| i as u8);
                     let n = if scripted {
                         2
                     } else {
                         2 + self.rng.below(4) as u8
                     };
+                    let already_moved = self.acted_this_turn[foe];
                     let mon = self.sides[foe].mon_mut();
                     mon.disabled_slot = slot_i;
                     mon.disable_n = n;
                     mon.disable_fresh = true;
+                    mon.disable_skip_tick = already_moved;
                 } else {
                     events.push(Event::Failed {
                         side: side as u8 + 1,

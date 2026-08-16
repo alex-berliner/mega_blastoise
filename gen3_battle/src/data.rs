@@ -386,6 +386,11 @@ pub struct MoveEntry {
     /// goes off with the other side's slot empty; everything else logs the
     /// move line and then stops, having spent its PP.
     pub needs_target: bool,
+    /// Whether Protect and Detect stop it. The sim keys this off the move's
+    /// `protect` flag, which most self- and field-aimed moves lack — and so
+    /// do Future Sight and Doom Desire, which launch straight through a
+    /// shield.
+    pub protectable: bool,
     /// Hyper Beam and kin: a landed hit costs the next turn to recharge.
     pub recharge: bool,
     /// Superpower and kin: a landed hit costs the user these stages, always.
@@ -431,6 +436,7 @@ pub static STRUGGLE: MoveEntry = MoveEntry {
     trap: false,
     self_drop: None,
     needs_target: true,
+    protectable: true,
 };
 
 /// Chart order, so a randbat slot's type index resolves back to a [`Type`].

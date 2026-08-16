@@ -531,6 +531,9 @@ function runDump(sc) {
         // useMove computes lacksTarget for every non-field target and bails
         // with -notarget; a self- or field-aimed move never does.
         needsTarget: !['self', 'all', 'foeSide', 'allySide', 'allyTeam'].includes(m.target),
+        // Whether a shield stops it. Most self- and field-aimed moves carry
+        // no protect flag, and neither do the delayed hits.
+        protectable: !!(m.flags && m.flags.protect),
         selfDrop: m.self && m.self.boosts && m.category !== 'Status' ? m.self.boosts : null,
         statusAction: m.category !== 'Status' ? null
           : m.id === 'haze' ? {haze: true}
