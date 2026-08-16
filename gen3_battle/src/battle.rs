@@ -842,6 +842,15 @@ impl Battle {
                     events.push(Event::TrapEnded { side: side as u8 + 1 });
                 }
             }
+            // Yawn rides THIS mon's residual slot, right after its bind:
+            // a faster mon's yawn resolves before a slower mon's poison,
+            // and a battle already decided leaves the drowsy awake.
+            if self.sides[side].mon().yawn_n > 0 && !self.sides[side].mon().fainted() {
+                self.sides[side].mon_mut().yawn_n -= 1;
+                if self.sides[side].mon().yawn_n == 0 {
+                    self.inflict(side, Status::Sleep, scripted, &mut events);
+                }
+            }
         }
 
         // A Future Sight lands at the end of its third turn, computed from
@@ -901,19 +910,6 @@ impl Battle {
                             }
                         }
                     }
-                }
-            }
-        }
-
-        // Yawn drops the drowsy at the end of the turn AFTER it landed.
-        for side in 0..2 {
-            if self.over() {
-                break;
-            }
-            if self.sides[side].mon().yawn_n > 0 && !self.sides[side].mon().fainted() {
-                self.sides[side].mon_mut().yawn_n -= 1;
-                if self.sides[side].mon().yawn_n == 0 {
-                    self.inflict(side, Status::Sleep, scripted, &mut events);
                 }
             }
         }
@@ -1555,8 +1551,11 @@ impl Battle {
                     | StatusAction::Substitute
             )
         );
-        // Sketch carries no protect flag: it works through a shield.
-        if !self_targeted && slot.entry.id != "sketch" && self.sides[foe].mon().protected {
+        // Sketch and Transform carry no protect flag: straight through a shield.
+        if !self_targeted
+            && !matches!(slot.entry.id, "sketch" | "transform")
+            && self.sides[foe].mon().protected
+        {
             // A shielded target disrupts a rampage: no fatigue, fresh start.
             self.sides[side].mon_mut().rampage = None;
             events.push(Event::Failed { side: side as u8 + 1 });
@@ -2780,7 +2779,8 @@ impl Battle {
             }
             StatusAction::Transform => {
                 let foe_mon = self.sides[foe].mon().clone();
-                if foe_mon.fainted() {
+                // Copying a copy fails: a transformed target refuses it.
+                if foe_mon.fainted() || foe_mon.transform_backup.is_some() {
                     events.push(Event::Failed { side: side as u8 + 1 });
                 } else {
                     let mon = self.sides[side].mon_mut();
