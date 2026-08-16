@@ -14,6 +14,13 @@ for (const m of moves) {
   if (!move.exists) throw new Error(`no move ${m.id}`);
   m.sound = !!move.flags.sound;
   m.contact = !!move.flags.contact;
+  // Pressure charges its extra PP when the other side is among the move's
+  // apparent targets, which is what the sim calls pressureTargets: a move
+  // aimed at yourself or your own side never costs the extra point, and
+  // neither does one aimed at the foe's SIDE rather than the mon on it.
+  const ownSide = ['self', 'adjacentAlly', 'adjacentAllyOrSelf', 'allySide', 'allyTeam', 'allies'];
+  m.pressured = !!move.flags.mustpressure ||
+    !(ownSide.includes(move.target) || move.target === 'foeSide');
 }
 fs.writeFileSync(path, JSON.stringify(moves) + '\n');
 process.stderr.write(`${moves.length} moves tagged\n`);

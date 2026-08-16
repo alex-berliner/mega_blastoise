@@ -344,6 +344,10 @@ pub enum StatusAction {
     HealBell,
     /// A move that succeeds and does nothing in singles (Follow Me).
     NoopSuccess,
+    /// Skill Swap trades abilities with the target.
+    SkillSwap,
+    /// Role Play copies the target's ability onto the user.
+    RolePlay,
     NoopFail,
     /// Mirror Move: use the foe's last move.
     MirrorMove,
@@ -400,6 +404,9 @@ pub struct MoveEntry {
     pub sound: bool,
     /// A contact move: the abilities that answer being touched read this.
     pub contact: bool,
+    /// Whether the other side counts as one of this move's apparent targets,
+    /// which is what decides whether Pressure charges its extra PP.
+    pub pressured: bool,
     /// Whether the move needs a LIVING foe. A self- or field-aimed move
     /// goes off with the other side's slot empty; everything else logs the
     /// move line and then stops, having spent its PP.
@@ -438,6 +445,7 @@ impl MoveEntry {
 pub static STRUGGLE: MoveEntry = MoveEntry {
     sound: false,
     contact: true,
+    pressured: true,
     id: "struggle",
     name: "Struggle",
     move_type: Type::None,

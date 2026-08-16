@@ -2066,7 +2066,11 @@ impl Battle {
             // field. A move the user turns on itself is free of it.
             let cost = if ability::pressure(&self.sides[1 - side].mon().bearer())
                 && !self.sides[1 - side].mon().fainted()
-                && slot.entry.needs_target
+                && slot.entry.pressured
+                && (slot.entry.id != "curse" || {
+                    let (t1, t2) = self.sides[side].mon().types();
+                    t1 == Type::Ghost || t2 == Type::Ghost
+                })
             {
                 2
             } else {
@@ -2742,7 +2746,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 slot.move_type(),
                 self.sides[foe].mon().types(),
             );
-            if eff == 0 {
+            if eff == 0
+                || ability::immune_to_type(&self.sides[foe].mon().bearer(), slot.move_type())
+            {
                 events.push(Event::Damage {
                     side: foe as u8 + 1,
                     amount: 0,
@@ -4041,7 +4047,12 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         }
         let mon = self.sides[side].mon();
         let (t1, t2) = mon.types();
-        if t1 == Type::Flying || t2 == Type::Flying {
+        // Spikes only bite what stands on the ground, and Levitate is the
+        // other way to be off it.
+        if t1 == Type::Flying
+            || t2 == Type::Flying
+            || self.sides[side].mon().ability == "levitate"
+        {
             return;
         }
         let max = mon.max_hp;
@@ -4174,10 +4185,17 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// the mon's own Defense — stages and burn apply, nothing else does.
     fn confusion_self_hit(&mut self, side: usize, random: u8) -> u16 {
         let mon = self.sides[side].mon();
-        let atk = crate::stats::apply_stage(mon.atk, mon.stages[Stat::Atk as usize]) as u32;
-        let def = crate::stats::apply_stage(mon.def, mon.stages[Stat::Def as usize]).max(1) as u32;
+        // The sim runs this through its ordinary damage call, which means
+        // the Attack and Defence abilities both speak — a confused Huge
+        // Power mon hits itself twice as hard.
+        let bearer = mon.bearer();
+        let atk = ability::attack_chain(&bearer, true)
+            .apply(crate::stats::apply_stage(mon.atk, mon.stages[Stat::Atk as usize]) as u32);
+        let def = ability::defence_chain(&bearer, true)
+            .apply(crate::stats::apply_stage(mon.def, mon.stages[Stat::Def as usize]) as u32)
+            .max(1);
         let mut dmg = ((2 * mon.level as u32 / 5 + 2) * 40 * atk / def) / 50;
-        if mon.burned() {
+        if mon.burned() && !ability::ignores_burn_drop(&bearer) {
             dmg /= 2;
         }
         if dmg == 0 {
@@ -4388,6 +4406,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // count, however loud the singing.
                 for who in 0..2 {
                     if self.sides[who].mon().semi_invulnerable().is_some() {
+                        continue;
+                    }
+                    // The song is a sound, and it sweeps the singer's own
+                    // side too, so a Soundproof singer is deaf to it.
+                    if self.sides[who].mon().ability == "soundproof" {
                         continue;
                     }
                     let mon = self.sides[who].mon_mut();
@@ -4820,6 +4843,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     mon.acc_stage = foe_mon.acc_stage;
                     mon.eva_stage = foe_mon.eva_stage;
                     mon.type_override = Some(foe_mon.types());
+                    // The copy is complete enough to include the ability,
+                    // which is how a paralysed mon that copies a Limber one
+                    // walks away cured.
+                    mon.ability = foe_mon.ability;
+                    mon.flash_fire = false;
                     mon.moves = foe_mon
                         .moves
                         .iter()
@@ -4831,7 +4859,44 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                             typed_as: ms.typed_as,
                         })
                         .collect();
+                    self.ability_update(side);
                 }
+            }
+            StatusAction::SkillSwap | StatusAction::RolePlay => {
+                // Wonder Guard refuses to be traded or copied, and this era
+                // also refuses a swap between two mons that already share an
+                // ability. Role Play alone insists the two differ; Skill
+                // Swap checks the same thing under gen 5 and below.
+                let mine = self.sides[side].mon().ability;
+                let theirs = self.sides[foe].mon().ability;
+                let unswappable = mine == "wonderguard" || theirs == "wonderguard";
+                if !hit
+                    || unswappable
+                    || mine == theirs
+                    || self.sides[foe].mon().fainted()
+                    || self.sides[side].mon().fainted()
+                {
+                    events.push(Event::Failed {
+                        side: side as u8 + 1,
+                    });
+                    return;
+                }
+                let swapping = matches!(action, StatusAction::SkillSwap);
+                self.sides[side].mon_mut().ability = theirs;
+                if swapping {
+                    self.sides[foe].mon_mut().ability = mine;
+                }
+                // Losing Flash Fire loses what it caught: the sim ends the
+                // old ability, and ending Flash Fire drops its volatile.
+                for w in [side, foe] {
+                    if self.sides[w].mon().ability != "flashfire" {
+                        self.sides[w].mon_mut().flash_fire = false;
+                    }
+                }
+                // A traded-in ability tidies up straight away — a frozen mon
+                // handed Magma Armor thaws on the spot.
+                self.ability_update(side);
+                self.ability_update(foe);
             }
             StatusAction::NoopFail => {
                 events.push(Event::Failed {
@@ -4842,10 +4907,18 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             StatusAction::HealBell => {
                 // The chime reaches the WHOLE party, bench included — the
                 // sim walks `side.pokemon`, not just the active slot.
+                // …but it never reaches a Soundproof one, on the field or
+                // on the bench. The chime is a sound, and that ability is
+                // deaf to it whoever rang it.
+                let chimes = slot.entry.sound;
                 for mon in self.sides[side].party.iter_mut() {
+                    if chimes && mon.ability == "soundproof" {
+                        continue;
+                    }
                     mon.status = None;
                     mon.toxic_n = 0;
                     mon.sleep_n = 0;
+                    mon.sleep_skipped = 0;
                     mon.nightmared = false;
                 }
             }
@@ -5105,7 +5178,14 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // Shield Dust refuses every secondary a move turns on ITS TARGET.
         // The self-aimed drops (Overheat's own Special Attack) are a
         // different field entirely and are not touched.
-        let dusted = ability::blocks_secondary(&self.sides[foe].mon().bearer());
+        // Shield Dust filters the secondaries aimed at its bearer and keeps
+        // the ones the move turns on the ATTACKER — Steel Wing still raises
+        // its own Defence through it.
+        let dusted = ability::blocks_secondary(&self.sides[foe].mon().bearer())
+            && !matches!(
+                slot.entry.secondary.map(|sec| sec.effect),
+                Some(SecondaryEffect::SelfBoosts(_))
+            );
         // Serene Grace doubles the printed chance before it is rolled.
         let doubled = ability::doubles_secondary(&self.sides[side].mon().bearer());
         let chance =
@@ -5240,7 +5320,13 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             Some(s) => (s.random, s.crit),
             None => (85 + self.rng.below(16) as u8, self.rng.below(16) == 0),
         };
-        let (attacker, defender) = self.attack_pair(side);
+        let (mut attacker, mut defender) = self.attack_pair(side);
+        let user_b = self.sides[side].mon().bearer();
+        let foe_b = self.sides[foe].mon().bearer();
+        let physical = ability::physical_type(slot.move_type());
+        attacker.stat_mod = ability::attack_chain(&user_b, physical);
+        attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
+        defender.stat_mod = ability::defence_chain(&foe_b, physical);
         let m = MoveUse {
             move_type: slot.move_type(),
             power: slot.entry.power,
