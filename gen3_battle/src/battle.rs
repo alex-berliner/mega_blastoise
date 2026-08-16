@@ -2096,6 +2096,31 @@ impl Battle {
             slot
         };
 
+        // A called move can itself be a caller: Assist and Sleep Talk both
+        // reach Nature Power, and the sim's useMove simply recurses. Run the
+        // one chain that exists in this era rather than stopping a link
+        // short, which left the call announced and nothing coming out of it.
+        let slot = if slot.entry.id == "naturepower" {
+            let np_hit = match script {
+                Some(s) => s.hit,
+                None => self.rng.below(100) < 95,
+            };
+            if !np_hit {
+                return;
+            }
+            events.push(Event::Used {
+                side: side as u8 + 1,
+                move_index: index,
+            });
+            MoveSlot {
+                entry: move_by_id("swift").expect("swift"),
+                pp: 1,
+                typed_as: None,
+            }
+        } else {
+            slot
+        };
+
         // Mirror Move plays back the move the foe last HIT this mon with
         // (the sim's attacked-by book, damaging or status alike) — refusing
         // the noMirror set and a move the foe no longer knows. It swaps in
