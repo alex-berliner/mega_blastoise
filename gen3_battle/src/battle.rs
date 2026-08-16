@@ -1625,6 +1625,31 @@ impl Battle {
                     });
                     self.announce_faint(side, &mut events);
                 }
+                // The din runs its own clock here, at the sim's subOrder 11.
+                // That is BEFORE Yawn at 19, which is exactly why a Yawn
+                // coming due on the turn an Uproar ends still puts its
+                // victim under: by then there is no noise left to stop it.
+                // Counting the turns down at the moment the mon shouted
+                // instead ended the racket half a turn early, and a Grass
+                // Whistle aimed at it landed that it should have slept
+                // straight through.
+                if let Some((slot_i, left)) = self.sides[side].mon().rampage {
+                    let uproar = self.sides[side]
+                        .mon()
+                        .moves
+                        .get(slot_i as usize)
+                        .is_some_and(|m| m.entry.id == "uproar");
+                    if uproar {
+                        let mon = self.sides[side].mon_mut();
+                        let left = left.saturating_sub(1);
+                        if left == 0 {
+                            mon.rampage = None;
+                            mon.uproar_ending = true;
+                        } else {
+                            mon.rampage = Some((slot_i, left));
+                        }
+                    }
+                }
                 // Yawn rides THIS mon's residual slot, right after its bind:
                 // a faster mon's yawn resolves before a slower mon's poison,
                 // and a battle already decided leaves the drowsy awake.
@@ -2700,7 +2725,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // Uproar keeps counting its own turns down as it attacks;
                 // the Thrash family hands its countdown to the residual
                 // phase and stores the swings owed here instead.
-                mon.rampage = Some((index as u8, if uproar { total - 1 } else { total }));
+                mon.rampage = Some((index as u8, total));
                 mon.rampage_dur = 2;
                 mon.locked_move = Some(slot.entry.id);
             }
@@ -4119,20 +4144,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // This runs BEFORE the thaw below, matching the reference sim: a
         // Fire move's burn chance is blocked by the freeze it is about to
         // cure, because the target still carries frz when secondaries apply.
-        // An Uproar counts its turns down as it goes; the Thrash family's
-        // lock is spent in the residual phase instead, so that a swing lost
-        // to sleep or a flinch still runs the clock out on schedule.
-        if slot.entry.id == "uproar" {
-            if let Some((slot_i, left)) = self.sides[side].mon().rampage {
-                let mon = self.sides[side].mon_mut();
-                if left == 0 {
-                    mon.rampage = None;
-                    mon.uproar_ending = true;
-                } else {
-                    mon.rampage = Some((slot_i, left - 1));
-                }
-            }
-        }
 
         // Fury Cutter ramps on every landed use, resetting elsewhere.
         if slot.entry.id == "furycutter" {
