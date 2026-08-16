@@ -1072,7 +1072,7 @@
   "type": "Bug"
  },
  "struggle": {
-  "accuracy": 0,
+  "accuracy": 100,
   "effect": "RECOIL_EFFECT",
   "name": "Struggle",
   "power": 50,

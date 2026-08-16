@@ -493,6 +493,13 @@ impl<'a> Battle<'a> {
                 if m.out_of_pp() {
                     return move_by_id("struggle");
                 }
+                // A Disabled chosen slot is offered only as Struggle at the
+                // sim's request step — order and priority follow suit.
+                if m.volatile.has(Volatile::DISABLED)
+                    && m.volatile.disabled_slot == (slot as usize).min(3) as u8
+                {
+                    return move_by_id("struggle");
+                }
                 move_by_id(m.moves[(slot as usize).min(3)].move_id)
             }
             _ => None,
@@ -501,6 +508,18 @@ impl<'a> Battle<'a> {
 
     fn do_battle_turn(&mut self) {
         self.turn_count += 1;
+        // The sim's Struggle-instead-of-Disabled-move decision is made at
+        // REQUEST time — before any of this turn's actions. A Disable that
+        // lands mid-turn does not rewrite an already-made choice (the
+        // victim's own next action ticks it away instead).
+        let disabled_choice: [bool; 2] = [0, 1].map(|i| {
+            locked_move_id(&self.sides[i]).is_none()
+                && matches!(self.pending_choice[i], Some(Choice::Move(sl)) if {
+                    let m = self.sides[i].active();
+                    m.volatile.has(Volatile::DISABLED)
+                        && m.volatile.disabled_slot == sl.min(3)
+                })
+        });
         // Determine action order: switches first; between moves, priority
         // bracket (Quick Attack +1, Counter -1), then modified Speed, then a
         // coin flip on ties.
@@ -550,9 +569,17 @@ impl<'a> Battle<'a> {
         }
 
         // Selections register before either side moves (Counter reads the
-        // opponent's selected move).
+        // opponent's selected move). A sleeping or frozen mon is on the
+        // sim's "fight" pseudo-choice and does NOT re-register — its stale
+        // register is exactly what its wake-turn priority reads (a mon
+        // asleep since battle start has selected nothing, priority 0).
         for side in 0..2 {
-            if matches!(self.pending_choice[side], Some(Choice::Move(_))) {
+            if matches!(self.pending_choice[side], Some(Choice::Move(_)))
+                && !matches!(
+                    self.sides[side].active().status,
+                    Status::Sleep(_) | Status::Freeze
+                )
+            {
                 if let Some(mv) = self.effective_move(side) {
                     self.sides[side].last_selected_move = mv.id;
                 }
@@ -578,13 +605,13 @@ impl<'a> Battle<'a> {
                     }
                 }
                 Some(Choice::Move(slot)) => {
-                    self.run_move_action(side, Some(slot));
+                    self.run_move_action(side, Some(slot), disabled_choice[side]);
                 }
                 None => {
                     // No choice (e.g. mon fainted before choice was set);
                     // honor a locked-in move if present.
                     if locked_move_id(&self.sides[side]).is_some() {
-                        self.run_move_action(side, None);
+                        self.run_move_action(side, None, false);
                     }
                 }
             }
@@ -616,17 +643,19 @@ impl<'a> Battle<'a> {
 
     /// One side's move action: pre-move gate, execution (locked / struggle /
     /// chosen slot), then Gen 1's after-action residual damage.
-    fn run_move_action(&mut self, side: usize, chosen_slot: Option<u8>) {
+    fn run_move_action(&mut self, side: usize, chosen_slot: Option<u8>, disabled_choice: bool) {
         let locked = locked_move_id(&self.sides[side]);
-        // For the Disable check, the relevant slot is the one about to fire.
+        // For the Disable check, the relevant slot is the one about to fire
+        // (a Struggle choice fires no slot, so the gate has nothing to block).
         let disable_slot = match locked {
             Some(id) => self.sides[side].active().find_move_slot(id),
+            None if disabled_choice => None,
             None => chosen_slot,
         };
         if pre_move_check(&mut self.rng, &mut self.field, &mut self.sides, side, disable_slot, &mut self.log) {
             if let Some(id) = locked_move_id(&self.sides[side]) {
                 let _ = execute_locked_move(&mut self.rng, &mut self.field, &mut self.sides, side, id, &mut self.log);
-            } else if self.sides[side].active().out_of_pp() {
+            } else if self.sides[side].active().out_of_pp() || disabled_choice {
                 let _ = execute_struggle(&mut self.rng, &mut self.field, &mut self.sides, side, &mut self.log);
             } else if let Some(slot) = chosen_slot {
                 let _ = execute_move(
@@ -641,9 +670,22 @@ impl<'a> Battle<'a> {
         }
         // A knockout that ends the battle ends it NOW: the winner's burn or
         // poison never ticks after the decisive hit. Found by the gen 1 turn
-        // fuzzer against the reference sim.
+        // fuzzer against the reference sim. One exception: a SEEDED actor
+        // that just fainted to its own move still pays its Leech Seed tick,
+        // healing the seeder in full (the sim's after-move residual runs
+        // before the faint resolves).
         if !self.team_wiped(0) && !self.team_wiped(1) {
             after_action_residuals(&mut self.field, &mut self.sides, side, &mut self.log);
+        } else if self.sides[side].active().fainted()
+            && self.sides[side].active().volatile.has(Volatile::LEECH_SEEDED)
+            && !self.sides[1 - side].active().fainted()
+        {
+            crate::dispatch::leech_seed_residual(
+                &mut self.field,
+                &mut self.sides,
+                side,
+                &mut self.log,
+            );
         }
     }
 

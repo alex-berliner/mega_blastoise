@@ -456,8 +456,8 @@ fn fuzz_gen1_single_hits() {
 
     let moves = vanilla_moves(1, false, |id| {
         use gen1_battle::MoveEffectKind::{
-            Counter, CrashOnMiss, DreamEater, FlatDamage, HalfHp, LevelDamage, Ohko, ThrashLock,
-            TwoTurn, Wrap,
+            Counter, CrashOnMiss, DreamEater, FlatDamage, HalfHp, LevelDamage, Ohko, Psywave,
+            Rage, ThrashLock, TwoTurn, Wrap,
         };
         gen1_battle::move_by_id(id)
             .map(|m| {
@@ -468,7 +468,7 @@ fn fuzz_gen1_single_hits() {
                     && !matches!(
                         m.effect_kind,
                         FlatDamage | LevelDamage | HalfHp | Ohko | TwoTurn | Counter | DreamEater
-                            | Wrap | ThrashLock | CrashOnMiss
+                            | Wrap | ThrashLock | CrashOnMiss | Rage | Psywave
                     )
             })
             .unwrap_or(false)

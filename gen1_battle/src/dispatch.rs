@@ -256,13 +256,6 @@ fn run_move(
             a.volatile.locked_acc = 255;
         }
     }
-    if ek == Rage && !sides[attacker_side].active().volatile.has(Volatile::RAGE) {
-        let a = sides[attacker_side].active_mut();
-        a.volatile.set(Volatile::RAGE);
-        a.volatile.multi_turn_move = mv.id; // locked in for the rest of the battle
-        a.volatile.multi_turn_turns = 255;
-        a.volatile.locked_acc = 255;
-    }
 
     // Gen 1 bug: sleep moves against a recharging target skip the accuracy
     // roll and overwrite any existing status.
@@ -396,10 +389,13 @@ fn miss_aftermath(
     if mv.effect_kind == MoveEffectKind::TwoTurn
         && sides[attacker_side].active().volatile.has(Volatile::CHARGING)
     {
-        sides[attacker_side]
-            .active_mut()
-            .volatile
-            .clear(Volatile::CHARGING | Volatile::INVULNERABLE);
+        let a = sides[attacker_side].active_mut();
+        a.volatile.clear(Volatile::CHARGING | Volatile::INVULNERABLE);
+        // The lock id goes with it — a stale multi_turn_move here read as
+        // "still locked" and let a freshly Disabled Dig recharge instead
+        // of Struggling. Found by the gen 1 turn fuzzer.
+        a.volatile.multi_turn_move = "";
+        a.volatile.multi_turn_turns = 0;
     }
     match mv.effect_kind {
         MoveEffectKind::CrashOnMiss => {
@@ -609,27 +605,43 @@ fn apply_effect(
             let res = deal_damage(field, sides, defender_side, dmg, log);
             note_hit(&mut outcome, res, dmg);
             outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
+            if !outcome.fainted_target {
+                rage_build(sides, defender_side, log);
+            }
         }
         FlatDamage => {
             let dmg = mv.effect_param0 as u16;
             let res = deal_damage(field, sides, defender_side, dmg, log);
             note_hit(&mut outcome, res, dmg);
             outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
+            if !outcome.fainted_target {
+                rage_build(sides, defender_side, log);
+            }
         }
         Psywave => {
             // damage = random(1 .. 1.5×level - 1); the cartridge softlocks at
-            // levels 0/1/171 — we just floor the range at 1 instead.
+            // levels 0/1/171 — we just floor the range at 1 instead. Under a
+            // script the secondary knob picks the floor or the ceiling,
+            // matching the harness's pin of the sim's random(1, 1.5×level).
             let lvl = sides[attacker_side].active().level as u32;
             let cap = (lvl * 3 / 2).saturating_sub(1).max(1);
-            let dmg = (rng.range(cap) + 1) as u16;
+            let dmg = match rng.forced_secondary() {
+                Some(true) => 1u16,
+                Some(false) => cap as u16,
+                None => (rng.range(cap) + 1) as u16,
+            };
             let res = deal_damage(field, sides, defender_side, dmg, log);
             note_hit(&mut outcome, res, dmg);
             outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
+            if !outcome.fainted_target {
+                rage_build(sides, defender_side, log);
+            }
         }
         HalfHp => {
             let dmg = (sides[defender_side].active().hp_cur / 2).max(1);
             let res = deal_damage(field, sides, defender_side, dmg, log);
             note_hit(&mut outcome, res, dmg);
+            rage_build(sides, defender_side, log);
         }
         HealHalf => {
             let (cur, max) = {
@@ -756,6 +768,9 @@ fn apply_effect(
                 let res = deal_damage(field, sides, defender_side, dmg, log);
                 note_hit(&mut outcome, res, dmg);
                 outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
+                if !outcome.fainted_target {
+                    rage_build(sides, defender_side, log);
+                }
             } else {
                 fail_log(sides, attacker_side, log);
             }
@@ -885,7 +900,13 @@ fn apply_effect(
             {
                 fail_log(sides, attacker_side, log);
             } else {
-                let pick = candidates[(rng.range(candidates.len() as u32)) as usize];
+                // The sim samples a random PP-bearing slot; the pinned
+                // harness sample returns the FIRST, so a script does too.
+                let pick = if rng.force.is_some() {
+                    candidates[0]
+                } else {
+                    candidates[(rng.range(candidates.len() as u32)) as usize]
+                };
                 let turns = if rng.force.is_some() { 1 } else { (rng.range(8) as u8) + 1 }; // 1..=8
                 let d = sides[defender_side].active_mut();
                 d.volatile.set(Volatile::DISABLED);
@@ -1067,8 +1088,20 @@ fn apply_effect(
             }
         }
         Rage | ThrashLock => {
-            // Locking was handled pre-accuracy; the move itself just hits.
+            // Thrash's lock was handled pre-accuracy; Rage's is the sim's
+            // self-volatile — it only arms once the move actually lands
+            // (a first-use miss leaves the user free, and paying PP again).
             outcome = damage_step(rng, field, sides, attacker_side, mv, false, None, log, outcome);
+            if mv.effect_kind == Rage
+                && outcome.hit
+                && !sides[attacker_side].active().volatile.has(Volatile::RAGE)
+            {
+                let a = sides[attacker_side].active_mut();
+                a.volatile.set(Volatile::RAGE);
+                a.volatile.multi_turn_move = mv.id; // locked for the battle
+                a.volatile.multi_turn_turns = 255;
+                a.volatile.locked_acc = 255;
+            }
         }
         NoOp => {
             fail_log(sides, attacker_side, log);
@@ -1672,22 +1705,30 @@ pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: us
     }
 
     if sides[side].active().hp_cur > 0 && sides[side].active().volatile.has(Volatile::LEECH_SEEDED) {
-        // Leech Seed shares — and INCREMENTS — the toxic counter (Gen 1).
-        let mult = if sides[side].active().volatile.has(Volatile::TOX_COUNTER) {
-            let m = sides[side].active_mut();
-            m.volatile.toxic_counter = m.volatile.toxic_counter.saturating_add(1);
-            m.volatile.toxic_counter as u16
-        } else {
-            1
-        };
-        let drain = base.saturating_mul(mult);
-        direct_hp_loss(field, sides, side, drain, false, log);
-        // The seeder heals the full drain amount, not capped by the victim's
-        // remaining HP (Gen 1 quirk).
-        let healer = 1 - side;
-        if !sides[healer].active().fainted() && !sides[healer].active().empty() {
-            heal_mon(sides, healer, drain, log);
-        }
+        leech_seed_residual(field, sides, side, log);
+    }
+}
+
+/// The seeded mon's Leech Seed tick: drain (a no-op on a corpse) and the
+/// seeder's heal — which the sim pays IN FULL even when the seeded mon just
+/// fainted to its own Explosion, as long as the seeder stands.
+pub fn leech_seed_residual(field: &mut Field, sides: &mut [Side; 2], side: usize, log: &mut Log) {
+    let base = (sides[side].active().hp_max / 16).max(1);
+    // Leech Seed shares — and INCREMENTS — the toxic counter (Gen 1).
+    let mult = if sides[side].active().volatile.has(Volatile::TOX_COUNTER) {
+        let m = sides[side].active_mut();
+        m.volatile.toxic_counter = m.volatile.toxic_counter.saturating_add(1);
+        m.volatile.toxic_counter as u16
+    } else {
+        1
+    };
+    let drain = base.saturating_mul(mult);
+    direct_hp_loss(field, sides, side, drain, false, log);
+    // The seeder heals the full drain amount, not capped by the victim's
+    // remaining HP (Gen 1 quirk).
+    let healer = 1 - side;
+    if !sides[healer].active().fainted() && !sides[healer].active().empty() {
+        heal_mon(sides, healer, drain, log);
     }
 }
 

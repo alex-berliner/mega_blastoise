@@ -182,6 +182,12 @@ function scriptRandomness(battle, script) {
       // bottom, otherwise the top.
       return ((battle.__act ?? battle.__cur).secondary) ? 0 : Math.max(0, a - 1);
     }
+    if (a === 1 && b > 9) {
+      // Gen 1 Psywave's random(1, 1.5*level): the secondary knob picks the
+      // floor (1) or the ceiling (b-1). Sleep turns are random(1,8) and
+      // keep the minimum below.
+      return ((battle.__act ?? battle.__cur).secondary) ? 1 : b - 1;
+    }
     return a; // two-arg minimums: multi-hit counts, sleep turns
   };
 
@@ -493,7 +499,7 @@ function runMovelist(sc) {
         'recover', 'softboiled', 'reflect', 'lightscreen', 'haze', 'growth',
         'defensecurl', 'minimize', 'focusenergy', 'splash', 'teleport',
         'toxic', 'poisonpowder', 'sleeppowder', 'stunspore', 'substitute', 'rest',
-        'roar', 'whirlwind',
+        'roar', 'whirlwind', 'spore', 'mist', 'conversion', 'disable',
       ]).includes(move.id);
       const weather = sc.gen >= 3 &&
         ['sunnyday', 'raindance', 'sandstorm', 'hail'].includes(move.id);
@@ -514,7 +520,7 @@ function runMovelist(sc) {
     // callback stays out. OHKO moves KO on their scripted hit.
     const g1plain = sc.gen === 1 && [
       'payday', 'blizzard', 'thunder', 'dreameater', 'highjumpkick',
-      'jumpkick', 'lowkick', 'triattack',
+      'jumpkick', 'lowkick', 'triattack', 'rage', 'psywave',
     ].includes(move.id);
     const fixedDamage = typeof move.damage === 'number' || move.damage === 'level' ||
       move.id === 'superfang';
@@ -536,7 +542,8 @@ function runMovelist(sc) {
     if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish
         && !g3special) continue;
     if (move.basePowerCallback && !g3special) continue;
-    if ((move.damageCallback || move.damage) && !fixedDamage && !counterish && !g3special) continue;
+    if ((move.damageCallback || move.damage) && !fixedDamage && !counterish && !g3special
+        && !g1plain) continue;
     if (move.mindBlownRecoil) continue;
     if (move.willCrit !== undefined && !counterish) continue;
     if ((move.hasCrashDamage && !g3special && !g1plain) || move.struggleRecoil) continue;
