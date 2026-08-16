@@ -458,7 +458,13 @@ impl<'a> Battle<'a> {
                         let s = &self.sides[i];
                         self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
                     }
-                    after_switch_in(&mut self.field, &mut self.sides, i, &mut self.log);
+                    crate::dispatch::after_switch_in_with(
+                        &mut self.field,
+                        &mut self.sides,
+                        i,
+                        &mut self.log,
+                        false,
+                    );
                 }
             } else {
                 // Auto-pick first alive.
@@ -472,7 +478,13 @@ impl<'a> Battle<'a> {
                         let s = &self.sides[i];
                         self.log.push_board(format!("switch|player:{}|name:{}", s.player_id, s.active().name));
                     }
-                    after_switch_in(&mut self.field, &mut self.sides, i, &mut self.log);
+                    crate::dispatch::after_switch_in_with(
+                        &mut self.field,
+                        &mut self.sides,
+                        i,
+                        &mut self.log,
+                        false,
+                    );
                 }
             }
         }
@@ -508,6 +520,22 @@ impl<'a> Battle<'a> {
 
     fn do_battle_turn(&mut self) {
         self.turn_count += 1;
+        // A mon frozen or asleep when the choice was made is on the sim's
+        // "fight" pseudo-choice: its request offers that one entry, and
+        // whatever the player picks resolves to the move it last SELECTED
+        // while it could still choose. This matters the moment it thaws
+        // mid-turn — off a Fire move, say — and gets to act after all: the
+        // move that comes out is the old selection, not the new pick.
+        let stale_choice: [&'static str; 2] = [0, 1].map(|i| {
+            if matches!(
+                self.sides[i].active().status,
+                Status::Sleep(_) | Status::Freeze
+            ) {
+                self.sides[i].last_selected_move
+            } else {
+                ""
+            }
+        });
         // The sim's Struggle-instead-of-Disabled-move decision is made at
         // REQUEST time — before any of this turn's actions. A Disable that
         // lands mid-turn does not rewrite an already-made choice (the
@@ -605,6 +633,18 @@ impl<'a> Battle<'a> {
                     }
                 }
                 Some(Choice::Move(slot)) => {
+                    // Frozen or asleep at choice time: the old selection is
+                    // what comes out, whatever slot was pressed.
+                    let slot = match stale_choice[side] {
+                        "" => slot,
+                        id => self.sides[side]
+                            .active()
+                            .moves
+                            .iter()
+                            .position(|m| m.move_id == id)
+                            .map(|p| p as u8)
+                            .unwrap_or(slot),
+                    };
                     self.run_move_action(side, Some(slot), disabled_choice[side]);
                 }
                 None => {
@@ -697,7 +737,14 @@ impl<'a> Battle<'a> {
         // unleasher's own poison/burn/seed afterwards (it can kill them
         // both). A normal decisive hit ends the turn first.
         let unleashed = was_biding && !self.sides[side].active().volatile.has(Volatile::BIDING);
-        if (!self.team_wiped(0) && !self.team_wiped(1))
+        // ANY faint cancels the rest of the turn in this era, residuals
+        // included: the sim's faintMessages runs `this.queue.clear()` for
+        // gen 1, and the residual phase is just another queued action. A
+        // one-mon-a-side fuzz could not tell this from "a team was wiped",
+        // because there the two were the same thing.
+        let anyone_down =
+            self.sides[0].active().fainted() || self.sides[1].active().fainted();
+        if !anyone_down
             || (unleashed
                 && !self.sides[side].active().fainted()
                 && !self.team_wiped(side))

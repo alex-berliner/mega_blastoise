@@ -140,6 +140,12 @@ pub struct Mon {
     /// Current sleep came from the mon's own Rest — exempt from Sleep Clause
     /// Mod. Persists across switches (sleep does too), ignored when awake.
     pub rest_sleep: bool,
+    /// What Mimic overwrote: the slot, the move that used to be there, and
+    /// its maximum PP. The sim keeps the copy in a `virtual` move slot and
+    /// restores `baseMoveSlots` when the mon leaves the field or faints, so
+    /// the borrowed move goes back to being Mimic — carrying whatever PP the
+    /// slot has left, which the two arrays share.
+    pub mimic_backup: Option<(u8, &'static str, u8)>,
 }
 
 impl Default for Mon {
@@ -162,6 +168,7 @@ impl Default for Mon {
             volatile: Volatile::default(),
             last_move_used: "",
             rest_sleep: false,
+            mimic_backup: None,
         }
     }
 }
@@ -231,6 +238,7 @@ impl Mon {
             volatile: Volatile::default(),
             last_move_used: "",
             rest_sleep: false,
+            mimic_backup: None,
         })
     }
 }

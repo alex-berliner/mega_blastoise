@@ -1130,3 +1130,434 @@ fn fuzz_gen3_battles() {
     }
     assert_eq!(bad, 0, "{bad} gen3 battle fuzz cases disagree — replay with the seed above");
 }
+
+// ── Gen 1: whole battles — teams, switching, played to a winner ──────────────
+
+/// The Gen 1 counterpart of [`fuzz_gen3_battles`]: two parties, voluntary
+/// switches, faints and replacements, checked against the reference sim.
+///
+/// Same shape as the Gen 3 suite — the cartridge engine plays first and its
+/// own choices are what the sim replays — but the era brings its own rules.
+/// The one that shows up immediately is that ANY faint clears the whole queue
+/// here, not merely the actions of the mons still standing.
+#[test]
+fn fuzz_gen1_battles() {
+    if !armed() {
+        return;
+    }
+    use gen1_battle::testing::{apply_status_drop, SeatForce, Status as G1Status};
+    use gen1_battle::{MonData, MoveSlot as G1MoveSlot, PublicCoreBattle, Request, TeamData};
+    use mega_blastoise_core::{battle_options_with_seed, demo_engine_opts, FlashDataStore};
+
+    let moves = vanilla_moves(1, true, |id| gen1_battle::move_by_id(id).is_some());
+    let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
+    assert!(moves.len() > 30, "gen1 battle pool too small: {}", moves.len());
+    let species: Vec<&'static str> = gen1_battle::SPECIES.iter().map(|s| s.id).collect();
+
+    let mut fz = Fuzz::new("gen1-battles");
+    let data = FlashDataStore::new();
+    let statuses: [Option<&str>; 6] =
+        [None, None, None, Some("brn"), Some("psn"), Some("par")];
+
+    let mut scenarios = Vec::new();
+    let mut expected = Vec::new();
+    let mut skipped = 0usize;
+
+    for _ in 0..fuzz_n() / 4 {
+        let team_n = 2 + fz.below(3) as usize;
+        let level = 40 + fz.below(61) as u8;
+
+        // Two teams. Statuses stay off sleep and freeze: both stall the
+        // battle on clocks the two engines pin differently, and the freeze
+        // side would also need the RBY thaw glitch the engine does not model.
+        let mut specs: [Vec<Value>; 2] = [Vec::new(), Vec::new()];
+        let mut members: [Vec<MonData>; 2] = [Vec::new(), Vec::new()];
+        for seat in 0..2 {
+            for _ in 0..team_n {
+                let id = *fz.pick(&species);
+                let sp = gen1_battle::SPECIES.iter().find(|s| s.id == id).unwrap();
+                let m1 = fz.pick(&moves).clone();
+                let mut m2 = fz.pick(&moves).clone();
+                while m2 == m1 {
+                    m2 = fz.pick(&moves).clone();
+                }
+                let st = {
+                    let pick = *fz.pick(&statuses);
+                    let has =
+                        |t: gen1_battle::Type| sp.primary_type == t || sp.secondary_type == t;
+                    match pick {
+                        Some("brn") if has(gen1_battle::Type::Fire) => None,
+                        Some("psn") if has(gen1_battle::Type::Poison) => None,
+                        other => other,
+                    }
+                };
+                // The cartridge engine builds every mon at 15 DVs and full
+                // stat experience; the sim needs telling, in its own units.
+                specs[seat].push(json!({
+                    "species": id, "level": level, "moves": [&m1, &m2], "status": st,
+                    "ivs": {"hp": 30, "atk": 30, "def": 30, "spa": 30, "spd": 30, "spe": 30},
+                    "evs": {"hp": 255, "atk": 255, "def": 255, "spa": 255, "spd": 255, "spe": 255},
+                }));
+                members[seat].push(MonData {
+                    name: String::new(),
+                    species: sp.name.to_string(),
+                    level,
+                    moves: vec![
+                        G1MoveSlot { name: m1.clone(), id: m1, typ: String::new(), pp: 0, max_pp: 0, disabled: false, target: 0 },
+                        G1MoveSlot { name: m2.clone(), id: m2, typ: String::new(), pp: 0, max_pp: 0, disabled: false, target: 0 },
+                    ],
+                    ivs: Default::default(),
+                    evs: Default::default(),
+                    gender: None,
+                    nature: None,
+                    ability: Some(String::from("No Ability")),
+                    item: None,
+                });
+            }
+        }
+
+        let mut battle =
+            PublicCoreBattle::new(battle_options_with_seed(1), &data, demo_engine_opts()).unwrap();
+        let [t0, t1] = members;
+        battle.update_team("p1", TeamData { members: t0, ..Default::default() }).unwrap();
+        battle.update_team("p2", TeamData { members: t1, ..Default::default() }).unwrap();
+        battle.start().unwrap();
+        {
+            let sides = battle.testing_sides_mut();
+            for seat in 0..2 {
+                for (j, spec) in specs[seat].iter().enumerate() {
+                    let mon = &mut sides[seat].team[j];
+                    mon.status = match spec["status"].as_str() {
+                        Some("brn") => G1Status::Burn,
+                        Some("psn") => G1Status::Poison,
+                        Some("par") => G1Status::Paralysis,
+                        _ => G1Status::None,
+                    };
+                    apply_status_drop(mon);
+                }
+            }
+            // No Speed ties anywhere in the two parties: the tie-break is
+            // each side's own RNG and cannot be pinned.
+            let mut speeds: Vec<u16> = (0..2)
+                .flat_map(|s| (0..team_n).map(move |j| (s, j)))
+                .map(|(s, j)| sides[s].team[j].modified[4])
+                .collect();
+            speeds.sort_unstable();
+            let before = speeds.len();
+            speeds.dedup();
+            if speeds.len() != before {
+                skipped += 1;
+                continue;
+            }
+            // The drop above was only needed to compare Speeds. On the bench
+            // it has to come back off: the engine re-applies it to fresh
+            // stats when the mon actually walks on (which is what makes a
+            // switch out and back a no-op), so leaving it here would halve
+            // a burned Attack twice over.
+            for seat in 0..2 {
+                for j in 1..team_n {
+                    let mon = &mut sides[seat].team[j];
+                    mon.modified = mon.stats;
+                }
+            }
+        }
+        let _ = battle.new_log_entries().count(); // drop the setup log
+
+        let n_turns = 2 + fz.below(5) as usize;
+        let mut turn_json: Vec<Value> = Vec::new();
+        let mut our_order: Vec<&str> = Vec::new();
+        let mut our_states: Vec<Vec<Vec<String>>> = Vec::new();
+        let mut our_log: Vec<String> = Vec::new();
+        for _ in 0..n_turns {
+            if battle.ended() {
+                break;
+            }
+            let mut seats: [Value; 2] = [Value::Null, Value::Null];
+            let mut lines: [String; 2] = [String::new(), String::new()];
+            for seat in 0..2 {
+                let pid = if seat == 0 { "p1" } else { "p2" };
+                let (active, alive): (usize, Vec<usize>) = {
+                    let d = battle.player_data(pid).unwrap();
+                    let active = d
+                        .mons
+                        .iter()
+                        .position(|m| m.active)
+                        .unwrap_or(0);
+                    let alive = d
+                        .mons
+                        .iter()
+                        .enumerate()
+                        .filter(|(j, m)| *j != active && m.hp > 0)
+                        .map(|(j, _)| j)
+                        .collect();
+                    (active, alive)
+                };
+                // What the engine's own request says is legal — the same
+                // view the sim builds: a mon locked into Rage or a charge
+                // move is trapped, and Disable greys its slot out.
+                let (trapped, locked, usable): (bool, bool, Vec<usize>) = {
+                    let mut t = false;
+                    let mut l = false;
+                    let mut u: Vec<usize> = Vec::new();
+                    for (rid, req) in battle.active_requests() {
+                        if rid != pid {
+                            continue;
+                        }
+                        if let Request::Turn(tr) = req {
+                            if let Some(a) = tr.active.first() {
+                                t = a.trapped;
+                                l = a.locked_into_move;
+                                u = a
+                                    .moves
+                                    .iter()
+                                    .enumerate()
+                                    .filter(|(_, m)| !m.disabled)
+                                    .map(|(j, _)| j)
+                                    .collect();
+                            }
+                        }
+                    }
+                    if u.is_empty() {
+                        u.push(0);
+                    }
+                    (t, l, u)
+                };
+                let want_switch = fz.chance(25);
+                let switching = !alive.is_empty() && !trapped && want_switch;
+                let pick = fz.below(2) as usize;
+                let slot = if switching {
+                    *fz.pick(&alive)
+                } else if locked {
+                    // A locked mon's request offers exactly one move, and
+                    // that is what the harness will send.
+                    0
+                } else if usable.contains(&pick) {
+                    pick
+                } else {
+                    usable[0]
+                };
+                let _ = active;
+                lines[seat] =
+                    if switching { format!("switch {slot}") } else { format!("move {slot}") };
+                seats[seat] = json!({
+                    "action": if switching { "switch" } else { "move" },
+                    "slot": slot,
+                    "hit": !fz.chance(10),
+                    "crit": fz.chance(20),
+                    "roll": 217 + fz.below(39) as u8,
+                    "secondary": fz.chance(40),
+                    "immobile": fz.chance(15),
+                    "hits": 0,
+                    "selfhit": fz.chance(50),
+                });
+            }
+            let seat_force = |v: &Value| SeatForce {
+                hit: Some(v["hit"].as_bool().unwrap()),
+                crit: Some(v["crit"].as_bool().unwrap()),
+                roll: Some(v["roll"].as_u64().unwrap() as u8),
+                secondary: Some(v["secondary"].as_bool().unwrap()),
+                immobile: Some(v["immobile"].as_bool().unwrap()),
+                // Pinned to the table floor, matching the harness's `hits ||
+                // 2`. It cannot be drawn per move here the way the turn
+                // suite does it, because Mimic can change what a slot holds
+                // between the draw and the use.
+                hits: Some(2),
+                selfhit: Some(v["selfhit"].as_bool().unwrap()),
+            };
+            battle.set_turn_force(Some([seat_force(&seats[0]), seat_force(&seats[1])]));
+            battle.set_player_choice("p1", &lines[0]).unwrap();
+            if !battle.ended() {
+                let _ = battle.set_player_choice("p2", &lines[1]);
+            }
+            // Answer any forced replacement the same way the harness does:
+            // the lowest-numbered living team slot that is not already out.
+            let mut guard = 0;
+            while !battle.ended() && guard < 12 {
+                guard += 1;
+                let pending: Vec<String> = battle
+                    .active_requests()
+                    .filter(|(_, r)| matches!(r, Request::Switch(_)))
+                    .map(|(pid, _)| pid.to_string())
+                    .collect();
+                if pending.is_empty() {
+                    break;
+                }
+                for pid in pending {
+                    let d = battle.player_data(&pid).unwrap();
+                    let next = d
+                        .mons
+                        .iter()
+                        .enumerate()
+                        .find(|(_, m)| !m.active && m.hp > 0)
+                        .map(|(j, _)| j);
+                    match next {
+                        Some(j) => {
+                            let _ = battle.set_player_choice(&pid, &format!("switch {j}"));
+                        }
+                        None => break,
+                    }
+                }
+            }
+            our_log.push(format!(
+                "-- turn {}: p1 {} p2 {}",
+                turn_json.len(),
+                lines[0],
+                lines[1]
+            ));
+            for line in battle.new_log_entries() {
+                if line.starts_with("move|mon:") {
+                    our_order.push(if line.contains(",p1,") { "p1" } else { "p2" });
+                }
+                our_log.push(format!("   {line}"));
+            }
+            our_states.push(
+                ["p1", "p2"]
+                    .iter()
+                    .map(|pid| {
+                        battle
+                            .player_data(pid)
+                            .unwrap()
+                            .mons
+                            .iter()
+                            .map(|m| {
+                                format!(
+                                    "{}/{} {}{} pp[{}]",
+                                    m.hp,
+                                    m.max_hp,
+                                    m.status.clone().unwrap_or_else(|| "-".into()),
+                                    if m.active && m.hp > 0 { " *" } else { "" },
+                                    m.moves
+                                        .iter()
+                                        .map(|s| format!("{}:{}", s.id, s.pp))
+                                        .collect::<Vec<_>>()
+                                        .join(","),
+                                )
+                            })
+                            .collect()
+                    })
+                    .collect(),
+            );
+            turn_json.push(json!({"p1": seats[0], "p2": seats[1]}));
+        }
+
+        scenarios.push(json!({
+            "kind": "battle", "gen": 1,
+            "p1": {"team": specs[0]},
+            "p2": {"team": specs[1]},
+            "turns": turn_json,
+        }));
+        expected.push((battle, our_order, our_states, our_log));
+    }
+
+    if skipped > 0 {
+        eprintln!("[gen1-battles] {skipped} cases skipped on a Speed tie");
+    }
+    let results = showdown(&Value::Array(scenarios.clone()));
+    let mut bad = 0;
+    for (i, ((battle, our_order, our_states, our_log), got)) in expected.iter().zip(&results).enumerate() {
+        if got.get("error").is_some() {
+            eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
+            bad += 1;
+            continue;
+        }
+        let mut diffs: Vec<String> = Vec::new();
+        for e in got["errors"].as_array().map(|a| a.as_slice()).unwrap_or(&[]) {
+            diffs.push(format!("harness rejected a choice: {e}"));
+        }
+        for (seat, who) in ["p1", "p2"].iter().enumerate() {
+            let ours = battle.player_data(who).unwrap();
+            let theirs = got[*who].as_array().unwrap();
+            let _ = seat;
+            if theirs.len() != ours.mons.len() {
+                diffs.push(format!("{who} party size {} vs {}", ours.mons.len(), theirs.len()));
+                continue;
+            }
+            for (j, mon) in ours.mons.iter().enumerate() {
+                let want = &theirs[j];
+                let mut cmp = |field: &str, a: String, b: String| {
+                    if a != b {
+                        diffs.push(format!("{who}[{j}].{field}: ours {a} vs sim {b}"));
+                    }
+                };
+                cmp("hp", mon.hp.to_string(), want["hp"].to_string());
+                cmp("maxhp", mon.max_hp.to_string(), want["maxhp"].to_string());
+                cmp("fainted", (mon.hp == 0).to_string(), want["fainted"].to_string());
+                cmp(
+                    "active",
+                    (mon.active && mon.hp > 0).to_string(),
+                    want["active"].to_string(),
+                );
+                let their_pp = want["pp"].as_array().unwrap();
+                for (k, ms) in mon.moves.iter().enumerate() {
+                    cmp(
+                        &format!("pp[{}]", ms.id),
+                        ms.pp.to_string(),
+                        their_pp.get(k).map(|v| v.to_string()).unwrap_or_else(|| "-".into()),
+                    );
+                }
+            }
+        }
+        let their_order: Vec<&str> =
+            got["order"].as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
+        if *our_order != their_order {
+            diffs.push(format!("order: ours {our_order:?} vs sim {their_order:?}"));
+        }
+        if let Some(states) = got["states"].as_array() {
+            for (t, theirs) in states.iter().enumerate() {
+                let Some(ours) = our_states.get(t) else { break };
+                let mut turn_diff = Vec::new();
+                for (seat, who) in ["p1", "p2"].iter().enumerate() {
+                    for (j, mon) in theirs[*who].as_array().unwrap().iter().enumerate() {
+                        // The sim reports PP positionally; pair it with our
+                        // own slot ids so a divergence names the move.
+                        let ours_ids: Vec<String> = our_states[t][seat]
+                            .get(j)
+                            .and_then(|s| s.split("pp[").nth(1))
+                            .map(|s| s.trim_end_matches(']'))
+                            .map(|s| s.split(',').map(|x| x.split(':').next().unwrap_or("").to_string()).collect())
+                            .unwrap_or_default();
+                        let sim_pp: Vec<String> = mon["pp"]
+                            .as_array()
+                            .map(|a| {
+                                a.iter()
+                                    .enumerate()
+                                    .map(|(k, v)| {
+                                        format!("{}:{}", ours_ids.get(k).cloned().unwrap_or_default(), v)
+                                    })
+                                    .collect()
+                            })
+                            .unwrap_or_default();
+                        let sim = format!(
+                            "{}/{} {}{} pp[{}]",
+                            mon["hp"], mon["maxhp"],
+                            mon["status"].as_str().unwrap_or("-"),
+                            if mon["active"].as_bool().unwrap_or(false) { " *" } else { "" },
+                            sim_pp.join(","),
+                        );
+                        if ours[seat].get(j) != Some(&sim) {
+                            turn_diff.push(format!(
+                                "{who}[{j}] ours {:?} vs sim {sim:?}",
+                                ours[seat].get(j)
+                            ));
+                        }
+                    }
+                }
+                if !turn_diff.is_empty() {
+                    diffs.push(format!("FIRST DIVERGENCE on turn {t}: {}", turn_diff.join("; ")));
+                    break;
+                }
+            }
+        }
+        if !diffs.is_empty() {
+            eprintln!(
+                "GEN1 BATTLE FUZZ MISMATCH case {i}:\n  diffs:\n    {}\n  scenario: {}\n  log: {}",
+                diffs.join("\n    "),
+                scenarios[i],
+                got["log"],
+            );
+            eprintln!("  ours-log:\n{}", our_log.join("\n"));
+            bad += 1;
+        }
+    }
+    assert_eq!(bad, 0, "{bad} gen1 battle fuzz cases disagree — replay with the seed above");
+}

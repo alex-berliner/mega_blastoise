@@ -48,9 +48,19 @@ function teamMon(dex, m, slot) {
   };
 }
 
+/// The format the core engines actually play. Gen 1 runs under the random-
+/// battle clauses — a second sleep or freeze from an enemy move fails while
+/// one is already on that side — and `customgame` carries neither, so they
+/// are added explicitly rather than left to diverge.
+function formatFor(gen) {
+  return gen === 1
+    ? 'gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod'
+    : `gen${gen}customgame`;
+}
+
 function newBattle(gen, p1mon, p2mon) {
   const dex = Dex.mod(`gen${gen}`);
-  const battle = new Battle({formatid: `gen${gen}customgame`});
+  const battle = new Battle({formatid: formatFor(gen)});
   battle.setPlayer('p1', {team: [teamMon(dex, p1mon)]});
   battle.setPlayer('p2', {team: [teamMon(dex, p2mon)]});
   return battle;
@@ -334,7 +344,7 @@ function runTurn(sc) {
 /// the lowest-numbered living slot -- so neither side needs to be asked.
 function runBattle(sc) {
   const dex = Dex.mod(`gen${sc.gen}`);
-  const battle = new Battle({formatid: `gen${sc.gen}customgame`});
+  const battle = new Battle({formatid: formatFor(sc.gen)});
   battle.setPlayer('p1', {team: sc.p1.team.map((m, i) => teamMon(dex, m, i))});
   battle.setPlayer('p2', {team: sc.p2.team.map((m, i) => teamMon(dex, m, i))});
   normalizePp(battle, dex);

@@ -841,13 +841,30 @@ fn apply_effect(
                 fail_log(sides, attacker_side, log);
                 return outcome;
             }
-            // Gen 1 Mimic copies a RANDOM move of the target.
-            let new_move = target_moves[(rng.range(target_moves.len() as u32)) as usize];
+            // Gen 1 Mimic copies a RANDOM move of the target — not the one
+            // it last used, which is the later generations' rule. Under a
+            // script the pick is the first slot, matching the reference
+            // harness pinning `battle.sample` to its first entry.
+            let new_move = if rng.force.is_some() {
+                target_moves[0]
+            } else {
+                target_moves[(rng.range(target_moves.len() as u32)) as usize]
+            };
             let a = sides[attacker_side].active_mut();
             let mimic_slot = a.find_move_slot("mimic").unwrap_or(0) as usize;
             let copied_max = move_by_id(new_move).map(|m| m.pp).unwrap_or(5);
             // Current PP carries over from the Mimic slot (Gen 1).
             let cur_pp = a.moves[mimic_slot].pp;
+            // Remember what was there. The copy is a `virtual` slot in the
+            // sim: leaving the field puts the base slots back, so the mon
+            // walks on knowing Mimic again rather than the borrowed move.
+            if a.mimic_backup.is_none() {
+                a.mimic_backup = Some((
+                    mimic_slot as u8,
+                    a.moves[mimic_slot].move_id,
+                    a.moves[mimic_slot].max_pp,
+                ));
+            }
             a.moves[mimic_slot] = MoveSlot {
                 move_id: new_move,
                 pp: cur_pp,
@@ -1707,11 +1724,38 @@ pub fn reset_on_switch_out(s: &mut Side) {
     }
     s.transform_backup = None;
     let m = s.active_mut();
+    // `lastMove` belongs to the MON in the sim, and clearVolatile wipes it on
+    // the way out — so a Mirror Move aimed at a mon that just came back finds
+    // nothing to copy. The SIDE's own record survives, which is what keeps
+    // Counter's desync clause reading the right thing.
+    m.last_move_used = "";
+    // Conversion's borrowed typing goes back too: it is a volatile in the
+    // sim, so a Rhydon that copied Poison is Ground/Rock again the moment it
+    // steps off, and a Normal move meets its Rock resistance on the way back.
+    if let Some(sp) = crate::tables::species_by_id(m.species_id) {
+        m.primary_type = sp.primary_type;
+        m.secondary_type = sp.secondary_type;
+    }
+    // A mimicked slot is virtual: the base move comes back, keeping whatever
+    // PP the slot has left.
+    if let Some((slot, id, max_pp)) = m.mimic_backup.take() {
+        let cur = m.moves[slot as usize].pp;
+        m.moves[slot as usize] = MoveSlot { move_id: id, pp: cur, max_pp };
+    }
     m.volatile = Volatile::default();
     m.stages = [0; 6];
     m.modified = m.stats;
-    if m.status == Status::BadPoison {
-        m.status = Status::Poison;
+    // Toxic's counter dies with the switch (the volatile above went with it),
+    // but the STATUS is still `tox` while the mon sits on the bench. It
+    // degrades to plain poison only when it walks back ON — the sim puts
+    // `pokemon.status = "psn"` in the condition's onSwitchIn, not on the way
+    // out — so the conversion lives in `after_switch_in`.
+    // A mon carried off the field face-down loses its status with it: the
+    // sim's switchIn does `if (oldActive.fainted) oldActive.status = ""`.
+    // One that faints with nothing left to replace it never leaves, and
+    // keeps what killed it on show.
+    if m.fainted() {
+        m.status = Status::None;
     }
 }
 
@@ -1720,8 +1764,38 @@ pub fn reset_on_switch_out(s: &mut Side) {
 /// poisoned/burned mon takes an immediate 1/16 residual (flat — the toxic
 /// counter died with the switch).
 pub fn after_switch_in(field: &mut Field, sides: &mut [Side; 2], side: usize, log: &mut Log) {
+    after_switch_in_with(field, sides, side, log, true)
+}
+
+/// The same, with the immediate residual made optional. A REPLACEMENT sent in
+/// after a faint skips it: the faint already cleared the turn's queue, and
+/// that tick is only the switched-in mon being present for a residual phase
+/// which is no longer going to run.
+pub fn after_switch_in_with(
+    field: &mut Field,
+    sides: &mut [Side; 2],
+    side: usize,
+    log: &mut Log,
+    residual: bool,
+) {
+    // Somebody walking on wipes the OTHER side's last-move memory, which is
+    // why a Mirror Move cannot reach back across a KO: measured against the
+    // sim, a replacement entering leaves the opposing active's `lastMove`
+    // null. A voluntary switch does the same — it just does not show, since
+    // the foe usually moves again later in the very same turn and sets it
+    // afresh.
+    sides[1 - side].active_mut().last_move_used = "";
+
+    // Walking on turns bad poison into the ordinary kind: the sim's gen 2
+    // `tox` condition does exactly this in its onSwitchIn, and gen 1
+    // inherits it. The counter died on the way out, so the tick that follows
+    // is a flat sixteenth either way — but the STATUS the two engines report
+    // only agrees if the change happens here.
+    if sides[side].active().status == Status::BadPoison {
+        sides[side].active_mut().status = Status::Poison;
+    }
     apply_status_drop(sides[side].active_mut());
-    if matches!(sides[side].active().status, Status::Poison | Status::Burn) {
+    if residual && matches!(sides[side].active().status, Status::Poison | Status::Burn) {
         let max = sides[side].active().hp_max;
         direct_hp_loss(field, sides, side, (max / 16).max(1), false, log);
     }
@@ -1772,6 +1846,12 @@ pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: us
 /// seeder's heal — which the sim pays IN FULL even when the seeded mon just
 /// fainted to its own Explosion, as long as the seeder stands.
 pub fn leech_seed_residual(field: &mut Field, sides: &mut [Side; 2], side: usize, log: &mut Log) {
+    // A seed with nobody to feed takes nothing at all — the sim bails on
+    // "Nothing to leech into" before the victim loses a point, which is what
+    // spares a mon whose seeder has just gone down.
+    if sides[1 - side].active().fainted() || sides[1 - side].active().empty() {
+        return;
+    }
     let base = (sides[side].active().hp_max / 16).max(1);
     // Leech Seed shares — and INCREMENTS — the toxic counter (Gen 1).
     let mult = if sides[side].active().volatile.has(Volatile::TOX_COUNTER) {

@@ -218,7 +218,11 @@ fn toxic_counter_dies_on_switch() {
     let mut sides = make_sides(a, d);
     reset_on_switch_out(&mut sides[0]);
     let m = sides[0].active();
-    assert_eq!(m.status, Status::Poison, "tox downgrades to psn on switch");
+    // The COUNTER dies with the switch, flattening the damage back to a plain
+    // sixteenth. The STATUS is still Toxic on the bench: the sim degrades it
+    // to plain poison in the condition's onSwitchIn, so it changes when the
+    // mon walks back ON, not when it leaves.
+    assert_eq!(m.status, Status::BadPoison, "still Toxic on the bench");
     assert!(!m.volatile.has(Volatile::TOX_COUNTER));
     assert_eq!(m.volatile.toxic_counter, 0);
 }
