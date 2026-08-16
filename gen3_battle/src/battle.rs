@@ -180,6 +180,9 @@ pub struct Mon {
     pub mean_looked: bool,
     /// Mud/Water Sport: which attack type this mon's field-hum halves.
     pub sport: Option<Type>,
+    /// Tightening focus for a Focus Punch this turn: refuses the flinch
+    /// volatile outright. Set as the turn starts, cleared as it ends.
+    pub focusing: bool,
     /// Focus Energy is up: crits start two stages higher. Cleared by
     /// switching out.
     pub focused: bool,
@@ -263,6 +266,7 @@ impl Mon {
             mean_looked: false,
             sport: None,
             sub_hp: 0,
+            focusing: false,
             focused: false,
             minimized: false,
             seeded: false,
@@ -594,6 +598,19 @@ impl Battle {
         self.turn += 1;
         self.taken_physical = [0; 2];
         self.taken_special = [0; 2];
+
+        // A seat that chose Focus Punch starts tightening its focus before
+        // anything else happens this turn (the sim's priority charge step);
+        // while focusing, the flinch volatile is refused outright.
+        for side in 0..2 {
+            if let Choice::Move(i) = choices[side] {
+                if self.sides[side].mon().moves.get(i).is_some_and(|m| m.entry.id == "focuspunch")
+                    && !self.sides[side].mon().fainted()
+                {
+                    self.sides[side].mon_mut().focusing = true;
+                }
+            }
+        }
 
         // Switches resolve before any move, in side order. Leaving the field
         // resets a Toxic count: the poison stays, the clock starts over.
@@ -985,6 +1002,7 @@ impl Battle {
             mon.protected = false;
             mon.enduring = false;
             mon.torment_fresh = false;
+            mon.focusing = false;
         }
 
         if let Some(win) = self.winner() {
@@ -1097,19 +1115,21 @@ impl Battle {
             }
         }
         // Frozen solid: a 1-in-5 thaw each action in play (scripts pin it
-        // off, matching the reference runs). Flame Wheel and Sacred Fire are
-        // the era's two moves usable while frozen: they cure the user.
+        // off, matching the reference runs). Flame Wheel and Sacred Fire
+        // pass THROUGH this gate — but the cure itself only lands when the
+        // move actually executes, so a flinch or full paralysis after this
+        // gate leaves the user frozen.
         if self.sides[side].mon().status == Some(Status::Freeze) {
-            let self_thaw = self.sides[side].mon().moves.get(index).is_some_and(|slot| {
+            let defrost = self.sides[side].mon().moves.get(index).is_some_and(|slot| {
                 matches!(slot.entry.id, "flamewheel" | "sacredfire")
             });
             let lucky = match script {
                 Some(_) => false,
                 None => self.rng.below(5) == 0,
             };
-            if self_thaw || lucky {
+            if lucky {
                 self.sides[side].mon_mut().status = None;
-            } else {
+            } else if !defrost {
                 self.sides[side].mon_mut().charging = None;
                 self.sides[side].mon_mut().rampage = None;
                 self.sides[side].mon_mut().rolling = None;
@@ -1117,20 +1137,6 @@ impl Battle {
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Freeze });
                 return;
             }
-        }
-        // Focus Punch that was hit while focusing has already lost the turn,
-        // and the sim decides that BEFORE the flinch gate looks: the move is
-        // still logged and its PP still spent, it just does nothing.
-        if self.sides[side].mon().moves.get(index).is_some_and(|m| m.entry.id == "focuspunch")
-            && (self.taken_physical[side] > 0 || self.taken_special[side] > 0)
-        {
-            if self.sides[side].mon().moves[index].pp > 0 {
-                self.sides[side].mon_mut().moves[index].pp -= 1;
-            }
-            self.sides[side].mon_mut().stall_counter = 0;
-            events.push(Event::Used { side: side as u8 + 1, move_index: index });
-            events.push(Event::Failed { side: side as u8 + 1 });
-            return;
         }
         // Flinch: the hit that caused it resolved earlier this turn, so a
         // flinched mon that has not moved yet loses its action. Freeze and
@@ -1284,6 +1290,12 @@ impl Battle {
         if !releasing && !struggling {
             self.sides[side].mon_mut().moves[index].pp -= 1;
         }
+        // A defrosting move thaws its user the moment it actually goes off.
+        if self.sides[side].mon().status == Some(Status::Freeze)
+            && matches!(slot.entry.id, "flamewheel" | "sacredfire")
+        {
+            self.sides[side].mon_mut().status = None;
+        }
         events.push(Event::Used { side: side as u8 + 1, move_index: index });
         {
             let mon = self.sides[side].mon_mut();
@@ -1396,6 +1408,16 @@ impl Battle {
             }
         }
 
+        // Focus Punch loses its focus — and the turn — if anything hit the
+        // user before it moved. The sim checks in the move's own onTry,
+        // after every gate has passed and the PP is already spent.
+        if slot.entry.id == "focuspunch"
+            && (self.taken_physical[side] > 0 || self.taken_special[side] > 0)
+        {
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
+
         // Brick Break smashes the target's screens before it hits, unless
         // the target is outright immune.
         if slot.entry.id == "brickbreak"
@@ -1489,7 +1511,8 @@ impl Battle {
                     | StatusAction::PsychUp
             )
         );
-        if !self_targeted && self.sides[foe].mon().protected {
+        // Sketch carries no protect flag: it works through a shield.
+        if !self_targeted && slot.entry.id != "sketch" && self.sides[foe].mon().protected {
             // A shielded target disrupts a rampage: no fatigue, fresh start.
             self.sides[side].mon_mut().rampage = None;
             events.push(Event::Failed { side: side as u8 + 1 });
@@ -2603,9 +2626,9 @@ impl Battle {
                 }
             }
             StatusAction::Disable => {
+                // Disable pierces a substitute in this era.
                 let target = self.sides[foe].mon();
                 if hit
-                    && target.sub_hp == 0
                     && target.disabled_slot.is_none()
                     && target.last_used.is_some()
                     && !target.fainted()
@@ -2847,7 +2870,9 @@ impl Battle {
                     }
                 }
                 Some(SecondaryEffect::Flinch) => {
-                    if !self.sides[foe].mon().fainted() {
+                    // A mon tightening its focus cannot be flinched at all —
+                    // the volatile is refused, not merely out-prioritized.
+                    if !self.sides[foe].mon().fainted() && !self.sides[foe].mon().focusing {
                         self.sides[foe].mon_mut().flinched = true;
                     }
                 }
@@ -2934,7 +2959,9 @@ impl Battle {
             weather: 0,
         };
         let would = damage(&attacker, &defender, &m, Roll { crit, random });
-        let crash = ((would / 2) as u16).max(1);
+        // The sim clamps the crash into [1, target's max HP / 2].
+        let cap = (self.sides[foe].mon().max_hp / 2).max(1);
+        let crash = ((would / 2) as u16).max(1).min(cap);
         let user = self.sides[side].mon_mut();
         let crash = crash.min(user.hp);
         user.hp -= crash;
