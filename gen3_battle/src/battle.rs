@@ -3050,6 +3050,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 effectiveness: 100,
                 crit: false,
             });
+            // A one-hit KO is still a hit, and its victim still answers it:
+            // Rough Skin grazes the mon that just killed it, and Horn Drill
+            // is a hand on your skin like anything else.
+            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
             return;
         }
