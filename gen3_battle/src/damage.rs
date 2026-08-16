@@ -14,6 +14,7 @@
 //! The random roll is an input rather than something drawn here, so a caller
 //! can replay a turn, and so tests can pin an exact number.
 
+use crate::ability::{Chain, X0_5};
 use crate::stats::apply_stage;
 use crate::types::{category_of, effectiveness_against, Category, Type};
 
@@ -28,6 +29,10 @@ pub struct Attacker {
     pub types: (Type, Type),
     /// Burn halves physical damage in Gen 3.
     pub burned: bool,
+    /// What abilities do to the attacking stat once the stages are in.
+    pub stat_mod: Chain,
+    /// Guts takes burn's boost without burn's Attack cut.
+    pub ignores_burn: bool,
 }
 
 /// The side taking it.
@@ -40,6 +45,8 @@ pub struct Defender {
     pub types: (Type, Type),
     pub reflect: bool,
     pub light_screen: bool,
+    /// What abilities do to the defending stat once the stages are in.
+    pub stat_mod: Chain,
 }
 
 /// The move being used. Category is derived from the type, per Gen 3, unless
@@ -62,6 +69,10 @@ pub struct MoveUse {
     /// hits are declared Special in Gen 3, which flips which screen counts
     /// and skips the physical zero-floor bump.
     pub special: bool,
+    /// The sim's first damage stage, where the screens sit. Flash Fire's
+    /// boost chains in here with them rather than multiplying afterwards,
+    /// which is a point of damage on a screened hit.
+    pub phase1: Chain,
 }
 
 impl MoveUse {
@@ -145,25 +156,32 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
             d.light_screen,
         ),
     };
+    // Abilities modify the stats after the stages, the way the sim's
+    // ModifyAtk and ModifyDef events run on an already-boosted number.
+    let attack = a.stat_mod.apply(attack as u32);
+    let defence = d.stat_mod.apply(defence as u32);
     let defence = if m.halve_def && category == Category::Physical {
-        (defence / 2).max(1) as u32
+        (defence / 2).max(1)
     } else {
-        defence.max(1) as u32
+        defence.max(1)
     };
 
     // Base damage. The trailing +2 lands AFTER burn and screens halve — one
     // more ordering the parity suite caught: putting it before is a point of
     // phantom damage on every halved hit.
     let level_term = (2 * a.level as u32) / 5 + 2;
-    let mut dmg = (level_term * m.power as u32 * attack as u32 / defence) / 50;
+    let mut dmg = (level_term * m.power as u32 * attack / defence) / 50;
 
-    // Burn, then screens. A critical hit goes through a screen in Gen 3.
-    if a.burned && category == Category::Physical {
+    // Burn, then the sim's first damage stage. A critical hit goes through a
+    // screen in Gen 3, and Guts ignores the burn cut entirely.
+    if a.burned && !a.ignores_burn && category == Category::Physical {
         dmg /= 2;
     }
+    let mut phase1 = m.phase1;
     if screened && !roll.crit {
-        dmg /= 2;
+        phase1.mul(X0_5);
     }
+    dmg = phase1.apply(dmg);
     // Weather, after screens and before the physical floor — the reference
     // sim's modifyDamage order.
     if m.weather > 0 {
@@ -211,6 +229,8 @@ mod tests {
             sp_atk_stage: 0,
             types: (Type::Normal, Type::None),
             burned: false,
+            stat_mod: Chain::new(),
+            ignores_burn: false,
         }
     }
 
@@ -223,10 +243,12 @@ mod tests {
             types: (Type::Normal, Type::None),
             reflect: false,
             light_screen: false,
+            stat_mod: Chain::new(),
         }
     }
 
     const TACKLE: MoveUse = MoveUse {
+            phase1: Chain::new(),
         halve_def: false,
         late_mult: 1,
         special: false,
@@ -298,6 +320,7 @@ mod tests {
         d.def = 1000;
         d.sp_def = 100;
         let bite = MoveUse {
+            phase1: Chain::new(),
             halve_def: false,
             late_mult: 1,
             special: false,
@@ -306,6 +329,7 @@ mod tests {
             power: 100,
         };
         let physical = MoveUse {
+            phase1: Chain::new(),
             halve_def: false,
             late_mult: 1,
             special: false,
@@ -324,6 +348,7 @@ mod tests {
         let mut a = attacker();
         a.burned = true;
         let special = MoveUse {
+            phase1: Chain::new(),
             halve_def: false,
             late_mult: 1,
             special: false,
@@ -359,6 +384,7 @@ mod tests {
         d.types = (Type::Ghost, Type::None);
         assert_eq!(damage(&attacker(), &d, &TACKLE, Roll::MAX), 0);
         let status = MoveUse {
+            phase1: Chain::new(),
             halve_def: false,
             late_mult: 1,
             special: false,

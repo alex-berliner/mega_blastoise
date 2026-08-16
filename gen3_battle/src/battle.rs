@@ -14,6 +14,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 
+use crate::ability;
 use crate::damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
 use crate::data::{
     move_by_id, species_by_id, Boost, FixedDamage, MoveEntry, SecondaryEffect, SideCondition,
@@ -279,9 +280,28 @@ pub struct Mon {
     pub rampage_dur: u8,
     /// Hyper Beam landed last turn: this action is spent recharging.
     pub must_recharge: bool,
+    /// This mon's ability, as a lookup id, or empty for none. Trace and
+    /// Role Play overwrite it, so it is not simply read off the species.
+    pub ability: &'static str,
+    /// Flash Fire has caught: this mon's Fire moves are half again as strong
+    /// until it leaves the field.
+    pub flash_fire: bool,
 }
 
 impl Mon {
+    /// The slice of this mon the ability rules read. Handing the rules a
+    /// small copy rather than the mon itself keeps them pure, and keeps the
+    /// borrow checker out of the middle of a damage calculation.
+    pub fn bearer(&self) -> ability::Bearer {
+        ability::Bearer {
+            ability: self.ability,
+            types: self.types(),
+            status: self.status,
+            hp: self.hp,
+            max_hp: self.max_hp,
+        }
+    }
+
     /// Build a mon at `level` with uniform investment. Per-stat IVs and EVs
     /// come later with the team builder; this is enough to fight.
     pub fn new(
@@ -372,6 +392,8 @@ impl Mon {
             rampage: None,
             rampage_dur: 0,
             must_recharge: false,
+            ability: "",
+            flash_fire: false,
         })
     }
 
@@ -853,6 +875,28 @@ impl Battle {
     /// its own turn — `getLockedMove` covers a rampage, a rolling
     /// Rollout/Ice Ball, a storing Bide, an Uproar, a charge turn and a
     /// Hyper Beam recharge, and every one of those sets `trapped = true`.
+    /// The sim's `onUpdate`, which runs between actions and is where the
+    /// refusing abilities do their tidying: they do not merely block a
+    /// status arriving, they shed one already there. A mon that walks into
+    /// the battle asleep with Insomnia is awake before it has to act.
+    fn ability_update(&mut self, side: usize) {
+        let mon = self.sides[side].mon();
+        if mon.fainted() {
+            return;
+        }
+        let bearer = mon.bearer();
+        if mon.status.is_some_and(|st| ability::blocks_status(&bearer, st)) {
+            let mon = self.sides[side].mon_mut();
+            mon.status = None;
+            mon.sleep_n = 0;
+            mon.sleep_skipped = 0;
+            mon.toxic_n = 0;
+        }
+        if ability::blocks_confusion(&bearer) {
+            self.sides[side].mon_mut().confusion_n = 0;
+        }
+    }
+
     pub fn can_switch(&self, side: usize) -> bool {
         let mon = self.sides[side].mon();
         if mon.fainted() {
@@ -942,6 +986,9 @@ impl Battle {
     /// the parity tests pass the same script they gave the reference sim.
     pub fn step_with(&mut self, choices: [Choice; 2], script: &TurnScript) -> Vec<Event> {
         let mut events = Vec::new();
+        for side in 0..2 {
+            self.ability_update(side);
+        }
         self.turn += 1;
         self.acted_this_turn = [false; 2];
         self.dragged = [false; 2];
@@ -1702,6 +1749,9 @@ impl Battle {
                 .get(index)
                 .is_some_and(|m| matches!(m.entry.id, "snore" | "sleeptalk"));
             let mon = self.sides[side].mon_mut();
+            if ability::early_bird(&mon.bearer()) {
+                mon.sleep_n = mon.sleep_n.saturating_sub(1);
+            }
             mon.sleep_n = mon.sleep_n.saturating_sub(1);
             if mon.sleep_n == 0 {
                 mon.status = None;
@@ -2012,7 +2062,18 @@ impl Battle {
             slot
         };
         if !releasing && !struggling {
-            self.sides[side].mon_mut().moves[index].pp -= 1;
+            // Pressure charges an extra point for anything aimed across the
+            // field. A move the user turns on itself is free of it.
+            let cost = if ability::pressure(&self.sides[1 - side].mon().bearer())
+                && !self.sides[1 - side].mon().fainted()
+                && slot.entry.needs_target
+            {
+                2
+            } else {
+                1
+            };
+            let pp = &mut self.sides[side].mon_mut().moves[index].pp;
+            *pp = pp.saturating_sub(cost);
         }
         // A defrosting move thaws its user the moment it actually goes off.
         if self.sides[side].mon().status == Some(Status::Freeze)
@@ -2459,6 +2520,17 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
 
         // Explosion/Self-Destruct: the user faints ON USE, before the hit
         // resolves — a miss or an immune target changes nothing about that.
+        if slot.entry.selfdestruct
+            && ability::damp_present(
+                &self.sides[side].mon().bearer(),
+                &self.sides[foe].mon().bearer(),
+            )
+        {
+            events.push(Event::Failed {
+                side: side as u8 + 1,
+            });
+            return;
+        }
         let boom = slot.entry.selfdestruct;
         if boom {
             self.sides[side].mon_mut().hp = 0;
@@ -2478,6 +2550,21 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             }
         } else {
             slot.entry.accuracy
+        };
+        // Abilities move the accuracy BEFORE the stages, in one chain: the
+        // sim runs Compound Eyes, Sand Veil and Hustle on the same event and
+        // applies the result once. A move that cannot miss is left alone —
+        // the sim's accuracy is `true` there, not a number to modify.
+        let acc = if acc == 0 {
+            0
+        } else {
+            let chain = ability::accuracy_chain(
+                &self.sides[side].mon().bearer(),
+                &self.sides[foe].mon().bearer(),
+                slot.move_type(),
+                self.weather == Some(Weather::Sandstorm),
+            );
+            chain.apply(acc as u32).clamp(1, 100) as u8
         };
         // Pursuit's onModifyMove sets accuracy true against a mon that is
         // already leaving, so the interception cannot whiff.
@@ -2641,6 +2728,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
 
         // One-hit KO: fails outright against a higher-level target, is
         // stopped by type immunity, and otherwise its hit IS the KO.
+        if slot.entry.ohko && ability::blocks_ohko(&self.sides[foe].mon().bearer()) {
+            events.push(Event::Damage {
+                side: foe as u8 + 1,
+                amount: 0,
+                effectiveness: 0,
+                crit: false,
+            });
+            return;
+        }
         if slot.entry.ohko {
             let eff = crate::types::effectiveness_against(
                 slot.move_type(),
@@ -2987,6 +3083,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 late_mult: 1,
                 special: false,
                 weather: 0,
+                phase1: ability::Chain::new(),
             };
             let dealt = damage(
                 &attacker,
@@ -3121,6 +3218,43 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     slot.entry.id,
                     "batonpass" | "assist" | "sleeptalk" | "recycle"
                 );
+            // The try-hit abilities answer a status move too: Growl is a
+            // sound move whatever its power, and Will-O-Wisp is a Fire one.
+            if !self_aimed {
+                match ability::absorbs(
+                    &self.sides[foe].mon().bearer(),
+                    slot.entry.id,
+                    slot.move_type(),
+                    slot.entry.sound,
+                ) {
+                    ability::Absorb::None => {}
+                    ability::Absorb::FlashFire => {
+                        self.sides[foe].mon_mut().flash_fire = true;
+                        return;
+                    }
+                    ability::Absorb::Drain => {
+                        let mon = self.sides[foe].mon_mut();
+                        let amount = (mon.max_hp / 4).max(1).min(mon.max_hp - mon.hp);
+                        if amount > 0 {
+                            mon.hp += amount;
+                            events.push(Event::Healed {
+                                side: foe as u8 + 1,
+                                amount,
+                            });
+                        }
+                        return;
+                    }
+                    ability::Absorb::Immune => {
+                        events.push(Event::Damage {
+                            side: foe as u8 + 1,
+                            amount: 0,
+                            effectiveness: 0,
+                            crit: false,
+                        });
+                        return;
+                    }
+                }
+            }
             if !self_aimed && hit && !immune && self.sides[foe].mon().sub_hp == 0 {
                 self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
@@ -3158,13 +3292,64 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 let strip = |t: Type| if t == Type::Ghost { Type::None } else { t };
                 dtypes = (strip(dtypes.0), strip(dtypes.1));
             }
-            if crate::types::effectiveness_against(move_type, dtypes) == 0 {
-                events.push(Event::Damage {
-                    side: foe as u8 + 1,
-                    amount: 0,
-                    effectiveness: 0,
-                    crit: false,
-                });
+            let foe_b = self.sides[foe].mon().bearer();
+            // Levitate is part of the immunity step itself in the sim, not a
+            // try-hit handler: it makes the mon ungrounded, and Ground has
+            // nothing to stand on.
+            let chart_immune = crate::types::effectiveness_against(move_type, dtypes) == 0
+                || ability::immune_to_type(&foe_b, move_type);
+            // Then the try-hit abilities, which gen 3 runs AFTER the chart
+            // rather than before it. Wonder Guard is asked here because this
+            // is the only place that knows what the chart said.
+            let effective = crate::types::effectiveness_against(move_type, dtypes) > 100;
+            let absorb = if chart_immune {
+                ability::Absorb::None
+            } else if foe_b.ability == "wonderguard" && !effective && move_type != Type::None {
+                ability::Absorb::Immune
+            } else {
+                ability::absorbs(&foe_b, slot.entry.id, move_type, slot.entry.sound)
+            };
+            match absorb {
+                ability::Absorb::Drain => {
+                    let mon = self.sides[foe].mon_mut();
+                    let amount = (mon.max_hp / 4).max(1).min(mon.max_hp - mon.hp);
+                    if amount > 0 {
+                        mon.hp += amount;
+                        events.push(Event::Healed {
+                            side: foe as u8 + 1,
+                            amount,
+                        });
+                    } else {
+                        events.push(Event::Damage {
+                            side: foe as u8 + 1,
+                            amount: 0,
+                            effectiveness: 0,
+                            crit: false,
+                        });
+                    }
+                }
+                ability::Absorb::FlashFire => {
+                    self.sides[foe].mon_mut().flash_fire = true;
+                }
+                ability::Absorb::Immune => {
+                    events.push(Event::Damage {
+                        side: foe as u8 + 1,
+                        amount: 0,
+                        effectiveness: 0,
+                        crit: false,
+                    });
+                }
+                ability::Absorb::None => {}
+            }
+            if chart_immune || absorb != ability::Absorb::None {
+                if chart_immune {
+                    events.push(Event::Damage {
+                        side: foe as u8 + 1,
+                        amount: 0,
+                        effectiveness: 0,
+                        crit: false,
+                    });
+                }
                 // An immune target never locks a rampage in — and breaks
                 // a running one the way a miss does.
                 if ramping {
@@ -3226,6 +3411,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 85 + self.rng.below(16) as u8,
             ),
         };
+        // Battle Armor and Shell Armor refuse the critical hit outright,
+        // however it was rolled.
+        let crit = crit && !ability::blocks_crit(&self.sides[foe].mon().bearer());
         // How many times this move strikes. The 2-5 spread is the games'
         // weighted table (2 and 3 hits three-eighths each, 4 and 5 an eighth
         // each); a script pins the count for the tests.
@@ -3429,17 +3617,55 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 } else {
                     1
                 };
+            // Every base-power modifier goes through ONE chain and is
+            // applied once, in the sim's handler order: Charge's doubling,
+            // then a Sport's hum, then a pinch ability, then Thick Fat, then
+            // Solar Beam's weather sulk. Halving and then boosting in turn
+            // is not the same arithmetic as doing both at once, and the
+            // difference shows up as a point of damage.
+            let user_b = self.sides[side].mon().bearer();
+            let foe_b = self.sides[foe].mon().bearer();
+            let mut bp = ability::Chain::new();
+            if charge_mult == 2 {
+                bp.mul(ability::X2);
+            }
+            if sport_div == 2 {
+                bp.mul(ability::X0_5);
+            }
+            if ability::pinch_boost(&user_b, move_type) {
+                bp.mul(ability::X1_5);
+            }
+            if ability::thick_fat_cut(&foe_b, move_type) {
+                bp.mul(ability::X0_5);
+            }
+            if solar_cut {
+                bp.mul(ability::X0_5);
+            }
+            let power = bp
+                .apply((base_power * pierce_power_mult) as u32)
+                .max(1)
+                .min(u16::MAX as u32) as u16;
+            // The stats, once their stages are in. Gen 3 reads the category
+            // off the move's type, so that is what decides whether an
+            // Attack ability speaks at all.
+            let physical = slot.entry.id != "beatup" && ability::physical_type(move_type);
+            attacker.stat_mod = ability::attack_chain(&user_b, physical);
+            attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
+            defender.stat_mod = ability::defence_chain(&foe_b, physical);
+            let mut phase1 = ability::Chain::new();
+            if self.sides[side].mon().flash_fire && move_type == Type::Fire {
+                phase1.mul(ability::X1_5);
+            }
             let m = MoveUse {
                 move_type,
-                power: base_power * charge_mult * pierce_power_mult
-                    / if solar_cut { 2 } else { 1 }
-                    / sport_div,
+                power,
                 halve_def: slot.entry.selfdestruct,
                 weather: weather_mod,
                 // Pierce and stomp double at the sim's ModifyDamage stage,
                 // just before the roll — not on base power.
                 late_mult: pierce_mult * stomp_mult,
                 special: slot.entry.id == "beatup",
+                phase1,
             };
             let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
             if dealt == 0 {
@@ -3516,6 +3742,19 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 } else {
                     (amount * num / den).max(1)
                 };
+                // Liquid Ooze turns the sip into a swig of poison: the same
+                // number, taken off the drainer instead of given to it.
+                if ability::ooze_reverses_drain(&self.sides[foe].mon().bearer(), slot.entry.id) {
+                    let user = self.sides[side].mon_mut();
+                    let hurt = heal.min(user.hp);
+                    user.hp -= hurt;
+                    events.push(Event::Recoil {
+                        side: side as u8 + 1,
+                        amount: hurt,
+                    });
+                    self.resolve_faints(side, foe, events);
+                    continue;
+                }
                 let user = self.sides[side].mon_mut();
                 let heal = heal.min(user.max_hp - user.hp);
                 if heal > 0 {
@@ -3606,7 +3845,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // Recoil comes off the damage actually dealt: floored (this era's
         // rule; the fuzzer rejected round-to-nearest), but at least 1 — and
         // it can knock the user out.
-        if let Some((num, den)) = slot.entry.recoil {
+        if let Some((num, den)) = slot.entry.recoil
+            .filter(|_| !ability::ignores_recoil(&self.sides[side].mon().bearer(), slot.entry.id))
+        {
             let hurt = (total * num / den).max(1);
             let user = self.sides[side].mon_mut();
             let hurt = hurt.min(user.hp);
@@ -3663,6 +3904,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.sides[1 - side].mon_mut().trapped_n = 0;
             self.sides[1 - side].mon_mut().mean_looked = false;
             let out = self.sides[side].mon_mut();
+            if ability::cures_on_switch_out(&out.bearer()) && !out.fainted() {
+                out.status = None;
+                out.sleep_n = 0;
+            }
+            out.flash_fire = false;
             out.toxic_n = 0;
             out.confusion_n = 0;
             out.identified = false;
@@ -3783,6 +4029,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// bite a grounded arrival: an eighth, a sixth, a quarter for one, two,
     /// three layers. Flying types float over.
     fn switch_in_greet(&mut self, side: usize, events: &mut Vec<Event>) {
+        self.ability_update(side);
         let mon = self.sides[side].mon_mut();
         if mon.status == Some(Status::Sleep) {
             mon.sleep_n += mon.sleep_skipped;
@@ -3867,6 +4114,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if !self.sides[foe].mon().can_receive(status) {
             return;
         }
+        // An ability that simply refuses this status.
+        if ability::blocks_status(&self.sides[foe].mon().bearer(), status) {
+            return;
+        }
         // Bright sunlight prevents freezing outright (the sim's Sunny Day
         // onImmunity hook).
         if status == Status::Freeze && self.weather == Some(Weather::Sun) {
@@ -3902,6 +4153,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         }
         let target = self.sides[foe].mon();
         if target.fainted() || target.confusion_n > 0 {
+            return;
+        }
+        // Own Tempo simply refuses the volatile.
+        if ability::blocks_confusion(&self.sides[foe].mon().bearer()) {
             return;
         }
         let n = if scripted {
@@ -4112,6 +4367,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     && target.yawn_n == 0
                     && self.sides[foe].safeguard_n == 0
                     && !target.fainted()
+                    && !ability::blocks_yawn(&target.bearer())
                 {
                     self.sides[foe].mon_mut().yawn_n = 2;
                     events.push(Event::Drowsy {
@@ -4344,7 +4600,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // onDragOut — and the sim announces the refusal rather than
                 // failing quietly. A bind or a Mean Look does NOT stop one:
                 // those only forbid leaving of your own accord.
-                let rooted = self.sides[foe].mon().ingrained;
+                let rooted = self.sides[foe].mon().ingrained
+                    || ability::blocks_drag(&self.sides[foe].mon().bearer());
                 let bench = self.sides[foe].draggable();
                 match bench.first().copied() {
                     Some(next) if hit && !rooted && !self.sides[foe].mon().fainted() => {
@@ -4809,6 +5066,16 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         if misted && delta < 0 {
                             continue;
                         }
+                        // Clear Body and the single-stat guards refuse a
+                        // drop that came from the other side.
+                        if delta < 0
+                            && ability::blocks_drop(
+                                &self.sides[foe].mon().bearer(),
+                                ability::drop_kind(boost),
+                            )
+                        {
+                            continue;
+                        }
                         self.sides[foe].mon_mut().apply_boost(boost, delta);
                         events.push(Event::Boosted {
                             side: foe as u8 + 1,
@@ -4835,16 +5102,25 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // A 100% secondary (Zap Cannon's paralysis) is a certainty, not a
         // roll, so the script has no say in it — matching the reference sim,
         // whose sub-certain roll can't come up short of 100.
-        let certain = slot.entry.secondary.is_some_and(|sec| sec.chance >= 100);
-        let proc = certain
-            || match script {
-                Some(s) => s.secondary,
-                None => slot
-                    .entry
-                    .secondary
-                    .map(|sec| self.rng.below(100) < sec.chance as u32)
-                    .unwrap_or(false),
-            };
+        // Shield Dust refuses every secondary a move turns on ITS TARGET.
+        // The self-aimed drops (Overheat's own Special Attack) are a
+        // different field entirely and are not touched.
+        let dusted = ability::blocks_secondary(&self.sides[foe].mon().bearer());
+        // Serene Grace doubles the printed chance before it is rolled.
+        let doubled = ability::doubles_secondary(&self.sides[side].mon().bearer());
+        let chance =
+            |sec: crate::data::Secondary| (sec.chance as u32 * if doubled { 2 } else { 1 }).min(255);
+        let certain = slot.entry.secondary.is_some_and(|sec| chance(sec) >= 100);
+        let proc = !dusted
+            && (certain
+                || match script {
+                    Some(s) => s.secondary,
+                    None => slot
+                        .entry
+                        .secondary
+                        .map(|sec| self.rng.below(100) < chance(sec))
+                        .unwrap_or(false),
+                });
         if proc {
             match slot.entry.secondary.map(|sec| sec.effect) {
                 Some(SecondaryEffect::Status(status)) => {
@@ -4856,6 +5132,14 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     if !self.sides[foe].mon().fainted() {
                         for &(boost, delta) in list {
                             if misted && delta < 0 {
+                                continue;
+                            }
+                            if delta < 0
+                                && ability::blocks_drop(
+                                    &self.sides[foe].mon().bearer(),
+                                    ability::drop_kind(boost),
+                                )
+                            {
                                 continue;
                             }
                             self.sides[foe].mon_mut().apply_boost(boost, delta);
@@ -4870,7 +5154,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 Some(SecondaryEffect::Flinch) => {
                     // A mon tightening its focus cannot be flinched at all —
                     // the volatile is refused, not merely out-prioritized.
-                    if !self.sides[foe].mon().fainted() && !self.sides[foe].mon().focusing {
+                    if !self.sides[foe].mon().fainted()
+                        && !self.sides[foe].mon().focusing
+                        && !ability::blocks_flinch(&self.sides[foe].mon().bearer())
+                    {
                         self.sides[foe].mon_mut().flinched = true;
                     }
                 }
@@ -4961,6 +5248,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             late_mult: 1,
             special: false,
             weather: 0,
+            phase1: ability::Chain::new(),
         };
         let would = damage(&attacker, &defender, &m, Roll { crit, random });
         // The sim clamps the crash into [1, target's max HP / 2].
@@ -4988,6 +5276,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 sp_atk_stage: a.stage(Stat::SpAtk),
                 types: a.types(),
                 burned: a.burned(),
+                stat_mod: ability::Chain::new(),
+                ignores_burn: false,
             },
             Defender {
                 def: d.def,
@@ -4997,6 +5287,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 types: d.types(),
                 reflect: self.sides[1 - side].reflect_n > 0,
                 light_screen: self.sides[1 - side].light_screen_n > 0,
+                stat_mod: ability::Chain::new(),
             },
         )
     }

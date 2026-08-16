@@ -34,6 +34,9 @@ pub struct SpeciesEntry {
     pub learn_len: u16,
     /// Weight in hectograms (kg × 10) — Low Kick's tiers read this.
     pub weight_hg: u16,
+    /// The two abilities this species can be born with, as lookup ids. The
+    /// second is empty for species that only ever have one.
+    pub abilities: (&'static str, &'static str),
 }
 
 impl SpeciesEntry {
@@ -393,6 +396,10 @@ pub struct MoveEntry {
     pub charge: bool,
     /// Wrap and kin: a landed hit binds the target for end-of-turn chip.
     pub trap: bool,
+    /// A sound move, which Soundproof refuses outright.
+    pub sound: bool,
+    /// A contact move: the abilities that answer being touched read this.
+    pub contact: bool,
     /// Whether the move needs a LIVING foe. A self- or field-aimed move
     /// goes off with the other side's slot empty; everything else logs the
     /// move line and then stops, having spent its PP.
@@ -429,6 +436,8 @@ impl MoveEntry {
 /// Ghost as hard as anything else. Outside the generated table because
 /// the pool deliberately excludes it.
 pub static STRUGGLE: MoveEntry = MoveEntry {
+    sound: false,
+    contact: true,
     id: "struggle",
     name: "Struggle",
     move_type: Type::None,

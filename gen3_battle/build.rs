@@ -260,10 +260,20 @@ fn emit_species(
         let stats = m["baseStats"].as_object().unwrap();
         let stat = |k: &str| stats[k].as_u64().unwrap() as u16;
         let weight_hg = (m["weightkg"].as_f64().unwrap_or(0.0) * 10.0).round() as u16;
+        let ability = |i: usize| {
+            m["abilities"]
+                .as_array()
+                .and_then(|a| a.get(i))
+                .and_then(|a| a.as_str())
+                .unwrap_or("")
+                .to_string()
+        };
+        let (ability0, ability1) = (ability(0), ability(1));
         out.push_str(&format!(
             "    SpeciesEntry {{ id: {id:?}, name: {name:?}, types: ({primary}, {secondary}), \
              base: BaseStats {{ hp: {}, atk: {}, def: {}, spa: {}, spd: {}, spe: {} }}, \
-             learn_start: {ls_start}, learn_len: {ls_len}, weight_hg: {weight_hg} }},\n",
+             learn_start: {ls_start}, learn_len: {ls_len}, weight_hg: {weight_hg}, \
+             abilities: ({ability0:?}, {ability1:?}) }},\n",
             stat("hp"),
             stat("atk"),
             stat("def"),
@@ -499,6 +509,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
             None => String::from("None"),
         };
         let recharge = m["recharge"].as_bool().unwrap_or(false);
+        let sound = m["sound"].as_bool().unwrap_or(false);
+        let contact = m["contact"].as_bool().unwrap_or(false);
         let status_action = match m["statusAction"].as_object() {
             None => String::from("None"),
             Some(act) => {
@@ -669,7 +681,7 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
              respects_immunity: {respects_immunity}, fixed: {fixed}, \
              ohko: {ohko}, high_crit: {high_crit}, selfdestruct: {selfdestruct}, \
              charge: {charge}, recharge: {recharge}, trap: {trap}, needs_target: {needs_target}, protectable: {protectable}, no_sleep_talk: {no_sleep_talk}, no_assist: {no_assist}, \
-             self_drop: {self_drop} }},\n",
+             sound: {sound}, contact: {contact}, self_drop: {self_drop} }},\n",
             type_variant(mtype, id),
         ));
         ids.push(id.to_string());

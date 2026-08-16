@@ -37,10 +37,10 @@ function teamMon(dex, m, slot) {
     species: species.name,
     level: m.level ?? 50,
     nature: m.nature ?? 'Hardy',
-    // The core engines model no abilities yet, so the reference sim runs
-    // without them too: otherwise Pressure, Levitate and Huge Power dominate
-    // every diff with knowingly-unbuilt behaviour.
-    ability: 'noability',
+    // Only the abilities the core engines model are ever handed out; a
+    // scenario that leaves this blank is asking for a mon with none, which
+    // is what the sim calls 'noability'.
+    ability: m.ability || 'noability',
     ivs: m.ivs ?? {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31},
     evs: m.evs ?? {hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0},
     moves: m.moves,

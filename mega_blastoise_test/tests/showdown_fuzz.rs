@@ -108,6 +108,86 @@ fn vanilla_moves(gen: u8, multihit: bool, ours: impl Fn(&str) -> bool) -> Vec<(S
 
 // ── Gen 3: single scripted hits, the full damage surface ─────────────────────
 
+/// The Gen 3 abilities the engine models, and so the ones the fuzzer is
+/// allowed to hand out. Everything outside this list stays off both sides:
+/// the reference sim would play it and we would not, and every battle it
+/// touched would diverge for a reason we already know about.
+///
+/// Still to come: intimidate, trace, the weather setters and readers
+/// (drizzle, drought, sandstream, airlock, cloudnine, forecast, chlorophyll,
+/// swiftswim, raindish, sandveil), the residual ones (speedboost, shedskin,
+/// truant), the contact ones (static, poisonpoint, flamebody, effectspore,
+/// cutecharm, roughskin, colorchange), synchronize, and the trappers
+/// (arenatrap, magnetpull, shadowtag).
+const GEN3_ABILITIES: &[&str] = &[
+    "battlearmor",
+    "blaze",
+    "clearbody",
+    "compoundeyes",
+    "damp",
+    "earlybird",
+    "flashfire",
+    "guts",
+    "hugepower",
+    "hustle",
+    "hypercutter",
+    "illuminate",
+    "immunity",
+    "innerfocus",
+    "insomnia",
+    "keeneye",
+    "levitate",
+    "lightningrod",
+    "limber",
+    "liquidooze",
+    "magmaarmor",
+    "marvelscale",
+    "minus",
+    "naturalcure",
+    "oblivious",
+    "overgrow",
+    "owntempo",
+    "pickup",
+    "plus",
+    "pressure",
+    "purepower",
+    "rockhead",
+    "runaway",
+    "serenegrace",
+    "shellarmor",
+    "shielddust",
+    "soundproof",
+    "stench",
+    "stickyhold",
+    "sturdy",
+    "suctioncups",
+    "swarm",
+    "thickfat",
+    "torrent",
+    "vitalspirit",
+    "voltabsorb",
+    "waterabsorb",
+    "waterveil",
+    "whitesmoke",
+    "wonderguard",
+];
+
+/// Which ability this mon walks in with. The draw always happens so the
+/// generator's stream does not depend on which species came up, and it comes
+/// out empty whenever the species has nothing we model.
+fn pick_ability(fz: &mut Fuzz, sp: &'static gen3_battle::data::SpeciesEntry) -> &'static str {
+    let slot = fz.below(2) as usize;
+    let none = fz.chance(30);
+    let known = |id: &'static str| GEN3_ABILITIES.contains(&id).then_some(id);
+    let pair = [sp.abilities.0, sp.abilities.1];
+    if none {
+        return "";
+    }
+    known(pair[slot])
+        .or_else(|| known(pair[1 - slot]))
+        .unwrap_or("")
+}
+
 #[test]
 fn fuzz_gen3_single_hits() {
     if !armed() {
@@ -232,6 +312,8 @@ fn fuzz_gen3_single_hits() {
             sp_atk_stage: stages[1],
             types: a_sp.types,
             burned: *burned,
+            stat_mod: gen3_battle::ability::Chain::new(),
+            ignores_burn: false,
         };
         let mut defender = Defender {
             def: other_stat(d_sp.base.def, d_inv, *level, *d_nat, Stat::Def),
@@ -241,6 +323,7 @@ fn fuzz_gen3_single_hits() {
             types: d_sp.types,
             reflect: *reflect,
             light_screen: *light_screen,
+            stat_mod: gen3_battle::ability::Chain::new(),
         };
         // Beat Up is its own calc: each healthy ally strikes typeless with
         // its BASE Attack against the target's BASE Defence — no stages, no
@@ -259,7 +342,7 @@ fn fuzz_gen3_single_hits() {
         // as the sim's accuracy step never runs for it.
         let hit = (*hit || entry.accuracy == 0) && !(*mv == "beatup" && *burned);
         let dealt = if hit {
-            damage(&attacker, &defender, &MoveUse { move_type, power: entry.power, halve_def: entry.selfdestruct, late_mult: 1, special: *mv == "beatup", weather: 0 },
+            damage(&attacker, &defender, &MoveUse { move_type, power: entry.power, halve_def: entry.selfdestruct, late_mult: 1, special: *mv == "beatup", weather: 0, phase1: gen3_battle::ability::Chain::new() },
                    Roll { crit: *crit, random: *roll })
         } else {
             0
@@ -335,6 +418,7 @@ fn fuzz_gen3_turns() {
         };
         let st1 = legal_status(&mut fz, s1);
         let st2 = legal_status(&mut fz, s2);
+        let (ab1, ab2) = (pick_ability(&mut fz, s1), pick_ability(&mut fz, s2));
         // 1-3 whole turns, each seat scripted per turn: hit, crit, roll,
         // secondary, immobile, hits, selfhit. The conditional knobs only
         // fire when their condition holds (paralysis, a 2-5 multi-hit move,
@@ -376,18 +460,29 @@ fn fuzz_gen3_turns() {
             .collect();
         scenarios.push(json!({
             "kind": "turn", "gen": 3,
-            "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0)},
-            "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0)},
+            "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0), "ability": ab1},
+            "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0), "ability": ab2},
             "moves": [m1, m2],
             "turns": turn_json,
         }));
-        cases.push((s1.id, s2.id, level, m1, m2, turns, [st1.map(|s| s.1), st2.map(|s| s.1)]));
+        cases.push((
+            s1.id,
+            s2.id,
+            level,
+            m1,
+            m2,
+            turns,
+            [st1.map(|s| s.1), st2.map(|s| s.1)],
+            [ab1, ab2],
+        ));
     }
 
     let results = showdown(&Value::Array(scenarios.clone()));
     let inv = Invest { iv: 31, ev: 0 };
     let mut bad = 0;
-    for (i, ((s1, s2, level, m1, m2, turns, statuses), got)) in cases.iter().zip(&results).enumerate() {
+    for (i, ((s1, s2, level, m1, m2, turns, statuses, abilities), got)) in
+        cases.iter().zip(&results).enumerate()
+    {
         if got.get("error").is_some() {
             eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
             bad += 1;
@@ -397,6 +492,7 @@ fn fuzz_gen3_turns() {
         let mut battle =
             Battle::new(Side::new(vec![mk(s1, m1)]), Side::new(vec![mk(s2, m2)]), 1);
         for (seat, st) in statuses.iter().enumerate() {
+            battle.sides[seat].party[0].ability = abilities[seat];
             battle.sides[seat].party[0].status = *st;
             if *st == Some(gen3_battle::data::Status::Sleep) {
                 // The sim's pinned duration roll: asleep for one skipped
@@ -881,7 +977,9 @@ fn fuzz_gen3_battles() {
                         other => other,
                     }
                 };
+                let ability = pick_ability(&mut fz, sp);
                 let mut mon = Mon::new(sp.id, level, Nature::Hardy, inv, &[&m1, &m2]).unwrap();
+                mon.ability = ability;
                 mon.status = match st {
                     Some("brn") => Some(gen3_battle::data::Status::Burn),
                     Some("psn") => Some(gen3_battle::data::Status::Poison),
@@ -894,7 +992,7 @@ fn fuzz_gen3_battles() {
                 }
                 specs[seat].push(json!({
                     "species": sp.id, "level": level, "moves": [m1, m2],
-                    "status": st,
+                    "status": st, "ability": ability,
                 }));
                 teams[seat].push(mon);
             }

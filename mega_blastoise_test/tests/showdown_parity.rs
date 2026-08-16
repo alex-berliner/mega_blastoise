@@ -241,12 +241,14 @@ fn gen3_turns_match_showdown() {
                     &Attacker {
                         level: a.level, atk: a.atk, sp_atk: a.spa,
                         atk_stage: 0, sp_atk_stage: 0, types: a.types(), burned: a.burned(),
+                        stat_mod: gen3_battle::ability::Chain::new(), ignores_burn: false,
                     },
                     &Defender {
                         def: d.def, sp_def: d.spd, def_stage: 0, sp_def_stage: 0,
                         types: d.types(), reflect, light_screen,
+                        stat_mod: gen3_battle::ability::Chain::new(),
                     },
-                    &MoveUse { move_type: slot.move_type(), power: slot.entry.power, halve_def: slot.entry.selfdestruct, late_mult: 1, special: false, weather: 0 },
+                    &MoveUse { move_type: slot.move_type(), power: slot.entry.power, halve_def: slot.entry.selfdestruct, late_mult: 1, special: false, phase1: gen3_battle::ability::Chain::new(), weather: 0 },
                     Roll { crit: c.script[0].1, random: c.script[0].2 },
                 );
                 (d.hp.saturating_sub(dealt as u16), a.moves[0].pp - 1)
