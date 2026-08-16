@@ -378,9 +378,10 @@ pub struct Side {
     /// Wish clock and the amount that arrives when it hits zero.
     pub wish_n: u8,
     pub wish_amount: u16,
-    /// A Future Sight/Doom Desire aimed at THIS side: countdown, the
-    /// launcher's snapshot, and which of the two moves it was.
-    pub incoming: Option<(u8, crate::damage::Attacker, &'static str)>,
+    /// A Future Sight/Doom Desire aimed at THIS side: the countdown and
+    /// which of the two moves it was. The hit itself is recomputed in
+    /// full at resolution from the launcher's then-current stats.
+    pub incoming: Option<(u8, &'static str)>,
 }
 
 impl Side {
@@ -850,9 +851,9 @@ impl Battle {
             if self.over() {
                 break;
             }
-            if let Some((n, attacker, id)) = self.sides[side].incoming {
+            if let Some((n, id)) = self.sides[side].incoming {
                 if n > 1 {
-                    self.sides[side].incoming = Some((n - 1, attacker, id));
+                    self.sides[side].incoming = Some((n - 1, id));
                 } else {
                     self.sides[side].incoming = None;
                     let mon = self.sides[side].mon();
@@ -862,6 +863,11 @@ impl Battle {
                         } else {
                             (Type::Psychic, 80)
                         };
+                        // A target mid Fly/Dig/Bounce/Dive when the hit
+                        // arrives dodges it like any other attack.
+                        if mon.semi_invulnerable().is_some() {
+                            continue;
+                        }
                         let defender = crate::damage::Defender {
                             def: mon.def,
                             sp_def: mon.spd,
@@ -871,6 +877,11 @@ impl Battle {
                             reflect: false,
                             light_screen: false,
                         };
+                        // The hit is recomputed IN FULL at resolution — the
+                        // launcher's CURRENT stats and stages, not a launch
+                        // snapshot (Feather Dance between launch and landing
+                        // shrinks it).
+                        let (attacker, _) = self.attack_pair(1 - side);
                         let m = MoveUse { move_type, power, halve_def: false, weather: 0 };
                         // Accuracy is rolled at RESOLUTION too — 90 for
                         // Future Sight, 85 for Doom Desire — off the
@@ -1810,8 +1821,7 @@ impl Battle {
                 events.push(Event::Failed { side: side as u8 + 1 });
                 return;
             }
-            let (attacker, _) = self.attack_pair(side);
-            self.sides[foe].incoming = Some((3, attacker, slot.entry.id));
+            self.sides[foe].incoming = Some((3, slot.entry.id));
             events.push(Event::Charging { side: side as u8 + 1 });
             return;
         }
