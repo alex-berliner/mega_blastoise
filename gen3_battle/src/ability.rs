@@ -468,7 +468,11 @@ pub fn synchronizes(mon: &Bearer, status: Status) -> Option<Status> {
 /// Arena Trap only holds what stands on the ground.
 pub fn traps(mon: &Bearer, victim: &Bearer, victim_grounded: bool) -> bool {
     match mon.ability {
-        "shadowtag" => !victim.has("shadowtag"),
+        // Gen 3's Shadow Tag holds another Shadow Tag just the same. The
+        // "unless you have it too" clause lives only on the sim's
+        // MaybeTrap handler, which is about what a player is allowed to
+        // KNOW; the real trap has no such exemption in this era.
+        "shadowtag" => true,
         "magnetpull" => victim.types.0 == Type::Steel || victim.types.1 == Type::Steel,
         "arenatrap" => victim_grounded,
         _ => false,

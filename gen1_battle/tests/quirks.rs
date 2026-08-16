@@ -762,3 +762,37 @@ fn freeze_clause_blocks_second_freeze() {
         sides[1].active_mut().hp_cur = max;
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Leech Seed pays out past its host's death
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn leech_seed_drains_a_full_eighth_even_off_a_corpse() {
+    // The sim states this one in a hint of its own: "In Gen 1, Leech Seed
+    // recovery is not limited by the remaining HP of the seeded Pokemon." A
+    // victim that dies to its own burn on five HP still hands a full eighth
+    // of its MAXIMUM across the field.
+    let mut field = Field::default();
+    let mut log = Log::new();
+    let mut sides = make_sides(
+        fresh_mon("venusaur", 50, &["leechseed"]),
+        fresh_mon("charizard", 50, &["ember"]),
+    );
+    sides[1].active_mut().volatile.set(Volatile::LEECH_SEEDED);
+    sides[1].active_mut().status = Status::Burn;
+    let owed = (sides[1].active().hp_max / 16).max(1);
+    // Five HP left: the burn tick will finish it before the seed ticks.
+    sides[1].active_mut().hp_cur = 5;
+    let seeder_start = sides[0].active().hp_max / 2;
+    sides[0].active_mut().hp_cur = seeder_start;
+
+    after_action_residuals(&mut field, &mut sides, 1, &mut log);
+
+    assert_eq!(sides[1].active().hp_cur, 0, "the burn finished it");
+    assert_eq!(
+        sides[0].active().hp_cur - seeder_start,
+        owed,
+        "the seeder is paid in full off a corpse, not the five that were left"
+    );
+}
