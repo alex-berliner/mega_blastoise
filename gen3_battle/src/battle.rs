@@ -1552,6 +1552,7 @@ impl Battle {
                     | StatusAction::Camouflage
                     | StatusAction::Conversion
                     | StatusAction::Imprison
+                    | StatusAction::Substitute
             )
         );
         // Sketch carries no protect flag: it works through a shield.
