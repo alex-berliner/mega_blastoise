@@ -868,20 +868,11 @@ impl Battle {
                         if mon.semi_invulnerable().is_some() {
                             continue;
                         }
-                        let defender = crate::damage::Defender {
-                            def: mon.def,
-                            sp_def: mon.spd,
-                            def_stage: mon.stages[Stat::Def as usize],
-                            sp_def_stage: mon.stages[Stat::SpDef as usize],
-                            types: mon.types(),
-                            reflect: false,
-                            light_screen: false,
-                        };
                         // The hit is recomputed IN FULL at resolution — the
                         // launcher's CURRENT stats and stages, not a launch
                         // snapshot (Feather Dance between launch and landing
-                        // shrinks it).
-                        let (attacker, _) = self.attack_pair(1 - side);
+                        // shrinks it), and the target's screens count too.
+                        let (attacker, defender) = self.attack_pair(1 - side);
                         let m = MoveUse { move_type, power, halve_def: false, weather: 0 };
                         // Accuracy is rolled at RESOLUTION too — 90 for
                         // Future Sight, 85 for Doom Desire — off the
@@ -1574,6 +1565,9 @@ impl Battle {
                     | StatusAction::PerishSong
                     | StatusAction::Minimize
                     | StatusAction::PsychUp
+                    | StatusAction::Camouflage
+                    | StatusAction::Conversion
+                    | StatusAction::Imprison
             )
         );
         // Sketch carries no protect flag: it works through a shield.
