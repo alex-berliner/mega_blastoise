@@ -113,19 +113,24 @@ fn vanilla_moves(gen: u8, multihit: bool, ours: impl Fn(&str) -> bool) -> Vec<(S
 /// the reference sim would play it and we would not, and every battle it
 /// touched would diverge for a reason we already know about.
 ///
-/// Still to come: intimidate, trace, the weather setters and readers
-/// (drizzle, drought, sandstream, airlock, cloudnine, forecast, chlorophyll,
-/// swiftswim, raindish, sandveil), the residual ones (speedboost, shedskin,
-/// truant), the contact ones (static, poisonpoint, flamebody, effectspore,
-/// cutecharm, roughskin, colorchange), synchronize, and the trappers
-/// (arenatrap, magnetpull, shadowtag).
+/// Still to come: Forecast, which needs Castform's weather formes.
 const GEN3_ABILITIES: &[&str] = &[
+    "airlock",
+    "arenatrap",
     "battlearmor",
     "blaze",
+    "chlorophyll",
     "clearbody",
+    "cloudnine",
+    "colorchange",
     "compoundeyes",
+    "cutecharm",
     "damp",
+    "drizzle",
+    "drought",
     "earlybird",
+    "effectspore",
+    "flamebody",
     "flashfire",
     "guts",
     "hugepower",
@@ -135,12 +140,14 @@ const GEN3_ABILITIES: &[&str] = &[
     "immunity",
     "innerfocus",
     "insomnia",
+    "intimidate",
     "keeneye",
     "levitate",
     "lightningrod",
     "limber",
     "liquidooze",
     "magmaarmor",
+    "magnetpull",
     "marvelscale",
     "minus",
     "naturalcure",
@@ -149,21 +156,34 @@ const GEN3_ABILITIES: &[&str] = &[
     "owntempo",
     "pickup",
     "plus",
+    "poisonpoint",
     "pressure",
     "purepower",
+    "raindish",
     "rockhead",
+    "roughskin",
     "runaway",
+    "sandstream",
+    "sandveil",
     "serenegrace",
+    "shadowtag",
+    "shedskin",
     "shellarmor",
     "shielddust",
     "soundproof",
+    "speedboost",
+    "static",
     "stench",
     "stickyhold",
     "sturdy",
     "suctioncups",
     "swarm",
+    "swiftswim",
+    "synchronize",
     "thickfat",
     "torrent",
+    "trace",
+    "truant",
     "vitalspirit",
     "voltabsorb",
     "waterabsorb",
@@ -171,6 +191,7 @@ const GEN3_ABILITIES: &[&str] = &[
     "whitesmoke",
     "wonderguard",
 ];
+
 
 /// Which ability this mon walks in with. The draw always happens so the
 /// generator's stream does not depend on which species came up, and it comes

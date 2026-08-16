@@ -330,3 +330,122 @@ pub fn early_bird(mon: &Bearer) -> bool {
 pub fn pressure(target: &Bearer) -> bool {
     target.has("pressure")
 }
+
+/// Doubles this mon's Speed under its own weather. Chlorophyll wants sun,
+/// Swift Swim wants rain, and neither notices a sky that Air Lock has
+/// flattened — the caller passes what the weather EFFECTIVELY is.
+pub fn speed_doubles(mon: &Bearer, sun: bool, rain: bool) -> bool {
+    (mon.has("chlorophyll") && sun) || (mon.has("swiftswim") && rain)
+}
+
+/// Sand Veil also shelters its bearer from the sandstorm's own chip.
+pub fn immune_to_sandstorm(mon: &Bearer) -> bool {
+    mon.has("sandveil")
+}
+
+/// The weather a mon lays down as it arrives.
+pub fn weather_on_entry(mon: &Bearer) -> Option<&'static str> {
+    match mon.ability {
+        "drizzle" => Some("rain"),
+        "drought" => Some("sun"),
+        "sandstream" => Some("sandstorm"),
+        _ => None,
+    }
+}
+
+/// Air Lock and Cloud Nine flatten the sky for as long as they are out.
+pub fn suppresses_weather(mon: &Bearer) -> bool {
+    matches!(mon.ability, "airlock" | "cloudnine")
+}
+
+/// Intimidate cows the mon across the field as its bearer arrives.
+pub fn intimidates(mon: &Bearer) -> bool {
+    mon.has("intimidate")
+}
+
+/// Trace takes a copy of what it sees. Nothing in this era refuses to be
+/// traced, but a mon with no ability has nothing to give.
+pub fn traces(mon: &Bearer) -> bool {
+    mon.has("trace")
+}
+
+/// Speed Boost climbs a stage at the end of every turn its bearer has spent
+/// on the field.
+pub fn speed_boosts(mon: &Bearer) -> bool {
+    mon.has("speedboost")
+}
+
+/// Rain Dish sips a sixteenth back while it rains.
+pub fn rain_dish(mon: &Bearer) -> bool {
+    mon.has("raindish")
+}
+
+/// Shed Skin's third of a chance at shrugging a status off each turn.
+pub fn sheds_skin(mon: &Bearer) -> bool {
+    mon.has("shedskin")
+}
+
+/// Truant loafs about every other turn.
+pub fn truant(mon: &Bearer) -> bool {
+    mon.has("truant")
+}
+
+/// Rough Skin grazes whatever touches it for a sixteenth of that mon's
+/// maximum.
+pub fn rough_skin(mon: &Bearer) -> bool {
+    mon.has("roughskin")
+}
+
+/// Color Change takes on the type of the move that just landed.
+pub fn color_change(mon: &Bearer) -> bool {
+    mon.has("colorchange")
+}
+
+/// What a contact ability gives back to whatever touched it, if its third
+/// (or tenth, for Effect Spore) comes up.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OnTouch {
+    None,
+    Status(Status),
+    /// Effect Spore picks between sleep, paralysis and poison; the sim
+    /// samples that list, and a pinned sample takes the first.
+    Spore,
+    Attract,
+}
+
+/// The odds, out of the given denominator, that a contact ability answers.
+pub fn on_touch(mon: &Bearer) -> (OnTouch, u32) {
+    match mon.ability {
+        "static" => (OnTouch::Status(Status::Paralysis), 3),
+        "poisonpoint" => (OnTouch::Status(Status::Poison), 3),
+        "flamebody" => (OnTouch::Status(Status::Burn), 3),
+        "cutecharm" => (OnTouch::Attract, 3),
+        "effectspore" => (OnTouch::Spore, 10),
+        _ => (OnTouch::None, 1),
+    }
+}
+
+/// Synchronize passes the status it just caught back to whoever gave it.
+/// Sleep and freeze do not travel, and Toxic arrives as ordinary poison.
+pub fn synchronizes(mon: &Bearer, status: Status) -> Option<Status> {
+    if !mon.has("synchronize") {
+        return None;
+    }
+    match status {
+        Status::Sleep | Status::Freeze => None,
+        Status::Toxic => Some(Status::Poison),
+        other => Some(other),
+    }
+}
+
+/// Whether this mon holds the other side in place, given what the other mon
+/// is. Shadow Tag lets another Shadow Tag go; Magnet Pull only holds Steel;
+/// Arena Trap only holds what stands on the ground.
+pub fn traps(mon: &Bearer, victim: &Bearer, victim_grounded: bool) -> bool {
+    match mon.ability {
+        "shadowtag" => !victim.has("shadowtag"),
+        "magnetpull" => victim.types.0 == Type::Steel || victim.types.1 == Type::Steel,
+        "arenatrap" => victim_grounded,
+        _ => false,
+    }
+}

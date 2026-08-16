@@ -286,6 +286,11 @@ pub struct Mon {
     /// Flash Fire has caught: this mon's Fire moves are half again as strong
     /// until it leaves the field.
     pub flash_fire: bool,
+    /// Turns this mon has spent on the field since it came in. Speed Boost
+    /// wants at least one before it starts climbing.
+    pub active_turns: u8,
+    /// Truant's toggle: true on the turn the mon loafs about.
+    pub loafing: bool,
 }
 
 impl Mon {
@@ -394,6 +399,8 @@ impl Mon {
             must_recharge: false,
             ability: "",
             flash_fire: false,
+            active_turns: 0,
+            loafing: false,
         })
     }
 
@@ -897,6 +904,36 @@ impl Battle {
         }
     }
 
+    /// The weather as the field actually feels it. Air Lock and Cloud Nine
+    /// do not clear the sky — the weather keeps running its clock down — but
+    /// while either is out nothing reads it.
+    pub fn effective_weather(&self) -> Option<Weather> {
+        if (0..2).any(|w| {
+            !self.sides[w].mon().fainted()
+                && ability::suppresses_weather(&self.sides[w].mon().bearer())
+        }) {
+            return None;
+        }
+        self.weather
+    }
+
+    /// A mon's Speed for the turn order, with the abilities that read the
+    /// sky folded in.
+    fn turn_speed(&self, side: usize) -> u16 {
+        let mon = self.sides[side].mon();
+        let spe = mon.effective_speed();
+        let sky = self.effective_weather();
+        if ability::speed_doubles(
+            &mon.bearer(),
+            sky == Some(Weather::Sun),
+            sky == Some(Weather::Rain),
+        ) {
+            spe.saturating_mul(2)
+        } else {
+            spe
+        }
+    }
+
     pub fn can_switch(&self, side: usize) -> bool {
         let mon = self.sides[side].mon();
         if mon.fainted() {
@@ -905,6 +942,15 @@ impl Battle {
         // Ingrain's roots hold it as surely as a bind does: the condition's
         // onTrapPokemon calls tryTrap, so the request comes back trapped.
         if mon.trapped_n > 0 || mon.mean_looked || mon.ingrained {
+            return false;
+        }
+        // The other side's ability can hold it in place too. Being off the
+        // ground is what gets past Arena Trap.
+        let foe = self.sides[1 - side].mon();
+        let (t1, t2) = mon.types();
+        let grounded =
+            t1 != Type::Flying && t2 != Type::Flying && mon.ability != "levitate";
+        if !foe.fainted() && ability::traps(&foe.bearer(), &mon.bearer(), grounded) {
             return false;
         }
         !(mon.rampage.is_some()
@@ -986,8 +1032,35 @@ impl Battle {
     /// the parity tests pass the same script they gave the reference sim.
     pub fn step_with(&mut self, choices: [Choice; 2], script: &TurnScript) -> Vec<Event> {
         let mut events = Vec::new();
+        // The battle's opening switch-ins happen before turn one, and the
+        // abilities that greet the field fire then: Intimidate cows, Trace
+        // copies, a weather ability lays down its sky. The sim runs them in
+        // speed order, like any other switch-in.
+        if self.turn == 0 {
+            let first = self.faster_side(script.seats.iter().any(|s| s.is_some()));
+            for side in [first, 1 - first] {
+                self.switch_in_greet(side, &mut events);
+            }
+            // A status a mon was handed before the battle is still subject
+            // to the sky those openers just laid down: nothing freezes under
+            // sun, and the sim refuses the status outright rather than
+            // thawing it later.
+            if self.effective_weather() == Some(Weather::Sun) {
+                for w in 0..2 {
+                    for mon in self.sides[w].party.iter_mut() {
+                        if mon.status == Some(Status::Freeze) {
+                            mon.status = None;
+                        }
+                    }
+                }
+            }
+        }
         for side in 0..2 {
             self.ability_update(side);
+            if !self.sides[side].mon().fainted() {
+                let mon = self.sides[side].mon_mut();
+                mon.active_turns = mon.active_turns.saturating_add(1);
+            }
         }
         self.turn += 1;
         self.acted_this_turn = [false; 2];
@@ -1214,8 +1287,8 @@ impl Battle {
                 }
             }
 
-            if matches!(self.weather, Some(Weather::Sandstorm | Weather::Hail)) {
-                let sand = self.weather == Some(Weather::Sandstorm);
+            if matches!(self.effective_weather(), Some(Weather::Sandstorm | Weather::Hail)) {
+                let sand = self.effective_weather() == Some(Weather::Sandstorm);
                 let first = self.faster_side(scripted);
                 for side in [first, 1 - first] {
                     let mon = self.sides[side].mon();
@@ -1227,6 +1300,7 @@ impl Battle {
                         [t1, t2]
                             .iter()
                             .any(|t| matches!(t, Type::Rock | Type::Ground | Type::Steel))
+                            || ability::immune_to_sandstorm(&mon.bearer())
                     } else {
                         t1 == Type::Ice || t2 == Type::Ice
                     };
@@ -1392,6 +1466,53 @@ impl Battle {
                 // out the mon is confused whatever it did with the turn;
                 // falling asleep calms it only if the sleep arrives while
                 // the clock still has time on it.
+                // Rain Dish sips while it rains; Shed Skin gets a third of a
+                // chance at shrugging a status off; Speed Boost climbs a
+                // stage for every turn spent on the field. All three sit at
+                // the sim's residual order 10, subOrder 3.
+                if !self.sides[side].mon().fainted() {
+                    let bearer = self.sides[side].mon().bearer();
+                    if ability::rain_dish(&bearer) && self.effective_weather() == Some(Weather::Rain)
+                    {
+                        let mon = self.sides[side].mon_mut();
+                        let amount = ((mon.max_hp / 16).max(1)).min(mon.max_hp - mon.hp);
+                        if amount > 0 {
+                            mon.hp += amount;
+                            events.push(Event::Healed {
+                                side: side as u8 + 1,
+                                amount,
+                            });
+                        }
+                    }
+                    // A scripted run pins this roll off: it is not one of
+                    // the scenario's knobs, and the reference harness leaves
+                    // a 33-in-100 alone the same way.
+                    if ability::sheds_skin(&bearer)
+                        && self.sides[side].mon().status.is_some()
+                        && !scripted
+                        && self.rng.below(100) < 33
+                    {
+                        let mon = self.sides[side].mon_mut();
+                        mon.status = None;
+                        mon.sleep_n = 0;
+                        mon.sleep_skipped = 0;
+                        mon.toxic_n = 0;
+                    }
+                    if ability::speed_boosts(&bearer) && self.sides[side].mon().active_turns > 0 {
+                        self.sides[side].mon_mut().apply_boost(Boost::Spe, 1);
+                        events.push(Event::Boosted {
+                            side: side as u8 + 1,
+                            boost: Boost::Spe,
+                            delta: 1,
+                        });
+                    }
+                    // Truant loafs every other turn, and the toggle flips
+                    // here whether or not the mon acted.
+                    if ability::truant(&bearer) {
+                        let mon = self.sides[side].mon_mut();
+                        mon.loafing = !mon.loafing;
+                    }
+                }
                 if let Some((slot_i, owed)) = self.sides[side].mon().rampage {
                     let uproar = self.sides[side]
                         .mon()
@@ -1668,8 +1789,8 @@ impl Battle {
     /// RNG on a tie in play. Under a script a tie goes to player 1, matching
     /// the reference sim with its tie-shuffle pinned to insertion order.
     fn faster_side(&mut self, scripted: bool) -> usize {
-        let s0 = self.sides[0].mon().effective_speed();
-        let s1 = self.sides[1].mon().effective_speed();
+        let s0 = self.turn_speed(0);
+        let s1 = self.turn_speed(1);
         match s0.cmp(&s1) {
             core::cmp::Ordering::Greater => 0,
             core::cmp::Ordering::Less => 1,
@@ -1790,6 +1911,16 @@ impl Battle {
                 });
                 return;
             }
+        }
+        // Truant: every other turn is spent loafing about, and the turn it
+        // arrives counts as one unless the battle has not started.
+        if self.sides[side].mon().loafing
+            && ability::truant(&self.sides[side].mon().bearer())
+        {
+            events.push(Event::Failed {
+                side: side as u8 + 1,
+            });
+            return;
         }
         // Frozen solid: a 1-in-5 thaw each action in play (scripts pin it
         // off, matching the reference runs). Flame Wheel and Sacred Fire
@@ -2320,7 +2451,7 @@ impl Battle {
 
         // The charge turn of a two-turn move: announce, tuck the slot away,
         // and stop. Skull Bash's era perk raises Defense on the way down.
-        let instant_solar = slot.entry.id == "solarbeam" && self.weather == Some(Weather::Sun);
+        let instant_solar = slot.entry.id == "solarbeam" && self.effective_weather() == Some(Weather::Sun);
         if slot.entry.charge && !releasing && !instant_solar {
             events.push(Event::Charging {
                 side: side as u8 + 1,
@@ -2547,7 +2678,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // way: one combined stage, (3+s)/3 above zero and 3/(3-s) below.
         // Thunder rides the weather: unmissable in rain, halved in sun.
         let acc = if slot.entry.id == "thunder" {
-            match self.weather {
+            match self.effective_weather() {
                 Some(Weather::Rain) => 0,
                 Some(Weather::Sun) => 50,
                 _ => slot.entry.accuracy,
@@ -2566,7 +2697,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 &self.sides[side].mon().bearer(),
                 &self.sides[foe].mon().bearer(),
                 slot.move_type(),
-                self.weather == Some(Weather::Sandstorm),
+                self.effective_weather() == Some(Weather::Sandstorm),
             );
             chain.apply(acc as u32).clamp(1, 100) as u8
         };
@@ -2868,6 +2999,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     delta: 1,
                 });
             }
+            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
             self.resolve_faints(side, foe, events);
             return;
         }
@@ -3281,7 +3413,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // happens against an immune target — and the kicks never crash.
         {
             let move_type = if slot.entry.id == "weatherball" {
-                match self.weather {
+                match self.effective_weather() {
                     Some(Weather::Sun) => Type::Fire,
                     Some(Weather::Rain) => Type::Water,
                     Some(Weather::Sandstorm) => Type::Rock,
@@ -3480,7 +3612,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             }
             // Weather Ball wears the sky: retyped and doubled under weather.
             let move_type = if slot.entry.id == "weatherball" {
-                match self.weather {
+                match self.effective_weather() {
                     Some(Weather::Sun) => Type::Fire,
                     Some(Weather::Rain) => Type::Water,
                     Some(Weather::Sandstorm) => Type::Rock,
@@ -3499,7 +3631,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 let strip = |t: Type| if t == Type::Ghost { Type::None } else { t };
                 defender.types = (strip(defender.types.0), strip(defender.types.1));
             }
-            let mut weather_mod = match (self.weather, move_type) {
+            let mut weather_mod = match (self.effective_weather(), move_type) {
                 (Some(Weather::Rain), Type::Water) | (Some(Weather::Sun), Type::Fire) => 1,
                 (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
                 _ => 0,
@@ -3525,7 +3657,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // Solar Beam sputters outside the sun it was made for.
             let solar_cut = slot.entry.id == "solarbeam"
                 && matches!(
-                    self.weather,
+                    self.effective_weather(),
                     Some(Weather::Rain | Weather::Sandstorm | Weather::Hail)
                 );
             // Conditional powers the era defines by id.
@@ -3566,7 +3698,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 "revenge" if self.taken_physical[side] > 0 || self.taken_special[side] > 0 => {
                     slot.entry.power * 2
                 }
-                "weatherball" if self.weather.is_some() => 100,
+                "weatherball" if self.effective_weather().is_some() => 100,
                 "hiddenpower" => 70,
                 "magnitude" => {
                     // The spread collapses under a script: the secondary knob
@@ -3738,6 +3870,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 if slot.entry.id == "rage" {
                     self.sides[side].mon_mut().raging = true;
                 }
+                self.on_damaged(side, foe, &slot, move_type, script, events);
+                self.resolve_faints(side, foe, events);
             }
             // Drain heals off the damage actually dealt: floor, but at
             // least 1 — EXCEPT off a substitute, where the sim's sub hook
@@ -3915,6 +4049,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 out.sleep_n = 0;
             }
             out.flash_fire = false;
+            out.active_turns = 0;
             out.toxic_n = 0;
             out.confusion_n = 0;
             out.identified = false;
@@ -4035,6 +4170,49 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// bite a grounded arrival: an eighth, a sixth, a quarter for one, two,
     /// three layers. Flying types float over.
     fn switch_in_greet(&mut self, side: usize, events: &mut Vec<Event>) {
+        // Truant counts the turn it arrives on, unless the battle has not
+        // started: the sim keys that off its own turn counter.
+        let turn = self.turn;
+        self.sides[side].mon_mut().loafing = turn > 0;
+        // Trace takes a copy of what it can see, before anything else it
+        // might have to answer.
+        let foe_ability = self.sides[1 - side].mon().ability;
+        if ability::traces(&self.sides[side].mon().bearer())
+            && !foe_ability.is_empty()
+            && !self.sides[1 - side].mon().fainted()
+        {
+            self.sides[side].mon_mut().ability = foe_ability;
+        }
+        // A weather ability lays its sky down on arrival. Gen 3 gives it no
+        // clock at all: it holds until something else sets the weather.
+        if let Some(sky) = ability::weather_on_entry(&self.sides[side].mon().bearer()) {
+            let weather = match sky {
+                "rain" => Weather::Rain,
+                "sun" => Weather::Sun,
+                _ => Weather::Sandstorm,
+            };
+            if self.weather != Some(weather) {
+                self.weather = Some(weather);
+                self.weather_n = u8::MAX;
+                events.push(Event::WeatherStarted { weather });
+            }
+        }
+        // Intimidate cows whatever is standing across the field — but not
+        // through a substitute, and in this era not at all if the only
+        // target has one up.
+        if ability::intimidates(&self.sides[side].mon().bearer())
+            && !self.sides[1 - side].mon().fainted()
+            && self.sides[1 - side].mon().sub_hp == 0
+            && !ability::blocks_drop(&self.sides[1 - side].mon().bearer(), ability::Drop::Attack)
+            && self.sides[1 - side].mist_n == 0
+        {
+            self.sides[1 - side].mon_mut().apply_boost(Boost::Atk, -1);
+            events.push(Event::Boosted {
+                side: (1 - side) as u8 + 1,
+                boost: Boost::Atk,
+                delta: -1,
+            });
+        }
         self.ability_update(side);
         let mon = self.sides[side].mon_mut();
         if mon.status == Some(Status::Sleep) {
@@ -4098,6 +4276,30 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// the clocks that come with it: Toxic restarts its count, sleep draws
     /// its duration (pinned to the reference sim's floor under a script).
     fn inflict(&mut self, foe: usize, status: Status, scripted: bool, events: &mut Vec<Event>) {
+        let before = self.sides[foe].mon().status;
+        self.inflict_inner(foe, status, scripted, events);
+        // Synchronize passes what it just caught back across the field. It
+        // fires on the status ACTUALLY taking hold, so a blocked or refused
+        // one bounces nothing.
+        if self.sides[foe].mon().status != before {
+            if let Some(back) =
+                ability::synchronizes(&self.sides[foe].mon().bearer(), status)
+            {
+                let source = 1 - foe;
+                if !self.sides[source].mon().fainted() {
+                    self.inflict_inner(source, back, scripted, events);
+                }
+            }
+        }
+    }
+
+    fn inflict_inner(
+        &mut self,
+        foe: usize,
+        status: Status,
+        scripted: bool,
+        events: &mut Vec<Event>,
+    ) {
         // Safeguard shields the whole team from foe-inflicted statuses.
         if self.sides[foe].safeguard_n > 0 {
             return;
@@ -4131,7 +4333,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         }
         // Bright sunlight prevents freezing outright (the sim's Sunny Day
         // onImmunity hook).
-        if status == Status::Freeze && self.weather == Some(Weather::Sun) {
+        if status == Status::Freeze && self.effective_weather() == Some(Weather::Sun) {
             return;
         }
         let sleep = match status {
@@ -4183,6 +4385,65 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
 
     /// The confusion self-hit: 40 base power, typeless, physical, against
     /// the mon's own Defense — stages and burn apply, nothing else does.
+    /// What the target's ability does about having just been hit. Color
+    /// Change takes on the move's type; Rough Skin grazes whatever touched
+    /// it; the status ones each get a third of a chance, Effect Spore a
+    /// tenth. A scripted run pins those rolls off — they are not one of the
+    /// scenario's knobs, and the reference harness leaves a denominator of
+    /// three or ten alone.
+    fn on_damaged(
+        &mut self,
+        side: usize,
+        foe: usize,
+        slot: &MoveSlot,
+        move_type: Type,
+        script: Option<SeatScript>,
+        events: &mut Vec<Event>,
+    ) {
+        let hit_b = self.sides[foe].mon().bearer();
+        if ability::color_change(&hit_b) && !self.sides[foe].mon().fainted() && move_type != Type::None
+        {
+            let (t1, t2) = self.sides[foe].mon().types();
+            if t1 != move_type || t2 != Type::None {
+                self.sides[foe].mon_mut().type_override = Some((move_type, Type::None));
+            }
+        }
+        if !slot.entry.contact {
+            return;
+        }
+        if ability::rough_skin(&hit_b) {
+            let attacker = self.sides[side].mon_mut();
+            let graze = ((attacker.max_hp / 16).max(1)).min(attacker.hp);
+            attacker.hp -= graze;
+            events.push(Event::Recoil {
+                side: side as u8 + 1,
+                amount: graze,
+            });
+        }
+        let (touch, odds) = ability::on_touch(&hit_b);
+        let proc = match script {
+            Some(_) => false,
+            None => touch != ability::OnTouch::None && self.rng.below(odds) == 0,
+        };
+        if proc {
+            match touch {
+                ability::OnTouch::Status(st) => self.inflict(side, st, script.is_some(), events),
+                // The sim samples sleep, paralysis and poison in that order.
+                ability::OnTouch::Spore => {
+                    let st = match self.rng.below(3) {
+                        0 => Status::Sleep,
+                        1 => Status::Paralysis,
+                        _ => Status::Poison,
+                    };
+                    self.inflict(side, st, script.is_some(), events);
+                }
+                // Attract is not modelled yet, so Cute Charm has nothing to
+                // do with its third of a chance.
+                ability::OnTouch::Attract | ability::OnTouch::None => {}
+            }
+        }
+    }
+
     fn confusion_self_hit(&mut self, side: usize, random: u8) -> u16 {
         let mon = self.sides[side].mon();
         // The sim runs this through its ordinary damage call, which means
@@ -4325,7 +4586,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 });
             }
             StatusAction::WeatherHeal => {
-                let mult = match self.weather {
+                let mult = match self.effective_weather() {
                     None => (1, 2),
                     Some(Weather::Sun) => (2, 3),
                     Some(_) => (1, 4),
