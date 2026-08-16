@@ -3699,18 +3699,21 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         let hits = if slot.entry.id == "beatup" {
             beatup_allies.len() as u16
         } else if slot.entry.id == "triplekick" {
-            // Each kick re-rolls accuracy in the sim; under a script the
+            // Each kick re-rolls accuracy in the sim. Under a script the
             // follow-up rolls read the secondary knob — false stops after
-            // the first kick, true lands all three.
+            // the first kick — UNLESS the roll is not a roll at all: an
+            // accuracy that has saturated at a hundred is certain, and a
+            // Compound Eyes user lands all three whatever the knob says.
+            let certain = acc == 0 || acc >= 100;
             match script {
-                Some(s) => {
+                Some(s) if !certain => {
                     if s.secondary {
                         3
                     } else {
                         1
                     }
                 }
-                None => 3,
+                _ => 3,
             }
         } else {
             match slot.entry.multihit {
