@@ -1233,6 +1233,7 @@ impl Battle {
             || self.sides[side].mon().bide.is_some()
             || self.sides[side].mon().rolling.is_some();
         let releasing = self.sides[side].mon().charging.is_some() || ramping;
+        let was_charging = self.sides[side].mon().charging.is_some();
         let index = match self.sides[side].mon().charging {
             Some(i) => {
                 self.sides[side].mon_mut().charging = None;
@@ -1243,6 +1244,13 @@ impl Battle {
                 None => index,
             },
         };
+        // A two-turn move Disabled mid-charge cannot release: the turn is
+        // simply lost — no move line, no Struggle, no PP.
+        if was_charging && self.sides[side].mon().disabled_slot == Some(index as u8) {
+            self.sides[side].mon_mut().stall_counter = 0;
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
         let Some(slot) = self.sides[side].mon().moves.get(index).copied() else {
             events.push(Event::Failed { side: side as u8 + 1 });
             return;
