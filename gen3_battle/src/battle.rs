@@ -4005,7 +4005,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 if slot.entry.id == "rage" {
                     self.sides[side].mon_mut().raging = true;
                 }
-                self.on_damaged(side, foe, &slot, move_type, script, events);
                 self.resolve_faints(side, foe, events);
             }
             // Drain heals off the damage actually dealt: floor, but at
@@ -4041,7 +4040,14 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
             }
             if !hit_sub {
+                // The move's own secondary lands FIRST, and only then does
+                // the target answer having been hit. Colour Change turning a
+                // mon Fire the instant a Blaze Kick lands would otherwise
+                // make it immune to the burn that same Blaze Kick is about
+                // to inflict.
                 self.hit_effects(side, foe, &slot, script, events);
+                self.on_damaged(side, foe, &slot, move_type, script, events);
+                self.resolve_faints(side, foe, events);
             }
             if self.sides[foe].mon().fainted() {
                 break;
@@ -4339,18 +4345,24 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // started: the sim keys that off its own turn counter.
         let turn = self.turn;
         self.sides[side].mon_mut().loafing = turn > 0;
-        // Trace takes a copy of what it can see, before anything else it
-        // might have to answer.
+        // What this mon walks in WITH is what greets the field. Trace copies
+        // at the same moment, but an ability handed over in this era is never
+        // started — the sim gates that on gen > 3 — so a traced Intimidate
+        // cows nobody and a traced Drizzle brings no rain.
+        let own = self.sides[side].mon().ability;
         let foe_ability = self.sides[1 - side].mon().ability;
         if ability::traces(&self.sides[side].mon().bearer())
-            && !foe_ability.is_empty()
             && !self.sides[1 - side].mon().fainted()
         {
             self.sides[side].mon_mut().ability = foe_ability;
         }
+        let greeter = ability::Bearer {
+            ability: own,
+            ..self.sides[side].mon().bearer()
+        };
         // A weather ability lays its sky down on arrival. Gen 3 gives it no
         // clock at all: it holds until something else sets the weather.
-        if let Some(sky) = ability::weather_on_entry(&self.sides[side].mon().bearer()) {
+        if let Some(sky) = ability::weather_on_entry(&greeter) {
             let weather = match sky {
                 "rain" => Weather::Rain,
                 "sun" => Weather::Sun,
@@ -4365,7 +4377,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // Intimidate cows whatever is standing across the field — but not
         // through a substitute, and in this era not at all if the only
         // target has one up.
-        if ability::intimidates(&self.sides[side].mon().bearer())
+        if ability::intimidates(&greeter)
             && !self.sides[1 - side].mon().fainted()
             && self.sides[1 - side].mon().sub_hp == 0
             && !ability::blocks_drop(&self.sides[1 - side].mon().bearer(), ability::Drop::Attack)
