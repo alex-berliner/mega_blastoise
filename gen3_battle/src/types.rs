@@ -178,13 +178,25 @@ mod tests {
     #[test]
     fn dual_types_multiply() {
         // Rock/Ground against Water: 2x and 2x.
-        assert_eq!(effectiveness_against(Type::Water, (Type::Rock, Type::Ground)), 400);
+        assert_eq!(
+            effectiveness_against(Type::Water, (Type::Rock, Type::Ground)),
+            400
+        );
         // Fire against Water/Flying: half, then neutral.
-        assert_eq!(effectiveness_against(Type::Fire, (Type::Water, Type::Flying)), 50);
+        assert_eq!(
+            effectiveness_against(Type::Fire, (Type::Water, Type::Flying)),
+            50
+        );
         // An immunity on either half wins outright.
-        assert_eq!(effectiveness_against(Type::Ground, (Type::Flying, Type::Steel)), 0);
+        assert_eq!(
+            effectiveness_against(Type::Ground, (Type::Flying, Type::Steel)),
+            0
+        );
         // A single-typed mon only counts its one type.
-        assert_eq!(effectiveness_against(Type::Water, (Type::Fire, Type::None)), 200);
+        assert_eq!(
+            effectiveness_against(Type::Water, (Type::Fire, Type::None)),
+            200
+        );
     }
 
     #[test]

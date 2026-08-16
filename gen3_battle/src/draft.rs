@@ -130,7 +130,11 @@ mod tests {
     fn every_drafted_mon_can_actually_fight() {
         let mut rng = Rng::new(9);
         for mon in draft_team(&mut rng, 6) {
-            assert!(!mon.moves.is_empty(), "{} was drafted with no moves", mon.species.name);
+            assert!(
+                !mon.moves.is_empty(),
+                "{} was drafted with no moves",
+                mon.species.name
+            );
             assert!(mon.moves.len() <= 4);
             assert!(mon.hp > 0);
         }
@@ -163,11 +167,18 @@ mod tests {
     #[test]
     fn a_drafted_set_uses_showdowns_moves_for_that_role() {
         let mut rng = Rng::new(11);
-        let set = RANDBAT.iter().find(|s| s.species == "absol").expect("absol has sets");
+        let set = RANDBAT
+            .iter()
+            .find(|s| s.species == "absol")
+            .expect("absol has sets");
         let mon = draft_set(&mut rng, set).expect("absol drafts");
         let allowed: Vec<&str> = set.moves().map(|(m, _)| m.id).collect();
         for slot in &mon.moves {
-            assert!(allowed.contains(&slot.entry.id), "{} is not in the role", slot.entry.name);
+            assert!(
+                allowed.contains(&slot.entry.id),
+                "{} is not in the role",
+                slot.entry.name
+            );
         }
         assert_eq!(mon.level, set.level);
     }
@@ -192,8 +203,7 @@ mod tests {
         let mut rng = Rng::new(5);
         let blaziken = species_by_id("blaziken").expect("blaziken");
         let mon = draft_mon(&mut rng, blaziken, 50).expect("blaziken can fight at 50");
-        let learnable: Vec<&str> =
-            blaziken.moves_by_level(50).map(|m| m.id).collect();
+        let learnable: Vec<&str> = blaziken.moves_by_level(50).map(|m| m.id).collect();
         for slot in &mon.moves {
             assert!(
                 learnable.contains(&slot.entry.id),

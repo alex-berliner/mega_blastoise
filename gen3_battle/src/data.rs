@@ -45,8 +45,12 @@ impl SpeciesEntry {
 
     /// Everything this species knows by `level`, most recently learned first.
     pub fn moves_by_level(&self, level: u8) -> impl Iterator<Item = &'static MoveEntry> {
-        let mut rows: alloc::vec::Vec<(u16, u8)> =
-            self.learnset().iter().copied().filter(|(_, l)| *l <= level).collect();
+        let mut rows: alloc::vec::Vec<(u16, u8)> = self
+            .learnset()
+            .iter()
+            .copied()
+            .filter(|(_, l)| *l <= level)
+            .collect();
         rows.sort_by(|a, b| b.1.cmp(&a.1));
         rows.into_iter().map(|(i, _)| &MOVES[i as usize])
     }
@@ -70,10 +74,16 @@ impl RandbatSet {
     /// Showdown lists more moves than a set uses, and the drafter picks.
     pub fn moves(&self) -> impl Iterator<Item = (&'static MoveEntry, Option<Type>)> {
         let start = self.move_start as usize;
-        RANDBAT_MOVES[start..start + self.move_len as usize].iter().map(|(i, ty)| {
-            let over = if *ty as usize >= TYPE_COUNT { None } else { Some(TYPE_BY_INDEX[*ty as usize]) };
-            (&MOVES[*i as usize], over)
-        })
+        RANDBAT_MOVES[start..start + self.move_len as usize]
+            .iter()
+            .map(|(i, ty)| {
+                let over = if *ty as usize >= TYPE_COUNT {
+                    None
+                } else {
+                    Some(TYPE_BY_INDEX[*ty as usize])
+                };
+                (&MOVES[*i as usize], over)
+            })
     }
 
     pub fn species_entry(&self) -> Option<&'static SpeciesEntry> {
@@ -420,21 +430,41 @@ pub static STRUGGLE: MoveEntry = MoveEntry {
 
 /// Chart order, so a randbat slot's type index resolves back to a [`Type`].
 static TYPE_BY_INDEX: [Type; 17] = [
-    Type::Normal, Type::Fire, Type::Water, Type::Electric, Type::Grass, Type::Ice,
-    Type::Fighting, Type::Poison, Type::Ground, Type::Flying, Type::Psychic, Type::Bug,
-    Type::Rock, Type::Ghost, Type::Dragon, Type::Dark, Type::Steel,
+    Type::Normal,
+    Type::Fire,
+    Type::Water,
+    Type::Electric,
+    Type::Grass,
+    Type::Ice,
+    Type::Fighting,
+    Type::Poison,
+    Type::Ground,
+    Type::Flying,
+    Type::Psychic,
+    Type::Bug,
+    Type::Rock,
+    Type::Ghost,
+    Type::Dragon,
+    Type::Dark,
+    Type::Steel,
 ];
 
 include!(concat!(env!("OUT_DIR"), "/gen3_tables.rs"));
 
 /// Find a species by lowercase id. O(log N): the table is emitted sorted.
 pub fn species_by_id(id: &str) -> Option<&'static SpeciesEntry> {
-    SPECIES.binary_search_by(|e| e.id.cmp(id)).ok().map(|i| &SPECIES[i])
+    SPECIES
+        .binary_search_by(|e| e.id.cmp(id))
+        .ok()
+        .map(|i| &SPECIES[i])
 }
 
 /// Find a move by lowercase id. O(log N).
 pub fn move_by_id(id: &str) -> Option<&'static MoveEntry> {
-    MOVES.binary_search_by(|e| e.id.cmp(id)).ok().map(|i| &MOVES[i])
+    MOVES
+        .binary_search_by(|e| e.id.cmp(id))
+        .ok()
+        .map(|i| &MOVES[i])
 }
 
 #[cfg(test)]
@@ -446,8 +476,14 @@ mod tests {
         // Gen 3's dex is everything up to Deoxys, so all three layers have to
         // have merged. Bulbasaur comes from the gen1 layer, Treecko from gen3.
         assert!(SPECIES.len() > 380, "only {} species merged", SPECIES.len());
-        assert!(species_by_id("bulbasaur").is_some(), "the gen1 layer is missing");
-        assert!(species_by_id("treecko").is_some(), "the gen3 layer is missing");
+        assert!(
+            species_by_id("bulbasaur").is_some(),
+            "the gen1 layer is missing"
+        );
+        assert!(
+            species_by_id("treecko").is_some(),
+            "the gen3 layer is missing"
+        );
         assert!(species_by_id("notamon").is_none());
     }
 
@@ -489,7 +525,11 @@ mod tests {
         assert!(RANDBAT.len() > 200, "only {} sets", RANDBAT.len());
         // Every set names a species the dex knows and carries real moves.
         for set in RANDBAT {
-            assert!(set.species_entry().is_some(), "{} is not in the dex", set.species);
+            assert!(
+                set.species_entry().is_some(),
+                "{} is not in the dex",
+                set.species
+            );
             assert!(set.move_len > 0);
             assert!(set.level > 0);
         }
@@ -504,28 +544,43 @@ mod tests {
         assert_eq!(move_by_id("tackle").unwrap().priority, 0);
         let ember = move_by_id("ember").unwrap().secondary.unwrap();
         assert_eq!(ember.chance, 10);
-        assert!(matches!(ember.effect, SecondaryEffect::Status(Status::Burn)));
+        assert!(matches!(
+            ember.effect,
+            SecondaryEffect::Status(Status::Burn)
+        ));
         let bodyslam = move_by_id("bodyslam").unwrap().secondary.unwrap();
         assert_eq!(bodyslam.chance, 30);
-        assert!(matches!(bodyslam.effect, SecondaryEffect::Status(Status::Paralysis)));
+        assert!(matches!(
+            bodyslam.effect,
+            SecondaryEffect::Status(Status::Paralysis)
+        ));
         assert!(move_by_id("tackle").unwrap().secondary.is_none());
 
         // Poison Fang badly poisons — tox, not plain psn. Found by the fuzzer:
         // the tick is a growing sixteenth, not a flat eighth.
         let fang = move_by_id("poisonfang").unwrap().secondary.unwrap();
-        assert!(matches!(fang.effect, SecondaryEffect::Status(Status::Toxic)));
+        assert!(matches!(
+            fang.effect,
+            SecondaryEffect::Status(Status::Toxic)
+        ));
 
         // Boost secondaries carry the target's stage change. Crunch drops
         // Sp. Def in this era, not Defense.
         let crunch = move_by_id("crunch").unwrap().secondary.unwrap();
         assert_eq!(crunch.chance, 20);
         assert!(
-            matches!(crunch.effect, SecondaryEffect::Boosts(&[(Boost::SpDef, -1)])),
+            matches!(
+                crunch.effect,
+                SecondaryEffect::Boosts(&[(Boost::SpDef, -1)])
+            ),
             "crunch: {:?}",
             crunch.effect
         );
         let octazooka = move_by_id("octazooka").unwrap().secondary.unwrap();
-        assert!(matches!(octazooka.effect, SecondaryEffect::Boosts(&[(Boost::Acc, -1)])));
+        assert!(matches!(
+            octazooka.effect,
+            SecondaryEffect::Boosts(&[(Boost::Acc, -1)])
+        ));
     }
 
     #[test]

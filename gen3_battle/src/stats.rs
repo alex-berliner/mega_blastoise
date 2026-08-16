@@ -124,9 +124,9 @@ static NATURES: [Nature; 25] = [
 ];
 
 static NATURE_NAMES: [&str; 25] = [
-    "Hardy", "Lonely", "Brave", "Adamant", "Naughty", "Bold", "Docile", "Relaxed", "Impish",
-    "Lax", "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful",
-    "Rash", "Calm", "Gentle", "Sassy", "Careful", "Quirky",
+    "Hardy", "Lonely", "Brave", "Adamant", "Naughty", "Bold", "Docile", "Relaxed", "Impish", "Lax",
+    "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful", "Rash",
+    "Calm", "Gentle", "Sassy", "Careful", "Quirky",
 ];
 
 /// One mon's investment in a single stat.
@@ -163,7 +163,11 @@ pub fn other_stat(base: u16, inv: Invest, level: u8, nature: Nature, stat: Stat)
 /// Apply a stat stage (-6..=6) the Gen 3 way: a ratio, not a percentage.
 pub fn apply_stage(stat: u16, stage: i8) -> u16 {
     let s = stage.clamp(-6, 6);
-    let (num, den): (u32, u32) = if s >= 0 { (2 + s as u32, 2) } else { (2, 2 + (-s) as u32) };
+    let (num, den): (u32, u32) = if s >= 0 {
+        (2 + s as u32, 2)
+    } else {
+        (2, 2 + (-s) as u32)
+    };
     ((stat as u32 * num) / den) as u16
 }
 
@@ -184,7 +188,11 @@ mod tests {
         assert_eq!(Nature::Jolly.effect(), (Stat::Spe, Stat::SpAtk));
         assert_eq!(Nature::Timid.effect(), (Stat::Spe, Stat::Atk));
         assert_eq!(Nature::from_index(3), Nature::Adamant);
-        assert_eq!(Nature::from_index(99), Nature::Hardy, "out of range is neutral");
+        assert_eq!(
+            Nature::from_index(99),
+            Nature::Hardy,
+            "out of range is neutral"
+        );
     }
 
     #[test]
@@ -192,7 +200,11 @@ mod tests {
         assert_eq!(Nature::Adamant.modifier(Stat::Atk), 11);
         assert_eq!(Nature::Adamant.modifier(Stat::SpAtk), 9);
         assert_eq!(Nature::Adamant.modifier(Stat::Spe), 10);
-        assert_eq!(Nature::Hardy.modifier(Stat::Atk), 10, "a neutral nature moves nothing");
+        assert_eq!(
+            Nature::Hardy.modifier(Stat::Atk),
+            10,
+            "a neutral nature moves nothing"
+        );
     }
 
     /// Hand-checked against the standard Gen 3 formulas.
@@ -213,7 +225,10 @@ mod tests {
         // The same mon, Adamant: floor(299 * 11/10) = 328.
         assert_eq!(other_stat(100, MAXED, 100, Nature::Adamant, Stat::Atk), 328);
         // And its Sp.Atk is lowered: floor(299 * 9/10) = 269.
-        assert_eq!(other_stat(100, MAXED, 100, Nature::Adamant, Stat::SpAtk), 269);
+        assert_eq!(
+            other_stat(100, MAXED, 100, Nature::Adamant, Stat::SpAtk),
+            269
+        );
     }
 
     #[test]
@@ -232,6 +247,10 @@ mod tests {
         assert_eq!(apply_stage(200, 6), 800);
         assert_eq!(apply_stage(200, -1), 133);
         assert_eq!(apply_stage(200, -6), 50);
-        assert_eq!(apply_stage(200, 9), apply_stage(200, 6), "stages clamp at six");
+        assert_eq!(
+            apply_stage(200, 9),
+            apply_stage(200, 6),
+            "stages clamp at six"
+        );
     }
 }

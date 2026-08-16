@@ -87,9 +87,15 @@ pub struct Roll {
 impl Roll {
     /// The highest roll, no crit — the number a damage calculator quotes as
     /// "max".
-    pub const MAX: Roll = Roll { crit: false, random: 100 };
+    pub const MAX: Roll = Roll {
+        crit: false,
+        random: 100,
+    };
     /// The lowest.
-    pub const MIN: Roll = Roll { crit: false, random: 85 };
+    pub const MIN: Roll = Roll {
+        crit: false,
+        random: 85,
+    };
 }
 
 /// Chance denominator of a critical hit at `stage`: 1 in N.
@@ -220,7 +226,14 @@ mod tests {
         }
     }
 
-    const TACKLE: MoveUse = MoveUse { halve_def: false, late_mult: 1, special: false, weather: 0, move_type: Type::Normal, power: 100 };
+    const TACKLE: MoveUse = MoveUse {
+        halve_def: false,
+        late_mult: 1,
+        special: false,
+        weather: 0,
+        move_type: Type::Normal,
+        power: 100,
+    };
 
     /// Worked by hand: level term 42; 42*100*299/200 = 6279; /50 = 125; +2 = 127.
     #[test]
@@ -246,7 +259,10 @@ mod tests {
         // STAB first (127 -> 190), THEN the roll: floor(190 * 85/100) = 161.
         // The other order gives 160; Showdown agrees with 161.
         assert_eq!(damage(&attacker(), &defender(), &TACKLE, Roll::MIN), 161);
-        let out_of_range = Roll { crit: false, random: 3 };
+        let out_of_range = Roll {
+            crit: false,
+            random: 3,
+        };
         assert_eq!(
             damage(&attacker(), &defender(), &TACKLE, out_of_range),
             161,
@@ -259,7 +275,10 @@ mod tests {
         // 381, not 380: the crit doubles the BASE (127 -> 254) and STAB
         // floors afterwards, so it is not the same as doubling the 190 the
         // uncritical hit lands for. Order matters because every step floors.
-        let crit = Roll { crit: true, random: 100 };
+        let crit = Roll {
+            crit: true,
+            random: 100,
+        };
         assert_eq!(damage(&attacker(), &defender(), &TACKLE, crit), 381);
 
         // The defender is at +2 Def and the attacker at -2 Atk. Without a crit
@@ -278,16 +297,40 @@ mod tests {
         let mut d = defender();
         d.def = 1000;
         d.sp_def = 100;
-        let bite = MoveUse { halve_def: false, late_mult: 1, special: false, weather: 0, move_type: Type::Dark, power: 100 };
-        let physical = MoveUse { halve_def: false, late_mult: 1, special: false, weather: 0, move_type: Type::Rock, power: 100 };
-        assert!(damage(&attacker(), &d, &bite, Roll::MAX) > damage(&attacker(), &d, &physical, Roll::MAX));
+        let bite = MoveUse {
+            halve_def: false,
+            late_mult: 1,
+            special: false,
+            weather: 0,
+            move_type: Type::Dark,
+            power: 100,
+        };
+        let physical = MoveUse {
+            halve_def: false,
+            late_mult: 1,
+            special: false,
+            weather: 0,
+            move_type: Type::Rock,
+            power: 100,
+        };
+        assert!(
+            damage(&attacker(), &d, &bite, Roll::MAX)
+                > damage(&attacker(), &d, &physical, Roll::MAX)
+        );
     }
 
     #[test]
     fn burn_halves_physical_only() {
         let mut a = attacker();
         a.burned = true;
-        let special = MoveUse { halve_def: false, late_mult: 1, special: false, weather: 0, move_type: Type::Water, power: 100 };
+        let special = MoveUse {
+            halve_def: false,
+            late_mult: 1,
+            special: false,
+            weather: 0,
+            move_type: Type::Water,
+            power: 100,
+        };
         let burned_physical = damage(&a, &defender(), &TACKLE, Roll::MAX);
         let healthy_physical = damage(&attacker(), &defender(), &TACKLE, Roll::MAX);
         assert!(burned_physical < healthy_physical);
@@ -303,7 +346,10 @@ mod tests {
         let mut d = defender();
         d.reflect = true;
         assert!(damage(&attacker(), &d, &TACKLE, Roll::MAX) < 190);
-        let crit = Roll { crit: true, random: 100 };
+        let crit = Roll {
+            crit: true,
+            random: 100,
+        };
         assert_eq!(damage(&attacker(), &d, &TACKLE, crit), 381);
     }
 
@@ -312,7 +358,14 @@ mod tests {
         let mut d = defender();
         d.types = (Type::Ghost, Type::None);
         assert_eq!(damage(&attacker(), &d, &TACKLE, Roll::MAX), 0);
-        let status = MoveUse { halve_def: false, late_mult: 1, special: false, weather: 0, move_type: Type::Normal, power: 0 };
+        let status = MoveUse {
+            halve_def: false,
+            late_mult: 1,
+            special: false,
+            weather: 0,
+            move_type: Type::Normal,
+            power: 0,
+        };
         assert_eq!(damage(&attacker(), &defender(), &status, Roll::MAX), 0);
     }
 
