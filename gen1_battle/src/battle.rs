@@ -391,8 +391,13 @@ impl<'a> Battle<'a> {
                             typ: format!("{:?}", info.move_type),
                             pp: sl.pp,
                             max_pp: sl.max_pp,
-                            disabled: v.has(Volatile::DISABLED)
-                                && v.disabled_slot as usize == slot,
+                            // A move with nothing left in it is greyed out
+                            // in the sim's request the same way a Disabled
+                            // one is, and a player who has only empty slots
+                            // is offered Struggle instead.
+                            disabled: sl.pp == 0
+                                || (v.has(Volatile::DISABLED)
+                                    && v.disabled_slot as usize == slot),
                             target: 0,
                         }
                     })
