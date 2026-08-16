@@ -1972,14 +1972,6 @@ impl Battle {
             return;
         }
 
-        // Snore only works out of a snore-filled sleep.
-        if slot.entry.id == "snore" && !asleep_now {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
-            return;
-        }
-
         // Nature Power becomes Swift in the sim's default arena; Hidden
         // Power under the fuzz's uniform maxed IVs is Dark 70.
         let slot = if slot.entry.id == "metronome" {
@@ -2972,6 +2964,17 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
                 _ => unreachable!(),
             }
+        }
+
+        // Snore only works out of a snore-filled sleep — checked HERE, after
+        // the call substitution, because Assist and Metronome can hand it to
+        // a wide-awake mon and the gate has to see the move that will
+        // actually go off.
+        if slot.entry.id == "snore" && !asleep_now {
+            events.push(Event::Failed {
+                side: side as u8 + 1,
+            });
+            return;
         }
 
         // A zero-power move is its status action, nothing more. A
