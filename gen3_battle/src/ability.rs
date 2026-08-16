@@ -53,6 +53,12 @@ impl Chain {
         self.0 = (self.0 * numerator + 2048) >> 12;
     }
 
+    /// Fold a whole second chain in, as the sim does when two effects answer
+    /// the same event.
+    pub fn extend(&mut self, other: Chain) {
+        self.mul(other.0);
+    }
+
     /// True while nothing has been folded in.
     pub fn is_identity(&self) -> bool {
         self.0 == 4096

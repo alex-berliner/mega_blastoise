@@ -44,7 +44,9 @@ function teamMon(dex, m, slot) {
     ivs: m.ivs ?? {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31},
     evs: m.evs ?? {hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0},
     moves: m.moves,
-    item: '',
+    // Only the items the core engines model are ever handed out; blank asks
+    // for a mon holding nothing.
+    item: m.item ?? '',
   };
 }
 

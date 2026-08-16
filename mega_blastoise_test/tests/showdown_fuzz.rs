@@ -193,6 +193,72 @@ const GEN3_ABILITIES: &[&str] = &[
 ];
 
 
+/// The Gen 3 held items the engine models, and so the ones the fuzzer is
+/// allowed to hand out. Same rule as the abilities: anything outside this
+/// list stays off both sides.
+///
+/// Still to come: King's Rock, Quick Claw, White Herb, Mental Herb, Leppa
+/// Berry, and the two moves that move items about — Trick and Recycle.
+const GEN3_ITEMS: &[&str] = &[
+    "apicotberry",
+    "aspearberry",
+    "blackbelt",
+    "blackglasses",
+    "brightpowder",
+    "charcoal",
+    "cheriberry",
+    "chestoberry",
+    "choiceband",
+    "deepseascale",
+    "deepseatooth",
+    "dragonfang",
+    "ganlonberry",
+    "hardstone",
+    "lansatberry",
+    "laxincense",
+    "leftovers",
+    "liechiberry",
+    "lightball",
+    "luckypunch",
+    "machobrace",
+    "magnet",
+    "metalcoat",
+    "metalpowder",
+    "miracleseed",
+    "mysticwater",
+    "nevermeltice",
+    "oranberry",
+    "pechaberry",
+    "petayaberry",
+    "poisonbarb",
+    "rawstberry",
+    "salacberry",
+    "scopelens",
+    "seaincense",
+    "sharpbeak",
+    "shellbell",
+    "silkscarf",
+    "silverpowder",
+    "sitrusberry",
+    "softsand",
+    "souldew",
+    "spelltag",
+    "starfberry",
+    "stick",
+    "thickclub",
+    "twistedspoon",
+];
+
+/// What this mon is holding. Most mons hold nothing, the way most sets do.
+fn pick_item(fz: &mut Fuzz) -> &'static str {
+    let pick = *fz.pick(GEN3_ITEMS);
+    if fz.chance(60) {
+        ""
+    } else {
+        pick
+    }
+}
+
 /// Which ability this mon walks in with. The draw always happens so the
 /// generator's stream does not depend on which species came up, and it comes
 /// out empty whenever the species has nothing we model.
@@ -440,6 +506,7 @@ fn fuzz_gen3_turns() {
         let st1 = legal_status(&mut fz, s1);
         let st2 = legal_status(&mut fz, s2);
         let (ab1, ab2) = (pick_ability(&mut fz, s1), pick_ability(&mut fz, s2));
+        let (it1, it2) = (pick_item(&mut fz), pick_item(&mut fz));
         // 1-3 whole turns, each seat scripted per turn: hit, crit, roll,
         // secondary, immobile, hits, selfhit. The conditional knobs only
         // fire when their condition holds (paralysis, a 2-5 multi-hit move,
@@ -481,8 +548,8 @@ fn fuzz_gen3_turns() {
             .collect();
         scenarios.push(json!({
             "kind": "turn", "gen": 3,
-            "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0), "ability": ab1},
-            "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0), "ability": ab2},
+            "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0), "ability": ab1, "item": it1},
+            "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0), "ability": ab2, "item": it2},
             "moves": [m1, m2],
             "turns": turn_json,
         }));
@@ -495,13 +562,14 @@ fn fuzz_gen3_turns() {
             turns,
             [st1.map(|s| s.1), st2.map(|s| s.1)],
             [ab1, ab2],
+            [it1, it2],
         ));
     }
 
     let results = showdown(&Value::Array(scenarios.clone()));
     let inv = Invest { iv: 31, ev: 0 };
     let mut bad = 0;
-    for (i, ((s1, s2, level, m1, m2, turns, statuses, abilities), got)) in
+    for (i, ((s1, s2, level, m1, m2, turns, statuses, abilities, items), got)) in
         cases.iter().zip(&results).enumerate()
     {
         if got.get("error").is_some() {
@@ -511,9 +579,10 @@ fn fuzz_gen3_turns() {
         }
         // Ability and status go on BEFORE the battle exists: constructing it
         // runs the opening switch-ins, and those read both.
-        let mk = |id: &str, mv: &str, ability: &'static str, st: Option<_>| {
+        let mk = |id: &str, mv: &str, ability: &'static str, item: &'static str, st: Option<_>| {
             let mut mon = Mon::new(id, *level, Nature::Hardy, inv, &[mv]).unwrap();
             mon.ability = ability;
+            mon.item = item;
             mon.status = st;
             if st == Some(gen3_battle::data::Status::Sleep) {
                 // The sim's pinned duration roll: asleep for one skipped
@@ -523,8 +592,8 @@ fn fuzz_gen3_turns() {
             mon
         };
         let mut battle = Battle::new(
-            Side::new(vec![mk(s1, m1, abilities[0], statuses[0])]),
-            Side::new(vec![mk(s2, m2, abilities[1], statuses[1])]),
+            Side::new(vec![mk(s1, m1, abilities[0], items[0], statuses[0])]),
+            Side::new(vec![mk(s2, m2, abilities[1], items[1], statuses[1])]),
             1,
         );
         // Skip speed ties: the tie-break is each side's own RNG.
@@ -1003,8 +1072,10 @@ fn fuzz_gen3_battles() {
                     }
                 };
                 let ability = pick_ability(&mut fz, sp);
+                let item = pick_item(&mut fz);
                 let mut mon = Mon::new(sp.id, level, Nature::Hardy, inv, &[&m1, &m2]).unwrap();
                 mon.ability = ability;
+                mon.item = item;
                 mon.status = match st {
                     Some("brn") => Some(gen3_battle::data::Status::Burn),
                     Some("psn") => Some(gen3_battle::data::Status::Poison),
@@ -1017,7 +1088,7 @@ fn fuzz_gen3_battles() {
                 }
                 specs[seat].push(json!({
                     "species": sp.id, "level": level, "moves": [m1, m2],
-                    "status": st, "ability": ability,
+                    "status": st, "ability": ability, "item": item,
                 }));
                 teams[seat].push(mon);
             }

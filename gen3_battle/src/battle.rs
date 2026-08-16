@@ -15,6 +15,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use crate::ability;
+use crate::item;
 use crate::damage::{crit_denominator, damage, Attacker, Defender, MoveUse, Roll};
 use crate::data::{
     move_by_id, species_by_id, Boost, FixedDamage, MoveEntry, SecondaryEffect, SideCondition,
@@ -291,12 +292,26 @@ pub struct Mon {
     pub active_turns: u8,
     /// Truant's toggle: true on the turn the mon loafs about.
     pub loafing: bool,
+    /// The item this mon is holding, as a lookup id, or empty for none.
+    /// Eating a berry empties it; Trick and Knock Off move it about.
+    pub item: &'static str,
 }
 
 impl Mon {
     /// The slice of this mon the ability rules read. Handing the rules a
     /// small copy rather than the mon itself keeps them pure, and keeps the
     /// borrow checker out of the middle of a damage calculation.
+    /// The slice of this mon the item rules read.
+    pub fn holder(&self) -> crate::item::Holder {
+        crate::item::Holder {
+            item: self.item,
+            species: self.species.id,
+            transformed: self.transform_backup.is_some(),
+            hp: self.hp,
+            max_hp: self.max_hp,
+        }
+    }
+
     pub fn bearer(&self) -> ability::Bearer {
         ability::Bearer {
             ability: self.ability,
@@ -401,6 +416,7 @@ impl Mon {
             flash_fire: false,
             active_turns: 0,
             loafing: false,
+            item: "",
         })
     }
 
@@ -855,6 +871,9 @@ pub struct Battle {
     /// turn. Gen 2-4 still honour it (the sim re-queues at priority -101),
     /// so the slot stays empty until the move phase is over.
     deferred_switch: [Option<usize>; 2],
+    /// Which side this turn's speeds put first, read once as the turn opens
+    /// and held for the rest of it.
+    speed_first: Option<usize>,
 }
 
 impl Battle {
@@ -873,6 +892,7 @@ impl Battle {
             will_act: false,
             pursuing: false,
             deferred_switch: [None; 2],
+            speed_first: None,
         };
         // The battle's opening switch-ins are switch-ins, and the sim runs
         // them as part of starting: Intimidate cows, Trace copies, a weather
@@ -884,17 +904,25 @@ impl Battle {
         let mut opening = Vec::new();
         let first = battle.faster_side(true);
         for side in [first, 1 - first] {
-            battle.switch_in_greet(side, &mut opening);
+            battle.greet(side, false, &mut opening);
         }
         // A status a mon was handed before the battle is still subject to the
         // sky those openers just laid down: nothing freezes under sun, and
         // the sim refuses the status rather than thawing it later.
-        if battle.effective_weather() == Some(Weather::Sun) {
-            for w in 0..2 {
-                for mon in battle.sides[w].party.iter_mut() {
-                    if mon.status == Some(Status::Freeze) {
-                        mon.status = None;
-                    }
+        // A status a mon was handed before the battle is still subject to
+        // what those openers just did. Nothing freezes under sun, and an
+        // ability that refuses a status refuses it here too — the sim never
+        // applies it in the first place, which is why a Limber mon handed
+        // paralysis is at full Speed on turn one rather than curing it a
+        // moment later. A BERRY, by contrast, is not eaten yet: those wait
+        // for the first update of the turn, after the speeds are read.
+        let sun = battle.effective_weather() == Some(Weather::Sun);
+        for w in 0..2 {
+            for mon in battle.sides[w].party.iter_mut() {
+                let Some(st) = mon.status else { continue };
+                if (sun && st == Status::Freeze) || ability::blocks_status(&mon.bearer(), st) {
+                    mon.status = None;
+                    mon.sleep_n = 0;
                 }
             }
         }
@@ -927,6 +955,30 @@ impl Battle {
         if ability::blocks_confusion(&bearer) {
             self.sides[side].mon_mut().confusion_n = 0;
         }
+        // The curing berries are `onUpdate` items too: they are eaten the
+        // moment the status lands, not at the end of the turn like the
+        // healing ones.
+        let holder = self.sides[side].mon().holder();
+        let cure_status = self
+            .sides[side]
+            .mon()
+            .status
+            .is_some_and(|st| item::cures_status(&holder, st));
+        let cure_confusion =
+            self.sides[side].mon().confusion_n > 0 && item::cures_confusion(&holder);
+        if cure_status || cure_confusion {
+            let mon = self.sides[side].mon_mut();
+            mon.item = "";
+            if cure_status {
+                mon.status = None;
+                mon.sleep_n = 0;
+                mon.sleep_skipped = 0;
+                mon.toxic_n = 0;
+            }
+            if cure_confusion {
+                mon.confusion_n = 0;
+            }
+        }
     }
 
     /// The weather as the field actually feels it. Air Lock and Cloud Nine
@@ -946,7 +998,7 @@ impl Battle {
     /// sky folded in.
     fn turn_speed(&self, side: usize) -> u16 {
         let mon = self.sides[side].mon();
-        let spe = mon.effective_speed();
+        let spe = item::speed_chain(&mon.holder()).apply(mon.effective_speed() as u32) as u16;
         let sky = self.effective_weather();
         if ability::speed_doubles(
             &mon.bearer(),
@@ -1057,6 +1109,12 @@ impl Battle {
     /// the parity tests pass the same script they gave the reference sim.
     pub fn step_with(&mut self, choices: [Choice; 2], script: &TurnScript) -> Vec<Event> {
         let mut events = Vec::new();
+        // The sim sorts this turn's actions as the choices come in, which is
+        // before the turn's first update(). A Cheri Berry eaten a moment
+        // later cures the paralysis but does not reorder the turn, so the
+        // speeds are read here and held.
+        let scripted_now = script.seats.iter().any(|s| s.is_some());
+        self.speed_first = Some(self.faster_side(scripted_now));
         for side in 0..2 {
             self.ability_update(side);
             if !self.sides[side].mon().fainted() {
@@ -1357,6 +1415,70 @@ impl Battle {
                         });
                     }
                 }
+                // Rain Dish sips while it rains; Shed Skin gets a third of a
+                // chance at shrugging a status off; Speed Boost climbs a
+                // stage for every turn spent on the field. All three sit at
+                // the sim's residual order 10, subOrder 3.
+                if !self.sides[side].mon().fainted() {
+                    let bearer = self.sides[side].mon().bearer();
+                    if ability::rain_dish(&bearer) && self.effective_weather() == Some(Weather::Rain)
+                    {
+                        let mon = self.sides[side].mon_mut();
+                        let amount = ((mon.max_hp / 16).max(1)).min(mon.max_hp - mon.hp);
+                        if amount > 0 {
+                            mon.hp += amount;
+                            events.push(Event::Healed {
+                                side: side as u8 + 1,
+                                amount,
+                            });
+                        }
+                    }
+                    // A scripted run pins this roll off: it is not one of
+                    // the scenario's knobs, and the reference harness leaves
+                    // a 33-in-100 alone the same way.
+                    if ability::sheds_skin(&bearer)
+                        && self.sides[side].mon().status.is_some()
+                        && !scripted
+                        && self.rng.below(100) < 33
+                    {
+                        let mon = self.sides[side].mon_mut();
+                        mon.status = None;
+                        mon.sleep_n = 0;
+                        mon.sleep_skipped = 0;
+                        mon.toxic_n = 0;
+                    }
+                    if ability::speed_boosts(&bearer) && self.sides[side].mon().active_turns > 0 {
+                        self.sides[side].mon_mut().apply_boost(Boost::Spe, 1);
+                        events.push(Event::Boosted {
+                            side: side as u8 + 1,
+                            boost: Boost::Spe,
+                            delta: 1,
+                        });
+                    }
+                    // Truant loafs every other turn, and the toggle flips
+                    // here whether or not the mon acted.
+                    if ability::truant(&bearer) {
+                        let mon = self.sides[side].mon_mut();
+                        mon.loafing = !mon.loafing;
+                    }
+                    // Then the items, at subOrder 4. Gen 3 berries wait for
+                    // this phase rather than firing the moment the holder is
+                    // hurt, which is why a mon can be knocked out with a
+                    // Sitrus still in hand.
+                    let holder = self.sides[side].mon().holder();
+                    if item::leftovers(&holder) {
+                        let mon = self.sides[side].mon_mut();
+                        let amount = ((mon.max_hp / 16).max(1)).min(mon.max_hp - mon.hp);
+                        if amount > 0 {
+                            mon.hp += amount;
+                            events.push(Event::Healed {
+                                side: side as u8 + 1,
+                                amount,
+                            });
+                        }
+                    }
+                    self.ripen(side, &mut events);
+                }
                 // Leech Seed bleeds an eighth of max HP to the opposing active.
                 // A seed with nobody to feed does nothing at all: the sim
                 // bails on "Nothing to leech into" before it takes a point,
@@ -1474,53 +1596,6 @@ impl Battle {
                 // out the mon is confused whatever it did with the turn;
                 // falling asleep calms it only if the sleep arrives while
                 // the clock still has time on it.
-                // Rain Dish sips while it rains; Shed Skin gets a third of a
-                // chance at shrugging a status off; Speed Boost climbs a
-                // stage for every turn spent on the field. All three sit at
-                // the sim's residual order 10, subOrder 3.
-                if !self.sides[side].mon().fainted() {
-                    let bearer = self.sides[side].mon().bearer();
-                    if ability::rain_dish(&bearer) && self.effective_weather() == Some(Weather::Rain)
-                    {
-                        let mon = self.sides[side].mon_mut();
-                        let amount = ((mon.max_hp / 16).max(1)).min(mon.max_hp - mon.hp);
-                        if amount > 0 {
-                            mon.hp += amount;
-                            events.push(Event::Healed {
-                                side: side as u8 + 1,
-                                amount,
-                            });
-                        }
-                    }
-                    // A scripted run pins this roll off: it is not one of
-                    // the scenario's knobs, and the reference harness leaves
-                    // a 33-in-100 alone the same way.
-                    if ability::sheds_skin(&bearer)
-                        && self.sides[side].mon().status.is_some()
-                        && !scripted
-                        && self.rng.below(100) < 33
-                    {
-                        let mon = self.sides[side].mon_mut();
-                        mon.status = None;
-                        mon.sleep_n = 0;
-                        mon.sleep_skipped = 0;
-                        mon.toxic_n = 0;
-                    }
-                    if ability::speed_boosts(&bearer) && self.sides[side].mon().active_turns > 0 {
-                        self.sides[side].mon_mut().apply_boost(Boost::Spe, 1);
-                        events.push(Event::Boosted {
-                            side: side as u8 + 1,
-                            boost: Boost::Spe,
-                            delta: 1,
-                        });
-                    }
-                    // Truant loafs every other turn, and the toggle flips
-                    // here whether or not the mon acted.
-                    if ability::truant(&bearer) {
-                        let mon = self.sides[side].mon_mut();
-                        mon.loafing = !mon.loafing;
-                    }
-                }
                 if let Some((slot_i, owed)) = self.sides[side].mon().rampage {
                     let uproar = self.sides[side]
                         .mon()
@@ -1789,7 +1864,12 @@ impl Battle {
         match p0.cmp(&p1) {
             core::cmp::Ordering::Greater => 0,
             core::cmp::Ordering::Less => 1,
-            core::cmp::Ordering::Equal => self.faster_side(scripted),
+            core::cmp::Ordering::Equal => match self.speed_first {
+                // The order was settled as the turn opened; a berry eaten
+                // since then cures the paralysis without reshuffling it.
+                Some(first) => first,
+                None => self.faster_side(scripted),
+            },
         }
     }
 
@@ -2707,7 +2787,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 slot.move_type(),
                 self.effective_weather() == Some(Weather::Sandstorm),
             );
-            chain.apply(acc as u32).clamp(1, 100) as u8
+            let after = chain.apply(acc as u32);
+            item::accuracy_after_item(&self.sides[foe].mon().holder(), after).clamp(1, 100) as u8
         };
         // Pursuit's onModifyMove sets accuracy true against a mon that is
         // already leaving, so the interception cannot whiff.
@@ -3552,7 +3633,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             Some(s) => (s.crit, s.random),
             None => (
                 self.rng.below(crit_denominator(
-                    slot.entry.high_crit as u8 + if self.sides[side].mon().focused { 2 } else { 0 },
+                    slot.entry.high_crit as u8
+                        + if self.sides[side].mon().focused { 2 } else { 0 }
+                        + item::crit_stages(&self.sides[side].mon().holder()),
                 )) == 0,
                 85 + self.rng.below(16) as u8,
             ),
@@ -3795,9 +3878,14 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // off the move's type, so that is what decides whether an
             // Attack ability speaks at all.
             let physical = slot.entry.id != "beatup" && ability::physical_type(move_type);
+            let user_i = self.sides[side].mon().holder();
+            let foe_i = self.sides[foe].mon().holder();
             attacker.stat_mod = ability::attack_chain(&user_b, physical);
+            attacker.stat_mod
+                .extend(item::attack_chain(&user_i, move_type, physical));
             attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
             defender.stat_mod = ability::defence_chain(&foe_b, physical);
+            defender.stat_mod.extend(item::defence_chain(&foe_i, physical));
             let mut phase1 = ability::Chain::new();
             if self.sides[side].mon().flash_fire && move_type == Type::Fire {
                 phase1.mul(ability::X1_5);
@@ -4006,6 +4094,20 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             });
         }
 
+        // Shell Bell hands back an eighth of everything the move dealt,
+        // rounded down, at the sim's after-secondary-self stage.
+        if total > 0 && item::shell_bell(&self.sides[side].mon().holder()) {
+            let mon = self.sides[side].mon_mut();
+            let amount = (total / 8).min(mon.max_hp - mon.hp);
+            if amount > 0 {
+                mon.hp += amount;
+                events.push(Event::Healed {
+                    side: side as u8 + 1,
+                    amount,
+                });
+            }
+        }
+
         // A landed Hyper Beam costs the next action.
         if slot.entry.recharge {
             self.sides[side].mon_mut().must_recharge = true;
@@ -4013,6 +4115,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
 
         self.resolve_faints(side, foe, events);
     }
+
+
 
     /// Announce and replace one side's active if it just fainted.
     fn announce_faint(&mut self, side: usize, events: &mut Vec<Event>) {
@@ -4178,6 +4282,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// bite a grounded arrival: an eighth, a sixth, a quarter for one, two,
     /// three layers. Flying types float over.
     fn switch_in_greet(&mut self, side: usize, events: &mut Vec<Event>) {
+        self.greet(side, true, events)
+    }
+
+    fn greet(&mut self, side: usize, tidy: bool, events: &mut Vec<Event>) {
         // Truant counts the turn it arrives on, unless the battle has not
         // started: the sim keys that off its own turn counter.
         let turn = self.turn;
@@ -4221,7 +4329,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 delta: -1,
             });
         }
-        self.ability_update(side);
+        if tidy {
+            self.ability_update(side);
+        }
         let mon = self.sides[side].mon_mut();
         if mon.status == Some(Status::Sleep) {
             mon.sleep_n += mon.sleep_skipped;
@@ -4286,6 +4396,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     fn inflict(&mut self, foe: usize, status: Status, scripted: bool, events: &mut Vec<Event>) {
         let before = self.sides[foe].mon().status;
         self.inflict_inner(foe, status, scripted, events);
+        // The sim calls update() after an action resolves, which is where
+        // the curing berries and the refusing abilities do their tidying.
+        // A Rawst eaten the instant the burn lands is a whole turn's chip
+        // that never happens.
+        self.ability_update(foe);
         // Synchronize passes what it just caught back across the field. It
         // fires on the status ACTUALLY taking hold, so a blocked or refused
         // one bounces nothing.
@@ -4296,6 +4411,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 let source = 1 - foe;
                 if !self.sides[source].mon().fainted() {
                     self.inflict_inner(source, back, scripted, events);
+                    self.ability_update(source);
                 }
             }
         }
@@ -4386,6 +4502,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             2 + self.rng.below(4) as u8
         };
         self.sides[foe].mon_mut().confusion_n = n;
+        self.ability_update(foe);
         events.push(Event::ConfusionStarted {
             side: foe as u8 + 1,
         });
@@ -4449,6 +4566,77 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // do with its third of a chance.
                 ability::OnTouch::Attract | ability::OnTouch::None => {}
             }
+        }
+    }
+
+    /// Eat the held berry if the residual phase finds the holder low enough.
+    fn ripen(&mut self, side: usize, events: &mut Vec<Event>) {
+        if self.sides[side].mon().fainted() {
+            return;
+        }
+        let ripe = item::ripens(&self.sides[side].mon().holder());
+        if ripe == item::Ripe::None {
+            return;
+        }
+        self.sides[side].mon_mut().item = "";
+        match ripe {
+            item::Ripe::Heal(flat) => {
+                let mon = self.sides[side].mon_mut();
+                let amount = flat.min(mon.max_hp - mon.hp);
+                if amount > 0 {
+                    mon.hp += amount;
+                    events.push(Event::Healed {
+                        side: side as u8 + 1,
+                        amount,
+                    });
+                }
+            }
+            item::Ripe::HealEighth => {
+                let mon = self.sides[side].mon_mut();
+                let amount = ((mon.max_hp / 8).max(1)).min(mon.max_hp - mon.hp);
+                if amount > 0 {
+                    mon.hp += amount;
+                    events.push(Event::Healed {
+                        side: side as u8 + 1,
+                        amount,
+                    });
+                }
+            }
+            item::Ripe::Boost(boost) => {
+                self.sides[side].mon_mut().apply_boost(boost, 1);
+                events.push(Event::Boosted {
+                    side: side as u8 + 1,
+                    boost,
+                    delta: 1,
+                });
+            }
+            // The sim samples the stats that are not already maxed, and a
+            // pinned sample takes the first — which is Attack.
+            item::Ripe::StarfBoost => {
+                let order = [Boost::Atk, Boost::Def, Boost::SpAtk, Boost::SpDef, Boost::Spe];
+                let pick = order.iter().copied().find(|b| {
+                    let i = match b {
+                        Boost::Atk => Stat::Atk,
+                        Boost::Def => Stat::Def,
+                        Boost::SpAtk => Stat::SpAtk,
+                        Boost::SpDef => Stat::SpDef,
+                        _ => Stat::Spe,
+                    };
+                    self.sides[side].mon().stage(i) < 6
+                });
+                if let Some(boost) = pick {
+                    self.sides[side].mon_mut().apply_boost(boost, 2);
+                    events.push(Event::Boosted {
+                        side: side as u8 + 1,
+                        boost,
+                        delta: 2,
+                    });
+                }
+            }
+            item::Ripe::FocusEnergy => {
+                self.sides[side].mon_mut().focused = true;
+            }
+            item::Ripe::None => {}
         }
     }
 

@@ -31,6 +31,7 @@
 #![cfg_attr(not(test), no_std)]
 
 pub mod ability;
+pub mod item;
 pub mod battle;
 pub mod damage;
 pub mod data;
