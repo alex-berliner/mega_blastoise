@@ -4152,6 +4152,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 {
                     self.sides[foe].mon_mut().item = "";
                     self.sides[side].mon_mut().item = theirs;
+                    // A stolen berry is a berry in hand: the sim's setItem
+                    // runs an update, so a thief that pockets a Rawst eats
+                    // it on the spot and walks away unburned.
+                    self.ability_update(side);
                 }
                 "knockoff" if !theirs.is_empty() && !held => {
                     self.sides[foe].mon_mut().item = "";
