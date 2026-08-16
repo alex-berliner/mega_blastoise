@@ -295,6 +295,9 @@ pub struct Mon {
     /// The item this mon is holding, as a lookup id, or empty for none.
     /// Eating a berry empties it; Trick and Knock Off move it about.
     pub item: &'static str,
+    /// A Choice Band holder is stuck with whatever it swung first. Cleared
+    /// by leaving the field.
+    pub choice_locked: Option<&'static str>,
 }
 
 impl Mon {
@@ -417,6 +420,7 @@ impl Mon {
             active_turns: 0,
             loafing: false,
             item: "",
+            choice_locked: None,
         })
     }
 
@@ -918,9 +922,13 @@ impl Battle {
         // for the first update of the turn, after the speeds are read.
         let sun = battle.effective_weather() == Some(Weather::Sun);
         for w in 0..2 {
-            for mon in battle.sides[w].party.iter_mut() {
+            let active = battle.sides[w].active;
+            for (i, mon) in battle.sides[w].party.iter_mut().enumerate() {
                 let Some(st) = mon.status else { continue };
-                if (sun && st == Status::Freeze) || ability::blocks_status(&mon.bearer(), st) {
+                // The sky reaches the whole party; an ability speaks only for
+                // the mon holding it, and only while that mon is out.
+                let refused = i == active && ability::blocks_status(&mon.bearer(), st);
+                if (sun && st == Status::Freeze) || refused {
                     mon.status = None;
                     mon.sleep_n = 0;
                 }
@@ -1084,6 +1092,10 @@ impl Battle {
                     && !(mon.tormented && mon.last_used == Some(i as u8))
                     // Encore greys out everything BUT the encored move.
                     && !(mon.encore_n > 0 && mon.last_used.is_some_and(|u| u != i as u8))
+                    // A Choice Band greys out everything but the first swing.
+                    && !mon
+                        .choice_locked
+                        .is_some_and(|id| id != slot.entry.id)
             })
             .collect()
     }
@@ -2304,6 +2316,12 @@ impl Battle {
         {
             self.sides[side].mon_mut().status = None;
         }
+        // A Choice Band clamps shut behind the move it commits to, whatever
+        // then becomes of it: a miss or a failure spends the choice too.
+        if self.sides[side].mon().item == "choiceband" {
+            let id = slot.entry.id;
+            self.sides[side].mon_mut().choice_locked = Some(id);
+        }
         events.push(Event::Used {
             side: side as u8 + 1,
             move_index: index,
@@ -3089,6 +3107,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 });
             }
             self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
             return;
         }
@@ -4094,19 +4113,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             });
         }
 
-        // Shell Bell hands back an eighth of everything the move dealt,
-        // rounded down, at the sim's after-secondary-self stage.
-        if total > 0 && item::shell_bell(&self.sides[side].mon().holder()) {
-            let mon = self.sides[side].mon_mut();
-            let amount = (total / 8).min(mon.max_hp - mon.hp);
-            if amount > 0 {
-                mon.hp += amount;
-                events.push(Event::Healed {
-                    side: side as u8 + 1,
-                    amount,
-                });
-            }
-        }
+        self.shell_bell(side, total, events);
+
 
         // A landed Hyper Beam costs the next action.
         if slot.entry.recharge {
@@ -4161,6 +4169,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 out.sleep_n = 0;
             }
             out.flash_fire = false;
+            out.choice_locked = None;
             out.active_turns = 0;
             out.toxic_n = 0;
             out.confusion_n = 0;
@@ -4637,6 +4646,24 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 self.sides[side].mon_mut().focused = true;
             }
             item::Ripe::None => {}
+        }
+    }
+
+    /// Shell Bell hands back an eighth of everything the move dealt, rounded
+    /// down, at the sim's after-secondary-self stage — which is after the
+    /// recoil, so a full-health attacker still gets part of its kick back.
+    fn shell_bell(&mut self, side: usize, dealt: u16, events: &mut Vec<Event>) {
+        if dealt == 0 || !item::shell_bell(&self.sides[side].mon().holder()) {
+            return;
+        }
+        let mon = self.sides[side].mon_mut();
+        let amount = (dealt / 8).min(mon.max_hp - mon.hp);
+        if amount > 0 {
+            mon.hp += amount;
+            events.push(Event::Healed {
+                side: side as u8 + 1,
+                amount,
+            });
         }
     }
 
