@@ -796,3 +796,36 @@ fn leech_seed_drains_a_full_eighth_even_off_a_corpse() {
         "the seeder is paid in full off a corpse, not the five that were left"
     );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Counter reads BASE POWER, and a one-hit KO has none
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn counter_refuses_a_one_hit_ko() {
+    // Gen 1 Counter answers a Normal or Fighting move with base power above
+    // zero. The reference dex gives the one-hit-KO moves a base power of ZERO
+    // — this table stores 1 as a marker — so a Horn Drill is not counterable
+    // however Normal it is and however much damage it just did.
+    let mut field = Field::default();
+    let mut log = Log::new();
+    let mut rng = Rng::new(1);
+    let mut sides = make_sides(
+        fresh_mon("cubone", 50, &["counter"]),
+        fresh_mon("nidoking", 50, &["horndrill"]),
+    );
+    // The register the sim reads: the foe's last USED move, and a non-zero
+    // last-damage figure to answer.
+    sides[1].last_move_used = "horndrill";
+    sides[1].last_selected_move = "horndrill";
+    field.last_damage = 100;
+    let before = sides[1].active().hp_cur;
+
+    let _ = execute_move(&mut rng, &mut field, &mut sides, 0, 0, &mut log);
+
+    assert_eq!(
+        sides[1].active().hp_cur,
+        before,
+        "a one-hit KO leaves nothing for Counter to answer"
+    );
+}

@@ -788,9 +788,15 @@ fn apply_effect(
             // which persists across turns and includes residual damage.
             let enemy_selected = sides[defender_side].last_selected_move;
             let enemy_used = sides[defender_side].last_move_used;
+            // The one-hit-KO moves carry a power of 1 in this table purely
+            // as a marker; the reference dex gives them ZERO, and Counter
+            // reads exactly that field. So a Horn Drill is not counterable,
+            // however Normal it is and however much damage it just did.
             let counterable = move_by_id(enemy_used)
                 .map(|m| {
-                    m.power > 0 && matches!(m.move_type, Type::Normal | Type::Fighting)
+                    m.power > 0
+                        && m.effect_kind != MoveEffectKind::Ohko
+                        && matches!(m.move_type, Type::Normal | Type::Fighting)
                 })
                 .unwrap_or(false);
             if enemy_selected != "counter" && counterable && field.last_damage > 0 {
