@@ -208,8 +208,9 @@ fn residual_poison_deals_one_sixteenth() {
     let dealt = max - sides[0].active().hp_cur;
     let expected = (max / 16).max(1);
     assert_eq!(dealt, expected);
-    // Residual damage is counterable in Gen 1 — it feeds the register.
-    assert_eq!(field.last_damage, expected);
+    // Residual damage does NOT feed the Counter register — the reference
+    // sim leaves last-damage untouched by status chip (fuzz-derived).
+    assert_eq!(field.last_damage, 0);
 }
 
 #[test]
