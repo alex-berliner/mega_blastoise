@@ -225,8 +225,14 @@ fn run_move(
     sides[attacker_side].last_move_used = mv.id;
 
     {
-        let s = &sides[attacker_side];
-        log.push_board(format!("move|mon:{},{},0|name:{}", s.active().name, s.player_id, mv.name));
+        // EVERY continuation Bide turn is silent in the sim — storing and
+        // the unleash alike; only the initial use announces itself.
+        let storing = ek == Bide
+            && sides[attacker_side].active().volatile.has(Volatile::BIDING);
+        if !storing {
+            let s = &sides[attacker_side];
+            log.push_board(format!("move|mon:{},{},0|name:{}", s.active().name, s.player_id, mv.name));
+        }
     }
 
     // A Bide turn resolves before the move-use pipeline on the cartridge:
@@ -590,11 +596,11 @@ fn apply_effect(
             // Drain doesn't happen if the hit broke a Substitute.
             if outcome.hit && outcome.damage_dealt > 0 && !outcome.sub_broke {
                 let heal = (outcome.damage_dealt / 2).max(1);
-                if outcome.hit_sub {
-                    // Gen 1 oddity: draining off a Substitute leaves the DRAIN
-                    // amount in the last-damage register.
-                    field.last_damage = heal;
-                }
+                // Gen 1: the drain amount ALWAYS overwrites the last-damage
+                // register (the sim sets it before the heal, sub or not) —
+                // a Bide storing after a Mega Drain banks the heal, not the
+                // damage.
+                field.last_damage = heal;
                 heal_mon(sides, attacker_side, heal, log);
             }
         }

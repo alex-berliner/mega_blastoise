@@ -592,15 +592,18 @@ fn fuzz_gen1_turns() {
         // The RBY thaw glitch — a mon thawed mid-turn by a Fire move attacks
         // with a 102 BP ???-typed glitch move — is not modelled yet, so
         // freeze setups stay away from Fire moves until it is.
+        // Mimic, Mirror Move and Metronome can DELIVER a Fire move (even
+        // the frozen mon's own, mimicked back at it), so they count too.
         let fire = |m: &str| {
             gen1_battle::move_by_id(m)
                 .map(|e| e.move_type == gen1_battle::Type::Fire)
                 .unwrap_or(false)
+                || matches!(m, "mimic" | "mirrormove" | "metronome")
         };
-        if st1 == Some("frz") && fire(&m2) {
+        if st1 == Some("frz") && (fire(&m2) || fire(&m1)) {
             st1 = None;
         }
-        if st2 == Some("frz") && fire(&m1) {
+        if st2 == Some("frz") && (fire(&m1) || fire(&m2)) {
             st2 = None;
         }
         let n_turns = 1 + fz.below(3) as usize;

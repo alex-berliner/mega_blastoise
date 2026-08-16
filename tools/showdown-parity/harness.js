@@ -542,7 +542,7 @@ function runMovelist(sc) {
       'spitup',
     ].includes(move.id);
     if ((!move.basePower || move.basePower <= 0) && !fixedDamage && !move.ohko && !counterish
-        && !g3special) continue;
+        && !g3special && !(g1plain && move.id === 'bide')) continue;
     if (move.basePowerCallback && !g3special) continue;
     if ((move.damageCallback || move.damage) && !fixedDamage && !counterish && !g3special
         && !g1plain) continue;
@@ -590,7 +590,7 @@ function runMovelist(sc) {
     // allAdjacent only differs from allAdjacentFoes in doubles; this is 1v1.
     if (!['normal', 'any', 'randomNormal', 'allAdjacentFoes', 'allAdjacent'].includes(move.target)
         && !(counterish && move.target === 'scripted')
-        && !(g3special && move.target === 'self')) continue;
+        && !((g3special || g1plain) && move.target === 'self')) continue;
     if (move.id === 'struggle') continue;
     out.push({id: move.id, priority: move.priority, boostsSelf: !!move.self, multihit: !!move.multihit});
   }

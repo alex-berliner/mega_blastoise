@@ -662,6 +662,7 @@ impl<'a> Battle<'a> {
     /// chosen slot), then Gen 1's after-action residual damage.
     fn run_move_action(&mut self, side: usize, chosen_slot: Option<u8>, disabled_choice: bool) {
         let locked = locked_move_id(&self.sides[side]);
+        let was_biding = self.sides[side].active().volatile.has(Volatile::BIDING);
         // For the Disable check, the relevant slot is the one about to fire
         // (a Struggle choice fires no slot, so the gate has nothing to block).
         let disable_slot = match locked {
@@ -691,7 +692,16 @@ impl<'a> Battle<'a> {
         // that just fainted to its own move still pays its Leech Seed tick,
         // healing the seeder in full (the sim's after-move residual runs
         // before the faint resolves).
-        if !self.team_wiped(0) && !self.team_wiped(1) {
+        // A Bide unleash resolves in the sim's BeforeMove, before any faint
+        // is processed — so an unleash that KOs the target still pays the
+        // unleasher's own poison/burn/seed afterwards (it can kill them
+        // both). A normal decisive hit ends the turn first.
+        let unleashed = was_biding && !self.sides[side].active().volatile.has(Volatile::BIDING);
+        if (!self.team_wiped(0) && !self.team_wiped(1))
+            || (unleashed
+                && !self.sides[side].active().fainted()
+                && !self.team_wiped(side))
+        {
             after_action_residuals(&mut self.field, &mut self.sides, side, &mut self.log);
         } else if self.sides[side].active().fainted()
             && self.sides[side].active().volatile.has(Volatile::LEECH_SEEDED)
