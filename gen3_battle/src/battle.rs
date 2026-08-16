@@ -4564,8 +4564,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         let hit_b = self.sides[foe].mon().bearer();
         if ability::color_change(&hit_b) && !self.sides[foe].mon().fainted() && move_type != Type::None
         {
+            // Only a type the target does NOT already have takes hold: a
+            // dual-type that already counts as this type keeps both halves.
             let (t1, t2) = self.sides[foe].mon().types();
-            if t1 != move_type || t2 != Type::None {
+            if t1 != move_type && t2 != move_type {
                 self.sides[foe].mon_mut().type_override = Some((move_type, Type::None));
             }
         }
@@ -4685,8 +4687,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if dealt == 0 || !item::shell_bell(&self.sides[side].mon().holder()) {
             return;
         }
+        // The sim's heal() rounds a fraction of one UP: anything above zero
+        // gives back at least a point, so a four-damage hit still pays one.
         let mon = self.sides[side].mon_mut();
-        let amount = (dealt / 8).min(mon.max_hp - mon.hp);
+        let amount = (dealt / 8).max(1).min(mon.max_hp - mon.hp);
         if amount > 0 {
             mon.hp += amount;
             events.push(Event::Healed {
