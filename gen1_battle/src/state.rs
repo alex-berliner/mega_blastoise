@@ -36,6 +36,9 @@ pub struct Volatile {
     /// Move id for a locked-in multi-turn action (TwoTurn charge, Wrap, Bide,
     /// Thrash/Petal Dance, Rage). Empty means none.
     pub multi_turn_move: &'static str,
+    /// Mirror Move's deferred PP: the sim charges the MIRROR slot when the
+    /// called two-turn move actually RELEASES, not when it charges.
+    pub mirror_debt_slot: Option<u8>,
     pub multi_turn_turns: u8,
     /// Stored effective accuracy for the Thrash/Rage accuracy bug: stage
     /// multipliers compound onto LAST turn's effective accuracy each turn.
@@ -109,6 +112,10 @@ pub struct Mon {
     pub level: u8,
     pub hp_cur: u16,
     pub hp_max: u16,
+    /// The ORIGINAL species' final stats, frozen at creation: the crit
+    /// path reads these (the sim's baseStoredStats), and Transform never
+    /// touches them.
+    pub crit_stats: [u16; 5],
     /// HP/Atk/Def/Spc/Spe — FINAL stats (base+IV+EV+level), never modified
     /// in battle (except by Transform). Crits read these directly.
     pub stats: [u16; 5],
@@ -143,6 +150,7 @@ impl Default for Mon {
             level: 0,
             hp_cur: 0,
             hp_max: 0,
+            crit_stats: [0; 5],
             stats: [0; 5],
             modified: [0; 5],
             base_spe: 0,
@@ -211,6 +219,7 @@ impl Mon {
             level,
             hp_cur: hp,
             hp_max: hp,
+            crit_stats: [hp, atk, def, spc, spe],
             stats: [hp, atk, def, spc, spe],
             modified: [hp, atk, def, spc, spe],
             base_spe: sp.base_stats[4],

@@ -664,7 +664,7 @@
   "type": "Normal"
  },
  "mimic": {
-  "accuracy": 0,
+  "accuracy": 100,
   "effect": "MIMIC_EFFECT",
   "name": "Mimic",
   "power": 0,

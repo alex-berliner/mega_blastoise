@@ -166,8 +166,8 @@ pub fn compute_damage_scripted(
         // Crits ignore stat stages, par/brn drops, AND screens — and double
         // the level term instead of the final damage.
         level *= 2;
-        atk = attacker.stats[atk_idx] as u32;
-        def = defender.stats[def_idx] as u32;
+        atk = attacker.crit_stats[atk_idx] as u32;
+        def = defender.crit_stats[def_idx] as u32;
     } else {
         atk = attacker.modified[atk_idx] as u32;
         def = defender.modified[def_idx] as u32;

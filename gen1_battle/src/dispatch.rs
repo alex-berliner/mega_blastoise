@@ -198,10 +198,30 @@ fn run_move(
             if a.moves[slot].pp > 0 {
                 a.moves[slot].pp -= 1;
             }
+        } else if locked {
+            // A mirror-called two-turn move has no slot of its own: its
+            // release pays the deferred PP from the MIRROR slot.
+            let a = sides[attacker_side].active_mut();
+            if let Some(ds) = a.volatile.mirror_debt_slot.take() {
+                if a.moves[ds as usize].pp > 0 {
+                    a.moves[ds as usize].pp -= 1;
+                }
+            }
         }
     }
+    if !locked {
+        // A free (unlocked) action supersedes any stale deferred-PP debt.
+        sides[attacker_side].active_mut().volatile.mirror_debt_slot = None;
+    }
 
-    sides[attacker_side].active_mut().last_move_used = mv.id;
+    // The mon-level register (what Mirror Move copies) is NOT set by a
+    // two-turn move's charge turn — the sim only records a move once it
+    // fully executes, so Mirror Move fails against a mid-charge foe.
+    let charge_turn = mv.effect_kind == MoveEffectKind::TwoTurn
+        && !sides[attacker_side].active().volatile.has(Volatile::CHARGING);
+    if !charge_turn {
+        sides[attacker_side].active_mut().last_move_used = mv.id;
+    }
     sides[attacker_side].last_move_used = mv.id;
 
     {
@@ -266,7 +286,7 @@ fn run_move(
     let targets_foe = !matches!(
         ek,
         BoostSelf | HealHalf | Rest | Substitute | LightScreen | Reflect | Mist | FocusEnergy
-            | Haze | Metronome | MirrorMove | NoOp | Bide | ThrashLock
+            | Haze | Metronome | MirrorMove | NoOp | Bide
     );
 
     // The charge turn of a two-turn move targets nobody: neither the type
@@ -780,7 +800,27 @@ fn apply_effect(
             if last.is_empty() || last == "mirrormove" {
                 fail_log(sides, attacker_side, log);
             } else if let Some(mv2) = move_by_id(last) {
+                // A SUCCESSFUL Mirror Move never pays its own PP: the sim
+                // charges the mirror slot when the called move actually
+                // executes. An immediate call pays now (net one, exactly
+                // what the outer deduct already took); a two-turn call
+                // refunds the outer deduct and leaves a debt the release
+                // pays. The debt is written AFTER the call, or the called
+                // move's own fresh-action bookkeeping would wipe it.
+                let was_charging =
+                    sides[attacker_side].active().volatile.has(Volatile::CHARGING);
                 outcome = execute_move_entry(rng, field, sides, attacker_side, mv2, None, false, log);
+                if mv2.effect_kind == MoveEffectKind::TwoTurn
+                    && !was_charging
+                    && sides[attacker_side].active().volatile.has(Volatile::CHARGING)
+                {
+                    let slot = sides[attacker_side].active().find_move_slot("mirrormove");
+                    if let Some(ms) = slot {
+                        let a = sides[attacker_side].active_mut();
+                        a.moves[ms as usize].pp = (a.moves[ms as usize].pp + 1).min(63);
+                        a.volatile.mirror_debt_slot = Some(ms);
+                    }
+                }
             }
         }
         Mimic => {
@@ -931,6 +971,9 @@ fn apply_effect(
                     let res = deal_damage(field, sides, defender_side, dmg, log);
                     note_hit(&mut outcome, res, dmg);
                     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
+                    if !outcome.fainted_target {
+                        rage_build(sides, defender_side, log);
+                    }
                 } else {
                     outcome.hit = true;
                 }
@@ -978,6 +1021,9 @@ fn apply_effect(
                     dealt = field.last_damage;
                     outcome.crit = roll.crit;
                     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
+                    if !outcome.fainted_target {
+                        rage_build(sides, defender_side, log);
+                    }
                 }
                 if !outcome.fainted_target {
                     let total = match rng.forced_hits() {
@@ -1064,17 +1110,24 @@ fn apply_effect(
             apply_haze(field, sides, attacker_side, log);
         }
         Metronome => {
-            let mut idx = rng.range(MOVES.len() as u32) as usize;
-            let mut safety = 32;
-            while safety > 0 {
-                let cand = &MOVES[idx];
-                if cand.id != "metronome" && cand.id != "struggle" {
-                    break;
+            // The sim samples the num-sorted eligible list; the pinned
+            // sample lands on the first entry — Pound — so a script does
+            // exactly that, and play keeps the true random pick.
+            let cand: &'static MoveEntry = if rng.force.is_some() {
+                move_by_id("pound").unwrap_or(&MOVES[0])
+            } else {
+                let mut idx = rng.range(MOVES.len() as u32) as usize;
+                let mut safety = 32;
+                while safety > 0 {
+                    let cand = &MOVES[idx];
+                    if cand.id != "metronome" && cand.id != "struggle" {
+                        break;
+                    }
+                    idx = rng.range(MOVES.len() as u32) as usize;
+                    safety -= 1;
                 }
-                idx = rng.range(MOVES.len() as u32) as usize;
-                safety -= 1;
-            }
-            let cand: &'static MoveEntry = &MOVES[idx];
+                &MOVES[idx]
+            };
             outcome = execute_move_entry(rng, field, sides, attacker_side, cand, None, false, log);
         }
         SelfDestruct => {

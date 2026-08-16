@@ -567,6 +567,14 @@ fn fuzz_gen1_turns() {
         let level = 40 + fz.below(61) as u8;
         let (m1, _) = fz.pick(&moves).clone();
         let (m2, _) = fz.pick(&moves).clone();
+        // Transform against Transform-only is the sim's Endless Battle
+        // Clause: it ties at turn zero, which measures the clause, not the
+        // engine. Mimic-of-Transform manufactures the same dead end one
+        // turn later. Skip those matchups.
+        let ebc = |a: &str, b: &str| a == "transform" && (b == "transform" || b == "mimic");
+        if ebc(&m1, &m2) || ebc(&m2, &m1) {
+            continue;
+        }
         // Same legality rule as gen 3, minus Steel which does not exist yet.
         let legal_status = |fz: &mut Fuzz, id: &str| {
             let sp = gen1_battle::SPECIES.iter().find(|s| s.id == id).unwrap();

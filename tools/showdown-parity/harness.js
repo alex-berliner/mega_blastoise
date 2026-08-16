@@ -500,6 +500,7 @@ function runMovelist(sc) {
         'defensecurl', 'minimize', 'focusenergy', 'splash', 'teleport',
         'toxic', 'poisonpowder', 'sleeppowder', 'stunspore', 'substitute', 'rest',
         'roar', 'whirlwind', 'spore', 'mist', 'conversion', 'disable',
+        'mimic', 'transform', 'mirrormove', 'metronome',
       ]).includes(move.id);
       const weather = sc.gen >= 3 &&
         ['sunnyday', 'raindance', 'sandstorm', 'hail'].includes(move.id);
@@ -521,6 +522,7 @@ function runMovelist(sc) {
     const g1plain = sc.gen === 1 && [
       'payday', 'blizzard', 'thunder', 'dreameater', 'highjumpkick',
       'jumpkick', 'lowkick', 'triattack', 'rage', 'psywave',
+      'thrash', 'petaldance', 'wrap', 'bind', 'firespin', 'clamp', 'bide',
     ].includes(move.id);
     const fixedDamage = typeof move.damage === 'number' || move.damage === 'level' ||
       move.id === 'superfang';

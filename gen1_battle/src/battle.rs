@@ -615,6 +615,23 @@ impl<'a> Battle<'a> {
                     }
                 }
             }
+            // A fainted Transform reverts on the spot — the corpse shows
+            // its real moves and their real PP (the sim's base slots).
+            for si in 0..2 {
+                if self.sides[si].active().fainted()
+                    && self.sides[si].active().volatile.has(Volatile::TRANSFORMED)
+                {
+                    if let Some(b) = self.sides[si].transform_backup.take() {
+                        let m = self.sides[si].active_mut();
+                        m.species_id = b.species_id;
+                        m.primary_type = b.primary_type;
+                        m.secondary_type = b.secondary_type;
+                        m.stats = b.stats;
+                        m.moves = b.moves;
+                        m.volatile.clear(Volatile::TRANSFORMED);
+                    }
+                }
+            }
             // Gen 1: any faint ends the turn — the other side's action (and
             // residuals) simply don't happen.
             if self.sides[0].active().fainted() || self.sides[1].active().fainted() {
