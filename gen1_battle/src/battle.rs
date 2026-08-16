@@ -519,17 +519,26 @@ impl<'a> Battle<'a> {
                     _ => 0,
                 }
             };
-            // A mon that cannot SELECT a move — asleep, frozen, or stuck
-            // recharging — queues a no-move action with no priority bracket:
-            // a sleeping Quick Attack holder does not keep its +1. (The gen 1
-            // turn fuzzer caught this against the reference sim.)
-            let cannot_select = |b: &Self, i: usize| {
+            // A recharging mon queues a no-move action with no priority
+            // bracket. A SLEEPING or FROZEN mon is forced to the sim's
+            // "fight" pseudo-choice, which resolves to the LAST move it
+            // selected while awake — so a mon that fell asleep holding
+            // Quick Attack keeps the +1 (its wake-up turn resolves in that
+            // early slot, which is how a sleep move re-lands on the
+            // just-woken target the same turn), while a mon asleep since
+            // the battle began has selected nothing and sits at 0.
+            let bracket_move = |b: &Self, i: usize| -> Option<&'static MoveEntry> {
                 let m = b.sides[i].active();
-                matches!(m.status, Status::Sleep(_) | Status::Freeze)
-                    || m.volatile.has(Volatile::MUST_RECHARGE)
+                if m.volatile.has(Volatile::MUST_RECHARGE) {
+                    return None;
+                }
+                if matches!(m.status, Status::Sleep(_) | Status::Freeze) {
+                    return move_by_id(b.sides[i].last_selected_move);
+                }
+                b.effective_move(i)
             };
-            let pr0 = if cannot_select(self, 0) { 0 } else { prio(self.effective_move(0)) };
-            let pr1 = if cannot_select(self, 1) { 0 } else { prio(self.effective_move(1)) };
+            let pr0 = prio(bracket_move(self, 0));
+            let pr1 = prio(bracket_move(self, 1));
             let s0 = self.sides[0].active().modified[4];
             let s1 = self.sides[1].active().modified[4];
             // A scripted battle breaks Speed ties toward player 1, matching

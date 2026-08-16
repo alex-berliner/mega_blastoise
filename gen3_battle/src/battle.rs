@@ -132,6 +132,9 @@ pub struct Mon {
     pub raging: bool,
     /// Fury Cutter's consecutive-hit ramp (0..=4).
     pub fury_n: u8,
+    /// The id of the move this mon last used — survives Transform/Mimic
+    /// rewriting the slots, which is exactly when the slot index lies.
+    pub last_used_id: Option<&'static str>,
     /// The last move slot this mon successfully USED (for Spite/Torment).
     pub last_used: Option<u8>,
     /// The last move this mon used MISSED (Mirror Move refuses those).
@@ -245,6 +248,7 @@ impl Mon {
             raging: false,
             fury_n: 0,
             last_used: None,
+            last_used_id: None,
             last_missed: false,
             mimic_backup: None,
             transform_backup: None,
@@ -644,6 +648,7 @@ impl Battle {
                     out.raging = false;
                     out.fury_n = 0;
                     out.last_used = None;
+                    out.last_used_id = None;
                     out.last_missed = false;
                     if let Some((i, orig)) = out.mimic_backup.take() {
                         out.moves[i as usize] = orig;
@@ -1336,6 +1341,7 @@ impl Battle {
         {
             let mon = self.sides[side].mon_mut();
             mon.last_used = if struggling { None } else { Some(index as u8) };
+            mon.last_used_id = Some(slot.entry.id);
             mon.last_missed = false;
             // Using any move ends an ongoing rage; Rage itself re-arms it
             // only once it actually lands (a missed Rage never rages).
@@ -2657,11 +2663,13 @@ impl Battle {
                 self.sides[side].mon_mut().charged_elec = true;
             }
             StatusAction::Spite => {
-                // Spite reaches through a substitute in this era.
+                // Spite reaches through a substitute in this era. It drains
+                // the slot carrying the last-used move's ID — a Transform
+                // that rewrote the slots leaves nothing to drain, and fails.
                 let drained = if hit {
-                    if let Some(slot_i) = self.sides[foe].mon().last_used {
+                    if let Some(id) = self.sides[foe].mon().last_used_id.filter(|&i| i != "struggle") {
                         let mon = self.sides[foe].mon_mut();
-                        if let Some(ms) = mon.moves.get_mut(slot_i as usize) {
+                        if let Some(ms) = mon.moves.iter_mut().find(|m| m.entry.id == id) {
                             if ms.pp > 0 {
                                 // The games shave 2..5 PP; a script pins 2.
                                 let cut = if scripted { 2 } else { 2 + self.rng.below(4) as u8 };
