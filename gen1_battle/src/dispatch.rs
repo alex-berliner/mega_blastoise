@@ -1843,7 +1843,12 @@ pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: us
         _ => {}
     }
 
-    if sides[side].active().hp_cur > 0 && sides[side].active().volatile.has(Volatile::LEECH_SEEDED) {
+    // The seed ticks even if the status tick just killed its host. The sim
+    // spells this one out in a hint of its own: in Gen 1 the recovery is not
+    // limited by what the seeded mon had left, so a victim that dies to its
+    // own burn at five HP still pays a full eighth of its MAXIMUM across the
+    // field. Only the drain is a no-op on the corpse.
+    if sides[side].active().volatile.has(Volatile::LEECH_SEEDED) {
         leech_seed_residual(field, sides, side, log);
     }
 }

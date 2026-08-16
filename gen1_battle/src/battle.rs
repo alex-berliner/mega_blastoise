@@ -21,6 +21,16 @@ use crate::dispatch::{
     locked_move_id, pre_move_check, Log,
 };
 use crate::options::{CoreBattleEngineOptions, CoreBattleOptions};
+
+/// What the cartridge writes into a side's move register when its mon is
+/// held by a partial trap and has no real choice to make. It is not a move,
+/// and a later turn that reads it back throws the action away.
+const CANNOT_MOVE: &str = "cannotmove";
+
+/// Where a side's move register starts, before anything has been selected on
+/// it. Like `cannotmove` it is not a move, so the index register answers for
+/// it — and that index starts at the first slot.
+const NO_MOVE: &str = "nomove";
 use crate::request::{MonTurnRequest, Request, SwitchRequest, TurnRequest};
 use crate::rng::Rng;
 use crate::state::{Field, Mon, Side, Status, Volatile};
@@ -531,7 +541,17 @@ impl<'a> Battle<'a> {
                 self.sides[i].active().status,
                 Status::Sleep(_) | Status::Freeze
             ) {
-                self.sides[i].last_selected_move
+                // `nomove` is where the register starts, and a side that has
+                // only ever switched still holds it. It names no move, so the
+                // index register answers instead — which is what makes a mon
+                // frozen the moment it arrived come out swinging its FIRST
+                // move rather than the one just pressed.
+                let reg = self.sides[i].last_selected_move;
+                if reg.is_empty() {
+                    NO_MOVE
+                } else {
+                    reg
+                }
             } else {
                 ""
             }
@@ -608,7 +628,15 @@ impl<'a> Battle<'a> {
                     Status::Sleep(_) | Status::Freeze
                 )
             {
-                if let Some(mv) = self.effective_move(side) {
+                // A mon held by Wrap and kin has no real choice to register:
+                // the cartridge writes `cannotmove` into the side's move
+                // register instead. That sticks, and the next mon to inherit
+                // the register — an asleep one, which never registers its own
+                // — aborts its turn on it. The sim spells the consequence out
+                // in a hint of its own: the sleep counter does not decrease.
+                if self.sides[side].active().volatile.has(Volatile::TRAPPED) {
+                    self.sides[side].last_selected_move = CANNOT_MOVE;
+                } else if let Some(mv) = self.effective_move(side) {
                     self.sides[side].last_selected_move = mv.id;
                 }
                 if let Some(Choice::Move(slot)) = self.pending_choice[side] {
@@ -635,9 +663,24 @@ impl<'a> Battle<'a> {
                         after_switch_in(&mut self.field, &mut self.sides, side, &mut self.log);
                     }
                 }
+                Some(Choice::Move(slot)) if stale_choice[side] == CANNOT_MOVE => {
+                    // The register says `cannotmove`: the action is thrown
+                    // away before the sleep check ever runs, so the sleeper
+                    // loses the turn AND keeps its full counter.
+                    let _ = slot;
+                }
                 Some(Choice::Move(slot)) => {
                     // Frozen or asleep at choice time: the old selection is
                     // what comes out, whatever slot was pressed.
+                    // The cartridge keeps TWO registers per side: the move
+                    // itself, which never resets, and the move-list INDEX,
+                    // which resets on every switch. A frozen or sleeping mon
+                    // plays back the move register; when that names something
+                    // it does not know — or nothing at all, which is where a
+                    // side that has only ever switched starts — the index
+                    // register decides instead, and that index starts at zero.
+                    // The slot the player pressed does not come into it.
+                    let stale = self.sides[side].last_selected_slot.min(3);
                     let slot = match stale_choice[side] {
                         "" => slot,
                         id => self.sides[side]
@@ -646,7 +689,7 @@ impl<'a> Battle<'a> {
                             .iter()
                             .position(|m| m.move_id == id)
                             .map(|p| p as u8)
-                            .unwrap_or(slot),
+                            .unwrap_or(stale),
                     };
                     self.run_move_action(side, Some(slot), disabled_choice[side]);
                 }

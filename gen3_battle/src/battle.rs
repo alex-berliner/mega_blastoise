@@ -1233,6 +1233,7 @@ impl Battle {
 
         // Switches resolve before any move, in side order. Leaving the field
         // resets a Toxic count: the poison stays, the clock starts over.
+        let mut arriving = [false; 2];
         for side in 0..2 {
             if self.deferred_switch[side].is_some() {
                 continue;
@@ -1251,8 +1252,20 @@ impl Battle {
                         side: side as u8 + 1,
                         party_index: idx,
                     });
-                    self.switch_in_greet(side, &mut events);
+                    // The greeting waits: the sim puts BOTH mons on the
+                    // field and only then runs what they brought with them.
+                    // An Intimidate that fires the instant its own mon lands
+                    // cows whoever is standing at that moment, which on a
+                    // double switch is the mon that is about to leave.
+                    arriving[side] = true;
                 }
+            }
+        }
+        // Now the arrivals speak, faster mon first.
+        let greet_first = self.faster_side(scripted_now);
+        for side in [greet_first, 1 - greet_first] {
+            if arriving[side] {
+                self.switch_in_greet(side, &mut events);
             }
         }
 
