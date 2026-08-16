@@ -777,3 +777,356 @@ fn fuzz_gen1_turns() {
     }
     assert_eq!(bad, 0, "{bad} gen1 turn fuzz cases disagree — replay with the seed above");
 }
+
+/// One side-by-side-comparable line per party member, in the same shape the
+/// harness reports, so a turn-by-turn diff is a string compare.
+fn snapshot_of(battle: &gen3_battle::Battle) -> Vec<Vec<String>> {
+    (0..2)
+        .map(|seat| {
+            let side = &battle.sides[seat];
+            side.party
+                .iter()
+                .enumerate()
+                .map(|(j, m)| {
+                    format!(
+                        "{}/{} {}{}",
+                        m.hp,
+                        m.max_hp,
+                        m.status.map(|s| s.abbr()).unwrap_or("-"),
+                        if side.active == j && !m.fainted() { " *" } else { "" },
+                    )
+                })
+                .collect()
+        })
+        .collect()
+}
+
+// ── Gen 3: whole battles — teams, switching, played to a winner ──────────────
+
+/// The first suite that exercises a party rather than a lone mon: two teams,
+/// voluntary switches, faints, replacements, and the end of the battle.
+///
+/// The engine runs FIRST and records the concrete choice it made each turn;
+/// only then does the reference sim replay that exact choice list. Generating
+/// choices blind would have both sides guessing at legality from states that
+/// may already have diverged, and every such guess would read as a mismatch.
+#[test]
+fn fuzz_gen3_battles() {
+    if !armed() {
+        return;
+    }
+    use gen3_battle::{
+        battle::{SeatScript, Side, TurnScript},
+        Battle, Choice, Event, Invest, Mon, Nature, SPECIES,
+    };
+
+    let moves = vanilla_moves(3, true, |id| {
+        // A party changes what these moves MEAN. Each is currently modelled
+        // as a no-op, which was indistinguishable from the truth while every
+        // battle was one mon against one mon: Assist and Sleep Talk had no
+        // other move to call, Roar and Whirlwind had nobody to drag in,
+        // Baton Pass had nowhere to pass to. With a bench they all do real
+        // work, and they are stubs again until their own pass. Trick,
+        // Recycle, Role Play and Skill Swap wait on items and abilities.
+        const PENDING: &[&str] = &[
+            "assist", "sleeptalk", "roar", "whirlwind", "batonpass",
+            "trick", "recycle", "roleplay", "skillswap", "followme",
+        ];
+        gen3_battle::move_by_id(id)
+            .map(|m| {
+                !PENDING.contains(&m.id)
+                    && (m.power > 0
+                        || m.status_action.is_some()
+                        || m.fixed.is_some()
+                        || m.ohko
+                        || matches!(m.id, "counter" | "mirrorcoat"))
+            })
+            .unwrap_or(false)
+    });
+    let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
+
+    let mut fz = Fuzz::new("gen3-battles");
+    let inv = Invest { iv: 31, ev: 0 };
+    let statuses: [Option<&str>; 7] =
+        [None, None, None, Some("brn"), Some("psn"), Some("par"), Some("slp")];
+
+    let mut scenarios = Vec::new();
+    let mut expected = Vec::new();
+    let mut skipped = 0usize;
+
+    for _ in 0..fuzz_n() / 4 {
+        let team_n = 2 + fz.below(3) as usize; // 2..=4 per side
+        let level = 40 + fz.below(61) as u8;
+
+        // Build both teams, then reject any battle where two mons could tie
+        // on Speed: the tie-break is each side's own RNG and cannot be pinned.
+        let mut teams: [Vec<Mon>; 2] = [Vec::new(), Vec::new()];
+        let mut specs: [Vec<Value>; 2] = [Vec::new(), Vec::new()];
+        for seat in 0..2 {
+            for _ in 0..team_n {
+                let sp = fz.pick(SPECIES);
+                let m1 = fz.pick(&moves).clone();
+                // Two copies of one move is not a legal set, and the sim
+                // folds them into a single slot with shared PP.
+                let mut m2 = fz.pick(&moves).clone();
+                while m2 == m1 {
+                    m2 = fz.pick(&moves).clone();
+                }
+                let st = {
+                    use gen3_battle::Type;
+                    let pick = *fz.pick(&statuses);
+                    let has = |t: Type| sp.types.0 == t || sp.types.1 == t;
+                    match pick {
+                        Some("brn") if has(Type::Fire) => None,
+                        Some("psn") if has(Type::Poison) || has(Type::Steel) => None,
+                        other => other,
+                    }
+                };
+                let mut mon = Mon::new(sp.id, level, Nature::Hardy, inv, &[&m1, &m2]).unwrap();
+                mon.status = match st {
+                    Some("brn") => Some(gen3_battle::data::Status::Burn),
+                    Some("psn") => Some(gen3_battle::data::Status::Poison),
+                    Some("par") => Some(gen3_battle::data::Status::Paralysis),
+                    Some("slp") => Some(gen3_battle::data::Status::Sleep),
+                    _ => None,
+                };
+                if mon.status == Some(gen3_battle::data::Status::Sleep) {
+                    mon.sleep_n = 2;
+                }
+                specs[seat].push(json!({
+                    "species": sp.id, "level": level, "moves": [m1, m2],
+                    "status": st,
+                }));
+                teams[seat].push(mon);
+            }
+        }
+        let mut speeds: Vec<u16> =
+            teams.iter().flat_map(|t| t.iter().map(|m| m.spe)).collect();
+        speeds.sort_unstable();
+        let before = speeds.len();
+        speeds.dedup();
+        if speeds.len() != before {
+            skipped += 1;
+            continue;
+        }
+
+        let [t0, t1] = teams;
+        let mut battle = Battle::new(Side::new(t0), Side::new(t1), 1);
+
+        // Play the engine, recording what it actually chose each turn.
+        let n_turns = 2 + fz.below(6) as usize;
+        let mut turn_json: Vec<Value> = Vec::new();
+        let mut our_order: Vec<&str> = Vec::new();
+        let mut our_log: Vec<String> = Vec::new();
+        let mut our_states: Vec<Vec<Vec<String>>> = Vec::new();
+        for _ in 0..n_turns {
+            if battle.over() {
+                break;
+            }
+            let mut choices = [Choice::Move(0); 2];
+            let mut seats: [Value; 2] = [Value::Null, Value::Null];
+            for seat in 0..2 {
+                // A living, benched party member to switch to, if any.
+                let bench: Vec<usize> = (0..battle.sides[seat].party.len())
+                    .filter(|&i| i != battle.sides[seat].active)
+                    .filter(|&i| !battle.sides[seat].party[i].fainted())
+                    .collect();
+                // Only offer a switch the sim would let a player pick: a
+                // locked or held mon has `trapped` set on its request and
+                // the choice is rejected outright.
+                // Draw the coin unconditionally so the generator's stream
+                // does not depend on battle state.
+                let want_switch = fz.chance(25);
+                let switching =
+                    !bench.is_empty() && battle.can_switch(seat) && want_switch;
+                let pick = fz.below(2) as usize;
+                let slot = if switching {
+                    *fz.pick(&bench)
+                } else {
+                    // Disable, Taunt and Torment grey a move out in the
+                    // sim's request; choosing it is rejected, not
+                    // reinterpreted.
+                    let usable = battle.selectable_moves(seat);
+                    if usable.contains(&pick) {
+                        pick
+                    } else {
+                        usable.first().copied().unwrap_or(pick)
+                    }
+                };
+                choices[seat] =
+                    if switching { Choice::Switch(slot) } else { Choice::Move(slot) };
+                seats[seat] = json!({
+                    "action": if switching { "switch" } else { "move" },
+                    "slot": slot,
+                    "hit": !fz.chance(10),
+                    "crit": fz.chance(20),
+                    "roll": 85 + fz.below(16) as u8,
+                    "secondary": fz.chance(40),
+                    "immobile": fz.chance(15),
+                    "hits": 0,
+                    "selfhit": fz.chance(50),
+                    "stall": fz.chance(50),
+                });
+            }
+            let seat_script = |v: &Value| SeatScript {
+                hit: v["hit"].as_bool().unwrap(),
+                crit: v["crit"].as_bool().unwrap(),
+                random: v["roll"].as_u64().unwrap() as u8,
+                secondary: v["secondary"].as_bool().unwrap(),
+                immobile: v["immobile"].as_bool().unwrap(),
+                hits: v["hits"].as_u64().unwrap() as u8,
+                selfhit: v["selfhit"].as_bool().unwrap(),
+                stall: v["stall"].as_bool().unwrap(),
+            };
+            let ts = TurnScript {
+                seats: [Some(seat_script(&seats[0])), Some(seat_script(&seats[1]))],
+            };
+            let events = battle.step_with(choices, &ts);
+            our_states.push(snapshot_of(&battle));
+            our_log.push(format!("-- turn {}: p1 {:?} p2 {:?}", turn_json.len(), choices[0], choices[1]));
+            our_log.extend(events.iter().map(|e| format!("   {e:?}")));
+            our_order.extend(events.iter().filter_map(|e| match e {
+                Event::Used { side: 1, .. } => Some("p1"),
+                Event::Used { side: 2, .. } => Some("p2"),
+                _ => None,
+            }));
+            turn_json.push(json!({"p1": seats[0], "p2": seats[1]}));
+        }
+
+        scenarios.push(json!({
+            "kind": "battle", "gen": 3,
+            "p1": {"team": specs[0]},
+            "p2": {"team": specs[1]},
+            "turns": turn_json,
+        }));
+        expected.push((battle, our_order, our_log, our_states));
+    }
+
+    if skipped > 0 {
+        eprintln!("[gen3-battles] {skipped} cases skipped on a Speed tie");
+    }
+    let results = showdown(&Value::Array(scenarios.clone()));
+    let mut bad = 0;
+    for (i, ((battle, our_order, our_log, our_states), got)) in expected.iter().zip(&results).enumerate() {
+        if got.get("error").is_some() {
+            eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
+            bad += 1;
+            continue;
+        }
+        // Collect every disagreement by name rather than folding them into
+        // one boolean: a battle has forty-odd comparable numbers and "these
+        // two states differ" is not a finding.
+        let mut diffs: Vec<String> = Vec::new();
+        for e in got["errors"].as_array().map(|a| a.as_slice()).unwrap_or(&[]) {
+            diffs.push(format!("harness rejected a choice: {e}"));
+        }
+        for seat in 0..2 {
+            let who = if seat == 0 { "p1" } else { "p2" };
+            let side = &battle.sides[seat];
+            let theirs = got[who].as_array().unwrap();
+            if theirs.len() != side.party.len() {
+                diffs.push(format!("{who} party size {} vs {}", side.party.len(), theirs.len()));
+                continue;
+            }
+            for (j, mon) in side.party.iter().enumerate() {
+                let want = &theirs[j];
+                let mut cmp = |field: &str, ours: String, theirs: String| {
+                    if ours != theirs {
+                        diffs.push(format!("{who}[{j}].{field}: ours {ours} vs sim {theirs}"));
+                    }
+                };
+                cmp("hp", mon.hp.to_string(), want["hp"].to_string());
+                cmp("maxhp", mon.max_hp.to_string(), want["maxhp"].to_string());
+                cmp("fainted", mon.fainted().to_string(), want["fainted"].to_string());
+                cmp(
+                    "status",
+                    format!("{:?}", mon.status.map(|s| s.abbr())),
+                    format!("{:?}", want["status"].as_str()),
+                );
+                // The sim drops `isActive` the moment a mon faints; the
+                // engine's `active` index just stays put when there is
+                // nobody left to send in, so compare what both mean.
+                cmp(
+                    "active",
+                    (side.active == j && !mon.fainted()).to_string(),
+                    want["active"].to_string(),
+                );
+                let their_pp = want["pp"].as_array().unwrap();
+                for (k, ms) in mon.moves.iter().enumerate() {
+                    cmp(
+                        &format!("pp[{}]", ms.entry.id),
+                        ms.pp.to_string(),
+                        their_pp.get(k).map(|v| v.to_string()).unwrap_or_else(|| "-".into()),
+                    );
+                }
+            }
+        }
+        let their_order: Vec<&str> =
+            got["order"].as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
+        if *our_order != their_order {
+            diffs.push(format!("order: ours {our_order:?} vs sim {their_order:?}"));
+        }
+        // Everything after the first parting of ways is an echo of it, so
+        // name the turn it happened on.
+        if let Some(states) = got["states"].as_array() {
+            for (t, theirs) in states.iter().enumerate() {
+                let Some(ours) = our_states.get(t) else { break };
+                let mut turn_diff = Vec::new();
+                for (seat, who) in ["p1", "p2"].iter().enumerate() {
+                    let side = theirs[*who].as_array().unwrap();
+                    for (j, mon) in side.iter().enumerate() {
+                        let sim = format!(
+                            "{}/{} {}{}",
+                            mon["hp"], mon["maxhp"],
+                            mon["status"].as_str().unwrap_or("-"),
+                            if mon["active"].as_bool().unwrap_or(false) { " *" } else { "" },
+                        );
+                        if ours[seat].get(j) != Some(&sim) {
+                            turn_diff.push(format!(
+                                "{who}[{j}] ours {:?} vs sim {sim:?}",
+                                ours[seat].get(j)
+                            ));
+                        }
+                    }
+                }
+                if !turn_diff.is_empty() {
+                    diffs.push(format!("FIRST DIVERGENCE on turn {t}: {}", turn_diff.join("; ")));
+                    break;
+                }
+            }
+        }
+        let ok = diffs.is_empty();
+        if !ok {
+            let ours: Vec<String> = (0..2)
+                .map(|s| {
+                    let side = &battle.sides[s];
+                    format!(
+                        "[{}]",
+                        side.party
+                            .iter()
+                            .enumerate()
+                            .map(|(j, m)| format!(
+                                "{}{}/{}{}",
+                                if side.active == j { "*" } else { "" },
+                                m.hp,
+                                m.max_hp,
+                                m.status.map(|st| format!(" {}", st.abbr())).unwrap_or_default()
+                            ))
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    )
+                })
+                .collect();
+            eprintln!(
+                "GEN3 BATTLE FUZZ MISMATCH case {i}: ours {} {} order {:?}\n  showdown {} / {} order {:?} errors {}\n  scenario: {}\n  log: {}",
+                ours[0], ours[1], our_order,
+                got["p1"], got["p2"], their_order, got["errors"],
+                scenarios[i], got["log"],
+            );
+            eprintln!("  diffs:\n    {}", diffs.join("\n    "));
+            eprintln!("  ours-log:\n{}", our_log.join("\n"));
+            bad += 1;
+        }
+    }
+    assert_eq!(bad, 0, "{bad} gen3 battle fuzz cases disagree — replay with the seed above");
+}

@@ -382,6 +382,10 @@ pub struct MoveEntry {
     pub charge: bool,
     /// Wrap and kin: a landed hit binds the target for end-of-turn chip.
     pub trap: bool,
+    /// Whether the move needs a LIVING foe. A self- or field-aimed move
+    /// goes off with the other side's slot empty; everything else logs the
+    /// move line and then stops, having spent its PP.
+    pub needs_target: bool,
     /// Hyper Beam and kin: a landed hit costs the next turn to recharge.
     pub recharge: bool,
     /// Superpower and kin: a landed hit costs the user these stages, always.
@@ -426,6 +430,7 @@ pub static STRUGGLE: MoveEntry = MoveEntry {
     recharge: false,
     trap: false,
     self_drop: None,
+    needs_target: true,
 };
 
 /// Chart order, so a randbat slot's type index resolves back to a [`Type`].

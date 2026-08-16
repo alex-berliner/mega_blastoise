@@ -25,11 +25,15 @@
 
 const {Battle, Dex} = require('pokemon-showdown/dist/sim');
 
-function teamMon(dex, m) {
+function teamMon(dex, m, slot) {
   const species = dex.species.get(m.species);
   if (!species.exists) throw new Error(`no species ${m.species}`);
   return {
-    name: species.name,
+    // In battle mode every team member carries its ORIGINAL slot as a
+    // nickname. The sim swaps entries around inside side.pokemon whenever
+    // something switches, so a bare index is not a stable address; the
+    // nickname is, and the core engines keep `party` in its original order.
+    name: slot === undefined ? species.name : `m${slot}`,
     species: species.name,
     level: m.level ?? 50,
     nature: m.nature ?? 'Hardy',
@@ -321,6 +325,148 @@ function runTurn(sc) {
 /// core engines' build scripts to consume. This replaced hand-layering the
 /// per-gen delta files, whose direction the fuzzer proved wrong (modern PP
 /// counts and even Gen 6 base-stat buffs were leaking into "gen 3" tables).
+/// A whole battle: six-mon teams, switching, played until someone wins or
+/// the scripted turns run out.
+///
+/// Switch targets are named by ORIGINAL team slot, translated here to the
+/// sim's live `side.pokemon` index via the per-slot nickname. Forced
+/// replacements after a faint follow the same rule the core engines use --
+/// the lowest-numbered living slot -- so neither side needs to be asked.
+function runBattle(sc) {
+  const dex = Dex.mod(`gen${sc.gen}`);
+  const battle = new Battle({formatid: `gen${sc.gen}customgame`});
+  battle.setPlayer('p1', {team: sc.p1.team.map((m, i) => teamMon(dex, m, i))});
+  battle.setPlayer('p2', {team: sc.p2.team.map((m, i) => teamMon(dex, m, i))});
+  normalizePp(battle, dex);
+
+  const script = {};
+  scriptRandomness(battle, script);
+
+  for (const id of ['p1', 'p2']) {
+    for (const [i, want] of (sc[id].team ?? []).entries()) {
+      if (!want.status) continue;
+      const mon = battle.getSide(id).pokemon.find((p) => p.name === `m${i}`);
+      mon.setStatus(want.status);
+      if (sc.gen <= 2 && mon.modifyStat) {
+        if (want.status === 'par') mon.modifyStat('spe', 0.25);
+        if (want.status === 'brn') mon.modifyStat('atk', 0.5);
+      }
+    }
+  }
+
+  // Live sim index (1-based, as `switch N` wants) of an original team slot.
+  const liveIndex = (sideId, slot) => {
+    const arr = battle.getSide(sideId).pokemon;
+    const i = arr.findIndex((p) => p.name === `m${slot}`);
+    return i < 0 ? null : i + 1;
+  };
+  // The replacement rule both engines use: lowest living slot not already out.
+  const forcedChoice = (sideId) => {
+    const side = battle.getSide(sideId);
+    const arr = side.pokemon;
+    let best = null;
+    for (let slot = 0; slot < arr.length; slot++) {
+      const p = arr.find((q) => q.name === `m${slot}`);
+      if (!p || p.fainted || p.isActive) continue;
+      best = slot;
+      break;
+    }
+    return best === null ? 'pass' : `switch ${liveIndex(sideId, best)}`;
+  };
+
+  const seatChoice = (sideId, seat) => {
+    if (!seat) return 'move 1';
+    if (seat.action === 'switch') {
+      const idx = liveIndex(sideId, seat.slot);
+      if (idx === null) return 'move 1';
+      return `switch ${idx}`;
+    }
+    // A locked mon's request offers exactly one move (the lock itself), so
+    // any higher slot is out of range and the whole choice is rejected. The
+    // core engines ignore the chosen index in the same situation.
+    const offered = battle.getSide(sideId).activeRequest?.active?.[0]?.moves?.length ?? 4;
+    const slot = Math.min(seat.slot ?? 0, Math.max(offered - 1, 0));
+    return `move ${slot + 1}`;
+  };
+
+  const partyOf = (sideId) => {
+    const arr = battle.getSide(sideId).pokemon;
+    return (sc[sideId].team ?? []).map((_, i) => {
+      const p = arr.find((q) => q.name === `m${i}`);
+      return {...endMon(p), active: p.isActive};
+    });
+  };
+  const snapshot = () => ({p1: partyOf('p1'), p2: partyOf('p2')});
+
+  const errors = [];
+  const states = [];
+  // A rejected choice says only "Not all choices done" on its own; pair it
+  // with what was asked for and what the sim was actually requesting.
+  const describe = (attempted, e) => {
+    const req = (id) => {
+      const r = battle.getSide(id).activeRequest;
+      if (!r) return 'none';
+      if (r.forceSwitch) return `forceSwitch:${JSON.stringify(r.forceSwitch)}`;
+      if (r.wait) return 'wait';
+      const a = r.active?.[0];
+      return `move trapped=${!!a?.trapped} moves=${(a?.moves ?? [])
+        .map((m) => `${m.id}${m.disabled ? '(off)' : ''}:${m.pp}`)
+        .join(',')}`;
+    };
+    return `${String(e.message || e)} | tried ${attempted} | p1 ${req('p1')} | p2 ${req('p2')}`;
+  };
+  for (const ts of sc.turns ?? []) {
+    if (battle.ended) break;
+    if (ts.p1) script.p1 = ts.p1;
+    if (ts.p2) script.p2 = ts.p2;
+    const c1 = seatChoice('p1', ts.p1);
+    const c2 = seatChoice('p2', ts.p2);
+    try {
+      battle.makeChoices(c1, c2);
+    } catch (e) {
+      errors.push(describe(`${c1} / ${c2}`, e));
+      break;
+    }
+    // Faints open a replacement request; answer it the same way the core
+    // engines do until the battle stops asking.
+    let guard = 0;
+    while (!battle.ended && guard++ < 12) {
+      const need1 = battle.p1.activeRequest?.forceSwitch?.some(Boolean);
+      const need2 = battle.p2.activeRequest?.forceSwitch?.some(Boolean);
+      if (!need1 && !need2) break;
+      // Answer ONLY the side that was asked. Handing the other side a
+      // 'pass' through makeChoices wipes the move it already has queued,
+      // which silently ate an action every time a mon fainted mid-turn.
+      const f1 = need1 ? forcedChoice('p1') : null;
+      const f2 = need2 ? forcedChoice('p2') : null;
+      try {
+        if (f1) battle.choose('p1', f1);
+        if (f2) battle.choose('p2', f2);
+      } catch (e) {
+        errors.push(describe(`forced ${f1} / ${f2}`, e));
+        break;
+      }
+    }
+    states.push(snapshot());
+  }
+
+  const order = battle.log
+    .filter((l) => l.startsWith('|move|'))
+    .map((l) => (l.includes('|move|p1a') ? 'p1' : 'p2'));
+
+  return {
+    p1: partyOf('p1'),
+    p2: partyOf('p2'),
+    states,
+    order,
+    ended: battle.ended,
+    winner: battle.ended ? (battle.winner || null) : null,
+    errors,
+    log: battle.log.filter((l) =>
+      /move|damage|crit|supereffective|resisted|immune|miss|faint|switch|win|drag/.test(l)),
+  };
+}
+
 function runDump(sc) {
   const dex = Dex.mod(`gen${sc.gen}`);
   const species = dex.species.all()
@@ -381,6 +527,10 @@ function runDump(sc) {
         drain: m.drain ?? null,
         recoil: m.recoil ?? null,
         respectsImmunity: m.category === 'Status' && m.ignoreImmunity === false,
+        // Whether the move needs a LIVING foe to go off at all. The sim's
+        // useMove computes lacksTarget for every non-field target and bails
+        // with -notarget; a self- or field-aimed move never does.
+        needsTarget: !['self', 'all', 'foeSide', 'allySide', 'allyTeam'].includes(m.target),
         selfDrop: m.self && m.self.boosts && m.category !== 'Status' ? m.self.boosts : null,
         statusAction: m.category !== 'Status' ? null
           : m.id === 'haze' ? {haze: true}
@@ -625,6 +775,7 @@ function main() {
         if (sc.kind === 'turn') return runTurn(sc);
         if (sc.kind === 'movelist') return runMovelist(sc);
         if (sc.kind === 'dump') return runDump(sc);
+        if (sc.kind === 'battle') return runBattle(sc);
         return {error: `unknown kind ${sc.kind}`};
       } catch (e) {
         return {error: String(e && e.stack ? e.stack.split('\n')[0] : e)};
