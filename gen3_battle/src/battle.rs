@@ -114,6 +114,10 @@ pub struct Mon {
     /// zero (and acting that turn). Set when sleep lands — 2 under a script,
     /// matching the pinned reference roll; 2..=5 in play.
     pub sleep_n: u8,
+    /// Turns of sleep skipped by Snore or Sleep Talk since the last action
+    /// that was simply lost to sleep. Gen 3 hands them back on switch-in,
+    /// so attacking out of sleep and then retreating costs nothing.
+    pub sleep_skipped: u8,
     /// Flinched this turn and loses its action if it has not moved yet.
     /// Cleared when the turn ends.
     pub flinched: bool,
@@ -131,11 +135,15 @@ pub struct Mon {
     /// Lock-On: the next move cannot miss.
     /// Lock-On/Mind Reader: 2 while armed (cast turn + the next); the
     /// next move consumes it, the end-of-turn clock expires it.
-    /// Taken aim AT THIS MON (Lock-On, Mind Reader): while it is above zero
-    /// the other side's active cannot miss it, and cannot be dodged by it.
-    /// The sim keeps the volatile on the TARGET, which is why leaving the
-    /// field ends the lock — including for a mon that comes straight back.
+    /// Aim taken BY THIS MON (Lock-On, Mind Reader): while it is above zero
+    /// this mon cannot miss the mon it sighted, and cannot be dodged by it.
+    /// The sim keeps the volatile on the user, so leaving the field ends the
+    /// lock, and a replacement inherits nothing.
     pub sure_hit: u8,
+    /// Which party slot on the other side the aim was taken at. The sim
+    /// remembers the mon itself, so a lock survives that mon switching out
+    /// and back but does not transfer to whoever stands in for it.
+    pub sure_hit_on: u8,
     /// Charge: the next Electric move doubles.
     pub charged_elec: bool,
     /// Grudge is armed until this mon's next action.
@@ -260,10 +268,15 @@ pub struct Mon {
     /// through Mirror Move carries the CALLED move, and the follow-up turns
     /// must run it directly (one announced line, no re-call).
     pub locked_move: Option<&'static str>,
-    /// Thrash-family rampage: (slot, attacks left AFTER this turn's).
-    /// Ends in fatigue confusion if it runs its course; any disruption
-    /// (a Cant, a miss) ends it quietly. Cleared by switching out.
+    /// Thrash-family rampage: (slot, turns of lock still owed). For Uproar
+    /// this is a plain countdown spent at the end of each din; for the
+    /// Thrash family it is the sim's `trueDuration`, and the lock itself
+    /// runs on `rampage_dur` below. Cleared by switching out.
     pub rampage: Option<(u8, u8)>,
+    /// The Thrash-family lock's own clock, which the sim keeps separate
+    /// from the count of swings owed: it is re-armed to 2 every time the
+    /// move actually goes off, and expiring is what brings on the fatigue.
+    pub rampage_dur: u8,
     /// Hyper Beam landed last turn: this action is spent recharging.
     pub must_recharge: bool,
 }
@@ -300,10 +313,12 @@ impl Mon {
             status: None,
             toxic_n: 0,
             sleep_n: 0,
+            sleep_skipped: 0,
             flinched: false,
             confusion_n: 0,
             identified: false,
             sure_hit: 0,
+            sure_hit_on: 0,
             charged_elec: false,
             grudged: false,
             tormented: false,
@@ -355,6 +370,7 @@ impl Mon {
             uproar_ending: false,
             locked_move: None,
             rampage: None,
+            rampage_dur: 0,
             must_recharge: false,
         })
     }
@@ -1032,7 +1048,7 @@ impl Battle {
                         side: side as u8 + 1,
                         party_index: idx,
                     });
-                    self.spikes_greet(side, &mut events);
+                    self.switch_in_greet(side, &mut events);
                 }
             }
         }
@@ -1099,7 +1115,7 @@ impl Battle {
                         side: side as u8 + 1,
                         party_index: idx,
                     });
-                    self.spikes_greet(side, &mut events);
+                    self.switch_in_greet(side, &mut events);
                 }
             }
         }
@@ -1322,6 +1338,40 @@ impl Battle {
                     self.sides[side].mon_mut().yawn_n -= 1;
                     if self.sides[side].mon().yawn_n == 0 {
                         self.inflict(side, Status::Sleep, scripted, &mut events);
+                    }
+                }
+                // The Thrash-family lock ticks last of all, carrying no
+                // residual order of its own. When its two-turn clock runs
+                // out the mon is confused whatever it did with the turn;
+                // falling asleep calms it only if the sleep arrives while
+                // the clock still has time on it.
+                if let Some((slot_i, owed)) = self.sides[side].mon().rampage {
+                    let uproar = self.sides[side]
+                        .mon()
+                        .moves
+                        .get(slot_i as usize)
+                        .is_some_and(|m| m.entry.id == "uproar");
+                    if !uproar {
+                        let n = if scripted {
+                            2
+                        } else {
+                            2 + self.rng.below(4) as u8
+                        };
+                        let mon = self.sides[side].mon_mut();
+                        mon.rampage_dur = mon.rampage_dur.saturating_sub(1);
+                        if mon.rampage_dur == 0 {
+                            mon.rampage = None;
+                            if owed <= 1 && mon.confusion_n == 0 && !mon.fainted() {
+                                mon.confusion_n = n;
+                                events.push(Event::ConfusionStarted {
+                                    side: side as u8 + 1,
+                                });
+                            }
+                        } else if mon.status == Some(Status::Sleep) {
+                            mon.rampage = None;
+                        } else {
+                            mon.rampage = Some((slot_i, owed.saturating_sub(1)));
+                        }
                     }
                 }
             }
@@ -1655,8 +1705,11 @@ impl Battle {
             mon.sleep_n = mon.sleep_n.saturating_sub(1);
             if mon.sleep_n == 0 {
                 mon.status = None;
+                mon.sleep_skipped = 0;
             } else if snoring {
-                // Snore attacks straight out of sleep.
+                // Snore attacks straight out of sleep, and Gen 3 refunds the
+                // turn on switch-in rather than counting it.
+                mon.sleep_skipped += 1;
                 asleep_now = true;
                 events.push(Event::Cant {
                     side: side as u8 + 1,
@@ -1665,7 +1718,18 @@ impl Battle {
             } else {
                 mon.charging = None;
                 mon.charge_fresh = false;
-                mon.rampage = None;
+                mon.sleep_skipped = 0;
+                // A Thrash-family lock is NOT dropped here: the sim lets the
+                // sleeper keep it and settles the matter in the residual
+                // phase, which is why a mon slept out of its final swing
+                // still wakes up confused.
+                if mon.rampage.is_some_and(|(slot_i, _)| {
+                    mon.moves
+                        .get(slot_i as usize)
+                        .is_some_and(|m| m.entry.id == "uproar")
+                }) {
+                    mon.rampage = None;
+                }
                 mon.rolling = None;
                 mon.fury_n = 0;
                 mon.raging = false;
@@ -2277,15 +2341,30 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if matches!(
             slot.entry.id,
             "thrash" | "petaldance" | "outrage" | "uproar"
-        ) && !ramping
-        {
-            let total: u8 = match script {
-                Some(_) => 2,
-                None if slot.entry.id == "uproar" => 2 + self.rng.below(4) as u8,
-                None => 2 + self.rng.below(2) as u8,
-            };
-            self.sides[side].mon_mut().rampage = Some((index as u8, total - 1));
-            self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
+        ) {
+            if ramping {
+                // Every swing that actually goes off re-arms the lock's own
+                // two-turn clock, but only while swings are still owed: the
+                // last one lets the clock run out, and that is what fatigues.
+                let mon = self.sides[side].mon_mut();
+                if mon.rampage.is_some_and(|(_, owed)| owed >= 2) {
+                    mon.rampage_dur = 2;
+                }
+            } else {
+                let total: u8 = match script {
+                    Some(_) => 2,
+                    None if slot.entry.id == "uproar" => 2 + self.rng.below(4) as u8,
+                    None => 2 + self.rng.below(2) as u8,
+                };
+                let uproar = slot.entry.id == "uproar";
+                let mon = self.sides[side].mon_mut();
+                // Uproar keeps counting its own turns down as it attacks;
+                // the Thrash family hands its countdown to the residual
+                // phase and stores the swings owed here instead.
+                mon.rampage = Some((index as u8, if uproar { total - 1 } else { total }));
+                mon.rampage_dur = 2;
+                mon.locked_move = Some(slot.entry.id);
+            }
         }
 
         // Spit Up with an empty bank simply fails; otherwise the bank is
@@ -2402,8 +2481,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         };
         // Pursuit's onModifyMove sets accuracy true against a mon that is
         // already leaving, so the interception cannot whiff.
-        let sure =
-            self.sides[foe].mon().sure_hit > 0 || (self.pursuing && slot.entry.id == "pursuit");
+        let sure = (self.sides[side].mon().sure_hit > 0
+            && self.sides[side].mon().sure_hit_on as usize == self.sides[foe].active)
+            || (self.pursuing && slot.entry.id == "pursuit");
         // Nothing consumes the lock: the sim's volatile simply runs out its
         // two-turn duration, so clearing it here both let a second Mind
         // Reader re-apply it and cut it short by a turn.
@@ -3466,30 +3546,18 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // This runs BEFORE the thaw below, matching the reference sim: a
         // Fire move's burn chance is blocked by the freeze it is about to
         // cure, because the target still carries frz when secondaries apply.
-        // A rampage counts down after each attack; running its course ends
-        // in fatigue confusion (which asks nobody's permission — not
-        // Safeguard's, not a substitute's).
-        if let Some((slot_i, left)) = self.sides[side].mon().rampage {
-            if left == 0 {
-                let scripted = script.is_some();
-                let fatigue = slot.entry.id != "uproar";
+        // An Uproar counts its turns down as it goes; the Thrash family's
+        // lock is spent in the residual phase instead, so that a swing lost
+        // to sleep or a flinch still runs the clock out on schedule.
+        if slot.entry.id == "uproar" {
+            if let Some((slot_i, left)) = self.sides[side].mon().rampage {
                 let mon = self.sides[side].mon_mut();
-                mon.rampage = None;
-                if !fatigue {
+                if left == 0 {
+                    mon.rampage = None;
                     mon.uproar_ending = true;
+                } else {
+                    mon.rampage = Some((slot_i, left - 1));
                 }
-                if fatigue && mon.confusion_n == 0 && !mon.fainted() {
-                    mon.confusion_n = if scripted {
-                        2
-                    } else {
-                        2 + self.rng.below(4) as u8
-                    };
-                    events.push(Event::ConfusionStarted {
-                        side: side as u8 + 1,
-                    });
-                }
-            } else {
-                self.sides[side].mon_mut().rampage = Some((slot_i, left - 1));
             }
         }
 
@@ -3704,14 +3772,22 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     side: side as u8 + 1,
                     party_index: next,
                 });
-                self.spikes_greet(side, events);
+                self.switch_in_greet(side, events);
             }
         }
     }
 
-    /// Spikes bite a grounded switch-in: an eighth, a sixth, a quarter for
-    /// one, two, three layers. Flying types float over.
-    fn spikes_greet(&mut self, side: usize, events: &mut Vec<Event>) {
+    /// What greets a mon as it comes in. Gen 3 hands back the sleep it spent
+    /// on Snore or Sleep Talk right before retreating, so a sleeper can
+    /// attack, switch out and come back no closer to waking. Then Spikes
+    /// bite a grounded arrival: an eighth, a sixth, a quarter for one, two,
+    /// three layers. Flying types float over.
+    fn switch_in_greet(&mut self, side: usize, events: &mut Vec<Event>) {
+        let mon = self.sides[side].mon_mut();
+        if mon.status == Some(Status::Sleep) {
+            mon.sleep_n += mon.sleep_skipped;
+        }
+        mon.sleep_skipped = 0;
         let layers = self.sides[side].spikes;
         if layers == 0 {
             return;
@@ -3805,6 +3881,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         target.status = Some(status);
         target.toxic_n = 0;
         target.sleep_n = sleep;
+        target.sleep_skipped = 0;
         if status == Status::Sleep {
             // A fresh sleep shakes off a Nightmare.
             target.nightmared = false;
@@ -3957,6 +4034,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     // the same shape as the sim's pinned setStatus. A fresh
                     // sleep also shakes off a Nightmare.
                     mon.sleep_n = 3;
+                    mon.sleep_skipped = 0;
                     mon.toxic_n = 0;
                     mon.nightmared = false;
                     events.push(Event::Rested {
@@ -4177,8 +4255,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // Taking aim at a mon already in your sights does nothing:
                 // addVolatile refuses a lock that is still up, and the move
                 // fails rather than refreshing it.
-                if hit && !self.sides[foe].mon().fainted() && self.sides[foe].mon().sure_hit == 0 {
-                    self.sides[foe].mon_mut().sure_hit = 2;
+                if hit && !self.sides[foe].mon().fainted() && self.sides[side].mon().sure_hit == 0 {
+                    let aim = self.sides[foe].active as u8;
+                    let mon = self.sides[side].mon_mut();
+                    mon.sure_hit = 2;
+                    mon.sure_hit_on = aim;
                 } else {
                     events.push(Event::Failed {
                         side: side as u8 + 1,
@@ -4248,7 +4329,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                             side: side as u8 + 1,
                             party_index: next,
                         });
-                        self.spikes_greet(side, events);
+                        self.switch_in_greet(side, events);
                     }
                 }
             }
@@ -4275,7 +4356,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                             side: foe as u8 + 1,
                             party_index: next,
                         });
-                        self.spikes_greet(foe, events);
+                        self.switch_in_greet(foe, events);
                     }
                     _ => events.push(Event::Failed {
                         side: side as u8 + 1,
