@@ -299,6 +299,17 @@ pub enum StatusAction {
     LockOn,
     /// Charge: the user's next Electric move doubles.
     ChargeUp,
+    /// Roar and Whirlwind: the target is dragged off and replaced by one of
+    /// its own benched mons, chosen at random.
+    ForceSwitch,
+    /// Sleep Talk: only out of a sleep, and it calls one of the user's own
+    /// moves at random.
+    SleepTalk,
+    /// Baton Pass: the user leaves and hands its boosts and most of its
+    /// volatiles to whoever comes in.
+    BatonPass,
+    /// Assist: calls a move at random from the rest of the party.
+    Assist,
     /// Spite: the target's last move loses PP.
     Spite,
     /// Grudge: a KO before the user's next action drains the killer's move.
@@ -391,6 +402,10 @@ pub struct MoveEntry {
     /// do Future Sight and Doom Desire, which launch straight through a
     /// shield.
     pub protectable: bool,
+    /// Sleep Talk refuses to call it.
+    pub no_sleep_talk: bool,
+    /// Assist refuses to call it.
+    pub no_assist: bool,
     /// Hyper Beam and kin: a landed hit costs the next turn to recharge.
     pub recharge: bool,
     /// Superpower and kin: a landed hit costs the user these stages, always.
@@ -437,6 +452,8 @@ pub static STRUGGLE: MoveEntry = MoveEntry {
     self_drop: None,
     needs_target: true,
     protectable: true,
+    no_sleep_talk: true,
+    no_assist: true,
 };
 
 /// Chart order, so a randbat slot's type index resolves back to a [`Type`].

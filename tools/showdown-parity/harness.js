@@ -544,6 +544,9 @@ function runDump(sc) {
         // Whether a shield stops it. Most self- and field-aimed moves carry
         // no protect flag, and neither do the delayed hits.
         protectable: !!(m.flags && m.flags.protect),
+        // Which called-move lists refuse to carry it.
+        noSleepTalk: !!(m.flags && m.flags.nosleeptalk),
+        noAssist: !!(m.flags && m.flags.noassist),
         selfDrop: m.self && m.self.boosts && m.category !== 'Status' ? m.self.boosts : null,
         statusAction: m.category !== 'Status' ? null
           : m.id === 'haze' ? {haze: true}
@@ -582,11 +585,15 @@ function runDump(sc) {
           : m.id === 'ingrain' ? {ingrain: true}
           : ['healbell', 'aromatherapy'].includes(m.id) ? {healbell: true}
           : m.id === 'followme' ? {noopsuccess: true}
-          : ['roar', 'whirlwind', 'batonpass'].includes(m.id) && sc.gen >= 3 ? {noopfail: m.id}
+          : ['roar', 'whirlwind'].includes(m.id) && sc.gen >= 3 ? {forceswitch: true}
+          : m.id === 'sleeptalk' && sc.gen >= 3 ? {sleeptalk: true}
+          : m.id === 'assist' && sc.gen >= 3 ? {assist: true}
+          : m.id === 'batonpass' && sc.gen >= 3 ? {batonpass: true}
           : m.id === 'conversion' ? {conversion: true}
           : m.id === 'imprison' ? {imprison: true}
-          : ['assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap'].includes(m.id)
+          : ['recycle', 'trick', 'roleplay', 'skillswap'].includes(m.id)
             ? {noopfail: m.id}
+          : ['assist', 'sleeptalk'].includes(m.id) ? {noopfail: m.id}
           : m.id === 'mirrormove' ? {mirror: true}
           : m.id === 'mimic' ? {mimic: true}
           : m.id === 'sketch' ? {sketch: true}

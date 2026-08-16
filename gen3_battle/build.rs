@@ -492,6 +492,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
         let trap = m["trap"].as_bool().unwrap_or(false);
         let needs_target = m["needsTarget"].as_bool().unwrap_or(true);
         let protectable = m["protectable"].as_bool().unwrap_or(true);
+        let no_sleep_talk = m["noSleepTalk"].as_bool().unwrap_or(false);
+        let no_assist = m["noAssist"].as_bool().unwrap_or(false);
         let self_drop = match m["selfDrop"].as_object() {
             Some(boosts) => format!("Some({})", boost_list_top(boosts)),
             None => String::from("None"),
@@ -600,6 +602,14 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::HealBell)")
                 } else if act.get("noopsuccess").is_some() {
                     String::from("Some(StatusAction::NoopSuccess)")
+                } else if act.get("forceswitch").is_some() {
+                    String::from("Some(StatusAction::ForceSwitch)")
+                } else if act.get("batonpass").is_some() {
+                    String::from("Some(StatusAction::BatonPass)")
+                } else if act.get("sleeptalk").is_some() {
+                    String::from("Some(StatusAction::SleepTalk)")
+                } else if act.get("assist").is_some() {
+                    String::from("Some(StatusAction::Assist)")
                 } else if act.get("noopfail").is_some() {
                     String::from("Some(StatusAction::NoopFail)")
                 } else if act.get("mirror").is_some() {
@@ -658,7 +668,7 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
              multihit: {multihit}, status_action: {status_action}, \
              respects_immunity: {respects_immunity}, fixed: {fixed}, \
              ohko: {ohko}, high_crit: {high_crit}, selfdestruct: {selfdestruct}, \
-             charge: {charge}, recharge: {recharge}, trap: {trap}, needs_target: {needs_target}, protectable: {protectable}, \
+             charge: {charge}, recharge: {recharge}, trap: {trap}, needs_target: {needs_target}, protectable: {protectable}, no_sleep_talk: {no_sleep_talk}, no_assist: {no_assist}, \
              self_drop: {self_drop} }},\n",
             type_variant(mtype, id),
         ));

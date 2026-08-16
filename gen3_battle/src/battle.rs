@@ -427,8 +427,15 @@ impl Mon {
     /// Which semi-invulnerable move this mon is mid-way through, if any:
     /// the charge turn of Fly, Dig, Bounce or Dive puts it out of reach.
     pub fn semi_invulnerable(&self) -> Option<&'static str> {
-        let i = self.charging? as usize;
-        let id = self.moves.get(i)?.entry.id;
+        self.charging?;
+        // What is actually being charged, which is not always what the slot
+        // holds: a Mirror-Moved Bounce charges out of the Mirror Move's own
+        // slot, and reading the slot would have the mon standing on the
+        // ground while the sim has it in the air.
+        let id = match self.locked_move {
+            Some(id) => id,
+            None => self.moves.get(self.charging? as usize)?.entry.id,
+        };
         matches!(id, "fly" | "dig" | "bounce" | "dive").then_some(id)
     }
 
@@ -447,6 +454,12 @@ impl Mon {
 pub struct Side {
     pub party: Vec<Mon>,
     pub active: usize,
+    /// The sim's own `side.pokemon` ordering, which is NOT the party order:
+    /// every switch swaps the incoming mon into slot 0 and pushes the
+    /// outgoing one into the slot it came from. Anything that picks a mon at
+    /// random — Roar and Whirlwind dragging one in — samples this list, so
+    /// the order is observable and has to be kept.
+    pub order: Vec<usize>,
     pub reflect_n: u8,
     pub light_screen_n: u8,
     pub safeguard_n: u8,
@@ -466,9 +479,11 @@ pub struct Side {
 
 impl Side {
     pub fn new(party: Vec<Mon>) -> Side {
+        let order = (0..party.len()).collect();
         Side {
             party,
             active: 0,
+            order,
             reflect_n: 0,
             light_screen_n: 0,
             safeguard_n: 0,
@@ -504,6 +519,26 @@ impl Side {
     /// First living party member that is not already out.
     pub fn first_healthy(&self) -> Option<usize> {
         self.party.iter().position(|m| !m.fainted())
+    }
+
+    /// Record a switch the way the sim does: the incoming mon trades places
+    /// with whoever was at the front.
+    fn reorder_for_switch(&mut self, incoming: usize) {
+        if let Some(p) = self.order.iter().position(|&i| i == incoming) {
+            self.order.swap(0, p);
+        }
+    }
+
+    /// Everyone the sim would consider dragging in: its `possibleSwitches`
+    /// walks `side.pokemon` past the active slot and keeps the unfainted, so
+    /// the answer comes back in ITS order, not the party's.
+    pub fn draggable(&self) -> Vec<usize> {
+        self.order
+            .iter()
+            .skip(1)
+            .copied()
+            .filter(|&i| !self.party[i].fainted())
+            .collect()
     }
 }
 
@@ -984,88 +1019,8 @@ impl Battle {
                     continue;
                 }
                 if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
-                    // The trapper/gazer leaving the field releases its
-                    // victim; a sport leaves with its hummer (handled by
-                    // the outgoing mon's own field reset below).
-                    self.sides[1 - side].mon_mut().trapped_n = 0;
-                    self.sides[1 - side].mon_mut().mean_looked = false;
-                    let out = self.sides[side].mon_mut();
-                    out.toxic_n = 0;
-                    out.confusion_n = 0;
-                    out.identified = false;
-                    out.sure_hit = 0;
-                    out.charged_elec = false;
-                    out.grudged = false;
-                    out.tormented = false;
-                    out.torment_fresh = false;
-                    out.raging = false;
-                    out.fury_n = 0;
-                    out.last_used = None;
-                    out.last_used_id = None;
-                    out.last_hit_by = None;
-                    out.last_hit_by_slot = None;
-                    out.last_missed = false;
-                    if let Some((i, orig)) = out.mimic_backup.take() {
-                        out.moves[i as usize] = orig;
-                    }
-                    if let Some(orig) = out.transform_backup.take() {
-                        out.moves = orig;
-                    }
-                    if let Some((stats, types)) = out.transform_stats.take() {
-                        out.atk = stats[0];
-                        out.def = stats[1];
-                        out.spa = stats[2];
-                        out.spd = stats[3];
-                        out.spe = stats[4];
-                        out.type_override = types;
-                    }
-                    out.bide = None;
-                    out.rolling = None;
-                    out.curled = false;
-                    out.encore_n = 0;
-                    out.disabled_slot = None;
-                    out.disable_n = 0;
-                    out.disable_fresh = false;
-                    out.disable_skip_tick = false;
-                    out.imprisoning = false;
-                    out.imprison_fresh = false;
-                    out.type_override = None;
-                    out.cursed = false;
-                    out.ingrained = false;
-                    out.stall_counter = 0;
-                    out.protected = false;
-                    out.enduring = false;
-                    out.taunt_n = 0;
-                    out.nightmared = false;
-                    out.stockpile_n = 0;
-                    out.yawn_n = 0;
-                    out.perish_n = 0;
-                    out.destiny = false;
-                    out.mean_looked = false;
-                    // The sim's clearVolatile also wipes every stat stage and
-                    // the accuracy/evasion pair, drops any lock the mon was
-                    // under, and zeroes its action count — which is why Fake
-                    // Out works again on a mon that left and came back.
-                    out.stages = Default::default();
-                    out.acc_stage = 0;
-                    out.eva_stage = 0;
-                    out.flinched = false;
-                    out.focusing = false;
-                    out.uproar_ending = false;
-                    out.locked_move = None;
-                    out.acted = false;
-                    out.sport = None;
-                    out.sub_hp = 0;
-                    out.focused = false;
-                    out.minimized = false;
-                    out.seeded = false;
-                    out.trapped_n = 0;
-                    out.charging = None;
-                    out.charge_fresh = false;
-                    out.charge_fresh = false;
-                    out.rolling_fresh = false;
-                    out.rampage = None;
-                    out.must_recharge = false;
+                    self.switch_out_reset(side);
+                    self.sides[side].reorder_for_switch(idx);
                     self.sides[side].active = idx;
                     events.push(Event::Switched {
                         side: side as u8 + 1,
@@ -1127,6 +1082,7 @@ impl Battle {
             if let Some(idx) = self.deferred_switch[side].take() {
                 if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
                     self.sides[side].mon_mut().status = None;
+                    self.sides[side].reorder_for_switch(idx);
                     self.sides[side].active = idx;
                     events.push(Event::Switched {
                         side: side as u8 + 1,
@@ -2057,6 +2013,56 @@ impl Battle {
                 pp: 1,
                 typed_as: None,
             }
+        } else if slot.entry.id == "sleeptalk" {
+            // Only out of a sleep, and it calls one of the user's OWN moves:
+            // anything flagged nosleeptalk or charge is skipped, and a
+            // pinned sample lands on the first survivor. A pick with no PP
+            // left is a silent lost turn rather than a call.
+            if !asleep_now {
+                events.push(Event::Failed { side: side as u8 + 1 });
+                return;
+            }
+            let pick = self.sides[side]
+                .mon()
+                .moves
+                .iter()
+                .find(|m| !m.entry.no_sleep_talk && !m.entry.charge)
+                .copied();
+            match pick {
+                None => {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
+                Some(m) if m.pp == 0 => return,
+                Some(m) => {
+                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
+                    MoveSlot { entry: m.entry, pp: 1, typed_as: None }
+                }
+            }
+        } else if slot.entry.id == "assist" {
+            // Assist rummages through the REST of the party, in the sim's
+            // own `side.pokemon` order, and calls the first move that is not
+            // on the noassist list.
+            let called = {
+                let s = &self.sides[side];
+                s.order
+                    .iter()
+                    .copied()
+                    .filter(|&i| i != s.active)
+                    .flat_map(|i| s.party[i].moves.iter())
+                    .find(|m| !m.entry.no_assist)
+                    .map(|m| m.entry)
+            };
+            match called {
+                None => {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return;
+                }
+                Some(e) => {
+                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
+                    MoveSlot { entry: e, pp: 1, typed_as: None }
+                }
+            }
         } else if slot.entry.id == "naturepower" {
             // Nature Power rolls its own 95 accuracy; a miss stops before
             // Swift is even called (one log line, not two).
@@ -2432,6 +2438,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     | StatusAction::Ingrain
                     | StatusAction::HealBell
                     | StatusAction::NoopSuccess
+                    | StatusAction::BatonPass
+                    | StatusAction::SleepTalk
+                    | StatusAction::Assist
             )
         ) || (matches!(slot.entry.status_action, Some(StatusAction::Curse))
             && {
@@ -3532,6 +3541,95 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         }
     }
 
+
+    /// Everything the sim's `clearVolatile` drops when a mon leaves the
+    /// field, applied to `side`'s current active. Shared by the voluntary
+    /// switch and by Roar and Whirlwind dragging one off.
+    fn switch_out_reset(&mut self, side: usize) {
+            // The trapper/gazer leaving the field releases its
+            // victim; a sport leaves with its hummer (handled by
+            // the outgoing mon's own field reset below).
+            self.sides[1 - side].mon_mut().trapped_n = 0;
+            self.sides[1 - side].mon_mut().mean_looked = false;
+            let out = self.sides[side].mon_mut();
+            out.toxic_n = 0;
+            out.confusion_n = 0;
+            out.identified = false;
+            out.sure_hit = 0;
+            out.charged_elec = false;
+            out.grudged = false;
+            out.tormented = false;
+            out.torment_fresh = false;
+            out.raging = false;
+            out.fury_n = 0;
+            out.last_used = None;
+            out.last_used_id = None;
+            out.last_hit_by = None;
+            out.last_hit_by_slot = None;
+            out.last_missed = false;
+            if let Some((i, orig)) = out.mimic_backup.take() {
+                out.moves[i as usize] = orig;
+            }
+            if let Some(orig) = out.transform_backup.take() {
+                out.moves = orig;
+            }
+            if let Some((stats, types)) = out.transform_stats.take() {
+                out.atk = stats[0];
+                out.def = stats[1];
+                out.spa = stats[2];
+                out.spd = stats[3];
+                out.spe = stats[4];
+                out.type_override = types;
+            }
+            out.bide = None;
+            out.rolling = None;
+            out.curled = false;
+            out.encore_n = 0;
+            out.disabled_slot = None;
+            out.disable_n = 0;
+            out.disable_fresh = false;
+            out.disable_skip_tick = false;
+            out.imprisoning = false;
+            out.imprison_fresh = false;
+            out.type_override = None;
+            out.cursed = false;
+            out.ingrained = false;
+            out.stall_counter = 0;
+            out.protected = false;
+            out.enduring = false;
+            out.taunt_n = 0;
+            out.nightmared = false;
+            out.stockpile_n = 0;
+            out.yawn_n = 0;
+            out.perish_n = 0;
+            out.destiny = false;
+            out.mean_looked = false;
+            // The sim's clearVolatile also wipes every stat stage and
+            // the accuracy/evasion pair, drops any lock the mon was
+            // under, and zeroes its action count — which is why Fake
+            // Out works again on a mon that left and came back.
+            out.stages = Default::default();
+            out.acc_stage = 0;
+            out.eva_stage = 0;
+            out.flinched = false;
+            out.focusing = false;
+            out.uproar_ending = false;
+            out.locked_move = None;
+            out.acted = false;
+            out.sport = None;
+            out.sub_hp = 0;
+            out.focused = false;
+            out.minimized = false;
+            out.seeded = false;
+            out.trapped_n = 0;
+            out.charging = None;
+            out.charge_fresh = false;
+            out.charge_fresh = false;
+            out.rolling_fresh = false;
+            out.rampage = None;
+            out.must_recharge = false;
+    }
+
     /// Send in replacements for whoever is down. The sim asks for these only
     /// AFTER the residual phase (`fieldEvent("Residual")`, then
     /// `checkFainted`), so a mon that faints mid-turn stays in its slot for
@@ -3557,6 +3655,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     break;
                 };
                 self.sides[side].mon_mut().status = None;
+                self.sides[side].reorder_for_switch(next);
                 self.sides[side].active = next;
                 events.push(Event::Switched {
                     side: side as u8 + 1,
@@ -4031,6 +4130,99 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             }
             StatusAction::ChargeUp => {
                 self.sides[side].mon_mut().charged_elec = true;
+            }
+            // Handled by the call substitution above, before the status
+            // dispatch is ever reached; these arms only exist so the match
+            // stays exhaustive.
+            StatusAction::SleepTalk | StatusAction::Assist => {}
+            StatusAction::BatonPass => {
+                // The user leaves and hands over its boosts and most of its
+                // volatiles. The sim refuses the ones flagged noCopy —
+                // Disable, Encore, Foresight, Nightmare, Stockpile, Imprison,
+                // Minimize, Torment, Toxic's counter, Yawn, Destiny Bond,
+                // Defense Curl — so the incoming mon starts clean of those.
+                let incoming = (0..self.sides[side].party.len())
+                    .find(|&i| i != self.sides[side].active && !self.sides[side].party[i].fainted());
+                match incoming {
+                    None => events.push(Event::Failed {
+                        side: side as u8 + 1,
+                    }),
+                    Some(next) => {
+                        let passed = {
+                            let m = self.sides[side].mon();
+                            (
+                                m.stages,
+                                m.acc_stage,
+                                m.eva_stage,
+                                m.sub_hp,
+                                m.seeded,
+                                m.confusion_n,
+                                m.perish_n,
+                                m.cursed,
+                                m.ingrained,
+                                m.focused,
+                                m.mean_looked,
+                                m.trapped_n,
+                                m.charged_elec,
+                                m.taunt_n,
+                            )
+                        };
+                        self.switch_out_reset(side);
+                        self.sides[side].reorder_for_switch(next);
+                        self.sides[side].active = next;
+                        {
+                            let m = self.sides[side].mon_mut();
+                            m.stages = passed.0;
+                            m.acc_stage = passed.1;
+                            m.eva_stage = passed.2;
+                            m.sub_hp = passed.3;
+                            m.seeded = passed.4;
+                            m.confusion_n = passed.5;
+                            m.perish_n = passed.6;
+                            m.cursed = passed.7;
+                            m.ingrained = passed.8;
+                            m.focused = passed.9;
+                            m.mean_looked = passed.10;
+                            m.trapped_n = passed.11;
+                            m.charged_elec = passed.12;
+                            m.taunt_n = passed.13;
+                        }
+                        events.push(Event::Switched {
+                            side: side as u8 + 1,
+                            party_index: next,
+                        });
+                        self.spikes_greet(side, events);
+                    }
+                }
+            }
+            StatusAction::ForceSwitch => {
+                // Roar and Whirlwind drag a benched mon out of the other
+                // side. The sim samples `possibleSwitches`, which is its own
+                // `side.pokemon` order past the active slot; a pinned sample
+                // lands on that list's first entry. With nobody to drag in,
+                // or the target already down, the move simply fails.
+                // Ingrain's roots hold against a drag as well as against a
+                // voluntary switch — it is the one thing in this era with an
+                // onDragOut — and the sim announces the refusal rather than
+                // failing quietly. A bind or a Mean Look does NOT stop one:
+                // those only forbid leaving of your own accord.
+                let rooted = self.sides[foe].mon().ingrained;
+                let bench = self.sides[foe].draggable();
+                match bench.first().copied() {
+                    Some(next) if hit && !rooted && !self.sides[foe].mon().fainted() => {
+                        self.switch_out_reset(foe);
+                        self.sides[foe].reorder_for_switch(next);
+                        self.sides[foe].active = next;
+                        events.push(Event::Switched {
+                            side: foe as u8 + 1,
+                            party_index: next,
+                        });
+                        self.spikes_greet(foe, events);
+                    }
+                    _ => events.push(Event::Failed {
+                        side: side as u8 + 1,
+                    }),
+                }
             }
             StatusAction::Spite => {
                 // Spite reaches through a substitute in this era. It drains

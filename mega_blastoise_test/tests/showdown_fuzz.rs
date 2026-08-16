@@ -829,7 +829,6 @@ fn fuzz_gen3_battles() {
         // work, and they are stubs again until their own pass. Trick,
         // Recycle, Role Play and Skill Swap wait on items and abilities.
         const PENDING: &[&str] = &[
-            "assist", "sleeptalk", "roar", "whirlwind", "batonpass",
             "trick", "recycle", "roleplay", "skillswap", "followme",
         ];
         gen3_battle::move_by_id(id)
