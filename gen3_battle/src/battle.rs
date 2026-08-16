@@ -156,6 +156,9 @@ pub struct Mon {
     pub disable_fresh: bool,
     /// Imprison is up: the foe cannot use moves this mon also knows.
     pub imprisoning: bool,
+    /// True only for the remainder of the turn Imprison landed in: the
+    /// foe's already-chosen sealed move is a lost turn, not a Struggle.
+    pub imprison_fresh: bool,
     /// Camouflage/Conversion retyping.
     pub type_override: Option<(Type, Type)>,
     /// Protect's stall gamble: 0 fresh, then the era's 2-4-8 ladder.
@@ -253,6 +256,7 @@ impl Mon {
             disable_n: 0,
             disable_fresh: false,
             imprisoning: false,
+            imprison_fresh: false,
             type_override: None,
             stall_counter: 0,
             protected: false,
@@ -655,6 +659,7 @@ impl Battle {
                     out.disable_n = 0;
                     out.disable_fresh = false;
                     out.imprisoning = false;
+                    out.imprison_fresh = false;
                     out.type_override = None;
                     out.stall_counter = 0;
                     out.protected = false;
@@ -701,6 +706,27 @@ impl Battle {
         // Weather chips first — the games' upkeep slot: sandstorm hits
         // anything not Rock/Ground/Steel, hail anything not Ice, a
         // sixteenth each, faster side first.
+        // Wish arrives at the end of the turn after it was made — at the
+        // games' order 4, BEFORE the weather chips and the status ticks
+        // (the sim logs the heal ahead of the hail) — healing whoever is
+        // active then.
+        for side in 0..2 {
+            if self.sides[side].wish_n > 0 {
+                self.sides[side].wish_n -= 1;
+                if self.sides[side].wish_n == 0 {
+                    let amount = self.sides[side].wish_amount;
+                    let mon = self.sides[side].mon_mut();
+                    if !mon.fainted() {
+                        let heal = amount.min(mon.max_hp - mon.hp);
+                        if heal > 0 {
+                            mon.hp += heal;
+                            events.push(Event::Healed { side: side as u8 + 1, amount: heal });
+                        }
+                    }
+                }
+            }
+        }
+
         if matches!(self.weather, Some(Weather::Sandstorm | Weather::Hail)) {
             let sand = self.weather == Some(Weather::Sandstorm);
             let first = self.faster_side(scripted);
@@ -731,26 +757,6 @@ impl Battle {
                 mon.hp -= amount;
                 events.push(Event::WeatherDamage { side: side as u8 + 1, amount });
                 self.faint_and_replace(side, &mut events);
-            }
-        }
-
-        // Wish arrives at the end of the turn after it was made — at the
-        // games' order 4, BEFORE the status ticks — healing whoever is
-        // active then.
-        for side in 0..2 {
-            if self.sides[side].wish_n > 0 {
-                self.sides[side].wish_n -= 1;
-                if self.sides[side].wish_n == 0 {
-                    let amount = self.sides[side].wish_amount;
-                    let mon = self.sides[side].mon_mut();
-                    if !mon.fainted() {
-                        let heal = amount.min(mon.max_hp - mon.hp);
-                        if heal > 0 {
-                            mon.hp += heal;
-                            events.push(Event::Healed { side: side as u8 + 1, amount: heal });
-                        }
-                    }
-                }
             }
         }
 
@@ -824,10 +830,14 @@ impl Battle {
                 let mon = self.sides[side].mon_mut();
                 mon.trapped_n -= 1;
                 if mon.trapped_n > 0 {
-                    let amount = ((mon.max_hp / 16).max(1)).min(mon.hp);
-                    mon.hp -= amount;
-                    events.push(Event::TrapDamage { side: side as u8 + 1, amount });
-                    self.faint_and_replace(side, &mut events);
+                    // A substitute soaks the bind's chip (invisible to the
+                    // battle state we track); the clock still runs down.
+                    if mon.sub_hp == 0 {
+                        let amount = ((mon.max_hp / 16).max(1)).min(mon.hp);
+                        mon.hp -= amount;
+                        events.push(Event::TrapDamage { side: side as u8 + 1, amount });
+                        self.faint_and_replace(side, &mut events);
+                    }
                 } else {
                     events.push(Event::TrapEnded { side: side as u8 + 1 });
                 }
@@ -1002,6 +1012,7 @@ impl Battle {
             mon.protected = false;
             mon.enduring = false;
             mon.torment_fresh = false;
+            mon.imprison_fresh = false;
             mon.focusing = false;
         }
 
@@ -1014,10 +1025,41 @@ impl Battle {
     /// Who moves first given the chosen moves: higher priority bracket, then
     /// [`Battle::faster_side`] within it. A switch resolves before moves and
     /// takes no bracket.
+    /// True when this seat's chosen move can only come out as Struggle —
+    /// decided at CHOICE time, so turn order uses Struggle's priority 0
+    /// instead of the dead move's (the sim's request step offers only
+    /// Struggle, so the queued action never carries the old priority).
+    fn struggles_at_choice(&self, side: usize, i: usize) -> bool {
+        let mon = self.sides[side].mon();
+        let locked = mon.charging.is_some()
+            || mon.rampage.is_some()
+            || mon.bide.is_some()
+            || mon.rolling.is_some();
+        if locked {
+            return false;
+        }
+        let Some(slot) = mon.moves.get(i) else { return false };
+        let status_movish = slot.entry.power == 0
+            && slot.entry.fixed.is_none()
+            && !slot.entry.ohko
+            && !matches!(slot.entry.id, "counter" | "mirrorcoat" | "spitup");
+        let foe_mon = self.sides[1 - side].mon();
+        slot.pp == 0
+            || mon.disabled_slot == Some(i as u8)
+            || (mon.tormented && mon.last_used == Some(i as u8))
+            || (mon.taunt_n == 1 && status_movish)
+            || (foe_mon.imprisoning
+                && foe_mon.moves.iter().any(|m| m.entry.id == slot.entry.id))
+    }
+
     fn first_mover(&mut self, choices: &[Choice; 2], scripted: bool) -> usize {
         let prio = |side: usize| match choices[side] {
             Choice::Move(i) => {
-                self.sides[side].mon().moves.get(i).map(|s| s.entry.priority).unwrap_or(0)
+                if self.struggles_at_choice(side, i) {
+                    0
+                } else {
+                    self.sides[side].mon().moves.get(i).map(|s| s.entry.priority).unwrap_or(0)
+                }
             }
             Choice::Switch(_) => 0,
         };
@@ -1109,6 +1151,7 @@ impl Battle {
                 mon.charging = None;
                 mon.rampage = None;
                 mon.rolling = None;
+                mon.fury_n = 0;
                 mon.stall_counter = 0;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Sleep });
                 return;
@@ -1133,6 +1176,7 @@ impl Battle {
                 self.sides[side].mon_mut().charging = None;
                 self.sides[side].mon_mut().rampage = None;
                 self.sides[side].mon_mut().rolling = None;
+                self.sides[side].mon_mut().fury_n = 0;
                 self.sides[side].mon_mut().stall_counter = 0;
                 events.push(Event::Cant { side: side as u8 + 1, status: Status::Freeze });
                 return;
@@ -1145,6 +1189,7 @@ impl Battle {
             self.sides[side].mon_mut().charging = None;
             break_rampage(self, side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
+            self.sides[side].mon_mut().fury_n = 0;
             self.sides[side].mon_mut().stall_counter = 0;
             events.push(Event::Flinched { side: side as u8 + 1 });
             return;
@@ -1165,6 +1210,7 @@ impl Battle {
                     self.sides[side].mon_mut().charging = None;
                     self.sides[side].mon_mut().rampage = None;
                     self.sides[side].mon_mut().rolling = None;
+                    self.sides[side].mon_mut().fury_n = 0;
                     self.sides[side].mon_mut().stall_counter = 0;
                     let amount = self.confusion_self_hit(side, random);
                     events.push(Event::ConfusedHit { side: side as u8 + 1, amount });
@@ -1191,6 +1237,7 @@ impl Battle {
                 self.sides[side].mon_mut().charging = None;
                 break_rampage(self, side, script.is_some(), events);
                 self.sides[side].mon_mut().rolling = None;
+                self.sides[side].mon_mut().fury_n = 0;
                 self.sides[side].mon_mut().stall_counter = 0;
                 events.push(Event::FullyParalyzed { side: side as u8 + 1 });
                 return;
@@ -1269,13 +1316,20 @@ impl Battle {
         }
         let disabled_out =
             self.sides[side].mon().disabled_slot == Some(index as u8) && !releasing;
-        let imprisoned_out = !releasing
-            && self.sides[foe].mon().imprisoning
+        let sealed = self.sides[foe].mon().imprisoning
             && self.sides[foe]
                 .mon()
                 .moves
                 .iter()
                 .any(|m| m.entry.id == slot.entry.id);
+        if sealed && self.sides[foe].mon().imprison_fresh && !releasing {
+            // Imprison landed earlier this same turn: the chosen move is
+            // simply lost — no move line, no PP, no Struggle.
+            self.sides[side].mon_mut().stall_counter = 0;
+            events.push(Event::Failed { side: side as u8 + 1 });
+            return;
+        }
+        let imprisoned_out = sealed && !releasing;
         let struggling = (taunted_out
             || tormented_out
             || disabled_out
@@ -1854,10 +1908,15 @@ impl Battle {
             }
         }
         if !hit {
-            // A miss ends a rampage quietly — no fatigue confusion — and
-            // resets Fury Cutter's ramp and a Rollout.
+            // A first-use miss ends a rampage quietly, but a miss once the
+            // lock is running (the [from] lockedmove turns) still ends in
+            // fatigue confusion. Fury Cutter's ramp and a Rollout reset.
             self.sides[side].mon_mut().last_missed = true;
-            self.sides[side].mon_mut().rampage = None;
+            if ramping {
+                break_rampage(self, side, script.is_some(), events);
+            } else {
+                self.sides[side].mon_mut().rampage = None;
+            }
             self.sides[side].mon_mut().fury_n = 0;
             self.sides[side].mon_mut().rolling = None;
             // The kicks crash for half the damage they would have dealt.
@@ -2626,11 +2685,16 @@ impl Battle {
                 }
             }
             StatusAction::Disable => {
-                // Disable pierces a substitute in this era.
+                // Disable pierces a substitute in this era, but fails when
+                // the target's last move has no PP left to seal.
                 let target = self.sides[foe].mon();
+                let last_has_pp = target
+                    .last_used
+                    .and_then(|i| target.moves.get(i as usize))
+                    .is_some_and(|m| m.pp > 0);
                 if hit
                     && target.disabled_slot.is_none()
-                    && target.last_used.is_some()
+                    && last_has_pp
                     && !target.fainted()
                 {
                     // Four sealed turns pinned; 4..7 in play.
@@ -2666,7 +2730,17 @@ impl Battle {
                 }
             }
             StatusAction::Imprison => {
-                self.sides[side].mon_mut().imprisoning = true;
+                // Fails unless the foe actually shares a move with the user
+                // — the sim refuses a sealless Imprison outright.
+                let shares = self.sides[side].mon().moves.iter().any(|m| {
+                    self.sides[foe].mon().moves.iter().any(|f| f.entry.id == m.entry.id)
+                });
+                if shares && !self.sides[side].mon().imprisoning {
+                    self.sides[side].mon_mut().imprisoning = true;
+                    self.sides[side].mon_mut().imprison_fresh = true;
+                } else {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                }
             }
             StatusAction::MirrorMove | StatusAction::Mimic | StatusAction::Sketch => {
                 // Handled before the status path; unreachable here.
