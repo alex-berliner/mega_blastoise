@@ -1018,9 +1018,9 @@ fn fuzz_gen3_battles() {
         // battle was one mon against one mon: Assist and Sleep Talk had no
         // other move to call, Roar and Whirlwind had nobody to drag in,
         // Baton Pass had nowhere to pass to. With a bench they all do real
-        // work, and they are stubs again until their own pass. Trick and
-        // Recycle still wait on held items.
-        const PENDING: &[&str] = &["trick", "recycle", "followme"];
+        // work, and they are stubs again until their own pass. Follow Me
+        // needs a partner to draw fire away from, so it waits on doubles.
+        const PENDING: &[&str] = &["followme"];
         gen3_battle::move_by_id(id)
             .map(|m| {
                 !PENDING.contains(&m.id)

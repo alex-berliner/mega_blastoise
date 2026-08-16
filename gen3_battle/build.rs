@@ -623,6 +623,10 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::SleepTalk)")
                 } else if act.get("assist").is_some() {
                     String::from("Some(StatusAction::Assist)")
+                } else if act.get("trick").is_some() {
+                    String::from("Some(StatusAction::Trick)")
+                } else if act.get("recycle").is_some() {
+                    String::from("Some(StatusAction::Recycle)")
                 } else if act.get("skillswap").is_some() {
                     String::from("Some(StatusAction::SkillSwap)")
                 } else if act.get("roleplay").is_some() {

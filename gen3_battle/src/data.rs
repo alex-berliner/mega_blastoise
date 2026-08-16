@@ -344,6 +344,10 @@ pub enum StatusAction {
     HealBell,
     /// A move that succeeds and does nothing in singles (Follow Me).
     NoopSuccess,
+    /// Trick swaps held items with the target.
+    Trick,
+    /// Recycle brings back the item this mon used up.
+    Recycle,
     /// Skill Swap trades abilities with the target.
     SkillSwap,
     /// Role Play copies the target's ability onto the user.

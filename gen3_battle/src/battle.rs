@@ -298,6 +298,9 @@ pub struct Mon {
     /// A Choice Band holder is stuck with whatever it swung first. Cleared
     /// by leaving the field.
     pub choice_locked: Option<&'static str>,
+    /// The last item this mon used up, which is what Recycle brings back.
+    /// Having one TAKEN does not count; only spending it does.
+    pub last_item: &'static str,
 }
 
 impl Mon {
@@ -421,6 +424,7 @@ impl Mon {
             loafing: false,
             item: "",
             choice_locked: None,
+            last_item: "",
         })
     }
 
@@ -976,6 +980,7 @@ impl Battle {
             self.sides[side].mon().confusion_n > 0 && item::cures_confusion(&holder);
         if cure_status || cure_confusion {
             let mon = self.sides[side].mon_mut();
+            mon.last_item = mon.item;
             mon.item = "";
             if cure_status {
                 mon.status = None;
@@ -3289,6 +3294,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             });
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
             return;
         }
@@ -4113,6 +4120,26 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             });
         }
 
+        // Thief and Covet pocket what the target was holding, but only if
+        // the thief's own hands are empty; Knock Off simply strikes it away.
+        // Sticky Hold keeps hold of it either way, and in this era Knock Off
+        // gets no extra power for the trouble.
+        if total > 0 && !self.sides[foe].mon().fainted() && !self.sides[side].mon().fainted() {
+            let theirs = self.sides[foe].mon().item;
+            let held = self.sides[foe].mon().ability == "stickyhold";
+            match slot.entry.id {
+                "thief" | "covet"
+                    if self.sides[side].mon().item.is_empty() && !theirs.is_empty() && !held =>
+                {
+                    self.sides[foe].mon_mut().item = "";
+                    self.sides[side].mon_mut().item = theirs;
+                }
+                "knockoff" if !theirs.is_empty() && !held => {
+                    self.sides[foe].mon_mut().item = "";
+                }
+                _ => {}
+            }
+        }
         self.shell_bell(side, total, events);
 
 
@@ -4587,7 +4614,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if ripe == item::Ripe::None {
             return;
         }
+        let eaten = self.sides[side].mon().item;
         self.sides[side].mon_mut().item = "";
+        self.sides[side].mon_mut().last_item = eaten;
         match ripe {
             item::Ripe::Heal(flat) => {
                 let mon = self.sides[side].mon_mut();
@@ -5345,6 +5374,42 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         .collect();
                     self.ability_update(side);
                 }
+            }
+            StatusAction::Trick => {
+                // Sticky Hold refuses the trade outright, and two empty
+                // hands have nothing to trade.
+                let mine = self.sides[side].mon().item;
+                let theirs = self.sides[foe].mon().item;
+                if !hit
+                    || self.sides[foe].mon().ability == "stickyhold"
+                    || (mine.is_empty() && theirs.is_empty())
+                    || self.sides[foe].mon().fainted()
+                {
+                    events.push(Event::Failed {
+                        side: side as u8 + 1,
+                    });
+                    return;
+                }
+                self.sides[side].mon_mut().item = theirs;
+                self.sides[foe].mon_mut().item = mine;
+                // A Choice Band that changes hands lets go of both.
+                self.sides[side].mon_mut().choice_locked = None;
+                self.sides[foe].mon_mut().choice_locked = None;
+                self.ability_update(side);
+                self.ability_update(foe);
+            }
+            StatusAction::Recycle => {
+                let back = self.sides[side].mon().last_item;
+                if !self.sides[side].mon().item.is_empty() || back.is_empty() {
+                    events.push(Event::Failed {
+                        side: side as u8 + 1,
+                    });
+                    return;
+                }
+                let mon = self.sides[side].mon_mut();
+                mon.item = back;
+                mon.last_item = "";
+                self.ability_update(side);
             }
             StatusAction::SkillSwap | StatusAction::RolePlay => {
                 // Wonder Guard refuses to be traded or copied, and this era
