@@ -168,7 +168,9 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
     }
 
     // STAB, then type, then the roll LAST — the Gen 3 order. Each floors.
-    if m.move_type == a.types.0 || m.move_type == a.types.1 {
+    // A typeless hit (Struggle, a delayed Future Sight) never gets STAB,
+    // even off a mon whose empty second type slot is also None.
+    if m.move_type != Type::None && (m.move_type == a.types.0 || m.move_type == a.types.1) {
         dmg = dmg * 3 / 2;
     }
     dmg = dmg * eff / 100;

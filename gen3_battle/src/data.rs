@@ -377,13 +377,14 @@ impl MoveEntry {
 }
 
 /// Struggle: the fallback when nothing else is usable. Normal-typed
-/// 50-power with a quarter recoil in this era (the chart applies — Rock
-/// resists it; typeless Struggle is a later generation), outside the
-/// generated table because the pool deliberately excludes it.
+/// 50-power with a quarter recoil in this era. TYPELESS in the sim's
+/// gen 3 (an onModifyMove sets '???'): no STAB, no chart — it hits a
+/// Ghost as hard as anything else. Outside the generated table because
+/// the pool deliberately excludes it.
 pub static STRUGGLE: MoveEntry = MoveEntry {
     id: "struggle",
     name: "Struggle",
-    move_type: Type::Normal,
+    move_type: Type::None,
     power: 50,
     accuracy: 100,
     pp: 1,

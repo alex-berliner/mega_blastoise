@@ -185,20 +185,27 @@ function scriptRandomness(battle, script) {
     return a; // two-arg minimums: multi-hit counts, sleep turns
   };
 
-  // Crits: pin willCrit on an active copy of the move, which every gen's
-  // getDamage honours in place of rolling.
+  // Crits: pin willCrit on a copy of the move, which every gen's getDamage
+  // honours in place of rolling. The copy must PRESERVE runtime mutations
+  // (Weather Ball's onModifyMove retype/redouble, Future Sight's fixed
+  // launch damage) — a fresh dex copy silently reverted them, which warped
+  // several move families (fuzz-found via Weather Ball in sun).
   const origGetDamage = actions.getDamage.bind(actions);
   actions.getDamage = function (source, target, move, suppressMessages) {
     battle.__cur = forSide(source);
     // Only real moves get the willCrit-pinned copy: secondary/self-boost
     // moveData blobs carry no id, and swapping them for a broken active
     // move silently ate their boosts (fuzz-found via Metal Claw).
-    if (typeof move === 'string' || (typeof move !== 'number' && move.id)) {
-      const active = this.dex.getActiveMove(typeof move === 'string' ? move : move.id);
-      // Moves that inherently never crit (Counter) keep that; only an
-      // undecided willCrit takes the script's.
+    if (typeof move === 'string') {
+      const active = this.dex.getActiveMove(move);
       if (active.willCrit === undefined) active.willCrit = forSide(source).crit;
       move = active;
+    } else if (typeof move !== 'number' && move.id) {
+      const copy = Object.assign(Object.create(Object.getPrototypeOf(move)), move);
+      // Moves that inherently never crit (Counter) keep that; only an
+      // undecided willCrit takes the script's.
+      if (copy.willCrit === undefined) copy.willCrit = forSide(source).crit;
+      move = copy;
     }
     // Gens 1-2 ignore willCrit and roll their own randomChance(x, 256)
     // inside; flag the window so that roll answers from the crit knob.

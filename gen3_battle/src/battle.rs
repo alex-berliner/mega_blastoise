@@ -378,10 +378,9 @@ pub struct Side {
     /// Wish clock and the amount that arrives when it hits zero.
     pub wish_n: u8,
     pub wish_amount: u16,
-    /// A Future Sight/Doom Desire aimed at THIS side: the countdown and
-    /// which of the two moves it was. The hit itself is recomputed in
-    /// full at resolution from the launcher's then-current stats.
-    pub incoming: Option<(u8, &'static str)>,
+    /// A Future Sight/Doom Desire aimed at THIS side: the countdown, the
+    /// damage locked in at launch, and which of the two moves it was.
+    pub incoming: Option<(u8, u16, &'static str)>,
 }
 
 impl Side {
@@ -851,33 +850,24 @@ impl Battle {
             if self.over() {
                 break;
             }
-            if let Some((n, id)) = self.sides[side].incoming {
+            if let Some((n, dealt, id)) = self.sides[side].incoming {
                 if n > 1 {
-                    self.sides[side].incoming = Some((n - 1, id));
+                    self.sides[side].incoming = Some((n - 1, dealt, id));
                 } else {
                     self.sides[side].incoming = None;
                     let mon = self.sides[side].mon();
                     if !mon.fainted() {
-                        let (move_type, power) = if id == "doomdesire" {
-                            (Type::Steel, 120)
-                        } else {
-                            (Type::Psychic, 80)
-                        };
                         // A target mid Fly/Dig/Bounce/Dive when the hit
                         // arrives dodges it like any other attack.
                         if mon.semi_invulnerable().is_some() {
                             continue;
                         }
-                        // The hit is recomputed IN FULL at resolution — the
-                        // launcher's CURRENT stats and stages, not a launch
-                        // snapshot (Feather Dance between launch and landing
-                        // shrinks it), and the target's screens count too.
-                        let (attacker, defender) = self.attack_pair(1 - side);
-                        let m = MoveUse { move_type, power, halve_def: false, weather: 0 };
-                        // Accuracy is rolled at RESOLUTION too — 90 for
+                        // Only ACCURACY waits for the landing — 90 for
                         // Future Sight, 85 for Doom Desire — off the
                         // launcher's seat script for that turn. A miss
-                        // simply drops the delayed hit.
+                        // simply drops the delayed hit. The damage itself
+                        // was locked in at launch; the sim even strips the
+                        // target's Endure before it lands.
                         let landed = match script.seats[1 - side] {
                             Some(sc) => sc.hit,
                             None => {
@@ -888,15 +878,6 @@ impl Battle {
                         if !landed {
                             continue;
                         }
-                        // The damage roll — and the crit — happen at
-                        // RESOLUTION, off the launcher's seat script for
-                        // that turn.
-                        let (random, crit) = match script.seats[1 - side] {
-                            Some(sc) => (sc.random, sc.crit),
-                            None => (85 + self.rng.below(16) as u8, self.rng.below(16) == 0),
-                        };
-                        let dealt =
-                            damage(&attacker, &defender, &m, Roll { crit, random }) as u16;
                         if dealt > 0 {
                             let mon = self.sides[side].mon_mut();
                             let hit_sub = mon.sub_hp > 0;
@@ -908,12 +889,7 @@ impl Battle {
                                     events.push(Event::SubBroke { side: side as u8 + 1 });
                                 }
                             } else {
-                                let cap = if mon.enduring {
-                                    mon.hp.saturating_sub(1)
-                                } else {
-                                    mon.hp
-                                };
-                                let amount = dealt.min(cap);
+                                let amount = dealt.min(mon.hp);
                                 mon.hp -= amount;
                                 events.push(Event::Damage {
                                     side: side as u8 + 1,
@@ -1810,12 +1786,35 @@ impl Battle {
         }
 
         // Future Sight and Doom Desire: aim a delayed hit two turns out.
+        // The DAMAGE is computed now, at launch — typeless (no STAB, no
+        // chart), never a crit, the launch turn's roll, today's stats and
+        // screens — and stored; only accuracy waits for the landing.
         if matches!(slot.entry.id, "futuresight" | "doomdesire") {
             if self.sides[foe].incoming.is_some() {
                 events.push(Event::Failed { side: side as u8 + 1 });
                 return;
             }
-            self.sides[foe].incoming = Some((3, slot.entry.id));
+            let (mut attacker, mut defender) = self.attack_pair(side);
+            let power = if slot.entry.id == "doomdesire" {
+                120
+            } else {
+                // Future Sight is special: route the special stats through
+                // the physical slots, since a typeless move reads those.
+                attacker.atk = attacker.sp_atk;
+                attacker.atk_stage = attacker.sp_atk_stage;
+                attacker.burned = false;
+                defender.def = defender.sp_def;
+                defender.def_stage = defender.sp_def_stage;
+                defender.reflect = defender.light_screen;
+                80
+            };
+            let random = match script {
+                Some(s) => s.random,
+                None => 85 + self.rng.below(16) as u8,
+            };
+            let m = MoveUse { move_type: Type::None, power, halve_def: false, weather: 0 };
+            let dealt = damage(&attacker, &defender, &m, Roll { crit: false, random }) as u16;
+            self.sides[foe].incoming = Some((3, dealt, slot.entry.id));
             events.push(Event::Charging { side: side as u8 + 1 });
             return;
         }
