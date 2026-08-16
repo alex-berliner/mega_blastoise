@@ -1233,8 +1233,14 @@ impl Battle {
 
         // Switches resolve before any move, in side order. Leaving the field
         // resets a Toxic count: the poison stays, the clock starts over.
-        let mut arriving = [false; 2];
-        for side in 0..2 {
+        // Switches resolve in SPEED order — the speed of the mon leaving —
+        // and each arrival greets the field the moment it lands, before the
+        // other side has moved. That is what decides who an Intimidate cows
+        // and what a Trace finds standing opposite: on a double switch the
+        // slower side's newcomer is greeted by a field that has already
+        // changed, and the faster side's by one that has not.
+        let switch_first = self.faster_side(scripted_now);
+        for side in [switch_first, 1 - switch_first] {
             if self.deferred_switch[side].is_some() {
                 continue;
             }
@@ -1252,20 +1258,8 @@ impl Battle {
                         side: side as u8 + 1,
                         party_index: idx,
                     });
-                    // The greeting waits: the sim puts BOTH mons on the
-                    // field and only then runs what they brought with them.
-                    // An Intimidate that fires the instant its own mon lands
-                    // cows whoever is standing at that moment, which on a
-                    // double switch is the mon that is about to leave.
-                    arriving[side] = true;
+                    self.switch_in_greet(side, &mut events);
                 }
-            }
-        }
-        // Now the arrivals speak, faster mon first.
-        let greet_first = self.faster_side(scripted_now);
-        for side in [greet_first, 1 - greet_first] {
-            if arriving[side] {
-                self.switch_in_greet(side, &mut events);
             }
         }
 
@@ -4703,7 +4697,13 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// down, at the sim's after-secondary-self stage — which is after the
     /// recoil, so a full-health attacker still gets part of its kick back.
     fn shell_bell(&mut self, side: usize, dealt: u16, events: &mut Vec<Event>) {
-        if dealt == 0 || !item::shell_bell(&self.sides[side].mon().holder()) {
+        // Nothing heals a corpse: the sim's heal() refuses a target with no
+        // HP left, and an Explosion that pays its user back to life keeps a
+        // decided battle running.
+        if dealt == 0
+            || self.sides[side].mon().fainted()
+            || !item::shell_bell(&self.sides[side].mon().holder())
+        {
             return;
         }
         // The sim's heal() rounds a fraction of one UP: anything above zero
@@ -4725,9 +4725,17 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // the Attack and Defence abilities both speak — a confused Huge
         // Power mon hits itself twice as hard.
         let bearer = mon.bearer();
-        let atk = ability::attack_chain(&bearer, true)
+        let holder = mon.holder();
+        // A typeless forty-power physical hit, which means the held items
+        // speak as well as the abilities: a confused Choice Band swings half
+        // again as hard at itself.
+        let mut atk_chain = ability::attack_chain(&bearer, true);
+        atk_chain.extend(item::attack_chain(&holder, Type::None, true));
+        let mut def_chain = ability::defence_chain(&bearer, true);
+        def_chain.extend(item::defence_chain(&holder, true));
+        let atk = atk_chain
             .apply(crate::stats::apply_stage(mon.atk, mon.stages[Stat::Atk as usize]) as u32);
-        let def = ability::defence_chain(&bearer, true)
+        let def = def_chain
             .apply(crate::stats::apply_stage(mon.def, mon.stages[Stat::Def as usize]) as u32)
             .max(1);
         let mut dmg = ((2 * mon.level as u32 / 5 + 2) * 40 * atk / def) / 50;
