@@ -3343,6 +3343,32 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 defender.reflect = defender.light_screen;
                 80
             };
+            // The damage is computed here, at launch, but it is still a
+            // move of its own type as far as the abilities and items are
+            // concerned: Doom Desire is Steel and therefore physical, so a
+            // Choice Band swings it half again as hard even though the hit
+            // itself lands typeless two turns later.
+            let real_type = slot.move_type();
+            let physical = ability::physical_category(real_type);
+            let user_b = self.sides[side].mon().bearer();
+            let foe_b = self.sides[foe].mon().bearer();
+            let user_i = self.sides[side].mon().holder();
+            let foe_i = self.sides[foe].mon().holder();
+            attacker.stat_mod = ability::attack_chain(&user_b, physical);
+            attacker
+                .stat_mod
+                .extend(item::attack_chain(&user_i, real_type, physical));
+            attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
+            defender.stat_mod = ability::defence_chain(&foe_b, physical);
+            defender.stat_mod.extend(item::defence_chain(&foe_i, physical));
+            let mut bp = ability::Chain::new();
+            if ability::pinch_boost(&user_b, real_type) {
+                bp.mul(ability::X1_5);
+            }
+            if ability::thick_fat_cut(&foe_b, real_type) {
+                bp.mul(ability::X0_5);
+            }
+            let power = bp.apply(power as u32).max(1).min(u16::MAX as u32) as u16;
             let random = match script {
                 Some(s) => s.random,
                 None => 85 + self.rng.below(16) as u8,
