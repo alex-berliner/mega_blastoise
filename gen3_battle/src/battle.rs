@@ -938,6 +938,9 @@ pub struct Battle {
     calling: bool,
     /// Whoever is owed one, and what: drained once the current move is done.
     pending_call: Option<(usize, &'static MoveEntry)>,
+    /// The move being resolved kills its own user outright — an Explosion or
+    /// a Self-Destruct — which the sim queues before the hit.
+    self_destructed: bool,
     /// A Yawn is collecting right now. Safeguard blocks the drowsiness going
     /// on, and lets the sleep it delivers through — the sim writes that
     /// exemption into Safeguard's own onSetStatus as `if (effect.id ===
@@ -971,6 +974,7 @@ impl Battle {
             pending_call: None,
             bounced: false,
             yawn_landing: false,
+            self_destructed: false,
         };
         // The battle's opening switch-ins are switch-ins, and the sim runs
         // them as part of starting: Intimidate cows, Trace copies, a weather
@@ -3239,6 +3243,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             return;
         }
         let boom = slot.entry.selfdestruct;
+        // The user's own faint is queued before the hit for these, which is
+        // what keeps a Grudge from draining their PP.
+        self.self_destructed = boom;
         if boom {
             self.sides[side].mon_mut().hp = 0;
         }
@@ -3568,6 +3575,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             });
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+            self.kings_rock(side, foe, &slot, script);
             self.took_a_hit(foe, amount, events);
             self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
@@ -3614,6 +3622,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 effectiveness: 100,
                 crit: false,
             });
+            self.kings_rock(side, foe, &slot, script);
             self.took_a_hit(foe, amount, events);
             self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
@@ -3678,6 +3687,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 effectiveness: 100,
                 crit: false,
             });
+            self.kings_rock(side, foe, &slot, script);
             self.took_a_hit(foe, amount, events);
             self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
@@ -5050,8 +5060,18 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if self.sides[foe].mon().fainted() && self.sides[foe].mon().destiny {
             self.sides[side].mon_mut().hp = 0;
         }
-        // Grudge: the killing move's PP drains to nothing.
-        if self.sides[foe].mon().fainted() && self.sides[foe].mon().grudged {
+        // Grudge: the killing move's PP drains to nothing — unless the mon
+        // that used it is already dead by then. `onFaint` opens with
+        // `if (!source || source.fainted || ...) return`, and a move with
+        // `selfdestruct: "always"` queues ITS OWN user's faint before the hit
+        // lands, so by the time the Grudge holder's Faint event runs the
+        // attacker is gone and takes its PP with it. Recoil is different: the
+        // target is dequeued first there, so a Double-Edge that kills its
+        // user still loses its PP.
+        if self.sides[foe].mon().fainted()
+            && self.sides[foe].mon().grudged
+            && !self.self_destructed
+        {
             if let Some(slot_i) = self.sides[side].mon().last_used {
                 if let Some(ms) = self.sides[side].mon_mut().moves.get_mut(slot_i as usize) {
                     ms.pp = 0;
@@ -6505,6 +6525,47 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         }
     }
 
+    /// A King's Rock hangs a second secondary off the move — ten percent,
+    /// flinch — by pushing it onto `move.secondaries` at onModifyMove. It is
+    /// rolled on its own after the move's own secondary, Shield Dust refuses
+    /// it the same way, and Serene Grace doubles it, since by the time it is
+    /// rolled it is just another entry in the list.
+    ///
+    /// The list it answers to includes the FIXED-damage moves — Night Shade,
+    /// Seismic Toss, Sonic Boom, Dragon Rage — as well as Endeavor and
+    /// Psywave, none of which go anywhere near the ordinary damage loop. So
+    /// this is called from their arms too, and not from the paths where a
+    /// Substitute soaked the hit: the sim logs no flinch there.
+    fn kings_rock(
+        &mut self,
+        side: usize,
+        foe: usize,
+        slot: &MoveSlot,
+        script: Option<SeatScript>,
+    ) {
+        if !item::kings_rock_flinches(&self.sides[side].mon().holder(), slot.entry.id) {
+            return;
+        }
+        let dusted = ability::blocks_secondary(&self.sides[foe].mon().bearer());
+        let chance = if ability::doubles_secondary(&self.sides[side].mon().bearer()) {
+            20
+        } else {
+            10
+        };
+        let proc = !dusted
+            && match script {
+                Some(s) => s.secondary,
+                None => self.rng.below(100) < chance,
+            };
+        if proc
+            && !self.sides[foe].mon().fainted()
+            && !self.sides[foe].mon().focusing
+            && !ability::blocks_flinch(&self.sides[foe].mon().bearer())
+        {
+            self.sides[foe].mon_mut().flinched = true;
+        }
+    }
+
     fn hit_effects(
         &mut self,
         side: usize,
@@ -6611,26 +6672,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             }
         }
 
-        // A King's Rock hangs a second secondary off the move — ten percent,
-        // flinch — by pushing it onto `move.secondaries` at onModifyMove. It
-        // is rolled on its own, after the move's own secondary, and Shield
-        // Dust refuses it the same way. Serene Grace doubles it too, since by
-        // the time it is rolled it is just another entry in the list.
-        if item::kings_rock_flinches(&self.sides[side].mon().holder(), slot.entry.id) {
-            let rock_chance = if doubled { 20 } else { 10 };
-            let rock_proc = !dusted
-                && match script {
-                    Some(s) => s.secondary,
-                    None => self.rng.below(100) < rock_chance,
-                };
-            if rock_proc
-                && !self.sides[foe].mon().fainted()
-                && !self.sides[foe].mon().focusing
-                && !ability::blocks_flinch(&self.sides[foe].mon().bearer())
-            {
-                self.sides[foe].mon_mut().flinched = true;
-            }
-        }
+        self.kings_rock(side, foe, slot, script);
 
         // A Fire-type hit thaws a frozen target — game rule, not RNG. A
         // knocked-out target keeps its freeze; there is nothing left to thaw.
