@@ -6334,11 +6334,23 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     Type::Rock,
                     Type::Water,
                 ];
-                let last = self.sides[foe]
-                    .mon()
-                    .last_used_id
-                    .and_then(crate::data::move_by_id)
-                    .map(|m| m.move_type);
+                // The type it reads is the one the move was USED as, not the
+                // one in the table: `attackType = lastMoveUsed.type` off the
+                // active move, after every onModifyMove has had its say. Gen
+                // 3's Beat Up retypes itself to '???' there, and nothing in
+                // the chart resists '???', so a Conversion 2 answering a Beat
+                // Up simply fails. Struggle is named outright as Normal.
+                let last = self.sides[foe].mon().last_used_id.and_then(|id| match id {
+                    "struggle" => Some(Type::Normal),
+                    "beatup" => Some(Type::None),
+                    _ => self.sides[foe]
+                        .mon()
+                        .moves
+                        .iter()
+                        .find(|m| m.entry.id == id)
+                        .map(|m| m.move_type())
+                        .or_else(|| crate::data::move_by_id(id).map(|m| m.move_type)),
+                });
                 match last {
                     Some(atk_type) if atk_type != Type::None => {
                         let pick = DEX_ORDER
