@@ -502,6 +502,7 @@ fn fuzz_gen3_single_hits() {
             types: a_sp.types,
             burned: *burned,
             stat_mod: gen3_battle::ability::Chain::new(),
+            stat_pre: gen3_battle::ability::Chain::new(),
             ignores_burn: false,
         };
         let mut defender = Defender {

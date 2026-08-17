@@ -241,7 +241,9 @@ fn gen3_turns_match_showdown() {
                     &Attacker {
                         level: a.level, atk: a.atk, sp_atk: a.spa,
                         atk_stage: 0, sp_atk_stage: 0, types: a.types(), burned: a.burned(),
-                        stat_mod: gen3_battle::ability::Chain::new(), ignores_burn: false,
+                        stat_mod: gen3_battle::ability::Chain::new(),
+                        stat_pre: gen3_battle::ability::Chain::new(),
+                        ignores_burn: false,
                     },
                     &Defender {
                         def: d.def, sp_def: d.spd, def_stage: 0, sp_def_stage: 0,
