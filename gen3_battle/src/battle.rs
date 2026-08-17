@@ -1093,6 +1093,13 @@ impl Battle {
 
     fn settle_choice_lock(&mut self, side: usize) {
         let committed = self.committed_move[side].take();
+        // Charge's volatile is dropped by `onAfterMove` on ANY move but
+        // Charge itself, so a charge spent on something that is not Electric
+        // is simply spent. Ours only cleared it when an Electric move cashed
+        // it in, which left a Raikou holding the doubling indefinitely.
+        if committed.is_some_and(|id| id != "charge") {
+            self.sides[side].mon_mut().charged_elec = false;
+        }
         let mon = self.sides[side].mon();
         let banded = mon.item == "choiceband";
         if let Some(id) = committed {
@@ -2327,10 +2334,17 @@ impl Battle {
         if self.sides[side].mon().fainted() {
             return;
         }
-        // Fake Out's window is ACTIONS, not moves: a sleep-lost turn still
-        // burns it (the sim counts every action taken from the queue).
+        // Fake Out's window is counted in `activeMoveActions`, which the sim
+        // bumps at the top of `runMove` — so a sleep-lost turn burns it (the
+        // mon took its action and was stopped inside it), and an intercepting
+        // Pursuit does NOT. The interception is fired from the switch-out
+        // hook through `useMove`, which is below runMove, and the mon's own
+        // queued action is thrown away: it never spent one. So a Cyndaquil
+        // that pursued something off the field can still Fake Out next turn.
         let had_acted = self.sides[side].mon().acted;
-        self.sides[side].mon_mut().acted = true;
+        if !self.pursuing {
+            self.sides[side].mon_mut().acted = true;
+        }
         // In Gen 3 a rampage broken by flinch or full paralysis still ends
         // in fatigue confusion, on the spot. (A miss or a protecting target
         // ends it quietly — those sites clear `rampage` directly.)
