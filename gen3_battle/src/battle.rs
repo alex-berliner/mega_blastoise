@@ -291,6 +291,12 @@ pub struct Mon {
     /// Flash Fire has caught: this mon's Fire moves are half again as strong
     /// until it leaves the field.
     pub flash_fire: bool,
+    /// What this mon was born with, stashed the first time something in the
+    /// battle overwrites its ability. An ability handed over by Trace,
+    /// Transform, Role Play or Skill Swap is a VOLATILE in the sim — leaving
+    /// the field restores the original, which is why a Trace user copies
+    /// afresh every time it comes back in.
+    pub ability_backup: Option<&'static str>,
     /// Turns this mon has spent on the field since it came in. Speed Boost
     /// wants at least one before it starts climbing.
     pub active_turns: u8,
@@ -425,6 +431,7 @@ impl Mon {
             recharge_fresh: false,
             ability: "",
             flash_fire: false,
+            ability_backup: None,
             active_turns: 0,
             loafing: false,
             item: "",
@@ -887,6 +894,9 @@ pub struct Battle {
     /// Which side this turn's speeds put first, read once as the turn opens
     /// and held for the rest of it.
     speed_first: Option<usize>,
+    /// The move each side has just committed to, held until the move finishes
+    /// so a Choice Band can clamp on it afterwards.
+    committed_move: [Option<&'static str>; 2],
 }
 
 impl Battle {
@@ -906,6 +916,7 @@ impl Battle {
             pursuing: false,
             deferred_switch: [None; 2],
             speed_first: None,
+            committed_move: [None; 2],
         };
         // The battle's opening switch-ins are switch-ins, and the sim runs
         // them as part of starting: Intimidate cows, Trace copies, a weather
@@ -952,6 +963,40 @@ impl Battle {
     /// its own turn — `getLockedMove` covers a rampage, a rolling
     /// Rollout/Ice Ball, a storing Bide, an Uproar, a charge turn and a
     /// Hyper Beam recharge, and every one of those sets `trapped = true`.
+    /// Overwrite a mon's ability, remembering what it was born with. Trace,
+    /// Transform, Role Play and Skill Swap all come through here.
+    fn set_ability(&mut self, side: usize, id: &'static str) {
+        let mon = self.sides[side].mon_mut();
+        if mon.ability_backup.is_none() {
+            mon.ability_backup = Some(mon.ability);
+        }
+        mon.ability = id;
+    }
+
+    /// The sim's `AfterMove`, as far as a Choice Band is concerned: the lock
+    /// goes on once the move is done, and reads whatever the mon is holding
+    /// by then. The lock also lapses on its own the moment its holder stops
+    /// carrying a Choice item or stops knowing the move — which is how a
+    /// Knock Off frees its victim, and why a Struggle forced out by the lock
+    /// never sticks as the locked move.
+    fn settle_choice_lock(&mut self, side: usize) {
+        let committed = self.committed_move[side].take();
+        let mon = self.sides[side].mon();
+        let banded = mon.item == "choiceband";
+        if let Some(id) = committed {
+            if banded && mon.choice_locked.is_none() {
+                self.sides[side].mon_mut().choice_locked = Some(id);
+            }
+        }
+        let mon = self.sides[side].mon();
+        let lapsed = mon.choice_locked.is_some_and(|id| {
+            !banded || !mon.moves.iter().any(|m| m.entry.id == id)
+        });
+        if lapsed {
+            self.sides[side].mon_mut().choice_locked = None;
+        }
+    }
+
     /// The sim's `onUpdate`, which runs between actions and is where the
     /// refusing abilities do their tidying: they do not merely block a
     /// status arriving, they shed one already there. A mon that walks into
@@ -1229,6 +1274,7 @@ impl Battle {
             }
             self.pursuing = true;
             self.use_move(foe, mi, script.seats[foe], &mut events);
+            self.settle_choice_lock(foe);
             self.pursuing = false;
             pursued[foe] = true;
             if self.sides[side].mon().fainted() {
@@ -1295,6 +1341,7 @@ impl Battle {
                     self.will_act =
                         side == first && !cancelled[foe] && matches!(choices[foe], Choice::Move(_));
                     self.use_move(side, index, script.seats[side], &mut events);
+                    self.settle_choice_lock(side);
                 }
             }
             // ANY faint stops the rest of the turn dead in this era. The
@@ -2391,18 +2438,12 @@ impl Battle {
         {
             self.sides[side].mon_mut().status = None;
         }
-        // A Choice Band clamps shut behind the move it commits to, whatever
-        // then becomes of it: a miss or a failure spends the choice too. It
-        // clamps ONCE, though — the sim's volatile records the move when it
-        // is added and never revises it, so a Struggle forced out by that
-        // very lock does not become the locked move and grey out the whole
-        // moveset.
-        if self.sides[side].mon().item == "choiceband"
-            && self.sides[side].mon().choice_locked.is_none()
-        {
-            let id = slot.entry.id;
-            self.sides[side].mon_mut().choice_locked = Some(id);
-        }
+        // Note what this mon committed to. The Choice Band does not clamp
+        // here: gen 3 has no Choice Band of its own and inherits gen 4's,
+        // which hangs the lock off AFTER the move — so it reads the item the
+        // mon holds once the move is done, not the one it started with. A
+        // Covet that steals a Band locks the thief into Covet.
+        self.committed_move[side] = Some(slot.entry.id);
         events.push(Event::Used {
             side: side as u8 + 1,
             move_index: index,
@@ -3422,7 +3463,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // Choice Band swings it half again as hard even though the hit
             // itself lands typeless two turns later.
             let real_type = slot.move_type();
+            // The sim hands getDamage a moveData whose `type` is '???' and
+            // whose CATEGORY is hardcoded — Special for Future Sight, Physical
+            // for Doom Desire. So the category still follows the real type,
+            // but every handler gated on the move's TYPE sees nothing it
+            // recognises and declines: the type-boosting items, the pinch
+            // abilities, Thick Fat. A Twisted Spoon does not sharpen a Future
+            // Sight even though Future Sight is Psychic.
             let physical = ability::physical_category(real_type);
+            let calc_type = Type::None;
             let user_b = self.sides[side].mon().bearer();
             let foe_b = self.sides[foe].mon().bearer();
             let user_i = self.sides[side].mon().holder();
@@ -3430,15 +3479,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             attacker.stat_mod = ability::attack_chain(&user_b, physical);
             attacker
                 .stat_mod
-                .extend(item::attack_chain(&user_i, real_type, physical));
+                .extend(item::attack_chain(&user_i, calc_type, physical));
             attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
             defender.stat_mod = ability::defence_chain(&foe_b, physical);
             defender.stat_mod.extend(item::defence_chain(&foe_i, physical));
             let mut bp = ability::Chain::new();
-            if ability::pinch_boost(&user_b, real_type) {
+            if ability::pinch_boost(&user_b, calc_type) {
                 bp.mul(ability::X1_5);
             }
-            if ability::thick_fat_cut(&foe_b, real_type) {
+            if ability::thick_fat_cut(&foe_b, calc_type) {
                 bp.mul(ability::X0_5);
             }
             let power = bp.apply(power as u32).max(1).min(u16::MAX as u32) as u16;
@@ -4161,6 +4210,14 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 self.hit_effects(side, foe, &slot, script, events);
                 self.on_damaged(side, foe, &slot, move_type, script, events);
                 self.resolve_faints(side, foe, events);
+            } else {
+                // A substitute soaks the hit but not the whole secondary. The
+                // sim nulls the TARGET out rather than cancelling the move —
+                // `targets[i] = null` — and its secondary step skips only on
+                // a strict `false`, so the half of a secondary aimed at the
+                // ATTACKER still lands. Ancient Power off a broken sub still
+                // raises all five of the user's stats.
+                self.self_boost_only(side, &slot, script, events);
             }
             if self.sides[foe].mon().fainted() {
                 break;
@@ -4286,6 +4343,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             if let Some(orig) = self.sides[side].mon_mut().transform_backup.take() {
                 self.sides[side].mon_mut().moves = orig;
             }
+            // A borrowed ability goes back with everything else the sim
+            // clears when a mon goes down.
+            if let Some(born_with) = self.sides[side].mon_mut().ability_backup.take() {
+                self.sides[side].mon_mut().ability = born_with;
+            }
             if let Some((stats, types)) = self.sides[side].mon_mut().transform_stats.take() {
                 let mon = self.sides[side].mon_mut();
                 mon.atk = stats[0];
@@ -4320,6 +4382,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 out.sleep_n = 0;
             }
             out.flash_fire = false;
+            if let Some(born_with) = out.ability_backup.take() {
+                out.ability = born_with;
+            }
             out.choice_locked = None;
             out.active_turns = 0;
             out.toxic_n = 0;
@@ -4460,7 +4525,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if ability::traces(&self.sides[side].mon().bearer())
             && !self.sides[1 - side].mon().fainted()
         {
-            self.sides[side].mon_mut().ability = foe_ability;
+            self.set_ability(side, foe_ability);
         }
         let greeter = ability::Bearer {
             ability: own,
@@ -5520,7 +5585,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     // The copy is complete enough to include the ability,
                     // which is how a paralysed mon that copies a Limber one
                     // walks away cured.
-                    mon.ability = foe_mon.ability;
                     mon.flash_fire = false;
                     mon.moves = foe_mon
                         .moves
@@ -5533,6 +5597,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                             typed_as: ms.typed_as,
                         })
                         .collect();
+                    // The copy is complete enough to include the ability,
+                    // which is how a paralysed mon that copies a Limber one
+                    // walks away cured — and it goes back on switching out
+                    // like every other borrowed ability.
+                    self.set_ability(side, foe_mon.ability);
                     self.ability_update(side);
                 }
             }
@@ -5553,9 +5622,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
                 self.sides[side].mon_mut().item = theirs;
                 self.sides[foe].mon_mut().item = mine;
-                // A Choice Band that changes hands lets go of both.
-                self.sides[side].mon_mut().choice_locked = None;
-                self.sides[foe].mon_mut().choice_locked = None;
                 self.ability_update(side);
                 self.ability_update(foe);
             }
@@ -5592,9 +5658,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     return;
                 }
                 let swapping = matches!(action, StatusAction::SkillSwap);
-                self.sides[side].mon_mut().ability = theirs;
+                self.set_ability(side, theirs);
                 if swapping {
-                    self.sides[foe].mon_mut().ability = mine;
+                    self.set_ability(foe, mine);
                 }
                 // Losing Flash Fire loses what it caught: the sim ends the
                 // old ability, and ending Flash Fire drops its volatile.
@@ -5874,6 +5940,47 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// The per-strike aftermath of a landed hit: the secondary (script or
     /// RNG-decided), then the Fire thaw. Runs once per strike of a
     /// multi-hit move, which is also how the reference sim rolls it.
+    /// The one part of a secondary that survives a Substitute: the half a
+    /// move turns on its OWN user. The roll is the same roll — Serene Grace
+    /// doubles it, a certainty is no roll at all, a script decides it — but
+    /// Shield Dust never had anything to say about a self-aimed boost, and
+    /// the target is not there to be affected.
+    fn self_boost_only(
+        &mut self,
+        side: usize,
+        slot: &MoveSlot,
+        script: Option<SeatScript>,
+        events: &mut Vec<Event>,
+    ) {
+        let Some(SecondaryEffect::SelfBoosts(list)) = slot.entry.secondary.map(|sec| sec.effect)
+        else {
+            return;
+        };
+        let doubled = ability::doubles_secondary(&self.sides[side].mon().bearer());
+        let chance =
+            |sec: crate::data::Secondary| (sec.chance as u32 * if doubled { 2 } else { 1 }).min(255);
+        let certain = slot.entry.secondary.is_some_and(|sec| chance(sec) >= 100);
+        let proc = certain
+            || match script {
+                Some(s) => s.secondary,
+                None => slot
+                    .entry
+                    .secondary
+                    .map(|sec| self.rng.below(100) < chance(sec))
+                    .unwrap_or(false),
+            };
+        if proc && !self.sides[side].mon().fainted() {
+            for &(boost, delta) in list {
+                self.sides[side].mon_mut().apply_boost(boost, delta);
+                events.push(Event::Boosted {
+                    side: side as u8 + 1,
+                    boost,
+                    delta,
+                });
+            }
+        }
+    }
+
     fn hit_effects(
         &mut self,
         side: usize,
