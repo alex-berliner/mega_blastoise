@@ -648,7 +648,17 @@ fn fuzz_gen3_turns() {
         let par = |st: Option<(&'static str, gen3_battle::data::Status)>| {
             st.filter(|s| !(touchy && s.0 == "par"))
         };
-        let (st1, st2) = (par(st1), par(st2));
+        let (st1, mut st2) = (par(st1), par(st2));
+        // Transform copies the target's stats, Speed included, so the two
+        // mons end the turn EXACTLY tied — and a tie makes the residual order
+        // arbitrary. The reference resolves it by the swaps its selection
+        // sort happens to make, with its tie-shuffle pinned to a no-op; the
+        // real game shuffles. Neither answer is the rule, so the pairing that
+        // exposes it — a Transform with both sides carrying a status to tick
+        // — is not generated. One side statused is still fair game.
+        if (m1 == "transform" || m2 == "transform") && st1.is_some() {
+            st2 = None;
+        }
         // 1-3 whole turns, each seat scripted per turn: hit, crit, roll,
         // secondary, immobile, hits, selfhit. The conditional knobs only
         // fire when their condition holds (paralysis, a 2-5 multi-hit move,
