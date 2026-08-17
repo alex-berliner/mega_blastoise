@@ -1112,11 +1112,16 @@ impl Battle {
     /// within the turn, rather than at the start of the next one.
     fn end_of_action(&mut self) {
         for side in 0..2 {
-            self.forecast(side);
             self.ability_update(side);
         }
     }
 
+    /// Forecast, which is the sim's `onWeatherChange` and nothing else — it
+    /// answers a sky that CHANGED and a mon that just arrived, and is silent
+    /// the rest of the time. Running it more often than that would have it
+    /// stomping every other thing that writes a type: a Conversion 2 that
+    /// turned Castform into a Ghost has to stay a Ghost.
+    ///
     /// Forecast, which is the sim's `onWeatherChange`: Castform wears the
     /// sky. Every forme carries the same seventy across the board, so the
     /// only thing that actually changes is the TYPE, and this is a type
@@ -6352,6 +6357,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     self.weather = Some(weather);
                     self.weather_n = 5;
                     events.push(Event::WeatherStarted { weather });
+                    for w in 0..2 {
+                        self.forecast(w);
+                    }
                 }
             }
             StatusAction::Team(cond) => {
