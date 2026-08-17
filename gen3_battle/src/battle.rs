@@ -159,6 +159,8 @@ pub struct Mon {
     pub raging: bool,
     /// Fury Cutter's consecutive-hit ramp (0..=4).
     pub fury_n: u8,
+    /// Fury Cutter landed THIS turn, so its ramp has been refreshed.
+    pub fury_fresh: bool,
     /// The move id this mon was last HIT by (Mirror Move's source).
     pub last_hit_by: Option<&'static str>,
     /// WHICH party slot on the other side landed that hit. The sim keeps the
@@ -381,6 +383,7 @@ impl Mon {
             torment_fresh: false,
             raging: false,
             fury_n: 0,
+            fury_fresh: false,
             last_used: None,
             last_used_id: None,
             last_hit_by: None,
@@ -1010,6 +1013,17 @@ impl Battle {
         }
     }
 
+    /// `if (this.gen < 5) this.eachEvent('Update')`, the line the sim runs at
+    /// the end of every action in this era. It is what eats a Chesto off the
+    /// sleep Rest just laid down, refills a slot a Spite emptied before its
+    /// owner has to move, and shakes off a status an ability refuses — all
+    /// within the turn, rather than at the start of the next one.
+    fn end_of_action(&mut self) {
+        for side in 0..2 {
+            self.ability_update(side);
+        }
+    }
+
     /// The sim's `onUpdate`, which runs between actions and is where the
     /// refusing abilities do their tidying: they do not merely block a
     /// status arriving, they shed one already there. A mon that walks into
@@ -1341,6 +1355,7 @@ impl Battle {
             self.settle_choice_lock(foe);
             self.white_herb(foe);
             self.white_herb(1 - foe);
+            self.end_of_action();
             self.pursuing = false;
             pursued[foe] = true;
             if self.sides[side].mon().fainted() {
@@ -1376,6 +1391,7 @@ impl Battle {
                         party_index: idx,
                     });
                     self.switch_in_greet(side, &mut events);
+                    self.end_of_action();
                 }
             }
         }
@@ -1413,6 +1429,7 @@ impl Battle {
                     // end of the turn.
                     self.white_herb(side);
                     self.white_herb(1 - side);
+                    self.end_of_action();
                 }
             }
             // ANY faint stops the rest of the turn dead in this era. The
@@ -1828,6 +1845,12 @@ impl Battle {
                 }
             }
 
+            // The White Herb's own residual, at order 29 — after every tick
+            // above it, and the last thing either side does.
+            for side in 0..2 {
+                self.white_herb(side);
+            }
+
             // A Future Sight lands at the end of its third turn, computed from
             // the launcher's snapshot against the target now standing.
             for side in 0..2 {
@@ -1972,6 +1995,18 @@ impl Battle {
             mon.torment_fresh = false;
             mon.imprison_fresh = false;
             mon.uproar_ending = false;
+            // Fury Cutter's ramp is a volatile with a two-turn clock that
+            // only a landed Fury Cutter refreshes. So a turn that did not
+            // land one is the turn it runs out, and it does not matter why:
+            // a miss, a Truant loaf, a flinch and a full paralysis all end it
+            // the same way, at the end of the turn rather than on the spot.
+            if mon.fury_n > 0 {
+                if mon.fury_fresh {
+                    mon.fury_fresh = false;
+                } else {
+                    mon.fury_n = 0;
+                }
+            }
             // A rolling lock that did not swing this turn is over.
             if mon.rolling.is_some() {
                 if mon.rolling_fresh {
@@ -4333,6 +4368,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if slot.entry.id == "furycutter" {
             let mon = self.sides[side].mon_mut();
             mon.fury_n = (mon.fury_n + 1).min(4);
+            mon.fury_fresh = true;
         }
         // Rollout counts its landed uses and lets go after five.
         if matches!(slot.entry.id, "rollout" | "iceball") {
@@ -4493,6 +4529,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             out.torment_fresh = false;
             out.raging = false;
             out.fury_n = 0;
+            out.fury_fresh = false;
             out.last_used = None;
             out.last_used_id = None;
             out.last_hit_by = None;
@@ -4604,12 +4641,16 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// bite a grounded arrival: an eighth, a sixth, a quarter for one, two,
     /// three layers. Flying types float over.
     fn switch_in_greet(&mut self, side: usize, events: &mut Vec<Event>) {
-        self.greet(side, true, events);
-        // The White Herb answers a switch-in from either seat: `onStart` for
-        // the mon arriving, `onAnySwitchIn` for the one already standing
-        // there that an Intimidate just cowed.
+        // `runSwitch` fires the SwitchIn event BEFORE it starts the arriving
+        // mon's ability, so a White Herb on the field answers whatever was
+        // already there and NOT the Intimidate that is about to land: the
+        // drop stands until some move ends or the residual phase comes round.
         self.white_herb(side);
         self.white_herb(1 - side);
+        self.greet(side, true, events);
+        // Then the arrival's own item onStart, one step later, which is what
+        // catches a negative boost that came in on a Baton Pass.
+        self.white_herb(side);
     }
 
     fn greet(&mut self, side: usize, tidy: bool, events: &mut Vec<Event>) {
@@ -5147,14 +5188,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     events.push(Event::Rested {
                         side: side as u8 + 1,
                     });
-                    // The sim runs an Update at the end of every action in
-                    // this era, so a Chesto or a Lum is eaten off the sleep
-                    // Rest just laid down — in the same action that laid it.
-                    // The mon finishes the turn at full HP and awake, having
-                    // never once shown as asleep. Rest is the only place the
-                    // engine writes a status without going through `inflict`,
-                    // which is where that update usually happens.
-                    self.ability_update(side);
                 }
             }
             StatusAction::Minimize => {
