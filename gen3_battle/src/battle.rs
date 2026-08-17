@@ -281,6 +281,10 @@ pub struct Mon {
     pub rampage_dur: u8,
     /// Hyper Beam landed last turn: this action is spent recharging.
     pub must_recharge: bool,
+    /// The recharge was set THIS turn, so its own residual has not run yet.
+    /// The sim gives the volatile a duration of two, which means it expires
+    /// at the end of the following turn whether or not it was ever spent.
+    pub recharge_fresh: bool,
     /// This mon's ability, as a lookup id, or empty for none. Trace and
     /// Role Play overwrite it, so it is not simply read off the species.
     pub ability: &'static str,
@@ -418,6 +422,7 @@ impl Mon {
             rampage: None,
             rampage_dur: 0,
             must_recharge: false,
+            recharge_fresh: false,
             ability: "",
             flash_fire: false,
             active_turns: 0,
@@ -1625,6 +1630,19 @@ impl Battle {
                     });
                     self.announce_faint(side, &mut events);
                 }
+                // The recharge is a two-turn volatile, so it runs out at the
+                // end of the turn it was owed on — spent or not. A turn that
+                // a faint cancelled still burns it, which is why a mon whose
+                // Hyper Beam turn was cut short is free the turn after next
+                // rather than a turn later.
+                if self.sides[side].mon().must_recharge {
+                    let mon = self.sides[side].mon_mut();
+                    if mon.recharge_fresh {
+                        mon.recharge_fresh = false;
+                    } else {
+                        mon.must_recharge = false;
+                    }
+                }
                 // The din runs its own clock here, at the sim's subOrder 11.
                 // That is BEFORE Yawn at 19, which is exactly why a Yawn
                 // coming due on the turn an Uproar ends still puts its
@@ -2011,6 +2029,7 @@ impl Battle {
         // gated even above sleep, matching the games' priority order.
         if self.sides[side].mon().must_recharge {
             self.sides[side].mon_mut().must_recharge = false;
+            self.sides[side].mon_mut().recharge_fresh = false;
             self.sides[side].mon_mut().stall_counter = 0;
             events.push(Event::Recharging {
                 side: side as u8 + 1,
@@ -4238,7 +4257,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
 
         // A landed Hyper Beam costs the next action.
         if slot.entry.recharge {
-            self.sides[side].mon_mut().must_recharge = true;
+            let mon = self.sides[side].mon_mut();
+            mon.must_recharge = true;
+            mon.recharge_fresh = true;
         }
 
         self.resolve_faints(side, foe, events);
@@ -4367,6 +4388,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             out.rolling_fresh = false;
             out.rampage = None;
             out.must_recharge = false;
+            out.recharge_fresh = false;
     }
 
     /// Send in replacements for whoever is down. The sim asks for these only
