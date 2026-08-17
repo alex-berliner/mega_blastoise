@@ -76,7 +76,16 @@ async fn switch_in<E: BoardEffects>(battle: &Battle, side: u8, effects: &mut E) 
     let mon = battle.sides[i].mon();
     effects
         .on_event(BoardEvent::SwitchIn {
-            name: format!("{},{}", mon.species.name, player_id(side)),
+            // The bare species name, NOT a `Name,p1` position string. This
+            // event carries `player_id` in its own field, so the name needs no
+            // seat glued to it — and gluing one on broke two things at once:
+            // the plate printed "Blastoise,p1", and the sprite table, which is
+            // keyed by species, missed every lookup and drew nothing. Gen 1
+            // fills this field from the battler log's own `name`, which is a
+            // bare nickname; Gen 3 now matches. The `mon:` fields on every
+            // other event DO carry the suffix, because those have nowhere else
+            // to say which seat they mean.
+            name: mon.species.name.to_string(),
             species: Some(mon.species.name.to_string()),
             player_id: Some(player_id(side)),
             team_slot: Some(battle.sides[i].active as u8),
@@ -699,11 +708,17 @@ mod tests {
                 | BoardEvent::Faint { mon, .. }
                 | BoardEvent::SuperEffective { mon }
                 | BoardEvent::CriticalHit { mon } => Some(mon),
-                BoardEvent::SwitchIn { name, .. } => Some(name),
                 _ => None,
             };
             if let Some(mon) = mon {
                 assert!(mon_player_num(mon).is_some(), "{mon:?} does not name a player");
+            }
+            // A SwitchIn says which seat in its own field, and its `name` is
+            // the bare species — the display prints it and the sprite table is
+            // keyed by it, so a seat suffix there would break both.
+            if let BoardEvent::SwitchIn { name, player_id, .. } = e {
+                assert!(player_id.is_some(), "switch-in does not name a player");
+                assert!(!name.contains(','), "switch-in name {name:?} carries a suffix");
             }
         }
     }

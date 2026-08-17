@@ -32,3 +32,24 @@ fn spot_checks() {
     assert!(mon_sprite("Nidoran-F").is_some(), "Nidoran-F");
     assert_eq!(MON_SPRITES.len(), 151);
 }
+
+/// The Gen 3 battler drafts from a 220-species random-battle pool, and the
+/// colour sprite tables were built off a hand-kept list of Kanto's 151 — so
+/// every mon past Mew reached the field with no art at all, and the miss was
+/// silent because `front_sprite_in` just returns false and draws nothing.
+/// This is the guard: the table is built from the same vendored dex the engine
+/// compiles against, and this asserts the two still agree.
+#[test]
+fn every_gen3_species_name_has_a_color_sprite() {
+    use mega_blastoise_core::{mon_back_sprite_color, mon_sprite_color};
+    let mut missing = Vec::new();
+    for entry in gen3_battle::data::SPECIES {
+        if mon_sprite_color(entry.name).is_none() {
+            missing.push((entry.name, "front"));
+        }
+        if mon_back_sprite_color(entry.name).is_none() {
+            missing.push((entry.name, "back"));
+        }
+    }
+    assert!(missing.is_empty(), "no colour sprite for: {missing:?}");
+}

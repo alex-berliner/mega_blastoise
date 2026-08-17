@@ -909,34 +909,61 @@ fn rgb565(c: [u8; 3]) -> u16 {
     ((c[0] as u16 & 0xF8) << 8) | ((c[1] as u16 & 0xFC) << 3) | (c[2] as u16 >> 3)
 }
 
+/// How far apart two RGB565 colours are, as a plain squared distance over the
+/// unpacked channels. Good enough to pick a stand-in when a palette is full.
+fn rgb565_dist(a: u16, b: u16) -> u32 {
+    let un = |v: u16| {
+        (
+            ((v >> 11) & 0x1F) as i32 * 8,
+            ((v >> 5) & 0x3F) as i32 * 4,
+            (v & 0x1F) as i32 * 8,
+        )
+    };
+    let (ar, ag, ab) = un(a);
+    let (br, bg, bb) = un(b);
+    let (dr, dg, db) = (ar - br, ag - bg, ab - bb);
+    (dr * dr + dg * dg + db * db) as u32
+}
+
 /// Quantize to a palette (index 0 = transparent) and pack 4bpp, high nibble
 /// = left pixel. Appends palette then pixels to `blob`; returns the record.
+///
+/// Gen 1's art really is four shades, so for a Kanto sprite every colour lands
+/// in the palette untouched. The rest of the Gen 3 dex is not so tidy — plenty
+/// of Emerald sprites carry more than the fifteen this format has room for —
+/// so the palette keeps the fifteen MOST USED colours and everything else is
+/// redrawn in whichever of those it is nearest. At this size the difference is
+/// invisible, and it beats widening every sprite in the blob to 8bpp to suit a
+/// handful of busy ones.
 fn pack_color_sprite(
     w: usize,
     h: usize,
     px: &[Option<[u8; 3]>],
     blob: &mut Vec<u8>,
 ) -> (usize, usize, usize, usize) {
+    let mut counts: BTreeMap<u16, usize> = BTreeMap::new();
+    for c in px.iter().flatten() {
+        *counts.entry(rgb565(*c)).or_insert(0) += 1;
+    }
+    let mut ranked: Vec<(u16, usize)> = counts.into_iter().collect();
+    // Most used first, and the colour value breaks ties so the build is
+    // reproducible rather than dependent on map order.
+    ranked.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     let mut pal: Vec<u16> = vec![0];
+    pal.extend(ranked.iter().take(15).map(|(v, _)| *v));
+    let nearest = |v: u16| -> u8 {
+        pal.iter()
+            .enumerate()
+            .skip(1)
+            .min_by_key(|(_, &e)| rgb565_dist(v, e))
+            .map(|(i, _)| i as u8)
+            .unwrap_or(0)
+    };
     let mut idx = Vec::with_capacity(px.len());
     for p in px {
         idx.push(match p {
             None => 0u8,
-            Some(c) => {
-                let v = rgb565(*c);
-                match pal.iter().position(|&e| e == v) {
-                    Some(i) if i > 0 => i as u8,
-                    _ => {
-                        if let Some(i) = pal.iter().skip(1).position(|&e| e == v) {
-                            (i + 1) as u8
-                        } else {
-                            assert!(pal.len() < 16, "sprite exceeds 16 colors");
-                            pal.push(v);
-                            (pal.len() - 1) as u8
-                        }
-                    }
-                }
-            }
+            Some(c) => nearest(rgb565(*c)),
         });
     }
     let pal_off = blob.len();
@@ -965,15 +992,53 @@ fn fetch_gen3_front(manifest: &Path, dex: usize) -> PathBuf {
     )
 }
 
-/// Gen 3 back art. Emerald ships no backs on PokeAPI, so FireRed/LeafGreen
-/// supplies them — same era, same style.
+/// Every Gen 3 species as (display name, national dex number), read from the
+/// dex the battle engine itself compiles against.
+///
+/// The sprite tables used to be built off `GEN1_DEX`, a hand-kept list of 151
+/// names, while the Gen 3 battler drafts from a 220-species random-battle
+/// pool. Everything past Mew therefore had no art at all: the lookup missed
+/// and the field drew nothing. Reading the species list from the same vendored
+/// file the engine reads means the two cannot drift.
+fn gen3_dex(manifest: &Path) -> Vec<(String, usize)> {
+    let path = manifest.join("../gen3_battle/vendor/showdown_gen3_species.json");
+    let text = fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("failed to read {}: {e}", path.display()));
+    let json: serde_json::Value = serde_json::from_str(&text)
+        .unwrap_or_else(|e| panic!("failed to parse {}: {e}", path.display()));
+    let mut out: Vec<(String, usize)> = json
+        .as_array()
+        .expect("species list is an array")
+        .iter()
+        .filter_map(|e| {
+            let name = e.get("name")?.as_str()?.to_string();
+            let num = e.get("num")?.as_u64()? as usize;
+            (1..=386).contains(&num).then_some((name, num))
+        })
+        .collect();
+    // One dex number can carry several formes (Deoxys, Castform). The battle
+    // screen keys on the display name, so each keeps its own entry and they
+    // simply share the art.
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Gen 3 back art. Emerald ships no backs on PokeAPI, and FireRed/LeafGreen
+/// only covers Kanto, so Ruby/Sapphire supplies the rest — same era, same
+/// style.
 fn fetch_gen3_back(manifest: &Path, dex: usize) -> PathBuf {
+    // FireRed/LeafGreen is a Kanto game and ships backs for the first 151
+    // only; Ruby/Sapphire covers the rest of the era. Keeping FRLG for the
+    // range it does cover also means the 151 already sitting in vendor/ are
+    // not re-fetched and do not change.
+    let game = if dex <= 151 { "firered-leafgreen" } else { "ruby-sapphire" };
     fetch_cached(
         manifest,
         "vendor/sprites_gen3/back",
         dex,
         &format!(
-            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iii/firered-leafgreen/back/{dex}.png"
+            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iii/{game}/back/{dex}.png"
         ),
     )
 }
@@ -996,27 +1061,33 @@ fn fetch_cached(manifest: &Path, dir: &str, dex: usize, url: &str) -> PathBuf {
 }
 
 fn emit_color_sprites(out: &mut String, manifest: &Path, blob: &mut Vec<u8>) {
+    let dex = gen3_dex(manifest);
     for (table, back) in [("MON_SPRITES_COLOR", false), ("MON_BACK_SPRITES_COLOR", true)] {
-        let mut entries: Vec<(&str, String)> = GEN1_DEX
-            .iter()
-            .enumerate()
-            .map(|(i, name)| {
-                let path = if back {
-                    fetch_gen3_back(manifest, i + 1)
-                } else {
-                    fetch_gen3_front(manifest, i + 1)
-                };
-                let (w, h, px) = color_pixels(&path, back);
-                let (po, pl, dobj, dl) = pack_color_sprite(w, h, &px, blob);
-                (
-                    *name,
+        // Several names can share a dex number, and packing the same art twice
+        // would double the blob for nothing, so each number is packed once and
+        // every name pointing at it reuses the record.
+        let mut packed: BTreeMap<usize, String> = BTreeMap::new();
+        let mut entries: Vec<(&str, String)> = Vec::with_capacity(dex.len());
+        for (name, num) in &dex {
+            let rec = packed
+                .entry(*num)
+                .or_insert_with(|| {
+                    let path = if back {
+                        fetch_gen3_back(manifest, *num)
+                    } else {
+                        fetch_gen3_front(manifest, *num)
+                    };
+                    let (w, h, px) = color_pixels(&path, back);
+                    let (po, pl, dobj, dl) = pack_color_sprite(w, h, &px, blob);
                     format!(
                         "ColorSprite {{ w: {w}, h: {h}, pal_off: {po}, pal_len: {pl}, \
                          data_off: {dobj}, data_len: {dl} }}"
-                    ),
-                )
-            })
-            .collect();
+                    )
+                })
+                .clone();
+            entries.push((name.as_str(), rec));
+        }
+        // `lookup` binary-searches this, so the sort is load-bearing.
         entries.sort_by_key(|(name, _)| *name);
         out.push_str(&format!("pub static {table}: &[(&str, ColorSprite)] = &[\n"));
         for (name, rec) in &entries {
