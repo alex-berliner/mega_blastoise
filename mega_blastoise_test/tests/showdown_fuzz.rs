@@ -1274,6 +1274,28 @@ fn fuzz_gen3_battles() {
                 teams[seat].push(mon);
             }
         }
+        // Same pre-set-status limitation the turn suite already dodges, and
+        // for the same reason: the harness applies the statuses after
+        // `setPlayer` has started the battle, so the two OPENERS greet the
+        // field at unquartered Speed while the engine greets them already
+        // paralysed. Only slot 0 is exposed — a benched mon is statused long
+        // before its own `runSwitch` runs. The status was picked before the
+        // ability and the item, so the pair is broken up afterwards rather
+        // than declined at pick time, which would shift the RNG stream.
+        let order_sensitive = |m: &Mon| {
+            matches!(
+                m.ability,
+                "intimidate" | "trace" | "drizzle" | "drought" | "sandstream" | "forecast"
+            ) || m.item == "whiteherb"
+        };
+        if teams.iter().any(|t| order_sensitive(&t[0])) {
+            for seat in 0..2 {
+                if teams[seat][0].status == Some(gen3_battle::data::Status::Paralysis) {
+                    teams[seat][0].status = None;
+                    specs[seat][0]["status"] = Value::Null;
+                }
+            }
+        }
         let mut speeds: Vec<u16> =
             teams.iter().flat_map(|t| t.iter().map(|m| m.spe)).collect();
         speeds.sort_unstable();

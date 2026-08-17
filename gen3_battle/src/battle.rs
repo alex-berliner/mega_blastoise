@@ -6110,10 +6110,22 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             StatusAction::SleepTalk | StatusAction::Assist => {}
             StatusAction::BatonPass => {
                 // The user leaves and hands over its boosts and most of its
-                // volatiles. The sim refuses the ones flagged noCopy —
-                // Disable, Encore, Foresight, Nightmare, Stockpile, Imprison,
+                // volatiles. `copyVolatileFrom` copies EVERY volatile the
+                // passer holds except the ones flagged noCopy — Disable,
+                // Encore, Foresight, Nightmare, Stockpile, Imprison,
                 // Minimize, Torment, Toxic's counter, Yawn, Destiny Bond,
-                // Defense Curl — so the incoming mon starts clean of those.
+                // Defense Curl, Attract, Counter, Mirror Coat, the Choice
+                // lock and Flash Fire's catch — so the incoming mon starts
+                // clean of those and inherits the rest.
+                //
+                // The list below is everything copyable that can still be
+                // standing when Baton Pass is SELECTED. Locking volatiles
+                // (Bide, Rollout, Thrash, a charging two-turner, Uproar,
+                // Recharge) are copyable in principle but leave no turn in
+                // which the pass could be chosen, and the ones that end
+                // before the pass resolves (Rage and Grudge clear in
+                // onBeforeMove, Endure and Protect expire the same turn)
+                // cannot reach the incoming mon either.
                 let incoming = (0..self.sides[side].party.len())
                     .find(|&i| i != self.sides[side].active && !self.sides[side].party[i].fainted());
                 match incoming {
@@ -6121,25 +6133,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         side: side as u8 + 1,
                     }),
                     Some(next) => {
-                        let passed = {
-                            let m = self.sides[side].mon();
-                            (
-                                m.stages,
-                                m.acc_stage,
-                                m.eva_stage,
-                                m.sub_hp,
-                                m.seeded,
-                                m.confusion_n,
-                                m.perish_n,
-                                m.cursed,
-                                m.ingrained,
-                                m.focused,
-                                m.mean_looked,
-                                m.trapped_n,
-                                m.charged_elec,
-                                m.taunt_n,
-                            )
-                        };
+                        let passed = self.sides[side].mon().clone();
                         self.switch_out_reset(side);
                         let slot_item = self.hand_slot_item_over(side);
                         self.sides[side].reorder_for_switch(next);
@@ -6147,20 +6141,31 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         self.sides[side].mon_mut().last_item = slot_item;
                         {
                             let m = self.sides[side].mon_mut();
-                            m.stages = passed.0;
-                            m.acc_stage = passed.1;
-                            m.eva_stage = passed.2;
-                            m.sub_hp = passed.3;
-                            m.seeded = passed.4;
-                            m.confusion_n = passed.5;
-                            m.perish_n = passed.6;
-                            m.cursed = passed.7;
-                            m.ingrained = passed.8;
-                            m.focused = passed.9;
-                            m.mean_looked = passed.10;
-                            m.trapped_n = passed.11;
-                            m.charged_elec = passed.12;
-                            m.taunt_n = passed.13;
+                            m.stages = passed.stages;
+                            m.acc_stage = passed.acc_stage;
+                            m.eva_stage = passed.eva_stage;
+                            m.sub_hp = passed.sub_hp;
+                            m.seeded = passed.seeded;
+                            m.confusion_n = passed.confusion_n;
+                            m.perish_n = passed.perish_n;
+                            m.cursed = passed.cursed;
+                            m.ingrained = passed.ingrained;
+                            m.focused = passed.focused;
+                            m.mean_looked = passed.mean_looked;
+                            m.trapped_n = passed.trapped_n;
+                            m.charged_elec = passed.charged_elec;
+                            m.taunt_n = passed.taunt_n;
+                            // Water Sport and Mud Sport are volatiles on the
+                            // HUMMER, not the field, so the halving follows
+                            // the pass and dampens the arrival's own moves.
+                            m.sport = passed.sport;
+                            // Lock-On's condition spells `noCopy: false` out
+                            // in the data; the arrival inherits the mark and
+                            // the turn left on it.
+                            m.sure_hit = passed.sure_hit;
+                            // Fury Cutter's doubling counter rides along too.
+                            m.fury_n = passed.fury_n;
+                            m.fury_fresh = passed.fury_fresh;
                         }
                         events.push(Event::Switched {
                             side: side as u8 + 1,
@@ -6475,13 +6480,19 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 self.ability_update(side);
             }
             StatusAction::SkillSwap | StatusAction::RolePlay => {
-                // Wonder Guard refuses to be traded or copied, and this era
-                // also refuses a swap between two mons that already share an
-                // ability. Role Play alone insists the two differ; Skill
-                // Swap checks the same thing under gen 5 and below.
+                // Wonder Guard refuses to move, but the two moves ask
+                // different questions of it. Skill Swap is a trade and fails
+                // if EITHER side carries the ability (`failskillswap` is
+                // tested on both). Role Play only reads the target, so its
+                // gate is one-directional: a Wonder Guard user may happily
+                // copy the ability away and lose it. The only source-side
+                // gate Role Play has is `cantsuppress`, which no gen 3
+                // ability carries. Both moves also refuse two mons that
+                // already share an ability in this era.
                 let mine = self.sides[side].mon().ability;
                 let theirs = self.sides[foe].mon().ability;
-                let unswappable = mine == "wonderguard" || theirs == "wonderguard";
+                let unswappable = theirs == "wonderguard"
+                    || (matches!(action, StatusAction::SkillSwap) && mine == "wonderguard");
                 if !hit
                     || unswappable
                     || mine == theirs
