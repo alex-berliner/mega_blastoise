@@ -2102,11 +2102,15 @@ impl Battle {
                 }
             }
 
-            // The perish count falls; at zero the song collects.
-            for side in 0..2 {
-                if self.over() {
-                    break;
-                }
+            // The perish count falls; at zero the song collects. Both songs
+            // sit at residual order 12, so Speed decides which counts down
+            // first — and the count is a `duration` handler, which the sim
+            // runs down its OWN branch: `handler.end()` with no faintMessages
+            // after it. A perish KO therefore only queues the faint, the
+            // battle is not declared over inside the phase, and the other
+            // side's song still counts. Two mons on zero go down together.
+            let perish_first = self.faster_side(scripted);
+            for side in [perish_first, 1 - perish_first] {
                 if self.sides[side].mon().perish_n > 0 && !self.sides[side].mon().fainted() {
                     self.sides[side].mon_mut().perish_n -= 1;
                     let n = self.sides[side].mon().perish_n;
@@ -4658,8 +4662,12 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // Fire move's burn chance is blocked by the freeze it is about to
         // cure, because the target still carries frz when secondaries apply.
 
-        // Fury Cutter ramps on every landed use, resetting elsewhere.
-        if slot.entry.id == "furycutter" {
+        // Fury Cutter ramps on every use that actually REACHES the mon. In
+        // gen 3 the bump lives in the move's own `onHit`, and a hit a
+        // Substitute ate never gets there — the sim nulls the target and
+        // skips onHit entirely. One `addVolatile` sets both the multiplier
+        // and the two-turn clock, so a sub-only swing extends neither.
+        if slot.entry.id == "furycutter" && past_sub > 0 {
             let mon = self.sides[side].mon_mut();
             mon.fury_n = (mon.fury_n + 1).min(4);
             mon.fury_fresh = true;
