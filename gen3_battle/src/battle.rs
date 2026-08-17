@@ -938,8 +938,15 @@ impl Battle {
         // ability that refuses a status refuses it here too — the sim never
         // applies it in the first place, which is why a Limber mon handed
         // paralysis is at full Speed on turn one rather than curing it a
-        // moment later. A BERRY, by contrast, is not eaten yet: those wait
-        // for the first update of the turn, after the speeds are read.
+        // moment later.
+        //
+        // A berry mostly waits for the first update of the turn, which comes
+        // after the speeds are read. The Lum Berry is the exception: it is
+        // the only cure berry carrying an `onAfterSetStatus`, so handing the
+        // status out is itself what eats it, and it is gone before turn one
+        // is sorted. That only reaches a mon standing on the field —
+        // `eatItem` refuses a benched one — so a Lum on the bench waits for
+        // its holder to be sent out.
         let sun = battle.effective_weather() == Some(Weather::Sun);
         for w in 0..2 {
             let active = battle.sides[w].active;
@@ -951,6 +958,12 @@ impl Battle {
                 if (sun && st == Status::Freeze) || refused {
                     mon.status = None;
                     mon.sleep_n = 0;
+                } else if i == active && mon.item == "lumberry" {
+                    mon.last_item = mon.item;
+                    mon.item = "";
+                    mon.status = None;
+                    mon.sleep_n = 0;
+                    mon.toxic_n = 0;
                 }
             }
         }
@@ -6134,8 +6147,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         }
     }
 
-    /// The kicks crash for half the damage they would have dealt — full
-    /// calc, including the crit the seat was due.
+    /// The kicks crash for half the damage they would have dealt. The sim
+    /// runs `getDamage` for real here, so the whole calculation answers: the
+    /// crit the seat was due, both mons' abilities, and both mons' held
+    /// items — a Black Belt makes the crash hurt more, a Metal Powder makes
+    /// it hurt less.
     fn kick_crash(
         &mut self,
         side: usize,
@@ -6156,9 +6172,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         let user_b = self.sides[side].mon().bearer();
         let foe_b = self.sides[foe].mon().bearer();
         let physical = ability::physical_category(slot.move_type());
+        let user_i = self.sides[side].mon().holder();
+        let foe_i = self.sides[foe].mon().holder();
         attacker.stat_mod = ability::attack_chain(&user_b, physical);
+        attacker
+            .stat_mod
+            .extend(item::attack_chain(&user_i, slot.move_type(), physical));
         attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
         defender.stat_mod = ability::defence_chain(&foe_b, physical);
+        defender.stat_mod.extend(item::defence_chain(&foe_i, physical));
         let m = MoveUse {
             move_type: slot.move_type(),
             power: slot.entry.power,

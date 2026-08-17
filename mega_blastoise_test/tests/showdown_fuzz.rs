@@ -290,11 +290,12 @@ const GEN3_ABILITIES: &[&str] = &[
 /// allowed to hand out. Same rule as the abilities: anything outside this
 /// list stays off both sides.
 ///
-/// Still to come: King's Rock, Quick Claw, White Herb, Mental Herb, Leppa
-/// Berry, and the two moves that move items about — Trick and Recycle.
+/// Still to come: King's Rock, Quick Claw, Focus Band, White Herb, Mental
+/// Herb, Leppa Berry, Mail, and Recycle.
 const GEN3_ITEMS: &[&str] = &[
     "apicotberry",
     "aspearberry",
+    "aguavberry",
     "blackbelt",
     "blackglasses",
     "brightpowder",
@@ -305,14 +306,18 @@ const GEN3_ITEMS: &[&str] = &[
     "deepseascale",
     "deepseatooth",
     "dragonfang",
+    "figyberry",
     "ganlonberry",
     "hardstone",
     "lansatberry",
     "laxincense",
     "leftovers",
+    "iapapaberry",
     "liechiberry",
     "lightball",
+    "lumberry",
     "luckypunch",
+    "magoberry",
     "machobrace",
     "magnet",
     "metalcoat",
@@ -322,6 +327,7 @@ const GEN3_ITEMS: &[&str] = &[
     "nevermeltice",
     "oranberry",
     "pechaberry",
+    "persimberry",
     "petayaberry",
     "poisonbarb",
     "rawstberry",
@@ -340,6 +346,7 @@ const GEN3_ITEMS: &[&str] = &[
     "stick",
     "thickclub",
     "twistedspoon",
+    "wikiberry",
 ];
 
 /// What this mon is holding. Most mons hold nothing, the way most sets do.
