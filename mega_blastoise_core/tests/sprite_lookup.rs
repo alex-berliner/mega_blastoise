@@ -53,3 +53,23 @@ fn every_gen3_species_name_has_a_color_sprite() {
     }
     assert!(missing.is_empty(), "no colour sprite for: {missing:?}");
 }
+
+/// The single-screen view draws BOTH generations from the colour tables, so a
+/// Gen 1 species has to resolve there too. It caught a real one: Showdown
+/// spells Farfetch'd with a curly apostrophe and the Gen 1 data with a
+/// straight one, so rebuilding the tables off the Gen 3 dex quietly took that
+/// species' art away.
+#[test]
+fn every_gen1_species_name_has_a_color_sprite() {
+    use mega_blastoise_core::{mon_back_sprite_color, mon_sprite_color};
+    let mut missing = Vec::new();
+    for entry in gen1_battle::SPECIES {
+        if mon_sprite_color(entry.name).is_none() {
+            missing.push((entry.name, "front"));
+        }
+        if mon_back_sprite_color(entry.name).is_none() {
+            missing.push((entry.name, "back"));
+        }
+    }
+    assert!(missing.is_empty(), "no colour sprite for: {missing:?}");
+}

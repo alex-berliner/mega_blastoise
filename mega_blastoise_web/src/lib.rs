@@ -777,8 +777,16 @@ pub(crate) fn menu_ruleset() -> Ruleset {
 struct WebPads;
 
 impl mega_blastoise_core::gen3_runner::PadSource for WebPads {
-    async fn next(&mut self) -> (u8, gen3_battle::Choice) {
+    /// Same rule the Gen 1 loop has always applied one line before it builds
+    /// its collector: pad presses made between turns are dropped, typed lines
+    /// buffer across the gap.
+    fn flush(&mut self) {
+        BATTLE_INPUT.with(|q| q.borrow_mut().retain(|i| matches!(i, BattleInput::Line(_))));
+    }
+
+    async fn next(&mut self) -> mega_blastoise_core::gen3_runner::PadChoice {
         use gen3_battle::Choice;
+        use mega_blastoise_core::gen3_runner::PadChoice;
         loop {
             let pad = match BattleInputFuture.await {
                 BattleInput::Pad(p) => p,
@@ -786,10 +794,13 @@ impl mega_blastoise_core::gen3_runner::PadSource for WebPads {
                 BattleInput::Line(_) => continue,
             };
             match pad {
-                PadEvent::TapMove { player, slot } => return (player, Choice::Move(slot as usize)),
-                PadEvent::TapSwitch { player, idx } => {
-                    return (player, Choice::Switch(idx as usize))
+                PadEvent::TapMove { player, slot } => {
+                    return PadChoice::Pick { player, choice: Choice::Move(slot as usize) }
                 }
+                PadEvent::TapSwitch { player, idx } => {
+                    return PadChoice::Pick { player, choice: Choice::Switch(idx as usize) }
+                }
+                PadEvent::Cancel { player } => return PadChoice::Cancel { player },
                 _ => continue,
             }
         }
@@ -1503,9 +1514,11 @@ pub fn nav_cancel(player: u8) {
         return;
     }
     if seat_is_waiting(player) {
-        // Any pad event while committed unreadies, which is exactly what the
-        // collector already does with a tap on the current cursor slot.
-        press_move(player, SESSION.with(|s| s.borrow().seats[(player == 2) as usize].nav.cursor));
+        // Say "cancel" rather than replaying a tap on the cursor slot. The
+        // replay only ever worked because the Gen 1 collector unreadies on any
+        // press while committed; the Gen 3 runner saw a tap from a seat that
+        // had already chosen and dropped it on the floor, so B did nothing.
+        push_battle_input(BattleInput::Pad(PadEvent::Cancel { player }));
     }
 }
 

@@ -1016,6 +1016,19 @@ fn gen3_dex(manifest: &Path) -> Vec<(String, usize)> {
             (1..=386).contains(&num).then_some((name, num))
         })
         .collect();
+    // Showdown writes Farfetch'd with a curly apostrophe and the Gen 1 data
+    // with a straight one, and the table is keyed by display name — so the
+    // spelling the Gen 1 engine hands the screen has to be in here too, or
+    // that one species silently loses its art in the single-screen view.
+    // Emitting both costs one extra key and no extra pixels: the record is
+    // shared.
+    let mut aliases: Vec<(String, usize)> = Vec::new();
+    for (name, num) in &out {
+        if name.contains('\u{2019}') {
+            aliases.push((name.replace('\u{2019}', "'"), *num));
+        }
+    }
+    out.extend(aliases);
     // One dex number can carry several formes (Deoxys, Castform). The battle
     // screen keys on the display name, so each keeps its own entry and they
     // simply share the art.

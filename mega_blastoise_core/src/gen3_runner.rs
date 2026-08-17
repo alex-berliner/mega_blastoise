@@ -33,13 +33,25 @@ fn player_id(side: u8) -> String {
     if side == 1 { "p1".to_string() } else { "p2".to_string() }
 }
 
+/// Who each side had on the field, as party indices. The engine plays a WHOLE
+/// turn before handing back its event list, so by the time those events are
+/// narrated `Side::mon()` names whoever survived to the end of it — not who
+/// actually acted. A mon that attacked and then fainted had every one of its
+/// lines read out under its replacement's name. Walking the events with this
+/// alongside, updated on each `Switched`, keeps the narration honest.
+///
+/// Indices stay valid across a switch because `reorder_for_switch` permutes
+/// `Side::order` and never `Side::party`.
+type Onstage = [usize; 2];
+
 /// The active mon as a board position string: `"Name,p1"`.
 ///
 /// The display and LED layers route by parsing the player id back out of this
 /// field ([`crate::board_event::mon_player_num`]), so a bare species name
 /// would leave HP updates, faints and party syncing silently doing nothing.
-fn active_name(battle: &Battle, side: u8) -> String {
-    let name = battle.sides[(side - 1) as usize].mon().species.name;
+fn active_name(battle: &Battle, side: u8, at: &Onstage) -> String {
+    let i = (side - 1) as usize;
+    let name = battle.sides[i].party[at[i]].species.name;
     format!("{name},{}", player_id(side))
 }
 
@@ -50,9 +62,9 @@ fn health(battle: &Battle, side: u8) -> String {
 }
 
 /// The active mon's moves in the shape the board speaks.
-fn move_slots(battle: &Battle, side: u8) -> Vec<MoveSlot> {
-    battle.sides[(side - 1) as usize]
-        .mon()
+fn move_slots(battle: &Battle, side: u8, at: &Onstage) -> Vec<MoveSlot> {
+    let i = (side - 1) as usize;
+    battle.sides[i].party[at[i]]
         .moves
         .iter()
         .map(|s| MoveSlot {
@@ -71,9 +83,9 @@ fn move_slots(battle: &Battle, side: u8) -> Vec<MoveSlot> {
         .collect()
 }
 
-async fn switch_in<E: BoardEffects>(battle: &Battle, side: u8, effects: &mut E) {
+async fn switch_in<E: BoardEffects>(battle: &Battle, side: u8, at: &Onstage, effects: &mut E) {
     let i = (side - 1) as usize;
-    let mon = battle.sides[i].mon();
+    let mon = &battle.sides[i].party[at[i]];
     effects
         .on_event(BoardEvent::SwitchIn {
             // The bare species name, NOT a `Name,p1` position string. This
@@ -88,8 +100,8 @@ async fn switch_in<E: BoardEffects>(battle: &Battle, side: u8, effects: &mut E) 
             name: mon.species.name.to_string(),
             species: Some(mon.species.name.to_string()),
             player_id: Some(player_id(side)),
-            team_slot: Some(battle.sides[i].active as u8),
-            moves: move_slots(battle, side),
+            team_slot: Some(at[i] as u8),
+            moves: move_slots(battle, side, at),
             speed: Some(mon.spe),
         })
         .await;
@@ -98,8 +110,10 @@ async fn switch_in<E: BoardEffects>(battle: &Battle, side: u8, effects: &mut E) 
 /// Open the battle: both leads out, both move lists published.
 pub async fn announce_start<E: BoardEffects>(battle: &Battle, effects: &mut E) {
     effects.on_event(BoardEvent::BattleStart).await;
+    // Nothing has happened yet, so the leads ARE the active mons.
+    let at = &[battle.sides[0].active, battle.sides[1].active];
     for side in [1u8, 2] {
-        switch_in(battle, side, effects).await;
+        switch_in(battle, side, at, effects).await;
     }
 }
 
@@ -109,10 +123,21 @@ pub async fn play_turn<E: BoardEffects>(
     choices: [Choice; 2],
     effects: &mut E,
 ) -> bool {
+    // Who is on stage NOW, before the engine plays the turn out. The walk
+    // below moves this on as it meets each `Switched`, so every line is read
+    // in the voice of the mon that was actually standing there.
+    let mut on = [battle.sides[0].active, battle.sides[1].active];
+    let at = &mut on;
     let events = battle.step(choices);
     effects.on_event(BoardEvent::Turn { n: battle.turn }).await;
 
     for event in events {
+        // A switch changes who the rest of the turn is about — including the
+        // switch-in announcement itself, which is about the ARRIVAL.
+        if let Event::Switched { side, party_index } = event {
+            at[(side - 1) as usize] = party_index;
+        }
+        let at = &*at;
         match event {
             Event::Used { side, move_index } => {
                 let name = battle.sides[(side - 1) as usize]
@@ -123,7 +148,7 @@ pub async fn play_turn<E: BoardEffects>(
                     .unwrap_or_default();
                 effects
                     .on_event(BoardEvent::Move {
-                        user: Some(active_name(battle, side)),
+                        user: Some(active_name(battle, side, at)),
                         player_id: Some(player_id(side)),
                         name,
                     })
@@ -132,12 +157,12 @@ pub async fn play_turn<E: BoardEffects>(
                 effects
                     .on_event(BoardEvent::MovesUpdate {
                         player_id: player_id(side),
-                        moves: move_slots(battle, side),
+                        moves: move_slots(battle, side, at),
                     })
                     .await;
             }
             Event::Damage { side, effectiveness, crit, .. } => {
-                let mon = active_name(battle, side);
+                let mon = active_name(battle, side, at);
                 if crit {
                     effects.on_event(BoardEvent::CriticalHit { mon: mon.clone() }).await;
                 }
@@ -157,7 +182,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Fainted { side } => {
                 effects
                     .on_event(BoardEvent::Faint {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         team_slot: Some(battle.sides[(side - 1) as usize].active as u8),
                     })
                     .await;
@@ -165,7 +190,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Statused { side, status } => {
                 effects
                     .on_event(BoardEvent::SetStatus {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         status: status.abbr().to_string(),
                     })
                     .await;
@@ -173,7 +198,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Boosted { side, boost, delta } => {
                 effects
                     .on_event(BoardEvent::StatChange {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         stat: boost.label().into(),
                         delta,
                     })
@@ -182,7 +207,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Drained { side, .. } => {
                 effects
                     .on_event(BoardEvent::Heal {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
@@ -190,7 +215,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Healed { side, .. } => {
                 effects
                     .on_event(BoardEvent::Heal {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
@@ -198,7 +223,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Recoil { side, .. } => {
                 effects
                     .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
@@ -206,7 +231,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::ConfusionStarted { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "confusion".into(),
                         detail: None,
                     })
@@ -215,7 +240,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::ConfusedHit { side, .. } => {
                 effects
                     .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
@@ -223,7 +248,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::ConfusionEnded { side } => {
                 effects
                     .on_event(BoardEvent::EffectEnd {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "confusion".into(),
                     })
                     .await;
@@ -231,7 +256,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::SideStarted { side, condition } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: condition.label().into(),
                         detail: None,
                     })
@@ -240,7 +265,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::SideEnded { side, condition } => {
                 effects
                     .on_event(BoardEvent::EffectEnd {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: condition.label().into(),
                     })
                     .await;
@@ -265,7 +290,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::WeatherDamage { side, .. } => {
                 effects
                     .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
@@ -273,7 +298,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Drowsy { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "drowsy".into(),
                         detail: None,
                     })
@@ -282,7 +307,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::PerishCount { side, n } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: alloc::format!("perish{n}"),
                         detail: None,
                     })
@@ -291,7 +316,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::DestinyArmed { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "Destiny Bond".into(),
                         detail: None,
                     })
@@ -300,7 +325,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::NoEscape { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "trapped".into(),
                         detail: None,
                     })
@@ -309,7 +334,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::SpikesLaid { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "Spikes".into(),
                         detail: None,
                     })
@@ -318,7 +343,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::SpikesDamage { side, .. } => {
                 effects
                     .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
@@ -326,7 +351,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Protected { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "Protect".into(),
                         detail: None,
                     })
@@ -344,7 +369,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::SubStarted { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "Substitute".into(),
                         detail: None,
                     })
@@ -354,7 +379,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::SubBroke { side } => {
                 effects
                     .on_event(BoardEvent::EffectEnd {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "Substitute".into(),
                     })
                     .await;
@@ -362,7 +387,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Focused { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "Focus Energy".into(),
                         detail: None,
                     })
@@ -371,13 +396,13 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Rested { side } => {
                 effects
                     .on_event(BoardEvent::Heal {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
                 effects
                     .on_event(BoardEvent::SetStatus {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         status: "slp".into(),
                     })
                     .await;
@@ -385,7 +410,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Trapped { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "bind".into(),
                         detail: None,
                     })
@@ -394,7 +419,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::TrapDamage { side, .. } => {
                 effects
                     .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
@@ -402,7 +427,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::TrapEnded { side } => {
                 effects
                     .on_event(BoardEvent::EffectEnd {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "bind".into(),
                     })
                     .await;
@@ -410,7 +435,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Seeded { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "Leech Seed".into(),
                         detail: None,
                     })
@@ -419,7 +444,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::SeedDrain { side, .. } => {
                 effects
                     .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
@@ -427,7 +452,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Charging { side } => {
                 effects
                     .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         what: "charge".into(),
                         detail: None,
                     })
@@ -436,25 +461,25 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Recharging { side } => {
                 effects
                     .on_event(BoardEvent::Cant {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         reason: "recharge".into(),
                     })
                     .await;
             }
             Event::Flinched { side } => {
                 effects
-                    .on_event(BoardEvent::Cant { mon: active_name(battle, side), reason: "flinch".into() })
+                    .on_event(BoardEvent::Cant { mon: active_name(battle, side, at), reason: "flinch".into() })
                     .await;
             }
             Event::FullyParalyzed { side } => {
                 effects
-                    .on_event(BoardEvent::Cant { mon: active_name(battle, side), reason: "par".into() })
+                    .on_event(BoardEvent::Cant { mon: active_name(battle, side, at), reason: "par".into() })
                     .await;
             }
             Event::Infatuated { side } => {
                 effects
                     .on_event(BoardEvent::Cant {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         reason: "love".into(),
                     })
                     .await;
@@ -462,7 +487,7 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Cant { side, status } => {
                 effects
                     .on_event(BoardEvent::Cant {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         reason: status.abbr().to_string(),
                     })
                     .await;
@@ -470,14 +495,14 @@ pub async fn play_turn<E: BoardEffects>(
             Event::Residual { side, .. } => {
                 effects
                     .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side),
+                        mon: active_name(battle, side, at),
                         health: health(battle, side),
                     })
                     .await;
             }
-            Event::Switched { side, .. } => switch_in(battle, side, effects).await,
+            Event::Switched { side, .. } => switch_in(battle, side, at, effects).await,
             Event::Failed { side } => {
-                effects.on_event(BoardEvent::Fail { mon: active_name(battle, side) }).await;
+                effects.on_event(BoardEvent::Fail { mon: active_name(battle, side, at) }).await;
             }
             Event::Win { side } => {
                 if side == 0 {
@@ -508,8 +533,22 @@ pub struct SeatPrompt {
 /// the turn's lifecycle (who is prompted, when an AI commits, when a seat
 /// locks) lives in [`run_battle`], so the two platforms cannot order it
 /// differently.
+pub enum PadChoice {
+    /// A seat committed to an action.
+    Pick { player: u8, choice: Choice },
+    /// A seat took its committed action back.
+    Cancel { player: u8 },
+}
+
 pub trait PadSource {
-    async fn next(&mut self) -> (u8, Choice);
+    /// Throw away anything pressed before this turn opened. Presses made
+    /// while the narration was still running belong to the text the player
+    /// was skipping, not to the choice they have not been asked for yet —
+    /// and without this they arrive the instant the turn starts, lock the
+    /// seat in immediately, and the player never sees a menu at all. Gen 1
+    /// has always dropped them; this is the same rule, said out loud.
+    fn flush(&mut self);
+    async fn next(&mut self) -> PadChoice;
 }
 
 /// The per-seat UI state the runner drives as the turn progresses. The web
@@ -559,6 +598,9 @@ pub async fn run_battle<E: BoardEffects, P: PadSource, U: UiHook>(
 ) {
     announce_start(battle, effects).await;
     while !battle.over() {
+        // The turn is about to be asked for, so nothing pressed before now
+        // counts as an answer to it.
+        pads.flush();
         let prompts = prompts_for(battle);
         let mut chosen: [Option<Choice>; 2] = [None, None];
         for p in prompts {
@@ -579,14 +621,36 @@ pub async fn run_battle<E: BoardEffects, P: PadSource, U: UiHook>(
             }
         }
         while chosen[0].is_none() || chosen[1].is_none() {
-            let (player, choice) = pads.next().await;
+            let ev = pads.next().await;
+            let player = match ev {
+                PadChoice::Pick { player, .. } | PadChoice::Cancel { player } => player,
+            };
             if !(1..=2).contains(&player) {
                 continue;
             }
             let i = (player - 1) as usize;
-            if chosen[i].is_none() && !ai[i] {
-                chosen[i] = Some(choice);
-                ui.set_locked(player, true);
+            if ai[i] {
+                continue;
+            }
+            match ev {
+                PadChoice::Pick { choice, .. } if chosen[i].is_none() => {
+                    chosen[i] = Some(choice);
+                    ui.set_locked(player, true);
+                }
+                // Taking it back puts the seat on its menu again, which needs
+                // the same cue the turn opened with — otherwise the display
+                // sits on the waiting screen with nothing to press.
+                PadChoice::Cancel { .. } if chosen[i].is_some() => {
+                    chosen[i] = None;
+                    ui.set_locked(player, false);
+                    effects
+                        .on_event(BoardEvent::Prompt {
+                            player_id: player_id(player),
+                            kind: PromptKind::ChooseMove,
+                        })
+                        .await;
+                }
+                _ => {}
             }
         }
         if play_turn(battle, [chosen[0].unwrap(), chosen[1].unwrap()], effects).await {
@@ -641,6 +705,31 @@ mod tests {
             Side::new(alloc::vec![mon("treecko", 5, &["pound"])]),
             42,
         )
+    }
+
+    /// The engine plays a whole turn before handing back its events, so the
+    /// narration has to be told who was standing there when each one fired —
+    /// reading `Side::mon()` names whoever is left at the END of the turn. A
+    /// mon that attacked and then fainted had its whole turn read out in its
+    /// replacement's name, which is what this pins down: given an index that
+    /// disagrees with the live `active`, the narration follows the index.
+    #[test]
+    fn narration_names_the_mon_that_was_on_stage_not_the_one_left_standing() {
+        let mut b = Battle::new(
+            Side::new(alloc::vec![
+                mon("blaziken", 100, &["ember"]),
+                mon("wigglytuff", 100, &["pound"]),
+            ]),
+            Side::new(alloc::vec![mon("treecko", 5, &["pound"])]),
+            42,
+        );
+        // Whoever the turn ENDED with.
+        b.sides[0].active = 1;
+        assert_eq!(b.sides[0].mon().species.name, "Wigglytuff");
+        // Whoever was on stage when the event fired.
+        let at = &[0usize, 0usize];
+        assert_eq!(active_name(&b, 1, at), "Blaziken,p1");
+        assert_eq!(move_slots(&b, 1, at)[0].name, "Ember");
     }
 
     fn block_on<F: core::future::Future>(f: F) -> F::Output {

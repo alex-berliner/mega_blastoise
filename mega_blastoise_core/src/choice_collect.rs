@@ -95,6 +95,13 @@ pub enum PadEvent {
     /// HIDDEN: all four corner (move) buttons pressed simultaneously.
     /// During the lobby ready sequence this toggles 6v6 teams.
     Chord4 { player: u8 },
+    /// Take this seat's committed choice back. B, or a tap on the panel while
+    /// waiting. It used to be sent as a repeat tap on the cursor slot, which
+    /// worked only because the Gen 1 collector unreadies on ANY press while
+    /// committed — the Gen 3 runner saw a tap for a seat that had already
+    /// chosen and dropped it, so B did nothing there at all. Saying "cancel"
+    /// outright means both generations can read the same intent.
+    Cancel { player: u8 },
 }
 
 /// What the collector wants the platform to do. Platforms map these onto
@@ -780,6 +787,16 @@ impl ChoiceCollector {
 
     /// Feed a classified physical-button event.
     pub fn pad_event(&mut self, ev: PadEvent, now_ms: u64, fx: &mut Vec<Effect>) {
+        // A cancel only means anything to a seat that has already committed;
+        // while still choosing there is nothing to take back.
+        if let PadEvent::Cancel { player } = ev {
+            if let Some(i) = self.slot_index(player) {
+                if !self.is_auto(i) && self.st[i] == SlotState::Committed {
+                    self.unready(i, fx);
+                }
+            }
+            return;
+        }
         let (player, action) = match ev {
             PadEvent::TapMove { player, slot } => (player, Pad::Tap(PlayerAction::Move(slot as usize))),
             PadEvent::TapSwitch { player, idx } => (player, Pad::Tap(PlayerAction::Switch(idx as usize))),
@@ -787,6 +804,7 @@ impl ChoiceCollector {
             PadEvent::HoldSwitch { player, idx } => (player, Pad::Hold(HoldView::Stats(idx))),
             PadEvent::HoldEnd { player } => (player, Pad::HoldEnd),
             PadEvent::Chord4 { .. } => return, // lobby-only combo
+            PadEvent::Cancel { .. } => return,  // handled above
         };
         let Some(i) = self.slot_index(player) else {
             return; // no prompt for this player this batch
@@ -1339,6 +1357,9 @@ impl ReadySequence {
             PadEvent::TapMove { player, .. } => (player, None, Kind::Press),
             PadEvent::HoldMove { player, .. } => (player, None, Kind::ArmAi),
             PadEvent::HoldEnd { player } => (player, None, Kind::HoldEnd),
+            // In the lobby a cancel is just a press: it reopens the picker
+            // for a ready player, which is what the B handler wanted anyway.
+            PadEvent::Cancel { player } => (player, None, Kind::Press),
             PadEvent::Chord4 { .. } => {
                 // Hidden combo: toggle 6v6 for the upcoming battle. Flash the
                 // mode on both screens; tick restores the state screens.
