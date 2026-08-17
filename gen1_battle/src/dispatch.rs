@@ -780,11 +780,17 @@ fn apply_effect(
                         // through Fly/Dig invulnerability.
                         let dmg = stored.saturating_mul(2);
                         let res = deal_damage(field, sides, defender_side, dmg, log);
+                        let ate_by_sub = matches!(res, HitRes::Sub { .. });
                         note_hit(&mut outcome, res, dmg);
                         // An unleash stokes a raging target like any other
-                        // hit that lands: the Attack it earns is on before
-                        // the raging mon swings back.
-                        rage_build(sides, defender_side, log);
+                        // hit that lands — but only if it actually reached
+                        // the mon. A Substitute nulls the target out, and
+                        // Rage's onHit is skipped along with everything else
+                        // aimed at it, so a release that only broke a sub
+                        // earns nothing.
+                        if !ate_by_sub {
+                            rage_build(sides, defender_side, log);
+                        }
                         outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
                     }
                 }
@@ -792,7 +798,13 @@ fn apply_effect(
                 let a = sides[attacker_side].active_mut();
                 a.volatile.set(Volatile::BIDING);
                 a.volatile.stored_damage = 0;
-                a.volatile.bide_turns = 2 + (rng.coin() as u8); // 2..=3
+                // `this.random(2, 4)` in the sim, which a scripted run pins
+                // to its floor like every other free roll here.
+                a.volatile.bide_turns = if rng.force.is_some() {
+                    2
+                } else {
+                    2 + (rng.coin() as u8) // 2..=3
+                };
                 a.volatile.multi_turn_move = mv.id;
                 a.volatile.multi_turn_turns = a.volatile.bide_turns;
                 let s = &sides[attacker_side];
