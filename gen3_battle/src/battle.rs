@@ -6013,6 +6013,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             Some(s) => (s.random, s.crit),
             None => (85 + self.rng.below(16) as u8, self.rng.below(16) == 0),
         };
+        // The crash is a real damage calculation, so the target's armour
+        // answers it: a Shell Armor mon refuses the critical hit here just
+        // as it would on a landed one, and the kick hurts half as much.
+        let crit = crit && !ability::blocks_crit(&self.sides[foe].mon().bearer());
         let (mut attacker, mut defender) = self.attack_pair(side);
         let user_b = self.sides[side].mon().bearer();
         let foe_b = self.sides[foe].mon().bearer();
