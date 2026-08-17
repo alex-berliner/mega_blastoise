@@ -1106,6 +1106,26 @@ impl Battle {
     /// move works out its damage — an OHKO, a Seismic Toss, a Psywave and a
     /// Dragon Rage alike. A Night Shade gets through, because Ghost beats
     /// Shedinja's Ghost half. A typeless hit is exempt.
+    /// The target's types as the IMMUNITY step sees them. Foresight and Odor
+    /// Sleuth hang an `onNegateImmunity` on the target that cancels a Ghost's
+    /// exemption from Normal and Fighting, and the sim asks that question in
+    /// exactly ONE place — `runImmunity`, called from `hitStepTypeImmunity`,
+    /// which sits above every damage arm. So the fixed-damage moves, the
+    /// OHKOs, Endeavor, Psywave and Counter all inherit the strip there for
+    /// free, and have to inherit it here too. `getEffectiveness` is a
+    /// different question that Foresight does not touch, which is why Wonder
+    /// Guard still reads the raw chart.
+    fn immunity_types(&self, foe: usize, move_type: Type) -> (Type, Type) {
+        let types = self.sides[foe].mon().types();
+        if self.sides[foe].mon().identified
+            && matches!(move_type, Type::Normal | Type::Fighting)
+        {
+            let strip = |t: Type| if t == Type::Ghost { Type::None } else { t };
+            return (strip(types.0), strip(types.1));
+        }
+        types
+    }
+
     fn wonder_guard_blocks(&self, foe: usize, move_type: Type) -> bool {
         self.sides[foe].mon().ability == "wonderguard"
             && move_type != Type::None
@@ -1490,6 +1510,15 @@ impl Battle {
     }
 
     fn end_of_action(&mut self) {
+        // `eachEvent('Update')` is the LAST statement of the sim's `runAction`,
+        // and `runAction` has already returned by then if the action decided
+        // the battle: `faintMessages(); if (this.ended) return true;` sits
+        // above it. So a Grudge that empties a move on the winning blow leaves
+        // the holder's Leppa Berry uneaten — nothing gets a chance to tidy up
+        // after the last mon has gone down.
+        if self.over() {
+            return;
+        }
         for side in 0..2 {
             self.ability_update(side);
         }
@@ -2309,6 +2338,19 @@ impl Battle {
                 }
                 if mon.encore_n > 0 {
                     mon.encore_n -= 1;
+                    // Encore also ends the moment the move it is forcing runs
+                    // out of PP, which its `onResidual` checks straight after
+                    // the duration tick. The clock and the PP are two separate
+                    // ends: the sim takes the duration branch first and only
+                    // asks about PP when that branch did not fire.
+                    let spent = mon
+                        .last_used
+                        .and_then(|i| mon.moves.get(i as usize))
+                        .is_none_or(|m| m.pp == 0);
+                    if mon.encore_n > 0 && spent {
+                        mon.encore_n = 0;
+                        mon.encore_fresh = false;
+                    }
                 }
                 if mon.disable_n > 0 {
                     mon.disable_fresh = false;
@@ -2418,6 +2460,40 @@ impl Battle {
             || (mon.tormented && mon.last_used_id == Some(slot.entry.id))
             || (mon.taunt_n == 1 && status_movish)
             || (foe_mon.imprisoning && foe_mon.moves.iter().any(|m| m.entry.id == slot.entry.id))
+    }
+
+    /// Which slot a mon is actually about to swing, whatever the player sent.
+    /// `Side.chooseMove` throws the choice away and queues `getLockedMove()`
+    /// in its place, and `runMove` applies an Encore's override above that —
+    /// both of them ABOVE `runEvent('BeforeMove')`. So every gate that reads
+    /// the move (the sleep gate asking `sleepUsable`, the freeze gate asking
+    /// whether this one thaws its user) is answered about the lock and never
+    /// about the slot that was picked. This mirrors the override that runs
+    /// for real further down `use_move`, minus its bookkeeping.
+    fn acting_slot(&self, side: usize, index: usize) -> usize {
+        let mon = self.sides[side].mon();
+        let index = match (mon.encore_n > 0, mon.last_used) {
+            (true, Some(i)) => i as usize,
+            _ => index,
+        };
+        let releasing = mon.charging.is_some()
+            || mon.rampage.is_some()
+            || mon.bide.is_some()
+            || mon.rolling.is_some();
+        let index = match mon.charging {
+            Some(i) => i as usize,
+            None => match mon.rampage {
+                Some((i, _)) => i as usize,
+                None => index,
+            },
+        };
+        if releasing {
+            mon.locked_move
+                .and_then(|id| mon.moves.iter().position(|m| m.entry.id == id))
+                .unwrap_or(index)
+        } else {
+            index
+        }
     }
 
     fn first_mover(&mut self, choices: &[Choice; 2], scripted: bool) -> usize {
@@ -2559,10 +2635,11 @@ impl Battle {
         // Fast asleep: the sleep clock ticks down before each action, and at
         // zero the mon wakes and moves that same turn.
         if self.sides[side].mon().status == Some(Status::Sleep) {
+            let acting = self.acting_slot(side, index);
             let snoring = self.sides[side]
                 .mon()
                 .moves
-                .get(index)
+                .get(acting)
                 .is_some_and(|m| matches!(m.entry.id, "snore" | "sleeptalk"));
             let mon = self.sides[side].mon_mut();
             if ability::early_bird(&mon.bearer()) {
@@ -2624,10 +2701,11 @@ impl Battle {
         // move actually executes, so a flinch or full paralysis after this
         // gate leaves the user frozen.
         if self.sides[side].mon().status == Some(Status::Freeze) {
+            let acting = self.acting_slot(side, index);
             let defrost = self.sides[side]
                 .mon()
                 .moves
-                .get(index)
+                .get(acting)
                 .is_some_and(|slot| matches!(slot.entry.id, "flamewheel" | "sacredfire"));
             let lucky = match script {
                 Some(_) => false,
@@ -3455,8 +3533,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // Brick Break smashes the target's screens before it hits, unless
         // the target is outright immune.
         if slot.entry.id == "brickbreak"
-            && crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types())
-                != 0
+            && crate::types::effectiveness_against(
+                slot.move_type(),
+                self.immunity_types(foe, slot.move_type()),
+            ) != 0
         {
             for cond in [SideCondition::Reflect, SideCondition::LightScreen] {
                 let n = self.sides[foe].condition_n(cond);
@@ -3581,7 +3661,19 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     | StatusAction::Haze
                     | StatusAction::PerishSong
                     | StatusAction::Minimize
-                    | StatusAction::PsychUp
+                    // Psych Up is NOT in this list: it reads the foe's book,
+                    // and `target: "normal"` means it is aimed there. So it
+                    // answers the Invulnerability event like any other aimed
+                    // move and misses a mon that is mid-Bounce or underground.
+                    // It stays out of Protect's way on its own — the entry
+                    // carries no `protect` flag in this era.
+                    // These read `target: "self"` in this era, and gen 3's
+                    // `useMoveInner` rewrites the target to the user before
+                    // the Invulnerability event is asked — so a foe that is
+                    // mid-Bounce cannot make any of them miss.
+                    | StatusAction::Recycle
+                    | StatusAction::MirrorMove
+                    | StatusAction::NaturePower
                     | StatusAction::Camouflage
                     | StatusAction::Conversion
                     | StatusAction::Imprison
@@ -3698,7 +3790,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if slot.entry.ohko {
             let eff = crate::types::effectiveness_against(
                 slot.move_type(),
-                self.sides[foe].mon().types(),
+                self.immunity_types(foe, slot.move_type()),
             );
             if eff == 0
                 || self.wonder_guard_blocks(foe, slot.move_type())
@@ -3766,7 +3858,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             }
             let eff = crate::types::effectiveness_against(
                 slot.move_type(),
-                self.sides[foe].mon().types(),
+                self.immunity_types(foe, slot.move_type()),
             );
             if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
                 events.push(Event::Damage {
@@ -3830,8 +3922,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             if !hit {
                 return;
             }
-            if crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types())
-                == 0
+            if crate::types::effectiveness_against(
+                slot.move_type(),
+                self.immunity_types(foe, slot.move_type()),
+            ) == 0
             {
                 events.push(Event::Damage {
                     side: foe as u8 + 1,
@@ -3876,8 +3970,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             if !hit {
                 return;
             }
-            if crate::types::effectiveness_against(slot.move_type(), self.sides[foe].mon().types())
-                == 0
+            if crate::types::effectiveness_against(
+                slot.move_type(),
+                self.immunity_types(foe, slot.move_type()),
+            ) == 0
             {
                 events.push(Event::Damage {
                     side: foe as u8 + 1,
@@ -3963,7 +4059,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             }
             let eff = crate::types::effectiveness_against(
                 slot.move_type(),
-                self.sides[foe].mon().types(),
+                self.immunity_types(foe, slot.move_type()),
             );
             if eff == 0 {
                 events.push(Event::Damage {
@@ -4222,7 +4318,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 "thunderwave" | "glare" => {
                     crate::types::effectiveness_against(
                         slot.move_type(),
-                        self.sides[foe].mon().types(),
+                        self.immunity_types(foe, slot.move_type()),
                     ) == 0
                 }
                 // Attract's GENDER check is an `onTryImmunity`, which turns
@@ -4318,6 +4414,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 script.map(|s| s.stall),
                 events,
             );
+            // Defense Curl primes Rollout. The volatile is applied by
+            // `moveHit` from the move's `volatileStatus`, which is a separate
+            // step from the boost — so a mon already at +6 Defence still
+            // curls, and the doubling still lands. This lives on the status
+            // path because Defense Curl is a zero-power move and never
+            // reaches the damage tail.
+            if slot.entry.id == "defensecurl" && hit {
+                self.sides[side].mon_mut().curled = true;
+            }
             return;
         }
         // Type immunity preempts the accuracy step entirely: the sim logs
@@ -4335,13 +4440,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             } else {
                 slot.move_type()
             };
-            let mut dtypes = self.sides[foe].mon().types();
-            if self.sides[foe].mon().identified
-                && matches!(move_type, Type::Normal | Type::Fighting)
-            {
-                let strip = |t: Type| if t == Type::Ghost { Type::None } else { t };
-                dtypes = (strip(dtypes.0), strip(dtypes.1));
-            }
+            let dtypes = self.immunity_types(foe, move_type);
             let foe_b = self.sides[foe].mon().bearer();
             // Levitate is part of the immunity step itself in the sim, not a
             // try-hit handler: it makes the mon ungrounded, and Ground has
@@ -4511,7 +4610,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // the first kick — UNLESS the roll is not a roll at all: an
             // accuracy that has saturated at a hundred is certain, and a
             // Compound Eyes user lands all three whatever the knob says.
-            let certain = acc == 0 || acc >= 100;
+            // Lock-On is certain for the same reason and for EVERY kick: its
+            // `onSourceAccuracy` answers `true`, and the loop only rolls when
+            // the accuracy it is handed is still a number.
+            let certain = sure || acc == 0 || acc >= 100;
             match script {
                 Some(s) if !certain => {
                     if s.secondary {
@@ -4769,8 +4871,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 break; // immune: later strikes land no better
             }
 
-            let eff =
-                crate::types::effectiveness_against(m.move_type, self.sides[foe].mon().types());
+            let eff = crate::types::effectiveness_against(
+                m.move_type,
+                self.immunity_types(foe, m.move_type),
+            );
             let target = self.sides[foe].mon_mut();
             let hit_sub = target.sub_hp > 0;
             let amount = if hit_sub {
@@ -4933,11 +5037,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             mon.rolling = if n >= 5 { None } else { Some(n) };
             mon.rolling_fresh = true;
         }
-        // Defense Curl primes Rollout.
-        if slot.entry.id == "defensecurl" {
-            self.sides[side].mon_mut().curled = true;
-        }
-
         // Rapid Spin flings off the user's own bind and Leech Seed.
         if slot.entry.id == "rapidspin" {
             let user = self.sides[side].mon_mut();
@@ -6776,7 +6875,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 let immune = slot.entry.respects_immunity
                     && crate::types::effectiveness_against(
                         slot.move_type(),
-                        self.sides[foe].mon().types(),
+                        self.immunity_types(foe, slot.move_type()),
                     ) == 0;
                 if hit && !immune {
                     self.confuse(foe, scripted, events);
@@ -6789,7 +6888,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 let immune = slot.entry.respects_immunity
                     && crate::types::effectiveness_against(
                         slot.move_type(),
-                        self.sides[foe].mon().types(),
+                        self.immunity_types(foe, slot.move_type()),
                     ) == 0;
                 if hit && !immune {
                     self.inflict(foe, status, scripted, events);
