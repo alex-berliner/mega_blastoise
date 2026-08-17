@@ -471,7 +471,9 @@ fn apply_effect(
         }
         DamageMaybeStatus => {
             outcome = damage_step(rng, field, sides, attacker_side, mv, false, None, log, outcome);
-            if outcome.hit && outcome.damage_dealt > 0 && !outcome.fainted_target {
+            // The secondary's only gates in the sim are that the move hit and
+            // that the target is still standing — NOT that it took damage.
+            if outcome.hit && !outcome.fainted_target {
                 if mv.effect_param0 == 6 {
                     // Confusion secondary pierces a Substitute as long as the
                     // sub didn't break (Gen 1 quirk).
@@ -505,7 +507,6 @@ fn apply_effect(
         DamageMaybeFlinch => {
             outcome = damage_step(rng, field, sides, attacker_side, mv, false, None, log, outcome);
             if outcome.hit
-                && outcome.damage_dealt > 0
                 && !outcome.fainted_target
                 && !outcome.hit_sub
                 && roll_chance_byte(rng, mv.effect_param0)
@@ -519,7 +520,6 @@ fn apply_effect(
         DamageMaybeBoostTarget => {
             outcome = damage_step(rng, field, sides, attacker_side, mv, false, None, log, outcome);
             if outcome.hit
-                && outcome.damage_dealt > 0
                 && !outcome.fainted_target
                 && !outcome.hit_sub
                 && roll_chance_byte(rng, 85)
@@ -583,7 +583,6 @@ fn apply_effect(
             // Twineedle rolls its poison chance once, after the last hit.
             if mv.effect_kind == Twineedle
                 && outcome.hit
-                && outcome.damage_dealt > 0
                 && !outcome.fainted_target
                 && !outcome.hit_sub
                 && roll_chance_byte(rng, mv.effect_param1)
@@ -1373,15 +1372,17 @@ fn damage_step(
                 let d = sides[defender_side].active();
                 compute_damage(rng, a, d, mv, selfdestruct)
             };
-            if roll.dmg == 0 {
+            // Immunity is a miss; a damage roll that merely FLOORED to zero
+            // is not. The sim's own comment here says "the move is made to
+            // miss", but the line under it is `if (damage === 0) return
+            // damage` — it returns the number nought, and every caller reads
+            // that as a hit that dealt nothing. It sets lastDamage to 0,
+            // prints the damage line, builds Rage and rolls its secondary,
+            // whose only gate is that the target is still standing. Which is
+            // how a Poison Sting doing no damage at all still poisons.
+            if roll.dmg == 0 && roll.immune {
                 let s = &sides[defender_side];
-                if roll.immune {
-                    log.push_board(format!("immune|mon:{},{},0", s.active().name, s.player_id));
-                } else {
-                    // Gen 1 "0 damage glitch": a damage roll of 0 is a miss.
-                    let s = &sides[defender_side];
-                    log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
-                }
+                log.push_board(format!("immune|mon:{},{},0", s.active().name, s.player_id));
                 outcome.hit = false;
                 return outcome;
             }

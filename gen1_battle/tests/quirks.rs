@@ -428,8 +428,13 @@ fn swift_hits_through_invulnerability() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[test]
-fn zero_damage_becomes_a_miss() {
-    // A pitifully weak double-resisted hit rounds to 0 → miss, not min-1.
+fn zero_damage_still_counts_as_a_hit() {
+    // A pitifully weak double-resisted hit rounds to 0 — and in Gen 1 that
+    // is a HIT that dealt nothing, not a miss. The sim's own comment at the
+    // site says "the move is made to miss", but the line under it returns
+    // the NUMBER nought, and every caller reads that as a landed hit: it
+    // sets lastDamage to 0, builds Rage, and rolls its secondary, whose only
+    // gate is that the target is still standing.
     let mut a = fresh_mon("caterpie", 2, &["tackle"]);
     a.stats[1] = 1;
     a.modified[1] = 1;
@@ -449,9 +454,10 @@ fn zero_damage_becomes_a_miss() {
         let mut rng = Rng::new(seed);
         let out = execute_move(&mut rng, &mut field, &mut sides, 0, 0, &mut log);
         assert_eq!(out.damage_dealt, 0, "quad-resisted 2-damage base must round to 0 (seed {seed})");
-        assert!(!out.hit || out.damage_dealt == 0);
+        assert!(out.hit, "…and nought damage is still a hit (seed {seed})");
     }
     assert_eq!(sides[1].active().hp_cur, sides[1].active().hp_max);
+    assert_eq!(field.last_damage, 0, "the register takes the nought, not a stale figure");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
