@@ -193,13 +193,19 @@ fn button_press_sends_move_choice_without_stdin() {
     let data = FlashDataStore::new();
     let mut battle = make_battle(&data);
 
-    // Grab the first real Turn request so the prompt has a genuine move list.
+    // Grab the first real Turn request so the prompt has a genuine move list,
+    // distilled exactly as the runner distils it before sending.
     let (player_id, request) = battle
         .active_requests()
         .next()
         .map(|(pid, req)| (pid.to_string(), req.clone()))
         .expect("battle should have an active request after start");
     let player_data = battle.player_data(&player_id).ok();
+    let slot = mega_blastoise_core::battle_runner::slot_options_from_request(
+        &player_id,
+        &request,
+        player_data.as_ref(),
+    );
 
     let bus = InputBus::new();
     let mut controller = HostBattleController::new();
@@ -209,7 +215,7 @@ fn button_press_sends_move_choice_without_stdin() {
     let choice = pollster::block_on(async {
         let driver = async {
             bus.prompt
-                .send(ActivePrompt { player_id, request, player_data, batch_total: 1 })
+                .send(ActivePrompt { player_id, slot, batch_total: 1 })
                 .await;
             bus.choices.receive().await
         };
