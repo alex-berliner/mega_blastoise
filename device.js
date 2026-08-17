@@ -5,15 +5,23 @@
 // The console is loaded before the wasm glue so its patch catches anything
 // the module emits while loading — but dynamically, with a stub fallback: a
 // static import would take the whole page down if this one debug file ever
-// 404s, which is exactly what a broken Pages deploy did once.
+// 404s, which is exactly what a broken Pages deploy did twice.
+//
+// It is `webconsole.js` and not `devconsole.js` because Pages wedged on that
+// second name: the branch carried the file as an ordinary blob with the right
+// hash, every OTHER file on the branch was served byte-identical, the source
+// was set to gh-pages root, and the build reported success — and that one path
+// still answered 404, through a redeploy that was pushed for no other reason
+// than to shift it. Nothing was left to fix on this side of the wire, so the
+// file moved to a path Pages had never cached.
 let setCommandHandler = () => {};
 let consoleOpen = () => false;
 try {
-  const dc = await import('./devconsole.js');
+  const dc = await import('./webconsole.js');
   setCommandHandler = dc.setCommandHandler;
   consoleOpen = dc.isOpen;
 } catch (e) {
-  console.warn('devconsole unavailable, running without it:', e);
+  console.warn('webconsole unavailable, running without it:', e);
 }
 import init, * as wasm from './pkg/mega_blastoise_web.js';
 
