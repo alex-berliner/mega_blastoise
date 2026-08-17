@@ -224,9 +224,10 @@ fn gen3_turns_match_showdown() {
         let light_screen = c.p2_conditions.contains(&"lightscreen");
         let script = TurnScript {
             seats: [
-                Some(SeatScript { hit: c.script[0].0, crit: c.script[0].1, random: c.script[0].2, secondary: false, immobile: false, hits: 0, selfhit: false, stall: false }),
-                Some(SeatScript { hit: c.script[1].0, crit: c.script[1].1, random: c.script[1].2, secondary: false, immobile: false, hits: 0, selfhit: false, stall: false }),
+                Some(SeatScript { hit: c.script[0].0, crit: c.script[0].1, random: c.script[0].2, secondary: false, immobile: false, hits: 0, selfhit: false, stall: false, band: false }),
+                Some(SeatScript { hit: c.script[1].0, crit: c.script[1].1, random: c.script[1].2, secondary: false, immobile: false, hits: 0, selfhit: false, stall: false, band: false }),
             ],
+            claw: false,
         };
         let (ours_hp, ours_pp) = {
             // Fold the screens in through the damage call the turn makes: the

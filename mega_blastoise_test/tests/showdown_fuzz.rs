@@ -307,6 +307,7 @@ const GEN3_ITEMS: &[&str] = &[
     "deepseatooth",
     "dragonfang",
     "figyberry",
+    "focusband",
     "ganlonberry",
     "hardstone",
     "lansatberry",
@@ -334,6 +335,7 @@ const GEN3_ITEMS: &[&str] = &[
     "persimberry",
     "petayaberry",
     "poisonbarb",
+    "quickclaw",
     "rawstberry",
     "salacberry",
     "scopelens",
@@ -673,9 +675,9 @@ fn fuzz_gen3_turns() {
         // confusion), so generating them unconditionally is harmless and
         // covers conditions that land mid-battle.
         let n_turns = 1 + fz.below(3) as usize;
-        let mut turns: Vec<[(bool, bool, u8, bool, bool, u8, bool, bool); 2]> = Vec::new();
+        let mut turns: Vec<(bool, [(bool, bool, u8, bool, bool, u8, bool, bool, bool); 2])> = Vec::new();
         for _ in 0..n_turns {
-            let mut pair = [(true, false, 100u8, false, false, 0u8, false, false); 2];
+            let mut pair = [(true, false, 100u8, false, false, 0u8, false, false, false); 2];
             for (seat, slot) in pair.iter_mut().enumerate() {
                 *slot = (
                     !fz.chance(10),
@@ -686,6 +688,7 @@ fn fuzz_gen3_turns() {
                     0,
                     fz.chance(50),
                     fz.chance(50),
+                    fz.chance(50),
                 );
                 let mv = if seat == 0 { &m1 } else { &m2 };
                 if let Some(e) = gen3_battle::move_by_id(mv) {
@@ -694,16 +697,17 @@ fn fuzz_gen3_turns() {
                     }
                 }
             }
-            turns.push(pair);
+            // The turn's Quick Claw coin, one for the whole field.
+            turns.push((fz.chance(30), pair));
         }
 
         let turn_json: Vec<Value> = turns
             .iter()
-            .map(|pair| {
-                let seat = |t: &(bool, bool, u8, bool, bool, u8, bool, bool)| {
-                    json!({"hit": t.0, "crit": t.1, "roll": t.2, "secondary": t.3, "immobile": t.4, "hits": t.5, "selfhit": t.6, "stall": t.7})
+            .map(|(claw, pair)| {
+                let seat = |t: &(bool, bool, u8, bool, bool, u8, bool, bool, bool)| {
+                    json!({"hit": t.0, "crit": t.1, "roll": t.2, "secondary": t.3, "immobile": t.4, "hits": t.5, "selfhit": t.6, "stall": t.7, "band": t.8})
                 };
-                json!({"p1": seat(&pair[0]), "p2": seat(&pair[1])})
+                json!({"p1": seat(&pair[0]), "p2": seat(&pair[1]), "claw": claw})
             })
             .collect();
         scenarios.push(json!({
@@ -772,11 +776,11 @@ fn fuzz_gen3_turns() {
         // carried this since it was written, and every turn case diagnosed
         // without it was diagnosed by guesswork.
         let mut our_log: Vec<String> = Vec::new();
-        for (turn_i, pair) in turns.iter().enumerate() {
+        for (turn_i, (claw, pair)) in turns.iter().enumerate() {
             if battle.over() {
                 break;
             }
-            let seat = |t: &(bool, bool, u8, bool, bool, u8, bool, bool)| SeatScript {
+            let seat = |t: &(bool, bool, u8, bool, bool, u8, bool, bool, bool)| SeatScript {
                 hit: t.0,
                 crit: t.1,
                 random: t.2,
@@ -785,8 +789,12 @@ fn fuzz_gen3_turns() {
                 hits: t.5,
                 selfhit: t.6,
                 stall: t.7,
+                band: t.8,
             };
-            let ts = TurnScript { seats: [Some(seat(&pair[0])), Some(seat(&pair[1]))] };
+            let ts = TurnScript {
+                seats: [Some(seat(&pair[0])), Some(seat(&pair[1]))],
+                claw: *claw,
+            };
             let events = battle.step_with([Choice::Move(0), Choice::Move(0)], &ts);
             our_log.push(format!("-- turn {turn_i}"));
             our_log.extend(events.iter().map(|e| format!("   {e:?}")));
@@ -1365,8 +1373,11 @@ fn fuzz_gen3_battles() {
                     "hits": 0,
                     "selfhit": fz.chance(50),
                     "stall": fz.chance(50),
+                    "band": fz.chance(50),
                 });
             }
+            // One Quick Claw coin serves the whole field for the turn.
+            let claw = fz.chance(30);
             let seat_script = |v: &Value| SeatScript {
                 hit: v["hit"].as_bool().unwrap(),
                 crit: v["crit"].as_bool().unwrap(),
@@ -1376,9 +1387,11 @@ fn fuzz_gen3_battles() {
                 hits: v["hits"].as_u64().unwrap() as u8,
                 selfhit: v["selfhit"].as_bool().unwrap(),
                 stall: v["stall"].as_bool().unwrap(),
+                band: v["band"].as_bool().unwrap(),
             };
             let ts = TurnScript {
                 seats: [Some(seat_script(&seats[0])), Some(seat_script(&seats[1]))],
+                claw,
             };
             let events = battle.step_with(choices, &ts);
             our_states.push(snapshot_of(&battle));
@@ -1389,7 +1402,7 @@ fn fuzz_gen3_battles() {
                 Event::Used { side: 2, .. } => Some("p2"),
                 _ => None,
             }));
-            turn_json.push(json!({"p1": seats[0], "p2": seats[1]}));
+            turn_json.push(json!({"p1": seats[0], "p2": seats[1], "claw": claw}));
         }
 
         scenarios.push(json!({

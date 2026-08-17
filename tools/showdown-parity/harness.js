@@ -96,6 +96,20 @@ function newBattle(gen, p1mon, p2mon) {
 /// damage roll via battle.randomizer. So the hooks live at those three seams:
 /// tryMoveHit (to know whose script applies), randomChance (accuracy), and
 /// randomizer (the 85..100 roll); crits ride getDamage's willCrit.
+/// Gen 3's Quick Claw is not a priority bracket and not an item handler: the
+/// sim flips ONE coin for the whole field at the tail of `nextTurn`, parks it
+/// on `battle.quickClawRoll`, and the mod's `getActionSpeed` answers 65535 for
+/// any holder while it is up. That coin is written straight in rather than
+/// caught in `randomChance`, because the roll it makes there is a `(1, 5)` and
+/// so is the thaw roll, and the two are otherwise hard to tell apart. Writing
+/// the field directly also lands it at the right MOMENT: the sim's own flip at
+/// the end of the previous turn is overwritten here, before the choices that
+/// read it. `updateSpeed()` runs again at the residual step, so the same coin
+/// decides the residual order too.
+function setQuickClaw(battle, ts) {
+  if (battle.gen === 3) battle.quickClawRoll = !!ts.claw;
+}
+
 function scriptRandomness(battle, script) {
   const forSide = (source) =>
     script[source.side.id] ?? {hit: true, crit: false, roll: 100, secondary: false};
@@ -176,6 +190,17 @@ function scriptRandomness(battle, script) {
         battle.__actMon?.volatiles['attract'] && !battle.__attractRolled) {
       battle.__attractRolled = true;
       return battle.__act?.immobile ?? false;
+    }
+    // Focus Band's tenth, rolled in its `onDamage` — which means it is spent
+    // on EVERY damaging hit the holder takes, lethal or not, because the sim
+    // rolls before it asks whether the blow would have killed. It answers to
+    // the mon being hit, not the mon attacking, so the knob comes off the
+    // TARGET's seat. Effect Spore rolls the same tenth in this era; the two
+    // are told apart by their event, `Damage` against `DamagingHit`.
+    if (numerator === 1 && denominator === 10) {
+      if (battle.event?.id !== 'Damage') return false;
+      const hit = battle.event?.target;
+      return (hit && script[hit.side?.id]?.band) ?? false;
     }
     // Full paralysis: (1,4) in gen 3+ (once, in onBeforeMove, only for a
     // paralyzed actor), (63,256) in gens 1-2. Later (1,4)s are Protect's
@@ -370,6 +395,7 @@ function runTurn(sc) {
     if (b.ended) break;
     if (ts.p1) script.p1 = ts.p1;
     if (ts.p2) script.p2 = ts.p2;
+    setQuickClaw(b, ts);
     b.makeChoices('move 1', 'move 1');
   }
   const order = b.log
@@ -488,6 +514,7 @@ function runBattle(sc) {
     if (ts.p2) script.p2 = ts.p2;
     const c1 = seatChoice('p1', ts.p1);
     const c2 = seatChoice('p2', ts.p2);
+    setQuickClaw(battle, ts);
     try {
       battle.makeChoices(c1, c2);
     } catch (e) {

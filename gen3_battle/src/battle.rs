@@ -686,12 +686,19 @@ pub struct SeatScript {
     pub selfhit: bool,
     /// The consecutive Protect/Endure gamble comes up heads.
     pub stall: bool,
+    /// A Focus Band holder's 1-in-10 comes up, so a lethal blow this action
+    /// leaves it standing at one HP.
+    pub band: bool,
 }
 
 /// Per-turn RNG script; see [`Battle::step_with`].
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TurnScript {
     pub seats: [Option<SeatScript>; 2],
+    /// The turn's Quick Claw coin. One coin serves the whole field in this
+    /// era, so it is a turn knob rather than a seat one: when it comes up,
+    /// EVERY holder on the field moves at 65535.
+    pub claw: bool,
 }
 
 /// What a player does with their turn.
@@ -940,6 +947,12 @@ pub struct Battle {
     /// Which side this turn's speeds put first, read once as the turn opens
     /// and held for the rest of it.
     speed_first: Option<usize>,
+    /// This turn's Quick Claw coin, flipped once for the whole field.
+    claw_this_turn: bool,
+    /// This turn's per-seat script, kept where anything that needs the OTHER
+    /// seat's knobs can reach it — Focus Band's coin is rolled by the mon
+    /// being hit, not by the one attacking.
+    turn_seats: [Option<SeatScript>; 2],
     /// The move each side has just committed to, held until the move finishes
     /// so a Choice Band can clamp on it afterwards.
     committed_move: [Option<&'static str>; 2],
@@ -971,6 +984,82 @@ pub struct Battle {
     bounced: bool,
 }
 
+/// How many residual buckets the end-of-turn phase walks.
+const BUCKETS: usize = 13;
+
+/// The `comparePriority` key for one residual bucket on a mon of this Speed.
+///
+/// The sim reads `(order, priority, speed, subOrder, effectOrder)` and folds
+/// a MISSING order into 4294967296, which sends it to the very back — that is
+/// where the two bare duration volatiles land, since neither Recharge nor the
+/// Thrash-family lock carries a residual order of its own. Nothing in this
+/// era gives a residual handler a priority, and `effectOrder` is only ever
+/// assigned for `SwitchIn` and `RedirectTarget`, so both drop out and the key
+/// is just the three that are left.
+fn residual_key(bucket: usize, speed: u16) -> (u32, i32, i32, u32) {
+    // (order, -priority, -speed, subOrder): every field now sorts ASCENDING,
+    // which is what makes plain tuple comparison the same sort.
+    // The sim's stand-in is 4294967296, which does not fit here; any value
+    // past the largest real order (Truant's 27) sorts the same.
+    const NO_ORDER: u32 = u32::MAX;
+    let (order, sub): (u32, u32) = match bucket {
+        0 => (10, 1),   // Ingrain
+        1 => (10, 3),   // Rain Dish, Shed Skin, Speed Boost
+        2 => (10, 4),   // the berries and Leftovers
+        3 => (10, 5),   // Leech Seed
+        4 => (10, 6),   // burn, poison and Toxic
+        5 => (10, 7),   // Nightmare
+        6 => (10, 8),   // Curse
+        7 => (10, 9),   // the bind
+        9 => (10, 11),  // Uproar
+        10 => (10, 19), // Yawn
+        12 => (27, 0),  // Truant
+        // Recharge (8) and the Thrash-family lock (11) are plain duration
+        // volatiles with no residual order at all.
+        _ => (NO_ORDER, 0),
+    };
+    (order, 0, -(speed as i32), sub)
+}
+
+/// The sim's `speedSort`, which is a selection sort and deliberately so: it
+/// is the shape that makes a speed tie easy to resolve. The important part is
+/// what it does to the tied elements it is NOT currently looking at. Having
+/// found the run of minima, it swaps each one into place from wherever it sat
+/// — and whatever was already in that slot goes back to where the minimum
+/// came from. A tied pair therefore comes out REVERSED whenever a lower-key
+/// handler was sitting behind it.
+///
+/// The sim then shuffles each run of ties with its own PRNG. The reference
+/// runs we check against pin that shuffle to a no-op, so a run is left in the
+/// order the swaps put it, and this does the same.
+fn speed_sort<T, K: Ord, F: Fn(&T) -> K>(list: &mut [T], key: F) {
+    if list.len() < 2 {
+        return;
+    }
+    let mut sorted = 0;
+    while sorted + 1 < list.len() {
+        let mut next: Vec<usize> = Vec::new();
+        next.push(sorted);
+        for i in (sorted + 1)..list.len() {
+            match key(&list[next[0]]).cmp(&key(&list[i])) {
+                core::cmp::Ordering::Less => continue,
+                core::cmp::Ordering::Greater => {
+                    next.clear();
+                    next.push(i);
+                }
+                core::cmp::Ordering::Equal => next.push(i),
+            }
+        }
+        // `next` is ascending, so no swap here can disturb a later one.
+        for (i, &index) in next.iter().enumerate() {
+            if index != sorted + i {
+                list.swap(sorted + i, index);
+            }
+        }
+        sorted += next.len();
+    }
+}
+
 impl Battle {
     pub fn new(side1: Side, side2: Side, seed: u64) -> Battle {
         let mut battle = Battle {
@@ -988,6 +1077,8 @@ impl Battle {
             pursuing: false,
             deferred_switch: [None; 2],
             speed_first: None,
+            claw_this_turn: false,
+            turn_seats: [None; 2],
             committed_move: [None; 2],
             forced_entry: None,
             calling: false,
@@ -1709,7 +1800,44 @@ impl Battle {
         if mon.status == Some(Status::Paralysis) {
             chain.mul(ability::X0_25);
         }
+        // Quick Claw is not a priority bracket in this era. The sim's gen 3
+        // `getActionSpeed` simply answers 65535 for a holder when the turn's
+        // claw came up, which wins its own bracket and loses to a higher one.
+        // It rolls ONE claw per turn for the whole field, so two holders both
+        // answer 65535 and tie. The same number feeds the residual sort,
+        // because `case 'residual'` calls `updateSpeed()` before the field
+        // event and `updateSpeed` is what writes this stat.
+        if self.claw_this_turn && mon.item == "quickclaw" {
+            return u16::MAX;
+        }
         chain.apply(mon.effective_speed() as u32) as u16
+    }
+
+    /// Whether a lethal blow leaves the mon standing at one HP. Endure always
+    /// does; Focus Band answers a 1-in-10 the sim rolls on EVERY damaging hit,
+    /// lethal or not, and only for damage whose source is a move — a
+    /// confusion self-hit, recoil and a residual all go through unclamped.
+    fn survives_at_one(&mut self, side: usize) -> bool {
+        let mon = self.sides[side].mon();
+        // A blow the Substitute eats never reaches the mon's own HP, so the
+        // sim's `damage()` is never called and neither handler is asked. The
+        // Band's coin is not spent either.
+        if mon.sub_hp > 0 {
+            return false;
+        }
+        if mon.enduring {
+            return true;
+        }
+        if mon.item != "focusband" {
+            return false;
+        }
+        // The coin belongs to the mon being HIT, not the one attacking, so
+        // it is read off the target's own seat rather than off the script the
+        // acting side was handed.
+        match self.turn_seats[side] {
+            Some(s) => s.band,
+            None => self.rng.below(10) == 0,
+        }
     }
 
     pub fn can_switch(&self, side: usize) -> bool {
@@ -1819,6 +1947,15 @@ impl Battle {
         // later cures the paralysis but does not reorder the turn, so the
         // speeds are read here and held.
         let scripted_now = script.seats.iter().any(|s| s.is_some());
+        // The sim flips the turn's Quick Claw coin at the tail of `nextTurn`,
+        // which is before any choice is read — so it is settled here, ahead of
+        // the speed order it decides.
+        self.turn_seats = script.seats;
+        self.claw_this_turn = if scripted_now {
+            script.claw
+        } else {
+            self.rng.below(5) == 0
+        };
         self.speed_first = Some(self.faster_side(scripted_now));
         for side in 0..2 {
             self.ability_update(side);
@@ -2153,28 +2290,30 @@ impl Battle {
                 }
             }
 
-            // The sim's residual list is sorted by (order, priority, SPEED,
-            // subOrder). With different Speeds that comes out as one mon's
-            // whole set and then the other's; at a TIE — which a Transform
-            // makes exactly — subOrder takes over and the two interleave.
-            // Both readings are the same sort; only the nesting differs.
-            let first = self.faster_side(scripted);
-            let tied = self.turn_speed(0) == self.turn_speed(1);
-            const BUCKETS: usize = 13;
+            // The sim gathers every residual handler on the field into ONE
+            // list and hands it to `speedSort`. Running that sort for real,
+            // rather than guessing its shape, is the only way to get the ties
+            // right: `speedSort` is a SELECTION sort, and a selection sort is
+            // not stable. When it finds its minimum behind a tied pair it
+            // swaps that minimum forward, and the element it displaces lands
+            // where the minimum was — at the BACK of the pair. So a third
+            // handler with a lower key can reverse two tied ones just by
+            // being there. Speeds are read once, up front, exactly as the sim
+            // reads them: `case 'residual'` calls `updateSpeed()` before the
+            // field event, so a Salac eaten mid-phase does not reshuffle it.
+            let speeds = [self.turn_speed(0), self.turn_speed(1)];
             let mut plan: Vec<(usize, usize)> = Vec::with_capacity(BUCKETS * 2);
-            if tied {
+            // Insertion order is the sim's: side 1's active and everything on
+            // it, then side 2's. Within one mon the buckets already ascend by
+            // subOrder, and no two of them share one, so the finer insertion
+            // order inside a mon (status, then volatiles, then ability, then
+            // item) can never be what breaks a tie.
+            for s in 0..2 {
                 for b in 0..BUCKETS {
-                    for s in [first, 1 - first] {
-                        plan.push((b, s));
-                    }
-                }
-            } else {
-                for s in [first, 1 - first] {
-                    for b in 0..BUCKETS {
-                        plan.push((b, s));
-                    }
+                    plan.push((b, s));
                 }
             }
+            speed_sort(&mut plan, |&(b, s)| residual_key(b, speeds[s]));
             for (b, s) in plan {
                 if self.over() {
                     break;
@@ -3400,6 +3539,7 @@ impl Battle {
                 });
                 return;
             }
+            let survives = self.survives_at_one(foe);
             let target = self.sides[foe].mon_mut();
             if target.sub_hp > 0 {
                 let amount = amount.min(target.sub_hp);
@@ -3415,7 +3555,7 @@ impl Battle {
                 }
                 return;
             }
-            let cap = if target.enduring {
+            let cap = if survives {
                 target.hp.saturating_sub(1)
             } else {
                 target.hp
@@ -3825,8 +3965,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 });
                 return;
             }
+            let survives = self.survives_at_one(foe);
             let mon = self.sides[foe].mon_mut();
-            let amount = if mon.enduring {
+            let amount = if survives {
                 mon.hp.saturating_sub(1)
             } else {
                 mon.hp
@@ -3874,6 +4015,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 FixedDamage::Level => self.sides[side].mon().level as u16,
                 FixedDamage::Half => (self.sides[foe].mon().hp / 2).max(1),
             };
+            let survives = self.survives_at_one(foe);
             let target = self.sides[foe].mon_mut();
             if target.sub_hp > 0 {
                 let amount = amount.min(target.sub_hp);
@@ -3889,7 +4031,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
                 return;
             }
-            let cap = if target.enduring {
+            let cap = if survives {
                 target.hp.saturating_sub(1)
             } else {
                 target.hp
@@ -3995,6 +4137,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 None => self.rng.below(11),
             };
             let amount = ((level * (10 * i as u32 + 50)) / 100).max(1) as u16;
+            let survives = self.survives_at_one(foe);
             let target = self.sides[foe].mon_mut();
             if target.sub_hp > 0 {
                 let amount = amount.min(target.sub_hp);
@@ -4010,7 +4153,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
                 return;
             }
-            let cap = if target.enduring {
+            let cap = if survives {
                 target.hp.saturating_sub(1)
             } else {
                 target.hp
@@ -4071,6 +4214,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 return;
             }
             let amount = taken.saturating_mul(2);
+            let survives = self.survives_at_one(foe);
             let target = self.sides[foe].mon_mut();
             if target.sub_hp > 0 {
                 let amount = amount.min(target.sub_hp);
@@ -4086,7 +4230,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
                 return;
             }
-            let cap = if target.enduring {
+            let cap = if survives {
                 target.hp.saturating_sub(1)
             } else {
                 target.hp
@@ -4875,6 +5019,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 m.move_type,
                 self.immunity_types(foe, m.move_type),
             );
+            let survives = self.survives_at_one(foe);
             let target = self.sides[foe].mon_mut();
             let hit_sub = target.sub_hp > 0;
             let amount = if hit_sub {
@@ -4882,7 +5027,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 target.sub_hp -= amount;
                 amount
             } else {
-                let cap = if slot.entry.id == "falseswipe" || target.enduring {
+                let cap = if slot.entry.id == "falseswipe" || survives {
                     target.hp.saturating_sub(1)
                 } else {
                     target.hp
