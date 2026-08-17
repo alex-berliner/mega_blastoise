@@ -16,8 +16,9 @@ fn a_self_destruct_that_wins_the_battle_ends_it() {
         hits: 0,
         selfhit: false,
         stall: false,
+        band: false,
     };
-    let script = TurnScript { seats: [Some(seat), Some(seat)] };
+    let script = TurnScript { seats: [Some(seat), Some(seat)], claw: false };
     let events = b.step_with([Choice::Move(0), Choice::Move(0)], &script);
     let used: Vec<u8> = events
         .iter()

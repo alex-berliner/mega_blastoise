@@ -7674,6 +7674,7 @@ mod tests {
     fn scripted(script: [SeatScript; 2]) -> TurnScript {
         TurnScript {
             seats: [Some(script[0]), Some(script[1])],
+            claw: false,
         }
     }
 
@@ -7686,6 +7687,7 @@ mod tests {
         hits: 0,
         selfhit: false,
         stall: false,
+        band: false,
     };
 
     #[test]
