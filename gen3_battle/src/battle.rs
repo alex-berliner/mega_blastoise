@@ -4097,8 +4097,7 @@ impl Battle {
             let (uhp, thp) = (self.sides[side].mon().hp, self.sides[foe].mon().hp);
             if self.sides[foe].mon().sub_hp > 0 || uhp >= thp {
                 if self.sides[foe].mon().sub_hp == 0 {
-                    self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+                    self.note_hit_by(side, foe, slot.entry.id);
                 }
                 events.push(Event::Failed {
                     side: side as u8 + 1,
@@ -4107,8 +4106,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             }
             let amount = thp - uhp;
             self.sides[foe].mon_mut().hp = uhp;
-            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+            self.note_hit_by(side, foe, slot.entry.id);
             self.taken_physical[foe] = amount;
             events.push(Event::Damage {
                 side: foe as u8 + 1,
@@ -4296,8 +4294,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // because both sit in Mirror Move's noMirror list, and a Sketch
             // landing after a Crabhammer is what makes the reply fail.
             if hit && self.sides[foe].mon().sub_hp == 0 {
-                self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+                self.note_hit_by(side, foe, slot.entry.id);
             }
             // The foe's last move BY ID — a Transform that rewrote its
             // slots doesn't change what it last used.
@@ -4520,8 +4517,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
             }
             if !self_aimed && hit && !immune && self.sides[foe].mon().sub_hp == 0 {
-                self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+                self.note_hit_by(side, foe, slot.entry.id);
             }
             self.status_move(
                 side,
@@ -4675,8 +4671,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // reached by every move that got this far whatever it then does, so
         // a fizzle is Mirror Move-able exactly like a hit.
         if slot.entry.id == "beatup" && self.beatup_allies(side).is_empty() {
-            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-            self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+            self.note_hit_by(side, foe, slot.entry.id);
             events.push(Event::Failed {
                 side: side as u8 + 1,
             });
@@ -5036,8 +5031,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     crit,
                 });
                 // What just hit this mon (Mirror Move's playback source).
-                self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+                self.note_hit_by(side, foe, slot.entry.id);
                 // A biding target banks what it just took.
                 if let Some((stored, left)) = self.sides[foe].mon().bide {
                     self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
@@ -5839,8 +5833,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             effectiveness: 100,
             crit: false,
         });
-        self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-        self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+        self.note_hit_by(side, foe, slot.entry.id);
         if kings_rock {
             self.kings_rock(side, foe, slot, script);
         }
@@ -5850,6 +5843,16 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.shell_bell(side, amount, events);
         }
         self.resolve_faints(side, foe, events);
+    }
+
+    /// Write the target's attacked-by book: what hit it and from which
+    /// field slot. Mirror Move reads it; the end-of-turn purge clears it
+    /// when the attacker leaves the field.
+    fn note_hit_by(&mut self, side: usize, foe: usize, id: &'static str) {
+        let from = self.sides[side].active;
+        let mon = self.sides[foe].mon_mut();
+        mon.last_hit_by = Some(id);
+        mon.last_hit_by_slot = Some(from);
     }
 
     fn took_a_hit(&mut self, foe: usize, amount: u16, events: &mut Vec<Event>) {
