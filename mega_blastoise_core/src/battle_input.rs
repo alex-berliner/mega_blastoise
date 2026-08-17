@@ -21,7 +21,6 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use gen1_battle::{PlayerBattleData, Request};
 use embassy_futures::select::{select, Either};
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::channel::{Channel, Sender};
@@ -30,10 +29,14 @@ use embassy_sync::channel::{Channel, Sender};
 #[derive(Clone)]
 pub struct ActivePrompt {
     pub player_id: String,
-    pub request: Request,
-    /// Full battle state for the requesting player — used by display sources to show HP, moves,
-    /// and bench. `None` only when the battle engine can't supply data (shouldn't happen).
-    pub player_data: Option<PlayerBattleData>,
+    /// The seat's options, ALREADY distilled into the generation-neutral
+    /// shape the collector consumes. Each engine's runner does its own
+    /// distilling before it sends — Gen 1 from the battler's `Request`, Gen 3
+    /// from its battle state — so everything downstream of this bus is
+    /// generation-blind. This used to carry the raw Gen 1 `Request`, which is
+    /// exactly how the Gen 3 path ended up with a parallel prompt type and a
+    /// parallel turn loop with none of the collector's behaviour.
+    pub slot: crate::choice_collect::SlotOptions,
     /// Total number of prompts in this batch (e.g. 2 when both players need to choose
     /// simultaneously). Input sources use this to wait for all prompts with `receive().await`
     /// instead of `try_receive()`, eliminating the race where the second prompt hasn't been
@@ -199,13 +202,7 @@ pub enum PlayerAction {
 pub trait ButtonSource {
     /// Called once when the engine sends a new prompt, before waiting for input.
     /// Override to show a display (terminal menu, OLED update, …).  Default is a no-op.
-    fn on_prompt(
-        &mut self,
-        _player_id: &str,
-        _request: &Request,
-        _player_data: &Option<PlayerBattleData>,
-    ) {
-    }
+    fn on_prompt(&mut self, _player_id: &str, _slot: &crate::choice_collect::SlotOptions) {}
 
     /// Wait for the player to press either a move button or a party button.
     /// Used during `Request::Turn` where either is valid (unless trapped).
@@ -238,49 +235,31 @@ impl<BS: ButtonSource> ButtonController<BS> {
 
 impl<BS: ButtonSource> ButtonController<BS> {
     /// Collect the player's choice for a given prompt (move/switch/etc.).
+    ///
+    /// Works off the SAME distilled [`SlotOptions`] the shared collector
+    /// consumes, so this simpler pipeline (host tests) validates a press by
+    /// the same facts. It used to re-derive usability from the raw Gen 1
+    /// request — a third, drifting copy of the rules.
     async fn collect_choice(&mut self, prompt: &ActivePrompt) -> String {
-        let ActivePrompt { player_id, request, .. } = prompt;
-        match request {
-            Request::Turn(turn) => {
-                let mut parts = Vec::new();
-                for mon_req in &turn.active {
-                    let n = mon_req.moves.len().min(4);
-                    if n == 0 {
-                        parts.push(String::from("pass"));
-                        continue;
-                    }
-                    if mon_req.locked_into_move {
-                        parts.push(format_move_choice(0));
-                        continue;
-                    }
-                    let mut usable = [false; 4];
-                    for i in 0..n {
-                        usable[i] = !mon_req.moves[i].disabled && mon_req.moves[i].pp > 0;
-                    }
-                    let active_slot = Some(mon_req.team_position as usize);
-                    loop {
-                        let action = self.source.wait_action(player_id, n).await;
-                        if let Ok(choice) = turn_action_choice(&action, n, &usable, mon_req.trapped, active_slot) {
-                            parts.push(choice);
-                            break;
-                        }
-                    }
-                }
-                join_choice_parts(&parts)
+        let slot = &prompt.slot;
+        let player_id = prompt.player_id.as_str();
+        if let Some(auto) = &slot.auto {
+            return auto.clone();
+        }
+        if slot.forced_switch {
+            let idx = self.source.wait_switch(player_id).await;
+            return format_switch_choice(idx);
+        }
+        let n = slot.n_moves as usize;
+        loop {
+            let action = self.source.wait_action(player_id, n).await;
+            if let Ok(choice) =
+                turn_action_choice(&action, n, &slot.usable, slot.trapped, slot.active_slot)
+            {
+                return choice;
             }
-            Request::Switch(sw) => {
-                let mut parts = Vec::new();
-                for _ in &sw.needs_switch {
-                    let idx = self.source.wait_switch(player_id).await;
-                    parts.push(format_switch_choice(idx));
-                }
-                join_choice_parts(&parts)
-            }
-            Request::TeamPreview(_) => String::from("random"),
-            Request::LearnMove(_) => String::from("pass"),
         }
     }
-
 }
 
 impl<BS: ButtonSource> InputSource for ButtonController<BS> {
@@ -300,11 +279,7 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
             };
 
             // Fire on_prompt for the first player immediately.
-            self.source.on_prompt(
-                &first_prompt.player_id,
-                &first_prompt.request,
-                &first_prompt.player_data,
-            );
+            self.source.on_prompt(&first_prompt.player_id, &first_prompt.slot);
 
             // Receive all remaining prompts in this batch using blocking receive().
             // Using try_receive() here would race: the battle_runner sends prompts
@@ -315,7 +290,7 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
             let mut extra_prompts: Vec<ActivePrompt> = Vec::with_capacity(extra_count);
             for _ in 0..extra_count {
                 let p = bus.prompt.receive().await;
-                self.source.on_prompt(&p.player_id, &p.request, &p.player_data);
+                self.source.on_prompt(&p.player_id, &p.slot);
                 extra_prompts.push(p);
             }
 

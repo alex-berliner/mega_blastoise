@@ -19,6 +19,12 @@ impl RandomAi {
         self.0.next_u64()
     }
 
+    /// The RNG itself, for the generation-neutral
+    /// [`crate::choice_collect::SlotOptions::random_choice`] policy.
+    pub fn rng_mut(&mut self) -> &mut SimpleRng {
+        &mut self.0
+    }
+
     pub fn make_choice(&mut self, request: &Request, player_data: Option<&PlayerBattleData>) -> String {
         match request {
             Request::Turn(turn) => {

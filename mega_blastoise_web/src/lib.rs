@@ -15,7 +15,7 @@ use wasm_bindgen_futures::spawn_local;
 use embassy_futures::select::{select, select3, Either, Either3};
 use mega_blastoise_core::{
     battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_active_state,
-    party_slot_from_mon, render_screen, run_battle, ActivePrompt, BoardEventQueue,
+    render_screen, run_battle, ActivePrompt, BoardEventQueue,
     ChoiceCollector, CollectEffect, ControlMode, FlashDataStore, InputBus,
     OledCmd, OledController, PadEvent, PartySlotData, PlayerChoice,
     RandomAi, ReadySequence, SlotOptions,
@@ -772,57 +772,20 @@ pub(crate) fn menu_ruleset() -> Ruleset {
     SESSION.with(|s| s.borrow().ruleset())
 }
 
-/// The web's raw pad feed for the Gen 3 runner: nothing but committed
-/// presses. Turn lifecycle, AI, and locking all live in core.
-struct WebPads;
-
-impl mega_blastoise_core::gen3_runner::PadSource for WebPads {
-    /// Same rule the Gen 1 loop has always applied one line before it builds
-    /// its collector: pad presses made between turns are dropped, typed lines
-    /// buffer across the gap.
-    fn flush(&mut self) {
-        BATTLE_INPUT.with(|q| q.borrow_mut().retain(|i| matches!(i, BattleInput::Line(_))));
-    }
-
-    async fn next(&mut self) -> mega_blastoise_core::gen3_runner::PadChoice {
-        use gen3_battle::Choice;
-        use mega_blastoise_core::gen3_runner::PadChoice;
-        loop {
-            let pad = match BattleInputFuture.await {
-                BattleInput::Pad(p) => p,
-                // Typed lines drive the Gen 1 grammar; nothing reads them here.
-                BattleInput::Line(_) => continue,
-            };
-            match pad {
-                PadEvent::TapMove { player, slot } => {
-                    return PadChoice::Pick { player, choice: Choice::Move(slot as usize) }
-                }
-                PadEvent::TapSwitch { player, idx } => {
-                    return PadChoice::Pick { player, choice: Choice::Switch(idx as usize) }
-                }
-                PadEvent::Cancel { player } => return PadChoice::Cancel { player },
-                _ => continue,
-            }
-        }
-    }
-}
-
-/// The runner's view of the per-seat UI: dumb setters over the session.
-struct WebUiHook;
-
-impl mega_blastoise_core::gen3_runner::UiHook for WebUiHook {
-    fn begin_turn(&mut self, p: mega_blastoise_core::gen3_runner::SeatPrompt) {
-        nav_begin_turn(p.player, p.n_moves, p.n_party, p.forced_switch);
-    }
-
-    fn set_locked(&mut self, player: u8, locked: bool) {
-        nav_set_locked(player, locked);
-    }
-}
-
-/// One Gen 3 battle: core drafts, constructs and drives it; this function is
-/// the seed, the wiring, and a team-list line on the console.
-async fn run_gen3_web_battle(seed: u64, six: bool, effects: &mut WebBattleEffects<'_>) {
+/// One Gen 3 battle: core drafts, constructs and drives it over the SAME
+/// [`InputBus`] + [`ChoiceCollector`] pump the Gen 1 path uses. This function
+/// is the seed, the wiring, and a team-list line on the console — there is no
+/// Gen 3 input code on this platform at all, which is the point: the first
+/// cut had its own pad feed and its own turn loop, and every collector
+/// behaviour it skipped (stale-press flushing, B-to-unready, validation, the
+/// AI think delay) came back as a bug.
+async fn run_gen3_web_battle(
+    seed: u64,
+    six: bool,
+    bus: &InputBus,
+    modes: [ControlMode; 2],
+    effects: &mut WebBattleEffects<'_>,
+) {
     let Some(mut battle) = mega_blastoise_core::gen3_runner::drafted_battle(seed, six) else {
         print_log("Gen 3: could not draft teams.");
         return;
@@ -831,14 +794,10 @@ async fn run_gen3_web_battle(seed: u64, six: bool, effects: &mut WebBattleEffect
         let names: Vec<&str> = side.party.iter().map(|m| m.species.name).collect();
         print_log(&format!("{label}: {}", names.join(", ")));
     }
-    let ai = AI_PLAYERS.with(|a| *a.borrow());
-    let mut ai_rng = gen3_battle::Rng::new(seed ^ 0x5DEE_CE66_D000_0001);
     mega_blastoise_core::gen3_runner::run_battle(
         &mut battle,
-        ai,
-        &mut ai_rng,
-        &mut WebPads,
-        &mut WebUiHook,
+        bus,
+        collect_battle_input(bus, seed, modes),
         effects,
     )
     .await;
@@ -978,15 +937,19 @@ async fn run_game_loop() {
             }
         }
 
-        let seed = (Date::now() as u64) ^ 0xdead_beef_cafe_babe;
+        // `?seed=N` pins the battle seed, so a headless probe tests one
+        // battle rather than rolling a new one per run — a probe that only
+        // sometimes meets an Explosion is a probe that only sometimes fails.
+        let seed = fixed_seed_param()
+            .unwrap_or_else(|| (Date::now() as u64) ^ 0xdead_beef_cafe_babe);
 
-        // The ruleset the players picked decides which engine runs. Gen 1
-        // takes the path it always took; Gen 3 is a separate engine with its
-        // own turn loop, so it is a fork here rather than a swapped argument.
+        // The ruleset the players picked decides which engine runs. Both
+        // speak the same InputBus + ChoiceCollector protocol; the fork picks
+        // an engine and a narrator, nothing about input.
         if menu_ruleset() == Ruleset::Gen3 {
             let bus = InputBus::new();
             let mut effects = WebBattleEffects::new(&bus);
-            run_gen3_web_battle(seed, seq_six, &mut effects).await;
+            run_gen3_web_battle(seed, seq_six, &bus, modes, &mut effects).await;
         } else {
             let mut battle = match gen1_battle::PublicCoreBattle::new(
                 battle_options_with_seed(seed),
@@ -1052,6 +1015,15 @@ async fn run_game_loop() {
 // live), and shuttle raw IO — pad events, typed lines, the tick clock, and
 // the collector's effects.
 
+/// The `seed` URL parameter, when present and numeric.
+fn fixed_seed_param() -> Option<u64> {
+    let search = web_sys::window()?.location().search().ok()?;
+    let rest = search.strip_prefix('?')?;
+    rest.split('&')
+        .find_map(|kv| kv.strip_prefix("seed="))
+        .and_then(|v| v.parse().ok())
+}
+
 fn now_ms() -> u64 {
     Date::now() as u64
 }
@@ -1083,6 +1055,23 @@ fn apply_effects(fx: &mut Vec<CollectEffect>) {
                     | OledCmd::ShowSwitchList { player, .. }
                     | OledCmd::ShowOpponentMon { player }
                     | OledCmd::ShowControlsSelect { player, .. } => clear_hold_latch(*player),
+                    _ => {}
+                }
+                // The collector restoring a seat's pick screen means the seat
+                // is CHOOSING again, so the session's lock flag comes off.
+                // ShowWaiting is the only thing that sets it, and until this
+                // arm existed nothing ever cleared it mid-turn — an unready
+                // restored the OLED but left the flag on, so the seat kept
+                // reporting LOCKED_IN, `ctx.waiting` kept routing every press
+                // to a cancel the collector ignored (nothing was committed),
+                // and the game could not move. The headless probe caught it
+                // on its second assertion.
+                match &cmd {
+                    OledCmd::RestoreScreen { player }
+                    | OledCmd::ShowSwitchScreen { player }
+                    | OledCmd::ShowActionSelect { player, .. }
+                    | OledCmd::ShowConcealedMoves { player, .. }
+                    | OledCmd::ShowSwitchList { player, .. } => nav_set_locked(*player, false),
                     _ => {}
                 }
                 oled_apply(cmd)
@@ -1132,13 +1121,13 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
             }
         }
 
-        // Web-only side state: party snapshots for the LED strip.
+        // Web-only side state: party snapshots for the LED strip. The rows
+        // arrive pre-distilled on the prompt, whichever engine sent it.
         for p in &prompts {
-            if let Some(pd) = &p.player_data {
+            if !p.slot.party.is_empty() {
                 let player = mega_blastoise_core::player_id_to_num(p.player_id.as_str());
-                let slots: Vec<PartySlotData> = pd.mons.iter().map(party_slot_from_mon).collect();
-                if player == 1 { P1_PARTY.with(|s| *s.borrow_mut() = slots.clone()); }
-                else           { P2_PARTY.with(|s| *s.borrow_mut() = slots.clone()); }
+                if player == 1 { P1_PARTY.with(|s| *s.borrow_mut() = p.slot.party.clone()); }
+                else           { P2_PARTY.with(|s| *s.borrow_mut() = p.slot.party.clone()); }
                 sync_party_leds(player);
             }
         }
@@ -1153,10 +1142,11 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
 
         let mut batch: Vec<SlotOptions> = Vec::with_capacity(prompts.len());
         for p in &prompts {
-            let mut slot = SlotOptions::from_prompt(p);
+            let mut slot = p.slot.clone();
             let player = mega_blastoise_core::player_id_to_num(p.player_id.as_str());
             if is_ai_player(player) {
-                slot.set_ai_choice(ai.make_choice(&p.request, p.player_data.as_ref()));
+                let pick = slot.random_choice(ai.rng_mut());
+                slot.set_ai_choice(pick);
                 // Its choice is made the instant the turn opens, so say so:
                 // an AI that sits on a move menu until the human moves reads
                 // as a game waiting on nobody.
@@ -1166,16 +1156,9 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
                 slot.set_concealed(now_ms() ^ ((player as u64) << 33));
             }
             if !is_ai_player(player) {
-                let n_moves = p
-                    .player_data
-                    .as_ref()
-                    .and_then(|d| d.mons.iter().find(|m| m.active && m.hp > 0))
-                    .map(|m| m.moves.len().min(4) as u8)
-                    .unwrap_or(4);
-                let n_party =
-                    p.player_data.as_ref().map(|d| d.mons.len().min(6) as u8).unwrap_or(3);
-                let forced = matches!(p.request, gen1_battle::Request::Switch(_));
-                nav_begin_turn(player, n_moves.max(1), n_party.max(1), forced);
+                let n_moves = (slot.n_moves as u8).max(1);
+                let n_party = (slot.party.len().min(6) as u8).max(1);
+                nav_begin_turn(player, n_moves.min(4), n_party, slot.forced_switch);
             }
             batch.push(slot);
         }
@@ -1514,10 +1497,6 @@ pub fn nav_cancel(player: u8) {
         return;
     }
     if seat_is_waiting(player) {
-        // Say "cancel" rather than replaying a tap on the cursor slot. The
-        // replay only ever worked because the Gen 1 collector unreadies on any
-        // press while committed; the Gen 3 runner saw a tap from a seat that
-        // had already chosen and dropped it on the floor, so B did nothing.
         push_battle_input(BattleInput::Pad(PadEvent::Cancel { player }));
     }
 }
@@ -1573,7 +1552,11 @@ pub(crate) fn menu_text_scale(ms: u32) -> u32 {
 
 /// The per-call context the session cannot know on its own.
 fn press_ctx(player: u8) -> Ctx {
-    Ctx { lobby: is_lobby_mode(), choosing: seat_is_choosing(player) }
+    Ctx {
+        lobby: is_lobby_mode(),
+        choosing: seat_is_choosing(player),
+        waiting: seat_is_waiting(player),
+    }
 }
 
 /// Execute the session's instructions. This is the entire web-side meaning
@@ -1584,6 +1567,9 @@ fn run_outs(outs: Vec<Out>) {
             Out::ReadyLine(p) => push_button(ButtonEvent::Line(alloc_ready_line(p))),
             Out::CancelLine(p) => push_button(ButtonEvent::Line(alloc_cancel_line(p))),
             Out::Nav(p, nav) => apply_nav_out(p, nav),
+            Out::CancelChoice(p) => {
+                push_battle_input(BattleInput::Pad(PadEvent::Cancel { player: p }))
+            }
             Out::LobbyLongPress(p) => wasm_lobby_long_press(p),
         }
     }

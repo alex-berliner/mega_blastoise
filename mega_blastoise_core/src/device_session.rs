@@ -44,6 +44,12 @@ pub enum Out {
     ReadyLine(u8),
     /// Send this seat's cancel line.
     CancelLine(u8),
+    /// Take this seat's committed battle choice back (the collector's
+    /// unready). Produced by B — or any confirm — on a seat that is already
+    /// waiting; the probe that forced this fix pressed B on a locked seat
+    /// and watched `nav.back()` toggle the cursor mode underneath the
+    /// waiting screen instead of unreadying.
+    CancelChoice(u8),
     /// A battle-navigation outcome for this seat (tap/hold a move or switch).
     Nav(u8, NavOut),
     /// The lobby long-press: this seat asked for an AI opponent.
@@ -68,6 +74,9 @@ pub struct Ctx {
     /// This seat's battle screen is a choosing screen (moves or party), which
     /// decides whether `?` explains the cursor or opens the log.
     pub choosing: bool,
+    /// This seat has committed a choice and is on the waiting screen. B (or
+    /// any confirm) then means "take it back", not navigation.
+    pub waiting: bool,
 }
 
 /// The device's non-battle state, shared verbatim by both platforms.
@@ -269,6 +278,20 @@ impl DeviceSession {
             return outs;
         }
 
+        // A committed seat is not navigating: the cursor state machine is
+        // for choosing, and this seat has chosen. B and both confirms take
+        // the choice back; the D-pad and ? do nothing until the seat is
+        // choosing again.
+        if ctx.waiting {
+            match button {
+                Button::A | Button::B | Button::TapSeat => {
+                    outs.push(Out::CancelChoice(player));
+                }
+                Button::Dpad(_) | Button::Info | Button::AHold => {}
+            }
+            return outs;
+        }
+
         // In battle: the cursor state machine, plus ? meaning "explain" while
         // choosing and "open the log" during playback.
         match button {
@@ -341,19 +364,20 @@ impl DeviceSession {
 
         // This seat's options overlay: a tap confirms the row.
         if self.seats[i].options.is_some() {
-            return self.button(player, Button::TapSeat, Ctx { lobby: ctx.lobby, choosing: false });
+            return self.button(player, Button::TapSeat, Ctx { lobby: ctx.lobby, choosing: false, waiting: false });
         }
 
         if ctx.lobby {
-            return self.button(player, Button::TapSeat, Ctx { lobby: true, choosing: false });
+            return self.button(player, Button::TapSeat, Ctx { lobby: true, choosing: false, waiting: false });
         }
 
-        // Committed: a tap on your own half takes the choice back, by the
-        // same path the collector already treats as an un-ready (re-tapping
-        // the committed slot).
+        // Committed: a tap on your own half takes the choice back. It says
+        // CANCEL outright — this used to replay a tap on the cursor slot,
+        // which only unreadies because the Gen 1 collector treats any press
+        // while committed that way, and the same trick was what left B dead
+        // on the Gen 3 path.
         if ctx.waiting[i] {
-            let cursor = self.seats[i].nav.cursor;
-            outs.push(Out::Nav(player, NavOut::TapMove(cursor)));
+            outs.push(Out::CancelChoice(player));
             return outs;
         }
 
@@ -383,7 +407,7 @@ impl DeviceSession {
             NavMode::Detail => None,
         };
         if let Some(index) = target {
-            let bctx = Ctx { lobby: false, choosing: true };
+            let bctx = Ctx { lobby: false, choosing: true, waiting: false };
             outs.extend(self.tap_commit(player, index, bctx));
         }
         outs
@@ -431,9 +455,9 @@ impl DeviceSession {
 mod tests {
     use super::*;
 
-    const LOBBY: Ctx = Ctx { lobby: true, choosing: false };
-    const BATTLE: Ctx = Ctx { lobby: false, choosing: true };
-    const PLAYBACK: Ctx = Ctx { lobby: false, choosing: false };
+    const LOBBY: Ctx = Ctx { lobby: true, choosing: false, waiting: false };
+    const BATTLE: Ctx = Ctx { lobby: false, choosing: true, waiting: false };
+    const PLAYBACK: Ctx = Ctx { lobby: false, choosing: false, waiting: false };
 
     #[test]
     fn boots_on_the_gen_picker_and_the_choice_reaches_the_ruleset() {

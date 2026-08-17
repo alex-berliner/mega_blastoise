@@ -142,10 +142,11 @@ impl<'d> UsbBattleInput<'d> {
             //    and applying the collector's effects. ──────────────────────
             let mut batch: Vec<SlotOptions> = Vec::with_capacity(prompts.len());
             for p in &prompts {
-                let mut slot = SlotOptions::from_prompt(p);
+                let mut slot = p.slot.clone();
                 let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };
                 if self.ai_players[idx] {
-                    slot.set_ai_choice(self.ai.make_choice(&p.request, p.player_data.as_ref()));
+                    let pick = slot.random_choice(self.ai.rng_mut());
+                    slot.set_ai_choice(pick);
                 } else if self.modes[idx] == ControlMode::Concealed {
                     // Fresh randomized layouts every combat turn.
                     slot.set_concealed(Instant::now().as_millis() ^ (idx as u64) << 33);

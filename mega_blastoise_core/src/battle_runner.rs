@@ -313,6 +313,69 @@ async fn enrich_and_dispatch<E, DS>(
     }
 }
 
+// ── Prompt distilling ─────────────────────────────────────────────────────────
+
+/// Distil a Gen 1 battler request into the generation-neutral
+/// [`SlotOptions`] the shared collector consumes. This is battle logic — it
+/// knows the battler's `Request` shapes — which is why it lives here with the
+/// Gen 1 runner and not in `choice_collect`, which must stay engine-blind.
+pub fn slot_options_from_request(
+    player_id: &str,
+    request: &Request,
+    player_data: Option<&gen1_battle::PlayerBattleData>,
+) -> crate::choice_collect::SlotOptions {
+    use crate::battle_input::{format_move_choice, format_switch_choice};
+    use crate::choice_collect::SlotOptions;
+    use alloc::string::String;
+
+    let mut s = SlotOptions::blank(
+        crate::board_event::player_id_to_num(player_id),
+        player_id.to_string(),
+    );
+    if let Some(pd) = player_data {
+        for (i, ok) in s.party_ok.iter_mut().enumerate() {
+            *ok = pd.mons.get(i).is_some_and(|m| !m.active && m.hp > 0);
+        }
+        s.party = pd.mons.iter().map(crate::display::party_slot_from_mon).collect();
+    }
+    match request {
+        Request::Turn(turn) => {
+            if let Some(mon) = turn.active.first() {
+                s.active_slot = Some(mon.team_position as usize);
+                let n = mon.moves.len().min(4);
+                if n == 0 {
+                    s.auto = Some(String::from("pass"));
+                } else if mon.locked_into_move {
+                    s.auto = Some(format_move_choice(0));
+                } else {
+                    s.n_moves = n;
+                    for i in 0..n {
+                        s.usable[i] = !mon.moves[i].disabled && mon.moves[i].pp > 0;
+                    }
+                    s.trapped = mon.trapped;
+                }
+            }
+        }
+        Request::Switch(_) => {
+            s.forced_switch = true;
+            // Sole survivor: nothing to choose — send it out automatically.
+            // (party_ok is all-true when player data is missing, so this
+            // only triggers on real single-option benches.)
+            if player_data.is_some() {
+                let mut alive = (0..6).filter(|&i| s.party_ok[i]);
+                if let (Some(only), None) = (alive.next(), alive.next()) {
+                    s.auto = Some(format_switch_choice(only));
+                }
+            }
+        }
+        Request::TeamPreview(_) => s.auto = Some(String::from("random")),
+        Request::LearnMove(_) => s.auto = Some(String::from("pass")),
+    }
+    s.prompt_text =
+        crate::prompt_fmt::format_prompt(s.player_id.as_str(), request, player_data);
+    s
+}
+
 // ── Battle runner ─────────────────────────────────────────────────────────────
 
 pub async fn run_battle<E, T, F, DS>(
@@ -408,10 +471,11 @@ async fn battle_loop<E, T, DS>(
                 queue.push_event(board_prompt_event(player_id, request));
                 queue.dispatch_all(effects).await;
                 let player_data = battle.player_data(player_id).ok();
+                let slot =
+                    slot_options_from_request(player_id, request, player_data.as_ref());
                 bus.prompt.send(ActivePrompt {
                     player_id: player_id.clone(),
-                    request: request.clone(),
-                    player_data,
+                    slot,
                     batch_total,
                 }).await;
                 #[cfg(feature = "trace")]

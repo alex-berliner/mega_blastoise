@@ -479,7 +479,7 @@ impl InputSource for PicoBattleInput<'_> {
             }
 
             let mut batch: alloc::vec::Vec<SlotOptions> =
-                prompts.iter().map(SlotOptions::from_prompt).collect();
+                prompts.iter().map(|p| p.slot.clone()).collect();
             // Apply each player's chosen control scheme (fresh layouts per turn).
             for (slot, p) in batch.iter_mut().zip(&prompts) {
                 let idx = if p.player_id.as_str() == "p1" { 0 } else { 1 };

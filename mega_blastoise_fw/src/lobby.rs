@@ -285,7 +285,7 @@ impl InputSource for DemoAi {
         loop {
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: waiting for prompt");
-            let ActivePrompt { player_id, request, player_data, .. } = bus.prompt.receive().await;
+            let ActivePrompt { player_id, mut slot, .. } = bus.prompt.receive().await;
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: got prompt");
             // Cosmetic pacing so the demo is watchable. Skipped under `trace`
@@ -294,7 +294,7 @@ impl InputSource for DemoAi {
             Timer::after_millis(400 + (self.0.next_u64() % 600)).await;
             #[cfg(feature = "trace")]
             let _ = self.0.next_u64(); // keep RNG stream identical
-            let choice = self.0.make_choice(&request, player_data.as_ref());
+            let choice = slot.random_choice(self.0.rng_mut());
             #[cfg(feature = "trace")]
             defmt::info!("[trace] DemoAi: sending choice: {}", choice.as_str());
             bus.choices.send(PlayerChoice { player_id, choice }).await;

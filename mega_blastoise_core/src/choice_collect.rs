@@ -19,17 +19,12 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use gen1_battle::Request;
-
 use crate::battle_input::{
-    format_move_choice, format_switch_choice, turn_action_choice, ActionReject, ActivePrompt,
-    PlayerAction,
+    format_move_choice, format_switch_choice, turn_action_choice, ActionReject, PlayerAction,
 };
-use crate::board_event::player_id_to_num;
 use crate::cli_parse::{parse_switch_line, parse_turn_line, TurnChoice};
-use crate::display::{party_slot_from_mon, InvalidReason, PartySlotData};
+use crate::display::{InvalidReason, PartySlotData};
 use crate::oled_ctl::OledCmd;
-use crate::prompt_fmt::format_prompt;
 use crate::rng::SimpleRng;
 
 /// After every player has committed, either may still unready for this long
@@ -123,30 +118,31 @@ pub enum Effect {
 /// turn, a forced switch after a faint, or team preview), plus how their
 /// buttons map onto those choices this turn.
 ///
-/// Built by [`Self::from_prompt`] from the engine's [`ActivePrompt`], which
+/// Distilled from an engine's own request shape by that engine's runner, which
 /// carries full battle state; this keeps only what input handling and the
 /// screens depend on: which move/party buttons are valid, whether the choice
 /// is forced or AI-made (`auto`), and the per-turn Concealed mappings.
+#[derive(Clone)]
 pub struct SlotOptions {
-    player_num: u8,
-    player_id: String,
-    n_moves: usize,
-    usable: [bool; 4],
-    trapped: bool,
-    active_slot: Option<usize>,
+    pub player_num: u8,
+    pub player_id: String,
+    pub n_moves: usize,
+    pub usable: [bool; 4],
+    pub trapped: bool,
+    pub active_slot: Option<usize>,
     /// Per-team-slot switch validity (alive and benched). All-true when no
     /// player data was attached — the engine still validates.
-    party_ok: [bool; 6],
-    forced_switch: bool,
+    pub party_ok: [bool; 6],
+    pub forced_switch: bool,
     /// Forced choice (locked move / no moves / team preview) or an AI pick —
     /// committed from the start, can't be unreadied.
-    auto: Option<String>,
+    pub auto: Option<String>,
     /// The AI controls this player (affects messages only).
-    is_ai: bool,
+    pub is_ai: bool,
     /// Prompt text to print for human players ("" otherwise).
-    prompt_text: String,
+    pub prompt_text: String,
     /// Party snapshot for the stats/switch screens.
-    party: Vec<PartySlotData>,
+    pub party: Vec<PartySlotData>,
     /// Input scheme (see [`ControlMode`]); everything below is Concealed-only,
     /// randomized once per combat turn by [`Self::set_concealed`].
     mode: ControlMode,
@@ -161,13 +157,16 @@ pub struct SlotOptions {
 }
 
 impl SlotOptions {
-    /// Distil a prompt into the options the collector needs.
-    pub fn from_prompt(prompt: &ActivePrompt) -> Self {
-        let player_id = prompt.player_id.clone();
-        let request = &prompt.request;
-        let player_data = prompt.player_data.as_ref();
-        let mut s = Self {
-            player_num: player_id_to_num(&player_id),
+    /// A blank slate every distiller starts from. The FIELDS here are the
+    /// whole UI contract: whichever generation is playing, the collector sees
+    /// nothing but this — which is what keeps one input state machine
+    /// serving every engine. Distillers live with their engines
+    /// ([`crate::battle_runner::slot_options_from_request`] for Gen 1,
+    /// [`crate::gen3_runner`]'s in its battle loop), because parsing an
+    /// engine's request shape is battle logic, not UI.
+    pub fn blank(player_num: u8, player_id: String) -> Self {
+        Self {
+            player_num,
             player_id,
             n_moves: 0,
             usable: [false; 4],
@@ -184,48 +183,35 @@ impl SlotOptions {
             switch_pos: 1,
             move_map: [-1; 4],
             bench: Vec::new(),
-        };
-        if let Some(pd) = player_data {
-            for (i, ok) in s.party_ok.iter_mut().enumerate() {
-                *ok = pd.mons.get(i).is_some_and(|m| !m.active && m.hp > 0);
-            }
-            s.party = pd.mons.iter().map(party_slot_from_mon).collect();
         }
-        match request {
-            Request::Turn(turn) => {
-                if let Some(mon) = turn.active.first() {
-                    s.active_slot = Some(mon.team_position as usize);
-                    let n = mon.moves.len().min(4);
-                    if n == 0 {
-                        s.auto = Some(String::from("pass"));
-                    } else if mon.locked_into_move {
-                        s.auto = Some(format_move_choice(0));
-                    } else {
-                        s.n_moves = n;
-                        for i in 0..n {
-                            s.usable[i] = !mon.moves[i].disabled && mon.moves[i].pp > 0;
-                        }
-                        s.trapped = mon.trapped;
-                    }
-                }
-            }
-            Request::Switch(_) => {
-                s.forced_switch = true;
-                // Sole survivor: nothing to choose — send it out automatically.
-                // (party_ok is all-true when player data is missing, so this
-                // only triggers on real single-option benches.)
-                if player_data.is_some() {
-                    let mut alive = (0..6).filter(|&i| s.party_ok[i]);
-                    if let (Some(only), None) = (alive.next(), alive.next()) {
-                        s.auto = Some(format_switch_choice(only));
-                    }
-                }
-            }
-            Request::TeamPreview(_) => s.auto = Some(String::from("random")),
-            Request::LearnMove(_) => s.auto = Some(String::from("pass")),
+    }
+
+    /// A random LEGAL choice for this slot, in the shared choice grammar.
+    /// This is the stock robot policy for BOTH generations — it lives on the
+    /// neutral options precisely so an AI cannot pick what a human could not:
+    /// only usable moves, only benchable party slots. The old Gen 3 robot
+    /// rolled `below(n_moves)` and `below(n_party)` raw, which could pick a
+    /// 0-PP move or send out the mon already standing there.
+    pub fn random_choice(&mut self, rng: &mut SimpleRng) -> String {
+        if let Some(auto) = &self.auto {
+            return auto.clone();
         }
-        s.prompt_text = format_prompt(s.player_id.as_str(), request, player_data);
-        s
+        if self.forced_switch {
+            let benchable: Vec<usize> =
+                (0..6).filter(|&i| self.party_ok[i]).collect();
+            if benchable.is_empty() {
+                return String::from("pass");
+            }
+            let pick = benchable[(rng.next_u64() as usize) % benchable.len()];
+            return format_switch_choice(pick);
+        }
+        let usable: Vec<usize> =
+            (0..self.n_moves as usize).filter(|&i| self.usable[i]).collect();
+        if usable.is_empty() {
+            return format_move_choice(0);
+        }
+        let pick = usable[(rng.next_u64() as usize) % usable.len()];
+        format_move_choice(pick)
     }
 
     /// Mark this player as AI-controlled with a pre-made choice.
@@ -1699,9 +1685,9 @@ fn invalid_reason(r: ActionReject) -> InvalidReason {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gen1_battle::{MonTurnRequest, MoveSlot as ApiMove, SwitchRequest, TurnRequest};
+    use gen1_battle::{MonTurnRequest, MoveSlot as ApiMove, Request, SwitchRequest, TurnRequest};
 
-    fn turn_prompt(player_id: &str, n_moves: usize) -> ActivePrompt {
+    fn turn_prompt(player_id: &str, n_moves: usize) -> SlotOptions {
         let moves = (0..n_moves)
             .map(|i| ApiMove {
                 name: format!("Move{i}"),
@@ -1713,9 +1699,9 @@ mod tests {
                 target: 0,
             })
             .collect();
-        ActivePrompt {
-            player_id: String::from(player_id),
-            request: Request::Turn(TurnRequest {
+        crate::battle_runner::slot_options_from_request(
+            player_id,
+            &Request::Turn(TurnRequest {
                 active: alloc::vec![MonTurnRequest {
                     team_position: 0,
                     moves,
@@ -1723,26 +1709,24 @@ mod tests {
                     locked_into_move: false,
                 }],
             }),
-            player_data: None,
-            batch_total: 2,
-        }
+            None,
+        )
     }
 
-    fn switch_prompt(player_id: &str) -> ActivePrompt {
-        ActivePrompt {
-            player_id: String::from(player_id),
-            request: Request::Switch(SwitchRequest { needs_switch: alloc::vec![0] }),
-            player_data: None,
-            batch_total: 1,
-        }
+    fn switch_prompt(player_id: &str) -> SlotOptions {
+        crate::battle_runner::slot_options_from_request(
+            player_id,
+            &Request::Switch(SwitchRequest { needs_switch: alloc::vec![0] }),
+            None,
+        )
     }
 
     fn two_humans() -> (ChoiceCollector, Vec<Effect>) {
         let mut fx = Vec::new();
         let c = ChoiceCollector::new(
             alloc::vec![
-                SlotOptions::from_prompt(&turn_prompt("p1", 4)),
-                SlotOptions::from_prompt(&turn_prompt("p2", 4)),
+                (turn_prompt("p1", 4)),
+                (turn_prompt("p2", 4)),
             ],
             &mut fx,
         );
@@ -1764,6 +1748,49 @@ mod tests {
         c.pad_event(PadEvent::TapMove { player: 1, slot: 1 }, 0, &mut fx);
         assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowWaiting { player: 1 })));
         assert_eq!(c.out[0], "move 1");
+    }
+
+    /// B (or a tap on the panel while waiting) says CANCEL outright, and the
+    /// collector treats it as the unready it always was. The regression this
+    /// pins: the web used to fake a cancel by replaying a tap on the cursor
+    /// slot, which only worked because this collector unreadies on any press
+    /// while committed — the old Gen 3 loop saw a tap from a seat that had
+    /// already chosen and dropped it, so B did nothing there at all. Now that
+    /// BOTH generations collect through here, this test covers them both.
+    #[test]
+    fn cancel_unreadies_a_committed_seat_and_is_inert_while_choosing() {
+        let (mut c, _) = two_humans();
+        let mut fx = Vec::new();
+        // While still choosing, a cancel has nothing to take back.
+        c.pad_event(PadEvent::Cancel { player: 1 }, 0, &mut fx);
+        assert!(fx.is_empty(), "cancel while choosing must be inert");
+        // Commit, then cancel: the seat is unreadied and shown its menu.
+        c.pad_event(PadEvent::TapMove { player: 1, slot: 1 }, 10, &mut fx);
+        assert_eq!(c.out[0], "move 1");
+        fx.clear();
+        c.pad_event(PadEvent::Cancel { player: 1 }, 20, &mut fx);
+        assert!(c.out[0].is_empty(), "cancel must unready");
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { player: 1 })));
+        // And the both-ready grace is void: the other seat committing alone
+        // must not complete the turn.
+        c.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, 30, &mut fx);
+        assert!(!c.tick(30 + UNREADY_GRACE_MS, &mut fx));
+    }
+
+    /// An AI or forced choice cannot be cancelled — it was never the
+    /// player's to take back.
+    #[test]
+    fn cancel_cannot_unready_an_auto_seat() {
+        let mut fx = Vec::new();
+        let mut p1 = turn_prompt("p1", 4);
+        p1.set_ai_choice(String::from("move 2"));
+        let mut c = ChoiceCollector::new(alloc::vec![p1, turn_prompt("p2", 4)], &mut fx);
+        // Let the AI think-delay commit it first.
+        c.tick(0, &mut fx);
+        c.tick(AI_THINK_MS, &mut fx);
+        fx.clear();
+        c.pad_event(PadEvent::Cancel { player: 1 }, AI_THINK_MS + 10, &mut fx);
+        assert_eq!(c.out[0], "move 2", "an auto choice stays committed");
     }
 
     #[test]
@@ -1820,10 +1847,10 @@ mod tests {
     #[test]
     fn bare_line_targets_single_human_vs_ai() {
         let mut fx = Vec::new();
-        let mut p2 = SlotOptions::from_prompt(&turn_prompt("p2", 4));
+        let mut p2 = (turn_prompt("p2", 4));
         p2.set_ai_choice(String::from("move 0"));
         let mut c = ChoiceCollector::new(
-            alloc::vec![SlotOptions::from_prompt(&turn_prompt("p1", 4)), p2],
+            alloc::vec![(turn_prompt("p1", 4)), p2],
             &mut fx,
         );
         fx.clear();
@@ -1861,7 +1888,7 @@ mod tests {
     fn forced_switch_screens_and_validation() {
         let mut fx = Vec::new();
         let mut c = ChoiceCollector::new(
-            alloc::vec![SlotOptions::from_prompt(&switch_prompt("p1"))],
+            alloc::vec![(switch_prompt("p1"))],
             &mut fx,
         );
         // Init: switch picker for p1, waiting screen for promptless p2.
@@ -1883,7 +1910,7 @@ mod tests {
     #[test]
     fn fainted_pick_flashes_invalid_then_restores() {
         let mut fx = Vec::new();
-        let mut p1 = SlotOptions::from_prompt(&switch_prompt("p1"));
+        let mut p1 = (switch_prompt("p1"));
         p1.party_ok = [false, true, false, false, false, false];
         let mut c = ChoiceCollector::new(alloc::vec![p1], &mut fx);
         fx.clear();
@@ -2149,12 +2176,12 @@ mod tests {
     /// A two-human collector with p1 concealed (4 moves, bench 1/2 alive).
     fn concealed_pair(seed: u64) -> (ChoiceCollector, Vec<Effect>) {
         let mut fx = Vec::new();
-        let mut p1 = SlotOptions::from_prompt(&turn_prompt("p1", 4));
+        let mut p1 = (turn_prompt("p1", 4));
         p1.party_ok = [false, true, true, false, false, false];
         p1.active_slot = Some(0);
         p1.set_concealed(seed);
         let c = ChoiceCollector::new(
-            alloc::vec![p1, SlotOptions::from_prompt(&turn_prompt("p2", 4))],
+            alloc::vec![p1, (turn_prompt("p2", 4))],
             &mut fx,
         );
         (c, fx)
@@ -2309,7 +2336,7 @@ mod tests {
     #[test]
     fn concealed_forced_switch_shows_list_directly() {
         let mut fx = Vec::new();
-        let mut p1 = SlotOptions::from_prompt(&switch_prompt("p1"));
+        let mut p1 = (switch_prompt("p1"));
         p1.party_ok = [false, true, true, false, false, false];
         p1.set_concealed(3);
         let mut c = ChoiceCollector::new(alloc::vec![p1], &mut fx);
@@ -2337,7 +2364,7 @@ mod tests {
         // 5 alive benched mons (6v6 after one faint): every one of them —
         // the old corner windows capped at 4 — must be reachable.
         let mut fx = Vec::new();
-        let mut p1 = SlotOptions::from_prompt(&switch_prompt("p1"));
+        let mut p1 = (switch_prompt("p1"));
         p1.party_ok = [true, true, true, true, true, false];
         p1.set_concealed(41);
         let mut c = ChoiceCollector::new(alloc::vec![p1], &mut fx);
@@ -2378,14 +2405,11 @@ mod tests {
     #[test]
     fn concealed_dead_corner_is_inert_and_no_pp_flashes_invalid() {
         let mut fx = Vec::new();
-        let mut prompt = turn_prompt("p1", 2); // 2 moves → 2 dead corners
-        if let Request::Turn(t) = &mut prompt.request {
-            t.active[0].moves[1].pp = 0; // second move unusable
-        }
-        let mut p1 = SlotOptions::from_prompt(&prompt);
+        let mut p1 = turn_prompt("p1", 2); // 2 moves → 2 dead corners
+        p1.usable[1] = false; // second move unusable
         p1.set_concealed(5);
         let mut c = ChoiceCollector::new(
-            alloc::vec![p1, SlotOptions::from_prompt(&turn_prompt("p2", 4))],
+            alloc::vec![p1, (turn_prompt("p2", 4))],
             &mut fx,
         );
         let atk = c.slots[0].attack_pos;
@@ -2408,8 +2432,8 @@ mod tests {
     #[test]
     fn ai_vs_ai_waits_one_second_in_parallel() {
         let mut fx = Vec::new();
-        let mut p1 = SlotOptions::from_prompt(&turn_prompt("p1", 4));
-        let mut p2 = SlotOptions::from_prompt(&turn_prompt("p2", 4));
+        let mut p1 = (turn_prompt("p1", 4));
+        let mut p2 = (turn_prompt("p2", 4));
         p1.set_ai_choice(String::from("move 0"));
         p2.set_ai_choice(String::from("move 1"));
         let mut c = ChoiceCollector::new(alloc::vec![p1, p2], &mut fx);
@@ -2427,10 +2451,10 @@ mod tests {
     #[test]
     fn ai_thinking_ignores_input_and_forced_human_still_instant() {
         let mut fx = Vec::new();
-        let mut p2 = SlotOptions::from_prompt(&turn_prompt("p2", 4));
+        let mut p2 = (turn_prompt("p2", 4));
         p2.set_ai_choice(String::from("move 1"));
         let mut c = ChoiceCollector::new(
-            alloc::vec![SlotOptions::from_prompt(&turn_prompt("p1", 4)), p2],
+            alloc::vec![(turn_prompt("p1", 4)), p2],
             &mut fx,
         );
         c.tick(0, &mut fx); // arm the AI deadline
@@ -2453,7 +2477,7 @@ mod tests {
     fn single_prompt_batch_pads_inert_and_completes() {
         let mut fx = Vec::new();
         let mut c = ChoiceCollector::new(
-            alloc::vec![SlotOptions::from_prompt(&switch_prompt("p2"))],
+            alloc::vec![(switch_prompt("p2"))],
             &mut fx,
         );
         c.typed_line("2", 0, &mut fx);
@@ -2468,7 +2492,7 @@ mod tests {
     fn prefix_for_promptless_player_rejected() {
         let mut fx = Vec::new();
         let mut c = ChoiceCollector::new(
-            alloc::vec![SlotOptions::from_prompt(&switch_prompt("p1"))],
+            alloc::vec![(switch_prompt("p1"))],
             &mut fx,
         );
         fx.clear();

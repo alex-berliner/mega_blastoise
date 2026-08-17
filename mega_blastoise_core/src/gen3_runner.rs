@@ -516,146 +516,171 @@ pub async fn play_turn<E: BoardEffects>(
     battle.over()
 }
 
-/// What a seat may choose from this turn. Platforms use it to bound their
-/// cursor before blocking on a press.
-#[derive(Clone, Copy, Debug)]
-pub struct SeatPrompt {
-    /// 1 or 2.
-    pub player: u8,
-    pub n_moves: u8,
-    pub n_party: u8,
-    /// The active mon fainted: this seat must switch, not attack.
-    pub forced_switch: bool,
-}
+/// Distil one Gen 3 seat into the generation-neutral [`SlotOptions`] the
+/// shared collector consumes. The Gen 3 counterpart of
+/// [`crate::battle_runner::slot_options_from_request`]: parsing the engine's
+/// state is battle logic and lives with the engine; everything past the
+/// [`crate::battle_input::InputBus`] is generation-blind.
+///
+/// The first cut of this runner skipped the collector and read raw pad
+/// presses instead, and every behaviour the collector already owned came back
+/// as a bug report: presses queued through the narration locked seats in
+/// before a menu was drawn, B could not unready, an AI could pick a 0-PP
+/// move, and nothing validated a press at all.
+pub fn slot_options_for(battle: &Battle, side: u8) -> crate::choice_collect::SlotOptions {
+    use crate::choice_collect::SlotOptions;
+    use crate::display::PartySlotData;
 
-/// One committed press from a seat, already classified by the platform's
-/// cursor UI: a move slot or a party index. This is ALL a platform supplies —
-/// the turn's lifecycle (who is prompted, when an AI commits, when a seat
-/// locks) lives in [`run_battle`], so the two platforms cannot order it
-/// differently.
-pub enum PadChoice {
-    /// A seat committed to an action.
-    Pick { player: u8, choice: Choice },
-    /// A seat took its committed action back.
-    Cancel { player: u8 },
-}
-
-pub trait PadSource {
-    /// Throw away anything pressed before this turn opened. Presses made
-    /// while the narration was still running belong to the text the player
-    /// was skipping, not to the choice they have not been asked for yet —
-    /// and without this they arrive the instant the turn starts, lock the
-    /// seat in immediately, and the player never sees a menu at all. Gen 1
-    /// has always dropped them; this is the same rule, said out loud.
-    fn flush(&mut self);
-    async fn next(&mut self) -> PadChoice;
-}
-
-/// The per-seat UI state the runner drives as the turn progresses. The web
-/// backs this with its `DeviceSession`; the firmware will back it with the
-/// same one.
-pub trait UiHook {
-    fn begin_turn(&mut self, prompt: SeatPrompt);
-    fn set_locked(&mut self, player: u8, locked: bool);
-}
-
-fn prompts_for(battle: &Battle) -> [SeatPrompt; 2] {
-    [1u8, 2].map(|player| {
-        let side = &battle.sides[(player - 1) as usize];
-        SeatPrompt {
-            player,
-            n_moves: side.mon().moves.len().max(1) as u8,
-            n_party: side.party.len().max(1) as u8,
-            forced_switch: side.mon().fainted(),
-        }
-    })
-}
-
-/// The stock policy for a robot seat: a random legal pick, forced switches
-/// honoured. Core owns it for the same reason `RandomAi` is core on the Gen 1
-/// side — an AI that picked differently per platform would be drift.
-fn ai_choice(rng: &mut gen3_battle::Rng, p: SeatPrompt) -> Choice {
-    if p.forced_switch {
-        Choice::Switch(rng.below(p.n_party as u32) as usize)
+    let i = (side - 1) as usize;
+    let s_side = &battle.sides[i];
+    let mon = s_side.mon();
+    let mut s = SlotOptions::blank(side, player_id(side));
+    s.active_slot = Some(s_side.active);
+    for (slot_i, ok) in s.party_ok.iter_mut().enumerate() {
+        *ok = slot_i != s_side.active
+            && s_side.party.get(slot_i).is_some_and(|m| !m.fainted());
+    }
+    s.party = s_side
+        .party
+        .iter()
+        .enumerate()
+        .map(|(slot_i, m)| PartySlotData {
+            name: alloc::string::String::from(m.species.name),
+            active: slot_i == s_side.active,
+            level: m.level,
+            hp: m.hp,
+            max_hp: m.max_hp,
+            status: m.status.map(|st| alloc::string::String::from(status_id(st))),
+            atk: m.atk,
+            def: m.def,
+            spe: m.spe,
+            // The party card was drawn for Gen 1's single Special; showing
+            // Sp.Atk there is the least wrong of the two halves.
+            spc: m.spa,
+            // Gen 1's type enum has no Dark or Steel, so the card's type
+            // badges stay empty for Gen 3 rather than lying.
+            types: alloc::vec::Vec::new(),
+            boost_atk: if slot_i == s_side.active { m.stages[0] } else { 0 },
+            boost_def: if slot_i == s_side.active { m.stages[1] } else { 0 },
+            // Stage order is Atk, Def, Spe, SpAtk, SpDef.
+            boost_spc: if slot_i == s_side.active { m.stages[3] } else { 0 },
+            boost_spe: if slot_i == s_side.active { m.stages[2] } else { 0 },
+            item: if m.item.is_empty() {
+                None
+            } else {
+                Some(alloc::string::String::from(m.item))
+            },
+            moves: m
+                .moves
+                .iter()
+                .map(|ms| (alloc::string::String::from(ms.entry.name), ms.pp, ms.entry.pp))
+                .collect(),
+        })
+        .collect();
+    if mon.fainted() {
+        // The engine auto-replaces a mid-turn faint with the lowest living
+        // slot, so this only happens when a battle is being poked after it
+        // ended; keep the shape honest anyway.
+        s.forced_switch = true;
     } else {
-        Choice::Move(rng.below(p.n_moves as u32) as usize)
+        s.n_moves = mon.moves.len().min(4);
+        for (mi, u) in s.usable.iter_mut().enumerate().take(s.n_moves) {
+            *u = mon.moves[mi].pp > 0;
+        }
+        s.trapped = !battle.can_switch(i);
+        if s.n_moves == 0 {
+            // Struggle: the engine substitutes it whatever index arrives.
+            s.auto = Some(crate::battle_input::format_move_choice(0));
+        }
+    }
+    s
+}
+
+fn status_id(st: gen3_battle::data::Status) -> &'static str {
+    use gen3_battle::data::Status;
+    match st {
+        Status::Burn => "brn",
+        Status::Paralysis => "par",
+        Status::Poison => "psn",
+        Status::Toxic => "tox",
+        Status::Sleep => "slp",
+        Status::Freeze => "frz",
     }
 }
 
-/// Run a Gen 3 battle to its end.
-///
-/// The counterpart of the Gen 1 runner: same responsibilities, same place in
-/// the stack, so a caller picks an engine rather than a shape. Per turn: both
-/// seats' cursors are re-bounded, AI seats commit instantly and lock, human
-/// seats are prompted, and each human commit locks its seat.
-pub async fn run_battle<E: BoardEffects, P: PadSource, U: UiHook>(
+/// The shared choice grammar, read back into an engine [`Choice`]. The
+/// collector speaks strings ("move 2" / "switch 4") because that is the Gen 1
+/// battler's own protocol; Gen 3 borrows the grammar rather than inventing a
+/// second one, and this is the whole cost of the borrowing.
+pub fn parse_choice(line: &str) -> Choice {
+    let mut parts = line.split_whitespace();
+    match (parts.next(), parts.next().and_then(|n| n.parse::<usize>().ok())) {
+        (Some("switch"), Some(i)) => Choice::Switch(i),
+        (Some("move"), Some(i)) => Choice::Move(i),
+        // "pass" and anything unparseable: the engine treats an
+        // out-of-range move like slot 0, which is also what a locked or
+        // Struggling mon does with any index.
+        _ => Choice::Move(0),
+    }
+}
+
+/// Run a Gen 3 battle to its end over the SAME [`InputBus`] protocol the
+/// Gen 1 runner speaks: distil each seat into an [`ActivePrompt`], let the
+/// platform's collector pump answer with choice strings, step the engine,
+/// narrate. Who is AI, what a press means, unready, validation — none of that
+/// is here, because none of it is Gen 3's business.
+pub async fn battle_loop<E: BoardEffects>(
     battle: &mut Battle,
-    ai: [bool; 2],
-    ai_rng: &mut gen3_battle::Rng,
-    pads: &mut P,
-    ui: &mut U,
+    bus: &crate::battle_input::InputBus,
     effects: &mut E,
 ) {
+    use crate::battle_input::ActivePrompt;
+
     announce_start(battle, effects).await;
     while !battle.over() {
-        // The turn is about to be asked for, so nothing pressed before now
-        // counts as an answer to it.
-        pads.flush();
-        let prompts = prompts_for(battle);
         let mut chosen: [Option<Choice>; 2] = [None, None];
-        for p in prompts {
-            let i = (p.player - 1) as usize;
-            ui.begin_turn(p);
-            if ai[i] {
-                chosen[i] = Some(ai_choice(ai_rng, p));
-                ui.set_locked(p.player, true);
-            } else {
-                // Cue the human seat. This is what takes a display off the
-                // narration and back to the choice screen.
-                effects
-                    .on_event(BoardEvent::Prompt {
-                        player_id: player_id(p.player),
-                        kind: PromptKind::ChooseMove,
-                    })
-                    .await;
-            }
+        for side in [1u8, 2] {
+            let slot = slot_options_for(battle, side);
+            effects
+                .on_event(BoardEvent::Prompt {
+                    player_id: player_id(side),
+                    kind: PromptKind::ChooseMove,
+                })
+                .await;
+            bus.prompt
+                .send(ActivePrompt {
+                    player_id: player_id(side),
+                    slot,
+                    batch_total: 2,
+                })
+                .await;
         }
         while chosen[0].is_none() || chosen[1].is_none() {
-            let ev = pads.next().await;
-            let player = match ev {
-                PadChoice::Pick { player, .. } | PadChoice::Cancel { player } => player,
+            let submitted = bus.choices.receive().await;
+            let i = match submitted.player_id.as_str() {
+                "p1" => 0,
+                "p2" => 1,
+                _ => continue,
             };
-            if !(1..=2).contains(&player) {
-                continue;
-            }
-            let i = (player - 1) as usize;
-            if ai[i] {
-                continue;
-            }
-            match ev {
-                PadChoice::Pick { choice, .. } if chosen[i].is_none() => {
-                    chosen[i] = Some(choice);
-                    ui.set_locked(player, true);
-                }
-                // Taking it back puts the seat on its menu again, which needs
-                // the same cue the turn opened with — otherwise the display
-                // sits on the waiting screen with nothing to press.
-                PadChoice::Cancel { .. } if chosen[i].is_some() => {
-                    chosen[i] = None;
-                    ui.set_locked(player, false);
-                    effects
-                        .on_event(BoardEvent::Prompt {
-                            player_id: player_id(player),
-                            kind: PromptKind::ChooseMove,
-                        })
-                        .await;
-                }
-                _ => {}
-            }
+            chosen[i] = Some(parse_choice(&submitted.choice));
         }
         if play_turn(battle, [chosen[0].unwrap(), chosen[1].unwrap()], effects).await {
             break;
         }
+    }
+}
+
+/// [`battle_loop`] raced against the platform's input future — the same
+/// composition shape as the Gen 1 [`crate::run_battle`].
+pub async fn run_battle<E: BoardEffects, F: core::future::Future<Output = ()>>(
+    battle: &mut Battle,
+    bus: &crate::battle_input::InputBus,
+    inputs: F,
+    effects: &mut E,
+) {
+    use embassy_futures::select::{select, Either};
+    match select(battle_loop(battle, bus, effects), inputs).await {
+        Either::First(()) | Either::Second(()) => {}
     }
 }
 
@@ -730,6 +755,106 @@ mod tests {
         let at = &[0usize, 0usize];
         assert_eq!(active_name(&b, 1, at), "Blaziken,p1");
         assert_eq!(move_slots(&b, 1, at)[0].name, "Ember");
+    }
+
+    /// The whole Gen 3 seat protocol, end to end over the real bus: every
+    /// turn sends a fresh prompt per seat BEFORE it will accept a choice, and
+    /// the collected strings drive the engine. This is the core-level pin for
+    /// the "player was never prompted" bug: the old runner read raw pad
+    /// events with no prompt/choice protocol at all, so a press queued during
+    /// the narration was consumed as the next turn's answer and the seat
+    /// never saw a menu. Under the bus protocol that cannot happen — a
+    /// choice is only produced by the platform pump in ANSWER to a prompt,
+    /// and this test asserts the prompts actually arrive, carrying options
+    /// that match the engine's live state.
+    #[test]
+    fn every_turn_prompts_both_seats_before_taking_choices() {
+        let mut b = Battle::new(
+            Side::new(alloc::vec![mon("blaziken", 50, &["ember", "doubleedge"])]),
+            Side::new(alloc::vec![mon("swampert", 50, &["surf"])]),
+            42,
+        );
+        let bus = crate::battle_input::InputBus::new();
+        let mut rec = Recorder::default();
+        let mut turns = 0usize;
+        block_on(async {
+            loop {
+                if b.over() || turns >= 8 {
+                    break;
+                }
+                // One turn of the runner's loop, hand-driven: it must send
+                // both prompts before it blocks on choices.
+                let step = async {
+                    for side in [1u8, 2] {
+                        let slot = slot_options_for(&b, side);
+                        bus.prompt
+                            .send(crate::battle_input::ActivePrompt {
+                                player_id: player_id(side),
+                                slot,
+                                batch_total: 2,
+                            })
+                            .await;
+                    }
+                };
+                step.await;
+                // The "platform": drain exactly the prompts that were sent,
+                // check their shape, and answer them.
+                for _ in 0..2 {
+                    let p = bus.prompt.try_receive().expect("a prompt per seat per turn");
+                    assert!(p.slot.n_moves > 0, "prompt carries the move count");
+                    assert!(
+                        (1..=2).contains(&crate::board_event::player_id_to_num(&p.player_id)),
+                        "prompt names a seat"
+                    );
+                    bus.choices
+                        .send(crate::battle_input::PlayerChoice {
+                            player_id: p.player_id,
+                            choice: alloc::string::String::from("move 0"),
+                        })
+                        .await;
+                }
+                let mut chosen = [None, None];
+                while chosen[0].is_none() || chosen[1].is_none() {
+                    let c = bus.choices.try_receive().expect("both answers are in");
+                    let i = (c.player_id == "p2") as usize;
+                    chosen[i] = Some(parse_choice(&c.choice));
+                }
+                turns += 1;
+                if play_turn(&mut b, [chosen[0].unwrap(), chosen[1].unwrap()], &mut rec).await {
+                    break;
+                }
+            }
+        });
+        assert!(turns > 0, "the battle played at least one turn");
+        assert!(
+            rec.0.iter().any(|e| matches!(e, BoardEvent::Move { .. })),
+            "choices drove real moves"
+        );
+    }
+
+    /// The distiller only offers what the engine will accept: no 0-PP move
+    /// is usable, only living benched mons are switch targets, and the party
+    /// rows carry real HP. The old runner offered raw counts, so its robot
+    /// could pick a dead move and its menus could not grey anything out.
+    #[test]
+    fn distilled_options_match_engine_state() {
+        let mut b = Battle::new(
+            Side::new(alloc::vec![
+                mon("blaziken", 50, &["ember", "doubleedge"]),
+                mon("wigglytuff", 50, &["pound"]),
+            ]),
+            Side::new(alloc::vec![mon("swampert", 50, &["surf"])]),
+            42,
+        );
+        b.sides[0].party[0].moves[1].pp = 0;
+        let s = slot_options_for(&b, 1);
+        assert_eq!(s.n_moves, 2);
+        assert!(s.usable[0], "Ember has PP");
+        assert!(!s.usable[1], "the drained slot is not offered");
+        assert!(s.party_ok[1], "the benched Wigglytuff is a switch target");
+        assert!(!s.party_ok[0], "the active mon is not");
+        assert_eq!(s.party.len(), 2);
+        assert!(s.party[0].active && s.party[0].hp > 0);
     }
 
     fn block_on<F: core::future::Future>(f: F) -> F::Output {

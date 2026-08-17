@@ -7,9 +7,9 @@
 use std::collections::VecDeque;
 use std::io::{self, IsTerminal, Write};
 
-use gen1_battle::{PlayerBattleData, Request};
+use mega_blastoise_core::choice_collect::SlotOptions;
 use mega_blastoise_core::{
-    format_prompt, player_display_name, ButtonController, ButtonSource, InputBus, InputSource, PlayerAction,
+    player_display_name, ButtonController, ButtonSource, InputBus, InputSource, PlayerAction,
 };
 
 // ── Simulated button source ───────────────────────────────────────────────────
@@ -62,29 +62,24 @@ pub struct HostButtonSource {
     // Per-player snapshots — both players' prompts arrive (and fire on_prompt)
     // before either choice is collected, so a single shared slot would leave
     // p1's wait_switch reading p2's bench.
-    player_data: [Option<PlayerBattleData>; 2],
+    slots: [Option<SlotOptions>; 2],
     auto_cycle: usize,
 }
 
 impl HostButtonSource {
     fn new() -> Self {
-        Self { buttons: SimButtonSource::new(), player_data: [None, None], auto_cycle: 0 }
+        Self { buttons: SimButtonSource::new(), slots: [None, None], auto_cycle: 0 }
     }
 
-    fn player_data(&self, player_id: &str) -> Option<&PlayerBattleData> {
-        self.player_data[(player_id == "p2") as usize].as_ref()
+    fn slot(&self, player_id: &str) -> Option<&SlotOptions> {
+        self.slots[(player_id == "p2") as usize].as_ref()
     }
 }
 
 impl ButtonSource for HostButtonSource {
-    fn on_prompt(
-        &mut self,
-        player_id: &str,
-        request: &Request,
-        player_data: &Option<PlayerBattleData>,
-    ) {
-        self.player_data[(player_id == "p2") as usize] = player_data.clone();
-        print!("\n{}", format_prompt(player_id, request, player_data.as_ref()));
+    fn on_prompt(&mut self, player_id: &str, slot: &SlotOptions) {
+        self.slots[(player_id == "p2") as usize] = Some(slot.clone());
+        print!("\n{}", slot.prompt_text);
     }
 
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
@@ -102,7 +97,7 @@ impl ButtonSource for HostButtonSource {
         // pre-fed slot is out of PP). Blocking on a closed stdin would hit
         // read_stdin_line's exit(0) and silently kill the test harness.
         if !io::stdin().is_terminal() {
-            let party = self.player_data(player_id).map(|pd| pd.mons.len()).unwrap_or(6);
+            let party = self.slot(player_id).map(|s| s.party.len().max(1)).unwrap_or(6);
             let i = self.auto_cycle % (n_moves + party);
             self.auto_cycle += 1;
             let action = if i < n_moves {
@@ -141,11 +136,8 @@ impl ButtonSource for HostButtonSource {
             return idx;
         }
         let label = player_display_name(player_id);
-        let available: Vec<usize> = self.player_data(player_id)
-            .map(|pd| pd.mons.iter().enumerate()
-                .filter(|(_, m)| !m.active && m.hp > 0)
-                .map(|(i, _)| i)
-                .collect())
+        let available: Vec<usize> = self.slot(player_id)
+            .map(|s| (0..6).filter(|&i| s.party_ok[i]).collect())
             .unwrap_or_default();
         // Automated runs (no tty to prompt): auto-pick the first available bench
         // slot, as documented on HostBattleController. Blocking on a closed stdin
@@ -156,18 +148,17 @@ impl ButtonSource for HostButtonSource {
                 return idx;
             }
         }
-        let max = self.player_data(player_id).map(|pd| pd.mons.len()).unwrap_or(6);
+        let max = self.slot(player_id).map(|s| s.party.len().max(1)).unwrap_or(6);
         loop {
             let n = stdin_number(&format!("{label}, slot [1-{max}]: "), 1, max).await - 1;
             if available.is_empty() || available.contains(&n) {
                 return n;
             }
-            if let Some(pd) = self.player_data(player_id) {
-                let m = &pd.mons[n];
-                if m.active {
-                    eprintln!("  {} is already in battle.", m.summary.name);
+            if let Some(row) = self.slot(player_id).and_then(|s| s.party.get(n)) {
+                if row.active {
+                    eprintln!("  {} is already in battle.", row.name);
                 } else {
-                    eprintln!("  {} has fainted.", m.summary.name);
+                    eprintln!("  {} has fainted.", row.name);
                 }
             }
         }

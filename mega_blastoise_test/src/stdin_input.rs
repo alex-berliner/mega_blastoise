@@ -1,8 +1,8 @@
 use std::io::{self, Write};
 
-use gen1_battle::Request;
+use mega_blastoise_core::choice_collect::SlotOptions;
 use mega_blastoise_core::{
-    format_move_choice, format_switch_choice, join_choice_parts, player_display_name,
+    format_move_choice, format_switch_choice, player_display_name,
     ActivePrompt, InputBus, InputSource, PlayerChoice,
 };
 
@@ -14,69 +14,48 @@ impl StdinBattleInput {
     /// else needs to run while waiting for the user to type.
     pub async fn run(&mut self, bus: &InputBus) {
         loop {
-            let ActivePrompt { player_id, request, .. } = bus.prompt.receive().await;
-            let choice = self.handle(&player_id, &request);
+            let ActivePrompt { player_id, slot, .. } = bus.prompt.receive().await;
+            let choice = self.handle(&player_id, &slot);
             bus.choices.send(PlayerChoice { player_id, choice }).await;
         }
     }
 
-    fn handle(&self, player_id: &str, request: &Request) -> String {
+    fn handle(&self, player_id: &str, slot: &SlotOptions) -> String {
         let label = player_display_name(player_id);
-        match request {
-            Request::Turn(turn) => {
-                let mut parts = Vec::new();
-                for mon_req in &turn.active {
-                    println!("\n=== {label} ({player_id}) — choose move ===");
-                    let n_moves = mon_req.moves.len().min(4);
-                    if n_moves == 0 {
-                        eprintln!("No moves available; passing.");
-                        parts.push("pass".to_string());
-                        continue;
-                    }
-                    for i in 0..n_moves {
-                        let m = &mon_req.moves[i];
-                        let status = if m.disabled || m.pp == 0 { " (disabled)" } else { "" };
-                        println!("  [{}] {}  PP {}/{}{}", i + 1, m.name, m.pp, m.max_pp, status);
-                    }
-                    loop {
-                        let btn = Self::prompt_usize_inclusive(
-                            &format!("{label}, pick move [1-{n_moves}]: "),
-                            1,
-                            n_moves,
-                        );
-                        let slot = btn - 1;
-                        let m = &mon_req.moves[slot];
-                        if m.disabled || m.pp == 0 {
-                            eprintln!("That move cannot be used. Pick another.");
-                            continue;
-                        }
-                        parts.push(format_move_choice(slot));
-                        break;
-                    }
-                }
-                join_choice_parts(&parts)
+        if let Some(auto) = &slot.auto {
+            return auto.clone();
+        }
+        if slot.forced_switch {
+            println!("\n=== {label} ({player_id}) — switch (bench 1-6) ===");
+            let bench = Self::prompt_usize_inclusive(
+                &format!("{label}, which party slot to send in [1-6]? "),
+                1,
+                6,
+            );
+            return format_switch_choice(bench - 1);
+        }
+        println!("\n=== {label} ({player_id}) — choose move ===");
+        let n_moves = slot.n_moves;
+        if n_moves == 0 {
+            eprintln!("No moves available; passing.");
+            return "pass".to_string();
+        }
+        for i in 0..n_moves {
+            let status = if slot.usable[i] { "" } else { " (disabled)" };
+            println!("  [{}]{}", i + 1, status);
+        }
+        loop {
+            let btn = Self::prompt_usize_inclusive(
+                &format!("{label}, pick move [1-{n_moves}]: "),
+                1,
+                n_moves,
+            );
+            let picked = btn - 1;
+            if !slot.usable[picked] {
+                eprintln!("That move cannot be used. Pick another.");
+                continue;
             }
-            Request::Switch(sw) => {
-                let mut parts = Vec::new();
-                for _ in &sw.needs_switch {
-                    println!("\n=== {label} ({player_id}) — switch (bench 1-6) ===");
-                    let bench = Self::prompt_usize_inclusive(
-                        &format!("{label}, which party slot to send in [1-6]? "),
-                        1,
-                        6,
-                    );
-                    parts.push(format_switch_choice(bench - 1));
-                }
-                join_choice_parts(&parts)
-            }
-            Request::TeamPreview(_) => {
-                eprintln!("Team preview not handled; using random.");
-                "random".to_string()
-            }
-            Request::LearnMove(_) => {
-                eprintln!("Learn move not handled; passing.");
-                "pass".to_string()
-            }
+            return format_move_choice(picked);
         }
     }
 
