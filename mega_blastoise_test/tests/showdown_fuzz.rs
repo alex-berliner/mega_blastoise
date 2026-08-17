@@ -1243,7 +1243,10 @@ fn fuzz_gen3_battles() {
                     if usable.contains(&pick) {
                         pick
                     } else {
-                        usable.first().copied().unwrap_or(pick)
+                        // With nothing usable at all the sim's request
+                        // carries a single entry, Struggle, so the only
+                        // choice a player can send back is the first one.
+                        usable.first().copied().unwrap_or(0)
                     }
                 };
                 choices[seat] =

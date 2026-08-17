@@ -2387,10 +2387,18 @@ impl Battle {
             return;
         }
         let imprisoned_out = sealed && !releasing;
+        // A Choice Band greys its move out the same way Disable does, so a
+        // choice outside the lock is no more usable than a disabled one.
+        let choice_locked_out = !releasing
+            && self.sides[side]
+                .mon()
+                .choice_locked
+                .is_some_and(|id| id != slot.entry.id);
         if slot.pp == 0
             && !releasing
             && !self.pp0_at_choice[side]
-            && !(taunted_out || tormented_out || disabled_out || imprisoned_out)
+            && !(taunted_out || tormented_out || disabled_out || imprisoned_out
+                || choice_locked_out)
         {
             // Drained to zero AFTER the choice was made: the sim's runMove
             // hits "cant: nopp" — a silent lost turn, no Struggle.
@@ -2403,6 +2411,7 @@ impl Battle {
             || tormented_out
             || disabled_out
             || imprisoned_out
+            || choice_locked_out
             || (slot.pp == 0 && !releasing && self.pp0_at_choice[side]))
             && !releasing;
         let slot = if struggling {
