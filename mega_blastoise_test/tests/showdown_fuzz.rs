@@ -630,6 +630,25 @@ fn fuzz_gen3_turns() {
         let (ab1, ab2) = (pick_ability(&mut fz, s1), pick_ability(&mut fz, s2));
         let (it1, it2) = (pick_item(&mut fz), pick_item(&mut fz));
         let (g1, g2) = (pick_gender(&mut fz, s1), pick_gender(&mut fz, s2));
+        // A pre-set PARALYSIS is not safe to combine with an opening that
+        // cares about Speed order. The harness hands the statuses out after
+        // `setPlayer` has already started the battle and sorted the opening
+        // switch-ins, so the reference greets the field at unquartered Speed
+        // while the engine, which is handed a paralysed mon to begin with,
+        // greets it slow. The limitation is written up where it happens; here
+        // the pair is simply not generated, because the mismatch it produces
+        // says nothing about either engine.
+        let order_sensitive = |ab: &str, item: &str| {
+            matches!(
+                ab,
+                "intimidate" | "trace" | "drizzle" | "drought" | "sandstream" | "forecast"
+            ) || item == "whiteherb"
+        };
+        let touchy = order_sensitive(ab1, it1) || order_sensitive(ab2, it2);
+        let par = |st: Option<(&'static str, gen3_battle::data::Status)>| {
+            st.filter(|s| !(touchy && s.0 == "par"))
+        };
+        let (st1, st2) = (par(st1), par(st2));
         // 1-3 whole turns, each seat scripted per turn: hit, crit, roll,
         // secondary, immobile, hits, selfhit. The conditional knobs only
         // fire when their condition holds (paralysis, a 2-5 multi-hit move,
