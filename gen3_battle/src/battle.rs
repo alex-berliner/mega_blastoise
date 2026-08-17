@@ -3237,6 +3237,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 effectiveness: 100,
                 crit: false,
             });
+            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
             return;
         }
@@ -3298,6 +3300,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 effectiveness: 100,
                 crit: false,
             });
+            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.shell_bell(side, amount, events);
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.resolve_faints(side, foe, events);
