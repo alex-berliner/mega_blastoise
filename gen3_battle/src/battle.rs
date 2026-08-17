@@ -2794,6 +2794,20 @@ impl Battle {
         if slot.entry.snatchable && !self.sides[foe].mon().fainted() && self.sides[foe].mon().snatching
         {
             self.sides[foe].mon_mut().snatching = false;
+            // Snatch runs a DeductPP event of its own against the mon it is
+            // robbing, and Pressure answers it: the thief pays a SECOND point
+            // for the Snatch it already spent one on. The sim charges that to
+            // Snatch's slot, not to the move being taken.
+            if ability::pressure(&self.sides[side].mon().bearer()) {
+                if let Some(ms) = self.sides[foe]
+                    .mon_mut()
+                    .moves
+                    .iter_mut()
+                    .find(|m| m.entry.id == "snatch")
+                {
+                    ms.pp = ms.pp.saturating_sub(1);
+                }
+            }
             self.pending_call = Some((foe, slot.entry));
             return;
         }
