@@ -17,7 +17,7 @@ echo "building wasm..."
 echo "assembling site..."
 SITE="$WORK/_site"
 mkdir -p "$SITE/pkg"
-cp "$WEB"/www/{index.html,style.css,app.js,ui_flow.html,device.html,device.css,device.js,devconsole.js} "$SITE"/
+cp "$WEB"/www/{index.html,style.css,app.js,ui_flow.html,device.html,device.css,device.js,webconsole.js} "$SITE"/
 cp "$WEB"/pkg/*.js "$WEB"/pkg/*.wasm "$SITE/pkg/"
 # Without this, Jekyll drops anything starting with an underscore.
 touch "$SITE/.nojekyll"
@@ -30,12 +30,17 @@ cd "$WORK/ghp"
 find . -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
 cp -r "$SITE/." .
 git add -A
+# A rebuild is requested even when the content is identical. Pages has served a
+# stale artifact for an already-pushed file more than once here, and exiting
+# early on "nothing changed" made this script unable to do the one thing that
+# shifts it.
 if git diff --cached --quiet; then
-  echo "no changes to publish"
-  exit 0
+  echo "no content changes; requesting a rebuild anyway"
+else
+  git commit -q -m "Publish site from main@$(git -C "$ROOT" rev-parse --short HEAD)"
+  git push -q origin gh-pages
+  echo "pushed"
 fi
-git commit -q -m "Publish site from main@$(git -C "$ROOT" rev-parse --short HEAD)"
-git push -q origin gh-pages
-echo "pushed; requesting Pages build"
+echo "requesting Pages build"
 gh api -X POST "repos/$(gh repo view --json nameWithOwner --jq .nameWithOwner)/pages/builds" >/dev/null
 echo "done: $(gh repo view --json homepageUrl --jq .homepageUrl 2>/dev/null || echo 'see repo Pages settings')"
