@@ -33,6 +33,9 @@ pub const X0_5: u32 = 2048;
 pub const X1_3: u32 = 5324;
 /// ×0.8.
 pub const X0_8: u32 = 3276;
+/// ×0.25 — paralysis, which in this era is an ordinary ModifySpe link and
+/// not a quarter taken on its own.
+pub const X0_25: u32 = 1024;
 /// Hustle's accuracy cut, which the sim writes out as a raw 3277/4096 rather
 /// than as 0.8 — one part in 4096 away from Sand Veil's, and not the same.
 pub const HUSTLE_ACC: u32 = 3277;

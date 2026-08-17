@@ -242,7 +242,15 @@ fn run_move(
     // fully executes, so Mirror Move fails against a mid-charge foe.
     let charge_turn = mv.effect_kind == MoveEffectKind::TwoTurn
         && !sides[attacker_side].active().volatile.has(Volatile::CHARGING);
-    if !charge_turn {
+    // A Bide CONTINUATION is run entirely from the volatile's onBeforeMove,
+    // which returns false — so `runMove` aborts before `useMove` and the
+    // move register is never written. Only the first, freely chosen Bide
+    // sets it. It matters because a switch-in wipes both actives' registers
+    // in this era, and a Mirror Move aimed at a mon still storing Bide finds
+    // nothing to play back.
+    let biding_on = mv.effect_kind == MoveEffectKind::Bide
+        && sides[attacker_side].active().volatile.has(Volatile::BIDING);
+    if !charge_turn && !biding_on {
         sides[attacker_side].active_mut().last_move_used = mv.id;
     }
     sides[attacker_side].last_move_used = mv.id;
