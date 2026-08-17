@@ -19,6 +19,10 @@ for (const species of dex.species.all()) {
     types,
     baseStats: species.baseStats,
     weightkg: species.weightkg,
+    // 'M', 'F' or 'N' where the species is fixed; empty where it can be
+    // either. Attract is the only gen 3 mechanic that reads it, and it reads
+    // it as a plain comparison.
+    gender: species.gender || '',
     abilities,
   });
 }

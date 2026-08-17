@@ -155,6 +155,9 @@ pub struct Mon {
     /// True only for the remainder of the turn Torment landed in: the
     /// victim's already-chosen move still goes through that turn.
     pub torment_fresh: bool,
+    /// Encore landed THIS turn, after its victim had already chosen. The
+    /// forcing then happens at execution time, below every gate.
+    pub encore_fresh: bool,
     /// Rage is rolling: hits taken raise Attack.
     pub raging: bool,
     /// Fury Cutter's consecutive-hit ramp (0..=4).
@@ -295,6 +298,14 @@ pub struct Mon {
     /// This mon's ability, as a lookup id, or empty for none. Trace and
     /// Role Play overwrite it, so it is not simply read off the species.
     pub ability: &'static str,
+    /// Which party slot on the other side charmed this mon, if any. The
+    /// volatile ends by itself the moment that mon is no longer the one
+    /// standing opposite, and a Baton Pass does not carry it.
+    pub attracted_by: Option<usize>,
+    /// "M", "F" or "N". Attract is the only thing in the era that reads it,
+    /// and it reads it as a plain comparison. A species that can be either
+    /// starts male here; callers that care set it themselves.
+    pub gender: &'static str,
     /// Flash Fire has caught: this mon's Fire moves are half again as strong
     /// until it leaves the field.
     pub flash_fire: bool,
@@ -358,8 +369,14 @@ impl Mon {
         let b = species.base;
         let max_hp = hp_stat(b.hp, inv, level);
         let stat = |base: u16, s: Stat| other_stat(base, inv, level, nature, s);
+        let gender = match species.gender {
+            "" => "M",
+            fixed => fixed,
+        };
         Some(Mon {
             species,
+            gender,
+            attracted_by: None,
             level,
             nature,
             hp: max_hp,
@@ -386,6 +403,7 @@ impl Mon {
             grudged: false,
             tormented: false,
             torment_fresh: false,
+            encore_fresh: false,
             raging: false,
             fury_n: 0,
             fury_fresh: false,
@@ -844,6 +862,10 @@ pub enum Event {
     FullyParalyzed {
         side: u8,
     },
+    /// `side`'s mon was too taken with the other one to act.
+    Infatuated {
+        side: u8,
+    },
     /// `side`'s mon could not move: frozen solid or fast asleep.
     Cant {
         side: u8,
@@ -916,6 +938,11 @@ pub struct Battle {
     calling: bool,
     /// Whoever is owed one, and what: drained once the current move is done.
     pending_call: Option<(usize, &'static MoveEntry)>,
+    /// A Yawn is collecting right now. Safeguard blocks the drowsiness going
+    /// on, and lets the sleep it delivers through — the sim writes that
+    /// exemption into Safeguard's own onSetStatus as `if (effect.id ===
+    /// 'yawn') return`.
+    yawn_landing: bool,
     /// A move already thrown back once. The sim's `hasBounced` — a Magic
     /// Coat cannot volley against another Magic Coat.
     bounced: bool,
@@ -943,6 +970,7 @@ impl Battle {
             calling: false,
             pending_call: None,
             bounced: false,
+            yawn_landing: false,
         };
         // The battle's opening switch-ins are switch-ins, and the sim runs
         // them as part of starting: Intimidate cows, Trace copies, a weather
@@ -1010,16 +1038,15 @@ impl Battle {
             mon.ability_backup = Some(mon.ability);
         }
         mon.ability = id;
-        // Truant arriving mid-battle starts its own clock. The sim's onStart
-        // drops the loafing volatile and puts it straight back if the mon has
-        // been out a turn and has either moved already or is not going to —
-        // which for a Skill Swap is always, since the swap IS the move. So a
-        // mon handed Truant loses its NEXT action, not this one. Our flag is
-        // read a turn later, after the residual has flipped it, which is why
-        // "will loaf next turn" is stored here as `false`.
+        // Truant handed over mid-battle does NOT start loafing on the spot.
+        // Gen 3's own Truant sets `onStart: void 0`, and `setAbility` only
+        // raises a Start event from gen 4 on, so nothing at all runs when the
+        // ability changes hands: the loaf state is written only by Truant's
+        // switch-in and by its residual. A Traced or Skill Swapped Truant
+        // therefore acts this turn and first loafs on the next, which is
+        // exactly what the residual flip below produces from `false`.
         if id == "truant" {
-            let fresh = self.sides[side].mon().active_turns == 0;
-            self.sides[side].mon_mut().loafing = fresh;
+            self.sides[side].mon_mut().loafing = false;
         }
     }
 
@@ -1085,8 +1112,33 @@ impl Battle {
     /// within the turn, rather than at the start of the next one.
     fn end_of_action(&mut self) {
         for side in 0..2 {
+            self.forecast(side);
             self.ability_update(side);
         }
+    }
+
+    /// Forecast, which is the sim's `onWeatherChange`: Castform wears the
+    /// sky. Every forme carries the same seventy across the board, so the
+    /// only thing that actually changes is the TYPE, and this is a type
+    /// override and nothing more. Air Lock and Cloud Nine put it back to
+    /// Normal without clearing the weather, since `effectiveWeather` is what
+    /// it reads; sandstorm is not one of the three it answers to. A
+    /// transformed Castform stops answering altogether.
+    fn forecast(&mut self, side: usize) {
+        let mon = self.sides[side].mon();
+        if mon.ability != "forecast"
+            || !mon.species.id.starts_with("castform")
+            || mon.transform_stats.is_some()
+        {
+            return;
+        }
+        let worn = match self.effective_weather() {
+            Some(Weather::Sun) => Type::Fire,
+            Some(Weather::Rain) => Type::Water,
+            Some(Weather::Hail) => Type::Ice,
+            _ => Type::Normal,
+        };
+        self.sides[side].mon_mut().type_override = Some((worn, Type::None));
     }
 
     /// The sim's `onUpdate`, which runs between actions and is where the
@@ -1133,6 +1185,23 @@ impl Battle {
             if cure_confusion {
                 mon.confusion_n = 0;
             }
+        }
+        // Attract's own `onUpdate`: the volatile goes the moment the mon
+        // that charmed it is no longer the one standing opposite.
+        if let Some(who) = self.sides[side].mon().attracted_by {
+            if self.sides[1 - side].active != who || self.sides[1 - side].mon().fainted() {
+                self.sides[side].mon_mut().attracted_by = None;
+            }
+        }
+        // A Mental Herb is spent breaking the charm, and does nothing else in
+        // this era.
+        if self.sides[side].mon().item == "mentalherb"
+            && self.sides[side].mon().attracted_by.is_some()
+        {
+            let mon = self.sides[side].mon_mut();
+            mon.last_item = mon.item;
+            mon.item = "";
+            mon.attracted_by = None;
         }
         // A Leppa Berry is an `onUpdate` item too. It waits for a slot to
         // reach zero, then puts ten points back into the FIRST slot at zero
@@ -1591,6 +1660,9 @@ impl Battle {
                 if self.weather_n == 0 {
                     self.weather = None;
                     events.push(Event::WeatherEnded { weather });
+                    for w in 0..2 {
+                        self.forecast(w);
+                    }
                 }
             }
 
@@ -1887,7 +1959,9 @@ impl Battle {
                 if self.sides[side].mon().yawn_n > 0 && !self.sides[side].mon().fainted() {
                     self.sides[side].mon_mut().yawn_n -= 1;
                     if self.sides[side].mon().yawn_n == 0 {
+                        self.yawn_landing = true;
                         self.inflict(side, Status::Sleep, scripted, &mut events);
+                        self.yawn_landing = false;
                     }
                 }
                 // The Thrash-family lock ticks last of all, carrying no
@@ -2092,6 +2166,7 @@ impl Battle {
             mon.snatching = false;
             mon.enduring = false;
             mon.torment_fresh = false;
+            mon.encore_fresh = false;
             mon.imprison_fresh = false;
             mon.uproar_ending = false;
             // Fury Cutter's ramp is a volatile with a two-turn clock that
@@ -2417,6 +2492,26 @@ impl Battle {
                 }
             }
         }
+        // Attract, at `onBeforeMovePriority: 2` — under confusion's 3 and
+        // over paralysis's. Half a charmed mon's actions are lost, and the
+        // coin is rolled whether or not anything else was going to stop it.
+        if self.sides[side].mon().attracted_by.is_some() {
+            let immobile = match script {
+                Some(s) => s.immobile,
+                None => self.rng.below(2) == 0,
+            };
+            if immobile {
+                self.sides[side].mon_mut().charging = None;
+                break_rampage(self, side, script.is_some(), events);
+                self.sides[side].mon_mut().rolling = None;
+                self.sides[side].mon_mut().fury_n = 0;
+                self.sides[side].mon_mut().stall_counter = 0;
+                events.push(Event::Infatuated {
+                    side: side as u8 + 1,
+                });
+                return;
+            }
+        }
         // Full paralysis: a quarter of a paralyzed mon's actions, decided by
         // the script under test and the RNG in play. No PP is spent.
         if self.sides[side].mon().status == Some(Status::Paralysis) {
@@ -2437,7 +2532,18 @@ impl Battle {
             }
         }
         }
-        // Encore overrides the choice with the last move used.
+        // Encore overrides the choice with the last move used. The sim does
+        // that at EXECUTION time, through `OverrideAction`, which re-checks
+        // nothing: an Encore that landed earlier this turn — after its victim
+        // had already chosen — forces the move through a Torment or a Disable
+        // that would otherwise have greyed it out. An Encore already up when
+        // the choice was made is a different matter: the request had greyed
+        // everything else out already, so either the encored move was the
+        // only offer or there was no offer at all and the answer is a real
+        // Struggle, which the sim then leaves alone.
+        let encore_forced = self.sides[side].mon().encore_n > 0
+            && self.sides[side].mon().encore_fresh
+            && self.sides[side].mon().last_used.is_some();
         let index = match (
             self.sides[side].mon().encore_n > 0,
             self.sides[side].mon().last_used,
@@ -2555,13 +2661,15 @@ impl Battle {
             });
             return;
         }
-        let taunted_out = self.sides[side].mon().taunt_n == 1 && status_movish;
+        let taunted_out =
+            self.sides[side].mon().taunt_n == 1 && status_movish && !encore_forced;
         // Torment: the same move twice in a row becomes Struggle. So does
         // a Disabled slot, or a move the imprisoning foe also knows.
         let tormented_out = self.sides[side].mon().tormented
             && !self.sides[side].mon().torment_fresh
             && self.sides[side].mon().last_used_id == Some(slot.entry.id)
-            && !releasing;
+            && !releasing
+            && !encore_forced;
         if self.sides[side].mon().disabled_slot == Some(index as u8)
             && self.sides[side].mon().disable_fresh
             && !releasing
@@ -2574,7 +2682,9 @@ impl Battle {
             });
             return;
         }
-        let disabled_out = self.sides[side].mon().disabled_slot == Some(index as u8) && !releasing;
+        let disabled_out = self.sides[side].mon().disabled_slot == Some(index as u8)
+            && !releasing
+            && !encore_forced;
         let sealed = self.sides[foe].mon().imprisoning
             && self.sides[foe]
                 .mon()
@@ -2590,10 +2700,11 @@ impl Battle {
             });
             return;
         }
-        let imprisoned_out = sealed && !releasing;
+        let imprisoned_out = sealed && !releasing && !encore_forced;
         // A Choice Band greys its move out the same way Disable does, so a
         // choice outside the lock is no more usable than a disabled one.
         let choice_locked_out = !releasing
+            && !encore_forced
             && self.sides[side]
                 .mon()
                 .choice_locked
@@ -4189,14 +4300,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
                 _ => 0,
             };
-            // Mud/Water Sport hum from EITHER active halves the matching
-            // type at BASE POWER (the sim's onBasePower chain), not at the
-            // damage stage — the floor lands one point differently.
-            let sport_div: u16 = if (0..2).any(|w| self.sides[w].mon().sport == Some(move_type)) {
-                2
-            } else {
-                1
-            };
+            // Mud/Water Sport halves the matching type at BASE POWER (the
+            // sim's onBasePower chain), not at the damage stage — the floor
+            // lands one point differently. In this era the hum is a VOLATILE
+            // on each mon rather than a field effect, and every holder
+            // contributes its own halving: with both actives sporting,
+            // Electric comes through at a quarter.
+            let sporters = (0..2)
+                .filter(|&w| self.sides[w].mon().sport == Some(move_type))
+                .count();
             // The stomping moves land doubled on a minimized target.
             let stomp_mult: u16 = if self.sides[foe].mon().minimized
                 && matches!(
@@ -4320,7 +4432,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             if charge_mult == 2 {
                 bp.mul(ability::X2);
             }
-            if sport_div == 2 {
+            for _ in 0..sporters {
                 bp.mul(ability::X0_5);
             }
             if ability::pinch_boost(&user_b, move_type) {
@@ -4695,6 +4807,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             out.rolling = None;
             out.curled = false;
             out.encore_n = 0;
+            out.encore_fresh = false;
             out.disabled_slot = None;
             out.disable_n = 0;
             out.disable_fresh = false;
@@ -4708,6 +4821,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             out.protected = false;
             out.magic_coat = false;
             out.snatching = false;
+            out.attracted_by = None;
             out.enduring = false;
             out.taunt_n = 0;
             out.nightmared = false;
@@ -4829,8 +4943,16 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 self.weather = Some(weather);
                 self.weather_n = u8::MAX;
                 events.push(Event::WeatherStarted { weather });
+                for w in 0..2 {
+                    self.forecast(w);
+                }
             }
         }
+        // Forecast comes in at `onSwitchInPriority: -2`, under every other
+        // arrival handler, so it reads a sky the newcomer may have just laid
+        // down itself. This sits in `greet` rather than in the switch wrapper
+        // because the battle's OPENING goes through here too.
+        self.forecast(side);
         // Intimidate cows whatever is standing across the field — but not
         // through a substitute, and in this era not at all if the only
         // target has one up.
@@ -4942,8 +5064,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         scripted: bool,
         events: &mut Vec<Event>,
     ) {
-        // Safeguard shields the whole team from foe-inflicted statuses.
-        if self.sides[foe].safeguard_n > 0 {
+        // Safeguard shields the whole team from foe-inflicted statuses, with
+        // one hole in it that the sim writes out by name: a Yawn already
+        // collecting delivers its sleep regardless. Safeguard's job was to
+        // stop the drowsiness going on in the first place.
+        if self.sides[foe].safeguard_n > 0 && !self.yawn_landing {
             return;
         }
         // No one sleeps through an Uproar.
@@ -5751,6 +5876,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         3 + self.rng.below(4) as u8
                     };
                     self.sides[foe].mon_mut().encore_n = n;
+                    self.sides[foe].mon_mut().encore_fresh = true;
                 } else {
                     events.push(Event::Failed {
                         side: side as u8 + 1,
@@ -5976,6 +6102,22 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 events.push(Event::Failed {
                     side: side as u8 + 1,
                 });
+            }
+            StatusAction::Attract => {
+                // Genders have to differ, and neither may be genderless.
+                // The sim asks twice, in `onTryImmunity` and again in the
+                // volatile's own `onStart`, and both are the same plain
+                // comparison — so a mismatched pair is a move that failed.
+                let (them, us) = (self.sides[foe].mon().gender, self.sides[side].mon().gender);
+                let charmable = (them == "M" && us == "F") || (them == "F" && us == "M");
+                if !hit || !charmable || self.sides[foe].mon().attracted_by.is_some() {
+                    events.push(Event::Failed {
+                        side: side as u8 + 1,
+                    });
+                    return;
+                }
+                let who = self.sides[side].active;
+                self.sides[foe].mon_mut().attracted_by = Some(who);
             }
             StatusAction::MagicCoat => {
                 self.sides[side].mon_mut().magic_coat = true;

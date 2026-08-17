@@ -442,6 +442,14 @@ pub async fn play_turn<E: BoardEffects>(
                     .on_event(BoardEvent::Cant { mon: active_name(battle, side), reason: "par".into() })
                     .await;
             }
+            Event::Infatuated { side } => {
+                effects
+                    .on_event(BoardEvent::Cant {
+                        mon: active_name(battle, side),
+                        reason: "love".into(),
+                    })
+                    .await;
+            }
             Event::Cant { side, status } => {
                 effects
                     .on_event(BoardEvent::Cant {

@@ -34,6 +34,9 @@ pub struct SpeciesEntry {
     pub learn_len: u16,
     /// Weight in hectograms (kg × 10) — Low Kick's tiers read this.
     pub weight_hg: u16,
+    /// "M", "F" or "N" where the species is one thing only, and empty where
+    /// it can be either. Attract is what reads it.
+    pub gender: &'static str,
     /// The two abilities this species can be born with, as lookup ids. The
     /// second is empty for species that only ever have one.
     pub abilities: (&'static str, &'static str),
@@ -236,6 +239,9 @@ pub enum StatusAction {
     /// Snatch: a shield up for the turn that takes the next self-aimed move
     /// out of its owner's hands.
     Snatch,
+    /// Attract: the target loses half its actions while the mon that charmed
+    /// it is still standing opposite.
+    Attract,
     BoostSelf(&'static [(Boost, i8)]),
     BoostFoe(&'static [(Boost, i8)]),
     HealHalf,

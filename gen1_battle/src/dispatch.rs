@@ -887,8 +887,14 @@ fn apply_effect(
             } else {
                 target_moves[(rng.range(target_moves.len() as u32)) as usize]
             };
+            // Mimic overwrites the slot the SIDE selected this turn — the
+            // cartridge's move-list index, the same register PP is charged
+            // to — and not the slot that happens to hold Mimic. They are the
+            // same thing when a player picks Mimic outright, and different
+            // every time something else calls it: a Mirror Move or a
+            // Metronome that reaches Mimic destroys ITS OWN slot.
+            let mimic_slot = sides[attacker_side].last_selected_slot.min(3) as usize;
             let a = sides[attacker_side].active_mut();
-            let mimic_slot = a.find_move_slot("mimic").unwrap_or(0) as usize;
             let copied_max = move_by_id(new_move).map(|m| m.pp).unwrap_or(5);
             // Current PP carries over from the Mimic slot (Gen 1).
             let cur_pp = a.moves[mimic_slot].pp;

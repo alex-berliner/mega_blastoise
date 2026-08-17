@@ -37,6 +37,10 @@ function teamMon(dex, m, slot) {
     species: species.name,
     level: m.level ?? 50,
     nature: m.nature ?? 'Hardy',
+    // Attract is the one gen 3 mechanic that reads this, and it reads it as
+    // a plain comparison, so the scenario states it outright rather than
+    // leaving the sim to roll it off the species' ratio.
+    gender: m.gender ?? 'M',
     // Only the abilities the core engines model are ever handed out; a
     // scenario that leaves this blank is asking for a mon with none, which
     // is what the sim calls 'noability'.
@@ -60,9 +64,25 @@ function formatFor(gen) {
     : `gen${gen}customgame`;
 }
 
+/// Put the era's own integer truncation back.
+///
+/// `Dex.trunc(num, bits)` keeps only the low `bits` bits, and that is where
+/// two of gen 1's famous glitches live: a stat above 1023 rolls over to a
+/// small number once the /4 is taken (`trunc(x, 8)`), and a move forced out
+/// at zero PP underflows to 63 (`trunc(pp, 6)`). Every `customgame` format
+/// ships `battle: {trunc: Math.trunc}`, which drops the bit width on the
+/// floor — deliberately, so those formats can host Level 9999 mons with
+/// four-digit stats. We are not hosting anything; we are checking an engine
+/// against the cartridge, and the cartridge rolls over. So the real one goes
+/// back on every battle we build.
+function cartridgeTrunc(battle) {
+  battle.trunc = (num, bits = 0) => (bits ? (num >>> 0) % (2 ** bits) : num >>> 0);
+  return battle;
+}
+
 function newBattle(gen, p1mon, p2mon) {
   const dex = Dex.mod(`gen${gen}`);
-  const battle = new Battle({formatid: formatFor(gen)});
+  const battle = cartridgeTrunc(new Battle({formatid: formatFor(gen)}));
   battle.setPlayer('p1', {team: [teamMon(dex, p1mon)]});
   battle.setPlayer('p2', {team: [teamMon(dex, p2mon)]});
   return battle;
@@ -98,6 +118,7 @@ function scriptRandomness(battle, script) {
     // type-immune gen 1 move skips its accuracy roll entirely, and the
     // stale flag would otherwise eat the next action's paralysis roll.)
     battle.__accPending = false;
+    battle.__attractRolled = false;
     return origRun.call(this, moveOrMoveName, pokemon, ...rest);
   };
 
@@ -146,6 +167,15 @@ function scriptRandomness(battle, script) {
          (numerator === 128 && denominator === 256))) {
       battle.__confRolled = true;
       return !((battle.__act ?? battle.__cur).selfhit);
+    }
+    // Attract's coin, also (1,2) in onBeforeMove, and also only for an actor
+    // actually under the volatile. It is rolled after confusion's and before
+    // the paralysis one, so the two (1,2)s are told apart by which volatile
+    // the actor carries.
+    if (numerator === 1 && denominator === 2 &&
+        battle.__actMon?.volatiles['attract'] && !battle.__attractRolled) {
+      battle.__attractRolled = true;
+      return battle.__act?.immobile ?? false;
     }
     // Full paralysis: (1,4) in gen 3+ (once, in onBeforeMove, only for a
     // paralyzed actor), (63,256) in gens 1-2. Later (1,4)s are Protect's
@@ -354,7 +384,7 @@ function runTurn(sc) {
 /// the lowest-numbered living slot -- so neither side needs to be asked.
 function runBattle(sc) {
   const dex = Dex.mod(`gen${sc.gen}`);
-  const battle = new Battle({formatid: formatFor(sc.gen)});
+  const battle = cartridgeTrunc(new Battle({formatid: formatFor(sc.gen)}));
   battle.setPlayer('p1', {team: sc.p1.team.map((m, i) => teamMon(dex, m, i))});
   battle.setPlayer('p2', {team: sc.p2.team.map((m, i) => teamMon(dex, m, i))});
   normalizePp(battle, dex);
@@ -604,6 +634,7 @@ function runDump(sc) {
           : ['recycle', 'trick', 'roleplay', 'skillswap'].includes(m.id)
             ? {noopfail: m.id}
           : ['assist', 'sleeptalk'].includes(m.id) ? {noopfail: m.id}
+          : m.id === 'attract' ? {attract: true}
           : m.id === 'magiccoat' ? {magiccoat: true}
           : m.id === 'snatch' ? {snatch: true}
           : m.id === 'mirrormove' ? {mirror: true}
@@ -686,7 +717,7 @@ function runMovelist(sc) {
         'disable', 'naturepower', 'camouflage', 'conversion', 'imprison',
         'curse', 'conversion2', 'ingrain', 'healbell', 'aromatherapy',
         'followme', 'roar', 'whirlwind', 'batonpass', 'teeterdance',
-        'metronome', 'mirrormove', 'magiccoat', 'snatch',
+        'metronome', 'mirrormove', 'magiccoat', 'snatch', 'attract',
         'assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap',
         'mimic', 'sketch', 'transform',
       ] : [

@@ -269,11 +269,12 @@ fn emit_species(
                 .to_string()
         };
         let (ability0, ability1) = (ability(0), ability(1));
+        let gender = m["gender"].as_str().unwrap_or("").to_string();
         out.push_str(&format!(
             "    SpeciesEntry {{ id: {id:?}, name: {name:?}, types: ({primary}, {secondary}), \
              base: BaseStats {{ hp: {}, atk: {}, def: {}, spa: {}, spd: {}, spe: {} }}, \
              learn_start: {ls_start}, learn_len: {ls_len}, weight_hg: {weight_hg}, \
-             abilities: ({ability0:?}, {ability1:?}) }},\n",
+             gender: {gender:?}, abilities: ({ability0:?}, {ability1:?}) }},\n",
             stat("hp"),
             stat("atk"),
             stat("def"),
@@ -615,6 +616,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Ingrain)")
                 } else if act.get("healbell").is_some() {
                     String::from("Some(StatusAction::HealBell)")
+                } else if act.get("attract").is_some() {
+                    String::from("Some(StatusAction::Attract)")
                 } else if act.get("magiccoat").is_some() {
                     String::from("Some(StatusAction::MagicCoat)")
                 } else if act.get("snatch").is_some() {

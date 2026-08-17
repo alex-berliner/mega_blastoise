@@ -206,7 +206,6 @@ fn vanilla_moves(gen: u8, multihit: bool, ours: impl Fn(&str) -> bool) -> Vec<(S
 /// the reference sim would play it and we would not, and every battle it
 /// touched would diverge for a reason we already know about.
 ///
-/// Still to come: Forecast, which needs Castform's weather formes.
 const GEN3_ABILITIES: &[&str] = &[
     "airlock",
     "arenatrap",
@@ -225,6 +224,7 @@ const GEN3_ABILITIES: &[&str] = &[
     "effectspore",
     "flamebody",
     "flashfire",
+    "forecast",
     "guts",
     "hugepower",
     "hustle",
@@ -290,8 +290,7 @@ const GEN3_ABILITIES: &[&str] = &[
 /// allowed to hand out. Same rule as the abilities: anything outside this
 /// list stays off both sides.
 ///
-/// Still to come: King's Rock, Quick Claw, Focus Band, Mental Herb, Mail,
-/// and Recycle.
+/// Still to come: King's Rock, Quick Claw, Focus Band, Mail and Recycle.
 const GEN3_ITEMS: &[&str] = &[
     "apicotberry",
     "aspearberry",
@@ -310,6 +309,7 @@ const GEN3_ITEMS: &[&str] = &[
     "ganlonberry",
     "hardstone",
     "lansatberry",
+    "mentalherb",
     "leppaberry",
     "laxincense",
     "leftovers",
@@ -364,6 +364,22 @@ fn pick_item(fz: &mut Fuzz) -> &'static str {
 /// Which ability this mon walks in with. The draw always happens so the
 /// generator's stream does not depend on which species came up, and it comes
 /// out empty whenever the species has nothing we model.
+/// A gender the species can actually have. Attract is the only thing that
+/// reads it, and it reads it as a plain comparison — but the scenario states
+/// it outright either way, since the sim otherwise rolls its own.
+fn pick_gender(fz: &mut Fuzz, sp: &'static gen3_battle::data::SpeciesEntry) -> &'static str {
+    match sp.gender {
+        "" => {
+            if fz.chance(50) {
+                "F"
+            } else {
+                "M"
+            }
+        }
+        fixed => fixed,
+    }
+}
+
 fn pick_ability(fz: &mut Fuzz, sp: &'static gen3_battle::data::SpeciesEntry) -> &'static str {
     let slot = fz.below(2) as usize;
     let none = fz.chance(30);
@@ -610,6 +626,7 @@ fn fuzz_gen3_turns() {
         let st2 = legal_status(&mut fz, s2);
         let (ab1, ab2) = (pick_ability(&mut fz, s1), pick_ability(&mut fz, s2));
         let (it1, it2) = (pick_item(&mut fz), pick_item(&mut fz));
+        let (g1, g2) = (pick_gender(&mut fz, s1), pick_gender(&mut fz, s2));
         // 1-3 whole turns, each seat scripted per turn: hit, crit, roll,
         // secondary, immobile, hits, selfhit. The conditional knobs only
         // fire when their condition holds (paralysis, a 2-5 multi-hit move,
@@ -651,8 +668,8 @@ fn fuzz_gen3_turns() {
             .collect();
         scenarios.push(json!({
             "kind": "turn", "gen": 3,
-            "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0), "ability": ab1, "item": it1},
-            "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0), "ability": ab2, "item": it2},
+            "p1": {"species": s1.id, "level": level, "status": st1.map(|s| s.0), "ability": ab1, "item": it1, "gender": g1},
+            "p2": {"species": s2.id, "level": level, "status": st2.map(|s| s.0), "ability": ab2, "item": it2, "gender": g2},
             "moves": [m1, m2],
             "turns": turn_json,
         }));
@@ -666,13 +683,14 @@ fn fuzz_gen3_turns() {
             [st1.map(|s| s.1), st2.map(|s| s.1)],
             [ab1, ab2],
             [it1, it2],
+            [g1, g2],
         ));
     }
 
     let results = showdown(&Value::Array(scenarios.clone()));
     let inv = Invest { iv: 31, ev: 0 };
     let mut bad = 0;
-    for (i, ((s1, s2, level, m1, m2, turns, statuses, abilities, items), got)) in
+    for (i, ((s1, s2, level, m1, m2, turns, statuses, abilities, items, genders), got)) in
         cases.iter().zip(&results).enumerate()
     {
         if got.get("error").is_some() {
@@ -682,10 +700,16 @@ fn fuzz_gen3_turns() {
         }
         // Ability and status go on BEFORE the battle exists: constructing it
         // runs the opening switch-ins, and those read both.
-        let mk = |id: &str, mv: &str, ability: &'static str, item: &'static str, st: Option<_>| {
+        let mk = |id: &str,
+                  mv: &str,
+                  ability: &'static str,
+                  item: &'static str,
+                  gender: &'static str,
+                  st: Option<_>| {
             let mut mon = Mon::new(id, *level, Nature::Hardy, inv, &[mv]).unwrap();
             mon.ability = ability;
             mon.item = item;
+            mon.gender = gender;
             mon.status = st;
             if st == Some(gen3_battle::data::Status::Sleep) {
                 // The sim's pinned duration roll: asleep for one skipped
@@ -695,8 +719,8 @@ fn fuzz_gen3_turns() {
             mon
         };
         let mut battle = Battle::new(
-            Side::new(vec![mk(s1, m1, abilities[0], items[0], statuses[0])]),
-            Side::new(vec![mk(s2, m2, abilities[1], items[1], statuses[1])]),
+            Side::new(vec![mk(s1, m1, abilities[0], items[0], genders[0], statuses[0])]),
+            Side::new(vec![mk(s2, m2, abilities[1], items[1], genders[1], statuses[1])]),
             1,
         );
         // Skip speed ties: the tie-break is each side's own RNG.
@@ -1183,9 +1207,11 @@ fn fuzz_gen3_battles() {
                 };
                 let ability = pick_ability(&mut fz, sp);
                 let item = pick_item(&mut fz);
+                let gender = pick_gender(&mut fz, sp);
                 let mut mon = Mon::new(sp.id, level, Nature::Hardy, inv, &[&m1, &m2]).unwrap();
                 mon.ability = ability;
                 mon.item = item;
+                mon.gender = gender;
                 mon.status = match st {
                     Some("brn") => Some(gen3_battle::data::Status::Burn),
                     Some("psn") => Some(gen3_battle::data::Status::Poison),
@@ -1198,7 +1224,7 @@ fn fuzz_gen3_battles() {
                 }
                 specs[seat].push(json!({
                     "species": sp.id, "level": level, "moves": [m1, m2],
-                    "status": st, "ability": ability, "item": item,
+                    "status": st, "ability": ability, "item": item, "gender": gender,
                 }));
                 teams[seat].push(mon);
             }
