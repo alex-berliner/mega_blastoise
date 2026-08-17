@@ -34,7 +34,100 @@ fn armed() -> bool {
     false
 }
 
+/// Where cached reference answers live. Overridable, and removable at any
+/// time — a cold cache only costs time.
+fn cache_dir() -> PathBuf {
+    match std::env::var("FUZZ_CACHE_DIR") {
+        Ok(d) => PathBuf::from(d),
+        Err(_) => std::env::temp_dir().join("mb-showdown-cache"),
+    }
+}
+
+fn fnv1a(bytes: &[u8], mut hash: u64) -> u64 {
+    for b in bytes {
+        hash ^= *b as u64;
+        hash = hash.wrapping_mul(0x0000_0100_0000_01B3);
+    }
+    hash
+}
+
+/// The harness itself is part of the key: change how we drive the reference
+/// and every previous answer is void.
+fn harness_stamp() -> u64 {
+    static STAMP: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
+    *STAMP.get_or_init(|| {
+        let bytes = std::fs::read(harness_dir().join("harness.js")).unwrap_or_default();
+        fnv1a(&bytes, 0xcbf2_9ce4_8422_2325)
+    })
+}
+
+/// Run a batch of scenarios through the reference, answering from disk
+/// whatever has been asked before.
+///
+/// The reference is deterministic for everything the suites compare — HP, PP,
+/// status, faints, who is active, move order. The ONE thing that varies run to
+/// run is each mon's gender letter in the battle log, which is cosmetic and
+/// only ever read by a human looking at a failure. So a scenario's answer can
+/// be kept and reused.
+///
+/// The key is the scenario itself, not the fuzz seed. That matters: the battle
+/// suites RECORD the choices our own engine made and hand that list to the
+/// reference, so changing the engine changes the scenario — and a changed
+/// scenario is simply a different key, which misses and runs live. There is no
+/// way for a stale answer to be served against new behaviour.
 fn showdown(scenarios: &Value) -> Vec<Value> {
+    let list = scenarios.as_array().cloned().unwrap_or_default();
+    let caching = std::env::var("FUZZ_NO_CACHE").is_err();
+    let dir = cache_dir();
+
+    // Each scenario's own text is the key; the stored copy is checked against
+    // it on read, so a hash collision cannot serve the wrong answer.
+    let texts: Vec<String> = list.iter().map(|s| s.to_string()).collect();
+    let keys: Vec<String> = texts
+        .iter()
+        .map(|t| format!("{:016x}", fnv1a(t.as_bytes(), harness_stamp())))
+        .collect();
+
+    let mut answers: Vec<Option<Value>> = vec![None; list.len()];
+    if caching {
+        for (i, key) in keys.iter().enumerate() {
+            let path = dir.join(&key[..2]).join(format!("{key}.json"));
+            let Ok(raw) = std::fs::read(&path) else { continue };
+            let Ok(entry) = serde_json::from_slice::<Value>(&raw) else { continue };
+            if entry.get("scenario").map(|s| s.to_string()).as_deref() == Some(&texts[i]) {
+                if let Some(result) = entry.get("result") {
+                    answers[i] = Some(result.clone());
+                }
+            }
+        }
+    }
+
+    let misses: Vec<usize> = (0..list.len()).filter(|i| answers[*i].is_none()).collect();
+    if !misses.is_empty() {
+        let batch = Value::Array(misses.iter().map(|i| list[*i].clone()).collect());
+        let fresh = run_harness(&batch);
+        assert_eq!(fresh.len(), misses.len(), "harness returned the wrong count");
+        for (slot, result) in misses.iter().zip(fresh) {
+            if caching {
+                let key = &keys[*slot];
+                let shard = dir.join(&key[..2]);
+                let _ = std::fs::create_dir_all(&shard);
+                let entry = json!({"scenario": list[*slot], "result": result});
+                // Write beside the target and rename, so a dozen sweep
+                // workers racing on the same scenario cannot tear a file.
+                let tmp = shard.join(format!("{key}.{}.tmp", std::process::id()));
+                if std::fs::write(&tmp, entry.to_string()).is_ok() {
+                    let _ = std::fs::rename(&tmp, shard.join(format!("{key}.json")));
+                }
+            }
+            answers[*slot] = Some(result);
+        }
+    }
+
+    answers.into_iter().map(|a| a.expect("every scenario answered")).collect()
+}
+
+fn run_harness(scenarios: &Value) -> Vec<Value> {
     let mut child = Command::new("node")
         .arg("harness.js")
         .current_dir(harness_dir())
