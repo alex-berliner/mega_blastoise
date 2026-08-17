@@ -5296,15 +5296,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     fn inflict(&mut self, foe: usize, status: Status, scripted: bool, events: &mut Vec<Event>) {
         let before = self.sides[foe].mon().status;
         self.inflict_inner(foe, status, scripted, events);
-        // The sim calls update() after an action resolves, which is where
-        // the curing berries and the refusing abilities do their tidying.
-        // A Rawst eaten the instant the burn lands is a whole turn's chip
-        // that never happens.
-        self.ability_update(foe);
-        // Synchronize passes what it just caught back across the field. It
-        // fires on the status ACTUALLY taking hold, so a blocked or refused
-        // one bounces nothing.
-        if self.sides[foe].mon().status != before {
+        // Synchronize passes what it just caught back across the field, and
+        // it goes FIRST. Both it and the curing berries hang off the same
+        // AfterSetStatus event, and the berries are deprioritised there —
+        // Lum carries `onAfterSetStatusPriority: -1`. So a Synchronize mon
+        // holding one still infects the attacker on its way out of the
+        // status. The bounce reads the status that actually took hold, so a
+        // blocked or refused one bounces nothing.
+        let took = self.sides[foe].mon().status != before;
+        if took {
             if let Some(back) =
                 ability::synchronizes(&self.sides[foe].mon().bearer(), status)
             {
@@ -5315,6 +5315,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
             }
         }
+        // Then the target's own tidying: the curing berries and the refusing
+        // abilities. A Rawst eaten the instant the burn lands is a whole
+        // turn's chip that never happens.
+        self.ability_update(foe);
     }
 
     fn inflict_inner(
