@@ -611,7 +611,15 @@ fn fuzz_gen3_turns() {
             use gen3_battle::{data::Status, Type};
             let pick = *fz.pick(&statuses);
             let has = |t: Type| sp.types.0 == t || sp.types.1 == t;
+            // A Castform's type at the opening is decided by the sky, not
+            // by its own entry in the dex: Forecast fires at switch-in, so a
+            // Drought opposite makes it Fire before the harness gets round to
+            // handing out the scenario's statuses — and the sim then refuses
+            // a burn our engine has already applied. The type-dependent
+            // statuses are simply not offered to it.
+            let weather_forme = sp.id.starts_with("castform");
             match pick {
+                Some("brn") | Some("frz") | Some("psn") if weather_forme => None,
                 Some("brn") if has(Type::Fire) => None,
                 Some("frz") if has(Type::Ice) => None,
                 Some("psn") if has(Type::Poison) || has(Type::Steel) => None,
@@ -1231,7 +1239,12 @@ fn fuzz_gen3_battles() {
                     use gen3_battle::Type;
                     let pick = *fz.pick(&statuses);
                     let has = |t: Type| sp.types.0 == t || sp.types.1 == t;
+                    // See the turn suite: a Forecast Castform's type at the
+                    // opening is the sky's, not the dex's, and the harness
+                    // hands the statuses out after the opening has run.
+                    let weather_forme = sp.id.starts_with("castform");
                     match pick {
+                        Some("brn") | Some("frz") | Some("psn") if weather_forme => None,
                         Some("brn") if has(Type::Fire) => None,
                         Some("psn") if has(Type::Poison) || has(Type::Steel) => None,
                         other => other,

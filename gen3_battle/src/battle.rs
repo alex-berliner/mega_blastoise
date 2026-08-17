@@ -952,6 +952,12 @@ pub struct Battle {
     /// exemption into Safeguard's own onSetStatus as `if (effect.id ===
     /// 'yawn') return`.
     yawn_landing: bool,
+    /// Whether each side's chosen slot was SEALED by an Imprison as the turn
+    /// opened. The sim clears and recomputes every disable flag in
+    /// `nextTurn`, before it asks for choices, and never revises them — so an
+    /// imprisoner that switches out mid-turn does not give its victim its
+    /// moves back until the turn after.
+    sealed_at_choice: [bool; 2],
     /// A move already thrown back once. The sim's `hasBounced` — a Magic
     /// Coat cannot volley against another Magic Coat.
     bounced: bool,
@@ -980,6 +986,7 @@ impl Battle {
             pending_call: None,
             bounced: false,
             yawn_landing: false,
+            sealed_at_choice: [false; 2],
             self_destructed: false,
         };
         // The battle's opening switch-ins are switch-ins, and the sim runs
@@ -1461,6 +1468,19 @@ impl Battle {
         }
     }
 
+    /// `lastItem` belongs to the field SLOT in this era, not to the mon.
+    /// `switchIn` hands the outgoing mon's over to the incoming one and
+    /// blanks the outgoing mon's, so a Recycle restores whatever the last
+    /// occupant of that slot used up — even if that was somebody else. The
+    /// handover is unconditional: a mon returning to a slot whose last
+    /// occupant consumed nothing comes back with nothing.
+    fn hand_slot_item_over(&mut self, side: usize) -> &'static str {
+        let out = self.sides[side].mon_mut();
+        let carried = out.last_item;
+        out.last_item = "";
+        carried
+    }
+
     fn end_of_action(&mut self) {
         for side in 0..2 {
             self.ability_update(side);
@@ -1785,6 +1805,26 @@ impl Battle {
                     .is_some_and(|m| m.pp == 0),
                 _ => false,
             };
+            // The Imprison seal is read HERE, before anyone switches, and
+            // held for the turn. The sim recomputes its disable flags once in
+            // `nextTurn` and then commits the choice against them, so an
+            // imprisoner that leaves the field partway through the turn does
+            // not hand its victim's moves back until the next one.
+            let foe = 1 - side;
+            self.sealed_at_choice[side] = match choices[side] {
+                Choice::Move(i) => {
+                    let sealed_id = self.sides[side]
+                        .mon()
+                        .moves
+                        .get(i)
+                        .map(|m| m.entry.id);
+                    self.sides[foe].mon().imprisoning
+                        && sealed_id.is_some_and(|id| {
+                            self.sides[foe].mon().moves.iter().any(|m| m.entry.id == id)
+                        })
+                }
+                _ => false,
+            };
         }
         // A seat that chose Focus Punch starts tightening its focus before
         // anything else happens this turn (the sim's priority charge step);
@@ -1888,8 +1928,10 @@ impl Battle {
                 }
                 if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
                     self.switch_out_reset(side);
+                    let slot_item = self.hand_slot_item_over(side);
                     self.sides[side].reorder_for_switch(idx);
                     self.sides[side].active = idx;
+                    self.sides[side].mon_mut().last_item = slot_item;
                     events.push(Event::Switched {
                         side: side as u8 + 1,
                         party_index: idx,
@@ -1974,8 +2016,10 @@ impl Battle {
             if let Some(idx) = self.deferred_switch[side].take() {
                 if idx < self.sides[side].party.len() && !self.sides[side].party[idx].fainted() {
                     self.sides[side].mon_mut().status = None;
+                    let slot_item = self.hand_slot_item_over(side);
                     self.sides[side].reorder_for_switch(idx);
                     self.sides[side].active = idx;
+                    self.sides[side].mon_mut().last_item = slot_item;
                     events.push(Event::Switched {
                         side: side as u8 + 1,
                         party_index: idx,
@@ -2845,12 +2889,16 @@ impl Battle {
             && !releasing
             && !encore_forced
             && !forced;
-        let sealed = self.sides[foe].mon().imprisoning
-            && self.sides[foe]
-                .mon()
-                .moves
-                .iter()
-                .any(|m| m.entry.id == slot.entry.id);
+        // The seal as it stood when the choice was made, plus the live one —
+        // an Imprison that landed EARLIER this turn seals a mon that has not
+        // moved yet, and that is the `imprison_fresh` path just below.
+        let sealed = self.sealed_at_choice[side]
+            || (self.sides[foe].mon().imprisoning
+                && self.sides[foe]
+                    .mon()
+                    .moves
+                    .iter()
+                    .any(|m| m.entry.id == slot.entry.id));
         if sealed && self.sides[foe].mon().imprison_fresh && !releasing
             && !forced {
             // Imprison landed earlier this same turn: the chosen move is
@@ -2934,37 +2982,21 @@ impl Battle {
             side: side as u8 + 1,
             move_index: index,
         });
-        // Snatch answers `onAnyPrepareHit`, the first event in the sim's
-        // tryMoveHit, so it takes the move before any roll is made. The
-        // original user has already spent the PP and had its line logged;
-        // what it loses is everything after this.
-        if slot.entry.snatchable && !self.sides[foe].mon().fainted() && self.sides[foe].mon().snatching
-        {
-            self.sides[foe].mon_mut().snatching = false;
-            // Snatch runs a DeductPP event of its own against the mon it is
-            // robbing, and Pressure answers it: the thief pays a SECOND point
-            // for the Snatch it already spent one on. The sim charges that to
-            // Snatch's slot, not to the move being taken.
-            if ability::pressure(&self.sides[side].mon().bearer()) {
-                if let Some(ms) = self.sides[foe]
-                    .mon_mut()
-                    .moves
-                    .iter_mut()
-                    .find(|m| m.entry.id == "snatch")
-                {
-                    ms.pp = ms.pp.saturating_sub(1);
-                }
-            }
-            self.pending_call = Some((foe, slot.entry));
-            return;
-        }
-        {
+        // `moveUsed` lives in `runMove`, and a called move never goes through
+        // it — gen 3's own `useMoveInner` writes `lastMoveUsed` and nothing
+        // else. So a Magic Coat bounce and a Snatch both leave their user's
+        // memory of what it last did completely alone: the bouncer's lastMove
+        // is still Magic Coat, which is what a Torment greys out next turn,
+        // and a Sketch aimed at a thief copies SNATCH rather than the move it
+        // took. Pursuit is the exception the sim writes by hand, and it comes
+        // through here with `forced` false, so it still records.
+        //
+        // (One knowing gap: our single field stands in for both `lastMove`
+        // and `lastMoveUsed`, so a Conversion 2 answering a bounced move sees
+        // nothing where the sim would see the move. No seed reaches it.)
+        if !forced {
             let mon = self.sides[side].mon_mut();
-            mon.last_used = if struggling || forced {
-                None
-            } else {
-                Some(index as u8)
-            };
+            mon.last_used = if struggling { None } else { Some(index as u8) };
             mon.last_used_id = Some(slot.entry.id);
             mon.last_missed = false;
         }
@@ -3184,6 +3216,37 @@ impl Battle {
         } else {
             slot
         };
+
+        // Snatch answers `onAnyPrepareHit`, which fires once per `useMove` —
+        // so it tests the move actually being prepared, and that is the move
+        // AFTER the callers have had their say. An Assist or a Sleep Talk
+        // carries no snatch flag itself, but the move it reaches for
+        // re-enters useMove and gets its own PrepareHit, so a Recover pulled
+        // out of an Assist is stolen just the same. The original user has
+        // already spent its PP and had both lines logged; what it loses is
+        // everything after this.
+        if slot.entry.snatchable
+            && !self.sides[foe].mon().fainted()
+            && self.sides[foe].mon().snatching
+        {
+            self.sides[foe].mon_mut().snatching = false;
+            // Snatch runs a DeductPP event of its own against the mon it is
+            // robbing, and Pressure answers it: the thief pays a SECOND point
+            // for the Snatch it already spent one on. The sim charges that to
+            // Snatch's slot, not to the move being taken.
+            if ability::pressure(&self.sides[side].mon().bearer()) {
+                if let Some(ms) = self.sides[foe]
+                    .mon_mut()
+                    .moves
+                    .iter_mut()
+                    .find(|m| m.entry.id == "snatch")
+                {
+                    ms.pp = ms.pp.saturating_sub(1);
+                }
+            }
+            self.pending_call = Some((foe, slot.entry));
+            return;
+        }
 
         // Fury Cutter's count belongs to the move that ACTUALLY goes off,
         // not the one announced: a Mirror Move or a Sleep Talk that plays
@@ -5132,8 +5195,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     continue;
                 };
                 self.sides[side].mon_mut().status = None;
+                let slot_item = self.hand_slot_item_over(side);
                 self.sides[side].reorder_for_switch(next);
                 self.sides[side].active = next;
+                self.sides[side].mon_mut().last_item = slot_item;
                 events.push(Event::Switched {
                     side: side as u8 + 1,
                     party_index: next,
@@ -6064,8 +6129,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                             )
                         };
                         self.switch_out_reset(side);
+                        let slot_item = self.hand_slot_item_over(side);
                         self.sides[side].reorder_for_switch(next);
                         self.sides[side].active = next;
+                        self.sides[side].mon_mut().last_item = slot_item;
                         {
                             let m = self.sides[side].mon_mut();
                             m.stages = passed.0;
@@ -6108,8 +6175,10 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 match bench.first().copied() {
                     Some(next) if hit && !rooted && !self.sides[foe].mon().fainted() => {
                         self.switch_out_reset(foe);
+                        let slot_item = self.hand_slot_item_over(foe);
                         self.sides[foe].reorder_for_switch(next);
                         self.sides[foe].active = next;
+                        self.sides[foe].mon_mut().last_item = slot_item;
                         self.dragged[foe] = true;
                         events.push(Event::Switched {
                             side: foe as u8 + 1,
