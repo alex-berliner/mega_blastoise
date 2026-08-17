@@ -154,33 +154,16 @@ pub(crate) fn is_ai_player(player: u8) -> bool {
     AI_PLAYERS.with(|a| a.borrow()[(player - 1) as usize])
 }
 
-pub(crate) fn ai_pick_move(n_moves: usize) -> usize {
-    (js_sys::Math::random() * n_moves as f64) as usize
-}
 
-pub(crate) fn ai_pick_switch(player: u8) -> usize {
-    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
-                else           { P2_PARTY.with(|p| p.borrow().clone()) };
-    // Try slots 1, 2, 0 — prefer bench slots over active (slot 0 is usually active)
-    for &idx in &[1usize, 2, 0] {
-        if let Some(slot) = party.get(idx) {
-            if slot.hp > 0 { return idx; }
-        }
-    }
-    0
-}
+
+
 
 pub(crate) fn clear_input_queues() {
     P1_QUEUE.with(|q| q.borrow_mut().clear());
     P2_QUEUE.with(|q| q.borrow_mut().clear());
 }
 
-/// Returns true if the party slot at `idx` is alive (hp > 0) or data is unavailable.
-pub(crate) fn party_slot_alive(player: u8, idx: usize) -> bool {
-    let party = if player == 1 { P1_PARTY.with(|p| p.borrow().clone()) }
-                else           { P2_PARTY.with(|p| p.borrow().clone()) };
-    party.get(idx).map(|s| s.hp > 0).unwrap_or(true)
-}
+
 
 
 pub(crate) fn update_leds(leds: [u32; 24]) {
@@ -1347,22 +1330,9 @@ pub fn get_device_pixels() -> Vec<u8> {
     })
 }
 
-/// Cursor position for a seat, so the page can highlight its on-screen pad.
-#[wasm_bindgen]
-pub fn nav_cursor(player: u8) -> u8 {
-    SESSION.with(|s| s.borrow().seats[(player == 2) as usize].nav.cursor)
-}
 
-/// Which list the cursor is in: 0 moves, 1 party, 2 detail.
-#[wasm_bindgen]
-pub fn nav_mode(player: u8) -> u8 {
-    use mega_blastoise_core::cursor_nav::NavMode::*;
-    SESSION.with(|s| match s.borrow().seats[(player == 2) as usize].nav.mode {
-        Moves => 0,
-        Party => 1,
-        Detail => 2,
-    })
-}
+
+
 
 /// Sync the cursor's bounds to the live prompt. Called when a turn starts so
 /// the cursor can never point at a move slot the mon does not have.
@@ -1423,13 +1393,7 @@ pub fn ai_hold_ms() -> u32 {
     mega_blastoise_core::AI_HOLD_MS as u32
 }
 
-/// Point the cursor straight at an item — what a direct tap on the screen
-/// does. Bounded by the same limits the D-pad respects.
-#[wasm_bindgen]
-pub fn nav_set_cursor(player: u8, idx: u8) {
-    let ctx = press_ctx(player);
-    SESSION.with(|s| s.borrow_mut().set_cursor(player, idx, ctx));
-}
+
 
 /// D-pad: 0 up, 1 down, 2 left, 3 right.
 #[wasm_bindgen]
@@ -1460,15 +1424,7 @@ pub(crate) fn log_view(player: u8) -> Option<usize> {
 }
 
 
-/// True when neither seat is choosing: turn playback, which is the shared
-/// moment both players watch, so it wants the full-panel landscape view.
-#[wasm_bindgen]
-pub fn is_playback() -> bool {
-    if is_lobby_mode() || menu_active() {
-        return false;
-    }
-    !seat_is_choosing(1) && !seat_is_choosing(2) && !seat_is_waiting(1) && !seat_is_waiting(2)
-}
+
 
 /// Has this seat committed and is now on the locked-in screen?
 #[wasm_bindgen]
@@ -1482,13 +1438,7 @@ pub fn seat_is_waiting(player: u8) -> bool {
     })
 }
 
-/// Point at a slot and commit it in one action — what a direct tap on a move
-/// cell does, so a tap is a whole turn decision rather than half of one.
-#[wasm_bindgen]
-pub fn nav_tap_commit(player: u8, idx: u8) {
-    let ctx = press_ctx(player);
-    run_outs(SESSION.with(|s| s.borrow_mut().tap_commit(player, idx, ctx)));
-}
+
 
 /// Tapping the panel after committing cancels it.
 #[wasm_bindgen]
@@ -1520,16 +1470,7 @@ pub fn menu_active() -> bool {
     SESSION.with(|s| s.borrow().menu_active)
 }
 
-/// 0 gen picker, 1 lobby, 2 options — for the page's debug tooling.
-#[wasm_bindgen]
-pub fn menu_screen() -> u8 {
-    use mega_blastoise_core::menu::MenuScreen::*;
-    SESSION.with(|s| match s.borrow().menu.screen {
-        GenPicker => 0,
-        Lobby => 1,
-        Options => 2,
-    })
-}
+
 
 pub(crate) fn menu_six_v_six() -> bool {
     SESSION.with(|s| s.borrow().six_v_six())
@@ -1595,10 +1536,7 @@ pub fn nav_info(player: u8) {
     press(player, Button::Info);
 }
 
-#[wasm_bindgen]
-pub fn nav_tap_seat(player: u8) {
-    press(player, Button::TapSeat);
-}
+
 
 #[wasm_bindgen]
 pub fn nav_a_hold(player: u8) {

@@ -145,20 +145,6 @@ fn blend(under: u16, over: u16, a: u32) -> u16 {
     (r << 11) | (g << 5) | b
 }
 
-/// The seam for the shared battle scene. Both halves are one battlefield
-/// there, so a hard divider would cut it in two; a soft horizon line in the
-/// field's own shadow color keeps the ground continuous while still telling
-/// each player where their side ends.
-pub fn draw_field_seam(frame: &mut DeviceFrame) {
-    let mid = DEV_H / 2;
-    let shadow = rgb565(crate::display_color::C_SHADOW);
-    let track = rgb565(crate::display_color::C_TRACK);
-    for x in 0..DEV_W {
-        frame.set(x, mid - 1, track);
-        frame.set(x, mid, shadow);
-    }
-}
-
 /// Where the shared scene's two mons stand: a band across the seam, one seat
 /// per side.
 pub const BAND_TOP: i32 = 116;

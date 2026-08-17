@@ -672,24 +672,7 @@ where
 
 use embedded_graphics::pixelcolor::raw::RawU16;
 
-/// Blit at half size by point-sampling every other pixel. Pixel art survives
-/// a clean 2:1 reduction, and it keeps a native ~54px sprite inside the 34px
-/// HUD slot without a second set of assets.
-fn draw_sprite_half<D>(d: &mut D, spr: &ColorSprite, x: i32, y: i32)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    for sy in (0..spr.h as u32).step_by(2) {
-        for sx in (0..spr.w as u32).step_by(2) {
-            let i = spr.index_at(sx, sy);
-            if i == 0 {
-                continue;
-            }
-            let c = Rgb565::from(RawU16::new(spr.color(i)));
-            fill(d, x + (sx / 2) as i32, y + (sy / 2) as i32, 1, 1, c);
-        }
-    }
-}
+
 
 /// Blit horizontally mirrored. Gen 1 front sprites all face the same way, so
 /// one side has to be flipped for the two mons to face each other.
@@ -762,75 +745,13 @@ fn draw_sprite_fit<D>(
     }
 }
 
-/// Draw a species' front art centered in a box. Returns false if unknown.
-fn front_sprite_in<D>(d: &mut D, name: &str, cx: i32, cy: i32, scale: u32) -> bool
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    match mon_sprite_color(name) {
-        Some(s) => {
-            draw_sprite(
-                d,
-                s,
-                cx - (s.w as u32 * scale / 2) as i32,
-                cy - (s.h as u32 * scale / 2) as i32,
-                scale,
-            );
-            true
-        }
-        None => false,
-    }
-}
 
-/// Draw a species' back art centered. Back sprites are natively 32x32 and
-/// the Game Boy drew them at 2x, so `scale` is normally 2.
-fn back_sprite_in<D>(d: &mut D, name: &str, cx: i32, cy: i32, scale: u32) -> bool
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    match mon_back_sprite_color(name) {
-        Some(s) => {
-            draw_sprite(
-                d,
-                s,
-                cx - (s.w as u32 * scale / 2) as i32,
-                cy - (s.h as u32 * scale / 2) as i32,
-                scale,
-            );
-            true
-        }
-        None => false,
-    }
-}
+
+
 
 // ── Shared furniture ─────────────────────────────────────────────────────────
 
-/// The permanent foe HUD along the top of every choice screen: sprite, name,
-/// level, HP, status, and whether they have locked in.
-fn foe_hud<D>(d: &mut D, ctx: &HalfCtx<'_>)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    panel(d, LEFT, TOP, CONTENT_W, 38, C_BOX, C_INK);
-    if let Some(s) = mon_sprite_color(ctx.foe_name) {
-        // Half scale: native art is ~54px, the HUD slot is 34px.
-        let w = (s.w as i32 + 1) / 2;
-        let h = (s.h as i32 + 1) / 2;
-        draw_sprite_half(d, s, 7 + (34 - w).max(0) / 2, TOP + 3 + (34 - h).max(0) / 2);
-    }
-    text_at(d, "FOE", 45, TOP + 5, &FONT_5X8, C_DIM);
-    text_at(d, clip(ctx.foe_name, 13), 69, TOP + 3, &FONT_8X13, C_INK);
-    if ctx.foe_level > 0 {
-        let mut buf = LvBuf::new();
-        text_right(d, buf.fmt(ctx.foe_level), 232, TOP + 5, &FONT_5X8, C_DIM);
-    }
-    hp_bar(d, 45, TOP + 21, 150, ctx.foe_hp);
-    if ctx.foe_locked {
-        chip(d, 199, TOP + 20, "LOCK", C_DIM);
-    } else if let Some(st) = ctx.foe_status {
-        chip(d, 199, TOP + 20, clip(st, 3), C_ACCENT);
-    }
-}
+
 
 /// `Lv55` without `alloc::format!` — this runs on the firmware too.
 struct LvBuf([u8; 8], usize);
@@ -1000,17 +921,7 @@ pub const CONTENT_W: u32 = (RIGHT - LEFT) as u32;
 /// box's own edge and right-aligned text stops `BOX_PAD` short of it.
 pub const BOX_PAD: i32 = 6;
 
-/// `Name` at the left, `Lv12` hard right, on one line.
-fn name_and_level<D>(d: &mut D, name: &str, level: u8, x: i32, right: i32, y: i32)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    text_at(d, clip(name, 13), x, y, &FONT_6X10, C_INK);
-    if level > 0 {
-        let mut b = LvBuf::new();
-        text_right(d, b.fmt(level), right, y + 1, &FONT_5X8, C_DIM);
-    }
-}
+
 
 /// The Gen 3 HP row: a red HP tag against the bar, not a bare track.
 fn hp_row<D>(d: &mut D, x: i32, y: i32, w: u32, pct: u8)
@@ -1101,35 +1012,7 @@ where
     );
 }
 
-/// The rival, as their own window down the right side: species, sprite, level
-/// and HP in one card, the way the Gen 3 games show the opposing side. This is
-/// the information the whole turn is decided on, so it is a panel rather than
-/// the thumbnail strip it used to be.
-fn foe_window<D>(d: &mut D, ctx: &HalfCtx<'_>)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    panel(d, 124, TOP, 108, 82, C_BOX, C_INK);
-    // The sprite gets the full width and height of the card above the name
-    // plate, so it draws at native scale instead of being halved to fit.
-    if let Some(s) = mon_sprite_color(ctx.foe_name) {
-        draw_sprite_fit(d, s, 126, TOP + 2, 104, 56, false, true);
-    } else {
-        text_center(d, clip(ctx.foe_name, 11), 178, TOP + 26, &FONT_6X10, C_INK);
-    }
-    // The tags sit over the top corners of the art rather than taking a band
-    // of their own, which is where the height for the sprite came from.
-    chip(d, 127, TOP + 2, "FOE", C_DIM);
-    name_and_level(d, ctx.foe_name, ctx.foe_level, 128, RIGHT - 4, TOP + 58);
-    hp_row(d, 128, TOP + 68, 100, ctx.foe_hp);
-    // The rival having locked their move is the one thing worth interrupting
-    // the card for: it is the only signal that the turn is waiting on you.
-    if ctx.foe_locked {
-        chip(d, 201, TOP + 2, "LOCK", C_DIM);
-    } else if let Some(st) = ctx.foe_status {
-        chip(d, 211, TOP + 2, clip(st, 3), C_ACCENT);
-    }
-}
+
 
 // ── Screens ──────────────────────────────────────────────────────────────────
 

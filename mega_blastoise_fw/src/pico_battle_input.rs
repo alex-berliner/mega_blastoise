@@ -100,8 +100,6 @@ mod board {
     ];
 }
 
-pub use board::N_PINS;
-
 /// Snapshot of every button's state from one full scan.
 /// Bit layout: `mask[player-1][kind]`, kind 0 = moves, 1 = party.
 #[derive(Clone, Copy, Default, PartialEq, Eq)]

@@ -414,9 +414,14 @@ async fn battle_loop<E, T, DS>(
     defmt::info!("[trace] battle_loop: start, initial dispatch");
     enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
 
+    // The turn counter feeds only the trace logs.
+    #[cfg(feature = "trace")]
     let mut turn: u32 = 0;
     while !battle.ended() {
-        turn += 1;
+        #[cfg(feature = "trace")]
+        {
+            turn += 1;
+        }
         #[cfg(feature = "trace")]
         defmt::info!("[trace] battle_loop: turn {}", turn);
         let mut had_request = false;

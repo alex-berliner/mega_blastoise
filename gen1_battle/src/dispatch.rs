@@ -816,7 +816,6 @@ fn apply_effect(
                         // build is an `onHit` on the target's own volatile — so it earns
                         // nothing off a sub.
                         let ate_by_sub = matches!(res, HitRes::Sub { .. });
-                        let ate_by_sub = matches!(res, HitRes::Sub { .. });
                         note_hit(&mut outcome, res, dmg);
                         // An unleash stokes a raging target like any other
                         // hit that lands — but only if it actually reached

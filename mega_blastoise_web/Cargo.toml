@@ -24,7 +24,6 @@ gen1_battle = { path = "../gen1_battle" }
 gen3_battle = { path = "../gen3_battle" }
 battler = { path = "../battler/battler" }
 battler-data = { path = "../battler/battler-data" }
-anyhow = "1.0"
 # getrandom is pulled in transitively by battler → rand.
 # Enable wasm_js so it compiles for wasm32-unknown-unknown.
 getrandom = { version = "0.4", features = ["wasm_js"] }
