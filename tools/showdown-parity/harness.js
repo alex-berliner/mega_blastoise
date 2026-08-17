@@ -122,10 +122,11 @@ function scriptRandomness(battle, script) {
     // Shed Skin's end-of-turn third of a chance is not one of the scenario's
     // knobs, and it fires outside any move — after an accuracy window that a
     // never-rolling move may have left open, and with `__cur` still holding
-    // whichever action ran last. Nothing else in this era rolls 33 out of
-    // 100, so pin it off first; the engines leave it alone under a script
-    // for the same reason.
-    if (numerator === 33 && denominator === 100) return false;
+    // whichever action ran last. Pin it off first, but ONLY outside a move:
+    // an accuracy of 33 is a real number a move can have (Poison Gas at two
+    // stages down is exactly that), and swallowing its roll here made the
+    // reference miss where the script said hit.
+    if (numerator === 33 && denominator === 100 && !battle.activeMove) return false;
     if (battle.__accPending && (denominator === 100 || denominator === 256)) {
       battle.__accPending = false;
       return battle.__cur.hit;
