@@ -2836,15 +2836,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             });
             return;
         }
-        // Beat Up rallies every healthy party member — the sim builds
-        // `move.allies` from everyone unfainted and unstatused — and fails
-        // only when that leaves nobody at all.
-        if slot.entry.id == "beatup" && self.beatup_allies(side).is_empty() {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
-            return;
-        }
         // Dream Eater only bites a sleeping target.
         if slot.entry.id == "dreameater" && self.sides[foe].mon().status != Some(Status::Sleep) {
             events.push(Event::Failed {
@@ -3819,6 +3810,24 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             if boom {
                 self.resolve_faints(side, foe, events);
             }
+            return;
+        }
+
+        // Beat Up rallies every healthy party member — the sim builds
+        // `move.allies` from everyone unfainted and unstatused — and fails
+        // only when that leaves nobody at all. That failure lives in the
+        // damage calculation, which sits PAST the accuracy roll, so a Beat
+        // Up with nobody behind it can miss like anything else; and when it
+        // does not miss, the target still counts as attacked. Gen 3 ends its
+        // tryMoveHit with `target.gotAttacked(move, damage, pokemon)`,
+        // reached by every move that got this far whatever it then does, so
+        // a fizzle is Mirror Move-able exactly like a hit.
+        if slot.entry.id == "beatup" && self.beatup_allies(side).is_empty() {
+            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
+            self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+            events.push(Event::Failed {
+                side: side as u8 + 1,
+            });
             return;
         }
 
