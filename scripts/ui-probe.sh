@@ -70,8 +70,10 @@ async function until(label, pred, ms = 8000) {
 
 try {
   await init();
-  // Through the menus: A picks the highlighted ruleset, then both seats
-  // ready up through the lobby with default controls.
+  // Through the menus: the gen picker first (row 0 Gen 1, row 1 Gen 3 —
+  // the lane says which), then both seats ready up with default controls.
+  const lane = new URLSearchParams(location.search).get('lane') ?? 'gen1';
+  if (lane === 'gen3') { wasm.nav_dpad(1, 1); await sleep(120); }
   wasm.nav_a(1); await sleep(300);
   wasm.nav_a(1); wasm.nav_a(2); await sleep(300);
   wasm.nav_a(1); wasm.nav_a(2);
@@ -116,18 +118,21 @@ python3 -m http.server 8123 >/dev/null 2>&1 &
 SERVER_PID=$!
 sleep 1
 
-DOM=$("$CHROME" --headless=new --no-sandbox --disable-gpu \
-  --virtual-time-budget=150000 --timeout=180000 \
-  --dump-dom "http://127.0.0.1:8123/_probe.html?seed=7777" 2>/dev/null || true)
-
-echo "$DOM" | sed -n 's/.*<pre id="out">//; s/<\/pre>.*//p' | head -1 >/dev/null
-RESULT=$(echo "$DOM" | python3 -c "
+FAILED=0
+for LANE in gen1 gen3; do
+  echo "── lane: $LANE ──"
+  DOM=$("$CHROME" --headless=new --no-sandbox --disable-gpu \
+    --virtual-time-budget=150000 --timeout=180000 \
+    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=7777&lane=$LANE" 2>/dev/null || true)
+  RESULT=$(echo "$DOM" | python3 -c "
 import re, sys
 m = re.search(r'<pre id=\"out\">(.*?)</pre>', sys.stdin.read(), re.S)
 print(m.group(1) if m else 'NO OUTPUT — page did not render')
 ")
-echo "$RESULT"
-if echo "$RESULT" | grep -q "ALL PASS"; then
+  echo "$RESULT"
+  echo "$RESULT" | grep -q "ALL PASS" || FAILED=1
+done
+if [ "$FAILED" = 0 ]; then
   echo "ui-probe: OK"
 else
   echo "ui-probe: FAILED" >&2
