@@ -4228,7 +4228,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.sides[side].mon_mut().last_missed = true;
             if ramping {
                 break_rampage(self, side, script.is_some(), events);
-            } else if self.sides[side].mon().locked_move != Some("uproar") {
+            } else {
+                // A FIRST-use miss leaves no lock at all: the din's volatile
+                // is a self-effect applied in `moveHit`, which a move that
+                // missed never reaches. Only a miss once the lock is already
+                // running keeps it, and that is the `ramping` branch above.
                 self.sides[side].mon_mut().rampage = None;
             }
             self.sides[side].mon_mut().fury_n = 0;
