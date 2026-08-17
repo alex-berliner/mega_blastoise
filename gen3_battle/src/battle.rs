@@ -5539,7 +5539,13 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // refuses it there — so the heal never happens at all.
                 let sleepless =
                     ability::blocks_status(&self.sides[side].mon().bearer(), Status::Sleep);
-                if mon.hp < mon.max_hp && !uproar && !sleepless {
+                // Rest refuses to run at all on a mon that is ALREADY asleep,
+                // and its onTry asks that before anything else. It matters
+                // because Sleep Talk can only be used while asleep and will
+                // happily reach for Rest: the call fails, and the sleeper
+                // does not heal.
+                let already = mon.status == Some(Status::Sleep);
+                if mon.hp < mon.max_hp && !uproar && !sleepless && !already {
                     let mon = self.sides[side].mon_mut();
                     mon.hp = mon.max_hp;
                     mon.status = Some(Status::Sleep);
