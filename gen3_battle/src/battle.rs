@@ -4906,9 +4906,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         self.white_herb(side);
         self.white_herb(1 - side);
         self.greet(side, true, events);
-        // Then the arrival's own item onStart, one step later, which is what
-        // catches a negative boost that came in on a Baton Pass.
-        self.white_herb(side);
     }
 
     fn greet(&mut self, side: usize, tidy: bool, events: &mut Vec<Event>) {
@@ -4948,6 +4945,14 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 }
             }
         }
+        // The arrival's own item `onStart`, which `runSwitch` fires after the
+        // ability has started: this is the White Herb answering an Intimidate
+        // that landed a moment ago on the other side of the field, and the
+        // one that catches a negative boost carried in on a Baton Pass. It
+        // sits in `greet` rather than in the switch wrapper because the
+        // battle's OPENING goes through here too, where both mons greet each
+        // other in turn.
+        self.white_herb(side);
         // Forecast comes in at `onSwitchInPriority: -2`, under every other
         // arrival handler, so it reads a sky the newcomer may have just laid
         // down itself. This sits in `greet` rather than in the switch wrapper
@@ -6034,8 +6039,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // hands have nothing to trade.
                 let mine = self.sides[side].mon().item;
                 let theirs = self.sides[foe].mon().item;
+                // Mail refuses to leave its holder's hands for anything but
+                // a Knock Off, a Thief or a Covet: its `onTakeItem` turns
+                // everything else away, and Trick takes both items before it
+                // hands either over, so one piece of Mail on either side
+                // fails the whole trade.
                 if !hit
                     || self.sides[foe].mon().ability == "stickyhold"
+                    || mine == "mail"
+                    || theirs == "mail"
                     || (mine.is_empty() && theirs.is_empty())
                     || self.sides[foe].mon().fainted()
                 {
@@ -6535,6 +6547,27 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     }
                 }
                 None => {}
+            }
+        }
+
+        // A King's Rock hangs a second secondary off the move — ten percent,
+        // flinch — by pushing it onto `move.secondaries` at onModifyMove. It
+        // is rolled on its own, after the move's own secondary, and Shield
+        // Dust refuses it the same way. Serene Grace doubles it too, since by
+        // the time it is rolled it is just another entry in the list.
+        if item::kings_rock_flinches(&self.sides[side].mon().holder(), slot.entry.id) {
+            let rock_chance = if doubled { 20 } else { 10 };
+            let rock_proc = !dusted
+                && match script {
+                    Some(s) => s.secondary,
+                    None => self.rng.below(100) < rock_chance,
+                };
+            if rock_proc
+                && !self.sides[foe].mon().fainted()
+                && !self.sides[foe].mon().focusing
+                && !ability::blocks_flinch(&self.sides[foe].mon().bearer())
+            {
+                self.sides[foe].mon_mut().flinched = true;
             }
         }
 

@@ -331,6 +331,23 @@ function runTurn(sc) {
     const mon = b.getSide(id).pokemon[0];
     const want = sc[id];
     if (want.status) {
+      // KNOWN LIMITATION. `setPlayer` starts the battle as soon as the second
+      // team lands, so by the time this runs the opening switch-ins are done:
+      // Intimidate has cowed, Trace has copied, a weather ability has laid
+      // its sky down and a White Herb has answered — all of it sorted by a
+      // Speed that had not yet been quartered by this paralysis. A mon that
+      // walks into a real battle already paralysed greets the field slow.
+      //
+      // Moving this earlier was tried twice, once by holding `start` back and
+      // once by hooking `actions.switchIn` before the opening is sorted. Both
+      // put the status on in time and both bought an extra residual tick with
+      // it — a mon that starts poisoned took poison damage before turn one's
+      // first move, which the cartridge does not do. The tick is the worse of
+      // the two errors, so the order stays as it is.
+      //
+      // What this can cost: a pre-set PARALYSIS on a mon whose opening is
+      // order-sensitive, which in this era means Intimidate against a White
+      // Herb, a Trace, or two weather abilities racing.
       mon.setStatus(want.status);
       // Gens 1-2 apply the par/brn stat drops at the moment of infliction
       // (scripts.js does it inside the move); a bare setStatus skips them,

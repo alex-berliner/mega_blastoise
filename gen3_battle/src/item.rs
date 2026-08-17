@@ -210,6 +210,39 @@ pub fn ripens(mon: &Holder) -> Ripe {
     }
 }
 
+/// The moves a King's Rock adds a ten-percent flinch to. The sim writes them
+/// out as a list rather than deriving one, and the list is not "every
+/// damaging move": Thunderbolt, Flamethrower and Ice Beam are all absent,
+/// while Bide, Beat Up and Struggle are all there.
+pub fn kings_rock_flinches(user: &Holder, move_id: &str) -> bool {
+    user.has("kingsrock")
+        && matches!(
+            move_id,
+            "aerialace" | "aeroblast" | "aircutter" | "armthrust" | "barrage" | "beatup" |
+            "bide" | "bind" | "blastburn" | "bonerush" | "bonemerang" | "bounce" |
+            "brickbreak" | "bulletseed" | "clamp" | "cometpunch" | "crabhammer" | "crosschop" |
+            "cut" | "dig" | "dive" | "doublekick" | "doubleslap" | "doubleedge" |
+            "dragonbreath" | "dragonclaw" | "dragonrage" | "drillpeck" | "earthquake" | "eggbomb" |
+            "endeavor" | "eruption" | "explosion" | "extremespeed" | "falseswipe" | "feintattack" |
+            "firespin" | "flail" | "fly" | "frenzyplant" | "frustration" | "furyattack" |
+            "furycutter" | "furyswipes" | "gust" | "hiddenpower" | "highjumpkick" | "hornattack" |
+            "hydrocannon" | "hydropump" | "hyperbeam" | "iceball" | "iciclespear" | "jumpkick" |
+            "karatechop" | "leafblade" | "lowkick" | "machpunch" | "magicalleaf" | "magnitude" |
+            "megakick" | "megapunch" | "megahorn" | "meteormash" | "mudshot" | "muddywater" |
+            "nightshade" | "outrage" | "overheat" | "payday" | "peck" | "petaldance" |
+            "pinmissile" | "poisontail" | "pound" | "psychoboost" | "psywave" | "quickattack" |
+            "rage" | "rapidspin" | "razorleaf" | "razorwind" | "return" | "revenge" |
+            "reversal" | "rockblast" | "rockthrow" | "rollingkick" | "rollout" | "sandtomb" |
+            "scratch" | "seismictoss" | "selfdestruct" | "shadowpunch" | "shockwave" | "signalbeam" |
+            "silverwind" | "skullbash" | "skyattack" | "skyuppercut" | "slam" | "slash" |
+            "snore" | "solarbeam" | "sonicboom" | "spikecannon" | "spitup" | "steelwing" |
+            "strength" | "struggle" | "submission" | "surf" | "swift" | "tackle" |
+            "takedown" | "thrash" | "triplekick" | "twister" | "uproar" | "visegrip" |
+            "vinewhip" | "vitalthrow" | "volttackle" | "watergun" | "waterpulse" | "waterfall" |
+            "weatherball" | "whirlpool" | "wingattack" | "wrap"
+        )
+}
+
 /// Whether an item is one of the berries, which is what Trick and a few other
 /// effects need to know.
 pub fn is_berry(item: &str) -> bool {

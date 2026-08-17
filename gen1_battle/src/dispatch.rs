@@ -217,17 +217,18 @@ fn run_move(
     if deduct {
         if let Some(slot) = pp_slot {
             let a = sides[attacker_side].active_mut();
-            if a.moves[slot].pp > 0 {
-                a.moves[slot].pp -= 1;
-            }
+            // A move forced out at zero PP UNDERFLOWS. The cartridge keeps
+            // six bits of PP, so one taken from nothing wraps to sixty-three,
+            // and the sim leaves a hint saying exactly that. Clamping at zero
+            // instead was the safe-looking guess and the wrong one: a mon
+            // held on an empty slot walks away with a full one.
+            a.moves[slot].pp = a.moves[slot].pp.wrapping_sub(1) & 0x3f;
         } else if locked {
             // A mirror-called two-turn move has no slot of its own: its
             // release pays the deferred PP from the MIRROR slot.
             let a = sides[attacker_side].active_mut();
             if let Some(ds) = a.volatile.mirror_debt_slot.take() {
-                if a.moves[ds as usize].pp > 0 {
-                    a.moves[ds as usize].pp -= 1;
-                }
+                a.moves[ds as usize].pp = a.moves[ds as usize].pp.wrapping_sub(1) & 0x3f;
             }
         }
     }

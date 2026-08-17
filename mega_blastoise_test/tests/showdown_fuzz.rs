@@ -290,7 +290,8 @@ const GEN3_ABILITIES: &[&str] = &[
 /// allowed to hand out. Same rule as the abilities: anything outside this
 /// list stays off both sides.
 ///
-/// Still to come: King's Rock, Quick Claw, Focus Band, Mail and Recycle.
+/// Still to come: Quick Claw and Focus Band, whose rolls the harness has no
+/// knob for yet.
 const GEN3_ITEMS: &[&str] = &[
     "apicotberry",
     "aspearberry",
@@ -311,6 +312,7 @@ const GEN3_ITEMS: &[&str] = &[
     "lansatberry",
     "mentalherb",
     "leppaberry",
+    "kingsrock",
     "laxincense",
     "leftovers",
     "iapapaberry",
@@ -321,6 +323,7 @@ const GEN3_ITEMS: &[&str] = &[
     "magoberry",
     "machobrace",
     "magnet",
+    "mail",
     "metalcoat",
     "metalpowder",
     "miracleseed",
