@@ -31,6 +31,8 @@ pub struct Attacker {
     pub burned: bool,
     /// What abilities do to the attacking stat once the stages are in.
     pub stat_mod: Chain,
+    /// Hustle, which rounds on its own before the chain above multiplies.
+    pub stat_pre: Chain,
     /// Guts takes burn's boost without burn's Attack cut.
     pub ignores_burn: bool,
 }
@@ -158,7 +160,7 @@ pub fn damage(a: &Attacker, d: &Defender, m: &MoveUse, roll: Roll) -> u32 {
     };
     // Abilities modify the stats after the stages, the way the sim's
     // ModifyAtk and ModifyDef events run on an already-boosted number.
-    let attack = a.stat_mod.apply(attack as u32);
+    let attack = a.stat_mod.apply(a.stat_pre.apply(attack as u32));
     let defence = d.stat_mod.apply(defence as u32);
     let defence = if m.halve_def && category == Category::Physical {
         (defence / 2).max(1)
@@ -230,6 +232,7 @@ mod tests {
             types: (Type::Normal, Type::None),
             burned: false,
             stat_mod: Chain::new(),
+            stat_pre: Chain::new(),
             ignores_burn: false,
         }
     }

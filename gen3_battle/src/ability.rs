@@ -112,8 +112,11 @@ pub fn thick_fat_cut(target: &Bearer, move_type: Type) -> bool {
 }
 
 /// The attacking stat, after stat stages. Huge Power and Pure Power double it
-/// outright; Guts and Hustle add half again, Guts only while something ails
-/// the user.
+/// outright; Guts adds half again while something ails the user.
+///
+/// Hustle is NOT here. It is the one modifier in the era that does not chain
+/// — the sim's own source says so in a comment above it — so it gets its own
+/// rounding step in [`hustle_chain`].
 pub fn attack_chain(user: &Bearer, physical: bool) -> Chain {
     let mut chain = Chain::new();
     if !physical {
@@ -121,9 +124,22 @@ pub fn attack_chain(user: &Bearer, physical: bool) -> Chain {
     }
     match user.ability {
         "hugepower" | "purepower" => chain.mul(X2),
-        "hustle" => chain.mul(X1_5),
         "guts" if user.status.is_some() => chain.mul(X1_5),
         _ => {}
+    }
+    chain
+}
+
+/// Hustle's half again, which lands on the stat BEFORE anything else and
+/// rounds there. Every other Attack modifier accumulates into one chain that
+/// is applied once at the end of the event; Hustle calls `modify` directly,
+/// truncating on the spot, and the chain then multiplies the rounded number.
+/// With Hustle alone the two orders agree; pair it with a Choice Band and
+/// they differ by a point of Attack, which is a point of damage.
+pub fn hustle_chain(user: &Bearer, physical: bool) -> Chain {
+    let mut chain = Chain::new();
+    if physical && user.has("hustle") {
+        chain.mul(X1_5);
     }
     chain
 }

@@ -3477,6 +3477,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             let user_i = self.sides[side].mon().holder();
             let foe_i = self.sides[foe].mon().holder();
             attacker.stat_mod = ability::attack_chain(&user_b, physical);
+        attacker.stat_pre = ability::hustle_chain(&user_b, physical);
             attacker
                 .stat_mod
                 .extend(item::attack_chain(&user_i, calc_type, physical));
@@ -4100,6 +4101,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             let user_i = self.sides[side].mon().holder();
             let foe_i = self.sides[foe].mon().holder();
             attacker.stat_mod = ability::attack_chain(&user_b, physical);
+            attacker.stat_pre = ability::hustle_chain(&user_b, physical);
             attacker.stat_mod
                 .extend(item::attack_chain(&user_i, move_type, physical));
             attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
@@ -4938,8 +4940,9 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         atk_chain.extend(item::attack_chain(&holder, Type::None, true));
         let mut def_chain = ability::defence_chain(&bearer, true);
         def_chain.extend(item::defence_chain(&holder, true));
-        let atk = atk_chain
-            .apply(crate::stats::apply_stage(mon.atk, mon.stages[Stat::Atk as usize]) as u32);
+        let atk = atk_chain.apply(ability::hustle_chain(&bearer, true).apply(
+            crate::stats::apply_stage(mon.atk, mon.stages[Stat::Atk as usize]) as u32,
+        ));
         let def = def_chain
             .apply(crate::stats::apply_stage(mon.def, mon.stages[Stat::Def as usize]) as u32)
             .max(1);
@@ -6184,6 +6187,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         let user_i = self.sides[side].mon().holder();
         let foe_i = self.sides[foe].mon().holder();
         attacker.stat_mod = ability::attack_chain(&user_b, physical);
+            attacker.stat_pre = ability::hustle_chain(&user_b, physical);
         attacker
             .stat_mod
             .extend(item::attack_chain(&user_i, slot.move_type(), physical));
@@ -6226,6 +6230,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 types: a.types(),
                 burned: a.burned(),
                 stat_mod: ability::Chain::new(),
+                stat_pre: ability::Chain::new(),
                 ignores_burn: false,
             },
             Defender {
