@@ -2357,7 +2357,15 @@ impl Battle {
                     2 + b.rng.below(4) as u8
                 };
                 let mon = b.sides[side].mon_mut();
-                mon.rampage = None;
+                // An Uproar is not a Thrash. Its lock is a volatile of its
+                // own with its own clock, ticked in the residual phase, and
+                // nothing that happens to the move it is swinging shortens
+                // it: the din carries on through a miss, a flinch and a full
+                // paralysis alike. Only the Thrash family ends here, and only
+                // the Thrash family fatigues.
+                if !uproar {
+                    mon.rampage = None;
+                }
                 if !uproar && mon.confusion_n == 0 && !mon.fainted() {
                     mon.confusion_n = n;
                     events.push(Event::ConfusionStarted {
@@ -4202,7 +4210,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.sides[side].mon_mut().last_missed = true;
             if ramping {
                 break_rampage(self, side, script.is_some(), events);
-            } else {
+            } else if self.sides[side].mon().locked_move != Some("uproar") {
                 self.sides[side].mon_mut().rampage = None;
             }
             self.sides[side].mon_mut().fury_n = 0;
