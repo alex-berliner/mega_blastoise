@@ -3493,7 +3493,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // A one-hit KO is still a hit, and its victim still answers it:
             // Rough Skin grazes the mon that just killed it, and Horn Drill
             // is a hand on your skin like anything else.
-            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
             return;
@@ -3558,7 +3558,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.took_a_hit(foe, amount, events);
-            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
             return;
@@ -3604,7 +3604,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 crit: false,
             });
             self.took_a_hit(foe, amount, events);
-            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
             return;
@@ -3668,7 +3668,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 crit: false,
             });
             self.took_a_hit(foe, amount, events);
-            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
@@ -3748,7 +3748,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             self.took_a_hit(foe, amount, events);
-            self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
+            self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
             return;
@@ -4578,7 +4578,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // make it immune to the burn that same Blaze Kick is about
                 // to inflict.
                 self.hit_effects(side, foe, &slot, script, events);
-                self.on_damaged(side, foe, &slot, move_type, script, events);
+                self.on_damaged(side, foe, &slot, move_type, amount, script, events);
                 self.resolve_faints(side, foe, events);
             } else {
                 // A substitute soaks the hit but not the whole secondary. The
@@ -5177,15 +5177,24 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         }
     }
 
+    /// What a mon's ability does about having just been hit. Every one of
+    /// these is an `onDamagingHit` in the sim and every one opens with the
+    /// same guard — `if (damage && ...)`. A hit that took nothing off, a
+    /// False Swipe into a mon already at one HP, wakes none of them: no
+    /// Rough Skin graze, no Static, no Color Change.
     fn on_damaged(
         &mut self,
         side: usize,
         foe: usize,
         slot: &MoveSlot,
         move_type: Type,
+        dealt: u16,
         script: Option<SeatScript>,
         events: &mut Vec<Event>,
     ) {
+        if dealt == 0 {
+            return;
+        }
         let hit_b = self.sides[foe].mon().bearer();
         if ability::color_change(&hit_b) && !self.sides[foe].mon().fainted() && move_type != Type::None
         {
