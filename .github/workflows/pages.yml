@@ -45,16 +45,21 @@ jobs:
 
       - name: Assemble site
         run: |
+          # EVERYTHING in www/ ships. Naming the files one at a time is how the
+          # in-page console stayed missing for two days: the file was written,
+          # committed, and present on every branch, and this list simply did
+          # not mention it, so the deploy 404'd a file that existed everywhere
+          # we looked. A whole-directory copy cannot forget a new one.
+          mkdir -p _site
+          cp -r mega_blastoise_web/www/. _site/
+          # www/pkg is checked in but stale by definition; the fresh build wins.
+          rm -rf _site/pkg
           mkdir -p _site/pkg
-          cp mega_blastoise_web/www/index.html _site/
-          cp mega_blastoise_web/www/style.css  _site/
-          cp mega_blastoise_web/www/app.js     _site/
-          cp mega_blastoise_web/www/ui_flow.html _site/
-          cp mega_blastoise_web/www/device.html _site/
-          cp mega_blastoise_web/www/device.css  _site/
-          cp mega_blastoise_web/www/device.js   _site/
           cp mega_blastoise_web/pkg/*.js       _site/pkg/
           cp mega_blastoise_web/pkg/*.wasm     _site/pkg/
+          # Without this, Jekyll drops anything starting with an underscore.
+          touch _site/.nojekyll
+          ls -la _site
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

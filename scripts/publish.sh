@@ -1,46 +1,47 @@
 #!/usr/bin/env bash
-# Build the web client and publish it to the gh-pages branch.
+# Publish the web client.
 #
-# GitHub Pages serves this repo from a branch rather than from Actions, so
-# publishing is a local build plus a push. Switch back to the workflow with:
-#   gh api -X PUT repos/<owner>/<repo>/pages -f build_type=workflow
+# This used to build the site locally and push it to a gh-pages branch. It
+# must not do that any more, and the reason is worth writing down, because the
+# failure it caused was expensive to read.
+#
+# The site is deployed by .github/workflows/pages.yml, which runs on every
+# push to main and uploads a Pages artifact. That requires the repository's
+# Pages source to be `build_type: workflow`. Pushing a gh-pages branch and
+# then asking for a build the old way — `POST /pages/builds` — flips the
+# repository BACK to `build_type: legacy` with its source set to that branch.
+# The two paths cannot both be live: whichever ran last owns the site, and the
+# legacy builder then sat wedged in `building` while the workflow, which was
+# still succeeding on every push, deployed nothing anyone could see.
+#
+# So publishing is now just "make sure main is pushed", plus an explicit
+# re-run for when you want a deploy without a commit.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WEB="$ROOT/mega_blastoise_web"
-WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+cd "$ROOT"
 
-echo "building wasm..."
-(cd "$WEB" && wasm-pack build --target web --release >/dev/null)
+REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
 
-echo "assembling site..."
-SITE="$WORK/_site"
-mkdir -p "$SITE/pkg"
-cp "$WEB"/www/{index.html,style.css,app.js,ui_flow.html,device.html,device.css,device.js,webconsole.js} "$SITE"/
-cp "$WEB"/pkg/*.js "$WEB"/pkg/*.wasm "$SITE/pkg/"
-# Without this, Jekyll drops anything starting with an underscore.
-touch "$SITE/.nojekyll"
-
-echo "publishing..."
-REMOTE="$(git -C "$ROOT" remote get-url origin)"
-git clone -q --depth 1 --branch gh-pages "$REMOTE" "$WORK/ghp" 2>/dev/null \
-  || { git clone -q --depth 1 "$REMOTE" "$WORK/ghp"; git -C "$WORK/ghp" checkout -q --orphan gh-pages; }
-cd "$WORK/ghp"
-find . -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
-cp -r "$SITE/." .
-git add -A
-# A rebuild is requested even when the content is identical. Pages has served a
-# stale artifact for an already-pushed file more than once here, and exiting
-# early on "nothing changed" made this script unable to do the one thing that
-# shifts it.
-if git diff --cached --quiet; then
-  echo "no content changes; requesting a rebuild anyway"
-else
-  git commit -q -m "Publish site from main@$(git -C "$ROOT" rev-parse --short HEAD)"
-  git push -q origin gh-pages
-  echo "pushed"
+BUILD_TYPE="$(gh api "repos/$REPO/pages" --jq .build_type 2>/dev/null || echo unknown)"
+if [ "$BUILD_TYPE" != "workflow" ]; then
+  echo "Pages is on '$BUILD_TYPE'; the workflow needs 'workflow'. Fixing."
+  gh api -X PUT "repos/$REPO/pages" -f build_type=workflow >/dev/null
 fi
-echo "requesting Pages build"
-gh api -X POST "repos/$(gh repo view --json nameWithOwner --jq .nameWithOwner)/pages/builds" >/dev/null
-echo "done: $(gh repo view --json homepageUrl --jq .homepageUrl 2>/dev/null || echo 'see repo Pages settings')"
+
+if [ -n "$(git status --porcelain -- mega_blastoise_web .github/workflows/pages.yml)" ]; then
+  echo "warning: uncommitted web changes; the deploy builds from origin/main, not your tree" >&2
+fi
+
+if [ -n "$(git log --oneline @{u}..HEAD 2>/dev/null)" ]; then
+  echo "pushing main..."
+  git push origin main
+else
+  echo "main already pushed; dispatching a rebuild"
+  gh workflow run pages.yml --ref main
+fi
+
+echo "watching the deploy..."
+sleep 5
+gh run watch "$(gh run list --workflow=pages.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status \
+  && echo "done: $(gh api "repos/$REPO/pages" --jq .html_url)"
