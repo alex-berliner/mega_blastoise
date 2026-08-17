@@ -512,6 +512,8 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
         let sound = m["sound"].as_bool().unwrap_or(false);
         let contact = m["contact"].as_bool().unwrap_or(false);
         let pressured = m["pressured"].as_bool().unwrap_or(false);
+        let reflectable = m["reflectable"].as_bool().unwrap_or(false);
+        let snatchable = m["snatchable"].as_bool().unwrap_or(false);
         let status_action = match m["statusAction"].as_object() {
             None => String::from("None"),
             Some(act) => {
@@ -613,6 +615,10 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
                     String::from("Some(StatusAction::Ingrain)")
                 } else if act.get("healbell").is_some() {
                     String::from("Some(StatusAction::HealBell)")
+                } else if act.get("magiccoat").is_some() {
+                    String::from("Some(StatusAction::MagicCoat)")
+                } else if act.get("snatch").is_some() {
+                    String::from("Some(StatusAction::Snatch)")
                 } else if act.get("noopsuccess").is_some() {
                     String::from("Some(StatusAction::NoopSuccess)")
                 } else if act.get("forceswitch").is_some() {
@@ -691,6 +697,7 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
              ohko: {ohko}, high_crit: {high_crit}, selfdestruct: {selfdestruct}, \
              charge: {charge}, recharge: {recharge}, trap: {trap}, needs_target: {needs_target}, protectable: {protectable}, no_sleep_talk: {no_sleep_talk}, no_assist: {no_assist}, \
              sound: {sound}, contact: {contact}, pressured: {pressured}, \
+             reflectable: {reflectable}, snatchable: {snatchable}, \
              self_drop: {self_drop} }},\n",
             type_variant(mtype, id),
         ));

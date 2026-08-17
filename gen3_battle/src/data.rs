@@ -230,6 +230,12 @@ impl SideCondition {
 #[derive(Clone, Copy, Debug)]
 pub enum StatusAction {
     Inflict(Status),
+    /// Magic Coat: a shield up for the turn that throws the next reflectable
+    /// move back at its sender.
+    MagicCoat,
+    /// Snatch: a shield up for the turn that takes the next self-aimed move
+    /// out of its owner's hands.
+    Snatch,
     BoostSelf(&'static [(Boost, i8)]),
     BoostFoe(&'static [(Boost, i8)]),
     HealHalf,
@@ -408,6 +414,10 @@ pub struct MoveEntry {
     pub sound: bool,
     /// A contact move: the abilities that answer being touched read this.
     pub contact: bool,
+    /// A Magic Coat throws this move back at whoever sent it.
+    pub reflectable: bool,
+    /// A Snatch takes this move for itself.
+    pub snatchable: bool,
     /// Whether the other side counts as one of this move's apparent targets,
     /// which is what decides whether Pressure charges its extra PP.
     pub pressured: bool,
@@ -450,6 +460,8 @@ pub static STRUGGLE: MoveEntry = MoveEntry {
     sound: false,
     contact: true,
     pressured: true,
+    reflectable: false,
+    snatchable: false,
     id: "struggle",
     name: "Struggle",
     move_type: Type::None,

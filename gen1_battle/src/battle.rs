@@ -644,8 +644,16 @@ impl<'a> Battle<'a> {
                 } else if let Some(mv) = self.effective_move(side) {
                     self.sides[side].last_selected_move = mv.id;
                 }
+                // The SLOT register is a separate thing from the move
+                // register, and only a freely chosen move writes it: the sim
+                // pushes a locked continuation with no `moveSlot` at all, so
+                // `lastSelectedMoveSlot` keeps whatever the turn the lock
+                // began put there. That is the register every PP charge in
+                // this era is paid out of.
                 if let Some(Choice::Move(slot)) = self.pending_choice[side] {
-                    self.sides[side].last_selected_slot = slot.min(3);
+                    if locked_move_id(&self.sides[side]).is_none() {
+                        self.sides[side].last_selected_slot = slot.min(3);
+                    }
                 }
             }
         }
@@ -744,9 +752,18 @@ impl<'a> Battle<'a> {
             }
         }
 
+        // A faint clears the whole queue in this era, and the queue is where
+        // the residual action sits. The residual is the only thing that ticks
+        // a volatile's duration down, and a flinch has a duration of exactly
+        // one — so a flinch that would have expired quietly instead SURVIVES
+        // the turn something died in, and costs its owner the next action too.
+        let anyone_down = self.sides[0].active().fainted() || self.sides[1].active().fainted();
+
         // End-of-turn cleanup (not residuals — those ran per action).
         for i in 0..2 {
-            self.sides[i].active_mut().volatile.clear(Volatile::FLINCHED);
+            if !anyone_down {
+                self.sides[i].active_mut().volatile.clear(Volatile::FLINCHED);
+            }
             // Free a partial-trap victim once the trapper's lock is gone
             // (ended, cancelled, switched away, or fainted).
             if self.sides[i].active().volatile.has(Volatile::TRAPPED) {

@@ -147,7 +147,13 @@ pub fn execute_locked_move(
     let Some(mv) = move_by_id(move_id) else {
         return MoveOutcome::default();
     };
-    let slot = sides[attacker_side_idx].active().find_move_slot(move_id).map(|s| s as usize);
+    // Gen 1 charges PP to a slot REGISTER, never to the move that goes off:
+    // `deductPP` ignores the move it is handed and always decrements
+    // `lastSelectedMoveSlot`. A locked continuation left that register alone,
+    // so it still points at whatever was freely chosen when the lock began —
+    // a Mirror Move, say, whose Skull Bash release is billed to the Mirror
+    // Move slot even when the mon knows Skull Bash itself.
+    let slot = Some(sides[attacker_side_idx].last_selected_slot.min(3) as usize);
     execute_move_entry(rng, field, sides, attacker_side_idx, mv, slot, true, log)
 }
 

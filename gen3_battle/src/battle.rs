@@ -218,6 +218,11 @@ pub struct Mon {
     pub stall_counter: u8,
     /// Untouchable this turn (Protect/Detect). Cleared when the turn ends.
     pub protected: bool,
+    /// Magic Coat is up: the next reflectable move aimed here goes back the
+    /// way it came. One turn only, like Protect's shield.
+    pub magic_coat: bool,
+    /// Snatch is up: the next self-aimed move anyone reaches for is taken.
+    pub snatching: bool,
     /// Whatever lands this turn leaves 1 HP (Endure). Cleared at turn end.
     pub enduring: bool,
     /// Taunt clock: while above zero, status moves are refused.
@@ -408,6 +413,8 @@ impl Mon {
             acted: false,
             stall_counter: 0,
             protected: false,
+            magic_coat: false,
+            snatching: false,
             enduring: false,
             taunt_n: 0,
             nightmared: false,
@@ -900,6 +907,18 @@ pub struct Battle {
     /// The move each side has just committed to, held until the move finishes
     /// so a Choice Band can clamp on it afterwards.
     committed_move: [Option<&'static str>; 2],
+    /// A move handed to a mon by something other than its own choice: the
+    /// move a Magic Coat threw back, or the one a Snatch took. The sim runs
+    /// these through `useMove` directly, which sits inside the can't-move
+    /// gates and inside the PP charge, so they answer to neither.
+    forced_entry: Option<&'static MoveEntry>,
+    /// Set while such a move is running.
+    calling: bool,
+    /// Whoever is owed one, and what: drained once the current move is done.
+    pending_call: Option<(usize, &'static MoveEntry)>,
+    /// A move already thrown back once. The sim's `hasBounced` — a Magic
+    /// Coat cannot volley against another Magic Coat.
+    bounced: bool,
 }
 
 impl Battle {
@@ -920,6 +939,10 @@ impl Battle {
             deferred_switch: [None; 2],
             speed_first: None,
             committed_move: [None; 2],
+            forced_entry: None,
+            calling: false,
+            pending_call: None,
+            bounced: false,
         };
         // The battle's opening switch-ins are switch-ins, and the sim runs
         // them as part of starting: Intimidate cows, Trace copies, a weather
@@ -987,6 +1010,17 @@ impl Battle {
             mon.ability_backup = Some(mon.ability);
         }
         mon.ability = id;
+        // Truant arriving mid-battle starts its own clock. The sim's onStart
+        // drops the loafing volatile and puts it straight back if the mon has
+        // been out a turn and has either moved already or is not going to —
+        // which for a Skill Swap is always, since the swap IS the move. So a
+        // mon handed Truant loses its NEXT action, not this one. Our flag is
+        // read a turn later, after the residual has flipped it, which is why
+        // "will loaf next turn" is stored here as `false`.
+        if id == "truant" {
+            let fresh = self.sides[side].mon().active_turns == 0;
+            self.sides[side].mon_mut().loafing = fresh;
+        }
     }
 
     /// The sim's `AfterMove`, as far as a Choice Band is concerned: the lock
@@ -995,6 +1029,37 @@ impl Battle {
     /// carrying a Choice item or stops knowing the move — which is how a
     /// Knock Off frees its victim, and why a Struggle forced out by the lock
     /// never sticks as the locked move.
+    /// Run whatever a Magic Coat or a Snatch put in someone else's hands.
+    /// The sim reaches these through `useMove`, which is below the gates and
+    /// below the PP charge, so the move simply happens.
+    fn run_pending_call(&mut self, script: &TurnScript, events: &mut Vec<Event>) {
+        let mut guard = 0;
+        while let Some((who, entry)) = self.pending_call.take() {
+            guard += 1;
+            if guard > 4 || self.sides[who].mon().fainted() || self.over() {
+                break;
+            }
+            self.forced_entry = Some(entry);
+            self.calling = true;
+            self.bounced = true;
+            self.use_move(who, 0, script.seats[who], events);
+            self.calling = false;
+            self.bounced = false;
+        }
+    }
+
+    /// Wonder Guard's try-hit gate: `runEffectiveness(move) <= 0` turns away
+    /// anything that is not super effective. It is not a damage-formula
+    /// modifier, so it answers for every non-status move whatever way that
+    /// move works out its damage — an OHKO, a Seismic Toss, a Psywave and a
+    /// Dragon Rage alike. A Night Shade gets through, because Ghost beats
+    /// Shedinja's Ghost half. A typeless hit is exempt.
+    fn wonder_guard_blocks(&self, foe: usize, move_type: Type) -> bool {
+        self.sides[foe].mon().ability == "wonderguard"
+            && move_type != Type::None
+            && crate::types::effectiveness_against(move_type, self.sides[foe].mon().types()) <= 100
+    }
+
     fn settle_choice_lock(&mut self, side: usize) {
         let committed = self.committed_move[side].take();
         let mon = self.sides[side].mon();
@@ -1352,6 +1417,7 @@ impl Battle {
             }
             self.pursuing = true;
             self.use_move(foe, mi, script.seats[foe], &mut events);
+            self.run_pending_call(script, &mut events);
             self.settle_choice_lock(foe);
             self.white_herb(foe);
             self.white_herb(1 - foe);
@@ -1394,8 +1460,19 @@ impl Battle {
                     self.end_of_action();
                 }
             }
+            // `faintMessages` runs cancelAction over every mon still standing
+            // the moment anything goes down, and in gen 3 that takes SWITCHES
+            // as well as moves. A newcomer that walked onto Spikes and died
+            // there cancels the other side's switch before it happens.
+            if (0..2).any(|s| self.sides[s].mon().fainted()) {
+                break;
+            }
         }
 
+        // Whether anything is lying down as the move phase opens. This has to
+        // be read BEFORE the replacement is swapped in, or the empty slot is
+        // already filled and the cancellation never happens.
+        let already_down = (0..2).any(|s| self.sides[s].mon().fainted());
         // A switch-in that dropped to Spikes is replaced before anyone moves.
         self.replace_fainted(&mut events);
 
@@ -1406,7 +1483,6 @@ impl Battle {
         // replacement does not inherit it — so the cancellation is recorded
         // BEFORE anyone is swapped in, while the slot is still empty.
         let mut cancelled = [false; 2];
-        let already_down = (0..2).any(|s| self.sides[s].mon().fainted());
         for side in 0..2 {
             cancelled[side] = pursued[side] || already_down;
         }
@@ -1423,6 +1499,7 @@ impl Battle {
                     self.will_act =
                         side == first && !cancelled[foe] && matches!(choices[foe], Choice::Move(_));
                     self.use_move(side, index, script.seats[side], &mut events);
+                    self.run_pending_call(script, &mut events);
                     self.settle_choice_lock(side);
                     // `onAnyAfterMove`: a White Herb on either seat undoes
                     // what the move just did to it, without waiting for the
@@ -1908,6 +1985,26 @@ impl Battle {
                                         effectiveness: 100,
                                         crit: false,
                                     });
+                                    // A delayed hit is a real hit: the sim
+                                    // resolves it through trySpreadMoveHit,
+                                    // so the Hit event runs and everything
+                                    // that answers being struck answers this
+                                    // too. A raging target's Attack climbs,
+                                    // and a Bide banks it.
+                                    if let Some((stored, left)) = self.sides[side].mon().bide {
+                                        self.sides[side].mon_mut().bide =
+                                            Some((stored.saturating_add(amount), left));
+                                    }
+                                    if self.sides[side].mon().raging
+                                        && !self.sides[side].mon().fainted()
+                                    {
+                                        self.sides[side].mon_mut().apply_boost(Boost::Atk, 1);
+                                        events.push(Event::Boosted {
+                                            side: side as u8 + 1,
+                                            boost: Boost::Atk,
+                                            delta: 1,
+                                        });
+                                    }
                                     self.announce_faint(side, &mut events);
                                 }
                             }
@@ -1991,6 +2088,8 @@ impl Battle {
             let mon = self.sides[side].mon_mut();
             mon.flinched = false;
             mon.protected = false;
+            mon.magic_coat = false;
+            mon.snatching = false;
             mon.enduring = false;
             mon.torment_fresh = false;
             mon.imprison_fresh = false;
@@ -2169,7 +2268,7 @@ impl Battle {
         // or flinched user still gets its strike in. (Sleep and freeze are
         // refused earlier, by the condition's own guard.)
         let mut asleep_now = false;
-        if !self.pursuing {
+        if !self.pursuing && !self.calling {
         // Rage ends the moment its holder tries to act. The sim hangs that
         // on BeforeMove at priority 100, above every gate below — above
         // Truant, sleep, freeze, flinch and full paralysis alike — so an
@@ -2394,12 +2493,21 @@ impl Battle {
             });
             return;
         }
-        let Some(slot) = self.sides[side].mon().moves.get(index).copied() else {
+        let forced = self.forced_entry.take();
+        let Some(slot) = forced
+            .map(|entry| MoveSlot {
+                entry,
+                pp: 1,
+                typed_as: None,
+            })
+            .or_else(|| self.sides[side].mon().moves.get(index).copied())
+        else {
             events.push(Event::Failed {
                 side: side as u8 + 1,
             });
             return;
         };
+        let forced = forced.is_some();
         // A rampage locked in through Mirror Move keeps swinging the CALLED
         // move on its follow-up turns — run it directly, one announced line.
         let slot = if releasing {
@@ -2519,7 +2627,7 @@ impl Battle {
         } else {
             slot
         };
-        if !releasing && !struggling {
+        if !releasing && !struggling && !forced {
             // Pressure charges an extra point for anything aimed across the
             // field. A move the user turns on itself is free of it.
             let cost = if ability::pressure(&self.sides[1 - side].mon().bearer())
@@ -2553,9 +2661,23 @@ impl Battle {
             side: side as u8 + 1,
             move_index: index,
         });
+        // Snatch answers `onAnyPrepareHit`, the first event in the sim's
+        // tryMoveHit, so it takes the move before any roll is made. The
+        // original user has already spent the PP and had its line logged;
+        // what it loses is everything after this.
+        if slot.entry.snatchable && !self.sides[foe].mon().fainted() && self.sides[foe].mon().snatching
+        {
+            self.sides[foe].mon_mut().snatching = false;
+            self.pending_call = Some((foe, slot.entry));
+            return;
+        }
         {
             let mon = self.sides[side].mon_mut();
-            mon.last_used = if struggling { None } else { Some(index as u8) };
+            mon.last_used = if struggling || forced {
+                None
+            } else {
+                Some(index as u8)
+            };
             mon.last_used_id = Some(slot.entry.id);
             mon.last_missed = false;
         }
@@ -3095,6 +3217,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     | StatusAction::Substitute
                     | StatusAction::Ingrain
                     | StatusAction::HealBell
+                    | StatusAction::MagicCoat
+                    | StatusAction::Snatch
                     | StatusAction::NoopSuccess
                     | StatusAction::BatonPass
                     | StatusAction::SleepTalk
@@ -3206,6 +3330,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 self.sides[foe].mon().types(),
             );
             if eff == 0
+                || self.wonder_guard_blocks(foe, slot.move_type())
                 || ability::immune_to_type(&self.sides[foe].mon().bearer(), slot.move_type())
             {
                 events.push(Event::Damage {
@@ -3272,7 +3397,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 slot.move_type(),
                 self.sides[foe].mon().types(),
             );
-            if eff == 0 {
+            if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
                 events.push(Event::Damage {
                     side: foe as u8 + 1,
                     amount: 0,
@@ -3731,6 +3856,23 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     slot.entry.id,
                     "batonpass" | "assist" | "sleeptalk" | "recycle"
                 );
+            // Magic Coat is a TryHit handler at priority 2, so it speaks
+            // before the try-hit abilities and before the immunity is
+            // announced — but after the accuracy roll, which is why a move
+            // that missed is never thrown back. The volley is one-way: the
+            // sim marks the returned move `hasBounced`, so a second Magic
+            // Coat standing opposite cannot send it round again.
+            if !self_aimed
+                && hit
+                && slot.entry.reflectable
+                && !self.bounced
+                && !self.sides[foe].mon().fainted()
+                && self.sides[foe].mon().magic_coat
+            {
+                self.sides[foe].mon_mut().magic_coat = false;
+                self.pending_call = Some((foe, slot.entry));
+                return;
+            }
             // The try-hit abilities answer a status move too: Growl is a
             // sound move whatever its power, and Will-O-Wisp is a Fire one.
             if !self_aimed && hit {
@@ -4564,6 +4706,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             out.ingrained = false;
             out.stall_counter = 0;
             out.protected = false;
+            out.magic_coat = false;
+            out.snatching = false;
             out.enduring = false;
             out.taunt_n = 0;
             out.nightmared = false;
@@ -5832,6 +5976,12 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 events.push(Event::Failed {
                     side: side as u8 + 1,
                 });
+            }
+            StatusAction::MagicCoat => {
+                self.sides[side].mon_mut().magic_coat = true;
+            }
+            StatusAction::Snatch => {
+                self.sides[side].mon_mut().snatching = true;
             }
             StatusAction::NoopSuccess => {}
             StatusAction::HealBell => {

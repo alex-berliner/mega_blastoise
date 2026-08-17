@@ -604,6 +604,8 @@ function runDump(sc) {
           : ['recycle', 'trick', 'roleplay', 'skillswap'].includes(m.id)
             ? {noopfail: m.id}
           : ['assist', 'sleeptalk'].includes(m.id) ? {noopfail: m.id}
+          : m.id === 'magiccoat' ? {magiccoat: true}
+          : m.id === 'snatch' ? {snatch: true}
           : m.id === 'mirrormove' ? {mirror: true}
           : m.id === 'mimic' ? {mimic: true}
           : m.id === 'sketch' ? {sketch: true}
@@ -684,7 +686,7 @@ function runMovelist(sc) {
         'disable', 'naturepower', 'camouflage', 'conversion', 'imprison',
         'curse', 'conversion2', 'ingrain', 'healbell', 'aromatherapy',
         'followme', 'roar', 'whirlwind', 'batonpass', 'teeterdance',
-        'metronome', 'mirrormove',
+        'metronome', 'mirrormove', 'magiccoat', 'snatch',
         'assist', 'sleeptalk', 'recycle', 'trick', 'roleplay', 'skillswap',
         'mimic', 'sketch', 'transform',
       ] : [

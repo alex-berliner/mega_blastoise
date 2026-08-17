@@ -14,6 +14,9 @@ for (const m of moves) {
   if (!move.exists) throw new Error(`no move ${m.id}`);
   m.sound = !!move.flags.sound;
   m.contact = !!move.flags.contact;
+  // What a Magic Coat throws back, and what a Snatch takes.
+  m.reflectable = !!move.flags.reflectable;
+  m.snatchable = !!move.flags.snatch;
   // Pressure charges its extra PP when the other side is among the move's
   // apparent targets, which is what the sim calls pressureTargets: a move
   // aimed at yourself or your own side never costs the extra point, and
