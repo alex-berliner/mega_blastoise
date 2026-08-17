@@ -2466,6 +2466,12 @@ impl Battle {
         if self.sides[side].mon().loafing
             && ability::truant(&self.sides[side].mon().bearer())
         {
+            // A loaf ABORTS the move, and `twoturnmove.onMoveAborted` drops
+            // the lock — its onEnd taking the move's own volatile with it. So
+            // a Slakoth that loafs mid-Bounce comes down: it is no longer out
+            // of reach, and the Earthquake it was dodging lands.
+            self.sides[side].mon_mut().charging = None;
+            self.sides[side].mon_mut().charge_fresh = false;
             events.push(Event::Failed {
                 side: side as u8 + 1,
             });
