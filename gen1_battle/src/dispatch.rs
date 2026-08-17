@@ -656,19 +656,31 @@ fn apply_effect(
         LevelDamage => {
             let dmg = sides[attacker_side].active().level as u16;
             let res = deal_damage(field, sides, defender_side, dmg, log);
+            // A hit the Substitute ate never reaches the Hit event, and Rage's
+            // build is an `onHit` on the target's own volatile — so it earns
+            // nothing off a sub.
+            let ate_by_sub = matches!(res, HitRes::Sub { .. });
             note_hit(&mut outcome, res, dmg);
             outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
             if !outcome.fainted_target {
-                rage_build(sides, defender_side, log);
+                if !ate_by_sub {
+                    rage_build(sides, defender_side, log);
+                }
             }
         }
         FlatDamage => {
             let dmg = mv.effect_param0 as u16;
             let res = deal_damage(field, sides, defender_side, dmg, log);
+            // A hit the Substitute ate never reaches the Hit event, and Rage's
+            // build is an `onHit` on the target's own volatile — so it earns
+            // nothing off a sub.
+            let ate_by_sub = matches!(res, HitRes::Sub { .. });
             note_hit(&mut outcome, res, dmg);
             outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
             if !outcome.fainted_target {
-                rage_build(sides, defender_side, log);
+                if !ate_by_sub {
+                    rage_build(sides, defender_side, log);
+                }
             }
         }
         Psywave => {
@@ -684,17 +696,29 @@ fn apply_effect(
                 None => (rng.range(cap) + 1) as u16,
             };
             let res = deal_damage(field, sides, defender_side, dmg, log);
+            // A hit the Substitute ate never reaches the Hit event, and Rage's
+            // build is an `onHit` on the target's own volatile — so it earns
+            // nothing off a sub.
+            let ate_by_sub = matches!(res, HitRes::Sub { .. });
             note_hit(&mut outcome, res, dmg);
             outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
             if !outcome.fainted_target {
-                rage_build(sides, defender_side, log);
+                if !ate_by_sub {
+                    rage_build(sides, defender_side, log);
+                }
             }
         }
         HalfHp => {
             let dmg = (sides[defender_side].active().hp_cur / 2).max(1);
             let res = deal_damage(field, sides, defender_side, dmg, log);
+            // A hit the Substitute ate never reaches the Hit event, and Rage's
+            // build is an `onHit` on the target's own volatile — so it earns
+            // nothing off a sub.
+            let ate_by_sub = matches!(res, HitRes::Sub { .. });
             note_hit(&mut outcome, res, dmg);
-            rage_build(sides, defender_side, log);
+            if !ate_by_sub {
+                rage_build(sides, defender_side, log);
+            }
         }
         HealHalf => {
             let (cur, max) = {
@@ -780,6 +804,10 @@ fn apply_effect(
                         // through Fly/Dig invulnerability.
                         let dmg = stored.saturating_mul(2);
                         let res = deal_damage(field, sides, defender_side, dmg, log);
+                        // A hit the Substitute ate never reaches the Hit event, and Rage's
+                        // build is an `onHit` on the target's own volatile — so it earns
+                        // nothing off a sub.
+                        let ate_by_sub = matches!(res, HitRes::Sub { .. });
                         let ate_by_sub = matches!(res, HitRes::Sub { .. });
                         note_hit(&mut outcome, res, dmg);
                         // An unleash stokes a raging target like any other
@@ -789,7 +817,9 @@ fn apply_effect(
                         // aimed at it, so a release that only broke a sub
                         // earns nothing.
                         if !ate_by_sub {
-                            rage_build(sides, defender_side, log);
+                            if !ate_by_sub {
+                                rage_build(sides, defender_side, log);
+                            }
                         }
                         outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
                     }
@@ -841,10 +871,16 @@ fn apply_effect(
             if enemy_selected != "counter" && counterable && field.last_damage > 0 {
                 let dmg = field.last_damage.saturating_mul(2);
                 let res = deal_damage(field, sides, defender_side, dmg, log);
+                // A hit the Substitute ate never reaches the Hit event, and Rage's
+                // build is an `onHit` on the target's own volatile — so it earns
+                // nothing off a sub.
+                let ate_by_sub = matches!(res, HitRes::Sub { .. });
                 note_hit(&mut outcome, res, dmg);
                 outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
                 if !outcome.fainted_target {
-                    rage_build(sides, defender_side, log);
+                    if !ate_by_sub {
+                        rage_build(sides, defender_side, log);
+                    }
                 }
             } else {
                 fail_log(sides, attacker_side, log);
@@ -1048,10 +1084,16 @@ fn apply_effect(
                 let dmg = sides[attacker_side].active().volatile.stored_damage;
                 if dmg > 0 {
                     let res = deal_damage(field, sides, defender_side, dmg, log);
+                    // A hit the Substitute ate never reaches the Hit event, and Rage's
+                    // build is an `onHit` on the target's own volatile — so it earns
+                    // nothing off a sub.
+                    let ate_by_sub = matches!(res, HitRes::Sub { .. });
                     note_hit(&mut outcome, res, dmg);
                     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
                     if !outcome.fainted_target {
-                        rage_build(sides, defender_side, log);
+                        if !ate_by_sub {
+                            rage_build(sides, defender_side, log);
+                        }
                     }
                 } else {
                     outcome.hit = true;
@@ -1096,12 +1138,18 @@ fn apply_effect(
                         log.push_board(format!("resisted|mon:{},{},0", s.active().name, s.player_id));
                     }
                     let res = deal_damage(field, sides, defender_side, roll.dmg, log);
+                    // A hit the Substitute ate never reaches the Hit event, and Rage's
+                    // build is an `onHit` on the target's own volatile — so it earns
+                    // nothing off a sub.
+                    let ate_by_sub = matches!(res, HitRes::Sub { .. });
                     note_hit(&mut outcome, res, roll.dmg);
                     dealt = field.last_damage;
                     outcome.crit = roll.crit;
                     outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
                     if !outcome.fainted_target {
-                        rage_build(sides, defender_side, log);
+                        if !ate_by_sub {
+                            rage_build(sides, defender_side, log);
+                        }
                     }
                 }
                 if !outcome.fainted_target {
@@ -1450,6 +1498,10 @@ fn damage_step(
     };
 
     let res = deal_damage(field, sides, defender_side, dmg, log);
+    // A hit the Substitute ate never reaches the Hit event, and Rage's
+    // build is an `onHit` on the target's own volatile — so it earns
+    // nothing off a sub.
+    let ate_by_sub = matches!(res, HitRes::Sub { .. });
     // Recoil and drain read the damage the cartridge stored, which is
     // clamped to the HP actually removed (deal_damage just set it) — an
     // overkill Double-Edge recoils off the target's remaining HP, not the
@@ -1460,7 +1512,9 @@ fn damage_step(
     // A raging target's Attack climbs every time it's hit by a damaging,
     // non-exploding move (explosions build Rage via the miss-or-hit rule).
     if !selfdestruct && !outcome.fainted_target {
-        rage_build(sides, defender_side, log);
+        if !ate_by_sub {
+            rage_build(sides, defender_side, log);
+        }
     }
     outcome
 }
