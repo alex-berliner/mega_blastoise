@@ -174,6 +174,13 @@ pub struct Mon {
     /// The id of the move this mon last used — survives Transform/Mimic
     /// rewriting the slots, which is exactly when the slot index lies.
     pub last_used_id: Option<&'static str>,
+    /// The sim's `lastMoveUsed`, which is NOT the same thing as `lastMove`:
+    /// `useMoveInner` writes this one for every move that goes off, called
+    /// moves included, while `lastMove` is only written by `runMove`. Gen 3
+    /// has exactly one reader of it — Conversion 2 — and that is why a
+    /// bounced Toxic retypes its bouncer even though a Torment would still
+    /// be greying out the Magic Coat.
+    pub last_move_used_id: Option<&'static str>,
     /// The last move slot this mon successfully USED (for Spite/Torment).
     pub last_used: Option<u8>,
     /// The last move this mon used MISSED (Mirror Move refuses those).
@@ -416,6 +423,7 @@ impl Mon {
             fury_fresh: false,
             last_used: None,
             last_used_id: None,
+            last_move_used_id: None,
             last_hit_by: None,
             last_hit_by_slot: None,
             last_missed: false,
@@ -3000,6 +3008,9 @@ impl Battle {
             mon.last_used_id = Some(slot.entry.id);
             mon.last_missed = false;
         }
+        // `lastMoveUsed` is a different register and `useMoveInner` writes it
+        // for EVERY move that goes off, called ones included.
+        self.sides[side].mon_mut().last_move_used_id = Some(slot.entry.id);
 
         // No living foe to aim at: the sim logs the move and stops there
         // (`-notarget`), PP already spent. Self- and field-aimed moves go
@@ -5085,6 +5096,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             out.fury_fresh = false;
             out.last_used = None;
             out.last_used_id = None;
+            out.last_move_used_id = None;
             out.last_hit_by = None;
             out.last_hit_by_slot = None;
             out.last_missed = false;
@@ -6584,7 +6596,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // 3's Beat Up retypes itself to '???' there, and nothing in
                 // the chart resists '???', so a Conversion 2 answering a Beat
                 // Up simply fails. Struggle is named outright as Normal.
-                let last = self.sides[foe].mon().last_used_id.and_then(|id| match id {
+                let last = self.sides[foe].mon().last_move_used_id.and_then(|id| match id {
                     "struggle" => Some(Type::Normal),
                     "beatup" => Some(Type::None),
                     _ => self.sides[foe]
