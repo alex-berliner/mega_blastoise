@@ -4602,7 +4602,12 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 if slot.entry.id == "rage" {
                     self.sides[side].mon_mut().raging = true;
                 }
-                self.resolve_faints(side, foe, events);
+                // The faint is NOT announced here. `faintMessages` runs at
+                // the end of the hit, after the secondaries and after the
+                // target has answered being hit — and announcing it early
+                // hands a transformed mon its own ability back before Rough
+                // Skin is asked, so a Sharpedo wearing a copied Battle Armor
+                // grazed with a Rough Skin it no longer had.
             }
             // Drain heals off the damage actually dealt: floor, but at
             // least 1 — EXCEPT off a substitute, where the sim's sub hook
