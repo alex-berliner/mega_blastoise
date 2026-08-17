@@ -6,6 +6,7 @@ description = "Gen 3 (Ruby/Sapphire/Emerald) battle mechanics, no_std, for Mega 
 build = "build.rs"
 
 [dependencies]
+battle_types = { path = "../battle_types" }
 defmt = { version = "1.0", optional = true }
 
 [build-dependencies]

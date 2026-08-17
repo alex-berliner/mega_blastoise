@@ -554,9 +554,14 @@ pub fn slot_options_for(battle: &Battle, side: u8) -> crate::choice_collect::Slo
             // The party card was drawn for Gen 1's single Special; showing
             // Sp.Atk there is the least wrong of the two halves.
             spc: m.spa,
-            // Gen 1's type enum has no Dark or Steel, so the card's type
-            // badges stay empty for Gen 3 rather than lying.
-            types: alloc::vec::Vec::new(),
+            types: {
+                let (t1, t2) = m.species.types;
+                let mut v = alloc::vec![t1];
+                if t2 != battle_types::Type::None {
+                    v.push(t2);
+                }
+                v
+            },
             boost_atk: if slot_i == s_side.active { m.stages[0] } else { 0 },
             boost_def: if slot_i == s_side.active { m.stages[1] } else { 0 },
             // Stage order is Atk, Def, Spe, SpAtk, SpDef.

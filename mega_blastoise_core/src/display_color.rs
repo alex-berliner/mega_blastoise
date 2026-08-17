@@ -115,6 +115,9 @@ fn type_color(name: &str) -> Rgb565 {
         "Rock" | "RCK" => rgb(0xB8A05C),
         "Ghost" | "GHO" => rgb(0x6C5C9B),
         "Dragon" | "DRG" => rgb(0x7038F8),
+        "Dark" | "DRK" => rgb(0x705848),
+        "Steel" | "STL" => rgb(0x9098A8),
+        "Fairy" | "FAI" => rgb(0xEE99AC),
         _ => rgb(0xA8A08A),
     }
 }

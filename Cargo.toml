@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "battle_types",
     "gen1_battle",
     "gen3_battle",
     "mega_blastoise_core",

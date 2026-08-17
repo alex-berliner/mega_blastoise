@@ -8,6 +8,7 @@ default = []
 defmt = ["dep:defmt"]
 
 [dependencies]
+battle_types = { path = "../battle_types" }
 anyhow = { version = "1.0", default-features = false }
 hashbrown = { version = "0.14", default-features = false, features = ["ahash"] }
 heapless = "0.8"

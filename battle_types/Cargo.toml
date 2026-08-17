@@ -1,0 +1,5 @@
+[package]
+name = "battle_types"
+version = "0.1.0"
+edition = "2021"
+description = "The type chart's alphabet, shared by every generation's engine."

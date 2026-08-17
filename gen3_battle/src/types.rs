@@ -11,78 +11,12 @@ use crate::data::{TYPE_CHART, TYPE_COUNT};
 /// The seventeen Gen 3 types. Discriminants are the chart's row/column order,
 /// which `build.rs` emits against; `None` is the absent second type of a
 /// single-typed mon and never indexes the chart.
-#[repr(u8)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Type {
-    Normal = 0,
-    Fire,
-    Water,
-    Electric,
-    Grass,
-    Ice,
-    Fighting,
-    Poison,
-    Ground,
-    Flying,
-    Psychic,
-    Bug,
-    Rock,
-    Ghost,
-    Dragon,
-    Dark,
-    Steel,
-    None,
-}
+/// Re-exported so `gen3_battle::Type` keeps working; the enum itself is
+/// shared with every other generation's engine. Gen 3 has no Fairy: the
+/// variant exists but this engine never produces one, and the chart guard
+/// below reads it as neutral.
+pub use battle_types::Type;
 
-impl Type {
-    pub fn name(self) -> &'static str {
-        match self {
-            Type::Normal => "Normal",
-            Type::Fire => "Fire",
-            Type::Water => "Water",
-            Type::Electric => "Electric",
-            Type::Grass => "Grass",
-            Type::Ice => "Ice",
-            Type::Fighting => "Fighting",
-            Type::Poison => "Poison",
-            Type::Ground => "Ground",
-            Type::Flying => "Flying",
-            Type::Psychic => "Psychic",
-            Type::Bug => "Bug",
-            Type::Rock => "Rock",
-            Type::Ghost => "Ghost",
-            Type::Dragon => "Dragon",
-            Type::Dark => "Dark",
-            Type::Steel => "Steel",
-            Type::None => "---",
-        }
-    }
-
-    /// Three-letter abbreviation, matching the ones the display layer already
-    /// uses for Gen 1 so one badge renderer serves both.
-    pub fn abbr(self) -> &'static str {
-        match self {
-            Type::Normal => "NRM",
-            Type::Fire => "FIR",
-            Type::Water => "WAT",
-            Type::Electric => "ELC",
-            Type::Grass => "GRS",
-            Type::Ice => "ICE",
-            Type::Fighting => "FGT",
-            Type::Poison => "PSN",
-            Type::Ground => "GND",
-            Type::Flying => "FLY",
-            Type::Psychic => "PSY",
-            Type::Bug => "BUG",
-            Type::Rock => "RCK",
-            Type::Ghost => "GHO",
-            Type::Dragon => "DRG",
-            Type::Dark => "DRK",
-            Type::Steel => "STL",
-            Type::None => "---",
-        }
-    }
-}
 
 /// Whether a move is physical or special.
 ///
@@ -119,8 +53,10 @@ pub fn category_of(t: Type) -> Category {
         | Type::Dragon
         | Type::Dark => Category::Special,
         // Typeless DAMAGE is physical in this era — Struggle is the one
-        // case, since zero-power moves resolve as Status before this.
-        Type::None => Category::Physical,
+        // case, since zero-power moves resolve as Status before this. Fairy
+        // arrives with the shared enum but not with this generation, so it
+        // never reaches here; it answers with the same default.
+        Type::None | Type::Fairy => Category::Physical,
     }
 }
 

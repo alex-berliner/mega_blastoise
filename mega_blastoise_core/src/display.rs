@@ -37,7 +37,8 @@ pub struct PartySlotData {
     pub def: u16,
     pub spe: u16,
     pub spc: u16,
-    pub types: alloc::vec::Vec<gen1_battle::Type>,
+    /// The mon's types, in dex order. Any engine can fill this now.
+    pub types: alloc::vec::Vec<battle_types::Type>,
     /// Move name + (pp, max_pp) for each slot, in order.
     pub moves: alloc::vec::Vec<(alloc::string::String, u8, u8)>,
     /// Stat stage boosts (-6 to +6).
@@ -460,28 +461,8 @@ where
 
 // ── Shared header for pokémon stat/move pages ─────────────────────────────────
 
-pub fn type_abbr(t: gen1_battle::Type) -> &'static str {
-    match t {
-        gen1_battle::Type::Normal   => "NRM",
-        gen1_battle::Type::Fighting => "FGT",
-        gen1_battle::Type::Flying   => "FLY",
-        gen1_battle::Type::Poison   => "PSN",
-        gen1_battle::Type::Ground   => "GND",
-        gen1_battle::Type::Rock     => "RCK",
-        gen1_battle::Type::Bug      => "BUG",
-        gen1_battle::Type::Ghost    => "GHO",
-        gen1_battle::Type::Steel    => "STL",
-        gen1_battle::Type::Fire     => "FIR",
-        gen1_battle::Type::Water    => "WAT",
-        gen1_battle::Type::Grass    => "GRS",
-        gen1_battle::Type::Electric => "ELC",
-        gen1_battle::Type::Psychic  => "PSY",
-        gen1_battle::Type::Ice      => "ICE",
-        gen1_battle::Type::Dragon   => "DRG",
-        gen1_battle::Type::Dark     => "DRK",
-        gen1_battle::Type::Fairy    => "FAI",
-        _                       => "???",
-    }
+pub fn type_abbr(t: battle_types::Type) -> &'static str {
+    t.abbr()
 }
 
 fn draw_mon_header<D>(display: &mut D, slot: &PartySlotData)
