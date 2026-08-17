@@ -2392,8 +2392,14 @@ impl Battle {
             self.sides[side].mon_mut().status = None;
         }
         // A Choice Band clamps shut behind the move it commits to, whatever
-        // then becomes of it: a miss or a failure spends the choice too.
-        if self.sides[side].mon().item == "choiceband" {
+        // then becomes of it: a miss or a failure spends the choice too. It
+        // clamps ONCE, though — the sim's volatile records the move when it
+        // is added and never revises it, so a Struggle forced out by that
+        // very lock does not become the locked move and grey out the whole
+        // moveset.
+        if self.sides[side].mon().item == "choiceband"
+            && self.sides[side].mon().choice_locked.is_none()
+        {
             let id = slot.entry.id;
             self.sides[side].mon_mut().choice_locked = Some(id);
         }
@@ -5415,12 +5421,19 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     } else {
                         2 + self.rng.below(4) as u8
                     };
+                    // The sim's clock is `random(2, 6)`, and its onStart adds
+                    // ONE MORE turn when the victim has already had its go —
+                    // `if (!queue.willMove(victim)) duration++`. That is an
+                    // increment, not a skipped tick: the landing turn's own
+                    // residual still counts against it either way. Modelling
+                    // it as a skip left the move greyed out a turn too long,
+                    // which the reference's own request disagreed with.
                     let already_moved = self.acted_this_turn[foe];
                     let mon = self.sides[foe].mon_mut();
                     mon.disabled_slot = slot_i;
-                    mon.disable_n = n;
+                    mon.disable_n = n + u8::from(already_moved);
                     mon.disable_fresh = true;
-                    mon.disable_skip_tick = already_moved;
+                    mon.disable_skip_tick = false;
                 } else {
                     events.push(Event::Failed {
                         side: side as u8 + 1,
