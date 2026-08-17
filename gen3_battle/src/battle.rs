@@ -2761,6 +2761,13 @@ impl Battle {
             });
             return;
         };
+        // A called move — one a Magic Coat threw back or a Snatch took — is
+        // run through `useMove`, which sits BELOW `runMove`. Every "you may
+        // not use that move" gate in this era is an onBeforeMove or an
+        // onDisableMove, and neither event fires down there: a Choice lock, a
+        // Taunt, a Disable, a Torment and an Imprison all have no say in it,
+        // and the Struggle they would otherwise force is a REQUEST-time
+        // substitution a called move never passes through.
         let forced = forced.is_some();
         // A rampage locked in through Mirror Move keeps swinging the CALLED
         // move on its follow-up turns — run it directly, one announced line.
@@ -2809,18 +2816,22 @@ impl Battle {
             });
             return;
         }
-        let taunted_out =
-            self.sides[side].mon().taunt_n == 1 && status_movish && !encore_forced;
+        let taunted_out = self.sides[side].mon().taunt_n == 1
+            && status_movish
+            && !encore_forced
+            && !forced;
         // Torment: the same move twice in a row becomes Struggle. So does
         // a Disabled slot, or a move the imprisoning foe also knows.
         let tormented_out = self.sides[side].mon().tormented
             && !self.sides[side].mon().torment_fresh
             && self.sides[side].mon().last_used_id == Some(slot.entry.id)
             && !releasing
-            && !encore_forced;
+            && !encore_forced
+            && !forced;
         if self.sides[side].mon().disabled_slot == Some(index as u8)
             && self.sides[side].mon().disable_fresh
             && !releasing
+            && !forced
         {
             // Disabled mid-turn: the chosen move is simply lost.
             self.sides[side].mon_mut().disable_fresh = false;
@@ -2832,14 +2843,16 @@ impl Battle {
         }
         let disabled_out = self.sides[side].mon().disabled_slot == Some(index as u8)
             && !releasing
-            && !encore_forced;
+            && !encore_forced
+            && !forced;
         let sealed = self.sides[foe].mon().imprisoning
             && self.sides[foe]
                 .mon()
                 .moves
                 .iter()
                 .any(|m| m.entry.id == slot.entry.id);
-        if sealed && self.sides[foe].mon().imprison_fresh && !releasing {
+        if sealed && self.sides[foe].mon().imprison_fresh && !releasing
+            && !forced {
             // Imprison landed earlier this same turn: the chosen move is
             // simply lost — no move line, no PP, no Struggle.
             self.sides[side].mon_mut().stall_counter = 0;
@@ -2848,11 +2861,12 @@ impl Battle {
             });
             return;
         }
-        let imprisoned_out = sealed && !releasing && !encore_forced;
+        let imprisoned_out = sealed && !releasing && !encore_forced && !forced;
         // A Choice Band greys its move out the same way Disable does, so a
         // choice outside the lock is no more usable than a disabled one.
         let choice_locked_out = !releasing
             && !encore_forced
+            && !forced
             && self.sides[side]
                 .mon()
                 .choice_locked
