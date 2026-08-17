@@ -3097,6 +3097,7 @@ impl Battle {
             });
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+            self.took_a_hit(foe, amount, events);
             self.resolve_faints(side, foe, events);
             return;
         }
@@ -3556,18 +3557,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             });
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
-            // Fixed damage still stokes a raging target and banks in a Bide.
-            if let Some((stored, left)) = self.sides[foe].mon().bide {
-                self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
-            }
-            if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
-                self.sides[foe].mon_mut().apply_boost(Boost::Atk, 1);
-                events.push(Event::Boosted {
-                    side: foe as u8 + 1,
-                    boost: Boost::Atk,
-                    delta: 1,
-                });
-            }
+            self.took_a_hit(foe, amount, events);
             self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
@@ -3613,6 +3603,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 effectiveness: 100,
                 crit: false,
             });
+            self.took_a_hit(foe, amount, events);
             self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
@@ -3676,6 +3667,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 effectiveness: 100,
                 crit: false,
             });
+            self.took_a_hit(foe, amount, events);
             self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
             self.shell_bell(side, amount, events);
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
@@ -3755,6 +3747,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             });
             self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
 self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+            self.took_a_hit(foe, amount, events);
             self.on_damaged(side, foe, &slot, slot.move_type(), script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
@@ -5164,6 +5157,26 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// tenth. A scripted run pins those rolls off — they are not one of the
     /// scenario's knobs, and the reference harness leaves a denominator of
     /// three or ten alone.
+    /// Everything a mon does in answer to having HP taken off it by a move,
+    /// wherever in the pipeline that happened. The sim reaches these through
+    /// the Damage event, which every damaging path runs, so an OHKO, a
+    /// Seismic Toss, a Counter, an Endeavor and a delayed Future Sight all
+    /// stoke a raging target and all bank into a Bide — exactly as an
+    /// ordinary hit does.
+    fn took_a_hit(&mut self, foe: usize, amount: u16, events: &mut Vec<Event>) {
+        if let Some((stored, left)) = self.sides[foe].mon().bide {
+            self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
+        }
+        if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
+            self.sides[foe].mon_mut().apply_boost(Boost::Atk, 1);
+            events.push(Event::Boosted {
+                side: foe as u8 + 1,
+                boost: Boost::Atk,
+                delta: 1,
+            });
+        }
+    }
+
     fn on_damaged(
         &mut self,
         side: usize,
