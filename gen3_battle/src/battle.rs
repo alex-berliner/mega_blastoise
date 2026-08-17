@@ -4875,15 +4875,29 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if self.over() {
             return;
         }
-        for side in 0..2 {
-            if self.deferred_switch[side].is_some() {
-                continue; // its own switch is still coming
+        // Both replacements are PLACED before either is greeted. The sim's
+        // `switchIn` puts the mon on the field and queues a separate
+        // `runSwitch` action, and only those queued actions — sorted by Speed
+        // — start the abilities. So when two mons go down together, the
+        // Intimidate on one of the replacements cows the other replacement,
+        // which is already standing there. Greeting each one as it landed had
+        // the first arrival staring at an empty slot.
+        let mut guard = 0;
+        loop {
+            guard += 1;
+            if guard > 8 {
+                break;
             }
-            let mut guard = 0;
-            while self.sides[side].mon().fainted() && guard < 8 {
-                guard += 1;
+            let mut arrived = [false; 2];
+            for side in 0..2 {
+                if self.deferred_switch[side].is_some() {
+                    continue; // its own switch is still coming
+                }
+                if !self.sides[side].mon().fainted() {
+                    continue;
+                }
                 let Some(next) = self.sides[side].first_healthy() else {
-                    break;
+                    continue;
                 };
                 self.sides[side].mon_mut().status = None;
                 self.sides[side].reorder_for_switch(next);
@@ -4892,7 +4906,17 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     side: side as u8 + 1,
                     party_index: next,
                 });
-                self.switch_in_greet(side, events);
+                arrived[side] = true;
+            }
+            if !arrived[0] && !arrived[1] {
+                break;
+            }
+            let first = self.faster_side(true);
+            for side in [first, 1 - first] {
+                if arrived[side] {
+                    self.switch_in_greet(side, events);
+                    self.end_of_action();
+                }
             }
         }
     }
