@@ -3217,8 +3217,14 @@ impl Battle {
 
         // Rollout and Ice Ball lock five doubling uses; Bide stores for two
         // turns; Uproar rolls like a rampage without the hangover.
+        // A Rollout swung out of SLEEP leaves no lock at all. The volatile is
+        // added in `onModifyMove`, which bails on `pokemon.status === 'slp'`,
+        // so a Sleep Talk that reaches for Rollout gets one thirty-power hit
+        // and nothing else — no lock, no counter, and the sleeper keeps its
+        // own move for next turn.
         if matches!(slot.entry.id, "rollout" | "iceball")
             && self.sides[side].mon().rolling.is_none()
+            && !asleep_now
         {
             self.sides[side].mon_mut().rolling = Some(0);
             self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
@@ -4841,8 +4847,13 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             mon.fury_n = (mon.fury_n + 1).min(4);
             mon.fury_fresh = true;
         }
-        // Rollout counts its landed uses and lets go after five.
-        if matches!(slot.entry.id, "rollout" | "iceball") {
+        // Rollout counts its landed uses and lets go after five — and its
+        // base-power callback carries the same sleep guard, so a Sleep Talk
+        // swing neither starts a count nor advances one.
+        if matches!(slot.entry.id, "rollout" | "iceball")
+            && self.sides[side].mon().rolling.is_some()
+            && !asleep_now
+        {
             let mon = self.sides[side].mon_mut();
             let n = mon.rolling.unwrap_or(0) + 1;
             mon.rolling = if n >= 5 { None } else { Some(n) };
