@@ -120,6 +120,22 @@ pub fn execute_move(
 /// A locked-in continuation (TwoTurn release, Bide, Wrap, Thrash, Rage).
 /// Locked uses never deduct PP — except a TwoTurn release, which is when
 /// Gen 1 deducts for two-turn moves.
+/// Swing an arbitrary move entry, paying its PP out of an explicit slot.
+/// Gen 1's glitch move needs exactly this: what it EXECUTES comes from the
+/// move register, and what it PAYS comes from the index register, and in the
+/// case that matters those are two different moves.
+pub fn execute_move_entry_at(
+    rng: &mut Rng,
+    field: &mut Field,
+    sides: &mut [Side; 2],
+    attacker_side_idx: usize,
+    mv: &'static MoveEntry,
+    pp_slot: usize,
+    log: &mut Log,
+) -> MoveOutcome {
+    execute_move_entry(rng, field, sides, attacker_side_idx, mv, Some(pp_slot), false, log)
+}
+
 pub fn execute_locked_move(
     rng: &mut Rng,
     field: &mut Field,
@@ -378,6 +394,11 @@ fn run_move(
         };
         let base = if locked_bug {
             sides[attacker_side].active().volatile.locked_acc as u32
+        } else if mv.id == "nomove" {
+            // The glitch move's accuracy is 81/256 exactly, which does not
+            // survive a trip through a whole-percent field: 31 gives 79 and
+            // 32 gives 81, and the sim rolls against 80.
+            80
         } else {
             mv.accuracy as u32 * 255 / 100
         };

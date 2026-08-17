@@ -665,6 +665,11 @@ impl<'a> Battle<'a> {
                             let si = &self.sides[side];
                             self.log.push_board(format!("switch|player:{}|name:{}", si.player_id, si.active().name));
                         }
+                        // The INDEX register resets on every switch where
+                        // the move register never resets at all. The sim puts
+                        // that reset in gen 4's runSwitch, which gen 1
+                        // inherits — easy to miss reading gen1's own files.
+                        self.sides[side].last_selected_slot = 0;
                         after_switch_in(&mut self.field, &mut self.sides, side, &mut self.log);
                     }
                 }
@@ -674,17 +679,26 @@ impl<'a> Battle<'a> {
                     // loses the turn AND keeps its full counter.
                     let _ = slot;
                 }
+                // The move register is still at its starting value: nothing
+                // has ever been selected on this side, because it only ever
+                // switched and was then frozen or asleep. The sim hands
+                // `nomove` to runMove, which swings a glitch move built out
+                // of Fissure — and pays for it from the INDEX register's
+                // slot, which is a different move entirely. The sim states
+                // the whole thing in a hint of its own.
+                Some(Choice::Move(_)) if stale_choice[side] == NO_MOVE => {
+                    self.run_move_action(side, None, false, true);
+                }
                 Some(Choice::Move(slot)) => {
                     // Frozen or asleep at choice time: the old selection is
                     // what comes out, whatever slot was pressed.
                     // The cartridge keeps TWO registers per side: the move
                     // itself, which never resets, and the move-list INDEX,
                     // which resets on every switch. A frozen or sleeping mon
-                    // plays back the move register; when that names something
-                    // it does not know — or nothing at all, which is where a
-                    // side that has only ever switched starts — the index
-                    // register decides instead, and that index starts at zero.
-                    // The slot the player pressed does not come into it.
+                    // plays back the move register; when that names a move it
+                    // does not know, the index register picks the slot that
+                    // fires. The slot the player pressed does not come into
+                    // it.
                     let stale = self.sides[side].last_selected_slot.min(3);
                     let slot = match stale_choice[side] {
                         "" => slot,
@@ -696,13 +710,13 @@ impl<'a> Battle<'a> {
                             .map(|p| p as u8)
                             .unwrap_or(stale),
                     };
-                    self.run_move_action(side, Some(slot), disabled_choice[side]);
+                    self.run_move_action(side, Some(slot), disabled_choice[side], false);
                 }
                 None => {
                     // No choice (e.g. mon fainted before choice was set);
                     // honor a locked-in move if present.
                     if locked_move_id(&self.sides[side]).is_some() {
-                        self.run_move_action(side, None, false);
+                        self.run_move_action(side, None, false, false);
                     }
                 }
             }
@@ -769,7 +783,13 @@ impl<'a> Battle<'a> {
 
     /// One side's move action: pre-move gate, execution (locked / struggle /
     /// chosen slot), then Gen 1's after-action residual damage.
-    fn run_move_action(&mut self, side: usize, chosen_slot: Option<u8>, disabled_choice: bool) {
+    fn run_move_action(
+        &mut self,
+        side: usize,
+        chosen_slot: Option<u8>,
+        disabled_choice: bool,
+        glitch: bool,
+    ) {
         let locked = locked_move_id(&self.sides[side]);
         let was_biding = self.sides[side].active().volatile.has(Volatile::BIDING);
         // For the Disable check, the relevant slot is the one about to fire
@@ -784,6 +804,19 @@ impl<'a> Battle<'a> {
                 let _ = execute_locked_move(&mut self.rng, &mut self.field, &mut self.sides, side, id, &mut self.log);
             } else if self.sides[side].active().out_of_pp() || disabled_choice {
                 let _ = execute_struggle(&mut self.rng, &mut self.field, &mut self.sides, side, &mut self.log);
+            } else if glitch {
+                // The register named no move at all: swing the glitch move,
+                // and take its PP off the index register's slot instead.
+                let pp_slot = self.sides[side].last_selected_slot.min(3) as usize;
+                let _ = crate::dispatch::execute_move_entry_at(
+                    &mut self.rng,
+                    &mut self.field,
+                    &mut self.sides,
+                    side,
+                    &crate::tables::NO_MOVE_GLITCH,
+                    pp_slot,
+                    &mut self.log,
+                );
             } else if let Some(slot) = chosen_slot {
                 let _ = execute_move(
                     &mut self.rng,

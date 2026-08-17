@@ -139,6 +139,30 @@ pub struct MoveEntry {
     pub flags: u8,
 }
 
+/// Gen 1's "thawed with nothing selected" glitch move. When a side's move
+/// register is still at its starting value and a frozen or sleeping mon is
+/// finally free to act, the cartridge swings THIS: the sim builds it as
+/// Fissure with the fields below overridden, and says so in a hint of its
+/// own — "a move with Fissure's animation, 102 base power, ??? type, Special
+/// category, and around 31.6% accuracy". The name stays Fissure because that
+/// is the animation the client plays; the move's real name is empty.
+pub static NO_MOVE_GLITCH: MoveEntry = MoveEntry {
+    id: "nomove",
+    name: "Fissure",
+    // '???' — never STAB, and off the end of the chart, so always neutral.
+    move_type: Type::None,
+    category: MoveCategory::Special,
+    power: 102,
+    // 81/256, which the percent field below cannot express exactly; the
+    // accuracy step special-cases this move to reach the sim's figure.
+    accuracy: 32,
+    pp: 10,
+    effect_kind: MoveEffectKind::Damage,
+    effect_param0: 0,
+    effect_param1: 0,
+    flags: 0,
+};
+
 pub const FLAG_HIGH_CRIT: u8 = 0x01;
 pub const FLAG_PRIO_PLUS: u8 = 0x08;
 pub const FLAG_PRIO_MINUS: u8 = 0x10;
