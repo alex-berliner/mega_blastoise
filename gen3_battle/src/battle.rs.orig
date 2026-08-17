@@ -1055,57 +1055,6 @@ impl Battle {
                 mon.confusion_n = 0;
             }
         }
-        // A Leppa Berry is an `onUpdate` item too. It waits for a slot to
-        // reach zero, then puts ten points back into the FIRST slot at zero
-        // — or, failing that, the first slot short of full, which is how a
-        // Leppa handed over by Trick lands on a mon that never ran dry.
-        // (A Mimicked slot's five-point maximum is not modelled: the engine
-        // carries no per-slot maximum, so the move's own PP stands in.)
-        if self.sides[side].mon().item == "leppaberry" {
-            let mon = self.sides[side].mon();
-            let empty = mon.moves.iter().any(|m| m.pp == 0);
-            let target = mon
-                .moves
-                .iter()
-                .position(|m| m.pp == 0)
-                .or_else(|| mon.moves.iter().position(|m| m.pp < m.entry.pp));
-            if let (true, Some(i)) = (empty, target) {
-                let mon = self.sides[side].mon_mut();
-                mon.last_item = mon.item;
-                mon.item = "";
-                let slot = &mut mon.moves[i];
-                slot.pp = (slot.pp + 10).min(slot.entry.pp);
-            }
-        }
-    }
-
-    /// The White Herb hands back every stage its holder has lost, all at
-    /// once, and is spent doing it. The sim hangs it off `onStart`,
-    /// `onAnySwitchIn`, `onAnyAfterMove` and the residual phase, so it
-    /// answers an Intimidate as the intimidator lands and a Growl as soon as
-    /// the Growl is over, rather than waiting for the end of the turn like
-    /// the berries. It reads negative stages only: a mon at +2 Attack and -1
-    /// Speed keeps the +2.
-    fn white_herb(&mut self, side: usize) {
-        if self.sides[side].mon().fainted() || self.sides[side].mon().item != "whiteherb" {
-            return;
-        }
-        let mon = self.sides[side].mon();
-        let dropped =
-            mon.stages.iter().any(|&st| st < 0) || mon.acc_stage < 0 || mon.eva_stage < 0;
-        if !dropped {
-            return;
-        }
-        let mon = self.sides[side].mon_mut();
-        mon.last_item = mon.item;
-        mon.item = "";
-        for st in mon.stages.iter_mut() {
-            if *st < 0 {
-                *st = 0;
-            }
-        }
-        mon.acc_stage = mon.acc_stage.max(0);
-        mon.eva_stage = mon.eva_stage.max(0);
     }
 
     /// The weather as the field actually feels it. Air Lock and Cloud Nine
@@ -1339,8 +1288,6 @@ impl Battle {
             self.pursuing = true;
             self.use_move(foe, mi, script.seats[foe], &mut events);
             self.settle_choice_lock(foe);
-            self.white_herb(foe);
-            self.white_herb(1 - foe);
             self.pursuing = false;
             pursued[foe] = true;
             if self.sides[side].mon().fainted() {
@@ -1408,11 +1355,6 @@ impl Battle {
                         side == first && !cancelled[foe] && matches!(choices[foe], Choice::Move(_));
                     self.use_move(side, index, script.seats[side], &mut events);
                     self.settle_choice_lock(side);
-                    // `onAnyAfterMove`: a White Herb on either seat undoes
-                    // what the move just did to it, without waiting for the
-                    // end of the turn.
-                    self.white_herb(side);
-                    self.white_herb(1 - side);
                 }
             }
             // ANY faint stops the rest of the turn dead in this era. The
@@ -1719,17 +1661,17 @@ impl Battle {
                     let mon = self.sides[side].mon_mut();
                     mon.trapped_n -= 1;
                     if mon.trapped_n > 0 {
-                        // The chip goes straight to the mon: a residual is
-                        // not a hit, so a substitute never soaks it. (The
-                        // only way to be behind one and still bound is a
-                        // Baton Pass, which carries both.)
-                        let amount = ((mon.max_hp / 16).max(1)).min(mon.hp);
-                        mon.hp -= amount;
-                        events.push(Event::TrapDamage {
-                            side: side as u8 + 1,
-                            amount,
-                        });
-                        self.announce_faint(side, &mut events);
+                        // A substitute soaks the bind's chip (invisible to the
+                        // battle state we track); the clock still runs down.
+                        if mon.sub_hp == 0 {
+                            let amount = ((mon.max_hp / 16).max(1)).min(mon.hp);
+                            mon.hp -= amount;
+                            events.push(Event::TrapDamage {
+                                side: side as u8 + 1,
+                                amount,
+                            });
+                            self.announce_faint(side, &mut events);
+                        }
                     } else {
                         events.push(Event::TrapEnded {
                             side: side as u8 + 1,
@@ -3966,13 +3908,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         };
 
         let mut total = 0u16;
-        // What the move actually took off the target, which is not the same
-        // as what it dealt. A hit soaked by a Substitute returns the sim's
-        // HIT_SUBSTITUTE, which is zero, so it adds nothing to
-        // `move.totalDamage` — and it is `move.totalDamage` that Shell Bell
-        // reads. Recoil is paid inline inside the substitute hook, so recoil
-        // does see the soaked hits and keeps reading `total`.
-        let mut past_sub = 0u16;
         for hit_i in 0..hits {
             let (mut attacker, mut defender) = self.attack_pair(side);
             // Beat Up strikes with each ally's BASE Attack against the
@@ -4211,9 +4146,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 amount
             };
             total += amount;
-            if !hit_sub {
-                past_sub += amount;
-            }
             if hit_sub {
                 events.push(Event::SubDamage {
                     side: foe as u8 + 1,
@@ -4391,11 +4323,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // the thief's own hands are empty; Knock Off simply strikes it away.
         // Sticky Hold keeps hold of it either way, and in this era Knock Off
         // gets no extra power for the trouble.
-        // `if (moveData.onAfterHit && pokemon.hp)` — the sim asks after the
-        // THIEF, not after the victim, and the faint is not processed until
-        // the move is over. So a Covet or a Thief that knocks its target out
-        // walks off with the item anyway, and so does a Knock Off.
-        if total > 0 && !self.sides[side].mon().fainted() {
+        if total > 0 && !self.sides[foe].mon().fainted() && !self.sides[side].mon().fainted() {
             let theirs = self.sides[foe].mon().item;
             let held = self.sides[foe].mon().ability == "stickyhold";
             match slot.entry.id {
@@ -4415,7 +4343,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 _ => {}
             }
         }
-        self.shell_bell(side, past_sub, events);
+        self.shell_bell(side, total, events);
 
 
         // A landed Hyper Beam costs the next action.
@@ -4604,12 +4532,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// bite a grounded arrival: an eighth, a sixth, a quarter for one, two,
     /// three layers. Flying types float over.
     fn switch_in_greet(&mut self, side: usize, events: &mut Vec<Event>) {
-        self.greet(side, true, events);
-        // The White Herb answers a switch-in from either seat: `onStart` for
-        // the mon arriving, `onAnySwitchIn` for the one already standing
-        // there that an Intimidate just cowed.
-        self.white_herb(side);
-        self.white_herb(1 - side);
+        self.greet(side, true, events)
     }
 
     fn greet(&mut self, side: usize, tidy: bool, events: &mut Vec<Event>) {
@@ -5147,14 +5070,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     events.push(Event::Rested {
                         side: side as u8 + 1,
                     });
-                    // The sim runs an Update at the end of every action in
-                    // this era, so a Chesto or a Lum is eaten off the sleep
-                    // Rest just laid down — in the same action that laid it.
-                    // The mon finishes the turn at full HP and awake, having
-                    // never once shown as asleep. Rest is the only place the
-                    // engine writes a status without going through `inflict`,
-                    // which is where that update usually happens.
-                    self.ability_update(side);
                 }
             }
             StatusAction::Minimize => {
@@ -5974,11 +5889,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     let mon = self.sides[side].mon_mut();
                     mon.hp -= cost;
                     mon.sub_hp = cost;
-                    // The substitute's own onStart deletes any partial trap
-                    // its owner is under — a Bind, Wrap, Clamp, Fire Spin,
-                    // Whirlpool or Sand Tomb ends there and then, and ends
-                    // silently: the sim marks its `-end` `[silent]`.
-                    mon.trapped_n = 0;
                     events.push(Event::SubStarted {
                         side: side as u8 + 1,
                     });
