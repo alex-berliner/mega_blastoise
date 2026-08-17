@@ -5053,12 +5053,22 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 "sun" => Weather::Sun,
                 _ => Weather::Sandstorm,
             };
-            if self.weather != Some(weather) {
+            // A weather ability re-laying the sky it already found is NOT a
+            // no-op in this era. `setWeather` bails early on a repeat only
+            // when the source is an ability AND the duration is already
+            // endless; a five-turn sandstorm from the MOVE is a duration it
+            // will happily overwrite with its own endless one. So a Tyranitar
+            // walking into someone else's sandstorm makes it permanent.
+            let already_endless = self.weather == Some(weather) && self.weather_n == u8::MAX;
+            if !already_endless {
+                let changed = self.weather != Some(weather);
                 self.weather = Some(weather);
                 self.weather_n = u8::MAX;
-                events.push(Event::WeatherStarted { weather });
-                for w in 0..2 {
-                    self.forecast(w);
+                if changed {
+                    events.push(Event::WeatherStarted { weather });
+                    for w in 0..2 {
+                        self.forecast(w);
+                    }
                 }
             }
         }
