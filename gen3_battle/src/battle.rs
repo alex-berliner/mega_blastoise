@@ -6763,6 +6763,23 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         script: Option<SeatScript>,
         events: &mut Vec<Event>,
     ) {
+        // The whole crash is gated on the target not being immune to
+        // Fighting: `if (target.runImmunity('Fighting'))` wraps every line of
+        // it, so a kick that whiffs past a Ghost costs its user NOTHING —
+        // not the clamped minimum of one, which is what a zeroed damage
+        // calculation would otherwise floor to. It is a plain type check, so
+        // Levitate and Wonder Guard have no say, and a Foresight that
+        // stripped the Ghost half puts the crash back.
+        {
+            let mut dtypes = self.sides[foe].mon().types();
+            if self.sides[foe].mon().identified {
+                let strip = |t: Type| if t == Type::Ghost { Type::None } else { t };
+                dtypes = (strip(dtypes.0), strip(dtypes.1));
+            }
+            if crate::types::effectiveness_against(Type::Fighting, dtypes) == 0 {
+                return;
+            }
+        }
         let (random, crit) = match script {
             Some(s) => (s.random, s.crit),
             None => (85 + self.rng.below(16) as u8, self.rng.below(16) == 0),
