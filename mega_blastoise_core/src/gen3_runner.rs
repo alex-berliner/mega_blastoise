@@ -584,14 +584,40 @@ pub fn slot_options_for(battle: &Battle, side: u8) -> crate::choice_collect::Slo
         // slot, so this only happens when a battle is being poked after it
         // ended; keep the shape honest anyway.
         s.forced_switch = true;
+    } else if mon.charging.is_some()
+        || mon.rampage.is_some()
+        || mon.rolling.is_some()
+        || mon.bide.is_some()
+        || mon.must_recharge
+    {
+        // Mid two-turn move, rampage, roll, Bide or recharge: the engine
+        // swings the lock whatever index arrives, so the seat is committed
+        // the moment the turn opens — exactly how the Gen 1 battler's
+        // `locked_into_move` reads. Offering a menu here was a small lie:
+        // the player picked Surf and watched Tackle come out.
+        s.auto = Some(crate::battle_input::format_move_choice(0));
     } else {
         s.n_moves = mon.moves.len().min(4);
         for (mi, u) in s.usable.iter_mut().enumerate().take(s.n_moves) {
             *u = mon.moves[mi].pp > 0;
+            // An Encore forces `last_used` and a Choice item forces its
+            // locked move; the engine enforces both whatever is pressed, so
+            // the menu greys out what a press cannot mean. (The Choice-locked
+            // slots are still SENT if pressed — the engine turns them into
+            // Struggle — but the sim's request greys them, and so do we.)
+            if mon.encore_n > 0 {
+                if let Some(enc) = mon.last_used {
+                    *u &= mi == enc as usize;
+                }
+            }
+            if let Some(id) = mon.choice_locked {
+                *u &= mon.moves[mi].entry.id == id;
+            }
         }
         s.trapped = !battle.can_switch(i);
-        if s.n_moves == 0 {
-            // Struggle: the engine substitutes it whatever index arrives.
+        if s.n_moves == 0 || !s.usable[..s.n_moves].iter().any(|&u| u) {
+            // Struggle (or a lock whose move is gone): the engine substitutes
+            // whatever index arrives.
             s.auto = Some(crate::battle_input::format_move_choice(0));
         }
     }
@@ -852,6 +878,32 @@ mod tests {
         assert!(!s.party_ok[0], "the active mon is not");
         assert_eq!(s.party.len(), 2);
         assert!(s.party[0].active && s.party[0].hp > 0);
+    }
+
+    /// A locked seat is committed, not choosing: mid-charge, mid-rampage,
+    /// recharging — the engine swings the lock whatever index arrives, so the
+    /// distiller auto-commits instead of drawing a menu the press cannot
+    /// honour. An Encore greys everything but the encored slot. This is the
+    /// same reading the Gen 1 battler's request gives its UI, checked here
+    /// because Gen 3's first cut showed the fake menu.
+    #[test]
+    fn locked_and_encored_seats_distil_honestly() {
+        let mut b = Battle::new(
+            Side::new(alloc::vec![mon("blaziken", 50, &["ember", "doubleedge"])]),
+            Side::new(alloc::vec![mon("swampert", 50, &["surf"])]),
+            42,
+        );
+        b.sides[0].party[0].must_recharge = true;
+        let s = slot_options_for(&b, 1);
+        assert!(s.auto.is_some(), "a recharging seat is committed already");
+
+        b.sides[0].party[0].must_recharge = false;
+        b.sides[0].party[0].encore_n = 3;
+        b.sides[0].party[0].last_used = Some(1);
+        let s = slot_options_for(&b, 1);
+        assert!(s.auto.is_none(), "an encored seat still presses the button");
+        assert!(!s.usable[0], "but only the encored move is offered");
+        assert!(s.usable[1]);
     }
 
     fn block_on<F: core::future::Future>(f: F) -> F::Output {
