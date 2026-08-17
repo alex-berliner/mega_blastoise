@@ -3945,6 +3945,18 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     return;
                 }
                 ("sketch", Some(e)) => {
+                    // A Substitute stops a Sketch in this era even though
+                    // Sketch bypasses one for the purpose of landing. The
+                    // clause is in the gen 4 layer, which gen 3 inherits, and
+                    // gen 5 dropped it — so the modern wording is no guide.
+                    // The PP is already spent, which leaves the slot holding
+                    // a Sketch with nothing left in it.
+                    if self.sides[foe].mon().sub_hp > 0 {
+                        events.push(Event::Failed {
+                            side: side as u8 + 1,
+                        });
+                        return;
+                    }
                     self.sides[side].mon_mut().moves[index] = MoveSlot {
                         entry: e,
                         pp: e.pp,
