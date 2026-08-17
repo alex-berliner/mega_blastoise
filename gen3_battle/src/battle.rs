@@ -2081,6 +2081,18 @@ impl Battle {
                                         effectiveness: 100,
                                         crit: false,
                                     });
+                                    // It also goes into the attacked-by book,
+                                    // which the sim writes at the end of the
+                                    // same trySpreadMoveHit. That matters
+                                    // because Doom Desire and Future Sight
+                                    // are both on Mirror Move's refusal list:
+                                    // a delayed hit landing is what a Mirror
+                                    // Move aimed afterwards finds, and it
+                                    // fails on it.
+                                    let who = self.sides[1 - side].active;
+                                    let mon = self.sides[side].mon_mut();
+                                    mon.last_hit_by = Some(id);
+                                    mon.last_hit_by_slot = Some(who);
                                     // A delayed hit is a real hit: the sim
                                     // resolves it through trySpreadMoveHit,
                                     // so the Hit event runs and everything
