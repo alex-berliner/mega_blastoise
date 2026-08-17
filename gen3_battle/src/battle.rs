@@ -1699,11 +1699,12 @@ impl Battle {
                 // Whistle aimed at it landed that it should have slept
                 // straight through.
                 if let Some((slot_i, left)) = self.sides[side].mon().rampage {
-                    let uproar = self.sides[side]
-                        .mon()
-                        .moves
-                        .get(slot_i as usize)
-                        .is_some_and(|m| m.entry.id == "uproar");
+                    // The lock's move is the move that was RESOLVED, not the
+                    // slot that was chosen: an Uproar reached through Assist,
+                    // Metronome or Mirror Move sits in a slot holding some
+                    // other move entirely, so `locked_move` is what has to be
+                    // asked.
+                    let uproar = self.sides[side].mon().locked_move == Some("uproar");
                     if uproar {
                         let mon = self.sides[side].mon_mut();
                         let left = left.saturating_sub(1);
@@ -1730,11 +1731,7 @@ impl Battle {
                 // falling asleep calms it only if the sleep arrives while
                 // the clock still has time on it.
                 if let Some((slot_i, owed)) = self.sides[side].mon().rampage {
-                    let uproar = self.sides[side]
-                        .mon()
-                        .moves
-                        .get(slot_i as usize)
-                        .is_some_and(|m| m.entry.id == "uproar");
+                    let uproar = self.sides[side].mon().locked_move == Some("uproar");
                     if !uproar {
                         let n = if scripted {
                             2
@@ -2039,12 +2036,8 @@ impl Battle {
         // in fatigue confusion, on the spot. (A miss or a protecting target
         // ends it quietly — those sites clear `rampage` directly.)
         fn break_rampage(b: &mut Battle, side: usize, scripted: bool, events: &mut Vec<Event>) {
-            if let Some((slot_i, _)) = b.sides[side].mon().rampage {
-                let uproar = b.sides[side]
-                    .mon()
-                    .moves
-                    .get(slot_i as usize)
-                    .is_some_and(|m| m.entry.id == "uproar");
+            if b.sides[side].mon().rampage.is_some() {
+                let uproar = b.sides[side].mon().locked_move == Some("uproar");
                 let n = if scripted {
                     2
                 } else {
@@ -2071,6 +2064,12 @@ impl Battle {
         // refused earlier, by the condition's own guard.)
         let mut asleep_now = false;
         if !self.pursuing {
+        // Rage ends the moment its holder tries to act. The sim hangs that
+        // on BeforeMove at priority 100, above every gate below — above
+        // Truant, sleep, freeze, flinch and full paralysis alike — so an
+        // action that never happens still ends the rage. Only Rage landing
+        // re-arms it.
+        self.sides[side].mon_mut().raging = false;
 
         // Recharging after Hyper Beam and kin: the whole action is spent,
         // gated even above sleep, matching the games' priority order.
@@ -2116,16 +2115,11 @@ impl Battle {
                 // sleeper keep it and settles the matter in the residual
                 // phase, which is why a mon slept out of its final swing
                 // still wakes up confused.
-                if mon.rampage.is_some_and(|(slot_i, _)| {
-                    mon.moves
-                        .get(slot_i as usize)
-                        .is_some_and(|m| m.entry.id == "uproar")
-                }) {
+                if mon.rampage.is_some() && mon.locked_move == Some("uproar") {
                     mon.rampage = None;
                 }
                 mon.rolling = None;
                 mon.fury_n = 0;
-                mon.raging = false;
                 mon.stall_counter = 0;
                 events.push(Event::Cant {
                     side: side as u8 + 1,
@@ -2166,7 +2160,6 @@ impl Battle {
                 self.sides[side].mon_mut().rampage = None;
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
-                self.sides[side].mon_mut().raging = false;
                 self.sides[side].mon_mut().stall_counter = 0;
                 events.push(Event::Cant {
                     side: side as u8 + 1,
@@ -2183,7 +2176,6 @@ impl Battle {
             break_rampage(self, side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().fury_n = 0;
-            self.sides[side].mon_mut().raging = false;
             self.sides[side].mon_mut().stall_counter = 0;
             events.push(Event::Flinched {
                 side: side as u8 + 1,
@@ -2209,8 +2201,7 @@ impl Battle {
                     self.sides[side].mon_mut().rampage = None;
                     self.sides[side].mon_mut().rolling = None;
                     self.sides[side].mon_mut().fury_n = 0;
-                    self.sides[side].mon_mut().raging = false;
-                    self.sides[side].mon_mut().stall_counter = 0;
+                        self.sides[side].mon_mut().stall_counter = 0;
                     let amount = self.confusion_self_hit(side, random);
                     events.push(Event::ConfusedHit {
                         side: side as u8 + 1,
@@ -2233,7 +2224,6 @@ impl Battle {
                 break_rampage(self, side, script.is_some(), events);
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
-                self.sides[side].mon_mut().raging = false;
                 self.sides[side].mon_mut().stall_counter = 0;
                 events.push(Event::FullyParalyzed {
                     side: side as u8 + 1,
@@ -2462,9 +2452,6 @@ impl Battle {
             mon.last_used = if struggling { None } else { Some(index as u8) };
             mon.last_used_id = Some(slot.entry.id);
             mon.last_missed = false;
-            // Using any move ends an ongoing rage; Rage itself re-arms it
-            // only once it actually lands (a missed Rage never rages).
-            mon.raging = false;
         }
 
         // No living foe to aim at: the sim logs the move and stops there
@@ -4228,7 +4215,11 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // raises all five of the user's stats.
                 self.self_boost_only(side, &slot, script, events);
             }
-            if self.sides[foe].mon().fainted() {
+            // Gen 3 runs its own multi-hit loop and reads BOTH mons at the
+            // top of it: `for (i = 0; i < hits && target.hp && pokemon.hp;
+            // i++)`. An attacker killed by Rough Skin or Liquid Ooze between
+            // strikes stops there, mid-flurry.
+            if self.sides[foe].mon().fainted() || self.sides[side].mon().fainted() {
                 break;
             }
         }
@@ -5200,6 +5191,17 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 let misted = self.sides[foe].mist_n > 0;
                 if !misted {
                     for (boost, delta) in [(Boost::Atk, -2i8), (Boost::SpAtk, -2)] {
+                        // Clear Body and its kin hang off the generic
+                        // onTryBoost, which does not care whether the drop
+                        // came from a secondary or from the move itself, and
+                        // deletes the stats one at a time — so a Hyper Cutter
+                        // refuses the Attack half and takes the rest.
+                        if ability::blocks_drop(
+                            &self.sides[foe].mon().bearer(),
+                            ability::drop_kind(boost),
+                        ) {
+                            continue;
+                        }
                         self.sides[foe].mon_mut().apply_boost(boost, delta);
                         events.push(Event::Boosted {
                             side: foe as u8 + 1,
