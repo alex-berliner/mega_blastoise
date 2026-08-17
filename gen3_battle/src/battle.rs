@@ -1815,14 +1815,26 @@ impl Battle {
 
     /// Whether a lethal blow leaves the mon standing at one HP. Endure always
     /// does; Focus Band answers a 1-in-10 the sim rolls on EVERY damaging hit,
-    /// lethal or not, and only for damage whose source is a move — a
-    /// confusion self-hit, recoil and a residual all go through unclamped.
+    /// lethal or not, and only for damage whose source is a move.
+    ///
+    /// A confusion self-hit COUNTS as one. The sim deals it through the
+    /// ordinary `damage()` call with a fabricated effect that spells
+    /// `effectType: 'Move'` out, so both handlers gate open on it exactly as
+    /// they do for a real hit. Recoil and the residuals genuinely do go
+    /// through unclamped, because those carry a Recoil or a Status effect.
     fn survives_at_one(&mut self, side: usize) -> bool {
+        self.survives_lethal(side, true)
+    }
+
+    /// As above, but `through_sub` says whether a Substitute standing in front
+    /// of this mon can swallow the blow first. It can for an incoming move,
+    /// which never reaches the mon's own HP and so never calls `damage()` — no
+    /// handler is asked and the Band's coin is not spent. It cannot for a
+    /// confusion self-hit, which calls `damage()` on the mon directly and
+    /// walks straight past its own Substitute.
+    fn survives_lethal(&mut self, side: usize, through_sub: bool) -> bool {
         let mon = self.sides[side].mon();
-        // A blow the Substitute eats never reaches the mon's own HP, so the
-        // sim's `damage()` is never called and neither handler is asked. The
-        // Band's coin is not spent either.
-        if mon.sub_hp > 0 {
+        if through_sub && mon.sub_hp > 0 {
             return false;
         }
         if mon.enduring {
@@ -2059,11 +2071,19 @@ impl Battle {
                     .moves
                     .get(mi)
                     .is_some_and(|m| m.entry.id == "pursuit");
+            // The interception has its own refusal guard, and it turns away
+            // a loafing Truant user exactly as it turns away a frozen or a
+            // sleeping one. The guard returns BEFORE `queue.cancelMove`, so
+            // the pursuiter keeps its own queued action and takes its normal
+            // turn after the switch — where Truant stops it for nothing, no
+            // damage and no PP.
             let able = !self.sides[foe].mon().fainted()
                 && !matches!(
                     self.sides[foe].mon().status,
                     Some(Status::Freeze | Status::Sleep)
-                );
+                )
+                && !(self.sides[foe].mon().loafing
+                    && ability::truant(&self.sides[foe].mon().bearer()));
             if !is_pursuit || !able {
                 continue;
             }
@@ -2509,6 +2529,22 @@ impl Battle {
         // whoever it knocked out is replaced when it finishes, not between
         // its individual ticks.
         self.replace_fainted(&mut events);
+
+        // `nextTurn` walks each mon's attacked-by book and SPLICES OUT every
+        // entry whose attacker is no longer on the field. It is a destructive
+        // purge, not a filter applied at read time, so a mon that hit you and
+        // then switched out leaves no record — and coming back in does not
+        // restore it, because the entry is already gone. Mirror Move is the
+        // only reader, and this is why it fails against an attacker that took
+        // a lap on the bench, even one that returned to the same party slot.
+        for side in 0..2 {
+            let foe = 1 - side;
+            if self.sides[side].mon().last_hit_by_slot != Some(self.sides[foe].active) {
+                let mon = self.sides[side].mon_mut();
+                mon.last_hit_by = None;
+                mon.last_hit_by_slot = None;
+            }
+        }
 
         // A flinch lasts exactly the turn it landed in — as do Protect's
         // shield and Endure's brace.
@@ -3079,7 +3115,33 @@ impl Battle {
             && slot.entry.fixed.is_none()
             && !slot.entry.ohko
             && !matches!(slot.entry.id, "counter" | "mirrorcoat" | "spitup");
-        if self.sides[side].mon().taunt_n == 2 && status_movish {
+        // Struggle is substituted at REQUEST time: with no usable move,
+        // `getMoves()` comes back empty and `chooseMove` queues Struggle, so
+        // the dead slot is gone before anyone moves. Every mid-turn gate below
+        // is then asked about STRUGGLE, which sails past all of them — Taunt
+        // only stops a Status move and Struggle is Physical, Disable only
+        // stops the one move it named, and Imprison spells out
+        // `move.id !== "struggle"`. So a mon that was already Struggling when
+        // the turn opened cannot lose the turn to any of them.
+        //
+        // It has to be read as the state stood AT THE REQUEST, which is why
+        // every `_fresh` flag disqualifies its own reason: a Disable, a
+        // Torment or an Imprison that landed earlier THIS turn was not there
+        // when the choice was made, so it cannot be what put Struggle in the
+        // queue — and those are exactly the lost-turn cases below.
+        let struggling_at_request = !releasing && {
+            let mon = self.sides[side].mon();
+            let picked = mon.moves.get(index).map(|m| m.entry.id);
+            self.pp0_at_choice[side]
+                || (mon.disabled_slot == Some(index as u8) && !mon.disable_fresh)
+                || (mon.tormented && !mon.torment_fresh && mon.last_used_id == picked)
+                || (mon.taunt_n == 1 && status_movish)
+                || (self.sealed_at_choice[side] && !self.sides[foe].mon().imprison_fresh)
+                || mon
+                    .choice_locked
+                    .is_some_and(|id| picked.is_some_and(|p| p != id))
+        };
+        if !struggling_at_request && self.sides[side].mon().taunt_n == 2 && status_movish {
             events.push(Event::Failed {
                 side: side as u8 + 1,
             });
@@ -3097,7 +3159,8 @@ impl Battle {
             && !releasing
             && !encore_forced
             && !forced;
-        if self.sides[side].mon().disabled_slot == Some(index as u8)
+        if !struggling_at_request
+            && self.sides[side].mon().disabled_slot == Some(index as u8)
             && self.sides[side].mon().disable_fresh
             && !releasing
             && !forced
@@ -3124,8 +3187,12 @@ impl Battle {
                     .moves
                     .iter()
                     .any(|m| m.entry.id == slot.entry.id));
-        if sealed && self.sides[foe].mon().imprison_fresh && !releasing
-            && !forced {
+        if !struggling_at_request
+            && sealed
+            && self.sides[foe].mon().imprison_fresh
+            && !releasing
+            && !forced
+        {
             // Imprison landed earlier this same turn: the chosen move is
             // simply lost — no move line, no PP, no Struggle.
             self.sides[side].mon_mut().stall_counter = 0;
@@ -3241,6 +3308,7 @@ impl Battle {
 
         // Nature Power becomes Swift in the sim's default arena; Hidden
         // Power under the fuzz's uniform maxed IVs is Dark 70.
+        let chosen_id = slot.entry.id;
         let slot = if slot.entry.id == "metronome" {
             // The sim samples the num-sorted eligible list; pinned, that is
             // its first entry — Pound. Play keeps a real random pick.
@@ -3444,6 +3512,28 @@ impl Battle {
         } else {
             slot
         };
+        // Whether a caller — Metronome, Sleep Talk, Assist, Nature Power,
+        // Mirror Move — put this move here rather than the player.
+        let called = slot.entry.id != chosen_id;
+        // `useMoveInner` writes `lastMoveUsed` at its very top, for EVERY
+        // invocation and before any success check, and a called move
+        // re-enters it. So the register ends up holding the CALLEE, not the
+        // caller: a Conversion 2 answering an Assist reads the move the
+        // Assist reached for, right down a nested Assist into Nature Power
+        // into Swift. The write above this chain covers the caller that
+        // found nothing and bailed, which is what the sim leaves there too.
+        if called {
+            self.sides[side].mon_mut().last_move_used_id = Some(slot.entry.id);
+        }
+        // Counter and Mirror Coat read a volatile that only
+        // `beforeTurnCallback` creates, and the queue attaches a
+        // `beforeTurnMove` action ONLY for a seat's own top-level move. A
+        // called one therefore finds no volatile, fails its `onTry`, and —
+        // in this era, whose `tryMoveHit` skips the `-fail` the modern one
+        // adds — does so in silence.
+        if called && matches!(slot.entry.id, "counter" | "mirrorcoat") {
+            return;
+        }
 
         // Snatch answers `onAnyPrepareHit`, which fires once per `useMove` —
         // so it tests the move actually being prepared, and that is the move
@@ -4401,10 +4491,27 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         });
                         return;
                     }
-                    let orig = self.sides[side].mon().moves[index];
+                    // The copy goes into the slot holding MIMIC, found by
+                    // name — `source.moves.indexOf('mimic')` — and not into
+                    // the slot that invoked the move. When a Sleep Talk
+                    // reaches for Mimic those are two different slots, and
+                    // the sim overwrites Mimic's. With no such slot the
+                    // index comes back negative and the move fails.
+                    let Some(home) = self.sides[side]
+                        .mon()
+                        .moves
+                        .iter()
+                        .position(|m| m.entry.id == "mimic")
+                    else {
+                        events.push(Event::Failed {
+                            side: side as u8 + 1,
+                        });
+                        return;
+                    };
+                    let orig = self.sides[side].mon().moves[home];
                     let mon = self.sides[side].mon_mut();
-                    mon.mimic_backup = Some((index as u8, orig));
-                    mon.moves[index] = MoveSlot {
+                    mon.mimic_backup = Some((home as u8, orig));
+                    mon.moves[home] = MoveSlot {
                         entry: e,
                         pp: 5,
                         typed_as: None,
@@ -4424,7 +4531,21 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                         });
                         return;
                     }
-                    self.sides[side].mon_mut().moves[index] = MoveSlot {
+                    // Same as Mimic: `source.moves.indexOf('sketch')` picks
+                    // the slot, so a Sleep-Talked Sketch overwrites SKETCH
+                    // and leaves Sleep Talk alone.
+                    let Some(home) = self.sides[side]
+                        .mon()
+                        .moves
+                        .iter()
+                        .position(|m| m.entry.id == "sketch")
+                    else {
+                        events.push(Event::Failed {
+                            side: side as u8 + 1,
+                        });
+                        return;
+                    };
+                    self.sides[side].mon_mut().moves[home] = MoveSlot {
                         entry: e,
                         pp: e.pp,
                         typed_as: None,
@@ -5091,7 +5212,15 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
             // Drain heals off the damage actually dealt: floor, but at
             // least 1 — EXCEPT off a substitute, where the sim's sub hook
             // heals with a CEILING instead.
-            if let Some((num, den)) = slot.entry.drain {
+            // `spreadDamage` gates the whole drain block on the damage
+            // actually DEALT — `if (targetDamage && effect.effectType ===
+            // 'Move')` — and the sim is careful to let a genuine zero through
+            // to that test rather than flooring it up to one. So a blow that
+            // Focus Band or Endure clamped to nothing at one HP heals the
+            // drainer nothing: the min-of-one below lives INSIDE the gate and
+            // never runs. Liquid Ooze is under the same gate, so it stays
+            // silent too.
+            if let Some((num, den)) = slot.entry.drain.filter(|_| amount > 0) {
                 let heal = if hit_sub {
                     ((amount * num + den - 1) / den).max(1)
                 } else {
@@ -5494,6 +5623,18 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         // started: the sim keys that off its own turn counter.
         let turn = self.turn;
         self.sides[side].mon_mut().loafing = turn > 0;
+        {
+            let mon = self.sides[side].mon_mut();
+            if mon.status == Some(Status::Sleep) {
+                mon.sleep_n += mon.sleep_skipped;
+            }
+            mon.sleep_skipped = 0;
+        }
+        // The layers bite first, and a mon they kill greets nothing.
+        self.entry_hazards(side, events);
+        if self.sides[side].mon().fainted() {
+            return;
+        }
         // What this mon walks in WITH is what greets the field. Trace copies
         // at the same moment, but an ability handed over in this era is never
         // started — the sim gates that on gen > 3 — so a traced Intimidate
@@ -5568,11 +5709,17 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         if tidy {
             self.ability_update(side);
         }
-        let mon = self.sides[side].mon_mut();
-        if mon.status == Some(Status::Sleep) {
-            mon.sleep_n += mon.sleep_skipped;
-        }
-        mon.sleep_skipped = 0;
+    }
+
+    /// The hazards the arrival walks onto, which gen 3 runs BEFORE its ability
+    /// and item are started: `runSwitch` is `runEvent('EntryHazard')`, then
+    /// `runEvent('SwitchIn')`, then `if (!pokemon.hp) return false`, and only
+    /// then the two `singleEvent('Start', ...)` calls. So a mon whose Trace
+    /// borrows a Levitate still eats the Spikes it stepped on — the ability it
+    /// arrives with is the one that decides — and a mon the layers KILL never
+    /// gets to greet the field at all: no Intimidate, no Trace, no weather, no
+    /// item.
+    fn entry_hazards(&mut self, side: usize, events: &mut Vec<Event>) {
         let layers = self.sides[side].spikes;
         if layers == 0 {
             return;
@@ -5581,10 +5728,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         let (t1, t2) = mon.types();
         // Spikes only bite what stands on the ground, and Levitate is the
         // other way to be off it.
-        if t1 == Type::Flying
-            || t2 == Type::Flying
-            || self.sides[side].mon().ability == "levitate"
-        {
+        if t1 == Type::Flying || t2 == Type::Flying || mon.ability == "levitate" {
             return;
         }
         let max = mon.max_hp;
@@ -5981,7 +6125,19 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
         }
         dmg += 2;
         dmg = (dmg * random.clamp(85, 100) as u32) / 100;
-        let dmg = (dmg.max(1) as u16).min(mon.hp);
+        let dmg = dmg.max(1) as u16;
+        // The self-hit goes through `damage()` like any move, so Endure and
+        // Focus Band are both asked — and asked about the mon hitting itself,
+        // which is the one whose seat carries the coin. Its own Substitute is
+        // no shield here: the damage is dealt to the mon directly.
+        let survives = self.survives_lethal(side, false);
+        let mon = self.sides[side].mon();
+        let cap = if survives {
+            mon.hp.saturating_sub(1)
+        } else {
+            mon.hp
+        };
+        let dmg = dmg.min(cap);
         self.sides[side].mon_mut().hp -= dmg;
         dmg
     }
@@ -6693,7 +6849,14 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // everything else away, and Trick takes both items before it
                 // hands either over, so one piece of Mail on either side
                 // fails the whole trade.
+                // A Substitute turns it away too. The sub's
+                // `onTryPrimaryHit` asks `getDamage` for a number and a
+                // Status move gives it none, so the handler logs a fail and
+                // returns null before `onHit` is ever reached. Trick carries
+                // no `bypasssub` in this era, unlike Torment, Taunt, Spite
+                // and the rest of that set.
                 if !hit
+                    || self.sides[foe].mon().sub_hp > 0
                     || self.sides[foe].mon().ability == "stickyhold"
                     || mine == "mail"
                     || theirs == "mail"
