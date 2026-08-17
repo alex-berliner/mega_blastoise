@@ -154,6 +154,14 @@ pub fn defence_chain(target: &Bearer, physical: bool) -> Chain {
     chain
 }
 
+/// Oblivious cannot be charmed. The sim asks twice — an `onImmunity` that
+/// refuses the volatile going on, and an `onUpdate` that sheds one already
+/// there — so a mon that gains Oblivious mid-battle loses the infatuation
+/// it was already under.
+pub fn blocks_attract(target: &Bearer) -> bool {
+    target.has("oblivious")
+}
+
 /// Guts shrugs off burn's Attack cut as well as taking its boost, so a burned
 /// Guts mon hits harder than a healthy one.
 pub fn ignores_burn_drop(user: &Bearer) -> bool {

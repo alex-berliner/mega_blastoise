@@ -1191,6 +1191,12 @@ impl Battle {
                 mon.confusion_n = 0;
             }
         }
+        // Oblivious sheds a charm as well as refusing one, on its own
+        // `onUpdate` — so a mon that comes by the ability mid-battle stops
+        // being infatuated.
+        if ability::blocks_attract(&self.sides[side].mon().bearer()) {
+            self.sides[side].mon_mut().attracted_by = None;
+        }
         // Attract's own `onUpdate`: the volatile goes the moment the mon
         // that charmed it is no longer the one standing opposite.
         if let Some(who) = self.sides[side].mon().attracted_by {
@@ -6148,7 +6154,8 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 // volatile's own `onStart`, and both are the same plain
                 // comparison — so a mismatched pair is a move that failed.
                 let (them, us) = (self.sides[foe].mon().gender, self.sides[side].mon().gender);
-                let charmable = (them == "M" && us == "F") || (them == "F" && us == "M");
+                let charmable = ((them == "M" && us == "F") || (them == "F" && us == "M"))
+                    && !ability::blocks_attract(&self.sides[foe].mon().bearer());
                 if !hit || !charmable || self.sides[foe].mon().attracted_by.is_some() {
                     events.push(Event::Failed {
                         side: side as u8 + 1,
