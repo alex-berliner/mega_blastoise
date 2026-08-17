@@ -48,18 +48,6 @@ impl ColorSprite {
         let byte = SPRITE_BLOB[(self.data_off + y * row_bytes + x / 2) as usize];
         if x % 2 == 0 { byte >> 4 } else { byte & 0x0F }
     }
-
-    /// Visit every non-transparent pixel as `(x, y, rgb565)`.
-    pub fn for_each_pixel<F: FnMut(u32, u32, u16)>(&self, mut f: F) {
-        for y in 0..self.h as u32 {
-            for x in 0..self.w as u32 {
-                let i = self.index_at(x, y);
-                if i != 0 {
-                    f(x, y, self.color(i));
-                }
-            }
-        }
-    }
 }
 
 fn lookup(table: &'static [(&'static str, ColorSprite)], name: &str) -> Option<&'static ColorSprite> {

@@ -243,8 +243,3 @@ pub fn kings_rock_flinches(user: &Holder, move_id: &str) -> bool {
         )
 }
 
-/// Whether an item is one of the berries, which is what Trick and a few other
-/// effects need to know.
-pub fn is_berry(item: &str) -> bool {
-    item.ends_with("berry")
-}

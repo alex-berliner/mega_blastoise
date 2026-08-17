@@ -3629,40 +3629,7 @@ impl Battle {
                 });
                 return;
             }
-            let survives = self.survives_at_one(foe);
-            let target = self.sides[foe].mon_mut();
-            if target.sub_hp > 0 {
-                let amount = amount.min(target.sub_hp);
-                target.sub_hp -= amount;
-                events.push(Event::SubDamage {
-                    side: foe as u8 + 1,
-                    amount,
-                });
-                if self.sides[foe].mon().sub_hp == 0 {
-                    events.push(Event::SubBroke {
-                        side: foe as u8 + 1,
-                    });
-                }
-                return;
-            }
-            let cap = if survives {
-                target.hp.saturating_sub(1)
-            } else {
-                target.hp
-            };
-            let amount = amount.min(cap);
-            target.hp -= amount;
-            self.taken_physical[foe] = amount;
-            events.push(Event::Damage {
-                side: foe as u8 + 1,
-                amount,
-                effectiveness: 100,
-                crit: false,
-            });
-            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
-            self.took_a_hit(foe, amount, events);
-            self.resolve_faints(side, foe, events);
+            self.flat_hit(side, foe, &slot, amount, Some(false), false, false, script, events);
             return;
         }
         // The thrash family locks in: the games roll 2..3 total attacks
@@ -3686,7 +3653,6 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                     None if slot.entry.id == "uproar" => 2 + self.rng.below(4) as u8,
                     None => 2 + self.rng.below(2) as u8,
                 };
-                let uproar = slot.entry.id == "uproar";
                 let mon = self.sides[side].mon_mut();
                 // Uproar keeps counting its own turns down as it attacks;
                 // the Thrash family hands its countdown to the residual
@@ -4105,46 +4071,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 FixedDamage::Level => self.sides[side].mon().level as u16,
                 FixedDamage::Half => (self.sides[foe].mon().hp / 2).max(1),
             };
-            let survives = self.survives_at_one(foe);
-            let target = self.sides[foe].mon_mut();
-            if target.sub_hp > 0 {
-                let amount = amount.min(target.sub_hp);
-                target.sub_hp -= amount;
-                events.push(Event::SubDamage {
-                    side: foe as u8 + 1,
-                    amount,
-                });
-                if self.sides[foe].mon().sub_hp == 0 {
-                    events.push(Event::SubBroke {
-                        side: foe as u8 + 1,
-                    });
-                }
-                return;
-            }
-            let cap = if survives {
-                target.hp.saturating_sub(1)
-            } else {
-                target.hp
-            };
-            let amount = amount.min(cap);
-            target.hp -= amount;
-            match crate::types::category_of(slot.move_type()) {
-                crate::types::Category::Physical => self.taken_physical[foe] = amount,
-                _ => self.taken_special[foe] = amount,
-            }
-            events.push(Event::Damage {
-                side: foe as u8 + 1,
-                amount,
-                effectiveness: 100,
-                crit: false,
-            });
-            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
-            self.kings_rock(side, foe, &slot, script);
-            self.took_a_hit(foe, amount, events);
-            self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
-            self.shell_bell(side, amount, events);
-            self.resolve_faints(side, foe, events);
+            self.flat_hit(side, foe, &slot, amount, None, true, true, script, events);
             return;
         }
 
@@ -4227,43 +4154,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 None => self.rng.below(11),
             };
             let amount = ((level * (10 * i as u32 + 50)) / 100).max(1) as u16;
-            let survives = self.survives_at_one(foe);
-            let target = self.sides[foe].mon_mut();
-            if target.sub_hp > 0 {
-                let amount = amount.min(target.sub_hp);
-                target.sub_hp -= amount;
-                events.push(Event::SubDamage {
-                    side: foe as u8 + 1,
-                    amount,
-                });
-                if self.sides[foe].mon().sub_hp == 0 {
-                    events.push(Event::SubBroke {
-                        side: foe as u8 + 1,
-                    });
-                }
-                return;
-            }
-            let cap = if survives {
-                target.hp.saturating_sub(1)
-            } else {
-                target.hp
-            };
-            let amount = amount.min(cap);
-            target.hp -= amount;
-            self.taken_special[foe] = amount;
-            events.push(Event::Damage {
-                side: foe as u8 + 1,
-                amount,
-                effectiveness: 100,
-                crit: false,
-            });
-            self.kings_rock(side, foe, &slot, script);
-            self.took_a_hit(foe, amount, events);
-            self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
-            self.shell_bell(side, amount, events);
-            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
-            self.resolve_faints(side, foe, events);
+            self.flat_hit(side, foe, &slot, amount, Some(true), true, true, script, events);
             return;
         }
 
@@ -4304,45 +4195,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 return;
             }
             let amount = taken.saturating_mul(2);
-            let survives = self.survives_at_one(foe);
-            let target = self.sides[foe].mon_mut();
-            if target.sub_hp > 0 {
-                let amount = amount.min(target.sub_hp);
-                target.sub_hp -= amount;
-                events.push(Event::SubDamage {
-                    side: foe as u8 + 1,
-                    amount,
-                });
-                if self.sides[foe].mon().sub_hp == 0 {
-                    events.push(Event::SubBroke {
-                        side: foe as u8 + 1,
-                    });
-                }
-                return;
-            }
-            let cap = if survives {
-                target.hp.saturating_sub(1)
-            } else {
-                target.hp
-            };
-            let amount = amount.min(cap);
-            target.hp -= amount;
-            match crate::types::category_of(slot.move_type()) {
-                crate::types::Category::Physical => self.taken_physical[foe] = amount,
-                _ => self.taken_special[foe] = amount,
-            }
-            events.push(Event::Damage {
-                side: foe as u8 + 1,
-                amount,
-                effectiveness: 100,
-                crit: false,
-            });
-            self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
-self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
-            self.took_a_hit(foe, amount, events);
-            self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
-            self.shell_bell(side, amount, events);
-            self.resolve_faints(side, foe, events);
+            self.flat_hit(side, foe, &slot, amount, None, false, true, script, events);
             return;
         }
 
@@ -4950,7 +4803,7 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
                 let strip = |t: Type| if t == Type::Ghost { Type::None } else { t };
                 defender.types = (strip(defender.types.0), strip(defender.types.1));
             }
-            let mut weather_mod = match (self.effective_weather(), move_type) {
+            let weather_mod = match (self.effective_weather(), move_type) {
                 (Some(Weather::Rain), Type::Water) | (Some(Weather::Sun), Type::Fire) => 1,
                 (Some(Weather::Rain), Type::Fire) | (Some(Weather::Sun), Type::Water) => -1,
                 _ => 0,
@@ -5919,6 +5772,86 @@ self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
     /// Seismic Toss, a Counter, an Endeavor and a delayed Future Sight all
     /// stoke a raging target and all bank into a Bide — exactly as an
     /// ordinary hit does.
+    /// Land a flat, chart-neutral hit: the shape Bide's unleash, the
+    /// fixed-damage moves, Psywave and Counter all share. The Substitute eats
+    /// it first (and the mon behind takes nothing at all); Endure and Focus
+    /// Band cap it at one HP; what was actually dealt goes into the turn's
+    /// taken-damage register and the target's attacked-by book, and the
+    /// shared hit tail runs. Four copies of this block each missed a
+    /// different fix this month, which is why it is one function now.
+    ///
+    /// `kings_rock` and `contact_tail` are per-arm because the copies
+    /// genuinely differed: Bide runs neither (even though Bide is in the
+    /// King's Rock move list — the sim was never consulted on that pairing,
+    /// so the unification must not quietly change it), and Counter skips the
+    /// Rock (its move is not in the list, so the call would only be a no-op
+    /// bought with a flag).
+    #[allow(clippy::too_many_arguments)]
+    fn flat_hit(
+        &mut self,
+        side: usize,
+        foe: usize,
+        slot: &MoveSlot,
+        amount: u16,
+        special_register: Option<bool>,
+        kings_rock: bool,
+        contact_tail: bool,
+        script: Option<SeatScript>,
+        events: &mut Vec<Event>,
+    ) {
+        let survives = self.survives_at_one(foe);
+        let target = self.sides[foe].mon_mut();
+        if target.sub_hp > 0 {
+            let amount = amount.min(target.sub_hp);
+            target.sub_hp -= amount;
+            events.push(Event::SubDamage {
+                side: foe as u8 + 1,
+                amount,
+            });
+            if self.sides[foe].mon().sub_hp == 0 {
+                events.push(Event::SubBroke {
+                    side: foe as u8 + 1,
+                });
+            }
+            return;
+        }
+        let cap = if survives {
+            target.hp.saturating_sub(1)
+        } else {
+            target.hp
+        };
+        let amount = amount.min(cap);
+        target.hp -= amount;
+        let special = special_register.unwrap_or_else(|| {
+            !matches!(
+                crate::types::category_of(slot.move_type()),
+                crate::types::Category::Physical
+            )
+        });
+        if special {
+            self.taken_special[foe] = amount;
+        } else {
+            self.taken_physical[foe] = amount;
+        }
+        events.push(Event::Damage {
+            side: foe as u8 + 1,
+            amount,
+            effectiveness: 100,
+            crit: false,
+        });
+        self.sides[foe].mon_mut().last_hit_by = Some(slot.entry.id);
+        self.sides[foe].mon_mut().last_hit_by_slot = Some(self.sides[side].active);
+        if kings_rock {
+            self.kings_rock(side, foe, slot, script);
+        }
+        self.took_a_hit(foe, amount, events);
+        if contact_tail {
+            self.on_damaged(side, foe, slot, slot.move_type(), amount, script, events);
+            self.shell_bell(side, amount, events);
+        }
+        self.resolve_faints(side, foe, events);
+    }
+
     fn took_a_hit(&mut self, foe: usize, amount: u16, events: &mut Vec<Event>) {
         if let Some((stored, left)) = self.sides[foe].mon().bide {
             self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));

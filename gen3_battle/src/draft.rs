@@ -41,7 +41,7 @@ pub fn draft_set(rng: &mut Rng, set: &'static RandbatSet) -> Option<Mon> {
     }
 
     let mut picked: Vec<MoveSlot> = Vec::with_capacity(MOVE_SLOTS);
-    let mut take = |want_damaging: bool, picked: &mut Vec<MoveSlot>| {
+    let take = |want_damaging: bool, picked: &mut Vec<MoveSlot>| {
         for (entry, ty) in &pool {
             if picked.len() == MOVE_SLOTS {
                 return;

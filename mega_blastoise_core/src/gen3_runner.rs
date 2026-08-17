@@ -20,10 +20,7 @@ extern crate alloc;
 
 use alloc::{format, string::String, string::ToString, vec::Vec};
 
-use gen3_battle::{
-    battle::{Battle, Choice, Event},
-    Type,
-};
+use gen3_battle::battle::{Battle, Choice, Event};
 
 use crate::battle_effects::BoardEffects;
 use crate::board_event::{BoardEvent, MoveSlot, PromptKind};
@@ -699,11 +696,6 @@ pub fn drafted_battle(seed: u64, six: bool) -> Option<Battle> {
     Some(Battle::new(Side::new(t1), Side::new(t2), seed))
 }
 
-/// A move's type, for callers that colour a badge without reaching into the
-/// engine's types themselves.
-pub fn move_type_name(t: Type) -> &'static str {
-    t.name()
-}
 
 #[cfg(test)]
 mod tests {

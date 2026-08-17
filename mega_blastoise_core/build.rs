@@ -855,7 +855,7 @@ fn color_pixels(path: &Path, back: bool) -> (usize, usize, Vec<Option<[u8; 3]>>)
         };
         let is_bg = |x: usize, y: usize| rgba(x, y)[3] == 0 || luma(x, y) >= 240;
         let mut stack: Vec<(usize, usize)> = Vec::new();
-        let mut seed = |x: usize, y: usize, clear: &mut Vec<Vec<bool>>, st: &mut Vec<(usize, usize)>| {
+        let seed = |x: usize, y: usize, clear: &mut Vec<Vec<bool>>, st: &mut Vec<(usize, usize)>| {
             if !clear[y][x] && is_bg(x, y) {
                 clear[y][x] = true;
                 st.push((x, y));
@@ -870,7 +870,7 @@ fn color_pixels(path: &Path, back: bool) -> (usize, usize, Vec<Option<[u8; 3]>>)
             seed(w - 1, y, &mut clear, &mut stack);
         }
         while let Some((x, y)) = stack.pop() {
-            let mut visit = |nx: usize, ny: usize, clear: &mut Vec<Vec<bool>>, st: &mut Vec<(usize, usize)>| {
+            let visit = |nx: usize, ny: usize, clear: &mut Vec<Vec<bool>>, st: &mut Vec<(usize, usize)>| {
                 if !clear[ny][nx] && is_bg(nx, ny) {
                     clear[ny][nx] = true;
                     st.push((nx, ny));

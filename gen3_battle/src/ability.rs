@@ -62,10 +62,6 @@ impl Chain {
         self.mul(other.0);
     }
 
-    /// True while nothing has been folded in.
-    pub fn is_identity(&self) -> bool {
-        self.0 == 4096
-    }
 
     /// Apply the accumulated chain to a value.
     pub fn apply(&self, value: u32) -> u32 {
