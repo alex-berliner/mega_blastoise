@@ -90,3 +90,30 @@ mod tests {
         assert_eq!(Ruleset::Gen3.as_str(), "Gen 3");
     }
 }
+
+// ── On the things that LOOK duplicated ────────────────────────────────────────
+//
+// `Type` really was duplicated and now lives in `battle_types`, shared with
+// every other generation's engine. The rest of the near-twins across
+// `gen1_battle` and `gen3_battle` are NOT the same thing wearing two names,
+// and unifying them would change meanings rather than remove repetition:
+//
+//   Rng      three different generators, deliberately. Gen 1 is xorshift64
+//            (13/7/17) with per-seat forced channels for its parity suites,
+//            Gen 3 is xorshift64* (12/25/27 + multiply), and core's
+//            SimpleRng is splitmix64. Each stream is load-bearing: a battle
+//            replays from its seed, so swapping an algorithm rewrites every
+//            recorded outcome.
+//   Stat     different orders that INDEX ARRAYS. Gen 1 leads with Hp and
+//            ends Spe; Gen 3 has no Hp and puts Spe third. The numbers are
+//            the contract.
+//   Status   Gen 1 carries its sleep counter in the enum and has a None
+//            variant; Gen 3 splits Poison from Toxic and stores neither
+//            counter here.
+//   Mon,     per-engine state. The volatiles an era tracks ARE the era.
+//   Side,
+//   MoveSlot
+//
+// The check that found `Type`, worth re-running when a generation is added:
+// grep both engine crates for same-named public items, then decide each pair
+// out loud rather than by eye.

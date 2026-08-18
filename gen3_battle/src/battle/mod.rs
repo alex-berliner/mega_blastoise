@@ -997,8 +997,6 @@ pub struct Battle {
     bounced: bool,
 }
 
-/// How many residual buckets the end-of-turn phase walks.
-const BUCKETS: usize = 13;
 
 /// The `comparePriority` key for one residual bucket on a mon of this Speed.
 ///
