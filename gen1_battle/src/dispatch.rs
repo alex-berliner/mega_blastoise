@@ -672,14 +672,7 @@ fn apply_effect(
             // A hit the Substitute ate never reaches the Hit event, and Rage's
             // build is an `onHit` on the target's own volatile — so it earns
             // nothing off a sub.
-            let ate_by_sub = matches!(res, HitRes::Sub { .. });
-            note_hit(&mut outcome, res, dmg);
-            outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
-            if !outcome.fainted_target {
-                if !ate_by_sub {
-                    rage_build(sides, defender_side, log);
-                }
-            }
+            land_hit(&mut outcome, res, dmg, sides, defender_side, log);
         }
         FlatDamage => {
             let dmg = mv.effect_param0 as u16;
@@ -687,14 +680,7 @@ fn apply_effect(
             // A hit the Substitute ate never reaches the Hit event, and Rage's
             // build is an `onHit` on the target's own volatile — so it earns
             // nothing off a sub.
-            let ate_by_sub = matches!(res, HitRes::Sub { .. });
-            note_hit(&mut outcome, res, dmg);
-            outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
-            if !outcome.fainted_target {
-                if !ate_by_sub {
-                    rage_build(sides, defender_side, log);
-                }
-            }
+            land_hit(&mut outcome, res, dmg, sides, defender_side, log);
         }
         Psywave => {
             // damage = random(1 .. 1.5×level - 1); the cartridge softlocks at
@@ -712,14 +698,7 @@ fn apply_effect(
             // A hit the Substitute ate never reaches the Hit event, and Rage's
             // build is an `onHit` on the target's own volatile — so it earns
             // nothing off a sub.
-            let ate_by_sub = matches!(res, HitRes::Sub { .. });
-            note_hit(&mut outcome, res, dmg);
-            outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
-            if !outcome.fainted_target {
-                if !ate_by_sub {
-                    rage_build(sides, defender_side, log);
-                }
-            }
+            land_hit(&mut outcome, res, dmg, sides, defender_side, log);
         }
         HalfHp => {
             let dmg = (sides[defender_side].active().hp_cur / 2).max(1);
@@ -886,14 +865,7 @@ fn apply_effect(
                 // A hit the Substitute ate never reaches the Hit event, and Rage's
                 // build is an `onHit` on the target's own volatile — so it earns
                 // nothing off a sub.
-                let ate_by_sub = matches!(res, HitRes::Sub { .. });
-                note_hit(&mut outcome, res, dmg);
-                outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
-                if !outcome.fainted_target {
-                    if !ate_by_sub {
-                        rage_build(sides, defender_side, log);
-                    }
-                }
+                land_hit(&mut outcome, res, dmg, sides, defender_side, log);
             } else {
                 fail_log(sides, attacker_side, log);
             }
@@ -1099,14 +1071,7 @@ fn apply_effect(
                     // A hit the Substitute ate never reaches the Hit event, and Rage's
                     // build is an `onHit` on the target's own volatile — so it earns
                     // nothing off a sub.
-                    let ate_by_sub = matches!(res, HitRes::Sub { .. });
-                    note_hit(&mut outcome, res, dmg);
-                    outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
-                    if !outcome.fainted_target {
-                        if !ate_by_sub {
-                            rage_build(sides, defender_side, log);
-                        }
-                    }
+                    land_hit(&mut outcome, res, dmg, sides, defender_side, log);
                 } else {
                     outcome.hit = true;
                 }
@@ -1434,6 +1399,28 @@ fn roll_chance_byte(rng: &mut Rng, threshold: u8) -> bool {
 
 fn pick<'v, T>(rng: &mut Rng, options: &'v [T]) -> &'v T {
     &options[rng.range(options.len() as u32) as usize]
+}
+
+/// Book a landed hit: record it in the outcome, note whether the target went
+/// down, and let a raging target build — unless a Substitute ate the hit,
+/// which never reaches the Hit event and so earns Rage nothing.
+///
+/// Five damage arms wrote this sequence out, and the sub check is exactly
+/// the sort of clause that goes missing from the fifth copy.
+fn land_hit(
+    outcome: &mut MoveOutcome,
+    res: HitRes,
+    dmg: u16,
+    sides: &mut [Side; 2],
+    defender_side: usize,
+    log: &mut Log,
+) {
+    let ate_by_sub = matches!(res, HitRes::Sub { .. });
+    note_hit(outcome, res, dmg);
+    outcome.fainted_target = sides[defender_side].active().hp_cur == 0;
+    if !outcome.fainted_target && !ate_by_sub {
+        rage_build(sides, defender_side, log);
+    }
 }
 
 fn note_hit(outcome: &mut MoveOutcome, res: HitRes, dmg: u16) {
