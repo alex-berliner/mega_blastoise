@@ -35,12 +35,7 @@ impl Battle {
         match action {
             StatusAction::BoostSelf(list) => {
                 for &(boost, delta) in list {
-                    self.sides[side].mon_mut().apply_boost(boost, delta);
-                    events.push(Event::Boosted {
-                        side: side as u8 + 1,
-                        boost,
-                        delta,
-                    });
+                    self.boost(side, boost, delta, events);
                 }
             }
             StatusAction::HealHalf => {
@@ -68,12 +63,7 @@ impl Battle {
                 // drops, not raises), then the confusion (Safeguard's job).
                 if hit && !self.sides[foe].mon().fainted() {
                     for &(boost, delta) in list {
-                        self.sides[foe].mon_mut().apply_boost(boost, delta);
-                        events.push(Event::Boosted {
-                            side: foe as u8 + 1,
-                            boost,
-                            delta,
-                        });
+                        self.boost(foe, boost, delta, events);
                     }
                     self.confuse(foe, scripted, events);
                 }
@@ -128,12 +118,7 @@ impl Battle {
             }
             StatusAction::Minimize => {
                 self.sides[side].mon_mut().minimized = true;
-                self.sides[side].mon_mut().apply_boost(Boost::Eva, 1);
-                events.push(Event::Boosted {
-                    side: side as u8 + 1,
-                    boost: Boost::Eva,
-                    delta: 1,
-                });
+                self.boost(side, Boost::Eva, 1, events);
             }
             StatusAction::WeatherHeal => {
                 let mult = match self.effective_weather() {
@@ -269,12 +254,7 @@ impl Battle {
                         ) {
                             continue;
                         }
-                        self.sides[foe].mon_mut().apply_boost(boost, delta);
-                        events.push(Event::Boosted {
-                            side: foe as u8 + 1,
-                            boost,
-                            delta,
-                        });
+                        self.boost(foe, boost, delta, events);
                     }
                 }
                 self.sides[side].mon_mut().hp = 0;
@@ -1039,12 +1019,7 @@ impl Battle {
                         {
                             continue;
                         }
-                        self.sides[foe].mon_mut().apply_boost(boost, delta);
-                        events.push(Event::Boosted {
-                            side: foe as u8 + 1,
-                            boost,
-                            delta,
-                        });
+                        self.boost(foe, boost, delta, events);
                     }
                 }
             }

@@ -583,12 +583,7 @@ impl Battle {
                                     if self.sides[side].mon().raging
                                         && !self.sides[side].mon().fainted()
                                     {
-                                        self.sides[side].mon_mut().apply_boost(Boost::Atk, 1);
-                                        events.push(Event::Boosted {
-                                            side: side as u8 + 1,
-                                            boost: Boost::Atk,
-                                            delta: 1,
-                                        });
+                                        self.boost(side, Boost::Atk, 1, &mut events);
                                     }
                                     self.announce_faint(side, &mut events);
                                 }

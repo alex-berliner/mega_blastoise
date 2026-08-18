@@ -924,12 +924,7 @@ impl Battle {
                 side: side as u8 + 1,
             });
             if slot.entry.id == "skullbash" {
-                self.sides[side].mon_mut().apply_boost(Boost::Def, 1);
-                events.push(Event::Boosted {
-                    side: side as u8 + 1,
-                    boost: Boost::Def,
-                    delta: 1,
-                });
+                self.boost(side, Boost::Def, 1, events);
             }
             self.sides[side].mon_mut().charging = Some(index as u8);
             self.sides[side].mon_mut().charge_fresh = true;
@@ -2328,12 +2323,7 @@ impl Battle {
                 }
                 // A raging target's Attack climbs with every hit it takes.
                 if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
-                    self.sides[foe].mon_mut().apply_boost(Boost::Atk, 1);
-                    events.push(Event::Boosted {
-                        side: foe as u8 + 1,
-                        boost: Boost::Atk,
-                        delta: 1,
-                    });
+                    self.boost(foe, Boost::Atk, 1, events);
                 }
                 // Rage's own rage state begins only once it actually lands.
                 if slot.entry.id == "rage" {
@@ -2425,12 +2415,7 @@ impl Battle {
                 if let Some(list) = slot.entry.self_drop {
                     if !self.sides[side].mon().fainted() {
                         for &(boost, delta) in list {
-                            self.sides[side].mon_mut().apply_boost(boost, delta);
-                            events.push(Event::Boosted {
-                                side: side as u8 + 1,
-                                boost,
-                                delta,
-                            });
+                            self.boost(side, boost, delta, events);
                         }
                     }
                 }
@@ -2482,12 +2467,7 @@ impl Battle {
         if let Some(list) = slot.entry.self_drop {
             if !self.sides[side].mon().fainted() {
                 for &(boost, delta) in list {
-                    self.sides[side].mon_mut().apply_boost(boost, delta);
-                    events.push(Event::Boosted {
-                        side: side as u8 + 1,
-                        boost,
-                        delta,
-                    });
+                    self.boost(side, boost, delta, events);
                 }
             }
         }
@@ -2680,6 +2660,23 @@ impl Battle {
     /// it when anything actually went in. Fifteen sites clamped and logged
     /// this by hand — and the clamp is the part worth having in one place:
     /// a heal that would overshoot is not an error, it is the common case.
+    /// Move a stat stage and say so. Nineteen sites applied the boost and
+    /// then wrote its event out by hand; the pair is one action.
+    pub(super) fn boost(
+        &mut self,
+        side: usize,
+        boost: Boost,
+        delta: i8,
+        events: &mut Vec<Event>,
+    ) {
+        self.sides[side].mon_mut().apply_boost(boost, delta);
+        events.push(Event::Boosted {
+            side: side as u8 + 1,
+            boost,
+            delta,
+        });
+    }
+
     pub(super) fn heal(&mut self, side: usize, amount: u16, events: &mut Vec<Event>) {
         let mon = self.sides[side].mon_mut();
         let healed = amount.min(mon.max_hp - mon.hp);
@@ -2722,12 +2719,7 @@ impl Battle {
             self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
         }
         if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
-            self.sides[foe].mon_mut().apply_boost(Boost::Atk, 1);
-            events.push(Event::Boosted {
-                side: foe as u8 + 1,
-                boost: Boost::Atk,
-                delta: 1,
-            });
+            self.boost(foe, Boost::Atk, 1, events);
         }
     }
 
@@ -2966,12 +2958,7 @@ impl Battle {
                             {
                                 continue;
                             }
-                            self.sides[foe].mon_mut().apply_boost(boost, delta);
-                            events.push(Event::Boosted {
-                                side: foe as u8 + 1,
-                                boost,
-                                delta,
-                            });
+                            self.boost(foe, boost, delta, events);
                         }
                     }
                 }
@@ -3001,12 +2988,7 @@ impl Battle {
                 Some(SecondaryEffect::SelfBoosts(list)) => {
                     if !self.sides[side].mon().fainted() {
                         for &(boost, delta) in list {
-                            self.sides[side].mon_mut().apply_boost(boost, delta);
-                            events.push(Event::Boosted {
-                                side: side as u8 + 1,
-                                boost,
-                                delta,
-                            });
+                            self.boost(side, boost, delta, events);
                         }
                     }
                 }
@@ -3209,12 +3191,7 @@ impl Battle {
             };
         if proc && !self.sides[side].mon().fainted() {
             for &(boost, delta) in list {
-                self.sides[side].mon_mut().apply_boost(boost, delta);
-                events.push(Event::Boosted {
-                    side: side as u8 + 1,
-                    boost,
-                    delta,
-                });
+                self.boost(side, boost, delta, events);
             }
         }
     }

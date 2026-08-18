@@ -313,12 +313,7 @@ impl Battle {
                 }
             }
             item::Ripe::Boost(boost) => {
-                self.sides[side].mon_mut().apply_boost(boost, 1);
-                events.push(Event::Boosted {
-                    side: side as u8 + 1,
-                    boost,
-                    delta: 1,
-                });
+                self.boost(side, boost, 1, events);
             }
             // The sim samples the stats that are not already maxed, and a
             // pinned sample takes the first — which is Attack.
@@ -335,12 +330,7 @@ impl Battle {
                     self.sides[side].mon().stage(i) < 6
                 });
                 if let Some(boost) = pick {
-                    self.sides[side].mon_mut().apply_boost(boost, 2);
-                    events.push(Event::Boosted {
-                        side: side as u8 + 1,
-                        boost,
-                        delta: 2,
-                    });
+                    self.boost(side, boost, 2, events);
                 }
             }
             item::Ripe::FocusEnergy => {
@@ -654,12 +644,7 @@ impl Battle {
             && !ability::blocks_drop(&self.sides[1 - side].mon().bearer(), ability::Drop::Attack)
             && self.sides[1 - side].mist_n == 0
         {
-            self.sides[1 - side].mon_mut().apply_boost(Boost::Atk, -1);
-            events.push(Event::Boosted {
-                side: (1 - side) as u8 + 1,
-                boost: Boost::Atk,
-                delta: -1,
-            });
+            self.boost(1 - side, Boost::Atk, -1, events);
         }
         if tidy {
             self.ability_update(side);

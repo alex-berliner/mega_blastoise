@@ -66,12 +66,7 @@ impl Battle {
                     mon.toxic_n = 0;
                 }
                 if ability::speed_boosts(&bearer) && self.sides[side].mon().active_turns > 0 {
-                    self.sides[side].mon_mut().apply_boost(Boost::Spe, 1);
-                    events.push(Event::Boosted {
-                        side: side as u8 + 1,
-                        boost: Boost::Spe,
-                        delta: 1,
-                    });
+                    self.boost(side, Boost::Spe, 1, events);
                 }
         }
             }
