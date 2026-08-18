@@ -426,6 +426,10 @@ impl Battle {
                             m.focused = passed.focused;
                             m.mean_looked = passed.mean_looked;
                             m.trapped_n = passed.trapped_n;
+                            // …and its staleness: a bind whose user already
+                            // left rides the pass as the same dead volatile,
+                            // not a fresh one.
+                            m.trap_stale = passed.trap_stale;
                             m.charged_elec = passed.charged_elec;
                             m.taunt_n = passed.taunt_n;
                             // Water Sport and Mud Sport are volatiles on the

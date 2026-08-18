@@ -471,26 +471,10 @@ impl Battle {
                 if ability == "truant" {
                     plan.push((12, s));
                 }
-                // The item: Leftovers and the pinch berries have residual
-                // callbacks; the status berries answer onUpdate instead and
-                // never enter this list.
-                if matches!(
-                    mon.item,
-                    "leftovers"
-                        | "oranberry"
-                        | "sitrusberry"
-                        | "figyberry"
-                        | "wikiberry"
-                        | "magoberry"
-                        | "aguavberry"
-                        | "iapapaberry"
-                        | "liechiberry"
-                        | "ganlonberry"
-                        | "salacberry"
-                        | "petayaberry"
-                        | "starfberry"
-                        | "lansatberry"
-                ) {
+                // The item: presence is answered by the item module itself,
+                // beside the effects — the hand-copied list this replaced
+                // was one berry short.
+                if crate::item::has_residual(mon.item) {
                     plan.push((2, s));
                 }
                 // This side's conditions, gathered after its mon. The sim
@@ -635,8 +619,14 @@ impl Battle {
             // poison KO of the last mon leaves the other side's song
             // unfinished and its singer alive.
             let perish_first = self.faster_side(scripted);
+            // Decided BEFORE the counts, not by them: an earlier residual
+            // ending the battle skips both songs — but a perish KO itself
+            // only queues the faint (the duration branch runs no
+            // faintMessages), so the second song still counts and two mons
+            // on zero go down together.
+            let decided_before_perish = self.over();
             for side in [perish_first, 1 - perish_first] {
-                if self.over() {
+                if decided_before_perish {
                     break;
                 }
                 if self.sides[side].mon().perish_n > 0 && !self.sides[side].mon().fainted() {

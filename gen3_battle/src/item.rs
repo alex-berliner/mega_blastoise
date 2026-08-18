@@ -141,6 +141,32 @@ pub fn accuracy_after_item(target: &Holder, accuracy: u32) -> u32 {
 }
 
 /// Leftovers' sixteenth, at the sim's residual order 10, subOrder 4.
+/// Whether this item carries a residual handler at all — Leftovers and the
+/// pinch berries. Presence is what the end-of-turn sort runs on, so this
+/// lives HERE, next to the effects themselves: a hand-copied list in the
+/// turn driver went stale by exactly one berry (Apicot) within a day of
+/// being written.
+pub fn has_residual(item: &str) -> bool {
+    matches!(
+        item,
+        "leftovers"
+            | "oranberry"
+            | "sitrusberry"
+            | "figyberry"
+            | "wikiberry"
+            | "magoberry"
+            | "aguavberry"
+            | "iapapaberry"
+            | "liechiberry"
+            | "ganlonberry"
+            | "salacberry"
+            | "petayaberry"
+            | "apicotberry"
+            | "starfberry"
+            | "lansatberry"
+    )
+}
+
 pub fn leftovers(mon: &Holder) -> bool {
     mon.has("leftovers")
 }
