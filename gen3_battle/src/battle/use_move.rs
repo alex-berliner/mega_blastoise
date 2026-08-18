@@ -1685,11 +1685,18 @@ impl Battle {
             return;
         }
 
-        // A zero-power move is its status action, nothing more. A
+        // A status move is its status action, nothing more. A
         // foe-aimed one that gets this far still goes in the target's
         // attacked-by book (the sim records at the hit loop, whether or
         // not the effect then succeeds) — that is what Mirror Move reads.
-        if slot.entry.power == 0 {
+        // The test is the CATEGORY. Two dozen damaging moves in this era
+        // carry 0 in the power column and compute it in a callback (Return,
+        // Hidden Power, Flail, Reversal, Low Kick, Magnitude, Frustration);
+        // reading the column as "no damage" sent every one of them down the
+        // status path, where they used their PP and did nothing at all. The
+        // ones with their own arms (fixed damage, the OHKOs, Counter, Spit
+        // Up) have already returned above.
+        if !slot.entry.damaging {
             // …except one the target is outright IMMUNE to (Leech Seed on
             // Grass, a chart-zero Thunder Wave or Glare): the sim filters
             // those at the type-immunity step, before the book is written.

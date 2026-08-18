@@ -5,7 +5,6 @@
 //! stable API but let us drive the engine state machine directly.
 
 use gen1_battle::testing::*;
-use gen1_battle::Type;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

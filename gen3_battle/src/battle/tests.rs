@@ -796,3 +796,33 @@ fn the_same_seed_replays_the_same_battle() {
     };
     assert_eq!(run(), run(), "a seeded battle has to be reproducible");
 }
+
+/// Two dozen of this era's damaging moves carry 0 in the power column and
+/// work it out in a callback. Reading that column as "not a damaging move"
+/// classified every one of them as Status, so they spent their PP, produced
+/// no event, and did nothing at all. The category is DATA now; this pins the
+/// ones with no other arm to fall back on.
+#[test]
+fn the_callback_power_moves_actually_hit() {
+    for id in [
+        "return",
+        "frustration",
+        "hiddenpower",
+        "flail",
+        "reversal",
+        "lowkick",
+        "magnitude",
+    ] {
+        let mut b = battle(mon("blaziken", 100, &[id]), mon("snorlax", 100, &["splash"]));
+        assert!(
+            b.sides[0].mon().moves[0].entry.damaging,
+            "{id} is not marked damaging",
+        );
+        let before = b.sides[1].mon().hp;
+        let events = b.step([Choice::Move(0), Choice::Move(0)]);
+        assert!(
+            b.sides[1].mon().hp < before,
+            "{id} did nothing: {events:?}",
+        );
+    }
+}

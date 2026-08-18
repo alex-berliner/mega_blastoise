@@ -391,6 +391,12 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
         let name = m["name"].as_str().unwrap();
         let mtype = m["type"].as_str().unwrap();
         let power = m["basePower"].as_u64().unwrap_or(0) as u16;
+        // Whether the move deals damage is DATA, not something to infer from
+        // its power. Two dozen of this era's moves compute their power in a
+        // callback and sit at 0 in the table (Return, Hidden Power, Flail,
+        // Magnitude, Low Kick, Reversal, Frustration), and reading 0 as "no
+        // damage" turned every one of them into a move that does nothing.
+        let damaging = m["category"].as_str() != Some("Status");
         let accuracy = m["accuracy"].as_u64().unwrap_or(0) as u8;
         let pp = m["pp"].as_u64().unwrap_or(0) as u8;
         let priority = m["priority"].as_i64().unwrap_or(0) as i8;
@@ -693,7 +699,7 @@ fn emit_moves(dump: &Value, out: &mut String) -> Vec<String> {
         };
         out.push_str(&format!(
             "    MoveEntry {{ id: {id:?}, name: {name:?}, move_type: {}, \
-             power: {power}, accuracy: {accuracy}, pp: {pp}, priority: {priority}, \
+             power: {power}, damaging: {damaging}, accuracy: {accuracy}, pp: {pp}, priority: {priority}, \
              secondary: {secondary}, drain: {drain}, recoil: {recoil}, \
              multihit: {multihit}, status_action: {status_action}, \
              respects_immunity: {respects_immunity}, fixed: {fixed}, \

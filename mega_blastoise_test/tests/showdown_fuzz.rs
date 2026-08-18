@@ -188,6 +188,12 @@ fn fuzz_n() -> usize {
 /// the multi-strike moves: the single-hit suites compare one strike's damage,
 /// so a move the sim lands twice would only measure the miscount.
 fn vanilla_moves(gen: u8, multihit: bool, ours: impl Fn(&str) -> bool) -> Vec<(String, i8)> {
+    // `FUZZ_ONLY=return,flail` narrows the pool to those ids, for asking one
+    // move at a time whether it matches the sim. Widening the pool turned up
+    // a backlog of moves that had never been fuzzed at all, and a sweep that
+    // fails on all of them at once says nothing about any one of them.
+    let only = std::env::var("FUZZ_ONLY").unwrap_or_default();
+    let only: Vec<&str> = only.split(',').filter(|s| !s.is_empty()).collect();
     let results = showdown(&json!([{"kind": "movelist", "gen": gen}]));
     results[0]["moves"]
         .as_array()
@@ -196,6 +202,7 @@ fn vanilla_moves(gen: u8, multihit: bool, ours: impl Fn(&str) -> bool) -> Vec<(S
         .filter(|m| multihit || !m["multihit"].as_bool().unwrap_or(false))
         .map(|m| (m["id"].as_str().unwrap().to_string(), m["priority"].as_i64().unwrap() as i8))
         .filter(|(id, _)| ours(id))
+        .filter(|(id, _)| only.is_empty() || only.contains(&id.as_str()))
         .collect()
 }
 
@@ -588,11 +595,13 @@ fn fuzz_gen3_turns() {
     let moves = vanilla_moves(3, true, |id| {
         gen3_battle::move_by_id(id)
             .map(|m| {
-                m.power > 0
-                    || m.status_action.is_some()
-                    || m.fixed.is_some()
-                    || m.ohko
-                    || matches!(m.id, "counter" | "mirrorcoat")
+                // Damaging is DATA, not "the power column is non-zero".
+                // This filter used to make the engine's own mistake, so the
+                // moves that compute their power in a callback (Return,
+                // Hidden Power, Flail, Reversal, Low Kick, Magnitude,
+                // Frustration, Present, Spit Up) were never once fuzzed —
+                // and every one of them silently did nothing in play.
+                m.damaging || m.status_action.is_some()
             })
             .unwrap_or(false)
     });
@@ -1205,12 +1214,7 @@ fn fuzz_gen3_battles() {
         const PENDING: &[&str] = &["followme"];
         gen3_battle::move_by_id(id)
             .map(|m| {
-                !PENDING.contains(&m.id)
-                    && (m.power > 0
-                        || m.status_action.is_some()
-                        || m.fixed.is_some()
-                        || m.ohko
-                        || matches!(m.id, "counter" | "mirrorcoat"))
+                !PENDING.contains(&m.id) && (m.damaging || m.status_action.is_some())
             })
             .unwrap_or(false)
     });

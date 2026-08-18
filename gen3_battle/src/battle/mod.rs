@@ -1286,8 +1286,9 @@ impl Battle {
             .filter(|&i| {
                 let slot = &mon.moves[i];
                 // "Status move" is the CATEGORY, not zero base power:
-                // Dragon Rage, Seismic Toss, Night Shade, Psywave, the OHKOs
-                // and Counter all sit at power 0 and Taunt lets them through.
+                // Dragon Rage, Seismic Toss, Night Shade, Psywave, the OHKOs,
+                // Counter, Return and Hidden Power all sit at power 0 and
+                // Taunt lets them through.
                 let status_move = slot.entry.power == 0
                     && slot.entry.fixed.is_none()
                     && !slot.entry.ohko

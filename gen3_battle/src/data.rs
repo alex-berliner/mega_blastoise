@@ -381,8 +381,15 @@ pub struct MoveEntry {
     pub id: &'static str,
     pub name: &'static str,
     pub move_type: Type,
-    /// 0 for a status move.
+    /// 0 for a status move, and also for the moves that compute their power
+    /// in a callback (see [`MoveEntry::damaging`]).
     pub power: u16,
+    /// The sim's category, minus the physical/special split, which this era
+    /// takes from the TYPE. Kept as data rather than derived from `power`
+    /// being non-zero: Return, Hidden Power, Flail, Reversal, Low Kick,
+    /// Magnitude and Frustration all sit at 0 power with a callback, and
+    /// calling those status moves made them silently do nothing.
+    pub damaging: bool,
     /// 0 means it never misses.
     pub accuracy: u8,
     pub pp: u8,
@@ -449,7 +456,7 @@ pub struct MoveEntry {
 impl MoveEntry {
     /// Physical or special, which in Gen 3 follows the move's type.
     pub fn category(&self) -> crate::types::Category {
-        if self.power == 0 {
+        if !self.damaging {
             crate::types::Category::Status
         } else {
             crate::types::category_of(self.move_type)
@@ -472,6 +479,7 @@ pub static STRUGGLE: MoveEntry = MoveEntry {
     name: "Struggle",
     move_type: Type::None,
     power: 50,
+    damaging: true,
     accuracy: 100,
     pp: 1,
     priority: 0,
