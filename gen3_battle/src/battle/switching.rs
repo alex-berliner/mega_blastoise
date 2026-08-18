@@ -291,26 +291,10 @@ impl Battle {
         self.sides[side].mon_mut().last_item = eaten;
         match ripe {
             item::Ripe::Heal(flat) => {
-                let mon = self.sides[side].mon_mut();
-                let amount = flat.min(mon.max_hp - mon.hp);
-                if amount > 0 {
-                    mon.hp += amount;
-                    events.push(Event::Healed {
-                        side: side as u8 + 1,
-                        amount,
-                    });
-                }
+                self.heal(side, flat, events);
             }
             item::Ripe::HealEighth => {
-                let mon = self.sides[side].mon_mut();
-                let amount = ((mon.max_hp / 8).max(1)).min(mon.max_hp - mon.hp);
-                if amount > 0 {
-                    mon.hp += amount;
-                    events.push(Event::Healed {
-                        side: side as u8 + 1,
-                        amount,
-                    });
-                }
+                self.heal(side, (self.sides[side].mon().max_hp / 8).max(1), events);
             }
             item::Ripe::Boost(boost) => {
                 self.boost(side, boost, 1, events);
