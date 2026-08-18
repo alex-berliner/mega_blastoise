@@ -1,13 +1,13 @@
 //! Drives a [`gen3_battle`] battle and narrates it as [`BoardEvent`]s.
 //!
 //! This is the Gen 3 half of the engine seam. The Gen 1 half is
-//! [`crate::battle_runner`] and is deliberately untouched: a Gen 1 battle runs
+//! [`crate::runner::gen1`] and is deliberately untouched: a Gen 1 battle runs
 //! exactly the code it always ran, and picking a ruleset picks which of the
 //! two a caller drives.
 //!
 //! Both runners own their loop, so a platform drives either the same way:
 //! hand it a battle, somewhere to read choices from, and somewhere to narrate
-//! to. [`run_battle`] here is the counterpart of [`crate::battle_runner`]'s.
+//! to. [`run_battle`] here is the counterpart of [`crate::runner::gen1`]'s.
 //!
 //! Narration pacing is deliberately absent: [`BoardEffects`] sinks already
 //! delay per event, so both engines inherit identical timing by emitting the
@@ -480,7 +480,7 @@ pub async fn play_turn<E: BoardEffects>(
 
 /// Distil one Gen 3 seat into the generation-neutral [`SlotOptions`] the
 /// shared collector consumes. The Gen 3 counterpart of
-/// [`crate::battle_runner::slot_options_from_request`]: parsing the engine's
+/// [`crate::runner::gen1::slot_options_from_request`]: parsing the engine's
 /// state is battle logic and lives with the engine; everything past the
 /// [`crate::battle_input::InputBus`] is generation-blind.
 ///

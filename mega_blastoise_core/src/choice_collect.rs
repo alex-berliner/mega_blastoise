@@ -161,8 +161,8 @@ impl SlotOptions {
     /// whole UI contract: whichever generation is playing, the collector sees
     /// nothing but this — which is what keeps one input state machine
     /// serving every engine. Distillers live with their engines
-    /// ([`crate::battle_runner::slot_options_from_request`] for Gen 1,
-    /// [`crate::gen3_runner`]'s in its battle loop), because parsing an
+    /// ([`crate::runner::gen1::slot_options_from_request`] for Gen 1,
+    /// [`crate::runner::gen3`]'s in its battle loop), because parsing an
     /// engine's request shape is battle logic, not UI.
     pub fn blank(player_num: u8, player_id: String) -> Self {
         Self {
@@ -407,7 +407,9 @@ impl ChoiceCollector {
                 if s.is_ai {
                     fx.push(Effect::Dbg(format!("[AI] auto-choosing for {}", s.player_id)));
                 } else if s.forced_switch && s.auto.is_some() {
-                    // Sole survivor — sent out automatically, no menu.
+                    // An engine-forced replacement with nothing to decide —
+                    // not the one-mon bench, which the player still sends
+                    // out themselves.
                     fx.push(Effect::Dbg(format!(
                         "[auto] {} sends out their last Pokemon",
                         s.player_id
@@ -1699,7 +1701,7 @@ mod tests {
                 target: 0,
             })
             .collect();
-        crate::battle_runner::slot_options_from_request(
+        crate::runner::gen1::slot_options_from_request(
             player_id,
             &Request::Turn(TurnRequest {
                 active: alloc::vec![MonTurnRequest {
@@ -1714,7 +1716,7 @@ mod tests {
     }
 
     fn switch_prompt(player_id: &str) -> SlotOptions {
-        crate::battle_runner::slot_options_from_request(
+        crate::runner::gen1::slot_options_from_request(
             player_id,
             &Request::Switch(SwitchRequest { needs_switch: alloc::vec![0] }),
             None,

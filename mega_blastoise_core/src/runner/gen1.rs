@@ -1,3 +1,16 @@
+//! Drives a [`gen1_battle`] battle and narrates it as [`BoardEvent`]s.
+//!
+//! This is the Gen 1 half of the engine seam; the Gen 3 half is
+//! [`crate::runner::gen3`]. Picking a ruleset picks which of the two a
+//! caller drives — nothing below the [`InputBus`] knows which ran.
+//!
+//! The shape differs from Gen 3's because the engines differ: the battler
+//! hands out `Request`s and takes choice strings back, so this runner pumps
+//! that protocol, while Gen 3 steps a whole turn at once. What they share is
+//! everything past the bus — both distil their seats into the neutral
+//! [`crate::choice_collect::SlotOptions`], and a player cannot tell from the
+//! choosing experience which engine is underneath.
+
 extern crate alloc;
 
 use alloc::string::ToString;
@@ -324,7 +337,7 @@ pub fn slot_options_from_request(
     request: &Request,
     player_data: Option<&gen1_battle::PlayerBattleData>,
 ) -> crate::choice_collect::SlotOptions {
-    use crate::battle_input::{format_move_choice, format_switch_choice};
+    use crate::battle_input::format_move_choice;
     use crate::choice_collect::SlotOptions;
     use alloc::string::String;
 
@@ -358,15 +371,12 @@ pub fn slot_options_from_request(
         }
         Request::Switch(_) => {
             s.forced_switch = true;
-            // Sole survivor: nothing to choose — send it out automatically.
-            // (party_ok is all-true when player data is missing, so this
-            // only triggers on real single-option benches.)
-            if player_data.is_some() {
-                let mut alive = (0..6).filter(|&i| s.party_ok[i]);
-                if let (Some(only), None) = (alive.next(), alive.next()) {
-                    s.auto = Some(format_switch_choice(only));
-                }
-            }
+            // A bench of one is still the player's to send out. This used to
+            // auto-commit, on the reasoning that a choice with one option is
+            // not a choice — but the player is watching their last Pokemon
+            // come out, and having the game make that press for them reads
+            // as a dropped input rather than a courtesy. The engine
+            // validates either way.
         }
         Request::TeamPreview(_) => s.auto = Some(String::from("random")),
         Request::LearnMove(_) => s.auto = Some(String::from("pass")),

@@ -12,10 +12,9 @@ pub mod cursor_nav;
 pub mod hp_bar;
 pub mod board_event;
 pub mod battle_input;
-pub mod battle_runner;
+pub mod runner;
 pub mod device_session;
 pub mod device_ui;
-pub mod gen3_runner;
 pub mod choice_collect;
 pub mod data_store;
 pub mod demo_teams;
@@ -52,7 +51,7 @@ pub use choice_collect::{
     HOLD_THRESHOLD_MS, INVALID_FLASH_MS, STATS_PAGE_CYCLE_MS, UNREADY_GRACE_MS,
 };
 pub use gen3_battle::Ruleset;
-pub use battle_runner::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
+pub use runner::gen1::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
 pub use hp_bar::{hp_bar_color, hp_bar_count, HpBarState};
 pub use prompt_fmt::{format_active_state, format_lobby_status, format_player_state, format_prompt};
 pub use data_store::FlashDataStore;

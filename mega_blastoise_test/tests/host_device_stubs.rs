@@ -201,7 +201,7 @@ fn button_press_sends_move_choice_without_stdin() {
         .map(|(pid, req)| (pid.to_string(), req.clone()))
         .expect("battle should have an active request after start");
     let player_data = battle.player_data(&player_id).ok();
-    let slot = mega_blastoise_core::battle_runner::slot_options_from_request(
+    let slot = mega_blastoise_core::runner::gen1::slot_options_from_request(
         &player_id,
         &request,
         player_data.as_ref(),

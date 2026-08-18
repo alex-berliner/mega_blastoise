@@ -282,7 +282,7 @@ impl<BS: ButtonSource> InputSource for ButtonController<BS> {
             self.source.on_prompt(&first_prompt.player_id, &first_prompt.slot);
 
             // Receive all remaining prompts in this batch using blocking receive().
-            // Using try_receive() here would race: the battle_runner sends prompts
+            // Using try_receive() here would race: the Gen 1 runner sends prompts
             // in a loop with dispatch_all().await between sends, so the second
             // prompt may not be in the channel yet when the first is processed.
             // batch_total tells us exactly how many to expect.

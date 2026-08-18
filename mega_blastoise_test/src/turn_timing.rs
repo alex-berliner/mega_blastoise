@@ -80,7 +80,7 @@ mod tests {
 
         while !battle.ended() {
             // The turn only advances once every active player has submitted a
-            // choice, so answer all requests each round like battle_runner does.
+            // choice, so answer all requests each round like the Gen 1 runner does.
             let requests: Vec<(String, Request)> = battle
                 .active_requests()
                 .map(|(pid, req)| (pid.to_string(), req.clone()))
