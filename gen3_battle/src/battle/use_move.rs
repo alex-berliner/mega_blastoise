@@ -281,6 +281,136 @@ impl Battle {
         true
     }
 
+    /// Metronome, Sleep Talk, Assist, Nature Power and Mirror Move: the move
+    /// that ACTUALLY goes off is not the one the player pressed. Each reaches
+    /// for another move and hands it on, and a called move can itself be a
+    /// caller — an Assist into Nature Power into Swift is one action.
+    ///
+    /// `None` means the caller found nothing to reach for and has already
+    /// said so; the action is over. Otherwise the returned slot replaces the
+    /// chosen one for everything downstream, which is why `lastMoveUsed`,
+    /// Snatch and the Counter guard all read IT rather than the press.
+    fn resolve_caller(
+        &mut self,
+        side: usize,
+        index: usize,
+        slot: MoveSlot,
+        script: Option<SeatScript>,
+        asleep_now: bool,
+        events: &mut Vec<Event>,
+    ) -> Option<MoveSlot> {
+        Some(if slot.entry.id == "metronome" {
+            // The sim samples the num-sorted eligible list; pinned, that is
+            // its first entry — Pound. Play keeps a real random pick.
+            let called: &'static MoveEntry = match script {
+                Some(_) => move_by_id("pound").expect("pound"),
+                None => {
+                    let mut pick = move_by_id("pound").expect("pound");
+                    for _ in 0..16 {
+                        let i = self.rng.below(crate::data::MOVES.len() as u32) as usize;
+                        let cand = &crate::data::MOVES[i];
+                        if !matches!(
+                            cand.id,
+                            "metronome" | "struggle" | "mirrormove" | "sketch" | "mimic"
+                        ) {
+                            pick = cand;
+                            break;
+                        }
+                    }
+                    pick
+                }
+            };
+            // Both lines are announced: Metronome, then the call.
+            events.push(Event::Used {
+                side: side as u8 + 1,
+                move_index: index,
+            });
+            MoveSlot {
+                entry: called,
+                pp: 1,
+                typed_as: None,
+            }
+        } else if slot.entry.id == "sleeptalk" {
+            // Only out of a sleep, and it calls one of the user's OWN moves:
+            // anything flagged nosleeptalk or charge is skipped, and a
+            // pinned sample lands on the first survivor. A pick with no PP
+            // left is a silent lost turn rather than a call.
+            if !asleep_now {
+                events.push(Event::Failed { side: side as u8 + 1 });
+                return None;
+            }
+            let pick = self.sides[side]
+                .mon()
+                .moves
+                .iter()
+                .find(|m| !m.entry.no_sleep_talk && !m.entry.charge)
+                .copied();
+            match pick {
+                None => {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return None;
+                }
+                Some(m) if m.pp == 0 => return None,
+                Some(m) => {
+                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
+                    MoveSlot { entry: m.entry, pp: 1, typed_as: None }
+                }
+            }
+        } else if slot.entry.id == "assist" {
+            // Assist rummages through the REST of the party, in the sim's
+            // own `side.pokemon` order, and calls the first move that is not
+            // on the noassist list.
+            let called = {
+                let s = &self.sides[side];
+                s.order
+                    .iter()
+                    .copied()
+                    .filter(|&i| i != s.active)
+                    .flat_map(|i| s.party[i].moves.iter())
+                    .find(|m| !m.entry.no_assist)
+                    .map(|m| m.entry)
+            };
+            match called {
+                None => {
+                    events.push(Event::Failed { side: side as u8 + 1 });
+                    return None;
+                }
+                Some(e) => {
+                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
+                    MoveSlot { entry: e, pp: 1, typed_as: None }
+                }
+            }
+        } else if slot.entry.id == "naturepower" {
+            // Nature Power rolls its own 95 accuracy; a miss stops before
+            // Swift is even called (one log line, not two).
+            let np_hit = match script {
+                Some(s) => s.hit,
+                None => self.rng.below(100) < 95,
+            };
+            if !np_hit {
+                return None;
+            }
+            // The games announce both: Nature Power, then the called Swift.
+            events.push(Event::Used {
+                side: side as u8 + 1,
+                move_index: index,
+            });
+            MoveSlot {
+                entry: move_by_id("swift").expect("swift"),
+                pp: 1,
+                typed_as: None,
+            }
+        } else if slot.entry.id == "hiddenpower" && slot.typed_as.is_none() {
+            MoveSlot {
+                entry: slot.entry,
+                pp: slot.pp,
+                typed_as: Some(Type::Dark),
+            }
+        } else {
+            slot
+        })
+    }
+
     pub(super) fn use_move(
         &mut self,
         side: usize,
@@ -642,115 +772,9 @@ impl Battle {
         // Nature Power becomes Swift in the sim's default arena; Hidden
         // Power under the fuzz's uniform maxed IVs is Dark 70.
         let chosen_id = slot.entry.id;
-        let slot = if slot.entry.id == "metronome" {
-            // The sim samples the num-sorted eligible list; pinned, that is
-            // its first entry — Pound. Play keeps a real random pick.
-            let called: &'static MoveEntry = match script {
-                Some(_) => move_by_id("pound").expect("pound"),
-                None => {
-                    let mut pick = move_by_id("pound").expect("pound");
-                    for _ in 0..16 {
-                        let i = self.rng.below(crate::data::MOVES.len() as u32) as usize;
-                        let cand = &crate::data::MOVES[i];
-                        if !matches!(
-                            cand.id,
-                            "metronome" | "struggle" | "mirrormove" | "sketch" | "mimic"
-                        ) {
-                            pick = cand;
-                            break;
-                        }
-                    }
-                    pick
-                }
-            };
-            // Both lines are announced: Metronome, then the call.
-            events.push(Event::Used {
-                side: side as u8 + 1,
-                move_index: index,
-            });
-            MoveSlot {
-                entry: called,
-                pp: 1,
-                typed_as: None,
-            }
-        } else if slot.entry.id == "sleeptalk" {
-            // Only out of a sleep, and it calls one of the user's OWN moves:
-            // anything flagged nosleeptalk or charge is skipped, and a
-            // pinned sample lands on the first survivor. A pick with no PP
-            // left is a silent lost turn rather than a call.
-            if !asleep_now {
-                events.push(Event::Failed { side: side as u8 + 1 });
-                return;
-            }
-            let pick = self.sides[side]
-                .mon()
-                .moves
-                .iter()
-                .find(|m| !m.entry.no_sleep_talk && !m.entry.charge)
-                .copied();
-            match pick {
-                None => {
-                    events.push(Event::Failed { side: side as u8 + 1 });
-                    return;
-                }
-                Some(m) if m.pp == 0 => return,
-                Some(m) => {
-                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
-                    MoveSlot { entry: m.entry, pp: 1, typed_as: None }
-                }
-            }
-        } else if slot.entry.id == "assist" {
-            // Assist rummages through the REST of the party, in the sim's
-            // own `side.pokemon` order, and calls the first move that is not
-            // on the noassist list.
-            let called = {
-                let s = &self.sides[side];
-                s.order
-                    .iter()
-                    .copied()
-                    .filter(|&i| i != s.active)
-                    .flat_map(|i| s.party[i].moves.iter())
-                    .find(|m| !m.entry.no_assist)
-                    .map(|m| m.entry)
-            };
-            match called {
-                None => {
-                    events.push(Event::Failed { side: side as u8 + 1 });
-                    return;
-                }
-                Some(e) => {
-                    events.push(Event::Used { side: side as u8 + 1, move_index: index });
-                    MoveSlot { entry: e, pp: 1, typed_as: None }
-                }
-            }
-        } else if slot.entry.id == "naturepower" {
-            // Nature Power rolls its own 95 accuracy; a miss stops before
-            // Swift is even called (one log line, not two).
-            let np_hit = match script {
-                Some(s) => s.hit,
-                None => self.rng.below(100) < 95,
-            };
-            if !np_hit {
-                return;
-            }
-            // The games announce both: Nature Power, then the called Swift.
-            events.push(Event::Used {
-                side: side as u8 + 1,
-                move_index: index,
-            });
-            MoveSlot {
-                entry: move_by_id("swift").expect("swift"),
-                pp: 1,
-                typed_as: None,
-            }
-        } else if slot.entry.id == "hiddenpower" && slot.typed_as.is_none() {
-            MoveSlot {
-                entry: slot.entry,
-                pp: slot.pp,
-                typed_as: Some(Type::Dark),
-            }
-        } else {
-            slot
+        let Some(slot) = self.resolve_caller(side, index, slot, script, asleep_now, events)
+        else {
+            return;
         };
 
         // A called move can itself be a caller: Assist and Sleep Talk both
