@@ -16,68 +16,62 @@ use crate::types::Type;
 use super::*;
 
 impl Battle {
-    pub(super) fn use_move(
+    /// In Gen 3 a rampage broken by flinch or full paralysis still ends in
+    /// fatigue confusion, on the spot. (A miss or a protecting target ends it
+    /// quietly — those sites clear `rampage` directly.)
+    ///
+    /// A method rather than a closure inside `use_move` because both the
+    /// before-move gates and the move body itself end rampages, and those
+    /// two now live in different functions.
+    fn break_rampage(&mut self, side: usize, scripted: bool, events: &mut Vec<Event>) {
+        if self.sides[side].mon().rampage.is_some() {
+            let uproar = self.sides[side].mon().locked_move == Some("uproar");
+            let n = if scripted {
+                2
+            } else {
+                2 + self.rng.below(4) as u8
+            };
+            let mon = self.sides[side].mon_mut();
+            // An Uproar is not a Thrash. Its lock is a volatile of its
+            // own with its own clock, ticked in the residual phase, and
+            // nothing that happens to the move it is swinging shortens
+            // it: the din carries on through a miss, a flinch and a full
+            // paralysis alike. Only the Thrash family ends here, and only
+            // the Thrash family fatigues.
+            if !uproar {
+                mon.rampage = None;
+            }
+            if !uproar && mon.confusion_n == 0 && !mon.fainted() {
+                mon.confusion_n = n;
+                events.push(Event::ConfusionStarted {
+                    side: side as u8 + 1,
+                });
+            }
+        }
+    }
+
+    /// The sim's `BeforeMove` event: everything that can stop an action
+    /// before the move itself is even resolved — Rage ending, a Truant loaf,
+    /// sleep, freeze, a flinch, the confusion self-hit, infatuation, full
+    /// paralysis. `false` means the action is over.
+    ///
+    /// A phase, not a fragment: the sim names it, runs it as one event, and
+    /// skips the whole thing for an intercepting Pursuit — which is fired
+    /// from the switch-out hook through `useMove`, below `runMove`, so no
+    /// BeforeMove ever runs for it. That is why the caller guards this on
+    /// `!pursuing && !calling` rather than the gates doing it one by one.
+    ///
+    /// `asleep_now` rides back out because three later gates need to know the
+    /// mon acted THROUGH a sleep: Snore, Rollout's lock, and Rollout's
+    /// base-power callback all read it.
+    fn before_move(
         &mut self,
         side: usize,
         index: usize,
         script: Option<SeatScript>,
+        asleep_now: &mut bool,
         events: &mut Vec<Event>,
-    ) {
-        let foe = 1 - side;
-        if self.sides[side].mon().fainted() {
-            return;
-        }
-        // Fake Out's window is counted in `activeMoveActions`, which the sim
-        // bumps at the top of `runMove` — so a sleep-lost turn burns it (the
-        // mon took its action and was stopped inside it), and an intercepting
-        // Pursuit does NOT. The interception is fired from the switch-out
-        // hook through `useMove`, which is below runMove, and the mon's own
-        // queued action is thrown away: it never spent one. So a Cyndaquil
-        // that pursued something off the field can still Fake Out next turn.
-        let had_acted = self.sides[side].mon().acted;
-        if !self.pursuing {
-            self.sides[side].mon_mut().acted = true;
-        }
-        // In Gen 3 a rampage broken by flinch or full paralysis still ends
-        // in fatigue confusion, on the spot. (A miss or a protecting target
-        // ends it quietly — those sites clear `rampage` directly.)
-        fn break_rampage(b: &mut Battle, side: usize, scripted: bool, events: &mut Vec<Event>) {
-            if b.sides[side].mon().rampage.is_some() {
-                let uproar = b.sides[side].mon().locked_move == Some("uproar");
-                let n = if scripted {
-                    2
-                } else {
-                    2 + b.rng.below(4) as u8
-                };
-                let mon = b.sides[side].mon_mut();
-                // An Uproar is not a Thrash. Its lock is a volatile of its
-                // own with its own clock, ticked in the residual phase, and
-                // nothing that happens to the move it is swinging shortens
-                // it: the din carries on through a miss, a flinch and a full
-                // paralysis alike. Only the Thrash family ends here, and only
-                // the Thrash family fatigues.
-                if !uproar {
-                    mon.rampage = None;
-                }
-                if !uproar && mon.confusion_n == 0 && !mon.fainted() {
-                    mon.confusion_n = n;
-                    events.push(Event::ConfusionStarted {
-                        side: side as u8 + 1,
-                    });
-                }
-            }
-        }
-        // Destiny Bond and Grudge last exactly until the user's next action.
-        self.sides[side].mon_mut().destiny = false;
-        self.sides[side].mon_mut().grudged = false;
-
-        // An intercepting Pursuit skips every can't-move gate below. The sim
-        // fires it from the switch-out hook through `useMove`, which is the
-        // inside caller: it never runs the BeforeMove event, so a paralysed
-        // or flinched user still gets its strike in. (Sleep and freeze are
-        // refused earlier, by the condition's own guard.)
-        let mut asleep_now = false;
-        if !self.pursuing && !self.calling {
+    ) -> bool {
         // Rage ends the moment its holder tries to act. The sim hangs that
         // on BeforeMove at priority 100, above every gate below — above
         // Truant, sleep, freeze, flinch and full paralysis alike — so an
@@ -94,7 +88,7 @@ impl Battle {
             events.push(Event::Recharging {
                 side: side as u8 + 1,
             });
-            return;
+            return false;
         }
         // Fast asleep: the sleep clock ticks down before each action, and at
         // zero the mon wakes and moves that same turn.
@@ -117,7 +111,7 @@ impl Battle {
                 // Snore attacks straight out of sleep, and Gen 3 refunds the
                 // turn on switch-in rather than counting it.
                 mon.sleep_skipped += 1;
-                asleep_now = true;
+                *asleep_now = true;
                 events.push(Event::Cant {
                     side: side as u8 + 1,
                     status: Status::Sleep,
@@ -141,7 +135,7 @@ impl Battle {
                     side: side as u8 + 1,
                     status: Status::Sleep,
                 });
-                return;
+                return false;
             }
         }
         // Truant: every other turn is spent loafing about, and the turn it
@@ -163,7 +157,7 @@ impl Battle {
             events.push(Event::Failed {
                 side: side as u8 + 1,
             });
-            return;
+            return false;
         }
         // Frozen solid: a 1-in-5 thaw each action in play (scripts pin it
         // off, matching the reference runs). Flame Wheel and Sacred Fire
@@ -194,7 +188,7 @@ impl Battle {
                     side: side as u8 + 1,
                     status: Status::Freeze,
                 });
-                return;
+                return false;
             }
         }
         // Flinch: the hit that caused it resolved earlier this turn, so a
@@ -202,7 +196,7 @@ impl Battle {
         // sleep outrank it in the games' gate order, hence checking second.
         if self.sides[side].mon().flinched {
             self.sides[side].mon_mut().charging = None;
-            break_rampage(self, side, script.is_some(), events);
+            self.break_rampage(side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().fury_n = 0;
             self.sides[side].mon_mut().stall_counter = 0;
@@ -210,7 +204,7 @@ impl Battle {
             events.push(Event::Flinched {
                 side: side as u8 + 1,
             });
-            return;
+            return false;
         }
         // Confusion: the clock ticks before the action; at zero it lifts
         // and the move proceeds. Otherwise a coin (the script's selfhit
@@ -239,7 +233,7 @@ impl Battle {
                         amount,
                     });
                     self.announce_faint(side, events);
-                    return;
+                    return false;
                 }
             }
         }
@@ -253,7 +247,7 @@ impl Battle {
             };
             if immobile {
                 self.sides[side].mon_mut().charging = None;
-                break_rampage(self, side, script.is_some(), events);
+                self.break_rampage(side, script.is_some(), events);
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
                 self.sides[side].mon_mut().stall_counter = 0;
@@ -261,7 +255,7 @@ impl Battle {
                 events.push(Event::Infatuated {
                     side: side as u8 + 1,
                 });
-                return;
+                return false;
             }
         }
         // Full paralysis: a quarter of a paralyzed mon's actions, decided by
@@ -273,7 +267,7 @@ impl Battle {
             };
             if immobile {
                 self.sides[side].mon_mut().charging = None;
-                break_rampage(self, side, script.is_some(), events);
+                self.break_rampage(side, script.is_some(), events);
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
                 self.sides[side].mon_mut().stall_counter = 0;
@@ -281,9 +275,48 @@ impl Battle {
                 events.push(Event::FullyParalyzed {
                     side: side as u8 + 1,
                 });
-                return;
+                return false;
             }
         }
+        true
+    }
+
+    pub(super) fn use_move(
+        &mut self,
+        side: usize,
+        index: usize,
+        script: Option<SeatScript>,
+        events: &mut Vec<Event>,
+    ) {
+        let foe = 1 - side;
+        if self.sides[side].mon().fainted() {
+            return;
+        }
+        // Fake Out's window is counted in `activeMoveActions`, which the sim
+        // bumps at the top of `runMove` — so a sleep-lost turn burns it (the
+        // mon took its action and was stopped inside it), and an intercepting
+        // Pursuit does NOT. The interception is fired from the switch-out
+        // hook through `useMove`, which is below runMove, and the mon's own
+        // queued action is thrown away: it never spent one. So a Cyndaquil
+        // that pursued something off the field can still Fake Out next turn.
+        let had_acted = self.sides[side].mon().acted;
+        if !self.pursuing {
+            self.sides[side].mon_mut().acted = true;
+        }
+        // Destiny Bond and Grudge last exactly until the user's next action.
+        self.sides[side].mon_mut().destiny = false;
+        self.sides[side].mon_mut().grudged = false;
+
+        // An intercepting Pursuit skips every can't-move gate below. The sim
+        // fires it from the switch-out hook through `useMove`, which is the
+        // inside caller: it never runs the BeforeMove event, so a paralysed
+        // or flinched user still gets its strike in. (Sleep and freeze are
+        // refused earlier, by the condition's own guard.)
+        let mut asleep_now = false;
+        if !self.pursuing && !self.calling
+            && !self.before_move(side, index, script, &mut asleep_now, events)
+        {
+            return;
         }
         // Encore overrides the choice with the last move used. The sim does
         // that at EXECUTION time, through `OverrideAction`, which re-checks
@@ -344,7 +377,7 @@ impl Battle {
         // sim's disable cant; a broken rampage still fatigues).
         if releasing && self.sides[side].mon().disabled_slot == Some(index as u8) {
             let _ = was_charging;
-            break_rampage(self, side, script.is_some(), events);
+            self.break_rampage(side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().stall_counter = 0;
             events.push(Event::Failed {
@@ -1197,7 +1230,7 @@ impl Battle {
             // quietly on first use, with fatigue confusion once the lock
             // is running — and a rolling Rollout resets to a fresh choice.
             if ramping {
-                break_rampage(self, side, script.is_some(), events);
+                self.break_rampage(side, script.is_some(), events);
             } else {
                 self.sides[side].mon_mut().rampage = None;
             }
@@ -1243,7 +1276,7 @@ impl Battle {
                     // kicks still crash for half what they would have dealt.
                     self.sides[side].mon_mut().last_missed = true;
                     if ramping {
-                        break_rampage(self, side, script.is_some(), events);
+                        self.break_rampage(side, script.is_some(), events);
                     } else {
                         self.sides[side].mon_mut().rampage = None;
                     }
@@ -1922,7 +1955,7 @@ impl Battle {
                 // An immune target never locks a rampage in — and breaks
                 // a running one the way a miss does.
                 if ramping {
-                    break_rampage(self, side, script.is_some(), events);
+                    self.break_rampage(side, script.is_some(), events);
                 } else {
                     self.sides[side].mon_mut().rampage = None;
                 }
@@ -1940,7 +1973,7 @@ impl Battle {
             // fatigue confusion. Fury Cutter's ramp and a Rollout reset.
             self.sides[side].mon_mut().last_missed = true;
             if ramping {
-                break_rampage(self, side, script.is_some(), events);
+                self.break_rampage(side, script.is_some(), events);
             } else {
                 // A FIRST-use miss leaves no lock at all: the din's volatile
                 // is a self-effect applied in `moveHit`, which a move that
