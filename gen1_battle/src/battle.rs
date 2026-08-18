@@ -561,6 +561,17 @@ impl<'a> Battle<'a> {
                 ""
             }
         });
+        // A recharge owed at CHOICE time. The queued action on a recharge
+        // turn is not a "recharge" pseudo-move — `commitChoices` rewrites
+        // every gen 1 move choice to `lastSelectedMove`, and the locked
+        // recharge choice carries no `moveSlot` — so what sits in the queue
+        // is Hyper Beam itself, and only `mustrecharge.onBeforeMove` turns
+        // it into a cant. When a faster Wrap-class move negates the recharge
+        // ("even if they miss", the sim hints), nothing stands between the
+        // queued Hyper Beam and execution: it fires, pays PP from the Hyper
+        // Beam slot, and earns a fresh recharge.
+        let recharge_choice: [bool; 2] =
+            [0, 1].map(|i| self.sides[i].active().volatile.has(Volatile::MUST_RECHARGE));
         // The sim's Struggle-instead-of-Disabled-move decision is made at
         // REQUEST time — before any of this turn's actions. A Disable that
         // lands mid-turn does not rewrite an already-made choice (the
@@ -651,7 +662,14 @@ impl<'a> Battle<'a> {
                 // began put there. That is the register every PP charge in
                 // this era is paid out of.
                 if let Some(Choice::Move(slot)) = self.pending_choice[side] {
-                    if locked_move_id(&self.sides[side]).is_none() {
+                    // A recharge turn's choice is as locked as a Thrash: the
+                    // sim's continuation carries no `moveSlot`, so the slot
+                    // register keeps pointing at the move that earned the
+                    // recharge — which is where the PP comes from if a Bind
+                    // negates the recharge and the queued move fires.
+                    if locked_move_id(&self.sides[side]).is_none()
+                        && !self.sides[side].active().volatile.has(Volatile::MUST_RECHARGE)
+                    {
                         self.sides[side].last_selected_slot = slot.min(3);
                     }
                 }
@@ -696,6 +714,23 @@ impl<'a> Battle<'a> {
                 // the whole thing in a hint of its own.
                 Some(Choice::Move(_)) if stale_choice[side] == NO_MOVE => {
                     self.run_move_action(side, None, false, true);
+                }
+                Some(Choice::Move(slot)) if recharge_choice[side] => {
+                    // Owed a recharge when choosing: the queued action IS the
+                    // last selected move (see `recharge_choice` above). If
+                    // the volatile is still on, the can't-move gate spends it
+                    // exactly as before; if a Wrap-class hit negated it, the
+                    // old selection fires from its own slot.
+                    let _ = slot;
+                    let reg = self.sides[side].last_selected_move;
+                    let replay = self.sides[side]
+                        .active()
+                        .moves
+                        .iter()
+                        .position(|m| m.move_id == reg)
+                        .map(|p| p as u8)
+                        .unwrap_or(self.sides[side].last_selected_slot.min(3));
+                    self.run_move_action(side, Some(replay), disabled_choice[side], false);
                 }
                 Some(Choice::Move(slot)) => {
                     // Frozen or asleep at choice time: the old selection is

@@ -202,6 +202,18 @@ pub struct Mon {
     pub curled: bool,
     /// Encore clock: repeats the last move while above zero.
     pub encore_n: u8,
+    /// WHICH slot the Encore locked, snapshotted when it landed — the sim
+    /// pins `effectState.move` at onStart and never re-derives it. Reading
+    /// the live `last_used` instead let a Torment-forced Struggle (which
+    /// clears `last_used`) end an Encore a turn early.
+    pub encored_slot: Option<u8>,
+    /// The bind's user has LEFT (fainted or switched). The sim does not free
+    /// the victim on the spot: the stale volatile lingers until the victim's
+    /// next residual, where it is deleted silently with no chip — and while
+    /// it lingers it blocks a fresh binding move from attaching (addVolatile
+    /// refuses a volatile already present, and gen 3's has no onRestart). It
+    /// no longer holds the victim in, though: the trapper is gone.
+    pub trap_stale: bool,
     /// Disable: which slot is sealed, and for how long. The turn it lands
     /// the victim's already-chosen move is just a lost turn.
     pub disabled_slot: Option<u8>,
@@ -433,6 +445,8 @@ impl Mon {
             rolling: None,
             curled: false,
             encore_n: 0,
+            encored_slot: None,
+            trap_stale: false,
             disabled_slot: None,
             disable_n: 0,
             disable_fresh: false,
@@ -1231,7 +1245,7 @@ impl Battle {
         }
         // Ingrain's roots hold it as surely as a bind does: the condition's
         // onTrapPokemon calls tryTrap, so the request comes back trapped.
-        if mon.trapped_n > 0 || mon.mean_looked || mon.ingrained {
+        if (mon.trapped_n > 0 && !mon.trap_stale) || mon.mean_looked || mon.ingrained {
             return false;
         }
         // The other side's ability can hold it in place too. Being off the
@@ -1277,7 +1291,7 @@ impl Battle {
                     && !(mon.taunt_n > 0 && status_move)
                     && !(mon.tormented && mon.last_used == Some(i as u8))
                     // Encore greys out everything BUT the encored move.
-                    && !(mon.encore_n > 0 && mon.last_used.is_some_and(|u| u != i as u8))
+                    && !(mon.encore_n > 0 && mon.encored_slot.is_some_and(|u| u != i as u8))
                     // A Choice Band greys out everything but the first swing.
                     && !mon
                         .choice_locked

@@ -353,14 +353,19 @@ fn run_move(
         return MoveOutcome::default();
     }
 
-    // Type immunity, checked before accuracy. Only DAMAGING moves respect it:
-    // Gen 1 status moves ignore the chart entirely (Thunder Wave paralyzes
-    // Ground-types), and fixed-damage / trapping moves carry an explicit
-    // ignore flag (Sonic Boom hits Gengar; Wrap traps Ghosts).
+    // Type immunity, checked before accuracy. Damaging moves respect it
+    // unless flagged otherwise (Sonic Boom hits Gengar; Wrap traps Ghosts),
+    // and so do exactly the status moves whose dex entry spells
+    // `ignoreImmunity: false` — Thunder Wave and the poison trio, of which
+    // only Thunder Wave vs Ground has a chart zero in this era. The order
+    // matters more than the answer: an IMMUNE Thunder Wave exits HERE,
+    // before the accuracy roll, so a scripted miss is never consumed and
+    // `lastDamage` is never zeroed — which is what a later Counter reads.
     // Type immunity is likewise discovered on release: Razor Wind still
     // spends a turn "whipping up a whirlwind" at a Ghost. Found by the
     // gen 1 turn fuzzer.
-    if mv.category != MoveCategory::Status
+    let chart_bound_status = mv.id == "thunderwave";
+    if (mv.category != MoveCategory::Status || chart_bound_status)
         && (mv.flags & FLAG_IGNORE_IMMUNITY) == 0
         && ek != Counter
         && !charging_turn
@@ -1358,18 +1363,10 @@ fn apply_status_move(
         }
         _ => {
             // Paralysis (and any other primary status): goes through subs.
-            // Thunder Wave alone respects the type chart — a Ground-type is
-            // immune to the Electric-typed status move (cartridge rule; the
-            // gen 1 turn fuzzer corrected this arm's old claim otherwise).
-            let d = sides[defender_side].active();
-            let immune = mv.id == "thunderwave"
-                && (crate::tables::type_effectiveness(mv.move_type, d.primary_type) == 0
-                    || crate::tables::type_effectiveness(mv.move_type, d.secondary_type) == 0);
-            if immune {
-                let s = &sides[defender_side];
-                log.push_board(format!("immune|mon:{},{},0", s.active().name, s.player_id));
-                return;
-            }
+            // Thunder Wave's Ground immunity was already answered at the
+            // pre-accuracy gate — checking it here, after the accuracy roll,
+            // both consumed a roll the sim never makes and zeroed the
+            // Counter register on the way past.
             let st = status_from_param(rng, mv.effect_param0);
             if !try_apply_status(sides, defender_side, st, true, log) {
                 fail_log(sides, attacker_side, log);

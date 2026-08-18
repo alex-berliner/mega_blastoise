@@ -136,6 +136,7 @@ impl Battle {
                 mon.rolling = None;
                 mon.fury_n = 0;
                 mon.stall_counter = 0;
+                self.abort_drops_charge(side, index);
                 events.push(Event::Cant {
                     side: side as u8 + 1,
                     status: Status::Sleep,
@@ -154,6 +155,11 @@ impl Battle {
             // of reach, and the Earthquake it was dodging lands.
             self.sides[side].mon_mut().charging = None;
             self.sides[side].mon_mut().charge_fresh = false;
+            // A loaf is a turn that did not successfully stall, so the
+            // Protect ladder's volatile expires like on any other miss —
+            // every sibling can't-act gate resets this, and the loaf forgot.
+            self.sides[side].mon_mut().stall_counter = 0;
+            self.abort_drops_charge(side, index);
             events.push(Event::Failed {
                 side: side as u8 + 1,
             });
@@ -183,6 +189,7 @@ impl Battle {
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
                 self.sides[side].mon_mut().stall_counter = 0;
+                self.abort_drops_charge(side, index);
                 events.push(Event::Cant {
                     side: side as u8 + 1,
                     status: Status::Freeze,
@@ -199,6 +206,7 @@ impl Battle {
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().fury_n = 0;
             self.sides[side].mon_mut().stall_counter = 0;
+            self.abort_drops_charge(side, index);
             events.push(Event::Flinched {
                 side: side as u8 + 1,
             });
@@ -223,7 +231,8 @@ impl Battle {
                     self.sides[side].mon_mut().rampage = None;
                     self.sides[side].mon_mut().rolling = None;
                     self.sides[side].mon_mut().fury_n = 0;
-                        self.sides[side].mon_mut().stall_counter = 0;
+                    self.sides[side].mon_mut().stall_counter = 0;
+                    self.abort_drops_charge(side, index);
                     let amount = self.confusion_self_hit(side, random);
                     events.push(Event::ConfusedHit {
                         side: side as u8 + 1,
@@ -248,6 +257,7 @@ impl Battle {
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
                 self.sides[side].mon_mut().stall_counter = 0;
+                self.abort_drops_charge(side, index);
                 events.push(Event::Infatuated {
                     side: side as u8 + 1,
                 });
@@ -267,6 +277,7 @@ impl Battle {
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
                 self.sides[side].mon_mut().stall_counter = 0;
+                self.abort_drops_charge(side, index);
                 events.push(Event::FullyParalyzed {
                     side: side as u8 + 1,
                 });
@@ -285,10 +296,10 @@ impl Battle {
         // Struggle, which the sim then leaves alone.
         let encore_forced = self.sides[side].mon().encore_n > 0
             && self.sides[side].mon().encore_fresh
-            && self.sides[side].mon().last_used.is_some();
+            && self.sides[side].mon().encored_slot.is_some();
         let index = match (
             self.sides[side].mon().encore_n > 0,
-            self.sides[side].mon().last_used,
+            self.sides[side].mon().encored_slot,
         ) {
             (true, Some(i)) => i as usize,
             _ => index,
@@ -2015,7 +2026,39 @@ impl Battle {
             // Lock-On is certain for the same reason and for EVERY kick: its
             // `onSourceAccuracy` answers `true`, and the loop only rolls when
             // the accuracy it is handed is still a number.
-            let certain = sure || acc == 0 || acc >= 100;
+            //
+            // The follow-up check folds the STAGES back in — the sim
+            // recomputes effective accuracy from `move.accuracy` with the
+            // attacker's accuracy boost and the target's evasion boost as
+            // two separate boostTable factors — so a Sweet Scent that took
+            // the target to -1 evasion makes 90 into 120 and every kick
+            // certain. Foresight strips the evasion factor as usual.
+            let certain = sure || acc == 0 || {
+                let boost = |n: i32, up: bool| -> u32 {
+                    // The sim's accuracy boostTable: 3/3, 4/3, 5/3 … as a
+                    // numerator over 3, floored per factor.
+                    let n = n.clamp(0, 6) as u32;
+                    if up { 3 + n } else { 3 }
+                };
+                let acc_stage = self.sides[side].mon().acc_stage as i32;
+                let eva_stage = if self.sides[foe].mon().identified {
+                    0
+                } else {
+                    self.sides[foe].mon().eva_stage as i32
+                };
+                let mut eff = acc as u32;
+                if acc_stage > 0 {
+                    eff = eff * boost(acc_stage, true) / 3;
+                } else if acc_stage < 0 {
+                    eff = eff * 3 / boost(-acc_stage, true);
+                }
+                if eva_stage > 0 {
+                    eff = eff * 3 / boost(eva_stage, true);
+                } else if eva_stage < 0 {
+                    eff = eff * boost(-eva_stage, true) / 3;
+                }
+                eff >= 100
+            };
             match script {
                 Some(s) if !certain => {
                     if s.secondary {
@@ -2046,6 +2089,9 @@ impl Battle {
         };
 
         let mut total = 0u16;
+        // At least one strike got past the immunity gate — even if Endure or
+        // a Focus Band then clamped what it dealt to nothing.
+        let mut connected = false;
         // What the move actually took off the target, which is not the same
         // as what it dealt. A hit soaked by a Substitute returns the sim's
         // HIT_SUBSTITUTE, which is zero, so it adds nothing to
@@ -2272,6 +2318,7 @@ impl Battle {
             if dealt == 0 {
                 break; // immune: later strikes land no better
             }
+            connected = true;
 
             let eff = crate::types::effectiveness_against(
                 m.move_type,
@@ -2298,6 +2345,11 @@ impl Battle {
             if !hit_sub {
                 past_sub += amount;
             }
+            // The book records the hit whether or not the Substitute ate it:
+            // gen 3's `tryMoveHit` calls `gotAttacked` before the zero-damage
+            // early return, so a Bind that only dented the sub is still what
+            // Mirror Move replays next turn.
+            self.note_hit_by(side, foe, slot.entry.id);
             if hit_sub {
                 events.push(Event::SubDamage {
                     side: foe as u8 + 1,
@@ -2319,8 +2371,6 @@ impl Battle {
                     effectiveness: eff,
                     crit,
                 });
-                // What just hit this mon (Mirror Move's playback source).
-                self.note_hit_by(side, foe, slot.entry.id);
                 // A biding target banks what it just took.
                 if let Some((stored, left)) = self.sides[foe].mon().bide {
                     self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
@@ -2415,6 +2465,25 @@ impl Battle {
             self.sides[side].mon_mut().stockpile_n = 0;
         }
         if total == 0 {
+            // A hit that CONNECTED but was clamped to nothing — Focus Band
+            // holding a 1-HP mon, an Endure — still pays the move's own stat
+            // bill: `selfDrops` skips only targets marked false (miss, fail,
+            // immune), and damage 0 is not false. Recoil stays behind the
+            // total gate; the sim keys it on `move.totalDamage`.
+            if connected {
+                if let Some(list) = slot.entry.self_drop {
+                    if !self.sides[side].mon().fainted() {
+                        for &(boost, delta) in list {
+                            self.sides[side].mon_mut().apply_boost(boost, delta);
+                            events.push(Event::Boosted {
+                                side: side as u8 + 1,
+                                boost,
+                                delta,
+                            });
+                        }
+                    }
+                }
+            }
             if boom {
                 self.resolve_faints(side, foe, events);
             }
@@ -2579,6 +2648,9 @@ impl Battle {
         events: &mut Vec<Event>,
     ) {
         let survives = self.survives_at_one(foe);
+        // Sub or no sub, the hit goes in the target's attacked-by book —
+        // `gotAttacked` runs before the sim ever asks who absorbed it.
+        self.note_hit_by(side, foe, slot.entry.id);
         let target = self.sides[foe].mon_mut();
         if target.sub_hp > 0 {
             let amount = amount.min(target.sub_hp);
@@ -2618,7 +2690,6 @@ impl Battle {
             effectiveness: 100,
             crit: false,
         });
-        self.note_hit_by(side, foe, slot.entry.id);
         if kings_rock {
             self.kings_rock(side, foe, slot, script);
         }
@@ -2633,6 +2704,24 @@ impl Battle {
     /// Write the target's attacked-by book: what hit it and from which
     /// field slot. Mirror Move reads it; the end-of-turn purge clears it
     /// when the attacker leaves the field.
+    /// A move that ABORTS — full sleep, freeze, a flinch, a loaf, full
+    /// paralysis, infatuation, the confusion self-hit — fires `MoveAborted`,
+    /// and Charge's handler drops its volatile there exactly as it does
+    /// after a move that executes. The one exception the handler spells out:
+    /// an aborted CHARGE keeps the charge (a paralysed re-Charge loses
+    /// nothing). Charge has no duration; only these two events end it.
+    fn abort_drops_charge(&mut self, side: usize, index: usize) {
+        let acting = self.acting_slot(side, index);
+        let keeps = self.sides[side]
+            .mon()
+            .moves
+            .get(acting)
+            .is_some_and(|m| m.entry.id == "charge");
+        if !keeps {
+            self.sides[side].mon_mut().charged_elec = false;
+        }
+    }
+
     pub(super) fn note_hit_by(&mut self, side: usize, foe: usize, id: &'static str) {
         let from = self.sides[side].active;
         let mon = self.sides[foe].mon_mut();

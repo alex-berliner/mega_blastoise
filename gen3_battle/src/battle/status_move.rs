@@ -560,6 +560,9 @@ impl Battle {
                     };
                     self.sides[foe].mon_mut().encore_n = n;
                     self.sides[foe].mon_mut().encore_fresh = true;
+                    // Pin the slot NOW; later turns must not re-derive it.
+                    let locked = self.sides[foe].mon().last_used;
+                    self.sides[foe].mon_mut().encored_slot = locked;
                 } else {
                     events.push(Event::Failed {
                         side: side as u8 + 1,

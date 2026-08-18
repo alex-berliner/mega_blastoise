@@ -373,8 +373,12 @@ impl Battle {
                 mon.spe = stats[4];
                 mon.type_override = types;
             }
-            // A fainted trapper/gazer releases its victim.
-            self.sides[1 - side].mon_mut().trapped_n = 0;
+            // A fainted trapper releases nobody on the spot: the victim's
+            // volatile goes STALE and evaporates at its next residual. The
+            // gaze does end here.
+            if self.sides[1 - side].mon().trapped_n > 0 {
+                self.sides[1 - side].mon_mut().trap_stale = true;
+            }
             self.sides[1 - side].mon_mut().mean_looked = false;
             events.push(Event::Fainted {
                 side: side as u8 + 1,
@@ -386,10 +390,13 @@ impl Battle {
     /// field, applied to `side`'s current active. Shared by the voluntary
     /// switch and by Roar and Whirlwind dragging one off.
     pub(super) fn switch_out_reset(&mut self, side: usize) {
-            // The trapper/gazer leaving the field releases its
-            // victim; a sport leaves with its hummer (handled by
-            // the outgoing mon's own field reset below).
-            self.sides[1 - side].mon_mut().trapped_n = 0;
+            // The trapper leaving does not free its victim on the spot:
+            // the volatile goes STALE and evaporates at the victim's next
+            // residual. The gaze ends now; a sport leaves with its hummer
+            // (handled by the outgoing mon's own field reset below).
+            if self.sides[1 - side].mon().trapped_n > 0 {
+                self.sides[1 - side].mon_mut().trap_stale = true;
+            }
             self.sides[1 - side].mon_mut().mean_looked = false;
             let out = self.sides[side].mon_mut();
             if ability::cures_on_switch_out(&out.bearer()) && !out.fainted() {
@@ -437,6 +444,7 @@ impl Battle {
             out.rolling = None;
             out.curled = false;
             out.encore_n = 0;
+            out.encored_slot = None;
             out.encore_fresh = false;
             out.disabled_slot = None;
             out.disable_n = 0;
@@ -478,6 +486,7 @@ impl Battle {
             out.minimized = false;
             out.seeded = false;
             out.trapped_n = 0;
+            out.trap_stale = false;
             out.charging = None;
             out.charge_fresh = false;
             out.charge_fresh = false;

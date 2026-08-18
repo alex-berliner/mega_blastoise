@@ -606,7 +606,7 @@ pub fn slot_options_for(battle: &Battle, side: u8) -> crate::choice_collect::Slo
             // slots are still SENT if pressed — the engine turns them into
             // Struggle — but the sim's request greys them, and so do we.)
             if mon.encore_n > 0 {
-                if let Some(enc) = mon.last_used {
+                if let Some(enc) = mon.encored_slot {
                     *u &= mi == enc as usize;
                 }
             }
@@ -899,7 +899,9 @@ mod tests {
 
         b.sides[0].party[0].must_recharge = false;
         b.sides[0].party[0].encore_n = 3;
-        b.sides[0].party[0].last_used = Some(1);
+        // The snapshot the Encore pinned at onStart — the field every reader
+        // consults, since `last_used` can be cleared out from under it.
+        b.sides[0].party[0].encored_slot = Some(1);
         let s = slot_options_for(&b, 1);
         assert!(s.auto.is_none(), "an encored seat still presses the button");
         assert!(!s.usable[0], "but only the encored move is offered");

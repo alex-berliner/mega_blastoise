@@ -312,8 +312,10 @@ impl Battle {
             // games' order 4, BEFORE the weather chips and the status ticks
             // (the sim logs the heal ahead of the hail) — healing whoever is
             // active then.
+            let mut wish_present = [false; 2];
             for side in 0..2 {
                 if self.sides[side].wish_n > 0 {
+                    wish_present[side] = true;
                     self.sides[side].wish_n -= 1;
                     if self.sides[side].wish_n == 0 {
                         // Half of whoever CATCHES it, not half of whoever
@@ -399,21 +401,120 @@ impl Battle {
             // reads them: `case 'residual'` calls `updateSpeed()` before the
             // field event, so a Salac eaten mid-phase does not reshuffle it.
             let speeds = [self.turn_speed(0), self.turn_speed(1)];
-            let mut plan: Vec<(usize, usize)> = Vec::with_capacity(BUCKETS * 2);
-            // Insertion order is the sim's: side 1's active and everything on
-            // it, then side 2's. Within one mon the buckets already ascend by
-            // subOrder, and no two of them share one, so the finer insertion
-            // order inside a mon (status, then volatiles, then ability, then
-            // item) can never be what breaks a tie.
+            // The list holds only the handlers that EXIST, because presence
+            // is what displacement runs on. An earlier cut pushed every
+            // bucket for both sides and let absent ones no-op — which sorts
+            // to the same order for distinct Speeds, but at a TIE the
+            // symmetric phantoms cancel the selection sort's displacement
+            // and every tied pair came out side-1-first. The sim's list for
+            // a Transformed pair holding one Wiki Berry has THREE entries,
+            // and it is the berry's presence behind the two tied Leech Seeds
+            // that flings the first seed to the back.
+            //
+            // Insertion order mirrors `findPokemonEventHandlers`: per side,
+            // the status handler, then the volatiles, then the ability, then
+            // the item — and after each side's mon, its side conditions,
+            // which is where a pending Wish sits. The Wish entry is a marker:
+            // its EFFECT already ran in the wish phase above (order 7 sorts
+            // ahead of everything here), but its presence in the list still
+            // displaces ties, so it sorts along and runs nothing. Fainted
+            // mons' handlers are gathered too — the sim collects them and
+            // skips them at run time, and they still occupy slots.
+            const WISH_MARK: usize = usize::MAX;
+            let mut plan: Vec<(usize, usize)> = Vec::new();
             for s in 0..2 {
-                for b in 0..BUCKETS {
-                    plan.push((b, s));
+                let mon = &self.sides[s].party[self.sides[s].active];
+                let ability = mon.ability;
+                // Status: only brn/psn/tox carry a residual handler.
+                if matches!(
+                    mon.status,
+                    Some(Status::Burn | Status::Poison | Status::Toxic)
+                ) {
+                    plan.push((4, s));
+                }
+                // Volatiles with a residual callback or a bare duration.
+                // Their order among themselves approximates the add order;
+                // no two share a sort key, so it only matters in corners
+                // where one mon carries several and ties a foe's.
+                if mon.ingrained {
+                    plan.push((0, s));
+                }
+                if mon.seeded {
+                    plan.push((3, s));
+                }
+                if mon.nightmared {
+                    plan.push((5, s));
+                }
+                if mon.cursed {
+                    plan.push((6, s));
+                }
+                if mon.trapped_n > 0 {
+                    plan.push((7, s));
+                }
+                if mon.must_recharge {
+                    plan.push((8, s));
+                }
+                if mon.rampage.is_some() {
+                    if mon.locked_move == Some("uproar") {
+                        plan.push((9, s));
+                    } else {
+                        plan.push((11, s));
+                    }
+                }
+                if mon.yawn_n > 0 {
+                    plan.push((10, s));
+                }
+                // Abilities.
+                if matches!(ability, "raindish" | "shedskin" | "speedboost") {
+                    plan.push((1, s));
+                }
+                if ability == "truant" {
+                    plan.push((12, s));
+                }
+                // The item: Leftovers and the pinch berries have residual
+                // callbacks; the status berries answer onUpdate instead and
+                // never enter this list.
+                if matches!(
+                    mon.item,
+                    "leftovers"
+                        | "oranberry"
+                        | "sitrusberry"
+                        | "figyberry"
+                        | "wikiberry"
+                        | "magoberry"
+                        | "aguavberry"
+                        | "iapapaberry"
+                        | "liechiberry"
+                        | "ganlonberry"
+                        | "salacberry"
+                        | "petayaberry"
+                        | "starfberry"
+                        | "lansatberry"
+                ) {
+                    plan.push((2, s));
+                }
+                // This side's conditions, gathered after its mon. The sim
+                // gathers the WHOLE list before running anything, so a wish
+                // that resolved in the phase above was still present at
+                // gather time — hence the flag captured before that phase.
+                if wish_present[s] || self.sides[s].wish_n > 0 {
+                    plan.push((WISH_MARK, s));
                 }
             }
-            speed_sort(&mut plan, |&(b, s)| residual_key(b, speeds[s]));
+            speed_sort(&mut plan, |&(b, s)| {
+                if b == WISH_MARK {
+                    // Wish: order 7, ahead of every order-10 handler.
+                    (7, 0, -(speeds[s] as i32), 0)
+                } else {
+                    residual_key(b, speeds[s])
+                }
+            });
             for (b, s) in plan {
                 if self.over() {
                     break;
+                }
+                if b == WISH_MARK {
+                    continue;
                 }
                 self.residual_bucket(b, s, scripted, &mut events);
             }
@@ -528,8 +629,16 @@ impl Battle {
             // after it. A perish KO therefore only queues the faint, the
             // battle is not declared over inside the phase, and the other
             // side's song still counts. Two mons on zero go down together.
+            // …but none of that runs at all when an EARLIER residual ended
+            // the battle: `fieldEvent` returns at `if (this.ended)` after the
+            // handler that decided it, and the counts below it never tick. A
+            // poison KO of the last mon leaves the other side's song
+            // unfinished and its singer alive.
             let perish_first = self.faster_side(scripted);
             for side in [perish_first, 1 - perish_first] {
+                if self.over() {
+                    break;
+                }
                 if self.sides[side].mon().perish_n > 0 && !self.sides[side].mon().fainted() {
                     self.sides[side].mon_mut().perish_n -= 1;
                     let n = self.sides[side].mon().perish_n;
@@ -580,12 +689,13 @@ impl Battle {
                     // ends: the sim takes the duration branch first and only
                     // asks about PP when that branch did not fire.
                     let spent = mon
-                        .last_used
+                        .encored_slot
                         .and_then(|i| mon.moves.get(i as usize))
                         .is_none_or(|m| m.pp == 0);
                     if mon.encore_n > 0 && spent {
                         mon.encore_n = 0;
                         mon.encore_fresh = false;
+                        mon.encored_slot = None;
                     }
                 }
                 if mon.disable_n > 0 {
@@ -780,7 +890,7 @@ impl Battle {
     /// for real further down `use_move`, minus its bookkeeping.
     pub(super) fn acting_slot(&self, side: usize, index: usize) -> usize {
         let mon = self.sides[side].mon();
-        let index = match (mon.encore_n > 0, mon.last_used) {
+        let index = match (mon.encore_n > 0, mon.encored_slot) {
             (true, Some(i)) => i as usize,
             _ => index,
         };

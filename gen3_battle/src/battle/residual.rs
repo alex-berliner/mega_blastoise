@@ -220,7 +220,16 @@ impl Battle {
             7 => {
             // The bind (order 10, after the status tick): the clock ticks
             // down, and every surviving tick chips a sixteenth.
-            if self.sides[side].mon().trapped_n > 0 && !self.sides[side].mon().fainted() {
+            //
+            // Unless the trapper is GONE. The volatile lingered after its
+            // user left the field, and this is where the sim deletes it:
+            // silently, before the chip — `onResidual` checks the source
+            // first and bails. No damage, no end-of-trap line.
+            if self.sides[side].mon().trap_stale {
+                let mon = self.sides[side].mon_mut();
+                mon.trapped_n = 0;
+                mon.trap_stale = false;
+            } else if self.sides[side].mon().trapped_n > 0 && !self.sides[side].mon().fainted() {
                 let mon = self.sides[side].mon_mut();
                 mon.trapped_n -= 1;
                 if mon.trapped_n > 0 {
