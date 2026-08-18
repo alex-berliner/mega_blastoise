@@ -114,6 +114,36 @@ pub async fn announce_start<E: BoardEffects>(battle: &Battle, effects: &mut E) {
     }
 }
 
+/// "This mon took damage, here is its health bar." Seven arms of the event
+/// walk said exactly this.
+async fn say_damage<E: BoardEffects>(effects: &mut E, battle: &Battle, side: u8, at: &Onstage) {
+    effects
+        .on_event(BoardEvent::Damage {
+            mon: active_name(battle, side, at),
+            health: health(battle, side),
+        })
+        .await;
+}
+
+/// "This mon picked up a condition." The five arms that named a fixed
+/// condition all passed `detail: None`; the ones that compute a label or
+/// carry a detail still build the event themselves.
+async fn say_effect<E: BoardEffects>(
+    effects: &mut E,
+    battle: &Battle,
+    side: u8,
+    at: &Onstage,
+    what: &str,
+) {
+    effects
+        .on_event(BoardEvent::EffectStart {
+            mon: active_name(battle, side, at),
+            what: what.into(),
+            detail: None,
+        })
+        .await;
+}
+
 /// Resolve one turn and narrate it. Returns true once the battle is over.
 pub async fn play_turn<E: BoardEffects>(
     battle: &mut Battle,
@@ -218,29 +248,13 @@ pub async fn play_turn<E: BoardEffects>(
                     .await;
             }
             Event::Recoil { side, .. } => {
-                effects
-                    .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side, at),
-                        health: health(battle, side),
-                    })
-                    .await;
+                say_damage(effects, battle, side, at).await;
             }
             Event::ConfusionStarted { side } => {
-                effects
-                    .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side, at),
-                        what: "confusion".into(),
-                        detail: None,
-                    })
-                    .await;
+                say_effect(effects, battle, side, at, "confusion").await;
             }
             Event::ConfusedHit { side, .. } => {
-                effects
-                    .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side, at),
-                        health: health(battle, side),
-                    })
-                    .await;
+                say_damage(effects, battle, side, at).await;
             }
             Event::ConfusionEnded { side } => {
                 effects
@@ -285,21 +299,10 @@ pub async fn play_turn<E: BoardEffects>(
                     .await;
             }
             Event::WeatherDamage { side, .. } => {
-                effects
-                    .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side, at),
-                        health: health(battle, side),
-                    })
-                    .await;
+                say_damage(effects, battle, side, at).await;
             }
             Event::Drowsy { side } => {
-                effects
-                    .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side, at),
-                        what: "drowsy".into(),
-                        detail: None,
-                    })
-                    .await;
+                say_effect(effects, battle, side, at, "drowsy").await;
             }
             Event::PerishCount { side, n } => {
                 effects
@@ -320,13 +323,7 @@ pub async fn play_turn<E: BoardEffects>(
                     .await;
             }
             Event::NoEscape { side } => {
-                effects
-                    .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side, at),
-                        what: "trapped".into(),
-                        detail: None,
-                    })
-                    .await;
+                say_effect(effects, battle, side, at, "trapped").await;
             }
             Event::SpikesLaid { side } => {
                 effects
@@ -338,12 +335,7 @@ pub async fn play_turn<E: BoardEffects>(
                     .await;
             }
             Event::SpikesDamage { side, .. } => {
-                effects
-                    .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side, at),
-                        health: health(battle, side),
-                    })
-                    .await;
+                say_damage(effects, battle, side, at).await;
             }
             Event::Protected { side } => {
                 effects
@@ -405,21 +397,10 @@ pub async fn play_turn<E: BoardEffects>(
                     .await;
             }
             Event::Trapped { side } => {
-                effects
-                    .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side, at),
-                        what: "bind".into(),
-                        detail: None,
-                    })
-                    .await;
+                say_effect(effects, battle, side, at, "bind").await;
             }
             Event::TrapDamage { side, .. } => {
-                effects
-                    .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side, at),
-                        health: health(battle, side),
-                    })
-                    .await;
+                say_damage(effects, battle, side, at).await;
             }
             Event::TrapEnded { side } => {
                 effects
@@ -439,21 +420,10 @@ pub async fn play_turn<E: BoardEffects>(
                     .await;
             }
             Event::SeedDrain { side, .. } => {
-                effects
-                    .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side, at),
-                        health: health(battle, side),
-                    })
-                    .await;
+                say_damage(effects, battle, side, at).await;
             }
             Event::Charging { side } => {
-                effects
-                    .on_event(BoardEvent::EffectStart {
-                        mon: active_name(battle, side, at),
-                        what: "charge".into(),
-                        detail: None,
-                    })
-                    .await;
+                say_effect(effects, battle, side, at, "charge").await;
             }
             Event::Recharging { side } => {
                 effects
@@ -490,12 +460,7 @@ pub async fn play_turn<E: BoardEffects>(
                     .await;
             }
             Event::Residual { side, .. } => {
-                effects
-                    .on_event(BoardEvent::Damage {
-                        mon: active_name(battle, side, at),
-                        health: health(battle, side),
-                    })
-                    .await;
+                say_damage(effects, battle, side, at).await;
             }
             Event::Switched { side, .. } => switch_in(battle, side, at, effects).await,
             Event::Failed { side } => {
