@@ -35,15 +35,8 @@ impl Battle {
             // Ingrain sips a sixteenth of max HP back (the games' order 7,
             // ahead of Leech Seed).
             if self.sides[side].mon().ingrained && !self.sides[side].mon().fainted() {
-                let mon = self.sides[side].mon_mut();
-                let amount = ((mon.max_hp / 16).max(1)).min(mon.max_hp - mon.hp);
-                if amount > 0 {
-                    mon.hp += amount;
-                    events.push(Event::Healed {
-                        side: side as u8 + 1,
-                        amount,
-                    });
-                }
+                let want = (self.sides[side].mon().max_hp / 16).max(1);
+                self.heal(side, want, events);
             }
             }
             1 => {
@@ -55,15 +48,8 @@ impl Battle {
                 let bearer = self.sides[side].mon().bearer();
                 if ability::rain_dish(&bearer) && self.effective_weather() == Some(Weather::Rain)
                 {
-                    let mon = self.sides[side].mon_mut();
-                    let amount = ((mon.max_hp / 16).max(1)).min(mon.max_hp - mon.hp);
-                    if amount > 0 {
-                        mon.hp += amount;
-                        events.push(Event::Healed {
-                            side: side as u8 + 1,
-                            amount,
-                        });
-                    }
+                    let want = (self.sides[side].mon().max_hp / 16).max(1);
+                    self.heal(side, want, events);
                 }
                 // A scripted run pins this roll off: it is not one of
                 // the scenario's knobs, and the reference harness leaves
@@ -97,15 +83,8 @@ impl Battle {
         if !self.sides[side].mon().fainted() {
                 let holder = self.sides[side].mon().holder();
                 if item::leftovers(&holder) {
-                    let mon = self.sides[side].mon_mut();
-                    let amount = ((mon.max_hp / 16).max(1)).min(mon.max_hp - mon.hp);
-                    if amount > 0 {
-                        mon.hp += amount;
-                        events.push(Event::Healed {
-                            side: side as u8 + 1,
-                            amount,
-                        });
-                    }
+                    let want = (self.sides[side].mon().max_hp / 16).max(1);
+                    self.heal(side, want, events);
                 }
                 self.ripen(side, &mut events);
         }

@@ -321,17 +321,9 @@ impl Battle {
                         // Half of whoever CATCHES it, not half of whoever
                         // made it: `target.baseMaxhp / 2` in the sim's onEnd.
                         // Gen 5 moved it to the wisher; this era did not.
-                        let amount = self.sides[side].mon().max_hp / 2;
-                        let mon = self.sides[side].mon_mut();
-                        if !mon.fainted() {
-                            let heal = amount.min(mon.max_hp - mon.hp);
-                            if heal > 0 {
-                                mon.hp += heal;
-                                events.push(Event::Healed {
-                                    side: side as u8 + 1,
-                                    amount: heal,
-                                });
-                            }
+                        let want = self.sides[side].mon().max_hp / 2;
+                        if !self.sides[side].mon().fainted() {
+                            self.heal(side, want, &mut events);
                         }
                     }
                 }

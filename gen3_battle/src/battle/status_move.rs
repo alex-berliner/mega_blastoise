@@ -44,15 +44,8 @@ impl Battle {
                 }
             }
             StatusAction::HealHalf => {
-                let mon = self.sides[side].mon_mut();
-                let heal = (mon.max_hp / 2).min(mon.max_hp - mon.hp);
-                if heal > 0 {
-                    mon.hp += heal;
-                    events.push(Event::Healed {
-                        side: side as u8 + 1,
-                        amount: heal,
-                    });
-                }
+                let want = self.sides[side].mon().max_hp / 2;
+                self.heal(side, want, events);
             }
             StatusAction::Seed => {
                 if self.sides[foe].mon().sub_hp > 0 {
@@ -148,15 +141,9 @@ impl Battle {
                     Some(Weather::Sun) => (2, 3),
                     Some(_) => (1, 4),
                 };
-                let mon = self.sides[side].mon_mut();
-                let heal = ((mon.max_hp as u32 * mult.0 / mult.1) as u16).min(mon.max_hp - mon.hp);
-                if heal > 0 {
-                    mon.hp += heal;
-                    events.push(Event::Healed {
-                        side: side as u8 + 1,
-                        amount: heal,
-                    });
-                }
+                let want =
+                    (self.sides[side].mon().max_hp as u32 * mult.0 / mult.1) as u16;
+                self.heal(side, want, events);
             }
             StatusAction::Refresh => {
                 let mon = self.sides[side].mon_mut();

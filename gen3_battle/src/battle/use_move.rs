@@ -2676,6 +2676,23 @@ impl Battle {
     /// Log a hit that did nothing at all — the sim's `|-immune|` and its
     /// kin, which it reports as a damage event of zero at zero
     /// effectiveness. Eleven sites said this five lines at a time.
+    /// Heal `side`'s active by `amount`, capped at the missing HP, and log
+    /// it when anything actually went in. Fifteen sites clamped and logged
+    /// this by hand — and the clamp is the part worth having in one place:
+    /// a heal that would overshoot is not an error, it is the common case.
+    pub(super) fn heal(&mut self, side: usize, amount: u16, events: &mut Vec<Event>) {
+        let mon = self.sides[side].mon_mut();
+        let healed = amount.min(mon.max_hp - mon.hp);
+        if healed == 0 {
+            return;
+        }
+        mon.hp += healed;
+        events.push(Event::Healed {
+            side: side as u8 + 1,
+            amount: healed,
+        });
+    }
+
     pub(super) fn no_effect(&self, foe: usize, events: &mut Vec<Event>) {
         events.push(Event::Damage {
             side: foe as u8 + 1,
