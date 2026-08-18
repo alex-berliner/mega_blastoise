@@ -168,6 +168,19 @@ impl Menu {
         }
     }
 
+    /// How many rows the current screen offers, for a caller mapping a tap
+    /// to one of them.
+    pub fn row_count(&self) -> u8 {
+        self.limit()
+    }
+
+    /// Point the cursor straight at a row — what a tap on it means.
+    pub fn point_at(&mut self, row: u8) {
+        if row < self.limit() {
+            self.cursor = row;
+        }
+    }
+
     pub fn dpad(&mut self, dir: Dir, opts: &mut GameOptions) -> MenuOut {
         let limit = self.limit();
         if limit <= 1 {

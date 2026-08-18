@@ -105,6 +105,34 @@ try {
   await until('second turn resolves too', (s) =>
     !s.some((x) => /LOCKED_IN|WAIT_OPPONENT/.test(x)), 30000);
 
+  // ── A faint must ASK. Play the battle out with both seats mashing their
+  //    first move until somebody faints; the seat that lost a mon has to be
+  //    put on the party picker, and nothing may be sent out until it picks.
+  //    The report this covers: a replacement appeared on the board, health
+  //    bar full, without the player ever being offered the choice.
+  let sawPicker = false;
+  for (let i = 0; i < 400 && !sawPicker; i++) {
+    const s = states();
+    if (s.some((x) => /FORCED_SWITCH|CONCEALED_SWITCH/.test(x))) { sawPicker = true; break; }
+    if (s.some((x) => /WIN/.test(x))) break;
+    for (const seat of [1, 2]) {
+      if (/MOVES/.test(s[seat - 1])) wasm.press_move(seat, 0);
+    }
+    await sleep(150);
+  }
+  if (sawPicker) {
+    say('PASS a faint puts the player on the party picker');
+    const s = states();
+    const seat = /FORCED_SWITCH|CONCEALED_SWITCH/.test(s[0]) ? 1 : 2;
+    wasm.press_switch(seat, 1);
+    await until('the picked replacement takes the field', (t) =>
+      !/FORCED_SWITCH|CONCEALED_SWITCH/.test(t[seat - 1]), 20000);
+  } else {
+    say('FAIL nobody was asked for a replacement before the battle ended');
+    say(`trace: ${trace.join(' > ')}`);
+    throw new Error('no replacement prompt');
+  }
+
   say('ALL PASS');
 } catch (e) {
   say(`ABORT ${e.message ?? e}`);

@@ -477,6 +477,60 @@ impl Battle {
     /// residuals tick against an empty slot rather than against the
     /// replacement. The loop repeats because Spikes can drop the incoming
     /// mon too, and the sim just asks again.
+    /// Which sides are waiting for the player to send something out, and the
+    /// party slots they may legally choose. Empty when nobody is waiting.
+    pub fn pending_replacements(&self) -> [Option<Vec<usize>>; 2] {
+        [0, 1].map(|side| {
+            if !self.awaiting_replacement[side] {
+                return None;
+            }
+            let live: Vec<usize> = (0..self.sides[side].party.len())
+                .filter(|&i| i != self.sides[side].active && !self.sides[side].party[i].fainted())
+                .collect();
+            (!live.is_empty()).then_some(live)
+        })
+    }
+
+    /// Answer a pending replacement for each waiting side. Both arrivals are
+    /// PLACED before either is greeted, for the same reason the automatic
+    /// path does it that way: an Intimidate on one replacement has to cow the
+    /// other replacement, which is already standing there.
+    pub fn send_out(&mut self, picks: [Option<usize>; 2], events: &mut Vec<Event>) {
+        let mut arrived = [false; 2];
+        for side in 0..2 {
+            if !self.awaiting_replacement[side] {
+                continue;
+            }
+            let Some(next) = picks[side].filter(|&i| {
+                i != self.sides[side].active
+                    && self.sides[side].party.get(i).is_some_and(|m| !m.fainted())
+            }) else {
+                continue;
+            };
+            self.awaiting_replacement[side] = false;
+            self.sides[side].mon_mut().status = None;
+            let slot_item = self.hand_slot_item_over(side);
+            self.sides[side].reorder_for_switch(next);
+            self.sides[side].active = next;
+            self.sides[side].mon_mut().last_item = slot_item;
+            events.push(Event::Switched {
+                side: side as u8 + 1,
+                party_index: next,
+            });
+            arrived[side] = true;
+        }
+        let first = self.faster_side(true);
+        for side in [first, 1 - first] {
+            if arrived[side] {
+                self.switch_in_greet(side, events);
+                self.end_of_action();
+            }
+        }
+        // An arrival can faint on the way in (Spikes), which asks the same
+        // question again. Let the normal path notice it.
+        self.replace_fainted(events);
+    }
+
     pub(super) fn replace_fainted(&mut self, events: &mut Vec<Event>) {
         // A decided battle asks for nothing: the sim's checkWin runs inside
         // faintMessages, ahead of checkFainted, so the loser's last mon is
@@ -503,6 +557,19 @@ impl Battle {
                     continue; // its own switch is still coming
                 }
                 if !self.sides[side].mon().fainted() {
+                    continue;
+                }
+                // WHO comes in is the caller's to decide. By default the
+                // engine sends the lowest living slot, which is what the
+                // parity harness answers a forced switch with — so the fuzz
+                // suites see no change. A caller that wants the player asked
+                // sets `player_picks_replacement` and answers through
+                // `send_out`; until it does, the fainted mon simply stays on
+                // the field, which is where the sim leaves it too.
+                if self.player_picks_replacement {
+                    if self.sides[side].first_healthy().is_some() {
+                        self.awaiting_replacement[side] = true;
+                    }
                     continue;
                 }
                 let Some(next) = self.sides[side].first_healthy() else {

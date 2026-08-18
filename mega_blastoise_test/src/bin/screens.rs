@@ -151,6 +151,14 @@ fn main() {
         let mut bottom = Region::half(&mut scene, true, false);
         dc::render_playback(&mut bottom, caption, &ctx);
     }
+    {
+        let mut top = Region::half(&mut scene, false, true);
+        dc::draw_scene_frame_edge(&mut top, 2);
+    }
+    {
+        let mut bottom = Region::half(&mut scene, true, false);
+        dc::draw_scene_frame_edge(&mut bottom, 1);
+    }
     mega_blastoise_core::device_view::draw_scene_mons(
         &mut scene, "Blastoise", "Charizard", false, false, [(0, 0); 2],
     );

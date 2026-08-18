@@ -1168,20 +1168,32 @@ impl ChoiceCollector {
         }
         // Forced/AI choices on every side: nothing to unready, skip the grace.
         if (0..2).all(|i| self.is_auto(i)) {
-            self.complete = true;
-            return true;
+            return self.finish(fx);
         }
         match self.grace_start {
             None => {
                 self.grace_start = Some(now_ms);
                 false
             }
-            Some(t0) if now_ms.saturating_sub(t0) >= UNREADY_GRACE_MS => {
-                self.complete = true;
-                true
-            }
+            Some(t0) if now_ms.saturating_sub(t0) >= UNREADY_GRACE_MS => self.finish(fx),
             Some(_) => false,
         }
+    }
+
+    /// Close the batch and hand every seat back its battle screen. The
+    /// waiting screen says "waiting, tap to cancel", and neither half of that
+    /// is true once the turn is locked: the wait that follows is the turn
+    /// being played out, which the player should be watching. Leaving it up
+    /// read as the game stalling, most sharply after a faint, where the next
+    /// thing the player is asked for is a replacement.
+    fn finish(&mut self, fx: &mut Vec<Effect>) -> bool {
+        self.complete = true;
+        for i in 0..self.n_real {
+            fx.push(Effect::Oled(OledCmd::RestoreScreen {
+                player: self.slots[i].player_num,
+            }));
+        }
+        true
     }
 
     /// The collected `(player_id, choice)` pairs, in prompt order.
@@ -1750,6 +1762,29 @@ mod tests {
         c.pad_event(PadEvent::TapMove { player: 1, slot: 1 }, 0, &mut fx);
         assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowWaiting { player: 1 })));
         assert_eq!(c.out[0], "move 1");
+    }
+
+    /// The waiting screen means "your choice is in, the other seat is still
+    /// deciding". Once the batch closes, that stops being true: what follows
+    /// is the turn being played out, which the player should be watching. The
+    /// report this pins is a faint, where the player sat on "waiting, tap to
+    /// cancel" and then got asked for a replacement out of nowhere.
+    #[test]
+    fn closing_the_batch_hands_both_seats_their_battle_screen_back() {
+        let (mut c, _) = two_humans();
+        let mut fx = Vec::new();
+        c.pad_event(PadEvent::TapMove { player: 1, slot: 1 }, 0, &mut fx);
+        c.pad_event(PadEvent::TapMove { player: 2, slot: 0 }, 0, &mut fx);
+        fx.clear();
+        assert!(!c.tick(0, &mut fx), "the grace window has not run out yet");
+        assert!(!has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { .. })));
+        assert!(c.tick(UNREADY_GRACE_MS, &mut fx));
+        for player in [1, 2] {
+            assert!(
+                has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { player: p } if *p == player)),
+                "seat {player} was left on the waiting screen",
+            );
+        }
     }
 
     /// B (or a tap on the panel while waiting) says CANCEL outright, and the

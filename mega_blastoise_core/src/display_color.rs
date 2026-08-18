@@ -899,6 +899,29 @@ where
     }
 }
 
+/// The play frame's ring with the seam side left open, for the shared battle
+/// scene. A full ring per half would draw a bar down the middle of the one
+/// field the scene exists to show, but with no ring at all the panel loses
+/// the seat colors that say which side is whose. Three sides give both: each
+/// seat's color still runs around its outer edge, and the field is
+/// uninterrupted across the seam.
+///
+/// The seam is local y = 0, since each half is drawn the right way up for the
+/// player facing it.
+pub fn draw_scene_frame_edge<D>(d: &mut D, seat: u8)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    let (w, h) = (HALF_W as i32, HALF_H as i32);
+    let trim = seat_trim(seat);
+    for (x, y, bw, bh) in [(0, h - 8, w, 8), (0, 0, 8, h), (w - 8, 0, 8, h)] {
+        fill(d, x, y, bw as u32, bh as u32, trim);
+    }
+    for (x, y, bw, bh) in [(6, h - 8, w - 12, 2), (6, 6, 2, h - 6), (w - 8, 6, 2, h - 6)] {
+        fill(d, x, y, bw as u32, bh as u32, C_INK);
+    }
+}
+
 /// The frame's thickness, the gap inside it, and the resulting safe area.
 ///
 /// **Every screen must lay out inside `LEFT..RIGHT` and `TOP..BOTTOM`.** The
@@ -1428,9 +1451,9 @@ where
     text_aa_center_font(d, "OPTIONS", cx, TOP, &FONT_8X13, C_INK, C_BG);
     fill(d, 12, TOP + 16, w - 24, 2, C_INK);
     for (i, r) in rows.iter().enumerate() {
-        let y = 32 + i as i32 * 22;
+        let y = OPT_ROW.0 + i as i32 * OPT_ROW.1;
         let sel = i as u8 == cursor;
-        panel(d, 12, y, w - 24, 20, if sel { C_SEL } else { C_BOX }, C_INK);
+        panel(d, 12, y, w - 24, OPT_ROW.2, if sel { C_SEL } else { C_BOX }, C_INK);
         let fg = if sel { C_BOX } else { C_INK };
         let row_bg = if sel { C_SEL } else { C_BOX };
         text_aa_font(d, r.label, 18, y + 5, &FONT_6X10, fg, row_bg);
@@ -1441,6 +1464,29 @@ where
         text_aa_font(d, it, x, h as i32 - FRAME - PAD - 8, &FONT_5X8, C_DIM, C_BG);
         x += it.len() as i32 * 5 + 12;
     }
+}
+
+/// Row geometry of the two full-panel menus: first row's top, the pitch
+/// between rows, and a row's height. The tap hit test reads the same numbers
+/// the renderer lays out with, because a tap that lands one row off is
+/// indistinguishable from the menu ignoring the press: tapping GEN 3 started
+/// a Gen 1 battle when the two disagreed.
+pub const GEN_ROW: (i32, i32, u32) = (48, 46, 38);
+pub const OPT_ROW: (i32, i32, u32) = (32, 22, 20);
+
+/// Which menu row a point in half-local coordinates is over, if any. `rows`
+/// is what the menu says it is showing.
+pub fn menu_row_at(screen: crate::menu::MenuScreen, y: i32, rows: u8) -> Option<u8> {
+    use crate::menu::MenuScreen;
+    let (top, pitch, h) = match screen {
+        MenuScreen::GenPicker => GEN_ROW,
+        MenuScreen::Options | MenuScreen::Lobby => OPT_ROW,
+    };
+    if y < top {
+        return None;
+    }
+    let row = (y - top) / pitch;
+    ((y - top) % pitch < h as i32 && row < rows as i32).then_some(row as u8)
 }
 
 /// Generation picker — the first screen, before the lobby.
@@ -1456,9 +1502,9 @@ where
         ("GEN 3", "Ruby / Sapphire  (preview)", false),
     ];
     for (i, (name, sub, ready)) in opts.iter().enumerate() {
-        let y = 48 + i as i32 * 46;
+        let y = GEN_ROW.0 + i as i32 * GEN_ROW.1;
         let sel = i as u8 == cursor;
-        panel(d, 24, y, w - 48, 38, if sel { C_SEL } else { C_BOX }, C_INK);
+        panel(d, 24, y, w - 48, GEN_ROW.2, if sel { C_SEL } else { C_BOX }, C_INK);
         let fg = if sel { C_BOX } else { C_INK };
         let card_bg = if sel { C_SEL } else { C_BOX };
         text_aa_font(d, name, 34, y + 6, &FONT_8X13, fg, card_bg);

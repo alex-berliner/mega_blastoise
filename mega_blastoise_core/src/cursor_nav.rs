@@ -61,6 +61,8 @@ pub struct CursorNav {
     pub n_party: u8,
     /// A forced switch is in progress: the party list cannot be left.
     pub forced_switch: bool,
+    /// The move slot this seat confirmed last, so the next turn opens on it.
+    pub last_move: u8,
 }
 
 impl Default for CursorNav {
@@ -77,6 +79,7 @@ impl CursorNav {
             n_moves: 4,
             n_party: 3,
             forced_switch: false,
+            last_move: 0,
         }
     }
 
@@ -86,7 +89,13 @@ impl CursorNav {
         self.n_party = n_party;
         self.forced_switch = forced_switch;
         self.mode = if forced_switch { NavMode::Party } else { NavMode::Moves };
-        self.cursor = 0;
+        // Open on the move this seat used last. A battle is mostly the same
+        // few moves in a row, and starting back at slot 0 every turn made the
+        // player re-walk the grid to the move they had just picked.
+        self.cursor = match self.mode {
+            NavMode::Moves if self.last_move < n_moves => self.last_move,
+            _ => 0,
+        };
     }
 
     fn limit(&self) -> u8 {
@@ -138,7 +147,10 @@ impl CursorNav {
     /// A — confirm.
     pub fn confirm(&mut self) -> NavOut {
         match self.mode {
-            NavMode::Moves => NavOut::TapMove(self.cursor),
+            NavMode::Moves => {
+                self.last_move = self.cursor;
+                NavOut::TapMove(self.cursor)
+            }
             NavMode::Party => NavOut::TapSwitch(self.cursor),
             NavMode::Detail => {
                 self.mode = NavMode::Moves;
@@ -243,5 +255,25 @@ mod tests {
         assert_eq!(n.mode, NavMode::Detail);
         assert_eq!(n.info(), NavOut::HoldEnd);
         assert_eq!(n.mode, NavMode::Moves);
+    }
+
+    /// A battle is mostly the same few moves in a row, so the menu opens on
+    /// the one this seat used last instead of walking back to slot 0.
+    #[test]
+    fn the_menu_reopens_on_the_move_that_was_used() {
+        let mut n = CursorNav::new();
+        n.begin_turn(4, 3, false);
+        n.dpad(Dir::Right);
+        n.dpad(Dir::Down);
+        assert_eq!(n.confirm(), NavOut::TapMove(3));
+        n.begin_turn(4, 3, false);
+        assert_eq!(n.cursor, 3);
+        // A mon with fewer moves cannot inherit a slot it does not have.
+        n.begin_turn(2, 3, false);
+        assert_eq!(n.cursor, 0);
+        // A forced switch opens on the party list, from the top.
+        n.begin_turn(4, 3, true);
+        assert_eq!(n.cursor, 0);
+        assert_eq!(n.mode, NavMode::Party);
     }
 }

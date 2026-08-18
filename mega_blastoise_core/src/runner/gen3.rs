@@ -52,6 +52,17 @@ fn active_name(battle: &Battle, side: u8, at: &Onstage) -> String {
     format!("{name},{}", player_id(side))
 }
 
+/// The species name with no seat glued to it, for the board fields that are
+/// display names rather than positions. `BoardEvent::Move::user` is one: it
+/// carries its own `player_id`, and the seat suffix went straight into the
+/// sprite lookup and the caption, which printed "Blaziken,p1".
+fn bare_name(battle: &Battle, side: u8, at: &Onstage) -> String {
+    battle.sides[(side - 1) as usize].party[at[side as usize - 1]]
+        .species
+        .name
+        .to_string()
+}
+
 /// `"cur/max"`, the health string the display layer already parses.
 fn health(battle: &Battle, side: u8) -> String {
     let m = battle.sides[(side - 1) as usize].mon();
@@ -150,14 +161,27 @@ pub async fn play_turn<E: BoardEffects>(
     choices: [Choice; 2],
     effects: &mut E,
 ) -> bool {
-    // Who is on stage NOW, before the engine plays the turn out. The walk
-    // below moves this on as it meets each `Switched`, so every line is read
-    // in the voice of the mon that was actually standing there.
-    let mut on = [battle.sides[0].active, battle.sides[1].active];
-    let at = &mut on;
+    // Who is on stage NOW, before the engine plays the turn out, so every
+    // line is read in the voice of the mon that was actually standing there.
+    let on = [battle.sides[0].active, battle.sides[1].active];
     let events = battle.step(choices);
     effects.on_event(BoardEvent::Turn { n: battle.turn }).await;
+    narrate(battle, events, on, effects).await;
+    battle.over()
+}
 
+/// Read an event list out loud. Split out of [`play_turn`] because a turn is
+/// no longer the only thing that produces events: answering a forced
+/// replacement produces its own list, and it has to be narrated by the same
+/// code or the two paths drift.
+async fn narrate<E: BoardEffects>(
+    battle: &Battle,
+    events: Vec<Event>,
+    mut on: Onstage,
+    effects: &mut E,
+) {
+    // The walk moves this on as it meets each `Switched`.
+    let at = &mut on;
     for event in events {
         // A switch changes who the rest of the turn is about — including the
         // switch-in announcement itself, which is about the ARRIVAL.
@@ -175,7 +199,7 @@ pub async fn play_turn<E: BoardEffects>(
                     .unwrap_or_default();
                 effects
                     .on_event(BoardEvent::Move {
-                        user: Some(active_name(battle, side, at)),
+                        user: Some(bare_name(battle, side, at)),
                         player_id: Some(player_id(side)),
                         name,
                     })
@@ -475,7 +499,6 @@ pub async fn play_turn<E: BoardEffects>(
             }
         }
     }
-    battle.over()
 }
 
 /// Distil one Gen 3 seat into the generation-neutral [`SlotOptions`] the
@@ -660,6 +683,72 @@ pub async fn battle_loop<E: BoardEffects>(
         if play_turn(battle, [chosen[0].unwrap(), chosen[1].unwrap()], effects).await {
             break;
         }
+        replace_fainted(battle, bus, effects).await;
+    }
+}
+
+/// Ask whoever lost a Pokemon which one comes next. The engine leaves the
+/// fainted mon standing until it is answered, so the board keeps showing the
+/// mon that fell — its replacement's health bar does not appear before the
+/// player has chosen it.
+async fn replace_fainted<E: BoardEffects>(
+    battle: &mut Battle,
+    bus: &crate::battle_input::InputBus,
+    effects: &mut E,
+) {
+    use crate::battle_input::ActivePrompt;
+
+    // A replacement can faint on arrival (Spikes), so this asks again until
+    // nobody is waiting.
+    while !battle.over() {
+        let pending = battle.pending_replacements();
+        let waiting: Vec<u8> = (0..2)
+            .filter(|&i| pending[i].is_some())
+            .map(|i| i as u8 + 1)
+            .collect();
+        if waiting.is_empty() {
+            return;
+        }
+        let mut picks: [Option<usize>; 2] = [None, None];
+        for &side in &waiting {
+            let mut slot = slot_options_for(battle, side);
+            slot.forced_switch = true;
+            effects
+                .on_event(BoardEvent::Prompt {
+                    player_id: player_id(side),
+                    kind: PromptKind::ChooseSwitch,
+                })
+                .await;
+            bus.prompt
+                .send(ActivePrompt {
+                    player_id: player_id(side),
+                    slot,
+                    batch_total: waiting.len(),
+                })
+                .await;
+        }
+        while waiting.iter().any(|&s| picks[(s - 1) as usize].is_none()) {
+            let submitted = bus.choices.receive().await;
+            let i = match submitted.player_id.as_str() {
+                "p1" => 0,
+                "p2" => 1,
+                _ => continue,
+            };
+            if !waiting.contains(&(i as u8 + 1)) {
+                continue;
+            }
+            picks[i] = match parse_choice(&submitted.choice) {
+                Choice::Switch(slot) => Some(slot),
+                // A seat that answered with a move has nothing to attack
+                // with; take the lowest living slot rather than re-asking a
+                // question the player thinks they answered.
+                Choice::Move(_) => pending[i].as_ref().and_then(|live| live.first().copied()),
+            };
+        }
+        let on = [battle.sides[0].active, battle.sides[1].active];
+        let mut events = Vec::new();
+        battle.send_out(picks, &mut events);
+        narrate(battle, events, on, effects).await;
     }
 }
 
@@ -689,7 +778,12 @@ pub fn drafted_battle(seed: u64, six: bool) -> Option<Battle> {
     if t1.is_empty() || t2.is_empty() {
         return None;
     }
-    Some(Battle::new(Side::new(t1), Side::new(t2), seed))
+    let mut b = Battle::new(Side::new(t1), Side::new(t2), seed);
+    // A game has a player in it, so the player picks the replacement. The
+    // engine's default (send the lowest living slot) is for the parity
+    // harness, which answers a forced switch the same way.
+    b.player_picks_replacement = true;
+    Some(b)
 }
 
 
@@ -705,6 +799,130 @@ mod tests {
     impl BoardEffects for Recorder {
         async fn on_event(&mut self, event: BoardEvent) {
             self.0.push(event);
+        }
+    }
+
+    /// A faint asks the player who comes next. The engine used to send the
+    /// lowest living slot itself, which the board reported as a switch-in the
+    /// player never made: their new mon was already standing there, health bar
+    /// full, before they had been offered the choice.
+    #[test]
+    fn a_faint_prompts_the_player_for_a_replacement() {
+        use crate::battle_input::{InputBus, PlayerChoice};
+        use embassy_futures::select::{select, Either};
+
+        let mut b = Battle::new(
+            Side::new(alloc::vec![
+                mon("magikarp", 5, &["splash"]),
+                mon("blaziken", 100, &["ember"]),
+                mon("wigglytuff", 100, &["pound"]),
+            ]),
+            Side::new(alloc::vec![mon("blaziken", 100, &["ember"])]),
+            7,
+        );
+        b.player_picks_replacement = true;
+        let bus = InputBus::new();
+        let mut rec = Recorder::default();
+
+        // The seat answers every move prompt with slot 0, and the one
+        // replacement prompt with the LAST party slot — a slot the engine
+        // would never have picked on its own.
+        let play = async {
+            let mut asked_to_switch = 0;
+            loop {
+                let p = bus.prompt.receive().await;
+                let choice = if p.slot.forced_switch {
+                    asked_to_switch += 1;
+                    alloc::string::String::from("switch 2")
+                } else {
+                    alloc::string::String::from("move 0")
+                };
+                bus.choices
+                    .send(PlayerChoice { player_id: p.player_id, choice })
+                    .await;
+                if asked_to_switch == 2 {
+                    // Both seats have replaced; p2 has nothing left, so the
+                    // battle is over as soon as this lands.
+                    break;
+                }
+            }
+        };
+        block_on(async {
+            match select(battle_loop(&mut b, &bus, &mut rec), play).await {
+                Either::First(()) | Either::Second(()) => {}
+            }
+        });
+
+        let prompts: alloc::vec::Vec<&BoardEvent> = rec
+            .0
+            .iter()
+            .filter(|e| matches!(e, BoardEvent::Prompt { kind: PromptKind::ChooseSwitch, .. }))
+            .collect();
+        assert!(!prompts.is_empty(), "nobody was asked for a replacement");
+        // The chosen mon is the one that came in, not the lowest living slot.
+        let sent: alloc::vec::Vec<&str> = rec
+            .0
+            .iter()
+            .filter_map(|e| match e {
+                BoardEvent::SwitchIn { name, .. } => Some(name.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert!(
+            sent.contains(&"Wigglytuff"),
+            "the player's pick never came in: {sent:?}",
+        );
+    }
+
+    /// Nothing is put on the field until the answer arrives: the board must
+    /// not show the replacement's health bar before the player chose it.
+    #[test]
+    fn the_replacement_waits_for_the_answer() {
+        let mut b = Battle::new(
+            Side::new(alloc::vec![
+                mon("magikarp", 5, &["splash"]),
+                mon("blaziken", 100, &["ember"]),
+            ]),
+            Side::new(alloc::vec![mon("blaziken", 100, &["ember"])]),
+            7,
+        );
+        b.player_picks_replacement = true;
+        b.step([Choice::Move(0), Choice::Move(0)]);
+        assert!(b.sides[0].mon().fainted(), "magikarp survived a level 100 Ember");
+        assert_eq!(b.sides[0].active, 0, "the engine replaced the fainted mon by itself");
+        assert!(b.pending_replacements()[0].is_some(), "no replacement was asked for");
+
+        let mut events = alloc::vec::Vec::new();
+        b.send_out([Some(1), None], &mut events);
+        assert_eq!(b.sides[0].mon().species.name, "Blaziken");
+        assert!(b.pending_replacements()[0].is_none());
+    }
+
+    /// `Move::user` is a display name, not a position. The seat suffix in it
+    /// reached the sprite lookup and the caption, which read
+    /// "Blaziken,p1 used Ember!".
+    #[test]
+    fn the_move_line_names_the_mon_without_its_seat() {
+        let mut b = battle();
+        let mut rec = Recorder::default();
+        block_on(play_turn(&mut b, [Choice::Move(0), Choice::Move(0)], &mut rec));
+        let users: alloc::vec::Vec<&str> = rec
+            .0
+            .iter()
+            .filter_map(|e| match e {
+                BoardEvent::Move { user: Some(u), .. } => Some(u.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert!(!users.is_empty(), "nobody moved");
+        for u in &users {
+            assert!(!u.contains(','), "seat suffix left on the move user: {u}");
+        }
+        for e in &rec.0 {
+            if let BoardEvent::Move { .. } = e {
+                let line = e.description();
+                assert!(!line.contains(",p"), "seat suffix in the narration: {line}");
+            }
         }
     }
 

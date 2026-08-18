@@ -769,7 +769,7 @@ async fn run_gen3_web_battle(
     modes: [ControlMode; 2],
     effects: &mut WebBattleEffects<'_>,
 ) {
-    let Some(mut battle) = mega_blastoise_core::gen3_runner::drafted_battle(seed, six) else {
+    let Some(mut battle) = mega_blastoise_core::runner::gen3::drafted_battle(seed, six) else {
         print_log("Gen 3: could not draft teams.");
         return;
     };
@@ -777,7 +777,7 @@ async fn run_gen3_web_battle(
         let names: Vec<&str> = side.party.iter().map(|m| m.species.name).collect();
         print_log(&format!("{label}: {}", names.join(", ")));
     }
-    mega_blastoise_core::gen3_runner::run_battle(
+    mega_blastoise_core::runner::gen3::run_battle(
         &mut battle,
         bus,
         collect_battle_input(bus, seed, modes),

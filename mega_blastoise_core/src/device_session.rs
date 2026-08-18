@@ -346,8 +346,30 @@ impl DeviceSession {
             return outs;
         }
 
-        // The gen picker owns the whole panel: a tap anywhere confirms.
+        // The gen picker owns the whole panel. A tap PICKS the row it landed
+        // on and then confirms it — it used to confirm whatever the cursor
+        // already sat on, so tapping "GEN 3" started a Gen 1 battle.
+        //
+        // The picker is drawn into each half, so a tap is mapped through the
+        // half it hit; the far half is rotated 180. Rows are laid out by
+        // `display_color::render_gen_picker` at y = 48 + i * 46, 38 tall.
         if self.menu_active && ctx.lobby {
+            let hy = if y < DEV_H / 2 {
+                DEV_H / 2 - 1 - y
+            } else {
+                y - DEV_H / 2
+            };
+            // A tap on a menu is a tap on a ROW, not a blind confirm of
+            // whatever the cursor happened to be on: tapping GEN 3 used to
+            // start a Gen 1 battle. Taps outside every card still confirm the
+            // current row, which is what the seat taps did before.
+            if let Some(row) = crate::display_color::menu_row_at(
+                self.menu.screen,
+                hy as i32,
+                self.menu.row_count(),
+            ) {
+                self.menu.point_at(row);
+            }
             let out = self.menu.confirm(&mut self.opts);
             self.close_menu_on(out, &mut outs);
             return outs;
@@ -469,6 +491,25 @@ mod tests {
         s.button(1, Button::A, LOBBY);
         assert!(!s.menu_active, "picking a game hands the panel to the lobby");
         assert_eq!(s.ruleset(), Ruleset::Gen3);
+    }
+
+    /// A tap on the picker picks the row that was TOUCHED. It used to
+    /// confirm whatever the cursor sat on, so tapping GEN 3 started Gen 1.
+    #[test]
+    fn tapping_a_picker_row_picks_that_row() {
+        use crate::display_color::GEN_ROW;
+        const TAP: TapCtx = TapCtx { lobby: true, waiting: [false; 2] };
+        let (top, pitch, h) = GEN_ROW;
+        let row_y = |row: i32| crate::DEV_H / 2 + (top + row * pitch + h as i32 / 2) as u32;
+
+        let mut s = DeviceSession::new();
+        s.panel_tap(60, row_y(1), TAP);
+        assert_eq!(s.ruleset(), Ruleset::Gen3, "tapped GEN 3, got Gen 1");
+
+        let mut s = DeviceSession::new();
+        s.menu.point_at(1);
+        s.panel_tap(60, row_y(0), TAP);
+        assert_eq!(s.ruleset(), Ruleset::Gen1, "tapped GEN 1 with the cursor on GEN 3");
     }
 
     #[test]

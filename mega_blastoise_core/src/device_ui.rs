@@ -209,6 +209,9 @@ pub fn render_device(
     // leaves it — a log overlay, a forced switch — the halves are private
     // views again and the hard divider comes back to say so.
     if scene {
+        // Each seat still gets its own trim around its outer edge; only the
+        // seam side is left open, so the field reads as one.
+        both_halves(&mut frame, |r, seat| dc::draw_scene_frame_edge(r, seat));
         // The mons go on last, in a band across the seam that neither half
         // could have reached, so the pair lands at the same height side by
         // side. The halves have already drawn the chrome around it.

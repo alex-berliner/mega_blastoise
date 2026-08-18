@@ -992,6 +992,13 @@ pub struct Battle {
     /// imprisoner that switches out mid-turn does not give its victim its
     /// moves back until the turn after.
     sealed_at_choice: [bool; 2],
+    /// The caller answers forced replacements instead of the engine sending
+    /// the lowest living slot. Off by default: the parity harness answers a
+    /// forced switch with the lowest living slot, so the default IS the
+    /// reference's behaviour and the fuzz suites need no driver of their own.
+    pub player_picks_replacement: bool,
+    /// Set per side when a faint is waiting on that answer.
+    pub(crate) awaiting_replacement: [bool; 2],
     /// A move already thrown back once. The sim's `hasBounced` — a Magic
     /// Coat cannot volley against another Magic Coat.
     bounced: bool,
@@ -1100,6 +1107,8 @@ impl Battle {
             forced_entry: None,
             calling: false,
             pending_call: None,
+            player_picks_replacement: false,
+            awaiting_replacement: [false; 2],
             bounced: false,
             yawn_landing: false,
             sealed_at_choice: [false; 2],

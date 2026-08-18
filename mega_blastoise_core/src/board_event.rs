@@ -425,6 +425,11 @@ impl BoardEvent {
             }
             BoardEvent::Move { user, name, player_id, .. } => match user.as_deref() {
                 Some(u) => {
+                    // `user` is a position field, so the seat id has to come
+                    // off before it is read out — every sibling arm goes
+                    // through `player_mon_label` for exactly this reason, and
+                    // this one printed "Blaziken,p1 used Ember!".
+                    let u = mon_display_name(u);
                     let trainer = player_id.as_deref().map(player_display_name).unwrap_or("");
                     if trainer.is_empty() { format!("{u} used {name}!") }
                     else { format!("{trainer}'s {u} used {name}!") }
