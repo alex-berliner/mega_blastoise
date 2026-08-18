@@ -401,7 +401,6 @@ dependencies = [
 name = "gen3_battle"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "serde_json",
  "ureq",
 ]
@@ -697,7 +696,6 @@ dependencies = [
 name = "mega-blastoise-web"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "battler",
  "battler-data",
  "console_error_panic_hook",

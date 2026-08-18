@@ -154,9 +154,7 @@ impl Battle {
             // every sibling can't-act gate resets this, and the loaf forgot.
             self.sides[side].mon_mut().stall_counter = 0;
             self.abort_drops_charge(side, index);
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return false;
         }
         // Frozen solid: a 1-in-5 thaw each action in play (scripts pin it
@@ -510,9 +508,7 @@ impl Battle {
             self.break_rampage(side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().stall_counter = 0;
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
         let forced = self.forced_entry.take();
@@ -524,9 +520,7 @@ impl Battle {
             })
             .or_else(|| self.sides[side].mon().moves.get(index).copied())
         else {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         };
         // A called move — one a Magic Coat threw back or a Snatch took — is
@@ -605,9 +599,7 @@ impl Battle {
                     .is_some_and(|id| picked.is_some_and(|p| p != id))
         };
         if !struggling_at_request && self.sides[side].mon().taunt_n == 2 && status_movish {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
         let taunted_out = self.sides[side].mon().taunt_n == 1
@@ -631,9 +623,7 @@ impl Battle {
             // Disabled mid-turn: the chosen move is simply lost.
             self.sides[side].mon_mut().disable_fresh = false;
             self.sides[side].mon_mut().stall_counter = 0;
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
         let disabled_out = self.sides[side].mon().disabled_slot == Some(index as u8)
@@ -659,9 +649,7 @@ impl Battle {
             // Imprison landed earlier this same turn: the chosen move is
             // simply lost — no move line, no PP, no Struggle.
             self.sides[side].mon_mut().stall_counter = 0;
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
         let imprisoned_out = sealed && !releasing && !encore_forced && !forced;
@@ -682,9 +670,7 @@ impl Battle {
         {
             // Drained to zero AFTER the choice was made: the sim's runMove
             // hits "cant: nopp" — a silent lost turn, no Struggle.
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
         let struggling = (taunted_out
@@ -848,9 +834,7 @@ impl Battle {
                 .and_then(crate::data::move_by_id);
             match callable {
                 None => {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 Some(e) => {
@@ -981,9 +965,7 @@ impl Battle {
             self.sides[side].mon_mut().bide = None;
             let amount = stored.saturating_mul(2);
             if amount == 0 {
-                events.push(Event::Failed {
-                    side: side as u8 + 1,
-                });
+                self.log_failed(side, events);
                 return;
             }
             self.flat_hit(side, foe, &slot, amount, Some(false), false, false, script, events);
@@ -1024,9 +1006,7 @@ impl Battle {
         // spent whatever happens next.
         if slot.entry.id == "spitup" {
             if self.sides[side].mon().stockpile_n == 0 {
-                events.push(Event::Failed {
-                    side: side as u8 + 1,
-                });
+                self.log_failed(side, events);
                 return;
             }
         }
@@ -1037,24 +1017,18 @@ impl Battle {
         if slot.entry.id == "focuspunch"
             && (self.taken_physical[side] > 0 || self.taken_special[side] > 0)
         {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
 
         // Fake Out only works on the user's first action on the field.
         if slot.entry.id == "fakeout" && had_acted {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
         // Dream Eater only bites a sleeping target.
         if slot.entry.id == "dreameater" && self.sides[foe].mon().status != Some(Status::Sleep) {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
         // Present: the sim's random(10) picks heal or a power tier; the
@@ -1069,9 +1043,7 @@ impl Battle {
                 let target = self.sides[foe].mon_mut();
                 let amount = (target.max_hp / 4).max(1).min(target.max_hp - target.hp);
                 if amount == 0 {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 } else {
                     target.hp += amount;
                     events.push(Event::Healed {
@@ -1111,9 +1083,7 @@ impl Battle {
                 &self.sides[foe].mon().bearer(),
             )
         {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
         let boom = slot.entry.selfdestruct;
@@ -1260,9 +1230,7 @@ impl Battle {
             }
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().fury_n = 0;
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             // The kicks crash into the shield all the same.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                 self.kick_crash(side, foe, &slot, script, events);
@@ -1332,12 +1300,7 @@ impl Battle {
         // One-hit KO: fails outright against a higher-level target, is
         // stopped by type immunity, and otherwise its hit IS the KO.
         if slot.entry.ohko && ability::blocks_ohko(&self.sides[foe].mon().bearer()) {
-            events.push(Event::Damage {
-                side: foe as u8 + 1,
-                amount: 0,
-                effectiveness: 0,
-                crit: false,
-            });
+            self.no_effect(foe, events);
             return;
         }
         if slot.entry.ohko {
@@ -1349,18 +1312,11 @@ impl Battle {
                 || self.wonder_guard_blocks(foe, slot.move_type())
                 || ability::immune_to_type(&self.sides[foe].mon().bearer(), slot.move_type())
             {
-                events.push(Event::Damage {
-                    side: foe as u8 + 1,
-                    amount: 0,
-                    effectiveness: 0,
-                    crit: false,
-                });
+                self.no_effect(foe, events);
                 return;
             }
             if self.sides[foe].mon().level > self.sides[side].mon().level {
-                events.push(Event::Failed {
-                    side: side as u8 + 1,
-                });
+                self.log_failed(side, events);
                 return;
             }
             if !hit {
@@ -1415,12 +1371,7 @@ impl Battle {
                 self.immunity_types(foe, slot.move_type()),
             );
             if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
-                events.push(Event::Damage {
-                    side: foe as u8 + 1,
-                    amount: 0,
-                    effectiveness: 0,
-                    crit: false,
-                });
+                self.no_effect(foe, events);
                 return;
             }
             let amount = match kind {
@@ -1443,12 +1394,7 @@ impl Battle {
                 self.immunity_types(foe, slot.move_type()),
             ) == 0
             {
-                events.push(Event::Damage {
-                    side: foe as u8 + 1,
-                    amount: 0,
-                    effectiveness: 0,
-                    crit: false,
-                });
+                self.no_effect(foe, events);
                 return;
             }
             let (uhp, thp) = (self.sides[side].mon().hp, self.sides[foe].mon().hp);
@@ -1456,9 +1402,7 @@ impl Battle {
                 if self.sides[foe].mon().sub_hp == 0 {
                     self.note_hit_by(side, foe, slot.entry.id);
                 }
-                events.push(Event::Failed {
-                    side: side as u8 + 1,
-                });
+                self.log_failed(side, events);
                 return;
             }
             let amount = thp - uhp;
@@ -1489,12 +1433,7 @@ impl Battle {
                 self.immunity_types(foe, slot.move_type()),
             ) == 0
             {
-                events.push(Event::Damage {
-                    side: foe as u8 + 1,
-                    amount: 0,
-                    effectiveness: 0,
-                    crit: false,
-                });
+                self.no_effect(foe, events);
                 return;
             }
             let level = self.sides[side].mon().level as u32;
@@ -1531,9 +1470,7 @@ impl Battle {
                 // bounce back the sim fails this in the move's own `onTry`,
                 // which runs before the hit step ever writes the
                 // attacked-by book. A Mirror Move aimed back finds nothing.
-                events.push(Event::Failed {
-                    side: side as u8 + 1,
-                });
+                self.log_failed(side, events);
                 return;
             }
             let eff = crate::types::effectiveness_against(
@@ -1541,12 +1478,7 @@ impl Battle {
                 self.immunity_types(foe, slot.move_type()),
             );
             if eff == 0 {
-                events.push(Event::Damage {
-                    side: foe as u8 + 1,
-                    amount: 0,
-                    effectiveness: 0,
-                    crit: false,
-                });
+                self.no_effect(foe, events);
                 return;
             }
             let amount = taken.saturating_mul(2);
@@ -1560,9 +1492,7 @@ impl Battle {
         // screens — and stored; only accuracy waits for the landing.
         if matches!(slot.entry.id, "futuresight" | "doomdesire") {
             if self.sides[foe].incoming.is_some() {
-                events.push(Event::Failed {
-                    side: side as u8 + 1,
-                });
+                self.log_failed(side, events);
                 return;
             }
             let (mut attacker, mut defender) = self.attack_pair(side);
@@ -1662,9 +1592,7 @@ impl Battle {
                 .and_then(crate::data::move_by_id);
             match (slot.entry.id, foe_last) {
                 (_, None) => {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 // The user must not be transformed, must not already know
@@ -1677,9 +1605,7 @@ impl Battle {
                         || (slot.entry.id == "sketch"
                             && matches!(e.id, "sketch" | "struggle")) =>
                 {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 ("mimic", Some(e)) => {
@@ -1693,9 +1619,7 @@ impl Battle {
                         || self.sides[side].mon().transform_backup.is_some()
                         || matches!(e.id, "mimic" | "metronome" | "sketch" | "struggle")
                     {
-                        events.push(Event::Failed {
-                            side: side as u8 + 1,
-                        });
+                        self.log_failed(side, events);
                         return;
                     }
                     // The copy goes into the slot holding MIMIC, found by
@@ -1710,9 +1634,7 @@ impl Battle {
                         .iter()
                         .position(|m| m.entry.id == "mimic")
                     else {
-                        events.push(Event::Failed {
-                            side: side as u8 + 1,
-                        });
+                        self.log_failed(side, events);
                         return;
                     };
                     let orig = self.sides[side].mon().moves[home];
@@ -1733,9 +1655,7 @@ impl Battle {
                     // The PP is already spent, which leaves the slot holding
                     // a Sketch with nothing left in it.
                     if self.sides[foe].mon().sub_hp > 0 {
-                        events.push(Event::Failed {
-                            side: side as u8 + 1,
-                        });
+                        self.log_failed(side, events);
                         return;
                     }
                     // Same as Mimic: `source.moves.indexOf('sketch')` picks
@@ -1747,9 +1667,7 @@ impl Battle {
                         .iter()
                         .position(|m| m.entry.id == "sketch")
                     else {
-                        events.push(Event::Failed {
-                            side: side as u8 + 1,
-                        });
+                        self.log_failed(side, events);
                         return;
                     };
                     self.sides[side].mon_mut().moves[home] = MoveSlot {
@@ -1768,9 +1686,7 @@ impl Battle {
         // a wide-awake mon and the gate has to see the move that will
         // actually go off.
         if slot.entry.id == "snore" && !asleep_now {
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
 
@@ -1863,12 +1779,7 @@ impl Battle {
                         return;
                     }
                     ability::Absorb::Immune => {
-                        events.push(Event::Damage {
-                            side: foe as u8 + 1,
-                            amount: 0,
-                            effectiveness: 0,
-                            crit: false,
-                        });
+                        self.no_effect(foe, events);
                         return;
                     }
                 }
@@ -1946,35 +1857,20 @@ impl Battle {
                             amount,
                         });
                     } else {
-                        events.push(Event::Damage {
-                            side: foe as u8 + 1,
-                            amount: 0,
-                            effectiveness: 0,
-                            crit: false,
-                        });
+                        self.no_effect(foe, events);
                     }
                 }
                 ability::Absorb::FlashFire => {
                     self.sides[foe].mon_mut().flash_fire = true;
                 }
                 ability::Absorb::Immune => {
-                    events.push(Event::Damage {
-                        side: foe as u8 + 1,
-                        amount: 0,
-                        effectiveness: 0,
-                        crit: false,
-                    });
+                    self.no_effect(foe, events);
                 }
                 ability::Absorb::None => {}
             }
             if chart_immune || absorb != ability::Absorb::None {
                 if chart_immune {
-                    events.push(Event::Damage {
-                        side: foe as u8 + 1,
-                        amount: 0,
-                        effectiveness: 0,
-                        crit: false,
-                    });
+                    self.no_effect(foe, events);
                 }
                 // An immune target never locks a rampage in — and breaks
                 // a running one the way a miss does.
@@ -2029,9 +1925,7 @@ impl Battle {
         // a fizzle is Mirror Move-able exactly like a hit.
         if slot.entry.id == "beatup" && self.beatup_allies(side).is_empty() {
             self.note_hit_by(side, foe, slot.entry.id);
-            events.push(Event::Failed {
-                side: side as u8 + 1,
-            });
+            self.log_failed(side, events);
             return;
         }
 
@@ -2777,6 +2671,26 @@ impl Battle {
         if !keeps {
             self.sides[side].mon_mut().charged_elec = false;
         }
+    }
+
+    /// Log a hit that did nothing at all — the sim's `|-immune|` and its
+    /// kin, which it reports as a damage event of zero at zero
+    /// effectiveness. Eleven sites said this five lines at a time.
+    pub(super) fn no_effect(&self, foe: usize, events: &mut Vec<Event>) {
+        events.push(Event::Damage {
+            side: foe as u8 + 1,
+            amount: 0,
+            effectiveness: 0,
+            crit: false,
+        });
+    }
+
+    /// Log this side's move simply failing. Fifty-four sites, three lines
+    /// each, across the move phases.
+    pub(super) fn log_failed(&self, side: usize, events: &mut Vec<Event>) {
+        events.push(Event::Failed {
+            side: side as u8 + 1,
+        });
     }
 
     pub(super) fn note_hit_by(&mut self, side: usize, foe: usize, id: &'static str) {

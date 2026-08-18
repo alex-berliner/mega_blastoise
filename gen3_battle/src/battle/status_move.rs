@@ -181,9 +181,7 @@ impl Battle {
                         delta: 6,
                     });
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::PsychUp => {
@@ -262,16 +260,12 @@ impl Battle {
                         side: foe as u8 + 1,
                     });
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::Memento => {
                 if !hit || self.sides[foe].mon().sub_hp > 0 || self.sides[foe].mon().fainted() {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 let misted = self.sides[foe].mist_n > 0;
@@ -301,9 +295,7 @@ impl Battle {
             }
             StatusAction::PainSplit => {
                 if !hit || self.sides[foe].mon().sub_hp > 0 || self.sides[foe].mon().fainted() {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 let avg = (self.sides[side].mon().hp as u32 + self.sides[foe].mon().hp as u32) / 2;
@@ -321,9 +313,7 @@ impl Battle {
                 // ever reaches the stall gamble.
                 if !self.will_act {
                     self.sides[side].mon_mut().stall_counter = 0;
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 let counter = self.sides[side].mon().stall_counter;
@@ -349,9 +339,7 @@ impl Battle {
                     });
                 } else {
                     self.sides[side].mon_mut().stall_counter = 0;
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::Identify => {
@@ -369,9 +357,7 @@ impl Battle {
                     mon.sure_hit = 2;
                     mon.sure_hit_on = aim;
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::ChargeUp => {
@@ -519,9 +505,7 @@ impl Battle {
                     false
                 };
                 if !drained {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::Grudge => {
@@ -534,9 +518,7 @@ impl Battle {
                     // still runs; only choices made under Torment struggle.
                     self.sides[foe].mon_mut().torment_fresh = true;
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::Encore => {
@@ -568,9 +550,7 @@ impl Battle {
                     let locked = self.sides[foe].mon().last_used;
                     self.sides[foe].mon_mut().encored_slot = locked;
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::Disable => {
@@ -614,18 +594,14 @@ impl Battle {
                     mon.disable_fresh = true;
                     mon.disable_skip_tick = false;
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::Camouflage => {
                 // Fails on anything already carrying Normal (either slot).
                 let (t1, t2) = self.sides[side].mon().types();
                 if t1 == Type::Normal || t2 == Type::Normal {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 self.sides[side].mon_mut().type_override = Some((Type::Normal, Type::None));
@@ -663,9 +639,7 @@ impl Battle {
                     self.sides[side].mon_mut().imprisoning = true;
                     self.sides[side].mon_mut().imprison_fresh = true;
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::MirrorMove | StatusAction::Mimic | StatusAction::Sketch => {
@@ -675,9 +649,7 @@ impl Battle {
                 let foe_mon = self.sides[foe].mon().clone();
                 // Copying a copy fails: a transformed target refuses it.
                 if foe_mon.fainted() || foe_mon.transform_backup.is_some() {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 } else {
                     let mon = self.sides[side].mon_mut();
                     if mon.transform_backup.is_none() {
@@ -743,9 +715,7 @@ impl Battle {
                     || (mine.is_empty() && theirs.is_empty())
                     || self.sides[foe].mon().fainted()
                 {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 self.sides[side].mon_mut().item = theirs;
@@ -756,9 +726,7 @@ impl Battle {
             StatusAction::Recycle => {
                 let back = self.sides[side].mon().last_item;
                 if !self.sides[side].mon().item.is_empty() || back.is_empty() {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 let mon = self.sides[side].mon_mut();
@@ -786,9 +754,7 @@ impl Battle {
                     || self.sides[foe].mon().fainted()
                     || self.sides[side].mon().fainted()
                 {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 let swapping = matches!(action, StatusAction::SkillSwap);
@@ -809,9 +775,7 @@ impl Battle {
                 self.ability_update(foe);
             }
             StatusAction::NoopFail => {
-                events.push(Event::Failed {
-                    side: side as u8 + 1,
-                });
+                self.log_failed(side, events);
             }
             StatusAction::Attract => {
                 // Genders have to differ, and neither may be genderless.
@@ -822,9 +786,7 @@ impl Battle {
                 let charmable = ((them == "M" && us == "F") || (them == "F" && us == "M"))
                     && !ability::blocks_attract(&self.sides[foe].mon().bearer());
                 if !hit || !charmable || self.sides[foe].mon().attracted_by.is_some() {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                     return;
                 }
                 let who = self.sides[side].active;
@@ -857,9 +819,7 @@ impl Battle {
             }
             StatusAction::Ingrain => {
                 if self.sides[side].mon().ingrained {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 } else {
                     self.sides[side].mon_mut().ingrained = true;
                 }
@@ -930,9 +890,7 @@ impl Battle {
                 if t1 == Type::Ghost || t2 == Type::Ghost {
                     // The Ghost pays half its max HP to lay the curse.
                     if self.sides[foe].mon().cursed || self.sides[foe].mon().fainted() {
-                        events.push(Event::Failed {
-                            side: side as u8 + 1,
-                        });
+                        self.log_failed(side, events);
                     } else {
                         let cost = (self.sides[side].mon().max_hp / 2).max(1);
                         let user = self.sides[side].mon_mut();
@@ -967,9 +925,7 @@ impl Battle {
                 {
                     self.sides[foe].mon_mut().nightmared = true;
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::Stockpile => {
@@ -977,17 +933,13 @@ impl Battle {
                 if mon.stockpile_n < 3 {
                     mon.stockpile_n += 1;
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::Swallow => {
                 let n = self.sides[side].mon().stockpile_n;
                 if n == 0 {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 } else {
                     let mon = self.sides[side].mon_mut();
                     mon.stockpile_n = 0;
@@ -1031,9 +983,7 @@ impl Battle {
                         side: side as u8 + 1,
                     });
                 } else {
-                    events.push(Event::Failed {
-                        side: side as u8 + 1,
-                    });
+                    self.log_failed(side, events);
                 }
             }
             StatusAction::SetWeather(weather) => {
