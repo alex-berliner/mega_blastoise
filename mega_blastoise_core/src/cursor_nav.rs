@@ -83,6 +83,15 @@ impl CursorNav {
         }
     }
 
+    /// Reset for a new BATTLE. The remembered move belongs to the mon that
+    /// used it, so a fresh game opens on the top-left slot for both seats
+    /// rather than wherever the last game left off.
+    pub fn begin_battle(&mut self) {
+        self.last_move = 0;
+        self.cursor = 0;
+        self.mode = NavMode::Moves;
+    }
+
     /// Reset for a new turn. Keeps the cursor on a valid slot.
     pub fn begin_turn(&mut self, n_moves: u8, n_party: u8, forced_switch: bool) {
         self.n_moves = n_moves;

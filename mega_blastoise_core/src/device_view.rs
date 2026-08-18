@@ -145,38 +145,6 @@ fn blend(under: u16, over: u16, a: u32) -> u16 {
     (r << 11) | (g << 5) | b
 }
 
-/// Where the shared scene's two mons stand: a band across the seam, one seat
-/// per side.
-pub const BAND_TOP: i32 = 116;
-pub const BAND_H: u32 = 88;
-pub const BAND_W: u32 = 112;
-
-/// Draw both seats' mons into that band, each upright to its own seat.
-///
-/// This is composed rather than drawn per half on purpose. A half can only
-/// touch its own 160 rows, so a per-half mon is always pushed onto one side of
-/// the seam and the pair ends up staggered; drawing the band over the composed
-/// panel is what puts them at the same height, side by side, the way two
-/// players facing each other across a table expect to see them.
-pub fn draw_scene_mons(
-    frame: &mut DeviceFrame,
-    p1: &str,
-    p2: &str,
-    bob1: bool,
-    bob2: bool,
-    shake: [(i32, i32); 2],
-) {
-    for (i, (name, bob, flip)) in [(p1, bob1, false), (p2, bob2, true)].into_iter().enumerate() {
-        // An attack effect rocks the mon it lands on. The mons are drawn
-        // before the effect, so the offset arrives here rather than being
-        // applied by the effect itself.
-        let (sx, sy) = shake[i];
-        let ox = if flip { (DEV_W - BAND_W) as i32 - 4 } else { 4 } + sx;
-        let mut r = Region::band(frame, ox, BAND_TOP + sy, BAND_W, BAND_H, flip);
-        crate::display_color::draw_field_mon(&mut r, name, bob, BAND_W, BAND_H);
-    }
-}
-
 fn rgb565(c: Rgb565) -> u16 {
     RawU16::from(c).into_inner()
 }

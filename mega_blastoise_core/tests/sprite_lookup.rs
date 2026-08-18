@@ -73,3 +73,44 @@ fn every_gen1_species_name_has_a_color_sprite() {
     }
     assert!(missing.is_empty(), "no colour sprite for: {missing:?}");
 }
+
+/// A forme keeps its own art but answers to the base name. Both halves of
+/// that broke at once: the name buffer cut "Deoxys-Attack" to twelve bytes,
+/// which matched no sprite, and the plate spent its width on the suffix.
+#[test]
+fn formes_use_their_own_art_under_the_base_name() {
+    use core::ops::Not;
+    use mega_blastoise_core::oled_ctl::name_buf;
+    use mega_blastoise_core::sprites_color::{mon_sprite_color, species_display_name};
+
+    let (buf, len) = name_buf("Deoxys-Attack");
+    let round_tripped = core::str::from_utf8(&buf[..len as usize]).unwrap();
+    assert_eq!(round_tripped, "Deoxys-Attack", "the name was cut in transit");
+    assert!(mon_sprite_color(round_tripped).is_some(), "no art for the forme");
+    let forme = mon_sprite_color("Deoxys-Attack").unwrap();
+    let base = mon_sprite_color("Deoxys").unwrap();
+    assert!(
+        core::ptr::eq(forme, base).not(),
+        "the forme must not fall back to the base art",
+    );
+
+    assert_eq!(species_display_name("Deoxys-Attack"), "Deoxys");
+    assert_eq!(species_display_name("Castform-Sunny"), "Castform");
+    // Hyphens that are part of the name itself stay put.
+    for name in ["Ho-Oh", "Nidoran-F", "Nidoran-M", "Porygon2"] {
+        assert_eq!(species_display_name(name), name, "{name}");
+    }
+}
+
+/// Every Gen 3 species the drafter can send out needs art, under the name the
+/// engine actually uses.
+#[test]
+fn every_gen3_species_name_has_color_art() {
+    use mega_blastoise_core::sprites_color::mon_sprite_color;
+    let missing: Vec<&str> = gen3_battle::SPECIES
+        .iter()
+        .map(|s| s.name)
+        .filter(|n| mon_sprite_color(n).is_none())
+        .collect();
+    assert!(missing.is_empty(), "no color art for: {missing:?}");
+}

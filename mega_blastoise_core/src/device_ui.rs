@@ -59,21 +59,23 @@ fn option_rows(opts: &crate::menu::GameOptions) -> Vec<dc::OptionRow<'static>> {
     rows
 }
 
-/// Is this seat showing the shared battle scene? The one predicate behind both
-/// the seam-vs-divider composition below and the screen-state trace in `lib.rs`
-/// — kept in one place because two copies drift the moment either rule moves.
-///
-/// Every per-seat overlay that makes [`render_seat`] return early belongs in
-/// here: an overlay is by definition a private view, whatever the controller
-/// is on, so the two must be extended together or the renderer and the tracer
-/// disagree.
-pub fn seat_shows_scene(
-    ctl: &OledController,
-    player: u8,
-    ui: &SeatUi,
-    log: LogView<'_>,
-) -> bool {
-    ui.options.is_none() && log.offset.is_none() && ctl.screen(player).is_scene()
+/// This seat's move animation for the current frame, if it is watching one.
+/// A private overlay (the log, the options) hides the field, and an effect
+/// drawn over a screen that is not showing the mons has nothing to travel
+/// between.
+fn seat_anim(ctl: &OledController, player: u8, ui: &SeatUi, log: LogView<'_>) -> Option<crate::move_anim::Anim> {
+    if ui.options.is_some() || log.offset.is_some() {
+        return None;
+    }
+    match ctl.screen(player) {
+        Screen::MoveUsed { move_id, attacker, elapsed_ms, .. } => crate::move_anim::anim(
+            move_id,
+            attacker,
+            elapsed_ms,
+            crate::battle_effects::anim::MOVE_MS,
+        ),
+        _ => None,
+    }
 }
 
 /// Draw one seat's half. Returns true when it drew the shared battle scene,
@@ -86,22 +88,21 @@ pub fn render_seat<D>(
     log: LogView<'_>,
     opts: &crate::menu::GameOptions,
     foe_locked: bool,
-) -> bool
-where
+) where
     D: embedded_graphics::draw_target::DrawTarget<Color = embedded_graphics::pixelcolor::Rgb565>,
 {
     // The options are a per-seat overlay for the same reason the log is: the
     // other seat keeps whatever it was looking at.
     if let Some(cursor) = ui.options {
         dc::render_options(d, &option_rows(opts), cursor, dc::HALF_W, dc::HALF_H, player);
-        return false;
+        return;
     }
     // The log is a per-seat overlay: one player can read it while the other
     // keeps playing, so it never stalls the game.
     if let Some(offset) = log.offset {
         let lines: Vec<&str> = log.lines.iter().map(|s| s.as_str()).collect();
         dc::render_log(d, &lines, offset, player);
-        return false;
+        return;
     }
     let me = ctl.seat(player);
     let foe = ctl.seat(3 - player);
@@ -130,9 +131,7 @@ where
         bob: me.bob,
     };
 
-    let screen = ctl.screen(player);
-    let scene = seat_shows_scene(ctl, player, ui, log);
-    match screen {
+    match ctl.screen(player) {
         Screen::Lobby { ready, ai } => dc::render_lobby(d, ready, ai, player),
 
         // The cursor can be pointing into the party list while the battle
@@ -178,7 +177,6 @@ where
         // Concealed mode is gone in this design; these cannot be reached.
         _ => dc::render_playback(d, "", &ctx),
     }
-    scene
 }
 
 /// Compose the whole panel: the two seats, head-to-head.
@@ -191,61 +189,35 @@ pub fn render_device(
     opts: &crate::menu::GameOptions,
 ) -> Vec<u8> {
     let mut frame = DeviceFrame::new();
-    let mut scene = true;
     both_halves(&mut frame, |r, seat| {
         let (ui, log) = if seat == 1 { (ui1, log1) } else { (ui2, log2) };
         let foe_locked = if seat == 1 { ui2.locked } else { ui1.locked };
-        let private = !render_seat(r, ctl, seat, ui, log, opts, foe_locked);
-        // The border is the last thing painted on a private half, so no
-        // screen can bleed into it however its own layout drifts.
-        if private {
-            dc::draw_play_frame_edge(r, seat);
+        render_seat(r, ctl, seat, ui, log, opts, foe_locked);
+        // The border is the last thing painted on a half, so no screen can
+        // bleed into it however its own layout drifts.
+        dc::draw_play_frame_edge(r, seat);
+        // An attack plays out on BOTH halves at once, each from that seat's
+        // own point of view: the effect travels from the attacker's mon to
+        // its target as that player sees them. There is no shared field any
+        // more, so there is nothing across the seam to animate.
+        if let Some(a) = seat_anim(ctl, seat, ui, log) {
+            let own = dc::OWN_MON_CENTRE;
+            let foe = dc::FOE_MON_CENTRE;
+            let (user, target) = if a.attacker == seat { (own, foe) } else { (foe, own) };
+            crate::move_anim::draw(r, &a, user, target);
         }
-        scene &= !private;
     });
-    // The battle scene is one field spanning both halves, so nothing is drawn
-    // across the middle at all — any line there cuts the field in two, which
-    // is the opposite of what the shared scene is for. The moment either seat
-    // leaves it — a log overlay, a forced switch — the halves are private
-    // views again and the hard divider comes back to say so.
-    if scene {
-        // Each seat still gets its own trim around its outer edge; only the
-        // seam side is left open, so the field reads as one.
-        both_halves(&mut frame, |r, seat| dc::draw_scene_frame_edge(r, seat));
-        // The mons go on last, in a band across the seam that neither half
-        // could have reached, so the pair lands at the same height side by
-        // side. The halves have already drawn the chrome around it.
-        let (p1, p2) = (ctl.seat(1), ctl.seat(2));
-        // An attack effect plays over the narration window that is already
-        // holding this screen, so it costs no extra pacing. The mons carry
-        // the shake, since they are drawn before the effect is.
-        let anim = match ctl.screen(1) {
-            Screen::MoveUsed { move_id, attacker, elapsed_ms, .. } => {
-                crate::move_anim::anim(
-                    move_id,
-                    attacker,
-                    elapsed_ms,
-                    crate::battle_effects::anim::MOVE_MS,
-                )
-            }
-            _ => None,
-        };
-        let shake = anim
-            .map(|a| {
-                [
-                    crate::move_anim::band_shake(&a, 1),
-                    crate::move_anim::band_shake(&a, 2),
-                ]
-            })
-            .unwrap_or([(0, 0); 2]);
-        crate::device_view::draw_scene_mons(
-            &mut frame, p1.name, p2.name, p1.bob, p2.bob, shake,
-        );
-        if let Some(a) = anim {
-            crate::move_anim::draw(&mut frame, &a);
-        }
-    } else {
-        crate::device_view::draw_split_divider(&mut frame);
+    crate::device_view::draw_split_divider(&mut frame);
+    // The wash is the one thing left that belongs to the whole panel: both
+    // players are watching the same move land.
+    let flash = [1u8, 2]
+        .iter()
+        .filter_map(|&seat| seat_anim(ctl, seat, if seat == 1 { ui1 } else { ui2 }, if seat == 1 { log1 } else { log2 }))
+        .map(|a| crate::move_anim::flash_amount(&a))
+        .max()
+        .unwrap_or(0);
+    if flash > 0 {
+        crate::move_anim::white_out(&mut frame, flash);
     }
     frame.to_rgba()
 }

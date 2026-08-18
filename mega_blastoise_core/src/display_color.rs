@@ -16,7 +16,7 @@
 use embedded_graphics::{
     draw_target::DrawTarget,
     mono_font::{
-        ascii::{FONT_5X8, FONT_6X10, FONT_8X13},
+        ascii::{FONT_5X8, FONT_6X10, FONT_8X13, FONT_10X20},
         MonoTextStyle,
     },
     prelude::*,
@@ -27,7 +27,7 @@ use embedded_graphics::{
 
 use crate::board_event::MoveSlot;
 use crate::display::{InvalidReason, PartySlotData};
-use crate::sprites_color::{mon_back_sprite_color, mon_sprite_color, ColorSprite};
+use crate::sprites_color::{mon_back_sprite_color, mon_sprite_color, species_display_name, ColorSprite};
 
 /// One seat's half of the panel.
 pub const HALF_W: u32 = 240;
@@ -267,23 +267,6 @@ where
         Point::new(x, y),
         MonoTextStyle::new(font, c),
         TextStyleBuilder::new().baseline(Baseline::Top).build(),
-    )
-    .draw(d)
-    .ok();
-}
-
-fn text_center<D>(d: &mut D, s: &str, cx: i32, y: i32, font: &'static MonoFont<'static>, c: Rgb565)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    Text::with_text_style(
-        s,
-        Point::new(cx, y),
-        MonoTextStyle::new(font, c),
-        TextStyleBuilder::new()
-            .baseline(Baseline::Top)
-            .alignment(Alignment::Center)
-            .build(),
     )
     .draw(d)
     .ok();
@@ -561,27 +544,6 @@ where
     ellipse(d, cx, cy - 2, rx - 3, ry - 2, C_PLATFORM_HI);
 }
 
-/// One mon standing on its platform, filling a band of `w` x `h`. Mirrored so
-/// that the far seat's copy — drawn into a band rotated 180 — comes out as a
-/// reflection of this one, which is what makes the two face each other.
-pub fn draw_field_mon<D>(d: &mut D, name: &str, bob: bool, w: u32, h: u32)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    if !has_mon(name) {
-        return;
-    }
-    // The platform sits a full ellipse-height clear of the band's edge, so
-    // the ground under the mon is a whole shape rather than a sliced one.
-    let rx = 44;
-    let ground = h as i32 - rx / 3 - 3;
-    draw_platform(d, w as i32 / 2, ground, rx);
-    let bob = if bob { -2 } else { 0 };
-    match mon_sprite_color(name) {
-        Some(spr) => draw_sprite_fit(d, spr, 0, bob, w, ground as u32, true, true),
-        None => text_center(d, clip(name, 13), w as i32 / 2, ground / 2, &FONT_8X13, C_INK),
-    }
-}
 
 /// A Gen 3 status plate: parchment panel with a hard drop shadow, the name
 /// and level on top, and an HP chip beside the bar. `trim` colors a tab on
@@ -608,7 +570,7 @@ pub fn draw_status_plate<D>(
     // Seat tab down the left edge.
     fill(d, x + 2, y + 2, 4, h - 4, trim);
 
-    text_at(d, clip(name, 13), x + 10, y + 4, &FONT_6X10, C_INK);
+    text_at(d, clip(species_display_name(name), 13), x + 10, y + 4, &FONT_6X10, C_INK);
     if level > 0 {
         let mut b = LvBuf::new();
         text_right(d, b.fmt(level), x + w as i32 - 6, y + 5, &FONT_5X8, C_INK);
@@ -899,29 +861,6 @@ where
     }
 }
 
-/// The play frame's ring with the seam side left open, for the shared battle
-/// scene. A full ring per half would draw a bar down the middle of the one
-/// field the scene exists to show, but with no ring at all the panel loses
-/// the seat colors that say which side is whose. Three sides give both: each
-/// seat's color still runs around its outer edge, and the field is
-/// uninterrupted across the seam.
-///
-/// The seam is local y = 0, since each half is drawn the right way up for the
-/// player facing it.
-pub fn draw_scene_frame_edge<D>(d: &mut D, seat: u8)
-where
-    D: DrawTarget<Color = Rgb565>,
-{
-    let (w, h) = (HALF_W as i32, HALF_H as i32);
-    let trim = seat_trim(seat);
-    for (x, y, bw, bh) in [(0, h - 8, w, 8), (0, 0, 8, h), (w - 8, 0, 8, h)] {
-        fill(d, x, y, bw as u32, bh as u32, trim);
-    }
-    for (x, y, bw, bh) in [(6, h - 8, w - 12, 2), (6, 6, 2, h - 6), (w - 8, 6, 2, h - 6)] {
-        fill(d, x, y, bw as u32, bh as u32, C_INK);
-    }
-}
-
 /// The frame's thickness, the gap inside it, and the resulting safe area.
 ///
 /// **Every screen must lay out inside `LEFT..RIGHT` and `TOP..BOTTOM`.** The
@@ -996,7 +935,13 @@ where
 /// mon on the near platform with your plate at the bottom right. Every screen
 /// that keeps the field showing draws this and then puts its own furniture in
 /// the bottom third.
-fn battle_field<D>(d: &mut D, ctx: &HalfCtx<'_>)
+/// Where the two mons stand on a half, as centres. The field draws them
+/// here and the move animation travels between them, so the two cannot
+/// disagree about where a Flamethrower is aimed.
+pub const FOE_MON_CENTRE: (i32, i32) = (138 + 44, FRAME + PAD + 32);
+pub const OWN_MON_CENTRE: (i32, i32) = (LEFT + 46, MENU_Y - 32);
+
+fn battle_field<D>(d: &mut D, ctx: &HalfCtx<'_>, show_lock: bool)
 where
     D: DrawTarget<Color = Rgb565>,
 {
@@ -1016,7 +961,9 @@ where
     );
     // The rival having locked in is the one thing worth a badge over the art:
     // it is the only signal that the turn is now waiting on you.
-    if ctx.foe_locked {
+    // Only while this seat still has a choice to make: during narration the
+    // corner is the caption's own hint, and both are locked in anyway.
+    if show_lock && ctx.foe_locked {
         chip(d, RIGHT - 28, FRAME + PAD, "LOCK", C_DIM);
     }
 
@@ -1032,8 +979,10 @@ where
         let dip = if ctx.bob { 0 } else { 3 };
         draw_sprite_fit(d, spr, LEFT, MENU_Y - 64 + dip, 92, 64, false, true);
     }
+    // Clear of the pane below it: with the numbers row the plate is 34 tall,
+    // and sat flush against the menu the HP figures were cut by its border.
     draw_status_plate(
-        d, 104, 78, 120, ctx.own_name, ctx.own_level, ctx.own_hp, ctx.own_hp_numbers,
+        d, 104, MENU_Y - 40, 120, ctx.own_name, ctx.own_level, ctx.own_hp, ctx.own_hp_numbers,
         ctx.own_status, seat_trim(ctx.seat),
     );
 }
@@ -1050,7 +999,7 @@ where
     D: DrawTarget<Color = Rgb565>,
 {
     play_frame(d, ctx.seat);
-    battle_field(d, ctx);
+    battle_field(d, ctx, true);
 
     // The move list: a 2x2 grid in a menu box with the cursor beside the
     // highlighted row, and the PP and type of that row in a second box at the
@@ -1093,7 +1042,7 @@ where
     D: DrawTarget<Color = Rgb565>,
 {
     play_frame(d, ctx.seat);
-    battle_field(d, ctx);
+    battle_field(d, ctx, true);
     // Same field, and the bottom third becomes the narration box instead of
     // the move menu — which is exactly what the games do between choices.
     draw_message_box(d, LEFT, MENU_Y, CONTENT_W, 36);
@@ -1128,7 +1077,7 @@ where
         };
         let row_bg = if sel { C_SEL } else { C_BOX };
         panel(d, LEFT, y, CONTENT_W, 16, if sel { C_SEL } else { C_BOX }, if dead { C_DIM } else { C_INK });
-        text_aa_font(d, clip(&slot.name, 11), LEFT + BOX_PAD, y + 3, &FONT_6X10, fg, row_bg);
+        text_aa_font(d, clip(species_display_name(&slot.name), 11), LEFT + BOX_PAD, y + 3, &FONT_6X10, fg, row_bg);
         let pct = if slot.max_hp == 0 {
             0
         } else {
@@ -1151,12 +1100,6 @@ where
     }
 }
 
-/// True once a name is a real species rather than the controller's boot
-/// placeholder — the opening plays on empty ground before either side is in.
-fn has_mon(name: &str) -> bool {
-    !name.is_empty() && name != "---"
-}
-
 /// One seat's half of the shared head-to-head battle scene.
 ///
 /// Both halves draw this at the same time and the far one is rotated 180, so
@@ -1169,60 +1112,41 @@ pub fn render_playback<D>(d: &mut D, caption: &str, ctx: &HalfCtx<'_>)
 where
     D: DrawTarget<Color = Rgb565>,
 {
-    d.clear(C_BG).ok();
-    // No seat stripe and no frame: the shared scene is one field across both
-    // halves, and any edge marker drawn here reads as a border cutting it in
-    // two. Seat identity is carried by the framed screens either side of it.
-
-    // The mons are not drawn here. They stand in a band across the seam that
-    // the compositor fills (`device_view::draw_scene_mons`), because only the
-    // composed panel can put both of them at the same height. This half owns
-    // the chrome around that band and must leave its rows clear.
-    if has_mon(ctx.own_name) {
-        {
-        // HP plate directly under the mon, in this seat's frame.
-        draw_status_plate(
-            d,
-            6,
-            44,
-            152,
-            ctx.own_name,
-            ctx.own_level,
-            ctx.own_hp,
-            None,
-            ctx.own_status,
-            seat_trim(ctx.seat),
-        );
-        }
-    }
-
-    text_aa_font(d, "A NEXT", 166, 82, &FONT_5X8, C_DIM, C_BG);
-
-    // Narration at the bottom of this seat's half — which is the bottom of the
-    // screen from where they are sitting. This is the line both players read
-    // across a table, so it gets the big font and a box to match: two lines of
-    // 26 characters at 8x13 rather than four times as much 6x10 nobody leans
-    // in to read.
-    draw_message_box(d, LEFT, 92, CONTENT_W, 56);
-    // Three lines of 26 at 8x13 — enough for the longest narration the engine
-    // writes, so a sentence never ends mid-word for want of a fourth line.
-    const NARR: usize = 26;
+    play_frame(d, ctx.seat);
+    battle_field(d, ctx, false);
+    // Narration takes the move menu's place, so the field above it does not
+    // move between choosing and watching. Two seats, two fields: each player
+    // reads the battle the right way up on their own half, which is why the
+    // mons are drawn here rather than in a band across the seam.
+    draw_message_box(d, LEFT, MENU_Y, CONTENT_W, MENU_H);
+    // Top right, the slot the LOCK chip uses on the choosing screen: it is
+    // the only corner of a half that no plate, sprite or pane wants.
+    text_aa_font(d, "A NEXT", RIGHT - 36, FRAME + PAD, &FONT_5X8, C_DIM, C_BG);
+    // The box is the height of the move menu it replaces, so the line reads
+    // at the display size while it fits in two rows and drops to the body
+    // size only for the long ones. Sized the other way round, every line
+    // would be small for the sake of the few that are long.
+    let (font, cols, rows, pitch) = if caption.len() <= 2 * 26 {
+        (&FONT_8X13, 26usize, 2, 15)
+    } else {
+        (&FONT_6X10, 34usize, 3, 11)
+    };
     let mut rest = caption;
-    for row in 0..3 {
+    for row in 0..rows {
         if rest.is_empty() {
             break;
         }
-        let take = if rest.len() <= NARR {
+        let take = if rest.len() <= cols {
             rest.len()
         } else {
-            rest[..NARR].rfind(' ').unwrap_or(NARR)
+            rest[..cols].rfind(' ').unwrap_or(cols)
         };
         text_aa_font(
             d,
-            clip(&rest[..take], NARR),
+            clip(&rest[..take], cols),
             LEFT + 8,
-            98 + row * 16,
-            &FONT_8X13,
+            MENU_Y + 5 + row as i32 * pitch,
+            font,
             C_MSG_TEXT,
             C_MSG_FILL,
         );
@@ -1240,13 +1164,15 @@ where
         text_aa_center_font(d, "AI", 120, 60, &FONT_8X13, C_ACCENT, C_BG);
         text_aa_center_font(d, "a robot rival takes this side", 120, 84, &FONT_5X8, C_DIM, C_BG);
     } else if ready {
-        text_aa_center_font(d, "READY!", 120, 56, &FONT_8X13, C_HP_G, C_BG);
-        text_aa_center_font(d, "waiting for rival...", 120, 80, &FONT_6X10, C_DIM, C_BG);
-        text_aa_center_font(d, "B to cancel", 120, 96, &FONT_5X8, C_DIM, C_BG);
+        text_aa_center_font(d, "READY!", 120, 52, &FONT_10X20, C_HP_G, C_BG);
+        text_aa_center_font(d, "waiting for rival...", 120, 84, &FONT_8X13, C_DIM, C_BG);
+        text_aa_center_font(d, "B to cancel", 120, 106, &FONT_6X10, C_DIM, C_BG);
     } else {
-        text_aa_center_font(d, "PRESS A TO READY", 120, 52, &FONT_8X13, C_INK, C_BG);
-        text_aa_center_font(d, "HOLD A: FIGHT THE AI", 120, 78, &FONT_6X10, C_DIM, C_BG);
-        text_aa_center_font(d, "?: RULES + CONTROLS", 120, 94, &FONT_6X10, C_DIM, C_BG);
+        // The one instruction on this screen carries the screen, so it is
+        // set at the display size rather than the body size.
+        text_aa_center_font(d, "PRESS A TO START", 120, 46, &FONT_10X20, C_INK, C_BG);
+        text_aa_center_font(d, "HOLD A: FIGHT THE AI", 120, 82, &FONT_8X13, C_DIM, C_BG);
+        text_aa_center_font(d, "?: OPTIONS", 120, 104, &FONT_8X13, C_DIM, C_BG);
     }
 }
 
@@ -1333,7 +1259,7 @@ where
     D: DrawTarget<Color = Rgb565>,
 {
     play_frame(d, seat);
-    text_aa_font(d, clip(&slot.name, 14), LEFT, TOP, &FONT_8X13, C_INK, C_BG);
+    text_aa_font(d, clip(species_display_name(&slot.name), 14), LEFT, TOP, &FONT_8X13, C_INK, C_BG);
     if slot.level > 0 {
         let mut b = LvBuf::new();
         text_aa_right_font(d, b.fmt(slot.level), RIGHT, TOP + 2, &FONT_5X8, C_DIM, C_BG);
@@ -1392,7 +1318,7 @@ where
         let x = LEFT + (i as i32 % 2) * 104;
         let y = TOP + 100 + (i as i32 / 2) * 11;
         let fg = if *pp == 0 { C_DIM } else { C_INK };
-        text_aa_font(d, clip(name, 13), x, y, &FONT_5X8, fg, C_BG);
+        text_aa_font(d, clip(species_display_name(name), 13), x, y, &FONT_5X8, fg, C_BG);
         let mut n = NumBuf::new();
         text_aa_font(d, n.pair(*pp as u32, *max_pp as u32), x + 68, y, &FONT_5X8, C_DIM, C_BG);
     }
@@ -1496,10 +1422,10 @@ where
 {
     play_frame(d, seat);
     let cx = (w / 2) as i32;
-    text_aa_center_font(d, "CHOOSE A GAME", cx, 18, &FONT_8X13, C_INK, C_BG);
+    text_aa_center_font(d, "CHOOSE A FORMAT", cx, 18, &FONT_8X13, C_INK, C_BG);
     let opts = [
-        ("GEN 1", "Red / Blue rules", true),
-        ("GEN 3", "Ruby / Sapphire  (preview)", false),
+        ("Generation 1", "Red / Blue / Yellow rules", true),
+        ("Generation 3", "Ruby / Sapphire / Emerald rules", false),
     ];
     for (i, (name, sub, ready)) in opts.iter().enumerate() {
         let y = GEN_ROW.0 + i as i32 * GEN_ROW.1;
@@ -1558,7 +1484,7 @@ pub fn render_versus<D>(
                 draw_sprite(d, spr, x, y, scale);
             }
         }
-        text_aa_center(d, clip(name, 16), cx, ground_y + 16, C_INK, C_BG);
+        text_aa_center(d, clip(species_display_name(name), 16), cx, ground_y + 16, C_INK, C_BG);
     };
     if let Some(name) = left {
         side(name, left_cx, true);

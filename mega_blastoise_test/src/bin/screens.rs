@@ -128,9 +128,8 @@ fn main() {
         dc::render_log(f, &lines, 0, 1)
     });
 
-    // The default view: one battle across both halves, each seat's mon
-    // upright to that seat with its HP plate under it and the same narration
-    // at the bottom of the screen from either side.
+    // The default view: each seat's own battle, upright to that seat, with
+    // the same narration at the bottom of both halves.
     let caption = "Blue's Charizard used Fire Blast! It's not very effective...";
     let mut scene = DeviceFrame::new();
     {
@@ -151,17 +150,7 @@ fn main() {
         let mut bottom = Region::half(&mut scene, true, false);
         dc::render_playback(&mut bottom, caption, &ctx);
     }
-    {
-        let mut top = Region::half(&mut scene, false, true);
-        dc::draw_scene_frame_edge(&mut top, 2);
-    }
-    {
-        let mut bottom = Region::half(&mut scene, true, false);
-        dc::draw_scene_frame_edge(&mut bottom, 1);
-    }
-    mega_blastoise_core::device_view::draw_scene_mons(
-        &mut scene, "Blastoise", "Charizard", false, false, [(0, 0); 2],
-    );
+    mega_blastoise_core::device_view::draw_split_divider(&mut scene);
     write_ppm(&format!("{dir}/device_battle.ppm"), 240, 320, &scene.to_rgba());
 
     // Composed 240x320 panel, head-to-head: far half rotated 180.
@@ -209,33 +198,34 @@ fn main() {
     ] {
         for (i, t) in [200u32, 500, 750, 950].iter().enumerate() {
             let mut f = DeviceFrame::new();
-            {
-                let mut top = Region::half(&mut f, false, true);
-                let p2 = dc::HalfCtx {
-                    seat: 2,
-                    own_name: "Charizard",
-                    own_hp: 88,
-                    own_level: 53,
-                    foe_name: "Blastoise",
-                    foe_hp: 81,
-                    foe_level: 55,
-                    ..Default::default()
-                };
-                dc::render_playback(&mut top, caption, &p2);
-            }
-            {
-                let mut bottom = Region::half(&mut f, true, false);
-                dc::render_playback(&mut bottom, caption, &ctx);
-            }
             let a = mega_blastoise_core::move_anim::anim(id, 1, *t, 1000).unwrap();
-            let shake = [
-                mega_blastoise_core::move_anim::band_shake(&a, 1),
-                mega_blastoise_core::move_anim::band_shake(&a, 2),
-            ];
-            mega_blastoise_core::device_view::draw_scene_mons(
-                &mut f, "Blastoise", "Charizard", false, false, shake,
-            );
-            mega_blastoise_core::move_anim::draw(&mut f, &a);
+            let (own, foe) = (dc::OWN_MON_CENTRE, dc::FOE_MON_CENTRE);
+            for (bottom_half, seat) in [(false, 2u8), (true, 1u8)] {
+                let mut r = Region::half(&mut f, bottom_half, !bottom_half);
+                let hc = if seat == 1 {
+                    ctx.clone()
+                } else {
+                    dc::HalfCtx {
+                        seat: 2,
+                        own_name: "Charizard",
+                        own_hp: 88,
+                        own_level: 53,
+                        foe_name: "Blastoise",
+                        foe_hp: 81,
+                        foe_level: 55,
+                        ..Default::default()
+                    }
+                };
+                dc::render_playback(&mut r, caption, &hc);
+                dc::draw_play_frame_edge(&mut r, seat);
+                let (user, target) = if a.attacker == seat { (own, foe) } else { (foe, own) };
+                mega_blastoise_core::move_anim::draw(&mut r, &a, user, target);
+            }
+            mega_blastoise_core::device_view::draw_split_divider(&mut f);
+            let flash = mega_blastoise_core::move_anim::flash_amount(&a);
+            if flash > 0 {
+                mega_blastoise_core::move_anim::white_out(&mut f, flash);
+            }
             write_ppm(&format!("{dir}/fx_{label}_{i}.ppm"), 240, 320, &f.to_rgba());
         }
     }

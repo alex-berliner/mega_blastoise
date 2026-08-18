@@ -371,13 +371,13 @@ async fn run_demo_battle(data: &FlashDataStore, queue: &mut BoardEventQueue, see
 // ── Countdown ─────────────────────────────────────────────────────────────────
 
 async fn do_countdown(input: &mut impl LobbyInput) {
+    // One second, one beep. The old 3, 2, 1 spent a second and a half on a
+    // wait with nothing in it: the players have already decided, and no
+    // screen shows the count either.
     input.write_line("Both ready!").await;
-    for i in (1u8..=3).rev() {
-        #[cfg(feature = "buzzer")]
-        buzz(BuzzerCmd::CountdownBeep);
-        input.write_line(&alloc::format!("{}...", i)).await;
-        Timer::after_millis(500).await;
-    }
+    #[cfg(feature = "buzzer")]
+    buzz(BuzzerCmd::CountdownBeep);
+    Timer::after_millis(1000).await;
     #[cfg(feature = "leds")]
     led_send(LedCmd::LobbyCountdown);
     #[cfg(feature = "buzzer")]

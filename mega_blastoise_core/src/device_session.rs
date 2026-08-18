@@ -160,6 +160,14 @@ impl DeviceSession {
 
     // ── Battle-turn bookkeeping ──────────────────────────────────────────
 
+    /// A battle is starting. Called by the platform between the lobby and
+    /// the first prompt.
+    pub fn begin_battle(&mut self) {
+        for seat in self.seats.iter_mut() {
+            seat.nav.begin_battle();
+        }
+    }
+
     pub fn begin_turn(&mut self, player: u8, n_moves: u8, n_party: u8, forced: bool) {
         let s = &mut self.seats[idx(player)];
         s.nav.begin_turn(n_moves, n_party, forced);

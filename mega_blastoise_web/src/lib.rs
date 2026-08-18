@@ -897,18 +897,16 @@ async fn run_game_loop() {
             });
         }
 
-        // Countdown — same text and 500 ms cadence as the firmware lobby,
-        // with a gold LED flash per tick as the web's buzzer stand-in.
+        // One second between the second READY and the battle, with a gold
+        // LED flash as the web's buzzer stand-in. It used to count 3, 2, 1
+        // over a second and a half, which is a wait with nothing in it: the
+        // players have already decided, and the screens say nothing during
+        // it either.
         print_log("Both ready!");
-        let gold = pack_rgb(200, 150, 0);
-        for i in (1u8..=3).rev() {
-            print_log(&format!("{}...", i));
-            update_leds([gold; 24]);
-            sleep_ms_raw(250).await;
-            update_leds([0u32; 24]);
-            sleep_ms_raw(250).await;
-        }
-        print_log("GO!");
+        update_leds([pack_rgb(200, 150, 0); 24]);
+        sleep_ms_raw(500).await;
+        update_leds([0u32; 24]);
+        sleep_ms_raw(500).await;
 
         // Battle-start tutorial, off by default: the cursor UI carries its
         // own legend on every screen, so 6.75 s of unskippable pages before
@@ -925,6 +923,9 @@ async fn run_game_loop() {
         // sometimes meets an Explosion is a probe that only sometimes fails.
         let seed = fixed_seed_param()
             .unwrap_or_else(|| (Date::now() as u64) ^ 0xdead_beef_cafe_babe);
+
+        // Both cursors open this game on the top-left move.
+        SESSION.with(|s| s.borrow_mut().begin_battle());
 
         // The ruleset the players picked decides which engine runs. Both
         // speak the same InputBus + ChoiceCollector protocol; the fork picks
@@ -1251,9 +1252,9 @@ fn seat_state_name(player: u8) -> String {
     }
 }
 
-/// What owns the panel as a whole: a menu, or the two halves — joined into one
-/// field when both seats are watching the same scene, split when either has a
-/// private view up. Mirrors the seam-vs-divider rule in `render_device`.
+/// What owns the panel as a whole: a menu, or the two halves. There is no
+/// joined state any more — every battle screen is private to its seat — so
+/// this reports the menu when one is up and the halves otherwise.
 fn view_state_name() -> String {
     use mega_blastoise_core::menu::MenuScreen;
     // The gen picker is the one menu that owns the whole panel, so it is the
@@ -1267,21 +1268,7 @@ fn view_state_name() -> String {
             MenuScreen::Lobby => "MENU_LOBBY",
         }));
     }
-    // Same predicate the renderer composes with, not a second copy of it.
-    // The session is read before OLED_CTL: separate cells, and nesting the
-    // borrows invites a double-borrow panic later.
-    let shared = SESSION.with(|se| {
-        let se = se.borrow();
-        let lines = se.log.lines();
-        OLED_CTL.with(|c| {
-            let ctl = c.borrow();
-            [1u8, 2].iter().all(|&p| {
-                let view = device_ui::LogView { lines, offset: se.log_view(p) };
-                device_ui::seat_shows_scene(&ctl, p, &se.seats[(p == 2) as usize], view)
-            })
-        })
-    });
-    String::from(if shared { "SHARED_SCENE" } else { "SPLIT_HALVES" })
+    String::from("SPLIT_HALVES")
 }
 
 /// All three at once, in the order [p1, p2, view].

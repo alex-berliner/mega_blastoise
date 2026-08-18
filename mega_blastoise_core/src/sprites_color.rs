@@ -65,6 +65,18 @@ pub fn mon_sprite_color(name: &str) -> Option<&'static ColorSprite> {
     lookup(MON_SPRITES_COLOR, name)
 }
 
+/// What to CALL a species on screen. Formes keep their own art but answer to
+/// the base name: a plate reading "Deoxys-Attack" spends half its width on a
+/// suffix, and the games call it Deoxys too. The test for a forme is that the
+/// part before the hyphen is itself a species we have art for, which leaves
+/// Ho-Oh, Nidoran-F and Porygon-Z alone.
+pub fn species_display_name(name: &str) -> &str {
+    match name.split_once('-') {
+        Some((base, _)) if !base.is_empty() && mon_sprite_color(base).is_some() => base,
+        _ => name,
+    }
+}
+
 /// Back (own-side) art, falling back to the front art when missing.
 pub fn mon_back_sprite_color(name: &str) -> Option<&'static ColorSprite> {
     lookup(MON_BACK_SPRITES_COLOR, name).or_else(|| mon_sprite_color(name))

@@ -48,7 +48,7 @@ pub enum OledCmd {
     HpUpdate { player: u8, pct: u8 },
     /// New active Pokémon (UTF-8 name, up to 12 bytes). `speed` is the mon's
     /// Speed stat — drives the battle-screen sprite bob rate.
-    ActiveMon { player: u8, name: [u8; 12], len: u8, speed: u16 },
+    ActiveMon { player: u8, name: [u8; 16], len: u8, speed: u16 },
     /// Move list updated (PP changes after each turn).
     MovesUpdate { player: u8, moves: Vec<MoveSlot> },
     /// A mon fainted.
@@ -104,13 +104,13 @@ pub enum OledCmd {
     ShowOpponentMon { player: u8 },
     /// Switch-in flash showing the incoming mon's sprite under the
     /// "sent out" caption. `player` 0 = both displays.
-    ShowSentOut { player: u8, name: [u8; 12], len: u8, text: [u8; 48], tlen: u8 },
+    ShowSentOut { player: u8, name: [u8; 16], len: u8, text: [u8; 48], tlen: u8 },
     /// Move-used flash: the attacker's sprite with the move's icon to its
     /// right, under the "used X!" caption. `player` 0 = both displays.
     ShowMoveUsed {
         player: u8,
         attacker: u8,
-        name: [u8; 12],
+        name: [u8; 16],
         len: u8,
         move_id: [u8; 16],
         mlen: u8,
@@ -151,10 +151,14 @@ impl OledCmd {
 }
 
 /// Copy up to 12 bytes of a Pokémon name into a fixed-size buffer.
-pub fn name_buf(name: &str) -> ([u8; 12], u8) {
+pub fn name_buf(name: &str) -> ([u8; 16], u8) {
+    // Wide enough for the longest species name this era has
+    // ("Deoxys-Defense"). At 12 the forme names came through cut in half,
+    // which lost the sprite: the art is keyed by the FULL name, so
+    // "Deoxys-Attac" matched nothing and the mon appeared with no picture.
     let bytes = name.as_bytes();
-    let len = bytes.len().min(12) as u8;
-    let mut buf = [b' '; 12];
+    let len = bytes.len().min(16) as u8;
+    let mut buf = [b' '; 16];
     buf[..len as usize].copy_from_slice(&bytes[..len as usize]);
     (buf, len)
 }
@@ -210,11 +214,15 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
         }
         BoardEvent::Faint { mon, .. } => {
             if let Some(player) = mon_player_num(mon) {
-                // The owner's display shows the FAINTED battle state; the
-                // OPPONENT gets the "<trainer>'s <mon> fainted!" dialogue.
+                // The owner's display carries the FAINTED battle state, and
+                // BOTH read the same line. Sending the dialogue to the
+                // opponent alone left the player whose mon just fell looking
+                // at an empty text box while the other seat was told what
+                // happened. Narration is shared context: every box on the
+                // panel says the same thing at the same time.
                 cmds.push(OledCmd::Faint { player });
                 let (text, len) = flash_buf(&event.description());
-                cmds.push(OledCmd::EventFlash { player: 3 - player, text, len });
+                cmds.push(OledCmd::EventFlash { player: 0, text, len });
             }
         }
         BoardEvent::SwitchIn { name, player_id, moves, speed, .. } => {
@@ -400,21 +408,6 @@ impl Screen<'_> {
         )
     }
 
-    /// True when this seat is showing the shared battle scene — the one view
-    /// both players read at once, drawn head-to-head across the whole panel.
-    /// Composition depends on it: the scene runs the seam between the halves
-    /// as one field, everything else keeps the hard divider.
-    pub fn is_scene(&self) -> bool {
-        matches!(
-            self,
-            Screen::EventText(_)
-                | Screen::SentOut { .. }
-                | Screen::MoveUsed { .. }
-                | Screen::Qr
-                | Screen::Tutorial(_)
-        )
-    }
-
     /// Short stable name for diagnostics: what a seat is looking at, without
     /// the payload. Every variant answers, so a new screen cannot be added
     /// without naming it. Both platforms log transitions with this, which is
@@ -529,13 +522,13 @@ enum View {
     OpponentMon,
     /// Switch-in flash: `sent_name`/`sent_len` hold the incoming mon's name;
     /// the caption reuses the flash buffer.
-    SentOut { name: [u8; 12], len: u8 },
+    SentOut { name: [u8; 16], len: u8 },
     /// Move-used flash: attacker name + move id; caption in the flash buffer.
-    MoveUsed { attacker: u8, name: [u8; 12], len: u8, move_id: [u8; 16], mlen: u8 },
+    MoveUsed { attacker: u8, name: [u8; 16], len: u8, move_id: [u8; 16], mlen: u8 },
 }
 
 struct Player {
-    name: [u8; 12],
+    name: [u8; 16],
     name_len: u8,
     hp_pct: u8,
     /// What the bar is currently showing. Chases `hp_pct` a few points per
@@ -563,7 +556,7 @@ struct Player {
 
 impl Player {
     fn new() -> Self {
-        let mut name = [b' '; 12];
+        let mut name = [b' '; 16];
         name[0] = b'-'; name[1] = b'-'; name[2] = b'-';
         Self {
             name,

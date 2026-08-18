@@ -16,11 +16,14 @@
 //! seats watch the same thing happen in the middle of the table.
 
 use embedded_graphics::{
+    draw_target::DrawTarget,
+    geometry::Point,
     pixelcolor::{raw::RawU16, Rgb565},
     prelude::RawData,
+    Pixel,
 };
 
-use crate::device_view::{DeviceFrame, BAND_H, BAND_TOP, BAND_W, DEV_W};
+use crate::device_view::DeviceFrame;
 use crate::move_sprites::{move_sprite, MOVE_SPRITE_SIDE};
 
 /// Progress is carried as thousandths, so the whole module is integer maths.
@@ -144,43 +147,16 @@ fn type_tint(move_id: &str) -> Rgb565 {
     crate::display_color::type_color_of(name)
 }
 
-/// Centre of a seat's mon on the composed panel.
-fn seat_centre(seat: u8) -> (i32, i32) {
-    let ox = if seat == 1 { 4 } else { DEV_W as i32 - BAND_W as i32 - 4 };
-    (ox + BAND_W as i32 / 2, BAND_TOP + BAND_H as i32 / 2)
-}
-
-/// How far to jolt a seat's mon this frame, for effects that land on it.
-///
-/// The mons are drawn before the effect, so the shake has to be handed to the
-/// compositor rather than applied here.
-pub fn band_shake(a: &Anim, seat: u8) -> (i32, i32) {
-    let target = 3 - a.attacker;
-    let hit = matches!(
-        a.effect,
-        Effect::Impact | Effect::Projectile { .. } | Effect::Beam | Effect::Strike | Effect::Wave
-    ) && seat == target
-        && a.t >= 550;
-    // A quake shakes the field, and a nova shakes everything on it.
-    let quake = matches!(a.effect, Effect::Quake | Effect::Nova) && a.t >= 350;
-    if !hit && !quake {
-        return (0, 0);
-    }
-    // Four frames of alternating offset, decaying to nothing.
-    let phase = (a.t / 40) % 2;
-    let mag = if a.t > 850 { 1 } else { 2 };
-    let dx = if phase == 0 { mag } else { -mag };
-    if quake {
-        (0, dx)
-    } else {
-        (dx, 0)
-    }
-}
-
-/// Draw this frame of the effect over the composed panel.
-pub fn draw(frame: &mut DeviceFrame, a: &Anim) {
-    let (ux, uy) = seat_centre(a.attacker);
-    let (tx, ty) = seat_centre(3 - a.attacker);
+/// Draw this frame of the effect into one seat's half, between the two mons
+/// as that seat sees them: `user` is where the attacker stands on this half,
+/// `target` where its victim does. Both halves play the same move at the same
+/// moment, each from its own point of view.
+pub fn draw<D>(d: &mut D, a: &Anim, user: (i32, i32), target: (i32, i32))
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    let (ux, uy) = user;
+    let (tx, ty) = target;
     match a.effect {
         Effect::Projectile { arc } => {
             // Travel for the first 60%, then land.
@@ -188,9 +164,9 @@ pub fn draw(frame: &mut DeviceFrame, a: &Anim) {
                 let p = (a.t * FULL) / 600;
                 let x = lerp(ux, tx, p);
                 let y = if arc { lerp(uy, uy - 26, arch(p)) } else { uy };
-                blit(frame, a, x, y, 1, false);
+                blit(d, a, x, y, 1, false);
             } else {
-                burst(frame, a, tx, ty, (a.t - 600) * FULL / 400);
+                burst(d, a, tx, ty, (a.t - 600) * FULL / 400);
             }
         }
         Effect::Beam => {
@@ -203,37 +179,37 @@ pub fn draw(frame: &mut DeviceFrame, a: &Anim) {
                     break;
                 }
                 let x = lerp(ux, tx, along);
-                blit(frame, a, x, uy, 1, i % 2 == 1);
+                blit(d, a, x, uy, 1, i % 2 == 1);
             }
             if a.t >= 600 {
-                burst(frame, a, tx, ty, (a.t - 600) * FULL / 400);
+                burst(d, a, tx, ty, (a.t - 600) * FULL / 400);
             }
         }
         Effect::Impact => {
             // No travel: the hit appears on the target and grows.
             if a.t >= 250 {
-                burst(frame, a, tx, ty, ((a.t - 250) * FULL) / 750);
+                burst(d, a, tx, ty, ((a.t - 250) * FULL) / 750);
             }
         }
         Effect::Aura => {
             // Rises off the user and thins out as it goes.
             let y = lerp(uy, uy - 34, a.t);
-            blit(frame, a, ux, y, if a.t < 500 { 2 } else { 1 }, a.t > 600);
+            blit(d, a, ux, y, if a.t < 500 { 2 } else { 1 }, a.t > 600);
         }
         Effect::Quake => {
             // Sits low between the two mons and jitters with the field.
             let mid = (ux + tx) / 2;
             let jolt = if (a.t / 40) % 2 == 0 { 2 } else { -2 };
-            blit(frame, a, mid + jolt, uy + 22, 2, a.t > 800);
+            blit(d, a, mid + jolt, uy + 22, 2, a.t > 800);
         }
         Effect::Strike => {
             // Falls onto the target from off the top of the field, then the
             // panel flashes on the landing.
             if a.t < 550 {
                 let p = (a.t * FULL) / 550;
-                blit(frame, a, tx, lerp(BAND_TOP - 40, ty, p), 1, false);
+                blit(d, a, tx, lerp(-40, ty, p), 1, false);
             } else {
-                burst(frame, a, tx, ty, (a.t - 550) * FULL / 450);
+                burst(d, a, tx, ty, (a.t - 550) * FULL / 450);
             }
         }
         Effect::Wave => {
@@ -241,30 +217,26 @@ pub fn draw(frame: &mut DeviceFrame, a: &Anim) {
             let front = lerp(ux, tx, (a.t.min(700) * FULL) / 700);
             for row in 0..3 {
                 let y = uy - 20 + row * 20;
-                blit(frame, a, front - row * 6, y, 1, row != 1);
+                blit(d, a, front - row * 6, y, 1, row != 1);
             }
             if a.t >= 700 {
-                burst(frame, a, tx, ty, (a.t - 700) * FULL / 300);
+                burst(d, a, tx, ty, (a.t - 700) * FULL / 300);
             }
         }
         Effect::Nova => {
             // Goes off where the user stands and takes the screen with it.
             let p = a.t.min(FULL);
             let scale = if p < 300 { 2 } else { 3 };
-            blit(frame, a, ux, uy, scale, p > 500);
+            blit(d, a, ux, uy, scale, p > 500);
         }
     }
 
-    // The heavy effects wash the panel out for a few frames. It is the
-    // cheapest thing on this hardware that reads as force.
-    let f = flash_amount(a);
-    if f > 0 {
-        white_out(frame, f);
-    }
 }
 
-/// How hard the panel is washed out this frame, 0..=16.
-fn flash_amount(a: &Anim) -> u32 {
+/// How hard the panel is washed out this frame, 0..=16. The wash is the
+/// one thing still applied to the WHOLE panel: both halves are watching the
+/// same move land, so the flash is the same fact on both.
+pub fn flash_amount(a: &Anim) -> u32 {
     let window = |from: u32, to: u32, peak: u32| -> u32 {
         if a.t < from || a.t >= to {
             return 0;
@@ -283,7 +255,7 @@ fn flash_amount(a: &Anim) -> u32 {
 }
 
 /// Blend the whole panel toward white by `amount`/16.
-fn white_out(frame: &mut DeviceFrame, amount: u32) {
+pub fn white_out(frame: &mut DeviceFrame, amount: u32) {
     let a = amount.min(16);
     for px in frame.px.iter_mut() {
         let r = ((*px >> 11) & 0x1F) as u32;
@@ -305,14 +277,20 @@ fn lerp(a: i32, b: i32, p: u32) -> i32 {
 }
 
 /// The landing: the icon at double size, thinning as it fades.
-fn burst(frame: &mut DeviceFrame, a: &Anim, x: i32, y: i32, p: u32) {
+fn burst<D>(d: &mut D, a: &Anim, x: i32, y: i32, p: u32)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
     let scale = if p < 500 { 2 } else { 3 };
-    blit(frame, a, x, y, scale, p > 450);
+    blit(d, a, x, y, scale, p > 450);
 }
 
 /// Blit the packed 1-bit icon centred on (cx, cy). `dither` drops every other
 /// pixel, which is how an effect fades without an alpha channel.
-fn blit(frame: &mut DeviceFrame, a: &Anim, cx: i32, cy: i32, scale: i32, dither: bool) {
+fn blit<D>(d: &mut D, a: &Anim, cx: i32, cy: i32, scale: i32, dither: bool)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
     let side = MOVE_SPRITE_SIDE as i32;
     let stride = (MOVE_SPRITE_SIDE / 8) as usize;
     let c = RawU16::from(a.color).into_inner();
@@ -333,7 +311,10 @@ fn blit(frame: &mut DeviceFrame, a: &Anim, cx: i32, cy: i32, scale: i32, dither:
                     if dither && (px + py) % 2 == 0 {
                         continue;
                     }
-                    frame.set(px as u32, py as u32, c);
+                    let _ = d.draw_iter(core::iter::once(Pixel(
+                        Point::new(px, py),
+                        Rgb565::from(RawU16::new(c)),
+                    )));
                 }
             }
         }
@@ -386,10 +367,28 @@ mod tests {
         assert_eq!(bespoke("tackle"), None, "the fallback still covers the ordinary moves");
     }
 
+    /// The effect travels from the attacker to its victim, whichever way
+    /// round the seat is looking at them. Each half plays the same move from
+    /// its own point of view, so the endpoints swap and nothing else does.
     #[test]
-    fn the_target_is_what_shakes() {
+    fn the_effect_runs_between_the_two_mons() {
+        use crate::device_view::{DeviceFrame, Region};
         let a = anim("tackle", 1, 900, 1000).unwrap();
-        assert_eq!(band_shake(&a, 1), (0, 0), "the attacker does not rock itself");
-        assert_ne!(band_shake(&a, 2), (0, 0), "the target does");
+        let (own, foe) = ((58, 80), (182, 44));
+        let mut frame = DeviceFrame::new();
+        let before = frame.px.iter().filter(|&&p| p != 0).count();
+        {
+            let mut r = Region::half(&mut frame, true, false);
+            draw(&mut r, &a, own, foe);
+        }
+        let after = frame.px.iter().filter(|&&p| p != 0).count();
+        assert!(after > before, "the effect drew nothing into the half");
+        // Everything it drew landed in THIS seat's half.
+        assert!(
+            frame.px[..(crate::device_view::DEV_W * crate::device_view::DEV_H / 2) as usize]
+                .iter()
+                .all(|&p| p == 0),
+            "the effect leaked across the seam",
+        );
     }
 }
