@@ -627,6 +627,18 @@ pub struct OledController {
     winner: u8,
 }
 
+/// A data-only update — HP, PP, the active mon's speed, the control scheme —
+/// only forces a redraw when the seat is actually looking at the battle
+/// screen. Four commands each spelled the rule out; a seat on a menu or a
+/// narration screen keeps what it is reading.
+fn redraw_if_on_battle(p: &Player, player: u8) -> OledRedraw {
+    if matches!(p.view, View::Battle) {
+        OledRedraw::for_player(player)
+    } else {
+        OledRedraw::None
+    }
+}
+
 impl OledController {
     pub fn new() -> Self {
         Self { p1: Player::new(), p2: Player::new(), winner: 0 }
@@ -715,11 +727,7 @@ impl OledController {
                 // between damage events. (HP renders on the LED strip.)
                 let p = self.player_mut(player);
                 p.hp_pct = pct;
-                if matches!(p.view, View::Battle) {
-                    OledRedraw::for_player(player)
-                } else {
-                    OledRedraw::None
-                }
+                redraw_if_on_battle(p, player)
             }
             OledCmd::ActiveMon { name, len, speed, .. } => {
                 // Data-only, like HpUpdate: the switch-in EventFlash (and the
@@ -732,21 +740,13 @@ impl OledController {
                 p.hp_pct = 100;
                 p.hp_shown = 100;
                 p.speed = speed;
-                if matches!(p.view, View::Battle) {
-                    OledRedraw::for_player(player)
-                } else {
-                    OledRedraw::None
-                }
+                redraw_if_on_battle(p, player)
             }
             OledCmd::MovesUpdate { moves, .. } => {
                 // Data-only update (PP refresh) — same rule as HpUpdate.
                 let p = self.player_mut(player);
                 p.moves = moves;
-                if matches!(p.view, View::Battle) {
-                    OledRedraw::for_player(player)
-                } else {
-                    OledRedraw::None
-                }
+                redraw_if_on_battle(p, player)
             }
             OledCmd::Faint { .. } => {
                 let p = self.player_mut(player);
@@ -830,11 +830,7 @@ impl OledController {
             OledCmd::SetControlMode { concealed, .. } => {
                 let p = self.player_mut(player);
                 p.concealed = concealed;
-                if matches!(p.view, View::Battle) {
-                    OledRedraw::for_player(player)
-                } else {
-                    OledRedraw::None
-                }
+                redraw_if_on_battle(p, player)
             }
             OledCmd::ShowQr => {
                 self.p1.view = View::Qr;
