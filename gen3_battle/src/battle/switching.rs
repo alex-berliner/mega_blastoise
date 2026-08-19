@@ -333,6 +333,7 @@ impl Battle {
             if let Some(orig) = self.sides[side].mon_mut().transform_backup.take() {
                 self.sides[side].mon_mut().moves = orig;
             }
+            self.sides[side].mon_mut().weight_override = None;
             // A borrowed ability goes back with everything else the sim
             // clears when a mon goes down.
             if let Some(born_with) = self.sides[side].mon_mut().ability_backup.take() {
@@ -406,6 +407,7 @@ impl Battle {
             if let Some(orig) = out.transform_backup.take() {
                 out.moves = orig;
             }
+            out.weight_override = None;
             if let Some((stats, types)) = out.transform_stats.take() {
                 out.atk = stats[0];
                 out.def = stats[1];

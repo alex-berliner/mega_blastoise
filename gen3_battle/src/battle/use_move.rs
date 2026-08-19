@@ -297,7 +297,20 @@ impl Battle {
         asleep_now: bool,
         events: &mut Vec<Event>,
     ) -> Option<MoveSlot> {
-        Some(if slot.entry.id == "metronome" {
+        // Whatever this resolves to, a Hidden Power with no type of its own
+        // is typed by the mon SWINGING it. A copy built from the move table
+        // (Mirror Move, Metronome, Sleep Talk, Assist) carries no IVs, and
+        // left untyped it came out Normal: a mirrored Hidden Power was
+        // resisted by a Rock type the real one goes straight through.
+        let own = self.sides[side].mon().hidden_power;
+        let typed = |slot: MoveSlot| -> MoveSlot {
+            if slot.entry.id == "hiddenpower" && slot.typed_as.is_none() {
+                MoveSlot { typed_as: Some(own), ..slot }
+            } else {
+                slot
+            }
+        };
+        Some(typed(if slot.entry.id == "metronome" {
             // The sim samples the num-sorted eligible list; pinned, that is
             // its first entry — Pound. Play keeps a real random pick.
             let called: &'static MoveEntry = match script {
@@ -398,15 +411,9 @@ impl Battle {
                 pp: 1,
                 typed_as: None,
             }
-        } else if slot.entry.id == "hiddenpower" && slot.typed_as.is_none() {
-            MoveSlot {
-                entry: slot.entry,
-                pp: slot.pp,
-                typed_as: Some(Type::Dark),
-            }
         } else {
             slot
-        })
+        }))
     }
 
     pub(super) fn use_move(
@@ -568,10 +575,7 @@ impl Battle {
         // victim's already-chosen status move is simply blocked (a lost
         // turn); a status move CHOSEN while taunted becomes Struggle —
         // typeless 50 power, a quarter recoil — as does running out of PP.
-        let status_movish = slot.entry.power == 0
-            && slot.entry.fixed.is_none()
-            && !slot.entry.ohko
-            && !matches!(slot.entry.id, "counter" | "mirrorcoat" | "spitup");
+        let status_movish = !slot.entry.damaging;
         // Struggle is substituted at REQUEST time: with no usable move,
         // `getMoves()` comes back empty and `chooseMove` queues Struggle, so
         // the dead slot is gone before anyone moves. Every mid-turn gate below
@@ -719,10 +723,19 @@ impl Battle {
         // mon holds once the move is done, not the one it started with. A
         // Covet that steals a Band locks the thief into Covet.
         self.committed_move[side] = Some(slot.entry.id);
-        events.push(Event::Used {
-            side: side as u8 + 1,
-            move_index: index,
-        });
+        // A releasing Bide announces nothing. The sim fires its unleash from
+        // inside `onBeforeMove` and returns false, which ABORTS the move, so
+        // no move line is ever logged for the turn the energy comes out; the
+        // `-end` and the hit are the whole record. Announcing it here gave
+        // the turn an extra action nobody in the sim took.
+        let releasing_bide = slot.entry.id == "bide"
+            && self.sides[side].mon().bide.is_some_and(|(_, left)| left == 0);
+        if !releasing_bide {
+            events.push(Event::Used {
+                side: side as u8 + 1,
+                move_index: index,
+            });
+        }
         // `moveUsed` lives in `runMove`, and a called move never goes through
         // it — gen 3's own `useMoveInner` writes `lastMoveUsed` and nothing
         // else. So a Magic Coat bounce and a Snatch both leave their user's
@@ -843,10 +856,14 @@ impl Battle {
                         side: side as u8 + 1,
                         move_index: index,
                     });
+                    // A mirrored Hidden Power is typed by the mon
+                    // MIRRORING it, off its own IVs — the copy is built from
+                    // the move table, which knows nothing about either mon.
                     MoveSlot {
                         entry: e,
                         pp: 1,
-                        typed_as: None,
+                        typed_as: (e.id == "hiddenpower")
+                            .then(|| self.sides[side].mon().hidden_power),
                     }
                 }
             }
@@ -946,26 +963,11 @@ impl Battle {
             self.sides[side].mon_mut().rolling = Some(0);
             self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
         }
-        if slot.entry.id == "bide" && self.sides[side].mon().bide.is_none() {
-            self.sides[side].mon_mut().bide = Some((0, 2));
-            self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
-            events.push(Event::Charging {
-                side: side as u8 + 1,
-            });
-            return;
-        }
-        // The unleash: double everything stored, typeless, at the foe.
-        if slot.entry.id == "bide" {
-            let (stored, _) = self.sides[side].mon().bide.unwrap();
-            self.sides[side].mon_mut().bide = None;
-            let amount = stored.saturating_mul(2);
-            if amount == 0 {
-                self.log_failed(side, events);
-                return;
-            }
-            self.flat_hit(side, foe, &slot, amount, Some(false), false, false, script, events);
-            return;
-        }
+        // The unleash: double everything stored, at the foe. NORMAL-typed in
+        // this era, not the typeless hit gen 1 threw — the sim builds its
+        // release as a Normal physical move, so it bounces off a Ghost and
+        // Wonder Guard turns it away like any other move that is not super
+        // effective. Aimed at a Shedinja it does nothing at all.
         // The thrash family locks in: the games roll 2..3 total attacks
         // (a script pins the floor). The lock starts on first use. Uproar
         // rides the same lock for its pinned 2 (2..5 in play) turns.
@@ -1026,30 +1028,6 @@ impl Battle {
             self.log_failed(side, events);
             return;
         }
-        // Present: the sim's random(10) picks heal or a power tier; the
-        // pinned roll routes to the secondary knob — floor is the HEAL
-        // branch (a quarter of the target's max, failing at full HP).
-        if slot.entry.id == "present" {
-            let heal_branch = match script {
-                Some(sc) => sc.secondary,
-                None => self.rng.below(10) < 2,
-            };
-            if heal_branch {
-                let target = self.sides[foe].mon_mut();
-                let amount = (target.max_hp / 4).max(1).min(target.max_hp - target.hp);
-                if amount == 0 {
-                    self.log_failed(side, events);
-                } else {
-                    target.hp += amount;
-                    events.push(Event::Healed {
-                        side: foe as u8 + 1,
-                        amount,
-                    });
-                }
-                return;
-            }
-        }
-
         // Brick Break smashes the target's screens before it hits, unless
         // the target is outright immune.
         if slot.entry.id == "brickbreak"
@@ -1148,6 +1126,52 @@ impl Battle {
                     }
                 }
             };
+        // The unleash rolls accuracy too: this era's release is built with
+        // `accuracy: 100` where the base game's is `true`, so the stored
+        // energy can whiff outright. Only a Bide already going gets here —
+        // the start sits just below, so on the opening turn there is
+        // nothing banked to unleash.
+        if slot.entry.id == "bide" && self.sides[side].mon().bide.is_some() {
+            let (stored, _) = self.sides[side].mon().bide.unwrap();
+            self.sides[side].mon_mut().bide = None;
+            if !hit {
+                return;
+            }
+            let amount = stored.saturating_mul(2);
+            if amount == 0 {
+                self.log_failed(side, events);
+                return;
+            }
+            let eff = crate::types::effectiveness_against(
+                slot.move_type(),
+                self.immunity_types(foe, slot.move_type()),
+            );
+            if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
+                self.no_effect(foe, events);
+                return;
+            }
+            self.flat_hit(side, foe, &slot, amount, Some(false), false, false, script, events);
+            return;
+        }
+        // Bide is started by its own accuracy roll, so it belongs BELOW the
+        // roll rather than up with the other locks. This era hands it a real
+        // 100 accuracy in place of the base game's never-miss, and a Bide
+        // that whiffs banks nothing: the sim logs the move, then a plain
+        // miss, and never adds the volatile.
+        if slot.entry.id == "bide" && self.sides[side].mon().bide.is_none() {
+            if !hit {
+                return;
+            }
+            // Three turns in total, the sim's `duration: 3`: the turn it is
+            // chosen, one silent turn, then the release on the third.
+            self.sides[side].mon_mut().bide = Some((0, 1));
+            self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
+            events.push(Event::Charging {
+                side: side as u8 + 1,
+            });
+            return;
+        }
+
         // A semi-invulnerable target (mid Fly/Dig/Bounce/Dive) dodges
         // everything aimed at it — no accuracy roll happens — except its
         // pierce moves, which land and double their power. Self-targeted
@@ -1378,25 +1402,100 @@ impl Battle {
             return;
         }
 
+        // Present is a gift or a hit, decided by one roll of ten: two of the
+        // ten hand the TARGET a quarter of its health back, the rest are 40,
+        // 80 or 120 base power. The sim draws this in `onModifyMove`, before
+        // anything else about the move is settled, so the draw happens here
+        // and the damage path reads what it landed on.
+        if slot.entry.id == "present" {
+            let roll = match script {
+                Some(s) => {
+                    // A pinned `random(10)` is its floor or its ceiling, so a
+                    // script only ever sees the gift or the 120 tier; the two
+                    // middle tiers belong to real play.
+                    if s.secondary {
+                        0
+                    } else {
+                        9
+                    }
+                }
+                None => self.rng.below(10) as u8,
+            };
+            self.present_bp = match roll {
+                0 | 1 => 0,
+                2..=5 => 40,
+                6..=8 => 80,
+                _ => 120,
+            };
+            if self.present_bp == 0 {
+                // The gift is still a Normal-typed move aimed at the foe, so
+                // a Ghost cannot be handed anything: the sim runs its
+                // immunity step before it ever looks at the heal.
+                if crate::types::effectiveness_against(
+                    slot.move_type(),
+                    self.immunity_types(foe, slot.move_type()),
+                ) == 0
+                {
+                    self.no_effect(foe, events);
+                    return;
+                }
+                // A Present that misses hands over nothing. This used to be
+                // decided ABOVE the accuracy roll, so the gift arrived even
+                // on a whiff.
+                if !hit {
+                    return;
+                }
+                // A Substitute eats the gift. The base sim marks the heal
+                // `infiltrates` so it slips past, but gen 4's Substitute
+                // drops that clause from its guard and gen 3 inherits it, so
+                // in this era the doll simply takes the present and the move
+                // is reported as having done nothing.
+                if self.sides[foe].mon().sub_hp > 0 {
+                    self.log_failed(side, events);
+                    return;
+                }
+                let target = self.sides[foe].mon_mut();
+                let amount = (target.max_hp / 4).max(1).min(target.max_hp - target.hp);
+                if amount == 0 {
+                    // Nothing to give a mon at full health, and the sim calls
+                    // that a failed move rather than a silent nothing.
+                    self.log_failed(side, events);
+                } else {
+                    target.hp += amount;
+                    events.push(Event::Healed {
+                        side: foe as u8 + 1,
+                        amount,
+                    });
+                }
+                return;
+            }
+        }
+
         // Endeavor drags the target's HP down to the user's — through the
         // chart, never a substitute, and failing upward.
         if slot.entry.id == "endeavor" {
             if !hit {
                 return;
             }
+            // Wonder Guard turns away anything that is not super effective,
+            // which for a flat-damage move means everything neutral too: the
+            // sim's `onTryHit` asks `runEffectiveness(move) <= 0` for every
+            // non-status move, whatever computes its damage.
             if crate::types::effectiveness_against(
                 slot.move_type(),
                 self.immunity_types(foe, slot.move_type()),
             ) == 0
+                || self.wonder_guard_blocks(foe, slot.move_type())
             {
                 self.no_effect(foe, events);
                 return;
             }
             let (uhp, thp) = (self.sides[side].mon().hp, self.sides[foe].mon().hp);
             if self.sides[foe].mon().sub_hp > 0 || uhp >= thp {
-                if self.sides[foe].mon().sub_hp == 0 {
-                    self.note_hit_by(side, foe, slot.entry.id);
-                }
+                // Failing upward does NOT write the attacked-by book. The
+                // sim rejects the target in `onTryImmunity`, which runs
+                // before the hit loop, so `gotAttacked` is never reached and
+                // a Mirror Move aimed back finds nothing to copy.
                 self.log_failed(side, events);
                 return;
             }
@@ -1418,31 +1517,39 @@ impl Battle {
             return;
         }
 
-        // Psywave's spread collapses the same way: level/2 or level*3/2.
+        // Psywave draws a number from 50 to 150 and takes that percentage of
+        // the user's level: `random(50, 151) * level / 100`. It is a flat
+        // spread over 101 values, NOT the eleven ten-point buckets gen 1
+        // rolled, and a script pins it to either end.
         if slot.entry.id == "psywave" {
             if !hit {
                 return;
             }
+            // Wonder Guard turns away anything that is not super effective,
+            // which for a flat-damage move means everything neutral too: the
+            // sim's `onTryHit` asks `runEffectiveness(move) <= 0` for every
+            // non-status move, whatever computes its damage.
             if crate::types::effectiveness_against(
                 slot.move_type(),
                 self.immunity_types(foe, slot.move_type()),
             ) == 0
+                || self.wonder_guard_blocks(foe, slot.move_type())
             {
                 self.no_effect(foe, events);
                 return;
             }
             let level = self.sides[side].mon().level as u32;
-            let i = match script {
+            let roll = match script {
                 Some(s) => {
                     if s.secondary {
-                        0
+                        50
                     } else {
-                        10
+                        150
                     }
                 }
-                None => self.rng.below(11),
+                None => 50 + self.rng.below(101),
             };
-            let amount = ((level * (10 * i as u32 + 50)) / 100).max(1) as u16;
+            let amount = ((level * roll) / 100).max(1) as u16;
             self.flat_hit(side, foe, &slot, amount, Some(true), true, true, script, events);
             return;
         }
@@ -1472,7 +1579,7 @@ impl Battle {
                 slot.move_type(),
                 self.immunity_types(foe, slot.move_type()),
             );
-            if eff == 0 {
+            if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
                 self.no_effect(foe, events);
                 return;
             }
@@ -2119,12 +2226,12 @@ impl Battle {
             // Conditional powers the era defines by id.
             let base_power = match slot.entry.id {
                 "triplekick" => 10 * (hit_i + 1),
-                "present" => 120,
+                "present" => self.present_bp,
                 "beatup" => 10,
                 "pursuit" if self.pursuing => slot.entry.power * 2,
                 "lowkick" => {
                     // Weight tiers, in hectograms.
-                    let w = self.sides[foe].mon().species.weight_hg;
+                    let w = self.sides[foe].mon().weight_hg();
                     match w {
                         0..=99 => 20,
                         100..=249 => 40,
@@ -2314,9 +2421,20 @@ impl Battle {
                     });
                 }
             } else {
-                match m.category() {
-                    crate::types::Category::Physical => self.taken_physical[foe] = amount,
-                    _ => self.taken_special[foe] = amount,
+                // Which book a hit goes in is the CATEGORY, except that
+                // this era names Hidden Power in both handlers and puts it in
+                // the physical one whatever type it came out as: gen 3's
+                // Counter reads `category === 'Physical' || id ===
+                // 'hiddenpower'`, and its Mirror Coat reads `category ===
+                // 'Special' && id !== 'hiddenpower'`. So a Dark Hidden Power
+                // is answered by Counter and ignored by Mirror Coat, which is
+                // the opposite of what its type says.
+                let physical = slot.entry.id == "hiddenpower"
+                    || m.category() == crate::types::Category::Physical;
+                if physical {
+                    self.taken_physical[foe] = amount;
+                } else {
+                    self.taken_special[foe] = amount;
                 }
                 events.push(Event::Damage {
                     side: foe as u8 + 1,
@@ -2648,7 +2766,16 @@ impl Battle {
     /// after a move that executes. The one exception the handler spells out:
     /// an aborted CHARGE keeps the charge (a paralysed re-Charge loses
     /// nothing). Charge has no duration; only these two events end it.
+    /// A move that never happened ends a Bide. The sim hangs
+    /// `onMoveAborted` off the volatile, so anything that stops the user
+    /// acting — sleep, freeze, a flinch, full paralysis, a confused self-hit
+    /// — drops the stored energy silently and the mon starts over next turn.
+    /// Called from the same places that clear the other locks.
     fn abort_drops_charge(&mut self, side: usize, index: usize) {
+        if self.sides[side].mon().bide.is_some() {
+            self.sides[side].mon_mut().bide = None;
+            self.sides[side].mon_mut().locked_move = None;
+        }
         let acting = self.acting_slot(side, index);
         let keeps = self.sides[side]
             .mon()

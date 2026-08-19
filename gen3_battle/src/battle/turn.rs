@@ -839,10 +839,7 @@ impl Battle {
         let Some(slot) = mon.moves.get(i) else {
             return false;
         };
-        let status_movish = slot.entry.power == 0
-            && slot.entry.fixed.is_none()
-            && !slot.entry.ohko
-            && !matches!(slot.entry.id, "counter" | "mirrorcoat" | "spitup");
+        let status_movish = !slot.entry.damaging;
         let foe_mon = self.sides[1 - side].mon();
         slot.pp == 0
             // A Choice lock greys out every other slot at REQUEST time, which

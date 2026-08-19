@@ -138,6 +138,40 @@ pub struct Invest {
     pub ev: u8,
 }
 
+/// Hidden Power's type, which in this era is a property of the HOLDER: the
+/// low bit of each of the six IVs, read as a number, picks one of fifteen
+/// types. Every IV in this engine is the same value, so the whole number is
+/// either 63 (odd IVs) or 0 (even), landing on Dark or Fighting.
+///
+/// It belongs on the move slot rather than being worked out at swing time,
+/// because everything that reads a move's type has to see the same answer:
+/// Conversion 2 picking a type that resists it, Counter and Mirror Coat
+/// deciding whether it was physical, the badge on the move menu.
+pub fn hidden_power_type(inv: Invest) -> crate::types::Type {
+    use crate::types::Type;
+    const ORDER: [Type; 16] = [
+        Type::Fighting,
+        Type::Flying,
+        Type::Poison,
+        Type::Ground,
+        Type::Rock,
+        Type::Bug,
+        Type::Ghost,
+        Type::Steel,
+        Type::Fire,
+        Type::Water,
+        Type::Grass,
+        Type::Electric,
+        Type::Psychic,
+        Type::Ice,
+        Type::Dragon,
+        Type::Dark,
+    ];
+    let bit = (inv.iv & 1) as u32;
+    let n = bit + 2 * bit + 4 * bit + 8 * bit + 16 * bit + 32 * bit;
+    ORDER[((n * 15) / 63) as usize]
+}
+
 /// HP at `level`. HP takes no nature and uses its own tail.
 ///
 /// A base HP of 1 IS 1 at every level and investment: that is Shedinja's

@@ -576,12 +576,21 @@ impl Battle {
             StatusAction::Conversion => {
                 // Only a type the user does not already have is eligible;
                 // with no eligible move type, Conversion fails.
+                //
+                // The type read here is the one in the TABLE, not the one the
+                // move would actually attack with: the sim asks
+                // `dex.moves.get(id).type`, so a Hidden Power offers Normal
+                // however its holder's IVs have typed it. Conversion 2 is the
+                // opposite — it reads the active move — and the two must not
+                // be made to agree. Curse is skipped by name; in this era it
+                // is the one '???'-typed move.
                 let cur = self.sides[side].mon().types();
                 let ty = self.sides[side]
                     .mon()
                     .moves
                     .iter()
-                    .map(|m| m.move_type())
+                    .filter(|m| m.entry.id != "curse")
+                    .map(|m| m.entry.move_type)
                     .find(|&t| t != Type::None && t != cur.0 && t != cur.1);
                 match ty {
                     Some(t) => {
@@ -635,6 +644,9 @@ impl Battle {
                     mon.acc_stage = foe_mon.acc_stage;
                     mon.eva_stage = foe_mon.eva_stage;
                     mon.type_override = Some(foe_mon.types());
+                    // The species comes across too, and with it the weight
+                    // Low Kick reads off the target.
+                    mon.weight_override = Some(foe_mon.weight_hg());
                     // The copy is complete enough to include the ability,
                     // which is how a paralysed mon that copies a Limber one
                     // walks away cured.

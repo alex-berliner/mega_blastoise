@@ -92,6 +92,11 @@ impl MoveSlot {
 #[derive(Clone, Debug)]
 pub struct Mon {
     pub species: &'static SpeciesEntry,
+    /// The type this mon's Hidden Power comes out as, from its IVs. Kept on
+    /// the MON because a Hidden Power copied by Mirror Move, Metronome or
+    /// Sleep Talk is typed by whoever is swinging it, and a copy built from
+    /// the move table alone has no IVs to ask.
+    pub hidden_power: Type,
     pub level: u8,
     pub nature: Nature,
     pub hp: u16,
@@ -189,6 +194,11 @@ pub struct Mon {
     /// Transform overlay: the pre-transform moveset, restored when the
     /// copy ends (faint or switch) — the corpse shows its real moves.
     pub transform_backup: Option<Vec<MoveSlot>>,
+    /// The weight this mon is CURRENTLY carrying, when a Transform has made
+    /// it something else. The sim copies the whole species, so a Rhyhorn
+    /// wearing a Snubbull weighs what a Snubbull weighs — which is the whole
+    /// of Low Kick's power.
+    pub weight_override: Option<u16>,
     /// What Transform borrowed besides the move set: the five battle stats
     /// and the type line. The sim keeps these in `baseStoredStats` and
     /// restores them with the volatile, so a transformed mon that leaves the
@@ -399,6 +409,7 @@ impl Mon {
         };
         Some(Mon {
             species,
+            hidden_power: crate::stats::hidden_power_type(inv),
             gender,
             item_knocked_off: false,
             attracted_by: None,
@@ -414,7 +425,16 @@ impl Mon {
             stages: [0; 5],
             acc_stage: 0,
             eva_stage: 0,
-            moves: moves.iter().filter_map(|m| MoveSlot::new(m)).collect(),
+            moves: moves
+                .iter()
+                .filter_map(|m| MoveSlot::new(m))
+                .map(|mut s| {
+                    if s.entry.id == "hiddenpower" {
+                        s.typed_as = Some(crate::stats::hidden_power_type(inv));
+                    }
+                    s
+                })
+                .collect(),
             status: None,
             toxic_n: 0,
             sleep_n: 0,
@@ -440,6 +460,7 @@ impl Mon {
             last_missed: false,
             mimic_backup: None,
             transform_backup: None,
+            weight_override: None,
             transform_stats: None,
             bide: None,
             rolling: None,
@@ -577,6 +598,12 @@ impl Mon {
 
     pub fn types(&self) -> (Type, Type) {
         self.type_override.unwrap_or(self.species.types)
+    }
+
+    /// What this mon weighs right now, in hectograms. Only Low Kick asks,
+    /// and only a Transform can change the answer.
+    pub fn weight_hg(&self) -> u16 {
+        self.weight_override.unwrap_or(self.species.weight_hg)
     }
 
     fn stage(&self, s: Stat) -> i8 {
@@ -999,6 +1026,10 @@ pub struct Battle {
     pub player_picks_replacement: bool,
     /// Set per side when a faint is waiting on that answer.
     pub(crate) awaiting_replacement: [bool; 2],
+    /// Present's roll for this use, in base power: the games draw one number
+    /// for four outcomes, so the draw happens once and both the gift branch
+    /// and the damage read the same answer.
+    pub(crate) present_bp: u16,
     /// A move already thrown back once. The sim's `hasBounced` — a Magic
     /// Coat cannot volley against another Magic Coat.
     bounced: bool,
@@ -1107,6 +1138,7 @@ impl Battle {
             forced_entry: None,
             calling: false,
             pending_call: None,
+            present_bp: 120,
             player_picks_replacement: false,
             awaiting_replacement: [false; 2],
             bounced: false,
@@ -1285,14 +1317,12 @@ impl Battle {
         (0..mon.moves.len())
             .filter(|&i| {
                 let slot = &mon.moves[i];
-                // "Status move" is the CATEGORY, not zero base power:
-                // Dragon Rage, Seismic Toss, Night Shade, Psywave, the OHKOs,
-                // Counter, Return and Hidden Power all sit at power 0 and
-                // Taunt lets them through.
-                let status_move = slot.entry.power == 0
-                    && slot.entry.fixed.is_none()
-                    && !slot.entry.ohko
-                    && !matches!(slot.entry.id, "counter" | "mirrorcoat" | "spitup");
+                // "Status move" is the CATEGORY. Dragon Rage, Seismic Toss,
+                // Night Shade, Psywave, the OHKOs, Counter, Return and Hidden
+                // Power all sit at power 0 and Taunt lets every one of them
+                // through; reading the power column instead had Taunt
+                // blocking a Hidden Power the sim was happy to fire.
+                let status_move = !slot.entry.damaging;
                 slot.pp > 0
                     && !sealed(slot.entry.id)
                     && mon.disabled_slot != Some(i as u8)

@@ -265,6 +265,13 @@ function scriptRandomness(battle, script) {
       // bottom, otherwise the top.
       return ((battle.__act ?? battle.__cur).secondary) ? 0 : Math.max(0, a - 1);
     }
+    // Gen 3 Psywave's random(50, 151): the secondary knob picks the floor
+    // (50) or the ceiling (150), so a sweep sees both ends of the spread.
+    // Without this it fell through to the two-arg minimum below, which meant
+    // the sim only ever rolled 50 and the top of the range went untested.
+    if (a === 50 && b === 151) {
+      return ((battle.__act ?? battle.__cur).secondary) ? 50 : 150;
+    }
     if (a === 1 && b > 9) {
       // Gen 1 Psywave's random(1, 1.5*level): the secondary knob picks the
       // floor (1) or the ceiling (b-1). Sleep turns are random(1,8) and

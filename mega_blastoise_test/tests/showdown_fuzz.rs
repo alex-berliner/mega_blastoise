@@ -193,7 +193,16 @@ fn vanilla_moves(gen: u8, multihit: bool, ours: impl Fn(&str) -> bool) -> Vec<(S
     // a backlog of moves that had never been fuzzed at all, and a sweep that
     // fails on all of them at once says nothing about any one of them.
     let only = std::env::var("FUZZ_ONLY").unwrap_or_default();
-    let only: Vec<&str> = only.split(',').filter(|s| !s.is_empty()).collect();
+    let mut only: Vec<&str> = only.split(',').filter(|s| !s.is_empty()).collect();
+    // Two copies of one move is not a legal set — the sim folds them into a
+    // single slot with shared PP — so a narrowed pool always keeps two
+    // ordinary moves to fill the other slot with. TWO, not one: the id under
+    // test may not exist in this generation, and a pool of one move sends
+    // the team builder's search for a second, distinct move round forever.
+    if !only.is_empty() {
+        only.push("tackle");
+        only.push("scratch");
+    }
     let results = showdown(&json!([{"kind": "movelist", "gen": gen}]));
     results[0]["moves"]
         .as_array()
@@ -441,7 +450,16 @@ fn fuzz_gen3_single_hits() {
             })
             .unwrap_or(false)
     });
-    assert!(moves.len() > 80, "gen3 vanilla pool too small: {}", moves.len());
+    assert!(
+        moves.len() > 80 || std::env::var("FUZZ_ONLY").is_ok(),
+        "gen3 vanilla pool too small: {}",
+        moves.len()
+    );
+    // A narrowed pool (FUZZ_ONLY) can leave a suite with nothing of its own
+    // generation to fuzz; that suite has nothing to say, so it stands down.
+    if moves.is_empty() {
+        return;
+    }
 
     let mut fz = Fuzz::new("gen3-single-hits");
     let natures: Vec<Nature> = (0..25).map(Nature::from_index).collect();
@@ -607,6 +625,9 @@ fn fuzz_gen3_turns() {
     });
     let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
 
+    if moves.is_empty() {
+        return;
+    }
     let mut fz = Fuzz::new("gen3-turns");
     let mut scenarios = Vec::new();
     let mut cases = Vec::new();
@@ -869,7 +890,16 @@ fn fuzz_gen1_single_hits() {
             })
             .unwrap_or(false)
     });
-    assert!(moves.len() > 30, "gen1 vanilla pool too small: {}", moves.len());
+    assert!(
+        moves.len() > 30 || std::env::var("FUZZ_ONLY").is_ok(),
+        "gen1 vanilla pool too small: {}",
+        moves.len()
+    );
+    // A narrowed pool (FUZZ_ONLY) can leave a suite with nothing of its own
+    // generation to fuzz; that suite has nothing to say, so it stands down.
+    if moves.is_empty() {
+        return;
+    }
 
     // Sample species from our own dex ids via the randbat pool's species and
     // the classic 151 by trying dex ids straight off Showdown's list is
@@ -950,7 +980,16 @@ fn fuzz_gen1_turns() {
     use mega_blastoise_core::{battle_options_with_seed, demo_engine_opts, FlashDataStore};
 
     let moves = vanilla_moves(1, false, |id| gen1_battle::move_by_id(id).is_some());
-    assert!(moves.len() > 30, "gen1 turn pool too small: {}", moves.len());
+    assert!(
+        moves.len() > 30 || std::env::var("FUZZ_ONLY").is_ok(),
+        "gen1 turn pool too small: {}",
+        moves.len()
+    );
+    // A narrowed pool (FUZZ_ONLY) can leave a suite with nothing of its own
+    // generation to fuzz; that suite has nothing to say, so it stands down.
+    if moves.is_empty() {
+        return;
+    }
     let species: Vec<&'static str> = gen1_battle::SPECIES.iter().map(|s| s.id).collect();
 
     let mut fz = Fuzz::new("gen1-turns");
@@ -1220,6 +1259,9 @@ fn fuzz_gen3_battles() {
     });
     let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
 
+    if moves.is_empty() {
+        return;
+    }
     let mut fz = Fuzz::new("gen3-battles");
     let inv = Invest { iv: 31, ev: 0 };
     let statuses: [Option<&str>; 7] =
@@ -1567,7 +1609,16 @@ fn fuzz_gen1_battles() {
 
     let moves = vanilla_moves(1, true, |id| gen1_battle::move_by_id(id).is_some());
     let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
-    assert!(moves.len() > 30, "gen1 battle pool too small: {}", moves.len());
+    assert!(
+        moves.len() > 30 || std::env::var("FUZZ_ONLY").is_ok(),
+        "gen1 battle pool too small: {}",
+        moves.len()
+    );
+    // A narrowed pool (FUZZ_ONLY) can leave a suite with nothing of its own
+    // generation to fuzz; that suite has nothing to say, so it stands down.
+    if moves.is_empty() {
+        return;
+    }
     let species: Vec<&'static str> = gen1_battle::SPECIES.iter().map(|s| s.id).collect();
 
     let mut fz = Fuzz::new("gen1-battles");
