@@ -1857,12 +1857,174 @@ def power_diagram_svg():
     return "\n".join(o)
 
 
+
+# ------------------------------------------------------- the showpiece view
+
+ISO_COS, ISO_SIN = 0.866, 0.5
+
+
+def exploded_svg(scale=2.5, spread=150):
+    """An exploded isometric of the whole build, one plate per layer.
+
+    The layered preview stacks everything in one plane, which is right for
+    working from and muddy to look at. This pulls the same geometry apart
+    along the vertical so each layer can be seen whole: cell underneath,
+    copper, board, wires, parts, display on its standoffs.
+    """
+    plates = ["cell", "copper", "board", "wires", "parts", "display"]
+    OX = 330.0
+    # the stack grows upward from the bottom plate, so the origin sits low
+    OY = 120.0 + spread * (len(plates) - 1)
+    W = 1000
+    H = int(OY + (BOARD_W + BOARD_H) * ISO_SIN * scale + 110)
+    o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
+         f'viewBox="0 0 {W} {H}" font-family="monospace">',
+         f'<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">'
+         f'<stop offset="0" stop-color="#11161d"/>'
+         f'<stop offset="1" stop-color="#05070a"/></linearGradient></defs>',
+         f'<rect width="{W}" height="{H}" fill="url(#bg)"/>']
+
+    def iso(bx, by, lift):
+        """board mm -> screen px, lifted by a plate's explode height"""
+        return (OX + (bx - by) * ISO_COS * scale,
+                OY + (bx + by) * ISO_SIN * scale - lift)
+
+    def poly(pts, fill, stroke=None, sw=1.0, op=1.0):
+        d = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        st = f' stroke="{stroke}" stroke-width="{sw}"' if stroke else ""
+        o.append(f'<polygon points="{d}" fill="{fill}" fill-opacity="{op}"{st}/>')
+
+    def slab(x, y, w, h, lift, top, side, thick=6, op=1.0):
+        """a rectangle in board space, drawn as a solid with thickness"""
+        a, b = iso(x, y, lift), iso(x + w, y, lift)
+        c, d = iso(x + w, y + h, lift), iso(x, y + h, lift)
+        poly([(b[0], b[1] + thick), (c[0], c[1] + thick), c, b], side, op=op)
+        poly([(c[0], c[1] + thick), (d[0], d[1] + thick), d, c], side, op=op)
+        poly([a, b, c, d], top, "#0d1117", 0.8, op)
+        return a, b, c, d
+
+    def line(p, q, color, sw=2.0, op=1.0):
+        o.append(f'<line x1="{p[0]:.1f}" y1="{p[1]:.1f}" x2="{q[0]:.1f}" '
+                 f'y2="{q[1]:.1f}" stroke="{color}" stroke-width="{sw}" '
+                 f'stroke-opacity="{op}" stroke-linecap="round"/>')
+
+    def label(lift, title, sub):
+        x, y = iso(BOARD_W, 0, lift)
+        o.append(f'<line x1="{x + 6:.1f}" y1="{y:.1f}" x2="{x + 60:.1f}" '
+                 f'y2="{y - 16:.1f}" stroke="#30363d" stroke-width="1"/>')
+        o.append(f'<text x="{x + 66:.1f}" y="{y - 12:.1f}" fill="#e6edf3" '
+                 f'font-size="14">{title}</text>')
+        o.append(f'<text x="{x + 66:.1f}" y="{y + 3:.1f}" fill="#7d8590" '
+                 f'font-size="10">{sub}</text>')
+
+    lift = {name: i * spread for i, name in enumerate(plates)}
+
+    # ---- cell, underneath everything -------------------------------------
+    bx, by, bw, bh = battery_outline()
+    slab(bx, by, bw, bh, lift["cell"], "#1d3b26", "#12251a", 10)
+    label(lift["cell"], "LiPo cell", "on the back, foam taped")
+
+    # ---- copper: the strips and their cuts -------------------------------
+    z = lift["copper"]
+    slab(0, 0, BOARD_W, BOARD_H, z, "#0f1318", "#080b0f", 4, op=0.65)
+    for col, r0, r1 in strip_segments():
+        c = STRIP_COLORS[(col - 1) % len(STRIP_COLORS)]
+        line(iso(*hole(col, r0), z), iso(*hole(col, r1), z), c, 2.2, 0.95)
+    for col, row in CUTS:
+        x, y = iso(*hole(col, row), z)
+        o.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.2" fill="none" '
+                 f'stroke="#ff4d4d" stroke-width="1.6"/>')
+    label(z, "Copper", f"{len(list(strip_segments()))} segments, "
+                       f"{len(CUTS)} cuts")
+
+    # ---- the board itself -------------------------------------------------
+    z = lift["board"]
+    slab(0, 0, BOARD_W, BOARD_H, z, "#2a2416", "#1a1610", 5)
+    for col in range(1, COLS + 1):
+        for row in range(1, ROWS + 1):
+            x, y = iso(*hole(col, row), z)
+            o.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="0.9" '
+                     f'fill="#0d1117" fill-opacity="0.8"/>')
+    label(z, "Stripboard", f"{COLS} x {ROWS} holes, {BOARD_W:.0f} x "
+                           f"{BOARD_H:.0f} mm")
+
+    # ---- fly wires --------------------------------------------------------
+    z = lift["wires"]
+    a, b, c, d = slab(0, 0, BOARD_W, BOARD_H, z, "#12161c", "#0b0e12", 3, op=0.35)
+    poly([a, b, c, d], "none", "#2f3844", 1.0)
+    for name, pts in JUMPERS:
+        c = wire_color(name)[0]
+        for a, b in zip(pts, pts[1:]):
+            line(iso(*hole(*a), z), iso(*hole(*b), z), c, 2.2)
+        for p in pts:
+            x, y = iso(*hole(*p), z)
+            o.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.4" fill="{c}"/>')
+    label(z, "Fly wires", f"{len(JUMPERS)} runs, 354 mm of wire")
+
+    # ---- parts -------------------------------------------------------------
+    z = lift["parts"]
+    a, b, c, d = slab(0, 0, BOARD_W, BOARD_H, z, "#12161c", "#0b0e12", 3, op=0.28)
+    poly([a, b, c, d], "none", "#2f3844", 1.0)
+    # the Pico
+    pb = part_body("U1")
+    slab(pb[0], pb[1], pb[2], pb[3], z, "#1b2b3d", "#101b27", 9)
+    px_, py_ = iso(pb[0] + pb[2] / 2, pb[1] + pb[3] / 2, z)
+    o.append(f'<text x="{px_:.1f}" y="{py_:.1f}" fill="#9fd0ff" font-size="10" '
+             f'text-anchor="middle">Pico 2</text>')
+    # the charger
+    cb = charger_outline()
+    slab(cb[0], cb[1], cb[2], cb[3], z, "#4a3115", "#2e1e0d", 8)
+    cx_, cy_ = iso(cb[0] + cb[2] / 2, cb[1] + cb[3] / 2, z)
+    o.append(f'<text x="{cx_:.1f}" y="{cy_:.1f}" fill="#ffb877" font-size="9" '
+             f'text-anchor="middle">TP4056</text>')
+    # switches, with caps
+    for cross, (a, b) in CROSSES.items():
+        for cm, (col, row) in cross_switches(a, b).items():
+            hx, hy = hole(col + 1.5, row + 1)
+            slab(hx - 3, hy - 3, 6, 6, z, "#4a3f1c", "#2c2511", 5)
+            cx2, cy2 = iso(hx, hy, z + 6)
+            o.append(f'<ellipse cx="{cx2:.1f}" cy="{cy2:.1f}" '
+                     f'rx="{CAP_DIA_MM / 2 * scale * 1.15:.1f}" '
+                     f'ry="{CAP_DIA_MM / 2 * scale * 0.62:.1f}" fill="#d29922" '
+                     f'stroke="#8a6410" stroke-width="1"/>')
+    # headers and passives
+    for ref in ("J1", "BT1", "J2", "J3", "SW17", "D1", "R1", "R2", "C1"):
+        bod = part_body(ref)
+        if bod:
+            slab(bod[0], bod[1], bod[2], bod[3], z, "#3a4048", "#23272c", 4)
+    label(z, "Components", "Pico, 16 switches, charger, power train")
+
+    # ---- display -----------------------------------------------------------
+    z = lift["display"]
+    dx, dy, dw, dh = display_outline()
+    slab(dx, dy, dw, dh, z, "#12233a", "#0b1626", 10)
+    ax, ay = iso(dx + dw / 2, dy + dh / 2, z)
+    o.append(f'<text x="{ax:.1f}" y="{ay:.1f}" fill="#79c0ff" font-size="12" '
+             f'text-anchor="middle">ST7796 320x480</text>')
+    for c, r in STANDOFF_HOLES:
+        sx0, sy0 = iso(*hole(c, r), lift["parts"])
+        sx1, sy1 = iso(*hole(c, r), z)
+        line((sx0, sy0), (sx1, sy1), "#a371f7", 2.0, 0.7)
+    label(z, "Display", "on four adhesive standoffs")
+
+    o.append(f'<text x="34" y="46" fill="#e6edf3" font-size="22">'
+             f'mega blastoise</text>')
+    o.append(f'<text x="34" y="68" fill="#7d8590" font-size="12">'
+             f'single-screen stripboard, exploded</text>')
+    o.append(f'<text x="34" y="{H - 26}" fill="#4d5560" font-size="10">'
+             f'{COLS}x{ROWS} stripboard . 16 buttons, no matrix . '
+             f'{len(CUTS)} cuts . {len(JUMPERS)} wires</text>')
+    o.append("</svg>")
+    return "\n".join(o)
+
+
 def main():
     (HERE / "BUILD.md").write_text(build_md())
     (HERE / "ASSEMBLY.md").write_text(assembly_md())
     for stem, names in STAGE_VIEWS.items():
         (HERE / f"{stem}.svg").write_text(stage_svg(names))
     (HERE / "power_diagram.svg").write_text(power_diagram_svg())
+    (HERE / "exploded.svg").write_text(exploded_svg())
     (HERE / "preview.svg").write_text(svg())
     (HERE / "BOM.csv").write_text(bom_csv())
     (HERE / "cut_template.svg").write_text(cut_template_svg())
