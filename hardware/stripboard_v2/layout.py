@@ -1730,11 +1730,139 @@ def assembly_md():
     return "\n".join(L)
 
 
+
+def power_diagram_svg():
+    """The power train drawn as a circuit, not as a board.
+
+    Same nets as the layout, but every connection is a line you can follow
+    instead of two pads that happen to share a strip. Hole references sit
+    beside each connection so it maps back to the board. This is a reading
+    aid; the board and the schematic remain the authority.
+    """
+    W, H = 1120, 670
+    o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
+         f'viewBox="0 0 {W} {H}" font-family="monospace">',
+         f'<rect width="{W}" height="{H}" fill="#0d1117"/>']
+
+    def esc(t):
+        return (t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+    def txt(x, y, t, fill="#e6edf3", size=11, anchor="middle"):
+        o.append(f'<text x="{x}" y="{y}" fill="{fill}" font-size="{size}" '
+                 f'text-anchor="{anchor}">{esc(t)}</text>')
+
+    def box(x, y, w, h, title, sub="", fill="#161b22", stroke="#8b949e"):
+        o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="5" '
+                 f'fill="{fill}" stroke="{stroke}" stroke-width="1.8"/>')
+        txt(x + w / 2, y + (h / 2 + 4 if not sub else h / 2 - 2), title, size=13)
+        if sub:
+            txt(x + w / 2, y + h / 2 + 14, sub, "#8b949e", 9)
+
+    def wire(pts, color="#ff5555", label="", holes="", dash="", lpos=None):
+        d = " ".join(("M" if i == 0 else "L") + f"{x},{y}"
+                     for i, (x, y) in enumerate(pts))
+        da = f' stroke-dasharray="{dash}"' if dash else ""
+        o.append(f'<path d="{d}" stroke="{color}" stroke-width="2.4" '
+                 f'fill="none"{da}/>')
+        lx, ly = lpos if lpos else pts[len(pts) // 2]
+        if label:
+            txt(lx, ly - 8, label, color, 11)
+        if holes:
+            txt(lx, ly + 15, holes, "#6e7681", 9)
+
+    def dot(x, y, color="#ff5555"):
+        o.append(f'<circle cx="{x}" cy="{y}" r="4.5" fill="{color}"/>')
+
+    txt(20, 32, "Power train, drawn as a circuit", "#e6edf3", 17, "start")
+    txt(20, 52, "Grey text is the board hole each connection lands in.",
+        "#8b949e", 11, "start")
+    txt(20, 68, "Red = supply, white = ground, orange = the sense tap.",
+        "#8b949e", 11, "start")
+
+    GND = 580
+
+    # sources
+    box(30, 95, 110, 44, "USB-C", "5 V in")
+    box(30, 215, 110, 56, "LiPo cell", "3.0 - 4.2 V")
+    box(200, 95, 180, 180, "TP4056", "charger + DW01 protection",
+        fill="#3d2a12", stroke="#f0883e")
+    txt(212, 150, "B+", "#ffd8a8", 10, "start")
+    txt(212, 205, "B-", "#ffd8a8", 10, "start")
+    txt(368, 150, "OUT+", "#ffd8a8", 10, "end")
+    txt(368, 205, "OUT-", "#ffd8a8", 10, "end")
+    txt(290, 240, "B+ and OUT+ are one copper;", "#f0883e", 9)
+    txt(290, 253, "B- reaches OUT- via the FETs", "#f0883e", 9)
+
+    wire([(140, 117), (200, 117)], "#ff5555", "5 V")
+    wire([(140, 233), (172, 233), (172, 147), (200, 147)], "#ff5555",
+         "", "BT1 W8, J2 W10", lpos=(172, 190))
+    wire([(140, 262), (184, 262), (184, 202), (200, 202)], "#f2f2f2",
+         "", "BT1 X8, J2 X10", lpos=(184, 285))
+
+    # switch, switched rail
+    box(440, 125, 120, 44, "SW17", "power switch")
+    txt(500, 186, "W23 to X23", "#6e7681", 9)
+    wire([(380, 147), (440, 147)], "#ff5555", "VBATT", "W21", lpos=(410, 147))
+    wire([(560, 147), (640, 147)], "#ff5555", "VBATT_SW", "")
+    dot(640, 147)
+
+    # D1 into VSYS
+    box(680, 125, 90, 44, "D1", "1N5817")
+    wire([(640, 147), (680, 147)], "#ff5555", "", "X27")
+    wire([(770, 147), (860, 147)], "#ff5555", "VSYS", "W27 to D25")
+    dot(860, 147)
+
+    # the Pico's own USB, OR'd in through its internal Schottky
+    box(680, 40, 100, 40, "micro-USB", "on the Pico")
+    wire([(780, 60), (860, 60), (860, 147)], "#ff5555", "", "", "6 4",
+         lpos=(820, 60))
+    txt(822, 52, "VBUS 5 V", "#ff5555", 10)
+    txt(822, 92, "through the Pico's own Schottky", "#8b949e", 9)
+
+    # Pico and 3V3
+    box(850, 200, 140, 120, "Pico 2", "buck-boost, 1.8-5.5 V in",
+        fill="#1c2431", stroke="#58a6ff")
+    wire([(860, 147), (860, 200)], "#ff5555")
+    box(850, 400, 140, 44, "ST7796", "display")
+    wire([(920, 320), (920, 400)], "#ff5555", "3V3", "G28 to J40", lpos=(920, 355))
+
+    # sense divider
+    box(600, 270, 80, 38, "R1 100k")
+    box(600, 350, 80, 38, "R2 100k")
+    box(700, 350, 76, 38, "C1 100nF")
+    wire([(640, 147), (640, 270)], "#ff5555", "", "X26", lpos=(640, 215))
+    wire([(640, 308), (640, 350)], "#ff9e4d", "tap", "V26, V24", lpos=(640, 329))
+    dot(640, 329)
+    wire([(640, 329), (738, 329), (738, 350)], "#ff9e4d", "", "V22",
+         lpos=(700, 329))
+    wire([(640, 329), (820, 329), (820, 240), (850, 240)], "#ff9e4d",
+         "to GP28", "V12 to I13", lpos=(800, 240))
+    wire([(640, 388), (640, GND)], "#f2f2f2", "", "T24", lpos=(640, 470))
+    wire([(738, 388), (738, GND)], "#f2f2f2", "", "T22", lpos=(738, 500))
+
+    # ground
+    o.append(f'<path d="M160,{GND} L1060,{GND}" stroke="#f2f2f2" '
+             f'stroke-width="3" fill="none"/>')
+    txt(160, GND + 22, "GND", "#f2f2f2", 12, "start")
+    wire([(380, 202), (380, GND)], "#f2f2f2", "OUT-", "X21 to T20",
+         lpos=(380, 400))
+    wire([(990, 260), (1040, 260), (1040, GND)], "#f2f2f2", "", "Pico GND",
+         lpos=(1040, 340))
+    wire([(920, 444), (920, GND)], "#f2f2f2", "", "J1 I46", lpos=(920, 510))
+
+    txt(20, H - 20, "Only one source conducts at a time: whichever is higher "
+                    "pulls VSYS up and reverse-biases the other diode.",
+        "#8b949e", 10, "start")
+    o.append("</svg>")
+    return "\n".join(o)
+
+
 def main():
     (HERE / "BUILD.md").write_text(build_md())
     (HERE / "ASSEMBLY.md").write_text(assembly_md())
     for stem, names in STAGE_VIEWS.items():
         (HERE / f"{stem}.svg").write_text(stage_svg(names))
+    (HERE / "power_diagram.svg").write_text(power_diagram_svg())
     (HERE / "preview.svg").write_text(svg())
     (HERE / "BOM.csv").write_text(bom_csv())
     (HERE / "cut_template.svg").write_text(cut_template_svg())
