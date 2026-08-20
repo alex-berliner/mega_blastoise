@@ -300,14 +300,23 @@ display deck it lives beneath. Stick it down on foam tape once its four
 leads are soldered.
 
 It has no pads on the board of its own - it reaches the circuit entirely
-through four flying leads:
+through four flying leads. On this module all four sit on the short edge
+**opposite the USB-C**, reading OUT- B- B+ OUT+ across it; the IN+ and
+IN- pads up beside the connector are unused, since charging comes in
+through the USB-C itself.
+
+Mounted with the connector over the right board edge, that pad edge
+faces left, so all four leads fan out from one side:
 
 | Module pad | Goes to | Hole |
 |---|---|---|
-| B+ | J2.1 | W10 |
-| B- | J2.2 | X10 |
-| OUT+ | J3.1 | W21 |
 | OUT- | J3.2 | X21 |
+| B- | J2.2 | X10 |
+| B+ | J2.1 | W10 |
+| OUT+ | J3.1 | W21 |
+
+Rotating the module the other way in its own plane reverses that order,
+swapping the two OUT leads. Read the silkscreen, not the picture.
 
 The cell's own leads land on BT1 at W8 and X8, which share those
 strips with J2 - that is how cell and charger meet.

@@ -365,7 +365,9 @@ BATTERY_MM = (50.0, 34.0)         # 103450 LiPo, mounted on the BACK
 # The TP4056 rides on the FRONT, under the display deck, with its USB-C
 # overhanging the right edge so a cable can reach it. Cell on the back,
 # charger on the front: the two are wired through the board rather than
-# stacked on the same face. It is about 4.8 mm tall including the connector,
+# stacked on the same face. All four connections leave the edge opposite the
+# USB-C, reading OUT- B- B+ OUT+ across it, with IN+/IN- up by the connector
+# left unused. It is about 4.8 mm tall including the connector,
 # so it clears the 8.5 mm deck. J3 and SW17 sit one row below its footprint
 # on purpose: that is what keeps the charger's ground wire out from under the
 # module, where it could not be reached or reworked.
@@ -985,28 +987,32 @@ def svg_layers(scale=5.0):
     # ornament that happens to sit near some headers. Each lead gets its own
     # exit point along the module edge so neither the lines nor their labels
     # land on top of one another.
+    # Pad order is taken from the module itself: USB-C on one short edge and
+    # all four connections on the opposite one, reading OUT- B- B+ OUT+ across
+    # it. Mounted with the connector over the right board edge, that edge faces
+    # left, so the leads fan from a single edge rather than from two.
+    # Rotating the module the other way in-plane reverses this order; the two
+    # OUT leads simply swap.
     LEADS = [
-        # label, board hole, x offset into the module, leaves via the top edge
-        ("B+",   (23, 10), 2.5,  True),
-        ("B-",   (24, 10), 8.0,  True),
-        ("OUT+", (23, 21), 2.5,  False),
-        ("OUT-", (24, 21), 8.0,  False),
+        # label, board hole, distance down the module's left edge
+        ("OUT-", (24, 21), 3.0),
+        ("B-",   (24, 10), 7.0),
+        ("B+",   (23, 10), 11.0),
+        ("OUT+", (23, 21), 15.0),
     ]
-    for label, hole_cr, ox, up in LEADS:
+    for label, hole_cr, oy in LEADS:
         hx, hy = px(*hole_cr)
-        ex = sx(cx0 + ox)
-        ey = sy(cy0 if up else cy0 + ch)
-        chg.append(f'<path d="M{ex:.1f},{ey:.1f} C{ex:.1f},{(ey + hy) / 2:.1f} '
-                   f'{hx:.1f},{(ey + hy) / 2:.1f} {hx:.1f},{hy:.1f}" '
+        ex, ey = sx(cx0), sy(cy0 + oy)
+        chg.append(f'<path d="M{ex:.1f},{ey:.1f} C{(ex + hx) / 2:.1f},{ey:.1f} '
+                   f'{(ex + hx) / 2:.1f},{hy:.1f} {hx:.1f},{hy:.1f}" '
                    f'stroke="#ffa657" stroke-width="1.8" fill="none" '
                    f'stroke-dasharray="5 3"/>')
         chg.append(f'<circle cx="{ex:.1f}" cy="{ey:.1f}" r="2.6" fill="#ffa657" '
                    f'stroke="#0d1117" stroke-width="0.8"/>')
-        # label sits just inside the module, clear of its own lead
-        ly = ey + (9 if up else -5)
-        chg.append(f'<text x="{ex:.1f}" y="{ly:.1f}" fill="#ffd8a8" font-size="8.5" '
-                   f'font-family="monospace" text-anchor="middle" stroke="#0d1117" '
-                   f'stroke-width="2.4" paint-order="stroke">{label}</text>')
+        chg.append(f'<text x="{ex + 6:.1f}" y="{ey + 3:.1f}" fill="#ffd8a8" '
+                   f'font-size="8.5" font-family="monospace" text-anchor="start" '
+                   f'stroke="#0d1117" stroke-width="2.4" '
+                   f'paint-order="stroke">{label}</text>')
 
     layers.append(("charger module", chg))
 
@@ -1318,14 +1324,23 @@ def build_md():
     A("leads are soldered.")
     A("")
     A("It has no pads on the board of its own - it reaches the circuit entirely")
-    A("through four flying leads:")
+    A("through four flying leads. On this module all four sit on the short edge")
+    A("**opposite the USB-C**, reading OUT- B- B+ OUT+ across it; the IN+ and")
+    A("IN- pads up beside the connector are unused, since charging comes in")
+    A("through the USB-C itself.")
+    A("")
+    A("Mounted with the connector over the right board edge, that pad edge")
+    A("faces left, so all four leads fan out from one side:")
     A("")
     A("| Module pad | Goes to | Hole |")
     A("|---|---|---|")
-    A("| B+ | J2.1 | W10 |")
-    A("| B- | J2.2 | X10 |")
-    A("| OUT+ | J3.1 | W21 |")
     A("| OUT- | J3.2 | X21 |")
+    A("| B- | J2.2 | X10 |")
+    A("| B+ | J2.1 | W10 |")
+    A("| OUT+ | J3.1 | W21 |")
+    A("")
+    A("Rotating the module the other way in its own plane reverses that order,")
+    A("swapping the two OUT leads. Read the silkscreen, not the picture.")
     A("")
     A("The cell's own leads land on BT1 at W8 and X8, which share those")
     A("strips with J2 - that is how cell and charger meet.")
