@@ -2018,6 +2018,313 @@ def exploded_svg(scale=2.5, spread=150):
     return "\n".join(o)
 
 
+# Real heights above the component-side surface, in mm, so the assembled view
+# stands up at the proportions the parts actually have.
+BOARD_T_MM = 1.6
+FOAM_MM = 1.5
+CELL_T_MM = 10.0                  # the 10 in "103450"
+HEADER_MM = 2.5                   # the Pico rides on its 2x20 header
+PICO_T_MM = 1.0
+SWITCH_T_MM = 4.3                 # bare tactile switch body
+CAP_T_MM = 4.2                    # the cap that slips over its plunger
+CHARGER_T_MM = 5.0                # PCB plus the USB-C shell
+DISPLAY_T_MM = 4.0
+
+
+def assembled_svg(scale=4.0, inset=1.32):
+    """The board as it will look built, drawn at true relative heights.
+
+    The exploded view answers "what goes where"; this one answers "what will
+    I be holding". Everything stands at its real height above the board and
+    near parts are painted over far ones, which means the Pico and most of the
+    wiring end up where they really are: hidden under the display deck. Two
+    small views make up for that, one with the module unplugged and one from
+    underneath.
+    """
+    W, H = 1240, 1020
+    o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
+         f'viewBox="0 0 {W} {H}" font-family="monospace">',
+         '<defs><linearGradient id="bg2" x1="0" y1="0" x2="0.4" y2="1">'
+         '<stop offset="0" stop-color="#131a24"/>'
+         '<stop offset="1" stop-color="#05070a"/></linearGradient>'
+         '<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">'
+         '<stop offset="0" stop-color="#1d4f7d"/>'
+         '<stop offset="0.45" stop-color="#123a5c"/>'
+         '<stop offset="1" stop-color="#0d2438"/></linearGradient>'
+         '<radialGradient id="pool" cx="0.5" cy="0.5" r="0.5">'
+         '<stop offset="0" stop-color="#000000" stop-opacity="0.6"/>'
+         '<stop offset="1" stop-color="#000000" stop-opacity="0"/>'
+         '</radialGradient></defs>',
+         f'<rect width="{W}" height="{H}" fill="url(#bg2)"/>']
+
+    def esc(t):
+        return (str(t).replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;"))
+
+    class View:
+        """One isometric projection: an origin, a scale and an optional flip."""
+
+        def __init__(self, ox, oy, sc, flip=False):
+            self.ox, self.oy, self.sc, self.flip = ox, oy, sc, flip
+
+        def at(self, bx, by, mm=0.0):
+            if self.flip:
+                bx = BOARD_W - bx
+            return (self.ox + (bx - by) * ISO_COS * self.sc,
+                    self.oy + (bx + by) * ISO_SIN * self.sc - mm * self.sc)
+
+        def depth(self, x, y, w, h):
+            """How far toward the viewer the footprint's nearest corner sits."""
+            xs = (BOARD_W - x - w, BOARD_W - x) if self.flip else (x, x + w)
+            return max(xs) + y + h
+
+    def poly(pts, fill, stroke=None, sw=1.0, op=1.0):
+        d = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        st = f' stroke="{stroke}" stroke-width="{sw}"' if stroke else ""
+        o.append(f'<polygon points="{d}" fill="{fill}" fill-opacity="{op}"{st}/>')
+
+    def box(v, x, y, w, h, z0, z1, top, side, dark=None, op=1.0, edge="#0a0d12"):
+        """A rectangular solid standing between two heights."""
+        dark = dark or side
+        lo = [v.at(x, y, z0), v.at(x + w, y, z0),
+              v.at(x + w, y + h, z0), v.at(x, y + h, z0)]
+        hi = [v.at(x, y, z1), v.at(x + w, y, z1),
+              v.at(x + w, y + h, z1), v.at(x, y + h, z1)]
+        poly([hi[1], lo[1], lo[2], hi[2]], side, op=op)
+        poly([hi[2], lo[2], lo[3], hi[3]], dark, op=op)
+        poly(hi, top, edge, 0.8, op)
+        return hi
+
+    def text(x, y, s, fill, size, anchor="start", weight=None, op=1.0):
+        wt = f' font-weight="{weight}"' if weight else ""
+        o.append(f'<text x="{x:.1f}" y="{y:.1f}" fill="{fill}" '
+                 f'font-size="{size}" text-anchor="{anchor}" '
+                 f'fill-opacity="{op}"{wt}>{esc(s)}</text>')
+
+    def leader(v, bx, by, mm, dx, dy, title, sub=None):
+        x, y = v.at(bx, by, mm)
+        o.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.6" fill="none" '
+                 f'stroke="#8b949e" stroke-width="1.2"/>')
+        run = 26 if dx > 0 else -26
+        o.append(f'<path d="M{x + (3 if dx > 0 else -3):.1f},{y:.1f} '
+                 f'L{x + dx:.1f},{y + dy:.1f} L{x + dx + run:.1f},{y + dy:.1f}" '
+                 f'fill="none" stroke="#3a434f" stroke-width="1"/>')
+        tx = x + dx + (32 if dx > 0 else -32)
+        anc = "start" if dx > 0 else "end"
+        text(tx, y + dy - (2 if sub else -4), title, "#e6edf3", 12, anc)
+        if sub:
+            text(tx, y + dy + 12, sub, "#7d8590", 9.5, anc)
+
+    def shadow(v, pad=14):
+        cx, cy = v.at(BOARD_W / 2, BOARD_H / 2, 0)
+        rx = (BOARD_W + BOARD_H) * ISO_COS * v.sc / 2 + pad
+        ry = (BOARD_W + BOARD_H) * ISO_SIN * v.sc / 2 + pad
+        o.append(f'<ellipse cx="{cx:.1f}" cy="{cy + 14:.1f}" rx="{rx:.1f}" '
+                 f'ry="{ry:.1f}" fill="url(#pool)"/>')
+
+    pb = part_body("U1")
+    cb = charger_outline()
+    dx, dy, dw, dh = display_outline()
+
+    def draw_stack(v, with_display=True, holes=True):
+        """Board, wires and parts in one view, painted far corner first."""
+        shadow(v, 14 if v.sc > 2 else 6)
+        box(v, 0, 0, BOARD_W, BOARD_H, -BOARD_T_MM, 0.0,
+            "#3d3419", "#241e0e", "#1a150a")
+        if holes:
+            r = max(0.6, 0.55 * v.sc / 4.0)
+            for col in range(1, COLS + 1):
+                for row in range(1, ROWS + 1):
+                    hx, hy = v.at(*hole(col, row), 0.0)
+                    o.append(f'<circle cx="{hx:.1f}" cy="{hy:.1f}" r="{r:.1f}" '
+                             f'fill="#15110a" fill-opacity="0.85"/>')
+        for name, pts in JUMPERS:
+            col = wire_color(name)[0]
+            for a, b in zip(pts, pts[1:]):
+                p, q = v.at(*hole(*a), 0.6), v.at(*hole(*b), 0.6)
+                o.append(f'<line x1="{p[0]:.1f}" y1="{p[1]:.1f}" '
+                         f'x2="{q[0]:.1f}" y2="{q[1]:.1f}" stroke="#05070a" '
+                         f'stroke-width="{1.2 * v.sc / 4 + 2.6:.1f}" '
+                         f'stroke-linecap="round" stroke-opacity="0.55"/>')
+                o.append(f'<line x1="{p[0]:.1f}" y1="{p[1]:.1f}" '
+                         f'x2="{q[0]:.1f}" y2="{q[1]:.1f}" stroke="{col}" '
+                         f'stroke-width="{0.7 * v.sc / 4 + 1.5:.1f}" '
+                         f'stroke-linecap="round"/>')
+
+        parts = []
+
+        def add(x, y, w, h, fn):
+            parts.append((v.depth(x, y, w, h), fn))
+
+        def draw_pico():
+            box(v, pb[0], pb[1], pb[2], pb[3], 0.0, HEADER_MM,
+                "#161b22", "#0e1218", "#090c10")
+            box(v, pb[0], pb[1], pb[2], pb[3], HEADER_MM, HEADER_MM + PICO_T_MM,
+                "#1f6f4a", "#155037", "#0f3826")
+            zt = HEADER_MM + PICO_T_MM
+            box(v, pb[0] + pb[2] / 2 - 3.5, pb[1] + pb[3] / 2 - 3.5, 7, 7,
+                zt, zt + 1.0, "#0d1117", "#080b0f")
+            box(v, pb[0] + 1.5, pb[1] - 1.0, 8.0, 7.5, zt, zt + 2.9,
+                "#adb6c0", "#6b7480", "#4c545e")
+            cx, cy = v.at(pb[0] + pb[2] * 0.62, pb[1] + pb[3] * 0.78, zt)
+            if v.sc > 2:
+                text(cx, cy, "Pico 2", "#7ee2b8", 9, "middle")
+        add(pb[0], pb[1], pb[2], pb[3], draw_pico)
+
+        def draw_charger():
+            box(v, cb[0], cb[1], cb[2], cb[3], FOAM_MM, FOAM_MM + 1.6,
+                "#8d2c1b", "#521810", "#3a110b")
+            box(v, cb[0] + cb[2] - 9.0, cb[1] + cb[3] / 2 - 4.5, 9.0, 9.0,
+                FOAM_MM + 1.6, FOAM_MM + CHARGER_T_MM,
+                "#d3dae1", "#8b949e", "#6b7480")
+            cx, cy = v.at(cb[0] + cb[2] * 0.3, cb[1] + cb[3] / 2, FOAM_MM + 1.6)
+            if v.sc > 2:
+                text(cx, cy, "TP4056", "#ffb877", 8, "middle")
+        add(cb[0], cb[1], cb[2], cb[3], draw_charger)
+
+        for _, (a, b) in CROSSES.items():
+            for _, (col, row) in cross_switches(a, b).items():
+                hx, hy = hole(col + 1.5, row + 1)
+
+                def draw_sw(hx=hx, hy=hy):
+                    s = SWITCH_BODY_MM / 2
+                    box(v, hx - s, hy - s, SWITCH_BODY_MM, SWITCH_BODY_MM,
+                        0.0, SWITCH_T_MM, "#2b2f36", "#1a1d22", "#131519")
+                    cx, cy = v.at(hx, hy, SWITCH_T_MM + CAP_T_MM)
+                    rx = CAP_DIA_MM / 2 * v.sc
+                    ry = rx * (ISO_SIN / ISO_COS)
+                    wall = CAP_T_MM * v.sc * 0.5
+                    o.append(f'<ellipse cx="{cx:.1f}" cy="{cy + wall:.1f}" '
+                             f'rx="{rx:.1f}" ry="{ry:.1f}" fill="#7a5a0d"/>')
+                    o.append(f'<rect x="{cx - rx:.1f}" y="{cy:.1f}" '
+                             f'width="{2 * rx:.1f}" height="{wall:.1f}" '
+                             f'fill="#7a5a0d"/>')
+                    o.append(f'<ellipse cx="{cx:.1f}" cy="{cy:.1f}" '
+                             f'rx="{rx:.1f}" ry="{ry:.1f}" fill="#e3a91f" '
+                             f'stroke="#8a6410" stroke-width="1"/>')
+                    o.append(f'<ellipse cx="{cx:.1f}" cy="{cy - ry * 0.22:.1f}" '
+                             f'rx="{rx * 0.6:.1f}" ry="{ry * 0.6:.1f}" '
+                             f'fill="#f2c452" fill-opacity="0.5"/>')
+                add(hx - 4.5, hy - 4.5, 9, 9, draw_sw)
+
+        for ref, tall, top, side in (("J1", 8.5, "#2a2f37", "#171a20"),
+                                     ("BT1", 8.5, "#2a2f37", "#171a20"),
+                                     ("J2", 8.5, "#2a2f37", "#171a20"),
+                                     ("J3", 8.5, "#2a2f37", "#171a20"),
+                                     ("SW17", 8.5, "#2a2f37", "#171a20"),
+                                     ("D1", 2.2, "#33383f", "#1d2126"),
+                                     ("R1", 2.0, "#33383f", "#1d2126"),
+                                     ("R2", 2.0, "#33383f", "#1d2126"),
+                                     ("C1", 2.6, "#414852", "#262b31")):
+            bod = part_body(ref)
+            if not bod:
+                continue
+
+            def draw_part(bod=bod, tall=tall, top=top, side=side):
+                box(v, bod[0], bod[1], bod[2], bod[3], 0.0, tall, top, side)
+            add(bod[0], bod[1], bod[2], bod[3], draw_part)
+
+        def draw_standoffs():
+            for c, r in STANDOFF_HOLES:
+                hx, hy = hole(c, r)
+                box(v, hx - 2.2, hy - 2.2, 4.4, 4.4, 0.0, DECK_HEIGHT_MM,
+                    "#8a72d6", "#5c48a0", "#3f3172")
+        if with_display:
+            def draw_display():
+                draw_standoffs()
+                z0 = DECK_HEIGHT_MM
+                box(v, dx, dy, dw, dh, z0, z0 + 1.6,
+                    "#1a5c3f", "#0e3626", "#0a2419")
+                box(v, dx, dy, dw, dh, z0 + 1.6, z0 + DISPLAY_T_MM,
+                    "#15191f", "#0d1015", "#080a0d", edge="#2a3038")
+                aw, ah = DISPLAY_ACTIVE_MM
+                box(v, dx + (dw - aw) / 2, dy + 6.0, aw, ah,
+                    z0 + DISPLAY_T_MM, z0 + DISPLAY_T_MM + 0.2,
+                    "#14395c", "#0d2338", "#0a1b2b", edge="#2f6491")
+                if v.sc > 2:
+                    ax, ay = v.at(dx + dw / 2, dy + 6.0 + ah / 2,
+                                  z0 + DISPLAY_T_MM)
+                    text(ax, ay - 4, "ST7796", "#79c0ff", 13, "middle")
+                    text(ax, ay + 11, "320 x 480", "#4d7ea8", 9, "middle")
+            add(dx, dy, dw, dh, draw_display)
+        else:
+            for c, r in STANDOFF_HOLES:
+                hx, hy = hole(c, r)
+                add(hx - 2.2, hy - 2.2, 4.4, 4.4,
+                    lambda hx=hx, hy=hy: box(v, hx - 2.2, hy - 2.2, 4.4, 4.4,
+                                             0.0, DECK_HEIGHT_MM, "#8a72d6",
+                                             "#5c48a0", "#3f3172"))
+
+        for _, fn in sorted(parts, key=lambda p: p[0]):
+            fn()
+
+    def caption(v, title, sub):
+        cx, cy = v.at(BOARD_W / 2, 0, 0)
+        text(cx, cy - 44, title, "#e6edf3", 13, "middle")
+        text(cx, cy - 30, sub, "#7d8590", 9.5, "middle")
+
+    # ------------------------------------------------------------ main view
+    main = View(585, 258, scale)
+    draw_stack(main, with_display=True)
+    leader(main, dx + dw, dy + 2, DECK_HEIGHT_MM + DISPLAY_T_MM, 56, -74,
+           "ST7796 3.5 in", f"plugged into J1, {DECK_HEIGHT_MM:.1f} mm deck")
+    a, b = CROSSES["P1_DPAD"]
+    n = cross_switches(a, b)["N"]
+    leader(main, *hole(n[0] + 1.5, n[1] + 1), SWITCH_T_MM + CAP_T_MM, 26, 214,
+           "16 caps, 9 mm", "one GPIO each, no matrix")
+    leader(main, cb[0] + cb[2], cb[1] + cb[3] / 2, FOAM_MM + CHARGER_T_MM,
+           62, 20, "TP4056 USB-C", "overhangs the edge for a plug")
+    leader(main, STANDOFF_HOLES[3][0] and hole(*STANDOFF_HOLES[3])[0],
+           hole(*STANDOFF_HOLES[3])[1], DECK_HEIGHT_MM * 0.55, 170, 104,
+           "nylon standoff", "8 mm, self-adhesive, four of them")
+
+    # ------------------------------------------------- module off, from below
+    deck = View(1010, 560, inset)
+    draw_stack(deck, with_display=False)
+    caption(deck, "module unplugged",
+            "the Pico and the wiring live under the deck")
+
+    under = View(1010, 862, inset, flip=True)
+    shadow(under, 6)
+    box(under, 0, 0, BOARD_W, BOARD_H, 0.0, BOARD_T_MM,
+        "#4a3f1e", "#2a2412", "#1d1a0d")
+    for col, r0, r1 in strip_segments():
+        c = STRIP_COLORS[(col - 1) % len(STRIP_COLORS)]
+        p = under.at(*hole(col, r0), BOARD_T_MM)
+        q = under.at(*hole(col, r1), BOARD_T_MM)
+        o.append(f'<line x1="{p[0]:.1f}" y1="{p[1]:.1f}" x2="{q[0]:.1f}" '
+                 f'y2="{q[1]:.1f}" stroke="{c}" stroke-width="1.7" '
+                 f'stroke-linecap="round"/>')
+    for col, row in CUTS:
+        hx, hy = under.at(*hole(col, row), BOARD_T_MM)
+        o.append(f'<circle cx="{hx:.1f}" cy="{hy:.1f}" r="2.1" fill="#0a0d12" '
+                 f'stroke="#ff4d4d" stroke-width="1.2"/>')
+    bx, by, bw, bh = battery_outline()
+    box(under, bx, by, bw, bh, BOARD_T_MM + FOAM_MM,
+        BOARD_T_MM + FOAM_MM + CELL_T_MM, "#1f4029", "#12251a", "#0c180f")
+    cx, cy = under.at(bx + bw / 2, by + bh / 2,
+                      BOARD_T_MM + FOAM_MM + CELL_T_MM)
+    text(cx, cy, "2000 mAh", "#7ee2b8", 9, "middle")
+    caption(under, "underside", f"{len(CUTS)} cuts, cell on foam tape")
+
+    # ---------------------------------------------------------------- chrome
+    text(40, 54, "mega blastoise", "#e6edf3", 25)
+    text(40, 76, "single-screen stripboard, assembled", "#7d8590", 12)
+    facts = [(f"{COLS} x {ROWS}", "holes, 61 x 142 mm"),
+             ("16", "buttons, one GPIO each"),
+             (f"{len(CUTS)}", "track cuts"),
+             (f"{len(JUMPERS)}", "fly wires, 354 mm"),
+             ("8.5", "mm from board to module")]
+    fy = H - 170
+    o.append(f'<line x1="40" y1="{fy - 28}" x2="300" y2="{fy - 28}" '
+             f'stroke="#242b34" stroke-width="1"/>')
+    for i, (big, small) in enumerate(facts):
+        text(40, fy + i * 28, big, "#e6edf3", 15, weight="bold")
+        text(136, fy + i * 28, small, "#7d8590", 10)
+    o.append("</svg>")
+    return "\n".join(o)
+
+
 def main():
     (HERE / "BUILD.md").write_text(build_md())
     (HERE / "ASSEMBLY.md").write_text(assembly_md())
@@ -2025,6 +2332,7 @@ def main():
         (HERE / f"{stem}.svg").write_text(stage_svg(names))
     (HERE / "power_diagram.svg").write_text(power_diagram_svg())
     (HERE / "exploded.svg").write_text(exploded_svg())
+    (HERE / "assembled.svg").write_text(assembled_svg())
     (HERE / "preview.svg").write_text(svg())
     (HERE / "BOM.csv").write_text(bom_csv())
     (HERE / "cut_template.svg").write_text(cut_template_svg())
