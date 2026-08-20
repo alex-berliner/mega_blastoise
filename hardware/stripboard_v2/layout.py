@@ -75,9 +75,9 @@ def page(col, row):
 # bands, so each column's middle segment belongs to exactly one Pico pin.
 
 PICO_COL0 = 3
-PICO_ROW_LOWER = 33       # pins 1..20  (GP0..GP15) -> Player 1 signals
-PICO_ROW_UPPER = 26       # pins 40..21 (GP16..GP28, power) -> Player 2
-PICO_CUT_ROW = 30
+PICO_ROW_LOWER = 37       # pins 1..20  (GP0..GP15) -> Player 1 signals
+PICO_ROW_UPPER = 30       # pins 40..21 (GP16..GP28, power) -> Player 2
+PICO_CUT_ROW = 34
 FENCE_NORTH = 12          # isolates the P2 band (rows 1-11)
 FENCE_SOUTH = 44          # isolates the P1 band (rows 45-56)
 
@@ -174,22 +174,22 @@ BUTTON_NETS = [
     #
     # "direct" means the fence cut is OMITTED on that column, so the button's
     # band strip merges with the Pico-pin segment: the strip IS the wire.
-    ("P1_LEFT",   4,  "31-56", 2,  "direct"),
-    ("P1_UP",     8,  "31-51", 6,  "direct"),
+    ("P1_LEFT",   4,  "35-56", 2,  "direct"),
+    ("P1_UP",     8,  "35-51", 6,  "direct"),
     ("P1_RIGHT",  12,  "48-56", 4,  "jumper (12,55)->(6,36)"),
     ("P1_DOWN",   8,  "53-56", 5,  "jumper (8,56)->(7,36)"),
     ("P1_INFO",   13,  "48-56", 17, "jumper (13,55)->(19,36)"),
-    ("P1_MENU",   17,  "31-51", 15, "direct"),
-    ("P1_A",      21,  "31-56", 19, "direct"),
+    ("P1_MENU",   17,  "35-51", 15, "direct"),
+    ("P1_A",      21,  "35-56", 19, "direct"),
     ("P1_B",      17,  "53-56", 16, "jumper (17,56)->(18,36)"),
     ("P2_A",      1,  "1-43",  32, "jumper (1,2)->(11,15)"),
     ("P2_B",      8,  "1-4",   29, "jumper (8,1)->(14,15)"),
-    ("P2_INFO",   12,  "1-29",  31, "direct"),
+    ("P2_INFO",   12,  "1-33",  31, "direct"),
     ("P2_MENU",   8,  "6-11",  25, "jumper (8,10)->(18,15)"),
-    ("P2_RIGHT",  16,  "1-29",  27, "direct"),
+    ("P2_RIGHT",  16,  "1-33",  27, "direct"),
     ("P2_DOWN",   17,  "1-4",   24, "jumper (17,1)->(19,15)"),
-    ("P2_LEFT",   21,  "1-29",  22, "direct"),
-    ("P2_UP",     17,  "6-29",  26, "direct"),
+    ("P2_LEFT",   21,  "1-33",  22, "direct"),
+    ("P2_UP",     17,  "6-33",  26, "direct"),
 ]
 
 # The display header pins fall through to the GPIOs directly below them: the
@@ -203,13 +203,13 @@ DISPLAY_HEADER_ROW = 46
 DISPLAY_NETS = [
     # J1 pin, name,  strip column, rows, Pico pin, how
     (1, "GND",       9,  "46-56", 8,  "direct: shares column 9 with the E-switch ground and the P1 bus"),
-    (2, "VCC",       10, "35-56", 36, "jumper (7,20)->(10,45) from 3V3"),
-    (3, "LCD_SCK",   11, "31-56", 9,  "direct"),
-    (4, "LCD_MOSI",  12, "31-46", 10, "direct"),
-    (5, "LCD_RST",   13, "31-46", 11, "direct"),
-    (6, "LCD_DC",    14, "31-56", 12, "direct"),
-    (7, "LCD_CS",    15, "35-56", 7,  "jumper (15,45)->(9,39)"),
-    (8, "LCD_BL",    16, "31-47", 14, "direct"),
+    (2, "VCC",       10, "40-56", 36, "jumper (7,20)->(10,45) from 3V3"),
+    (3, "LCD_SCK",   11, "35-56", 9,  "direct"),
+    (4, "LCD_MOSI",  12, "35-46", 10, "direct"),
+    (5, "LCD_RST",   13, "35-46", 11, "direct"),
+    (6, "LCD_DC",    14, "35-56", 12, "direct"),
+    (7, "LCD_CS",    15, "40-56", 7,  "jumper (15,45)->(9,39)"),
+    (8, "LCD_BL",    16, "35-47", 14, "direct"),
 ]
 
 # Every track cut. A cut destroys the hole it names. The fences skip the
@@ -243,7 +243,7 @@ CUTS = (
     + [(23, 18), (24, 19)]
     + [(24, 22)]
     + [(23, 24)]
-    + [(10, 35), (15, 35)]
+    + [(10, 39), (15, 39)]
     + [(1, 44), (23, 28), (24, 37)]
     + [(9, 45)]
     + [(12, 47), (13, 47)]
@@ -278,11 +278,11 @@ JUMPERS = [
     ("P2_B to GP22",            [(8, 3), (14, 3)]),
     ("P2_MENU to GP19",         [(8, 7), (18, 7)]),
     ("P2_DOWN to GP18",         [(17, 3), (19, 3)]),
-    ("display VCC from 3V3",    [(7, 24), (10, 36)]),
-    ("display CS to GP5",       [(9, 36), (15, 36)]),
-    ("D1 cathode to VSYS",      [(23, 25), (4, 24)]),
+    ("display VCC from 3V3",    [(10, 40), (7, 28)]),
+    ("display CS to GP5",       [(15, 40), (9, 40)]),
+    ("D1 cathode to VSYS",      [(23, 25), (4, 25)]),
     ("charger OUT- to GND",     [(24, 20), (20, 20)]),
-    ("battery sense to GP28",   [(9, 13), (22, 13)]),
+    ("battery sense to GP28",   [(22, 13), (9, 13)]),
     ("P1 ground bus",           
      [(1, 56), (5, 56), (9, 56), (16, 56), (20, 56), (24, 56)]),
     ("P2 ground bus",           
@@ -308,7 +308,7 @@ def switch_placements():
 
 PLACEMENTS = switch_placements() + [
     ("U1", "Module:RaspberryPi_Pico_Common_THT", PICO_COL0, PICO_ROW_LOWER, 90,
-     "USB left; pin 1 at C33, pin 40 at C26; under the display"),
+     "USB left; pin 1 at C37, pin 40 at C30; under the display"),
     ("J1", "Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical",
      DISPLAY_HEADER_COL0, DISPLAY_HEADER_ROW, 90,
      "socket for the ST7796 module's header"),

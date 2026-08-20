@@ -20,7 +20,7 @@ tightest pairs is 1.2 mm.
 **Strips run top to bottom** (Player 2's edge to Player 1's edge), one
 strip per column. Three straight cut lines organise the board: fences on
 rows 12 and 44 isolate the two button bands, and
-row 30 splits every column under the Pico so the middle of
+row 34 splits every column under the Pico so the middle of
 each strip belongs to exactly one Pico pin. Buttons then need one wire
 each: band strip to GPIO strip.
 
@@ -73,7 +73,7 @@ the top. All views are of the component side.
 the Pico and the display and cannot be reached later. A cut destroys the
 hole it names. Verify each with a meter before moving on.
 
-**Row 30, columns C-V** is the
+**Row 34, columns C-V** is the
 structural line: it splits every one of the Pico's columns into a
 Player 2 half above and a Player 1 half below. Cut it first.
 
@@ -89,10 +89,10 @@ it to the copper side and cut every cross on it.
 | D | row 12 | D12 |
 | H | rows 5, 12, 52 | H5 H12 H52 |
 | I | rows 12, 45 | I12 I45 |
-| J | row 35 | J35 |
+| J | row 39 | J39 |
 | L | row 47 | L47 |
 | M | rows 12, 47 | M12 M47 |
-| O | row 35 | O35 |
+| O | row 39 | O39 |
 | P | row 48 | P48 |
 | Q | rows 5, 52 | Q5 Q52 |
 | W | rows 18, 24, 28 | W18 W24 W28 |
@@ -121,7 +121,7 @@ its own strip straight to a Pico pin. Do not add cuts that are not here.
 | SW12 | SW_Tactile_6mm_Stripboard | M4 | P2_DPAD W = P2_RIGHT |
 | SW11 | SW_Tactile_6mm_Stripboard | U4 | P2_DPAD E = P2_LEFT |
 | SW9 | SW_Tactile_6mm_Stripboard | Q6 | P2_DPAD S = P2_UP |
-| U1 | RaspberryPi_Pico_Common_THT | C33 | USB left; pin 1 at C33, pin 40 at C26; under the display |
+| U1 | RaspberryPi_Pico_Common_THT | C37 | USB left; pin 1 at C37, pin 40 at C30; under the display |
 | J1 | PinHeader_1x08_P2.54mm_Vertical | I46 | socket for the ST7796 module's header |
 | BT1 | PinHeader_1x02_P2.54mm_Vertical | W8 | LiPo cell leads, brought round the edge from the back |
 | J2 | PinHeader_1x02_P2.54mm_Vertical | W10 | TP4056 B+ / B- (cell side of the charger) |
@@ -179,30 +179,30 @@ ground column; the single cut between them separates the two signals.
 
 | Net | Strip | Rows | Pico pin | Connection |
 |---|---|---|---|---|
-| P1_LEFT | D | 31-56 | 2 (GP1) | direct |
-| P1_UP | H | 31-51 | 6 (GP4) | direct |
+| P1_LEFT | D | 35-56 | 2 (GP1) | direct |
+| P1_UP | H | 35-51 | 6 (GP4) | direct |
 | P1_RIGHT | L | 48-56 | 4 (GP2) | jumper L48 -> F48 |
 | P1_DOWN | H | 53-56 | 5 (GP3) | jumper H54 -> G54 |
 | P1_INFO | M | 48-56 | 17 (GP13) | jumper M48 -> S48 |
-| P1_MENU | Q | 31-51 | 15 (GP11) | direct |
-| P1_A | U | 31-56 | 19 (GP14) | direct |
+| P1_MENU | Q | 35-51 | 15 (GP11) | direct |
+| P1_A | U | 35-56 | 19 (GP14) | direct |
 | P1_B | Q | 53-56 | 16 (GP12) | jumper Q54 -> R54 |
 | P2_A | A | 1-43 | 32 (GP27) | jumper A3 -> K3 |
 | P2_B | H | 1-4 | 29 (GP22) | jumper H3 -> N3 |
-| P2_INFO | L | 1-29 | 31 (GP26) | direct |
+| P2_INFO | L | 1-33 | 31 (GP26) | direct |
 | P2_MENU | H | 6-11 | 25 (GP19) | jumper H7 -> R7 |
-| P2_RIGHT | P | 1-29 | 27 (GP21) | direct |
+| P2_RIGHT | P | 1-33 | 27 (GP21) | direct |
 | P2_DOWN | Q | 1-4 | 24 (GP18) | jumper Q3 -> S3 |
-| P2_LEFT | U | 1-29 | 22 (GP17) | direct |
-| P2_UP | Q | 6-29 | 26 (GP20) | direct |
+| P2_LEFT | U | 1-33 | 22 (GP17) | direct |
+| P2_UP | Q | 6-33 | 26 (GP20) | direct |
 | GND (J1.1) | I | 46-56 | 8 (GND) | direct: shares column 9 with the E-switch ground and the P1 bus |
-| VCC (J1.2) | J | 35-56 | 36 (3V3_OUT) | jumper G24 -> J36 |
-| LCD_SCK (J1.3) | K | 31-56 | 9 (GP6) | direct |
-| LCD_MOSI (J1.4) | L | 31-46 | 10 (GP7) | direct |
-| LCD_RST (J1.5) | M | 31-46 | 11 (GP8) | direct |
-| LCD_DC (J1.6) | N | 31-56 | 12 (GP9) | direct |
-| LCD_CS (J1.7) | O | 35-56 | 7 (GP5) | jumper I36 -> O36 |
-| LCD_BL (J1.8) | P | 31-47 | 14 (GP10) | direct |
+| VCC (J1.2) | J | 40-56 | 36 (3V3_OUT) | jumper J40 -> G28 |
+| LCD_SCK (J1.3) | K | 35-56 | 9 (GP6) | direct |
+| LCD_MOSI (J1.4) | L | 35-46 | 10 (GP7) | direct |
+| LCD_RST (J1.5) | M | 35-46 | 11 (GP8) | direct |
+| LCD_DC (J1.6) | N | 35-56 | 12 (GP9) | direct |
+| LCD_CS (J1.7) | O | 40-56 | 7 (GP5) | jumper O40 -> I40 |
+| LCD_BL (J1.8) | P | 35-47 | 14 (GP10) | direct |
 | BATT+ | W | 1-17 | - | BT1 and J2 share the strip |
 | BATT- | X | 8-18 | - | BT1 and J2 share the strip |
 | VBATT | W | 19-23 | - | J3 OUT+ to SW17 on the strip |
@@ -245,11 +245,11 @@ red = power (3V3, VSYS), white = ground, orange = battery sense.
 | 6 | P2_B to GP22 | green | H3 N3 |
 | 7 | P2_MENU to GP19 | green | H7 R7 |
 | 8 | P2_DOWN to GP18 | green | Q3 S3 |
-| 9 | display VCC from 3V3 | red | G24 J36 |
-| 10 | display CS to GP5 | yellow | I36 O36 |
-| 11 | D1 cathode to VSYS | red | W25 D24 |
+| 9 | display VCC from 3V3 | red | J40 G28 |
+| 10 | display CS to GP5 | yellow | O40 I40 |
+| 11 | D1 cathode to VSYS | red | W25 D25 |
 | 12 | charger OUT- to GND | white | X20 T20 |
-| 13 | battery sense to GP28 | orange | I13 V13 |
+| 13 | battery sense to GP28 | orange | V13 I13 |
 | 14 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
 | 15 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
 
@@ -260,7 +260,7 @@ red = power (3V3, VSYS), white = ground, orange = battery sense.
    display, so they must go down first. No solder joint sits under the
    Pico's body - every endpoint stays reachable for rework.
 3. Solder the Pico. Headers on the Pico first, then drop it in with the
-   USB pointing left, check it straddles the row 30 cuts,
+   USB pointing left, check it straddles the row 34 cuts,
    then solder.
 4. Solder the 16 switches, all four legs each.
 5. Solder D1, R1, R2, C1, the J1 socket and the 2-pin headers.
