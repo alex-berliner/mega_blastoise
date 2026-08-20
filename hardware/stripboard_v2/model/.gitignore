@@ -1,0 +1,2 @@
+# Nothing here is authored; it all comes back from ../layout.py and build.sh.
+# The STLs are kept anyway, so someone can print without OpenSCAD installed.
