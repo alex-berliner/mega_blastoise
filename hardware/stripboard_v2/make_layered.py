@@ -62,8 +62,8 @@ def find_chromium():
     raise SystemExit("no chromium found for rasterising")
 
 
-def render(chromium, svg_path, png_path, w, h):
-    """SVG -> transparent PNG at exactly w x h device pixels."""
+def render(chromium, svg_path, png_path, w, h, opaque=False):
+    """SVG -> PNG at exactly w x h device pixels, transparent unless told."""
     subprocess.run(
         [chromium, "--headless=new", "--disable-gpu", "--hide-scrollbars",
          "--no-sandbox", "--disable-dev-shm-usage",
@@ -178,6 +178,15 @@ def main():
         merged = merged.resize((pw, ph))
     psd_writer.write_psd(OUT_PSD, pw, ph, psd_layers,
                          tuple(c.tobytes() for c in merged.split()))
+
+    # the stage guides that go with ASSEMBLY.md, rendered from the same layers
+    for stem in L.STAGE_VIEWS:
+        svg_path = os.path.join(tmp, f"{stem}.svg")
+        png_path = os.path.join(HERE, f"{stem}.png")
+        with open(svg_path, "w") as fh:
+            fh.write(open(os.path.join(HERE, f"{stem}.svg")).read())
+        render(chromium, svg_path, png_path, W, H)
+        print(f"wrote {png_path}")
 
     shutil.rmtree(tmp, ignore_errors=True)
     hidden = sum(1 for n, _, _ in jobs if n.startswith(HIDDEN_PREFIXES))

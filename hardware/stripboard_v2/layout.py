@@ -1052,6 +1052,35 @@ def svg():
     return "\n".join(out)
 
 
+def stage_svg(names, scale=5.0):
+    """One SVG containing only the named layers, in their usual stacking order.
+
+    Used for the build guides: a picture of the board showing just what the
+    stage is about, drawn from the same layer definitions as everything else
+    so it cannot show something the board does not have.
+    """
+    tree, W, H = svg_layer_tree(scale=scale)
+    want = set(names)
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W:.0f}" '
+           f'height="{H:.0f}" viewBox="0 0 {W:.0f} {H:.0f}">']
+    for _, members in tree:
+        for name, elements in members:
+            if name in want:
+                out.extend(elements)
+    missing = want - {n for _, m in tree for n, _ in m}
+    if missing:
+        raise SystemExit(f"stage_svg: no such layer {sorted(missing)}")
+    out.append("</svg>")
+    return "\n".join(out)
+
+
+# The pictures that go with the staged build, each naming the layers it needs.
+STAGE_VIEWS = {
+    "cuts_guide": ["background", "copper strips", "holes", "grid and labels",
+                   "cuts", "legend"],
+}
+
+
 def layer_svg(name, elements, W, H, transparent=True):
     """One layer as a standalone SVG on a transparent canvas."""
     bg = "" if transparent else f'<rect width="{W:.0f}" height="{H:.0f}" fill="#0d1117"/>'
@@ -1473,6 +1502,11 @@ def assembly_md():
     A("or the display, so they all happen now. Cut from the **copper side**;")
     A("`cut_template.svg` prints 1:1 and is already mirrored for it.")
     A("")
+    A("![Every track cut](cuts_guide.png)")
+    A("")
+    A("*Component side, with only the cuts shown. The wire-colour key at the")
+    A("bottom belongs to later stages and can be ignored here.*")
+    A("")
     A(f"Start with the long line: **row {PICO_CUT_ROW}, columns "
       f"{col_name(PICO_COL0)} to {col_name(PICO_COL0 + 19)}** "
       f"({len(range(PICO_COL0, PICO_COL0 + 20))} cuts). This is the one that")
@@ -1699,6 +1733,8 @@ def assembly_md():
 def main():
     (HERE / "BUILD.md").write_text(build_md())
     (HERE / "ASSEMBLY.md").write_text(assembly_md())
+    for stem, names in STAGE_VIEWS.items():
+        (HERE / f"{stem}.svg").write_text(stage_svg(names))
     (HERE / "preview.svg").write_text(svg())
     (HERE / "BOM.csv").write_text(bom_csv())
     (HERE / "cut_template.svg").write_text(cut_template_svg())

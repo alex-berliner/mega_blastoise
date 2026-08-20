@@ -37,6 +37,11 @@ Everything else sits on top of these, and several end up under the Pico
 or the display, so they all happen now. Cut from the **copper side**;
 `cut_template.svg` prints 1:1 and is already mirrored for it.
 
+![Every track cut](cuts_guide.png)
+
+*Component side, with only the cuts shown. The wire-colour key at the
+bottom belongs to later stages and can be ignored here.*
+
 Start with the long line: **row 34, columns C to V** (20 cuts). This is the one that
 splits the board into its two player halves.
 
