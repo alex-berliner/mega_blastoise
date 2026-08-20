@@ -69,7 +69,7 @@ the top. All views are of the component side.
 
 ## 3. Cut the tracks first
 
-42 cuts. Do every one before any part goes down; most sit under
+43 cuts. Do every one before any part goes down; most sit under
 the Pico and the display and cannot be reached later. A cut destroys the
 hole it names. Verify each with a meter before moving on.
 
@@ -95,6 +95,7 @@ it to the copper side and cut every cross on it.
 | O | row 39 | O39 |
 | P | row 48 | P48 |
 | Q | rows 5, 52 | Q5 Q52 |
+| V | row 28 | V28 |
 | W | rows 18, 24, 28 | W18 W24 W28 |
 | X | rows 7, 19, 22, 37 | X7 X19 X22 X37 |
 
@@ -128,7 +129,7 @@ its own strip straight to a Pico pin. Do not add cuts that are not here.
 | J3 | PinHeader_1x02_P2.54mm_Vertical | W21 | TP4056 OUT+ / OUT- (protected output) |
 | SW17 | PinHeader_1x02_P2.54mm_Vertical | W23 | power slide switch, panel mounted |
 | D1 | D_DO-41_SOD81_P2.54mm_Vertical_AnodeUp | W27 | cathode column 23 (VSYS carrier), anode column 24 (switched battery) |
-| R1 | R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical | X28 | battery divider top, X -> V: switched battery to the tap |
+| R1 | R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical | X26 | battery divider top, X -> V: switched battery to the tap |
 | R2 | R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical | V24 | battery divider bottom, V -> T: tap to ground |
 | C1 | C_Disc_D5.0mm_W2.5mm_P5.00mm | V22 | ADC filter across R2, V -> T |
 

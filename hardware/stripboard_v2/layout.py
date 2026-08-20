@@ -248,6 +248,7 @@ CUTS = (
     + [(9, 45)]
     + [(12, 47), (13, 47)]
     + [(16, 48)]
+    + [(22, 28)]   # keep GP16 off the sense tap
     + [(8, 52), (17, 52)]
 )
 
@@ -323,7 +324,7 @@ PLACEMENTS = switch_placements() + [
     ("D1", "Diode_THT:D_DO-41_SOD81_P2.54mm_Vertical_AnodeUp", 23, 27, 0,
      "cathode column 23 (VSYS carrier), anode column 24 (switched battery)"),
     ("R1", "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical",
-     24, 28, 180, "battery divider top, X -> V: switched battery to the tap"),
+     24, 26, 180, "battery divider top, X -> V: switched battery to the tap"),
     ("R2", "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical",
      22, 24, 180, "battery divider bottom, V -> T: tap to ground"),
     ("C1", "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm", 22, 22, 180,
@@ -350,7 +351,7 @@ def expected_pads():
     want["J3"] = {"1": [(23, 21)], "2": [(24, 21)]}
     want["SW17"] = {"1": [(23, 23)], "2": [(24, 23)]}
     want["D1"] = {"1": [(23, 27)], "2": [(24, 27)]}
-    want["R1"] = {"1": [(24, 28)], "2": [(22, 28)]}
+    want["R1"] = {"1": [(24, 26)], "2": [(22, 26)]}
     want["R2"] = {"1": [(22, 24)], "2": [(20, 24)]}
     want["C1"] = {"1": [(22, 22)], "2": [(20, 22)]}
     return want
