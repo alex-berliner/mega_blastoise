@@ -1,0 +1,11 @@
+(footprint "SW_Tactile_6mm_Stripboard"
+  (version 20240108)
+  (generator "konnect")
+  (layer "F.Cu")
+  (descr "6mm tactile switch, legs splayed onto 0.1in stripboard grid: terminals 7.62mm apart (3 holes, across strips), each terminal's two legs 5.08mm apart (2 holes, along one strip)")
+  (attr through_hole)
+  (pad "1" thru_hole circle (at 0 0) (size 1.8 1.8) (layers "*.Cu" "*.Mask") (drill 1))
+  (pad "1" thru_hole circle (at 0 5.08) (size 1.8 1.8) (layers "*.Cu" "*.Mask") (drill 1))
+  (pad "2" thru_hole circle (at 7.62 0) (size 1.8 1.8) (layers "*.Cu" "*.Mask") (drill 1))
+  (pad "2" thru_hole circle (at 7.62 5.08) (size 1.8 1.8) (layers "*.Cu" "*.Mask") (drill 1))
+)

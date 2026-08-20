@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+~*.lck
+.history/
+preview (Copy)*.psd
+*.kicad_pcb-bak
+fp-info-cache
