@@ -69,7 +69,7 @@ the top. All views are of the component side.
 
 ## 3. Cut the tracks first
 
-43 cuts. Do every one before any part goes down; most sit under
+42 cuts. Do every one before any part goes down; most sit under
 the Pico and the display and cannot be reached later. A cut destroys the
 hole it names. Verify each with a meter before moving on.
 
@@ -95,7 +95,6 @@ it to the copper side and cut every cross on it.
 | O | row 35 | O35 |
 | P | row 48 | P48 |
 | Q | rows 5, 52 | Q5 Q52 |
-| V | row 35 | V35 |
 | W | rows 18, 24, 28 | W18 W24 W28 |
 | X | rows 7, 19, 22, 37 | X7 X19 X22 X37 |
 
@@ -129,9 +128,9 @@ its own strip straight to a Pico pin. Do not add cuts that are not here.
 | J3 | PinHeader_1x02_P2.54mm_Vertical | W21 | TP4056 OUT+ / OUT- (protected output) |
 | SW17 | PinHeader_1x02_P2.54mm_Vertical | W23 | power slide switch, panel mounted |
 | D1 | D_DO-41_SOD81_P2.54mm_Vertical_AnodeUp | W27 | cathode column 23 (VSYS carrier), anode column 24 (switched battery) |
-| R1 | R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical | X36 | battery divider top, columns 24 -> 22 |
-| R2 | R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical | V40 | battery divider bottom, columns 22 -> 20 (ground) |
-| C1 | C_Disc_D5.0mm_W2.5mm_P5.00mm | V42 | ADC filter, columns 22 -> 20 |
+| R1 | R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical | X28 | battery divider top, X -> V: switched battery to the tap |
+| R2 | R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical | V24 | battery divider bottom, V -> T: tap to ground |
+| C1 | C_Disc_D5.0mm_W2.5mm_P5.00mm | V22 | ADC filter across R2, V -> T |
 
 ### The crosses
 
@@ -250,7 +249,7 @@ red = power (3V3, VSYS), white = ground, orange = battery sense.
 | 10 | display CS to GP5 | yellow | I36 O36 |
 | 11 | D1 cathode to VSYS | red | W25 D24 |
 | 12 | charger OUT- to GND | white | X20 T20 |
-| 13 | battery sense to GP28 | orange | I24 V37 |
+| 13 | battery sense to GP28 | orange | I13 V13 |
 | 14 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
 | 15 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
 

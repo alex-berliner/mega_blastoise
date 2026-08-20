@@ -68,14 +68,27 @@ PAD_NETS = {
     ("J3", "1"): "VBATT",    ("J3", "2"): "GND",
     ("SW17", "1"): "VBATT",  ("SW17", "2"): "VBATT_SW",
     ("D1", "1"): "VSYS",     ("D1", "2"): "VBATT_SW",
-    ("R1", "1"): "VBATT_SW", ("R1", "2"): "VBAT_SENSE",
-    ("R2", "1"): "VBAT_SENSE", ("R2", "2"): "GND",
-    ("C1", "1"): "VBAT_SENSE", ("C1", "2"): "GND",
+}
+
+# R1, R2 and C1 have no polarity, so which pad is "1" says nothing: the net is
+# decided by the column the lead lands in. Read them that way instead.
+PASSIVE_COL_NETS = {
+    "R1": {24: "VBATT_SW", 22: "VBAT_SENSE"},
+    "R2": {22: "VBAT_SENSE", 20: "GND"},
+    "C1": {22: "VBAT_SENSE", 20: "GND"},
 }
 pads_all = L.expected_pads()
 for (ref, num), net in PAD_NETS.items():
     for h in pads_all[ref][num]:
         net_holes[net].add(h)
+for ref, by_col in PASSIVE_COL_NETS.items():
+    for num, holes in pads_all[ref].items():
+        for c, r in holes:
+            if c not in by_col:
+                fail.append(f"{ref} pad at {L.hole_name(c, r)} is on an "
+                            f"unexpected column")
+            else:
+                net_holes[by_col[c]].add((c, r))
 for c, r, net in [(4, L.PICO_ROW_UPPER, "VSYS"), (7, L.PICO_ROW_UPPER, "3V3"),
                   (9, L.PICO_ROW_UPPER, "VBAT_SENSE")]:
     net_holes[net].add((c, r))

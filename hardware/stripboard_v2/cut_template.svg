@@ -1377,7 +1377,6 @@
 <path d="M2.81,58.69 L4.81,60.69 M2.81,60.69 L4.81,58.69" stroke="#000" stroke-width="0.5"/>
 <path d="M35.83,86.63 L37.83,88.63 M35.83,88.63 L37.83,86.63" stroke="#000" stroke-width="0.5"/>
 <path d="M23.13,86.63 L25.13,88.63 M23.13,88.63 L25.13,86.63" stroke="#000" stroke-width="0.5"/>
-<path d="M5.35,86.63 L7.35,88.63 M5.35,88.63 L7.35,86.63" stroke="#000" stroke-width="0.5"/>
 <path d="M58.69,109.49 L60.69,111.49 M58.69,111.49 L60.69,109.49" stroke="#000" stroke-width="0.5"/>
 <path d="M2.81,68.85 L4.81,70.85 M2.81,70.85 L4.81,68.85" stroke="#000" stroke-width="0.5"/>
 <path d="M0.27,91.71 L2.27,93.71 M0.27,93.71 L2.27,91.71" stroke="#000" stroke-width="0.5"/>
@@ -1393,5 +1392,5 @@
 <text x="24.13" y="146.24" font-size="3" text-anchor="middle" fill="#000">15</text>
 <text x="11.43" y="146.24" font-size="3" text-anchor="middle" fill="#000">20</text>
 <text x="1.27" y="146.24" font-size="3" text-anchor="middle" fill="#000">24</text>
-<text x="2" y="151.24" font-size="3" fill="#000">COPPER SIDE - print at 100% scale, cut every X (43 cuts)</text>
+<text x="2" y="151.24" font-size="3" fill="#000">COPPER SIDE - print at 100% scale, cut every X (42 cuts)</text>
 </svg>

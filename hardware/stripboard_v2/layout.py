@@ -243,7 +243,7 @@ CUTS = (
     + [(23, 18), (24, 19)]
     + [(24, 22)]
     + [(23, 24)]
-    + [(10, 35), (15, 35), (22, 35)]
+    + [(10, 35), (15, 35)]
     + [(1, 44), (23, 28), (24, 37)]
     + [(9, 45)]
     + [(12, 47), (13, 47)]
@@ -282,7 +282,7 @@ JUMPERS = [
     ("display CS to GP5",       [(9, 36), (15, 36)]),
     ("D1 cathode to VSYS",      [(23, 25), (4, 24)]),
     ("charger OUT- to GND",     [(24, 20), (20, 20)]),
-    ("battery sense to GP28",   [(9, 24), (22, 37)]),
+    ("battery sense to GP28",   [(9, 13), (22, 13)]),
     ("P1 ground bus",           
      [(1, 56), (5, 56), (9, 56), (16, 56), (20, 56), (24, 56)]),
     ("P2 ground bus",           
@@ -323,11 +323,11 @@ PLACEMENTS = switch_placements() + [
     ("D1", "Diode_THT:D_DO-41_SOD81_P2.54mm_Vertical_AnodeUp", 23, 27, 0,
      "cathode column 23 (VSYS carrier), anode column 24 (switched battery)"),
     ("R1", "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical",
-     24, 36, 180, "battery divider top, columns 24 -> 22"),
+     24, 28, 180, "battery divider top, X -> V: switched battery to the tap"),
     ("R2", "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P5.08mm_Vertical",
-     22, 40, 180, "battery divider bottom, columns 22 -> 20 (ground)"),
-    ("C1", "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm", 22, 42, 180,
-     "ADC filter, columns 22 -> 20"),
+     22, 24, 180, "battery divider bottom, V -> T: tap to ground"),
+    ("C1", "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm", 22, 22, 180,
+     "ADC filter across R2, V -> T"),
 ]
 
 
@@ -350,9 +350,9 @@ def expected_pads():
     want["J3"] = {"1": [(23, 21)], "2": [(24, 21)]}
     want["SW17"] = {"1": [(23, 23)], "2": [(24, 23)]}
     want["D1"] = {"1": [(23, 27)], "2": [(24, 27)]}
-    want["R1"] = {"1": [(24, 36)], "2": [(22, 36)]}
-    want["R2"] = {"1": [(22, 40)], "2": [(20, 40)]}
-    want["C1"] = {"1": [(22, 42)], "2": [(20, 42)]}
+    want["R1"] = {"1": [(24, 28)], "2": [(22, 28)]}
+    want["R2"] = {"1": [(22, 24)], "2": [(20, 24)]}
+    want["C1"] = {"1": [(22, 22)], "2": [(20, 22)]}
     return want
 
 

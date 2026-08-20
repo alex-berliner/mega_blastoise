@@ -56,8 +56,7 @@
 <line x1="286.3" y1="32.4" x2="286.3" y2="388.0" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="286.3" y1="413.4" x2="286.3" y2="730.9" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="299.1" y1="32.4" x2="299.1" y2="388.0" stroke="#8fb4d9" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
-<line x1="299.1" y1="413.4" x2="299.1" y2="451.5" stroke="#8fb4d9" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
-<line x1="299.1" y1="476.9" x2="299.1" y2="730.9" stroke="#8fb4d9" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="299.1" y1="413.4" x2="299.1" y2="730.9" stroke="#8fb4d9" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="311.8" y1="32.4" x2="311.8" y2="235.6" stroke="#7dc98f" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="311.8" y1="261.0" x2="311.8" y2="311.8" stroke="#7dc98f" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="311.8" y1="337.2" x2="311.8" y2="362.6" stroke="#7dc98f" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
@@ -1456,7 +1455,6 @@
 <path d="M306.2,319.0 L317.2,330.0 M306.2,330.0 L317.2,319.0" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M141.1,458.7 L152.1,469.7 M141.1,469.7 L152.1,458.7" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M204.6,458.7 L215.6,469.7 M204.6,469.7 L215.6,458.7" stroke="#ff4d4d" stroke-width="2.5"/>
-<path d="M293.6,458.7 L304.6,469.7 M293.6,469.7 L304.6,458.7" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M26.8,573.0 L37.8,584.0 M26.8,584.0 L37.8,573.0" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M306.2,369.8 L317.2,380.8 M306.2,380.8 L317.2,369.8" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M318.9,484.1 L329.9,495.1 M318.9,495.1 L329.9,484.1" stroke="#ff4d4d" stroke-width="2.5"/>
@@ -1681,18 +1679,18 @@
 <circle cx="311.8" cy="362.6" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
 <circle cx="324.4" cy="362.6" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
 <text x="302.8" y="366.6" fill="#fff" font-size="11" font-family="monospace" text-anchor="end" stroke="#000" stroke-width="2.5" paint-order="stroke">D1</text>
-<rect x="294.1" y="468.9" width="35.4" height="16.0" fill="#8b949e" fill-opacity="0.5" stroke="#e6edf3" stroke-width="1.2" rx="3"/>
-<circle cx="324.4" cy="476.9" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
-<circle cx="299.1" cy="476.9" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
-<text x="290.1" y="480.9" fill="#fff" font-size="11" font-family="monospace" text-anchor="end" stroke="#000" stroke-width="2.5" paint-order="stroke">R1</text>
-<rect x="268.6" y="519.7" width="35.4" height="16.0" fill="#8b949e" fill-opacity="0.5" stroke="#e6edf3" stroke-width="1.2" rx="3"/>
-<circle cx="299.1" cy="527.7" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
-<circle cx="273.6" cy="527.7" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
-<text x="264.6" y="531.7" fill="#fff" font-size="11" font-family="monospace" text-anchor="end" stroke="#000" stroke-width="2.5" paint-order="stroke">R2</text>
-<rect x="266.6" y="540.6" width="39.4" height="25.0" fill="#8b949e" fill-opacity="0.5" stroke="#e6edf3" stroke-width="1.2" rx="3"/>
-<circle cx="299.1" cy="553.1" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
-<circle cx="273.6" cy="553.1" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
-<text x="262.6" y="557.1" fill="#fff" font-size="11" font-family="monospace" text-anchor="end" stroke="#000" stroke-width="2.5" paint-order="stroke">C1</text>
+<rect x="294.1" y="367.3" width="35.4" height="16.0" fill="#8b949e" fill-opacity="0.5" stroke="#e6edf3" stroke-width="1.2" rx="3"/>
+<circle cx="324.4" cy="375.3" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
+<circle cx="299.1" cy="375.3" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
+<text x="290.1" y="379.3" fill="#fff" font-size="11" font-family="monospace" text-anchor="end" stroke="#000" stroke-width="2.5" paint-order="stroke">R1</text>
+<rect x="268.6" y="316.5" width="35.4" height="16.0" fill="#8b949e" fill-opacity="0.5" stroke="#e6edf3" stroke-width="1.2" rx="3"/>
+<circle cx="299.1" cy="324.5" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
+<circle cx="273.6" cy="324.5" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
+<text x="264.6" y="328.5" fill="#fff" font-size="11" font-family="monospace" text-anchor="end" stroke="#000" stroke-width="2.5" paint-order="stroke">R2</text>
+<rect x="266.6" y="286.6" width="39.4" height="25.0" fill="#8b949e" fill-opacity="0.5" stroke="#e6edf3" stroke-width="1.2" rx="3"/>
+<circle cx="299.1" cy="299.1" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
+<circle cx="273.6" cy="299.1" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
+<text x="262.6" y="303.1" fill="#fff" font-size="11" font-family="monospace" text-anchor="end" stroke="#000" stroke-width="2.5" paint-order="stroke">C1</text>
 <rect x="205.8" y="179.8" width="130.0" height="85.0" fill="#f0883e" fill-opacity="0.5" stroke="#ffa657" stroke-width="2"/>
 <rect x="328.3" y="199.8" width="15.0" height="45.0" fill="#ffa657" stroke="#0d1117" stroke-width="1"/>
 <text x="215.8" y="204.8" fill="#fff" font-size="11" font-family="monospace" stroke="#000" stroke-width="2.5" paint-order="stroke">TP4056</text>
@@ -1717,10 +1715,10 @@
 <text x="190.6" y="342.6" fill="#ff5555" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">D1 cathode</text>
 <circle cx="311.8" cy="337.2" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>
 <circle cx="70.5" cy="324.5" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>
-<path d="M133.9,324.5 Q210.1,413.4 299.1,489.6" stroke="#ff9e4d" stroke-width="2.4" fill="none"/>
-<text x="213.0" y="413.5" fill="#ff9e4d" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">battery sense</text>
-<circle cx="133.9" cy="324.5" r="3.2" fill="#ff9e4d" stroke="#0d1117" stroke-width="1"/>
-<circle cx="299.1" cy="489.6" r="3.2" fill="#ff9e4d" stroke="#0d1117" stroke-width="1"/>
+<path d="M133.9,184.8 Q216.5,193.8 299.1,184.8" stroke="#ff9e4d" stroke-width="2.4" fill="none"/>
+<text x="216.5" y="192.7" fill="#ff9e4d" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">battery sense</text>
+<circle cx="133.9" cy="184.8" r="3.2" fill="#ff9e4d" stroke="#0d1117" stroke-width="1"/>
+<circle cx="299.1" cy="184.8" r="3.2" fill="#ff9e4d" stroke="#0d1117" stroke-width="1"/>
 <rect x="53.4" y="293.9" width="250.0" height="170.0" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="5 5"/>
 <text x="63.4" y="318.9" fill="#3fb950" font-size="13" font-family="monospace">LiPo on BACK</text>
 <rect x="78.7" y="637.5" width="47.1" height="34.4" fill="#d29922" fill-opacity="0.5" stroke="#d29922" stroke-width="1.4" rx="3"/>
