@@ -37,6 +37,31 @@ Everything else sits on top of these, and several end up under the Pico
 or the display, so they all happen now. Cut from the **copper side**;
 `cut_template.svg` prints 1:1 and is already mirrored for it.
 
+### Mark them with the stencil, not by counting
+
+Counting to row 34 by eye is how a cut goes missing, and the one that
+goes missing is usually one of the twenty in the fence, because they
+look like a single thing rather than twenty things. Two ways to avoid
+counting at all:
+
+1. **Printed mask** - `cuts_stencil.scad` builds a 1 mm plate the size
+   of the board with an opening over each of the 43 holes to destroy.
+   Measure your board first and set `board_w` and `board_l`, then print
+   it flat, no supports, 0.15-0.2 mm layers. Drop it on the copper side,
+   push a scrap of 0.8-1 mm wire through each of the four corner dowel
+   holes to stop it turning, and put a scribe or an ultra-fine pen
+   through every opening. Lift it off and you have 43 marks and nothing to count.
+
+2. **Paper** - print `cut_template.svg` at 100% and check the printed
+   ruler bar really measures 100 mm before you trust it. Tape it to the
+   copper, prick each X through with a needle, peel it off.
+
+Either way the mask is mirrored, so the A1 corner ends up on your right
+when the copper faces you. Put a pen dot on the board's A1 corner before
+you flip it: the hole grid is symmetric under a half turn, and nothing
+physical stops the mask going on backwards. The chamfered corner and the
+engraved `A1` are there to be checked, not to save you.
+
 ![Every track cut](cuts_guide.png)
 
 *Component side, with only the cuts shown. The wire-colour key at the
