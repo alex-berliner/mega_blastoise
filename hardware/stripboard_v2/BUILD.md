@@ -250,7 +250,7 @@ red = power (3V3, VSYS), white = ground, orange = battery sense.
 | 10 | display CS to GP5 | yellow | O40 I40 |
 | 11 | D1 cathode to VSYS | red | W25 D25 |
 | 12 | charger OUT- to GND | white | X20 T20 |
-| 13 | battery sense to GP28 | orange | V13 I13 |
+| 13 | battery sense to GP28 | orange | V12 I13 |
 | 14 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
 | 15 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
 

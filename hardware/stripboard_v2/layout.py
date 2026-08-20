@@ -283,7 +283,7 @@ JUMPERS = [
     ("display CS to GP5",       [(15, 40), (9, 40)]),
     ("D1 cathode to VSYS",      [(23, 25), (4, 25)]),
     ("charger OUT- to GND",     [(24, 20), (20, 20)]),
-    ("battery sense to GP28",   [(22, 13), (9, 13)]),
+    ("battery sense to GP28", [(22, 12), (9, 13)]),
     ("P1 ground bus",           
      [(1, 56), (5, 56), (9, 56), (16, 56), (20, 56), (24, 56)]),
     ("P2 ground bus",           

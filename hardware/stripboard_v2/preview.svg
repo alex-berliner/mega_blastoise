@@ -1717,9 +1717,9 @@
 <text x="191.1" y="349.0" fill="#ff5555" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">D1 cathode</text>
 <circle cx="311.8" cy="337.2" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>
 <circle cx="70.5" cy="337.2" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>
-<path d="M299.1,184.8 Q216.5,175.8 133.9,184.8" stroke="#ff9e4d" stroke-width="2.4" fill="none"/>
-<text x="216.5" y="182.8" fill="#ff9e4d" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">battery sense</text>
-<circle cx="299.1" cy="184.8" r="3.2" fill="#ff9e4d" stroke="#0d1117" stroke-width="1"/>
+<path d="M299.1,172.1 Q215.8,169.4 133.9,184.8" stroke="#ff9e4d" stroke-width="2.4" fill="none"/>
+<text x="216.1" y="176.5" fill="#ff9e4d" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">battery sense</text>
+<circle cx="299.1" cy="172.1" r="3.2" fill="#ff9e4d" stroke="#0d1117" stroke-width="1"/>
 <circle cx="133.9" cy="184.8" r="3.2" fill="#ff9e4d" stroke="#0d1117" stroke-width="1"/>
 <rect x="53.4" y="293.9" width="250.0" height="170.0" fill="none" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="5 5"/>
 <text x="63.4" y="318.9" fill="#3fb950" font-size="13" font-family="monospace">LiPo on BACK</text>
