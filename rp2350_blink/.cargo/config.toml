@@ -1,0 +1,8 @@
+[build]
+target = "thumbv8m.main-none-eabihf"
+
+[target.thumbv8m.main-none-eabihf]
+# A CMSIS-DAP Debugprobe is on the bench, so SWD is the fast path: no BOOTSEL
+# button, no UF2 restamping, and RTT comes free if this ever grows defmt.
+# Falling back to a drag-and-drop UF2 is tools/uf2.sh + tools/flash.sh.
+runner = "probe-rs run --chip RP235x"
