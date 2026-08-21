@@ -1384,7 +1384,6 @@
 <path d="M30.75,117.11 L32.75,119.11 M30.75,119.11 L32.75,117.11" stroke="#000" stroke-width="0.5"/>
 <path d="M28.21,117.11 L30.21,119.11 M28.21,119.11 L30.21,117.11" stroke="#000" stroke-width="0.5"/>
 <path d="M20.59,104.41 L22.59,106.41 M20.59,106.41 L22.59,104.41" stroke="#000" stroke-width="0.5"/>
-<path d="M20.59,119.65 L22.59,121.65 M20.59,121.65 L22.59,119.65" stroke="#000" stroke-width="0.5"/>
 <path d="M5.35,68.85 L7.35,70.85 M5.35,70.85 L7.35,68.85" stroke="#000" stroke-width="0.5"/>
 <path d="M40.91,129.81 L42.91,131.81 M40.91,131.81 L42.91,129.81" stroke="#000" stroke-width="0.5"/>
 <path d="M18.05,129.81 L20.05,131.81 M18.05,131.81 L20.05,129.81" stroke="#000" stroke-width="0.5"/>
@@ -1395,7 +1394,7 @@
 <text x="11.43" y="145.64000000000001" font-size="2.4" text-anchor="middle" fill="#000">20</text>
 <text x="1.27" y="145.64000000000001" font-size="2.4" text-anchor="middle" fill="#000">24</text>
 <text x="1" y="150.64000000000001" font-size="2.4" fill="#000">COPPER SIDE - print at 100%</text>
-<text x="1" y="154.04000000000002" font-size="2.4" fill="#666">44 cuts; 20 are the line at row 34</text>
+<text x="1" y="154.04000000000002" font-size="2.4" fill="#666">43 cuts; 20 are the line at row 34</text>
 <text x="30.48" y="157.84" font-size="2.4" text-anchor="middle" fill="#000">this bar must measure 50 mm</text>
 <path d="M5.48,160.24 h50.0 m0,-1.5 v3 m-50.0,-3 v3 m25.0,-2 v2" stroke="#000" stroke-width="0.4" fill="none"/>
 </svg>

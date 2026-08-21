@@ -200,9 +200,10 @@ BUTTON_NETS = [
 # through to the GPIO directly below their column - but the roles move.
 # The price of the reversal is hardware SPI: SCK lands over GP9 and MOSI over
 # GP8, a pair no SPI block can drive, so the firmware clocks the panel by PIO.
-# GND now needs its column split off GP10 and bridged to the P1 bus; CS takes
-# the orphaned GP10 through the one new signal wire; VCC keeps its wire from
-# 3V3, just to the other end of the socket.
+# GND needs its column split off GP10, and below that cut the strip already IS
+# the P1 bus, so it costs one cut and no wire. CS takes the orphaned GP10
+# through the one new signal wire; VCC keeps its wire from 3V3, just to the
+# other end of the socket.
 DISPLAY_HEADER_COL0 = 9       # J1 pin 1; pins 1..8 on columns 9..16
 DISPLAY_HEADER_ROW = 46
 
@@ -216,7 +217,7 @@ DISPLAY_NETS = [
     (5, "LCD_MOSI",  13, "35-46", 11, "direct to GP8"),
     (6, "LCD_SCK",   14, "35-56", 12, "direct to GP9"),
     (7, "VCC",       15, "40-56", 36, "jumper (7,33)->(15,41) from 3V3"),
-    (8, "GND",       16, "43-47", 8,  "bridge (16,47)->(16,49) onto the P1 bus segment"),
+    (8, "GND",       16, "43-56", 8,  "direct: shares column P with SW7's ground and the P1 bus"),
 ]
 
 # Every track cut. A cut destroys the hole it names. The fences skip the
@@ -254,7 +255,7 @@ CUTS = (
     + [(1, 44), (23, 28), (24, 37)]
     + [(9, 48)]    # BL: split the socket+GP5 strip from SW4's ground and the bus
     + [(12, 47), (13, 47)]
-    + [(16, 42), (16, 48)]   # GND: GP10 above, socket in the middle, bus below
+    + [(16, 42)]   # GND: split GP10 off the socket, which then IS the bus
     + [(22, 28)]   # keep GP16 off the sense tap
     + [(8, 52), (17, 52)]
 )
@@ -288,7 +289,6 @@ JUMPERS = [
     ("P2_DOWN to GP18",         [(17, 3), (19, 3)]),
     ("display VCC from 3V3",    [(15, 41), (7, 33)]),
     ("display CS to GP10",      [(10, 41), (16, 41)]),
-    ("display GND",             [(16, 47), (16, 49)]),
     ("D1 cathode to VSYS",      [(23, 25), (4, 25)]),
     ("charger OUT- to GND",     [(24, 20), (20, 20)]),
     ("battery sense to GP28", [(22, 12), (9, 13)]),

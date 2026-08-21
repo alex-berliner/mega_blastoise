@@ -42,8 +42,7 @@
 <line x1="210.1" y1="527.7" x2="210.1" y2="730.9" stroke="#7dc98f" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="222.9" y1="32.4" x2="222.9" y2="438.8" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="222.9" y1="464.2" x2="222.9" y2="540.4" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
-<line x1="222.9" y1="565.8" x2="222.9" y2="616.6" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
-<line x1="222.9" y1="642.0" x2="222.9" y2="730.9" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="222.9" y1="565.8" x2="222.9" y2="730.9" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="235.5" y1="32.4" x2="235.5" y2="70.5" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="235.5" y1="95.9" x2="235.5" y2="438.8" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="235.5" y1="464.2" x2="235.5" y2="667.4" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
@@ -1464,7 +1463,6 @@
 <path d="M166.6,611.1 L177.6,622.1 M166.6,622.1 L177.6,611.1" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M179.2,611.1 L190.2,622.1 M179.2,622.1 L190.2,611.1" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M217.4,547.6 L228.4,558.6 M217.4,558.6 L228.4,547.6" stroke="#ff4d4d" stroke-width="2.5"/>
-<path d="M217.4,623.8 L228.4,634.8 M217.4,634.8 L228.4,623.8" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M293.6,369.8 L304.6,380.8 M293.6,380.8 L304.6,369.8" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M115.8,674.5 L126.8,685.5 M115.8,685.5 L126.8,674.5" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M230.0,674.5 L241.0,685.5 M230.0,685.5 L241.0,674.5" stroke="#ff4d4d" stroke-width="2.5"/>
@@ -1619,12 +1617,8 @@
 <text x="299.1" y="497.6" fill="#f0883e" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 299.1 497.6)">GP15</text>
 <text x="299.1" y="403.3" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">21</text>
 <text x="299.1" y="392.7" fill="#f0883e" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 299.1 392.7)">GP16</text>
-<path d="M222.9,616.6 Q213.9,629.2 222.9,642.0" stroke="#f2f2f2" stroke-width="2.4" fill="none"/>
-<text x="217.9" y="632.2" fill="#f2f2f2" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">display GND</text>
-<circle cx="222.9" cy="616.6" r="3.2" fill="#f2f2f2" stroke="#0d1117" stroke-width="1"/>
-<circle cx="222.9" cy="642.0" r="3.2" fill="#f2f2f2" stroke="#0d1117" stroke-width="1"/>
-<path d="M324.4,273.7 Q299.0,289.7 273.6,273.7" stroke="#f2f2f2" stroke-width="2.4" fill="none"/>
-<text x="299.0" y="285.5" fill="#f2f2f2" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">charger OUT-</text>
+<path d="M324.4,273.7 Q299.0,264.7 273.6,273.7" stroke="#f2f2f2" stroke-width="2.4" fill="none"/>
+<text x="299.0" y="271.7" fill="#f2f2f2" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">charger OUT-</text>
 <circle cx="324.4" cy="273.7" r="3.2" fill="#f2f2f2" stroke="#0d1117" stroke-width="1"/>
 <circle cx="273.6" cy="273.7" r="3.2" fill="#f2f2f2" stroke="#0d1117" stroke-width="1"/>
 <path d="M32.3,730.9 L83.2,730.9 L133.9,730.9 L222.9,730.9 L273.6,730.9 L324.4,730.9" stroke="#f2f2f2" stroke-width="2.4" fill="none"/>

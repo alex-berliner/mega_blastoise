@@ -3,7 +3,7 @@
 //
 // Lay it on the COPPER side, drop wire dowels through the four corner holes,
 // then put a scribe or an ultra-fine pen through each opening. Every opening
-// is one hole to destroy. 44 of them.
+// is one hole to destroy. 43 of them.
 
 pitch       = 2.54;
 cols        = 24;
@@ -27,7 +27,7 @@ corner_chamfer = 6;   // the A1 corner, cut off so the mask reads one way
 // The cuts are made from the copper side, which mirrors left for right.
 mirror_for_copper = true;
 
-cuts   = [[8,5], [17,5], [24,7], [4,12], [8,12], [9,12], [13,12], [23,18], [24,19], [24,22], [23,24], [22,28], [23,28], [3,34], [4,34], [5,34], [6,34], [7,34], [8,34], [9,34], [10,34], [11,34], [12,34], [13,34], [14,34], [15,34], [16,34], [17,34], [18,34], [19,34], [20,34], [21,34], [22,34], [24,37], [10,39], [15,39], [16,42], [1,44], [12,47], [13,47], [9,48], [16,48], [8,52], [17,52]];
+cuts   = [[8,5], [17,5], [24,7], [4,12], [8,12], [9,12], [13,12], [23,18], [24,19], [24,22], [23,24], [22,28], [23,28], [3,34], [4,34], [5,34], [6,34], [7,34], [8,34], [9,34], [10,34], [11,34], [12,34], [13,34], [14,34], [15,34], [16,34], [17,34], [18,34], [19,34], [20,34], [21,34], [22,34], [24,37], [10,39], [15,39], [16,42], [1,44], [12,47], [13,47], [9,48], [8,52], [17,52]];
 dowels = [[1,1], [24,1], [1,56], [24,56]];
 
 // ---------------------------------------------------------------- geometry
@@ -102,7 +102,7 @@ echo(str("pocket: ", pocket_w, " x ", pocket_l, " mm for a ",
          board_w, " x ", board_l, " board"));
 echo(str("wall between the closest openings: ", pitch - hole_d, " mm"));
 
-assert(len(cuts) == 44, "cut count drifted from layout.py");
+assert(len(cuts) == 43, "cut count drifted from layout.py");
 assert(hole_d < pitch - 0.5, "openings would merge into their neighbours");
 assert(dowel_d < pitch - 0.5, "dowel holes would merge into their neighbours");
 for (cr = cuts) {

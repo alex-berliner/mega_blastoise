@@ -69,7 +69,7 @@ the top. All views are of the component side.
 
 ## 3. Cut the tracks first
 
-44 cuts. Do every one before any part goes down; most sit under
+43 cuts. Do every one before any part goes down; most sit under
 the Pico and the display and cannot be reached later. A cut destroys the
 hole it names. Verify each with a meter before moving on.
 
@@ -93,7 +93,7 @@ it to the copper side and cut every cross on it.
 | L | row 47 | L47 |
 | M | rows 12, 47 | M12 M47 |
 | O | row 39 | O39 |
-| P | rows 42, 48 | P42 P48 |
+| P | row 42 | P42 |
 | Q | rows 5, 52 | Q5 Q52 |
 | V | row 28 | V28 |
 | W | rows 18, 24, 28 | W18 W24 W28 |
@@ -203,7 +203,7 @@ ground column; the single cut between them separates the two signals.
 | LCD_MOSI (J1.5) | M | 35-46 | 11 (GP8) | direct to GP8 |
 | LCD_SCK (J1.6) | N | 35-56 | 12 (GP9) | direct to GP9 |
 | VCC (J1.7) | O | 40-56 | 36 (3V3_OUT) | jumper O41 -> G33 |
-| GND (J1.8) | P | 43-47 | 8 (GND) | bridge (16,47)->(16,49) onto the P1 bus segment |
+| GND (J1.8) | P | 43-56 | 8 (GND) | direct: shares column P with SW7's ground and the P1 bus |
 | BATT+ | W | 1-17 | - | BT1 and J2 share the strip |
 | BATT- | X | 8-18 | - | BT1 and J2 share the strip |
 | VBATT | W | 19-23 | - | J3 OUT+ to SW17 on the strip |
@@ -219,7 +219,7 @@ bus at I56.
 
 ## 6. Jumper wires
 
-16 wires. Insulated, on the component side, soldered **only** at
+15 wires. Insulated, on the component side, soldered **only** at
 the holes listed. The two buses are one wire each with several joints.
 Endpoints are the closest free hole pair on the two strips each wire
 joins, and each fence cut is slid as close to the Pico as its own pads
@@ -248,12 +248,11 @@ red = power (3V3, VSYS), white = ground, orange = battery sense.
 | 8 | P2_DOWN to GP18 | green | Q3 S3 |
 | 9 | display VCC from 3V3 | red | O41 G33 |
 | 10 | display CS to GP10 | yellow | J41 P41 |
-| 11 | display GND | white | P47 P49 |
-| 12 | D1 cathode to VSYS | red | W25 D25 |
-| 13 | charger OUT- to GND | white | X20 T20 |
-| 14 | battery sense to GP28 | orange | V12 I13 |
-| 15 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
-| 16 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
+| 11 | D1 cathode to VSYS | red | W25 D25 |
+| 12 | charger OUT- to GND | white | X20 T20 |
+| 13 | battery sense to GP28 | orange | V12 I13 |
+| 14 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
+| 15 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
 
 ## 7. Build order
 
