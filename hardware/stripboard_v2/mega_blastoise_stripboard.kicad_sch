@@ -4115,7 +4115,7 @@
 		)
 		(uuid "f6e78ab7-c2ad-4a05-a307-599ab868af7d")
 	)
-	(label "LCD_DC"
+	(label "LCD_SCK"
 		(at 92.71 107.95 180)
 		(effects
 			(font
@@ -4145,7 +4145,7 @@
 		)
 		(uuid "0eb4d8ef-ccca-4bc8-87c3-ae62607cec7e")
 	)
-	(label "LCD_RST"
+	(label "LCD_MOSI"
 		(at 92.71 105.41 180)
 		(effects
 			(font
@@ -4175,7 +4175,7 @@
 		)
 		(uuid "24a012a5-01bc-4a3e-a77f-5af6fb1fdea9")
 	)
-	(label "LCD_BL"
+	(label "LCD_CS"
 		(at 92.71 110.49 180)
 		(effects
 			(font
@@ -4205,7 +4205,7 @@
 		)
 		(uuid "36b25ecf-1da8-4c38-8fa5-08c22cace700")
 	)
-	(label "+3V3"
+	(label "LCD_CS"
 		(at 205.74 39.37 180)
 		(effects
 			(font
@@ -4315,7 +4315,7 @@
 		)
 		(uuid "607ad162-44c7-4577-b976-6a0bb0a0d2de")
 	)
-	(label "GND"
+	(label "LCD_BL"
 		(at 205.74 36.83 180)
 		(effects
 			(font
@@ -4345,7 +4345,7 @@
 		)
 		(uuid "662ae955-47d7-4dcb-bb30-0fb7138edb34")
 	)
-	(label "LCD_CS"
+	(label "LCD_BL"
 		(at 92.71 97.79 180)
 		(effects
 			(font
@@ -4415,7 +4415,7 @@
 		)
 		(uuid "76a337b2-fc0b-483e-900e-dd4099794525")
 	)
-	(label "LCD_SCK"
+	(label "LCD_DC"
 		(at 92.71 100.33 180)
 		(effects
 			(font
@@ -4465,7 +4465,7 @@
 		)
 		(uuid "806d1f29-48b7-4fc9-b175-a449b10d3fa0")
 	)
-	(label "LCD_MOSI"
+	(label "LCD_RST"
 		(at 92.71 102.87 180)
 		(effects
 			(font
@@ -4595,7 +4595,7 @@
 		)
 		(uuid "adfb0b9e-168f-4041-9465-1ad40bd00ab4")
 	)
-	(label "LCD_DC"
+	(label "LCD_SCK"
 		(at 205.74 49.53 180)
 		(effects
 			(font
@@ -4615,7 +4615,7 @@
 		)
 		(uuid "b4aa235f-02d8-4952-ab35-ca684a1a3132")
 	)
-	(label "LCD_RST"
+	(label "LCD_MOSI"
 		(at 205.74 46.99 180)
 		(effects
 			(font
@@ -4625,7 +4625,7 @@
 		)
 		(uuid "b618e78a-4272-40bb-a0bf-58ca47c9c3bf")
 	)
-	(label "LCD_BL"
+	(label "GND"
 		(at 205.74 54.61 180)
 		(effects
 			(font
@@ -4665,7 +4665,7 @@
 		)
 		(uuid "c7d9a002-be68-48db-ade1-11b671fcbd46")
 	)
-	(label "LCD_SCK"
+	(label "LCD_DC"
 		(at 205.74 41.91 180)
 		(effects
 			(font
@@ -4675,7 +4675,7 @@
 		)
 		(uuid "c9dfdf01-fe4f-404c-b127-634ef524bc9f")
 	)
-	(label "LCD_MOSI"
+	(label "LCD_RST"
 		(at 205.74 44.45 180)
 		(effects
 			(font
@@ -4755,7 +4755,7 @@
 		)
 		(uuid "eedd3497-80e6-4533-88d6-351556f7d270")
 	)
-	(label "LCD_CS"
+	(label "+3V3"
 		(at 205.74 52.07 180)
 		(effects
 			(font
@@ -6832,6 +6832,94 @@
 	)
 	(wire
 		(pts
+			(xy 187.96 91.44)
+			(xy 187.96 86.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "pwr-w2")
+	)
+	(wire
+		(pts
+			(xy 234.95 120.65)
+			(xy 250.19 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "pwr-w11")
+	)
+	(wire
+		(pts
+			(xy 250.19 120.65)
+			(xy 269.24 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "pwr-w13")
+	)
+	(wire
+		(pts
+			(xy 187.96 140.97)
+			(xy 250.19 140.97)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "pwr-w15")
+	)
+	(wire
+		(pts
+			(xy 187.96 91.44)
+			(xy 187.96 86.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "pwr-w2")
+	)
+	(wire
+		(pts
+			(xy 234.95 120.65)
+			(xy 250.19 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "pwr-w11")
+	)
+	(wire
+		(pts
+			(xy 250.19 120.65)
+			(xy 269.24 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "pwr-w13")
+	)
+	(wire
+		(pts
+			(xy 187.96 140.97)
+			(xy 250.19 140.97)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "pwr-w15")
+	)
+	(wire
+		(pts
 			(xy 180.34 83.82)
 			(xy 193.04 83.82)
 		)
@@ -7176,7 +7264,7 @@
 		)
 		(uuid "pwr-note0-165_1")
 	)
-	(text "J1 pin order is ASSUMED: 1=GND 2=VCC 3=SCL/SCK 4=SDA/MOSI 5=RES 6=DC 7=CS 8=BLK."
+	(text "J1 pin order is VERIFIED against the real module, which is REVERSED from the usual"
 		(at 21.59 170.815 0)
 		(effects
 			(font
@@ -7186,7 +7274,7 @@
 		)
 		(uuid "pwr-note1-170_815")
 	)
-	(text "VERIFY against the module silkscreen before soldering."
+	(text "ST7796 boards: socket position 1 receives module pin 8 (BL) and position 8 receives"
 		(at 21.59 174.625 0)
 		(effects
 			(font
@@ -7196,44 +7284,64 @@
 		)
 		(uuid "pwr-note1-174_625")
 	)
-	(text "Power: the charger's USB-C and the Pico's micro-USB may be plugged in at the same"
-		(at 21.59 180.34 0)
+	(text "GND. SCK/MOSI land on GP9/GP8, so the firmware drives the panel by PIO, not hardware"
+		(at 21.59 178.435 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left)
 		)
-		(uuid "pwr-note2-180_34")
+		(uuid "pwr-note1-178_435")
+	)
+	(text "SPI."
+		(at 21.59 182.245 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "pwr-note1-182_245")
+	)
+	(text "Power: the charger's USB-C and the Pico's micro-USB may be plugged in at the same"
+		(at 21.59 187.96 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "pwr-note2-187_96")
 	)
 	(text "time."
-		(at 21.59 184.15 0)
+		(at 21.59 191.77 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left)
 		)
-		(uuid "pwr-note2-184_15")
+		(uuid "pwr-note2-191_77")
 	)
 	(text "VBUS reaches VSYS through the Pico's own Schottky, the cell reaches it through D1; the"
-		(at 21.59 189.865 0)
+		(at 21.59 197.485 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left)
 		)
-		(uuid "pwr-note3-189_865")
+		(uuid "pwr-note3-197_485")
 	)
 	(text "higher rail wins and neither back-feeds the other."
-		(at 21.59 193.675 0)
+		(at 21.59 201.295 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left)
 		)
-		(uuid "pwr-note3-193_675")
+		(uuid "pwr-note3-201_295")
 	)
 )

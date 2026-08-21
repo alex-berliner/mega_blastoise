@@ -31,7 +31,7 @@ cutters, tweezers. A helping hand is worth having for the module leads.
 | 7 | Display | 20 min |
 | 8 | First power | 20 min |
 
-## Stage 1 - Cut the tracks (43 cuts)
+## Stage 1 - Cut the tracks (44 cuts)
 
 Everything else sits on top of these, and several end up under the Pico
 or the display, so they all happen now. Cut from the **copper side**;
@@ -45,12 +45,12 @@ look like a single thing rather than twenty things. Two ways to avoid
 counting at all:
 
 1. **Printed mask** - `cuts_stencil.scad` builds a 1 mm plate the size
-   of the board with an opening over each of the 43 holes to destroy.
+   of the board with an opening over each of the 44 holes to destroy.
    Measure your board first and set `board_w` and `board_l`, then print
    it flat, no supports, 0.15-0.2 mm layers. Drop it on the copper side,
    push a scrap of 0.8-1 mm wire through each of the four corner dowel
    holes to stop it turning, and put a scribe or an ultra-fine pen
-   through every opening. Lift it off and you have 43 marks and nothing to count.
+   through every opening. Lift it off and you have 44 marks and nothing to count.
 
 2. **Paper** - print `cut_template.svg` at 100% and check the printed
    ruler bar really measures 100 mm before you trust it. Tape it to the
@@ -77,12 +77,12 @@ Then the per-column fences:
 | A | A44 |
 | D | D12 |
 | H | H5 H12 H52 |
-| I | I12 I45 |
+| I | I12 I48 |
 | J | J39 |
 | L | L47 |
 | M | M12 M47 |
 | O | O39 |
-| P | P48 |
+| P | P42 P48 |
 | Q | Q5 Q52 |
 | V | V28 |
 | W | W18 W24 W28 |
@@ -93,7 +93,7 @@ hole. All must read open. A cut that looks clean under a lamp and still
 beeps is the single most common fault on stripboard: the copper tears
 rather than lifts and leaves a whisker. Re-cut and re-test.
 
-## Stage 2 - Jumper wires (15)
+## Stage 2 - Jumper wires (16)
 
 These go down before anything else because most of them run under the
 Pico, the display or the charger. Insulated wire on the component side,
@@ -113,13 +113,14 @@ place makes the shorter wires harder to reach.
 | 6 | P2_B to GP22 | green | H3 N3 |
 | 7 | P2_MENU to GP19 | green | H7 R7 |
 | 8 | P2_DOWN to GP18 | green | Q3 S3 |
-| 9 | display VCC from 3V3 | red | J40 G28 |
-| 10 | display CS to GP5 | yellow | O40 I40 |
-| 11 | D1 cathode to VSYS | red | W25 D25 |
-| 12 | charger OUT- to GND | white | X20 T20 |
-| 13 | battery sense to GP28 | orange | V12 I13 |
-| 14 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
-| 15 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
+| 9 | display VCC from 3V3 | red | O41 G33 |
+| 10 | display CS to GP10 | yellow | J41 P41 |
+| 11 | display GND | white | P47 P49 |
+| 12 | D1 cathode to VSYS | red | W25 D25 |
+| 13 | charger OUT- to GND | white | X20 T20 |
+| 14 | battery sense to GP28 | orange | V12 I13 |
+| 15 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
+| 16 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
 
 **Check:** with the meter, confirm each of these reads closed, probing
 the two holes named. They are the connections the wires just made, and

@@ -194,24 +194,29 @@ BUTTON_NETS = [
     ("P2_UP",     17,  "6-33",  26, "direct"),
 ]
 
-# The display header pins fall through to the GPIOs directly below them: the
-# fence cut is omitted on columns 11-14 and 16, so SCK, MOSI, RST, DC and BL
-# ride their own strips down to the Pico. That is what moves the display to
-# SPI0 - GP6/GP7 are SPI0's SCK/TX and they sit exactly under J1 pins 3 and 4.
-# GND joins the P1 ground bus; only VCC and CS still need a wire.
+# The module Alex actually received is pin-REVERSED relative to the usual
+# ST7796 boards: read at the socket, GND arrives at column P and BL at column
+# I. The socket stays put and the strips still do the work - five signals fall
+# through to the GPIO directly below their column - but the roles move.
+# The price of the reversal is hardware SPI: SCK lands over GP9 and MOSI over
+# GP8, a pair no SPI block can drive, so the firmware clocks the panel by PIO.
+# GND now needs its column split off GP10 and bridged to the P1 bus; CS takes
+# the orphaned GP10 through the one new signal wire; VCC keeps its wire from
+# 3V3, just to the other end of the socket.
 DISPLAY_HEADER_COL0 = 9       # J1 pin 1; pins 1..8 on columns 9..16
 DISPLAY_HEADER_ROW = 46
 
 DISPLAY_NETS = [
-    # J1 pin, name,  strip column, rows, Pico pin, how
-    (1, "GND",       9,  "46-56", 8,  "direct: shares column 9 with the E-switch ground and the P1 bus"),
-    (2, "VCC",       10, "40-56", 36, "jumper (7,20)->(10,45) from 3V3"),
-    (3, "LCD_SCK",   11, "35-56", 9,  "direct"),
-    (4, "LCD_MOSI",  12, "35-46", 10, "direct"),
-    (5, "LCD_RST",   13, "35-46", 11, "direct"),
-    (6, "LCD_DC",    14, "35-56", 12, "direct"),
-    (7, "LCD_CS",    15, "40-56", 7,  "jumper (15,45)->(9,39)"),
-    (8, "LCD_BL",    16, "35-47", 14, "direct"),
+    # socket position (J1 pin), net, strip column, rows, Pico pin, how.
+    # The MODULE's own pin at each position is 9 minus the socket position.
+    (1, "LCD_BL",    9,  "35-47", 7,  "direct to GP5; module pin 8 lands here"),
+    (2, "LCD_CS",    10, "40-56", 14, "jumper (10,41)->(16,41) to GP10"),
+    (3, "LCD_DC",    11, "35-56", 9,  "direct to GP6"),
+    (4, "LCD_RST",   12, "35-46", 10, "direct to GP7"),
+    (5, "LCD_MOSI",  13, "35-46", 11, "direct to GP8"),
+    (6, "LCD_SCK",   14, "35-56", 12, "direct to GP9"),
+    (7, "VCC",       15, "40-56", 36, "jumper (7,33)->(15,41) from 3V3"),
+    (8, "GND",       16, "43-47", 8,  "bridge (16,47)->(16,49) onto the P1 bus segment"),
 ]
 
 # Every track cut. A cut destroys the hole it names. The fences skip the
@@ -247,9 +252,9 @@ CUTS = (
     + [(23, 24)]
     + [(10, 39), (15, 39)]
     + [(1, 44), (23, 28), (24, 37)]
-    + [(9, 45)]
+    + [(9, 48)]    # BL: split the socket+GP5 strip from SW4's ground and the bus
     + [(12, 47), (13, 47)]
-    + [(16, 48)]
+    + [(16, 42), (16, 48)]   # GND: GP10 above, socket in the middle, bus below
     + [(22, 28)]   # keep GP16 off the sense tap
     + [(8, 52), (17, 52)]
 )
@@ -281,8 +286,9 @@ JUMPERS = [
     ("P2_B to GP22",            [(8, 3), (14, 3)]),
     ("P2_MENU to GP19",         [(8, 7), (18, 7)]),
     ("P2_DOWN to GP18",         [(17, 3), (19, 3)]),
-    ("display VCC from 3V3",    [(10, 40), (7, 28)]),
-    ("display CS to GP5",       [(15, 40), (9, 40)]),
+    ("display VCC from 3V3",    [(15, 41), (7, 33)]),
+    ("display CS to GP10",      [(10, 41), (16, 41)]),
+    ("display GND",             [(16, 47), (16, 49)]),
     ("D1 cathode to VSYS",      [(23, 25), (4, 25)]),
     ("charger OUT- to GND",     [(24, 20), (20, 20)]),
     ("battery sense to GP28", [(22, 12), (9, 13)]),
@@ -1955,11 +1961,12 @@ def build_md():
             A(f"| {name} | {PICO_PIN_NAME[pico_pin]} | {pico_pin} |")
     A("| VBAT_SENSE | GP28 | 34 |")
     A("")
-    A("**SPI0** is the display bus: SCK on GP6 and MOSI (TX) on GP7 are that")
-    A("peripheral's hardware pins, chosen because they sit directly under J1")
-    A("pins 3 and 4. Buttons are inputs with `Pull::Up`, active low. GP0, GP15")
-    A("and GP16 are unused - GP0 is UART0 TX, kept free for a debug console.")
-    A("There is no buzzer: this console is silent by design.")
+    A("The display bus is **PIO, not hardware SPI**. The reversed module puts")
+    A("SCK over GP9 and MOSI over GP8, a pair neither SPI block can drive, and")
+    A("PIO clocks the panel just as fast. Buttons are inputs with `Pull::Up`,")
+    A("active low. GP0, GP15 and GP16 are unused - GP0 is UART0 TX, kept free")
+    A("for a debug console. There is no buzzer: this console is silent by")
+    A("design.")
     A("")
     return "\n".join(L)
 

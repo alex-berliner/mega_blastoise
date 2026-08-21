@@ -31,8 +31,8 @@
 <line x1="82.5" y1="910.5" x2="66.0" y2="920.0" stroke="#d98fb4" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="374.0" y1="748.6" x2="319.0" y2="780.3" stroke="#c9803a" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="308.0" y1="786.7" x2="198.0" y2="850.2" stroke="#c9803a" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
-<line x1="187.0" y1="856.5" x2="137.5" y2="885.1" stroke="#c9803a" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
-<line x1="126.5" y1="891.5" x2="71.5" y2="923.2" stroke="#c9803a" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
+<line x1="187.0" y1="856.5" x2="121.0" y2="894.6" stroke="#c9803a" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
+<line x1="110.0" y1="901.0" x2="71.5" y2="923.2" stroke="#c9803a" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="379.5" y1="751.8" x2="203.5" y2="853.4" stroke="#8fb4d9" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="192.5" y1="859.7" x2="176.0" y2="869.2" stroke="#8fb4d9" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="165.0" y1="875.6" x2="77.0" y2="926.4" stroke="#8fb4d9" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
@@ -51,7 +51,8 @@
 <line x1="220.0" y1="875.6" x2="203.5" y2="885.1" stroke="#7dc98f" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="192.5" y1="891.5" x2="104.5" y2="942.2" stroke="#7dc98f" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="412.5" y1="770.8" x2="236.5" y2="872.4" stroke="#d98fb4" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
-<line x1="225.5" y1="878.8" x2="159.5" y2="916.8" stroke="#d98fb4" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
+<line x1="225.5" y1="878.8" x2="192.5" y2="897.8" stroke="#d98fb4" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
+<line x1="181.5" y1="904.2" x2="159.5" y2="916.8" stroke="#d98fb4" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="148.5" y1="923.2" x2="110.0" y2="945.4" stroke="#d98fb4" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="418.0" y1="774.0" x2="401.5" y2="783.5" stroke="#c9803a" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
 <line x1="390.5" y1="789.9" x2="242.0" y2="875.6" stroke="#c9803a" stroke-width="2.2" stroke-opacity="0.95" stroke-linecap="round"/>
@@ -113,16 +114,17 @@
 <circle cx="93.5" cy="859.7" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <circle cx="302.5" cy="878.8" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <circle cx="258.5" cy="910.5" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
-<circle cx="132.0" cy="888.3" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
+<circle cx="115.5" cy="897.8" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <circle cx="137.5" cy="904.2" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <circle cx="143.0" cy="907.3" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
+<circle cx="187.0" cy="901.0" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <circle cx="154.0" cy="920.0" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <circle cx="297.0" cy="875.6" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <circle cx="88.0" cy="907.3" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <circle cx="137.5" cy="935.9" r="3.2" fill="none" stroke="#ff4d4d" stroke-width="1.6"/>
 <line x1="468.0" y1="796.2" x2="522.0" y2="780.2" stroke="#30363d" stroke-width="1"/>
 <text x="528.0" y="784.2" fill="#e6edf3" font-size="14">Copper</text>
-<text x="528.0" y="799.2" fill="#7d8590" font-size="10">67 segments, 43 cuts</text>
+<text x="528.0" y="799.2" fill="#7d8590" font-size="10">68 segments, 44 cuts</text>
 <polygon points="462.0,651.2 154.0,829.0 154.0,824.0 462.0,646.2" fill="#1a1610" fill-opacity="1.0"/>
 <polygon points="154.0,829.0 22.1,752.8 22.1,747.8 154.0,824.0" fill="#1a1610" fill-opacity="1.0"/>
 <polygon points="330.0,570.0 462.0,646.2 154.0,824.0 22.1,747.8" fill="#2a2416" fill-opacity="1.0" stroke="#0d1117" stroke-width="0.8"/>
@@ -1501,12 +1503,15 @@
 <line x1="407.0" y1="480.3" x2="418.0" y2="486.7" stroke="#5fe08a" stroke-width="2.2" stroke-opacity="1.0" stroke-linecap="round"/>
 <circle cx="407.0" cy="480.3" r="2.4" fill="#5fe08a"/>
 <circle cx="418.0" cy="486.7" r="2.4" fill="#5fe08a"/>
-<line x1="165.0" y1="575.6" x2="214.5" y2="528.0" stroke="#ff5555" stroke-width="2.2" stroke-opacity="1.0" stroke-linecap="round"/>
-<circle cx="165.0" cy="575.6" r="2.4" fill="#ff5555"/>
-<circle cx="214.5" cy="528.0" r="2.4" fill="#ff5555"/>
-<line x1="192.5" y1="591.5" x2="159.5" y2="572.4" stroke="#ffd24d" stroke-width="2.2" stroke-opacity="1.0" stroke-linecap="round"/>
-<circle cx="192.5" cy="591.5" r="2.4" fill="#ffd24d"/>
-<circle cx="159.5" cy="572.4" r="2.4" fill="#ffd24d"/>
+<line x1="187.0" y1="594.6" x2="187.0" y2="543.8" stroke="#ff5555" stroke-width="2.2" stroke-opacity="1.0" stroke-linecap="round"/>
+<circle cx="187.0" cy="594.6" r="2.4" fill="#ff5555"/>
+<circle cx="187.0" cy="543.8" r="2.4" fill="#ff5555"/>
+<line x1="159.5" y1="578.8" x2="192.5" y2="597.8" stroke="#ffd24d" stroke-width="2.2" stroke-opacity="1.0" stroke-linecap="round"/>
+<circle cx="159.5" cy="578.8" r="2.4" fill="#ffd24d"/>
+<circle cx="192.5" cy="597.8" r="2.4" fill="#ffd24d"/>
+<line x1="159.5" y1="616.8" x2="148.5" y2="623.2" stroke="#f2f2f2" stroke-width="2.2" stroke-opacity="1.0" stroke-linecap="round"/>
+<circle cx="159.5" cy="616.8" r="2.4" fill="#f2f2f2"/>
+<circle cx="148.5" cy="623.2" r="2.4" fill="#f2f2f2"/>
 <line x1="319.0" y1="569.2" x2="214.5" y2="508.9" stroke="#ff5555" stroke-width="2.2" stroke-opacity="1.0" stroke-linecap="round"/>
 <circle cx="319.0" cy="569.2" r="2.4" fill="#ff5555"/>
 <circle cx="214.5" cy="508.9" r="2.4" fill="#ff5555"/>
@@ -1540,7 +1545,7 @@
 <circle cx="456.5" cy="496.2" r="2.4" fill="#f2f2f2"/>
 <line x1="468.0" y1="496.2" x2="522.0" y2="480.2" stroke="#30363d" stroke-width="1"/>
 <text x="528.0" y="484.2" fill="#e6edf3" font-size="14">Fly wires</text>
-<text x="528.0" y="499.2" fill="#7d8590" font-size="10">15 runs, 354 mm of wire</text>
+<text x="528.0" y="499.2" fill="#7d8590" font-size="10">16 runs, 354 mm of wire</text>
 <polygon points="462.0,349.2 154.0,527.0 154.0,524.0 462.0,346.2" fill="#0b0e12" fill-opacity="0.28"/>
 <polygon points="154.0,527.0 22.1,450.8 22.1,447.8 154.0,524.0" fill="#0b0e12" fill-opacity="0.28"/>
 <polygon points="330.0,270.0 462.0,346.2 154.0,524.0 22.1,447.8" fill="#12161c" fill-opacity="0.28" stroke="#0d1117" stroke-width="0.8"/>
@@ -1660,5 +1665,5 @@
 <text x="528.0" y="199.2" fill="#7d8590" font-size="10">on four adhesive standoffs</text>
 <text x="34" y="46" fill="#e6edf3" font-size="22">mega blastoise</text>
 <text x="34" y="68" fill="#7d8590" font-size="12">single-screen stripboard, exploded</text>
-<text x="34" y="1208" fill="#4d5560" font-size="10">24x56 stripboard . 16 buttons, no matrix . 43 cuts . 15 wires</text>
+<text x="34" y="1208" fill="#4d5560" font-size="10">24x56 stripboard . 16 buttons, no matrix . 44 cuts . 16 wires</text>
 </svg>

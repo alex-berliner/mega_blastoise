@@ -102,8 +102,10 @@ BOX_TITLE = ("power train", 172.72, 68.58)
 NOTES = [
     "All 16 buttons are direct-to-GPIO, active low, internal pull-ups. "
     "No matrix, no diodes: ghosting is impossible by construction.",
-    "J1 pin order is ASSUMED: 1=GND 2=VCC 3=SCL/SCK 4=SDA/MOSI 5=RES 6=DC "
-    "7=CS 8=BLK. VERIFY against the module silkscreen before soldering.",
+    "J1 pin order is VERIFIED against the real module, which is REVERSED "
+    "from the usual ST7796 boards: socket position 1 receives module pin 8 "
+    "(BL) and position 8 receives GND. SCK/MOSI land on GP9/GP8, so the "
+    "firmware drives the panel by PIO, not hardware SPI.",
     "Power: the charger's USB-C and the Pico's micro-USB may be plugged in "
     "at the same time.",
     "VBUS reaches VSYS through the Pico's own Schottky, the cell reaches it "
@@ -224,6 +226,10 @@ for w in [n for n in root if nm(n) == "wire"]:
 for n in list(root):
     kind = nm(n)
     if kind not in ("label", "junction", "text", "rectangle"):
+        continue
+    u = get(n, "uuid")
+    if u is not None and str(u[1]).startswith("pwr-"):
+        root.remove(n)          # ours from a previous run, whatever it is
         continue
     if kind in ("text", "rectangle"):
         root.remove(n)          # notes and the module box are both reissued

@@ -21,8 +21,8 @@
 <line x1="121.2" y1="692.8" x2="121.2" y2="730.9" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="133.9" y1="32.4" x2="133.9" y2="159.4" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="133.9" y1="184.8" x2="133.9" y2="438.8" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
-<line x1="133.9" y1="464.2" x2="133.9" y2="578.5" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
-<line x1="133.9" y1="603.9" x2="133.9" y2="730.9" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="133.9" y1="464.2" x2="133.9" y2="616.6" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="133.9" y1="642.0" x2="133.9" y2="730.9" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="146.6" y1="32.4" x2="146.6" y2="438.8" stroke="#8fb4d9" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="146.6" y1="464.2" x2="146.6" y2="502.3" stroke="#8fb4d9" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="146.6" y1="527.7" x2="146.6" y2="730.9" stroke="#8fb4d9" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
@@ -41,7 +41,8 @@
 <line x1="210.1" y1="464.2" x2="210.1" y2="502.3" stroke="#7dc98f" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="210.1" y1="527.7" x2="210.1" y2="730.9" stroke="#7dc98f" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="222.9" y1="32.4" x2="222.9" y2="438.8" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
-<line x1="222.9" y1="464.2" x2="222.9" y2="616.6" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="222.9" y1="464.2" x2="222.9" y2="540.4" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
+<line x1="222.9" y1="565.8" x2="222.9" y2="616.6" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="222.9" y1="642.0" x2="222.9" y2="730.9" stroke="#d98fb4" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="235.5" y1="32.4" x2="235.5" y2="70.5" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
 <line x1="235.5" y1="95.9" x2="235.5" y2="438.8" stroke="#c9803a" stroke-width="9.5" stroke-linecap="round" opacity="0.8"/>
@@ -1459,9 +1460,10 @@
 <path d="M26.8,573.0 L37.8,584.0 M26.8,584.0 L37.8,573.0" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M306.2,369.8 L317.2,380.8 M306.2,380.8 L317.2,369.8" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M318.9,484.1 L329.9,495.1 M318.9,495.1 L329.9,484.1" stroke="#ff4d4d" stroke-width="2.5"/>
-<path d="M128.4,585.7 L139.4,596.7 M128.4,596.7 L139.4,585.7" stroke="#ff4d4d" stroke-width="2.5"/>
+<path d="M128.4,623.8 L139.4,634.8 M128.4,634.8 L139.4,623.8" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M166.6,611.1 L177.6,622.1 M166.6,622.1 L177.6,611.1" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M179.2,611.1 L190.2,622.1 M179.2,622.1 L190.2,611.1" stroke="#ff4d4d" stroke-width="2.5"/>
+<path d="M217.4,547.6 L228.4,558.6 M217.4,558.6 L228.4,547.6" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M217.4,623.8 L228.4,634.8 M217.4,634.8 L228.4,623.8" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M293.6,369.8 L304.6,380.8 M293.6,380.8 L304.6,369.8" stroke="#ff4d4d" stroke-width="2.5"/>
 <path d="M115.8,674.5 L126.8,685.5 M115.8,685.5 L126.8,674.5" stroke="#ff4d4d" stroke-width="2.5"/>
@@ -1543,7 +1545,7 @@
 <text x="121.2" y="392.7" fill="#f0883e" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 121.2 392.7)">ADC_VREF</text>
 <text x="133.9" y="492.2" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">7</text>
 <text x="133.9" y="497.6" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 133.9 497.6)">GP5</text>
-<text x="133.9" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 133.9 541.6)">LCD_CS</text>
+<text x="133.9" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 133.9 541.6)">LCD_BL</text>
 <text x="133.9" y="403.3" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">34</text>
 <text x="133.9" y="392.7" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 133.9 392.7)">GP28</text>
 <text x="133.9" y="348.7" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 133.9 348.7)">VBAT_SENSE</text>
@@ -1554,24 +1556,24 @@
 <text x="146.6" y="392.7" fill="#f0883e" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 146.6 392.7)">AGND</text>
 <text x="159.3" y="492.2" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">9</text>
 <text x="159.3" y="497.6" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 159.3 497.6)">GP6</text>
-<text x="159.3" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 159.3 541.6)">LCD_SCK</text>
+<text x="159.3" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 159.3 541.6)">LCD_DC</text>
 <text x="159.3" y="403.3" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">32</text>
 <text x="159.3" y="392.7" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 159.3 392.7)">GP27</text>
 <text x="159.3" y="348.7" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 159.3 348.7)">P2_A</text>
 <text x="172.1" y="492.2" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">10</text>
 <text x="172.1" y="497.6" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 172.1 497.6)">GP7</text>
-<text x="172.1" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 172.1 541.6)">LCD_MOSI</text>
+<text x="172.1" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 172.1 541.6)">LCD_RST</text>
 <text x="172.1" y="403.3" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">31</text>
 <text x="172.1" y="392.7" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 172.1 392.7)">GP26</text>
 <text x="172.1" y="348.7" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 172.1 348.7)">P2_INFO</text>
 <text x="184.8" y="492.2" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">11</text>
 <text x="184.8" y="497.6" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 184.8 497.6)">GP8</text>
-<text x="184.8" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 184.8 541.6)">LCD_RST</text>
+<text x="184.8" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 184.8 541.6)">LCD_MOSI</text>
 <text x="184.8" y="403.3" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">30</text>
 <text x="184.8" y="392.7" fill="#f0883e" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 184.8 392.7)">RUN</text>
 <text x="197.5" y="492.2" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">12</text>
 <text x="197.5" y="497.6" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 197.5 497.6)">GP9</text>
-<text x="197.5" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 197.5 541.6)">LCD_DC</text>
+<text x="197.5" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 197.5 541.6)">LCD_SCK</text>
 <text x="197.5" y="403.3" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">29</text>
 <text x="197.5" y="392.7" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 197.5 392.7)">GP22</text>
 <text x="197.5" y="348.7" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 197.5 348.7)">P2_B</text>
@@ -1581,7 +1583,7 @@
 <text x="210.1" y="392.7" fill="#8b949e" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 210.1 392.7)">GND</text>
 <text x="222.9" y="492.2" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">14</text>
 <text x="222.9" y="497.6" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 222.9 497.6)">GP10</text>
-<text x="222.9" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 222.9 541.6)">LCD_BL</text>
+<text x="222.9" y="541.6" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 222.9 541.6)">LCD_CS</text>
 <text x="222.9" y="403.3" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">27</text>
 <text x="222.9" y="392.7" fill="#7ee787" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 222.9 392.7)">GP21</text>
 <text x="222.9" y="348.7" fill="#c9d1d9" font-size="7" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 222.9 348.7)">P2_RIGHT</text>
@@ -1617,8 +1619,12 @@
 <text x="299.1" y="497.6" fill="#f0883e" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(90 299.1 497.6)">GP15</text>
 <text x="299.1" y="403.3" fill="#fff" font-size="7.5" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.2" paint-order="stroke">21</text>
 <text x="299.1" y="392.7" fill="#f0883e" font-size="7.5" font-family="monospace" text-anchor="start" stroke="#000" stroke-width="2.2" paint-order="stroke" transform="rotate(-90 299.1 392.7)">GP16</text>
-<path d="M324.4,273.7 Q299.0,264.7 273.6,273.7" stroke="#f2f2f2" stroke-width="2.4" fill="none"/>
-<text x="299.0" y="271.7" fill="#f2f2f2" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">charger OUT-</text>
+<path d="M222.9,616.6 Q213.9,629.2 222.9,642.0" stroke="#f2f2f2" stroke-width="2.4" fill="none"/>
+<text x="217.9" y="632.2" fill="#f2f2f2" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">display GND</text>
+<circle cx="222.9" cy="616.6" r="3.2" fill="#f2f2f2" stroke="#0d1117" stroke-width="1"/>
+<circle cx="222.9" cy="642.0" r="3.2" fill="#f2f2f2" stroke="#0d1117" stroke-width="1"/>
+<path d="M324.4,273.7 Q299.0,289.7 273.6,273.7" stroke="#f2f2f2" stroke-width="2.4" fill="none"/>
+<text x="299.0" y="285.5" fill="#f2f2f2" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">charger OUT-</text>
 <circle cx="324.4" cy="273.7" r="3.2" fill="#f2f2f2" stroke="#0d1117" stroke-width="1"/>
 <circle cx="273.6" cy="273.7" r="3.2" fill="#f2f2f2" stroke="#0d1117" stroke-width="1"/>
 <path d="M32.3,730.9 L83.2,730.9 L133.9,730.9 L222.9,730.9 L273.6,730.9 L324.4,730.9" stroke="#f2f2f2" stroke-width="2.4" fill="none"/>
@@ -1647,10 +1653,10 @@
 <circle cx="210.1" cy="603.9" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
 <circle cx="222.9" cy="603.9" r="4.8" fill="#e6edf3" stroke="#30363d" stroke-width="0.8"/>
 <text x="178.4" y="593.5" fill="#fff" font-size="11" font-family="monospace" text-anchor="middle" stroke="#000" stroke-width="2.5" paint-order="stroke">J1 display socket</text>
-<path d="M210.1,527.7 Q172.0,518.7 133.9,527.7" stroke="#ffd24d" stroke-width="2.4" fill="none"/>
-<text x="172.0" y="525.7" fill="#ffd24d" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">display CS</text>
-<circle cx="210.1" cy="527.7" r="3.2" fill="#ffd24d" stroke="#0d1117" stroke-width="1"/>
-<circle cx="133.9" cy="527.7" r="3.2" fill="#ffd24d" stroke="#0d1117" stroke-width="1"/>
+<path d="M146.6,540.4 Q184.8,549.4 222.9,540.4" stroke="#ffd24d" stroke-width="2.4" fill="none"/>
+<text x="184.8" y="548.3" fill="#ffd24d" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">display CS</text>
+<circle cx="146.6" cy="540.4" r="3.2" fill="#ffd24d" stroke="#0d1117" stroke-width="1"/>
+<circle cx="222.9" cy="540.4" r="3.2" fill="#ffd24d" stroke="#0d1117" stroke-width="1"/>
 <circle cx="57.8" cy="134.0" r="25.0" fill="#a371f7" fill-opacity="0.5" stroke="#d2a8ff" stroke-width="1.4"/>
 <circle cx="57.8" cy="134.0" r="6.2" fill="none" stroke="#d2a8ff" stroke-width="1"/>
 <circle cx="299.1" cy="134.0" r="25.0" fill="#a371f7" fill-opacity="0.5" stroke="#d2a8ff" stroke-width="1.4"/>
@@ -1709,10 +1715,10 @@
 <path d="M205.8,254.8 C258.8,254.8 258.8,286.4 311.8,286.4" stroke="#ffa657" stroke-width="1.8" fill="none" stroke-dasharray="5 3"/>
 <circle cx="205.8" cy="254.8" r="2.6" fill="#ffa657" stroke="#0d1117" stroke-width="0.8"/>
 <text x="211.8" y="257.8" fill="#ffd8a8" font-size="8.5" font-family="monospace" text-anchor="start" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">OUT+</text>
-<path d="M146.6,527.7 Q136.3,449.3 108.5,375.3" stroke="#ff5555" stroke-width="2.4" fill="none"/>
-<text x="132.4" y="453.2" fill="#ff5555" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">display VCC from 3V3</text>
-<circle cx="146.6" cy="527.7" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>
-<circle cx="108.5" cy="375.3" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>
+<path d="M210.1,540.4 Q165.7,483.2 108.5,438.8" stroke="#ff5555" stroke-width="2.4" fill="none"/>
+<text x="162.9" y="489.0" fill="#ff5555" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">display VCC from 3V3</text>
+<circle cx="210.1" cy="540.4" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>
+<circle cx="108.5" cy="438.8" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>
 <path d="M311.8,337.2 Q191.1,353.2 70.5,337.2" stroke="#ff5555" stroke-width="2.4" fill="none"/>
 <text x="191.1" y="349.0" fill="#ff5555" font-size="8" font-family="monospace" text-anchor="middle" stroke="#0d1117" stroke-width="2.4" paint-order="stroke">D1 cathode</text>
 <circle cx="311.8" cy="337.2" r="3.2" fill="#ff5555" stroke="#0d1117" stroke-width="1"/>

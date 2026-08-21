@@ -69,7 +69,7 @@ the top. All views are of the component side.
 
 ## 3. Cut the tracks first
 
-43 cuts. Do every one before any part goes down; most sit under
+44 cuts. Do every one before any part goes down; most sit under
 the Pico and the display and cannot be reached later. A cut destroys the
 hole it names. Verify each with a meter before moving on.
 
@@ -88,12 +88,12 @@ it to the copper side and cut every cross on it.
 | A | row 44 | A44 |
 | D | row 12 | D12 |
 | H | rows 5, 12, 52 | H5 H12 H52 |
-| I | rows 12, 45 | I12 I45 |
+| I | rows 12, 48 | I12 I48 |
 | J | row 39 | J39 |
 | L | row 47 | L47 |
 | M | rows 12, 47 | M12 M47 |
 | O | row 39 | O39 |
-| P | row 48 | P48 |
+| P | rows 42, 48 | P42 P48 |
 | Q | rows 5, 52 | Q5 Q52 |
 | V | row 28 | V28 |
 | W | rows 18, 24, 28 | W18 W24 W28 |
@@ -196,14 +196,14 @@ ground column; the single cut between them separates the two signals.
 | P2_DOWN | Q | 1-4 | 24 (GP18) | jumper Q3 -> S3 |
 | P2_LEFT | U | 1-33 | 22 (GP17) | direct |
 | P2_UP | Q | 6-33 | 26 (GP20) | direct |
-| GND (J1.1) | I | 46-56 | 8 (GND) | direct: shares column 9 with the E-switch ground and the P1 bus |
-| VCC (J1.2) | J | 40-56 | 36 (3V3_OUT) | jumper J40 -> G28 |
-| LCD_SCK (J1.3) | K | 35-56 | 9 (GP6) | direct |
-| LCD_MOSI (J1.4) | L | 35-46 | 10 (GP7) | direct |
-| LCD_RST (J1.5) | M | 35-46 | 11 (GP8) | direct |
-| LCD_DC (J1.6) | N | 35-56 | 12 (GP9) | direct |
-| LCD_CS (J1.7) | O | 40-56 | 7 (GP5) | jumper O40 -> I40 |
-| LCD_BL (J1.8) | P | 35-47 | 14 (GP10) | direct |
+| LCD_BL (J1.1) | I | 35-47 | 7 (GP5) | direct to GP5; module pin 8 lands here |
+| LCD_CS (J1.2) | J | 40-56 | 14 (GP10) | jumper J41 -> P41 |
+| LCD_DC (J1.3) | K | 35-56 | 9 (GP6) | direct to GP6 |
+| LCD_RST (J1.4) | L | 35-46 | 10 (GP7) | direct to GP7 |
+| LCD_MOSI (J1.5) | M | 35-46 | 11 (GP8) | direct to GP8 |
+| LCD_SCK (J1.6) | N | 35-56 | 12 (GP9) | direct to GP9 |
+| VCC (J1.7) | O | 40-56 | 36 (3V3_OUT) | jumper O41 -> G33 |
+| GND (J1.8) | P | 43-47 | 8 (GND) | bridge (16,47)->(16,49) onto the P1 bus segment |
 | BATT+ | W | 1-17 | - | BT1 and J2 share the strip |
 | BATT- | X | 8-18 | - | BT1 and J2 share the strip |
 | VBATT | W | 19-23 | - | J3 OUT+ to SW17 on the strip |
@@ -219,7 +219,7 @@ bus at I56.
 
 ## 6. Jumper wires
 
-15 wires. Insulated, on the component side, soldered **only** at
+16 wires. Insulated, on the component side, soldered **only** at
 the holes listed. The two buses are one wire each with several joints.
 Endpoints are the closest free hole pair on the two strips each wire
 joins, and each fence cut is slid as close to the Pico as its own pads
@@ -246,13 +246,14 @@ red = power (3V3, VSYS), white = ground, orange = battery sense.
 | 6 | P2_B to GP22 | green | H3 N3 |
 | 7 | P2_MENU to GP19 | green | H7 R7 |
 | 8 | P2_DOWN to GP18 | green | Q3 S3 |
-| 9 | display VCC from 3V3 | red | J40 G28 |
-| 10 | display CS to GP5 | yellow | O40 I40 |
-| 11 | D1 cathode to VSYS | red | W25 D25 |
-| 12 | charger OUT- to GND | white | X20 T20 |
-| 13 | battery sense to GP28 | orange | V12 I13 |
-| 14 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
-| 15 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
+| 9 | display VCC from 3V3 | red | O41 G33 |
+| 10 | display CS to GP10 | yellow | J41 P41 |
+| 11 | display GND | white | P47 P49 |
+| 12 | D1 cathode to VSYS | red | W25 D25 |
+| 13 | charger OUT- to GND | white | X20 T20 |
+| 14 | battery sense to GP28 | orange | V12 I13 |
+| 15 | P1 ground bus | white | A56 E56 I56 P56 T56 X56 |
+| 16 | P2 ground bus | white | D1 E1 I1 M1 T1 X1 |
 
 ## 7. Build order
 
@@ -388,16 +389,17 @@ The case needs ~10 mm of depth behind the board for the cell.
 | P2_DOWN | GP18 | 24 |
 | P2_LEFT | GP17 | 22 |
 | P2_UP | GP20 | 26 |
-| LCD_SCK | GP6 | 9 |
-| LCD_MOSI | GP7 | 10 |
-| LCD_RST | GP8 | 11 |
-| LCD_DC | GP9 | 12 |
-| LCD_CS | GP5 | 7 |
-| LCD_BL | GP10 | 14 |
+| LCD_BL | GP5 | 7 |
+| LCD_CS | GP10 | 14 |
+| LCD_DC | GP6 | 9 |
+| LCD_RST | GP7 | 10 |
+| LCD_MOSI | GP8 | 11 |
+| LCD_SCK | GP9 | 12 |
 | VBAT_SENSE | GP28 | 34 |
 
-**SPI0** is the display bus: SCK on GP6 and MOSI (TX) on GP7 are that
-peripheral's hardware pins, chosen because they sit directly under J1
-pins 3 and 4. Buttons are inputs with `Pull::Up`, active low. GP0, GP15
-and GP16 are unused - GP0 is UART0 TX, kept free for a debug console.
-There is no buzzer: this console is silent by design.
+The display bus is **PIO, not hardware SPI**. The reversed module puts
+SCK over GP9 and MOSI over GP8, a pair neither SPI block can drive, and
+PIO clocks the panel just as fast. Buttons are inputs with `Pull::Up`,
+active low. GP0, GP15 and GP16 are unused - GP0 is UART0 TX, kept free
+for a debug console. There is no buzzer: this console is silent by
+design.
