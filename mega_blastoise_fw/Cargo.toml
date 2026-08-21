@@ -18,7 +18,7 @@ rtt-target = { version = "0.6", features = ["defmt"] }
 
 # RP2040 async runtime + HAL
 embassy-executor = { version = "0.9", features = ["arch-cortex-m", "executor-thread", "defmt"] }
-embassy-rp = { version = "0.8", features = ["defmt", "critical-section-impl", "rp2040", "time-driver"] }
+embassy-rp = { version = "0.8", features = ["defmt", "critical-section-impl", "time-driver"] }
 embassy-time = { version = "0.5", features = ["defmt"] }
 embassy-sync = "0.6"
 embedded-hal-async = "1"
@@ -44,7 +44,13 @@ smart-leds = { version = "0.4", optional = true }
 pio = { version = "0.3", optional = true }
 fixed = { version = "1", optional = true }
 [features]
-default = ["usb", "oled", "buzzer", "leds"]
+default = ["usb", "oled", "buzzer", "leds", "rp2040"]
+# Chip selection — exactly one. Mutually exclusive because embassy-rp's own
+# rp2040/rp235xa features are; lib.rs enforces it with a compile_error.
+# Building for the RP2350 therefore needs --no-default-features:
+#   cargo b2350 / r2350 (aliases in .cargo/config.toml)
+rp2040 = ["embassy-rp/rp2040"]
+rp2350 = ["embassy-rp/rp235xa"]
 usb = []
 oled = ["dep:ssd1306", "dep:embedded-graphics", "dep:display-interface"]
 buzzer = []
