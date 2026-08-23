@@ -39,7 +39,7 @@ faces and the cell's leads come round the edge to BT1.
 | 1 | Raspberry Pi Pico 2 | RP2350, 4 MB flash | U1 | 12 | with 2x20 pin header, soldered flat, USB facing the board's left edge |
 | 1 | 3.5 in TFT display module | ST7796, 320x480, SPI, 8 pin, 3.3 V | J1 | 17 | 55.5 x 98 mm; the XIITIA 2-pack is one board plus a spare; already ordered |
 | 1 | Female header socket | 1x8, 2.54 mm | J1 | 7 | the display's male header plugs into this; sets the deck height |
-| 16 | Tactile switch | 6 x 6 mm through hole, 4 leg | SW1-SW16 | 8 | legs splay onto the 0.2 x 0.3 in hole pattern |
+| 16 | Tactile switch | 6 x 6 mm through hole, 4 leg, 9.5 or 11 mm tall round plunger (assortment-kit part is fine) | SW1-SW16 | 8 | legs splay onto the 0.2 x 0.3 in hole pattern; EITHER internal bridge direction works - meter one, then 4 legs or 2 diagonal legs per ASSEMBLY.md stage 4. Tall plunger takes the printed 9 mm cap |
 | 16 | Button cap | 9 mm dia, 3D printed - NEW PRINT, 11.3 mm caps do not fit | - | 0 | regenerate hardware/button_cap/ with d=9.0, bore for 6 mm plunger |
 | 1 | USB-C LiPo charger | TP4056 + DW01 + FS8205, 1 A | J2 J3 | 9 | protected variant only (OUT+/OUT- pads). Mounts on the FRONT under the display deck, USB-C overhanging the right edge; the cell is on the back |
 | 1 | LiPo cell | 3.7 V 2000 mAh, 103450, 50 x 34 x 10 mm | BT1 | 13 | mounts on the BACK on a foam pad over the solder joints |
@@ -263,7 +263,9 @@ red = power (3V3, VSYS), white = ground, orange = battery sense.
 3. Solder the Pico. Headers on the Pico first, then drop it in with the
    USB pointing left, check it straddles the row 34 cuts,
    then solder.
-4. Solder the 16 switches, all four legs each.
+4. Meter one switch for its bridge direction, then solder all 16 -
+   four legs if the bridged pairs run along the strips, two diagonal
+   legs (other two clipped) if they run across. ASSEMBLY.md stage 4.
 5. Solder D1, R1, R2, C1, the J1 socket and the 2-pin headers.
 6. Wire the charger module, cell and slide switch to their headers.
 7. Foam-pad the cell to the back of the board under the display area.

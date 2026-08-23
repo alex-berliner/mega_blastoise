@@ -154,10 +154,28 @@ to make at 2.54 mm and invisible from directly above.
 
 ## Stage 4 - Switches (16)
 
-Solder **all four legs** of each. The two legs on one column form one
-terminal, the two on the other form the second; using only two legs
-works electrically and then fails mechanically the first time a thumb
-lands on it.
+**First, meter ONE switch from the batch.** Probe two legs on the same
+side, no press: if they read OPEN, probe the leg across the narrow gap
+until you find the pair that reads closed at rest. 6x6 tactiles come in
+both internal arrangements, listings almost never say which, and the
+wrong guess grounds every button permanently. Twenty seconds with a
+meter beats trusting the product photo.
+
+Then mount by whichever case you found:
+
+- **Bridged pairs sit ALONG the strips** (each pair lands in one
+  column): solder all four legs. The bridge is harmless on one strip
+  and the extra legs carry the thumb load.
+- **Bridged pairs sit ACROSS the strips**: four legs would short the
+  signal column to the ground column permanently. **Clip two legs so
+  the two that remain are DIAGONAL**, then solder those two. One leg
+  per bridged pair breaks the bridge; diagonal keeps a leg in each
+  column. Seat the body flat and give both joints a proper fillet -
+  they carry all the press force now. Clip flush at the body, because
+  a folded-over stub lands on live copper.
+
+Either way the same 4 holes, the same body position, the same caps.
+The board cannot tell the difference; only the legs can.
 
 | Ref | Button | Signal column | Ground column | Top row |
 |---|---|---|---|---|
@@ -190,9 +208,11 @@ column, then press. Closed on press, open on release, every time:
 | SW4 | L51 | I51 | closes |
 | ... | and so on for all sixteen | | |
 
-If one is closed all the time, its signal and ground columns are
-bridged - most likely a fence cut that did not take. If one never
-closes, the switch is rotated 90 degrees.
+If one is closed all the time, either a fence cut did not take or the
+switch's internal bridge spans the two columns - the across-the-strips
+case soldered on four legs. Desolder it, clip to diagonal, refit. If
+one never closes, the two remaining legs are on the same bridged pair:
+wrong diagonal.
 
 ## Stage 5 - Power train parts
 

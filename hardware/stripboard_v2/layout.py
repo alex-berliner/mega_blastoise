@@ -490,9 +490,12 @@ BOM = [
     (1, "Female header socket", "1x8, 2.54 mm", "J1",
      "the display's male header plugs into this; sets the deck height",
      7, "2.54mm female pin header socket 1x8 single row"),
-    (16, "Tactile switch", "6 x 6 mm through hole, 4 leg",
-     "SW1-SW16", "legs splay onto the 0.2 x 0.3 in hole pattern",
-     8, "6x6x5mm tactile push button switch 4 pin through hole 100 pack"),
+    (16, "Tactile switch", "6 x 6 mm through hole, 4 leg, 9.5 or 11 mm tall "
+     "round plunger (assortment-kit part is fine)",
+     "SW1-SW16", "legs splay onto the 0.2 x 0.3 in hole pattern; EITHER "
+     "internal bridge direction works - meter one, then 4 legs or 2 diagonal "
+     "legs per ASSEMBLY.md stage 4. Tall plunger takes the printed 9 mm cap",
+     8, "6x6x9.5mm tactile push button switch 4 pin through hole long plunger"),
     (16, "Button cap", "9 mm dia, 3D printed - NEW PRINT, 11.3 mm caps do not fit",
      "-", "regenerate hardware/button_cap/ with d=9.0, bore for 6 mm plunger",
      0, "-- printed, filament only"),
@@ -1845,7 +1848,9 @@ def build_md():
     A("3. Solder the Pico. Headers on the Pico first, then drop it in with the")
     A(f"   USB pointing left, check it straddles the row {PICO_CUT_ROW} cuts,")
     A("   then solder.")
-    A("4. Solder the 16 switches, all four legs each.")
+    A("4. Meter one switch for its bridge direction, then solder all 16 -")
+    A("   four legs if the bridged pairs run along the strips, two diagonal")
+    A("   legs (other two clipped) if they run across. ASSEMBLY.md stage 4.")
     A("5. Solder D1, R1, R2, C1, the J1 socket and the 2-pin headers.")
     A("6. Wire the charger module, cell and slide switch to their headers.")
     A("7. Foam-pad the cell to the back of the board under the display area.")
@@ -2143,10 +2148,28 @@ def assembly_md():
     # ---- stage 4
     A(f"## Stage 4 - Switches ({len(switches)})")
     A("")
-    A("Solder **all four legs** of each. The two legs on one column form one")
-    A("terminal, the two on the other form the second; using only two legs")
-    A("works electrically and then fails mechanically the first time a thumb")
-    A("lands on it.")
+    A("**First, meter ONE switch from the batch.** Probe two legs on the same")
+    A("side, no press: if they read OPEN, probe the leg across the narrow gap")
+    A("until you find the pair that reads closed at rest. 6x6 tactiles come in")
+    A("both internal arrangements, listings almost never say which, and the")
+    A("wrong guess grounds every button permanently. Twenty seconds with a")
+    A("meter beats trusting the product photo.")
+    A("")
+    A("Then mount by whichever case you found:")
+    A("")
+    A("- **Bridged pairs sit ALONG the strips** (each pair lands in one")
+    A("  column): solder all four legs. The bridge is harmless on one strip")
+    A("  and the extra legs carry the thumb load.")
+    A("- **Bridged pairs sit ACROSS the strips**: four legs would short the")
+    A("  signal column to the ground column permanently. **Clip two legs so")
+    A("  the two that remain are DIAGONAL**, then solder those two. One leg")
+    A("  per bridged pair breaks the bridge; diagonal keeps a leg in each")
+    A("  column. Seat the body flat and give both joints a proper fillet -")
+    A("  they carry all the press force now. Clip flush at the body, because")
+    A("  a folded-over stub lands on live copper.")
+    A("")
+    A("Either way the same 4 holes, the same body position, the same caps.")
+    A("The board cannot tell the difference; only the legs can.")
     A("")
     A("| Ref | Button | Signal column | Ground column | Top row |")
     A("|---|---|---|---|---|")
@@ -2163,9 +2186,11 @@ def assembly_md():
         A(f"| {ref} | {hole_name(sc, row)} | {hole_name(gc, row)} | closes |")
     A("| ... | and so on for all sixteen | | |")
     A("")
-    A("If one is closed all the time, its signal and ground columns are")
-    A("bridged - most likely a fence cut that did not take. If one never")
-    A("closes, the switch is rotated 90 degrees.")
+    A("If one is closed all the time, either a fence cut did not take or the")
+    A("switch's internal bridge spans the two columns - the across-the-strips")
+    A("case soldered on four legs. Desolder it, clip to diagonal, refit. If")
+    A("one never closes, the two remaining legs are on the same bridged pair:")
+    A("wrong diagonal.")
     A("")
 
     # ---- stage 5
