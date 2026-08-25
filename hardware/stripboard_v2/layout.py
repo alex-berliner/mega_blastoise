@@ -1021,28 +1021,32 @@ def svg_layers(scale=5.0):
     # OUT leads simply swap.
     LEADS = [
         # label, board hole, distance down the module's left edge.
-        # Colour carries the pair: red = OUT (protected output), green = B
-        # (cell side, matching the battery outline). The terminal dot carries
-        # the polarity: filled in the pair colour = +, filled white = -.
+        # Every lead gets its own colour so no two can be confused at the
+        # board end: red = OUT+ (the power rail), white = OUT- (lands on
+        # GND), green = B+ (battery outline's colour), purple = B-.
         ("OUT-", (24, 21), 3.0),
         ("B-",   (24, 10), 7.0),
         ("B+",   (23, 10), 11.0),
         ("OUT+", (23, 21), 15.0),
     ]
-    PAIR_COLORS = {"OUT": "#ff5555", "B": "#3fb950"}
+    LEAD_COLORS = {"OUT+": "#ff5555", "OUT-": "#f2f2f2",
+                   "B+": "#3fb950", "B-": "#a78bfa"}
     for label, hole_cr, oy in LEADS:
-        pair = PAIR_COLORS[label.rstrip("+-")]
-        polarity = pair if label.endswith("+") else "#f2f2f2"
+        color = LEAD_COLORS[label]
         hx, hy = px(*hole_cr)
         ex, ey = sx(cx0), sy(cy0 + oy)
         chg.append(f'<path d="M{ex:.1f},{ey:.1f} C{(ex + hx) / 2:.1f},{ey:.1f} '
                    f'{(ex + hx) / 2:.1f},{hy:.1f} {hx:.1f},{hy:.1f}" '
-                   f'stroke="{pair}" stroke-width="1.8" fill="none" '
+                   f'stroke="{color}" stroke-width="1.8" fill="none" '
                    f'stroke-dasharray="5 3"/>')
         for tx, ty in ((ex, ey), (hx, hy)):
             chg.append(f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="2.6" '
-                       f'fill="{polarity}" stroke="#0d1117" stroke-width="0.8"/>')
-        chg.append(f'<text x="{ex + 6:.1f}" y="{ey + 3:.1f}" fill="{pair}" '
+                       f'fill="{color}" stroke="#0d1117" stroke-width="0.8"/>')
+        # the board-end dot sits on the header pad, so it carries the sign
+        chg.append(f'<text x="{hx:.1f}" y="{hy + 2.2:.1f}" fill="#0d1117" '
+                   f'font-size="6.5" font-family="monospace" '
+                   f'text-anchor="middle" font-weight="bold">{label[-1]}</text>')
+        chg.append(f'<text x="{ex + 6:.1f}" y="{ey + 3:.1f}" fill="{color}" '
                    f'font-size="8.5" font-family="monospace" text-anchor="start" '
                    f'stroke="#0d1117" stroke-width="2.4" '
                    f'paint-order="stroke">{label}</text>')
