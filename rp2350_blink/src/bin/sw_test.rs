@@ -1,8 +1,11 @@
-//! Switch bring-up test for SW13, SW14 and SW16 on the stripboard v2.
+//! Switch bring-up test for all 16 buttons on the stripboard v2.
 //!
-//!   SW13 = P2_A    on GP27
-//!   SW14 = P2_B    on GP22
-//!   SW16 = P2_MENU on GP19
+//! GPIO map is BUILD.md §10 (net names) + layout.py (SW numbers):
+//!
+//!   P1: SW1 UP GP4, SW2 DOWN GP3, SW3 LEFT GP1, SW4 RIGHT GP2,
+//!       SW5 A GP14, SW6 B GP12, SW7 INFO GP13, SW8 MENU GP11
+//!   P2: SW9 UP GP20, SW10 DOWN GP18, SW11 LEFT GP17, SW12 RIGHT GP21,
+//!       SW13 A GP27, SW14 B GP22, SW15 INFO GP26, SW16 MENU GP19
 //!
 //! All are direct-wired tactiles to ground: internal pull-up, LOW = pressed.
 //! Two independent signs of life, same philosophy as the blink target:
@@ -93,7 +96,7 @@ async fn main(spawner: Spawner) {
 
     let mut config = Config::new(0xc0de, 0xcafe);
     config.manufacturer = Some("mega-blastoise");
-    config.product = Some("RP2350 sw13/sw14 test");
+    config.product = Some("RP2350 switch test");
     config.serial_number = Some("1");
     config.max_power = 100;
     config.max_packet_size_0 = 64;
@@ -116,13 +119,29 @@ async fn main(spawner: Spawner) {
     spawner.spawn(usb_task(USB_DEV.init(builder.build()))).unwrap();
 
     let mut led = Output::new(p.PIN_25, Level::Low);
-    let mut sw13 = Switch::new(Input::new(p.PIN_27, Pull::Up), "SW13 P2_A GP27");
-    let mut sw14 = Switch::new(Input::new(p.PIN_22, Pull::Up), "SW14 P2_B GP22");
-    let mut sw16 = Switch::new(Input::new(p.PIN_19, Pull::Up), "SW16 P2_MENU GP19");
+    let mut switches = [
+        Switch::new(Input::new(p.PIN_4, Pull::Up), "SW1 P1_UP GP4"),
+        Switch::new(Input::new(p.PIN_3, Pull::Up), "SW2 P1_DOWN GP3"),
+        Switch::new(Input::new(p.PIN_1, Pull::Up), "SW3 P1_LEFT GP1"),
+        Switch::new(Input::new(p.PIN_2, Pull::Up), "SW4 P1_RIGHT GP2"),
+        Switch::new(Input::new(p.PIN_14, Pull::Up), "SW5 P1_A GP14"),
+        Switch::new(Input::new(p.PIN_12, Pull::Up), "SW6 P1_B GP12"),
+        Switch::new(Input::new(p.PIN_13, Pull::Up), "SW7 P1_INFO GP13"),
+        Switch::new(Input::new(p.PIN_11, Pull::Up), "SW8 P1_MENU GP11"),
+        Switch::new(Input::new(p.PIN_20, Pull::Up), "SW9 P2_UP GP20"),
+        Switch::new(Input::new(p.PIN_18, Pull::Up), "SW10 P2_DOWN GP18"),
+        Switch::new(Input::new(p.PIN_17, Pull::Up), "SW11 P2_LEFT GP17"),
+        Switch::new(Input::new(p.PIN_21, Pull::Up), "SW12 P2_RIGHT GP21"),
+        Switch::new(Input::new(p.PIN_27, Pull::Up), "SW13 P2_A GP27"),
+        Switch::new(Input::new(p.PIN_22, Pull::Up), "SW14 P2_B GP22"),
+        Switch::new(Input::new(p.PIN_26, Pull::Up), "SW15 P2_INFO GP26"),
+        Switch::new(Input::new(p.PIN_19, Pull::Up), "SW16 P2_MENU GP19"),
+    ];
 
     let mut banner_sent = false;
     loop {
-        for sw in [&mut sw13, &mut sw14, &mut sw16] {
+        let mut any_down = false;
+        for sw in switches.iter_mut() {
             if let Some(held) = sw.poll() {
                 let mut buf = [0u8; 64];
                 let line = fmt_edge(&mut buf, sw.name, held);
@@ -130,14 +149,15 @@ async fn main(spawner: Spawner) {
                     let _ = cdc.write_packet(line).await;
                 }
             }
+            any_down |= sw.down;
         }
-        led.set_level(if sw13.down || sw14.down || sw16.down { Level::High } else { Level::Low });
+        led.set_level(if any_down { Level::High } else { Level::Low });
 
         if cdc.dtr() && !banner_sent {
             banner_sent = true;
             let _ = cdc
                 // one CDC packet is 64 bytes, so the banner stays terse
-                .write_packet(b"sw_test: SW13 GP27, SW14 GP22, SW16 GP19, LOW=pressed\r\n")
+                .write_packet(b"sw_test: SW1-SW16, stripboard v2 map, LOW=pressed\r\n")
                 .await;
         } else if !cdc.dtr() {
             banner_sent = false; // re-banner on the next host connect
