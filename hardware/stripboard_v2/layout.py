@@ -809,11 +809,25 @@ def svg_layers(scale=5.0):
                      f'height="{bh:.1f}" fill="#8b949e" '
                      f'fill-opacity="{PART_OPACITY}" stroke="#e6edf3" '
                      f'stroke-width="{2.0 if heavy else 1.2}" rx="3"/>')
+        # Polarised headers wear their sign: red pad = +, white pad = -.
+        # All three sit with + on column W (23) and - on column X (24).
+        POLARISED = ("BT1", "J2", "J3")
         for hc, hr in part_pad_holes(ref):
             hx, hy = px(hc, hr)
-            parts.append(f'<circle cx="{hx:.1f}" cy="{hy:.1f}" '
-                         f'r="{0.95 * scale:.1f}" fill="#e6edf3" '
-                         f'stroke="#30363d" stroke-width="0.8"/>')
+            if ref in POLARISED:
+                plus = hc == 23
+                parts.append(f'<circle cx="{hx:.1f}" cy="{hy:.1f}" '
+                             f'r="{0.95 * scale:.1f}" '
+                             f'fill="{"#ff5555" if plus else "#f2f2f2"}" '
+                             f'stroke="#30363d" stroke-width="0.8"/>')
+                parts.append(f'<text x="{hx:.1f}" y="{hy + 2.6:.1f}" '
+                             f'fill="#0d1117" font-size="8" '
+                             f'font-family="monospace" text-anchor="middle" '
+                             f'font-weight="bold">{"+" if plus else "-"}</text>')
+            else:
+                parts.append(f'<circle cx="{hx:.1f}" cy="{hy:.1f}" '
+                             f'r="{0.95 * scale:.1f}" fill="#e6edf3" '
+                             f'stroke="#30363d" stroke-width="0.8"/>')
         label = PART_BODY[ref][2]
         if ref == "U1":
             uw, uh = 8.0 * scale, 6.0 * scale
@@ -1006,22 +1020,29 @@ def svg_layers(scale=5.0):
     # Rotating the module the other way in-plane reverses this order; the two
     # OUT leads simply swap.
     LEADS = [
-        # label, board hole, distance down the module's left edge
+        # label, board hole, distance down the module's left edge.
+        # Colour carries the pair: red = OUT (protected output), green = B
+        # (cell side, matching the battery outline). The terminal dot carries
+        # the polarity: filled in the pair colour = +, filled white = -.
         ("OUT-", (24, 21), 3.0),
         ("B-",   (24, 10), 7.0),
         ("B+",   (23, 10), 11.0),
         ("OUT+", (23, 21), 15.0),
     ]
+    PAIR_COLORS = {"OUT": "#ff5555", "B": "#3fb950"}
     for label, hole_cr, oy in LEADS:
+        pair = PAIR_COLORS[label.rstrip("+-")]
+        polarity = pair if label.endswith("+") else "#f2f2f2"
         hx, hy = px(*hole_cr)
         ex, ey = sx(cx0), sy(cy0 + oy)
         chg.append(f'<path d="M{ex:.1f},{ey:.1f} C{(ex + hx) / 2:.1f},{ey:.1f} '
                    f'{(ex + hx) / 2:.1f},{hy:.1f} {hx:.1f},{hy:.1f}" '
-                   f'stroke="#ffa657" stroke-width="1.8" fill="none" '
+                   f'stroke="{pair}" stroke-width="1.8" fill="none" '
                    f'stroke-dasharray="5 3"/>')
-        chg.append(f'<circle cx="{ex:.1f}" cy="{ey:.1f}" r="2.6" fill="#ffa657" '
-                   f'stroke="#0d1117" stroke-width="0.8"/>')
-        chg.append(f'<text x="{ex + 6:.1f}" y="{ey + 3:.1f}" fill="#ffd8a8" '
+        for tx, ty in ((ex, ey), (hx, hy)):
+            chg.append(f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="2.6" '
+                       f'fill="{polarity}" stroke="#0d1117" stroke-width="0.8"/>')
+        chg.append(f'<text x="{ex + 6:.1f}" y="{ey + 3:.1f}" fill="{pair}" '
                    f'font-size="8.5" font-family="monospace" text-anchor="start" '
                    f'stroke="#0d1117" stroke-width="2.4" '
                    f'paint-order="stroke">{label}</text>')
