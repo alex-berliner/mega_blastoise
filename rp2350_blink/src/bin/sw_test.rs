@@ -1,9 +1,10 @@
-//! Switch bring-up test for SW13 and SW14 on the stripboard v2.
+//! Switch bring-up test for SW13, SW14 and SW16 on the stripboard v2.
 //!
-//!   SW13 = P2_A on GP27
-//!   SW14 = P2_B on GP22
+//!   SW13 = P2_A    on GP27
+//!   SW14 = P2_B    on GP22
+//!   SW16 = P2_MENU on GP19
 //!
-//! Both are direct-wired tactiles to ground: internal pull-up, LOW = pressed.
+//! All are direct-wired tactiles to ground: internal pull-up, LOW = pressed.
 //! Two independent signs of life, same philosophy as the blink target:
 //!
 //!   * GP25 LED lights while either switch is held — bench check with no host.
@@ -117,10 +118,11 @@ async fn main(spawner: Spawner) {
     let mut led = Output::new(p.PIN_25, Level::Low);
     let mut sw13 = Switch::new(Input::new(p.PIN_27, Pull::Up), "SW13 P2_A GP27");
     let mut sw14 = Switch::new(Input::new(p.PIN_22, Pull::Up), "SW14 P2_B GP22");
+    let mut sw16 = Switch::new(Input::new(p.PIN_19, Pull::Up), "SW16 P2_MENU GP19");
 
     let mut banner_sent = false;
     loop {
-        for sw in [&mut sw13, &mut sw14] {
+        for sw in [&mut sw13, &mut sw14, &mut sw16] {
             if let Some(held) = sw.poll() {
                 let mut buf = [0u8; 64];
                 let line = fmt_edge(&mut buf, sw.name, held);
@@ -129,12 +131,13 @@ async fn main(spawner: Spawner) {
                 }
             }
         }
-        led.set_level(if sw13.down || sw14.down { Level::High } else { Level::Low });
+        led.set_level(if sw13.down || sw14.down || sw16.down { Level::High } else { Level::Low });
 
         if cdc.dtr() && !banner_sent {
             banner_sent = true;
             let _ = cdc
-                .write_packet(b"sw_test: SW13=P2_A GP27, SW14=P2_B GP22, LOW=pressed\r\n")
+                // one CDC packet is 64 bytes, so the banner stays terse
+                .write_packet(b"sw_test: SW13 GP27, SW14 GP22, SW16 GP19, LOW=pressed\r\n")
                 .await;
         } else if !cdc.dtr() {
             banner_sent = false; // re-banner on the next host connect
