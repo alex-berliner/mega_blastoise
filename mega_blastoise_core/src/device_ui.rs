@@ -188,6 +188,18 @@ pub fn render_device(
     log2: LogView<'_>,
     opts: &crate::menu::GameOptions,
 ) -> Vec<u8> {
+    render_device_frame(ctl, ui1, ui2, log1, log2, opts).to_rgba()
+}
+
+/// [`render_device`] returning the RGB565 frame itself (firmware path).
+pub fn render_device_frame(
+    ctl: &OledController,
+    ui1: &SeatUi,
+    ui2: &SeatUi,
+    log1: LogView<'_>,
+    log2: LogView<'_>,
+    opts: &crate::menu::GameOptions,
+) -> DeviceFrame {
     let mut frame = DeviceFrame::new();
     both_halves(&mut frame, |r, seat| {
         let (ui, log) = if seat == 1 { (ui1, log1) } else { (ui2, log2) };
@@ -219,7 +231,7 @@ pub fn render_device(
     if flash > 0 {
         crate::move_anim::white_out(&mut frame, flash);
     }
-    frame.to_rgba()
+    frame
 }
 
 /// The gen picker is the one menu that is not per seat: it chooses the game
@@ -229,6 +241,14 @@ pub fn render_menu(
     menu: &crate::menu::Menu,
     opts: &crate::menu::GameOptions,
 ) -> Vec<u8> {
+    render_menu_frame(menu, opts).to_rgba()
+}
+
+/// [`render_menu`] returning the RGB565 frame itself (firmware path).
+pub fn render_menu_frame(
+    menu: &crate::menu::Menu,
+    opts: &crate::menu::GameOptions,
+) -> DeviceFrame {
     use crate::menu::MenuScreen;
     use crate::display_color::{HALF_H, HALF_W};
     let rows = option_rows(opts);
@@ -242,7 +262,7 @@ pub fn render_menu(
     });
     both_halves(&mut frame, |r, seat| dc::draw_play_frame_edge(r, seat));
     crate::device_view::draw_split_divider(&mut frame);
-    frame.to_rgba()
+    frame
 }
 
 /// Compose the whole panel from the session, given the platform's one fact
@@ -253,13 +273,24 @@ pub fn render_session(
     ctl: &OledController,
     lobby: bool,
 ) -> Vec<u8> {
+    render_session_frame(session, ctl, lobby).to_rgba()
+}
+
+/// [`render_session`] without the RGBA conversion: the firmware flushes the
+/// RGB565 [`DeviceFrame`] to the panel as-is, so it takes the frame directly.
+/// Same composition, same rules — only the pixel format at the end differs.
+pub fn render_session_frame(
+    session: &crate::device_session::DeviceSession,
+    ctl: &OledController,
+    lobby: bool,
+) -> DeviceFrame {
     // A menu can only own the screen while the lobby is idle — a battle
     // (including the attract demo) always wins the panel.
     if session.menu_active && lobby {
-        return render_menu(&session.menu, &session.opts);
+        return render_menu_frame(&session.menu, &session.opts);
     }
     let lines = session.log.lines();
     let l1 = LogView { lines, offset: session.log_view(1) };
     let l2 = LogView { lines, offset: session.log_view(2) };
-    render_device(ctl, &session.seats[0], &session.seats[1], l1, l2, &session.opts)
+    render_device_frame(ctl, &session.seats[0], &session.seats[1], l1, l2, &session.opts)
 }

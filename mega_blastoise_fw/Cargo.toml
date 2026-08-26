@@ -53,6 +53,11 @@ rp2040 = ["embassy-rp/rp2040"]
 rp2350 = ["embassy-rp/rp235xa"]
 usb = []
 oled = ["dep:ssd1306", "dep:embedded-graphics", "dep:display-interface"]
+# Stripboard v2: one ST7796 320x480 panel (bit-banged SPI on GP5-GP10) and
+# 16 direct-GPIO buttons driving core's DeviceSession. Replaces the whole
+# dual-OLED path; build with --no-default-features:
+#   cargo bv2 (alias in .cargo/config.toml)
+board_v2 = ["dep:pio", "dep:fixed"]
 buzzer = []
 leds = ["dep:smart-leds", "dep:pio", "dep:fixed"]
 mem-profile = []

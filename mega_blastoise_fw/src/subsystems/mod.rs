@@ -12,3 +12,9 @@ pub mod sh1106;
 
 #[cfg(feature = "leds")]
 pub mod led;
+
+#[cfg(feature = "board_v2")]
+pub mod st7796;
+
+#[cfg(feature = "board_v2")]
+pub mod buttons_v2;

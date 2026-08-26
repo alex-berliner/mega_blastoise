@@ -28,3 +28,7 @@ rrb = "run --release --bin"
 # replacing the whole default set — these aliases carry the boilerplate.
 b2350 = "build --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,usb,oled,buzzer,leds"
 r2350 = "run --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,usb,oled,buzzer,leds"
+# Stripboard v2 (Pico 2 + ST7796 + 16 direct buttons). No usb yet: the
+# board_v2 milestone drives DeviceSession from the physical buttons only.
+bv2 = "build --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,board_v2"
+rv2 = "run --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,board_v2"
