@@ -27,6 +27,10 @@ battler-data = { path = "../battler/battler-data" }
 # getrandom is pulled in transitively by battler → rand.
 # Enable wasm_js so it compiles for wasm32-unknown-unknown.
 getrandom = { version = "0.4", features = ["wasm_js"] }
+# The shared DeviceInputChannel is a CriticalSectionRawMutex channel (the
+# firmware pushes from tasks into a static); wasm is single-threaded, so the
+# std critical-section impl satisfies the link.
+critical-section = { version = "1", features = ["std"] }
 
 [patch.crates-io]
 once_cell = { path = "../patches/once_cell" }

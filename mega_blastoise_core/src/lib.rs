@@ -30,6 +30,7 @@ pub mod random_ai;
 pub mod sprites;
 pub mod sprites_color;
 pub mod qr;
+pub mod device_runner;
 
 pub use battle_effects::{
     anim, process_new_log_lines, BoardEffects, BoardEventQueue, NoopBoardEffects,

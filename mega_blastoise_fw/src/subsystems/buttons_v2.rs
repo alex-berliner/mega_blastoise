@@ -18,25 +18,16 @@
 use core::sync::atomic::{AtomicU8, Ordering};
 
 use embassy_rp::gpio::Input;
-use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-use embassy_sync::channel::Channel;
-use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::cursor_nav::Dir;
+use mega_blastoise_core::device_runner::DeviceEvent;
 use mega_blastoise_core::device_session::Button;
-
-pub static EVENTS: Channel<CriticalSectionRawMutex, (u8, Button), 8> = Channel::new();
 
 /// Live held-button bitmask per seat, bit order matching
 /// `device_view::draw_input_debug`: 0=Up 1=Down 2=Left 3=Right 4=A 5=B
 /// 6=Info 7=Menu. Written here on every debounced edge, read by the debug
-/// overlay.
+/// overlay in the port's present().
 pub static MASKS: [AtomicU8; 2] = [AtomicU8::new(0), AtomicU8::new(0)];
-
-/// Pulsed on every debounced edge — presses AND releases — so the render
-/// loop can repaint the debug overlay even when an edge produces no
-/// session event (releases mostly don't).
-pub static DIRTY: Signal<CriticalSectionRawMutex, ()> = Signal::new();
 
 pub fn masks() -> [u8; 2] {
     [MASKS[0].load(Ordering::Relaxed), MASKS[1].load(Ordering::Relaxed)]
@@ -73,9 +64,10 @@ impl Key {
     }
 
     fn send(&self, b: Button) {
-        // try_send: a full queue means the device task is many presses
-        // behind; dropping the oldest intent is worse than dropping this one.
-        let _ = EVENTS.try_send((self.player, b));
+        // try_send: a full queue means the runner is many presses behind;
+        // dropping the newest press is the least-wrong option.
+        let _ = crate::board_v2::INPUT
+            .try_send(DeviceEvent::Button { player: self.player, button: b });
     }
 
     fn poll(&mut self) {
@@ -103,7 +95,8 @@ impl Key {
         } else {
             m.fetch_and(!(1 << self.bit), Ordering::Relaxed);
         }
-        DIRTY.signal(());
+        // Any edge — including releases — repaints the debug overlay.
+        let _ = crate::board_v2::INPUT.try_send(DeviceEvent::Pulse);
         match self.kind {
             Kind::Plain(b) => {
                 if raw_down {

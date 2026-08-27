@@ -37,12 +37,6 @@ bind_interrupts!(struct PioIrqs {
 
 pub static FRAME: Signal<CriticalSectionRawMutex, DeviceFrame> = Signal::new();
 
-/// Set after each blit (and once at init). The renderer waits on it before
-/// building the next frame, so at most one 300 KB frame is ever in flight —
-/// without this, a burst of presses can have three frames alive at once,
-/// which is real heap pressure even on the RP2350.
-pub static IDLE: Signal<CriticalSectionRawMutex, ()> = Signal::new();
-
 const PANEL_W: u16 = 320;
 const PANEL_H: u16 = 480;
 const OFF_X: u16 = (PANEL_W - DEV_W as u16) / 2; // 0
@@ -250,12 +244,17 @@ pub async fn task(mut lcd: Lcd) -> ! {
     lcd.init().await;
     lcd.fill_rect(0, 0, PANEL_W, PANEL_H, 0x0000).await;
     lcd.bl.set_high();
-    defmt::debug!("ST7796 ready: PIO SPI at 25 MHz, DMA per frame");
-    IDLE.signal(());
+    defmt::debug!("ST7796 ready: PIO SPI + DMA, native 320x480");
     loop {
         let mut frame = FRAME.wait().await;
         lcd.blit(&mut frame).await;
-        drop(frame); // free the 300 KB before inviting the next one
-        IDLE.signal(());
+        drop(frame); // free the 300 KB before releasing the flag
+        crate::board_v2::FRAME_FREE.store(true, core::sync::atomic::Ordering::Release);
+        // A present landed while we were blitting: pulse the runner so it
+        // re-presents from fresh state now that the frame slot is free.
+        if crate::board_v2::NEED_REPAINT.swap(false, core::sync::atomic::Ordering::AcqRel) {
+            let _ = crate::board_v2::INPUT
+                .try_send(mega_blastoise_core::device_runner::DeviceEvent::Pulse);
+        }
     }
 }
