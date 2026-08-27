@@ -238,6 +238,23 @@ struct WebPort;
 
 /// The `seed` URL parameter, when present and numeric — pins the battle for
 /// headless probes.
+/// The `batt` URL parameter: a number simulates that charge level, anything
+/// else (or nothing) reports Absent — the web has no cell.
+fn battery_param() -> mega_blastoise_core::display_color::Battery {
+    use mega_blastoise_core::display_color::Battery;
+    let get = || {
+        let search = web_sys::window()?.location().search().ok()?;
+        let rest = search.strip_prefix('?')?;
+        rest.split('&')
+            .find_map(|kv| kv.strip_prefix("batt="))
+            .and_then(|v| v.parse::<u8>().ok())
+    };
+    match get() {
+        Some(pct) => Battery::Level(pct.min(100)),
+        None => Battery::Absent,
+    }
+}
+
 fn fixed_seed_param() -> Option<u64> {
     let search = web_sys::window()?.location().search().ok()?;
     let rest = search.strip_prefix('?')?;
@@ -353,6 +370,10 @@ impl DevicePort for WebPort {
             }
             _ => {}
         }
+    }
+
+    fn battery(&self) -> mega_blastoise_core::display_color::Battery {
+        battery_param()
     }
 
     fn lobby_pulse(&self, ready: [bool; 2], _ai: [bool; 2]) {

@@ -97,6 +97,10 @@ pub struct DeviceSession {
     /// it cancels, sends a robot home, or reopens the picker.
     ready: [bool; 2],
     ai: [bool; 2],
+    /// What the platform last measured at the battery sense tap. Lives on
+    /// the session so every renderer sees one value; platforms feed it via
+    /// the runner (`DevicePort::battery`).
+    pub battery: crate::display_color::Battery,
 }
 
 impl Default for DeviceSession {
@@ -120,6 +124,7 @@ impl DeviceSession {
             log_view: [None, None],
             ready: [false, false],
             ai: [false, false],
+            battery: crate::display_color::Battery::Absent,
         }
     }
 

@@ -1400,14 +1400,99 @@ pub struct OptionRow<'a> {
     pub value: &'a str,
 }
 
-/// Options menu — lobby only, drawn into one seat's half (see `device_view`).
-pub fn render_options<D>(d: &mut D, rows: &[OptionRow<'_>], cursor: u8, w: u32, h: u32, seat: u8)
+/// What the device knows about its battery. The platform measures (the fw
+/// samples the VBAT divider on GP28; the web has no cell and reports
+/// Absent unless a `?batt=NN` sim asks otherwise); this module only draws.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum Battery {
+    /// No cell seen at the sense tap (or the power switch is off).
+    #[default]
+    Absent,
+    /// A cell at this many percent, from the resting-LiPo curve.
+    Level(u8),
+}
+
+/// Resting-voltage LiPo curve, (millivolts, percent), interpolated between.
+/// Shared so the firmware's gauge and any sim agree on what 3.87 V means.
+const LIPO_CURVE: [(u32, u32); 10] = [
+    (4200, 100),
+    (4060, 90),
+    (3980, 80),
+    (3920, 70),
+    (3870, 60),
+    (3820, 50),
+    (3770, 30),
+    (3740, 20),
+    (3680, 10),
+    (3300, 0),
+];
+
+pub fn lipo_percent(mv: u32) -> u8 {
+    if mv >= LIPO_CURVE[0].0 {
+        return 100;
+    }
+    for pair in LIPO_CURVE.windows(2) {
+        let (hv, hp) = pair[0];
+        let (lv, lp) = pair[1];
+        if mv >= lv {
+            return (lp + (hp - lp) * (mv - lv) / (hv - lv)) as u8;
+        }
+    }
+    0
+}
+
+/// The single battery indicator: a 22x10 battery glyph with a level fill in
+/// the HP colors plus a compact label, or a slashed outline with `--` when
+/// no cell is present. `rx` is the right edge; the indicator grows leftward.
+fn draw_battery<D>(d: &mut D, rx: i32, y: i32, batt: Battery)
 where
+    D: DrawTarget<Color = Rgb565>,
+{
+    const BW: i32 = 22;
+    const BH: i32 = 10;
+    // `rx` is the rightmost pixel the indicator may touch: the nub ends
+    // there and the body sits left of it, all inside the safe area.
+    let bx = rx - BW - 2;
+    panel(d, bx, y, BW as u32, BH as u32, C_BG, C_INK);
+    fill(d, rx - 2, y + 2, 2, (BH - 4) as u32, C_INK);
+    match batt {
+        Battery::Level(pct) => {
+            let inner = BW - 4;
+            let w = (inner * pct.min(100) as i32) / 100;
+            if w > 0 {
+                fill(d, bx + 2, y + 2, w as u32, (BH - 4) as u32, hp_color(pct));
+            }
+            let mut n = NumBuf::new();
+            let label = n.one(pct.min(100) as u32);
+            text_aa_right_font(d, label, bx - 10, y + 1, &FONT_5X8, C_DIM, C_BG);
+            text_aa_font(d, "%", bx - 9, y + 1, &FONT_5X8, C_DIM, C_BG);
+        }
+        Battery::Absent => {
+            // A slash through the empty body, and -- where the number goes.
+            for i in 0..BH - 2 {
+                fill(d, bx + 2 + (i * (BW - 4)) / (BH - 2), y + 1 + i, 2, 1, C_ACCENT);
+            }
+            text_aa_right_font(d, "--", bx - 4, y + 1, &FONT_5X8, C_DIM, C_BG);
+        }
+    }
+}
+
+/// Options menu — lobby only, drawn into one seat's half (see `device_view`).
+pub fn render_options<D>(
+    d: &mut D,
+    rows: &[OptionRow<'_>],
+    cursor: u8,
+    w: u32,
+    h: u32,
+    seat: u8,
+    batt: Battery,
+) where
     D: DrawTarget<Color = Rgb565>,
 {
     play_frame(d, seat);
     let cx = (w / 2) as i32;
     text_aa_center_font(d, "OPTIONS", cx, TOP, &FONT_8X13, C_INK, C_BG);
+    draw_battery(d, w as i32 - FRAME - PAD - 1, TOP + 1, batt);
     fill(d, 12, TOP + 16, w - 24, 2, C_INK);
     for (i, r) in rows.iter().enumerate() {
         let y = OPT_ROW.0 + i as i32 * OPT_ROW.1;
@@ -1661,7 +1746,7 @@ mod frame_tests {
                 OptionRow { label: "Tutorial", value: "First game" },
                 OptionRow { label: "Turn timer", value: "60 s" },
             ];
-            render_options(f, &rows, 2, HALF_W, HALF_H, 1)
+            render_options(f, &rows, 2, HALF_W, HALF_H, 1, Battery::Level(72))
         });
         check("render_gen_picker", |f| render_gen_picker(f, 0, HALF_W, HALF_H, 1));
     }

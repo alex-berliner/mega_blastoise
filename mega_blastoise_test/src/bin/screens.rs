@@ -255,11 +255,11 @@ fn main() {
     let mut op_dev = DeviceFrame::new();
     {
         let mut top = Region::half(&mut op_dev, false, true);
-        dc::render_options(&mut top, &rows, 2, dc::HALF_W, dc::HALF_H, 2);
+        dc::render_options(&mut top, &rows, 2, dc::HALF_W, dc::HALF_H, 2, dc::Battery::Level(72));
     }
     {
         let mut bottom = Region::half(&mut op_dev, true, false);
-        dc::render_options(&mut bottom, &rows, 2, dc::HALF_W, dc::HALF_H, 1);
+        dc::render_options(&mut bottom, &rows, 2, dc::HALF_W, dc::HALF_H, 1, dc::Battery::Level(72));
     }
     mega_blastoise_core::device_view::draw_split_divider(&mut op_dev);
     write_ppm(&format!("{dir}/device_options.ppm"), DEV_W, DEV_H, &op_dev.to_rgba());
@@ -271,6 +271,6 @@ fn main() {
     write_ppm(&format!("{dir}/gen_picker.ppm"), dc::HALF_W, dc::HALF_H, &gp.to_rgba());
 
     let mut op = HalfFrame::new(dc::HALF_W, dc::HALF_H);
-    dc::render_options(&mut op, &rows, 2, dc::HALF_W, dc::HALF_H, 1);
+    dc::render_options(&mut op, &rows, 2, dc::HALF_W, dc::HALF_H, 1, dc::Battery::Absent);
     write_ppm(&format!("{dir}/options.ppm"), dc::HALF_W, dc::HALF_H, &op.to_rgba());
 }

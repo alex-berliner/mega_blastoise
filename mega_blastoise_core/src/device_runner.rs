@@ -62,6 +62,11 @@ pub trait DevicePort {
     fn side_event(&self, _event: &BoardEvent, _parties: &[Vec<PartySlotData>; 2]) {}
     /// The lobby's ambient animation tick (web LED breathing). Optional.
     fn lobby_pulse(&self, _ready: [bool; 2], _ai: [bool; 2]) {}
+    /// What the battery sense reads right now. Platforms with no cell (the
+    /// web, a bench Pico on USB with the switch off) report Absent.
+    fn battery(&self) -> crate::display_color::Battery {
+        crate::display_color::Battery::Absent
+    }
 }
 
 // ── Input plumbing ───────────────────────────────────────────────────────────
@@ -195,6 +200,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
     // ── Small shared helpers ────────────────────────────────────────────
 
     fn present(&self) {
+        self.st.borrow_mut().session.battery = self.port.battery();
         let st = self.st.borrow();
         self.port.present(&st.session, &st.ctl, st.lobby);
     }

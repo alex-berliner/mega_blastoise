@@ -67,6 +67,10 @@ impl DevicePort for FwPort {
     fn seed(&self) -> u64 {
         Instant::now().as_ticks() ^ 0xdead_beef_cafe_babe
     }
+
+    fn battery(&self) -> mega_blastoise_core::display_color::Battery {
+        crate::subsystems::battery::battery()
+    }
 }
 
 /// The sprite-bob heartbeat; also the repaint-heal tick (core presents on

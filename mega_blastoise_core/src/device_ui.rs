@@ -88,13 +88,14 @@ pub fn render_seat<D>(
     log: LogView<'_>,
     opts: &crate::menu::GameOptions,
     foe_locked: bool,
+    batt: dc::Battery,
 ) where
     D: embedded_graphics::draw_target::DrawTarget<Color = embedded_graphics::pixelcolor::Rgb565>,
 {
     // The options are a per-seat overlay for the same reason the log is: the
     // other seat keeps whatever it was looking at.
     if let Some(cursor) = ui.options {
-        dc::render_options(d, &option_rows(opts), cursor, dc::HALF_W, dc::HALF_H, player);
+        dc::render_options(d, &option_rows(opts), cursor, dc::HALF_W, dc::HALF_H, player, batt);
         return;
     }
     // The log is a per-seat overlay: one player can read it while the other
@@ -187,8 +188,9 @@ pub fn render_device(
     log1: LogView<'_>,
     log2: LogView<'_>,
     opts: &crate::menu::GameOptions,
+    batt: dc::Battery,
 ) -> Vec<u8> {
-    render_device_frame(ctl, ui1, ui2, log1, log2, opts).to_rgba()
+    render_device_frame(ctl, ui1, ui2, log1, log2, opts, batt).to_rgba()
 }
 
 /// [`render_device`] returning the RGB565 frame itself (firmware path).
@@ -199,12 +201,13 @@ pub fn render_device_frame(
     log1: LogView<'_>,
     log2: LogView<'_>,
     opts: &crate::menu::GameOptions,
+    batt: dc::Battery,
 ) -> DeviceFrame {
     let mut frame = DeviceFrame::new();
     both_halves(&mut frame, |r, seat| {
         let (ui, log) = if seat == 1 { (ui1, log1) } else { (ui2, log2) };
         let foe_locked = if seat == 1 { ui2.locked } else { ui1.locked };
-        render_seat(r, ctl, seat, ui, log, opts, foe_locked);
+        render_seat(r, ctl, seat, ui, log, opts, foe_locked, batt);
         // The border is the last thing painted on a half, so no screen can
         // bleed into it however its own layout drifts.
         dc::draw_play_frame_edge(r, seat);
@@ -240,14 +243,16 @@ pub fn render_device_frame(
 pub fn render_menu(
     menu: &crate::menu::Menu,
     opts: &crate::menu::GameOptions,
+    batt: dc::Battery,
 ) -> Vec<u8> {
-    render_menu_frame(menu, opts).to_rgba()
+    render_menu_frame(menu, opts, batt).to_rgba()
 }
 
 /// [`render_menu`] returning the RGB565 frame itself (firmware path).
 pub fn render_menu_frame(
     menu: &crate::menu::Menu,
     opts: &crate::menu::GameOptions,
+    batt: dc::Battery,
 ) -> DeviceFrame {
     use crate::menu::MenuScreen;
     use crate::display_color::{HALF_H, HALF_W};
@@ -255,7 +260,7 @@ pub fn render_menu_frame(
     let mut frame = DeviceFrame::new();
     both_halves(&mut frame, |r, seat| match menu.screen {
         MenuScreen::GenPicker => dc::render_gen_picker(r, menu.cursor, HALF_W, HALF_H, seat),
-        MenuScreen::Options => dc::render_options(r, &rows, menu.cursor, HALF_W, HALF_H, seat),
+        MenuScreen::Options => dc::render_options(r, &rows, menu.cursor, HALF_W, HALF_H, seat, batt),
         // The lobby is drawn by the normal path; this is only reached if a
         // caller renders a menu while none is open.
         MenuScreen::Lobby => dc::render_lobby(r, false, false, seat),
@@ -287,10 +292,10 @@ pub fn render_session_frame(
     // A menu can only own the screen while the lobby is idle — a battle
     // (including the attract demo) always wins the panel.
     if session.menu_active && lobby {
-        return render_menu_frame(&session.menu, &session.opts);
+        return render_menu_frame(&session.menu, &session.opts, session.battery);
     }
     let lines = session.log.lines();
     let l1 = LogView { lines, offset: session.log_view(1) };
     let l2 = LogView { lines, offset: session.log_view(2) };
-    render_device_frame(ctl, &session.seats[0], &session.seats[1], l1, l2, &session.opts)
+    render_device_frame(ctl, &session.seats[0], &session.seats[1], l1, l2, &session.opts, session.battery)
 }
