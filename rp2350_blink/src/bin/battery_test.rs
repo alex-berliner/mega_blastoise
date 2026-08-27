@@ -114,7 +114,7 @@ impl Lcd {
         self.data(&[0x48]);
         self.cmd(0x3A); // COLMOD: RGB565
         self.data(&[0x55]);
-        self.cmd(0x21); // INVON: IPS glass
+        self.cmd(0x20); // INVOFF: this module is true-color (INVON showed inverted)
         self.cmd(0xF0); // CSCON: lock again
         self.data(&[0x3C]);
         self.cmd(0xF0);

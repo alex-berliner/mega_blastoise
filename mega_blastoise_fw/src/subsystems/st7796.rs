@@ -157,7 +157,10 @@ impl Lcd {
         self.data(&[0x48]).await;
         self.cmd(0x3A).await; // COLMOD: RGB565
         self.data(&[0x55]).await;
-        self.cmd(0x21).await; // INVON: IPS glass
+        // INVOFF, not the usual IPS INVON: webcam-vs-web comparison showed
+        // this module renders true colors uninverted (cream came out navy,
+        // red came out cyan with 0x21).
+        self.cmd(0x20).await;
         self.cmd(0xF0).await; // CSCON: lock again
         self.data(&[0x3C]).await;
         self.cmd(0xF0).await;
