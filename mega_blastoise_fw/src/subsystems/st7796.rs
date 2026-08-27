@@ -161,6 +161,29 @@ impl Lcd {
         // this module renders true colors uninverted (cream came out navy,
         // red came out cyan with 0x21).
         self.cmd(0x20).await;
+        // Power, VCOM and gamma. Without these the panel runs its reset
+        // defaults, which read washed out (the webcam-vs-web red check).
+        // Values are the widely shipped ST7796 set (TFT_eSPI / LovyanGFX).
+        self.cmd(0xB4).await; // display inversion control: 1-dot
+        self.data(&[0x01]).await;
+        self.cmd(0xC2).await; // power control 3
+        self.data(&[0xA7]).await;
+        self.cmd(0xC5).await; // VCOM
+        self.data(&[0x18]).await;
+        self.cmd(0xE8).await; // display output ctrl adjust
+        self.data(&[0x40, 0x8A, 0x00, 0x00, 0x29, 0x19, 0xA5, 0x33]).await;
+        self.cmd(0xE0).await; // positive gamma
+        self.data(&[
+            0xF0, 0x09, 0x0B, 0x06, 0x04, 0x15, 0x2F, 0x54, 0x42, 0x3C, 0x17, 0x14,
+            0x18, 0x1B,
+        ])
+        .await;
+        self.cmd(0xE1).await; // negative gamma
+        self.data(&[
+            0xE0, 0x09, 0x0B, 0x06, 0x04, 0x03, 0x2B, 0x43, 0x42, 0x3B, 0x16, 0x14,
+            0x17, 0x1B,
+        ])
+        .await;
         self.cmd(0xF0).await; // CSCON: lock again
         self.data(&[0x3C]).await;
         self.cmd(0xF0).await;
