@@ -29,9 +29,22 @@ pub async fn run() -> ! {
     // the channel and coalesce into the next frame.
     loop {
         st7796::IDLE.wait().await;
-        st7796::FRAME.signal(render_session_frame(&session, &ctl, true));
+        #[allow(unused_mut)]
+        let mut frame = render_session_frame(&session, &ctl, true);
+        #[cfg(feature = "input-debug")]
+        mega_blastoise_core::device_view::draw_input_debug(&mut frame, buttons_v2::masks());
+        st7796::FRAME.signal(frame);
 
-        let first = buttons_v2::EVENTS.receive().await;
+        // A session event or (input-debug) any button edge wakes the loop;
+        // releases repaint the overlay even though they carry no event.
+        let first = {
+            use embassy_futures::select::{select, Either};
+            match select(buttons_v2::EVENTS.receive(), buttons_v2::DIRTY.wait()).await {
+                Either::First(e) => Some(e),
+                Either::Second(()) => None,
+            }
+        };
+        let Some(first) = first else { continue };
         let mut apply = |(player, button): (u8, Button),
                          session: &mut DeviceSession,
                          ready: &mut [bool; 2],

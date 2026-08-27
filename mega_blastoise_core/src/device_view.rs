@@ -107,6 +107,98 @@ pub fn draw_split_divider(frame: &mut DeviceFrame) {
     }
 }
 
+/// Debug overlay: which physical buttons each seat is holding, stamped over
+/// the finished frame at half opacity so it can sit on top of any screen.
+///
+/// `masks[0]` is player 1, `masks[1]` player 2; bit order is the board's
+/// fixed key order 0=Up 1=Down 2=Left 3=Right 4=A 5=B 6=Info 7=Menu. Each
+/// seat's cluster is drawn in its own corner, rotated with the seat, so the
+/// player reads their own D-pad cross and A/B/?/M row upright.
+///
+/// Debug-only by design: platforms decide whether to call it (the firmware
+/// gates it behind a feature), and it deliberately draws OVER the UI.
+pub fn draw_input_debug(frame: &mut DeviceFrame, masks: [u8; 2]) {
+    const CELL: i32 = 10;
+    const GAP: i32 = 2;
+    // Seat-local cluster geometry: D-pad cross in a 3x3 cell grid, then the
+    // four action cells in a row beside it, vertically centred.
+    // (bit, cell x, cell y) in cluster cells.
+    const CELLS: [(u8, i32, i32); 8] = [
+        (0, 1, 0), // Up
+        (1, 1, 2), // Down
+        (2, 0, 1), // Left
+        (3, 2, 1), // Right
+        (4, 3, 1), // A
+        (5, 4, 1), // B
+        (6, 5, 1), // Info
+        (7, 6, 1), // Menu
+    ];
+    // 3x5 glyphs, bit 2 = leftmost column.
+    const GLYPHS: [[u8; 5]; 8] = [
+        [0b010, 0b111, 0b010, 0b010, 0b010], // up arrow
+        [0b010, 0b010, 0b010, 0b111, 0b010], // down arrow
+        [0b001, 0b010, 0b100, 0b010, 0b001], // <
+        [0b100, 0b010, 0b001, 0b010, 0b100], // >
+        [0b010, 0b101, 0b111, 0b101, 0b101], // A
+        [0b110, 0b101, 0b110, 0b101, 0b110], // B
+        [0b111, 0b001, 0b010, 0b000, 0b010], // ?
+        [0b101, 0b111, 0b101, 0b101, 0b101], // M
+    ];
+    let ink = rgb565(crate::display_color::C_INK);
+    let lit = rgb565(crate::display_color::C_HP_G);
+
+    // Cluster origin in seat-local half coords (320 wide, DEV_H/2 tall):
+    // tucked into the seat's lower-left, inside the play frame.
+    let (ox, oy) = (14i32, (DEV_H / 2) as i32 - 14 - 3 * CELL);
+
+    for (seat, &mask) in masks.iter().enumerate() {
+        for &(bit, cx, cy) in &CELLS {
+            let down = mask & (1 << bit) != 0;
+            let x0 = ox + cx * (CELL + GAP);
+            let y0 = oy + cy * (CELL + GAP);
+            for dy in 0..CELL {
+                for dx in 0..CELL {
+                    let edge = dx == 0 || dy == 0 || dx == CELL - 1 || dy == CELL - 1;
+                    let (over, a) = if down {
+                        (lit, 12) // held: bright fill, mostly opaque
+                    } else if edge {
+                        (ink, 8) // idle: a half-transparent outline only
+                    } else {
+                        continue;
+                    };
+                    stamp_seat_px(frame, seat, x0 + dx, y0 + dy, over, a);
+                }
+            }
+            // The glyph reads solid on top of either state.
+            let g = &GLYPHS[bit as usize];
+            for (gy, row) in g.iter().enumerate() {
+                for gx in 0..3 {
+                    if row & (0b100 >> gx) != 0 {
+                        stamp_seat_px(frame, seat, x0 + 2 + gx, y0 + 2 + gy as i32, ink, 16);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Blend one seat-local pixel into the panel: seat 0 (player 1) owns the
+/// bottom half unrotated, seat 1 (player 2) the top half rotated 180 — the
+/// same mapping as [`Region::half`].
+fn stamp_seat_px(frame: &mut DeviceFrame, seat: usize, x: i32, y: i32, over: u16, a: u32) {
+    let half = (DEV_H / 2) as i32;
+    if x < 0 || y < 0 || x >= DEV_W as i32 || y >= half {
+        return;
+    }
+    let (px, py) = if seat == 0 {
+        (x, half + y)
+    } else {
+        (DEV_W as i32 - 1 - x, half - 1 - y)
+    };
+    let i = (py as u32 * DEV_W + px as u32) as usize;
+    frame.px[i] = blend(frame.px[i], over, a);
+}
+
 /// Fractional coverage of one pixel by the button's white centre and by its
 /// black ring, each 0..=16, from a 4x4 grid of subsamples.
 fn coverage(dx: i32, dy: i32) -> (u32, u32) {

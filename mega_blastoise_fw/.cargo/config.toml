@@ -30,5 +30,5 @@ b2350 = "build --target thumbv8m.main-none-eabihf --no-default-features --featur
 r2350 = "run --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,usb,oled,buzzer,leds"
 # Stripboard v2 (Pico 2 + ST7796 + 16 direct buttons). No usb yet: the
 # board_v2 milestone drives DeviceSession from the physical buttons only.
-bv2 = "build --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,board_v2"
-rv2 = "run --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,board_v2"
+bv2 = "build --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,board_v2,input-debug"
+rv2 = "run --target thumbv8m.main-none-eabihf --no-default-features --features rp2350,board_v2,input-debug"

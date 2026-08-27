@@ -58,6 +58,8 @@ oled = ["dep:ssd1306", "dep:embedded-graphics", "dep:display-interface"]
 # dual-OLED path; build with --no-default-features:
 #   cargo bv2 (alias in .cargo/config.toml)
 board_v2 = ["dep:pio", "dep:fixed"]
+# Semi-transparent held-button overlay on the panel (board_v2 debug aid).
+input-debug = []
 buzzer = []
 leds = ["dep:smart-leds", "dep:pio", "dep:fixed"]
 mem-profile = []

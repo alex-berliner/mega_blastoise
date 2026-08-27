@@ -15,14 +15,32 @@
 //! B is the session's "back / reopen the picker" key. TODO(menu): give the
 //! session a real Menu press.
 
+use core::sync::atomic::{AtomicU8, Ordering};
+
 use embassy_rp::gpio::Input;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel::Channel;
+use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Instant, Timer};
 use mega_blastoise_core::cursor_nav::Dir;
 use mega_blastoise_core::device_session::Button;
 
 pub static EVENTS: Channel<CriticalSectionRawMutex, (u8, Button), 8> = Channel::new();
+
+/// Live held-button bitmask per seat, bit order matching
+/// `device_view::draw_input_debug`: 0=Up 1=Down 2=Left 3=Right 4=A 5=B
+/// 6=Info 7=Menu. Written here on every debounced edge, read by the debug
+/// overlay.
+pub static MASKS: [AtomicU8; 2] = [AtomicU8::new(0), AtomicU8::new(0)];
+
+/// Pulsed on every debounced edge — presses AND releases — so the render
+/// loop can repaint the debug overlay even when an edge produces no
+/// session event (releases mostly don't).
+pub static DIRTY: Signal<CriticalSectionRawMutex, ()> = Signal::new();
+
+pub fn masks() -> [u8; 2] {
+    [MASKS[0].load(Ordering::Relaxed), MASKS[1].load(Ordering::Relaxed)]
+}
 
 const STABLE: u8 = 4; // 4 x 5 ms poll = 20 ms debounce
 const HOLD_MS: u64 = 500; // the game's long-press threshold
@@ -39,6 +57,8 @@ pub struct Key {
     pin: Input<'static>,
     player: u8,
     kind: Kind,
+    /// This key's bit in [`MASKS`] (the board's fixed key order).
+    bit: u8,
     down: bool,
     run: u8,
     pressed_at: Instant,
@@ -46,8 +66,8 @@ pub struct Key {
 }
 
 impl Key {
-    pub fn new(pin: Input<'static>, player: u8, kind: Kind) -> Self {
-        Self { pin, player, kind, down: false, run: 0, pressed_at: Instant::MIN, hold_sent: false }
+    pub fn new(pin: Input<'static>, player: u8, kind: Kind, bit: u8) -> Self {
+        Self { pin, player, kind, bit, down: false, run: 0, pressed_at: Instant::MIN, hold_sent: false }
     }
 
     fn send(&self, b: Button) {
@@ -75,6 +95,13 @@ impl Key {
         }
         self.run = 0;
         self.down = raw_down;
+        let m = &MASKS[(self.player == 2) as usize];
+        if raw_down {
+            m.fetch_or(1 << self.bit, Ordering::Relaxed);
+        } else {
+            m.fetch_and(!(1 << self.bit), Ordering::Relaxed);
+        }
+        DIRTY.signal(());
         match self.kind {
             Kind::Plain(b) => {
                 if raw_down {
@@ -112,13 +139,13 @@ pub async fn task(mut keys: [Key; 16]) -> ! {
 pub fn seat_keys(player: u8, pins: [Input<'static>; 8]) -> [Key; 8] {
     let [up, down, left, right, a, b, info, menu] = pins;
     [
-        Key::new(up, player, Kind::Plain(Button::Dpad(Dir::Up))),
-        Key::new(down, player, Kind::Plain(Button::Dpad(Dir::Down))),
-        Key::new(left, player, Kind::Plain(Button::Dpad(Dir::Left))),
-        Key::new(right, player, Kind::Plain(Button::Dpad(Dir::Right))),
-        Key::new(a, player, Kind::A),
-        Key::new(b, player, Kind::Plain(Button::B)),
-        Key::new(info, player, Kind::Plain(Button::Info)),
-        Key::new(menu, player, Kind::Plain(Button::B)),
+        Key::new(up, player, Kind::Plain(Button::Dpad(Dir::Up)), 0),
+        Key::new(down, player, Kind::Plain(Button::Dpad(Dir::Down)), 1),
+        Key::new(left, player, Kind::Plain(Button::Dpad(Dir::Left)), 2),
+        Key::new(right, player, Kind::Plain(Button::Dpad(Dir::Right)), 3),
+        Key::new(a, player, Kind::A, 4),
+        Key::new(b, player, Kind::Plain(Button::B), 5),
+        Key::new(info, player, Kind::Plain(Button::Info), 6),
+        Key::new(menu, player, Kind::Plain(Button::B), 7),
     ]
 }
