@@ -66,9 +66,12 @@ pub async fn run() -> ! {
                         info!("board_v2: P{=u8} cancel", p);
                     }
                     Out::LobbyLongPress(p) => {
-                        ai[i] = true;
+                        // "HOLD A: FIGHT THE AI" — the robot takes the OTHER
+                        // side; the holder readies up as themselves.
                         ready[i] = true;
-                        info!("board_v2: P{=u8} requested AI", p);
+                        ai[1 - i] = true;
+                        ready[1 - i] = true;
+                        info!("board_v2: P{=u8} requested an AI rival", p);
                     }
                     Out::Nav(p, _) | Out::CancelChoice(p) => {
                         info!("board_v2: P{=u8} battle out (engine not wired yet)", p);
