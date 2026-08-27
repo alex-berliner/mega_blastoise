@@ -107,6 +107,7 @@ async fn main(spawner: Spawner) {
             ]))
             .expect("buttons task spawn");
         spawner.spawn(board_v2::pulse_task()).expect("pulse task spawn");
+        subsystems::usb_v2::init(p.USB, &spawner);
 
         board_v2::run().await
     }

@@ -43,6 +43,7 @@ impl DevicePort for FwPort {
 
     fn line_out(&self, line: &str) {
         defmt::info!("{=str}", line);
+        crate::subsystems::usb_v2::log_line(line);
     }
 
     fn present(&self, session: &DeviceSession, ctl: &OledController, lobby: bool) {

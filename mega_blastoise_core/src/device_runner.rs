@@ -120,6 +120,48 @@ fn idx(player: u8) -> usize {
     (player == 2) as usize
 }
 
+/// A typed line that IS a button press: `p1 a`, `p2 l`, `p1 up`, `p1 ah`.
+/// Tokens: a, b, i/info, m/menu (the physical MENU key, which maps to B),
+/// u/up, d/down, l/left, r/right, ah/hold (the A long-press). Anything
+/// else — `p1 ok`, `p1 2`, `p1 s3` — falls through to the lobby/battle
+/// grammars untouched. Shared by the fw CLI and the web console.
+pub fn parse_button_line(line: &str) -> Option<(u8, Button)> {
+    use crate::cursor_nav::Dir;
+    let mut it = line.split_whitespace();
+    let player = match it.next()? {
+        "p1" => 1,
+        "p2" => 2,
+        _ => return None,
+    };
+    let button = match it.next()? {
+        "a" => Button::A,
+        "b" => Button::B,
+        "i" | "info" => Button::Info,
+        "m" | "menu" => Button::B,
+        "u" | "up" => Button::Dpad(Dir::Up),
+        "d" | "down" => Button::Dpad(Dir::Down),
+        "l" | "left" => Button::Dpad(Dir::Left),
+        "r" | "right" => Button::Dpad(Dir::Right),
+        "ah" | "hold" => Button::AHold,
+        _ => return None,
+    };
+    if it.next().is_some() {
+        return None;
+    }
+    Some((player, button))
+}
+
+/// Rewrite a Line that is really a button press into the Button event, so
+/// every consumer downstream sees one input kind.
+fn normalize(ev: DeviceEvent) -> DeviceEvent {
+    if let DeviceEvent::Line(line) = &ev {
+        if let Some((player, button)) = parse_button_line(line) {
+            return DeviceEvent::Button { player, button };
+        }
+    }
+    ev
+}
+
 fn ready_line(player: u8) -> &'static str {
     if player == 2 { "p2 ok" } else { "p1 ok" }
 }
@@ -155,6 +197,12 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
     fn present(&self) {
         let st = self.st.borrow();
         self.port.present(&st.session, &st.ctl, st.lobby);
+    }
+
+    /// The one place input is received: typed button lines arrive as the
+    /// Button events they mean.
+    async fn next_event(&self) -> DeviceEvent {
+        normalize(self.input.receive().await)
     }
 
     fn oled_apply(&self, cmd: OledCmd) {
@@ -229,7 +277,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         let mut left = ms;
         while left > 0 {
             let step = left.min(50);
-            match select(self.input.receive(), self.port.sleep_ms(step)).await {
+            match select(self.next_event(), self.port.sleep_ms(step)).await {
                 Either::First(ev) => {
                     if !self.background_event(&ev) {
                         self.stash_battle_event(ev);
@@ -251,7 +299,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         let mut left = ms;
         while left > 0 {
             let step = left.min(50);
-            match select(self.input.receive(), self.port.sleep_ms(step)).await {
+            match select(self.next_event(), self.port.sleep_ms(step)).await {
                 Either::First(ev) => {
                     if !self.background_event(&ev) {
                         self.note_skip_request(&ev);
@@ -399,7 +447,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
                 let mut interrupted = false;
                 let mut waited = 0u32;
                 while waited < LOBBY_DEMO_DELAY_MS as u32 {
-                    match select(self.input.receive(), self.port.sleep_ms(100)).await {
+                    match select(self.next_event(), self.port.sleep_ms(100)).await {
                         Either::First(ev) => {
                             if !self.background_event(&ev) {
                                 interrupted = true;
@@ -470,7 +518,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
             self.present();
             let mut waited = 0u32;
             while waited < 30_000 {
-                match select(self.input.receive(), self.port.sleep_ms(100)).await {
+                match select(self.next_event(), self.port.sleep_ms(100)).await {
                     Either::First(ev) => {
                         if !self.background_event(&ev) {
                             break;
@@ -492,7 +540,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         }
         self.apply_effects(&mut fx);
         loop {
-            match select(self.input.receive(), self.port.sleep_ms(COLLECT_TICK_MS as u32)).await {
+            match select(self.next_event(), self.port.sleep_ms(COLLECT_TICK_MS as u32)).await {
                 Either::First(ev) => {
                     if !self.background_event(&ev) {
                         self.lobby_event(ev, &mut seq, &mut fx);
@@ -637,7 +685,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         loop {
             // Gather the whole prompt batch, narrating engine events.
             let first = loop {
-                match select3(bus.prompt.receive(), bus.log.receive(), self.input.receive()).await {
+                match select3(bus.prompt.receive(), bus.log.receive(), self.next_event()).await {
                     Either3::First(p) => {
                         while let Ok(line) = bus.log.try_receive() {
                             self.port.line_out(&alloc::format!("[EVT] {line}"));
@@ -719,7 +767,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
                     col.pad_event(pad, self.port.now_ms(), &mut fx);
                 }
                 match select3(
-                    self.input.receive(),
+                    self.next_event(),
                     bus.log.receive(),
                     self.port.sleep_ms(COLLECT_TICK_MS as u32),
                 )

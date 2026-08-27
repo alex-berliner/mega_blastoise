@@ -18,3 +18,6 @@ pub mod st7796;
 
 #[cfg(feature = "board_v2")]
 pub mod buttons_v2;
+
+#[cfg(feature = "board_v2")]
+pub mod usb_v2;
