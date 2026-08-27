@@ -7,9 +7,10 @@ use embedded_alloc::Heap;
 // old 128 KB). 64 KB keeps ~20× headroom over peak; the freed 64 KB goes to
 // the RTT buffer (see main.rs) with stack budget unchanged.
 // The RP2350 has 520 KB of RAM and the single-screen UI heap-allocates its
-// 240x320 RGB565 frame (150 KB), so that chip gets a heap to match.
+// 320x480 RGB565 frame (300 KB), so that chip gets a heap to match. One
+// frame in flight (st7796::IDLE) is what makes 384 KB enough.
 #[cfg(feature = "rp2350")]
-pub const HEAP_SIZE: usize = 256 * 1024;
+pub const HEAP_SIZE: usize = 384 * 1024;
 #[cfg(not(feature = "rp2350"))]
 pub const HEAP_SIZE: usize = 64 * 1024;
 

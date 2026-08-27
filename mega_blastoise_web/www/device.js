@@ -27,7 +27,7 @@ import init, * as wasm from './pkg/mega_blastoise_web.js';
 
 const canvas = document.getElementById('panel');
 const ctx = canvas.getContext('2d');
-// Core hands us a 240x320 image. Painting it straight into a canvas that CSS
+// Core hands us a 320x480 image. Painting it straight into a canvas that CSS
 // then rotates and fractionally scales makes the browser resample it, which
 // is what turns crisp 1px strokes into grey mush. Instead we blow the frame
 // up by a whole-number factor with smoothing off, so CSS only ever has to
@@ -35,11 +35,11 @@ const ctx = canvas.getContext('2d');
 // upscaling a small one.
 const UPSCALE = 3;
 const raw = document.createElement('canvas');
-raw.width = 240;
-raw.height = 320;
+raw.width = 320;
+raw.height = 480;
 const rawCtx = raw.getContext('2d');
-const PANEL_W = 240;
-const PANEL_H = 320;
+const PANEL_W = 320;
+const PANEL_H = 480;
 // Laid-out size of the panel element, which the physical-size presets scale
 // against. Mirrors #panel in device.css.
 const PANEL_CSS_H = 640;
@@ -53,16 +53,16 @@ let AI_HOLD_MS = 2000;
 //
 // Real parts you might put in the physical build, so the page can show the
 // case at the size it would actually be. `res` is the panel's own pixel grid:
-// core renders 240x320 and nothing else, so a panel with a different grid is
-// shown at its true physical size with the 240x320 image stretched onto it —
+// core renders 320x480 and nothing else, so a panel with a different grid is
+// shown at its true physical size with the 320x480 image stretched onto it —
 // the case size is honest, the pixel density is not.
-const PANEL_NATIVE = { w: 240, h: 320 };
+const PANEL_NATIVE = { w: 320, h: 480 };
 // The panel the firmware is actually being built for, per
-// architecture/09-single-screen.md: 2.8" IPS ST7789, 240x320, SPI. Its own
+// hardware/stripboard_v2/BUILD.md: 3.5" IPS ST7796, 320x480, SPI. Its own
 // entry (rather than reusing the generic 2.8" row) so that layout judgements
 // are made against THE target — if the hardware spec ever changes, change
 // this one line and the picker follows.
-const FW_TARGET = { id: 'fw', diag: 2.8, res: [240, 320], part: 'ST7789 IPS', fw: true };
+const FW_TARGET = { id: 'fw', diag: 3.5, res: [320, 480], part: 'ST7796 IPS', fw: true };
 
 const PANELS = [
   FW_TARGET,
@@ -258,7 +258,7 @@ function wireSeat(player) {
 
 // ── Direct tap on the panel ───────────────────────────────────────────────
 //
-// The page only scales the pointer to the 240x320 grid. Which half was hit,
+// The page only scales the pointer to the 320x480 grid. Which half was hit,
 // the far half's rotation, and what the pixel means are core's decisions
 // (DeviceSession::panel_tap) — the hit boxes are derived from the same layout
 // constants the renderer draws with, so they cannot go stale here.
@@ -327,7 +327,7 @@ window.addEventListener('keydown', (e) => {
         ? 'the firmware target (architecture/09-single-screen.md) — what you see is the panel, true size'
         : p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h
           ? 'native grid'
-          : `NOT the render grid — 240x320 stretched onto ${p.res[0]}x${p.res[1]}`;
+          : `NOT the render grid — 320x480 stretched onto ${p.res[0]}x${p.res[1]}`;
       console.log(
         `[screen] ${p.diag}" ${p.part}: ${mm.w.toFixed(1)}x${mm.h.toFixed(1)}mm, ${note}`,
       );

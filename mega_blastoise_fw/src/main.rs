@@ -47,6 +47,13 @@ async fn main(spawner: Spawner) {
     // NoBlockSkip mode is kept deliberately: BlockIfFull throttles the firmware
     // to a crawl (battle can't finish in real time over RTT). A 96 KB buffer
     // absorbs the OLED burst between probe-rs drains so few/no frames drop.
+    // board_v2 has no OLED-framebuffer dump to absorb, and its 384 KB heap
+    // wants the RAM back, so its RTT buffer is small.
+    #[cfg(feature = "board_v2")]
+    let channels = rtt_init! {
+        up: { 0: { size: 16 * 1024, name: "defmt" } }
+    };
+    #[cfg(not(feature = "board_v2"))]
     let channels = rtt_init! {
         up: { 0: { size: 96 * 1024, name: "defmt" } }
     };

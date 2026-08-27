@@ -10,7 +10,7 @@ use std::io::Write;
 use mega_blastoise_core::board_event::MoveSlot;
 use mega_blastoise_core::display::PartySlotData;
 use mega_blastoise_core::display_color as dc;
-use mega_blastoise_core::device_view::{DeviceFrame, HalfFrame, Region};
+use mega_blastoise_core::device_view::{DeviceFrame, HalfFrame, Region, DEV_H, DEV_W};
 
 fn mv(name: &str, ty: &str, cat: &str, pow: Option<u32>, acc: Option<u8>, pp: u8, max: u8) -> MoveSlot {
     MoveSlot {
@@ -151,7 +151,7 @@ fn main() {
         dc::render_playback(&mut bottom, caption, &ctx);
     }
     mega_blastoise_core::device_view::draw_split_divider(&mut scene);
-    write_ppm(&format!("{dir}/device_battle.ppm"), 240, 320, &scene.to_rgba());
+    write_ppm(&format!("{dir}/device_battle.ppm"), DEV_W, DEV_H, &scene.to_rgba());
 
     // Composed 240x320 panel, head-to-head: far half rotated 180.
     let mut dev = DeviceFrame::new();
@@ -182,7 +182,7 @@ fn main() {
         dc::render_choice(&mut bottom, &blastoise_moves, &ctx);
     }
     mega_blastoise_core::device_view::draw_split_divider(&mut dev);
-    write_ppm(&format!("{dir}/device_headtohead.ppm"), 240, 320, &dev.to_rgba());
+    write_ppm(&format!("{dir}/device_headtohead.ppm"), DEV_W, DEV_H, &dev.to_rgba());
 
     // Attack effects, sampled across their window so the motion is reviewable
     // as a strip rather than by watching the browser.
@@ -226,7 +226,7 @@ fn main() {
             if flash > 0 {
                 mega_blastoise_core::move_anim::white_out(&mut f, flash);
             }
-            write_ppm(&format!("{dir}/fx_{label}_{i}.ppm"), 240, 320, &f.to_rgba());
+            write_ppm(&format!("{dir}/fx_{label}_{i}.ppm"), DEV_W, DEV_H, &f.to_rgba());
         }
     }
 
@@ -250,7 +250,7 @@ fn main() {
         dc::render_gen_picker(&mut bottom, 0, dc::HALF_W, dc::HALF_H, 1);
     }
     mega_blastoise_core::device_view::draw_split_divider(&mut gp_dev);
-    write_ppm(&format!("{dir}/device_gen_picker.ppm"), 240, 320, &gp_dev.to_rgba());
+    write_ppm(&format!("{dir}/device_gen_picker.ppm"), DEV_W, DEV_H, &gp_dev.to_rgba());
 
     let mut op_dev = DeviceFrame::new();
     {
@@ -262,7 +262,7 @@ fn main() {
         dc::render_options(&mut bottom, &rows, 2, dc::HALF_W, dc::HALF_H, 1);
     }
     mega_blastoise_core::device_view::draw_split_divider(&mut op_dev);
-    write_ppm(&format!("{dir}/device_options.ppm"), 240, 320, &op_dev.to_rgba());
+    write_ppm(&format!("{dir}/device_options.ppm"), DEV_W, DEV_H, &op_dev.to_rgba());
 
     // The same halves unrotated, so a single menu layout is reviewable at the
     // size it is actually drawn.

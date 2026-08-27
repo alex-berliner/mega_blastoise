@@ -19,8 +19,8 @@ use embedded_graphics::{
     Pixel,
 };
 
-pub const DEV_W: u32 = 240;
-pub const DEV_H: u32 = 320;
+pub const DEV_W: u32 = 320;
+pub const DEV_H: u32 = 480;
 
 /// A 240x320 RGB565 framebuffer. Platforms flush it to a panel (firmware) or
 /// convert it to RGBA for a canvas (web).
@@ -167,15 +167,15 @@ enum Rot {
 }
 
 impl<'a> Region<'a> {
-    /// A 240x160 half. `bottom` picks which half of the panel; `flip` rotates
-    /// it 180 for the far seat.
+    /// One seat's half. `bottom` picks which half of the panel; `flip`
+    /// rotates it 180 for the far seat.
     pub fn half(frame: &'a mut DeviceFrame, bottom: bool, flip: bool) -> Self {
         Self {
             frame,
-            w: 240,
-            h: 160,
+            w: DEV_W,
+            h: DEV_H / 2,
             ox: 0,
-            oy: if bottom { 160 } else { 0 },
+            oy: if bottom { DEV_H as i32 / 2 } else { 0 },
             rot: if flip { Rot::Half } else { Rot::None },
         }
     }

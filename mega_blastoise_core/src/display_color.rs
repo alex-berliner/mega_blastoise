@@ -29,9 +29,10 @@ use crate::board_event::MoveSlot;
 use crate::display::{InvalidReason, PartySlotData};
 use crate::sprites_color::{mon_back_sprite_color, mon_sprite_color, species_display_name, ColorSprite};
 
-/// One seat's half of the panel.
-pub const HALF_W: u32 = 240;
-pub const HALF_H: u32 = 160;
+/// One seat's half of the panel. Native ST7796 size: the stripboard v2
+/// glass is 320x480, split into two 320x240 halves.
+pub const HALF_W: u32 = 320;
+pub const HALF_H: u32 = 240;
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 // Derived from the mockup. Kept as functions so the constants stay readable
@@ -681,11 +682,19 @@ fn draw_sprite_fit<D>(
     if sw == 0 || sh == 0 {
         return;
     }
-    // Halves are expressed as a numerator over 2 so half-scale is available
-    // without floating point. There is deliberately no 2x case: art is drawn
-    // at native size or halved to fit, never enlarged, so a species with a
-    // small sprite does not end up towering over the field.
-    let num: u32 = if sw <= bw && sh <= bh { 2 } else { 1 };
+    // Scale is a numerator over 2 so half-scale is available without
+    // floating point. 2x needs the box to be double the art in BOTH
+    // dimensions — the battle field's 64-tall boxes never qualify, so a
+    // species with a small sprite still cannot tower over the field; only a
+    // screen that deliberately offers a double-size box (the win recap) gets
+    // enlarged art.
+    let num: u32 = if sw * 2 <= bw && sh * 2 <= bh {
+        4
+    } else if sw <= bw && sh <= bh {
+        2
+    } else {
+        1
+    };
     let ow = sw * num / 2;
     let oh = sh * num / 2;
     let ox = bx + (bw as i32 - ow as i32) / 2;
@@ -811,16 +820,25 @@ where
 /// each half, so anything above this is under the band.
 pub const TOP: i32 = crate::device_view::DIVIDER_REACH as i32 + PAD;
 
-/// The bottom third, where Gen 3 puts its menus and its narration.
-pub(crate) const MENU_Y: i32 = 112;
+/// The bottom band, where Gen 3 puts its menus and its narration — flush
+/// against the safe area's floor whatever the panel size.
 pub(crate) const MENU_H: u32 = 36;
+pub(crate) const MENU_Y: i32 = BOTTOM - MENU_H as i32;
 
-/// First row of the type-effectiveness rows on the move-info screen.
-const CHART_Y: i32 = 96;
+/// Horizontal centre of a half, for centred text.
+const CX: i32 = HALF_W as i32 / 2;
+/// Vertical centre of a half, for the screens that are one centred block.
+const CY: i32 = HALF_H as i32 / 2;
+
+/// First row of the type-effectiveness rows on the move-info screen: three
+/// 13px rows plus clearance for the legend under them.
+const CHART_Y: i32 = BOTTOM - 52;
 
 /// Party list geometry, shared with the tap hit-test in the web client.
 pub(crate) const PARTY_Y: i32 = TOP + 22;
-pub(crate) const PARTY_PITCH: i32 = 17;
+pub(crate) const PARTY_PITCH: i32 = 24;
+/// A party row's height (the pitch leaves 4px of air between rows).
+pub(crate) const PARTY_ROW_H: u32 = 20;
 
 /// The play area's frame, in this seat's own color: White's half is edged in
 /// white and Red's in red. The two halves meet at the seam, so the divider's
@@ -938,8 +956,12 @@ where
 /// Where the two mons stand on a half, as centres. The field draws them
 /// here and the move animation travels between them, so the two cannot
 /// disagree about where a Flamethrower is aimed.
-pub const FOE_MON_CENTRE: (i32, i32) = (138 + 44, FRAME + PAD + 32);
+pub const FOE_MON_CENTRE: (i32, i32) = (FOE_SPRITE_X + 44, FRAME + PAD + 32);
 pub const OWN_MON_CENTRE: (i32, i32) = (LEFT + 46, MENU_Y - 32);
+
+/// Left edge of the rival's 88-wide sprite box, tucked against the right of
+/// the safe area.
+const FOE_SPRITE_X: i32 = RIGHT - 90;
 
 fn battle_field<D>(d: &mut D, ctx: &HalfCtx<'_>, show_lock: bool)
 where
@@ -950,10 +972,10 @@ where
     // at 1:1 — a pixel short and `draw_sprite_fit` halves it. It starts on the
     // first legal row: the divider only reaches into the middle columns, and
     // this sits well right of them.
-    draw_platform(d, 182, 76, 28);
+    draw_platform(d, FOE_SPRITE_X + 44, 76, 28);
     if let Some(spr) = mon_sprite_color(ctx.foe_name) {
         let bob = if ctx.foe_bob { -2 } else { 0 };
-        draw_sprite_fit(d, spr, 138, FRAME + PAD + bob, 88, 64, false, true);
+        draw_sprite_fit(d, spr, FOE_SPRITE_X, FRAME + PAD + bob, 88, 64, false, true);
     }
     draw_status_plate(
         d, LEFT, TOP, 112, ctx.foe_name, ctx.foe_level, ctx.foe_hp, None, ctx.foe_status,
@@ -974,7 +996,7 @@ where
     // has no feet to spare: the mon is stood flush against the top of the move
     // menu, and the bob dips it a few pixels behind the pane rather than
     // lifting it off nothing and leaving a cut edge in mid air.
-    draw_platform(d, 54, 110, 34);
+    draw_platform(d, LEFT + 42, MENU_Y - 2, 34);
     if let Some(spr) = mon_back_sprite_color(ctx.own_name) {
         let dip = if ctx.bob { 0 } else { 3 };
         draw_sprite_fit(d, spr, LEFT, MENU_Y - 64 + dip, 92, 64, false, true);
@@ -982,8 +1004,8 @@ where
     // Clear of the pane below it: with the numbers row the plate is 34 tall,
     // and sat flush against the menu the HP figures were cut by its border.
     draw_status_plate(
-        d, 104, MENU_Y - 40, 120, ctx.own_name, ctx.own_level, ctx.own_hp, ctx.own_hp_numbers,
-        ctx.own_status, seat_trim(ctx.seat),
+        d, RIGHT - 124, MENU_Y - 40, 120, ctx.own_name, ctx.own_level, ctx.own_hp,
+        ctx.own_hp_numbers, ctx.own_status, seat_trim(ctx.seat),
     );
 }
 
@@ -1004,9 +1026,11 @@ where
     // The move list: a 2x2 grid in a menu box with the cursor beside the
     // highlighted row, and the PP and type of that row in a second box at the
     // right — the Gen 3 arrangement, at this panel's scale.
-    draw_menu_box(d, LEFT, MENU_Y, 148, MENU_H);
+    let move_w = CONTENT_W - 68; // the PP/type box keeps its 64 + a 4px gap
+    draw_menu_box(d, LEFT, MENU_Y, move_w, MENU_H);
+    let col = (move_w as i32 - 2 * (BOX_PAD + 8)) / 2;
     for (i, mv) in moves.iter().take(4).enumerate() {
-        let x = LEFT + BOX_PAD + 8 + (i as i32 % 2) * 70;
+        let x = LEFT + BOX_PAD + 8 + (i as i32 % 2) * col;
         let y = MENU_Y + 7 + (i as i32 / 2) * 15;
         let sel = i as u8 == ctx.cursor;
         // A move with no PP left greys out rather than disappearing, so the
@@ -1018,10 +1042,11 @@ where
         }
     }
 
-    draw_menu_box(d, LEFT + 152, MENU_Y, 64, MENU_H);
+    let pp_x = LEFT + move_w as i32 + 4;
+    draw_menu_box(d, pp_x, MENU_Y, 64, MENU_H);
     if let Some(mv) = moves.get(ctx.cursor as usize) {
         let mut n = NumBuf::new();
-        text_aa_font(d, "PP", LEFT + 152 + BOX_PAD, MENU_Y + 7, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
+        text_aa_font(d, "PP", pp_x + BOX_PAD, MENU_Y + 7, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
         text_right(
             d,
             n.pair(mv.pp as u32, mv.max_pp as u32),
@@ -1030,8 +1055,8 @@ where
             &FONT_5X8,
             C_MSG_TEXT,
         );
-        text_aa_font(d, "TYPE/", LEFT + 152 + BOX_PAD, MENU_Y + 17, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
-        text_aa_font(d, clip(&mv.type_name, 7), LEFT + 152 + BOX_PAD, MENU_Y + 26, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
+        text_aa_font(d, "TYPE/", pp_x + BOX_PAD, MENU_Y + 17, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
+        text_aa_font(d, clip(&mv.type_name, 7), pp_x + BOX_PAD, MENU_Y + 26, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
     }
 
 }
@@ -1061,9 +1086,10 @@ where
     D: DrawTarget<Color = Rgb565>,
 {
     play_frame(d, ctx.seat);
-    text_aa_center_font(d, if forced { "SEND WHO NEXT?" } else { "PARTY" }, 120, TOP, &FONT_8X13, C_INK, C_BG);
+    text_aa_center_font(d, if forced { "SEND WHO NEXT?" } else { "PARTY" }, CX, TOP, &FONT_8X13, C_INK, C_BG);
     fill(d, LEFT, TOP + 16, CONTENT_W, 2, C_INK);
 
+    let bar_x = LEFT + 84;
     for (i, slot) in party.iter().take(6).enumerate() {
         let y = PARTY_Y + i as i32 * PARTY_PITCH;
         let sel = i as u8 == ctx.cursor;
@@ -1076,20 +1102,20 @@ where
             C_INK
         };
         let row_bg = if sel { C_SEL } else { C_BOX };
-        panel(d, LEFT, y, CONTENT_W, 16, if sel { C_SEL } else { C_BOX }, if dead { C_DIM } else { C_INK });
-        text_aa_font(d, clip(species_display_name(&slot.name), 11), LEFT + BOX_PAD, y + 3, &FONT_6X10, fg, row_bg);
+        panel(d, LEFT, y, CONTENT_W, PARTY_ROW_H, if sel { C_SEL } else { C_BOX }, if dead { C_DIM } else { C_INK });
+        text_aa_font(d, clip(species_display_name(&slot.name), 11), LEFT + BOX_PAD, y + 5, &FONT_6X10, fg, row_bg);
         let pct = if slot.max_hp == 0 {
             0
         } else {
             ((slot.hp as u32 * 100) / slot.max_hp as u32) as u8
         };
-        hp_bar(d, 96, y + 4, 62, pct);
+        hp_bar(d, bar_x, y + 6, 100, pct);
         let mut n = NumBuf::new();
-        text_aa_font(d, n.pair(slot.hp as u32, slot.max_hp as u32), 164, y + 4, &FONT_5X8, fg, row_bg);
+        text_aa_font(d, n.pair(slot.hp as u32, slot.max_hp as u32), bar_x + 108, y + 6, &FONT_5X8, fg, row_bg);
         if slot.active {
-            text_aa_right_font(d, "OUT", RIGHT - BOX_PAD, y + 4, &FONT_5X8, if sel { C_BOX } else { C_DIM }, row_bg);
+            text_aa_right_font(d, "OUT", RIGHT - BOX_PAD, y + 6, &FONT_5X8, if sel { C_BOX } else { C_DIM }, row_bg);
         } else if let Some(st) = &slot.status {
-            text_aa_right_font(d, clip(st, 3), RIGHT - BOX_PAD, y + 4, &FONT_5X8, if sel { C_BOX } else { C_ACCENT }, row_bg);
+            text_aa_right_font(d, clip(st, 3), RIGHT - BOX_PAD, y + 6, &FONT_5X8, if sel { C_BOX } else { C_ACCENT }, row_bg);
         }
     }
 
@@ -1126,10 +1152,12 @@ where
     // at the display size while it fits in two rows and drops to the body
     // size only for the long ones. Sized the other way round, every line
     // would be small for the sake of the few that are long.
-    let (font, cols, rows, pitch) = if caption.len() <= 2 * 26 {
-        (&FONT_8X13, 26usize, 2, 15)
+    let wide8 = ((CONTENT_W as i32 - 16) / 8) as usize;
+    let wide6 = ((CONTENT_W as i32 - 16) / 6) as usize;
+    let (font, cols, rows, pitch) = if caption.len() <= 2 * wide8 {
+        (&FONT_8X13, wide8, 2, 15)
     } else {
-        (&FONT_6X10, 34usize, 3, 11)
+        (&FONT_6X10, wide6, 3, 11)
     };
     let mut rest = caption;
     for row in 0..rows {
@@ -1161,18 +1189,18 @@ where
 {
     play_frame(d, seat);
     if ready && ai {
-        text_aa_center_font(d, "AI", 120, 60, &FONT_8X13, C_ACCENT, C_BG);
-        text_aa_center_font(d, "a robot rival takes this side", 120, 84, &FONT_5X8, C_DIM, C_BG);
+        text_aa_center_font(d, "AI", CX, CY - 20, &FONT_8X13, C_ACCENT, C_BG);
+        text_aa_center_font(d, "a robot rival takes this side", CX, CY + 4, &FONT_5X8, C_DIM, C_BG);
     } else if ready {
-        text_aa_center_font(d, "READY!", 120, 52, &FONT_10X20, C_HP_G, C_BG);
-        text_aa_center_font(d, "waiting for rival...", 120, 84, &FONT_8X13, C_DIM, C_BG);
-        text_aa_center_font(d, "B to cancel", 120, 106, &FONT_6X10, C_DIM, C_BG);
+        text_aa_center_font(d, "READY!", CX, CY - 28, &FONT_10X20, C_HP_G, C_BG);
+        text_aa_center_font(d, "waiting for rival...", CX, CY + 4, &FONT_8X13, C_DIM, C_BG);
+        text_aa_center_font(d, "B to cancel", CX, CY + 26, &FONT_6X10, C_DIM, C_BG);
     } else {
         // The one instruction on this screen carries the screen, so it is
         // set at the display size rather than the body size.
-        text_aa_center_font(d, "PRESS A TO START", 120, 46, &FONT_10X20, C_INK, C_BG);
-        text_aa_center_font(d, "HOLD A: FIGHT THE AI", 120, 82, &FONT_8X13, C_DIM, C_BG);
-        text_aa_center_font(d, "?: OPTIONS", 120, 104, &FONT_8X13, C_DIM, C_BG);
+        text_aa_center_font(d, "PRESS A TO START", CX, CY - 34, &FONT_10X20, C_INK, C_BG);
+        text_aa_center_font(d, "HOLD A: FIGHT THE AI", CX, CY + 2, &FONT_8X13, C_DIM, C_BG);
+        text_aa_center_font(d, "?: OPTIONS", CX, CY + 24, &FONT_8X13, C_DIM, C_BG);
     }
 }
 
@@ -1183,9 +1211,11 @@ where
 {
     play_frame(d, ctx.seat);
     let win = msg.starts_with("WIN");
-    text_aa_center_font(d, msg, 120, 22, &FONT_8X13, if win { C_HP_G } else { C_INK }, C_BG);
+    text_aa_center_font(d, msg, CX, TOP + 8, &FONT_8X13, if win { C_HP_G } else { C_INK }, C_BG);
     if let Some(spr) = mon_sprite_color(ctx.own_name) {
-        draw_sprite_fit(d, spr, 76, 46, 88, 76, false, true);
+        // Twice the box of the old panel: the recap owns the screen, so the
+        // winner's art gets drawn at 2x rather than floating in blank space.
+        draw_sprite_fit(d, spr, CX - 64, TOP + 34, 128, 128, false, true);
     }
     legend(d, &["A REMATCH", "? BATTLE LOG"]);
 }
@@ -1212,15 +1242,16 @@ where
     text_aa_font(d, n3.pair(mv.pp as u32, mv.max_pp as u32), x + 108, row, &FONT_5X8, C_INK, C_BG);
 
     // Description, word wrapped, stopping short of the chart rows.
+    let cols = (CONTENT_W / 6) as usize;
     let mut y = TOP + 43;
     let mut rest = desc;
     while !rest.is_empty() && y < CHART_Y - 12 {
-        let take = if rest.len() <= 36 {
+        let take = if rest.len() <= cols {
             rest.len()
         } else {
-            rest[..36].rfind(' ').unwrap_or(36)
+            rest[..cols].rfind(' ').unwrap_or(cols)
         };
-        text_aa_font(d, clip(&rest[..take], 36), LEFT, y, &FONT_6X10, C_INK, C_BG);
+        text_aa_font(d, clip(&rest[..take], cols), LEFT, y, &FONT_6X10, C_INK, C_BG);
         rest = rest[take..].trim_start();
         y += 12;
     }
@@ -1335,10 +1366,12 @@ where
     D: DrawTarget<Color = Rgb565>,
 {
     play_frame(d, seat);
-    text_aa_center_font(d, "BATTLE LOG", 120, TOP, &FONT_8X13, C_INK, C_BG);
+    text_aa_center_font(d, "BATTLE LOG", CX, TOP, &FONT_8X13, C_INK, C_BG);
     fill(d, LEFT, TOP + 16, CONTENT_W, 2, C_INK);
-    for (i, line) in lines.iter().skip(top).take(9).enumerate() {
-        text_aa_font(d, clip(line, 43), LEFT, TOP + 22 + i as i32 * 11, &FONT_5X8, C_INK, C_BG);
+    let rows = ((BOTTOM - (TOP + 22) - 12) / 11) as usize;
+    let cols = (CONTENT_W / 5) as usize;
+    for (i, line) in lines.iter().skip(top).take(rows).enumerate() {
+        text_aa_font(d, clip(line, cols), LEFT, TOP + 22 + i as i32 * 11, &FONT_5X8, C_INK, C_BG);
     }
     legend(d, &["+ SCROLL", "B BACK"]);
 }
@@ -1355,9 +1388,9 @@ where
         InvalidReason::NoPp => ("No power remaining", "for that move!"),
         InvalidReason::Trapped => ("Trapped -", "can't switch out!"),
     };
-    text_aa_center_font(d, a, 120, 62, &FONT_8X13, C_ACCENT, C_BG);
+    text_aa_center_font(d, a, CX, CY - 18, &FONT_8X13, C_ACCENT, C_BG);
     if !b.is_empty() {
-        text_aa_center_font(d, b, 120, 82, &FONT_8X13, C_ACCENT, C_BG);
+        text_aa_center_font(d, b, CX, CY + 2, &FONT_8X13, C_ACCENT, C_BG);
     }
 }
 
@@ -1382,8 +1415,8 @@ where
         panel(d, 12, y, w - 24, OPT_ROW.2, if sel { C_SEL } else { C_BOX }, C_INK);
         let fg = if sel { C_BOX } else { C_INK };
         let row_bg = if sel { C_SEL } else { C_BOX };
-        text_aa_font(d, r.label, 18, y + 5, &FONT_6X10, fg, row_bg);
-        text_aa_right_font(d, r.value, (w - 18) as i32, y + 5, &FONT_6X10, fg, row_bg);
+        text_aa_font(d, r.label, 18, y + 8, &FONT_6X10, fg, row_bg);
+        text_aa_right_font(d, r.value, (w - 18) as i32, y + 8, &FONT_6X10, fg, row_bg);
     }
     let mut x = 14;
     for it in ["+ CHANGE", "A CONFIRM", "B BACK"] {
@@ -1397,8 +1430,8 @@ where
 /// the renderer lays out with, because a tap that lands one row off is
 /// indistinguishable from the menu ignoring the press: tapping GEN 3 started
 /// a Gen 1 battle when the two disagreed.
-pub const GEN_ROW: (i32, i32, u32) = (48, 46, 38);
-pub const OPT_ROW: (i32, i32, u32) = (32, 22, 20);
+pub const GEN_ROW: (i32, i32, u32) = (70, 56, 44);
+pub const OPT_ROW: (i32, i32, u32) = (40, 30, 26);
 
 /// Which menu row a point in half-local coordinates is over, if any. `rows`
 /// is what the menu says it is showing.
@@ -1433,10 +1466,10 @@ where
         panel(d, 24, y, w - 48, GEN_ROW.2, if sel { C_SEL } else { C_BOX }, C_INK);
         let fg = if sel { C_BOX } else { C_INK };
         let card_bg = if sel { C_SEL } else { C_BOX };
-        text_aa_font(d, name, 34, y + 6, &FONT_8X13, fg, card_bg);
-        text_aa_font(d, sub, 34, y + 22, &FONT_5X8, if sel { C_BOX } else { C_DIM }, card_bg);
+        text_aa_font(d, name, 34, y + 9, &FONT_8X13, fg, card_bg);
+        text_aa_font(d, sub, 34, y + 26, &FONT_5X8, if sel { C_BOX } else { C_DIM }, card_bg);
         if !ready {
-            text_aa_right_font(d, "STUB", (w - 34) as i32, y + 6, &FONT_5X8, C_ACCENT, card_bg);
+            text_aa_right_font(d, "STUB", (w - 34) as i32, y + 9, &FONT_5X8, C_ACCENT, card_bg);
         }
     }
     text_aa_center_font(d, "+ CHOOSE    A START", cx, h as i32 - FRAME - PAD - 10, &FONT_5X8, C_DIM, C_BG);

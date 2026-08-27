@@ -1188,7 +1188,7 @@ async fn collect_battle_input(bus: &InputBus, seed: u64, modes: [ControlMode; 2]
 // The old two-OLED exports stay live so the legacy page keeps working during
 // the migration; these are additive.
 
-/// RGBA8888 for the whole 240x320 panel, always composed head-to-head.
+/// RGBA8888 for the whole 320x480 panel, always composed head-to-head.
 /// Rendered on demand rather than cached: one full frame is ~1 ms and it
 /// keeps the browser from ever showing stale halves.
 // ── Screen-state trace ───────────────────────────────────────────────────────
@@ -1356,7 +1356,7 @@ fn apply_nav_out(player: u8, out: mega_blastoise_core::cursor_nav::NavOut) {
     }
 }
 
-/// A raw tap on the panel, in 240x320 panel coordinates. Core decides which
+/// A raw tap on the panel, in 320x480 panel coordinates. Core decides which
 /// half it landed on, un-rotates the far half, and maps the pixel to a
 /// meaning; the page only scales client coordinates to the panel grid.
 #[wasm_bindgen]

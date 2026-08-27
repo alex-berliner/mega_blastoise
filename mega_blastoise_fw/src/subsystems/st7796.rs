@@ -4,14 +4,13 @@
 //! CS GP10. GP8/GP9 fit neither hardware SPI block; this is the PIO bus
 //! BUILD.md §10 promises. A two-instruction sideset program clocks mode-0
 //! SPI at 25 MHz and a single DMA transfer feeds it each frame, so a full
-//! 240x320 blit is ~50 ms — against well over a second for the bit-banged
+//! 320x480 blit is ~100 ms — against well over a second for the bit-banged
 //! bring-up driver this replaced (the visible wipe down the panel).
 //!
-//! The core renders a 240x320 [`DeviceFrame`] (the single-screen design's
-//! native size, shared with the web build — zero drift). This panel is
-//! 320x480, so the frame is centred pixel-for-pixel with a black border:
-//! no scaling, no resampling, nothing for the two platforms to disagree
-//! about.
+//! The core renders a 320x480 [`DeviceFrame`] (the single-screen design's
+//! native size, shared with the web build — zero drift), which matches this
+//! panel one-to-one; the centring offsets below are zero and exist so the
+//! math stays honest if either size ever moves again.
 //!
 //! The task consumes frames from [`FRAME`]; a `Signal` rather than a queue
 //! because only the newest frame matters. NOTE: binds PIO0_IRQ_0, as does
@@ -39,15 +38,15 @@ bind_interrupts!(struct PioIrqs {
 pub static FRAME: Signal<CriticalSectionRawMutex, DeviceFrame> = Signal::new();
 
 /// Set after each blit (and once at init). The renderer waits on it before
-/// building the next frame, so at most one 150 KB frame is ever in flight —
-/// without this, a burst of presses can have three frames alive at once and
-/// that is real heap pressure even on the RP2350.
+/// building the next frame, so at most one 300 KB frame is ever in flight —
+/// without this, a burst of presses can have three frames alive at once,
+/// which is real heap pressure even on the RP2350.
 pub static IDLE: Signal<CriticalSectionRawMutex, ()> = Signal::new();
 
 const PANEL_W: u16 = 320;
 const PANEL_H: u16 = 480;
-const OFF_X: u16 = (PANEL_W - DEV_W as u16) / 2; // 40
-const OFF_Y: u16 = (PANEL_H - DEV_H as u16) / 2; // 80
+const OFF_X: u16 = (PANEL_W - DEV_W as u16) / 2; // 0
+const OFF_Y: u16 = (PANEL_H - DEV_H as u16) / 2; // 0
 
 pub struct Lcd {
     sm: StateMachine<'static, PIO0, 0>,
@@ -224,7 +223,7 @@ pub async fn task(mut lcd: Lcd) -> ! {
     loop {
         let mut frame = FRAME.wait().await;
         lcd.blit(&mut frame).await;
-        drop(frame); // free the 150 KB before inviting the next one
+        drop(frame); // free the 300 KB before inviting the next one
         IDLE.signal(());
     }
 }

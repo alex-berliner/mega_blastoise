@@ -467,7 +467,7 @@ flowchart LR
 (() => {
   const css = Array.from(document.querySelectorAll('style')).map((s) => s.textContent).join('\n')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const HINT_OFF = 'click: 240×320 pixel preview';
+  const HINT_OFF = 'click: 320×480 pixel preview';
   const HINT_ON = 'pixel preview · click: idealized';
   document.querySelectorAll('.scr').forEach((scr) => {
     const hint = document.createElement('div');
