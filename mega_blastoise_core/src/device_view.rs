@@ -120,18 +120,19 @@ pub fn draw_split_divider(frame: &mut DeviceFrame) {
 pub fn draw_input_debug(frame: &mut DeviceFrame, masks: [u8; 2]) {
     const CELL: i32 = 10;
     const GAP: i32 = 2;
-    // Seat-local cluster geometry: D-pad cross in a 3x3 cell grid, then the
-    // four action cells in a row beside it, vertically centred.
+    // Seat-local cluster geometry: two crosses, exactly like the physical
+    // board — D-pad, then the action cross (MENU north, INFO west, A east,
+    // B south, BUILD.md's P1_ACTIONS/P2_ACTIONS layout).
     // (bit, cell x, cell y) in cluster cells.
     const CELLS: [(u8, i32, i32); 8] = [
         (0, 1, 0), // Up
         (1, 1, 2), // Down
         (2, 0, 1), // Left
         (3, 2, 1), // Right
-        (4, 3, 1), // A
-        (5, 4, 1), // B
-        (6, 5, 1), // Info
-        (7, 6, 1), // Menu
+        (7, 4, 0), // Menu (north)
+        (6, 3, 1), // Info (west)
+        (4, 5, 1), // A    (east)
+        (5, 4, 2), // B    (south)
     ];
     // 3x5 glyphs, bit 2 = leftmost column.
     const GLYPHS: [[u8; 5]; 8] = [
