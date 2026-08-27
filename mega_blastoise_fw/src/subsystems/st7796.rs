@@ -153,8 +153,12 @@ impl Lcd {
         self.data(&[0xC3]).await;
         self.cmd(0xF0).await;
         self.data(&[0x96]).await;
-        self.cmd(0x36).await; // MADCTL: portrait, BGR order
-        self.data(&[0x48]).await;
+        // MADCTL: portrait, BGR order, rotated 180 (0x88, not 0x48): as
+        // mounted, the panel's native bottom faces player 2's band, and the
+        // frame's bottom half is seat 1 — the rotation puts P1's half on
+        // P1's edge of the board.
+        self.cmd(0x36).await;
+        self.data(&[0x88]).await;
         self.cmd(0x3A).await; // COLMOD: RGB565
         self.data(&[0x55]).await;
         // INVOFF, not the usual IPS INVON: webcam-vs-web comparison showed
