@@ -78,6 +78,12 @@ fn dispatch(line: &str) {
             defmt::info!("console: :reset — rebooting");
             cortex_m::peripheral::SCB::sys_reset();
         }
+        ":bl" | ":bootloader" => {
+            defmt::info!("console: :bl — rebooting to BOOTSEL");
+            // Datasheet 5.5.10.1: type BOOTSEL (0x0002) | NO_RETURN (0x0100),
+            // 100 ms grace so this USB device detaches cleanly first.
+            embassy_rp::rom_data::reboot(0x0102, 100, 0, 0);
+        }
         ":anim off" => {
             let _ = crate::board_v2::INPUT.try_send(DeviceEvent::SetAnim(false));
             log_line("[anim] animations OFF");
