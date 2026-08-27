@@ -12,13 +12,13 @@
 use defmt::info;
 use mega_blastoise_core::device_session::{Button, Ctx, DeviceSession, Out};
 use mega_blastoise_core::device_ui::render_session_frame;
-use mega_blastoise_core::OledController;
+use mega_blastoise_core::{OledCmd, OledController};
 
 use crate::subsystems::{buttons_v2, st7796};
 
 pub async fn run() -> ! {
     let mut session = DeviceSession::new();
-    let ctl = OledController::new();
+    let mut ctl = OledController::new();
     let mut ready = [false; 2];
     let mut ai = [false; 2];
 
@@ -47,6 +47,7 @@ pub async fn run() -> ! {
         let Some(first) = first else { continue };
         let mut apply = |(player, button): (u8, Button),
                          session: &mut DeviceSession,
+                         ctl: &mut OledController,
                          ready: &mut [bool; 2],
                          ai: &mut [bool; 2]| {
             // Milestone: always lobby, nobody is choosing or waiting — the
@@ -74,11 +75,19 @@ pub async fn run() -> ! {
                     }
                 }
             }
+            // Both stores need the flags: the session for what B means on
+            // the next press, the controller for what the lobby SHOWS —
+            // render_seat reads Screen::Lobby off the controller, so ready
+            // never reached the glass without this.
             session.set_lobby_flags(*ready, *ai);
+            for p in [1u8, 2] {
+                let j = (p == 2) as usize;
+                let _ = ctl.apply(OledCmd::LobbyState { player: p, ready: ready[j], ai: ai[j] });
+            }
         };
-        apply(first, &mut session, &mut ready, &mut ai);
+        apply(first, &mut session, &mut ctl, &mut ready, &mut ai);
         while let Ok(more) = buttons_v2::EVENTS.try_receive() {
-            apply(more, &mut session, &mut ready, &mut ai);
+            apply(more, &mut session, &mut ctl, &mut ready, &mut ai);
         }
     }
 }
