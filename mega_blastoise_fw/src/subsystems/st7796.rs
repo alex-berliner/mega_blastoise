@@ -91,10 +91,12 @@ impl Lcd {
         let mut cfg = PioConfig::default();
         cfg.use_program(&loaded, &[&sck]);
         cfg.set_out_pins(&[&mosi]);
-        // 150 MHz sys / 3 = 50 MHz PIO, 2 cycles per bit = 25 MHz SPI.
-        // Datasheet write cycle is 15 MHz; every ST7796 module takes far
-        // more, and the bring-up risk is worth one divider bump if not.
-        cfg.clock_divider = 3u32.to_fixed();
+        // 150 MHz sys / 2 = 75 MHz PIO, 2 cycles per bit = 37.5 MHz SPI.
+        // Datasheet write cycle is 15 MHz, but ST7796 modules routinely run
+        // 40+ over short wires (TFT_eSPI ships 55). Proven at 25 (divider
+        // 3) first; raise the divider if the panel ever shows tearing or
+        // shifted pixels.
+        cfg.clock_divider = 2u32.to_fixed();
         // Autopull MSB-first with an 8-bit threshold: the SM shifts the top
         // 8 bits of each FIFO word. Byte-wide DMA writes are replicated
         // across the bus lanes (RP2040/RP2350 narrow-write rule), so a u8

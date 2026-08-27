@@ -42,7 +42,9 @@ pub fn masks() -> [u8; 2] {
     [MASKS[0].load(Ordering::Relaxed), MASKS[1].load(Ordering::Relaxed)]
 }
 
-const STABLE: u8 = 4; // 4 x 5 ms poll = 20 ms debounce
+// 2 x 5 ms poll = 10 ms debounce. These tactiles settle in ~1-2 ms; 20 ms
+// was bring-up caution and read as input lag once the display sped up.
+const STABLE: u8 = 2;
 const HOLD_MS: u64 = 500; // the game's long-press threshold
 
 /// What a physical key means. `A` is separate because it alone has

@@ -308,6 +308,47 @@ impl DrawTarget for Region<'_> {
         }
         Ok(())
     }
+
+    // Solid rectangles are most of every screen — the clear, the panels,
+    // the bars — and the default goes through draw_iter a pixel at a time.
+    // A rectangle stays a rectangle under our only rotation (180), so fill
+    // whole rows straight into the framebuffer instead. Roughly a 5x faster
+    // render on the firmware, where it is on the button-to-glass path.
+    fn fill_solid(
+        &mut self,
+        area: &embedded_graphics::primitives::Rectangle,
+        color: Self::Color,
+    ) -> Result<(), Self::Error> {
+        let c = RawU16::from(color).into_inner();
+        // Clip in region-local coords first.
+        let x0 = area.top_left.x.max(0);
+        let y0 = area.top_left.y.max(0);
+        let x1 = (area.top_left.x + area.size.width as i32).min(self.w as i32);
+        let y1 = (area.top_left.y + area.size.height as i32).min(self.h as i32);
+        if x0 >= x1 || y0 >= y1 {
+            return Ok(());
+        }
+        // Map the clipped rect's corners to panel coords; under Rot::Half
+        // the corners swap but the rect is the same set of pixels.
+        let (px0, py0) = match self.rot {
+            Rot::None => (x0 + self.ox, y0 + self.oy),
+            Rot::Half => (self.w as i32 - x1 + self.ox, self.h as i32 - y1 + self.oy),
+        };
+        // Clamp again in panel coords: a band region may hang off the panel.
+        let (rw, rh) = (x1 - x0, y1 - y0);
+        let cx0 = px0.max(0);
+        let cy0 = py0.max(0);
+        let cx1 = (px0 + rw).min(DEV_W as i32);
+        let cy1 = (py0 + rh).min(DEV_H as i32);
+        if cx0 >= cx1 || cy0 >= cy1 {
+            return Ok(());
+        }
+        for py in cy0..cy1 {
+            let start = py as usize * DEV_W as usize + cx0 as usize;
+            self.frame.px[start..start + (cx1 - cx0) as usize].fill(c);
+        }
+        Ok(())
+    }
 }
 
 impl OriginDimensions for Region<'_> {
