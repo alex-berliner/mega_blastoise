@@ -91,6 +91,9 @@ pub enum DeviceEvent {
     SetAnim(bool),
     /// Platform heartbeat at [`BOB_TICK_MS`]: advances sprite bobs.
     Pulse,
+    /// Platform asks for an unconditional present (the fw display task uses
+    /// this to heal a frame that was skipped mid-blit).
+    Repaint,
 }
 
 /// The queue platforms push [`DeviceEvent`]s into. Static-friendly.
@@ -232,6 +235,12 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
     }
 
     fn apply_effects(&self, fx: &mut Vec<CollectEffect>) {
+        // No effects, no repaint: the lobby and collector loops call this
+        // every 50 ms tick, and presenting unconditionally kept the display
+        // pipeline busy full-time (the idle-blit-spam regression).
+        if fx.is_empty() {
+            return;
+        }
         for e in fx.drain(..) {
             match e {
                 CollectEffect::Oled(cmd) => self.oled_apply(cmd),
@@ -259,10 +268,14 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
     fn background_event(&self, ev: &DeviceEvent) -> bool {
         match ev {
             DeviceEvent::Pulse => {
-                let _ = self.st.borrow_mut().ctl.tick_bob(BOB_TICK_MS);
-                // Present unconditionally: Pulse doubles as the platforms'
-                // repaint-heal path (the fw drops a present that lands
-                // mid-blit and pulses to catch up).
+                // Redraw-gated: an idle lobby must not render 4x a second.
+                let redraw = self.st.borrow_mut().ctl.tick_bob(BOB_TICK_MS);
+                if redraw.includes(1) || redraw.includes(2) {
+                    self.present();
+                }
+                true
+            }
+            DeviceEvent::Repaint => {
                 self.present();
                 true
             }
@@ -545,6 +558,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
             seq.ai_preset(ai, &mut fx);
         }
         self.apply_effects(&mut fx);
+        let mut last_flags = ([false; 2], [false; 2]);
         loop {
             match select(self.next_event(), self.port.sleep_ms(COLLECT_TICK_MS as u32)).await {
                 Either::First(ev) => {
@@ -555,14 +569,19 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
                 Either::Second(()) => {}
             }
             let done = seq.tick(self.port.now_ms(), &mut fx);
-            {
-                let mut st = self.st.borrow_mut();
-                let (r, a) = (seq.ready_flags(), seq.ai_flags());
-                st.session.set_lobby_flags(r, a);
-                st.ctl.apply(OledCmd::LobbyState { player: 1, ready: r[0], ai: a[0] });
-                st.ctl.apply(OledCmd::LobbyState { player: 2, ready: r[1], ai: a[1] });
-                self.port.lobby_pulse(r, a);
+            let flags = (seq.ready_flags(), seq.ai_flags());
+            if flags != last_flags {
+                last_flags = flags;
+                let (r, a) = flags;
+                {
+                    let mut st = self.st.borrow_mut();
+                    st.session.set_lobby_flags(r, a);
+                    st.ctl.apply(OledCmd::LobbyState { player: 1, ready: r[0], ai: a[0] });
+                    st.ctl.apply(OledCmd::LobbyState { player: 2, ready: r[1], ai: a[1] });
+                }
+                self.present();
             }
+            self.port.lobby_pulse(flags.0, flags.1);
             self.apply_effects(&mut fx);
             if done {
                 break;
@@ -598,7 +617,8 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
                     seq.ai_preset(ai, fx);
                 }
             }
-            DeviceEvent::SetAiPause(_) | DeviceEvent::SetAnim(_) | DeviceEvent::Pulse => {}
+            DeviceEvent::SetAiPause(_) | DeviceEvent::SetAnim(_) | DeviceEvent::Pulse
+            | DeviceEvent::Repaint => {}
         }
         self.present();
     }

@@ -96,7 +96,7 @@ impl Key {
             m.fetch_and(!(1 << self.bit), Ordering::Relaxed);
         }
         // Any edge — including releases — repaints the debug overlay.
-        let _ = crate::board_v2::INPUT.try_send(DeviceEvent::Pulse);
+        let _ = crate::board_v2::INPUT.try_send(DeviceEvent::Repaint);
         match self.kind {
             Kind::Plain(b) => {
                 if raw_down {

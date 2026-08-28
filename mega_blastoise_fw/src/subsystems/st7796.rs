@@ -108,13 +108,15 @@ impl Lcd {
         Self { sm: sm0, dma, dc, cs, rst, bl }
     }
 
-    /// Block until the SM has shifted everything out, so DC may flip.
+    /// Block until the SM has shifted everything out, so DC may flip. Spin,
+    /// not sleep: at 37.5 MHz the FIFO drains in ~2 us, and a timer round
+    /// trip per drain made every window cost milliseconds.
     async fn drain(&mut self) {
         while !self.sm.tx().empty() {
-            embassy_futures::yield_now().await;
+            core::hint::spin_loop();
         }
         // The FIFO empties one word before the last bits leave the pin.
-        Timer::after(Duration::from_micros(1)).await;
+        cortex_m::asm::delay(300); // ~2 us at 150 MHz
     }
 
     async fn push_byte(&mut self, b: u8) {
@@ -260,6 +262,10 @@ impl Lcd {
                     n_dirty += 1;
                 }
             }
+            // The full-frame hash is ~15 ms of straight compute; yielding
+            // per band keeps the 5 ms button poll (and everything else on
+            // the executor) breathing while it runs.
+            embassy_futures::yield_now().await;
         }
         if n_dirty == 0 {
             return;
@@ -340,7 +346,7 @@ pub async fn task(mut lcd: Lcd) -> ! {
         // re-presents from fresh state now that the frame slot is free.
         if crate::board_v2::NEED_REPAINT.swap(false, core::sync::atomic::Ordering::AcqRel) {
             let _ = crate::board_v2::INPUT
-                .try_send(mega_blastoise_core::device_runner::DeviceEvent::Pulse);
+                .try_send(mega_blastoise_core::device_runner::DeviceEvent::Repaint);
         }
     }
 }
