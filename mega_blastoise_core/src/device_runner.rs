@@ -509,8 +509,12 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
             self.port.line_out("Both ready!");
             self.pump_sleep(1000).await;
 
-            // Battle-start tutorial, off by default (options menu).
+            // Battle-start tutorial, off by default (options menu). The
+            // setting says "First game", so it spends itself: it used to
+            // replay before every match of the power-on, which is 6.75 s of
+            // unskippable pages between rematches.
             if self.st.borrow().session.tutorial() && !(seq_ai[0] && seq_ai[1]) {
+                self.st.borrow_mut().session.opts.tutorial = false;
                 for page in 0..crate::display::TUTORIAL_PAGES {
                     self.oled_apply(OledCmd::ShowTutorial { page });
                     self.present();
@@ -539,13 +543,32 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
             while waited < 30_000 {
                 match select(self.next_event(), self.port.sleep_ms(100)).await {
                     Either::First(ev) => {
-                        if !self.background_event(&ev) {
-                            break;
+                        if self.background_event(&ev) {
+                            continue;
+                        }
+                        // The recap legend promises "A REMATCH / ? BATTLE
+                        // LOG", so honour both: ? opens the log over the
+                        // recap (and the D-pad scrolls it), A starts the
+                        // next game, and a stray press does neither.
+                        match ev {
+                            DeviceEvent::Button { player, button } => {
+                                let reading = self.st.borrow().session.log_view(player).is_some();
+                                if matches!(button, Button::A | Button::TapSeat) && !reading {
+                                    break;
+                                }
+                                let ctx = Ctx { lobby: false, choosing: false, waiting: false };
+                                let _ = self.st.borrow_mut().session.button(player, button, ctx);
+                                self.present();
+                            }
+                            DeviceEvent::Pad(_) | DeviceEvent::PanelTap { .. } => break,
+                            _ => {}
                         }
                     }
                     Either::Second(()) => waited += 100,
                 }
             }
+            // Whatever either seat was reading, the next game starts clean.
+            self.st.borrow_mut().session.log_reset();
         }
     }
 

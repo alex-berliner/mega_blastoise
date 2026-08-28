@@ -174,7 +174,14 @@ impl DeviceSession {
     }
 
     pub fn begin_turn(&mut self, player: u8, n_moves: u8, n_party: u8, forced: bool) {
-        let s = &mut self.seats[idx(player)];
+        let i = idx(player);
+        // A turn arriving under an overlay is a stalled match: the log and
+        // the options both sit above the battle branch in `button`, so every
+        // press vanishes into a screen the player opened during narration and
+        // has no reason to think is still up. The prompt takes the screen.
+        self.log_view[i] = None;
+        self.seats[i].options = None;
+        let s = &mut self.seats[i];
         s.nav.begin_turn(n_moves, n_party, forced);
         s.locked = false;
         s.chosen = None;
@@ -297,10 +304,13 @@ impl DeviceSession {
         // choosing again.
         if ctx.waiting {
             match button {
-                Button::A | Button::B | Button::TapSeat => {
+                // AHold included: outside the lobby a long press is just a
+                // press. The pad reports the hold and suppresses the tap, so
+                // ignoring it here made a firm press do nothing at all.
+                Button::A | Button::B | Button::TapSeat | Button::AHold => {
                     outs.push(Out::CancelChoice(player));
                 }
-                Button::Dpad(_) | Button::Info | Button::AHold => {}
+                Button::Dpad(_) | Button::Info => {}
             }
             return outs;
         }
@@ -308,7 +318,11 @@ impl DeviceSession {
         // In battle: the cursor state machine, plus ? meaning "explain" while
         // choosing and "open the log" during playback.
         match button {
-            Button::A | Button::TapSeat => self.nav(player, &mut outs, |n| n.confirm()),
+            // AHold with A: see the waiting branch — a held button still
+            // means what the button means once the lobby is over.
+            Button::A | Button::TapSeat | Button::AHold => {
+                self.nav(player, &mut outs, |n| n.confirm())
+            }
             Button::B => self.nav(player, &mut outs, |n| n.back()),
             Button::Dpad(d) => self.nav(player, &mut outs, |n| n.dpad(d)),
             Button::Info => {
@@ -318,7 +332,6 @@ impl DeviceSession {
                     self.log_view[i] = Some(self.log.bottom());
                 }
             }
-            Button::AHold => {}
         }
         outs
     }

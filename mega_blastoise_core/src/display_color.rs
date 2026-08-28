@@ -815,6 +815,17 @@ where
     }
 }
 
+/// A one-line affordance hint on the battle screens, in the gap along the
+/// top edge between the rival's plate and their sprite — the only band of a
+/// battle half that no plate, art or pane wants. Dim on purpose: it is a
+/// reminder for the first game, not furniture.
+fn hint<D>(d: &mut D, text: &str)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    text_aa_font(d, text, LEFT + 118, FRAME + PAD + 2, &FONT_5X8, C_DIM, C_BG);
+}
+
 /// First row a half may draw on. The pokeball divider is painted over the
 /// composed panel and reaches [`crate::device_view::DIVIDER_REACH`] rows into
 /// each half, so anything above this is under the band.
@@ -1022,6 +1033,10 @@ where
 {
     play_frame(d, ctx.seat);
     battle_field(d, ctx, true);
+    // The two moves that are not the obvious one. A first-time player finds
+    // the D-pad and A on their own; nothing on this screen used to say that
+    // the party list and the move description exist at all.
+    hint(d, "B PARTY   ? INFO");
 
     // The move list: a 2x2 grid in a menu box with the cursor beside the
     // highlighted row, and the PP and type of that row in a second box at the
@@ -1068,6 +1083,9 @@ where
 {
     play_frame(d, ctx.seat);
     battle_field(d, ctx, true);
+    // A committed seat's one remaining move, said out loud: without this the
+    // waiting screen reads as "nothing you can do now".
+    hint(d, "B TAKE IT BACK");
     // Same field, and the bottom third becomes the narration box instead of
     // the move menu — which is exactly what the games do between choices.
     draw_message_box(d, LEFT, MENU_Y, CONTENT_W, 36);

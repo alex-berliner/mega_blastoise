@@ -232,13 +232,15 @@ fn main() {
 
     // Menus are head-to-head like everything else: the same screen in both
     // halves, each upright to the seat reading it.
-    let rows = [
-        dc::OptionRow { label: "Team size", value: "3 v 3" },
-        dc::OptionRow { label: "Text speed", value: "Normal" },
-        dc::OptionRow { label: "Sound", value: "On" },
-        dc::OptionRow { label: "Tutorial", value: "First game" },
-        dc::OptionRow { label: "Turn timer", value: "60 s" },
-    ];
+    // Straight from the real options, so this preview cannot show rows the
+    // device does not have (it used to hardcode two that no longer exist).
+    let opts = mega_blastoise_core::menu::GameOptions::default();
+    let rows: Vec<dc::OptionRow<'static>> = (0..mega_blastoise_core::menu::OPTION_ROWS)
+        .map(|i| {
+            let (label, value) = opts.row(i);
+            dc::OptionRow { label, value }
+        })
+        .collect();
 
     let mut gp_dev = DeviceFrame::new();
     {

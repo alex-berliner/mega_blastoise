@@ -69,11 +69,8 @@ pub struct GameOptions {
     /// 3 or 6.
     pub team_size: u8,
     pub text_speed: TextSpeed,
-    pub sound: bool,
     /// Show the tutorial before the first battle of this power-on only.
     pub tutorial: bool,
-    /// Seconds, or 0 for off.
-    pub turn_timer: u16,
 }
 
 impl Default for GameOptions {
@@ -82,15 +79,19 @@ impl Default for GameOptions {
             gen: Gen::One,
             team_size: 3,
             text_speed: TextSpeed::Normal,
-            sound: true,
             tutorial: false,
-            turn_timer: 60,
         }
     }
 }
 
 /// Rows on the options screen, in display order.
-pub const OPTION_ROWS: usize = 5;
+///
+/// Every row here must DO something. "Sound" and "Turn timer" used to sit
+/// in this list: both were toggled, stored, and read by nobody — and the
+/// board has no buzzer by design (BUILD.md), so the sound row could never
+/// mean anything. A setting that lies is worse than a setting that is
+/// missing; put either back only with the behaviour behind it.
+pub const OPTION_ROWS: usize = 3;
 
 impl GameOptions {
     /// Label and current value for row `i`, for the renderer.
@@ -98,9 +99,7 @@ impl GameOptions {
         match i {
             0 => ("Team size", if self.team_size == 6 { "6 v 6" } else { "3 v 3" }),
             1 => ("Text speed", self.text_speed.as_str()),
-            2 => ("Sound", if self.sound { "On" } else { "Off" }),
-            3 => ("Tutorial", if self.tutorial { "First game" } else { "Off" }),
-            _ => ("Turn timer", if self.turn_timer == 0 { "Off" } else { "60 s" }),
+            _ => ("Tutorial", if self.tutorial { "First game" } else { "Off" }),
         }
     }
 
@@ -108,9 +107,7 @@ impl GameOptions {
         match i {
             0 => self.team_size = if self.team_size == 3 { 6 } else { 3 },
             1 => self.text_speed = self.text_speed.next(),
-            2 => self.sound = !self.sound,
-            3 => self.tutorial = !self.tutorial,
-            _ => self.turn_timer = if self.turn_timer == 0 { 60 } else { 0 },
+            _ => self.tutorial = !self.tutorial,
         }
     }
 }
@@ -340,15 +337,19 @@ mod tests {
     }
 
     #[test]
-    fn turn_timer_toggles_between_off_and_sixty() {
+    fn every_option_row_does_something() {
+        // The guard against re-adding a setting nobody reads: each row must
+        // change the options when confirmed.
         let mut m = Menu::new();
         let mut o = GameOptions::default();
         m.confirm(&mut o);
         m.info();
-        m.cursor = 4;
-        assert_eq!(o.turn_timer, 60);
-        m.confirm(&mut o);
-        assert_eq!(o.turn_timer, 0);
+        for row in 0..OPTION_ROWS {
+            m.cursor = row as u8;
+            let before = o;
+            m.confirm(&mut o);
+            assert_ne!(before, o, "options row {row} ({}) changed nothing", o.row(row).0);
+        }
     }
 
     #[test]

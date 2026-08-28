@@ -161,8 +161,12 @@ impl CursorNav {
                 NavOut::TapMove(self.cursor)
             }
             NavMode::Party => NavOut::TapSwitch(self.cursor),
+            // Leaving a description returns to the list it was opened from —
+            // during a forced switch there IS no move row, and dropping the
+            // cursor there left A firing taps at an invisible grid the
+            // collector silently discarded.
             NavMode::Detail => {
-                self.mode = NavMode::Moves;
+                self.mode = if self.forced_switch { NavMode::Party } else { NavMode::Moves };
                 NavOut::HoldEnd
             }
         }
