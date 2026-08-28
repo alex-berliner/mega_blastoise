@@ -223,18 +223,101 @@ impl Lcd {
         }
     }
 
-    /// Blit the 240x320 frame centred on the panel: byte-swap the RGB565
-    /// words to wire order in place, then hand the whole thing to DMA.
-    async fn blit(&mut self, frame: &mut DeviceFrame) {
+    /// Send the whole frame as one window + one DMA burst.
+    async fn blit_full(&mut self, px: &[u16]) {
         self.window(OFF_X, OFF_Y, DEV_W as u16, DEV_H as u16).await;
+        let bytes =
+            unsafe { core::slice::from_raw_parts(px.as_ptr() as *const u8, px.len() * 2) };
+        self.dma_bytes(bytes).await;
+    }
+
+    /// Dirty-rectangle blit: byte-swap to wire order in place, hash the
+    /// frame in 16x16 tiles against `hashes`, and send only the spans of
+    /// tiles that changed — the panel's GRAM keeps everything else. A
+    /// cursor move costs a couple of tiles (~1 ms) instead of a full 65 ms
+    /// frame; a mostly-new frame falls back to one full-frame DMA rather
+    /// than paying window overhead hundreds of times.
+    async fn blit(
+        &mut self,
+        frame: &mut DeviceFrame,
+        hashes: &mut [u32; N_TILES],
+        bounce: &mut [u8],
+    ) {
         for px in frame.px.iter_mut() {
             *px = px.to_be();
         }
-        let bytes = unsafe {
-            core::slice::from_raw_parts(frame.px.as_ptr() as *const u8, frame.px.len() * 2)
-        };
-        self.dma_bytes(bytes).await;
+        let px = &frame.px;
+
+        let mut dirty = [false; N_TILES];
+        let mut n_dirty = 0usize;
+        for ty in 0..TILES_Y {
+            for tx in 0..TILES_X {
+                let h = tile_hash(px, tx, ty);
+                let i = ty * TILES_X + tx;
+                if h != hashes[i] {
+                    hashes[i] = h;
+                    dirty[i] = true;
+                    n_dirty += 1;
+                }
+            }
+        }
+        if n_dirty == 0 {
+            return;
+        }
+        // Past ~60% dirty, one burst beats many windows.
+        if n_dirty * 10 > N_TILES * 6 {
+            self.blit_full(px).await;
+            return;
+        }
+
+        for ty in 0..TILES_Y {
+            let mut tx = 0;
+            while tx < TILES_X {
+                if !dirty[ty * TILES_X + tx] {
+                    tx += 1;
+                    continue;
+                }
+                let start = tx;
+                while tx < TILES_X && dirty[ty * TILES_X + tx] {
+                    tx += 1;
+                }
+                let x0 = start * TILE;
+                let w = (tx - start) * TILE;
+                let y0 = ty * TILE;
+                self.window(x0 as u16, y0 as u16, w as u16, TILE as u16).await;
+                // The span's rows are strided in the framebuffer; gather
+                // them into the bounce buffer so one DMA covers the span.
+                let bytes = w * 2;
+                for row in 0..TILE {
+                    let src = (y0 + row) * DEV_W as usize + x0;
+                    let s = unsafe {
+                        core::slice::from_raw_parts(px[src..src + w].as_ptr() as *const u8, bytes)
+                    };
+                    bounce[row * bytes..(row + 1) * bytes].copy_from_slice(s);
+                }
+                self.dma_bytes(&bounce[..TILE * bytes]).await;
+            }
+        }
     }
+}
+
+// ── Dirty-tile bookkeeping ───────────────────────────────────────────────────
+
+const TILE: usize = 16;
+const TILES_X: usize = DEV_W as usize / TILE; // 20
+const TILES_Y: usize = DEV_H as usize / TILE; // 30
+const N_TILES: usize = TILES_X * TILES_Y; // 600 — 2.4 KB of hashes
+
+/// FNV-1a over one tile's (wire-order) pixels.
+fn tile_hash(px: &[u16], tx: usize, ty: usize) -> u32 {
+    let mut h: u32 = 2166136261;
+    for row in 0..TILE {
+        let base = (ty * TILE + row) * DEV_W as usize + tx * TILE;
+        for &p in &px[base..base + TILE] {
+            h = (h ^ p as u32).wrapping_mul(16777619);
+        }
+    }
+    h
 }
 
 extern crate alloc;
@@ -244,10 +327,13 @@ pub async fn task(mut lcd: Lcd) -> ! {
     lcd.init().await;
     lcd.fill_rect(0, 0, PANEL_W, PANEL_H, 0x0000).await;
     lcd.bl.set_high();
-    defmt::debug!("ST7796 ready: PIO SPI + DMA, native 320x480");
+    defmt::debug!("ST7796 ready: PIO SPI + DMA, dirty-tile blits");
+    // Zeroed hashes make the first frame all-dirty: a natural full paint.
+    let mut hashes = alloc::boxed::Box::new([0u32; N_TILES]);
+    let mut bounce = alloc::vec![0u8; DEV_W as usize * TILE * 2];
     loop {
         let mut frame = FRAME.wait().await;
-        lcd.blit(&mut frame).await;
+        lcd.blit(&mut frame, &mut hashes, &mut bounce).await;
         drop(frame); // free the 300 KB before releasing the flag
         crate::board_v2::FRAME_FREE.store(true, core::sync::atomic::Ordering::Release);
         // A present landed while we were blitting: pulse the runner so it
