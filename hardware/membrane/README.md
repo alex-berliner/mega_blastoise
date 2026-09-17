@@ -49,6 +49,33 @@ That last row is the one to keep in mind: the stripboard put a player's two
 clusters ~30 mm apart, which Alex already called cramped. A real controller is
 82 mm.
 
+### DS Lite, the compact option
+
+Measured 2026-09-17 from the gerbers of the "DS Lite Membrane PCB" sold by
+Ampersand on Tindie (<https://www.tindie.com/products/ampersand/ds-lite-membrane-pcb/>),
+a 31 x 34 mm two-layer breakout that accepts DS Lite ABXY membranes. EAGLE
+9.3.1 export dated 2022-02-28. **No licence ships with the download**, so treat
+these as dimensions (facts, freely usable) and redraw the copper rather than
+copying their artwork into a board we sell.
+
+| Property | DS Lite | SNES |
+|---|---|---|
+| Face-button diamond | **14.0 x 14.0 mm** | 27.0 x 21.0 mm |
+| Contact pattern | ~4.4 mm dia | 5 mm |
+| Pattern style | concentric rings, 0.15 mm traces, ~0.35 mm gaps | interdigitated comb, 0.3/0.3 mm |
+
+Two things worth copying from it:
+
+- **Concentric rings beat a comb** for rotation tolerance. A pill bridges
+  adjacent rings whichever way it lands; a comb has one orientation where an
+  off-centre pill can sit mostly on one net.
+- **The common net is the ground pour itself**, so each button costs one signal
+  trace and nothing else.
+
+Each button position also carries a small SMD footprint (one 5.8 x 1.4 mm pad
+plus two 1.0 x 0.6 mm pads at +/-3 mm), which looks like an alternative switch
+option in the same spot.
+
 For the GBA route there is no OEM four-button pad. Freeplay's GBA-shell boards
 get X/Y by fitting a **second A/B silicone pad** beside the first, which is the
 cheap way to reach four face buttons without leaving GBA parts.

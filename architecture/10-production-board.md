@@ -64,15 +64,27 @@ Geometry measured from the SNES OEM controller replacement PCB
 | Contact pad | 5 mm interdigitated, 0.3 mm fingers, 0.3 mm gaps, 23 fingers per net |
 | D-pad centre to ABXY centre | 82.0 mm |
 
-**Open: cluster spacing.** 82 mm is what a SNES controller does and it makes a
-board roughly 130 mm wide. The silicone pieces themselves set a hard floor of
-around 40 mm centre to centre; the stripboard's 30 mm was below even that, which
-is part of why it felt cramped. Anywhere in 40-82 mm is buildable. **Measure real
-SNES pads before fixing this**, the floor above is an estimate.
+**The compact alternative is DS Lite**: a 14.0 x 14.0 mm face-button diamond
+against the SNES 27.0 x 21.0 mm, measured from a membrane breakout board's
+gerbers (`hardware/membrane/README.md`). Its contacts are concentric rings
+rather than combs, which tolerates a rotated pill better. DS Lite membranes are
+in production as repair spares.
 
-**Board size estimate,** at full 82 mm spacing: ~130 x 175 mm (a 98 mm portrait
-panel with a ~35 mm button band at each end). Compare the stripboard at
-61 x 142 mm.
+**Open: donor part and cluster spacing.** Board envelope, panel fixed:
+
+| Donor and spacing | Board |
+|---|---|
+| SNES at 82 mm, as the controller does it | 132 x 158 mm |
+| SNES at 45 mm, pieces nearly touching | 86 x 158 mm |
+| DS Lite at 50 mm | 91 x 158 mm |
+| DS Lite at 40 mm | 81 x 158 mm |
+
+Height barely moves, because the panel sets it. Width is the only variable, and
+the panel's own 55.5 mm puts a floor near 72 mm. SNES at full controller spacing
+wraps a 132 mm slab around a 55.5 mm panel, which is out of proportion; DS Lite
+parts sit near the panel's own width. Compare the stripboard at 61 x 142 mm.
+Silicone piece widths in that table are estimates. **Measure real pads before
+fixing this.**
 
 **Take the dual footprint idea** from that same project: its
 `SNES_BTN_soft+mech` pad accepts either a membrane or a tact switch. Using that
