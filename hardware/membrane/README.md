@@ -76,6 +76,32 @@ Each button position also carries a small SMD footprint (one 5.8 x 1.4 mm pad
 plus two 1.0 x 0.6 mm pads at +/-3 mm), which looks like an alternative switch
 option in the same spot.
 
+**Unresolved, 14 vs 15 mm.** The 14.00 mm above is measured straight out of that
+breakout's gerbers and is exact for that board. A research pass reported the DS
+Lite diamond as 15.000 mm, source not yet pinned down; it may be the console
+itself rather than one person's breakout of it. Settle it with calipers on a
+real membrane before committing copper.
+
+**Second source at the same pitch.** [Adafruit 1611](https://www.adafruit.com/product/1611)
+is a silicone elastomer keypad on a 15 mm grid, explicitly cuttable, around
+$0.25 per button, and Adafruit publishes its mating footprint (0.400 mm traces,
+0.380 mm gaps, annulus 4.81-10.58 mm dia) in the Adafruit_Trellis EAGLE library.
+A cut-down 2x2 from that sheet is a drop-in if DS Lite spares ever dry up, which
+is worth designing toward given the whole plan rests on aftermarket parts.
+
+**Metal snap domes remain the fallback** if silicone disappoints, and unlike
+loose silicone domes they have catalogue part numbers at MOQ 1 with published
+mating pad geometry: Keystone 5133TR (8.40 mm dia, 220 g, five 3.0 mm pads on an
+8.0 mm bolt circle), Snaptron F06180 (6.00 mm, 180 g, 5M cycles). Retention is
+off the shelf too, via Snaptron Peel-N-Place or Keystone's 5200 adhesive spacer
+sheet, so domes can sit at any spacing at least 3 mm apart. Note that Snaptron's
+published double-sided pad table is internally inconsistent for the 4-16 mm
+rows; use Keystone's drawing instead.
+
+**Custom silicone tooling, for comparison:** $800-4,000 and 3-5 weeks, paying
+off somewhere around 200-500 units. Avoiding tooling is the premise of using
+aftermarket parts, but at real volume the saving is smaller than it looks.
+
 For the GBA route there is no OEM four-button pad. Freeplay's GBA-shell boards
 get X/Y by fitting a **second A/B silicone pad** beside the first, which is the
 cheap way to reach four face buttons without leaving GBA parts.
@@ -98,9 +124,23 @@ us to publish our board files under the same licence. Use the public-domain
 footprints above as the working source and treat the recreations as a
 dimensional sanity check only.
 
+## Surface finish: prefer carbon ink
+
+Rubber keypad design guides want **30-50 microinches of hard gold over nickel**
+on contact areas. JLCPCB's ENIG is **1-2 microinches** of immersion gold, an
+order of magnitude thinner, so a bare-ENIG contact can drift upward in
+resistance over the product's life. Hard gold that thick is a specialist finish
+and not cheap.
+
+**Carbon ink screen printed over the copper sidesteps the whole question.** It
+cannot oxidise, it is rated for over a million presses, and it costs cents per
+board. It is what remotes and OEM controllers use. That makes it the default
+here, with ENIG as the fallback if a fab will not print carbon. Never HASL or
+OSP.
+
 ## Fab requirements for these pads
 
-- ENIG finish, or carbon ink screen printed over the copper. Never HASL.
+- Carbon ink over copper preferred; ENIG acceptable. Never HASL.
 - No solder mask, silkscreen, or vias inside the contact area.
 - Nothing else under the membrane footprint, so the silicone seats flat and its
   moulded air channels stay clear.
