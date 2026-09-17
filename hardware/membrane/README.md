@@ -162,6 +162,11 @@ which means all rights reserved.
 Vita, Joy-Con, Wii Classic Controller or Wii U. ODROID-GO publishes only a
 schematic PDF; PyGamer and PyBadge publish EAGLE but use tact switches.
 
+Also checked and rejected, so nobody searches them twice: `hackzone/cz20-badge`
+(9.0 mm pad, no licence stated, no four-button cluster) and `jtgans/RetroPad`
+(12 mm pad, no licence stated, a crude two-bar contact rather than rings or a
+comb). Both are roughly twice the pad diameter we want.
+
 ## Loose single silicone domes
 
 Viable but poorly supported. Available from Chinese marketplaces in maybe 8-10
