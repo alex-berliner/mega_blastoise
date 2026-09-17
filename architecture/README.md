@@ -13,6 +13,7 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 7. [Design Principles and Extension Guide](./07-design-principles.md)
 8. [Feature Map: Core vs. Target-Specific](./08-feature-map.md)
 9. [Single-Screen Redesign](./09-single-screen.md) — target design for the next hardware generation
+10. [Production Board](./10-production-board.md) — what changes when the device becomes a sellable product
 
 ## Quick Links
 
