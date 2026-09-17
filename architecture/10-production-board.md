@@ -64,11 +64,13 @@ Geometry measured from the SNES OEM controller replacement PCB
 | Contact pad | 5 mm interdigitated, 0.3 mm fingers, 0.3 mm gaps, 23 fingers per net |
 | D-pad centre to ABXY centre | 82.0 mm |
 
-**The compact alternative is DS Lite**: a 14.0 x 14.0 mm face-button diamond
+**The compact alternative is DS Lite**: a **15.0 x 15.0 mm** face-button diamond
 against the SNES 27.0 x 21.0 mm, measured from a membrane breakout board's
-gerbers (`hardware/membrane/README.md`). Its contacts are concentric rings
+gerbers and corroborated by an unrelated project aligned to the real console
+(`hardware/membrane/README.md`). Its contacts are 4.52 mm concentric rings
 rather than combs, which tolerates a rotated pill better. DS Lite membranes are
-in production as repair spares.
+in production as repair spares, and Adafruit's cuttable elastomer keypad sits on
+the same 15 mm grid as a second source.
 
 **Open: donor part and cluster spacing.** Board envelope, panel fixed:
 
