@@ -91,12 +91,17 @@ Each button position also carries a small SMD footprint (one 5.8 x 1.4 mm pad
 plus two 1.0 x 0.6 mm pads at +/-3 mm), which looks like an alternative switch
 option in the same spot.
 
+**Working assumption (2026-09-21): these gerber numbers are correct.** Alex's
+call: build to 15.0 mm ABXY, 14.0 mm D-pad and 4.52 mm pads now, and revisit if
+calipers on a real membrane later disagree. Nothing downstream should wait on
+that measurement.
+
 **Verified: the mask opens the whole pad.** A rendering of the bottom copper with
 the bottom mask overlaid shows a full circular opening over each 4.52 mm ring
 stack, plus the bar. A research pass claimed the mask exposed only the
 1.4 x 5.8 mm bar and left the rings covered; that is wrong, and the render is
-the evidence. Regenerate it with `gerb.py` in the session scratchpad if this
-ever needs re-checking.
+the evidence. Regenerate it with `tools/gerb.py` if this ever needs
+re-checking.
 
 **Second source at the same pitch.** [Adafruit 1611](https://www.adafruit.com/product/1611)
 is a silicone elastomer keypad on a 15 mm grid, explicitly cuttable, around

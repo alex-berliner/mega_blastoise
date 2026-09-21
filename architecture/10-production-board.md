@@ -31,7 +31,7 @@ scratch rather than porting that layout.
 
 | Item | Decision | Notes |
 |---|---|---|
-| Buttons | **SNES OEM silicone membranes** on bare PCB pads | One D-pad piece + one ABXY piece per seat covers exactly the 8 inputs a seat needs. See §3 and `hardware/membrane/README.md` |
+| Buttons | **DS Lite silicone membranes** on bare PCB pads | 15.0 mm face-button diamond, half the SNES footprint. One D-pad piece + one ABXY piece per seat covers a seat's 8 inputs exactly. See §3 |
 | MCU | **Bare RP2350B** (QFN-80, 48 GPIO) | Not the A: §4 shows the pin budget needs more than 30. Fab house solders it; 0.4 mm pitch is not hand-solderable |
 | Core circuit | Copy Raspberry Pi's RP2350B Minimal KiCad design | Their regulator layout is mandatory, including the polarity-marked Abracon inductor. ABM8-272-T3 crystal, W25Q128JVS 16 MB flash |
 | Charger | Power-path IC (BQ25185 class), **not** TP4056 | TP4056 has no power path: a running device and the cell share charge current and termination gets unreliable |
@@ -72,7 +72,11 @@ rather than combs, which tolerates a rotated pill better. DS Lite membranes are
 in production as repair spares, and Adafruit's cuttable elastomer keypad sits on
 the same 15 mm grid as a second source.
 
-**Open: donor part and cluster spacing.** Board envelope, panel fixed:
+**Decided 2026-09-21: DS Lite, on the gerber numbers as measured.** They are an
+operational assumption, not calipered, and cheap to revise: the pads are
+generated, so a corrected pitch is a re-run rather than a redraw.
+
+**Open: cluster spacing.** Board envelope, panel fixed:
 
 | Donor and spacing | Board |
 |---|---|
@@ -85,8 +89,8 @@ Height barely moves, because the panel sets it. Width is the only variable, and
 the panel's own 55.5 mm puts a floor near 72 mm. SNES at full controller spacing
 wraps a 132 mm slab around a 55.5 mm panel, which is out of proportion; DS Lite
 parts sit near the panel's own width. Compare the stripboard at 61 x 142 mm.
-Silicone piece widths in that table are estimates. **Measure real pads before
-fixing this.**
+Silicone piece widths in that table are estimates, and they set the floor on
+spacing, so that floor is the one number still worth calipering.
 
 **Take the dual footprint idea** from that same project: its
 `SNES_BTN_soft+mech` pad accepts either a membrane or a tact switch. Using that
@@ -152,7 +156,7 @@ Never existed on any revision, so there is nothing to port.
 
 ## 7. Open questions
 
-1. Cluster spacing, 40-82 mm (§3). Needs real membranes in hand.
+1. Cluster spacing (§3). Needs a real membrane in hand to fix the floor.
 2. Exact IPS panel part, with a datasheet and a stable part number. The
    Amazon-sourced ST7796 module is not a production part.
 3. Layer count. Raspberry Pi's reference core is 2-layer; four may be easier
