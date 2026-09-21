@@ -32,14 +32,14 @@ scratch rather than porting that layout.
 | Item | Decision | Notes |
 |---|---|---|
 | Buttons | **DS Lite silicone membranes** on bare PCB pads | 15.0 mm face-button diamond, half the SNES footprint. One D-pad piece + one ABXY piece per seat covers a seat's 8 inputs exactly. See §3 |
-| MCU | **Bare RP2350B** (QFN-80, 48 GPIO) | Not the A: §4 shows the pin budget needs more than 30. Fab house solders it; 0.4 mm pitch is not hand-solderable |
+| MCU | **Bare RP2350B** (QFN-80, 48 GPIO) | Settled 2026-09-21 after checking modules, see §8. Not the A: §4 needs more than 30 pins. Fab house solders it; 0.4 mm pitch is not hand-solderable |
 | Core circuit | Copy Raspberry Pi's RP2350B Minimal KiCad design | Their regulator layout is mandatory, including the polarity-marked Abracon inductor. ABM8-272-T3 crystal, W25Q128JVS 16 MB flash |
 | Charger | Power-path IC (BQ25185 class), **not** TP4056 | TP4056 has no power path: a running device and the cell share charge current and termination gets unreliable |
 | Cell | Protected LiPo with an NTC, on JST-PH | Carriers require UN38.3 test docs from the supplier |
 | 3V3 rail | Buck-boost | Uses the cell down to ~3.0 V; the stripboard's Schottky drop is gone |
 | Power switch | Soft button, hold to toggle | Also delivers the hold-to-reset behaviour the reset-button TODO wanted |
 | Display | Bare **IPS** panel on FPC, behind a cover window | IPS still mandatory: two seats view one flat panel from opposite oblique angles |
-| Backlight | Own driver, PWM | The old module hid this behind a BLK pin |
+| Backlight | **Boost LED driver**, PWM dimming | The old module hid this behind a BLK pin. A 3.5 in panel's LED string typically needs more than the cell can give, so this is a boost converter, not a MOSFET |
 | Audio | MAX98357A + 20-28 mm speaker in a sealed chamber | New. §5 |
 | Radio | **None** | No Wi-Fi, no Bluetooth. Keeps FCC to the unintentional-radiator path |
 | USB | One USB-C, charge and data | The stripboard had two ports (charger USB-C + Pico micro-USB) |
@@ -164,7 +164,31 @@ Never existed on any revision, so there is nothing to port.
 4. Enclosure process: 3D print for prototypes, injection moulding at volume.
    The `cad/` subproject moves onto the critical path because the case is what
    holds the membranes against the board.
-5. Whether rev A carries an RP2350B module footprint as a hedge, or goes
-   straight to the bare chip. Current lean: bare chip, with one Solder Party
-   RP2350 Stamp XL bought separately for firmware bring-up while boards are at
-   the fab.
+5. Resolved, see §8.
+
+---
+
+## 8. Why the bare chip, not a module
+
+Checked 2026-09-21, because a prefab module the fab could solder would have
+removed the core-layout risk entirely. **It does not exist.** JLCPCB's library
+carries the bare RP2350A and RP2350B, plus the Pico family (Pico, Pico W,
+Pico 2 W) as LCC-43 parts they will place on the cheap tier with a fixture.
+Every RP2350B module is a small-vendor part LCSC does not stock:
+
+| Module | Why not |
+|---|---|
+| Solder Party RP2350 Stamp XL, $11 | right shape, not an LCSC part, consignment only |
+| Waveshare Core2350B, $5-8 | 2.54 mm through-hole pins, and USB exits on a 0.5 mm FPC, so it is a plug-in board not an SMT part |
+| Olimex PICO2-XL, WeAct | not LCSC parts |
+| Pimoroni PGA2350 | pin grid array, not placeable |
+
+JLC does not accept customer-supplied parts outside their consignment
+programme, so "the house solders it" only applies to their own library.
+
+The Pico family would be placeable, but it is RP2350A: 26 exposed GPIO against
+the 30 in §4, which forces an MCP23017 expander, drops flash to 4 MB, and
+leaves our single USB-C needing the module's underside test pads to reach the
+data lines. The bare chip avoids all three, costs about $1.06, and puts the only
+delicate part of the layout on Raspberry Pi's reference, which their guide
+requires us to copy anyway.
