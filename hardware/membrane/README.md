@@ -79,11 +79,43 @@ The 4.52 mm pattern implies a carbon pill around 3.5-4.0 mm, which matches the
 keypad design guide rule that the electrode should be 1.25x the pill or at least
 1 mm larger than it.
 
-Two things worth copying from it:
+### The real pattern: two interleaved combs, not alternating rings
 
-- **Concentric rings beat a comb** for rotation tolerance. A pill bridges
-  adjacent rings whichever way it lands; a comb has one orientation where an
-  off-centre pill can sit mostly on one net.
+Corrected 2026-09-21 after a connectivity analysis of the copper (an earlier
+pass binned radii and wrongly called it four concentric rings alternating
+nets). Each ring is **cut into two arcs on different nets**, and the two nets
+form identical combs 180 degrees apart. Walking outward from the centre:
+
+```
+   45 deg : COMMON   SIGNAL   COMMON   SIGNAL
+  135 deg : COMMON   SIGNAL   COMMON   SIGNAL
+  225 deg : SIGNAL   COMMON   SIGNAL   COMMON
+  315 deg : SIGNAL   COMMON   SIGNAL   COMMON
+```
+
+Measured arcs, angles CCW from +X, conductor 0.1524 throughout:
+
+| Radius | COMMON arc | SIGNAL arc |
+|---|---|---|
+| 0.720 | 10.2 to 169.8 | 189.6 to 350.4 |
+| 1.260 | 208.5 to 335.6 | 28.9 to 155.0 |
+| 1.720 | 4.3 to 144.4 | 184.0 to 324.6 |
+| 2.180 | 195.8 to 346.2 | 16.1 to 165.9 |
+
+Short 4-7 degree arcs also cross each ring; those are the radial jumpers
+stepping each comb outward, and their angular width matches 0.1524 mm at that
+radius exactly.
+
+**Why this beats alternating full rings.** Each net is one continuously
+connected comb, so neither net has to cross the other, and no ring needs a
+break for a spoke to pass. It also means each pad is a single connected shape,
+which is what KiCad wants for a custom pad. A pill landing anywhere still
+crosses alternating nets on its way out from the centre.
+
+**Verified island count:** the bottom copper layer is exactly 5 separate pieces
+of metal, one large pour (the common net) and four button signals.
+
+Also worth copying:
 - **The common net is the ground pour itself**, so each button costs one signal
   trace and nothing else.
 
