@@ -38,8 +38,8 @@ scratch rather than porting that layout.
 | Cell | Protected LiPo with an NTC, on JST-PH | Carriers require UN38.3 test docs from the supplier |
 | 3V3 rail | Buck-boost | Uses the cell down to ~3.0 V; the stripboard's Schottky drop is gone |
 | Power switch | Soft button, hold to toggle | Also delivers the hold-to-reset behaviour the reset-button TODO wanted |
-| Display | Bare **IPS** panel on FPC, behind a cover window | IPS still mandatory: two seats view one flat panel from opposite oblique angles |
-| Backlight | **Boost LED driver**, PWM dimming | The old module hid this behind a BLK pin. A 3.5 in panel's LED string typically needs more than the cell can give, so this is a boost converter, not a MOSFET |
+| Display | Bare **IPS** panel on FPC, 3.5 in 320x480 class, behind an **anti-glare** cover lens | IPS still mandatory: two seats view one flat panel from opposite oblique angles. Shortlist and the driver-IC trap in §9 |
+| Backlight | Topology **depends on the panel's LED string**, PWM dimming | Series string: one boost constant-current driver. Parallel bank at ~3.2 V: a boost cannot regulate inside the battery window, so it needs a fixed ~4.7 V rail plus a current sink. §9 |
 | Audio | MAX98357A + 20-28 mm speaker in a sealed chamber | New. §5 |
 | Radio | **None** | No Wi-Fi, no Bluetooth. Keeps FCC to the unintentional-radiator path |
 | USB | One USB-C, charge and data | The stripboard had two ports (charger USB-C + Pico micro-USB) |
@@ -157,8 +157,7 @@ Never existed on any revision, so there is nothing to port.
 ## 7. Open questions
 
 1. Cluster spacing (§3). Needs a real membrane in hand to fix the floor.
-2. Exact IPS panel part, with a datasheet and a stable part number. The
-   Amazon-sourced ST7796 module is not a production part.
+2. Which panel from the §9 shortlist.
 3. Layer count. Raspberry Pi's reference core is 2-layer; four may be easier
    once buttons, audio and display routing are on the board.
 4. Enclosure process: 3D print for prototypes, injection moulding at volume.
@@ -192,3 +191,72 @@ leaves our single USB-C needing the module's underside test pads to reach the
 data lines. The bare chip avoids all three, costs about $1.06, and puts the only
 delicate part of the layout on Raspberry Pi's reference, which their guide
 requires us to copy anyway.
+
+---
+
+## 9. Panel
+
+Surveyed 2026-09-21. **The 3.5 inch 320x480 IPS class is the only size in range
+with datasheet-backed, distributor-stocked IPS supply.** 3.2 inch 240x320 IPS
+barely exists as a purchasable part, so dropping resolution to save SRAM would
+cost us the supply chain.
+
+Nearly every candidate shares the same glass: **active area 48.96 x 73.44 mm,
+outline about 54.5 x 83 mm**. Lay the board and case out to that and several
+sources stay interchangeable.
+
+### Two findings that change the design
+
+**ILI9488 over 3-wire SPI cannot do RGB565.** It offers 3 bits per pixel or 18,
+and RGB565 exists only on its 4-line SPI and parallel interfaces. **ST7796S does
+do RGB565 over SPI.** So an ILI9488 panel that exposes only 3-line SPI wants a
+PIO 8080 parallel driver instead: 12 pins rather than 6, which the budget in §4
+still absorbs (36 of 48), and about 81 fps against 15.
+
+**The framebuffer question is moot.** ST7796S, ILI9488 and ST7789V all carry
+full-resolution GRAM on chip, so the panel holds and refreshes the image itself
+and we push dirty rectangles into it. That already matches what the firmware
+does with 16x16 dirty tiles. A 320x480 RGB565 framebuffer would be 300 KiB of
+the RP2350B's 520 KB; we do not need one. If one is ever wanted,
+the B package can map QSPI PSRAM on XIP CS1.
+
+### Shortlist
+
+| Panel | Price | Driver / interface | Notes |
+|---|---|---|---|
+| **Displaytech DT035CTFT-IPS-SHB** | $33.73 @1, Digi-Key stock | ST7796UI, **4-wire SPI RGB565** | Best engineering fit: existing SPI plumbing works as-is. 1000 nits. IPS 80/80/80/80 verified. Against: priciest, single source, odd **39-pin** tail whose matching ZIF is unconfirmed |
+| **Winstar WF35UTYAIDNN0 / Raystar RFI350U-AYW-DNN** | ~$15 @1 | ILI9488, **3-line SPI only** | Best production position: two makers, one identical part, 40-pin 0.5 mm standard tail, **anti-glare polariser included**. Costs a PIO 8080 driver and an awkward backlight |
+| 4D Systems 4DLCD-35-320-480 | $26 @100 | ILI9488, MODE pin selects 4-wire SPI | Best documentation of the lot, but **320 nits is too dim** behind a cover lens |
+| EastRising ER-TFT035IPS-6 | maybe $12-20 | ILI9488, 4-wire SPI | Probably cheapest; **nothing verified**, their site blocks automated fetches. Worth an email |
+
+Rejected for being TN, which one seat would see inverted: Crystalfontz
+CFAF320480C7-035TN, Raystar RFJ320D, Midas MDT0320ASH, and the cheap LCSC
+HS35B01A whose own datasheet says "12 o'clock" with viewing angles "TBD".
+
+### Backlight
+
+- **Series string** (Displaytech 3S2P, 11.4-13.4 V at 60 mA): one boost
+  constant-current driver. TPS61161 class, about $0.26 at 100.
+- **Parallel bank** (Winstar/Raystar, 3.0-3.4 V at 160 mA): the LED forward
+  voltage sits *inside* the 3.0-4.2 V battery window, so a boost cannot
+  regulate and the 3V3 rail has no headroom. Either ask the vendor for a
+  series-string variant, which they routinely build, or run a fixed ~4.7 V
+  boost into a constant-current sink.
+- Full brightness costs 0.37-0.74 W depending on panel; indoors at 30-50% PWM
+  budget 0.15-0.35 W. This dominates battery life.
+
+### Cover lens
+
+**Anti-glare (matte), not anti-reflective, and an air gap rather than optical
+bonding.** A flat face-up panel reflects ceiling lights into both players' eyes
+symmetrically; AR still leaves a sharp legible mirror image, while AG diffuses
+it. AG is also cheaper, and the Winstar/Raystar glass already has it. Optical
+bonding is not worth it at our volume.
+
+A good air gap means all of: AG lens, a **printed black border** hiding the
+panel's inactive edge and the FPC transition, a **foam perimeter gasket** for
+dust and light piping, and the smallest gap that avoids Newton's rings when
+someone presses on it. Mount with a perimeter ring of 3M 9495LE, never a
+full-face pad. Prototype in non-glare cast acrylic; move to chemically
+strengthened glass for production, since acrylic scratches on a shared surface
+people touch.
