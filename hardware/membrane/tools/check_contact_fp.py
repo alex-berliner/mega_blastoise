@@ -46,18 +46,25 @@ def sample_line(s, e):
 def parse(path):
     text = open(path).read()
     pads = {}
-    for pm in re.finditer(r'\(pad "([^"]+)" smd custom\s*\(at ([-\d.]+) ([-\d.]+)[^)]*\)(.*?)\n\t\)', text, re.S):
-        num, px, py, body = pm.group(1), float(pm.group(2)), float(pm.group(3)), pm.group(4)
+    for pm in re.finditer(r'\(pad "([^"]+)" smd custom\s*\(at ([-\d.]+) ([-\d.]+)(?: ([-\d.]+))?\)(.*?)\n\t\)', text, re.S):
+        num, px, py, body = pm.group(1), float(pm.group(2)), float(pm.group(3)), pm.group(5)
+        # primitives are stored relative to the pad AND in the pad's own rotation
+        rot = math.radians(float(pm.group(4) or 0))
+        cr, sr = math.cos(rot), math.sin(rot)
+
+        def place(x, y, px=px, py=py, cr=cr, sr=sr):
+            # KiCad angles turn counter-clockwise on screen, where Y points down
+            return (px + x * cr + y * sr, py - x * sr + y * cr)
         shapes = []
         width = None
         for m in re.finditer(
                 r'\((gr_arc|gr_line)\s*\(start ([-\d.]+) ([-\d.]+)\)\s*(?:\(mid ([-\d.]+) ([-\d.]+)\)\s*)?'
                 r'\(end ([-\d.]+) ([-\d.]+)\)\s*\(width ([\d.]+)\)', body):
-            s = (float(m.group(2)) + px, float(m.group(3)) + py)
-            e = (float(m.group(6)) + px, float(m.group(7)) + py)
+            s = place(float(m.group(2)), float(m.group(3)))
+            e = place(float(m.group(6)), float(m.group(7)))
             width = float(m.group(8))
             if m.group(1) == "gr_arc":
-                mid = (float(m.group(4)) + px, float(m.group(5)) + py)
+                mid = place(float(m.group(4)), float(m.group(5)))
                 pts, c, r, sweep = sample_arc(s, mid, e)
                 shapes.append({"kind": "arc", "pts": pts, "r": r, "c": c, "sweep": sweep})
             else:
