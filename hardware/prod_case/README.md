@@ -14,7 +14,8 @@ Replaces nothing: `cad/` holds the earlier dual-OLED device and is left as is.
 | `board.dxf` | board outline, for KiCad **Edge.Cuts** | `openscad -o board.dxf -D 'part="board"' layout.scad` |
 | `pads.dxf` | contact centres + outline, for a KiCad **User** layer to snap to | `openscad -o pads.dxf -D 'part="pads"' layout.scad` |
 | `template.svg` | 1:1 paper template: outline, glass, silicone, caps |
-| (3D) | `part="3d"`, `explode=30` lifts the lid | `openscad -D 'part="3d"' layout.scad` | `openscad -o template.svg -D 'part="template"' layout.scad` |
+| (3D) | `part="3d"`, `explode=30` lifts the lid | `openscad -D 'part="3d"' layout.scad` |
+| `tub.stl`, `lid.stl` | printable parts (not committed; regenerate) | `openscad -o tub.stl -D 'part="tub"' layout.scad`, same for `lid` | `openscad -o template.svg -D 'part="template"' layout.scad` |
 
 Coordinates: origin at the case centre, +Y towards seat 2. The echo block
 prints every contact in this frame and in KiCad's (centre at 100,100, Y down).

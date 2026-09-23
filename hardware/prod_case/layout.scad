@@ -9,6 +9,7 @@
 //   part="pads"    contact centres + board outline, 2D, for a KiCad User layer
 //   part="template" 1:1 outlines to print on paper and put your thumbs on
 //   part="3d"      the case in 3D; explode=<mm> lifts the lid to show the inside
+//   part="tub", part="lid"   the printable parts on their own, for STL export
 //
 // Frame: origin at the case centre, +Y towards seat 2, seat 1 sits at -Y.
 // KiCad frame used in the echoes: centre at (100,100), Y pointing down.
@@ -192,3 +193,7 @@ if (part == "3d") {
   color("#e8e8ee") caps();                      // caps stay on the silicone when the lid lifts
   color("#4a4a56") translate([0, 0, z_top + explode]) lid();
 }
+
+// printable parts, each on its own
+if (part == "tub") tub();
+if (part == "lid") lid();
