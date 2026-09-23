@@ -19,6 +19,45 @@ Color / Game Boy Pocket pads.
 
 Both define `F.Mask` openings, so the contact area stays bare copper.
 
+## The production footprint: `DSL_button_4ring`
+
+Generated, not hand-drawn, by `tools/gen_dsl_button.py` into the project library
+(`hardware/prod_board/prod_board/prod.pretty/`). Re-run it to change a
+dimension; do not edit the output.
+
+    python3 tools/gen_dsl_button.py <path>/prod.pretty
+    python3 tools/check_contact_fp.py <path>/prod.pretty/DSL_button_4ring.kicad_mod
+
+| Property | Value |
+|---|---|
+| Rings | 0.720 / 1.260 / 1.720 / 2.180 mm, the DS Lite's measured radii |
+| Conductor | 0.1524 mm, the DS Lite's measured width |
+| Min copper gap between nets | **0.200 mm**, checked from the saved file |
+| Smallest contact spot that bridges the nets anywhere | **1.60 mm across**; a DS Lite pill is 3.5-4 mm |
+| Pads | 1 = signal, 2 = common. Each is one connected custom pad |
+| Mask | one 4.80 mm opening; pads carry no mask or paste of their own |
+| BOM / pick-and-place | **excluded from both**: it is copper, nothing to buy or place |
+
+**Structure: two stepped-spiral combs, 180 degrees apart.** Each net runs arc,
+radial step, arc, step, arc, step, arc, alternating halves of the pad as it
+goes out. Neither net ever crosses the other. It differs from the original,
+which ties its arcs together with bus bars through the middle and fills the
+centre with a split disc (see below); ours joins them with radial steps and
+leaves a 1.29 mm hole in the middle, which is where the worst-case contact spot
+sits. Same principle, our own artwork, so nothing of theirs is copied.
+
+**The gap between nets is wider on the inner rings** (29.3 degrees at the
+inside, 9.3 at the outside) because it has to be the same 0.20 mm of copper at
+every radius. The tightest spot is not the chord between the two arc ends: it is
+the perpendicular from one net's arc end onto the other net's radial step, just
+inside the ring, so the gap angle is asin((clearance + width) / r). A first
+version used the chord and came out at 0.1965 mm; the checker caught it.
+
+**Gotcha for anyone scripting KiCad pads:** `PAD.AddPrimitiveShape` keeps the
+pointer it is given without copying it. Set `shape.thisown = False` first, or
+Python frees the shape and its memory gets reused, and the pad silently saves
+whatever landed there. The first run saved the mask circle as the pad's copper.
+
 ## Four face buttons (ABXY)
 
 The SNES OEM controller replacement PCB is the best documented source, and it is
@@ -102,9 +141,13 @@ Measured arcs, angles CCW from +X, conductor 0.1524 throughout:
 | 1.720 | 4.3 to 144.4 | 184.0 to 324.6 |
 | 2.180 | 195.8 to 346.2 | 16.1 to 165.9 |
 
-Short 4-7 degree arcs also cross each ring; those are the radial jumpers
-stepping each comb outward, and their angular width matches 0.1524 mm at that
-radius exactly.
+**How the original ties each net together (corrected 2026-09-23).** Tracing
+connectivity across the whole board, not a crop, shows it does not use radial
+steps. Two horizontal bus bars run through the middle, one per net, and each
+ring's half-arcs hang off them; the centre is a disc split into two halves, one
+per net. The short 4-7 degree arcs that cross every ring are where those bars
+pass through. An earlier note here called them radial jumpers; that was an
+inference from a crop and it was wrong.
 
 **Why this beats alternating full rings.** Each net is one continuously
 connected comb, so neither net has to cross the other, and no ring needs a
@@ -228,13 +271,28 @@ and not cheap.
 
 **Carbon ink screen printed over the copper sidesteps the whole question.** It
 cannot oxidise, it is rated for over a million presses, and it costs cents per
-board. It is what remotes and OEM controllers use. That makes it the default
-here, with ENIG as the fallback if a fab will not print carbon. Never HASL or
-OSP.
+board. It is what remotes and OEM controllers use. Never HASL or OSP.
+
+**But carbon ink and the 4-ring pattern are incompatible.** Carbon is screen
+printed, so it resolves far coarser than etched copper: Eurocircuits specifies
+0.30 mm lines and 0.40 mm gaps for carbon contacts. `DSL_button_4ring` has
+0.15 mm conductors and gaps down to 0.20 mm, so printed carbon would bridge the
+two nets. **The finish and the ring count are one decision:**
+
+| Pattern | Finish it needs |
+|---|---|
+| 4 rings (`DSL_button_4ring`) | ENIG or hard gold; accept that thin ENIG gold may drift over the product's life |
+| ~2 rings, 0.3 mm lines, 0.4+ mm gaps | carbon ink |
+
+The 2-ring learning footprint (`DSL_button`: 0.20 mm lines, radii 1.1 and 2.0)
+is already close to carbon-compatible; at 0.30 mm lines it would be. **Open:
+pick one.** The test coupon should carry both, one ENIG and one carbon, pressed
+against real DS Lite membranes.
 
 ## Fab requirements for these pads
 
-- Carbon ink over copper preferred; ENIG acceptable. Never HASL.
+- ENIG or hard gold for the 4-ring pattern; carbon ink only for a coarse
+  pattern (see above). Never HASL.
 - No solder mask, silkscreen, or vias inside the contact area.
 - Nothing else under the membrane footprint, so the silicone seats flat and its
   moulded air channels stay clear.
