@@ -4,11 +4,10 @@
 	(generator_version "10.0")
 	(layer "F.Cu")
 	(property "Reference" "REF**"
-		(at 0 -0.5 0)
+		(at 0 -3 0)
 		(unlocked yes)
-		(layer "F.SilkS")
-		(hide yes)
-		(uuid "2bbf54eb-12ba-4a69-89b9-374032ec28c2")
+		(layer "F.Fab")
+		(uuid "514dbd78-2174-49d1-b2e6-f08bd53f6812")
 		(effects
 			(font
 				(size 1 1)
@@ -21,7 +20,7 @@
 		(unlocked yes)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "6adcf4d8-7c63-4290-a1dc-5dea5f685829")
+		(uuid "bd9c1673-345f-4a15-9531-d6f1549efd8a")
 		(effects
 			(font
 				(size 1 1)
@@ -34,7 +33,7 @@
 		(unlocked yes)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "4e4d46d5-129b-4f01-8e6d-1f534760b443")
+		(uuid "e9c01222-79cc-4ea6-895e-9addce5ee3fc")
 		(effects
 			(font
 				(size 1 1)
@@ -47,7 +46,7 @@
 		(unlocked yes)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "ce62029d-d503-4b0d-9d4d-e29fcd32751c")
+		(uuid "197edc46-0871-4dd0-9077-f435d095c130")
 		(effects
 			(font
 				(size 1 1)
@@ -55,8 +54,41 @@
 			)
 		)
 	)
-	(attr smd)
+	(attr smd exclude_from_pos_files exclude_from_bom)
 	(duplicate_pad_numbers_are_jumpers no)
+	(fp_circle
+		(center 0 0)
+		(end 2.25 0)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill yes)
+		(layer "F.Mask")
+		(uuid "388eec89-5694-464e-a229-7f7b71f20b86")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 2.5 0)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "37d7d343-9a6e-476e-aabb-b882e7e80c65")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 2.1 0)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "d9cdf196-f67a-42e9-abc5-94fb4a4bfd65")
+	)
 	(pad "1" smd custom
 		(at 1.1 0)
 		(size 0.1524 0.1524)
@@ -85,7 +117,7 @@
 				(width 0.2)
 			)
 		)
-		(uuid "85f4bf2e-8189-485e-b740-481a9afd4a3a")
+		(uuid "389346d0-9966-4640-96f1-f7009a11b401")
 	)
 	(pad "2" smd custom
 		(at -1.1 0 180)
@@ -115,7 +147,7 @@
 				(width 0.2)
 			)
 		)
-		(uuid "5545bce9-d82b-401c-938f-8b22cb595882")
+		(uuid "6733019f-f657-46a8-b4d8-6d4ebb642c92")
 	)
 	(embedded_fonts no)
 )
