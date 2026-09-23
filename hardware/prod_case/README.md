@@ -13,7 +13,8 @@ Replaces nothing: `cad/` holds the earlier dual-OLED device and is left as is.
 | `layout.scad` | parametric layout, every number named at the top | (source) |
 | `board.dxf` | board outline, for KiCad **Edge.Cuts** | `openscad -o board.dxf -D 'part="board"' layout.scad` |
 | `pads.dxf` | contact centres + outline, for a KiCad **User** layer to snap to | `openscad -o pads.dxf -D 'part="pads"' layout.scad` |
-| `template.svg` | 1:1 paper template: outline, glass, silicone, caps | `openscad -o template.svg -D 'part="template"' layout.scad` |
+| `template.svg` | 1:1 paper template: outline, glass, silicone, caps |
+| (3D) | `part="3d"`, `explode=30` lifts the lid | `openscad -D 'part="3d"' layout.scad` | `openscad -o template.svg -D 'part="template"' layout.scad` |
 
 Coordinates: origin at the case centre, +Y towards seat 2. The echo block
 prints every contact in this frame and in KiCad's (centre at 100,100, Y down).
@@ -21,35 +22,36 @@ Run `openscad -o /dev/null layout.scad` to see them.
 
 ## Current numbers (preliminary)
 
-- Case 90 x 157 mm, board 85 x 152 mm (2 mm wall + 0.5 mm clearance)
-- Glass 54.5 x 83 centred; each seat's clusters at y = +/-59.5
+- Case 70.5 x 153 mm, board 65.5 x 148 mm (2 mm wall + 0.5 mm clearance)
+- Glass 54.5 x 83 centred with an 8 mm side bezel; clusters at y = +/-59.5,
+  36.5 mm between each seat's D-pad and ABXY centres
 - D-pad on each player's left, ABXY on the right; seat 2 is seat 1 rotated 180
 - Thickness estimate 19.1 mm, dominated by the 10 mm 103450 cell
 
 | Ref | Button | KiCad X, Y |
 |---|---|---|
-| SW1 | P1 up | 74, 152.5 |
-| SW2 | P1 down | 74, 166.5 |
-| SW3 | P1 left | 67, 159.5 |
-| SW4 | P1 right | 81, 159.5 |
-| SW5 | P1 A | 133.5, 159.5 |
-| SW6 | P1 B | 126, 167 |
-| SW7 | P1 X | 126, 152 |
-| SW8 | P1 Y | 118.5, 159.5 |
-| SW9 | P2 up | 126, 47.5 |
-| SW10 | P2 down | 126, 33.5 |
-| SW11 | P2 left | 133, 40.5 |
-| SW12 | P2 right | 119, 40.5 |
-| SW13 | P2 A | 66.5, 40.5 |
-| SW14 | P2 B | 74, 33 |
-| SW15 | P2 X | 74, 48 |
-| SW16 | P2 Y | 81.5, 40.5 |
+| SW1 | P1 up | 81.75, 152.5 |
+| SW2 | P1 down | 81.75, 166.5 |
+| SW3 | P1 left | 74.75, 159.5 |
+| SW4 | P1 right | 88.75, 159.5 |
+| SW5 | P1 A | 125.75, 159.5 |
+| SW6 | P1 B | 118.25, 167 |
+| SW7 | P1 X | 118.25, 152 |
+| SW8 | P1 Y | 110.75, 159.5 |
+| SW9 | P2 up | 118.25, 47.5 |
+| SW10 | P2 down | 118.25, 33.5 |
+| SW11 | P2 left | 125.25, 40.5 |
+| SW12 | P2 right | 111.25, 40.5 |
+| SW13 | P2 A | 74.25, 40.5 |
+| SW14 | P2 B | 81.75, 33 |
+| SW15 | P2 X | 81.75, 48 |
+| SW16 | P2 Y | 89.25, 40.5 |
 
 ## Estimates still standing in for measurements
 
 | Parameter | Now | Replace with |
 |---|---|---|
-| `cluster_spacing` | 52 mm, Game Boy-like | the paper template test below |
+| `glass_side` | 8 mm bezel, giving 36.5 mm thumb spacing | the paper template test below |
 | `piece_d` | 26 mm | calipers on a real DS Lite D-pad and ABXY silicone |
 | cap sizes | 6 mm face, 18 mm cross | calipers on real caps |
 | `aa_offset_y` | 0, glass assumed centred | the chosen panel's mechanical drawing |
@@ -80,4 +82,5 @@ Run `openscad -o /dev/null layout.scad` to see them.
 
 Print `template.svg` at **100% scale**, no "fit to page". Measure the 50 mm
 bar first. Put the real silicone and caps on it, sit across a table from
-someone, and play. Adjust `cluster_spacing` until it feels right.
+someone, and play. The side bezel and the thumb spacing are one number here:
+spacing = 20.5 + 2 x `glass_side`. Adjust `glass_side` until it feels right.

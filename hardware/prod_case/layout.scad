@@ -8,6 +8,7 @@
 //   part="board"   board outline only, 2D, for DXF export to KiCad Edge.Cuts
 //   part="pads"    contact centres + board outline, 2D, for a KiCad User layer
 //   part="template" 1:1 outlines to print on paper and put your thumbs on
+//   part="3d"      the case in 3D; explode=<mm> lifts the lid to show the inside
 //
 // Frame: origin at the case centre, +Y towards seat 2, seat 1 sits at -Y.
 // KiCad frame used in the echoes: centre at (100,100), Y pointing down.
@@ -16,6 +17,7 @@
 // board is committed. The echo block lists them.
 
 part = "layout";
+explode = 0;
 $fn = 96;
 
 // ---------------- parts ----------------
@@ -36,14 +38,16 @@ usb_w = 9.0;  usb_d = 7.5;            // ESTIMATE: USB-C receptacle footprint
 pwr_w = 6.0;  pwr_d = 3.5;            // ESTIMATE: side power button
 
 // ---------------- ergonomics + structure ----------------
-cluster_spacing = 52;     // ESTIMATE: D-pad centre to ABXY centre, Game Boy-like
-edge_margin     = 6;      // case edge to silicone piece
+// The side bezel sets the case width, and the width sets how far apart each
+// seat's D-pad and ABXY can sit: they share it. Narrower bezel, closer thumbs.
+glass_side      = 8;      // glass edge to long case edge (the side bezel)
+edge_margin     = 4;      // case edge to silicone piece
 piece_to_glass  = 5;      // silicone piece to glass edge
-glass_side_min  = 8;      // glass to long case edge, minimum
 wall = 2.0;  board_clear = 0.5;  corner_r = 8;
 
 // ---------------- derived ----------------
-case_w  = max(cluster_spacing + piece_d + 2*edge_margin, panel_w + 2*glass_side_min);
+case_w  = panel_w + 2*glass_side;
+cluster_spacing = case_w - piece_d - 2*edge_margin;   // D-pad centre to ABXY centre
 band    = edge_margin + piece_d + piece_to_glass;
 case_l  = panel_l + 2*band;
 inset   = wall + board_clear;
@@ -77,17 +81,17 @@ assert(cluster_spacing >= piece_d + 2, "silicone pieces of one seat would touch"
 assert(seat_y - piece_d/2 >= panel_l/2 + piece_to_glass - 1e-6, "cluster runs into the glass");
 assert(cluster_spacing/2 + piece_d/2 <= board_w/2, "silicone piece hangs off the board");
 assert(cell[0] <= board_w && cell[1] <= panel_l, "cell does not fit under the glass");
-assert(panel_w + 2*glass_side_min <= case_w, "glass too close to the long edges");
+assert(cluster_spacing >= 30, "thumbs closer than the stripboard, which was already cramped");
 
 echo(str("CASE    ", case_w, " x ", case_l, " mm   corner r ", corner_r));
 echo(str("BOARD   ", board_w, " x ", board_l, " mm   corner r ", board_r, "   (case minus wall ", wall, " and clearance ", board_clear, ")"));
 echo(str("GLASS   ", panel_w, " x ", panel_l, " centred;  window ", aa_w + 2*window_margin, " x ", aa_l + 2*window_margin));
-echo(str("SEATS   cluster centres at y = +/-", seat_y, ", D-pad to ABXY ", cluster_spacing));
+echo(str("SEATS   cluster centres at y = +/-", seat_y, ", D-pad to ABXY ", cluster_spacing, " (set by glass_side ", glass_side, ")"));
 for (b = buttons)
   echo(str(b[0], "  ", b[1], "   centre (", b[2][0], ", ", b[2][1], ")   KiCad (", 100 + b[2][0], ", ", 100 - b[2][1], ")"));
 stack = 1.5 + cell[2] + 0.5 + 1.6 + 4.0 + 1.5;
 echo(str("THICKNESS ESTIMATE ", stack, " mm = floor 1.5 + cell ", cell[2], " + 0.5 + PCB 1.6 + 4.0 above board + top 1.5"));
-echo("ESTIMATES TO REPLACE WITH MEASUREMENTS: piece_d, cap sizes, cluster_spacing, aa_offset_y, usb, pwr, 4.0 mm above-board height");
+echo("ESTIMATES TO REPLACE WITH MEASUREMENTS: piece_d, cap sizes, aa_offset_y, usb, pwr, panel_t, 4.0 mm above-board height");
 
 // ---------------- geometry ----------------
 module rrect(w, l, r) offset(r=r) square([w - 2*r, l - 2*r], center=true);
@@ -139,4 +143,52 @@ if (part == "layout") {
   label([-(case_w/2 - 9), 9], "PWR", 2);
   for (b = buttons) label(b[2] + [0, (b[2][1] < 0 ? -1 : 1) * 0], b[0], 1.3, 2.1);
   label([0, -case_l/2 - 6], str(case_w, " x ", case_l, " mm case"), 3);
+}
+
+// ---------------- 3D ----------------
+floor_t = 1.5;  top_t = 1.5;  pcb_t = 1.6;  above = 4.0;
+panel_t = 2.4;                 // ESTIMATE: bare IPS glass + backlight
+dome_h  = 2.0;                 // ESTIMATE: silicone piece height on the board
+cap_proud = 1.2;               // caps stand this far above the top face
+z_board = floor_t + cell[2] + 0.5;
+z_top   = z_board + pcb_t + above;
+case_h  = z_top + top_t;
+z_glass = z_board + pcb_t + 1.0;
+assert(z_glass + panel_t <= z_top, "glass pokes through the lid");
+echo(str("3D      case height ", case_h, " mm, board top at ", z_board + pcb_t, ", glass top at ", z_glass + panel_t));
+
+module cross(w, l) union() { square([l, w], center=true); square([w, l], center=true); }
+
+module tub() difference() {
+  linear_extrude(z_top) rrect(case_w, case_l, corner_r);
+  translate([0, 0, floor_t]) linear_extrude(z_top) rrect(case_w - 2*wall, case_l - 2*wall, corner_r - wall);
+  translate([case_w/2 - wall - 1, -usb_w/2, z_board + pcb_t]) cube([wall + 2, usb_w, 3.5]);
+  translate([-case_w/2 - 1, -pwr_w/2, z_board + pcb_t]) cube([wall + 2, pwr_w, 3.0]);
+}
+
+module lid() difference() {
+  linear_extrude(top_t) rrect(case_w, case_l, corner_r);
+  translate([0, aa_offset_y, -1]) linear_extrude(top_t + 2)
+    square([aa_w + 2*window_margin, aa_l + 2*window_margin], center=true);
+  for (c = [abxy1, abxy2]) for (o = [[a,0],[-a,0],[0,a],[0,-a]])
+    at(c + o, -1) cylinder(d=cap_abxy_d + 0.4, h=top_t + 2);
+  for (c = [dpad1, dpad2]) at(c, -1) linear_extrude(top_t + 2) offset(r=0.2) cross(dpad_arm_w, dpad_arm_l);
+}
+
+module caps() {
+  cap_h = case_h + cap_proud - (z_board + pcb_t + dome_h);
+  for (c = [abxy1, abxy2]) for (o = [[a,0],[-a,0],[0,a],[0,-a]])
+    at(c + o, z_board + pcb_t + dome_h) cylinder(d=cap_abxy_d, h=cap_h);
+  for (c = [dpad1, dpad2]) at(c, z_board + pcb_t + dome_h) linear_extrude(cap_h) cross(dpad_arm_w, dpad_arm_l);
+}
+
+if (part == "3d") {
+  color("#3a3a44") tub();
+  color("#c9c9d1") translate([0, 0, floor_t]) linear_extrude(cell[2]) square([cell[0], cell[1]], center=true);
+  color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
+  color("#101014") translate([0, 0, z_glass]) linear_extrude(panel_t) square([panel_w, panel_l], center=true);
+  color("#3b6fd1") translate([0, aa_offset_y, z_glass + panel_t - 0.05]) linear_extrude(0.1) square([aa_w, aa_l], center=true);
+  for (c = [dpad1, abxy1, dpad2, abxy2]) color("#8f8f99") at(c, z_board + pcb_t) cylinder(d=piece_d, h=dome_h);
+  color("#e8e8ee") caps();                      // caps stay on the silicone when the lid lifts
+  color("#4a4a56") translate([0, 0, z_top + explode]) lid();
 }
