@@ -1,0 +1,3 @@
+# KiCad runtime lock files and automatic backups
+~*.lck
+*-backups/

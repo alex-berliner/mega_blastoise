@@ -1,0 +1,121 @@
+(footprint "DSL_button"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 0 -0.5 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(hide yes)
+		(uuid "2bbf54eb-12ba-4a69-89b9-374032ec28c2")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "DSL_button"
+		(at 0 1 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "6adcf4d8-7c63-4290-a1dc-5dea5f685829")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "4e4d46d5-129b-4f01-8e6d-1f534760b443")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "ce62029d-d503-4b0d-9d4d-e29fcd32751c")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(pad "1" smd custom
+		(at 1.1 0)
+		(size 0.1524 0.1524)
+		(layers "F.Cu")
+		(thermal_bridge_angle 90)
+		(options
+			(clearance outline)
+			(anchor circle)
+		)
+		(primitives
+			(gr_arc
+				(start 0 0)
+				(mid -0.909 1.0833)
+				(end -2.1337 0.3762)
+				(width 0.2)
+			)
+			(gr_line
+				(start -2.1337 0.3762)
+				(end -2.9794 0.684)
+				(width 0.2)
+			)
+			(gr_arc
+				(start -2.9794 0.684)
+				(mid -2.0543 -1.7576)
+				(end 0.4973 -1.2036)
+				(width 0.2)
+			)
+		)
+		(uuid "85f4bf2e-8189-485e-b740-481a9afd4a3a")
+	)
+	(pad "2" smd custom
+		(at -1.1 0 180)
+		(size 0.1524 0.1524)
+		(layers "F.Cu")
+		(thermal_bridge_angle 90)
+		(options
+			(clearance outline)
+			(anchor circle)
+		)
+		(primitives
+			(gr_arc
+				(start 0 0)
+				(mid -0.909 1.0833)
+				(end -2.1337 0.3762)
+				(width 0.2)
+			)
+			(gr_line
+				(start -2.1337 0.3762)
+				(end -2.9794 0.684)
+				(width 0.2)
+			)
+			(gr_arc
+				(start -2.9794 0.684)
+				(mid -2.0543 -1.7576)
+				(end 0.4973 -1.2036)
+				(width 0.2)
+			)
+		)
+		(uuid "5545bce9-d82b-401c-938f-8b22cb595882")
+	)
+	(embedded_fonts no)
+)
