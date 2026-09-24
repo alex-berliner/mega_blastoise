@@ -31,7 +31,7 @@ speaker pads, test pads, mounting holes and fiducials.
 | Speaker, 20 mm round, 8 ohm, 1 W, <= 4.5 mm thick, wire leads | 1 | |
 | DS Lite silicone: D-pad piece + ABXY piece | 2 of each | aftermarket replacements |
 | DS Lite caps: D-pad cross + A, B, X, Y | 2 sets | |
-| Case: `case/tub.stl`, `case/lid.stl`, `case/pwr_cap.stl` | 1 each | resin (SLA/MJF) prints best: the lid is 0.6 mm thin over the battery connector |
+| Case: `case/tub.stl`, `case/lid.stl`, `case/pwr_cap.stl` | 1 each | print them yourself in PETG (or PLA), the lid face down. The lid is only 0.6 mm thick over the battery connector: print it at 100% infill and check that spot. FDM holes come out small: drill the 1.2 mm pinholes and 1.7 mm screw pilots to size |
 | Cover lens, 1.0 mm clear acrylic, `case/lens.dxf` | 1 | laser cut, glued into the lid's top recess |
 | Double-sided tape for the panel (e.g. 3M 9495LE), 1 mm strips | ~30 cm | panel to the lid's window ledge |
 | Light pipe, 2.0 mm clear acrylic rod, 5.5 mm long | 2 | over the charge and error LEDs |

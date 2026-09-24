@@ -173,4 +173,4 @@ Case 75.4 x 156.2 x 20.0 mm. Board 70.4 x 151.2 mm, 4 layers, 1.6 mm, ENIG.
 | DS Lite silicone fit | cap retention and feel depend on unmeasured heights | print the lid first and try real parts before the board order |
 | JLC rotation offsets | parts placed 90 or 180 degrees off | review JLC's placement preview; the CPL carries KiCad's angles |
 | Alps switch land pattern | KiCad's pattern puts the locating holes 0.075 mm from copper; the pads here are pulled back to 0.2 mm | check solder fillets on the first boards |
-| Thin lid over the battery connector (0.6 mm) | cracks in an FDM print | resin print, or a lower-profile cell connector (JST SH/GH) in production |
+| Thin lid over the battery connector (0.6 mm) | cracks in the FDM-printed lid | 100% infill there for now; a lower-profile cell connector (JST SH/GH) removes the pocket |

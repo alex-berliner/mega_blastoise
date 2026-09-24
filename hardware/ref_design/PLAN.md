@@ -23,6 +23,7 @@ schematic, routed board, fab outputs, case, BOM, docs. It cannot mean
 | Power switch | button, MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |
 | USB | one USB-C, charge + data, USBLC6 ESD | |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes, red error LED | |
+| Case printing | FDM at home, PETG or PLA: about $1.50 of filament a case | the cheapest way; a print service only once it's quoted |
 | Schematic | generated from `board/design.py` via Konnect; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
