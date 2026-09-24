@@ -66,7 +66,7 @@ def bom_cpl():
             skipped.append(ref)
             continue
         fpname = str(fp.GetFPID().GetLibItemName())
-        groups[(fp.GetValue(), fpname, lcsc)].append(ref)
+        groups[lcsc].append((ref, fpname, fp.GetValue()))
         pos = fp.GetPosition()
         side = "Bottom" if fp.IsFlipped() else "Top"
         # JLC: Y up, origin anywhere; mirror Y so the CPL matches the gerbers' orientation
@@ -76,8 +76,13 @@ def bom_cpl():
     with open(os.path.join(OUT, "battler_bom_jlc.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Comment", "Designator", "Footprint", "LCSC Part #"])
-        for (value, fpname, lcsc), refs in sorted(groups.items(), key=lambda kv: key([kv[1][0]])):
-            w.writerow([value, ",".join(sorted(refs, key=lambda r: key([r]))), fpname, lcsc])
+        # one line per part number: the core's passives use Raspberry Pi's land patterns, the
+        # rest KiCad's, and JLC matches on the LCSC number
+        for lcsc, items in sorted(groups.items(), key=lambda kv: key([kv[1][0][0]])):
+            refs = sorted((r for r, _, _ in items), key=lambda r: key([r]))
+            fps = sorted({f for _, f, _ in items})
+            values = sorted({v for _, _, v in items})
+            w.writerow([" / ".join(values), ",".join(refs), " / ".join(fps), lcsc])
     with open(os.path.join(OUT, "battler_cpl_jlc.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Designator", "Mid X", "Mid Y", "Layer", "Rotation"])
@@ -93,7 +98,7 @@ def pictures():
         run("pcb", "render", "--side", view, "--quality", "high", "--width", "1600", "--height", "1600",
             "--background", "opaque", *extra, "-o", os.path.join(OUT, f"battler_{side}.png"), PCB)
     run("sch", "export", "pdf", "-o", os.path.join(OUT, "battler_schematic.pdf"), SCH)
-    run("pcb", "export", "pdf", "--layers", "F.Fab,Edge.Cuts", "--mode-single", "--include-border-title",
+    run("pcb", "export", "pdf", "--layers", "F.Fab,Edge.Cuts", "--mode-single", "--include-border-title", "--sp",
         "-o", os.path.join(OUT, "battler_assembly.pdf"), PCB)
 
 

@@ -48,9 +48,7 @@ def stl_points(path):
 
 # Parts whose 3D model doesn't show their fitted height, and packages whose model
 # this KiCad install lacks: height above the board in mm
-KNOWN_HEIGHT = {
-    "J3": 0.9,     # Hirose FH35C closed; the vendor model shows the lock open (1.8)
-}
+KNOWN_HEIGHT = {}
 PACKAGE_HEIGHT = {"QFN": 1.0, "SON": 1.0, "DRC0010J": 1.0, "SOT-23": 1.2, "SOD-323": 1.1, "0402": 0.5, "0603": 0.9,
                   "1008": 1.2, "0806": 1.0}
 
@@ -61,8 +59,8 @@ def refs():
     out = []
     for fp in b.GetFootprints():
         name = str(fp.GetFPID().GetLibItemName())
-        if any(s in name for s in ("MountingHole", "Fiducial", "TestPoint", "DSL_button", "Speaker_Wire")):
-            continue                                  # flat copper, nothing to collide
+        if any(s in name for s in ("MountingHole", "Fiducial", "TestPoint", "DSL_button", "Speaker_Wire", "_Solder")):
+            continue                                  # flat copper, nothing to collide (the panel's FPC lands on J3)
         cy = fp.GetCourtyard(pcbnew.B_CrtYd if fp.IsFlipped() else pcbnew.F_CrtYd).BBox()
         court = (pcbnew.ToMM(cy.GetX()), pcbnew.ToMM(cy.GetY()), pcbnew.ToMM(cy.GetRight()), pcbnew.ToMM(cy.GetBottom()))
         out.append((fp.GetReference(), fp.IsFlipped(), str(fp.GetFPID().GetLibItemName()), court))
@@ -106,7 +104,7 @@ def main():
         if ref in KNOWN_HEIGHT and boxes.get(ref):
             b = boxes[ref]
             boxes[ref] = (b[0], b[1], b[2], b[3], 0.0, KNOWN_HEIGHT[ref])
-            notes.append(f"{ref}: checked at {KNOWN_HEIGHT[ref]} mm (its model shows the lock open)")
+            notes.append(f"{ref}: checked at {KNOWN_HEIGHT[ref]} mm")
         if boxes.get(ref) is None:
             h = next((v for k, v in PACKAGE_HEIGHT.items() if k in name), 1.5)
             boxes[ref] = (court[0], court[1], court[2], court[3], 0.0, h)

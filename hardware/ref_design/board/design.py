@@ -182,7 +182,7 @@ GPIO = {  # GPIO number: net
     16: "STATUS_LED", 17: "CHG_STAT_N", 18: "VIN_GOOD_N", 19: "CHG_EN1", 20: "CHG_EN2",
     24: "P1_A", 25: "P1_B", 26: "P1_X", 27: "P1_Y",
     28: "P1_UP", 29: "P1_DOWN", 30: "P1_LEFT", 31: "P1_RIGHT",
-    33: "LCD_DC", 34: "LCD_RST", 35: "BL_PWM",
+    32: "LCD_TE", 33: "LCD_DC", 34: "LCD_RST", 35: "BL_SDI",
     36: "LCD_MISO", 37: "LCD_CS", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
     40: "VBAT_SENSE", 41: "CC1_SENSE", 42: "CC2_SENSE",
 }
@@ -244,32 +244,34 @@ part("#FLG05", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+1V1"}, bom=False)
 part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=False)
 
 # =================================================================================
-# Display: DT035CTFT-IPS-SHB on a Hirose FH35C, TPS61160 backlight boost
+# Display: QD3525 (3.5in IPS 320x480, ST7796U) on its 48-pin solder FPC; an AP3156
+# charge pump drives the panel's six backlight LEDs (common anode, a cathode each)
 # =================================================================================
 S = "display.kicad_sch"
-fpc = {"1": "LCD_RST", "2": "LCD_CS", "3": "LCD_DC", "4": "LCD_SCK", "5": "LCD_MOSI", "6": "LCD_MISO",
-       "27": "+3V3", "28": "+3V3", "29": "GND", "38": "LED_A", "39": "LED_K", "MP": "GND"}
-fpc.update({str(p): "GND" for p in range(7, 27)})      # RGB bus unused in SPI mode: tie low
-fpc.update({str(p): None for p in range(30, 38)})      # touch pins (not fitted) and NC
-part("J3", S, "Connector_Generic_MountingPin:Conn_01x39_MountingPin", "FH35C-39S-0.3SHW(50)",
-     "battler:Hirose_FH35C-39S-0.3SHW_1x39-1MP_P0.30mm_Horizontal", fpc,
-     "C506799", "FH35C-39S-0.3SHW(50)", "Hirose")
+fpc = {"5": "+3V3", "6": "+3V3",                          # VDD, IOVCC
+       "7": "LCD_TE", "8": "LCD_CS", "9": "LCD_DC", "10": "LCD_SCK",
+       "11": "+3V3",                                      # RD: parallel read strobe, unused: high
+       "12": "LCD_MOSI", "13": "LCD_MISO", "38": "LCD_RST",
+       "39": "+3V3", "40": "+3V3", "41": "+3V3",          # IM2..IM0 = 111: 4-line 8-bit SPI
+       "42": "LED_A"}
+fpc.update({str(p): "GND" for p in range(14, 38)})        # GND, DB0-17, DEN, PCLK, HSYNC, VSYNC: tied low
+fpc.update({str(43 + i): f"LED_K{i + 1}" for i in range(6)})
+fpc.update({str(p): None for p in (1, 2, 3, 4)})          # resistive touch: not on this panel
+part("J3", S, "Connector_Generic:Conn_01x48", "QD3525", "battler:QD3525_FPC_1x48_P0.80mm_Solder", fpc)
 R("R28", S, "33", "LCD_SCK_MCU", "LCD_SCK")       # source termination, fitted next to the MCU
 R("R29", S, "33", "LCD_MOSI_MCU", "LCD_MOSI")
 C("C29", S, "1u", "+3V3")
 C("C30", S, "100n", "+3V3")
-part("U6", S, "Driver_LED:TPS61165DRV", "TPS61160DRVR", "Package_SON:WSON-6-1EP_2x2mm_P0.65mm_EP1x1.6mm_ThermalVias",
-     {"6": "VSYS", "4": "BL_SW", "1": "LED_K", "2": "BL_COMP", "5": "BL_PWM", "3": "GND", "7": "GND"},
-     "C165143", "TPS61160DRVR", "Texas Instruments")
-part("L3", S, "Device:L", "10u", "Inductor_SMD:L_1008_2520Metric", {"1": "VSYS", "2": "BL_SW"},
-     "C5832376", "FTC252012S100MBCA", "FH")
-part("D5", S, "Device:D_Schottky", "B5819WS", "Diode_SMD:D_SOD-323", {"1": "LED_A", "2": "BL_SW"},
-     "C64886", "B5819WS", "Changjiang")
-C("C31", S, "4.7u", "VSYS")
-C("C32", S, "1u 50V", "LED_A")
-C("C33", S, "220n", "BL_COMP")
-part("R30", S, "Device:R", "3.6", R0603, {"1": "LED_K", "2": "GND"}, "C23015", "0603WAF360KT5E", "UNI-ROYAL")
-R("R31", S, "100k", "BL_PWM", "GND")
+part("U6", S, "battler:AP3156", "AP3156FVG-7", "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.5x2.5mm_ThermalVias",
+     {"10": "VSYS", "2": "BL_SDI", "3": None, "6": "BL_C1P", "7": "BL_C1N", "5": "BL_C2P", "8": "BL_C2N",
+      "4": "LED_A", "12": "LED_K1", "13": "LED_K2", "14": "LED_K3", "15": "LED_K4", "16": "LED_K5", "1": "LED_K6",
+      "9": "GND", "11": "GND", "17": "GND"},
+     "C443652", "AP3156FVG-7", "Diodes Incorporated")
+C("C31", S, "1u", "VSYS")                          # charge pump input
+C("C32", S, "1u", "LED_A")                         # charge pump output
+C("C33", S, "1u", "BL_C1P", "BL_C1N")              # flying capacitors
+C("C36", S, "1u", "BL_C2P", "BL_C2N")
+R("R31", S, "100k", "BL_SDI", "GND")               # holds the driver off until firmware drives SDI
 
 # =================================================================================
 # Audio: MAX98357A class D into an 8 ohm speaker

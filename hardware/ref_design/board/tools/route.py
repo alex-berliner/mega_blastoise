@@ -10,8 +10,9 @@ placed board and the pre-routes are unchanged).
      top layer, as on Raspberry Pi's board (its keep-outs shape it)
   3. pre-routes that the router handles badly:
        membrane contacts: each comb's anchor -> radial stub -> via outside the pill
-       display connector: the twenty grounded RGB pins joined by two bars
+       display landing: the panel's 24 grounded pins joined by one bar
        TPS63001: its power loop, drawn as TI's layout guidance asks
+       AP3156: its GND pins into its thermal pad
        QSPI flash: pad to pad by the maze router (tools/maze.py)
        every other GND/3V3 pad: a short stub and a via into its plane
   4. Freerouting (1.9.0; 2.x loops on this board) routes the signals on F.Cu and
@@ -206,24 +207,23 @@ def contact_stubs(board):
     return contacts
 
 
-def fpc_ground_bars(board):
-    """The panel's RGB bus (pins 7-26) is tied to GND: twenty 0.3 mm pads in two
-    staggered rows. A bar behind each row joins them and three vias per bar take
-    it to the GND plane, outside the connector's body."""
+def fpc_ground_bar(board):
+    """The panel's pins 14-37 (GND, the parallel bus and the RGB interface's strobes)
+    are all tied to GND: a bar along the tip side of the landing, outside the FPC,
+    joins them, and vias every few pins take it into the GND plane."""
     fp = board.FindFootprintByReference("J3")
     gnd = board.FindNet("GND")
-    ox, oy = xy(fp.GetPosition())
-
-    def pad_x(k):
-        return 5.7 - (k - 1) * 0.3
-    for pins, y_pad, y_bar, y_via in ((range(7, 26, 2), 1.44, 2.35, 3.25), (range(8, 27, 2), -1.44, -2.35, -3.25)):
-        xs = [pad_x(k) for k in pins]
-        for x in xs:
-            add_track(board, (ox + x, oy + y_pad), (ox + x, oy + y_bar), gnd)
-        add_track(board, (ox + max(xs), oy + y_bar), (ox + min(xs), oy + y_bar), gnd)
-        for x in (max(xs) - 0.3, (max(xs) + min(xs)) / 2, min(xs) + 0.3):
-            add_track(board, (ox + x, oy + y_bar), (ox + x, oy + y_via), gnd)
-            add_via(board, (ox + x, oy + y_via), gnd)
+    pads = sorted((p for p in fp.Pads() if p.GetNetname() == "GND"), key=lambda p: p.GetPosition().x)
+    top = min(pcbnew.ToMM(p.GetBoundingBox().GetY()) for p in pads)
+    bar_y, via_y = top - 0.45, top - 1.25
+    xs = [xy(p.GetPosition())[0] for p in pads]
+    for p in pads:
+        x, y = xy(p.GetPosition())
+        add_track(board, (x, y), (x, bar_y), gnd, 0.3)
+    add_track(board, (xs[0], bar_y), (xs[-1], bar_y), gnd, 0.3)
+    for i in range(0, len(xs), 5):
+        add_track(board, (xs[i], bar_y), (xs[i], via_y), gnd, 0.3)
+        add_via(board, (xs[i], via_y), gnd)
 
 
 def buck_boost(board):
@@ -276,9 +276,32 @@ def buck_boost(board):
     path("/Power/VINA", [mid, pin[8]], 0.2)
 
 
+def led_driver(board):
+    """The AP3156's two GND pins sit beside its thermal pad: straight stubs join them
+    to it (and its vias), the fan-out has no room for a via of their own."""
+    u6 = board.FindFootprintByReference("U6")
+    ep = next(p for p in u6.Pads() if p.GetNumber() == "17")
+    ex, ey = xy(ep.GetPosition())
+    gnd = board.FindNet("GND")
+    for p in u6.Pads():
+        if p.GetNumber() in ("9", "11"):
+            x, y = xy(p.GetPosition())
+            # along the pin's own axis, to the pad's inner third
+            if abs(x - ex) > abs(y - ey):
+                add_track(board, (x, y), (ex + (x - ex) / 3, y), gnd, 0.25)
+            else:
+                add_track(board, (x, y), (x, ey + (y - ey) / 3), gnd, 0.25)
+
+
 def box(item):
     b = item.GetBoundingBox()
     return (pcbnew.ToMM(b.GetX()), pcbnew.ToMM(b.GetY()), pcbnew.ToMM(b.GetRight()), pcbnew.ToMM(b.GetBottom()))
+
+
+def exposed_pad(pad):
+    """A thermal/exposed pad: vias in it are the point."""
+    sz = pad.GetSize(pcbnew.F_Cu)
+    return min(pcbnew.ToMM(sz.x), pcbnew.ToMM(sz.y)) >= 1.5
 
 
 class Space:
@@ -302,7 +325,9 @@ class Space:
         self.slot = (min(sx0, sx1) - 0.6, min(sy0, sy1) - 0.6, max(sx0, sx1) + 0.6, max(sy0, sy1) + 0.6)
         self.fences = core_fences()
 
-    def clear_at(self, p, r, net):
+    def clear_at(self, p, r, net, via=False):
+        """Nothing of another net within r of p; with via=True no pad of any net under
+        the via either (a via on a pad wicks its solder away)."""
         x, y = p
         if not (self.edge[0] <= x <= self.edge[2] and self.edge[1] <= y <= self.edge[3]):
             return False
@@ -315,11 +340,14 @@ class Space:
         pos = V(x, y)
         reach = r + 0.8
         for item, n, bb, extra in self.items:
+            rr = r + extra
             if n == net and item.GetClass() != "PCB_VIA":
-                continue
+                if not (via and isinstance(item, pcbnew.PAD)) or exposed_pad(item):
+                    continue
+                rr = VIA_D / 2 + 0.05
             if x < bb[0] - reach - extra or x > bb[2] + reach + extra or y < bb[1] - reach - extra or y > bb[3] + reach + extra:
                 continue
-            if item.HitTest(pos, mm(r + extra)):
+            if item.HitTest(pos, mm(rr)):
                 return False
         return True
 
@@ -391,7 +419,7 @@ def reaches_plane(board, nets):
     return out
 
 
-def via_near(board, space, origin, net, layer, avoid_angle=None, hit=None):
+def via_near(board, space, origin, net, layer, avoid_angle=None, hit=None, origin_pad=None):
     """Put a via within ~2 mm of `origin` (x, y) and a stub to it on `layer`;
     `hit(q)` says whether a stub point is still inside the item it starts from."""
     ox, oy = origin
@@ -400,7 +428,9 @@ def via_near(board, space, origin, net, layer, avoid_angle=None, hit=None):
         for da in (0, 30, -30, 60, -60, 90, -90, 120, -120, 150, -150, 180):
             a = base + math.radians(da)
             p = (ox + dist * math.cos(a), oy + dist * math.sin(a))
-            if not space.clear_at(p, VIA_D / 2 + CLEAR, net):
+            if hit and hit(p) and not (origin_pad is not None and exposed_pad(origin_pad)):
+                continue                     # no via inside its own pad (a long pad would wick it dry)
+            if not space.clear_at(p, VIA_D / 2 + CLEAR, net, via=True):
                 continue
             n = max(3, int(dist / 0.1))
             path = [(ox + (p[0] - ox) * k / n, oy + (p[1] - oy) * k / n) for k in range(1, n)]
@@ -431,7 +461,7 @@ def fanout(board, nets=("GND", "+3V3")):
             layer = pcbnew.B_Cu if pad.IsOnLayer(pcbnew.B_Cu) else pcbnew.F_Cu
             px, py = xy(pad.GetPosition())
             base = math.atan2(py - fy, px - fx) if abs(px - fx) + abs(py - fy) > 1e-3 else 0.0
-            if via_near(board, space, (px, py), net, layer, base, lambda q, pad=pad: pad.HitTest(V(*q))):
+            if via_near(board, space, (px, py), net, layer, base, lambda q, pad=pad: pad.HitTest(V(*q)), pad):
                 done += 1
             else:
                 left.append(f"{fp.GetReference()}.{pad.GetNumber()}")
@@ -811,7 +841,7 @@ def stitch(board, pitch=5.0):
     while y <= y1:
         x = x0
         while x <= x1:
-            if not (cx0 <= x <= cx1 and cy0 <= y <= cy1) and space.clear_at((x, y), VIA_D / 2 + 0.25, "GND"):
+            if not (cx0 <= x <= cx1 and cy0 <= y <= cy1) and space.clear_at((x, y), VIA_D / 2 + 0.25, "GND", via=True):
                 v = pcbnew.PCB_VIA(board)
                 v.SetPosition(V(x, y))
                 v.SetWidth(mm(VIA_D))
@@ -851,15 +881,18 @@ def drc_unconnected(board):
     return sorted(drc_report(board).get("unconnected_items", []), key=pair_key)
 
 
-def prune_dangling(board, rounds=5):
-    """Router copper left with a loose end (pieces of routes the maze pass took up)."""
+def prune_dangling(board, rounds=5, locked_too=False):
+    """Copper with a loose end: pieces of routes the maze pass took up, or (at the end,
+    locked_too) copied stubs whose far end no longer meets anything. A loose-ended
+    piece carries no connection, so taking it away never disconnects anything."""
     gone = 0
     for _ in range(rounds):
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
         loose = {i["uuid"] for v in drc_report(board).get("violations", [])
                  if v["type"] in ("track_dangling", "via_dangling") for i in v["items"]}
-        items = [t for t in board.GetTracks() if t.m_Uuid.AsString() in loose and not t.IsLocked()
-                 and t.GetNetname() not in ("GND", "+3V3")]
+        items = [t for t in board.GetTracks() if t.m_Uuid.AsString() in loose
+                 and (locked_too or (not t.IsLocked() and t.GetNetname() not in ("GND", "+3V3")))
+                 and not (isinstance(t, pcbnew.PCB_VIA) and t.GetNetname() in ("GND", "+3V3"))]
         if not items:
             break
         for t in items:
@@ -901,7 +934,7 @@ def anchor_islands(board, space, nets=("GND", "+3V3")):
                         if not all(fill.Contains(V(p[0] + dx, p[1] + dy)) for dx, dy in
                                    ((0, 0), (0.3, 0), (-0.3, 0), (0, 0.3), (0, -0.3))):
                             continue
-                        if not space.clear_at(p, VIA_D / 2 + CLEAR, z.GetNetname()):
+                        if not space.clear_at(p, VIA_D / 2 + CLEAR, z.GetNetname(), via=True):
                             continue
                         space.add(add_via(board, p, board.FindNet(z.GetNetname())))
                         added += 1
@@ -933,7 +966,7 @@ def repair(board, rounds=4):
                     if pad.GetNumber() == num:
                         layer = pcbnew.B_Cu if pad.IsOnLayer(pcbnew.B_Cu) else pcbnew.F_Cu
                         if via_near(board, space, xy(pad.GetPosition()), net, layer, None,
-                                    lambda q, pad=pad: pad.HitTest(V(*q))):
+                                    lambda q, pad=pad: pad.HitTest(V(*q)), pad):
                             added += 1
                         break
                 break
@@ -954,8 +987,9 @@ def main():
     hide_bom_fields(board)
     planes(board)
     contacts = contact_stubs(board)
-    fpc_ground_bars(board)
+    fpc_ground_bar(board)
     buck_boost(board)
+    led_driver(board)
     qspi(board)
     fanout(board)
     freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
@@ -965,6 +999,7 @@ def main():
     print("unused stub vias removed:", drop_unused_stub_vias(board, STUB_VIAS))
     print("stitching vias:", stitch(board))
     repair(board)
+    print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
     pcbnew.SaveBoard(PCB, board)
     print("saved", PCB)
 

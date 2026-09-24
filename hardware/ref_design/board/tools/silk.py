@@ -8,7 +8,7 @@
   right) until it clears pads, holes, the board edge and other references;
   one that finds no clear spot is hidden
 - labels: board name and revision (back), test pad names, connector names\n  and the battery's + pin
-Run after routing; it only touches silkscreen text.
+Run after routing; it only touches silkscreen text, and can be run again.
 """
 import os
 import sys
@@ -24,6 +24,8 @@ PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-323", "L_1008",
          "Fiducial", "MountingHole", "DSL_button", "AOTA", "ABM8")
 TEXT_H = 0.8        # mm; JLC's minimum legible silk is about 0.8 mm tall, 0.15 mm line
+# parts whose label below says more than their reference would
+LABELLED = {"J2", "J3", "J4", "J5", "J6", "SW18", "SW19", "TP1", "TP2", "TP3", "TP4", "TP5"}
 
 
 def mm(v):
@@ -46,6 +48,11 @@ def overlap(a, b):
 
 def main():
     board = pcbnew.LoadBoard(PCB)
+    # labels from an earlier run go first, so running this again changes nothing
+    old = [d for d in board.GetDrawings() if isinstance(d, pcbnew.PCB_TEXT)
+           and d.GetLayer() in (pcbnew.F_SilkS, pcbnew.B_SilkS)]
+    for d in old:
+        board.Remove(d)
     bb = board.GetBoardEdgesBoundingBox()
     inner = (pcbnew.ToMM(bb.GetX()) + 0.6, pcbnew.ToMM(bb.GetY()) + 0.6,
              pcbnew.ToMM(bb.GetRight()) - 0.6, pcbnew.ToMM(bb.GetBottom()) - 0.6)
@@ -65,7 +72,7 @@ def main():
         ref = fp.Reference()
         name = str(fp.GetFPID().GetLibItemName())
         side = pcbnew.B_SilkS if fp.IsFlipped() else pcbnew.F_SilkS
-        if any(s in name for s in SMALL):
+        if any(s in name for s in SMALL) or fp.GetReference() in LABELLED:
             ref.SetVisible(False)
             hidden += 1
             continue
@@ -127,10 +134,13 @@ def main():
     text("+", pcbnew.ToMM(p1.GetPosition().x), b1[3] + 0.9, h=1.0)
     jb = box(j2)
     text("BATT", jb[0] - 2.4, (jb[1] + jb[3]) / 2)
-    text("SWD", CASE["swd"][0] + 2.9, CASE["swd"][1])
-    text("UART", CASE["uart"][0] + 3.1, CASE["uart"][1])
-    text("BOOT", CASE["pinholes"][0][0] + 3.0, CASE["pinholes"][0][1])
-    text("RESET", CASE["pinholes"][1][0] + 3.2, CASE["pinholes"][1][1])
+    j3 = board.FindFootprintByReference("J3")
+    row = [xy for xy in ((pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y)) for p in j3.Pads())]
+    text("PANEL", min(x for x, _ in row) - 5.2, row[0][1])
+    text("SWD", CASE["swd"][0] + 4.4, CASE["swd"][1])
+    text("UART", CASE["uart"][0] + 4.6, CASE["uart"][1])
+    text("BOOT", CASE["pinholes"][0][0] + 4.6, CASE["pinholes"][0][1])
+    text("RESET", CASE["pinholes"][1][0] + 4.8, CASE["pinholes"][1][1])
     if clashes:
         print("labels over pads or other text:", clashes)
     pcbnew.SaveBoard(PCB, board)

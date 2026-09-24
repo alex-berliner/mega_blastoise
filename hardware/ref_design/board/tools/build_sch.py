@@ -71,7 +71,7 @@ REGIONS = {
     "display.kicad_sch": [
         (15, 22, 95, 195, ["J3"]),
         (110, 30, 250, 75, ["R28", "R29", "C29", "C30"]),
-        (110, 80, 250, 175, ["U6", "L3", "D5", "C31", "C32", "C33", "R30", "R31"]),
+        (110, 80, 250, 175, ["U6", "C31", "C32", "C33", "C36", "R31"]),
     ],
     "audio.kicad_sch": [(15, 22, 250, 150, ["U7", "R32", "C34", "C35", "FB1", "FB2", "J4"])],
     "buttons.kicad_sch": [
@@ -86,7 +86,7 @@ SHEET_NOTES = [
     ("mcu.kicad_sch", "MCU", ("RP2350B, 12 MHz crystal,", "16 MB QSPI flash, USB series resistors")),
     ("mcu_power.kicad_sch", "MCU_Power", ("RP2350B decoupling and its", "internal 1.1 V switcher")),
     ("debug.kicad_sch", "Debug", ("SWD and UART connectors, BOOTSEL", "and RESET buttons, error LED")),
-    ("display.kicad_sch", "Display", ("39-pin FPC to the 3.5in IPS panel,", "TPS61160 backlight boost")),
+    ("display.kicad_sch", "Display", ("48-pin solder FPC of the 3.5in IPS panel,", "AP3156 backlight driver")),
     ("audio.kicad_sch", "Audio", ("MAX98357A I2S class D amplifier,", "speaker pads")),
     ("buttons.kicad_sch", "Buttons", ("16 membrane contacts,", "one GPIO each")),
 ]
@@ -125,9 +125,9 @@ TEXT = {
         (15, 134, 1.27, "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid. D4 is the error LED."),
     ],
     "display.kicad_sch": [
-        (110, 15, 1.27, "Displaytech DT035CTFT-IPS-SHB (ST7796, SPI). Its FPC folds under the panel into J3; pin k = pin k."),
-        (110, 19, 1.27, "U6 is drawn with the TPS61165DRV symbol: same DRV pinout as the fitted TPS61160DRVR."),
-        (110, 23, 1.27, "LED current = 0.2 V / R30 = 56 mA (panel rating 60 mA). Dim with PWM on BL_PWM, 5 to 100 kHz."),
+        (110, 15, 1.27, "QD3525 3.5in IPS panel (ST7796U, 4-line SPI). Its 48-pin FPC folds under the panel and is soldered to J3."),
+        (110, 19, 1.27, "Unused bus pins are tied as the panel maker's own module ties them: DB0-17 and RGB low, RD and IM2-0 high."),
+        (110, 23, 1.27, "U6 AP3156 sinks each of the six backlight LEDs; current set over SDI (1-wire, 32 steps, 20 mA max each)."),
     ],
     "audio.kicad_sch": [
         (15, 160, 1.27, "SD_MODE through R32 sits near 2.2 V: left channel. Firmware writes the mono mix to both slots."),
@@ -285,6 +285,9 @@ def layout(sheet):
 
 
 def main():
+    # Konnect looks for libraries in KICAD10_SYMBOL_DIR before KiCad's own folder; the
+    # project's symbols (tools/sym_lib.py) live in lib/, not in the project's library table
+    os.environ["KICAD10_SYMBOL_DIR"] = os.path.join(BOARD, "lib")
     k = Konnect()
     for ts in ("project", "sch_components", "sch_wiring", "sch_hierarchy", "library", "sch_batch"):
         k.call("load_toolset", name=ts)

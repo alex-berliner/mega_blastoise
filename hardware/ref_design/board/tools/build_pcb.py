@@ -32,7 +32,7 @@ REF_PCB = os.environ.get("RP2350B_REF", "")
 SYSFP = "/usr/share/kicad/footprints"
 LIBS = {"battler": os.path.join(BOARD_DIR, "lib", "battler.pretty")}
 NO_ASSEMBLY = ("SW1", "SW2", "SW3", "SW4", "SW5", "SW6", "SW7", "SW8", "SW9", "SW10", "SW11", "SW12",
-               "SW13", "SW14", "SW15", "SW16", "TP1", "TP2", "TP3", "TP4", "TP5", "J4",
+               "SW13", "SW14", "SW15", "SW16", "TP1", "TP2", "TP3", "TP4", "TP5", "J4", "J3",
                "H1", "H2", "H3", "H4", "H5", "H6", "FID1", "FID2", "FID3")
 
 
@@ -41,7 +41,7 @@ CLASSES = {
     # GND and 3V3 reach their planes through short stubs, so they keep the default
     "PWR": dict(track=0.3, clear=0.15, via=0.6, drill=0.3,
                 nets=["VSYS", "VBAT", "VBUS", "/Power/BB_L1", "/Power/BB_L2",
-                      "/Display/BL_SW", "/Display/LED_A", "/Display/LED_K", "/Audio/SPK_P", "/Audio/SPK_N",
+                      "/Display/LED_A", "/Audio/SPK_P", "/Audio/SPK_N",
                       "/Audio/SPK_P_AMP", "/Audio/SPK_N_AMP"]),
     "USB": dict(track=0.2, clear=0.15, via=0.5, drill=0.25,
                 nets=["USB_DP", "USB_DM", "/MCU/USB_DP_MCU", "/MCU/USB_DM_MCU"]),

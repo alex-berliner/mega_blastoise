@@ -15,6 +15,7 @@ the generator uses. KiCad 10.0.6, Konnect from `/home/alex/Konnect` as of
 | `batch_connect_to_net` | Writes `(net_label ...)`, which KiCad can't load. | `connect_to_net` / `add_schematic_net_label` per pin. |
 | pin location queries | Report a pin's root, not its connection tip, so a label placed there never connects. | `tools/kisym.py` reads the library and computes tips. |
 | `delete_schematic_net_label` | Given a name and coordinates, deleted a global label of that name elsewhere, not the local label at the coordinates. | Not used. |
+| `add_schematic_component` | Only finds libraries in `KICAD10_SYMBOL_DIR` and `/usr/share/kicad/symbols`: a project library in the project's `sym-lib-table` is not looked at, and the symbol is placed with no embedded definition (no pins again). | `build_sch.py` sets `KICAD10_SYMBOL_DIR` to `board/lib` before starting Konnect (KiCad's own folder is still searched after it). |
 
 ## Drawing (these make sheets hard to read)
 
@@ -25,6 +26,13 @@ the generator uses. KiCad 10.0.6, Konnect from `/home/alex/Konnect` as of
 | `add_hierarchical_sheet` | Sheetname and Sheetfile have no position: drawn at the page corner, not on the sheet box. | Text items next to each box on the root sheet. |
 | `add_schematic_component` | Reference always at y-3.81 and value at y+3.81 from the origin, horizontal, whatever the library says. On a vertical resistor both land on the pin tips. | Two-pin parts are drawn horizontal, where those spots are clear of the wires. |
 | instances | Symbols in sub-sheets get `(project "" (path "/" ...))`; KiCad falls back to the Reference property. Fine while each sheet is used once. | None needed yet. |
+
+## Libraries
+
+| Tool | What happens | Workaround here |
+|---|---|---|
+| `create_symbol` | Writes the pins only: no body rectangle, and pin names and numbers hidden. On a sheet the part is a cluster of loose pin stubs. | `tools/sym_lib.py` writes the symbol and has `kicad-cli sym upgrade` re-save it through KiCad. |
+| `register_symbol_library` | The `sym-lib-table` it writes starts with `(fp_lib_table`, so KiCad rejects the table. | `sym-lib-table` written by hand (it is not a design file). |
 
 ## Missing
 

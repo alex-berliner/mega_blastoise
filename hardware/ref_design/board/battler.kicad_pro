@@ -355,15 +355,7 @@
       },
       {
         "netclass": "PWR",
-        "pattern": "/Display/BL_SW"
-      },
-      {
-        "netclass": "PWR",
         "pattern": "/Display/LED_A"
-      },
-      {
-        "netclass": "PWR",
-        "pattern": "/Display/LED_K"
       },
       {
         "netclass": "PWR",

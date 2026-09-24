@@ -11,8 +11,8 @@ which this folder never touches.
 ## What it is
 
 - RP2350B, 16 MB flash, USB-C (charging + firmware + debug console)
-- 3.5in 320x480 IPS panel (Displaytech DT035CTFT-IPS-SHB, ST7796, SPI) with a
-  PWM-dimmed backlight driver
+- 3.5in 320x480 IPS panel (QD3525, ST7796U, SPI), a bare panel with a published
+  drawing, its FPC soldered to the board; a constant-current backlight driver
 - 16 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad and
   four face buttons at each end
 - MAX98357A I2S amplifier into a 20 mm speaker
@@ -58,8 +58,10 @@ python3 tools/pinmap.py                      # docs/pinmap.md
 
 Needs KiCad 10 (kicad-cli and its `pcbnew` Python module), OpenSCAD, Java,
 Freerouting 1.9.0, Konnect, and Raspberry Pi's RP2350B minimal KiCad design
-(document RP-010329-CA) for the core layout. `tools/lib_from_ref.py` rebuilds
-the core's land patterns in `lib/` from that design; they are already there.
+(document RP-010329-CA) for the core layout. The project library in `lib/` is
+already built; `tools/lib_from_ref.py` (the core's land patterns, from that
+design), `tools/fp_panel.py` (the panel's FPC landing) and `tools/sym_lib.py`
+(symbols KiCad lacks) rebuild it.
 
 ## Status
 

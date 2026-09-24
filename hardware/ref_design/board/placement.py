@@ -54,22 +54,20 @@ put("FID1", 67.3, 71.0)
 put("FID2", 133.2, 141.6)
 put("FID3", 66.8, 141.6)
 
-# display connector: mouth on the case's line, contact 1 at +X
-put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["front_y"] - 1.60, 0)
+# display: the panel's solder-FPC landing where its folded tail reaches (case.scad fpc_front),
+# contact 1 at -X; its backlight driver just above the LED end of the row, D1..D6 over
+# the six cathode pads in order
+put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["front_y"], 0)
 put("R28", 97.6, 96.6, 90)                  # SPI source terminations, next to GPIO38/39
 put("R29", 99.1, 96.6, 90)
-put("C29", 92.0, 104.8, 0)                  # panel VDD, at pins 27/28
-put("C30", 92.0, 106.0, 0)
-
-# backlight boost: left bezel, below the debug connectors
-put("U6", 69.2, 121.0, 90)
-put("L3", 69.4, 125.6, 90)
-put("D5", 69.6, 129.2, 180)
-put("C31", 71.4, 117.6, 0)
-put("C32", 67.2, 131.8, 0)
-put("C33", 71.6, 121.4, 90)
-put("R30", 71.6, 131.8, 0)
-put("R31", 67.0, 117.6, 0)
+put("C29", 84.8, 121.0, 0)                  # panel VDD/IOVCC, at pads 5 and 6
+put("C30", 86.8, 121.0, 0)
+put("U6", 116.8, 118.6, 180)
+put("C31", 113.4, 118.3, 90)                # VIN
+put("C32", 120.2, 117.6, 90)                # VOUT (LED anodes)
+put("C33", 116.8, 115.4, 180)               # flying C1P-C1N
+put("C36", 116.8, 113.9, 180)               # flying C2P-C2N
+put("R31", 120.2, 120.4, 90)                # SDI pull-down
 
 # debug: left bezel
 put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
@@ -104,7 +102,7 @@ put("R8", 125.4, 112.0, 90)
 put("R9", 126.6, 112.0, 90)
 put("R10", 124.2, 109.6, 90)
 put("J2", CASE["batt_conn"][0], CASE["batt_conn"][1] + 0.6, 180)
-put("RT1", 110.0, 128.0, 0)                 # over the cell, away from the charger's heat
+put("RT1", 106.0, 114.0, 0)                 # over the cell, clear of the panel's FPC tail and the charger
 
 # 3V3 buck-boost: right bezel. Power pins face down onto the inductor, VINA/EN/PS/FB up;
 # input cap on the VIN side, output caps on the VOUT side (route.py draws the loop)

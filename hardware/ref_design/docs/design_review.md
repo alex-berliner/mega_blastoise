@@ -65,10 +65,12 @@ Case 75.4 x 156.2 x 20.0 mm. Board 70.4 x 151.2 mm, 4 layers, 1.6 mm, ENIG.
   Pi's own land patterns (the switcher's LX copper runs between the pads of C24
   and C25, which KiCad's larger pads would cut), and inside the chip's pin ring the
   top layer is a 3V3 pour joined by short stubs from the 3V3 pins, as on their
-  board. Their board has two layers and reaches every pin from outside the ring;
-  on this one a few crowded pins drop to the bottom layer through vias in that
-  band instead, which the pour flows around. The 1.1 V ring around the centre
-  pad stays untouched.
+  board. Theirs has two layers and reaches every pin from outside the ring; this
+  one also uses the band between the pins and the 1.1 V ring for escapes (twelve
+  signals drop to the bottom layer through vias there), so its 3V3 pour is in
+  pieces. Every 3V3 pin still reaches the 3V3 plane, through its capacitor's via
+  or a via of its own (DRC: nothing unconnected). The 1.1 V ring around the
+  centre pad is untouched.
 - Flash: W25Q128JVP in WSON (0.8 mm) instead of the reference's SOIC (1.75 mm),
   because it sits under the panel. Its exposed pad sits where Raspberry Pi's SD2
   track reached its pin, so that one line is routed anew (`board/tools/maze.py`);
@@ -80,18 +82,27 @@ Case 75.4 x 156.2 x 20.0 mm. Board 70.4 x 151.2 mm, 4 layers, 1.6 mm, ENIG.
 
 ### Display (sheet Display)
 
-- Displaytech DT035CTFT-IPS-SHB: ST7796, 4-wire SPI, 3.3 V, 60 mA backlight of
-  two strings of three LEDs (11.4-13.4 V).
-- Hirose FH35C-39S-0.3SHW: dual-contact, 0.9 mm tall. The panel's FPC folds
-  under the panel; with a dual-contact connector which side of the FPC faces
-  up doesn't matter. Pin k of the panel lands on pin k of J3 (the EasyEDA land
-  pattern was renumbered to Hirose's contact order to make that true).
-- Unused RGB interface pins (7-26) are tied to ground rather than left floating;
-  touch pins (30-36) are left open (this panel variant has no touch).
+- QD3525 (Shenzhen Quandong Electronic's 3.5in IPS, BOE glass, ST7796U): 4-line
+  SPI, 3.3 V, 55.50 x 84.96 x 2.50 mm, six white LEDs in parallel (15 mA each
+  typical, 20 mA maximum). About $5-8 as a bare panel; the maker's drawing and
+  pinout (QD3525 Specifications rev A) are published with LCDwiki's MSP3525
+  module, which uses it. The Displaytech DT035 it replaced was $25-35 for the
+  same class of panel.
+- Its 48-contact tail (0.8 mm pitch) is soldered to J3's pads: this panel comes
+  with a solder tail only. The tail leaves the panel's seat-1 edge and folds
+  under it, contacts facing the board, contact 1 at the left end seen from above
+  with seat 1 nearest you (the panel maker's folded view); J3 sits where the
+  folded tail reaches (case.scad `fpc_front`).
+- Pins wired as the panel maker's own module wires them: the parallel bus
+  (DB0-17) and the RGB strobes low, RD and IM2-0 high (4-line 8-bit SPI); the
+  resistive-touch pins open (no touch layer). TE goes to GPIO32 so the firmware
+  can start frames on the panel's refresh and avoid tearing.
 - SPI clock and data get 33 ohm source terminations next to the MCU.
-- Backlight: TPS61160 boost from VSYS, current set by R30: 0.2 V / 3.6 ohm =
-  56 mA, under the panel's 60 mA rating. PWM dimming on CTRL. 26 V over-voltage
-  protection covers an unplugged panel; the 1 uF output capacitor is rated 50 V.
+- Backlight: AP3156 charge pump (1x/1.5x/2x) from VSYS drives the common anode;
+  each LED's cathode has its own current sink, so the six share current evenly
+  and the brightness holds from a full cell to a flat one. Current is set over
+  one GPIO (1-wire pulses, 32 levels, 20 mA per LED at the top); it starts at
+  0 mA, and R31 holds the line low (off) until the firmware drives it.
 
 ### Audio (sheet Audio)
 
@@ -117,20 +128,23 @@ Case 75.4 x 156.2 x 20.0 mm. Board 70.4 x 151.2 mm, 4 layers, 1.6 mm, ENIG.
 - Rules: 0.15 mm track and clearance (0.1 mm minimum inside the copied core),
   0.25 mm vias, 0.3 mm power tracks, 0.2 mm USB. All within JLCPCB's standard
   4-layer process.
-- Heights: under the panel every part is 1.2 mm or less (the panel sits 1.4 mm
-  above the board). Taller parts live in the side bezels or between a seat's
-  clusters: USB-C (3.3 mm), power switch (3.3), debug connectors (2.9),
-  inductors (1.2), battery connector (5.5, under a pocket in the lid).
+- Heights: the panel (2.5 mm) hangs from the lid's window ledge on double-sided
+  tape, in a 4.9 mm bay that leaves it 2.4 mm clear of the board, so every part
+  under it is 2.2 mm or less. Taller parts live in the
+  side bezels or between a seat's clusters: USB-C (3.3 mm), power switch (3.3),
+  debug connectors (2.9), inductors (1.2), battery connector (5.5, under a pocket
+  in the lid). The case is built around the bay, not the panel: a panel that
+  fits 56.0 x 86.24 x 4.9 mm changes nothing else.
 
 ## Checks run
 
 | Check | Tool | Result |
 |---|---|---|
-| Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 125 parts, 90 nets, 29 no-connects: all match |
+| Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 123 parts, 98 nets, 25 no-connects: all match |
 | ERC | kicad-cli | 0 errors; 1 warning: the MAX98357A symbol calls its exposed pad "unspecified" (it is ground) |
-| DRC with schematic parity | kicad-cli, `board/tools/check_pcb.py` | see the latest run in `board/fab/drc.txt` |
+| DRC with schematic parity | kicad-cli, `board/tools/check_pcb.py` | 0 errors, 0 unconnected, 0 parity issues; 2 cosmetic warnings (USB-C outline silk at the board edge, where the receptacle overhangs by design). `board/fab/drc.txt` |
 | Contact pattern | `hardware/membrane/tools/check_contact_fp.py` | 0.200 mm minimum gap, 1.60 mm bridging spot |
-| Board inside the case | board STL from kicad-cli against the case in OpenSCAD (`case/check_fit.py`) | see its report |
+| Board inside the case | every part's 3D model against the case's height limits, bosses and keep-outs (`case/check_fit.py`) | 91 parts, no collisions (`case/fit_report.txt`) |
 
 ## Not checked
 
@@ -145,7 +159,7 @@ Case 75.4 x 156.2 x 20.0 mm. Board 70.4 x 151.2 mm, 4 layers, 1.6 mm, ENIG.
 | What | Why | Where it goes |
 |---|---|---|
 | DS Lite silicone piece outline, dome height, cap flange and height | case clearances are estimates (`ESTIMATE` in `case/case.scad`) | `piece_d`, `dome_h`, `flange_t`, `cap_*` |
-| A real DT035 panel | FPC length and position, thickness, active area offset | `panel_*`, `fpc_*`, `aa_*` |
+| A real QD3525 panel | outline and thickness, active area offset, and where the folded tail's contacts land (it sets J3's position) | `panel_*`, `fpc_front`, `aa_*` |
 | The chosen cell | size and connector polarity (JST PH has no standard polarity) | `cell`, J2 |
 | The chosen speaker | diameter, thickness, lead position | `spk_*`, J4 |
 
@@ -154,7 +168,8 @@ Case 75.4 x 156.2 x 20.0 mm. Board 70.4 x 151.2 mm, 4 layers, 1.6 mm, ENIG.
 | Risk | Impact | Mitigation |
 |---|---|---|
 | BQ24074 stock at JLC (217 in July 2026) | assembly blocked for a larger run | same package, same pinout: BQ24073 (4.4 V OUT, no ITERM) or BQ24072 (VBAT+225 mV); or consign parts |
-| Panel SPI mode | the module fixes its interface internally; if it came configured RGB-only, SPI would not show pixels | read the ID first at bring-up; Displaytech confirms the mode per order |
+| Panel supply | the QD3525 comes from one maker through marketplace sellers; a lookalike may differ in pinout or tail length | buy by the part number printed on the tail, check it against the drawing before soldering; the same 48-pin ST7796U panel from another maker needs only case.scad's panel numbers and J3's pin map checked |
+| Soldered panel tail | a panel is harder to swap than on a connector | tin-and-reflow joint (JLC's paste leaves the pads tinned); a hot-air or iron rework frees it |
 | DS Lite silicone fit | cap retention and feel depend on unmeasured heights | print the lid first and try real parts before the board order |
 | JLC rotation offsets | parts placed 90 or 180 degrees off | review JLC's placement preview; the CPL carries KiCad's angles |
 | Alps switch land pattern | KiCad's pattern puts the locating holes 0.075 mm from copper; the pads here are pulled back to 0.2 mm | check solder fillets on the first boards |

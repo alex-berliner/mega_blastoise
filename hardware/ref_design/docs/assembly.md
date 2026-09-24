@@ -11,22 +11,22 @@ Files are in `board/fab/` (regenerate with `python3 board/tools/fab.py`).
 | Surface finish | **ENIG** | the silicone pills press straight on the contact combs: they must be gold, not HASL |
 | Via | 0.25 mm drill / 0.5 mm pad (0.3 / 0.6 on power), tented | copied core uses 0.25 mm |
 | Min track / space | 0.15 / 0.15 mm (0.1 mm in the RP2350B pin field) | |
-| Assembly | top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 94 placements, 46 part numbers |
+| Assembly | top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 91 placements, 40 part numbers |
 
 In JLC's placement preview, check every polarised part turned the way the silkscreen
-says: the RP2350B, BQ24074, TPS63001, TPS61160 and MAX98357A pin-1 dots, the flash, the
-FPC connector (contact 1 at the right-hand end seen from the front), USBLC6, BAT54C, 2N7002,
-the diodes (D2, D3, D5) and LEDs (D1, D4). JLC fixes rotation offsets on request; the CPL
-carries KiCad's angles.
+says: the RP2350B, BQ24074, TPS63001, AP3156 and MAX98357A pin-1 dots, the flash,
+USBLC6, BAT54C, 2N7002, the diodes (D2, D3) and LEDs (D1, D4). JLC fixes rotation offsets
+on request; the CPL carries KiCad's angles.
 
-Not assembled by JLC (no LCSC number): the 16 membrane contacts (bare gold), the speaker
-pads, test pads, mounting holes and fiducials.
+Not assembled by JLC (no LCSC number): the panel's landing J3 (JLC's paste leaves its pads
+tinned, which is what the hand joint wants), the 16 membrane contacts (bare gold), the
+speaker pads, test pads, mounting holes and fiducials.
 
 ## 2. Order and make the rest
 
 | Item | Qty | Notes |
 |---|---|---|
-| Displaytech DT035CTFT-IPS-SHB | 1 | 3.5in 320x480 IPS, 39-pin FPC |
+| QD3525 3.5in 320x480 IPS panel (ST7796U) | 1 | bare panel, 48-contact solder tail; check the part number on the tail against the maker's drawing |
 | Li-ion cell 103450 (34 x 50 x 10 mm) with protection board and JST PH 2.0 plug | 1 | **polarity varies by vendor**: pin 1 (silkscreen `+`) must be the positive lead |
 | Speaker, 20 mm round, 8 ohm, 1 W, <= 4.5 mm thick, wire leads | 1 | |
 | DS Lite silicone: D-pad piece + ABXY piece | 2 of each | aftermarket replacements |
@@ -42,9 +42,16 @@ pads, test pads, mounting holes and fiducials.
 
 1. Speaker: solder its leads to J4 on the back of the board, `+` to the pad marked `+`.
    Keep the leads short; the speaker sits on the tub floor right below.
-2. Look over the charger and regulator corners (BQ24074, TPS63001, TPS61160, MAX98357A):
+2. Look over the charger and regulator corners (BQ24074, TPS63001, AP3156, MAX98357A):
    their exposed pads must have wetted. X-ray is not needed for a prototype; a lifted
    corner pin shows under a loupe.
+3. Panel tail to J3. Lay the panel face down on the bench beyond the board's seat-1 edge,
+   its tail reaching back flat over J3, contacts down. Line the tail's edges up with the
+   silk ticks either side of J3, and its contact 1 with J3's pin-1 bar (left end seen
+   from above, seat 1 nearest you). Tape the panel down. Flux the row, tack the two end
+   contacts, check the alignment, then drag a fine chisel tip along the row (the pads are
+   already tinned) or use a hot-bar tool. Check for bridges under a loupe and clean the
+   flux off. The panel stays face down until the case goes together.
 
 ## 4. First power, before the case
 
@@ -59,11 +66,10 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 3. Board into the tub over them, resting on the six bosses and the four ribs under the
    button clusters, USB-C in its wall opening. Feed the cell's plug up through the slot
    next to J2 and plug it in (J2's mouth faces the slot).
-4. Panel: lay it face up over the board with its FPC tail folded under it at the seat-1
-   edge. Open J3's flip lock (the black bar at its back), slide the FPC in, close the lock.
-   The panel rests loosely on the low parts under it for now.
+4. Panel: fold it over onto the board, face up, its tail looping under it at the seat-1
+   edge (don't crease the tail). It rests loosely on the parts under it for now.
 5. Silicone pieces onto the contacts, caps onto the silicone.
 6. Peel the tape liner and lower the lid straight down: its locating frame centres the
    panel and the tape takes it, the caps come up through their holes and the retainers
-   trap their flanges. From here on the panel hangs from the lid, 1.4 mm clear of the board.
+   trap their flanges. From here on the panel hangs from the lid, 2.4 mm clear of the board.
 7. Six M2 x 16 screws from below. Snug, not tight: the bosses are plastic.

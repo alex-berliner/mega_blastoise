@@ -18,13 +18,17 @@ explode = 0;
 $fn = 72;
 
 // ---------------- bought parts ----------------
-panel_w = 54.40;  panel_l = 86.24;  panel_t = 3.50;     // DT035CTFT-IPS-SHB outline
+panel_w = 55.50;  panel_l = 84.96;  panel_t = 2.50;     // QD3525 3.5in IPS outline (tape not included)
 aa_w = 48.96;     aa_l = 73.44;                         // active area
-aa_to_top = 4.50; aa_to_fpc = 8.30;                     // active area to the glass edges
-aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 1.9 mm towards seat 2
+aa_to_top = 3.11; aa_to_fpc = 8.41;                     // active area to the glass edges
+aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.65 mm towards seat 2
 window_margin = 0.5;                                    // bezel opening past the active area
-fpc_x = -5.36;    fpc_w = 13.3;                         // FPC tail centre, connector width
-fpc_front = 31.0;                                       // connector mouth to the glass FPC edge
+fpc_x = 0;        fpc_w = 43.21;                        // solder FPC: centred on the panel, 43.21 wide
+fpc_front = 18.5;                                       // its pad row (centre) in from the glass FPC edge
+                                                        // once folded under: 21.9 mm of tail, less the loop
+// The panel's bay: the case and board layout are built around it, so a panel that
+// fits the bay (with its tape and a 0.25 mm gap each side) moves nothing else.
+bay_w = 56.0;     bay_l = 86.24;
 
 cell = [34, 50, 10];                                    // 103450 Li-ion, w x l x t
 cell_y = -16;                                           // cell centre (towards seat 1: wires end there)
@@ -36,13 +40,15 @@ cap_abxy_d = 6.0;  dpad_arm_l = 18;  dpad_arm_w = 6;    // ESTIMATE: DS Lite cap
 dome_h = 2.0;  flange_t = 0.8;  cap_proud = 1.2;        // ESTIMATE: silicone height, cap flange, cap above lid
 
 // ---------------- layout ----------------
-glass_side = 10.5;        // glass edge to long case edge: room for USB-C beside the glass
+glass_side = 9.7;         // panel bay edge to long case edge: room for USB-C beside the glass
 edge_margin = 4;          // case edge to silicone piece
 piece_to_glass = 5;       // silicone piece to glass edge
 wall = 2.0;  board_clear = 0.5;  corner_r = 8;
 
 // ---------------- stack (z) ----------------
-floor_t = 1.5;  cell_gap = 0.5;  pcb_t = 1.6;  glass_gap = 1.4;  lid_t = 1.5;
+floor_t = 1.5;  cell_gap = 0.5;  pcb_t = 1.6;  lid_t = 1.5;
+bay_t = 4.9;              // board top to lid underside: the panel and the air under it
+glass_gap = bay_t - panel_t;   // panel back above the board (the panel hangs from the lid on tape)
 lens_t = 1.0;             // acrylic cover lens, flush in the lid top
 z_board = floor_t + cell[2] + cell_gap;                 // board bottom
 z_top_cu = z_board + pcb_t;                             // board top: every height limit counts from here
@@ -52,10 +58,10 @@ case_h = z_lid + lid_t;
 retainer_z = z_top_cu + dome_h + flange_t;              // lid underside around the buttons
 
 // ---------------- derived ----------------
-case_w = panel_w + 2 * glass_side;
+case_w = bay_w + 2 * glass_side;
 cluster_spacing = case_w - piece_d - 2 * edge_margin;
 band = edge_margin + piece_d + piece_to_glass;
-case_l = panel_l + 2 * band;
+case_l = bay_l + 2 * band;
 inset = wall + board_clear;
 board_w = case_w - 2 * inset;
 board_l = case_l - 2 * inset;
@@ -83,7 +89,7 @@ seat2_names = ["P2 up", "P2 down", "P2 left", "P2 right", "P2 A", "P2 B", "P2 X"
 buttons = concat(seat1, [for (i = [0:7]) [str("SW", i + 9), seat2_names[i], rot180(seat1[i][2])]]);
 
 // screws: four beside the glass in the side bezels, two between each seat's clusters
-screw_x = panel_w / 2 + (board_w / 2 - panel_w / 2) / 2 + 0.2;
+screw_x = 31.4;           // midway between the bay and the board edge
 screws = [[screw_x, 36], [-screw_x, 36], [screw_x, -36], [-screw_x, -36], [0, seat_y], [0, -seat_y]];
 boss_d = 5.0;  hole_d = 2.2;
 
@@ -97,17 +103,19 @@ pin_pos = [[-(board_w / 2 - 4.0), 20.0], [-(board_w / 2 - 4.0), 12.0]];  // SW18
 swd_pos = [-(board_w / 2 - 3.5), -2.0];  uart_pos = [-(board_w / 2 - 3.5), -12.0];
 
 // the battery cable comes up through a slot next to its connector, between seat 1's clusters
-batt_conn = [0, -(panel_l / 2 + 8.6)];                  // J2 body centre
-slot = [[3.2, -(panel_l / 2 + 1.3)], [8.2, -(panel_l / 2 + 3.8)]];   // slot corners (x0,y0)-(x1,y1)
+batt_conn = [0, -(bay_l / 2 + 8.6)];                    // J2 body centre
+slot = [[3.2, -(bay_l / 2 + 1.3)], [8.2, -(bay_l / 2 + 3.8)]];       // slot corners (x0,y0)-(x1,y1)
 pocket = [9.4, 9.8];                                    // lid pocket over J2 (5.5 mm tall)
 
 // ---------------- checks ----------------
 assert(cluster_spacing >= piece_d + 2, "a seat's two silicone pieces would touch");
-assert(seat_y - piece_d / 2 >= panel_l / 2 + piece_to_glass - 1e-6, "cluster runs into the glass");
+assert(seat_y - piece_d / 2 >= bay_l / 2 + piece_to_glass - 1e-6, "cluster runs into the glass");
 assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs off the board");
-assert(abs(cell_y) + cell[1] / 2 <= panel_l / 2, "cell sticks out from under the glass");
-assert(spk_y + spk_d / 2 <= panel_l / 2 && spk_y - spk_d / 2 >= cell_y + cell[1] / 2 + 1, "speaker collides with the cell or leaves the glass area");
-assert(board_w / 2 - panel_w / 2 >= boss_d + 1, "no room for screw bosses beside the glass");
+assert(abs(cell_y) + cell[1] / 2 <= bay_l / 2, "cell sticks out from under the glass");
+assert(spk_y + spk_d / 2 <= bay_l / 2 && spk_y - spk_d / 2 >= cell_y + cell[1] / 2 + 1, "speaker collides with the cell or leaves the glass area");
+assert(screw_x - boss_d / 2 >= bay_w / 2 + 0.5 && screw_x + boss_d / 2 <= board_w / 2, "no room for screw bosses beside the glass");
+assert(panel_w + 0.4 <= bay_w && panel_l + 0.4 <= bay_l, "panel doesn't fit its bay");
+assert(glass_gap >= 1.0, "no room under the panel");
 assert(retainer_z < z_lid, "button retainer above the lid");
 for (s = screws) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "screw under a silicone piece");
 
@@ -119,7 +127,7 @@ echo(str("CASE ", case_w, " x ", case_l, " x ", case_h, " mm   board ", board_w,
 echo(str("JSON {",
   "\"board\": {\"w\": ", jnum(board_w), ", \"l\": ", jnum(board_l), ", \"r\": ", jnum(board_r), ", \"t\": ", pcb_t, "}, ",
   "\"slot\": [", jpt(slot[0]), ", ", jpt(slot[1]), "], ",
-  "\"glass\": [", jpt([-panel_w / 2, panel_l / 2]), ", ", jpt([panel_w / 2, -panel_l / 2]), "], ",
+  "\"glass\": [", jpt([-bay_w / 2, bay_l / 2]), ", ", jpt([bay_w / 2, -bay_l / 2]), "], ",
   "\"glass_limit\": ", glass_gap - 0.2, ", ",
   "\"bezel_limit\": ", z_lid - z_top_cu - 0.3, ", ",
   "\"retainer_limit\": ", retainer_z - z_top_cu - 0.3, ", ",

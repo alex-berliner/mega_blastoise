@@ -47,13 +47,17 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 ## 3. Display
 
 1. Drive LCD_RST low, then high; send the ST7796 init sequence over SPI0 at 20 MHz first.
-2. Read ID (0x04) back through LCD_MISO: expect the ST7796 ID bytes. If reads fail but
-   writes work, the panel's SPI mode (set inside the module; the RM bit in register 0xB0
-   picks SPI or RGB for pixel data) is the first suspect.
+2. Read ID (0x04) back through LCD_MISO: expect the ST7796 ID bytes. If nothing reads
+   back, look at the tail's joint first (a bridge or an open contact on J3), then at the
+   interface pins: IM2-0 (J3 pins 39-41) must be high for 4-line SPI.
 3. Fill red, green, blue, white; check pixel order (RGB or BGR bit in 0x36) and rotation.
 4. Raise SPI to 62.5 MHz; watch for corruption at the far edge of the panel.
-5. Backlight: PWM on GPIO35 at 20 kHz, 100% duty. The voltage across R30 should read
-   0.20 V (56 mA through the LEDs). At 0% duty the TPS61160 shuts down.
+5. Backlight: drive GPIO35 (BL_SDI) high, send 10 low pulses (1 us low, 1 us high), wait
+   300 us, then 6 pulses and another 300 us: current level 6, 15 mA per LED. All six LEDs
+   should light evenly; the AP3156's VOUT (C32) sits a few hundred mV above the LEDs'
+   forward voltage. Hold GPIO35 low for 300 us and the backlight goes off.
+6. Tearing effect: enable it on the panel (TEON, 0x35) and watch GPIO32: one pulse per
+   frame, about 60 Hz.
 
 ## 4. Audio
 

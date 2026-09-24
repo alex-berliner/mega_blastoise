@@ -29,7 +29,8 @@ ROLE = {
     "CHG_EN2": "output: charger input limit, see below (pulled down by R7 until driven)",
     "LCD_DC": "display data/command",
     "LCD_RST": "display reset, active low",
-    "BL_PWM": "PWM to the TPS61160 CTRL pin: backlight on/off and dimming, 5 to 100 kHz",
+    "LCD_TE": "input: the panel's tearing-effect signal (enable with TEON); start a frame on its edge",
+    "BL_SDI": "output to the AP3156 SDI (1-wire): backlight current in 32 steps, see below; low > 256 us = off",
     "LCD_MISO": "SPI0 RX (panel readback, optional)",
     "LCD_CS": "SPI0 CSn (or drive as a GPIO)",
     "LCD_SCK_MCU": "SPI0 SCK, 33 ohm source termination R28",
@@ -68,8 +69,6 @@ def main():
             use = f"membrane contact {BUTTON_POS[net]}, input with pull-up, low = pressed"
         else:
             use = ROLE.get(net, "")
-        if net == "BL_PWM":
-            use += f" ({pwm_slice(g)})"
         lines.append(f"| {g} | `{net}` | {use} |")
     lines += [
         "",
@@ -86,9 +85,19 @@ def main():
         "- Turning off: firmware sets PWR_HOLD low; power drops when the button is released.",
         "  Watch PWR_BTN_N for a long press, then drop PWR_HOLD.",
         "- With USB plugged in the 3V3 rail stays up whatever PWR_HOLD does, so the firmware runs",
-        "  while charging: show a charging screen, turn the backlight off (BL_PWM low) and sleep.",
+        "  while charging: show a charging screen, turn the backlight off (BL_SDI low) and sleep.",
         "- A reset or crash releases PWR_HOLD (GPIOs float, pulled low), so the device turns off",
         "  unless USB is connected.",
+        "",
+        "## Backlight (AP3156 on BL_SDI)",
+        "",
+        "SDI idles high. A command is a burst of low pulses (each low 0.3 to 50 us, high 0.05 to",
+        "50 us), ended by holding SDI high for more than 256 us; holding it low for more than 256 us",
+        "shuts the driver down, and the next rising edge wakes it. Brightness takes two bursts:",
+        "10 pulses (all six channels), then N pulses for current level N: 1 = 20 mA per LED (the",
+        "panel's maximum), 6 = 15 mA (its typical rating), down to 31 = 3.6 mA; 32 = off; about",
+        "0.5 dB a step. The driver starts at 0 mA and R31 holds SDI low, so the backlight stays off",
+        "until firmware sets a level. Command table: AP3156 datasheet, Serial Digital Interface.",
         "",
         "## Charger input limit (BQ24074 EN2, EN1)",
         "",

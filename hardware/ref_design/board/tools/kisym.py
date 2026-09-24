@@ -9,6 +9,9 @@ import os
 import re
 
 SYSLIB = "/usr/share/kicad/symbols"
+# the project's own symbol library (tools/sym_lib.py), as the project's sym-lib-table names it
+PROJECT_LIBS = {"battler": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                        "lib", "battler.kicad_sym")}
 
 
 def parse(text):
@@ -41,7 +44,7 @@ def find(n, key):
 def pins(lib_id, extra_libs=None):
     """{pin_number: dict(name, x, y, angle, length, type)} in library coords (Y up), unit 1."""
     nick, name = lib_id.split(":")
-    path = (extra_libs or {}).get(nick) or os.path.join(SYSLIB, nick + ".kicad_sym")
+    path = (extra_libs or PROJECT_LIBS).get(nick) or os.path.join(SYSLIB, nick + ".kicad_sym")
     lib = library(path)
     sym = lib[name]
     ext = find(sym, "extends")
