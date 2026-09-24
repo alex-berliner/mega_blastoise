@@ -7,7 +7,7 @@
 - every visible reference is tried beside its part (above, below, left,
   right) until it clears pads, holes, the board edge and other references;
   one that finds no clear spot is hidden
-- labels: board name and revision, connector names and the battery polarity
+- labels: board name and revision (back), test pad names, connector names\n  and the battery's + pin
 Run after routing; it only touches silkscreen text.
 """
 import os
@@ -92,26 +92,47 @@ def main():
         shown += placed
         hidden += not placed
     # labels
-    def text(s, x, y, layer=pcbnew.F_SilkS, h=1.0, mirrored=False):
+    clashes = []
+
+    def text(s, x, y, layer=pcbnew.F_SilkS, h=0.8):
         t = pcbnew.PCB_TEXT(board)
         t.SetText(s)
         t.SetPosition(V(x, y))
         t.SetLayer(layer)
         t.SetTextSize(V(h, h))
         t.SetTextThickness(mm(0.15 if h < 1.2 else 0.2))
-        t.SetMirrored(mirrored)
+        t.SetMirrored(layer == pcbnew.B_SilkS)
         board.Add(t)
-    text("TWO-PLAYER HANDHELD  REF-A", 100, 170.5, h=1.2)
-    text("REV 2026-09-24", 100, 172.4, h=0.8)
-    text("REF-A  4L 1.6mm ENIG", 100, 168.0, layer=pcbnew.B_SilkS, h=1.0, mirrored=True)
-    text("TP1 VBUS  TP2 VSYS  TP3 VBAT  TP4 3V3  TP5 GND", 100, 56.0, layer=pcbnew.B_SilkS, h=0.8, mirrored=True)
-    text("SPEAKER", 100, 60.2, layer=pcbnew.B_SilkS, h=0.8, mirrored=True)
-    x, y = CASE["batt_conn"]
-    text("BATT +", x - 5.6, y + 3.4, h=0.8)
-    text("SWD", CASE["swd"][0] + 2.9, CASE["swd"][1], h=0.8)
-    text("UART", CASE["uart"][0] + 3.1, CASE["uart"][1], h=0.8)
-    text("BOOT", CASE["pinholes"][0][0] + 3.0, CASE["pinholes"][0][1], h=0.8)
-    text("RESET", CASE["pinholes"][1][0] + 3.2, CASE["pinholes"][1][1], h=0.8)
+        b = box(t, 0.05)
+        if any(overlap(b, o) for o in obstacles[layer]):
+            clashes.append(s)
+        obstacles[layer].append(b)
+
+    # the board's name, revision and build on the back, over the cell
+    back = pcbnew.B_SilkS
+    text("TWO-PLAYER HANDHELD  REF-A", 100, 116.0, back, h=1.2)
+    text("REV 2026-09-24", 100, 118.2, back)
+    text("4 LAYERS  1.6 MM  ENIG", 100, 119.8, back)
+    # test pads (back, above the speaker pads), one name under each
+    for i, name in enumerate(["VBUS", "VSYS", "VBAT", "3V3", "GND"]):
+        tp = board.FindFootprintByReference(f"TP{i + 1}")
+        x, y = pcbnew.ToMM(tp.GetPosition().x), pcbnew.ToMM(tp.GetPosition().y)
+        text(name, x, y + 1.6, back)
+    j4 = board.FindFootprintByReference("J4")
+    text("SPEAKER", pcbnew.ToMM(j4.GetPosition().x), pcbnew.ToMM(j4.GetPosition().y) + 2.7, back)
+    # front: connectors and buttons people solder to or press during bring-up
+    j2 = board.FindFootprintByReference("J2")
+    p1 = next(p for p in j2.Pads() if p.GetNumber() == "1")
+    b1 = box(p1)
+    text("+", pcbnew.ToMM(p1.GetPosition().x), b1[3] + 0.9, h=1.0)
+    jb = box(j2)
+    text("BATT", jb[0] - 2.4, (jb[1] + jb[3]) / 2)
+    text("SWD", CASE["swd"][0] + 2.9, CASE["swd"][1])
+    text("UART", CASE["uart"][0] + 3.1, CASE["uart"][1])
+    text("BOOT", CASE["pinholes"][0][0] + 3.0, CASE["pinholes"][0][1])
+    text("RESET", CASE["pinholes"][1][0] + 3.2, CASE["pinholes"][1][1])
+    if clashes:
+        print("labels over pads or other text:", clashes)
     pcbnew.SaveBoard(PCB, board)
     print(f"references shown {shown}, hidden {hidden}")
 

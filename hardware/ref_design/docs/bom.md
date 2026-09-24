@@ -10,7 +10,7 @@ prices it from the JLCPCB parts snapshot used for this design (July 2026):
 |---|---|
 | unique part numbers | 46 (19 extended, 27 basic or preferred) |
 | placements per board | 94 |
-| parts per board | about $9.40 |
+| parts per board | about $9.37 |
 | extended-part setup (JLC charges once per part number per order) | about $57 per order |
 
 The five priciest parts are the flash ($2.18), BQ24074 ($1.28), MAX98357A ($1.15),
@@ -44,6 +44,8 @@ resistor to two basic resistors in parallel, the NTC to a basic 10k B3950).
 | Light pipe, 2 mm clear acrylic rod, 5.5 mm | 2 | $0.10 | |
 | Double-sided tape for the panel, foam pad under the cell | | $0.50 | |
 
-Board fabrication (4 layers, ENIG, 70 x 151 mm) and JLC's assembly fees come on
-top of the parts. For a handful of prototypes, budget roughly $30-40 per finished
-unit beyond the board order itself, most of it the panel.
+Off the board, one unit comes to about $57-95: the panel and a service-printed
+case are most of it (about $42-65 with the case printed at home). With the board's
+parts (about $15 a board at 10, setup fees included) that is roughly $72-110 per
+finished unit, before the bare boards (4 layers, ENIG, 70 x 151 mm) and JLC's
+per-order assembly fees.

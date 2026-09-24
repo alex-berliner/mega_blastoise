@@ -36,6 +36,23 @@ NO_ASSEMBLY = ("SW1", "SW2", "SW3", "SW4", "SW5", "SW6", "SW7", "SW8", "SW9", "S
                "H1", "H2", "H3", "H4", "H5", "H6", "FID1", "FID2", "FID3")
 
 
+CLASSES = {
+    # widths must still leave 0.4-0.5 mm pitch pads (QFNs, the FPC connector) cleanly;
+    # GND and 3V3 reach their planes through short stubs, so they keep the default
+    "PWR": dict(track=0.3, clear=0.15, via=0.6, drill=0.3,
+                nets=["VSYS", "VBAT", "VBUS", "/Power/BB_L1", "/Power/BB_L2",
+                      "/Display/BL_SW", "/Display/LED_A", "/Display/LED_K", "/Audio/SPK_P", "/Audio/SPK_N",
+                      "/Audio/SPK_P_AMP", "/Audio/SPK_N_AMP"]),
+    "USB": dict(track=0.2, clear=0.15, via=0.5, drill=0.25,
+                nets=["USB_DP", "USB_DM", "/MCU/USB_DP_MCU", "/MCU/USB_DM_MCU"]),
+}
+DEFAULT_CLASS = dict(track=0.15, clear=0.15, via=0.5, drill=0.25)
+
+
+def net_class(net):
+    return next((c for c in CLASSES.values() if net in c["nets"]), DEFAULT_CLASS)
+
+
 def mm(v):
     return pcbnew.FromMM(v)
 
@@ -89,21 +106,11 @@ def setup(board):
     ns.ClearNetclassPatternAssignments()
     ns.ClearNetclasses()
     dflt = ns.GetDefaultNetclass()
-    dflt.SetClearance(mm(0.15))
-    dflt.SetTrackWidth(mm(0.15))
-    dflt.SetViaDiameter(mm(0.5))
-    dflt.SetViaDrill(mm(0.25))
-    classes = {
-        # widths must still leave 0.4-0.5 mm pitch pads (QFNs, the FPC connector) cleanly;
-        # GND and 3V3 reach their planes through short stubs, so they keep the default
-        "PWR": dict(track=0.3, clear=0.15, via=0.6, drill=0.3,
-                    nets=["VSYS", "VBAT", "VBUS", "/Power/BB_L1", "/Power/BB_L2",
-                          "/Display/BL_SW", "/Display/LED_A", "/Display/LED_K", "/Audio/SPK_P", "/Audio/SPK_N",
-                          "/Audio/SPK_P_AMP", "/Audio/SPK_N_AMP"]),
-        "USB": dict(track=0.2, clear=0.15, via=0.5, drill=0.25,
-                    nets=["USB_DP", "USB_DM", "/MCU/USB_DP_MCU", "/MCU/USB_DM_MCU"]),
-    }
-    for name, c in classes.items():
+    dflt.SetClearance(mm(DEFAULT_CLASS["clear"]))
+    dflt.SetTrackWidth(mm(DEFAULT_CLASS["track"]))
+    dflt.SetViaDiameter(mm(DEFAULT_CLASS["via"]))
+    dflt.SetViaDrill(mm(DEFAULT_CLASS["drill"]))
+    for name, c in CLASSES.items():
         nc = pcbnew.NETCLASS(name)
         nc.SetTrackWidth(mm(c["track"]))
         nc.SetClearance(mm(c["clear"]))
@@ -112,7 +119,7 @@ def setup(board):
         ns.SetNetclass(name, nc)
         for n in c["nets"]:
             ns.SetNetclassPatternAssignment(n, name)
-    return classes
+    return CLASSES
 
 
 def arc(board, c, r, a0, a1):
@@ -211,15 +218,17 @@ def copy_core(board, fps, netinfo):
             if cands:
                 tx, ty = core_xy(*key)
                 pad_map[key] = min(cands, key=lambda c: (c[0] - tx) ** 2 + (c[1] - ty) ** 2)
-    # pads of reference parts we don't copy: routing that touches them stays behind
+    # pads of reference parts we don't copy: routing that touches them on their layer stays
+    # behind (the reference has a second flash/PSRAM footprint on the back, under the first)
     foreign = []
     for f in ref.GetFootprints():
         if f.GetReference() in CORE:
             continue
         for p in f.Pads():
             bb = p.GetBoundingBox()
-            foreign.append((pcbnew.ToMM(bb.GetX()), pcbnew.ToMM(bb.GetY()),
-                            pcbnew.ToMM(bb.GetRight()), pcbnew.ToMM(bb.GetBottom())))
+            layers = {l for l in (pcbnew.F_Cu, pcbnew.B_Cu) if p.IsOnLayer(l)}
+            foreign.append(((pcbnew.ToMM(bb.GetX()), pcbnew.ToMM(bb.GetY()),
+                             pcbnew.ToMM(bb.GetRight()), pcbnew.ToMM(bb.GetBottom())), layers))
     core_box = (86.0, 79.0, 114.5, 117.5)
 
     def inside(pt, box):
@@ -232,13 +241,13 @@ def copy_core(board, fps, netinfo):
             continue
         if t.GetClass() == "PCB_VIA":
             p = xy(t.GetPosition())
-            if inside(p, core_box) and not any(inside(p, b) for b in foreign):
+            if inside(p, core_box) and not any(inside(p, b) for b, _ in foreign):
                 items.append(("via", net, p, None, pcbnew.ToMM(t.GetWidth(pcbnew.F_Cu)), pcbnew.ToMM(t.GetDrillValue())))
             continue
         s, e = xy(t.GetStart()), xy(t.GetEnd())
         if not (inside(s, core_box) and inside(e, core_box)):
             continue
-        if any(inside(s, b) or inside(e, b) for b in foreign):
+        if any((inside(s, b) or inside(e, b)) and t.GetLayer() in layers for b, layers in foreign):
             continue
         items.append(("track", net, s, e, pcbnew.ToMM(t.GetWidth()), t.GetLayer()))
 
@@ -265,6 +274,31 @@ def copy_core(board, fps, netinfo):
              if it[0] == "via" or not hits_foreign_pad(it[1], land(it[2]), land(it[3]), it[4], it[5])]
     dropped = before - len(items)
 
+    # Raspberry Pi's board has two layers: a 3V3 pour on top, GND underneath. Routing
+    # that ends in those pours is meant to (the 3V3 pins' short stubs into the pour
+    # under the chip); route.py pours 3V3 over the core on top and GND underneath.
+    placed = [fps[o].GetBoundingBox(False) for o in CORE.values()]
+    pour = (min(pcbnew.ToMM(b.GetX()) for b in placed) - 0.8, min(pcbnew.ToMM(b.GetY()) for b in placed) - 0.8,
+            max(pcbnew.ToMM(b.GetRight()) for b in placed) + 0.8, max(pcbnew.ToMM(b.GetBottom()) for b in placed) + 0.8)
+
+    def in_pour(it, pt):
+        if it[0] != "track":
+            return False
+        if it[1] == "GND" and it[5] == pcbnew.B_Cu:
+            return True
+        return it[1] == "+3V3" and it[5] == pcbnew.F_Cu and inside(land(pt), pour)
+
+    def copied_zone(z):
+        bb = z.GetBoundingBox()
+        c = (pcbnew.ToMM(bb.GetCenter().x), pcbnew.ToMM(bb.GetCenter().y))
+        return pcbnew.ToMM(bb.GetWidth()) <= 13 and pcbnew.ToMM(bb.GetHeight()) <= 13 and inside(c, core_box)
+    small_zones = [z for z in (ref.GetArea(i) for i in range(ref.GetAreaCount()))
+                   if not z.GetIsRuleArea() and z.GetNetname() in CORE_NETS and copied_zone(z)]
+
+    def zone_layers(net, pt):
+        return {l for z in small_zones if CORE_NETS[z.GetNetname()] == net
+                for l in (pcbnew.F_Cu, pcbnew.B_Cu) if z.IsOnLayer(l) and z.Outline().Contains(V(*pt))}
+
     # drop routing left dangling by what we didn't copy (repeat until stable)
     def anchored(pt, skip):
         k = tuple(round(v, 3) for v in pt)
@@ -289,12 +323,14 @@ def copy_core(board, fps, netinfo):
             it = items[i]
             ends = [it[2]] if it[0] == "via" else [it[2], it[3]]
             if it[0] == "via":
-                # a via needs something on it
-                if not any(j != i and o[0] == "track" and (math.dist(o[2], it[2]) < 0.01 or math.dist(o[3], it[2]) < 0.01)
-                           for j, o in enumerate(items)) and it[1] != "GND":
+                # a via must lead somewhere: tracks on both sides (GND and 3V3 vias join the planes here)
+                sides = {o[5] for j, o in enumerate(items) if j != i and o[0] == "track"
+                         and (math.dist(o[2], it[2]) < 0.01 or math.dist(o[3], it[2]) < 0.01)}
+                sides |= zone_layers(it[1], it[2])
+                if len(sides) < 2 and it[1] not in ("GND", "+3V3"):
                     items.pop(i); changed = True
                 continue
-            if not all(anchored(pt, i) for pt in ends):
+            if not all(anchored(pt, i) or in_pour(it, pt) for pt in ends):
                 items.pop(i); changed = True
 
     n_t = n_v = 0
@@ -324,10 +360,7 @@ def copy_core(board, fps, netinfo):
     n_z = 0
     for i in range(ref.GetAreaCount()):
         z = ref.GetArea(i)
-        bb = z.GetBoundingBox()
-        w, h = pcbnew.ToMM(bb.GetWidth()), pcbnew.ToMM(bb.GetHeight())
-        c = (pcbnew.ToMM(bb.GetCenter().x), pcbnew.ToMM(bb.GetCenter().y))
-        if w > 13 or h > 13 or not inside(c, core_box):
+        if not copied_zone(z):
             continue
         if not z.GetIsRuleArea() and z.GetNetname() not in CORE_NETS:
             continue

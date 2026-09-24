@@ -39,6 +39,10 @@ Case 75.4 x 156.2 x 20.0 mm. Board 70.4 x 151.2 mm, 4 layers, 1.6 mm, ENIG.
 - TPS63001 buck-boost: 3.3 V from a cell anywhere between 3.0 and 4.4 V
   (buck, boost or pass-through), 1.8 A switch limit, power-save mode on.
   Load: RP2350B up to ~50 mA, panel logic ~10 mA, flash, LEDs: under 100 mA.
+- Its layout isn't left to the autorouter: `board/tools/route.py` draws the power
+  loop on the top layer the way TI's layout guidance asks (input capacitor on VIN,
+  both switch pins straight onto the inductor, output capacitors on VOUT, the GND
+  and PS pins into the PowerPAD's vias, FB on VOUT, VINA's RC on its pin).
 - PWR_EN = (button) OR (PWR_HOLD from the MCU) OR (VBUS through 10k and a diode).
   All three through Schottky diodes so none back-feeds another; 100k pull-down.
   EN's absolute maximum is 7 V independent of VIN, so the USB path is safe
@@ -57,9 +61,18 @@ Case 75.4 x 156.2 x 20.0 mm. Board 70.4 x 151.2 mm, 4 layers, 1.6 mm, ENIG.
   design (MIT), turned 90 degrees. Its routing, vias and the small copper areas
   around the internal 1.1 V switcher are copied too (`board/tools/build_pcb.py`),
   so the most layout-sensitive part of the board is Raspberry Pi's, not mine.
+- The copy keeps what that layout depends on: the core's 0402 parts use Raspberry
+  Pi's own land patterns (the switcher's LX copper runs between the pads of C24
+  and C25, which KiCad's larger pads would cut), and inside the chip's pin ring the
+  top layer is a 3V3 pour joined by short stubs from the 3V3 pins, as on their
+  board. Their board has two layers and reaches every pin from outside the ring;
+  on this one a few crowded pins drop to the bottom layer through vias in that
+  band instead, which the pour flows around. The 1.1 V ring around the centre
+  pad stays untouched.
 - Flash: W25Q128JVP in WSON (0.8 mm) instead of the reference's SOIC (1.75 mm),
-  because it sits under the panel. Its exposed pad forced one copied QSPI track
-  to be re-routed.
+  because it sits under the panel. Its exposed pad sits where Raspberry Pi's SD2
+  track reached its pin, so that one line is routed anew (`board/tools/maze.py`);
+  the other five QSPI lines are theirs.
 - 12 MHz ABM8 crystal with 15 pF loads and 1k series, as in the reference.
 - Debug: SWD and UART on JST SH 3-pin in the Raspberry Pi Debug Probe pinout;
   BOOTSEL and RESET buttons under pinholes; a red LED for firmware errors.

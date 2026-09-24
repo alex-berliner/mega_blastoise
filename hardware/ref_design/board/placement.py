@@ -106,14 +106,15 @@ put("R10", 124.2, 109.6, 90)
 put("J2", CASE["batt_conn"][0], CASE["batt_conn"][1] + 0.6, 180)
 put("RT1", 110.0, 128.0, 0)                 # over the cell, away from the charger's heat
 
-# 3V3 buck-boost: right bezel
-put("U3", 131.2, 124.2, 0)
-put("L1", 131.2, 128.6, 0)
-put("R12", 128.0, 121.4, 90)
-put("C4", 128.0, 124.0, 90)
-put("C5", 134.0, 121.6, 90)
-put("C6", 128.0, 127.4, 90)
-put("C7", 133.6, 131.6, 90)
+# 3V3 buck-boost: right bezel. Power pins face down onto the inductor, VINA/EN/PS/FB up;
+# input cap on the VIN side, output caps on the VOUT side (route.py draws the loop)
+put("U3", 131.2, 123.8, 90)
+put("L1", 131.2, 127.3, 180)
+put("C5", 133.9, 126.2, 270)
+put("C6", 128.3, 125.0, 270)
+put("C7", 128.3, 128.0, 270)
+put("R12", 130.0, 121.2, 0)
+put("C4", 132.4, 121.2, 0)
 
 # power switch latch: right bezel above the button
 put("SW17", CASE["pwr"]["plunger_x"] - 2.04, CASE["pwr"]["y"], 90)

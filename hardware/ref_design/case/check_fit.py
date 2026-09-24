@@ -19,7 +19,6 @@ against the tub's bosses and ribs. A whole-board CGAL intersection in
 OpenSCAD would be exact but takes hours on these models; boxes are enough for
 parts this blocky.
 """
-import concurrent.futures as cf
 import json
 import math
 import os
@@ -47,17 +46,31 @@ def stl_points(path):
     return pts
 
 
+# Parts whose 3D model doesn't show their fitted height, and packages whose model
+# this KiCad install lacks: height above the board in mm
+KNOWN_HEIGHT = {
+    "J3": 0.9,     # Hirose FH35C closed; the vendor model shows the lock open (1.8)
+}
+PACKAGE_HEIGHT = {"QFN": 1.0, "SON": 1.0, "DRC0010J": 1.0, "SOT-23": 1.2, "SOD-323": 1.1, "0402": 0.5, "0603": 0.9,
+                  "1008": 1.2, "0806": 1.0}
+
+
 def refs():
     import pcbnew
     b = pcbnew.LoadBoard(PCB)
     out = []
     for fp in b.GetFootprints():
-        if len(fp.Models()) and fp.Models()[0].m_Show:
-            out.append((fp.GetReference(), fp.IsFlipped()))
+        name = str(fp.GetFPID().GetLibItemName())
+        if any(s in name for s in ("MountingHole", "Fiducial", "TestPoint", "DSL_button", "Speaker_Wire")):
+            continue                                  # flat copper, nothing to collide
+        cy = fp.GetCourtyard(pcbnew.B_CrtYd if fp.IsFlipped() else pcbnew.F_CrtYd).BBox()
+        court = (pcbnew.ToMM(cy.GetX()), pcbnew.ToMM(cy.GetY()), pcbnew.ToMM(cy.GetRight()), pcbnew.ToMM(cy.GetBottom()))
+        out.append((fp.GetReference(), fp.IsFlipped(), str(fp.GetFPID().GetLibItemName()), court))
     return out
 
 
 def extent(ref, tmp):
+    # one at a time: parallel kicad-cli exports clobber each other's temporary files
     out = os.path.join(tmp, ref + ".stl")
     r = subprocess.run(["kicad-cli", "pcb", "export", "stl", "--no-board-body", "--force", "--subst-models",
                         "--component-filter", ref, "-o", out, PCB], capture_output=True, text=True)
@@ -85,10 +98,19 @@ def near_circle(box, c, r):
 
 def main():
     parts = refs()
-    with tempfile.TemporaryDirectory() as tmp, cf.ThreadPoolExecutor(8) as ex:
-        boxes = dict(ex.map(lambda r: extent(r[0], tmp), parts))
-    flipped = dict(parts)
+    with tempfile.TemporaryDirectory() as tmp:
+        boxes = {r[0]: extent(r[0], tmp)[1] for r in parts}
+    flipped = {r[0]: r[1] for r in parts}
     problems, notes = [], []
+    for ref, _, name, court in parts:
+        if ref in KNOWN_HEIGHT and boxes.get(ref):
+            b = boxes[ref]
+            boxes[ref] = (b[0], b[1], b[2], b[3], 0.0, KNOWN_HEIGHT[ref])
+            notes.append(f"{ref}: checked at {KNOWN_HEIGHT[ref]} mm (its model shows the lock open)")
+        if boxes.get(ref) is None:
+            h = next((v for k, v in PACKAGE_HEIGHT.items() if k in name), 1.5)
+            boxes[ref] = (court[0], court[1], court[2], court[3], 0.0, h)
+            notes.append(f"{ref}: no 3D model in this KiCad install, checked as its courtyard at {h} mm ({name})")
     glass = POS["glass"]
     for ref, box in sorted(boxes.items()):
         if box is None:
@@ -128,7 +150,7 @@ def main():
     if pwr and pwr[2] < POS["pwr"]["plunger_x"] - 0.3:
         problems.append(f"power plunger ends at x={pwr[2]:.2f}, short of the board edge {POS['pwr']['plunger_x']:.2f}")
     report = ["Board-in-case check (part boxes against case/positions.json)", ""]
-    report += [f"checked {sum(1 for b in boxes.values() if b)} parts with 3D models"]
+    report += [f"checked {sum(1 for b in boxes.values() if b)} parts"]
     report += [f"  PROBLEM: {p}" for p in problems] or ["  no collisions"]
     report += [f"  note: {n}" for n in notes]
     report.append("RESULT: " + ("PASS" if not problems else f"FAIL ({len(problems)})"))

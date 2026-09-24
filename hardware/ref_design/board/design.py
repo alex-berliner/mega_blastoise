@@ -15,6 +15,8 @@ Net naming:
 Footprints in battler: are KiCad's own where possible, copied into the
 project library only to carry a 3D model this KiCad install lacks (the
 connectors and switches) or a land-pattern change noted in its description.
+The RP2350B core's 0402 passives use Raspberry Pi's own pads
+(tools/lib_from_ref.py): the core's copied tracks and zones were drawn around them.
 
 Symbols are always root symbols. Konnect writes a derived symbol (one that
 "extends" another in KiCad's library) without flattening it, and KiCad then
@@ -49,6 +51,9 @@ R0402 = "Resistor_SMD:R_0402_1005Metric"
 R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0402 = "Capacitor_SMD:C_0402_1005Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
+C0402_RPI = "battler:C_0402_1005Metric_RPi"          # the copied core's passives
+C0402_RPI_WIDE = "battler:C_0402_1005Metric_RPi_Wide"  # VREG_LX copper runs between these pads
+R0402_RPI = "battler:R_0402_1005Metric_RPi"
 
 RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "0": ("C17168", "0402WGF0000TCE"),
@@ -76,14 +81,14 @@ CAP = {  # value: (lcsc, mpn, footprint)
 }
 
 
-def R(ref, sheet, value, a, b, rot=0):
+def R(ref, sheet, value, a, b, rot=0, fp=R0402):
     lcsc, mpn = RES[value]
-    part(ref, sheet, "Device:R", value, R0402, {"1": a, "2": b}, lcsc, mpn, "UNI-ROYAL", rot)
+    part(ref, sheet, "Device:R", value, fp, {"1": a, "2": b}, lcsc, mpn, "UNI-ROYAL", rot)
 
 
-def C(ref, sheet, value, a, b="GND", rot=0):
-    lcsc, mpn, fp = CAP[value]
-    part(ref, sheet, "Device:C", value.split()[0], fp, {"1": a, "2": b}, lcsc, mpn,
+def C(ref, sheet, value, a, b="GND", rot=0, fp=None):
+    lcsc, mpn, size = CAP[value]
+    part(ref, sheet, "Device:C", value.split()[0], fp or size, {"1": a, "2": b}, lcsc, mpn,
          "FH" if mpn.startswith("0402CG") else "Samsung", rot)
 
 
@@ -198,29 +203,29 @@ part("U4", S, "MCU_RaspberryPi:RP2350B", "RP2350B", "battler:RP2350B_QFN80_RPi",
      "C42415655", "RP2350B", "Raspberry Pi")
 P = "mcu_power.kicad_sch"                         # the RP2350B's supply: decoupling + 1V1 switcher
 for i in range(10):                              # IOVDD, ADC, VREG_VIN, OTP, QSPI decoupling
-    C(f"C{10 + i}", P, "100n", "+3V3")
+    C(f"C{10 + i}", P, "100n", "+3V3", fp=C0402_RPI)
 for i in range(3):                               # DVDD
-    C(f"C{20 + i}", P, "100n", "+1V1")
+    C(f"C{20 + i}", P, "100n", "+1V1", fp=C0402_RPI)
 C("C23", P, "10u", "+3V3")
-C("C24", P, "4.7u 0402", "+3V3")                 # VREG_VIN
-C("C25", P, "4.7u 0402", "+1V1")                 # VREG output
-C("C26", P, "4.7u 0402", "VREG_AVDD")
-R("R19", P, "33", "+3V3", "VREG_AVDD")
+C("C24", P, "4.7u 0402", "+3V3", fp=C0402_RPI_WIDE)     # VREG_VIN
+C("C25", P, "4.7u 0402", "+1V1", fp=C0402_RPI_WIDE)     # VREG output
+C("C26", P, "4.7u 0402", "VREG_AVDD", fp=C0402_RPI)
+R("R19", P, "33", "+3V3", "VREG_AVDD", fp=R0402_RPI)
 part("L2", P, "Device:L", "3.3u", "battler:AOTA-B201610S3R3-101-T", {"1": "+1V1", "2": "VREG_LX"},
      "C42411119", "AOTA-B201610S3R3-101-T", "Abracon")
 part("X1", S, "Device:Crystal_GND24", "12MHz", "battler:ABM8-272-T3",
      {"1": "XIN", "3": "XO", "2": "GND", "4": "GND"}, "C20625731", "ABM8-272-T3", "Abracon")
-C("C27", S, "15p", "XIN")
-C("C28", S, "15p", "XO")
-R("R20", S, "1k", "XOUT", "XO")
-R("R21", S, "27", "USB_DP", "USB_DP_MCU")
-R("R22", S, "27", "USB_DM", "USB_DM_MCU")
+C("C27", S, "15p", "XIN", fp=C0402_RPI)
+C("C28", S, "15p", "XO", fp=C0402_RPI)
+R("R20", S, "1k", "XOUT", "XO", fp=R0402_RPI)
+R("R21", S, "27", "USB_DP", "USB_DP_MCU", fp=R0402_RPI)
+R("R22", S, "27", "USB_DM", "USB_DM_MCU", fp=R0402_RPI)
 part("U5", S, "Memory_Flash:W25Q32JVZP", "W25Q128JVPIQ", "Package_SON:WSON-8-1EP_6x5mm_P1.27mm_EP3.4x4.3mm",
      {"1": "FLASH_SS", "2": "QSPI_SD1", "3": "QSPI_SD2", "4": "GND", "5": "QSPI_SD0", "6": "QSPI_SCLK",
       "7": "QSPI_SD3", "8": "+3V3", "9": "GND"}, "C190862", "W25Q128JVPIQ", "Winbond")
-R("R23", S, "10k", "+3V3", "FLASH_SS")
-R("R24", S, "0", "QSPI_SS", "FLASH_SS")
-R("R25", "debug.kicad_sch", "1k", "QSPI_SS", "BOOTSEL")
+R("R23", S, "10k", "+3V3", "FLASH_SS", fp=R0402_RPI)
+R("R24", S, "0", "QSPI_SS", "FLASH_SS", fp=R0402_RPI)
+R("R25", "debug.kicad_sch", "1k", "QSPI_SS", "BOOTSEL", fp=R0402_RPI)
 part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOTSEL", "battler:SW_SPST_TS-1088-xR020",
      {"1": "BOOTSEL", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
 R("R26", "debug.kicad_sch", "1k", "RUN", "RUN_SW")

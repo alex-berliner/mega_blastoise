@@ -48,7 +48,7 @@ python3 tools/build_sch.py                   # design.py -> schematic (through K
 python3 tools/check_netlist.py               # KiCad's netlist == design.py ?
 kicad-cli sch erc battler.kicad_sch          # 0 errors expected
 RP2350B_REF=.../RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb python3 tools/build_pcb.py
-FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py
+FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # ~20 min
 python3 tools/silk.py
 python3 tools/check_pcb.py                   # DRC with schematic parity
 python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders
@@ -58,7 +58,8 @@ python3 tools/pinmap.py                      # docs/pinmap.md
 
 Needs KiCad 10 (kicad-cli and its `pcbnew` Python module), OpenSCAD, Java,
 Freerouting 1.9.0, Konnect, and Raspberry Pi's RP2350B minimal KiCad design
-(document RP-010329-CA) for the core layout.
+(document RP-010329-CA) for the core layout. `tools/lib_from_ref.py` rebuilds
+the core's land patterns in `lib/` from that design; they are already there.
 
 ## Status
 
