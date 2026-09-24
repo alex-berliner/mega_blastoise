@@ -11,3 +11,7 @@ board/fp-info-cache
 board/~*.lck
 board/_autosave-*
 board/#auto_saved_files#
+# routing scratch (the session itself, last_route.ses, is kept for --reuse)
+board/tools/freerouting.log
+board/tools/last_route.dsn
+board/_repair.*

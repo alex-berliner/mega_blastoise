@@ -12,6 +12,10 @@ Net naming:
   Nets used on one sheet only become local labels (KiCad prefixes /sheet/).
   None means "no connect": the pin gets an X.
 
+Footprints in battler: are KiCad's own where possible, copied into the
+project library only to carry a 3D model this KiCad install lacks (the
+connectors and switches) or a land-pattern change noted in its description.
+
 Symbols are always root symbols. Konnect writes a derived symbol (one that
 "extends" another in KiCad's library) without flattening it, and KiCad then
 reads it with no pins. So USBLC6-2SC6, TPS63001, 2N7002 and W25Q128JVP are
@@ -88,7 +92,7 @@ def C(ref, sheet, value, a, b="GND", rot=0):
 # =================================================================================
 S = "usb_charger.kicad_sch"
 part("J1", S, "Connector:USB_C_Receptacle_USB2.0_16P", "TYPE-C-31-M-12",
-     "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12",
+     "battler:USB_C_Receptacle_HRO_TYPE-C-31-M-12",
      {"A1": "GND", "A12": "GND", "B1": "GND", "B12": "GND", "SH": "GND",
       "A4": "VBUS", "A9": "VBUS", "B4": "VBUS", "B9": "VBUS",
       "A5": "CC1", "B5": "CC2", "A6": "USB_DP", "B6": "USB_DP", "A7": "USB_DM", "B7": "USB_DM",
@@ -122,7 +126,7 @@ R("R11", S, "1k", "+3V3", "CHG_LED_A")
 C("C2", S, "4.7u", "VSYS")
 C("C3", S, "4.7u", "VBAT")
 part("J2", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "S2B-PH-SM4-TB",
-     "Connector_JST:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal",
+     "battler:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal",
      {"1": "VBAT", "2": "GND", "MP": None}, "C295747", "S2B-PH-SM4-TB(LF)(SN)", "JST")
 part("#FLG01", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VBUS"}, bom=False)
 part("#FLG02", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "GND"}, bom=False)
@@ -143,7 +147,7 @@ part("#FLG03", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VINA"}, bom=False)   
 C("C5", S, "10u", "VSYS")
 C("C6", S, "10u", "+3V3")
 C("C7", S, "10u", "+3V3")
-part("SW17", S, "Switch:SW_Push", "PWR", "Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010",
+part("SW17", S, "Switch:SW_Push", "PWR", "battler:SW_Alps_SKRTLAE010_Pullback",
      {"1": "VSYS", "2": "PWR_BTN_RAW"}, "C110293", "SKRTLAE010", "ALPS")
 R("R13", S, "100k", "PWR_BTN_RAW", "GND")
 part("D2", S, "Diode:BAT54C", "BAT54C", "Package_TO_SOT_SMD:SOT-23",
@@ -217,16 +221,16 @@ part("U5", S, "Memory_Flash:W25Q32JVZP", "W25Q128JVPIQ", "Package_SON:WSON-8-1EP
 R("R23", S, "10k", "+3V3", "FLASH_SS")
 R("R24", S, "0", "QSPI_SS", "FLASH_SS")
 R("R25", "debug.kicad_sch", "1k", "QSPI_SS", "BOOTSEL")
-part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOTSEL", "Button_Switch_SMD:SW_SPST_TS-1088-xR020",
+part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOTSEL", "battler:SW_SPST_TS-1088-xR020",
      {"1": "BOOTSEL", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
 R("R26", "debug.kicad_sch", "1k", "RUN", "RUN_SW")
-part("SW19", "debug.kicad_sch", "Switch:SW_Push", "RESET", "Button_Switch_SMD:SW_SPST_TS-1088-xR020",
+part("SW19", "debug.kicad_sch", "Switch:SW_Push", "RESET", "battler:SW_SPST_TS-1088-xR020",
      {"1": "RUN_SW", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
 part("J5", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_MountingPin", "SWD",
-     "Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
+     "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
      {"1": "SWCLK", "2": "GND", "3": "SWDIO", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
 part("J6", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_MountingPin", "UART",
-     "Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
+     "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
      {"1": "UART_TX", "2": "GND", "3": "UART_RX", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
 R("R27", "debug.kicad_sch", "1k", "STATUS_LED", "STATUS_LED_A")
 part("D4", "debug.kicad_sch", "Device:LED", "red", "LED_SMD:LED_0603_1608Metric",
@@ -249,7 +253,7 @@ R("R28", S, "33", "LCD_SCK_MCU", "LCD_SCK")       # source termination, fitted n
 R("R29", S, "33", "LCD_MOSI_MCU", "LCD_MOSI")
 C("C29", S, "1u", "+3V3")
 C("C30", S, "100n", "+3V3")
-part("U6", S, "Driver_LED:TPS61165DRV", "TPS61160DRVR", "Package_SON:WSON-6-1EP_2x2mm_P0.65mm_EP1x1.6mm",
+part("U6", S, "Driver_LED:TPS61165DRV", "TPS61160DRVR", "Package_SON:WSON-6-1EP_2x2mm_P0.65mm_EP1x1.6mm_ThermalVias",
      {"6": "VSYS", "4": "BL_SW", "1": "LED_K", "2": "BL_COMP", "5": "BL_PWM", "3": "GND", "7": "GND"},
      "C165143", "TPS61160DRVR", "Texas Instruments")
 part("L3", S, "Device:L", "10u", "Inductor_SMD:L_1008_2520Metric", {"1": "VSYS", "2": "BL_SW"},
@@ -266,7 +270,7 @@ R("R31", S, "100k", "BL_PWM", "GND")
 # Audio: MAX98357A class D into an 8 ohm speaker
 # =================================================================================
 S = "audio.kicad_sch"
-part("U7", S, "Audio:MAX98357A", "MAX98357AETE+T", "Package_DFN_QFN:TQFN-16-1EP_3x3mm_P0.5mm_EP1.23x1.23mm",
+part("U7", S, "Audio:MAX98357A", "MAX98357AETE+T", "Package_DFN_QFN:TQFN-16-1EP_3x3mm_P0.5mm_EP1.23x1.23mm_ThermalVias",
      {"1": "I2S_DIN", "16": "I2S_BCLK", "14": "I2S_LRCLK", "4": "AMP_SD_MODE", "2": None,
       "7": "VSYS", "8": "VSYS", "3": "GND", "11": "GND", "15": "GND", "17": "GND",
       "5": None, "6": None, "12": None, "13": None, "9": "SPK_P_AMP", "10": "SPK_N_AMP"},
@@ -277,7 +281,7 @@ C("C35", S, "100n", "VSYS")
 for ref, a, b in (("FB1", "SPK_P_AMP", "SPK_P"), ("FB2", "SPK_N_AMP", "SPK_N")):
     part(ref, S, "Device:FerriteBead_Small", "120R@100MHz", "Inductor_SMD:L_0603_1608Metric",
          {"1": a, "2": b}, "C14709", "BLM18PG121SN1D", "Murata")
-part("J4", S, "Connector_Generic:Conn_01x02", "SPEAKER", "Connector_Wire:SolderWire-0.15sqmm_1x02_P4mm_D0.5mm_OD1.5mm",
+part("J4", S, "Connector_Generic:Conn_01x02", "SPEAKER", "battler:Speaker_Wire_Pads_P4.0mm",
      {"1": "SPK_P", "2": "SPK_N"}, bom=False)
 
 # =================================================================================

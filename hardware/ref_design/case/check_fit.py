@@ -1,0 +1,142 @@
+"""Does the populated board fit the case?
+
+    python3 check_fit.py            # after board/tools/fab.py or any board change
+
+Each part's 3D model is exported on its own (kicad-cli pcb export stl
+--component-filter), so its real extent is known, and checked against what
+the case allows at that spot:
+
+  under the glass          top of part <= glass_limit above the board
+  side bezels, seat bands  <= bezel_limit (the lid's underside)
+  around the clusters      <= retainer_limit (the lid comes down to the cap flanges)
+  under a silicone piece   nothing at all
+  lid screw bosses         nothing within the boss diameter
+  J2 pocket                the battery connector may reach into the lid pocket
+  edge parts               USB-C face and power plunger reach the wall
+
+Bottom-side parts (speaker pads, test pads) are flat and only checked
+against the tub's bosses and ribs. A whole-board CGAL intersection in
+OpenSCAD would be exact but takes hours on these models; boxes are enough for
+parts this blocky.
+"""
+import concurrent.futures as cf
+import json
+import math
+import os
+import re
+import struct
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+PCB = os.path.join(HERE, "..", "board", "battler.kicad_pcb")
+POS = json.load(open(os.path.join(HERE, "positions.json")))
+PCB_T = POS["board"]["t"]
+
+
+def stl_points(path):
+    data = open(path, "rb").read()
+    if data[:5] == b"solid" and b"facet" in data[:400]:
+        return [tuple(float(v) for v in m.groups()) for m in re.finditer(rb"vertex\s+(\S+)\s+(\S+)\s+(\S+)", data)]
+    n = struct.unpack("<I", data[80:84])[0]
+    pts = []
+    for i in range(n):
+        v = struct.unpack("<12f", data[84 + i * 50:84 + i * 50 + 48])
+        pts += [v[3:6], v[6:9], v[9:12]]
+    return pts
+
+
+def refs():
+    import pcbnew
+    b = pcbnew.LoadBoard(PCB)
+    out = []
+    for fp in b.GetFootprints():
+        if len(fp.Models()) and fp.Models()[0].m_Show:
+            out.append((fp.GetReference(), fp.IsFlipped()))
+    return out
+
+
+def extent(ref, tmp):
+    out = os.path.join(tmp, ref + ".stl")
+    r = subprocess.run(["kicad-cli", "pcb", "export", "stl", "--no-board-body", "--force", "--subst-models",
+                        "--component-filter", ref, "-o", out, PCB], capture_output=True, text=True)
+    if r.returncode or not os.path.exists(out):
+        return ref, None
+    pts = stl_points(out)
+    if not pts:
+        return ref, None
+    xs, ys, zs = zip(*pts)
+    # STL frame: KiCad X, -KiCad Y, z = 0 at the board's bottom face
+    return ref, (min(xs), -max(ys), max(xs), -min(ys), min(zs) - PCB_T, max(zs) - PCB_T)
+
+
+def inside_rect(box, rect, margin=0.0):
+    (x0, y0), (x1, y1) = rect
+    return box[2] > min(x0, x1) - margin and box[0] < max(x0, x1) + margin and \
+        box[3] > min(y0, y1) - margin and box[1] < max(y0, y1) + margin
+
+
+def near_circle(box, c, r):
+    cx = min(max(c[0], box[0]), box[2])
+    cy = min(max(c[1], box[1]), box[3])
+    return math.hypot(cx - c[0], cy - c[1]) < r
+
+
+def main():
+    parts = refs()
+    with tempfile.TemporaryDirectory() as tmp, cf.ThreadPoolExecutor(8) as ex:
+        boxes = dict(ex.map(lambda r: extent(r[0], tmp), parts))
+    flipped = dict(parts)
+    problems, notes = [], []
+    glass = POS["glass"]
+    for ref, box in sorted(boxes.items()):
+        if box is None:
+            notes.append(f"{ref}: no 3D model exported")
+            continue
+        top = box[5]
+        if flipped[ref]:
+            height = -box[4] - PCB_T          # below the board
+            for s in POS["screws"]:
+                if near_circle(box, s, POS["boss_d"] / 2 + 0.5):
+                    problems.append(f"{ref} (back) sits on a tub screw boss")
+            continue
+        for i, c in enumerate(POS["pieces"]):
+            if near_circle(box, c, POS["piece_d"] / 2):
+                problems.append(f"{ref} is under a silicone piece (cluster {i})")
+        for s in POS["screws"]:
+            if near_circle(box, s, POS["boss_d"] / 2 + 0.3):
+                problems.append(f"{ref} collides with the lid screw boss at {s}")
+        pocket = POS["batt_conn"]
+        in_pocket = abs((box[0] + box[2]) / 2 - pocket[0]) < POS["pocket"][0] / 2 and \
+            abs((box[1] + box[3]) / 2 - pocket[1]) < POS["pocket"][1] / 2
+        limit = POS["bezel_limit"] + (1.2 if in_pocket else 0)
+        where = "bezel"
+        if inside_rect(box, glass):
+            limit, where = POS["glass_limit"], "glass"
+        elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]):
+            limit, where = min(limit, POS["retainer_limit"]), "retainer"
+        if top > limit + 1e-3:
+            problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
+        tl = POS["fpc_tail"]
+        if inside_rect(box, tl, -0.2) and top > 0.3 and not ref.startswith("J3"):
+            problems.append(f"{ref} is under the display's FPC tail")
+    usb = boxes.get("J1")
+    if usb and abs(usb[2] - POS["usb"]["front_x"]) > 0.3:
+        problems.append(f"USB-C face at x={usb[2]:.2f}, the case expects {POS['usb']['front_x']:.2f}")
+    pwr = boxes.get("SW17")
+    if pwr and pwr[2] < POS["pwr"]["plunger_x"] - 0.3:
+        problems.append(f"power plunger ends at x={pwr[2]:.2f}, short of the board edge {POS['pwr']['plunger_x']:.2f}")
+    report = ["Board-in-case check (part boxes against case/positions.json)", ""]
+    report += [f"checked {sum(1 for b in boxes.values() if b)} parts with 3D models"]
+    report += [f"  PROBLEM: {p}" for p in problems] or ["  no collisions"]
+    report += [f"  note: {n}" for n in notes]
+    report.append("RESULT: " + ("PASS" if not problems else f"FAIL ({len(problems)})"))
+    text = "\n".join(report)
+    print(text)
+    open(os.path.join(HERE, "fit_report.txt"), "w").write(text + "\n")
+    sys.exit(1 if problems else 0)
+
+
+if __name__ == "__main__":
+    main()

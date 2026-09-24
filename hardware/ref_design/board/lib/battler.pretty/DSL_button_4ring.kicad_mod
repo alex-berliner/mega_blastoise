@@ -8,7 +8,7 @@
 	(property "Reference" "SW**"
 		(at 0 -3 0)
 		(layer "F.Fab")
-		(uuid "03c05728-c0fb-4c72-af87-e8ef41ffac11")
+		(uuid "ca03ad89-52e7-4709-b1de-96fee2562f25")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -18,7 +18,7 @@
 	(property "Value" "DSL_button_4ring"
 		(at 0 3 0)
 		(layer "F.Fab")
-		(uuid "a6b63266-09c9-494e-ba15-86d7a11a6add")
+		(uuid "e63b8f3a-8d7f-4968-b26b-00e54c06907e")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -29,7 +29,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "7806e3bc-1a80-413e-b0cb-09ecec2f260a")
+		(uuid "df323512-e138-47e7-a748-bdbd246d3cb3")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -40,14 +40,14 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "5f60cc8c-6ac5-4e6b-9c64-4af37a50f218")
+		(uuid "7fe1a55c-fdc4-4c5b-a610-990ad8f39efe")
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 		)
 	)
-	(attr exclude_from_pos_files exclude_from_bom)
+	(attr exclude_from_pos_files exclude_from_bom allow_soldermask_bridges)
 	(duplicate_pad_numbers_are_jumpers no)
 	(fp_circle
 		(center 0 0)
@@ -58,7 +58,7 @@
 		)
 		(fill yes)
 		(layer "F.Mask")
-		(uuid "7a1d5e9f-a4e2-4058-b091-566de2119f1b")
+		(uuid "9094d7ec-7176-4ca8-a67d-e8c4ab0a7fa4")
 	)
 	(fp_circle
 		(center 0 0)
@@ -69,7 +69,7 @@
 		)
 		(fill no)
 		(layer "F.CrtYd")
-		(uuid "b2a58454-a4a9-49b5-b00a-c3772329ce9a")
+		(uuid "5a6652df-0d87-430a-9c6d-94522ecef04f")
 	)
 	(fp_circle
 		(center 0 0)
@@ -80,7 +80,7 @@
 		)
 		(fill no)
 		(layer "F.Fab")
-		(uuid "5bccc788-f92d-4747-8fb0-33f3e1aa44d1")
+		(uuid "609fa4ef-02c6-4a17-8720-ec272c076b9e")
 	)
 	(pad "1" smd custom
 		(at -1.60385 1.476503)
@@ -131,7 +131,7 @@
 				(width 0.1524)
 			)
 		)
-		(uuid "14ebc2cb-da60-403a-883f-ac07544a2076")
+		(uuid "f27d50ee-4fb0-4add-a589-9dfcc9a3767e")
 	)
 	(pad "2" smd custom
 		(at 1.60385 -1.476503)
@@ -182,7 +182,7 @@
 				(width 0.1524)
 			)
 		)
-		(uuid "8ef46c59-93ab-44e2-b0d9-ad8e59254b83")
+		(uuid "d8100e22-0ea9-49c7-b239-49ac5bd34f22")
 	)
 	(embedded_fonts no)
 )

@@ -28,13 +28,13 @@ schematic, routed board, fab outputs, case, BOM, docs. It cannot mean
 ## Phases
 
 - [x] 1 Parts: datasheet-verified pinouts, LCSC numbers (`board/design.py`)
-- [ ] 2 Case layout revised for real parts (panel 3.5 mm, FPC fold, USB-C, speaker)
+- [x] 2 Case layout revised for real parts (`case/case.scad` owns every position; `case/export.py`)
 - [x] 3 Schematic, hierarchical (9 sheets), netlist = design.py, ERC 0 errors
 - [x] 4 Footprints not in KiCad libs (`board/lib/battler.pretty`, with 3D models)
 - [ ] 5 Board: placement, RP2350 core copied from reference, routing, pours, DRC clean
 - [ ] 6 Fab outputs: gerbers, drill, BOM, CPL, 3D
-- [ ] 7 Case: full shell, bosses, screws, retention, grille, openings, STLs
-- [ ] 8 Docs: README, BOM, assembly, bring-up, design review, open risks
+- [x] 7 Case: tub, lid, power cap, lens outline, STLs; board fit check (`case/check_fit.py`)
+- [x] 8 Docs: README, BOM, assembly, bring-up, pin map, design review, Konnect notes
 
 ## Measure before ordering
 
