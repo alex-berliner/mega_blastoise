@@ -11,7 +11,7 @@ prices it from the JLCPCB parts snapshot used for this design (July 2026):
 | unique part numbers | 40 (16 extended, 24 basic or preferred) |
 | placements per board | 91 |
 | parts per board | about $9.27 |
-| extended-part setup (JLC charges once per part number per order) | about $48 per order |
+| extended-part fee (JLC charges once per part number per order) | about $48 per order (see below) |
 
 The five priciest parts are the flash ($2.18), BQ24074 ($1.28), MAX98357A ($1.15),
 TPS63001 ($1.12) and RP2350B ($1.08); the backlight driver (AP3156) is next at $0.63.
@@ -21,6 +21,32 @@ AP3156FVG-7 (1490). Alternatives are in [design_review.md](design_review.md).
 Cheaper later, not needed now: two extended parts could become basic ones for
 about $6 less setup per order (27 ohm USB resistors to 22 ohm, the NTC to a basic
 10k B3950).
+
+## JLC's assembly fees
+
+Published rates (jlcpcb.com, "PCB Assembly Cost", read September 2026). The board has
+358 solder joints to place and 4 through-hole tabs (the USB-C shell), which JLC may
+count as hand soldering.
+
+| | 10 boards (Economic PCBA) | 100 boards (Standard PCBA) |
+|---|---|---|
+| Setup | $8.18 | $25.56 |
+| Stencil | $1.53 | $8.21 |
+| Solder joints, $0.0016 each | $5.73 | $57.28 |
+| Extended parts, 16 unique | $49.12 ($3.07 each) | $24.48 ($1.53 each) |
+| USB-C tabs by hand, if charged ($0.0164 a joint + $3.58 labor) | $4.24 | $10.14 |
+| **Total** | **$68.80: about $6.90 a board** | **$125.67: about $1.26 a board** |
+
+Parts per board fall from $9.27 at 10 boards to $7.92 at 100.
+
+## Bare boards
+
+Not quoted yet: 4 layers, 70.5 x 151.3 mm, 1.6 mm, ENIG. For scale, JLC's own
+example (2024) is 100 pieces of a 100 x 100 mm 4-layer board for $106.30 in total,
+about $1.06 each; this board is slightly larger and ENIG costs extra. Small orders
+are mostly minimum charges. Upload `board/fab/battler_gerbers.zip` to JLC's instant
+quote for the real figure. Shipping and any import duties come on top, shown at
+checkout.
 
 ## On the board, not placed
 
@@ -47,9 +73,9 @@ about $6 less setup per order (27 ohm USB resistors to 22 ohm, the NTC to a basi
 | Double-sided tape for the panel, foam pad under the cell | | $0.50 | the panel hangs from the lid's window ledge |
 
 Off the board, one unit comes to about $23-40 with the case printed at home. With
-the board's parts (about $14 a board at 10, setup fees included) that is roughly
-$37-54 per finished unit, before the bare boards (4 layers, ENIG, 70 x 151 mm) and
-JLC's per-order assembly fees. A print service is not in that figure: at published
+the board's parts and JLC's assembly fees (about $16 a board at 10, $9 at 100) that
+is roughly $39-56 per finished unit at 10 and $32-49 at 100, before the bare boards,
+shipping and duties. A print service is not in that figure: at published
 service rates a case would be about $12-40 in FDM or $21-60 in resin one at a time
 (no quote yet). The panel was the largest item at $25-35 (a Displaytech DT035)
 until the QD3525 replaced it.
