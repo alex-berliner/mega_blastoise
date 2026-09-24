@@ -26,16 +26,18 @@ about $6 less setup per order (27 ohm USB resistors to 22 ohm, the NTC to a basi
 
 Published rates (jlcpcb.com, "PCB Assembly Cost", read September 2026). The board has
 358 solder joints to place and 4 through-hole tabs (the USB-C shell), which JLC may
-count as hand soldering.
+count as hand soldering (it usually places this connector as SMT). Economic PCBA takes
+2-50 boards with IC pitch down to 0.4 mm: the RP2350B's 0.4 mm pitch is right at that
+limit. Above 50 boards the order goes to Standard PCBA.
 
 | | 10 boards (Economic PCBA) | 100 boards (Standard PCBA) |
 |---|---|---|
 | Setup | $8.18 | $25.56 |
 | Stencil | $1.53 | $8.21 |
 | Solder joints, $0.0016 each | $5.73 | $57.28 |
-| Extended parts, 16 unique | $49.12 ($3.07 each) | $24.48 ($1.53 each) |
+| Feeder loading: Economic charges extended parts only (16), Standard every part number (40) | $49.12 ($3.07 each) | $61.20 ($1.53 each) |
 | USB-C tabs by hand, if charged ($0.0164 a joint + $3.58 labor) | $4.24 | $10.14 |
-| **Total** | **$68.80: about $6.90 a board** | **$125.67: about $1.26 a board** |
+| **Total** | **$68.80: about $6.90 a board** | **$162.39: about $1.62 a board** |
 
 Parts per board fall from $9.27 at 10 boards to $7.92 at 100.
 
@@ -73,8 +75,8 @@ checkout.
 | Double-sided tape for the panel, foam pad under the cell | | $0.50 | the panel hangs from the lid's window ledge |
 
 Off the board, one unit comes to about $23-40 with the case printed at home. With
-the board's parts and JLC's assembly fees (about $16 a board at 10, $9 at 100) that
-is roughly $39-56 per finished unit at 10 and $32-49 at 100, before the bare boards,
+the board's parts and JLC's assembly fees (about $16 a board at 10, $9.50 at 100) that
+is roughly $39-56 per finished unit at 10 and $33-50 at 100, before the bare boards,
 shipping and duties. A print service is not in that figure: at published
 service rates a case would be about $12-40 in FDM or $21-60 in resin one at a time
 (no quote yet). The panel was the largest item at $25-35 (a Displaytech DT035)
