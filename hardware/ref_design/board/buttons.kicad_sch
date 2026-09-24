@@ -1,0 +1,1271 @@
+(kicad_sch
+  (version 20250610)
+  (generator "konnect")
+  (generator_version "10.0")
+  (paper "A4")
+
+  (lib_symbols
+    (symbol "Switch:SW_Push"
+      (pin_numbers
+        (hide yes))
+      (pin_names
+        (offset 1.016)
+        (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "SW"
+        (at 1.27 2.54 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27))
+          (justify left)))
+      (property "Value" "SW_Push"
+        (at 0 -1.524 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Footprint" ""
+        (at 0 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Datasheet" ""
+        (at 0 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Description" "Push button switch, generic, two pins"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "ki_keywords" "switch normally-open pushbutton push-button"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (symbol "SW_Push_0_1"
+        (circle
+          (center -2.032 0)
+          (radius 0.508)
+          (stroke
+            (width 0)
+            (type default))
+          (fill
+            (type none)))
+        (polyline
+          (pts
+            (xy 0 1.27)
+            (xy 0 3.048))
+          (stroke
+            (width 0)
+            (type default))
+          (fill
+            (type none)))
+        (circle
+          (center 2.032 0)
+          (radius 0.508)
+          (stroke
+            (width 0)
+            (type default))
+          (fill
+            (type none)))
+        (polyline
+          (pts
+            (xy 2.54 1.27)
+            (xy -2.54 1.27))
+          (stroke
+            (width 0)
+            (type default))
+          (fill
+            (type none)))
+        (pin passive line
+          (at -5.08 0 0)
+          (length 2.54)
+          (name "1"
+            (effects
+              (font
+                (size 1.27 1.27))))
+          (number "1"
+            (effects
+              (font
+                (size 1.27 1.27)))))
+        (pin passive line
+          (at 5.08 0 180)
+          (length 2.54)
+          (name "2"
+            (effects
+              (font
+                (size 1.27 1.27))))
+          (number "2"
+            (effects
+              (font
+                (size 1.27 1.27))))))
+      (embedded_fonts no))
+    (symbol "power:GND"
+      (power global)
+      (pin_numbers
+        (hide yes))
+      (pin_names
+        (offset 0)
+        (hide yes))
+      (exclude_from_sim no)
+      (in_bom yes)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "#PWR"
+        (at 0 -6.35 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Value" "GND"
+        (at 0 -3.81 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Footprint" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "ki_keywords" "global power"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (symbol "GND_0_1"
+        (polyline
+          (pts
+            (xy 0 0)
+            (xy 0 -1.27)
+            (xy 1.27 -1.27)
+            (xy 0 -2.54)
+            (xy -1.27 -1.27)
+            (xy 0 -1.27))
+          (stroke
+            (width 0)
+            (type default))
+          (fill
+            (type none))))
+      (symbol "GND_1_1"
+        (pin power_in line
+          (at 0 0 270)
+          (length 0)
+          (name ""
+            (effects
+              (font
+                (size 1.27 1.27))))
+          (number "1"
+            (effects
+              (font
+                (size 1.27 1.27))))))
+      (embedded_fonts no)))
+
+  (wire
+    (pts
+      (xy 35.56 27.94)
+      (xy 38.1 27.94))
+    (uuid "c75f5c64-9e80-47a9-83a6-604d9359a35f"))
+
+  (wire
+    (pts
+      (xy 25.4 27.94)
+      (xy 15.24 27.94))
+    (uuid "35a910ef-8261-476f-b5cf-ce8ed4c34bab"))
+
+  (wire
+    (pts
+      (xy 71.12 27.94)
+      (xy 73.66 27.94))
+    (uuid "60b8c78e-a352-4036-8d86-dc10dd36b00e"))
+
+  (wire
+    (pts
+      (xy 60.96 27.94)
+      (xy 50.8 27.94))
+    (uuid "34837e15-f11e-4ff4-a141-d37de81a6612"))
+
+  (wire
+    (pts
+      (xy 109.22 27.94)
+      (xy 111.76 27.94))
+    (uuid "bc7760a3-70c6-4464-beaa-57980aae4e37"))
+
+  (wire
+    (pts
+      (xy 99.06 27.94)
+      (xy 88.9 27.94))
+    (uuid "a1ce1a8b-7429-4735-b301-4bd8cc2d321b"))
+
+  (wire
+    (pts
+      (xy 147.32 27.94)
+      (xy 149.86 27.94))
+    (uuid "31007652-94d7-4bf7-b881-09c0b4c538ba"))
+
+  (wire
+    (pts
+      (xy 137.16 27.94)
+      (xy 127 27.94))
+    (uuid "89b7fdcd-4a83-4f88-a31a-aedd71b8bbd2"))
+
+  (wire
+    (pts
+      (xy 187.96 27.94)
+      (xy 190.5 27.94))
+    (uuid "d4400023-fd3f-4910-9747-11f11db191df"))
+
+  (wire
+    (pts
+      (xy 177.8 27.94)
+      (xy 167.64 27.94))
+    (uuid "b12d415e-5633-49c1-b2f0-364877ed743a"))
+
+  (wire
+    (pts
+      (xy 223.52 27.94)
+      (xy 226.06 27.94))
+    (uuid "a381f95d-b7dc-4ad8-8f44-18db96033df9"))
+
+  (wire
+    (pts
+      (xy 213.36 27.94)
+      (xy 203.2 27.94))
+    (uuid "2ce24c54-3bd1-4c62-859c-bb1cef5e5454"))
+
+  (wire
+    (pts
+      (xy 35.56 40.64)
+      (xy 38.1 40.64))
+    (uuid "b5bf4704-deeb-4f96-a6eb-aadf5353b5a6"))
+
+  (wire
+    (pts
+      (xy 25.4 40.64)
+      (xy 15.24 40.64))
+    (uuid "10abfe7c-41ea-4057-b20f-803421d153c5"))
+
+  (wire
+    (pts
+      (xy 71.12 40.64)
+      (xy 73.66 40.64))
+    (uuid "c73eb9e7-7a72-4688-9a03-d09684500451"))
+
+  (wire
+    (pts
+      (xy 60.96 40.64)
+      (xy 50.8 40.64))
+    (uuid "caf24c79-210d-4c0d-a9ab-1ee5d8b0fd5e"))
+
+  (wire
+    (pts
+      (xy 35.56 101.6)
+      (xy 38.1 101.6))
+    (uuid "0d6922ca-48f0-4702-9a74-b48613d12684"))
+
+  (wire
+    (pts
+      (xy 25.4 101.6)
+      (xy 15.24 101.6))
+    (uuid "f3408cb4-ff7c-4768-84e7-79e0915f713b"))
+
+  (wire
+    (pts
+      (xy 71.12 101.6)
+      (xy 73.66 101.6))
+    (uuid "a9227512-d34e-4b5a-8127-42f847f7bdb5"))
+
+  (wire
+    (pts
+      (xy 60.96 101.6)
+      (xy 50.8 101.6))
+    (uuid "0b822414-9454-47ad-bfe4-624ab1470824"))
+
+  (wire
+    (pts
+      (xy 109.22 101.6)
+      (xy 111.76 101.6))
+    (uuid "f6f3640d-551a-4a80-9f06-e765e45cdf54"))
+
+  (wire
+    (pts
+      (xy 99.06 101.6)
+      (xy 88.9 101.6))
+    (uuid "ef3fca6d-5fab-4fc3-92b4-c9e242cb00ea"))
+
+  (wire
+    (pts
+      (xy 147.32 101.6)
+      (xy 149.86 101.6))
+    (uuid "68406614-8df7-40f7-91cf-fcdc3518ac04"))
+
+  (wire
+    (pts
+      (xy 137.16 101.6)
+      (xy 127 101.6))
+    (uuid "c5c9436f-e977-4e03-92ca-fea8bf38a559"))
+
+  (wire
+    (pts
+      (xy 187.96 101.6)
+      (xy 190.5 101.6))
+    (uuid "932f60a9-03ed-4a8b-aee5-713c07705b1b"))
+
+  (wire
+    (pts
+      (xy 177.8 101.6)
+      (xy 167.64 101.6))
+    (uuid "efa895d2-6369-4a59-a2af-30d7e90e8ad3"))
+
+  (wire
+    (pts
+      (xy 223.52 101.6)
+      (xy 226.06 101.6))
+    (uuid "fcba02ac-9875-4550-81cd-c58851c37685"))
+
+  (wire
+    (pts
+      (xy 213.36 101.6)
+      (xy 203.2 101.6))
+    (uuid "9937da7f-6e59-4c52-a16e-2c5fba888ea0"))
+
+  (wire
+    (pts
+      (xy 35.56 114.3)
+      (xy 38.1 114.3))
+    (uuid "bea6f08d-25b2-41cb-8615-2f23f32c6b4f"))
+
+  (wire
+    (pts
+      (xy 25.4 114.3)
+      (xy 15.24 114.3))
+    (uuid "ef9a5a4e-371c-4d02-b109-c716e40bf5d4"))
+
+  (wire
+    (pts
+      (xy 71.12 114.3)
+      (xy 73.66 114.3))
+    (uuid "fa1c6d14-2665-44c8-b5b4-843f0f4e3b22"))
+
+  (wire
+    (pts
+      (xy 60.96 114.3)
+      (xy 50.8 114.3))
+    (uuid "8ef0c78f-7823-4b57-84a2-828b8025f403"))
+
+  (wire
+    (pts
+      (xy 254 25.4)
+      (xy 266.7 25.4))
+    (uuid "e6fa38b4-9301-49a8-abe8-e87182c5effb"))
+
+  (text "Bare ENIG contacts (DSL_button_4ring) under DS Lite silicone; the firmware enables pull-ups."
+    (at 60.96 175 0)
+    (effects
+      (font
+        (size 1.27 1.27)))
+    (uuid "4e1bf613-6180-4bb7-9bcf-e38751a34fd1"))
+
+  (label "GND"
+    (at 15.24 27.94 0)
+    (uuid "b46618a7-c9c7-4975-8132-8a50f36d42b1"))
+
+  (label "GND"
+    (at 50.8 27.94 0)
+    (uuid "da9cafd0-468d-4ed6-8895-09faba36c3be"))
+
+  (label "GND"
+    (at 88.9 27.94 0)
+    (uuid "13975fae-1a7e-467e-a3f4-05ba463a4880"))
+
+  (label "GND"
+    (at 127 27.94 0)
+    (uuid "e7ec5878-34ce-4738-b962-e079b366c006"))
+
+  (label "GND"
+    (at 167.64 27.94 0)
+    (uuid "1914f519-31b8-4e38-a0d4-08e748a1f494"))
+
+  (label "GND"
+    (at 203.2 27.94 0)
+    (uuid "2ebe6bc4-868a-4a1b-b9d8-ea0f21ea4a1f"))
+
+  (label "GND"
+    (at 15.24 40.64 0)
+    (uuid "82e6a651-cb3a-46c2-a473-c69bef6a6053"))
+
+  (label "GND"
+    (at 50.8 40.64 0)
+    (uuid "bf7a1476-3521-469d-baa4-607db9f1b02a"))
+
+  (label "GND"
+    (at 15.24 101.6 0)
+    (uuid "8146adf1-04be-492e-aae6-76c835c8f9f7"))
+
+  (label "GND"
+    (at 50.8 101.6 0)
+    (uuid "6204aa86-d6d9-4b08-a0b5-5e7721e82f97"))
+
+  (label "GND"
+    (at 88.9 101.6 0)
+    (uuid "28d37193-0193-489b-8542-9da602e54f21"))
+
+  (label "GND"
+    (at 127 101.6 0)
+    (uuid "d11679a1-c7b9-4ab0-871e-3d972ad71004"))
+
+  (label "GND"
+    (at 167.64 101.6 0)
+    (uuid "78f8d2f8-bf46-47f9-8207-f25963a49538"))
+
+  (label "GND"
+    (at 203.2 101.6 0)
+    (uuid "46d1dea2-7335-48f0-bc19-fe1070930140"))
+
+  (label "GND"
+    (at 15.24 114.3 0)
+    (uuid "c891d5df-b86c-4e60-9fb8-3719c12438fe"))
+
+  (label "GND"
+    (at 50.8 114.3 0)
+    (uuid "3ed3bc1c-a654-4355-9896-a5889896bf35"))
+
+  (label "GND"
+    (at 254 25.4 0)
+    (uuid "2626bf36-349f-46c8-9e20-4999bf02320f"))
+
+  (global_label "P1_UP"
+    (shape passive)
+    (at 38.1 27.94 0)
+    (uuid "ddb2a7ee-8e4a-448b-a6ad-bee43a71be6e"))
+
+  (global_label "P1_DOWN"
+    (shape passive)
+    (at 73.66 27.94 0)
+    (uuid "7a7f5d70-0386-40b8-b32d-25c92cd915da"))
+
+  (global_label "P1_LEFT"
+    (shape passive)
+    (at 111.76 27.94 0)
+    (uuid "81dbf30a-29e3-411a-831c-1336d71087f4"))
+
+  (global_label "P1_RIGHT"
+    (shape passive)
+    (at 149.86 27.94 0)
+    (uuid "d83f100b-a9e7-4b2b-ae2a-52cf8a272a32"))
+
+  (global_label "P1_A"
+    (shape passive)
+    (at 190.5 27.94 0)
+    (uuid "98959a11-4d38-403e-9ef3-9d7df5593880"))
+
+  (global_label "P1_B"
+    (shape passive)
+    (at 226.06 27.94 0)
+    (uuid "d8f005a7-52ad-4262-ab9a-fb2351b8b65a"))
+
+  (global_label "P1_X"
+    (shape passive)
+    (at 38.1 40.64 0)
+    (uuid "70f3d3cb-cbb5-407f-93ae-b5d2af227e8e"))
+
+  (global_label "P1_Y"
+    (shape passive)
+    (at 73.66 40.64 0)
+    (uuid "c568a150-41bc-4fab-b51c-82a7e94c84d8"))
+
+  (global_label "P2_UP"
+    (shape passive)
+    (at 38.1 101.6 0)
+    (uuid "96196729-6ed4-4f6a-9c2c-d7a60a609da1"))
+
+  (global_label "P2_DOWN"
+    (shape passive)
+    (at 73.66 101.6 0)
+    (uuid "c018919f-0fef-4ae9-a526-dd1eadaa54ea"))
+
+  (global_label "P2_LEFT"
+    (shape passive)
+    (at 111.76 101.6 0)
+    (uuid "7bf6c073-8e32-457f-9743-480741f7a19e"))
+
+  (global_label "P2_RIGHT"
+    (shape passive)
+    (at 149.86 101.6 0)
+    (uuid "d55a3e2c-036c-4caa-bfc2-a9a720f36b3c"))
+
+  (global_label "P2_A"
+    (shape passive)
+    (at 190.5 101.6 0)
+    (uuid "e6a3ea10-db74-46c6-83aa-539b289d7b79"))
+
+  (global_label "P2_B"
+    (shape passive)
+    (at 226.06 101.6 0)
+    (uuid "0b7f0a4d-2d8c-46af-9ecc-73b0b38ab96a"))
+
+  (global_label "P2_X"
+    (shape passive)
+    (at 38.1 114.3 0)
+    (uuid "775cc3e4-01a3-4ec9-945c-45c66b22ac78"))
+
+  (global_label "P2_Y"
+    (shape passive)
+    (at 73.66 114.3 0)
+    (uuid "2ddf8a78-77b9-43de-8677-9ac4f217b47e"))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 30.48 27.94 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "6ba2f5cb-705e-4710-acf9-e39203670172")
+    (property "Reference" "SW1"
+      (at 30.48 24.13 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P1 UP"
+      (at 30.48 31.75 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 30.48 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 30.48 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW1")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 66.04 27.94 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "a48dda48-87de-4ab9-9a91-ac98c2372199")
+    (property "Reference" "SW2"
+      (at 66.04 24.13 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P1 DOWN"
+      (at 66.04 31.75 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 66.04 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 66.04 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW2")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 104.14 27.94 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "d2fc8b31-592a-4601-ad94-916a7a9305de")
+    (property "Reference" "SW3"
+      (at 104.14 24.13 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P1 LEFT"
+      (at 104.14 31.75 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 104.14 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 104.14 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW3")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 142.24 27.94 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "07ab261e-0e4f-4957-9302-fee03147e46c")
+    (property "Reference" "SW4"
+      (at 142.24 24.13 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P1 RIGHT"
+      (at 142.24 31.75 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 142.24 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 142.24 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW4")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 182.88 27.94 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "bcca40c9-6360-4a38-9427-9cd9a9612628")
+    (property "Reference" "SW5"
+      (at 182.88 24.13 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P1 A"
+      (at 182.88 31.75 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 182.88 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 182.88 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW5")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 218.44 27.94 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "82528d36-a265-403e-9810-6851e89fd77d")
+    (property "Reference" "SW6"
+      (at 218.44 24.13 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P1 B"
+      (at 218.44 31.75 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 218.44 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 218.44 27.94 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW6")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 30.48 40.64 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "40b8c904-05eb-43a3-9c12-6163462ed795")
+    (property "Reference" "SW7"
+      (at 30.48 36.83 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P1 X"
+      (at 30.48 44.45 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 30.48 40.64 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 30.48 40.64 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW7")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 66.04 40.64 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "dc76806f-98cb-4033-91cf-71bd91362eba")
+    (property "Reference" "SW8"
+      (at 66.04 36.83 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P1 Y"
+      (at 66.04 44.45 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 66.04 40.64 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 66.04 40.64 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW8")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 30.48 101.6 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "24ab296b-8b71-47f5-bd83-cba18fc5ac6f")
+    (property "Reference" "SW9"
+      (at 30.48 97.79 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P2 UP"
+      (at 30.48 105.41 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 30.48 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 30.48 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW9")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 66.04 101.6 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "8f3f0b5d-95ea-45ae-89ca-6ceda3625ee6")
+    (property "Reference" "SW10"
+      (at 66.04 97.79 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P2 DOWN"
+      (at 66.04 105.41 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 66.04 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 66.04 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW10")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 104.14 101.6 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "5188adc2-d789-4453-9fc9-5aa16c73067f")
+    (property "Reference" "SW11"
+      (at 104.14 97.79 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P2 LEFT"
+      (at 104.14 105.41 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 104.14 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 104.14 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW11")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 142.24 101.6 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "eea25685-2283-49cc-a382-102f288e1d00")
+    (property "Reference" "SW12"
+      (at 142.24 97.79 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P2 RIGHT"
+      (at 142.24 105.41 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 142.24 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 142.24 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW12")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 182.88 101.6 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "2f7d09d1-6156-4a03-be54-cd1bf76ce31d")
+    (property "Reference" "SW13"
+      (at 182.88 97.79 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P2 A"
+      (at 182.88 105.41 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 182.88 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 182.88 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW13")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 218.44 101.6 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "9e9c8fcb-5995-4efd-8d1e-62bb0723368d")
+    (property "Reference" "SW14"
+      (at 218.44 97.79 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P2 B"
+      (at 218.44 105.41 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 218.44 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 218.44 101.6 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW14")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 30.48 114.3 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "d40788aa-3524-44e8-b016-666aeb70aeba")
+    (property "Reference" "SW15"
+      (at 30.48 110.49 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P2 X"
+      (at 30.48 118.11 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 30.48 114.3 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 30.48 114.3 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW15")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Switch:SW_Push")
+    (at 66.04 114.3 180)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "35e64066-8281-4c83-934f-3c357d6da812")
+    (property "Reference" "SW16"
+      (at 66.04 110.49 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "P2 Y"
+      (at 66.04 118.11 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "battler:DSL_button_4ring"
+      (at 66.04 114.3 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 66.04 114.3 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "SW16")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "power:GND")
+    (at 266.7 25.4 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "9feb54e7-bc4f-47e1-9552-8c86d976632e")
+    (property "Reference" "#PWR023"
+      (at 266.7 21.59 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "GND"
+      (at 266.7 29.21 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" ""
+      (at 266.7 25.4 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 266.7 25.4 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "#PWR023")
+          (unit 1)))))
+)

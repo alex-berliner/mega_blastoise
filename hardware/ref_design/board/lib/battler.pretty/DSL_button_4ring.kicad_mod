@@ -1,0 +1,188 @@
+(footprint "DSL_button_4ring"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "Membrane contact for a DS Lite silicone pill: 4-ring interleaved combs, 0.1524 mm conductors, 0.20 mm min gap. Bare copper: needs ENIG or hard gold, too fine for carbon ink. Not a placed part.")
+	(tags "membrane contact carbon pill keypad DS Lite")
+	(property "Reference" "SW**"
+		(at 0 -3 0)
+		(layer "F.Fab")
+		(uuid "03c05728-c0fb-4c72-af87-e8ef41ffac11")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Value" "DSL_button_4ring"
+		(at 0 3 0)
+		(layer "F.Fab")
+		(uuid "a6b63266-09c9-494e-ba15-86d7a11a6add")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "7806e3bc-1a80-413e-b0cb-09ecec2f260a")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "5f60cc8c-6ac5-4e6b-9c64-4af37a50f218")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(attr exclude_from_pos_files exclude_from_bom)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_circle
+		(center 0 0)
+		(end 2.4 0)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill yes)
+		(layer "F.Mask")
+		(uuid "7a1d5e9f-a4e2-4058-b091-566de2119f1b")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 2.65 0)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "b2a58454-a4a9-49b5-b00a-c3772329ce9a")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 2.2562 0)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "5bccc788-f92d-4747-8fb0-33f3e1aa44d1")
+	)
+	(pad "1" smd custom
+		(at -1.60385 1.476503)
+		(size 0.1524 0.1524)
+		(layers "F.Cu")
+		(options
+			(clearance outline)
+			(anchor circle)
+		)
+		(primitives
+			(gr_arc
+				(start 0.907265 -1.658625)
+				(mid 1.60385 -2.196502)
+				(end 2.300436 -1.658625)
+				(width 0.1524)
+			)
+			(gr_line
+				(start 0.907265 -1.658625)
+				(end 0.384826 -1.795217)
+				(width 0.1524)
+			)
+			(gr_arc
+				(start 2.685088 -0.829567)
+				(mid 1.116135 -0.314721)
+				(end 0.384826 -1.795217)
+				(width 0.1524)
+			)
+			(gr_line
+				(start 2.685088 -0.829567)
+				(end 3.079825 -0.593385)
+				(width 0.1524)
+			)
+			(gr_arc
+				(start 0.340123 -2.64329)
+				(mid 2.634283 -2.853678)
+				(end 3.079825 -0.593385)
+				(width 0.1524)
+			)
+			(gr_line
+				(start 0.340123 -2.64329)
+				(end 0.002149 -2.955338)
+				(width 0.1524)
+			)
+			(gr_arc
+				(start 2.94543 0.241799)
+				(mid 0 -0.000001)
+				(end 0.002149 -2.955338)
+				(width 0.1524)
+			)
+		)
+		(uuid "14ebc2cb-da60-403a-883f-ac07544a2076")
+	)
+	(pad "2" smd custom
+		(at 1.60385 -1.476503)
+		(size 0.1524 0.1524)
+		(layers "F.Cu")
+		(options
+			(clearance outline)
+			(anchor circle)
+		)
+		(primitives
+			(gr_arc
+				(start -0.907265 1.658625)
+				(mid -1.60385 2.196502)
+				(end -2.300436 1.658625)
+				(width 0.1524)
+			)
+			(gr_line
+				(start -0.907265 1.658625)
+				(end -0.384826 1.795217)
+				(width 0.1524)
+			)
+			(gr_arc
+				(start -2.685088 0.829567)
+				(mid -1.116135 0.314721)
+				(end -0.384826 1.795217)
+				(width 0.1524)
+			)
+			(gr_line
+				(start -2.685088 0.829567)
+				(end -3.079825 0.593385)
+				(width 0.1524)
+			)
+			(gr_arc
+				(start -0.340123 2.64329)
+				(mid -2.634283 2.853678)
+				(end -3.079825 0.593385)
+				(width 0.1524)
+			)
+			(gr_line
+				(start -0.340123 2.64329)
+				(end -0.002149 2.955338)
+				(width 0.1524)
+			)
+			(gr_arc
+				(start -2.94543 -0.241799)
+				(mid 0 0.000001)
+				(end -0.002149 2.955338)
+				(width 0.1524)
+			)
+		)
+		(uuid "8ef46c59-93ab-44e2-b0d9-ad8e59254b83")
+	)
+	(embedded_fonts no)
+)

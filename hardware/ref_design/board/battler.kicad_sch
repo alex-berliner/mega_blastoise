@@ -1,0 +1,921 @@
+(kicad_sch
+  (version 20250610)
+  (generator "konnect")
+  (generator_version "10.0")
+  (paper "A4")
+
+  (lib_symbols
+    (symbol "Mechanical:MountingHole"
+      (pin_names
+        (offset 1.016))
+      (exclude_from_sim no)
+      (in_bom no)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "H"
+        (at 0 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Value" "MountingHole"
+        (at 0 3.175 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Footprint" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Description" "Mounting Hole without connection"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "ki_keywords" "mounting hole"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "ki_fp_filters" "MountingHole*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (symbol "MountingHole_0_1"
+        (circle
+          (center 0 0)
+          (radius 1.27)
+          (stroke
+            (width 1.27)
+            (type default))
+          (fill
+            (type none))))
+      (embedded_fonts no))
+    (symbol "Mechanical:Fiducial"
+      (exclude_from_sim no)
+      (in_bom no)
+      (on_board yes)
+      (in_pos_files yes)
+      (duplicate_pin_numbers_are_jumpers no)
+      (property "Reference" "FID"
+        (at 0 5.08 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Value" "Fiducial"
+        (at 0 3.175 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Footprint" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Datasheet" ""
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "Description" "Fiducial Marker"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "ki_keywords" "fiducial marker"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (property "ki_fp_filters" "Fiducial*"
+        (at 0 0 0)
+        (show_name no)
+        (do_not_autoplace no)
+        (hide yes)
+        (effects
+          (font
+            (size 1.27 1.27))))
+      (symbol "Fiducial_0_1"
+        (circle
+          (center 0 0)
+          (radius 1.27)
+          (stroke
+            (width 0.508)
+            (type default))
+          (fill
+            (type background))))
+      (embedded_fonts no)))
+
+  (text "Two-player handheld: reference design (REF-A)"
+    (at 54.61 20 0)
+    (effects
+      (font
+        (size 2 2)))
+    (uuid "ac84648b-3a1a-4277-8b51-8ae6e17accf3"))
+
+  (text "RP2350B, 3.5in 320x480 IPS (ST7796, SPI), 16 membrane contacts under DS Lite silicone,"
+    (at 62.23 27 0)
+    (effects
+      (font
+        (size 1.27 1.27)))
+    (uuid "bad93ddc-ec53-4c5c-95dd-e008c9d6f545"))
+
+  (text "MAX98357A audio, one Li-ion cell on a BQ24074 power path, TPS63001 3V3 buck-boost."
+    (at 60.96 31 0)
+    (effects
+      (font
+        (size 1.27 1.27)))
+    (uuid "02853f51-d6f6-4954-8942-3cc48cd88e28"))
+
+  (text "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets."
+    (at 69.85 35 0)
+    (effects
+      (font
+        (size 1.27 1.27)))
+    (uuid "e3961e40-258d-4ba2-81a6-cb7c843bd7a8"))
+
+  (text "Mechanical: M2 mounting holes at positions set by the case; fiducials for assembly."
+    (at 60.96 145 0)
+    (effects
+      (font
+        (size 1.27 1.27)))
+    (uuid "c2ddce1c-4182-4b6c-8fc3-b5fd7ec437b0"))
+
+  (text "USB_Charger"
+    (at 29.21 47 0)
+    (effects
+      (font
+        (size 1.8 1.8)))
+    (uuid "d6b962de-95df-4482-ba45-063fbdfd738c"))
+
+  (text "usb_charger.kicad_sch"
+    (at 30.48 55 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "09fc1dd7-5187-45f8-a8ba-4eb242962972"))
+
+  (text "USB-C sink, ESD, BQ24074 power path"
+    (at 35.56 60 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "5694a0e9-64e7-4f3a-a6ba-f27247898473"))
+
+  (text "charger, battery connector, NTC"
+    (at 34.29 63.5 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "7fc9342d-8dec-4a40-8e54-691d610cfbce"))
+
+  (text "Power"
+    (at 90.17 47 0)
+    (effects
+      (font
+        (size 1.8 1.8)))
+    (uuid "889b2daa-685c-4787-b5a8-5e3780254e6b"))
+
+  (text "power.kicad_sch"
+    (at 92.71 55 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "f71d3cbf-6590-46e2-ad8f-a112e8519262"))
+
+  (text "TPS63001 3V3 buck-boost, power button"
+    (at 101.6 60 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "2efa2f43-fa31-423d-ab66-d30c2d23dc6b"))
+
+  (text "latch, battery and button sensing"
+    (at 100.33 63.5 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "c2e82801-bd89-4003-b6f9-036d730cf425"))
+
+  (text "MCU"
+    (at 153.67 47 0)
+    (effects
+      (font
+        (size 1.8 1.8)))
+    (uuid "997a6925-9153-4de4-a708-fa3674c36e63"))
+
+  (text "mcu.kicad_sch"
+    (at 157.48 55 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "8535ec01-c055-4793-863f-ce2763a3bab8"))
+
+  (text "RP2350B, 12 MHz crystal,"
+    (at 161.29 60 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "c76bca5d-7ffd-4957-82d9-5952d912e2ee"))
+
+  (text "16 MB QSPI flash, USB series resistors"
+    (at 166.37 63.5 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "eeb5553e-88d1-4793-988d-b2bde8128e83"))
+
+  (text "MCU_Power"
+    (at 223.52 47 0)
+    (effects
+      (font
+        (size 1.8 1.8)))
+    (uuid "6a209200-fd2a-4a3d-aaf2-d3870d4eceb3"))
+
+  (text "mcu_power.kicad_sch"
+    (at 224.79 55 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "1caa7178-af92-4fb0-896e-9db3ac98477b"))
+
+  (text "RP2350B decoupling and its"
+    (at 227.33 60 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "55d0e1e8-55fb-4278-a49d-4d1be80cf1a7"))
+
+  (text "internal 1.1 V switcher"
+    (at 226.06 63.5 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "62d449a4-8b55-4237-9b94-ed9a79c758e3"))
+
+  (text "Debug"
+    (at 25.4 92 0)
+    (effects
+      (font
+        (size 1.8 1.8)))
+    (uuid "c7800312-353f-4f9e-a5e4-aa9b933bcb85"))
+
+  (text "debug.kicad_sch"
+    (at 27.94 100 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "9f9a35e7-2dc3-4e71-bfc2-61da44546b89"))
+
+  (text "SWD and UART connectors, BOOTSEL"
+    (at 34.29 105 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "a7018ee5-bf8b-4953-9cca-d587e8f3401c"))
+
+  (text "and RESET buttons, error LED"
+    (at 33.02 108.5 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "feefb7a6-8fe4-4791-b427-e6e7ba606c00"))
+
+  (text "Display"
+    (at 91.44 92 0)
+    (effects
+      (font
+        (size 1.8 1.8)))
+    (uuid "076241a5-88a1-4098-913a-4a2433831379"))
+
+  (text "display.kicad_sch"
+    (at 93.98 100 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "49899f09-9d2f-48ec-bbc6-7ee3580e98fb"))
+
+  (text "39-pin FPC to the 3.5in IPS panel,"
+    (at 100.33 105 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "56b6dbd2-067f-4257-b379-6f4fe6530465"))
+
+  (text "TPS61160 backlight boost"
+    (at 96.52 108.5 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "3beac71f-51e1-47ed-8a0a-166e86dbf5d4"))
+
+  (text "Audio"
+    (at 154.94 92 0)
+    (effects
+      (font
+        (size 1.8 1.8)))
+    (uuid "1f4cd067-f0ce-4df9-a44a-1aca0b0d8c7a"))
+
+  (text "audio.kicad_sch"
+    (at 157.48 100 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "27046786-84e2-416b-85c8-6eff7a94bfec"))
+
+  (text "MAX98357A I2S class D amplifier,"
+    (at 165.1 105 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "3a742e74-df0f-45dd-85e5-829ce8e3e8a7"))
+
+  (text "speaker pads"
+    (at 156.21 108.5 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "3b9757d8-e1dd-476e-ae8c-0035360eb2ea"))
+
+  (text "Buttons"
+    (at 222.25 92 0)
+    (effects
+      (font
+        (size 1.8 1.8)))
+    (uuid "da7624a5-cf08-436b-926a-6e369e8b3be4"))
+
+  (text "buttons.kicad_sch"
+    (at 223.52 100 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "d012e084-fc44-4c0a-b9b2-778c0b793301"))
+
+  (text "16 membrane contacts,"
+    (at 224.79 105 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "a8230c25-4187-40d1-be50-e04ebf008441"))
+
+  (text "one GPIO each"
+    (at 222.25 108.5 0)
+    (effects
+      (font
+        (size 1 1)))
+    (uuid "ccfa203d-2374-49d2-9426-2a47d97c548b"))
+
+  (sheet
+    (at 20 50)
+    (size 55.88 25.4)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0.0))
+    (uuid "a04aafd3-8c85-4ca0-b5b5-019d9e5e8bbc")
+    (property "Sheetname" "USB_Charger")
+    (property "Sheetfile" "usb_charger.kicad_sch")
+    (instances
+      (project "battler"
+        (path "/"
+          (page "2")))))
+
+  (sheet
+    (at 85 50)
+    (size 55.88 25.4)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0.0))
+    (uuid "5efc6cf9-427e-443b-b25a-4f9e4dbf737d")
+    (property "Sheetname" "Power")
+    (property "Sheetfile" "power.kicad_sch")
+    (instances
+      (project "battler"
+        (path "/"
+          (page "3")))))
+
+  (sheet
+    (at 150 50)
+    (size 55.88 25.4)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0.0))
+    (uuid "da7c12ff-ba9d-49b4-9d38-8943a57c7bc1")
+    (property "Sheetname" "MCU")
+    (property "Sheetfile" "mcu.kicad_sch")
+    (instances
+      (project "battler"
+        (path "/"
+          (page "4")))))
+
+  (sheet
+    (at 215 50)
+    (size 55.88 25.4)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0.0))
+    (uuid "9d7ea680-f7c2-400d-a2d2-4a0f5afb1d6d")
+    (property "Sheetname" "MCU_Power")
+    (property "Sheetfile" "mcu_power.kicad_sch")
+    (instances
+      (project "battler"
+        (path "/"
+          (page "5")))))
+
+  (sheet
+    (at 20 95)
+    (size 55.88 25.4)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0.0))
+    (uuid "d70524f9-4aea-4f3d-8869-591db915ba82")
+    (property "Sheetname" "Debug")
+    (property "Sheetfile" "debug.kicad_sch")
+    (instances
+      (project "battler"
+        (path "/"
+          (page "6")))))
+
+  (sheet
+    (at 85 95)
+    (size 55.88 25.4)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0.0))
+    (uuid "112755ec-cdcc-419e-864b-ef68a95f5fbc")
+    (property "Sheetname" "Display")
+    (property "Sheetfile" "display.kicad_sch")
+    (instances
+      (project "battler"
+        (path "/"
+          (page "7")))))
+
+  (sheet
+    (at 150 95)
+    (size 55.88 25.4)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0.0))
+    (uuid "01768dad-5f07-46c5-91cd-e8e76307735d")
+    (property "Sheetname" "Audio")
+    (property "Sheetfile" "audio.kicad_sch")
+    (instances
+      (project "battler"
+        (path "/"
+          (page "8")))))
+
+  (sheet
+    (at 215 95)
+    (size 55.88 25.4)
+    (fields_autoplaced)
+    (stroke
+      (width 0.1524)
+      (type solid))
+    (fill
+      (color 0 0 0 0.0))
+    (uuid "e5e19f99-fed2-4171-adc3-29327b37f1a6")
+    (property "Sheetname" "Buttons")
+    (property "Sheetfile" "buttons.kicad_sch")
+    (instances
+      (project "battler"
+        (path "/"
+          (page "9")))))
+
+  (symbol
+    (lib_id "Mechanical:MountingHole")
+    (at 22.86 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "0f7251c9-f221-4b82-aa17-31811847f7e5")
+    (property "Reference" "H1"
+      (at 22.86 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "M2"
+      (at 22.86 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+      (at 22.86 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 22.86 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "H1")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Mechanical:MountingHole")
+    (at 27.94 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "44beb4c4-293b-44ab-a404-15cd08868fe0")
+    (property "Reference" "H2"
+      (at 27.94 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "M2"
+      (at 27.94 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+      (at 27.94 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 27.94 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "H2")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Mechanical:MountingHole")
+    (at 33.02 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "e4886d7a-e43e-4713-85fd-d77c8aac270d")
+    (property "Reference" "H3"
+      (at 33.02 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "M2"
+      (at 33.02 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+      (at 33.02 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 33.02 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "H3")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Mechanical:MountingHole")
+    (at 38.1 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "48a60aee-2139-4b30-a65f-c32468a153ec")
+    (property "Reference" "H4"
+      (at 38.1 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "M2"
+      (at 38.1 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+      (at 38.1 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 38.1 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "H4")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Mechanical:MountingHole")
+    (at 43.18 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "416366c0-d935-49b1-9c53-71e76fe9bdc4")
+    (property "Reference" "H5"
+      (at 43.18 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "M2"
+      (at 43.18 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+      (at 43.18 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 43.18 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "H5")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Mechanical:MountingHole")
+    (at 48.26 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "29a0b626-bf66-4347-a887-6a82c280458b")
+    (property "Reference" "H6"
+      (at 48.26 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "M2"
+      (at 48.26 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+      (at 48.26 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 48.26 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "H6")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Mechanical:Fiducial")
+    (at 58.42 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "a13aa63d-2376-40a5-85c0-2bbca6f19d23")
+    (property "Reference" "FID1"
+      (at 58.42 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "Fiducial"
+      (at 58.42 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "Fiducial:Fiducial_1mm_Mask2mm"
+      (at 58.42 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 58.42 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "FID1")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Mechanical:Fiducial")
+    (at 71.12 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "269ace9b-8427-45de-8371-1e6aa376b143")
+    (property "Reference" "FID2"
+      (at 71.12 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "Fiducial"
+      (at 71.12 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "Fiducial:Fiducial_1mm_Mask2mm"
+      (at 71.12 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 71.12 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (instances
+      (project ""
+        (path "/"
+          (reference "FID2")
+          (unit 1)))))
+
+  (symbol
+    (lib_id "Mechanical:Fiducial")
+    (at 83.82 157.48 0)
+    (unit 1)
+    (in_bom yes)
+    (on_board yes)
+    (dnp no)
+    (uuid "91edcb69-1c79-46c7-8798-51a3c747dcd0")
+    (property "Reference" "FID3"
+      (at 83.82 153.67 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Value" "Fiducial"
+      (at 83.82 161.29 0)
+      (effects
+        (font
+          (size 1.27 1.27))))
+    (property "Footprint" "Fiducial:Fiducial_1mm_Mask2mm"
+      (at 83.82 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+    (property "Datasheet" ""
+      (at 83.82 157.48 0)
+      (effects
+        (font
+          (size 1.27 1.27))
+        (hide yes)))
+        (property "BOM" "exclude"
+      (at 0 0 0)
+      (effects (font (size 1.27 1.27)) (hide yes))
+    )
+    (instances
+      (project ""
+        (path "/"
+          (reference "FID3")
+          (unit 1)))))
+)

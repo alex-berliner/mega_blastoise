@@ -1,0 +1,387 @@
+(footprint "AOTA-B201610S3R3-101-T"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 0 -1.55 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "850e5e11-5d57-40da-873e-3f86b0d02482")
+		(effects
+			(font
+				(size 0.8 0.5)
+				(thickness 0.125)
+			)
+		)
+	)
+	(property "Value" "AOTA-B201610S3R3-101-T"
+		(at 0 0.8 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "ac4242e4-6135-4b82-a420-aa6fc9d65fd8")
+		(effects
+			(font
+				(size 0.8 0.5)
+				(thickness 0.01)
+			)
+		)
+	)
+	(property "Datasheet" "file:///C:\\rpi-pdb\\parts\\Inductors\\Fixed\\M2016\\ABRACON_AOTA-B201610S3R3-101-T\\datasheets"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "227ac874-4923-4b99-af99-3529d534e1cc")
+		(effects
+			(font
+				(size 0.8 0.5)
+				(thickness 0.01)
+			)
+		)
+	)
+	(property "Description" "Inductor, SMT, 3.3uH, 20%, Irms=2.1A, Isat=2.4A, DCR=115mR typ 140mR max, Polarity Marked, M2016"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "0b1191f6-d181-4340-845a-7b9fe8c2866c")
+		(effects
+			(font
+				(size 0.8 0.5)
+				(thickness 0.01)
+			)
+		)
+	)
+	(property "rms_current" "2.1A"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "f13f2ecf-793b-498a-ba30-08b95b60de29")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "part_uid" "RP-01GY5D-2VC7WP"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "34825d59-5dee-4955-9a1c-ece85d1a0c28")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "status" "OK"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "409362b2-21c3-45b2-be07-a304f7e24ad9")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "manufacturer" "Abracon"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "b56130a4-d96a-4bb3-be0b-de3e51e4d193")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "manufacturer_pn" "AOTA-B201610S3R3-101-T"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "08f66904-3e43-48bf-b750-52ec27214fbe")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "packaging" "180mm dia. tape & reel"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "3fa76964-c7c1-4862-8f3b-25a78826e881")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "packaging_qty" "3000"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "31e8040a-82c6-4ed3-8319-96b6529c63ff")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "lcsc_pn" "C42411119"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "33efd6d5-851a-4ee7-95e4-53f5c4e2c1cb")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "size" "2x1.6x1mm"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "a2338af6-d562-48dd-9425-0126e1634ee0")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "tolerance" "20%"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "cc42541c-58ca-4b87-8bd5-e53041e6cef2")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "inductance" "3.3u"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "646f8fb8-c2eb-4593-a1d0-fcee9906e8c8")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "operating_temp_max" "+125C"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "ae34e461-75b4-49c1-a5d6-653664ae3673")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "operating_temp_min" "-40C"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "9420058e-5fc8-456a-aff9-c3ffa2e4b5c7")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "saturation_current" "2.4A"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "f14f0e14-e7c8-4aca-814b-8c4eb77fe1a0")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "z_height_max" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "d06cd891-22c7-455e-be05-3640d6854082")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "package" "M2016"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "a08dd9ee-2736-4201-adb5-615d7140f768")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "z_height_nom" "1mm"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "ded8c722-0ba5-43bc-8f9b-0b64017d1259")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "dcr" "115mR typ 140mR max"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "12fe1c4c-9700-4710-b13a-1813a99ab3df")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property ki_fp_filters "RPI_COMPILED:abracon_aota-b201610s3r3-101-t")
+	(sheetname "/")
+	(sheetfile "RPI-RP2350B-MINIMAL_R4-S1.kicad_sch")
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_circle
+		(center -1.4 0.7)
+		(end -1.25 0.7)
+		(stroke
+			(width 0.01)
+			(type solid)
+		)
+		(fill yes)
+		(layer "F.SilkS")
+		(uuid "7f24e4c0-df9f-474d-a534-cb75b59f10e8")
+	)
+	(fp_rect
+		(start -1.1 0.9)
+		(end 1.1 -0.9)
+		(stroke
+			(width 0.01)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "dc0686f0-2b25-4884-92c6-52eb696ccd16")
+	)
+	(fp_rect
+		(start -1 0.8)
+		(end 1 -0.8)
+		(stroke
+			(width 0.01)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "12665a6b-0490-47bb-ab3b-0ad9d093761b")
+	)
+	(fp_rect
+		(start -0.4 0.8)
+		(end 0.4 -0.8)
+		(stroke
+			(width 0.01)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "de6fc123-8e49-4204-9463-f191edcaedb3")
+	)
+	(fp_circle
+		(center -0.7 0.55)
+		(end -0.6 0.55)
+		(stroke
+			(width 0.01)
+			(type solid)
+		)
+		(fill yes)
+		(layer "F.Fab")
+		(uuid "2ff1c3d2-a5b0-4f57-ade9-c9f47356b4b2")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "0c4b82a2-b30d-4a8a-8f82-5078b4ac355c")
+		(effects
+			(font
+				(size 0.8 0.5)
+				(thickness 0.01)
+			)
+		)
+	)
+	(pad "1" smd rect
+		(at -0.7 0)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "96ea00e2-15cb-4b9a-97b5-04f69590df8b")
+	)
+	(pad "2" smd rect
+		(at 0.7 0)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "08169754-3420-47a6-936a-49c5d1c6ce81")
+	)
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/lib/battler.3dshapes/AOTA-B201610S3R3-101-T.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)

@@ -1,0 +1,13 @@
+# vendor datasheets are not ours to redistribute: datasheets/SOURCES.md says where each comes from
+datasheets/*.pdf
+datasheets/*.txt
+datasheets/*.png
+!datasheets/RPI-RP2350B-MINIMAL_LICENSE.txt
+**/__pycache__/
+# KiCad per-user and generated state
+board/*.kicad_prl
+board/*-backups/
+board/fp-info-cache
+board/~*.lck
+board/_autosave-*
+board/#auto_saved_files#
