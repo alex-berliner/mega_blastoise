@@ -1,8 +1,12 @@
 # Two-player handheld: reference design (REF-A)
 
 A complete, orderable design for the production version of the handheld:
-schematic, 4-layer board, JLCPCB fab and assembly files, a printable case, and
-the documents to build, bring up and review it. Built by Claude in parallel with
+schematic, 2-layer board, JLCPCB fab and assembly files, a printable case, and
+the documents to build, bring up and review it.
+
+**This is the 2-layer build** (branch `ref-design-2layer`): the 4-layer design on
+`main` with every cost change Alex approved on 2026-09-24, on two copper layers
+with JLC's standard 0.3 mm holes. Built by Claude in parallel with
 Alex's own hand-made board (`hardware/prod_board/`, `hardware/prod_case/`),
 which this folder never touches.
 
@@ -10,15 +14,15 @@ which this folder never touches.
 
 ## What it is
 
-- RP2350B, 16 MB flash, USB-C (charging + firmware + debug console)
+- RP2354B (2 MB flash inside), USB-C (charging + firmware + debug console)
 - 3.5in 320x480 IPS panel (QD3525, ST7796U, SPI), a bare panel with a published
   drawing, its FPC soldered to the board; a constant-current backlight driver
 - 16 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad and
   four face buttons at each end
-- MAX98357A I2S amplifier into a 20 mm speaker
-- One 103450 Li-ion cell, BQ24074 power-path charger, TPS63001 buck-boost 3V3,
-  soft power button with MCU hold
-- Case 75.4 x 156.2 x 20.0 mm, two printed parts, six M2 screws
+- PWM audio through an RC filter into an FM8002A amplifier and a 20 mm speaker
+- One 503450 Li-ion cell (1000 mAh), TP4056 charger with USB load sharing,
+  ME6211 3V3 LDO, soft power on seat 1's Y button with MCU hold
+- Case 75.4 x 156.2 x 15.0 mm, two printed parts that snap together
 
 ## Folder
 
@@ -31,8 +35,9 @@ which this folder never touches.
 | `board/fab/` | gerbers zip, JLC BOM and CPL, STEP, renders, schematic and assembly PDFs |
 | `board/tools/` | the scripts that build and check all of it (below) |
 | `case/case.scad` | the case, and the source of every mechanical position |
-| `case/*.stl`, `case/*.dxf`, `case/positions.json` | printable parts, lens and board outlines, positions for the board scripts |
-| `docs/` | [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md), [Konnect notes](docs/konnect_notes.md) |
+| `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts, board outline, positions for the board scripts |
+| `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md), [Konnect notes](docs/konnect_notes.md) |
+| `tools/quotes/` | JLCPCB and PCBWay instant-quote scripts for the bare board and assembly |
 | `datasheets/SOURCES.md` | where each datasheet comes from |
 
 ## Rebuilding
@@ -48,7 +53,7 @@ python3 tools/build_sch.py                   # design.py -> schematic (through K
 python3 tools/check_netlist.py               # KiCad's netlist == design.py ?
 kicad-cli sch erc battler.kicad_sch          # 0 errors expected
 RP2350B_REF=.../RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb python3 tools/build_pcb.py
-FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # ~20 min
+FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # ~30 min
 python3 tools/silk.py
 python3 tools/check_pcb.py                   # DRC with schematic parity
 python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders

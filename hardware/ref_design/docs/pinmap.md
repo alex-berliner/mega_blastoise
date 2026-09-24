@@ -1,4 +1,4 @@
-# RP2350B pin map (reference board)
+# RP2354B pin map (reference board, 2-layer build)
 
 Generated from `board/design.py` by `board/tools/pinmap.py`; edit those, not this file.
 
@@ -7,38 +7,38 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 
 | GPIO | Net | Use |
 |---|---|---|
-| 0 | `UART_TX` | UART0 TX to J6 pin 1 (debug console) |
-| 1 | `UART_RX` | UART0 RX from J6 pin 3 |
-| 2 | `PWR_HOLD` | output: set high first thing at boot (the user is still holding the button); low turns the device off once the button is up |
-| 3 | `PWR_BTN_N` | input, pulled up (R16): low while the power button is pressed |
+| 0 | (spare) | not connected |
+| 1 | (spare) | not connected |
+| 2 | `PWR_HOLD` | output: set high to stay on (see Power control); low turns the device off once the button is up |
+| 3 | `PWR_BTN_N` | input, pulled up (R16): low while seat 1's Y is pressed. Y is the power button, so read seat 1's Y here |
 | 4 | `P2_UP` | membrane contact SW9, input with pull-up, low = pressed |
 | 5 | `P2_DOWN` | membrane contact SW10, input with pull-up, low = pressed |
 | 6 | `P2_LEFT` | membrane contact SW11, input with pull-up, low = pressed |
 | 7 | `P2_RIGHT` | membrane contact SW12, input with pull-up, low = pressed |
-| 8 | `I2S_DIN` | PIO I2S data to U7 |
-| 9 | `I2S_BCLK` | PIO I2S bit clock (side-set base) |
-| 10 | `I2S_LRCLK` | PIO I2S word clock (side-set base + 1: embassy-rp's PioI2sOut wants BCLK, BCLK+1) |
-| 11 | `AMP_SD` | output: high = amplifier on, left channel (SD_MODE ~2.2 V through R32); low = shutdown, 0.6 uA |
+| 8 | `AUDIO_PWM` | PWM4 A: audio, through two 16 kHz RC poles into U7 (see Audio) |
+| 9 | (spare) | not connected |
+| 10 | (spare) | not connected |
+| 11 | `AMP_EN` | output: high turns the FM8002A on (Q3 pulls its SHUTDOWN low); low or floating = off (4 uA) |
 | 12 | `P2_A` | membrane contact SW13, input with pull-up, low = pressed |
 | 13 | `P2_B` | membrane contact SW14, input with pull-up, low = pressed |
 | 14 | `P2_X` | membrane contact SW15, input with pull-up, low = pressed |
 | 15 | `P2_Y` | membrane contact SW16, input with pull-up, low = pressed |
-| 16 | `STATUS_LED` | output: high lights D4, the red error LED |
-| 17 | `CHG_STAT_N` | input, pulled up (R10): low while the BQ24074 charges; also lights D1 |
-| 18 | `VIN_GOOD_N` | input, pulled up (R9): low while USB power is present |
-| 19 | `CHG_EN1` | output: charger input limit, see below (pulled up by R8 until driven) |
-| 20 | `CHG_EN2` | output: charger input limit, see below (pulled down by R7 until driven) |
-| 21 | (spare) | not connected |
+| 16 | (spare) | not connected |
+| 17 | `CHG_STAT_N` | input, pulled up (R10): low while the TP4056 charges |
+| 18 | `CHG_DONE_N` | input, pulled up (R9): low when the charge is done (USB present, cell full) |
+| 19 | (spare) | not connected |
+| 20 | `UART_TX` | UART1 TX to J6 pin 1 (debug console) |
+| 21 | `UART_RX` | UART1 RX from J6 pin 3 |
 | 22 | (spare) | not connected |
-| 23 | (spare) | not connected |
+| 23 | `P1_RIGHT` | membrane contact SW4, input with pull-up, low = pressed |
 | 24 | `P1_A` | membrane contact SW5, input with pull-up, low = pressed |
 | 25 | `P1_B` | membrane contact SW6, input with pull-up, low = pressed |
 | 26 | `P1_X` | membrane contact SW7, input with pull-up, low = pressed |
-| 27 | `P1_Y` | membrane contact SW8, input with pull-up, low = pressed |
+| 27 | (spare) | not connected |
 | 28 | `P1_UP` | membrane contact SW1, input with pull-up, low = pressed |
 | 29 | `P1_DOWN` | membrane contact SW2, input with pull-up, low = pressed |
 | 30 | `P1_LEFT` | membrane contact SW3, input with pull-up, low = pressed |
-| 31 | `P1_RIGHT` | membrane contact SW4, input with pull-up, low = pressed |
+| 31 | (spare) | not connected |
 | 32 | `LCD_TE` | input: the panel's tearing-effect signal (enable with TEON); start a frame on its edge |
 | 33 | `LCD_DC` | display data/command |
 | 34 | `LCD_RST` | display reset, active low |
@@ -56,16 +56,18 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 46 | (spare) | not connected |
 | 47 | (spare) | not connected |
 
-Other RP2350B pins: QSPI flash (W25Q128JVP, 16 MB), 12 MHz crystal, USB to the USB-C
-(27 ohm series, USBLC6 ESD), SWD and RUN to J5 and the RESET button, QSPI_SS to the BOOTSEL
-button through 1k.
+Other RP2354B pins: the 2 MB flash is inside the package, so of the QSPI pins only QSPI_SS
+is wired (10k pull-up R23, and the BOOTSEL button through 1k). 12 MHz crystal, USB to the
+USB-C (22 ohm series, SRV05-4 ESD), SWD and RUN to J5 and the RESET button.
 
 ## Power control
 
-PWR_EN (the 3V3 regulator's enable) is the OR of: the power button, PWR_HOLD, and USB VBUS.
+PWR_EN (the ME6211's enable) is the OR of: the power button (seat 1's Y contact, which
+joins VSYS to PWR_BTN_RAW), PWR_HOLD, and USB VBUS.
 
-- Turning on: the button starts the regulator; firmware must set PWR_HOLD high before the
-  user lets go (hold time is the boot time, well under a second).
+- Turning on: pressing Y starts the regulator. Firmware sets PWR_HOLD high only once Y has
+  been held for about a second (read on PWR_BTN_N), so a knock in a bag doesn't turn the
+  device on: let go sooner and it powers off again.
 - Turning off: firmware sets PWR_HOLD low; power drops when the button is released.
   Watch PWR_BTN_N for a long press, then drop PWR_HOLD.
 - With USB plugged in the 3V3 rail stays up whatever PWR_HOLD does, so the firmware runs
@@ -83,21 +85,31 @@ panel's maximum), 6 = 15 mA (its typical rating), down to 31 = 3.6 mA; 32 = off;
 0.5 dB a step. The driver starts at 0 mA and R31 holds SDI low, so the backlight stays off
 until firmware sets a level. Command table: AP3156 datasheet, Serial Digital Interface.
 
-## Charger input limit (BQ24074 EN2, EN1)
+## Charger (TP4056) and USB power
 
-| CHG_EN2 | CHG_EN1 | USB input limit |
+| CHG_STAT_N | CHG_DONE_N | State |
 |---|---|---|
-| 0 | 1 | 500 mA (state at power-up: R7 pulls EN2 low, R8 pulls EN1 high) |
-| 1 | 0 | 1.34 A (ILIM resistor R5): only on a Type-C source offering 1.5 A or 3 A |
-| 0 | 0 | 100 mA |
-| 1 | 1 | suspend (no input current) |
+| low | high | charging (500 mA, set by R5) |
+| high | low | charge done |
+| high | high | no USB power |
 
-Reading the source's offer: with the 5.1k Rd on each CC, the CC line the cable uses sits at
-0.25-0.61 V for default USB power, 0.70-1.16 V for 1.5 A and 1.31-2.04 V for 3 A. Take the
-higher of CC1_SENSE and CC2_SENSE; above about 0.66 V it is safe to select 1.34 A.
-Fast-charge current is fixed at 740 mA by R6 either way.
+With USB in, the system runs from USB through D5 and the cell only charges; unplugged,
+Q2 connects the cell. The charger has no input current limit: a default-USB port (500 mA)
+can be asked for charge current plus the system's draw, so read the source's offer and
+dim the backlight on a weak one. With the 5.1k Rd on each CC, the CC line the cable uses
+sits at 0.25-0.61 V for default USB power, 0.70-1.16 V for 1.5 A and 1.31-2.04 V for 3 A;
+take the higher of CC1_SENSE and CC2_SENSE.
+
+## Audio (PWM into the FM8002A)
+
+GPIO8 is PWM4 A. At 150 MHz, 10 bits gives a 146 kHz carrier (8 bits: 586 kHz); R32/C37 and
+R33/C38 (two poles at 16 kHz) take it out, C39 blocks the DC, and U7 drives the speaker
+bridge-tied at a gain of 2 (R35/R34). Idle at half scale so turning on doesn't pop, and set
+AMP_EN high only while sound plays: the amplifier draws about 4.4 mA when on.
 
 ## Battery voltage
 
 VBAT = 2 x ADC0 x 3.3 V / 4096 (12-bit). Read a few samples; the 100 nF holds the divider
-steady for the ADC's sampling capacitor. Full charge reads about 2.10 V at the pin.
+steady for the ADC's sampling capacitor. Full charge reads about 2.10 V at the pin. Shut down
+at about 3.35 V: below that the ME6211 can't hold 3.3 V, and the RP2354B's regulator needs
+VREG_AVDD at 3.135 V or more.

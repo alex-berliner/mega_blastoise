@@ -21,7 +21,7 @@ sys.path.insert(0, BOARD_DIR)
 from placement import CASE  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
-SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-323", "L_1008",
+SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-323", "D_SOD-123", "C_0805", "L_1008",
          "Fiducial", "MountingHole", "DSL_button", "AOTA", "ABM8")
 TEXT_H = 0.8        # mm; JLC's minimum legible silk is about 0.8 mm tall, 0.15 mm line
 # parts whose label below says more than their reference would
@@ -119,7 +119,7 @@ def main():
     back = pcbnew.B_SilkS
     text("TWO-PLAYER HANDHELD  REF-A", 100, 116.0, back, h=1.2)
     text("REV 2026-09-24", 100, 118.2, back)
-    text("4 LAYERS  1.6 MM  ENIG", 100, 119.8, back)
+    text("2 LAYERS  1.6 MM  ENIG", 100, 119.8, back)
     # test pads (back, above the speaker pads), one name under each
     for i, name in enumerate(["VBUS", "VSYS", "VBAT", "3V3", "GND"]):
         tp = board.FindFootprintByReference(f"TP{i + 1}")

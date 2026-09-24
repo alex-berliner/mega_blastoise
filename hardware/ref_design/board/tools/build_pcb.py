@@ -2,14 +2,16 @@
 
     python3 tools/build_pcb.py            # close the board in KiCad first
 
-Starts from an empty 4-layer board every time:
-  1. stack-up, design rules (JLCPCB 4-layer), net classes
+Starts from an empty 2-layer board every time:
+  1. stack-up, design rules (JLCPCB 2-layer, every hole >= 0.3 mm: smaller ones cost
+     extra), net classes
   2. outline and battery cable slot from case/positions.json
   3. every footprint from KiCad's netlist, with its nets, fields and a link to
      its schematic symbol (so KiCad's DRC can check board against schematic)
   4. placement from placement.py
-  5. the RP2350B core: placement, tracks, vias and small zones copied from
-     Raspberry Pi's minimal design (MIT), turned and moved onto this board
+  5. the RP2354B core: placement, tracks, vias and small zones copied from
+     Raspberry Pi's RP2350B minimal design (MIT, 2 layers like this board), turned and
+     moved onto this board; the reference's flash and its routing stay behind
 Routing and pours are done afterwards by tools/route.py.
 """
 import math
@@ -37,16 +39,16 @@ NO_ASSEMBLY = ("SW1", "SW2", "SW3", "SW4", "SW5", "SW6", "SW7", "SW8", "SW9", "S
 
 
 CLASSES = {
-    # widths must still leave 0.4-0.5 mm pitch pads (QFNs, the FPC connector) cleanly;
-    # GND and 3V3 reach their planes through short stubs, so they keep the default
+    # widths must still leave 0.4-0.5 mm pitch pads (QFNs, the FPC connector) cleanly.
+    # Two layers: 3V3 has no plane and is routed like the other supplies (the core's
+    # 3V3 pins reach the pour over the core through the copied stubs); GND is the pours
     "PWR": dict(track=0.3, clear=0.15, via=0.6, drill=0.3,
-                nets=["VSYS", "VBAT", "VBUS", "/Power/BB_L1", "/Power/BB_L2",
-                      "/Display/LED_A", "/Audio/SPK_P", "/Audio/SPK_N",
-                      "/Audio/SPK_P_AMP", "/Audio/SPK_N_AMP"]),
-    "USB": dict(track=0.2, clear=0.15, via=0.5, drill=0.25,
+                nets=["VSYS", "VBAT", "VBUS", "+3V3", "/Display/LED_A", "/Audio/SPK_P", "/Audio/SPK_N"]),
+    "USB": dict(track=0.2, clear=0.15, via=0.5, drill=0.3,
                 nets=["USB_DP", "USB_DM", "/MCU/USB_DP_MCU", "/MCU/USB_DM_MCU"]),
 }
-DEFAULT_CLASS = dict(track=0.15, clear=0.15, via=0.5, drill=0.25)
+DEFAULT_CLASS = dict(track=0.15, clear=0.15, via=0.5, drill=0.3)
+MIN_DRILL = 0.3            # JLC's standard hole: 0.25 mm adds a fee, a 4-wire test and TG155
 
 
 def net_class(net):
@@ -86,15 +88,15 @@ def load_fp(fpid):
 
 
 def setup(board):
-    board.SetCopperLayerCount(4)
+    board.SetCopperLayerCount(2)
     ds = board.GetDesignSettings()
     ds.SetBoardThickness(mm(1.6))
-    # JLCPCB 4-layer capability with margin
+    # JLCPCB 2-layer capability with margin; the hole minimum is the price break, not the limit
     ds.m_TrackMinWidth = mm(0.1)
     ds.m_MinClearance = mm(0.1)
     ds.m_ViasMinSize = mm(0.45)
     ds.m_ViasMinAnnularWidth = mm(0.1)
-    ds.m_MinThroughDrill = mm(0.2)
+    ds.m_MinThroughDrill = mm(MIN_DRILL)
     ds.m_HoleClearance = mm(0.2)
     ds.m_CopperEdgeClearance = mm(0.2)       # JLCPCB routed-edge minimum
     ds.m_MinResolvedSpokes = 1               # small pads in the pours may have one thermal spoke
@@ -242,7 +244,9 @@ def copy_core(board, fps, netinfo):
         if t.GetClass() == "PCB_VIA":
             p = xy(t.GetPosition())
             if inside(p, core_box) and not any(inside(p, b) for b, _ in foreign):
-                items.append(("via", net, p, None, pcbnew.ToMM(t.GetWidth(pcbnew.F_Cu)), pcbnew.ToMM(t.GetDrillValue())))
+                # Raspberry Pi's vias are 0.6/0.25: the same pad with a standard 0.3 mm hole
+                items.append(("via", net, p, None, pcbnew.ToMM(t.GetWidth(pcbnew.F_Cu)),
+                              max(MIN_DRILL, pcbnew.ToMM(t.GetDrillValue()))))
             continue
         s, e = xy(t.GetStart()), xy(t.GetEnd())
         if not (inside(s, core_box) and inside(e, core_box)):
@@ -276,10 +280,9 @@ def copy_core(board, fps, netinfo):
 
     # Raspberry Pi's board has two layers: a 3V3 pour on top, GND underneath. Routing
     # that ends in those pours is meant to (the 3V3 pins' short stubs into the pour
-    # under the chip); route.py pours 3V3 over the core on top and GND underneath.
-    placed = [fps[o].GetBoundingBox(False) for o in CORE.values()]
-    pour = (min(pcbnew.ToMM(b.GetX()) for b in placed) - 0.8, min(pcbnew.ToMM(b.GetY()) for b in placed) - 0.8,
-            max(pcbnew.ToMM(b.GetRight()) for b in placed) + 0.8, max(pcbnew.ToMM(b.GetBottom()) for b in placed) + 0.8)
+    # inside the chip's pads); route.py pours 3V3 there on top and GND underneath.
+    ux, uy = xy(fps["U4"].GetPosition())
+    pour = (ux - 4.5, uy - 4.5, ux + 4.5, uy + 4.5)
 
     def in_pour(it, pt):
         if it[0] != "track":

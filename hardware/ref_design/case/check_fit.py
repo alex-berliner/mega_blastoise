@@ -10,9 +10,10 @@ the case allows at that spot:
   side bezels, seat bands  <= bezel_limit (the lid's underside)
   around the clusters      <= retainer_limit (the lid comes down to the cap flanges)
   under a silicone piece   nothing at all
-  lid screw bosses         nothing within the boss diameter
+  lid pin bosses           nothing within the boss diameter
+  lid snap hooks           nothing taller than hook_clear under a hook
   J2 pocket                the battery connector may reach into the lid pocket
-  edge parts               USB-C face and power plunger reach the wall
+  edge parts               the USB-C face reaches the wall
 
 Bottom-side parts (speaker pads, test pads) are flat and only checked
 against the tub's bosses and ribs. A whole-board CGAL intersection in
@@ -49,7 +50,7 @@ def stl_points(path):
 # Parts whose 3D model doesn't show their fitted height, and packages whose model
 # this KiCad install lacks: height above the board in mm
 KNOWN_HEIGHT = {}
-PACKAGE_HEIGHT = {"QFN": 1.0, "SON": 1.0, "DRC0010J": 1.0, "SOT-23": 1.2, "SOD-323": 1.1, "0402": 0.5, "0603": 0.9,
+PACKAGE_HEIGHT = {"SOIC-8": 1.75, "QFN": 1.0, "SON": 1.0, "DRC0010J": 1.0, "SOT-23": 1.2, "SOD-323": 1.1, "0402": 0.5, "0603": 0.9,
                   "1008": 1.2, "0806": 1.0}
 
 
@@ -117,16 +118,21 @@ def main():
         top = box[5]
         if flipped[ref]:
             height = -box[4] - PCB_T          # below the board
-            for s in POS["screws"]:
+            for s in POS["pins"]:
                 if near_circle(box, s, POS["boss_d"] / 2 + 0.5):
-                    problems.append(f"{ref} (back) sits on a tub screw boss")
+                    problems.append(f"{ref} (back) sits on a tub pin boss")
             continue
         for i, c in enumerate(POS["pieces"]):
             if near_circle(box, c, POS["piece_d"] / 2):
                 problems.append(f"{ref} is under a silicone piece (cluster {i})")
-        for s in POS["screws"]:
+        for s in POS["pins"]:
             if near_circle(box, s, POS["boss_d"] / 2 + 0.3):
-                problems.append(f"{ref} collides with the lid screw boss at {s}")
+                problems.append(f"{ref} collides with the lid pin boss at {s}")
+        for (hx0, hy0), (hx1, hy1) in POS["hooks"]:
+            hr = [[min(hx0, hx1), min(hy0, hy1)], [max(hx0, hx1), max(hy0, hy1)]]
+            overlap = box[0] < hr[1][0] and box[2] > hr[0][0] and box[1] < hr[1][1] and box[3] > hr[0][1]
+            if overlap and top > POS["hook_clear"]:
+                problems.append(f"{ref} is under a lid snap hook ({top:.2f} mm; the hook leaves {POS['hook_clear']:.2f})")
         pocket = POS["batt_conn"]
         in_pocket = abs((box[0] + box[2]) / 2 - pocket[0]) < POS["pocket"][0] / 2 and \
             abs((box[1] + box[3]) / 2 - pocket[1]) < POS["pocket"][1] / 2
@@ -144,9 +150,6 @@ def main():
     usb = boxes.get("J1")
     if usb and abs(usb[2] - POS["usb"]["front_x"]) > 0.3:
         problems.append(f"USB-C face at x={usb[2]:.2f}, the case expects {POS['usb']['front_x']:.2f}")
-    pwr = boxes.get("SW17")
-    if pwr and pwr[2] < POS["pwr"]["plunger_x"] - 0.3:
-        problems.append(f"power plunger ends at x={pwr[2]:.2f}, short of the board edge {POS['pwr']['plunger_x']:.2f}")
     report = ["Board-in-case check (part boxes against case/positions.json)", ""]
     report += [f"checked {sum(1 for b in boxes.values() if b)} parts"]
     report += [f"  PROBLEM: {p}" for p in problems] or ["  no collisions"]

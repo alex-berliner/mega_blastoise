@@ -2,7 +2,7 @@
 
     python3 tools/fab.py        # writes board/fab/
 
-  gerbers/ + battler_gerbers.zip   copper x4, mask, paste, silk, outline, drills
+  gerbers/ + battler_gerbers.zip   copper x2, mask, paste, silk, outline, drills
   battler_bom_jlc.csv              Comment, Designator, Footprint, LCSC Part #
   battler_cpl_jlc.csv              Designator, Mid X, Mid Y, Layer, Rotation
   battler.step                     board with parts, for the case check
@@ -28,7 +28,7 @@ BOARD_DIR = os.path.dirname(HERE)
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 SCH = os.path.join(BOARD_DIR, "battler.kicad_sch")
 OUT = os.path.join(BOARD_DIR, "fab")
-LAYERS = "F.Cu,In1.Cu,In2.Cu,B.Cu,F.Mask,B.Mask,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,Edge.Cuts"
+LAYERS = "F.Cu,B.Cu,F.Mask,B.Mask,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,Edge.Cuts"
 
 
 def run(*args):

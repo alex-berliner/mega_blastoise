@@ -1,24 +1,28 @@
-"""Planes, plane connections, autorouting and pours for the board build_pcb.py made.
+"""Pours, ground connections, autorouting for the 2-layer board build_pcb.py made.
 
     FREEROUTING_JAR=/path/freerouting-1.9.0.jar python3 tools/route.py [passes] [--reuse]
 
 --reuse imports tools/last_route.ses instead of routing again (valid while the
 placed board and the pre-routes are unchanged).
+--finish takes the saved, routed board and only closes what is still open (stubs,
+the maze router with a wide search, plane repairs): the step after a full run that
+left a connection or two.
 
   1. BOM fields hidden (KiCad puts new fields on the silkscreen)
-  2. In1 = GND plane, In2 = 3V3 plane; over the RP2350B core a 3V3 pour on the
-     top layer, as on Raspberry Pi's board (its keep-outs shape it)
+  2. over the RP2354B core a 3V3 pour on the top layer, as on Raspberry Pi's
+     2-layer board (its keep-outs shape it); GND is the bottom layer, poured last
   3. pre-routes that the router handles badly:
        membrane contacts: each comb's anchor -> radial stub -> via outside the pill
        display landing: the panel's 24 grounded pins joined by one bar
-       TPS63001: its power loop, drawn as TI's layout guidance asks
        AP3156: its GND pins into its thermal pad
-       QSPI flash: pad to pad by the maze router (tools/maze.py)
-       every other GND/3V3 pad: a short stub and a via into its plane
-  4. Freerouting (1.9.0; 2.x loops on this board) routes the signals on F.Cu and
-     B.Cu. Its copy of the board is adjusted first (see dsn_for_router). Any
-     connection it leaves open goes to the maze router.
-  5. outer GND pours, unused stub vias removed, GND stitching, zones filled
+       every other GND pad: a short stub and a via down to the GND pour
+  4. Freerouting (1.9.0; 2.x loops on this board) routes the signals and the
+     supplies (3V3 included: two layers have no 3V3 plane) on F.Cu and B.Cu. GND is
+     left out of its job. (Its per-layer costs would keep B.Cu clearer, but 1.9's
+     reader rejects an autoroute_settings block in the structure.) Its copy of the
+     board is adjusted first (see dsn_for_router). Any connection it leaves open goes
+     to the maze router.
+  5. GND pours on both layers, unused stub vias removed, GND stitching, zones filled
 kicad-cli's DRC decides whether it is done (tools/check_pcb.py).
 """
 import math
@@ -43,14 +47,17 @@ JAR = os.environ.get("FREEROUTING_JAR", "")
 STUB_VIAS = []
 STUB_R = 3.3              # contact via distance from the contact centre
 CONTACT_R = 2.9           # nothing but the combs inside this (no pour, no vias, no other tracks)
-VIA_D, VIA_DRILL = 0.5, 0.25
+VIA_D, VIA_DRILL = 0.5, 0.3     # JLC's standard hole: anything smaller costs extra
 CLEAR = 0.2                 # 0.15 rule + margin: pad outlines are polygons, the check rounds
 # Areas of Raspberry Pi's core the router must stay out of on F.Cu (reference coordinates),
 # both already connected by the copied routing:
 #   the 1.1 V switcher's copper (its four small zones)
-#   the 1.1 V ring around the RP2350B's centre pad. The band between that ring and the
-#   pins stays open: 3V3 pour, the 3V3 pins' stubs and vias, and escapes for crowded pins.
-CORE_FENCES_REF = [((101.4, 90.5), (104.4, 95.8)), ((97.1, 97.1), (102.9, 102.9))]
+#   everything inside the chip's pads (they end 4.5 mm from its centre): the 1.1 V ring
+#   around the centre pad and, between it and the pads, the 3V3 pour that the 3V3 pins'
+#   stubs reach. Two layers have no 3V3 plane to rescue a pour cut into pieces, so no
+#   escape may cross it (as on Raspberry Pi's own 2-layer board): every pin leaves outwards.
+CORE_FENCES_REF = [((101.4, 90.5), (104.4, 95.8)), ((95.55, 95.55), (104.45, 104.45))]
+PAD_RING = 4.5            # the chip's pads end this far from its centre
 
 
 def mm(v):
@@ -140,15 +147,16 @@ def core_fences():
     return out
 
 
+PLANE_NETS = ("GND",)       # nets the pours carry; everything else is routed
+
+
 def planes(board):
-    outline = board_polygon(0.4)
-    add_zone(board, "GND", pcbnew.In1_Cu, outline, 0, "GND plane")
-    add_zone(board, "+3V3", pcbnew.In2_Cu, outline, 0, "3V3 plane")
-    for l in (pcbnew.In1_Cu, pcbnew.In2_Cu):
-        board.SetLayerType(l, pcbnew.LT_POWER)
     for ref, (x, y) in CASE["buttons"].items():
         add_zone(board, None, pcbnew.F_Cu, circle(x, y, CONTACT_R), 0, f"{ref} contact", keepout=("pour", "vias"))
-    add_zone(board, "+3V3", pcbnew.F_Cu, rect(*core_box(board)), 2, "3V3 core pour")
+    u4 = board.FindFootprintByReference("U4")
+    cx, cy = xy(u4.GetPosition())
+    add_zone(board, "+3V3", pcbnew.F_Cu, rect(cx - PAD_RING, cy - PAD_RING, cx + PAD_RING, cy + PAD_RING), 2,
+             "3V3 inside the pads")
 
 
 def pours(board):
@@ -188,6 +196,35 @@ def add_via(board, p, net):
     return v
 
 
+def core_3v3_stubs(board):
+    """Every 3V3 pin of the chip reaches the 3V3 pour between its pads and the 1.1 V ring
+    through a short stub inwards. The copied routing has one on most of them; a pin
+    without one gets it here (touching the pour's edge isn't enough for the fill)."""
+    u4 = board.FindFootprintByReference("U4")
+    cx, cy = xy(u4.GetPosition())
+    ring = lambda p: max(abs(p[0] - cx), abs(p[1] - cy))
+    segs = [(xy(t.GetStart()), xy(t.GetEnd())) for t in board.GetTracks()
+            if t.GetClass() != "PCB_VIA" and t.GetNetname() == "+3V3"]
+    net = board.FindNet("+3V3")
+    added = []
+    for pad in pads_of(u4):
+        if pad.GetNetname() != "+3V3" or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
+            continue
+        inward = any((pad.HitTest(V(*a)) and ring(b) < PAD_RING - 0.1) or (pad.HitTest(V(*b)) and ring(a) < PAD_RING - 0.1)
+                     for a, b in segs)
+        if inward:
+            continue
+        px, py = xy(pad.GetPosition())
+        dx, dy = px - cx, py - cy
+        if abs(dx) > abs(dy):
+            end = (cx + math.copysign(PAD_RING - 0.6, dx), py)
+        else:
+            end = (px, cy + math.copysign(PAD_RING - 0.6, dy))
+        add_track(board, (px, py), end, net, 0.2)
+        added.append(pad.GetNumber())
+    print("3V3 stubs into the pour for U4 pins:", added)
+
+
 def contact_stubs(board):
     """Each comb's anchor sits on its outer ring. A radial stub takes it to a via
     outside the silicone footprint; the router starts from there."""
@@ -224,56 +261,6 @@ def fpc_ground_bar(board):
     for i in range(0, len(xs), 5):
         add_track(board, (xs[i], bar_y), (xs[i], via_y), gnd, 0.3)
         add_via(board, (xs[i], via_y), gnd)
-
-
-def buck_boost(board):
-    """The TPS63001's power loop as TI's layout guidance asks for it: VIN, L1, L2 and
-    VOUT straight onto their capacitor and inductor pads on the top layer, the GND and
-    PS pins into the PowerPAD's vias, the VINA filter on its pin, FB on VOUT.
-    placement.py turns the chip so its power pins face the inductor."""
-    def at(ref, num):
-        fp = board.FindFootprintByReference(ref)
-        return xy(next(p for p in fp.Pads() if p.GetNumber() == num and p.GetAttribute() == pcbnew.PAD_ATTRIB_SMD
-                       and p.IsOnLayer(pcbnew.F_Cu)).GetPosition())
-
-    def path(net, pts, width):
-        n = board.FindNet(net)
-        for a, b in zip(pts, pts[1:]):
-            add_track(board, a, b, n, width)
-    u3 = board.FindFootprintByReference("U3")
-    ep_vias = [xy(p.GetPosition()) for p in u3.Pads() if p.GetNumber() == "11" and p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH]
-    pin = {n: at("U3", str(n)) for n in range(1, 11)}
-    l1a, l1b = board.FindFootprintByReference("L1").Pads()
-    l_pad = {p.GetNumber(): p for p in (l1a, l1b)}
-
-    def into(pad_xy, pad):                  # straight down from the pin into the inductor pad, then to its centre
-        top = pcbnew.ToMM(pad.GetBoundingBox().GetY())
-        return [pad_xy, (pad_xy[0], top + 0.4), xy(pad.GetPosition())]
-    path("VSYS", [pin[5], at("C5", "1")], 0.3)
-    path("/Power/BB_L1", into(pin[4], l_pad["1"]), 0.3)
-    path("/Power/BB_L2", into(pin[2], l_pad["2"]), 0.3)
-    c6 = at("C6", "1")
-    # FB runs down outside the PowerPAD's side tabs (they reach 0.3 mm past the body)
-    tabs_x = min(pcbnew.ToMM(p.GetBoundingBox().GetX()) for p in u3.Pads() if p.GetNumber() == "11")
-    fb_x = tabs_x - 0.3
-    path("+3V3", [pin[1], (fb_x, pin[1][1]), c6], 0.3)
-    path("+3V3", [pin[10], (fb_x, pin[10][1]), (fb_x, pin[1][1])], 0.2)
-    # output caps into the 3V3 plane on their outer side
-    for ref in ("C6", "C7"):
-        p = at(ref, "1")
-        v = (p[0] - 0.9, p[1])
-        path("+3V3", [p, v], 0.3)
-        add_via(board, v, board.FindNet("+3V3"))
-    # GND and PS pins into the PowerPAD: pin 3 below it, pins 7 and 9 above it
-    top_via = min(ep_vias, key=lambda v: v[1])
-    bottom_via = max(ep_vias, key=lambda v: v[1])
-    path("GND", [pin[3], bottom_via], 0.3)
-    for n in (7, 9):
-        path("GND", [pin[n], (pin[n][0], top_via[1]), top_via], 0.3)
-    r12, c4 = at("R12", "2"), at("C4", "1")
-    mid = (pin[8][0], r12[1])
-    path("/Power/VINA", [r12, mid, c4], 0.2)
-    path("/Power/VINA", [mid, pin[8]], 0.2)
 
 
 def led_driver(board):
@@ -442,8 +429,8 @@ def via_near(board, space, origin, net, layer, avoid_angle=None, hit=None, origi
     return None
 
 
-def fanout(board, nets=("GND", "+3V3")):
-    """A stub and a via into the plane for every GND/3V3 pad whose tracks don't
+def fanout(board, nets=PLANE_NETS):
+    """A stub and a via down to the GND pour for every GND pad whose tracks don't
     already lead to one."""
     space = Space(board)
     ok = reaches_plane(board, nets)
@@ -492,10 +479,10 @@ def maze_for(board, net, a, b, reach=6.0, ignore=()):
 
 
 
-def maze_connect(board, net, a, la, b, lb):
+def maze_connect(board, net, a, la, b, lb, reach=6.0):
     """One connection, a -> b, by tools/maze.py on the outer layers; added locked.
     Returns the new route as [(layer, points), ...] or None."""
-    runs = maze_for(board, net, a, b).route(a, la, b, lb)
+    runs = maze_for(board, net, a, b, reach=reach).route(a, la, b, lb)
     if runs:
         add_route(board, net, runs)
     return runs
@@ -528,25 +515,6 @@ def conflicts(item, runs, net):
         if k < len(runs) - 1 and item.HitTest(V(*pts[-1]), mm(c["clear"] + c["via"] / 2)):
             return True
     return False
-
-
-QSPI = ["/MCU/QSPI_SD2", "/MCU/QSPI_SD1", "/MCU/QSPI_SD0", "/MCU/QSPI_SCLK", "/MCU/QSPI_SD3"]
-
-
-def qspi(board):
-    """Flash lines the core copy doesn't bring, pad to pad, before anything else is
-    routed. Raspberry Pi's SD2 approached its SOIC's pin from between the pad rows,
-    where this WSON has its exposed pad, so that one is routed here."""
-    routed = {t.GetNetname() for t in board.GetTracks()}
-    for net in QSPI:
-        if net in routed:
-            continue
-        pads = [p for fp in footprints(board) for p in pads_of(fp) if p.GetNetname() == net]
-        a, b = (xy(p.GetPosition()) for p in pads)
-        if maze_connect(board, net, a, pcbnew.F_Cu, b, pcbnew.F_Cu):
-            print("QSPI: routed", net)
-        else:
-            print("QSPI: no route for", net)
 
 
 def item_by_uuid(board):
@@ -610,8 +578,8 @@ def open_pairs(board):
     items = item_by_uuid(board)
     pairs, odd = [], []
     for u in drc_unconnected(board):
-        if any(f"[{n}]" in i["description"] for i in u["items"] for n in ("GND", "+3V3")):
-            continue                            # plane nets: repair() sees to them
+        if any(f"[{n}]" in i["description"] for i in u["items"] for n in PLANE_NETS):
+            continue                            # the pours' nets: repair() sees to them
         its = [items.get(i.get("uuid")) for i in u["items"]]
         if len(its) != 2 or None in its:        # a zone: nothing to route to
             odd.append(" / ".join(i["description"] for i in u["items"]))
@@ -636,6 +604,11 @@ def finish_open(board, rounds=24):
         took_up = progress = False
         for net, a, b in pairs:
             if maze_connect(board, net, a[:2], a[2], b[:2], b[2]):
+                done += 1
+                progress = True
+                continue
+            # a long connection may need to swing wide of the straight line between its ends
+            if maze_connect(board, net, a[:2], a[2], b[:2], b[2], reach=20.0):
                 done += 1
                 progress = True
                 continue
@@ -704,6 +677,9 @@ def dsn_for_router(text, contacts, fences, circles=()):
         pins = [p for p in m.group(2).split() if p.rsplit("-", 1)[0] not in refs]
         return m.group(1) + " ".join(pins) + m.group(3)
     text = re.sub(r"(\(pins )([^()]*)(\))", drop_pins, text)
+    # the pours carry GND: its pins leave the router's job (its fixed copper stays as obstacles)
+    for net in PLANE_NETS:
+        text = re.sub(r"(\(net " + re.escape(net) + r"\s*\(pins )([^()]*)(\))", r"\1\3", text)
     text = re.sub(r"\(image battler:DSL_button_4ring.*?\n    \)",
                   lambda m: re.sub(r"\n\s*\(pin [^\n]*", "", m.group(0)), text, flags=re.S)
     while True:
@@ -717,6 +693,12 @@ def dsn_for_router(text, contacts, fences, circles=()):
     for x0, y0, x1, y1 in fences:
         pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(x0, y0, x1, y1))
         extra += f'\n    (keepout "" (polygon F.Cu 0 {pts}))'
+    # the battery cable slot: the router's copy of the outline doesn't keep its tracks
+    # 0.2 mm off the slot's rounded ends, so it gets a keep-out on both layers
+    sx0, sy0, sx1, sy1 = slot_box()
+    pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.5, sy0 - 0.5, sx1 + 0.5, sy1 + 0.5))
+    for layer in ("F.Cu", "B.Cu"):
+        extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     i = text.index("  (placement")
     j = text.rindex("  )", 0, i)          # end of the structure section
     return text[:j] + extra + "\n" + text[j:]
@@ -823,7 +805,7 @@ def drop_unused_stub_vias(board, stub_vias):
             continue
         layers = {t.GetLayer() for t in tracks if t.GetNetname() == v.GetNetname()
                   and min(math.dist(p, xy(t.GetStart())), math.dist(p, xy(t.GetEnd()))) < 0.05}
-        if v.GetNetname() not in ("GND", "+3V3") and len(layers) < 2:
+        if v.GetNetname() not in PLANE_NETS and len(layers) < 2:
             board.Remove(v)
             gone += 1
     return gone
@@ -891,8 +873,8 @@ def prune_dangling(board, rounds=5, locked_too=False):
         loose = {i["uuid"] for v in drc_report(board).get("violations", [])
                  if v["type"] in ("track_dangling", "via_dangling") for i in v["items"]}
         items = [t for t in board.GetTracks() if t.m_Uuid.AsString() in loose
-                 and (locked_too or (not t.IsLocked() and t.GetNetname() not in ("GND", "+3V3")))
-                 and not (isinstance(t, pcbnew.PCB_VIA) and t.GetNetname() in ("GND", "+3V3"))]
+                 and (locked_too or (not t.IsLocked() and t.GetNetname() not in PLANE_NETS))
+                 and not (isinstance(t, pcbnew.PCB_VIA) and t.GetNetname() in PLANE_NETS)]
         if not items:
             break
         for t in items:
@@ -901,9 +883,9 @@ def prune_dangling(board, rounds=5, locked_too=False):
     return gone
 
 
-def anchor_islands(board, space, nets=("GND", "+3V3")):
-    """Every filled island of a GND/3V3 zone on an outer layer gets a via into its plane
-    unless it already holds one (or a plated hole)."""
+def anchor_islands(board, space, nets=PLANE_NETS):
+    """Every filled island of a GND pour gets a via to the other layer's pour unless it
+    already holds one (or a plated hole)."""
     added = 0
     zones = sorted(board.Zones(), key=lambda z: (z.GetZoneName(), z.GetNetname(), z.GetAssignedPriority(),
                                                  xy(z.GetBoundingBox().GetOrigin())))
@@ -952,14 +934,14 @@ def repair(board, rounds=4):
         space = Space(board)
         added = anchor_islands(board, space)
         items = drc_unconnected(board)
-        plane = [u for u in items if any(f"[{n}]" in i["description"] for i in u["items"] for n in ("GND", "+3V3"))]
+        plane = [u for u in items if any(f"[{n}]" in i["description"] for i in u["items"] for n in PLANE_NETS)]
         for u in plane:
             for it in u["items"]:
                 m = re.match(r"Pad (\S+) \[([^\]]+)\] of (\S+)", it["description"])
                 if not m:
                     continue
                 num, net, ref = m.groups()
-                if net not in ("GND", "+3V3"):
+                if net not in PLANE_NETS:
                     continue
                 fp = board.FindFootprintByReference(ref)
                 for pad in fp.Pads():
@@ -976,7 +958,47 @@ def repair(board, rounds=4):
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 
 
+def restore_contact_stubs(board):
+    """A contact whose net was left unrouted loses its stub and via to the final clean-up
+    (they led nowhere); the maze router's anchor for it is the stub's outer end, so put
+    them back first."""
+    ends = [xy(t.GetStart()) for t in board.GetTracks() if t.GetClass() != "PCB_VIA"] + \
+           [xy(t.GetEnd()) for t in board.GetTracks() if t.GetClass() != "PCB_VIA"]
+    back = []
+    for fp in footprints(board):
+        if str(fp.GetFPID().GetLibItemName()) != "DSL_button_4ring":
+            continue
+        cx, cy = xy(fp.GetPosition())
+        for pad in pads_of(fp):
+            if any(pad.HitTest(V(*e)) for e in ends):
+                continue
+            ax, ay = xy(pad.GetPosition())
+            a = math.atan2(ay - cy, ax - cx)
+            v = (cx + STUB_R * math.cos(a), cy + STUB_R * math.sin(a))
+            add_track(board, (ax, ay), v, pad.GetNet())
+            add_via(board, v, pad.GetNet())
+            back.append(f"{fp.GetReference()}.{pad.GetNumber()}")
+    if back:
+        print("contact stubs put back:", back)
+
+
+def finish():
+    """--finish: the routed, saved board again: stubs, open connections and repairs only,
+    without routing it all again (the pours stay; the maze router looks past them)."""
+    board = pcbnew.LoadBoard(PCB)
+    core_3v3_stubs(board)
+    restore_contact_stubs(board)
+    finish_open(board)
+    print("loose router copper removed:", prune_dangling(board))
+    repair(board)
+    print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
+    pcbnew.SaveBoard(PCB, board)
+    print("saved", PCB)
+
+
 def main():
+    if "--finish" in sys.argv:
+        return finish()
     if not JAR:
         sys.exit("set FREEROUTING_JAR")
     if os.path.exists(os.path.join(BOARD_DIR, "~battler.kicad_pcb.lck")):
@@ -986,11 +1008,10 @@ def main():
     board = pcbnew.LoadBoard(PCB)
     hide_bom_fields(board)
     planes(board)
+    core_3v3_stubs(board)
     contacts = contact_stubs(board)
     fpc_ground_bar(board)
-    buck_boost(board)
     led_driver(board)
-    qspi(board)
     fanout(board)
     freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
     finish_open(board)

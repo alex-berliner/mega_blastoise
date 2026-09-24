@@ -10,20 +10,25 @@ schematic, routed board, fab outputs, case, BOM, docs. It cannot mean
 
 ## Decisions (locked unless noted)
 
+The 2-layer build (branch `ref-design-2layer`) applies the cost changes Alex approved on
+2026-09-24; `main` keeps the 4-layer design they started from.
+
 | Area | Choice | Why |
 |---|---|---|
 | Panel | QD3525, ST7796U, 320x480 IPS, 55.50 x 84.96 x 2.50 mm, about $5-8 | SPI like current firmware; maker's drawing and pinout; a fifth of a distributor panel's price (the Displaytech DT035 was $25-35) |
 | Panel FPC | 48 contacts, 0.8 mm pitch, soldered to pads on the board (J3) | this panel has no connector version; the tail folds under the panel |
 | Backlight | 6 LEDs in parallel, 15-20 mA each; AP3156 charge pump, one current sink per LED | constant current from any cell voltage; 32 levels over one GPIO (1-wire) |
-| MCU core | RP2350B + W25Q128JVP (WSON, 0.8 mm) + ABM8-272-T3 + AOTA 3.3 uH | Raspberry Pi RP2350B minimal design (MIT); WSON so it fits under the glass |
-| Charger | BQ24074 power path, 500 mA default, 1.34 A on a Type-C 1.5/3 A source (firmware reads CC), 740 mA charge | on-board NTC over the cell |
-| 3V3 | TPS63001 buck-boost | uses the cell down to its cutoff |
-| Audio | MAX98357A, left channel, 9 dB, 8 ohm 1 W speaker on solder pads | I2S from PIO |
-| Buttons | 16 x DSL_button_4ring, direct GPIO, internal pull-ups | no matrix |
-| Power switch | button, MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |
-| USB | one USB-C, charge + data, USBLC6 ESD | |
-| Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes, red error LED | |
-| Case printing | FDM at home, PETG or PLA: about $1.50 of filament a case | the cheapest way; a print service only once it's quoted |
+| MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board); no flash chip to route |
+| Charger | TP4056 at 500 mA, TEMP grounded; USB load sharing (B5819W, AO3401A, BAT54WS gate feed, 22 uF on VSYS) | a fifth of the BQ24074's price, no stock risk; no thermistor (approved) |
+| Cell | 503450, 1000 mAh, JST PH 2.0 | the listing Alex found; 5 mm thinner case |
+| 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at about 3.35 V |
+| Audio | PWM (GPIO8) through two RC poles into an FM8002A, gain 2 | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
+| Buttons | 16 x DSL_button_4ring, direct GPIO, internal pull-ups; seat 1's Y is also the power button | no matrix; no side switch (approved) |
+| Power switch | seat 1's Y contact joins VSYS to the latch; MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |
+| USB | one USB-C, charge + data, SRV05-4 ESD, 22 ohm 0402 series in Raspberry Pi's spots | preferred/basic parts: no JLC setup fee (a 27 ohm 0603 doesn't fit the copied layout) |
+| Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes | no LEDs (approved) |
+| Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
+| Case | tub and lid snap together on six hooks; six pins locate the board; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` via Konnect; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
@@ -39,6 +44,7 @@ schematic, routed board, fab outputs, case, BOM, docs. It cannot mean
 
 ## Measure before ordering
 
-- DS Lite silicone piece outline and cap sizes
+- DS Lite silicone piece outline and cap sizes (pads and caps ordered)
 - QD3525 sample against its drawing: outline, and where the folded tail's contacts land
-- BQ24074 stock at JLC (217 in July 2026)
+- The 503450 cell: length with its protection board, plug polarity
+- A printed tub and lid: the snap fit

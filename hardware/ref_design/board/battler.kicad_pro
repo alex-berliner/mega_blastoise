@@ -152,7 +152,7 @@
         "min_silk_clearance": 0.0,
         "min_text_height": 0.8,
         "min_text_thickness": 0.08,
-        "min_through_hole_diameter": 0.2,
+        "min_through_hole_diameter": 0.3,
         "min_track_width": 0.1,
         "min_via_annular_width": 0.1,
         "min_via_diameter": 0.45,
@@ -285,7 +285,7 @@
         "track_width": 0.15,
         "tuning_profile": "",
         "via_diameter": 0.5,
-        "via_drill": 0.25,
+        "via_drill": 0.3,
         "wire_width": 6
       },
       {
@@ -323,7 +323,7 @@
         "track_width": 0.2,
         "tuning_profile": "",
         "via_diameter": 0.5,
-        "via_drill": 0.25,
+        "via_drill": 0.3,
         "wire_width": 6
       }
     ],
@@ -347,11 +347,7 @@
       },
       {
         "netclass": "PWR",
-        "pattern": "/Power/BB_L1"
-      },
-      {
-        "netclass": "PWR",
-        "pattern": "/Power/BB_L2"
+        "pattern": "+3V3"
       },
       {
         "netclass": "PWR",
@@ -364,14 +360,6 @@
       {
         "netclass": "PWR",
         "pattern": "/Audio/SPK_N"
-      },
-      {
-        "netclass": "PWR",
-        "pattern": "/Audio/SPK_P_AMP"
-      },
-      {
-        "netclass": "PWR",
-        "pattern": "/Audio/SPK_N_AMP"
       },
       {
         "netclass": "USB",

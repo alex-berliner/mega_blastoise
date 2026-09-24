@@ -1,11 +1,10 @@
 // Reference design case: the single source of truth for every position the
-// board depends on (outline, contacts, screws, connectors, height limits).
+// board depends on (outline, contacts, locating pins, connectors, height limits).
 //
 //   part="layout"   coloured top view
 //   part="board"    board outline with its cable slot, 2D (DXF for Edge.Cuts)
 //   part="3d"       assembly; explode=<mm> lifts the lid
-//   part="tub", "lid", "pwr_cap"   printable parts (STL)
-//   part="lens"     cover lens outline, 2D (DXF for laser cutting 1 mm acrylic)
+//   part="tub", "lid"   printable parts (STL); the lid snaps onto the tub
 //
 // Frame: origin at the case centre, +Y towards seat 2 (seat 1 at -Y), z = 0 at
 // the bottom of the tub. KiCad frame in the echoes: centre (100,100), Y down.
@@ -30,7 +29,7 @@ fpc_front = 18.5;                                       // its pad row (centre) 
 // fits the bay (with its tape and a 0.25 mm gap each side) moves nothing else.
 bay_w = 56.0;     bay_l = 86.24;
 
-cell = [34, 50, 10];                                    // 103450 Li-ion, w x l x t
+cell = [34, 50, 5];                                     // 503450 Li-ion, w x l x t; ESTIMATE: length with its protection board
 cell_y = -16;                                           // cell centre (towards seat 1: wires end there)
 spk_d = 20;  spk_h = 4.5;  spk_y = 26;                  // ESTIMATE: 20 mm 8 ohm 1 W speaker
 
@@ -49,7 +48,6 @@ wall = 2.0;  board_clear = 0.5;  corner_r = 8;
 floor_t = 1.5;  cell_gap = 0.5;  pcb_t = 1.6;  lid_t = 1.5;
 bay_t = 4.9;              // board top to lid underside: the panel and the air under it
 glass_gap = bay_t - panel_t;   // panel back above the board (the panel hangs from the lid on tape)
-lens_t = 1.0;             // acrylic cover lens, flush in the lid top
 z_board = floor_t + cell[2] + cell_gap;                 // board bottom
 z_top_cu = z_board + pcb_t;                             // board top: every height limit counts from here
 z_glass = z_top_cu + glass_gap;
@@ -88,16 +86,16 @@ seat1 = [
 seat2_names = ["P2 up", "P2 down", "P2 left", "P2 right", "P2 A", "P2 B", "P2 X", "P2 Y"];
 buttons = concat(seat1, [for (i = [0:7]) [str("SW", i + 9), seat2_names[i], rot180(seat1[i][2])]]);
 
-// screws: four beside the glass in the side bezels, two between each seat's clusters
-screw_x = 31.4;           // midway between the bay and the board edge
-screws = [[screw_x, 36], [-screw_x, 36], [screw_x, -36], [-screw_x, -36], [0, seat_y], [0, -seat_y]];
-boss_d = 5.0;  hole_d = 2.2;
+// locating pins: four beside the glass in the side bezels, two between each seat's clusters.
+// Each rises from a tub boss through the board's hole into a lid boss, so the snapped-on lid
+// clamps the board with nothing to screw
+pin_x = 31.4;             // midway between the bay and the board edge
+pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [0, seat_y], [0, -seat_y]];
+boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
 
 // edge parts, all on the right (+X) long edge
 usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
 usb_front = board_w / 2 + 1.35;                         // receptacle face: 1.35 past the board edge
-pwr_y = 22;  pwr_plunger = board_w / 2;                 // SKRTLAE010 plunger tip at the board edge
-led_pos = [[board_w / 2 - 4.0, 12.0], [board_w / 2 - 4.0, 8.0]];   // D1 charge, D4 error
 // left long edge: debug
 pin_pos = [[-(board_w / 2 - 4.0), 20.0], [-(board_w / 2 - 4.0), 12.0]];  // SW18 BOOTSEL, SW19 RESET
 swd_pos = [-(board_w / 2 - 3.5), -2.0];  uart_pos = [-(board_w / 2 - 3.5), -12.0];
@@ -113,13 +111,16 @@ assert(seat_y - piece_d / 2 >= bay_l / 2 + piece_to_glass - 1e-6, "cluster runs 
 assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs off the board");
 assert(abs(cell_y) + cell[1] / 2 <= bay_l / 2, "cell sticks out from under the glass");
 assert(spk_y + spk_d / 2 <= bay_l / 2 && spk_y - spk_d / 2 >= cell_y + cell[1] / 2 + 1, "speaker collides with the cell or leaves the glass area");
-assert(screw_x - boss_d / 2 >= bay_w / 2 + 0.5 && screw_x + boss_d / 2 <= board_w / 2, "no room for screw bosses beside the glass");
+assert(pin_x - boss_d / 2 >= bay_w / 2 + 0.5 && pin_x + boss_d / 2 <= board_w / 2, "no room for pin bosses beside the glass");
 assert(panel_w + 0.4 <= bay_w && panel_l + 0.4 <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
 assert(retainer_z < z_lid, "button retainer above the lid");
-for (s = screws) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "screw under a silicone piece");
+for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "pin under a silicone piece");
 
 // ---------------- echo: everything the board script needs ----------------
+// a snap hook's footprint (two corners) from its wall position and direction
+function hook_rect(h) = let(c = cos(h[2]), sn = sin(h[2]), u0 = -snap_gap - snap_t, v0 = -snap_w / 2, v1 = snap_w / 2)
+  [[h[0] + u0 * c - v0 * sn, h[1] + u0 * sn + v0 * c], [h[0] - v1 * sn, h[1] + v1 * c]];
 function jnum(v) = str(round(v * 1000) / 1000);
 function jpt(p) = str("[", jnum(kicad(p)[0]), ", ", jnum(kicad(p)[1]), "]");
 function join(l, i = 0) = i >= len(l) ? "" : str(i ? ", " : "", l[i], join(l, i + 1));
@@ -135,15 +136,15 @@ echo(str("JSON {",
   "\"fpc_conn\": {\"x\": ", jnum(kicad([fpc_x, 0])[0]), ", \"front_y\": ", jnum(kicad([0, -(panel_l / 2 - fpc_front)])[1]), "}, ",
   "\"pieces\": [", join([for (c = clusters) jpt(c)]), "], \"piece_d\": ", piece_d, ", ",
   "\"buttons\": {", join([for (b = buttons) str("\"", b[0], "\": ", jpt(b[2]))]), "}, ",
-  "\"screws\": [", join([for (s = screws) jpt(s)]), "], \"boss_d\": ", boss_d, ", \"hole_d\": ", hole_d, ", ",
+  "\"pins\": [", join([for (s = pins) jpt(s)]), "], \"boss_d\": ", boss_d, ", \"hole_d\": ", hole_d, ", ",
   "\"usb\": {\"y\": ", jnum(kicad([0, usb_y])[1]), ", \"front_x\": ", jnum(kicad([usb_front, 0])[0]), "}, ",
-  "\"pwr\": {\"y\": ", jnum(kicad([0, pwr_y])[1]), ", \"plunger_x\": ", jnum(kicad([pwr_plunger, 0])[0]), "}, ",
-  "\"leds\": [", jpt(led_pos[0]), ", ", jpt(led_pos[1]), "], ",
   "\"pinholes\": [", jpt(pin_pos[0]), ", ", jpt(pin_pos[1]), "], ",
   "\"swd\": ", jpt(swd_pos), ", \"uart\": ", jpt(uart_pos), ", ",
   "\"batt_conn\": ", jpt(batt_conn), ", \"pocket\": [", pocket[0], ", ", pocket[1], "], ",
   "\"cell\": [", jpt([-cell[0] / 2, cell_y + cell[1] / 2]), ", ", jpt([cell[0] / 2, cell_y - cell[1] / 2]), "], ",
-  "\"speaker\": {\"c\": ", jpt([0, spk_y]), ", \"d\": ", spk_d, "}",
+  "\"speaker\": {\"c\": ", jpt([0, spk_y]), ", \"d\": ", spk_d, "}, ",
+  "\"hooks\": [", join([for (h = hooks) str("[", jpt(hook_rect(h)[0]), ", ", jpt(hook_rect(h)[1]), "]")]), "], ",
+  "\"hook_clear\": ", bay_t - snap_len,
   "}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
 echo(str("STACK floor ", floor_t, " + cell ", cell[2], " + gap ", cell_gap, " + PCB ", pcb_t, " + glass gap ", glass_gap,
@@ -160,10 +161,7 @@ module board_outline() difference() {
   rrect(board_w, board_l, board_r);
   translate([slot[0][0], slot[1][1]]) square([slot[1][0] - slot[0][0], slot[0][1] - slot[1][1]]);
 }
-module lens2d() offset(r = 1) square([panel_w + 1.0, panel_l + 1.0], center = true);
-
 if (part == "board") board_outline();
-if (part == "lens") lens2d();
 
 if (part == "layout") {
   color("#34343d") linear_extrude(0.05) rrect(case_w, case_l, corner_r);
@@ -175,16 +173,23 @@ if (part == "layout") {
   color("#c9a227") translate([fpc_x, -(panel_l / 2 - fpc_front / 2), 0.45]) linear_extrude(0.05) square([fpc_w, fpc_front], center = true);
   for (c = clusters) color([0.85, 0.85, 0.9, 0.45]) at(c, 0.5) linear_extrude(0.05) circle(d = piece_d);
   for (b = buttons) color("#f2c94c") at(b[2], 0.6) linear_extrude(0.05) circle(d = 4.8);
-  for (s = screws) color("white") at(s, 0.7) linear_extrude(0.05) ring(0.4) circle(d = boss_d);
+  for (s = pins) color("white") at(s, 0.7) linear_extrude(0.05) ring(0.4) circle(d = boss_d);
+  for (h = hooks) color("#56ccf2") at(h, 0.75) rotate(h[2]) translate([-snap_t / 2, 0]) linear_extrude(0.05) square([snap_t, snap_w], center = true);
   color("#f08a3c") at([usb_front - 3.65, usb_y], 0.8) linear_extrude(0.05) square([7.3, usb_w], center = true);
-  color("#f08a3c") at([pwr_plunger - 1.7, pwr_y], 0.8) linear_extrude(0.05) square([3.4, 4.5], center = true);
   color("#f08a3c") at(batt_conn, 0.8) linear_extrude(0.05) square([7.9, 7.6], center = true);
   for (p = pin_pos) color("red") at(p, 0.9) linear_extrude(0.05) circle(d = 1.2);
-  for (p = led_pos) color("lime") at(p, 0.9) linear_extrude(0.05) circle(d = 2.0);
 }
 
 // ---------------- 3D ----------------
-screw_cb_d = 4.2;  screw_cb_h = 1.2;  pilot_d = 1.7;   // M2 x 16 from below, self-tapping into the lid bosses
+// Snap fit: hooks hang from the lid just inside the tub wall and their barbs click into
+// grooves in the wall. ESTIMATE: FDM snap fits need a test print; snap_barb and snap_t are
+// the numbers to tune (bending strain here is about 1.5 * t * barb / len^2 = 3%, fine in PETG)
+snap_w = 8.0;  snap_t = 1.0;  snap_len = 4.3;  snap_barb = 0.35;  snap_barb_h = 1.2;  snap_gap = 0.15;
+in_x = case_w / 2 - wall;  in_y = case_l / 2 - wall;
+// [x, y, direction of the wall]: clear of the USB-C (right wall, y 0), the debug connectors
+// (left wall, y -2 and -12) and the button retainers (|y| beyond 45 on the long walls)
+hooks = [[in_x, 30, 0], [in_x, -30, 0], [-in_x, 30, 180], [-in_x, -30, 180], [0, in_y, 90], [0, -in_y, 270]];
+assert(snap_len < bay_t - 0.3, "snap hooks reach the board");
 
 module tub() difference() {
   union() {
@@ -192,8 +197,8 @@ module tub() difference() {
       linear_extrude(z_lid) rrect(case_w, case_l, corner_r);
       translate([0, 0, floor_t]) linear_extrude(z_lid) rrect(case_w - 2 * wall, case_l - 2 * wall, corner_r - wall);
     }
-    // screw bosses up to the board
-    for (s = screws) at(s) cylinder(d = boss_d + 1.0, h = z_board);
+    // bosses up to the board, pins on through its holes into the lid bosses
+    for (s = pins) at(s) { cylinder(d = boss_d + 1.0, h = z_board); cylinder(d = pin_d, h = z_top_cu + 1.8); }
     // ribs under each silicone piece carry the button presses into the floor
     for (c = clusters) at(c) difference() {
       cylinder(d = piece_d - 4, h = z_board);
@@ -207,22 +212,23 @@ module tub() difference() {
     // feet
     for (sx = [-1, 1], sy = [-1, 1]) at([sx * (case_w / 2 - 7), sy * (case_l / 2 - 9)], -0.8) cylinder(d = 6, h = 0.8 + 0.01);
   }
-  // screw holes with a counterbore from below
-  for (s = screws) at(s, -1) { cylinder(d = hole_d + 0.2, h = z_board + 2); cylinder(d = screw_cb_d, h = screw_cb_h + 1 - 0.8 + 0.8); }
+  // grooves for the lid's snap hooks
+  for (h = hooks) at(h) rotate(h[2]) translate([-0.01, -(snap_w + 0.6) / 2, z_lid - snap_len + 0.1])
+    cube([snap_barb + 0.1 + 0.01, snap_w + 0.6, snap_barb_h + 0.2]);
   // speaker grille
   for (i = [-3:3], j = [-3:3]) if (norm([i, j]) <= 3.2) at([i * 2.4, spk_y + j * 2.4], -2) cylinder(d = 1.4, h = floor_t + 3);
   // USB-C: plug overmold recess outside, receptacle opening through
   at([case_w / 2 - 1.3, usb_y], z_top_cu + usb_h / 2) cube([3, 12.6, 6.6], center = true);
   at([case_w / 2 - wall / 2, usb_y], z_top_cu + usb_h / 2) cube([wall + 2, 9.4, 3.8], center = true);
-  // power button: cap slides in this slot
-  at([case_w / 2 - wall / 2, pwr_y], z_top_cu + 1.7) cube([wall + 2, 5.0, 3.0], center = true);
 }
 
 module lid() difference() {
   union() {
     translate([0, 0, z_lid]) linear_extrude(lid_t) rrect(case_w, case_l, corner_r);
-    // screw bosses down to the board top
-    for (s = screws) at(s, z_top_cu) cylinder(d = boss_d, h = z_lid - z_top_cu + 0.01);
+    // bosses down to the board top: they clamp it, the tub's pins locate them
+    for (s = pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_lid - z_top_cu + 0.01);
+    // snap hooks, just inside the tub wall
+    for (h = hooks) at(h) rotate(h[2]) snap_hook();
     // button retainers: the lid comes down to the cap flanges around each cluster
     for (c = clusters) at(c, retainer_z) cylinder(d = piece_d + 1, h = z_lid - retainer_z + 0.01);
     // pinhole guides reach down towards the switches
@@ -233,23 +239,25 @@ module lid() difference() {
       translate([fpc_x, -panel_l / 2]) square([fpc_w + 3, 6], center = true);   // FPC fold passes here
     }
   }
-  for (s = screws) at(s, z_top_cu - 1) cylinder(d = pilot_d, h = z_lid - z_top_cu - 0.5);
-  // viewing window and lens pocket
+  for (s = pins) at(s, z_top_cu - 1) cylinder(d = pin_d + 0.3, h = 1 + 2.2);
+  // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_lid - 1]) linear_extrude(lid_t + 2) window();
-  translate([0, 0, case_h - lens_t]) linear_extrude(lens_t + 1) lens2d();
   // buttons
   for (c = [abxy1, abxy2]) for (o = [[a, 0], [-a, 0], [0, a], [0, -a]]) at(c + o, z_top_cu) cylinder(d = cap_abxy_d + 0.4, h = case_h);
   for (c = [dpad1, dpad2]) at(c, z_top_cu) linear_extrude(case_h) offset(r = 0.2) cross(dpad_arm_w, dpad_arm_l);
-  // pinholes, light pipes (2 mm acrylic rod), battery connector pocket
+  // pinholes, battery connector pocket
   for (p = pin_pos) at(p, 0) cylinder(d = 1.2, h = case_h + 1);
-  for (p = led_pos) at(p, z_lid - 1) cylinder(d = 2.1, h = lid_t + 2);
   at(batt_conn, z_lid - 1) linear_extrude(1 + 0.9) square(pocket, center = true);
 }
 
-module pwr_cap() {
-  // slides in the tub slot; the inner flange keeps it in, the nose presses the plunger
-  cube([2.8, 4.6, 2.6], center = true);
-  translate([-1.4 - 0.5, 0, 0]) cube([1.0, 7.0, 2.6], center = true);
+// one snap hook in the frame of its wall: the wall's inner face at x = 0, the case inside at -x
+module snap_hook() {
+  z0 = z_lid - snap_len;
+  translate([-snap_gap - snap_t, -snap_w / 2, z0]) cube([snap_t, snap_w, snap_len + 0.01]);
+  // barb: a 45 degree lead-in below, a steep face above that holds the lid down
+  translate([0, snap_w / 2, 0]) rotate([90, 0, 0]) linear_extrude(snap_w)
+    polygon([[-snap_gap, z0 + 0.2], [-snap_gap + snap_barb, z0 + 0.2 + snap_barb],
+             [-snap_gap + snap_barb, z0 + snap_barb_h - 0.25], [-snap_gap, z0 + snap_barb_h]]);
 }
 
 module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
@@ -275,10 +283,7 @@ if (part == "3d") {
   color("#101014") translate([0, 0, z_glass]) linear_extrude(panel_t) square([panel_w, panel_l], center = true);
   for (c = clusters) color("#8f8f99") at(c, z_top_cu) cylinder(d = piece_d, h = dome_h);
   color("#4a4a56") translate([0, 0, explode]) lid();
-  color([0.8, 0.9, 1.0, 0.4]) translate([0, 0, case_h - lens_t - 0.02 + explode]) linear_extrude(lens_t) lens2d();
   color("#e8e8ee") caps();
-  color("#e8e8ee") at([case_w / 2 - wall / 2 + 0.4, pwr_y], z_top_cu + 1.7) pwr_cap();
 }
 if (part == "tub") tub();
 if (part == "lid") translate([0, 0, case_h]) rotate([180, 0, 0]) lid();       // printed face down
-if (part == "pwr_cap") pwr_cap();

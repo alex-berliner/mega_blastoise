@@ -70,11 +70,11 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "2.4k": ("C25882", "0402WGF2401TCE"),
     "5.1k": ("C25905", "0402WGF5101TCE"),
     "10k": ("C25744", "0402WGF1002TCE"),
+    "22": ("C25092", "0402WGF220JTCE"),
     "20k": ("C25765", "0402WGF2002TCE"),
     "47k": ("C25792", "0402WGF4702TCE"),
     "100k": ("C25741", "0402WGF1003TCE"),
     "470k": ("C25790", "0402WGF4703TCE"),
-    "27 0603": ("C25190", "0603WAF270JT5E"),         # UNI-ROYAL 0603: a preferred part, no JLC setup fee
 }
 CAP = {  # value: (lcsc, mpn, footprint)
     "15p": ("C1548", "0402CG150J500NT", C0402),
@@ -182,13 +182,16 @@ for i, net in enumerate(["VBUS", "VSYS", "VBAT", "+3V3", "GND"]):
 # =================================================================================
 S = "mcu.kicad_sch"
 GPIO = {  # GPIO number: net
-    0: "UART_TX", 1: "UART_RX", 2: "PWR_HOLD", 3: "PWR_BTN_N",
+    2: "PWR_HOLD", 3: "PWR_BTN_N",
     4: "P2_UP", 5: "P2_DOWN", 6: "P2_LEFT", 7: "P2_RIGHT",
     8: "AUDIO_PWM", 11: "AMP_EN",
     12: "P2_A", 13: "P2_B", 14: "P2_X", 15: "P2_Y",
     17: "CHG_STAT_N", 18: "CHG_DONE_N",
+    # 2-layer routing: UART1 and seat 1's right on free pins at the chip's top-left corner,
+    # nearest their connector and seat (the lower-left corner is crowded by the crystal)
+    20: "UART_TX", 21: "UART_RX", 23: "P1_RIGHT",
     24: "P1_A", 25: "P1_B", 26: "P1_X",                  # P1 Y is the power button: read on GPIO3
-    28: "P1_UP", 29: "P1_DOWN", 30: "P1_LEFT", 31: "P1_RIGHT",
+    28: "P1_UP", 29: "P1_DOWN", 30: "P1_LEFT",
     32: "LCD_TE", 33: "LCD_DC", 34: "LCD_RST", 35: "BL_SDI",
     36: "LCD_MISO", 37: "LCD_CS", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
     40: "VBAT_SENSE", 41: "CC1_SENSE", 42: "CC2_SENSE",
@@ -226,8 +229,10 @@ part("X1", S, "Device:Crystal_GND24", "12MHz", "battler:ABM8-272-T3",
 C("C27", S, "15p", "XIN", fp=C0402_RPI)
 C("C28", S, "15p", "XO", fp=C0402_RPI)
 R("R20", S, "1k", "XOUT", "XO", fp=R0402_RPI)
-R("R21", S, "27 0603", "USB_DP", "USB_DP_MCU", fp=R0603)
-R("R22", S, "27 0603", "USB_DM", "USB_DM_MCU", fp=R0603)
+# 22 ohm: a basic part in Raspberry Pi's own 0402 spot (a 27 ohm 0603 doesn't fit the copied
+# layout, and the 27 ohm 0402 is an extended part); 22 ohm is fine for full-speed USB
+R("R21", S, "22", "USB_DP", "USB_DP_MCU", fp=R0402_RPI)
+R("R22", S, "22", "USB_DM", "USB_DM_MCU", fp=R0402_RPI)
 R("R23", S, "10k", "+3V3", "QSPI_SS", fp=R0402_RPI)     # the flash's chip select high at power-up
 R("R25", "debug.kicad_sch", "1k", "QSPI_SS", "BOOTSEL", fp=R0402_RPI)
 part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOTSEL", "battler:SW_SPST_TS-1088-xR020",

@@ -1,8 +1,6 @@
 Board-in-case check (part boxes against case/positions.json)
 
-checked 91 parts
+checked 90 parts
   no collisions
-  note: U3: no 3D model in this KiCad install, checked as its courtyard at 1.0 mm (Texas_DRC0010J_ThermalVias)
-  note: U7: no 3D model in this KiCad install, checked as its courtyard at 1.0 mm (TQFN-16-1EP_3x3mm_P0.5mm_EP1.23x1.23mm_ThermalVias)
-  note: U2: no 3D model in this KiCad install, checked as its courtyard at 1.0 mm (VQFN-16-1EP_3x3mm_P0.5mm_EP1.6x1.6mm_ThermalVias)
+  note: U2: no 3D model in this KiCad install, checked as its courtyard at 1.75 mm (SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.3mm_ThermalVias_0.3mm)
 RESULT: PASS
