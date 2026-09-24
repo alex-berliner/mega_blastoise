@@ -1,0 +1,6 @@
+{
+  "name": "ref-design-quotes",
+  "private": true,
+  "description": "Instant-quote scripts for the reference design's boards (JLCPCB, PCBWay)",
+  "dependencies": { "playwright-core": "1.52.0" }
+}
