@@ -30,6 +30,14 @@ SYMBOLS = {
          ("14", "D3", "passive", "R", 0), ("15", "D4", "passive", "R", -1), ("16", "D5", "passive", "R", -2),
          ("1", "D6", "passive", "R", -3),
          ("9", "GND", "power_in", "B", -1), ("11", "GND", "power_in", "B", 0), ("17", "EP", "power_in", "B", 1)]),
+    "FM8002A": (
+        "U", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+        "https://www.lcsc.com/product-detail/Audio-Power-OpAmps_Shenzhen-Fuman-Elec_C94625.html",
+        "2 W mono bridge-tied audio amplifier, 2.5-5.5 V, gain 2 x Rf/Ri, SHUTDOWN high = off",
+        7.62, 7.62,
+        [("3", "+IN", "input", "L", 2), ("4", "-IN", "input", "L", 1), ("2", "BYPASS", "passive", "L", -1),
+         ("1", "SHUTDOWN", "input", "L", -2), ("5", "VO1", "output", "R", 1), ("8", "VO2", "output", "R", -1),
+         ("6", "VDD", "power_in", "T", 0), ("7", "GND", "power_in", "B", 0)]),
 }
 PIN_LEN = 2.54
 

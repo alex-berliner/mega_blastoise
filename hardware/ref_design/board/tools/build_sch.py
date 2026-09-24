@@ -49,16 +49,16 @@ REGIONS = {
     ROOT_FILE: [(20, 150, 175, 190, ["H1", "H2", "H3", "H4", "H5", "H6", "FID1", "FID2", "FID3"])],
     "usb_charger.kicad_sch": [
         (15, 22, 125, 175, ["J1", "U1", "R1", "R2", "R3", "R4", "C1", "#FLG01", "#FLG02"]),
-        (130, 22, 250, 175, ["U2", "R5", "R6", "RT1", "C2", "C3", "R7", "R8", "R9", "R10", "R11", "D1", "J2"]),
+        (130, 22, 250, 175, ["U2", "R5", "R9", "R10", "C2", "C3", "D5", "D6", "Q2", "R6", "C9", "#FLG03", "J2"]),
     ],
     "power.kicad_sch": [
-        (15, 22, 250, 80, ["U3", "L1", "R12", "C4", "#FLG03", "C5", "C6", "C7"]),
-        (15, 85, 250, 175, ["SW17", "R13", "D2", "R14", "D3", "R15", "Q1", "R16",
+        (15, 22, 250, 80, ["U3", "C5", "C6", "C7"]),
+        (15, 85, 250, 175, ["R13", "D2", "R14", "D3", "R15", "Q1", "R16",
                              "R17", "R18", "C8", "TP1", "TP2", "TP3", "TP4", "TP5"]),
     ],
     "mcu.kicad_sch": [
         (12, 20, 128, 197, ["U4"]),
-        (132, 28, 250, 172, ["X1", "R20", "C27", "C28", "R21", "R22", "U5", "R23", "R24"]),
+        (132, 28, 250, 172, ["X1", "R20", "C27", "C28", "R21", "R22", "R23"]),
     ],
     "mcu_power.kicad_sch": [
         (15, 28, 250, 170, ["C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19",
@@ -66,14 +66,15 @@ REGIONS = {
                              "#FLG05", "#FLG06"]),
     ],
     "debug.kicad_sch": [
-        (15, 22, 250, 120, ["R25", "SW18", "R26", "SW19", "J5", "J6", "R27", "D4"]),
+        (15, 22, 250, 120, ["R25", "SW18", "R26", "SW19", "J5", "J6"]),
     ],
     "display.kicad_sch": [
         (15, 22, 95, 195, ["J3"]),
         (110, 30, 250, 75, ["R28", "R29", "C29", "C30"]),
         (110, 80, 250, 175, ["U6", "C31", "C32", "C33", "C36", "R31"]),
     ],
-    "audio.kicad_sch": [(15, 22, 250, 150, ["U7", "R32", "C34", "C35", "FB1", "FB2", "J4"])],
+    "audio.kicad_sch": [(15, 22, 250, 150, ["U7", "R32", "C37", "R33", "C38", "C39", "R34", "R35", "C40",
+                                            "R36", "Q3", "R37", "C34", "C35", "J4"])],
     "buttons.kicad_sch": [
         (15, 22, 250, 90, ["SW1", "SW2", "SW3", "SW4", "SW5", "SW6", "SW7", "SW8"]),
         (15, 95, 250, 165, ["SW9", "SW10", "SW11", "SW12", "SW13", "SW14", "SW15", "SW16"]),
@@ -81,48 +82,48 @@ REGIONS = {
 }
 RAILS_X = 254.0            # rails column (power symbols) on every sheet
 SHEET_NOTES = [
-    ("usb_charger.kicad_sch", "USB_Charger", ("USB-C sink, ESD, BQ24074 power path", "charger, battery connector, NTC")),
-    ("power.kicad_sch", "Power", ("TPS63001 3V3 buck-boost, power button", "latch, battery and button sensing")),
-    ("mcu.kicad_sch", "MCU", ("RP2350B, 12 MHz crystal,", "16 MB QSPI flash, USB series resistors")),
-    ("mcu_power.kicad_sch", "MCU_Power", ("RP2350B decoupling and its", "internal 1.1 V switcher")),
-    ("debug.kicad_sch", "Debug", ("SWD and UART connectors, BOOTSEL", "and RESET buttons, error LED")),
+    ("usb_charger.kicad_sch", "USB_Charger", ("USB-C sink, ESD, TP4056 charger,", "load sharing, battery connector")),
+    ("power.kicad_sch", "Power", ("ME6211 3V3 LDO, power button latch,", "battery and button sensing")),
+    ("mcu.kicad_sch", "MCU", ("RP2354B (2 MB flash inside),", "12 MHz crystal, USB series resistors")),
+    ("mcu_power.kicad_sch", "MCU_Power", ("RP2354B decoupling and its", "internal 1.1 V switcher")),
+    ("debug.kicad_sch", "Debug", ("SWD and UART connectors,", "BOOTSEL and RESET buttons")),
     ("display.kicad_sch", "Display", ("48-pin solder FPC of the 3.5in IPS panel,", "AP3156 backlight driver")),
-    ("audio.kicad_sch", "Audio", ("MAX98357A I2S class D amplifier,", "speaker pads")),
+    ("audio.kicad_sch", "Audio", ("PWM low-pass into an FM8002A", "bridge amplifier, speaker pads")),
     ("buttons.kicad_sch", "Buttons", ("16 membrane contacts,", "one GPIO each")),
 ]
 TEXT = {
     ROOT_FILE: [
         (20, 20, 2.0, "Two-player handheld: reference design (REF-A)"),
-        (20, 27, 1.27, "RP2350B, 3.5in 320x480 IPS (ST7796, SPI), 16 membrane contacts under DS Lite silicone,"),
-        (20, 31, 1.27, "MAX98357A audio, one Li-ion cell on a BQ24074 power path, TPS63001 3V3 buck-boost."),
+        (20, 27, 1.27, "RP2354B, 3.5in 320x480 IPS (ST7796, SPI), 16 membrane contacts under DS Lite silicone,"),
+        (20, 31, 1.27, "PWM audio into an FM8002A, one Li-ion cell on a TP4056 charger with load sharing, ME6211 3V3."),
         (20, 35, 1.27, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets."),
-        (20, 145, 1.27, "Mechanical: M2 mounting holes at positions set by the case; fiducials for assembly."),
+        (20, 145, 1.27, "Mechanical: locating holes at positions set by the case; fiducials for assembly."),
     ] + [item for i, (f, name, desc) in enumerate(SHEET_NOTES)
          for item in ((22 + (i % 4) * 65, 47 + (i // 4) * 45, 1.8, name),
                       (22 + (i % 4) * 65, 55 + (i // 4) * 45, 1.0, f),
                       (22 + (i % 4) * 65, 60 + (i // 4) * 45, 1.0, desc[0]),
                       (22 + (i % 4) * 65, 63.5 + (i // 4) * 45, 1.0, desc[1]))],
     "usb_charger.kicad_sch": [
-        (15, 185, 1.27, "BQ24074 boots in USB500 (EN2=0, EN1=1). Firmware may read CC1/CC2_SENSE and, on a 1.5 A or 3 A"),
-        (15, 189, 1.27, "Type-C source, select the ILIM resistor (EN2=1, EN1=0): 1.34 A in. Fast charge 740 mA (R6)."),
-        (15, 193, 1.27, "RT1 sits on the board over the cell. Charging stops outside about 0 to 50 C."),
+        (15, 185, 1.27, "TP4056 charges at 500 mA (R5); TEMP is grounded (no thermistor). USB feeds the system through D5;"),
+        (15, 189, 1.27, "without USB the cell does, through Q2. D6 keeps Q2's gate off C1, so R6 turns Q2 on at once on an unplug."),
+        (15, 193, 1.27, "CC1/CC2_SENSE let firmware read the source's current offer (dim the backlight on a 500 mA port)."),
     ],
     "power.kicad_sch": [
-        (15, 185, 1.27, "Power: the button, the MCU (PWR_HOLD) or USB each raise PWR_EN. Releasing the button with"),
+        (15, 185, 1.27, "Power: the button (seat 1's Y contact), the MCU (PWR_HOLD) or USB raise PWR_EN. Releasing it with"),
         (15, 189, 1.27, "PWR_HOLD low turns the device off. A reset drops PWR_HOLD, so a crash turns it off."),
         (15, 193, 1.27, "Q1 lets the MCU see the button (PWR_BTN_N low = pressed) without exposing a pin to VSYS."),
     ],
     "mcu.kicad_sch": [
-        (132, 18, 1.27, "Core from Raspberry Pi's RP2350B minimal design (MIT). Supply decoupling and the"),
-        (132, 22, 1.27, "1.1 V switcher are on MCU_Power; 12 MHz crystal and 16 MB QSPI flash are here."),
+        (132, 18, 1.27, "Core from Raspberry Pi's RP2350B minimal design (MIT), fitted with an RP2354B: its 2 MB flash"),
+        (132, 22, 1.27, "is inside the package, so only QSPI_SS (the BOOTSEL strap, R23 pull-up) is wired outside."),
     ],
     "mcu_power.kicad_sch": [
-        (15, 180, 1.27, "RP2350B supply, as in Raspberry Pi's minimal design: 100 nF at every IOVDD, DVDD, ADC, OTP and QSPI"),
+        (15, 180, 1.27, "RP2354B supply, as in Raspberry Pi's minimal design: 100 nF at every IOVDD, DVDD, ADC, OTP and QSPI"),
         (15, 184, 1.27, "pin, 4.7 uF at the regulator's input and output, and L2 (a polarity-marked 3.3 uH inductor, fit as drawn)."),
     ],
     "debug.kicad_sch": [
         (15, 130, 1.27, "J5 SWD and J6 UART follow the Raspberry Pi 3-pin debug connector pinout (Debug Probe cable)."),
-        (15, 134, 1.27, "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid. D4 is the error LED."),
+        (15, 134, 1.27, "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid."),
     ],
     "display.kicad_sch": [
         (110, 15, 1.27, "QD3525 3.5in IPS panel (ST7796U, 4-line SPI). Its 48-pin FPC folds under the panel and is soldered to J3."),
@@ -130,8 +131,8 @@ TEXT = {
         (110, 23, 1.27, "U6 AP3156 sinks each of the six backlight LEDs; current set over SDI (1-wire, 32 steps, 20 mA max each)."),
     ],
     "audio.kicad_sch": [
-        (15, 160, 1.27, "SD_MODE through R32 sits near 2.2 V: left channel. Firmware writes the mono mix to both slots."),
-        (15, 164, 1.27, "GAIN_SLOT open: 9 dB. 8 ohm 1 W speaker, its leads soldered to the J4 pads from below."),
+        (15, 160, 1.27, "AUDIO_PWM (GPIO8, PWM4 A) through two 16 kHz RC poles; gain 2 x R35/R34 = 2. AMP_EN high"),
+        (15, 164, 1.27, "turns the amplifier on (Q3 pulls SHUTDOWN low). 8 ohm 1 W speaker on the J4 pads, from below."),
     ],
     "buttons.kicad_sch": [
         (15, 175, 1.27, "Bare ENIG contacts (DSL_button_4ring) under DS Lite silicone; the firmware enables pull-ups."),

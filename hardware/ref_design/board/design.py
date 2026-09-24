@@ -20,8 +20,12 @@ The RP2350B core's 0402 passives use Raspberry Pi's own pads
 
 Symbols are always root symbols. Konnect writes a derived symbol (one that
 "extends" another in KiCad's library) without flattening it, and KiCad then
-reads it with no pins. So USBLC6-2SC6, TPS63001, 2N7002 and W25Q128JVP are
-drawn with the symbols they derive from (same pins); the value is the real part.
+reads it with no pins. So the RP2354B, 2N7002 and AO3401A are drawn with the
+symbols they derive from (same pins); the value is the real part.
+
+This is the 2-layer build (branch ref-design-2layer): TP4056 charger with USB
+load sharing, ME6211 3V3, RP2354B (flash inside), PWM audio into an FM8002A,
+a face button as the power button, no LEDs or thermistor, every hole >= 0.3 mm.
 """
 
 POWER = {"GND", "+3V3", "+1V1", "VBUS", "VSYS", "VBAT"}
@@ -51,6 +55,7 @@ R0402 = "Resistor_SMD:R_0402_1005Metric"
 R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0402 = "Capacitor_SMD:C_0402_1005Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
+C0805 = "Capacitor_SMD:C_0805_2012Metric"
 C0402_RPI = "battler:C_0402_1005Metric_RPi"          # the copied core's passives
 C0402_RPI_WIDE = "battler:C_0402_1005Metric_RPi_Wide"  # VREG_LX copper runs between these pads
 R0402_RPI = "battler:R_0402_1005Metric_RPi"
@@ -62,14 +67,18 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "100": ("C25076", "0402WGF1000TCE"),
     "1k": ("C11702", "0402WGF1001TCE"),
     "1.2k": ("C25862", "0402WGF1201TCE"),
+    "2.4k": ("C25882", "0402WGF2401TCE"),
     "5.1k": ("C25905", "0402WGF5101TCE"),
     "10k": ("C25744", "0402WGF1002TCE"),
+    "20k": ("C25765", "0402WGF2002TCE"),
     "47k": ("C25792", "0402WGF4702TCE"),
     "100k": ("C25741", "0402WGF1003TCE"),
     "470k": ("C25790", "0402WGF4703TCE"),
+    "27 0603": ("C25190", "0603WAF270JT5E"),         # UNI-ROYAL 0603: a preferred part, no JLC setup fee
 }
 CAP = {  # value: (lcsc, mpn, footprint)
     "15p": ("C1548", "0402CG150J500NT", C0402),
+    "10n": ("C15195", "CL05B103KB5NNNC", C0402),
     "100n": ("C1525", "CL05B104KO5NNNC", C0402),
     "220n": ("C16772", "CL05B224KO5NNNC", C0402),
     "1u": ("C52923", "CL05A105KA5NQNC", C0402),
@@ -78,12 +87,13 @@ CAP = {  # value: (lcsc, mpn, footprint)
     "10u": ("C19702", "CL10A106KP8NNNC", C0603),
     "10u 25V": ("C96446", "CL10A106MA8NRNC", C0603),
     "1u 50V": ("C15849", "CL10A105KB8NNNC", C0603),
+    "22u 25V": ("C45783", "CL21A226MAQNNNE", C0805),
 }
 
 
 def R(ref, sheet, value, a, b, rot=0, fp=R0402):
     lcsc, mpn = RES[value]
-    part(ref, sheet, "Device:R", value, fp, {"1": a, "2": b}, lcsc, mpn, "UNI-ROYAL", rot)
+    part(ref, sheet, "Device:R", value.split()[0], fp, {"1": a, "2": b}, lcsc, mpn, "UNI-ROYAL", rot)
 
 
 def C(ref, sheet, value, a, b="GND", rot=0, fp=None):
@@ -107,53 +117,50 @@ R("R1", S, "5.1k", "CC1", "GND")               # Rd: tells the source we are a s
 R("R2", S, "5.1k", "CC2", "GND")
 R("R3", S, "10k", "CC1", "CC1_SENSE")          # ADC taps read the source's current offer;
 R("R4", S, "10k", "CC2", "CC2_SENSE")          # 10k keeps a CC short to VBUS off the pin
-part("U1", S, "Power_Protection:USBLC6-2P6", "USBLC6-2SC6", "Package_TO_SOT_SMD:SOT-23-6",
-     {"1": "USB_DP", "6": "USB_DP", "3": "USB_DM", "4": "USB_DM", "5": "VBUS", "2": "GND"},
-     "C2687116", "USBLC6-2SC6", "STMicroelectronics")
+part("U1", S, "Power_Protection:SRV05-4", "SRV05-4", "Package_TO_SOT_SMD:SOT-23-6",
+     {"1": "USB_DP", "3": "USB_DM", "4": None, "6": None, "5": "VBUS", "2": "GND"},
+     "C85364", "SRV05-4-P-T7", "ProTek Devices")
 C("C1", S, "10u 25V", "VBUS")
-part("U2", S, "Battery_Management:BQ24074RGT", "BQ24074RGTR",
-     "Package_DFN_QFN:VQFN-16-1EP_3x3mm_P0.5mm_EP1.6x1.6mm_ThermalVias",
-     {"13": "VBUS", "10": "VSYS", "11": "VSYS", "2": "VBAT", "3": "VBAT", "1": "TS",
-      "4": "GND", "5": "CHG_EN2", "6": "CHG_EN1", "7": "VIN_GOOD_N", "8": "GND", "17": "GND",
-      "9": "CHG_STAT_N", "12": "ILIM", "14": None, "15": None, "16": "ISET"},
-     "C54313", "BQ24074RGTR", "Texas Instruments")
-R("R5", S, "1.2k", "ILIM", "GND")              # input limit 1610/1.2k = 1.34 A when EN2=1, EN1=0
-R("R6", S, "1.2k", "ISET", "GND")              # fast charge 890/1.2k = 740 mA
-part("RT1", S, "Device:Thermistor_NTC", "10k B3380", "Resistor_SMD:R_0603_1608Metric",
-     {"1": "TS", "2": "GND"}, "C13564", "NCP18XH103F03RB", "Murata")  # on the board over the cell
-R("R7", S, "100k", "CHG_EN2", "GND")           # boots in USB500 (EN2=0, EN1=1) until firmware
-R("R8", S, "100k", "CHG_EN1", "+3V3")          # reads CC and picks a higher limit
-R("R9", S, "100k", "VIN_GOOD_N", "+3V3")
-R("R10", S, "100k", "CHG_STAT_N", "+3V3")
-part("D1", S, "Device:LED", "amber", "LED_SMD:LED_0603_1608Metric",
-     {"1": "CHG_STAT_N", "2": "CHG_LED_A"}, "C89811", "NCD0603Y2", "Foshan NationStar")
-R("R11", S, "1k", "+3V3", "CHG_LED_A")
+part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
+     "battler:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.3mm_ThermalVias_0.3mm",
+     {"4": "VBUS", "8": "VBUS", "5": "VBAT", "2": "CHG_PROG", "1": "GND",   # TEMP grounded: no NTC
+      "7": "CHG_STAT_N", "6": "CHG_DONE_N", "3": "GND", "9": "GND"},
+     "C16581", "TP4056-42-ESOP8", "TOPPOWER")
+R("R5", S, "2.4k", "CHG_PROG", "GND")          # charge current 1200 V / 2.4k = 500 mA (0.5 C for 1000 mAh)
+R("R9", S, "100k", "CHG_DONE_N", "+3V3")       # STDBY: low when the charge is done
+R("R10", S, "100k", "CHG_STAT_N", "+3V3")      # CHRG: low while charging
 C("C2", S, "4.7u", "VSYS")
-C("C3", S, "4.7u", "VBAT")
+C("C3", S, "10u", "VBAT")
+# load sharing: USB feeds the system through D5 while it charges the cell; without USB
+# the cell feeds it through Q2. Q2's gate sees VBUS through D6, so it doesn't wait for
+# C1 to drain: R6 turns it on within microseconds of an unplug, and C9 carries VSYS
+# across the change (a dip resets the MCU, and a reset turns the device off)
+part("D5", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS", "2": "VBUS"},
+     "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
+part("D6", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323", {"1": "LS_GATE", "2": "VBUS"},
+     "C7502694", "BAT54WS", "")
+part("Q2", S, "Transistor_FET:Q_PMOS_GSD", "AO3401A", "Package_TO_SOT_SMD:SOT-23",
+     {"1": "LS_GATE", "2": "VSYS", "3": "VBAT"}, "C15127", "AO3401A", "Alpha & Omega Semicon")
+R("R6", S, "10k", "LS_GATE", "GND")
+C("C9", S, "22u 25V", "VSYS")
 part("J2", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "S2B-PH-SM4-TB",
      "battler:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal",
      {"1": "VBAT", "2": "GND", "MP": None}, "C295747", "S2B-PH-SM4-TB(LF)(SN)", "JST")
 part("#FLG01", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VBUS"}, bom=False)
 part("#FLG02", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "GND"}, bom=False)
+part("#FLG03", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VSYS"}, bom=False)  # fed through D5 or Q2
 
 # =================================================================================
-# 3V3 buck-boost, power switch latch, sensing
+# 3V3 LDO, power switch latch, sensing
 # =================================================================================
 S = "power.kicad_sch"
-part("U3", S, "Regulator_Switching:TPS63000", "TPS63001DRCR", "Package_SON:Texas_DRC0010J_ThermalVias",
-     {"5": "VSYS", "8": "VINA", "6": "PWR_EN", "7": "GND", "4": "BB_L1", "2": "BB_L2",
-      "1": "+3V3", "10": "+3V3", "9": "GND", "3": "GND", "11": "GND"},
-     "C28060", "TPS63001DRCR", "Texas Instruments")
-part("L1", S, "Device:L", "2.2u", "Inductor_SMD:L_1008_2520Metric", {"1": "BB_L1", "2": "BB_L2"},
-     "C5832372", "FTC252012S2R2MBCA", "FH")
-R("R12", S, "100", "VSYS", "VINA")
-C("C4", S, "100n", "VINA")
-part("#FLG03", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VINA"}, bom=False)   # VINA fed through R12
+part("U3", S, "Regulator_Linear:ME6211C33M5", "ME6211C33M5G", "Package_TO_SOT_SMD:SOT-23-5",
+     {"1": "VSYS", "2": "GND", "3": "PWR_EN", "4": None, "5": "+3V3"},
+     "C82942", "ME6211C33M5G-N", "MICRONE")
 C("C5", S, "10u", "VSYS")
 C("C6", S, "10u", "+3V3")
 C("C7", S, "10u", "+3V3")
-part("SW17", S, "Switch:SW_Push", "PWR", "battler:SW_Alps_SKRTLAE010_Pullback",
-     {"1": "VSYS", "2": "PWR_BTN_RAW"}, "C110293", "SKRTLAE010", "ALPS")
+# the power button is seat 1's Y contact (SW8, on the Buttons sheet): it joins VSYS to PWR_BTN_RAW
 R("R13", S, "100k", "PWR_BTN_RAW", "GND")
 part("D2", S, "Diode:BAT54C", "BAT54C", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "PWR_HOLD", "3": "PWR_EN"}, "C37704", "BAT54C,215", "Nexperia")
@@ -177,10 +184,10 @@ S = "mcu.kicad_sch"
 GPIO = {  # GPIO number: net
     0: "UART_TX", 1: "UART_RX", 2: "PWR_HOLD", 3: "PWR_BTN_N",
     4: "P2_UP", 5: "P2_DOWN", 6: "P2_LEFT", 7: "P2_RIGHT",
-    8: "I2S_DIN", 9: "I2S_BCLK", 10: "I2S_LRCLK", 11: "AMP_SD",
+    8: "AUDIO_PWM", 11: "AMP_EN",
     12: "P2_A", 13: "P2_B", 14: "P2_X", 15: "P2_Y",
-    16: "STATUS_LED", 17: "CHG_STAT_N", 18: "VIN_GOOD_N", 19: "CHG_EN1", 20: "CHG_EN2",
-    24: "P1_A", 25: "P1_B", 26: "P1_X", 27: "P1_Y",
+    17: "CHG_STAT_N", 18: "CHG_DONE_N",
+    24: "P1_A", 25: "P1_B", 26: "P1_X",                  # P1 Y is the power button: read on GPIO3
     28: "P1_UP", 29: "P1_DOWN", 30: "P1_LEFT", 31: "P1_RIGHT",
     32: "LCD_TE", 33: "LCD_DC", 34: "LCD_RST", 35: "BL_SDI",
     36: "LCD_MISO", 37: "LCD_CS", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
@@ -197,10 +204,11 @@ u4.update({str(p): "+1V1" for p in (10, 32, 51, 65)})
 u4.update({"61": "VREG_AVDD", "63": "VREG_LX", "62": "GND", "81": "GND",
            "30": "XIN", "31": "XOUT", "33": "SWCLK", "34": "SWDIO", "35": "RUN",
            "66": "USB_DM_MCU", "67": "USB_DP_MCU",
-           "75": "QSPI_SS", "71": "QSPI_SCLK", "72": "QSPI_SD0", "74": "QSPI_SD1",
-           "73": "QSPI_SD2", "70": "QSPI_SD3"})
-part("U4", S, "MCU_RaspberryPi:RP2350B", "RP2350B", "battler:RP2350B_QFN80_RPi", u4,
-     "C42415655", "RP2350B", "Raspberry Pi")
+           # the RP2354B's 2 MB flash sits on these inside the package: only the chip
+           # select (the BOOTSEL strap) is used outside
+           "75": "QSPI_SS", "71": None, "72": None, "74": None, "73": None, "70": None})
+part("U4", S, "MCU_RaspberryPi:RP2350B", "RP2354B", "battler:RP2350B_QFN80_RPi", u4,
+     "C39843328", "RP2354B", "Raspberry Pi")
 P = "mcu_power.kicad_sch"                         # the RP2350B's supply: decoupling + 1V1 switcher
 for i in range(10):                              # IOVDD, ADC, VREG_VIN, OTP, QSPI decoupling
     C(f"C{10 + i}", P, "100n", "+3V3", fp=C0402_RPI)
@@ -218,13 +226,9 @@ part("X1", S, "Device:Crystal_GND24", "12MHz", "battler:ABM8-272-T3",
 C("C27", S, "15p", "XIN", fp=C0402_RPI)
 C("C28", S, "15p", "XO", fp=C0402_RPI)
 R("R20", S, "1k", "XOUT", "XO", fp=R0402_RPI)
-R("R21", S, "27", "USB_DP", "USB_DP_MCU", fp=R0402_RPI)
-R("R22", S, "27", "USB_DM", "USB_DM_MCU", fp=R0402_RPI)
-part("U5", S, "Memory_Flash:W25Q32JVZP", "W25Q128JVPIQ", "Package_SON:WSON-8-1EP_6x5mm_P1.27mm_EP3.4x4.3mm",
-     {"1": "FLASH_SS", "2": "QSPI_SD1", "3": "QSPI_SD2", "4": "GND", "5": "QSPI_SD0", "6": "QSPI_SCLK",
-      "7": "QSPI_SD3", "8": "+3V3", "9": "GND"}, "C190862", "W25Q128JVPIQ", "Winbond")
-R("R23", S, "10k", "+3V3", "FLASH_SS", fp=R0402_RPI)
-R("R24", S, "0", "QSPI_SS", "FLASH_SS", fp=R0402_RPI)
+R("R21", S, "27 0603", "USB_DP", "USB_DP_MCU", fp=R0603)
+R("R22", S, "27 0603", "USB_DM", "USB_DM_MCU", fp=R0603)
+R("R23", S, "10k", "+3V3", "QSPI_SS", fp=R0402_RPI)     # the flash's chip select high at power-up
 R("R25", "debug.kicad_sch", "1k", "QSPI_SS", "BOOTSEL", fp=R0402_RPI)
 part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOTSEL", "battler:SW_SPST_TS-1088-xR020",
      {"1": "BOOTSEL", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
@@ -237,9 +241,6 @@ part("J5", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_Mounting
 part("J6", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_MountingPin", "UART",
      "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
      {"1": "UART_TX", "2": "GND", "3": "UART_RX", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
-R("R27", "debug.kicad_sch", "1k", "STATUS_LED", "STATUS_LED_A")
-part("D4", "debug.kicad_sch", "Device:LED", "red", "LED_SMD:LED_0603_1608Metric",
-     {"1": "GND", "2": "STATUS_LED_A"}, "C2286", "KT-0603R", "Hubei KENTO")
 part("#FLG05", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+1V1"}, bom=False)
 part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=False)
 
@@ -274,20 +275,27 @@ C("C36", S, "1u", "BL_C2P", "BL_C2N")
 R("R31", S, "100k", "BL_SDI", "GND")               # holds the driver off until firmware drives SDI
 
 # =================================================================================
-# Audio: MAX98357A class D into an 8 ohm speaker
+# Audio: PWM from the RP2354B, filtered, into an FM8002A bridge amplifier (8 ohm speaker)
 # =================================================================================
 S = "audio.kicad_sch"
-part("U7", S, "Audio:MAX98357A", "MAX98357AETE+T", "Package_DFN_QFN:TQFN-16-1EP_3x3mm_P0.5mm_EP1.23x1.23mm_ThermalVias",
-     {"1": "I2S_DIN", "16": "I2S_BCLK", "14": "I2S_LRCLK", "4": "AMP_SD_MODE", "2": None,
-      "7": "VSYS", "8": "VSYS", "3": "GND", "11": "GND", "15": "GND", "17": "GND",
-      "5": None, "6": None, "12": None, "13": None, "9": "SPK_P_AMP", "10": "SPK_N_AMP"},
-     "C910544", "MAX98357AETE+T", "Analog Devices")
-R("R32", S, "47k", "AMP_SD", "AMP_SD_MODE")      # 2.2 V on SD_MODE: left channel; 0 V: shutdown
+part("U7", S, "battler:FM8002A", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+     {"3": "AMP_BYP", "4": "AMP_INN", "2": "AMP_BYP", "1": "AMP_SHDN",
+      "5": "SPK_P", "8": "SPK_N", "6": "VSYS", "7": "GND"},
+     "C94625", "FM8002A", "Shenzhen Fuman Elec")
+R("R32", S, "1k", "AUDIO_PWM", "AUDIO_F1")       # two RC poles at 16 kHz take out the PWM carrier
+C("C37", S, "10n", "AUDIO_F1")
+R("R33", S, "1k", "AUDIO_F1", "AUDIO_F2")
+C("C38", S, "10n", "AUDIO_F2")
+C("C39", S, "220n", "AUDIO_F2", "AMP_CI")       # Ci: blocks the PWM's DC; 36 Hz corner with Ri
+R("R34", S, "20k", "AMP_CI", "AMP_INN")          # Ri
+R("R35", S, "20k", "SPK_P", "AMP_INN")           # Rf: gain 2 x Rf / Ri = 2
+C("C40", S, "1u", "AMP_BYP")                     # half-supply reference, as the datasheet's circuit
+R("R36", S, "100k", "AMP_SHDN", "VSYS")          # SHUTDOWN high: off unless the MCU turns it on
+part("Q3", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
+     {"1": "AMP_EN", "2": "GND", "3": "AMP_SHDN"}, "C8545", "2N7002", "Changjiang")
+R("R37", S, "100k", "AMP_EN", "GND")             # off while the MCU boots
 C("C34", S, "10u", "VSYS")
 C("C35", S, "100n", "VSYS")
-for ref, a, b in (("FB1", "SPK_P_AMP", "SPK_P"), ("FB2", "SPK_N_AMP", "SPK_N")):
-    part(ref, S, "Device:FerriteBead_Small", "120R@100MHz", "Inductor_SMD:L_0603_1608Metric",
-         {"1": a, "2": b}, "C14709", "BLM18PG121SN1D", "Murata")
 part("J4", S, "Connector_Generic:Conn_01x02", "SPEAKER", "battler:Speaker_Wire_Pads_P4.0mm",
      {"1": "SPK_P", "2": "SPK_N"}, bom=False)
 
@@ -298,6 +306,12 @@ S = "buttons.kicad_sch"
 BUTTONS = ["P1_UP", "P1_DOWN", "P1_LEFT", "P1_RIGHT", "P1_A", "P1_B", "P1_X", "P1_Y",
            "P2_UP", "P2_DOWN", "P2_LEFT", "P2_RIGHT", "P2_A", "P2_B", "P2_X", "P2_Y"]
 for i, net in enumerate(BUTTONS):
+    if net == "P1_Y":
+        # the power button: this contact joins VSYS to PWR_BTN_RAW (the latch on the Power
+        # sheet); the MCU reads it as Y through Q1 on GPIO3 (PWR_BTN_N)
+        part(f"SW{i + 1}", S, "Switch:SW_Push", "P1 Y / PWR", "battler:DSL_button_4ring",
+             {"1": "PWR_BTN_RAW", "2": "VSYS"}, bom=False)
+        continue
     part(f"SW{i + 1}", S, "Switch:SW_Push", net.replace("_", " "), "battler:DSL_button_4ring",
          {"1": net, "2": "GND"}, bom=False)
 
