@@ -17,14 +17,23 @@ explode = 0;
 $fn = 72;
 
 // ---------------- bought parts ----------------
-panel_w = 55.50;  panel_l = 84.96;  panel_t = 2.50;     // QD3525 3.5in IPS outline (tape not included)
+// EastRising ER-TFT035IPS-6 (ILI9488), from its datasheet's outline drawing
+panel_w = 54.50;  panel_l = 83.00;  panel_t = 2.30;     // outline with the FPC folded (tape not included)
 aa_w = 48.96;     aa_l = 73.44;                         // active area
-aa_to_top = 3.11; aa_to_fpc = 8.41;                     // active area to the glass edges
-aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.65 mm towards seat 2
+aa_to_top = 2.5;  aa_to_fpc = panel_l - aa_l - aa_to_top;   // active area to the glass edges (centred across)
+aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.28 mm towards seat 2
 window_margin = 0.5;                                    // bezel opening past the active area
-fpc_x = 0;        fpc_w = 43.21;                        // solder FPC: centred on the panel, 43.21 wide
-fpc_front = 18.5;                                       // its pad row (centre) in from the glass FPC edge
-                                                        // once folded under: 21.9 mm of tail, less the loop
+// Its FPC leaves the seat-1 edge, folds under the panel and plugs into a 50-pin ZIF
+// connector (J3, Hirose FH12-50S, bottom contact). Seen from above, x from the panel's
+// centre, lengths along the FPC from that edge: a 4.59 mm neck (35.6 wide, centre +3.6)
+// wraps the edge, then a 14.41 mm body (47.9 wide, centre +2.5) lies under the panel,
+// then an 11.7 mm tail (25.5 wide, centred) ends in the 3.5 mm contact strip.
+fpc_neck = [3.6, 35.6, 4.59];   fpc_body = [2.5, 47.9, 14.41];   fpc_tail = [0, 25.5, 11.7];
+fpc_slack = 1.0;                                        // the connector 1 mm short of the tail's tip: a
+                                                        // long FPC bows, a short one can't reach (ESTIMATE)
+conn_rear = 1.2;  conn_front = 4.4;                     // FH12 footprint origin to its back and to its mouth
+tip_in = fpc_body[2] + fpc_tail[2];                     // tip, in from the edge (the neck is the fold)
+conn_in = tip_in - fpc_slack - conn_rear;               // connector origin, in from the edge
 // The panel's bay: the case and board layout are built around it, so a panel that
 // fits the bay (with its tape and a 0.25 mm gap each side) moves nothing else.
 bay_w = 56.0;     bay_l = 86.24;
@@ -132,8 +141,11 @@ echo(str("JSON {",
   "\"glass_limit\": ", glass_gap - 0.2, ", ",
   "\"bezel_limit\": ", z_lid - z_top_cu - 0.3, ", ",
   "\"retainer_limit\": ", retainer_z - z_top_cu - 0.3, ", ",
-  "\"fpc_tail\": [", jpt([fpc_x - fpc_w / 2 - 0.5, -(panel_l / 2 - fpc_front)]), ", ", jpt([fpc_x + fpc_w / 2 + 0.5, -(panel_l / 2 + 1.5)]), "], ",
-  "\"fpc_conn\": {\"x\": ", jnum(kicad([fpc_x, 0])[0]), ", \"front_y\": ", jnum(kicad([0, -(panel_l / 2 - fpc_front)])[1]), "}, ",
+  "\"fpc_zones\": [[", jpt([fpc_tail[0] - fpc_tail[1] / 2 - 0.5, -(panel_l / 2 - (conn_in - conn_front))]), ", ",
+    jpt([fpc_tail[0] + fpc_tail[1] / 2 + 0.5, -(panel_l / 2 - fpc_body[2])]), "], [",
+    jpt([fpc_body[0] - fpc_body[1] / 2 - 0.5, -(panel_l / 2 - fpc_body[2])]), ", ",
+    jpt([fpc_body[0] + fpc_body[1] / 2 + 0.5, -(panel_l / 2 + 1.5)]), "]], ",
+  "\"fpc_conn\": {\"x\": ", jnum(kicad([fpc_tail[0], 0])[0]), ", \"y\": ", jnum(kicad([0, -(panel_l / 2 - conn_in)])[1]), "}, ",
   "\"pieces\": [", join([for (c = clusters) jpt(c)]), "], \"piece_d\": ", piece_d, ", ",
   "\"buttons\": {", join([for (b = buttons) str("\"", b[0], "\": ", jpt(b[2]))]), "}, ",
   "\"pins\": [", join([for (s = pins) jpt(s)]), "], \"boss_d\": ", boss_d, ", \"hole_d\": ", hole_d, ", ",
@@ -170,7 +182,10 @@ if (part == "layout") {
   color([0.9, 0.7, 0.2, 0.6]) at([0, spk_y], 0.2) linear_extrude(0.05) circle(d = spk_d);
   color("#101014") translate([0, 0, 0.3]) linear_extrude(0.05) square([panel_w, panel_l], center = true);
   color("#3b6fd1") translate([0, 0, 0.4]) linear_extrude(0.05) window();
-  color("#c9a227") translate([fpc_x, -(panel_l / 2 - fpc_front / 2), 0.45]) linear_extrude(0.05) square([fpc_w, fpc_front], center = true);
+  color("#c9a227") translate([0, 0, 0.45]) linear_extrude(0.05) {
+    translate([fpc_body[0], -(panel_l / 2 - fpc_body[2] / 2)]) square([fpc_body[1], fpc_body[2]], center = true);
+    translate([fpc_tail[0], -(panel_l / 2 - fpc_body[2] - fpc_tail[2] / 2)]) square([fpc_tail[1], fpc_tail[2]], center = true);
+  }
   for (c = clusters) color([0.85, 0.85, 0.9, 0.45]) at(c, 0.5) linear_extrude(0.05) circle(d = piece_d);
   for (b = buttons) color("#f2c94c") at(b[2], 0.6) linear_extrude(0.05) circle(d = 4.8);
   for (s = pins) color("white") at(s, 0.7) linear_extrude(0.05) ring(0.4) circle(d = boss_d);
@@ -236,7 +251,7 @@ module lid() difference() {
     // panel locating frame
     translate([0, 0, z_lid - 1.0]) linear_extrude(1.01) difference() {
       square([panel_w + 2.6, panel_l + 2.6], center = true); square([panel_w + 0.4, panel_l + 0.4], center = true);
-      translate([fpc_x, -panel_l / 2]) square([fpc_w + 3, 6], center = true);   // FPC fold passes here
+      translate([fpc_neck[0], -panel_l / 2]) square([fpc_neck[1] + 3, 6], center = true);   // FPC fold passes here
     }
   }
   for (s = pins) at(s, z_top_cu - 1) cylinder(d = pin_d + 0.3, h = 1 + 2.2);

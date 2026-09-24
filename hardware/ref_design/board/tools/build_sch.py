@@ -57,8 +57,8 @@ REGIONS = {
                              "R17", "R18", "C8", "TP1", "TP2", "TP3", "TP4", "TP5"]),
     ],
     "mcu.kicad_sch": [
-        (12, 20, 128, 197, ["U4"]),
-        (132, 28, 250, 172, ["X1", "R20", "C27", "C28", "R21", "R22", "R23"]),
+        (12, 17, 138, 198, ["U4"]),
+        (142, 28, 280, 172, ["X1", "R20", "C27", "C28", "R21", "R22", "R23"]),
     ],
     "mcu_power.kicad_sch": [
         (15, 28, 250, 170, ["C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19",
@@ -87,14 +87,14 @@ SHEET_NOTES = [
     ("mcu.kicad_sch", "MCU", ("RP2354B (2 MB flash inside),", "12 MHz crystal, USB series resistors")),
     ("mcu_power.kicad_sch", "MCU_Power", ("RP2354B decoupling and its", "internal 1.1 V switcher")),
     ("debug.kicad_sch", "Debug", ("SWD and UART connectors,", "BOOTSEL and RESET buttons")),
-    ("display.kicad_sch", "Display", ("48-pin solder FPC of the 3.5in IPS panel,", "AP3156 backlight driver")),
+    ("display.kicad_sch", "Display", ("50-pin ZIF connector for the 3.5in IPS", "panel, AP3156 backlight driver")),
     ("audio.kicad_sch", "Audio", ("PWM low-pass into an FM8002A", "bridge amplifier, speaker pads")),
     ("buttons.kicad_sch", "Buttons", ("16 membrane contacts,", "one GPIO each")),
 ]
 TEXT = {
     ROOT_FILE: [
         (20, 20, 2.0, "Two-player handheld: reference design (REF-A)"),
-        (20, 27, 1.27, "RP2354B, 3.5in 320x480 IPS (ST7796, SPI), 16 membrane contacts under DS Lite silicone,"),
+        (20, 27, 1.27, "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 16 membrane contacts under DS Lite silicone,"),
         (20, 31, 1.27, "PWM audio into an FM8002A, one Li-ion cell on a TP4056 charger with load sharing, ME6211 3V3."),
         (20, 35, 1.27, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets."),
         (20, 145, 1.27, "Mechanical: locating holes at positions set by the case; fiducials for assembly."),
@@ -114,8 +114,8 @@ TEXT = {
         (15, 193, 1.27, "Q1 lets the MCU see the button (PWR_BTN_N low = pressed) without exposing a pin to VSYS."),
     ],
     "mcu.kicad_sch": [
-        (132, 18, 1.27, "Core from Raspberry Pi's RP2350B minimal design (MIT), fitted with an RP2354B: its 2 MB flash"),
-        (132, 22, 1.27, "is inside the package, so only QSPI_SS (the BOOTSEL strap, R23 pull-up) is wired outside."),
+        (142, 18, 1.27, "Core from Raspberry Pi's RP2350B minimal design (MIT), fitted with an RP2354B: its 2 MB flash"),
+        (142, 22, 1.27, "is inside the package, so only QSPI_SS (the BOOTSEL strap, R23 pull-up) is wired outside."),
     ],
     "mcu_power.kicad_sch": [
         (15, 180, 1.27, "RP2354B supply, as in Raspberry Pi's minimal design: 100 nF at every IOVDD, DVDD, ADC, OTP and QSPI"),
@@ -126,9 +126,9 @@ TEXT = {
         (15, 134, 1.27, "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid."),
     ],
     "display.kicad_sch": [
-        (110, 15, 1.27, "QD3525 3.5in IPS panel (ST7796U, 4-line SPI). Its 48-pin FPC folds under the panel and is soldered to J3."),
-        (110, 19, 1.27, "Unused bus pins are tied as the panel maker's own module ties them: DB0-17 and RGB low, RD and IM2-0 high."),
-        (110, 23, 1.27, "U6 AP3156 sinks each of the six backlight LEDs; current set over SDI (1-wire, 32 steps, 20 mA max each)."),
+        (110, 15, 1.27, "EastRising ER-TFT035IPS-6 (ILI9488, 4-wire SPI). Its 50-pin FPC folds under the panel into J3 (ZIF)."),
+        (110, 19, 1.27, "J3 pin j is panel pin 51 - j. Unused bus pins as the datasheet says: DB0-17 and RGB low, RD and IM2-0 high."),
+        (110, 23, 1.27, "U6 AP3156: three sinks per cathode pin (LED_K1, LED_K2), 20 mA per LED at most, set over SDI (1-wire)."),
     ],
     "audio.kicad_sch": [
         (15, 160, 1.27, "AUDIO_PWM (GPIO8, PWM4 A) through two 16 kHz RC poles; gain 2 x R35/R34 = 2. AMP_EN high"),

@@ -30,9 +30,9 @@ ROLE = {
     "LCD_CS": "SPI0 CSn (or drive as a GPIO)",
     "LCD_SCK_MCU": "SPI0 SCK, 33 ohm source termination R28",
     "LCD_MOSI_MCU": "SPI0 TX, 33 ohm source termination R29",
-    "VBAT_SENSE": "ADC0: battery voltage / 2 (R17/R18, 470k each, 100 nF)",
-    "CC1_SENSE": "ADC1: USB-C CC1 through 10k; the source's current offer",
-    "CC2_SENSE": "ADC2: USB-C CC2 through 10k",
+    "VBAT_SENSE": "ADC7: battery voltage / 2 (R17/R18, 470k each, 100 nF)",
+    "CC1_SENSE": "ADC6: USB-C CC1 through 10k; the source's current offer",
+    "CC2_SENSE": "ADC5: USB-C CC2 through 10k",
 }
 BUTTON_POS = {  # button net -> contact reference (SWn = case numbering)
     p["pins"]["1"]: p["ref"] for p in design.PARTS if p["sheet"] == "buttons.kicad_sch"
@@ -120,7 +120,7 @@ def main():
         "",
         "## Battery voltage",
         "",
-        "VBAT = 2 x ADC0 x 3.3 V / 4096 (12-bit). Read a few samples; the 100 nF holds the divider",
+        "VBAT = 2 x ADC7 x 3.3 V / 4096 (12-bit). Read a few samples; the 100 nF holds the divider",
         "steady for the ADC's sampling capacitor. Full charge reads about 2.10 V at the pin. Shut down",
         "at about 3.35 V: below that the ME6211 can't hold 3.3 V, and the RP2354B's regulator needs",
         "VREG_AVDD at 3.135 V or more.",

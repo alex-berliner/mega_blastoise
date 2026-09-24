@@ -52,20 +52,19 @@ put("FID1", 67.3, 71.0)
 put("FID2", 133.2, 141.6)
 put("FID3", 66.8, 141.6)
 
-# display: the panel's solder-FPC landing where its folded tail reaches (case.scad fpc_front),
-# contact 1 at -X; its backlight driver just above the LED end of the row, D1..D6 over
-# the six cathode pads in order
-put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["front_y"], 0)
+# display: the panel's ZIF connector where its folded FPC reaches (case.scad conn_in), its mouth
+# towards seat 1; the backlight driver beside the connector's LED end (pins 48-50)
+put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["y"], 0)
 put("R28", 97.6, 96.6, 90)                  # SPI source terminations, next to GPIO38/39
 put("R29", 99.1, 96.6, 90)
-put("C29", 84.8, 121.0, 0)                  # panel VDD/IOVCC, at pads 5 and 6
-put("C30", 86.8, 121.0, 0)
-put("U6", 116.8, 118.6, 180)
-put("C31", 113.4, 118.3, 90)                # VIN
-put("C32", 120.2, 117.6, 90)                # VOUT (LED anodes)
-put("C33", 116.8, 115.4, 180)               # flying C1P-C1N
-put("C36", 116.8, 113.9, 180)               # flying C2P-C2N
-put("R31", 120.2, 120.4, 90)                # SDI pull-down
+put("C29", 92.3, 112.4, 0)                  # panel VCI/VDDI, behind connector pins 9-11
+put("C30", 94.3, 112.4, 0)
+put("U6", 120.0, 118.6, 180)                # clear of J3's right mounting tab
+put("C31", 116.4, 118.6, 90)                # VIN
+put("C32", 123.4, 118.2, 90)                # VOUT (LED anodes)
+put("C33", 120.0, 115.4, 180)               # flying C1P-C1N
+put("C36", 120.0, 113.9, 180)               # flying C2P-C2N
+put("R31", 123.4, 120.4, 90)                # SDI pull-down
 
 # debug: left bezel
 put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
@@ -89,9 +88,9 @@ put("R3", 124.0, 97.4, 0)
 put("R4", 124.0, 102.6, 0)
 put("D5", 131.6, 111.6, 0)                  # VBUS -> VSYS
 put("U2", 130.4, 117.4, 0)                  # TP4056: its thermal pad spreads into the GND pours
-put("R5", 125.6, 116.2, 90)                 # PROG
-put("R9", 124.4, 116.2, 90)
-put("R10", 123.2, 116.2, 90)
+put("R5", 125.6, 115.6, 90)                 # PROG
+put("R9", 124.4, 115.6, 90)
+put("R10", 123.2, 115.6, 90)
 put("C3", 133.2, 121.6, 0)                  # VBAT
 put("C2", 129.0, 121.6, 0)                  # VSYS
 put("Q2", 131.2, 125.0, 0)                  # cell -> VSYS without USB

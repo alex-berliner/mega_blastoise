@@ -61,7 +61,7 @@ def refs():
     for fp in b.GetFootprints():
         name = str(fp.GetFPID().GetLibItemName())
         if any(s in name for s in ("MountingHole", "Fiducial", "TestPoint", "DSL_button", "Speaker_Wire", "_Solder")):
-            continue                                  # flat copper, nothing to collide (the panel's FPC lands on J3)
+            continue                                  # flat copper, nothing to collide
         cy = fp.GetCourtyard(pcbnew.B_CrtYd if fp.IsFlipped() else pcbnew.F_CrtYd).BBox()
         court = (pcbnew.ToMM(cy.GetX()), pcbnew.ToMM(cy.GetY()), pcbnew.ToMM(cy.GetRight()), pcbnew.ToMM(cy.GetBottom()))
         out.append((fp.GetReference(), fp.IsFlipped(), str(fp.GetFPID().GetLibItemName()), court))
@@ -144,9 +144,9 @@ def main():
             limit, where = min(limit, POS["retainer_limit"]), "retainer"
         if top > limit + 1e-3:
             problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
-        tl = POS["fpc_tail"]
-        if inside_rect(box, tl, -0.2) and top > 0.3 and not ref.startswith("J3"):
-            problems.append(f"{ref} is under the display's FPC tail")
+        for zone in POS["fpc_zones"]:
+            if inside_rect(box, zone, -0.2) and top > 0.3 and not ref.startswith("J3"):
+                problems.append(f"{ref} is under the display's folded FPC")
     usb = boxes.get("J1")
     if usb and abs(usb[2] - POS["usb"]["front_x"]) > 0.3:
         problems.append(f"USB-C face at x={usb[2]:.2f}, the case expects {POS['usb']['front_x']:.2f}")

@@ -4,8 +4,8 @@ What the reference design is, why each part of it is the way it is, what has
 been checked and what hasn't. Numbers here come from the datasheets in
 `datasheets/SOURCES.md` and from the files in this folder.
 
-This is the 2-layer build (branch `ref-design-2layer`): the 4-layer design on `main`
-with the cost changes Alex approved on 2026-09-24.
+This is the 2-layer build, `main` since 2026-09-24: the first, 4-layer design (branch
+`ref-design-4layer`) with the cost changes Alex approved that day.
 
 ## The device
 
@@ -87,27 +87,31 @@ every hole 0.3 mm or larger.
 
 ### Display (sheet Display)
 
-- QD3525 (Shenzhen Quandong Electronic's 3.5in IPS, BOE glass, ST7796U): 4-line
-  SPI, 3.3 V, 55.50 x 84.96 x 2.50 mm, six white LEDs in parallel (15 mA each
-  typical, 20 mA maximum). About $5-8 as a bare panel; the maker's drawing and
-  pinout (QD3525 Specifications rev A) are published with LCDwiki's MSP3525
-  module, which uses it. The Displaytech DT035 it replaced was $25-35 for the
-  same class of panel.
-- Its 48-contact tail (0.8 mm pitch) is soldered to J3's pads: this panel comes
-  with a solder tail only. The tail leaves the panel's seat-1 edge and folds
-  under it, contacts facing the board, contact 1 at the left end seen from above
-  with seat 1 nearest you (the panel maker's folded view); J3 sits where the
-  folded tail reaches (case.scad `fpc_front`).
-- Pins wired as the panel maker's own module wires them: the parallel bus
-  (DB0-17) and the RGB strobes low, RD and IM2-0 high (4-line 8-bit SPI); the
-  resistive-touch pins open (no touch layer). TE goes to GPIO32 so the firmware
-  can start frames on the panel's refresh and avoid tearing.
+- EastRising ER-TFT035IPS-6: 3.5in IPS, 320x480, ILI9488, 4-wire SPI, 3.3 V,
+  54.50 x 83.00 x 2.30 mm with its FPC folded, the same 48.96 x 73.44 mm active area
+  as the QD3525 it replaced. Sold by the maker, on its own site and its AliExpress
+  store: about $14.20 a unit with shipping at 10 units, $9.86 at 50 ([bom.md](bom.md)).
+  It has a published datasheet, outline drawing and 3D model
+  ([datasheet](https://www.buydisplay.com/download/manual/ER-TFT035IPS-6_Datasheet.pdf)).
+- Its 50-contact FPC (0.5 mm pitch, 0.3 mm thick with its stiffener) leaves the
+  panel's seat-1 edge, folds under the panel and plugs into J3, a Hirose FH12-50S
+  bottom-contact ZIF connector that JLC places: no hand soldering. J3 sits where the
+  folded FPC's tip reaches less 1 mm of slack (case.scad `conn_in`), its mouth towards
+  seat 1. Seen from above the FPC's contact 1 lands at the right, J3's pin 1 is at the
+  left, so J3 pin j carries panel pin 51 - j (`board/design.py`).
+- Pins wired as the datasheet says: the parallel bus (DB0-17) and the RGB strobes low,
+  RD and IM2-0 high (4-wire 8-bit SPI); the touch pins open (no touch layer). TE goes
+  to GPIO32 so the firmware can start frames on the panel's refresh and avoid tearing.
+- ILI9488 over SPI takes 18-bit colour only: three bytes a pixel, 461 kB a full frame,
+  half as much again as the ST7796U's 16-bit, so full-screen redraws are slower. The
+  battle screen redraws in parts. The datasheet rates serial writes to 20 MHz.
 - SPI clock and data get 33 ohm source terminations next to the MCU.
-- Backlight: AP3156 charge pump (1x/1.5x/2x) from VSYS drives the common anode;
-  each LED's cathode has its own current sink, so the six share current evenly
-  and the brightness holds from a full cell to a flat one. Current is set over
-  one GPIO (1-wire pulses, 32 levels, 20 mA per LED at the top); it starts at
-  0 mA, and R31 holds the line low (off) until the firmware drives it.
+- Backlight: six LEDs in parallel (3.0-3.2 V, 120 mA at most), common anode, three
+  on each of two cathode pins. The AP3156 charge pump (1x/1.5x/2x) from VSYS drives the
+  anode, and three of its six current sinks go to each cathode pin, so the current is
+  still regulated from a full cell to a flat one. It's set over one GPIO (1-wire
+  pulses, 32 levels, 20 mA per sink at the top); it starts at 0 mA, and R31 holds the
+  line low (off) until the firmware drives it.
 
 ### Audio (sheet Audio)
 
@@ -141,9 +145,10 @@ every hole 0.3 mm or larger.
   0.3 mm power tracks (3V3 included), 0.2 mm USB; vias 0.5 mm with 0.3 mm holes
   (0.6 mm on power). Every hole is 0.3 mm or larger, JLC's standard: smaller ones
   cost about $40 an order (a fee, a required 4-wire test and TG155 material).
-- Heights: the panel (2.5 mm) hangs from the lid's window ledge on double-sided
-  tape, in a 4.9 mm bay that leaves it 2.4 mm clear of the board, so every part
-  under it is 2.2 mm or less; the ESOP-8 and SOIC-8 chips (1.75 mm) sit under it.
+- Heights: the panel (2.3 mm) hangs from the lid's window ledge on double-sided
+  tape, in a 4.9 mm bay that leaves it 2.6 mm clear of the board, so every part
+  under it is 2.4 mm or less; the ESOP-8 and SOIC-8 chips (1.75 mm) and the panel's
+  connector (2.0 mm) sit under it.
   Taller parts live in the side bezels or between a seat's clusters: USB-C
   (3.3 mm), debug connectors (2.9), battery connector (5.5, under a pocket in the
   lid). The case is built around the bay, not the panel: a panel that fits
@@ -155,17 +160,21 @@ every hole 0.3 mm or larger.
 
 | Check | Tool | Result |
 |---|---|---|
-| Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 122 parts, 115 nets, 83 named and 32 no-connects: all match |
+| Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 122 parts, 115 nets, 79 named and 36 no-connects: all match |
 | ERC | kicad-cli | 0 errors, 0 warnings |
 | DRC with schematic parity | kicad-cli, `board/tools/check_pcb.py` | 0 errors, 0 unconnected, 0 parity issues; 2 cosmetic warnings (USB-C outline silk at the board edge, where the receptacle overhangs by design). `board/fab/drc.txt` |
 | Every hole 0.3 mm or larger | the drill file, `board/fab/gerbers/battler.drl` | 0.3, 0.6, 0.65 and 2.2 mm only |
 | Contact pattern | `hardware/membrane/tools/check_contact_fp.py` | 0.200 mm minimum gap, 1.60 mm bridging spot |
-| Board inside the case | every part's 3D model against the case's height limits, bosses, snap hooks and keep-outs (`case/check_fit.py`) | 90 parts, no collisions (`case/fit_report.txt`) |
+| Board inside the case | every part's 3D model against the case's height limits, bosses, snap hooks and keep-outs (`case/check_fit.py`) | 91 parts, no collisions (`case/fit_report.txt`) |
 
-Routing took `board/tools/route.py` and then `route.py --finish` for the last
-connection (a contact stub the first pass had cleaned away). Seat 1's right and
-the debug UART moved to free pins at the chip's top-left corner (GPIO23, and
-UART1 on GPIO20/21) to get out of the crystal's crowded corner.
+Routing: two things make the 2-layer board route completely, in about ten minutes.
+The pins are assigned for two layers: each faces where its net goes, in the order the
+nets fan out, so routes don't cross (seat 1's face buttons, the panel's reset, the
+backlight and the ADC inputs on GPIO40-47 along the chip's bottom edge; seat 1's cross
+and the panel's TE on GPIO28-32 down its left edge, after SWD and RUN). And Raspberry
+Pi's own pin escapes are copied with the core (`build_pcb.copy_escapes`): every pin in
+use leaves the chip on their track, locked, as far as 3.2 mm past the pads, so the
+router starts from a ring of stub ends and no pin gets boxed in by its neighbours.
 
 ## Not checked
 
@@ -182,7 +191,7 @@ UART1 on GPIO20/21) to get out of the crystal's crowded corner.
 | What | Why | Where it goes |
 |---|---|---|
 | DS Lite silicone piece outline, dome height, pill spacing, cap flange and height | case clearances are estimates (`ESTIMATE` in `case/case.scad`); the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `flange_t`, `cap_*`, `dpad_pitch` |
-| A real QD3525 panel | outline and thickness, active area offset, and where the folded tail's contacts land (it sets J3's position) | `panel_*`, `fpc_front`, `aa_*` |
+| A real ER-TFT035IPS-6 | outline and thickness, active area offset; that the folded FPC reaches J3 with a little slack; that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_in`; J3's pin map |
 | The chosen cell (503450) | length with its protection board, and connector polarity (JST PH has no standard polarity) | `cell`, J2 |
 | The chosen speaker | diameter, thickness, lead position | `spk_*`, J4 |
 | A printed tub and lid | the snap fit | `snap_*` |
@@ -194,8 +203,8 @@ UART1 on GPIO20/21) to get out of the crystal's crowded corner.
 | RP2354B and AP3156 stock at JLC (1454 and 1490 when checked) | assembly blocked for a larger run | buy ahead, or consign parts |
 | No charge temperature cutoff (approved) | the cell charges however hot it is; the TP4056 only protects itself | keep the device out of hot places while charging; a thermistor on TEMP can come back (two resistors) |
 | USB-to-cell hand-over | a reset on unplug turns the device off | bring-up step 5 with a scope; a second 22 uF on VSYS if needed |
-| Panel supply | the QD3525 comes from one maker through marketplace sellers; a lookalike may differ in pinout or tail length | buy by the part number printed on the tail, check it against the drawing before soldering; the same 48-pin ST7796U panel from another maker needs only case.scad's panel numbers and J3's pin map checked |
-| Soldered panel tail | a panel is harder to swap than on a connector | tin-and-reflow joint (JLC's paste leaves the pads tinned); a hot-air or iron rework frees it |
+| Panel supply | one maker (EastRising), sold direct | it publishes its drawings; another 3.5in panel that fits the 56.0 x 86.24 x 4.9 mm bay needs only case.scad's panel numbers, J3 and its pin map changed |
+| FPC fit in J3 | too short a fold can't reach the connector; too long bows under the panel | J3 sits 1 mm short of the drawn tip; check with a real panel before the board order (`fpc_slack`) |
 | DS Lite silicone fit | cap retention and feel depend on unmeasured heights | pads and caps ordered: try them in a printed lid before the board order |
 | Snap fit | too tight cracks a hook, too loose rattles; FDM snap fits wear | tune on a test print; PETG over PLA |
 | JLC rotation offsets | parts placed 90 or 180 degrees off | review JLC's placement preview; the CPL carries KiCad's angles |

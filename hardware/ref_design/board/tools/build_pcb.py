@@ -12,6 +12,8 @@ Starts from an empty 2-layer board every time:
   5. the RP2354B core: placement, tracks, vias and small zones copied from
      Raspberry Pi's RP2350B minimal design (MIT, 2 layers like this board), turned and
      moved onto this board; the reference's flash and its routing stay behind
+  6. the reference's routing out of the chip's pins, for every pin used here, as far
+     as ESCAPE past the pads (copy_escapes): the router starts from those ends
 Routing and pours are done afterwards by tools/route.py.
 """
 import math
@@ -34,7 +36,7 @@ REF_PCB = os.environ.get("RP2350B_REF", "")
 SYSFP = "/usr/share/kicad/footprints"
 LIBS = {"battler": os.path.join(BOARD_DIR, "lib", "battler.pretty")}
 NO_ASSEMBLY = ("SW1", "SW2", "SW3", "SW4", "SW5", "SW6", "SW7", "SW8", "SW9", "SW10", "SW11", "SW12",
-               "SW13", "SW14", "SW15", "SW16", "TP1", "TP2", "TP3", "TP4", "TP5", "J4", "J3",
+               "SW13", "SW14", "SW15", "SW16", "TP1", "TP2", "TP3", "TP4", "TP5", "J4",
                "H1", "H2", "H3", "H4", "H5", "H6", "FID1", "FID2", "FID3")
 
 
@@ -395,6 +397,92 @@ def copy_core(board, fps, netinfo):
           f"{dropped} tracks left out (they crossed a pad of another net on this board)")
 
 
+ESCAPE = 3.2       # mm past the chip's pad ring that Raspberry Pi's pin escapes are copied
+
+
+def copy_escapes(board, fps, netinfo):
+    """Raspberry Pi's routing out of the chip, for the pins used here, as far as ESCAPE
+    past the pad ring: each pin's track turns out of its neighbours' way (the left edge's
+    eight pins leave as staggered 45 degree lines, SWD west under the crystal, the rest
+    south as a bus). Autorouters do this badly on two layers: a pin gets boxed in by its
+    neighbours' tracks and vias, and nothing afterwards gets it out. Locked, like the
+    core's routing; the router carries on from the ends."""
+    ref = pcbnew.LoadBoard(REF_PCB)
+    rref = next(r for r, o in CORE.items() if o == "U4")
+    ref_pins = {p.GetNumber(): p.GetNetname() for p in ref.FindFootprintByReference(rref).Pads()}
+    u4 = fps["U4"]
+    skip = {"", "GND", "+3V3", "+1V1"} | set(CORE_NETS.values())
+    ux, uy = xy(u4.GetPosition())
+    r = 5.3 + ESCAPE
+    box = (ux - r, uy - r, ux + r, uy + r)
+    pads = [p for f in fps.values() for p in f.Pads()]
+
+    def inside(pt):
+        return box[0] <= pt[0] <= box[2] and box[1] <= pt[1] <= box[3]
+
+    def clip(a, b):
+        # where a (inside) -> b leaves the box
+        t = 1.0
+        for i, (lo, hi) in enumerate(((box[0], box[2]), (box[1], box[3]))):
+            d = b[i] - a[i]
+            if d > 0 and b[i] > hi:
+                t = min(t, (hi - a[i]) / d)
+            if d < 0 and b[i] < lo:
+                t = min(t, (lo - a[i]) / d)
+        return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+
+    def hits_pad(net, a, b, width):
+        n = max(2, int(math.dist(a, b) / 0.05))
+        for p in pads:
+            if p.GetNetname() == net or not p.IsOnLayer(pcbnew.F_Cu):
+                continue
+            if p.GetBoundingBox().Distance(V(*a)) > mm(4) and p.GetBoundingBox().Distance(V(*b)) > mm(4):
+                continue
+            for k in range(n + 1):
+                q = (a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n)
+                if p.HitTest(V(*q), mm(width / 2 + DEFAULT_CLASS["clear"])):
+                    return True
+        return False
+
+    done = []
+    for pad in sorted(u4.Pads(), key=lambda p: int(p.GetNumber())):
+        net, num = pad.GetNetname(), pad.GetNumber()
+        rnet = ref_pins.get(num)
+        if net in skip or not rnet:
+            continue
+        segs = [(core_xy(*xy(t.GetStart())), core_xy(*xy(t.GetEnd())), pcbnew.ToMM(t.GetWidth()))
+                for t in ref.GetTracks()
+                if t.GetNetname() == rnet and t.GetClass() != "PCB_VIA" and t.GetLayer() == pcbnew.F_Cu]
+        vias = [core_xy(*xy(t.GetPosition())) for t in ref.GetTracks()
+                if t.GetNetname() == rnet and t.GetClass() == "PCB_VIA"]
+        frontier, used, out = [xy(pad.GetPosition())], set(), []
+        while frontier:
+            a = frontier.pop()
+            for k, (s0, s1, w) in enumerate(segs):
+                if k in used or not (math.dist(s0, a) < 0.01 or math.dist(s1, a) < 0.01):
+                    continue
+                used.add(k)
+                b = s1 if math.dist(s0, a) < 0.01 else s0
+                end = b if inside(b) else clip(a, b)
+                if math.dist(a, end) < 0.05 or hits_pad(net, a, end, w):
+                    continue
+                out.append((a, end, w))
+                if inside(b) and not any(math.dist(b, v) < 0.01 for v in vias):
+                    frontier.append(b)
+        for a, b, w in out:
+            t = pcbnew.PCB_TRACK(board)
+            t.SetStart(V(*a))
+            t.SetEnd(V(*b))
+            t.SetWidth(mm(w))
+            t.SetLayer(pcbnew.F_Cu)
+            t.SetNet(netinfo[net])
+            t.SetLocked(True)
+            board.Add(t)
+        if out:
+            done.append(num)
+    print(f"pin escapes from Raspberry Pi's layout: {len(done)} pins ({', '.join(done)})")
+
+
 def main():
     global REF_PCB
     if not REF_PCB:
@@ -413,6 +501,7 @@ def main():
     for ref, (x, y, rot, side) in P.items():
         place(fps[ref], x, y, rot, side)
     copy_core(board, fps, netinfo)
+    copy_escapes(board, fps, netinfo)
     pcbnew.SaveBoard(PCB, board)
     print("saved", PCB, len(fps), "footprints,", len(nets), "nets")
 

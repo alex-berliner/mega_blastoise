@@ -23,9 +23,10 @@ Symbols are always root symbols. Konnect writes a derived symbol (one that
 reads it with no pins. So the RP2354B, 2N7002 and AO3401A are drawn with the
 symbols they derive from (same pins); the value is the real part.
 
-This is the 2-layer build (branch ref-design-2layer): TP4056 charger with USB
-load sharing, ME6211 3V3, RP2354B (flash inside), PWM audio into an FM8002A,
-a face button as the power button, no LEDs or thermistor, every hole >= 0.3 mm.
+This is the 2-layer build: TP4056 charger with USB load sharing, ME6211 3V3,
+RP2354B (flash inside), PWM audio into an FM8002A, a face button as the power
+button, no LEDs or thermistor, every hole >= 0.3 mm, and an ER-TFT035IPS-6 panel
+in a ZIF connector.
 """
 
 POWER = {"GND", "+3V3", "+1V1", "VBUS", "VSYS", "VBAT"}
@@ -182,19 +183,26 @@ for i, net in enumerate(["VBUS", "VSYS", "VBAT", "+3V3", "GND"]):
 # =================================================================================
 S = "mcu.kicad_sch"
 GPIO = {  # GPIO number: net
+    # 2 layers: each net's pin faces where it goes, and along an edge the pins are in the
+    # order their nets fan out, so routes don't cross (seat 1 below, seat 2 above,
+    # charger and USB to the right, the panel's connector below the chip). The pins leave
+    # the chip the way Raspberry Pi's layout takes them out (build_pcb.copy_escapes)
     2: "PWR_HOLD", 3: "PWR_BTN_N",
     4: "P2_UP", 5: "P2_DOWN", 6: "P2_LEFT", 7: "P2_RIGHT",
     8: "AUDIO_PWM", 11: "AMP_EN",
     12: "P2_A", 13: "P2_B", 14: "P2_X", 15: "P2_Y",
     17: "CHG_STAT_N", 18: "CHG_DONE_N",
-    # 2-layer routing: UART1 and seat 1's right on free pins at the chip's top-left corner,
-    # nearest their connector and seat (the lower-left corner is crowded by the crystal)
-    20: "UART_TX", 21: "UART_RX", 23: "P1_RIGHT",
-    24: "P1_A", 25: "P1_B", 26: "P1_X",                  # P1 Y is the power button: read on GPIO3
-    28: "P1_UP", 29: "P1_DOWN", 30: "P1_LEFT",
-    32: "LCD_TE", 33: "LCD_DC", 34: "LCD_RST", 35: "BL_SDI",
-    36: "LCD_MISO", 37: "LCD_CS", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
-    40: "VBAT_SENSE", 41: "CC1_SENSE", 42: "CC2_SENSE",
+    20: "UART_TX", 21: "UART_RX",
+    # left edge: seat 1's cross and the panel's TE leave south as one bus, after RUN
+    28: "P1_UP", 29: "P1_DOWN", 30: "P1_LEFT", 31: "P1_RIGHT", 32: "LCD_TE",
+    # the panel's pins in its connector's order (TE, CS, DC, SCK) where SPI0 allows;
+    # GPIO33 is an SPI0 CSn pin as well, DC is a plain output
+    33: "LCD_CS", 36: "LCD_MISO", 37: "LCD_DC", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
+    # bottom edge, right half, left to right: the panel's reset, seat 1's face buttons,
+    # the backlight, then the ADC inputs (GPIO40-47 are the ADC pins) for the USB-C CC
+    # lines and the cell (P1 Y is the power button: read on GPIO3)
+    40: "LCD_RST", 41: "P1_B", 42: "P1_X", 43: "P1_A", 44: "BL_SDI",
+    45: "CC2_SENSE", 46: "CC1_SENSE", 47: "VBAT_SENSE",
 }
 GPIO_PIN = {0: 77, 1: 78, 2: 79, 3: 80, 4: 1, 5: 2, 6: 3, 7: 4, 8: 6, 9: 7, 10: 8, 11: 9,
             12: 11, 13: 12, 14: 13, 15: 14, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20, 21: 21,
@@ -250,27 +258,34 @@ part("#FLG05", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+1V1"}, bom=False)
 part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=False)
 
 # =================================================================================
-# Display: QD3525 (3.5in IPS 320x480, ST7796U) on its 48-pin solder FPC; an AP3156
-# charge pump drives the panel's six backlight LEDs (common anode, a cathode each)
+# Display: EastRising ER-TFT035IPS-6 (3.5in IPS 320x480, ILI9488), its FPC in a 50-pin ZIF
+# connector; an AP3156 charge pump drives the panel's six parallel backlight LEDs (common
+# anode, two cathode pins of three LEDs each: three of the driver's sinks per pin)
 # =================================================================================
 S = "display.kicad_sch"
-fpc = {"5": "+3V3", "6": "+3V3",                          # VDD, IOVCC
-       "7": "LCD_TE", "8": "LCD_CS", "9": "LCD_DC", "10": "LCD_SCK",
-       "11": "+3V3",                                      # RD: parallel read strobe, unused: high
-       "12": "LCD_MOSI", "13": "LCD_MISO", "38": "LCD_RST",
-       "39": "+3V3", "40": "+3V3", "41": "+3V3",          # IM2..IM0 = 111: 4-line 8-bit SPI
-       "42": "LED_A"}
-fpc.update({str(p): "GND" for p in range(14, 38)})        # GND, DB0-17, DEN, PCLK, HSYNC, VSYNC: tied low
-fpc.update({str(43 + i): f"LED_K{i + 1}" for i in range(6)})
-fpc.update({str(p): None for p in (1, 2, 3, 4)})          # resistive touch: not on this panel
-part("J3", S, "Connector_Generic:Conn_01x48", "QD3525", "battler:QD3525_FPC_1x48_P0.80mm_Solder", fpc)
+PANEL = {1: "LED_A", 2: "LED_K1", 3: "LED_K2",                  # panel pin -> net (datasheet 4.1)
+         7: "+3V3", 8: "+3V3", 9: "+3V3",                          # IM0-2 = 111: 4-wire 8-bit SPI
+         10: "LCD_RST", 33: "LCD_MISO", 34: "LCD_MOSI",
+         35: "+3V3",                                               # RD: parallel read strobe, unused: high
+         36: "LCD_SCK", 37: "LCD_DC", 38: "LCD_CS", 39: "LCD_TE",
+         40: "+3V3", 41: "+3V3", 42: "+3V3",                       # VDDI x2, VCI
+         43: "GND", 48: "GND", 49: "GND", 50: "GND"}
+PANEL.update({p: "GND" for p in range(11, 33)})                   # VSYNC, HSYNC, DOTCLK, DE, DB17-0: low
+PANEL.update({p: None for p in (4, 5, 6, 44, 45, 46, 47)})        # NC, and the touch pins (no touch layer)
+# J3 faces seat 1 with its pin 1 on the left (seen from above); the folded FPC's contact 1
+# lands on the right, so connector pin j carries panel pin 51 - j
+fpc = {str(51 - p): net for p, net in PANEL.items()}
+fpc["MP"] = None
+part("J3", S, "Connector_Generic_MountingPin:Conn_01x50_MountingPin", "FH12-50S-0.5SH(55)",
+     "Connector_FFC-FPC:Hirose_FH12-50S-0.5SH_1x50-1MP_P0.50mm_Horizontal", fpc,
+     "C202116", "FH12-50S-0.5SH(55)", "HRS(Hirose)")
 R("R28", S, "33", "LCD_SCK_MCU", "LCD_SCK")       # source termination, fitted next to the MCU
 R("R29", S, "33", "LCD_MOSI_MCU", "LCD_MOSI")
 C("C29", S, "1u", "+3V3")
 C("C30", S, "100n", "+3V3")
 part("U6", S, "battler:AP3156", "AP3156FVG-7", "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.5x2.5mm_ThermalVias",
      {"10": "VSYS", "2": "BL_SDI", "3": None, "6": "BL_C1P", "7": "BL_C1N", "5": "BL_C2P", "8": "BL_C2N",
-      "4": "LED_A", "12": "LED_K1", "13": "LED_K2", "14": "LED_K3", "15": "LED_K4", "16": "LED_K5", "1": "LED_K6",
+      "4": "LED_A", "12": "LED_K1", "13": "LED_K1", "14": "LED_K1", "15": "LED_K2", "16": "LED_K2", "1": "LED_K2",
       "9": "GND", "11": "GND", "17": "GND"},
      "C443652", "AP3156FVG-7", "Diodes Incorporated")
 C("C31", S, "1u", "VSYS")                          # charge pump input

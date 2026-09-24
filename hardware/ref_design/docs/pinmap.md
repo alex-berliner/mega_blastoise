@@ -30,31 +30,31 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 20 | `UART_TX` | UART1 TX to J6 pin 1 (debug console) |
 | 21 | `UART_RX` | UART1 RX from J6 pin 3 |
 | 22 | (spare) | not connected |
-| 23 | `P1_RIGHT` | membrane contact SW4, input with pull-up, low = pressed |
-| 24 | `P1_A` | membrane contact SW5, input with pull-up, low = pressed |
-| 25 | `P1_B` | membrane contact SW6, input with pull-up, low = pressed |
-| 26 | `P1_X` | membrane contact SW7, input with pull-up, low = pressed |
+| 23 | (spare) | not connected |
+| 24 | (spare) | not connected |
+| 25 | (spare) | not connected |
+| 26 | (spare) | not connected |
 | 27 | (spare) | not connected |
 | 28 | `P1_UP` | membrane contact SW1, input with pull-up, low = pressed |
 | 29 | `P1_DOWN` | membrane contact SW2, input with pull-up, low = pressed |
 | 30 | `P1_LEFT` | membrane contact SW3, input with pull-up, low = pressed |
-| 31 | (spare) | not connected |
+| 31 | `P1_RIGHT` | membrane contact SW4, input with pull-up, low = pressed |
 | 32 | `LCD_TE` | input: the panel's tearing-effect signal (enable with TEON); start a frame on its edge |
-| 33 | `LCD_DC` | display data/command |
-| 34 | `LCD_RST` | display reset, active low |
-| 35 | `BL_SDI` | output to the AP3156 SDI (1-wire): backlight current in 32 steps, see below; low > 256 us = off |
+| 33 | `LCD_CS` | SPI0 CSn (or drive as a GPIO) |
+| 34 | (spare) | not connected |
+| 35 | (spare) | not connected |
 | 36 | `LCD_MISO` | SPI0 RX (panel readback, optional) |
-| 37 | `LCD_CS` | SPI0 CSn (or drive as a GPIO) |
+| 37 | `LCD_DC` | display data/command |
 | 38 | `LCD_SCK_MCU` | SPI0 SCK, 33 ohm source termination R28 |
 | 39 | `LCD_MOSI_MCU` | SPI0 TX, 33 ohm source termination R29 |
-| 40 | `VBAT_SENSE` | ADC0: battery voltage / 2 (R17/R18, 470k each, 100 nF) |
-| 41 | `CC1_SENSE` | ADC1: USB-C CC1 through 10k; the source's current offer |
-| 42 | `CC2_SENSE` | ADC2: USB-C CC2 through 10k |
-| 43 | (spare) | not connected |
-| 44 | (spare) | not connected |
-| 45 | (spare) | not connected |
-| 46 | (spare) | not connected |
-| 47 | (spare) | not connected |
+| 40 | `LCD_RST` | display reset, active low |
+| 41 | `P1_B` | membrane contact SW6, input with pull-up, low = pressed |
+| 42 | `P1_X` | membrane contact SW7, input with pull-up, low = pressed |
+| 43 | `P1_A` | membrane contact SW5, input with pull-up, low = pressed |
+| 44 | `BL_SDI` | output to the AP3156 SDI (1-wire): backlight current in 32 steps, see below; low > 256 us = off |
+| 45 | `CC2_SENSE` | ADC5: USB-C CC2 through 10k |
+| 46 | `CC1_SENSE` | ADC6: USB-C CC1 through 10k; the source's current offer |
+| 47 | `VBAT_SENSE` | ADC7: battery voltage / 2 (R17/R18, 470k each, 100 nF) |
 
 Other RP2354B pins: the 2 MB flash is inside the package, so of the QSPI pins only QSPI_SS
 is wired (10k pull-up R23, and the BOOTSEL button through 1k). 12 MHz crystal, USB to the
@@ -109,7 +109,7 @@ AMP_EN high only while sound plays: the amplifier draws about 4.4 mA when on.
 
 ## Battery voltage
 
-VBAT = 2 x ADC0 x 3.3 V / 4096 (12-bit). Read a few samples; the 100 nF holds the divider
+VBAT = 2 x ADC7 x 3.3 V / 4096 (12-bit). Read a few samples; the 100 nF holds the divider
 steady for the ADC's sampling capacitor. Full charge reads about 2.10 V at the pin. Shut down
 at about 3.35 V: below that the ME6211 can't hold 3.3 V, and the RP2354B's regulator needs
 VREG_AVDD at 3.135 V or more.

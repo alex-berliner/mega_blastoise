@@ -4,9 +4,9 @@ A complete, orderable design for the production version of the handheld:
 schematic, 2-layer board, JLCPCB fab and assembly files, a printable case, and
 the documents to build, bring up and review it.
 
-**This is the 2-layer build** (branch `ref-design-2layer`): the 4-layer design on
-`main` with every cost change Alex approved on 2026-09-24, on two copper layers
-with JLC's standard 0.3 mm holes. Built by Claude in parallel with
+**This is the 2-layer build**, on `main` since 2026-09-24: the first, 4-layer
+design (kept on branch `ref-design-4layer`) with every cost change Alex approved
+that day, on two copper layers with JLC's standard 0.3 mm holes. Built by Claude in parallel with
 Alex's own hand-made board (`hardware/prod_board/`, `hardware/prod_case/`),
 which this folder never touches.
 
@@ -15,8 +15,9 @@ which this folder never touches.
 ## What it is
 
 - RP2354B (2 MB flash inside), USB-C (charging + firmware + debug console)
-- 3.5in 320x480 IPS panel (QD3525, ST7796U, SPI), a bare panel with a published
-  drawing, its FPC soldered to the board; a constant-current backlight driver
+- 3.5in 320x480 IPS panel (EastRising ER-TFT035IPS-6, ILI9488, SPI) with a published
+  datasheet and 3D model, its FPC in a 50-pin ZIF connector (no soldering); a
+  constant-current backlight driver
 - 16 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad and
   four face buttons at each end
 - PWM audio through an RC filter into an FM8002A amplifier and a 20 mm speaker
@@ -53,7 +54,8 @@ python3 tools/build_sch.py                   # design.py -> schematic (through K
 python3 tools/check_netlist.py               # KiCad's netlist == design.py ?
 kicad-cli sch erc battler.kicad_sch          # 0 errors expected
 RP2350B_REF=.../RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb python3 tools/build_pcb.py
-FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # ~30 min
+FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # about 10 min
+python3 tools/route.py --finish              # only if route.py left a connection open
 python3 tools/silk.py
 python3 tools/check_pcb.py                   # DRC with schematic parity
 python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders
@@ -65,8 +67,7 @@ Needs KiCad 10 (kicad-cli and its `pcbnew` Python module), OpenSCAD, Java,
 Freerouting 1.9.0, Konnect, and Raspberry Pi's RP2350B minimal KiCad design
 (document RP-010329-CA) for the core layout. The project library in `lib/` is
 already built; `tools/lib_from_ref.py` (the core's land patterns, from that
-design), `tools/fp_panel.py` (the panel's FPC landing) and `tools/sym_lib.py`
-(symbols KiCad lacks) rebuild it.
+design) and `tools/sym_lib.py` (symbols KiCad lacks) rebuild it.
 
 ## Status
 

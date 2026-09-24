@@ -11,21 +11,21 @@ Files are in `board/fab/` (regenerate with `python3 board/tools/fab.py`).
 | Surface finish | **ENIG** | the silicone pills press straight on the contact combs: they must be gold, not HASL |
 | Min via hole | **0.3 mm** (0.5 mm pads, 0.6 mm on power), tented | JLC's standard: 0.25 mm adds a fee, a 4-wire test and TG155 material (about $40 an order) |
 | Min track / space | 0.15 / 0.15 mm (0.1 mm in the RP2354B pin field) | |
-| Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 90 placements, 36 part numbers |
+| Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 91 placements, 37 part numbers |
 
 In JLC's placement preview, check every polarised part turned the way the silkscreen
 says: the RP2354B, TP4056, AP3156 and FM8002A pin-1 dots, the ME6211, SRV05-4, BAT54C,
-AO3401A and the 2N7002s, and the diodes (D2, D3, D5, D6: the band is the cathode).
+AO3401A and the 2N7002s, the diodes (D2, D3, D5, D6: the band is the cathode), and J3,
+the panel's connector (pin 1 at its left end, its mouth towards seat 1).
 JLC fixes rotation offsets on request; the CPL carries KiCad's angles.
 
-Not assembled by JLC (no LCSC number): the panel's landing J3 (JLC's paste leaves its
-pads tinned, which is what the hand joint wants), the 16 membrane contacts (bare gold),
-the speaker pads, test pads, locating holes and fiducials.
+Not assembled by JLC (no LCSC number): the 16 membrane contacts (bare gold), the speaker
+pads, test pads, locating holes and fiducials. J3, the panel's ZIF connector, is assembled.
 
 ## 2. Order and make the rest
 
 The list, with the listings found so far: [bom.md](bom.md), "You". In short: the
-QD3525 panel, a 503450 cell with a JST PH plug, a 20 mm speaker, two sets each of DS
+ER-TFT035IPS-6 panel (buydisplay.com), a 503450 cell with a JST PH plug, a 20 mm speaker, two sets each of DS
 Lite silicone and caps, tape and foam, and the printed case (`case/tub.stl`,
 `case/lid.stl`).
 
@@ -49,13 +49,6 @@ size. The snap fit is untested: print one tub and lid first and tune `snap_barb`
    Keep the leads short; the speaker sits on the tub floor right below.
 2. Look over the chips with exposed pads (TP4056, AP3156, RP2354B): their pads must have
    wetted. X-ray is not needed for a prototype; a lifted corner pin shows under a loupe.
-3. Panel tail to J3. Lay the panel face down on the bench beyond the board's seat-1 edge,
-   its tail reaching back flat over J3, contacts down. Line the tail's edges up with the
-   silk ticks either side of J3, and its contact 1 with J3's pin-1 bar (left end seen
-   from above, seat 1 nearest you). Tape the panel down. Flux the row, tack the two end
-   contacts, check the alignment, then drag a fine chisel tip along the row (the pads are
-   already tinned) or use a hot-bar tool. Check for bridges under a loupe and clean the
-   flux off. The panel stays face down until the case goes together.
 
 ## 4. First power, before the case
 
@@ -70,13 +63,16 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 3. Board into the tub over them, its six holes over the six pins, resting on the bosses
    and the four ribs under the button clusters, USB-C in its wall opening. Feed the
    cell's plug up through the slot next to J2 and plug it in (J2's mouth faces the slot).
-4. Panel: fold it over onto the board, face up, its tail looping under it at the seat-1
-   edge (don't crease the tail). It rests loosely on the parts under it for now.
+4. Panel: lay it face down beyond the board's seat-1 edge, flip J3's lid up, slide the
+   FPC's contacts into J3 (contacts down) until it stops, square, and press the lid shut.
+   Then fold the panel over onto the board, face up, its FPC looping under it at the
+   seat-1 edge (don't crease it). It rests loosely on the parts under it for now.
+   A cracked panel comes out the same way: lid up, FPC out.
 5. Silicone pieces onto the contacts, caps onto the silicone.
 6. Peel the tape liner and lower the lid straight down until all six hooks click into
    the tub wall: its bosses take the pins and clamp the board, its locating frame centres
    the panel and the tape takes it, the caps come up through their holes and the
-   retainers trap their flanges. From here on the panel hangs from the lid, 2.4 mm clear
+   retainers trap their flanges. From here on the panel hangs from the lid, 2.6 mm clear
    of the board.
 7. Opening it again: work a thin blade down between the lid and the tub wall at a hook
    and ease that hook inwards; go round the six.

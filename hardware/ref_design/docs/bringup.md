@@ -40,7 +40,7 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 1. Print all 16 buttons (internal pull-ups): short each contact's combs with tweezers.
    The table in [pinmap.md](pinmap.md) says which GPIO is which contact; seat 1's Y
    (the power button) reads on GPIO3 (PWR_BTN_N).
-2. Read ADC0: with no cell it reads whatever the charger leaves on its output, not a
+2. Read ADC7 (GPIO47): with no cell it reads whatever the charger leaves on its output, not a
    cell voltage.
 3. Read CHG_STAT_N and CHG_DONE_N: with USB in and no cell the TP4056 has nothing to
    charge, so they may flicker; that's expected.
@@ -48,16 +48,22 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 
 ## 3. Display
 
-1. Drive LCD_RST low, then high; send the ST7796 init sequence over SPI0 at 20 MHz first.
-2. Read ID (0x04) back through LCD_MISO: expect the ST7796 ID bytes. If nothing reads
-   back, look at the tail's joint first (a bridge or an open contact on J3), then at the
-   interface pins: IM2-0 (J3 pins 39-41) must be high for 4-line SPI.
-3. Fill red, green, blue, white; check pixel order (RGB or BGR bit in 0x36) and rotation.
-4. Raise SPI to 62.5 MHz; watch for corruption at the far edge of the panel.
-5. Backlight: drive GPIO35 (BL_SDI) high, send 10 low pulses (1 us low, 1 us high), wait
-   300 us, then 6 pulses and another 300 us: current level 6, 15 mA per LED. All six LEDs
-   should light evenly; the AP3156's VOUT (C32) sits a few hundred mV above the LEDs'
-   forward voltage. Hold GPIO35 low for 300 us and the backlight goes off.
+1. Drive LCD_RST low, then high; send the ILI9488 init sequence over SPI0 at 10-20 MHz
+   first (the datasheet rates serial writes to 20 MHz).
+2. Read ID4 (0xD3) back through LCD_MISO: expect 0x94 0x88. If nothing reads back, look
+   at the FPC first (fully in J3, square, lid shut), then at the interface pins: IM2-0
+   (J3 pins 42-44, the panel's 9-7) must be high for 4-wire SPI.
+3. Set COLMOD (0x3A) to 0x66: in SPI mode the ILI9488 only takes 18-bit colour, three
+   bytes a pixel. Fill red, green, blue, white; check pixel order (RGB or BGR bit in 0x36)
+   and rotation.
+4. Raise SPI step by step; watch for corruption at the far edge of the panel. A full
+   frame is 461 kB, so redraw only what changes.
+5. Backlight: drive GPIO44 (BL_SDI) high, send 10 low pulses (1 us low, 1 us high), wait
+   300 us, then 6 pulses and another 300 us: current level 6, 15 mA per sink, so 45 mA on
+   each of the panel's two cathode pins (three LEDs each). The panel should light evenly;
+   the AP3156's VOUT (C32) sits a few hundred mV above the LEDs' forward voltage (about
+   3.0 V). Level 1 is 20 mA per LED, the panel's 120 mA maximum. Hold GPIO44 low for
+   300 us and the backlight goes off.
 6. Tearing effect: enable it on the panel (TEON, 0x35) and watch GPIO32: one pulse per
    frame, about 60 Hz.
 
@@ -74,7 +80,7 @@ hiss in silence; set AMP_EN low and check it goes quiet.
    current, expect under 20 uA.
 2. Plug USB: CHG_STAT_N goes low while charging. The meter shows about 0.5 A more than
    the system draws (R5 sets 500 mA).
-3. ADC0 reads VBAT / 2; compare with a meter on TP3.
+3. ADC7 reads VBAT / 2; compare with a meter on TP3.
 4. Hot check after 10 minutes of charging: the TP4056 is warm, not too hot to touch. It
    throttles its own current if its die passes about 120 C.
 5. **Unplug test.** Run the firmware from the cell with USB plugged in, scope on TP4 (3V3)

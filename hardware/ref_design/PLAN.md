@@ -10,20 +10,21 @@ schematic, routed board, fab outputs, case, BOM, docs. It cannot mean
 
 ## Decisions (locked unless noted)
 
-The 2-layer build (branch `ref-design-2layer`) applies the cost changes Alex approved on
-2026-09-24; `main` keeps the 4-layer design they started from.
+The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has been
+`main` since that day; branch `ref-design-4layer` keeps the 4-layer design it started from.
 
 | Area | Choice | Why |
 |---|---|---|
-| Panel | QD3525, ST7796U, 320x480 IPS, 55.50 x 84.96 x 2.50 mm, about $5-8 | SPI like current firmware; maker's drawing and pinout; a fifth of a distributor panel's price (the Displaytech DT035 was $25-35) |
-| Panel FPC | 48 contacts, 0.8 mm pitch, soldered to pads on the board (J3) | this panel has no connector version; the tail folds under the panel |
-| Backlight | 6 LEDs in parallel, 15-20 mA each; AP3156 charge pump, one current sink per LED | constant current from any cell voltage; 32 levels over one GPIO (1-wire) |
+| Panel | EastRising ER-TFT035IPS-6, ILI9488, 320x480 IPS, 54.50 x 83.00 x 2.30 mm, about $14.20 a unit with shipping at 10 | a published datasheet and 3D model, sold by the maker; plugs in instead of being soldered (Alex, 2026-09-24; the QD3525 it replaced only came with a solder tail) |
+| Panel FPC | 50 contacts, 0.5 mm pitch, in a Hirose FH12-50S bottom-contact ZIF (J3), assembled by JLC | no hand soldering per unit; a cracked panel swaps in a minute |
+| Backlight | 6 LEDs in parallel on two cathode pins; AP3156 charge pump, three current sinks per pin | constant current from any cell voltage; 32 levels over one GPIO (1-wire) |
 | MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board); no flash chip to route |
 | Charger | TP4056 at 500 mA, TEMP grounded; USB load sharing (B5819W, AO3401A, BAT54WS gate feed, 22 uF on VSYS) | a fifth of the BQ24074's price, no stock risk; no thermistor (approved) |
 | Cell | 503450, 1000 mAh, JST PH 2.0 | the listing Alex found; 5 mm thinner case |
 | 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at about 3.35 V |
 | Audio | PWM (GPIO8) through two RC poles into an FM8002A, gain 2 | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
 | Buttons | 16 x DSL_button_4ring, direct GPIO, internal pull-ups; seat 1's Y is also the power button | no matrix; no side switch (approved) |
+| Pin map | each pin faces where its net goes, in fan-out order; Raspberry Pi's pin escapes copied with the core | two layers route completely (docs/pinmap.md) |
 | Power switch | seat 1's Y contact joins VSYS to the latch; MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |
 | USB | one USB-C, charge + data, SRV05-4 ESD, 22 ohm 0402 series in Raspberry Pi's spots | preferred/basic parts: no JLC setup fee (a 27 ohm 0603 doesn't fit the copied layout) |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes | no LEDs (approved) |
@@ -45,6 +46,6 @@ The 2-layer build (branch `ref-design-2layer`) applies the cost changes Alex app
 ## Measure before ordering
 
 - DS Lite silicone piece outline and cap sizes (pads and caps ordered)
-- QD3525 sample against its drawing: outline, and where the folded tail's contacts land
+- An ER-TFT035IPS-6 against its drawing: outline, that its folded FPC reaches J3 with a little slack, and that contact 1 lands on J3's pin 50 (the right end seen from above, seat 1 nearest)
 - The 503450 cell: length with its protection board, plug polarity
 - A printed tub and lid: the snap fit

@@ -13,7 +13,7 @@ left a connection or two.
      2-layer board (its keep-outs shape it); GND is the bottom layer, poured last
   3. pre-routes that the router handles badly:
        membrane contacts: each comb's anchor -> radial stub -> via outside the pill
-       display landing: the panel's 24 grounded pins joined by one bar
+       display connector: the panel's grounded pins joined by a bar per run
        AP3156: its GND pins into its thermal pad
        every other GND pad: a short stub and a via down to the GND pour
   4. Freerouting (1.9.0; 2.x loops on this board) routes the signals and the
@@ -245,22 +245,34 @@ def contact_stubs(board):
 
 
 def fpc_ground_bar(board):
-    """The panel's pins 14-37 (GND, the parallel bus and the RGB interface's strobes)
-    are all tied to GND: a bar along the tip side of the landing, outside the FPC,
-    joins them, and vias every few pins take it into the GND plane."""
+    """The panel connector's grounded pins (GND, the parallel bus and the RGB interface's
+    strobes) come in runs of neighbours: each run is joined by a bar behind its pads (the
+    side away from the connector's mouth), with vias every few pins down to the GND pour.
+    The signal pins between runs keep their way out."""
     fp = board.FindFootprintByReference("J3")
     gnd = board.FindNet("GND")
-    pads = sorted((p for p in fp.Pads() if p.GetNetname() == "GND"), key=lambda p: p.GetPosition().x)
+    pads = sorted((p for p in fp.Pads() if p.GetNetname() == "GND" and p.GetNumber() != "MP"),
+                  key=lambda p: p.GetPosition().x)
     top = min(pcbnew.ToMM(p.GetBoundingBox().GetY()) for p in pads)
     bar_y, via_y = top - 0.45, top - 1.25
-    xs = [xy(p.GetPosition())[0] for p in pads]
+    runs, run = [], []
     for p in pads:
-        x, y = xy(p.GetPosition())
-        add_track(board, (x, y), (x, bar_y), gnd, 0.3)
-    add_track(board, (xs[0], bar_y), (xs[-1], bar_y), gnd, 0.3)
-    for i in range(0, len(xs), 5):
-        add_track(board, (xs[i], bar_y), (xs[i], via_y), gnd, 0.3)
-        add_via(board, (xs[i], via_y), gnd)
+        x = xy(p.GetPosition())[0]
+        if run and x - run[-1][0] > 0.6:
+            runs.append(run)
+            run = []
+        run.append((x, p))
+    runs.append(run)
+    for run in runs:
+        if len(run) < 2:
+            continue                           # a lone ground pin gets its own via in fanout()
+        xs = [x for x, _ in run]
+        for x, p in run:
+            add_track(board, (x, xy(p.GetPosition())[1]), (x, bar_y), gnd, 0.3)
+        add_track(board, (xs[0], bar_y), (xs[-1], bar_y), gnd, 0.3)
+        for i in range(0, len(xs), 5):
+            add_track(board, (xs[i], bar_y), (xs[i], via_y), gnd, 0.3)
+            add_via(board, (xs[i], via_y), gnd)
 
 
 def led_driver(board):
@@ -672,6 +684,21 @@ def dsn_for_router(text, contacts, fences, circles=()):
       keep-outs that wall off the MCU's pins: removed. The switcher's copper and the
       crystal's ground island get proper fences instead."""
     refs = {r for r, _, _ in contacts}
+    # Freerouting rounds its geometry and can finish a hair inside the clearance (0.1474 mm
+    # against 0.15 at a pad corner): it routes to 5 um more than the board's rules
+    text = re.sub(r"\(clearance ([0-9.]+)\)", lambda m: f"(clearance {float(m.group(1)) + 5:g})", text)
+
+    # KiCad keeps copper 0.2 mm from the outer side of the 0.1 mm outline; Freerouting keeps
+    # only its clearance from the outline itself: its copy of the outline is 0.12 mm inside
+    def shrink(m):
+        v = [float(n) for n in m.group(2).split()]
+        xs, ys = v[0::2], v[1::2]
+        cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+        hx, hy = (max(xs) - min(xs)) / 2, (max(ys) - min(ys)) / 2
+        d = 120.0                                  # um, the DSN's unit
+        pts = [f"{cx + (x - cx) * (hx - d) / hx:.1f} {cy + (y - cy) * (hy - d) / hy:.1f}" for x, y in zip(xs, ys)]
+        return m.group(1) + "  ".join(pts) + ")"
+    text = re.sub(r"(\(boundary\s*\(path pcb 0\s+)([-0-9.\s]+)\)", shrink, text, count=1)
 
     def drop_pins(m):
         pins = [p for p in m.group(2).split() if p.rsplit("-", 1)[0] not in refs]
@@ -865,8 +892,9 @@ def drc_unconnected(board):
 
 def prune_dangling(board, rounds=5, locked_too=False):
     """Copper with a loose end: pieces of routes the maze pass took up, or (at the end,
-    locked_too) copied stubs whose far end no longer meets anything. A loose-ended
-    piece carries no connection, so taking it away never disconnects anything."""
+    locked_too) copied stubs whose far end meets nothing. A loose track is cut back to
+    the last point where something joins it (the router often meets a stub part-way
+    along), and taken away only when nothing does, so no connection is ever lost."""
     gone = 0
     for _ in range(rounds):
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
@@ -875,12 +903,139 @@ def prune_dangling(board, rounds=5, locked_too=False):
         items = [t for t in board.GetTracks() if t.m_Uuid.AsString() in loose
                  and (locked_too or (not t.IsLocked() and t.GetNetname() not in PLANE_NETS))
                  and not (isinstance(t, pcbnew.PCB_VIA) and t.GetNetname() in PLANE_NETS)]
-        if not items:
-            break
+        changed = 0
         for t in items:
-            board.Remove(t)
-        gone += len(items)
+            if isinstance(t, pcbnew.PCB_VIA):
+                board.Remove(t)
+                changed += 1
+                continue
+            span = joined_span(board, t)
+            if span is None:
+                board.Remove(t)
+                changed += 1
+            elif span != (xy(t.GetStart()), xy(t.GetEnd())):
+                t.SetStart(V(*span[0]))
+                t.SetEnd(V(*span[1]))
+                changed += 1
+        if not changed:
+            break
+        gone += changed
     return gone
+
+
+def split_at_joins(board):
+    """A track that ends part-way along another of its net makes a T: KiCad counts it as
+    connected but calls the end dangling, and the stub past the T is never trimmed. Split
+    the other track there so the two meet end to end, and drop a track that exactly
+    repeats another. Returns (splits, duplicates dropped)."""
+    tracks = [t for t in board.GetTracks() if not isinstance(t, pcbnew.PCB_VIA)]
+    splits = 0
+    changed = True
+    while changed:
+        changed = False
+        ends = {}
+        for t in tracks:
+            for q in (xy(t.GetStart()), xy(t.GetEnd())):
+                ends.setdefault((t.GetNetname(), t.GetLayer()), []).append(q)
+        for t in list(tracks):
+            a, b = xy(t.GetStart()), xy(t.GetEnd())
+            for q in ends.get((t.GetNetname(), t.GetLayer()), []):
+                if seg_dist(q, a, b) < 0.001 and math.dist(q, a) > 0.001 and math.dist(q, b) > 0.001:
+                    u = pcbnew.PCB_TRACK(board)
+                    u.SetStart(V(*q))
+                    u.SetEnd(V(*b))
+                    u.SetWidth(t.GetWidth())
+                    u.SetLayer(t.GetLayer())
+                    u.SetNet(t.GetNet())
+                    u.SetLocked(t.IsLocked())
+                    board.Add(u)
+                    t.SetEnd(V(*q))
+                    tracks.append(u)
+                    splits += 1
+                    changed = True
+                    break
+            if changed:
+                break
+    seen, dropped = set(), 0
+    for t in tracks:
+        a, b = tuple(round(v, 4) for v in xy(t.GetStart())), tuple(round(v, 4) for v in xy(t.GetEnd()))
+        key = (t.GetNetname(), t.GetLayer(), frozenset((a, b)), t.GetWidth())
+        if key in seen:
+            board.Remove(t)
+            dropped += 1
+        else:
+            seen.add(key)
+    return splits, dropped
+
+
+def joined_span(board, t):
+    """The part of track t between the outermost points where other copper of its net
+    joins it (other tracks' ends or bodies, vias, pads, the net's pour), or None when
+    it adds no connection: a join point only counts if the copper there doesn't also
+    touch t somewhere else (a stub's tail that ends inside the track it branched from)."""
+    net, layer, w = t.GetNetname(), t.GetLayer(), pcbnew.ToMM(t.GetWidth())
+    a, b = xy(t.GetStart()), xy(t.GetEnd())
+    L = math.dist(a, b)
+    if L < 1e-6:
+        return None
+
+    def u_of(p):
+        return round(max(0.0, min(L, ((p[0] - a[0]) * (b[0] - a[0]) + (p[1] - a[1]) * (b[1] - a[1])) / L)), 4)
+    joins = {}
+
+    def join(u, item):
+        joins.setdefault(u, set()).add(item.m_Uuid.AsString())
+    me = t.m_Uuid.AsString()      # pcbnew hands out a new wrapper each time: "is" never matches
+    for o in board.GetTracks():
+        if o.GetNetname() != net or o.m_Uuid.AsString() == me:
+            continue
+        if isinstance(o, pcbnew.PCB_VIA):
+            c, r = xy(o.GetPosition()), pcbnew.ToMM(o.GetWidth(pcbnew.F_Cu)) / 2
+            if seg_dist(c, a, b) < r:
+                join(u_of(c), o)
+            continue
+        if not o.IsOnLayer(layer):
+            continue
+        oa, ob, ow = xy(o.GetStart()), xy(o.GetEnd()), pcbnew.ToMM(o.GetWidth())
+        for q in (oa, ob):                          # its end on this track
+            if seg_dist(q, a, b) < max(w, ow) / 2:
+                join(u_of(q), o)
+        for q, u in ((a, 0.0), (b, round(L, 4))):  # this track's end on it
+            if seg_dist(q, oa, ob) < max(w, ow) / 2:
+                join(u, o)
+    for fp in board.GetFootprints():
+        for p in fp.Pads():
+            if p.GetNetname() != net or not p.IsOnLayer(layer):
+                continue
+            for q, u in ((a, 0.0), (b, round(L, 4))):
+                if p.HitTest(V(*q)):
+                    join(u, p)
+            c = xy(p.GetPosition())
+            if seg_dist(c, a, b) < pcbnew.ToMM(min(p.GetSize(layer).x, p.GetSize(layer).y)) / 2:
+                join(u_of(c), p)
+    for z in board.Zones():
+        if z.GetIsRuleArea() or z.GetNetname() != net or not z.IsOnLayer(layer):
+            continue
+        fill = z.GetFilledPolysList(layer)
+        for q, u in ((a, 0.0), (b, round(L, 4))):
+            if fill.Contains(V(*q)):
+                join(u, z)
+    # an outermost join adds nothing if everything there also touches t elsewhere
+    while len(joins) >= 2:
+        for u in (min(joins), max(joins)):
+            rest = set().union(*(v for k, v in joins.items() if k != u))
+            if joins[u] <= rest:
+                del joins[u]
+                break
+        else:
+            break
+    if len(joins) < 2:
+        return None
+    lo, hi = min(joins), max(joins)
+
+    def at(u):
+        return (a[0] + (b[0] - a[0]) * u / L, a[1] + (b[1] - a[1]) * u / L)
+    return (a if lo == 0.0 else at(lo)), (b if hi == round(L, 4) else at(hi))
 
 
 def anchor_islands(board, space, nets=PLANE_NETS):
@@ -991,6 +1146,7 @@ def finish():
     finish_open(board)
     print("loose router copper removed:", prune_dangling(board))
     repair(board)
+    print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
     pcbnew.SaveBoard(PCB, board)
     print("saved", PCB)
@@ -1020,6 +1176,7 @@ def main():
     print("unused stub vias removed:", drop_unused_stub_vias(board, STUB_VIAS))
     print("stitching vias:", stitch(board))
     repair(board)
+    print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
     pcbnew.SaveBoard(PCB, board)
     print("saved", PCB)
