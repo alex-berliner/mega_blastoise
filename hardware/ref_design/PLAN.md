@@ -22,7 +22,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | Charger | TP4056 at 500 mA, TEMP grounded; USB load sharing (B5819W, AO3401A, BAT54WS gate feed, 22 uF on VSYS) | a fifth of the BQ24074's price, no stock risk; no thermistor (approved) |
 | Cell | 503450, 1000 mAh, JST PH 2.0 | the listing Alex found; 5 mm thinner case |
 | 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at about 3.35 V |
-| Audio | PWM (GPIO8) through two RC poles into an FM8002A, gain 2 | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
+| Audio | PWM (GPIO8, 8 bits at 586 kHz) through two RC stages (1k, 4.7 nF; -3 dB about 14 kHz) into an FM8002A, gain 2 | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
 | Buttons | 16 x DSL_button_4ring, direct GPIO, internal pull-ups; seat 1's Y is also the power button | no matrix; no side switch (approved) |
 | Pin map | each pin faces where its net goes, in fan-out order; Raspberry Pi's pin escapes copied with the core | two layers route completely (docs/pinmap.md) |
 | Power switch | seat 1's Y contact joins VSYS to the latch; MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |

@@ -70,7 +70,7 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 
 ## 4. Audio
 
-Start PWM4 A on GPIO8 (10 bits, about 146 kHz), idle it at half scale, set AMP_EN
+Start PWM4 A on GPIO8 (8 bits, about 586 kHz), idle it at half scale, set AMP_EN
 (GPIO11) high, then play a 1 kHz sine at -20 dBFS into the speaker. On a scope at C39's
 far side the carrier should be gone: a clean sine riding on half the supply. Listen for
 hiss in silence; set AMP_EN low and check it goes quiet. Measure the delay from AMP_EN

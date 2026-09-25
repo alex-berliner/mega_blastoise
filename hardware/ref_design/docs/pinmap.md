@@ -15,7 +15,7 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 5 | `P2_DOWN` | membrane contact SW10, input with pull-up, low = pressed |
 | 6 | `P2_LEFT` | membrane contact SW11, input with pull-up, low = pressed |
 | 7 | `P2_RIGHT` | membrane contact SW12, input with pull-up, low = pressed |
-| 8 | `AUDIO_PWM` | PWM4 A: audio, through two RC stages (-3 dB at about 6.6 kHz) into U7 (see Audio) |
+| 8 | `AUDIO_PWM` | PWM4 A, 8 bits (586 kHz): audio through two RC stages (-3 dB at about 14 kHz) into U7 (see Audio) |
 | 9 | (spare) | not connected |
 | 10 | (spare) | not connected |
 | 11 | `AMP_EN` | output: high turns the FM8002A on (Q3 pulls its SHUTDOWN low); low or floating = off (4 uA) |
@@ -102,8 +102,9 @@ take the higher of CC1_SENSE and CC2_SENSE.
 
 ## Audio (PWM into the FM8002A)
 
-GPIO8 is PWM4 A. At 150 MHz, 10 bits gives a 146 kHz carrier (8 bits: 586 kHz); R32/C37 and
-R33/C38 take it out (38 dB down at 146 kHz; the audio band is -3 dB at about 6.6 kHz), C39
+GPIO8 is PWM4 A. Run it at 8 bits: at 150 MHz that's a 586 kHz carrier, which R32/C37 and
+R33/C38 (1k, 4.7 nF) take 49 dB down, with the audio band -3 dB at about 14 kHz. Not 10 bits:
+146 kHz would only come out 26 dB down (dither or noise-shape for more resolution). C39
 blocks the DC, and U7 drives the speaker bridge-tied at about 1.8x (R35/R34, with the filter's
 2k in front of R34). Full scale is about 0.55 W on USB and 0.4-0.5 W on the cell, and it clips
 below a 3.7 V cell: back the amplitude off there. Idle at half scale so turning on doesn't pop.

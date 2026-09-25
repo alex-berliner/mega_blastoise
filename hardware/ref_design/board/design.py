@@ -80,6 +80,7 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
 CAP = {  # value: (lcsc, mpn, footprint)
     "15p": ("C1548", "0402CG150J500NT", C0402),
     "10n": ("C15195", "CL05B103KB5NNNC", C0402),
+    "4.7n": ("C1538", "0402B472K500NT", C0402),
     "100n": ("C1525", "CL05B104KO5NNNC", C0402),
     "220n": ("C16772", "CL05B224KO5NNNC", C0402),
     "1u": ("C52923", "CL05A105KA5NQNC", C0402),
@@ -311,10 +312,13 @@ part("U7", S, "battler:FM8002A", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm
      {"3": "AMP_BYP", "4": "AMP_INN", "2": "AMP_BYP", "1": "AMP_SHDN",
       "5": "SPK_P", "8": "SPK_N", "6": "VSYS", "7": "GND"},
      "C94625", "FM8002A", "Shenzhen Fuman Elec")
-R("R32", S, "1k", "AUDIO_PWM", "AUDIO_F1")       # two RC stages take out the PWM carrier (-3 dB ~6.6 kHz loaded)
-C("C37", S, "10n", "AUDIO_F1")
+# two RC stages (1k, 4.7 nF) take out the PWM carrier: with the PWM at 8 bits (586 kHz) it
+# comes out 49 dB down and the audio band is -3 dB at about 14 kHz loaded. 10-bit PWM
+# (146 kHz) would only be 26 dB down: firmware runs 8 bits (dithers for more resolution)
+R("R32", S, "1k", "AUDIO_PWM", "AUDIO_F1")
+C("C37", S, "4.7n", "AUDIO_F1")
 R("R33", S, "1k", "AUDIO_F1", "AUDIO_F2")
-C("C38", S, "10n", "AUDIO_F2")
+C("C38", S, "4.7n", "AUDIO_F2")
 C("C39", S, "220n", "AUDIO_F2", "AMP_CI")       # Ci: blocks the PWM's DC; 36 Hz corner with Ri
 R("R34", S, "20k", "AMP_CI", "AMP_INN")          # Ri
 R("R35", S, "20k", "SPK_P", "AMP_INN")           # Rf: gain 2 x Rf / Ri = 2

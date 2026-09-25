@@ -130,11 +130,13 @@ every hole 0.3 mm or larger.
 
 ### Audio (sheet Audio)
 
-- PWM from GPIO8 (PWM4 A) through two RC stages (1k and 10 nF each). Loaded, their
-  poles sit near 6 and 42 kHz: the audio band is -3 dB at about 6.6 kHz, and a
-  146 kHz carrier (10 bits at 150 MHz) comes out about 38 dB down. (8-bit PWM at
-  586 kHz with 3.9 nF capacitors would give about 17 kHz and 45 dB.) C39 (220 nF)
-  blocks the DC and, with R34, sets a 36 Hz low corner.
+- PWM from GPIO8 (PWM4 A, 8 bits at 150 MHz: a 586 kHz carrier) through two RC
+  stages (1k and 4.7 nF each). Loaded, the audio band is -3 dB at about 14 kHz, about
+  what a 20 mm speaker reproduces, and the carrier comes out about 49 dB down. 10-bit
+  PWM (146 kHz) would only come out 26 dB down, so firmware runs 8 bits and dithers or
+  noise-shapes if it wants more resolution. (4.7 nF is a JLC basic part; 3.9 nF, which
+  would give 17 kHz, is only an extended one.) C39 (220 nF) blocks the DC and, with
+  R34, sets a 36 Hz low corner.
 - FM8002A bridge-tied amplifier from VSYS: gain 2 x R35 / R34 = 2, the datasheet's
   circuit (+IN on the bypass, 1 uF bypass capacitor). The filter's 2k in front of R34
   makes the chain's gain about 1.8, so full scale is about 0.55 W into 8 ohm on USB
