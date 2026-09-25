@@ -70,7 +70,9 @@ every hole 0.3 mm or larger.
   ever touches VSYS; firmware reads seat 1's Y there.
 - Off state: ME6211 off (CE low), amplifier shut down (R36 holds SHUTDOWN high,
   4.2 uA), backlight driver shut down by R31, charger drawing about 2 uA from the
-  cell, battery divider 4.5 uA. About 12 uA total: years of shelf life.
+  cell, battery divider 4.5 uA (up to 9 uA: with the chip unpowered, GPIO47 sits above
+  IOVDD and its ESD diode takes a few uA, harmless and the same as on Raspberry Pi's
+  Pico). About 12-16 uA total: years of shelf life.
 - A reset or crash drops PWR_HOLD. On the cell alone that turns the device off,
   which is the safe failure. On USB it stays on (VBUS holds PWR_EN).
 
@@ -128,14 +130,21 @@ every hole 0.3 mm or larger.
 
 ### Audio (sheet Audio)
 
-- PWM from GPIO8 (PWM4 A) through two RC poles (1k and 10 nF, 16 kHz each): a
-  146 kHz carrier (10 bits at 150 MHz) comes out about 38 dB down. C39 (220 nF)
+- PWM from GPIO8 (PWM4 A) through two RC stages (1k and 10 nF each). Loaded, their
+  poles sit near 6 and 42 kHz: the audio band is -3 dB at about 6.6 kHz, and a
+  146 kHz carrier (10 bits at 150 MHz) comes out about 38 dB down. (8-bit PWM at
+  586 kHz with 3.9 nF capacitors would give about 17 kHz and 45 dB.) C39 (220 nF)
   blocks the DC and, with R34, sets a 36 Hz low corner.
 - FM8002A bridge-tied amplifier from VSYS: gain 2 x R35 / R34 = 2, the datasheet's
-  circuit (+IN on the bypass, 1 uF bypass capacitor). About 1 W into 8 ohm at 5 V
-  (datasheet: 1.1 W at 1% THD); less from the cell.
+  circuit (+IN on the bypass, 1 uF bypass capacitor). The filter's 2k in front of R34
+  makes the chain's gain about 1.8, so full scale is about 0.55 W into 8 ohm on USB
+  and 0.4-0.5 W on the cell (the amplifier is rated 1.1 W); below a 3.7 V cell full
+  scale clips. Worst-case dissipation (a continuous full-scale sine on USB) is about
+  0.54 W in the SOIC-8: bring-up step 4 checks its temperature.
 - SHUTDOWN is high (off) through R36 to VSYS; Q3 pulls it low when AMP_EN is high,
-  and R37 keeps the amplifier off while the MCU boots. On: 4.4 mA quiescent.
+  and R37 keeps the amplifier off while the MCU boots. On: 4.4 mA quiescent. It takes
+  about 100 ms to wake (the bypass capacitor charging), so firmware keeps it on while
+  the device is awake or raises AMP_EN well before a sound.
 - Class AB: it turns about half its battery draw into sound at high volume, against
   80-90% for the class-D NS4168 that was offered instead (50 cents a unit more).
 
@@ -155,7 +164,8 @@ every hole 0.3 mm or larger.
   wouldn't fit on top. GND pours on both layers, stitched by vias on a 5 mm grid.
   There is no 3V3 plane: 3V3 is routed as a 0.3 mm track like the other supplies.
 - Rules: 0.15 mm track and clearance (0.1 mm minimum inside the copied core),
-  0.3 mm power tracks (3V3 included), 0.2 mm USB; vias 0.5 mm with 0.3 mm holes
+  0.3 mm power tracks (3V3 included; each membrane contact's combs leave on 0.2 mm
+  stubs, the power button's VSYS comb too), 0.2 mm USB; vias 0.5 mm with 0.3 mm holes
   (0.6 mm on power). Every hole is 0.3 mm or larger, JLC's standard: smaller ones
   cost about $40 an order (a fee, a required 4-wire test and TG155 material).
 - Heights: the panel (2.35 +-0.1 mm in its drawing, counted as 2.45) hangs from the

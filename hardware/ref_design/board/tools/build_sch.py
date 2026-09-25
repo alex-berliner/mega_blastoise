@@ -131,7 +131,7 @@ TEXT = {
         (110, 23, 1.27, "U6 AP3156: three sinks per cathode pin (LED_K1, LED_K2), 20 mA per LED at most, set over SDI (1-wire)."),
     ],
     "audio.kicad_sch": [
-        (15, 160, 1.27, "AUDIO_PWM (GPIO8, PWM4 A) through two 16 kHz RC poles; gain 2 x R35/R34 = 2. AMP_EN high"),
+        (15, 160, 1.27, "AUDIO_PWM (GPIO8, PWM4 A) through two RC stages (-3 dB ~6.6 kHz); gain 2 x R35/R34. AMP_EN high"),
         (15, 164, 1.27, "turns the amplifier on (Q3 pulls SHUTDOWN low). 8 ohm 1 W speaker on the J4 pads, from below."),
     ],
     "buttons.kicad_sch": [

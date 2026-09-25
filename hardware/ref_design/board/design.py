@@ -141,9 +141,10 @@ R("R10", S, "100k", "CHG_STAT_N", "+3V3")      # CHRG: low while charging
 C("C2", S, "4.7u", "VSYS")
 C("C3", S, "10u", "VBAT")
 # load sharing: USB feeds the system through D5 while it charges the cell; without USB
-# the cell feeds it through Q2. Q2's gate sees VBUS through D6, so it doesn't wait for
-# C1 to drain: R6 turns it on within microseconds of an unplug, and C9 carries VSYS
-# across the change (a dip resets the MCU, and a reset turns the device off)
+# the cell feeds it through Q2. Q2's gate follows VBUS through D6 (R6 pulls it down), so
+# Q2 turns on as VBUS drains, which R38 (above) does in a few ms. Until then Q2's body
+# diode carries VSYS and C9 covers the step (a dip resets the MCU, and a reset turns the
+# device off)
 part("D5", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS", "2": "VBUS"},
      "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
 part("D6", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323", {"1": "LS_GATE", "2": "VBUS"},
@@ -310,7 +311,7 @@ part("U7", S, "battler:FM8002A", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm
      {"3": "AMP_BYP", "4": "AMP_INN", "2": "AMP_BYP", "1": "AMP_SHDN",
       "5": "SPK_P", "8": "SPK_N", "6": "VSYS", "7": "GND"},
      "C94625", "FM8002A", "Shenzhen Fuman Elec")
-R("R32", S, "1k", "AUDIO_PWM", "AUDIO_F1")       # two RC poles at 16 kHz take out the PWM carrier
+R("R32", S, "1k", "AUDIO_PWM", "AUDIO_F1")       # two RC stages take out the PWM carrier (-3 dB ~6.6 kHz loaded)
 C("C37", S, "10n", "AUDIO_F1")
 R("R33", S, "1k", "AUDIO_F1", "AUDIO_F2")
 C("C38", S, "10n", "AUDIO_F2")

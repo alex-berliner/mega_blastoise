@@ -15,7 +15,7 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 5 | `P2_DOWN` | membrane contact SW10, input with pull-up, low = pressed |
 | 6 | `P2_LEFT` | membrane contact SW11, input with pull-up, low = pressed |
 | 7 | `P2_RIGHT` | membrane contact SW12, input with pull-up, low = pressed |
-| 8 | `AUDIO_PWM` | PWM4 A: audio, through two 16 kHz RC poles into U7 (see Audio) |
+| 8 | `AUDIO_PWM` | PWM4 A: audio, through two RC stages (-3 dB at about 6.6 kHz) into U7 (see Audio) |
 | 9 | (spare) | not connected |
 | 10 | (spare) | not connected |
 | 11 | `AMP_EN` | output: high turns the FM8002A on (Q3 pulls its SHUTDOWN low); low or floating = off (4 uA) |
@@ -54,7 +54,7 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 44 | `BL_SDI` | output to the AP3156 SDI (1-wire): backlight current in 32 steps, see below; low > 256 us = off |
 | 45 | `CC2_SENSE` | ADC5: USB-C CC2 through 10k |
 | 46 | `CC1_SENSE` | ADC6: USB-C CC1 through 10k; the source's current offer |
-| 47 | `VBAT_SENSE` | ADC7: battery voltage / 2 (R17/R18, 470k each, 100 nF) |
+| 47 | `VBAT_SENSE` | ADC7: battery voltage / 2 (R17/R18, 470k each, 100 nF); off with a cell in, the pin sits above IOVDD, clamped by its ESD diode (under 9 uA, accepted) |
 
 Other RP2354B pins: the 2 MB flash is inside the package, so of the QSPI pins only QSPI_SS
 is wired (10k pull-up R23, and the BOOTSEL button through 1k). 12 MHz crystal, USB to the
@@ -103,9 +103,12 @@ take the higher of CC1_SENSE and CC2_SENSE.
 ## Audio (PWM into the FM8002A)
 
 GPIO8 is PWM4 A. At 150 MHz, 10 bits gives a 146 kHz carrier (8 bits: 586 kHz); R32/C37 and
-R33/C38 (two poles at 16 kHz) take it out, C39 blocks the DC, and U7 drives the speaker
-bridge-tied at a gain of 2 (R35/R34). Idle at half scale so turning on doesn't pop, and set
-AMP_EN high only while sound plays: the amplifier draws about 4.4 mA when on.
+R33/C38 take it out (38 dB down at 146 kHz; the audio band is -3 dB at about 6.6 kHz), C39
+blocks the DC, and U7 drives the speaker bridge-tied at about 1.8x (R35/R34, with the filter's
+2k in front of R34). Full scale is about 0.55 W on USB and 0.4-0.5 W on the cell, and it clips
+below a 3.7 V cell: back the amplitude off there. Idle at half scale so turning on doesn't pop.
+The FM8002A takes about 100 ms to wake (its bypass capacitor charges): keep AMP_EN high while
+the device is awake (about 4.4 mA), or raise it at least 150 ms before a sound, PWM idling.
 
 ## Battery voltage
 
