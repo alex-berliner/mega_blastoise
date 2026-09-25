@@ -86,7 +86,12 @@ firmware while VSYS is above 4 V.
    the system draws (R5 sets about 460-500 mA).
 3. ADC7 reads VBAT / 2; compare with a meter on TP3.
 4. Hot check after 10 minutes of charging: the TP4056 is warm, not too hot to touch. It
-   throttles its own current if its die passes about 145 C.
+   throttles its own current if its die passes about 145 C. Measure U2 pin 1 (TEMP): about
+   0.63 x VBUS at 25 C, falling as TH1 warms (0.45 x VBUS pauses the charge). Down near
+   0.5 x VBUS (about 40 C) after 10 minutes means U2's heat is reaching TH1.
+4a. Temperature cutoff: warm TH1 (left of the panel connector J3, at its seat-1 end) with a hair dryer, thermocouple
+   beside it. Charging pauses (CHG_STAT_N and CHG_DONE_N both high) at about 46 C and
+   resumes as it cools. A freezer spray or a cold pack on TH1 pauses it near 1 C.
 5. **Unplug test.** Run the firmware from the cell with USB plugged in, scope on TP4 (3V3)
    and TP2 (VSYS), trigger on VSYS falling, then pull the USB cable. VSYS drops from about
    4.6 V to the cell voltage and the firmware must keep running. Expect VSYS to sit at

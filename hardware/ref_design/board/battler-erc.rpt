@@ -1,0 +1,28 @@
+ERC report (2026-09-25T10:48:31, Encoding UTF8)
+Report includes: Errors, Warnings
+
+***** Sheet /
+
+***** Sheet /USB_Charger/
+
+***** Sheet /Debug/
+
+***** Sheet /Power/
+
+***** Sheet /Display/
+
+***** Sheet /MCU/
+
+***** Sheet /Audio/
+
+***** Sheet /MCU_Power/
+
+***** Sheet /Buttons/
+
+ ** ERC messages: 0  Errors 0  Warnings 0
+
+ ** Ignored checks:
+    - Global label only appears once in the schematic
+    - Four connection points are joined together
+    - SPICE model issue
+    - Assigned footprint doesn't match footprint filters

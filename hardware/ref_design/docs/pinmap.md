@@ -91,7 +91,10 @@ until firmware sets a level. Command table: AP3156 datasheet, Serial Digital Int
 |---|---|---|
 | low | high | charging (about 460-500 mA, set by R5) |
 | high | low | charge done |
-| high | high | no USB power |
+| high | high | no USB power, or the cell is outside 1-46 C (TH1): charging paused |
+
+Both high with USB in (a CC line reads a source) means the temperature pause: TH1, on the
+board over the cell, stopped the charge; it resumes when TH1 is back in range.
 
 With USB in, the system runs from USB through D5 and the cell only charges; unplugged,
 Q2 connects the cell. The charger has no input current limit: a default-USB port (500 mA)

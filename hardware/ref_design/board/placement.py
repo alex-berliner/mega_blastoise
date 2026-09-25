@@ -92,6 +92,9 @@ put("U2", 130.4, 117.4, 0)                  # TP4056: its thermal pad spreads in
 put("R5", 125.6, 115.6, 90)                 # PROG
 put("R9", 124.4, 115.6, 90)
 put("R10", 123.2, 115.6, 90)
+put("R39", 125.6, 112.6, 90)                # TEMP divider: VBUS side
+put("R40", 124.4, 112.6, 90)
+put("TH1", 85.2, 124.0, 90)                 # over the cell's left edge, below J3, clear of the FPC and of the MCU-to-J3 channel; 45 mm from U2
 put("C3", 133.2, 121.6, 0)                  # VBAT
 put("C2", 129.0, 121.6, 0)                  # VSYS
 put("Q2", 131.2, 125.0, 0)                  # cell -> VSYS without USB

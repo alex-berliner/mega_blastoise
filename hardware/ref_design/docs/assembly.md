@@ -11,7 +11,7 @@ Files are in `board/fab/` (regenerate with `python3 board/tools/fab.py`).
 | Surface finish | **ENIG** | the silicone pills press straight on the contact combs: they must be gold, not HASL |
 | Min via hole | **0.3 mm** (0.5 mm pads, 0.6 mm on power), tented | JLC's standard: 0.25 mm adds a fee, a 4-wire test and TG155 material (about $40 an order) |
 | Min track / space | 0.15 / 0.15 mm (0.1 mm in the RP2354B pin field) | |
-| Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 92 placements, 37 part numbers |
+| Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 95 placements, 40 part numbers |
 
 In JLC's placement preview, check every polarised part turned the way the silkscreen
 says: the RP2354B, TP4056, AP3156 and FM8002A pin-1 dots, the ME6211, SRV05-4, BAT54C,
@@ -62,7 +62,8 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
    liner on).
 2. Tub: foam pad and cell into the cell pocket, cable towards seat 1; speaker into its
    ring on the floor, face down.
-3. Board into the tub over them, its six holes over the six pins, resting on the bosses
+3. Board into the tub over them, its six holes over the six pins (it goes in one way only:
+   seat 1's centre pin is 3 mm off centre, towards the D-pad), resting on the bosses
    and the four ribs under the button clusters, USB-C in its wall opening. Feed the
    cell's plug up through the slot next to J2 and plug it in (J2's mouth faces the slot).
 4. Panel: lay it face down beyond the board's seat-1 edge, flip J3's lid up, slide the
@@ -70,7 +71,11 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
    Then fold the panel over onto the board, face up, its FPC looping under it at the
    seat-1 edge (don't crease it). It rests loosely on the parts under it for now.
    A cracked panel comes out the same way: lid up, FPC out.
-5. Silicone pieces onto the contacts, caps onto the silicone.
+5. Silicone pieces onto the contacts, caps onto the silicone. Each ABXY cap's flange tab
+   drops into a slot in the lid, so turn the caps to match. Seen from that seat's player:
+   A's tab (right cap) points down-left, B's (bottom) up-left, X's (top) down-right, Y's
+   (left) up-right. The slots are 30 degrees wide, so close is enough; if the lid won't
+   seat, a cap is turned too far.
 6. Peel the tape liner and lower the lid straight down until all six hooks click into
    the tub wall: its bosses take the pins and clamp the board, its locating frame centres
    the panel and the tape takes it, the caps come up through their holes and the

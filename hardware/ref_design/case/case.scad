@@ -52,8 +52,21 @@ spk_d = 20;  spk_h = 4.5;  spk_y = 26;                  // ESTIMATE: 20 mm 8 ohm
 
 abxy_pitch = 15.0;  dpad_pitch = 14.0;                  // DS Lite (gerbers)
 piece_d = 26;                                           // ESTIMATE: silicone piece outline
-cap_abxy_d = 6.0;  dpad_arm_l = 18;  dpad_arm_w = 6;    // ESTIMATE: DS Lite caps
-dome_h = 2.0;  flange_t = 0.8;  cap_proud = 1.2;        // ESTIMATE: silicone height, cap flange, cap above lid
+// Genuine DS Lite caps, measured from open models of them and of shells built for them
+// (jackw01/pi-tin, CERN-OHL-W; Printables 1178557, 205921, 986494): see case/DSLITE.md
+cap_abxy_d = 7.0;  cap_flange_d = 8.8;  cap_h = 3.56;  // ABXY: body, flange, flange bottom to top
+cap_tab_r = 5.6;  cap_tab_w = 2.0;                      // each flange's keying tab, out from the cap's centre
+dpad_arm_l = 17.8;  dpad_arm_w = 5.9;  dpad_h = 3.34;   // D-pad cross
+dpad_flange_r = 6.5;                                    // its flange fills the corners between the arms
+flange_t = 0.55;                                        // both caps' flanges
+cap_hole_d = 7.4;  pocket_d = 9.2;  pocket_h = 1.4;     // lid: hole, flange pocket under it (Pi Tin's, for genuine caps)
+slot_r = 5.95;  slot_a = 30;                            // tab slot in the pocket, a 30 degree wedge: the cap
+                                                        // turns a few degrees at most, and the lid still goes on
+                                                        // over caps set by eye (facelesstech's are 35)
+// tab directions, degrees clockwise from the seat's right, seen from the front: a pinwheel,
+// each 45 degrees clockwise from the flange's flat (which faces the diamond's centre)
+abxy_tabs = [["A", [1, 0], 135], ["B", [0, -1], 225], ["X", [0, 1], 45], ["Y", [-1, 0], 315]];
+dome_h = 2.0;                                           // ESTIMATE: board to the flange's underside at rest
 
 // ---------------- layout ----------------
 glass_side = 9.7;         // panel bay edge to long case edge: room for USB-C beside the glass
@@ -70,7 +83,19 @@ z_top_cu = z_board + pcb_t;                             // board top: every heig
 z_glass = z_top_cu + glass_gap;
 z_lid = z_glass + panel_t + tape_t;                     // lid underside
 case_h = z_lid + lid_t;
-retainer_z = z_top_cu + dome_h + flange_t;              // lid underside around the buttons
+retainer_z = z_top_cu + dome_h + flange_t;              // the lip the flanges rest against
+// the lid comes down around the buttons to clamp the silicone sheet, as a DS Lite shell does:
+// the flanges travel in pockets pocket_h deep, so the sheet's top is pocket_h under the lip
+retainer_bot = retainer_z - pocket_h;
+cap_top = retainer_z + cap_h - flange_t;                // at rest
+// Stepped ends: the lid face over the screen is set by the panel stack, which leaves genuine
+// caps below it. So each end drops to a button deck where the caps stand as on a DS Lite,
+// except a spine between the clusters (J2 and the end snap hooks sit under it)
+cap_proud = 1.3;                                        // above the deck, as a DS Lite (Pi Tin 1.3)
+deck_face = cap_top - cap_proud;                        // lip over the flanges: 1.71, a DS Lite's 1.68
+z_deck_lid = deck_face - lid_t;                         // deck underside; the tub's walls stop here
+step_y = bay_l / 2 + 2.4;                               // the step: clear of the panel and its FPC fold
+step_wall = 1.5;  spine_w = 13.0;  deck_r = 3;          // step wall, spine width, deck corner rounding
 
 // ---------------- derived ----------------
 case_w = bay_w + 2 * glass_side;
@@ -107,7 +132,10 @@ buttons = concat(seat1, [for (i = [0:7]) [str("SW", i + 9), seat2_names[i], rot1
 // Each rises from a tub boss through the board's hole into a lid boss, so the snapped-on lid
 // clamps the board with nothing to screw
 pin_x = 31.4;             // midway between the bay and the board edge
-pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [0, seat_y], [0, -seat_y]];
+// Anti-dummy: seat 1's centre pin sits pin_key off the centre line, so the board, and the lid,
+// go in one way only (a 180 degree turn or a flip leaves a pin against solid plastic)
+pin_key = 3.0;
+pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [0, seat_y], [-pin_key, -seat_y]];
 boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
 
 // edge parts, all on the right (+X) long edge
@@ -132,7 +160,16 @@ assert(pin_x - boss_d / 2 >= bay_w / 2 + 0.5 && pin_x + boss_d / 2 <= board_w / 
 assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
 assert(retainer_z < z_lid, "button retainer above the lid");
+assert(z_deck_lid > retainer_bot + 0.5, "button deck lower than the retainers");
+assert(step_y - step_wall > (panel_l + panel_fit) / 2 + frame_wall + 0.3, "step over the panel frame");
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "pin under a silicone piece");
+assert(len([for (s = pins) if (len([for (t = pins) if (norm(t - rot180(s)) < 1.5) 1]) == 0) 1]) > 0,
+       "locating pins symmetric under a half turn: the board could go in backwards");
+assert(len([for (s = pins) if (len([for (t = pins) if (norm(t - [-s[0], s[1]]) < 1.5) 1]) == 0) 1]) > 0,
+       "locating pins mirror-symmetric: a flipped board would fit");
+assert(len([for (s = pins) if (len([for (t = pins) if (norm(t - [s[0], -s[1]]) < 1.5) 1]) == 0) 1]) > 0,
+       "locating pins mirror-symmetric end to end: a flipped board would fit");
+assert(pin_key + boss_d / 2 + 0.5 <= spine_w / 2, "keyed pin's boss runs out under a button deck");
 
 // ---------------- echo: everything the board script needs ----------------
 // a snap hook's footprint (two corners) from its wall position and direction
@@ -148,7 +185,7 @@ echo(str("JSON {",
   "\"glass\": [", jpt([-bay_w / 2, bay_l / 2]), ", ", jpt([bay_w / 2, -bay_l / 2]), "], ",
   "\"glass_limit\": ", glass_gap - 0.2, ", ",
   "\"bezel_limit\": ", z_lid - z_top_cu - 0.3, ", ",
-  "\"retainer_limit\": ", retainer_z - z_top_cu - 0.3, ", ",
+  "\"retainer_limit\": ", retainer_bot - z_top_cu - 0.3, ", ",
   "\"fpc_zones\": [[", jpt([fpc_tail[0] - fpc_tail[1] / 2 - 0.5, -(panel_l / 2 - (conn_in - conn_front))]), ", ",
     jpt([fpc_tail[0] + fpc_tail[1] / 2 + 0.5, -(panel_l / 2 - fpc_body[2])]), "], [",
     jpt([fpc_body[0] - fpc_body[1] / 2 - 0.5, -(panel_l / 2 - fpc_body[2])]), ", ",
@@ -168,9 +205,13 @@ echo(str("JSON {",
     jpt([(panel_w + panel_fit) / 2 + frame_wall, -(panel_l + panel_fit) / 2 - frame_wall]), "], \"inner\": [",
     jpt([-(panel_w + panel_fit) / 2, (panel_l + panel_fit) / 2]), ", ", jpt([(panel_w + panel_fit) / 2, -(panel_l + panel_fit) / 2]),
     "], \"limit\": ", z_lid - z_top_cu - frame_h - 0.3, "}, ",
-  "\"hook_clear\": ", bay_t - snap_len,
+  "\"hook_clear\": ", bay_t - snap_len, ", ",
+  "\"decks\": [", join([for (sy = [-1, 1], sx = [-1, 1]) str("[", jpt([sx * (spine_w / 2 - step_wall), sy * (step_y - step_wall)]), ", ",
+    jpt([sx * case_w / 2, sy * case_l / 2]), "]")]), "], \"deck_limit\": ", z_deck_lid - z_top_cu - 0.3,
   "}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
+echo(str("CAPS flange top ", retainer_z - z_top_cu, " above the board, cap top ", cap_top - z_top_cu, ", deck face ",
+         deck_face - z_top_cu, ", screen face ", case_h - z_top_cu, ": ends ", deck_face, " mm thick, a ", case_h - deck_face, " mm step"));
 echo(str("STACK floor ", floor_t, " + cell ", cell[2], " + gap ", cell_gap, " + PCB ", pcb_t, " + glass gap ", glass_gap,
          " + panel ", panel_t, " + tape ", tape_t, " + lid ", lid_t, " = ", case_h, " mm"));
 
@@ -180,6 +221,11 @@ module at(p, z = 0) translate([p[0], p[1], z]) children();
 module ring(t = 0.35) difference() { offset(r = t) children(); children(); }
 module cross(w, l) union() { square([l, w], center = true); square([w, l], center = true); }
 module window() translate([0, aa_off]) square([aa_w + 2 * window_margin, aa_l + 2 * window_margin], center = true);
+// the two lowered decks at each end (past the case outline; intersect with it), and the
+// band the tub's walls drop in: the decks plus the step walls
+module deck2d() for (sy = [-1, 1]) scale([1, sy]) offset(r = deck_r) offset(delta = -deck_r)
+  for (sx = [-1, 1]) scale([sx, 1]) translate([spine_w / 2, step_y]) square([case_w, case_l]);
+module deck_cut2d() offset(delta = step_wall) deck2d();
 module slot2d() translate(slot[0]) square([slot[1][0] - slot[0][0], slot[0][1] - slot[1][1]] * 1) ;
 module board_outline() difference() {
   rrect(board_w, board_l, board_r);
@@ -223,6 +269,7 @@ module tub() difference() {
     difference() {
       linear_extrude(z_lid) rrect(case_w, case_l, corner_r);
       translate([0, 0, floor_t]) linear_extrude(z_lid) rrect(case_w - 2 * wall, case_l - 2 * wall, corner_r - wall);
+      translate([0, 0, z_deck_lid]) linear_extrude(z_lid) deck_cut2d();      // walls drop at the decks
     }
     // bosses up to the board, pins on through its holes into the lid bosses
     for (s = pins) at(s) { cylinder(d = boss_d + 1.0, h = z_board); cylinder(d = pin_d, h = z_top_cu + 1.8); }
@@ -249,15 +296,26 @@ module tub() difference() {
   at([case_w / 2 - wall / 2, usb_y], z_top_cu + usb_h / 2) cube([wall + 2, 9.4, 3.8], center = true);
 }
 
+// every ABXY cap: [centre, tab direction in OpenSCAD's counter-clockwise degrees]. Seat 2's
+// cluster is seat 1's turned 180 degrees, caps and all
+function abxy_keys() = [for (s = [[abxy1, 0], [abxy2, 180]]) for (t = abxy_tabs)
+  [s[0] + (s[1] == 0 ? t[1] * a : -t[1] * a), s[1] - t[2]]];
+module dpad_flange() union() { circle(r = dpad_flange_r, $fn = 64); cross(dpad_arm_w, dpad_arm_l); }
+
 module lid() difference() {
   union() {
-    translate([0, 0, z_lid]) linear_extrude(lid_t) rrect(case_w, case_l, corner_r);
+    translate([0, 0, z_lid]) linear_extrude(lid_t) difference() { rrect(case_w, case_l, corner_r); deck2d(); }
+    // the decks, and the step walls from them up to the screen face
+    translate([0, 0, z_deck_lid]) linear_extrude(lid_t) intersection() { rrect(case_w, case_l, corner_r); deck2d(); }
+    translate([0, 0, z_deck_lid]) linear_extrude(case_h - z_deck_lid) intersection() {
+      rrect(case_w, case_l, corner_r); difference() { deck_cut2d(); deck2d(); }
+    }
     // bosses down to the board top: they clamp it, the tub's pins locate them
     for (s = pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_lid - z_top_cu + 0.01);
     // snap hooks, just inside the tub wall
     for (h = hooks) at(h) rotate(h[2]) snap_hook();
     // button retainers: the lid comes down to the cap flanges around each cluster
-    for (c = clusters) at(c, retainer_z) cylinder(d = piece_d + 1, h = z_lid - retainer_z + 0.01);
+    for (c = clusters) at(c, retainer_bot) cylinder(d = piece_d + 1, h = z_lid - retainer_bot + 0.01);
     // pinhole guides reach down towards the switches
     for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_lid - z_top_cu - 2.4 + 0.01);
     // panel locating frame
@@ -269,11 +327,19 @@ module lid() difference() {
     }
   }
   for (s = pins) at(s, z_top_cu - 1) cylinder(d = pin_d + 0.3, h = 1 + 2.2);
+  translate([0, 0, deck_face]) linear_extrude(case_h) deck2d();              // nothing above the decks
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_lid - 1]) linear_extrude(lid_t + 2) window();
   // buttons
-  for (c = [abxy1, abxy2]) for (o = [[a, 0], [-a, 0], [0, a], [0, -a]]) at(c + o, z_top_cu) cylinder(d = cap_abxy_d + 0.4, h = case_h);
-  for (c = [dpad1, dpad2]) at(c, z_top_cu) linear_extrude(case_h) offset(r = 0.2) cross(dpad_arm_w, dpad_arm_l);
+  for (k = abxy_keys()) at(k[0], retainer_bot - 0.01) rotate(k[1]) {
+    cylinder(d = cap_hole_d, h = case_h);
+    cylinder(d = pocket_d, h = pocket_h + 0.01);
+    linear_extrude(pocket_h + 0.01) polygon([[0, 0], for (t = [-slot_a / 2:slot_a / 6:slot_a / 2]) slot_r * [cos(t), sin(t)]]);
+  }
+  for (c = [dpad1, dpad2]) at(c, retainer_bot - 0.01) {
+    linear_extrude(case_h) offset(r = 0.2) cross(dpad_arm_w, dpad_arm_l);
+    linear_extrude(pocket_h + 0.01) offset(r = 0.35) dpad_flange();
+  }
   // pinholes, battery connector pocket
   for (p = pin_pos) at(p, 0) cylinder(d = 1.2, h = case_h + 1);
   at(batt_conn, z_lid - 1) linear_extrude(1 + 0.9) square(pocket, center = true);
@@ -293,14 +359,15 @@ module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_
 
 // button caps, for the assembly view only (they are bought DS Lite parts)
 module caps() {
-  z0 = z_top_cu + dome_h;
-  for (c = [abxy1, abxy2]) for (o = [[a, 0], [-a, 0], [0, a], [0, -a]]) at(c + o, z0) {
-    cylinder(d = cap_abxy_d + 1.2, h = flange_t);
-    cylinder(d = cap_abxy_d, h = case_h + cap_proud - z0);
+  z0 = retainer_z - flange_t;
+  for (k = abxy_keys()) at(k[0], z0) rotate(k[1]) {
+    cylinder(d = cap_flange_d, h = flange_t, $fn = 48);
+    translate([0, -cap_tab_w / 2, 0]) cube([cap_tab_r, cap_tab_w, flange_t]);
+    cylinder(d = cap_abxy_d, h = cap_h, $fn = 48);
   }
   for (c = [dpad1, dpad2]) at(c, z0) {
-    linear_extrude(flange_t) offset(r = 0.6) cross(dpad_arm_w, dpad_arm_l);
-    linear_extrude(case_h + cap_proud - z0) cross(dpad_arm_w, dpad_arm_l);
+    linear_extrude(flange_t) dpad_flange();
+    linear_extrude(dpad_h) cross(dpad_arm_w, dpad_arm_l);
   }
 }
 

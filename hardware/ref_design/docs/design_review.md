@@ -13,7 +13,7 @@ Two players face each other across a 3.5in 320x480 IPS screen; each has a
 D-pad and four face buttons under DS Lite silicone at their end. One Li-ion
 cell, one speaker, one USB-C for charging and firmware. No radios.
 
-Case 75.4 x 156.2 x 15.0 mm. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
+Case 75.4 x 156.2 mm, 15.0 mm thick at the screen and 12.86 at the ends: each end steps down 2.14 mm to a button deck (a spine between the clusters stays full height over J2 and the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
 line width, the size JLC quotes), 2 layers, 1.6 mm, ENIG,
 every hole 0.3 mm or larger.
 
@@ -29,8 +29,16 @@ every hole 0.3 mm or larger.
   diode to about 2.7 V, which holds PWR_EN up and half-closes Q2. A JLC preferred part.
 - TP4056 linear charger: 4.2 V; R5 = 2.4k sets about 460-500 mA (the datasheet's
   revisions give 1100 or 1200 V / R5), about 0.5 C for the 1000 mAh
-  503450). TEMP is grounded, which turns its temperature check off: no thermistor,
-  as approved. CHRG and STDBY go to GPIOs; there are no LEDs.
+  503450). CHRG and STDBY go to GPIOs; there are no LEDs.
+- Charge temperature: the TP4056 charges only while TEMP is between 45% and 80% of
+  VBUS. The 503450 has no NTC wire, so TH1 (NCP15XH103F03RC, 10k B3380) sits on the
+  board over the cell (its left edge, below J3), in parallel with R40 (150k), under R39 (5.6k) from
+  VBUS. Window: 1 to 46 C nominal, -3 to 49 C across the datasheet's threshold spread
+  (43-45%, 80-82%). TH1 is about 45 mm from U2, whose 0.65 W while charging would
+  otherwise trip it. It reads the board above the cell, not the cell itself: close for a
+  slow 0.5 C charge in a sealed case, but it lags a fast change. Out of range, CHRG and
+  STDBY are both high-impedance, as with no USB; firmware tells them apart by the CC
+  lines. Divider current comes from VBUS only (about 0.6 mA), none from the cell.
 - Worst-case charger dissipation (5 V in, a 3.0 V cell, 500 mA): 1.0 W; about
   0.65 W at a 3.7 V cell. The ESOP-8's thermal pad has six 0.3 mm vias into the
   ground pours on both layers. The TP4056 lowers its own current when its die
@@ -219,7 +227,7 @@ the case for these checks.
 
 | What | Why | Where it goes |
 |---|---|---|
-| DS Lite silicone piece outline, dome height, pill spacing, cap flange and height | case clearances are estimates (`ESTIMATE` in `case/case.scad`); the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `flange_t`, `cap_*`, `dpad_pitch` |
+| DS Lite silicone piece outline and height, pill spacing; cap keying | the caps are measured from open models (`case/DSLITE.md`), the silicone is still estimated; `dome_h` sets the deck height, so a wrong one leaves the caps high or low; the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `dpad_pitch`; the cap numbers in `case/DSLITE.md` |
 | A real ER-TFT035IPS-6 and an FH12-50S | outline and thickness, active area offset; how far the FPC goes into J3 (Hirose's recommended FPC stops 3.5-4 mm in, so expect 2.5-3 mm of slack, not the 1 mm modelled); that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_rear`; J3's pin map |
 | The chosen cell (503450) | length with its protection board, and connector polarity (JST PH has no standard polarity) | `cell`, J2 |
 | The chosen speaker | diameter, thickness, lead position | `spk_*`, J4 |
@@ -230,7 +238,7 @@ the case for these checks.
 | Risk | Impact | Mitigation |
 |---|---|---|
 | RP2354B and AP3156 stock at JLC (1454 and 1490 when checked) | assembly blocked for a larger run | buy ahead, or consign parts |
-| No charge temperature cutoff (approved) | the cell charges however hot it is; the TP4056 only protects itself | keep the device out of hot places while charging; a thermistor on TEMP can come back (two resistors) |
+| Board thermistor, not a cell one | TH1 reads the board over the cell; a charge in a hot car or near the 46 C edge may pause and resume | the pause is safe and charging resumes by itself; bring-up 5.4 and 5.4a check TH1's reading while charging and the pause points |
 | USB-to-cell hand-over | for about 3-8 ms after an unplug VSYS is the cell less a diode drop; a reset turns the device off | R38 (1k) keeps the gap short; bring-up step 5 with a scope; if it still resets, a Schottky from VBAT to VSYS across Q2 (a B5819W, as D5) lifts VSYS in the gap |
 | Panel supply | one maker (EastRising), sold direct | it publishes its drawings; another 3.5in panel that fits the 56.0 x 86.24 x 4.9 mm bay needs only case.scad's panel numbers, J3 and its pin map changed |
 | FPC fit in J3 | too short a fold can't reach the connector; too long bows under the panel | the model errs long (safe); if the tail bows, move J3 1.5-2 mm towards seat 1 (`conn_rear` about -0.6); check with a real panel and connector before the board order |

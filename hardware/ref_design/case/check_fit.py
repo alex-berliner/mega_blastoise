@@ -9,6 +9,7 @@ the case allows at that spot:
   under the glass          top of part <= glass_limit above the board
   side bezels, seat bands  <= bezel_limit (the lid's underside)
   around the clusters      <= retainer_limit (the lid comes down to the cap flanges)
+  button decks             <= deck_limit (the ends step down so genuine caps stand proud)
   under a silicone piece   nothing at all
   lid pin bosses           nothing within the boss diameter
   lid snap hooks           nothing taller than hook_clear under a hook
@@ -148,6 +149,8 @@ def main():
             limit, where = POS["glass_limit"], "glass"
         elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]):
             limit, where = min(limit, POS["retainer_limit"]), "retainer"
+        if any(inside_rect(box, d) for d in POS["decks"]) and POS["deck_limit"] < limit:
+            limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends
         frame = POS["frame"]                    # the lid's panel frame hangs lower than the rest of the lid
         if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit:
             limit, where = frame["limit"], "lid's panel frame"

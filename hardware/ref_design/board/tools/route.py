@@ -766,8 +766,9 @@ def freerouting_19(args):
                     text=True).stdout.split())
                 x, y, wd, ht = (int(geo.get(k, 0)) for k in ("X", "Y", "WIDTH", "HEIGHT"))
                 if wd > 300 and ht > 200:
-                    # its OK button sits centred along the bottom edge
-                    subprocess.run(["xdotool", "mousemove", str(x + wd // 2), str(y + ht - 26), "click", "1"],
+                    # its OK button sits in the bottom-right corner (a click at the bottom
+                    # centre misses it, and Freerouting then waits for ever)
+                    subprocess.run(["xdotool", "mousemove", str(x + wd - 44), str(y + ht - 27), "click", "1"],
                                    env=env, capture_output=True)
                     print("  Freerouting warning dialog dismissed", flush=True)
         return java.stdout.read()

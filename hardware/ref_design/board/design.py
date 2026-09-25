@@ -25,7 +25,7 @@ symbols they derive from (same pins); the value is the real part.
 
 This is the 2-layer build: TP4056 charger with USB load sharing, ME6211 3V3,
 RP2354B (flash inside), PWM audio into an FM8002A, a face button as the power
-button, no LEDs or thermistor, every hole >= 0.3 mm, and an ER-TFT035IPS-6 panel
+button, a board thermistor over the cell (no LEDs), every hole >= 0.3 mm, and an ER-TFT035IPS-6 panel
 in a ZIF connector.
 """
 
@@ -70,11 +70,13 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "1.2k": ("C25862", "0402WGF1201TCE"),
     "2.4k": ("C25882", "0402WGF2401TCE"),
     "5.1k": ("C25905", "0402WGF5101TCE"),
+    "5.6k": ("C25908", "0402WGF5601TCE"),      # JLC Preferred: no Extended fee
     "10k": ("C25744", "0402WGF1002TCE"),
     "22": ("C25092", "0402WGF220JTCE"),
     "20k": ("C25765", "0402WGF2002TCE"),
     "47k": ("C25792", "0402WGF4702TCE"),
     "100k": ("C25741", "0402WGF1003TCE"),
+    "150k": ("C25755", "0402WGF1503TCE"),      # JLC Preferred
     "470k": ("C25790", "0402WGF4703TCE"),
 }
 CAP = {  # value: (lcsc, mpn, footprint)
@@ -133,9 +135,18 @@ C("C1", S, "10u 25V", "VBUS")
 R("R38", S, "1k", "VBUS", "GND")
 part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
      "battler:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.3mm_ThermalVias_0.3mm",
-     {"4": "VBUS", "8": "VBUS", "5": "VBAT", "2": "CHG_PROG", "1": "GND",   # TEMP grounded: no NTC
+     {"4": "VBUS", "8": "VBUS", "5": "VBAT", "2": "CHG_PROG", "1": "CHG_TEMP",
       "7": "CHG_STAT_N", "6": "CHG_DONE_N", "3": "GND", "9": "GND"},
      "C16581", "TP4056-42-ESOP8", "TOPPOWER")
+# cell temperature: the TP4056 charges only while TEMP sits between 45% and 80% of VBUS.
+# The 503450 has no NTC wire, so TH1 sits on the board over the cell (its left edge, below J3), about
+# 45 mm from U2 (whose 0.65 W while charging would trip it). TH1 is in parallel with R40:
+# the window is 1 to 46 C (-3 to 49 C across the TP4056's threshold spread). Fed from VBUS,
+# so it draws nothing from the cell. Out of range, CHRG and STDBY both go high (as with no USB)
+R("R39", S, "5.6k", "VBUS", "CHG_TEMP")
+R("R40", S, "150k", "CHG_TEMP", "GND")
+part("TH1", S, "Device:Thermistor_NTC", "10k B3380", R0402, {"1": "CHG_TEMP", "2": "GND"},
+     "C77131", "NCP15XH103F03RC", "Murata")
 R("R5", S, "2.4k", "CHG_PROG", "GND")          # charge current 1100-1200 V / 2.4k = 460-500 mA (by datasheet revision)
 R("R9", S, "100k", "CHG_DONE_N", "+3V3")       # STDBY: low when the charge is done
 R("R10", S, "100k", "CHG_STAT_N", "+3V3")      # CHRG: low while charging

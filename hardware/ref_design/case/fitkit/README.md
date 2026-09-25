@@ -12,7 +12,7 @@ they always match the design. Regenerate after any case or board change:
 
 | File | What it is | Print |
 |---|---|---|
-| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, 100% infill over the battery connector pocket |
+| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, 100% infill over the battery connector pocket, supports under the four button decks (they sit 2.14 mm below the screen face) |
 | `board_mock.stl` | the board: outline, the six locating holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 16 membrane contacts and the four silicone pieces engraved, J3's outline to tape a real connector on | flat, as exported |
 | `panel_dummy.stl` | the panel at its thickest (2.45 mm), active area engraved on the glass side | flat, glass side up |
 | `cell_dummy.stl` | the 503450 cell (34 x 50 x 5 mm) with its lead tab at the seat-1 end | flat |
@@ -23,7 +23,8 @@ they always match the design. Regenerate after any case or board change:
 | `coupon_usb_tub.stl` | the tub wall around the USB-C opening | as exported |
 | `coupon_frame_lid.stl` | the lid's window, ledge and panel frame | face down, as exported |
 
-PLA or PETG, 0.2 mm layers, 3 walls; no supports needed. Print the coupons with the same settings
+PLA or PETG, 0.2 mm layers, 3 walls; no supports, except under the lid's button decks (the
+lid and `coupon_buttons_lid`). Print the coupons with the same settings
 you'll use for the case: they're how those settings get tuned.
 
 ## Have on hand
@@ -44,10 +45,11 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   `aa_to_top`, `fpc_neck`.
 - **Buttons:** put the three button coupons together with the real silicone and caps: silicone on
   the board coupon (the pills should land on the engraved contact rings), caps in the lid coupon's
-  holes, lid coupon down onto the tub coupon. Check each cap stands about 1.2 mm proud, can't fall
-  out, presses cleanly and springs back, and that the D-pad's pills sit on its four rings. The
+  holes, lid coupon down onto the tub coupon. Check each cap stands about 1.3 mm proud of the deck, can't
+  fall out or turn (its flange tab sits in the pocket's slot), presses cleanly and springs back, and that the D-pad's pills sit on its four rings. The
   design assumes a D-pad pill spacing of 14.0 mm (another source says 13.5): measure it. Tune
-  `dpad_pitch`, `abxy_pitch`, `piece_d`, `dome_h`, `flange_t`, `cap_proud`, `cap_abxy_d`, `dpad_arm_*`.
+  `dome_h` (sets the deck height), `piece_d`, `dpad_pitch`; the cap numbers from `case/DSLITE.md`
+  (`cap_*`, `pocket_*`, `slot_*`, `dpad_*`) if a real cap disagrees.
   While it's together, the JST plug (real or dummy) should fit J2's pocket under the lid.
 - **USB-C:** a USB-C cable's plug should pass the opening in `coupon_usb_tub` with some clearance.
 
@@ -60,7 +62,7 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
    slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
    `case.scad` moves J3.
 4. Panel into the lid's frame on the tape, silicone and caps in, lid down: all six hooks should
-   click, the lid should sit flush, nothing should rattle, the case should measure 15.0 mm.
+   click, the lid should sit flush, nothing should rattle, the case should measure 15.0 mm at the screen, 12.9 at the ends.
 5. Press every button: each should click through and spring back.
 
 **3. Measure and record** (design_review.md, "Measure before ordering"): the silicone's pill
