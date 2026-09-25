@@ -214,6 +214,9 @@ router starts from a ring of stub ends and no pin gets boxed in by its neighbour
 
 ## Measure before ordering
 
+The fit kit (`case/fitkit/`, see its README) prints a board mock, part dummies and coupons of
+the case for these checks.
+
 | What | Why | Where it goes |
 |---|---|---|
 | DS Lite silicone piece outline, dome height, pill spacing, cap flange and height | case clearances are estimates (`ESTIMATE` in `case/case.scad`); the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `flange_t`, `cap_*`, `dpad_pitch` |

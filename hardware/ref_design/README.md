@@ -37,6 +37,7 @@ which this folder never touches.
 | `board/tools/` | the scripts that build and check all of it (below) |
 | `case/case.scad` | the case, and the source of every mechanical position |
 | `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts, board outline, positions for the board scripts |
+| `case/fitkit/` | a printable fit kit: board mock, part dummies and case coupons, to test the real parts before ordering ([its README](case/fitkit/README.md)) |
 | `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md), [Konnect notes](docs/konnect_notes.md) |
 | `tools/quotes/` | JLCPCB and PCBWay instant-quote scripts for the bare board and assembly |
 | `datasheets/SOURCES.md` | where each datasheet comes from |
@@ -60,6 +61,7 @@ python3 tools/silk.py
 python3 tools/check_pcb.py                   # DRC with schematic parity
 python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders
 python3 ../case/check_fit.py                 # board inside the case?
+python3 ../case/fitkit.py                    # the printable fit kit (about 7 min)
 python3 tools/pinmap.py                      # docs/pinmap.md
 ```
 

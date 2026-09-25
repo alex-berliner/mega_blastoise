@@ -40,8 +40,9 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 - [x] 4 Footprints not in KiCad libs (`board/lib/battler.pretty`, with 3D models)
 - [x] 5 Board: placement, RP2350 core copied from reference, routing, pours, DRC clean
 - [x] 6 Fab outputs: gerbers, drill, BOM, CPL, 3D
-- [x] 7 Case: tub, lid, power cap, lens outline, STLs; board fit check (`case/check_fit.py`)
+- [x] 7 Case: tub and lid (snap fit), STLs; board fit check (`case/check_fit.py`)
 - [x] 8 Docs: README, BOM, assembly, bring-up, pin map, design review, Konnect notes
+- [x] 9 Fit kit to print: board mock, part dummies, case coupons (`case/fitkit/`)
 
 ## Measure before ordering
 

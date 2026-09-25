@@ -32,7 +32,9 @@ Lite silicone and caps, tape and foam, and the printed case (`case/tub.stl`,
 Before the first board order, check the parts against the design (the approved
 fit check): one panel against its drawing, the cell's size with its protection board
 and its plug's polarity, the speaker's thickness, and the silicone and caps in a
-printed lid. The numbers to measure are in [design_review.md](design_review.md).
+printed lid. The fit kit (`case/fitkit/`) has the prints for it: a board mock, dummies
+of the loose parts and quick coupons of the case, with a test order in its README. The
+numbers to measure are in [design_review.md](design_review.md).
 
 **Cell polarity varies by vendor.** Pin 1 of J2 (silkscreen `+`) must be the red
 lead. A reversed cell destroys the charger. If a batch arrives reversed, lift each
