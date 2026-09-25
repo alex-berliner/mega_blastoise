@@ -161,7 +161,8 @@ every hole 0.3 mm or larger.
 - Heights: the panel (2.35 +-0.1 mm in its drawing, counted as 2.45) hangs from the
   lid's window ledge on 0.15 mm double-sided tape, in a 4.9 mm bay that leaves it
   2.3 mm clear of the board, so every part under it is 2.1 mm or less; the SOIC-8
-  amplifier (1.75 mm) and the panel's connector (2.0 mm) sit under it.
+  amplifier and the ESOP-8 charger (1.75 mm, at the panel's edge) and the panel's
+  connector (2.0 mm, 0.3 mm clear) sit under it.
   Taller parts live in the side bezels or between a seat's clusters: USB-C
   (3.3 mm), debug connectors (2.9), battery connector (5.5, under a pocket in the
   lid). The case is built around the bay, not the panel: a panel that fits
