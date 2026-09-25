@@ -900,9 +900,11 @@ def prune_dangling(board, rounds=5, locked_too=False):
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
         loose = {i["uuid"] for v in drc_report(board).get("violations", [])
                  if v["type"] in ("track_dangling", "via_dangling") for i in v["items"]}
+        # a pour's vias stay while the pours are still changing; at the end (locked_too) a
+        # dangling one joins nothing on either layer (a pocket the pours never reached)
         items = [t for t in board.GetTracks() if t.m_Uuid.AsString() in loose
                  and (locked_too or (not t.IsLocked() and t.GetNetname() not in PLANE_NETS))
-                 and not (isinstance(t, pcbnew.PCB_VIA) and t.GetNetname() in PLANE_NETS)]
+                 and not (isinstance(t, pcbnew.PCB_VIA) and t.GetNetname() in PLANE_NETS and not locked_too)]
         changed = 0
         for t in items:
             if isinstance(t, pcbnew.PCB_VIA):

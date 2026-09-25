@@ -12,6 +12,7 @@ the case allows at that spot:
   under a silicone piece   nothing at all
   lid pin bosses           nothing within the boss diameter
   lid snap hooks           nothing taller than hook_clear under a hook
+  lid's panel frame        its band round the panel: <= frame limit (it hangs lower)
   J2 pocket                the battery connector may reach into the lid pocket
   edge parts               the USB-C face reaches the wall
 
@@ -89,6 +90,11 @@ def inside_rect(box, rect, margin=0.0):
         box[3] > min(y0, y1) - margin and box[1] < max(y0, y1) + margin
 
 
+def within(box, rect):
+    (x0, y0), (x1, y1) = rect
+    return box[0] >= min(x0, x1) and box[2] <= max(x0, x1) and box[1] >= min(y0, y1) and box[3] <= max(y0, y1)
+
+
 def near_circle(box, c, r):
     cx = min(max(c[0], box[0]), box[2])
     cy = min(max(c[1], box[1]), box[3])
@@ -142,6 +148,9 @@ def main():
             limit, where = POS["glass_limit"], "glass"
         elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]):
             limit, where = min(limit, POS["retainer_limit"]), "retainer"
+        frame = POS["frame"]                    # the lid's panel frame hangs lower than the rest of the lid
+        if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit:
+            limit, where = frame["limit"], "lid's panel frame"
         if top > limit + 1e-3:
             problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
         for zone in POS["fpc_zones"]:

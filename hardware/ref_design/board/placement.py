@@ -82,6 +82,7 @@ put("J1", usb_x, CASE["usb"]["y"], 90)
 # then the load-sharing parts in the order the current flows
 put("U1", 130.6, 107.6, 90)                 # ESD at the connector
 put("C1", 128.0, 111.2, 90)
+put("R38", 126.8, 73.4, 90)                 # VBUS bleeder, beside R14 where VBUS meets the power latch
 put("R1", 126.0, 97.4, 0)
 put("R2", 126.0, 102.6, 0)
 put("R3", 124.0, 97.4, 0)

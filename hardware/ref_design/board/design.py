@@ -124,6 +124,10 @@ part("U1", S, "Power_Protection:SRV05-4", "SRV05-4", "Package_TO_SOT_SMD:SOT-23-
      {"1": "USB_DP", "3": "USB_DM", "4": None, "6": None, "5": "+3V3", "2": "GND"},
      "C85364", "SRV05-4-P-T7", "ProTek Devices")
 C("C1", S, "10u 25V", "VBUS")
+# VBUS bleeder: with the cell on VSYS, D5's reverse leakage flows into the VBUS node, and
+# through R14/D3 into R15's 100k about 10 uA (a warm Schottky) would lift the ME6211's CE to
+# 1.0 V. 10k here needs about 140 uA for that; it costs 0.5 mA with USB in
+R("R38", S, "10k", "VBUS", "GND")
 part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
      "battler:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.3mm_ThermalVias_0.3mm",
      {"4": "VBUS", "8": "VBUS", "5": "VBAT", "2": "CHG_PROG", "1": "GND",   # TEMP grounded: no NTC
@@ -170,7 +174,7 @@ part("D2", S, "Diode:BAT54C", "BAT54C", "Package_TO_SOT_SMD:SOT-23",
 R("R14", S, "10k", "VBUS", "VBUS_EN")
 part("D3", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
      {"1": "PWR_EN", "2": "VBUS_EN"}, "C7502694", "BAT54WS", "")
-R("R15", S, "10k", "PWR_EN", "GND")           # 10k: D5's reverse leakage into VBUS can't lift CE to 1.0 V, even warm
+R("R15", S, "100k", "PWR_EN", "GND")          # 100k keeps the Y contact's pill-resistance margin (Q1 reads it)
 part("Q1", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "GND", "3": "PWR_BTN_N"}, "C8545", "2N7002", "Changjiang")
 R("R16", S, "100k", "PWR_BTN_N", "+3V3")

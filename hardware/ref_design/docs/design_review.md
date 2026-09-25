@@ -54,9 +54,12 @@ every hole 0.3 mm or larger.
 - Load under 100 mA (RP2354B up to ~50 mA, panel logic ~10 mA): at most 0.13 W in
   the LDO on USB power.
 - PWR_EN = (button) OR (PWR_HOLD from the MCU) OR (VBUS through 10k and a diode).
-  All three through Schottky diodes so none back-feeds another. R15 pulls PWR_EN down
-  with 10k: with the cell on VSYS, D5's reverse leakage flows into the VBUS node, and
-  through 100k about 10 uA (a warm Schottky) would reach the ME6211's 1.0 V CE level.
+  All three through Schottky diodes so none back-feeds another; 100k pull-down (R15).
+  With the cell on VSYS, D5's reverse leakage flows into the VBUS node; into R15's 100k
+  about 10 uA (a warm Schottky) would reach the ME6211's 1.0 V CE level, so R38 (10k)
+  bleeds VBUS to ground: it then takes about 140 uA, and costs 0.5 mA with USB in.
+  (A 10k R15 would do the same but cut how much resistance the Y contact's pill may have
+  before Q1 misses a press by about five times.)
 - The button is seat 1's Y contact (SW8). Its common comb is VSYS instead of
   GND, so pressing Y joins VSYS to PWR_BTN_RAW, as the side switch did. The MCU
   sees it through Q1 (2N7002, gate on the button node) on GPIO3, so no MCU pin
@@ -166,12 +169,12 @@ every hole 0.3 mm or larger.
 
 | Check | Tool | Result |
 |---|---|---|
-| Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 122 parts, 115 nets, 79 named and 36 no-connects: all match |
+| Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 123 parts, 115 nets, 79 named and 36 no-connects: all match |
 | ERC | kicad-cli | 0 errors, 0 warnings |
 | DRC with schematic parity | kicad-cli, `board/tools/check_pcb.py` | 0 errors, 0 unconnected, 0 parity issues; 2 cosmetic warnings (USB-C outline silk at the board edge, where the receptacle overhangs by design). `board/fab/drc.txt` |
 | Every hole 0.3 mm or larger | the drill file, `board/fab/gerbers/battler.drl` | 0.3, 0.6, 0.65 and 2.2 mm only |
 | Contact pattern | `hardware/membrane/tools/check_contact_fp.py` | 0.200 mm minimum gap, 1.60 mm bridging spot |
-| Board inside the case | every part's 3D model against the case's height limits, bosses, snap hooks and keep-outs (`case/check_fit.py`) | 91 parts, no collisions (`case/fit_report.txt`) |
+| Board inside the case | every part's 3D model against the case's height limits, bosses, snap hooks and keep-outs (`case/check_fit.py`) | 92 parts, no collisions, including under the lid's panel frame (`case/fit_report.txt`) |
 
 Routing: two things make the 2-layer board route completely, in about ten minutes.
 The pins are assigned for two layers: each faces where its net goes, in the order the

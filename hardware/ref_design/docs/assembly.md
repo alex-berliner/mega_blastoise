@@ -11,7 +11,7 @@ Files are in `board/fab/` (regenerate with `python3 board/tools/fab.py`).
 | Surface finish | **ENIG** | the silicone pills press straight on the contact combs: they must be gold, not HASL |
 | Min via hole | **0.3 mm** (0.5 mm pads, 0.6 mm on power), tented | JLC's standard: 0.25 mm adds a fee, a 4-wire test and TG155 material (about $40 an order) |
 | Min track / space | 0.15 / 0.15 mm (0.1 mm in the RP2354B pin field) | |
-| Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 91 placements, 37 part numbers |
+| Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 92 placements, 37 part numbers |
 
 In JLC's placement preview, check every polarised part turned the way the silkscreen
 says: the RP2354B, TP4056, AP3156 and FM8002A pin-1 dots, the ME6211, SRV05-4, BAT54C,

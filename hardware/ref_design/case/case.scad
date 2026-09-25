@@ -20,10 +20,12 @@ $fn = 72;
 // EastRising ER-TFT035IPS-6 (ILI9488), from its datasheet's outline drawing
 panel_w = 54.50;  panel_l = 83.00;  panel_t = 2.30;     // outline with the FPC folded (tape not included)
 panel_fit = 0.8;   // the lid's locating frame is this much larger: the panel is +-0.2, FDM openings print small
+frame_wall = 1.1;  frame_h = 1.0;                       // that frame's walls, hanging from the lid
 aa_w = 48.96;     aa_l = 73.44;                         // active area
 aa_to_top = 2.5;  aa_to_fpc = panel_l - aa_l - aa_to_top;   // active area to the glass edges (centred across)
 aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.28 mm towards seat 2
-window_margin = 0.5;                                    // bezel opening past the active area
+window_margin = 0.8;                                    // bezel opening past the active area: covers the panel's
+                                                        // +-0.4 float in its frame and its +-0.3 active-area tolerance
 // Its FPC leaves the seat-1 edge, folds under the panel and plugs into a 50-pin ZIF
 // connector (J3, Hirose FH12-50S, bottom contact). Seen from above, x from the panel's
 // centre, lengths along the FPC from that edge: a 4.59 mm neck (35.6 wide, centre +3.6)
@@ -157,6 +159,10 @@ echo(str("JSON {",
   "\"cell\": [", jpt([-cell[0] / 2, cell_y + cell[1] / 2]), ", ", jpt([cell[0] / 2, cell_y - cell[1] / 2]), "], ",
   "\"speaker\": {\"c\": ", jpt([0, spk_y]), ", \"d\": ", spk_d, "}, ",
   "\"hooks\": [", join([for (h = hooks) str("[", jpt(hook_rect(h)[0]), ", ", jpt(hook_rect(h)[1]), "]")]), "], ",
+  "\"frame\": {\"outer\": [", jpt([-(panel_w + panel_fit) / 2 - frame_wall, (panel_l + panel_fit) / 2 + frame_wall]), ", ",
+    jpt([(panel_w + panel_fit) / 2 + frame_wall, -(panel_l + panel_fit) / 2 - frame_wall]), "], \"inner\": [",
+    jpt([-(panel_w + panel_fit) / 2, (panel_l + panel_fit) / 2]), ", ", jpt([(panel_w + panel_fit) / 2, -(panel_l + panel_fit) / 2]),
+    "], \"limit\": ", z_lid - z_top_cu - frame_h - 0.3, "}, ",
   "\"hook_clear\": ", bay_t - snap_len,
   "}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
@@ -250,8 +256,8 @@ module lid() difference() {
     // pinhole guides reach down towards the switches
     for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_lid - z_top_cu - 2.4 + 0.01);
     // panel locating frame
-    translate([0, 0, z_lid - 1.0]) linear_extrude(1.01) difference() {
-      square([panel_w + panel_fit + 2.2, panel_l + panel_fit + 2.2], center = true);
+    translate([0, 0, z_lid - frame_h]) linear_extrude(frame_h + 0.01) difference() {
+      square([panel_w + panel_fit + 2 * frame_wall, panel_l + panel_fit + 2 * frame_wall], center = true);
       square([panel_w + panel_fit, panel_l + panel_fit], center = true);
       translate([fpc_neck[0], -panel_l / 2]) square([fpc_neck[1] + 3, 6], center = true);   // FPC fold passes here
     }
