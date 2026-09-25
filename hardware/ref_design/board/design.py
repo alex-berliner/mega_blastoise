@@ -124,10 +124,12 @@ part("U1", S, "Power_Protection:SRV05-4", "SRV05-4", "Package_TO_SOT_SMD:SOT-23-
      {"1": "USB_DP", "3": "USB_DM", "4": None, "6": None, "5": "+3V3", "2": "GND"},
      "C85364", "SRV05-4-P-T7", "ProTek Devices")
 C("C1", S, "10u 25V", "VBUS")
-# VBUS bleeder: with the cell on VSYS, D5's reverse leakage flows into the VBUS node, and
-# through R14/D3 into R15's 100k about 10 uA (a warm Schottky) would lift the ME6211's CE to
-# 1.0 V. 10k here needs about 140 uA for that; it costs 0.5 mA with USB in
-R("R38", S, "10k", "VBUS", "GND")
+# VBUS bleeder. At an unplug C1 holds VBUS up, and Q2's gate (fed from VBUS through D6)
+# can only fall as fast as VBUS does: 1k lets Q2 take over from its body diode in about
+# 3 ms (full on in about 8) instead of tens of ms. It also keeps D5's reverse leakage (the
+# cell on VSYS) from lifting the ME6211's CE through R14/D3: that now takes about 1.3 mA.
+# 5 mA, 25 mW with USB in
+R("R38", S, "1k", "VBUS", "GND")
 part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
      "battler:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.3mm_ThermalVias_0.3mm",
      {"4": "VBUS", "8": "VBUS", "5": "VBAT", "2": "CHG_PROG", "1": "GND",   # TEMP grounded: no NTC

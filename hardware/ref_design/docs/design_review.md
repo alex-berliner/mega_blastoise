@@ -39,11 +39,14 @@ every hole 0.3 mm or larger.
   while the TP4056 charges the cell; without USB, Q2 (AO3401A, source on VSYS,
   drain on the cell) connects the cell. With USB, VSYS is about 4.6 V, so Q2's
   body diode is reverse biased and nothing flows back into the cell.
-- The unplug: Q2's gate sees VBUS through D6 (BAT54WS), so it isn't held up by
-  C1's 10 uF. R6 (10k) pulls it down within microseconds of an unplug, instead of
-  the 100 ms C1 would take, and C9 (22 uF) carries VSYS across the change. In the
-  gap, Q2's body diode holds VSYS at the cell voltage less 0.6 V. A dip here resets
-  the MCU, and a reset turns the device off, so bring-up checks it with a scope.
+- The unplug: Q2's gate is fed from VBUS through D6 (BAT54WS) and pulled down by R6
+  (10k), but it can only fall as fast as VBUS does, and C1 (10 uF) holds VBUS up
+  after the charger stops drawing. R38 (1k) bleeds VBUS, so Q2 starts to conduct
+  about 3 ms after an unplug and is fully on after about 8 ms (without R38 it would be
+  100 ms or more). Until then Q2's body diode holds VSYS at the cell voltage less
+  about 0.5 V: on a low cell 3V3 dips under the RP2350's 3.135 V analog minimum for
+  those few milliseconds. A reset here turns the device off, so bring-up checks it
+  with a scope.
 
 ### 3V3 and the power switch (sheet Power)
 
@@ -56,8 +59,9 @@ every hole 0.3 mm or larger.
 - PWR_EN = (button) OR (PWR_HOLD from the MCU) OR (VBUS through 10k and a diode).
   All three through Schottky diodes so none back-feeds another; 100k pull-down (R15).
   With the cell on VSYS, D5's reverse leakage flows into the VBUS node; into R15's 100k
-  about 10 uA (a warm Schottky) would reach the ME6211's 1.0 V CE level, so R38 (10k)
-  bleeds VBUS to ground: it then takes about 140 uA, and costs 0.5 mA with USB in.
+  about 10 uA (a warm Schottky) would reach the ME6211's 1.0 V CE level. R38 (1k, the
+  unplug bleeder, see USB) holds VBUS down: that now takes about 1.3 mA. It costs 5 mA
+  with USB in.
   (A 10k R15 would do the same but cut how much resistance the Y contact's pill may have
   before Q1 misses a press by about five times.)
 - The button is seat 1's Y contact (SW8). Its common comb is VSYS instead of
@@ -154,10 +158,10 @@ every hole 0.3 mm or larger.
   0.3 mm power tracks (3V3 included), 0.2 mm USB; vias 0.5 mm with 0.3 mm holes
   (0.6 mm on power). Every hole is 0.3 mm or larger, JLC's standard: smaller ones
   cost about $40 an order (a fee, a required 4-wire test and TG155 material).
-- Heights: the panel (2.3 mm) hangs from the lid's window ledge on double-sided
-  tape, in a 4.9 mm bay that leaves it 2.6 mm clear of the board, so every part
-  under it is 2.4 mm or less; the ESOP-8 and SOIC-8 chips (1.75 mm) and the panel's
-  connector (2.0 mm) sit under it.
+- Heights: the panel (2.35 +-0.1 mm in its drawing, counted as 2.45) hangs from the
+  lid's window ledge on 0.15 mm double-sided tape, in a 4.9 mm bay that leaves it
+  2.3 mm clear of the board, so every part under it is 2.1 mm or less; the SOIC-8
+  amplifier (1.75 mm) and the panel's connector (2.0 mm) sit under it.
   Taller parts live in the side bezels or between a seat's clusters: USB-C
   (3.3 mm), debug connectors (2.9), battery connector (5.5, under a pocket in the
   lid). The case is built around the bay, not the panel: a panel that fits
@@ -211,7 +215,7 @@ router starts from a ring of stub ends and no pin gets boxed in by its neighbour
 |---|---|---|
 | RP2354B and AP3156 stock at JLC (1454 and 1490 when checked) | assembly blocked for a larger run | buy ahead, or consign parts |
 | No charge temperature cutoff (approved) | the cell charges however hot it is; the TP4056 only protects itself | keep the device out of hot places while charging; a thermistor on TEMP can come back (two resistors) |
-| USB-to-cell hand-over | a reset on unplug turns the device off | bring-up step 5 with a scope; a second 22 uF on VSYS if needed |
+| USB-to-cell hand-over | for about 3-8 ms after an unplug VSYS is the cell less a diode drop; a reset turns the device off | R38 (1k) keeps the gap short; bring-up step 5 with a scope; if it still resets, a Schottky from VBAT to VSYS across Q2 (a B5819W, as D5) lifts VSYS in the gap |
 | Panel supply | one maker (EastRising), sold direct | it publishes its drawings; another 3.5in panel that fits the 56.0 x 86.24 x 4.9 mm bay needs only case.scad's panel numbers, J3 and its pin map changed |
 | FPC fit in J3 | too short a fold can't reach the connector; too long bows under the panel | the model errs long (safe); if the tail bows, move J3 1.5-2 mm towards seat 1 (`conn_rear` about -0.6); check with a real panel and connector before the board order |
 | DS Lite silicone fit | cap retention and feel depend on unmeasured heights | pads and caps ordered: try them in a printed lid before the board order |

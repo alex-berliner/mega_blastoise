@@ -86,9 +86,11 @@ hiss in silence; set AMP_EN low and check it goes quiet.
    throttles its own current if its die passes about 145 C.
 5. **Unplug test.** Run the firmware from the cell with USB plugged in, scope on TP4 (3V3)
    and TP2 (VSYS), trigger on VSYS falling, then pull the USB cable. VSYS drops from about
-   4.6 V to the cell voltage; 3V3 must stay above 3.1 V and the firmware must keep
-   running. If it resets instead (the device then turns off), add a second 22 uF on VSYS
-   next to C9 and try again.
+   4.6 V to the cell voltage and the firmware must keep running. Expect VSYS to sit at
+   the cell voltage less about 0.5 V for 3-8 ms first (Q2's body diode, until R38 has
+   drained VBUS), with 3V3 about 0.1 V under that. Try it with a nearly flat cell too.
+   If it resets (the device then turns off), fit a Schottky from VBAT to VSYS across Q2
+   (a B5819W, as D5, anode to VBAT) and try again.
 
 ## 6. Power switch
 

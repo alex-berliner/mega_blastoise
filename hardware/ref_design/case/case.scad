@@ -18,20 +18,25 @@ $fn = 72;
 
 // ---------------- bought parts ----------------
 // EastRising ER-TFT035IPS-6 (ILI9488), from its datasheet's outline drawing
-panel_w = 54.50;  panel_l = 83.00;  panel_t = 2.30;     // outline with the FPC folded (tape not included)
+panel_w = 54.50;  panel_l = 83.00;  panel_t = 2.45;     // outline with the FPC folded; the drawing's side view says
+                                                        // 2.35 +-0.1 (its table 2.3): the thickest
+tape_t = 0.15;                                          // double-sided tape between the lid's window ledge and the panel
 panel_fit = 0.8;   // the lid's locating frame is this much larger: the panel is +-0.2, FDM openings print small
 frame_wall = 1.1;  frame_h = 1.0;                       // that frame's walls, hanging from the lid
 aa_w = 48.96;     aa_l = 73.44;                         // active area
 aa_to_top = 2.5;  aa_to_fpc = panel_l - aa_l - aa_to_top;   // active area to the glass edges (centred across)
 aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.28 mm towards seat 2
-window_margin = 0.8;                                    // bezel opening past the active area: covers the panel's
-                                                        // +-0.4 float in its frame and its +-0.3 active-area tolerance
+window_margin = 1.0;                                    // bezel opening past the active area: covers the panel's
+                                                        // +-0.5 float in its frame, its +-0.3 active-area tolerance
+                                                        // and a printed opening's error; at most 0.5 mm of the
+                                                        // panel's black border shows
 // Its FPC leaves the seat-1 edge, folds under the panel and plugs into a 50-pin ZIF
 // connector (J3, Hirose FH12-50S, bottom contact). Seen from above, x from the panel's
 // centre, lengths along the FPC from that edge: a 4.59 mm neck (35.6 wide, centre +3.6)
 // wraps the edge, then a 14.41 mm body (47.9 wide, centre +2.5) lies under the panel,
 // then an 11.7 mm tail (25.5 wide, centred) ends in the 3.5 mm contact strip.
-fpc_neck = [3.6, 35.6, 4.59];   fpc_body = [2.5, 47.9, 14.41];   fpc_tail = [0, 25.5, 11.7];
+fpc_neck = [3.6, 35.6, 4.59];   // ESTIMATE: width and offset scaled from the drawing's views (not dimensioned)
+fpc_body = [2.5, 47.9, 14.41];   fpc_tail = [0, 25.5, 11.7];
 fpc_slack = 1.0;                                        // the connector 1 mm short of the tail's tip: a
                                                         // long FPC bows, a short one can't reach (ESTIMATE)
 conn_rear = 1.2;  conn_front = 4.4;                     // FH12 footprint origin to its back and to its mouth
@@ -59,11 +64,11 @@ wall = 2.0;  board_clear = 0.5;  corner_r = 8;
 // ---------------- stack (z) ----------------
 floor_t = 1.5;  cell_gap = 0.5;  pcb_t = 1.6;  lid_t = 1.5;
 bay_t = 4.9;              // board top to lid underside: the panel and the air under it
-glass_gap = bay_t - panel_t;   // panel back above the board (the panel hangs from the lid on tape)
+glass_gap = bay_t - panel_t - tape_t;   // panel back above the board (the panel hangs from the lid on tape)
 z_board = floor_t + cell[2] + cell_gap;                 // board bottom
 z_top_cu = z_board + pcb_t;                             // board top: every height limit counts from here
 z_glass = z_top_cu + glass_gap;
-z_lid = z_glass + panel_t;                              // lid underside
+z_lid = z_glass + panel_t + tape_t;                     // lid underside
 case_h = z_lid + lid_t;
 retainer_z = z_top_cu + dome_h + flange_t;              // lid underside around the buttons
 
@@ -167,7 +172,7 @@ echo(str("JSON {",
   "}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
 echo(str("STACK floor ", floor_t, " + cell ", cell[2], " + gap ", cell_gap, " + PCB ", pcb_t, " + glass gap ", glass_gap,
-         " + panel ", panel_t, " + lid ", lid_t, " = ", case_h, " mm"));
+         " + panel ", panel_t, " + tape ", tape_t, " + lid ", lid_t, " = ", case_h, " mm"));
 
 // ---------------- 2D ----------------
 module rrect(w, l, r) offset(r = r) square([w - 2 * r, l - 2 * r], center = true);
@@ -259,7 +264,8 @@ module lid() difference() {
     translate([0, 0, z_lid - frame_h]) linear_extrude(frame_h + 0.01) difference() {
       square([panel_w + panel_fit + 2 * frame_wall, panel_l + panel_fit + 2 * frame_wall], center = true);
       square([panel_w + panel_fit, panel_l + panel_fit], center = true);
-      translate([fpc_neck[0], -panel_l / 2]) square([fpc_neck[1] + 3, 6], center = true);   // FPC fold passes here
+      translate([fpc_neck[0], -panel_l / 2]) square([fpc_neck[1] + 7, 6], center = true);   // FPC fold passes here: wide,
+                                                                                             // the neck is only estimated
     }
   }
   for (s = pins) at(s, z_top_cu - 1) cylinder(d = pin_d + 0.3, h = 1 + 2.2);
