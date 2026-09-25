@@ -118,8 +118,10 @@ R("R1", S, "5.1k", "CC1", "GND")               # Rd: tells the source we are a s
 R("R2", S, "5.1k", "CC2", "GND")
 R("R3", S, "10k", "CC1", "CC1_SENSE")          # ADC taps read the source's current offer;
 R("R4", S, "10k", "CC2", "CC2_SENSE")          # 10k keeps a CC short to VBUS off the pin
+# REF on 3V3, not VBUS: on VBUS, with no cable in, the MCU's D+ pull-up would feed VBUS
+# through the D+ steering diode (to about 2.7 V), hold PWR_EN up and half-close Q2
 part("U1", S, "Power_Protection:SRV05-4", "SRV05-4", "Package_TO_SOT_SMD:SOT-23-6",
-     {"1": "USB_DP", "3": "USB_DM", "4": None, "6": None, "5": "VBUS", "2": "GND"},
+     {"1": "USB_DP", "3": "USB_DM", "4": None, "6": None, "5": "+3V3", "2": "GND"},
      "C85364", "SRV05-4-P-T7", "ProTek Devices")
 C("C1", S, "10u 25V", "VBUS")
 part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
@@ -127,7 +129,7 @@ part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
      {"4": "VBUS", "8": "VBUS", "5": "VBAT", "2": "CHG_PROG", "1": "GND",   # TEMP grounded: no NTC
       "7": "CHG_STAT_N", "6": "CHG_DONE_N", "3": "GND", "9": "GND"},
      "C16581", "TP4056-42-ESOP8", "TOPPOWER")
-R("R5", S, "2.4k", "CHG_PROG", "GND")          # charge current 1200 V / 2.4k = 500 mA (0.5 C for 1000 mAh)
+R("R5", S, "2.4k", "CHG_PROG", "GND")          # charge current 1100-1200 V / 2.4k = 460-500 mA (by datasheet revision)
 R("R9", S, "100k", "CHG_DONE_N", "+3V3")       # STDBY: low when the charge is done
 R("R10", S, "100k", "CHG_STAT_N", "+3V3")      # CHRG: low while charging
 C("C2", S, "4.7u", "VSYS")
@@ -168,7 +170,7 @@ part("D2", S, "Diode:BAT54C", "BAT54C", "Package_TO_SOT_SMD:SOT-23",
 R("R14", S, "10k", "VBUS", "VBUS_EN")
 part("D3", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
      {"1": "PWR_EN", "2": "VBUS_EN"}, "C7502694", "BAT54WS", "")
-R("R15", S, "100k", "PWR_EN", "GND")
+R("R15", S, "10k", "PWR_EN", "GND")           # 10k: D5's reverse leakage into VBUS can't lift CE to 1.0 V, even warm
 part("Q1", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "GND", "3": "PWR_BTN_N"}, "C8545", "2N7002", "Changjiang")
 R("R16", S, "100k", "PWR_BTN_N", "+3V3")

@@ -19,6 +19,7 @@ $fn = 72;
 // ---------------- bought parts ----------------
 // EastRising ER-TFT035IPS-6 (ILI9488), from its datasheet's outline drawing
 panel_w = 54.50;  panel_l = 83.00;  panel_t = 2.30;     // outline with the FPC folded (tape not included)
+panel_fit = 0.8;   // the lid's locating frame is this much larger: the panel is +-0.2, FDM openings print small
 aa_w = 48.96;     aa_l = 73.44;                         // active area
 aa_to_top = 2.5;  aa_to_fpc = panel_l - aa_l - aa_to_top;   // active area to the glass edges (centred across)
 aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.28 mm towards seat 2
@@ -121,7 +122,7 @@ assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs o
 assert(abs(cell_y) + cell[1] / 2 <= bay_l / 2, "cell sticks out from under the glass");
 assert(spk_y + spk_d / 2 <= bay_l / 2 && spk_y - spk_d / 2 >= cell_y + cell[1] / 2 + 1, "speaker collides with the cell or leaves the glass area");
 assert(pin_x - boss_d / 2 >= bay_w / 2 + 0.5 && pin_x + boss_d / 2 <= board_w / 2, "no room for pin bosses beside the glass");
-assert(panel_w + 0.4 <= bay_w && panel_l + 0.4 <= bay_l, "panel doesn't fit its bay");
+assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
 assert(retainer_z < z_lid, "button retainer above the lid");
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "pin under a silicone piece");
@@ -250,7 +251,8 @@ module lid() difference() {
     for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_lid - z_top_cu - 2.4 + 0.01);
     // panel locating frame
     translate([0, 0, z_lid - 1.0]) linear_extrude(1.01) difference() {
-      square([panel_w + 2.6, panel_l + 2.6], center = true); square([panel_w + 0.4, panel_l + 0.4], center = true);
+      square([panel_w + panel_fit + 2.2, panel_l + panel_fit + 2.2], center = true);
+      square([panel_w + panel_fit, panel_l + panel_fit], center = true);
       translate([fpc_neck[0], -panel_l / 2]) square([fpc_neck[1] + 3, 6], center = true);   // FPC fold passes here
     }
   }

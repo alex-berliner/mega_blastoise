@@ -13,7 +13,8 @@ Two players face each other across a 3.5in 320x480 IPS screen; each has a
 D-pad and four face buttons under DS Lite silicone at their end. One Li-ion
 cell, one speaker, one USB-C for charging and firmware. No radios.
 
-Case 75.4 x 156.2 x 15.0 mm. Board 70.4 x 151.2 mm, 2 layers, 1.6 mm, ENIG,
+Case 75.4 x 156.2 x 15.0 mm. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
+line width, the size JLC quotes), 2 layers, 1.6 mm, ENIG,
 every hole 0.3 mm or larger.
 
 ## Block by block
@@ -22,15 +23,18 @@ every hole 0.3 mm or larger.
 
 - Sink only: 5.1k Rd on CC1 and CC2, no PD. A Type-C charger turns VBUS on
   because of them. VBUS bulk capacitance 10 uF (USB's limit).
-- SRV05-4 on D+/D-, next to the connector: a 4-line TVS array referenced to VBUS
-  (two of its lines unused). A JLC preferred part, so no setup fee.
-- TP4056 linear charger: 4.2 V, 1200 V / R5 = 500 mA (0.5 C for the 1000 mAh
+- SRV05-4 on D+/D-, next to the connector: a 4-line TVS array referenced to 3V3
+  (two of its lines unused). Not VBUS: with no cable in, the MCU's D+ pull-up (on in
+  BOOTSEL mode and whenever USB is running) would feed VBUS through the D+ steering
+  diode to about 2.7 V, which holds PWR_EN up and half-closes Q2. A JLC preferred part.
+- TP4056 linear charger: 4.2 V; R5 = 2.4k sets about 460-500 mA (the datasheet's
+  revisions give 1100 or 1200 V / R5), about 0.5 C for the 1000 mAh
   503450). TEMP is grounded, which turns its temperature check off: no thermistor,
   as approved. CHRG and STDBY go to GPIOs; there are no LEDs.
 - Worst-case charger dissipation (5 V in, a 3.0 V cell, 500 mA): 1.0 W; about
   0.65 W at a 3.7 V cell. The ESOP-8's thermal pad has six 0.3 mm vias into the
   ground pours on both layers. The TP4056 lowers its own current when its die
-  passes about 120 C, so heat slows the charge rather than hurting the chip.
+  passes about 145 C, so heat slows the charge rather than hurting the chip.
 - Load sharing: USB feeds the system (VSYS) through D5 (B5819W, 1 A Schottky)
   while the TP4056 charges the cell; without USB, Q2 (AO3401A, source on VSYS,
   drain on the cell) connects the cell. With USB, VSYS is about 4.6 V, so Q2's
@@ -50,7 +54,9 @@ every hole 0.3 mm or larger.
 - Load under 100 mA (RP2354B up to ~50 mA, panel logic ~10 mA): at most 0.13 W in
   the LDO on USB power.
 - PWR_EN = (button) OR (PWR_HOLD from the MCU) OR (VBUS through 10k and a diode).
-  All three through Schottky diodes so none back-feeds another; 100k pull-down.
+  All three through Schottky diodes so none back-feeds another. R15 pulls PWR_EN down
+  with 10k: with the cell on VSYS, D5's reverse leakage flows into the VBUS node, and
+  through 100k about 10 uA (a warm Schottky) would reach the ME6211's 1.0 V CE level.
 - The button is seat 1's Y contact (SW8). Its common comb is VSYS instead of
   GND, so pressing Y joins VSYS to PWR_BTN_RAW, as the side switch did. The MCU
   sees it through Q1 (2N7002, gate on the button node) on GPIO3, so no MCU pin
@@ -74,9 +80,9 @@ every hole 0.3 mm or larger.
 - The copy keeps what that layout depends on: the core's 0402 parts use Raspberry
   Pi's own land patterns (the switcher's LX copper runs between the pads of C24
   and C25, which KiCad's larger pads would cut), and over the chip the top layer
-  is a 3V3 pour joined by short stubs from the 3V3 pins, as on their board. The
-  LDO and its output capacitors sit inside that pour, so the pour itself carries
-  3V3 to the chip. The copied vias keep Raspberry Pi's 0.6 mm pads with 0.3 mm holes
+  is a 3V3 pour joined by short stubs from the 3V3 pins, as on their board. 3V3
+  reaches that pour from the LDO (U3, right of the chip) through Raspberry Pi's
+  copied stubs, 0.15-0.2 mm wide: ample for the chip's 100 mA or less. The copied vias keep Raspberry Pi's 0.6 mm pads with 0.3 mm holes
   instead of 0.25 mm.
 - USB series resistors: 22 ohm 0402 (a basic part) in Raspberry Pi's own spots. The approved
   27 ohm 0603 doesn't fit the copied layout, and 22 ohm works as well at full speed.
@@ -191,7 +197,7 @@ router starts from a ring of stub ends and no pin gets boxed in by its neighbour
 | What | Why | Where it goes |
 |---|---|---|
 | DS Lite silicone piece outline, dome height, pill spacing, cap flange and height | case clearances are estimates (`ESTIMATE` in `case/case.scad`); the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `flange_t`, `cap_*`, `dpad_pitch` |
-| A real ER-TFT035IPS-6 | outline and thickness, active area offset; that the folded FPC reaches J3 with a little slack; that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_in`; J3's pin map |
+| A real ER-TFT035IPS-6 and an FH12-50S | outline and thickness, active area offset; how far the FPC goes into J3 (Hirose's recommended FPC stops 3.5-4 mm in, so expect 2.5-3 mm of slack, not the 1 mm modelled); that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_rear`; J3's pin map |
 | The chosen cell (503450) | length with its protection board, and connector polarity (JST PH has no standard polarity) | `cell`, J2 |
 | The chosen speaker | diameter, thickness, lead position | `spk_*`, J4 |
 | A printed tub and lid | the snap fit | `snap_*` |
@@ -204,7 +210,7 @@ router starts from a ring of stub ends and no pin gets boxed in by its neighbour
 | No charge temperature cutoff (approved) | the cell charges however hot it is; the TP4056 only protects itself | keep the device out of hot places while charging; a thermistor on TEMP can come back (two resistors) |
 | USB-to-cell hand-over | a reset on unplug turns the device off | bring-up step 5 with a scope; a second 22 uF on VSYS if needed |
 | Panel supply | one maker (EastRising), sold direct | it publishes its drawings; another 3.5in panel that fits the 56.0 x 86.24 x 4.9 mm bay needs only case.scad's panel numbers, J3 and its pin map changed |
-| FPC fit in J3 | too short a fold can't reach the connector; too long bows under the panel | J3 sits 1 mm short of the drawn tip; check with a real panel before the board order (`fpc_slack`) |
+| FPC fit in J3 | too short a fold can't reach the connector; too long bows under the panel | the model errs long (safe); if the tail bows, move J3 1.5-2 mm towards seat 1 (`conn_rear` about -0.6); check with a real panel and connector before the board order |
 | DS Lite silicone fit | cap retention and feel depend on unmeasured heights | pads and caps ordered: try them in a printed lid before the board order |
 | Snap fit | too tight cracks a hook, too loose rattles; FDM snap fits wear | tune on a test print; PETG over PLA |
 | JLC rotation offsets | parts placed 90 or 180 degrees off | review JLC's placement preview; the CPL carries KiCad's angles |

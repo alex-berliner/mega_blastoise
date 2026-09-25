@@ -13,20 +13,20 @@ snapshot used for this design (July 2026).
 
 | | 10 boards | Per unit | Source |
 |---|---|---|---|
-| Bare boards: 2 layers, 70.5 x 151.3 mm, 1.6 mm, ENIG, every hole >= 0.3 mm | $33.40 | $3.34 | quote (`tools/quotes/`) |
+| Bare boards: 2 layers, 70.5 x 151.34 mm (as quoted), 1.6 mm, ENIG, every hole >= 0.3 mm | $33.40 | $3.34 | quote (`tools/quotes/`) |
 | Parts: 37 part numbers, 91 placements a board | $49.70 | $4.97 | JLC parts database |
-| Assembly fees, Economic PCBA (below) | $46.55 | $4.66 | JLC's published rates |
+| Assembly fees, Economic PCBA (below) | $46.39 | $4.64 | JLC's published rates |
 | USB-C through-hole tabs by hand, if JLC charges it | $4.24 | $0.42 | JLC's published rates |
 | Shipping, DHL Express with duties paid at checkout (DDP) | $29.45 | $2.95 | quote; the duty itself isn't known yet |
-| **Total** | **about $163** | **about $16.33** | |
+| **Total** | **about $163** | **about $16.32** | |
 
 | Assembly fee (Economic PCBA, 2-50 boards) | 10 boards |
 |---|---|
 | Setup | $8.18 |
 | Stencil | $1.53 |
-| Solder joints: 384 a board, $0.0016 each | $6.14 |
+| Solder joints: 374 a board (JLC's own count per part), $0.0016 each | $5.98 |
 | Feeder loading: 10 extended part numbers, $3.07 each (basic and preferred parts: none) | $30.70 |
-| **Total** | **$46.55** |
+| **Total** | **$46.39** |
 
 The priciest parts: RP2354B $1.43, the panel's connector (Hirose FH12-50S) $0.81,
 AP3156 $0.63, the Abracon crystal and inductor $0.27 each, JST PH battery connector
@@ -61,7 +61,7 @@ Hand work per unit: [assembly.md](assembly.md).
 
 ## Per unit, into your hands
 
-About **$39-41** at 10 units: the factory's $16.33 and your $23-25. Not in it: import
+About **$39-41** at 10 units: the factory's $16.32 and your $23-25. Not in it: import
 duties (at the 25% rate an earlier review suggested, unverified, about $3 a unit
 on the board order)
 and JLC's new-account coupons ($30 and $20 on the quote page, up to $5 a unit off if

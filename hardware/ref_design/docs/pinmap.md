@@ -89,7 +89,7 @@ until firmware sets a level. Command table: AP3156 datasheet, Serial Digital Int
 
 | CHG_STAT_N | CHG_DONE_N | State |
 |---|---|---|
-| low | high | charging (500 mA, set by R5) |
+| low | high | charging (about 460-500 mA, set by R5) |
 | high | low | charge done |
 | high | high | no USB power |
 

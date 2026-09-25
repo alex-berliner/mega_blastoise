@@ -71,7 +71,7 @@ put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
 put("SW19", CASE["pinholes"][1][0], CASE["pinholes"][1][1], 90)
 put("R26", 71.8, 91.0, 90)
 put("J5", CASE["swd"][0], CASE["swd"][1], 180)
-put("J6", CASE["uart"][0], CASE["uart"][1], 180)
+put("J6", CASE["uart"][0], CASE["uart"][1], 0)      # mouth towards seat 1: turned, it faced J5's back 5 mm away
 
 # edge part on the right: USB-C
 usb_x = CASE["usb"]["front_x"] - 3.65       # footprint front is 3.65 ahead of its origin

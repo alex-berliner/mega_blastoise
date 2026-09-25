@@ -50,7 +50,8 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 
 1. Drive LCD_RST low, then high; send the ILI9488 init sequence over SPI0 at 10-20 MHz
    first (the datasheet rates serial writes to 20 MHz).
-2. Read ID4 (0xD3) back through LCD_MISO: expect 0x94 0x88. If nothing reads back, look
+2. Read ID4 (0xD3) back through LCD_MISO at 5 MHz or less (the ILI9488's serial read
+   cycle is 150 ns minimum): expect 0x94 0x88. If nothing reads back, look
    at the FPC first (fully in J3, square, lid shut), then at the interface pins: IM2-0
    (J3 pins 42-44, the panel's 9-7) must be high for 4-wire SPI.
 3. Set COLMOD (0x3A) to 0x66: in SPI mode the ILI9488 only takes 18-bit colour, three
@@ -79,10 +80,10 @@ hiss in silence; set AMP_EN low and check it goes quiet.
 1. Unplug USB. Connect the cell. Nothing should turn on (PWR_EN low): measure the cell
    current, expect under 20 uA.
 2. Plug USB: CHG_STAT_N goes low while charging. The meter shows about 0.5 A more than
-   the system draws (R5 sets 500 mA).
+   the system draws (R5 sets about 460-500 mA).
 3. ADC7 reads VBAT / 2; compare with a meter on TP3.
 4. Hot check after 10 minutes of charging: the TP4056 is warm, not too hot to touch. It
-   throttles its own current if its die passes about 120 C.
+   throttles its own current if its die passes about 145 C.
 5. **Unplug test.** Run the firmware from the cell with USB plugged in, scope on TP4 (3V3)
    and TP2 (VSYS), trigger on VSYS falling, then pull the USB cable. VSYS drops from about
    4.6 V to the cell voltage; 3V3 must stay above 3.1 V and the firmware must keep

@@ -26,7 +26,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | Buttons | 16 x DSL_button_4ring, direct GPIO, internal pull-ups; seat 1's Y is also the power button | no matrix; no side switch (approved) |
 | Pin map | each pin faces where its net goes, in fan-out order; Raspberry Pi's pin escapes copied with the core | two layers route completely (docs/pinmap.md) |
 | Power switch | seat 1's Y contact joins VSYS to the latch; MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |
-| USB | one USB-C, charge + data, SRV05-4 ESD, 22 ohm 0402 series in Raspberry Pi's spots | preferred/basic parts: no JLC setup fee (a 27 ohm 0603 doesn't fit the copied layout) |
+| USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 22 ohm 0402 series in Raspberry Pi's spots | preferred/basic parts: no JLC setup fee (a 27 ohm 0603 doesn't fit the copied layout) |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes | no LEDs (approved) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
 | Case | tub and lid snap together on six hooks; six pins locate the board; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
