@@ -67,6 +67,8 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "33": ("C25105", "0402WGF330JTCE"),
     "100": ("C25076", "0402WGF1000TCE"),
     "1k": ("C11702", "0402WGF1001TCE"),
+    "1k 0603": ("C21190", "0603WAF1001T5E"),
+    "2.2 0603": ("C22939", "0603WAF220KT5E"),
     "1.2k": ("C25862", "0402WGF1201TCE"),
     "2.4k": ("C25882", "0402WGF2401TCE"),
     "5.1k": ("C25905", "0402WGF5101TCE"),
@@ -126,13 +128,18 @@ R("R4", S, "10k", "CC2", "CC2_SENSE")          # 10k keeps a CC short to VBUS of
 part("U1", S, "Power_Protection:SRV05-4", "SRV05-4", "Package_TO_SOT_SMD:SOT-23-6",
      {"1": "USB_DP", "3": "USB_DM", "4": None, "6": None, "5": "+3V3", "2": "GND"},
      "C85364", "SRV05-4-P-T7", "ProTek Devices")
-C("C1", S, "10u 25V", "VBUS")
+# C1 through R41: the TP4056 datasheet's fix for a ceramic input cap ringing when a live
+# source is plugged in (it asks 1.5 ohm; 2.2 is the nearest Basic part). A 2 m cable into a
+# board without a cell: VBUS peaks 6.7 V instead of 7.1 (U2's maximum is 8 V), VSYS 6.2 V
+# instead of 6.7 (the ME6211's maximum is 6.5 V)
+R("R41", S, "2.2 0603", "VBUS", "VBUS_C1", fp=R0603)
+C("C1", S, "10u 25V", "VBUS_C1")
 # VBUS bleeder. At an unplug C1 holds VBUS up, and Q2's gate (fed from VBUS through D6)
 # can only fall as fast as VBUS does: 1k lets Q2 take over from its body diode in about
-# 3 ms (full on in about 8) instead of tens of ms. It also keeps D5's reverse leakage (the
-# cell on VSYS) from lifting the ME6211's CE through R14/D3: that now takes about 1.3 mA.
-# 5 mA, 25 mW with USB in
-R("R38", S, "1k", "VBUS", "GND")
+# 2-3 ms instead of tens of ms. It also keeps D5's reverse leakage (the cell on VSYS)
+# from lifting the ME6211's CE through R14/D3: that now takes about 1.3 mA.
+# 5 mA, 25-28 mW with USB in: an 0603 (100 mW), 25-30% loaded, in a warm sealed case
+R("R38", S, "1k 0603", "VBUS", "GND", fp=R0603)
 part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
      "battler:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.3mm_ThermalVias_0.3mm",
      {"4": "VBUS", "8": "VBUS", "5": "VBAT", "2": "CHG_PROG", "1": "CHG_TEMP",
@@ -154,9 +161,9 @@ C("C2", S, "4.7u", "VSYS")
 C("C3", S, "10u", "VBAT")
 # load sharing: USB feeds the system through D5 while it charges the cell; without USB
 # the cell feeds it through Q2. Q2's gate follows VBUS through D6 (R6 pulls it down), so
-# Q2 turns on as VBUS drains, which R38 (above) does in a few ms. Until then Q2's body
-# diode carries VSYS and C9 covers the step (a dip resets the MCU, and a reset turns the
-# device off)
+# Q2 turns on as VBUS drains, which R38 (above) does in a few ms. Until then D7 (below)
+# carries VSYS and C9 covers the step (a dip below the chip's supply minimums can crash
+# the MCU, and a reset turns the device off)
 part("D5", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS", "2": "VBUS"},
      "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
 part("D6", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323", {"1": "LS_GATE", "2": "VBUS"},
@@ -165,6 +172,13 @@ part("Q2", S, "Transistor_FET:Q_PMOS_GSD", "AO3401A", "Package_TO_SOT_SMD:SOT-23
      {"1": "LS_GATE", "2": "VSYS", "3": "VBAT"}, "C15127", "AO3401A", "Alpha & Omega Semicon")
 R("R6", S, "10k", "LS_GATE", "GND")
 C("C9", S, "22u 25V", "VSYS")
+# D7 carries VSYS from the cell during the unplug gap, until Q2's channel takes over: 0.34 V
+# at 0.25 A against the body diode's 0.6. Without it, 3V3 falls under QSPI_IOVDD's 2.97 V
+# minimum (the flash inside the RP2354B) on every unplug with the cell below about 3.7 V;
+# with it, 3V3 stays above 2.97 V down to about 3.45 V, inside the 3.5 V cutoff. The cost:
+# its reverse leakage (about 5 uA at 25 C, 50 uA at 75 C) flows into the cell while USB is in
+part("D7", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS", "2": "VBAT"},
+     "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
 part("J2", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "S2B-PH-SM4-TB",
      "battler:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal",
      {"1": "VBAT", "2": "GND", "MP": None}, "C295747", "S2B-PH-SM4-TB(LF)(SN)", "JST")

@@ -82,6 +82,7 @@ put("J1", usb_x, CASE["usb"]["y"], 90)
 # then the load-sharing parts in the order the current flows
 put("U1", 130.6, 107.6, 90)                 # ESD at the connector
 put("C1", 128.0, 111.2, 90)
+put("R41", 126.2, 109.8, 90)                # C1's series resistor (hot-plug ringing)
 put("R38", 126.8, 73.4, 90)                 # VBUS bleeder, beside R14 where VBUS meets the power latch
 put("R1", 126.0, 97.4, 0)
 put("R2", 126.0, 102.6, 0)
@@ -98,6 +99,7 @@ put("TH1", 85.2, 124.0, 90)                 # over the cell's left edge, below J
 put("C3", 133.2, 121.6, 0)                  # VBAT
 put("C2", 129.0, 121.6, 0)                  # VSYS
 put("Q2", 131.2, 125.0, 0)                  # cell -> VSYS without USB
+put("D7", 126.6, 124.4, 0)                  # Schottky across Q2: carries the unplug gap
 put("D6", 131.2, 128.6, 0)                  # Q2's gate from VBUS
 put("R6", 128.4, 127.0, 90)
 put("C9", 131.2, 131.4, 0)                  # holds VSYS through the switch-over

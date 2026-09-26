@@ -46,22 +46,42 @@ every hole 0.3 mm or larger.
 - Load sharing: USB feeds the system (VSYS) through D5 (B5819W, 1 A Schottky)
   while the TP4056 charges the cell; without USB, Q2 (AO3401A, source on VSYS,
   drain on the cell) connects the cell. With USB, VSYS is about 4.6 V, so Q2's
-  body diode is reverse biased and nothing flows back into the cell.
+  body diode and D7 (below) are reverse biased; only D7's leakage flows back into the
+  cell, about 5 uA at 25 C and 50 uA at 75 C. A full cell left on USB therefore floats
+  near 4.2 V instead of cycling through the 4.05 V recharge: a small calendar-ageing
+  cost, backstopped by the pack's overvoltage cut-off.
+- The input: C1 sits behind R41 (2.2 ohm), the TP4056 datasheet's fix for a ceramic
+  input capacitor ringing when a live source is plugged in (it asks 1.5 ohm; 2.2 is the
+  nearest Basic part). Simulated, a 2 m cable into a board with no cell peaks VBUS at
+  6.7 V (7.1 without R41; U2's maximum is 8 V) and VSYS at 6.2 V (6.7 without; the
+  ME6211's maximum is 6.5 V). Most of the ring goes through D5 into the VSYS capacitors,
+  which damps it; with a cell in, the peaks are lower. No TVS: an SMF5.0A's 5.0 V working
+  voltage is below USB's 5.5 V, and it would barely conduct at these peaks.
 - The unplug: Q2's gate is fed from VBUS through D6 (BAT54WS) and pulled down by R6
   (10k), but it can only fall as fast as VBUS does, and C1 (10 uF) holds VBUS up
-  after the charger stops drawing. R38 (1k) bleeds VBUS, so Q2 starts to conduct
-  about 3 ms after an unplug and is fully on after about 8 ms (without R38 it would be
-  100 ms or more). Until then Q2's body diode holds VSYS at the cell voltage less
-  about 0.5 V: on a low cell 3V3 dips under the RP2350's 3.135 V analog minimum for
-  those few milliseconds. A reset here turns the device off, so bring-up checks it
-  with a scope.
+  after the charger stops drawing. R38 (1k, an 0603) bleeds VBUS, so Q2's channel
+  takes the load 1.5-3.3 ms after an unplug, depending on its threshold (without R38,
+  tens of ms). Until then something else has to carry VSYS. Q2's body diode alone
+  drops about 0.6 V at a 0.25 A load (full backlight): 3V3 would then be about the cell
+  less 0.71 V, under the internal flash's 2.97 V QSPI_IOVDD minimum on every unplug
+  with the cell below about 3.7 V, most of its range. So D7 (B5819W, the same part as
+  D5) sits across Q2 and carries the gap at about 0.34 V: 3V3 stays above 2.97 V down
+  to a cell of about 3.42 V (3.49 V with 0.25 A of audio as well), inside the 3.5 V
+  cutoff. The RP2350 has no 3V3 supervisor (its brown-out detector watches the 1.1 V
+  core), so an out-of-spec dip would not reset it cleanly: it could corrupt a flash
+  access instead. Numbers from a simulation of the unplug (the AO3401A and B5819W
+  curves, the TP4056's shut-off, the ME6211's dropout and the routed copper), checked
+  by two independent model reviews; bring-up step 5 measures it.
 
 ### 3V3 and the power switch (sheet Power)
 
 - ME6211 LDO from VSYS: 500 mA maximum, 120 mV dropout at 100 mA. It holds 3.3 V
-  down to a cell of about 3.42 V; below that 3V3 follows the cell. The RP2354B
-  needs VREG_AVDD at 3.135 V or more, so the firmware shuts down at about 3.35 V,
-  which leaves roughly 5-10% of the cell unused against the buck-boost it replaced.
+  down to a cell of about 3.42 V; below that 3V3 follows the cell. The firmware shuts
+  down at 3.50 V as it computes it, never lower: the ADC's reference is the 3V3 rail,
+  so once the LDO drops out the computed voltage levels off at 3.37-3.43 V whatever
+  the cell is, and a lower threshold would never fire (`docs/pinmap.md` has the
+  reading and calibration rules). That leaves roughly 5-10% of the cell unused against
+  the buck-boost it replaced.
 - Load under 100 mA (RP2354B up to ~50 mA, panel logic ~10 mA): at most 0.13 W in
   the LDO on USB power.
 - PWR_EN = (button) OR (PWR_HOLD from the MCU) OR (VBUS through 10k and a diode).
@@ -80,7 +100,10 @@ every hole 0.3 mm or larger.
   4.2 uA), backlight driver shut down by R31, charger drawing about 2 uA from the
   cell, battery divider 4.5 uA (up to 9 uA: with the chip unpowered, GPIO47 sits above
   IOVDD and its ESD diode takes a few uA, harmless and the same as on Raspberry Pi's
-  Pico). About 12-16 uA total: years of shelf life.
+  Pico), and D5's reverse leakage from VSYS into R38 (1-6 uA at 25 C). About 18-22 uA
+  total: years of shelf life. The divider stays at 470k/470k for this reason: 100k/100k
+  would add about 30 uA, most of it into the unpowered chip's clamp, and still not
+  guarantee the reading against the pad's worst-case leakage.
 - A reset or crash drops PWR_HOLD. On the cell alone that turns the device off,
   which is the safe failure. On USB it stays on (VBUS holds PWR_EN).
 
@@ -239,7 +262,8 @@ the case for these checks.
 |---|---|---|
 | RP2354B and AP3156 stock at JLC (1454 and 1490 when checked) | assembly blocked for a larger run | buy ahead, or consign parts |
 | Board thermistor, not a cell one | TH1 reads the board over the cell; a charge in a hot car or near the 46 C edge may pause and resume | the pause is safe and charging resumes by itself; bring-up 5.4 and 5.4a check TH1's reading while charging and the pause points |
-| USB-to-cell hand-over | for about 3-8 ms after an unplug VSYS is the cell less a diode drop; a reset turns the device off | R38 (1k) keeps the gap short; bring-up step 5 with a scope; if it still resets, a Schottky from VBAT to VSYS across Q2 (a B5819W, as D5) lifts VSYS in the gap |
+| USB-to-cell hand-over | for 1.5-3.3 ms after an unplug D7 carries VSYS until Q2 takes over; below a 3.42-3.49 V cell 3V3 still dips under the flash's 2.97 V minimum | the 3.5 V cutoff keeps the cell above that; bring-up step 5 scopes it with a nearly flat cell; a larger margin would need a lower-dropout 3V3 regulator |
+| Hot plug with no cell | a live source into a bare board rings VSYS to about 6.2 V in simulation (R41 in place), against the ME6211's 6.5 V maximum | bring-up step 5 scopes it; the worst case is an A-to-C cable from an always-on USB-A port (a USB-C source switches VBUS on only after it sees the board, and ramps it), so on the bench prefer a USB-C source or fit the cell first |
 | Panel supply | one maker (EastRising), sold direct | it publishes its drawings; another 3.5in panel that fits the 56.0 x 86.24 x 4.9 mm bay needs only case.scad's panel numbers, J3 and its pin map changed |
 | FPC fit in J3 | too short a fold can't reach the connector; too long bows under the panel | the model errs long (safe); if the tail bows, move J3 1.5-2 mm towards seat 1 (`conn_rear` about -0.6); check with a real panel and connector before the board order |
 | DS Lite silicone fit | cap retention and feel depend on unmeasured heights | pads and caps ordered: try them in a printed lid before the board order |

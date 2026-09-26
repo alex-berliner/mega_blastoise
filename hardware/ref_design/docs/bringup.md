@@ -81,10 +81,13 @@ firmware while VSYS is above 4 V.
 ## 5. Cell, charger and the USB hand-over
 
 1. Unplug USB. Connect the cell. Nothing should turn on (PWR_EN low): measure the cell
-   current, expect under 20 uA.
+   current, expect about 20 uA (the divider, the charger's standby and D5's leakage), under 30.
 2. Plug USB: CHG_STAT_N goes low while charging. The meter shows about 0.5 A more than
    the system draws (R5 sets about 460-500 mA).
-3. ADC7 reads VBAT / 2; compare with a meter on TP3.
+3. ADC7 reads VBAT / 2 against the 3V3 rail: with the cell above about 3.6 V (3V3
+   regulated), compare the firmware's computed VBAT with a meter on TP3; they should
+   agree within about 50 mV. When CHG_DONE_N goes low (charge done), record the reading:
+   that is the calibration point (the cell at 4.2 V +-1%).
 4. Hot check after 10 minutes of charging: the TP4056 is warm, not too hot to touch. It
    throttles its own current if its die passes about 145 C. Measure U2 pin 1 (TEMP): about
    0.63 x VBUS at 25 C, falling as TH1 warms (0.45 x VBUS pauses the charge). Down near
@@ -92,13 +95,19 @@ firmware while VSYS is above 4 V.
 4a. Temperature cutoff: warm TH1 (left of the panel connector J3, at its seat-1 end) with a hair dryer, thermocouple
    beside it. Charging pauses (CHG_STAT_N and CHG_DONE_N both high) at about 46 C and
    resumes as it cools. A freezer spray or a cold pack on TH1 pauses it near 1 C.
-5. **Unplug test.** Run the firmware from the cell with USB plugged in, scope on TP4 (3V3)
-   and TP2 (VSYS), trigger on VSYS falling, then pull the USB cable. VSYS drops from about
-   4.6 V to the cell voltage and the firmware must keep running. Expect VSYS to sit at
-   the cell voltage less about 0.5 V for 3-8 ms first (Q2's body diode, until R38 has
-   drained VBUS), with 3V3 about 0.1 V under that. Try it with a nearly flat cell too.
-   If it resets (the device then turns off), fit a Schottky from VBAT to VSYS across Q2
-   (a B5819W, as D5, anode to VBAT) and try again.
+5. **Unplug test.** Run the firmware from the cell with USB plugged in, full backlight and
+   a sound playing, scope on TP4 (3V3) and TP2 (VSYS), trigger on VSYS falling, then pull
+   the USB cable. VSYS drops from about 4.6 V to the cell voltage and the firmware must
+   keep running. Expect VSYS at the cell less about 0.35 V for 1.5-3.3 ms first (D7,
+   until R38 has drained VBUS and Q2 is on), with 3V3 about 0.1 V under that. Repeat with
+   the cell at 3.5 V (the cutoff): 3V3 must stay above 2.97 V (the internal flash's
+   minimum). If it doesn't, raise the firmware cutoff until it does, and note it for a
+   respin (a lower-dropout 3V3 regulator).
+6. **Hot plug, no cell.** Cell unplugged, scope on TP1 (VBUS) and TP2 (VSYS), trigger on
+   VBUS rising, then plug in an A-to-C cable from an always-on USB-A port (the worst case:
+   a USB-C source only switches VBUS on after it sees the board). VBUS must stay under
+   8 V (the TP4056's maximum) and VSYS under 6.5 V (the ME6211's). Simulated with R41 in
+   place: about 6.7 and 6.2 V with a 2 m cable.
 
 ## 6. Power switch
 

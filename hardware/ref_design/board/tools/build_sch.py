@@ -48,8 +48,8 @@ POWER_SYM = {"GND": ("power:GND", "GND"), "+3V3": ("power:+3V3", "+3V3"), "+1V1"
 REGIONS = {
     ROOT_FILE: [(20, 150, 175, 190, ["H1", "H2", "H3", "H4", "H5", "H6", "FID1", "FID2", "FID3"])],
     "usb_charger.kicad_sch": [
-        (15, 22, 125, 175, ["J1", "U1", "R1", "R2", "R3", "R4", "C1", "R38", "#FLG01", "#FLG02"]),
-        (130, 22, 250, 175, ["U2", "R5", "R9", "R10", "R39", "R40", "TH1", "C2", "C3", "D5", "D6", "Q2", "R6", "C9", "#FLG03", "J2"]),
+        (15, 22, 125, 175, ["J1", "U1", "R1", "R2", "R3", "R4", "R41", "C1", "R38", "#FLG01", "#FLG02"]),
+        (130, 22, 250, 175, ["U2", "R5", "R9", "R10", "R39", "R40", "TH1", "C2", "C3", "D5", "D6", "Q2", "D7", "R6", "C9", "#FLG03", "J2"]),
     ],
     "power.kicad_sch": [
         (15, 22, 250, 80, ["U3", "C5", "C6", "C7"]),
@@ -105,7 +105,7 @@ TEXT = {
                       (22 + (i % 4) * 65, 63.5 + (i // 4) * 45, 1.0, desc[1]))],
     "usb_charger.kicad_sch": [
         (15, 185, 1.27, "TP4056 charges at 500 mA (R5), from 1 to 46 C (TH1 over the cell). USB feeds the system through D5;"),
-        (15, 189, 1.27, "without USB the cell does, through Q2. D6 keeps Q2's gate off C1, so R6 turns Q2 on at once on an unplug."),
+        (15, 189, 1.27, "without USB the cell does, through Q2; on an unplug D7 carries VSYS until R38 has drained VBUS and Q2 is on."),
         (15, 193, 1.27, "CC1/CC2_SENSE let firmware read the source's current offer (dim the backlight on a 500 mA port)."),
     ],
     "power.kicad_sch": [
