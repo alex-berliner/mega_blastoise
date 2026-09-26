@@ -15,3 +15,8 @@ board/#auto_saved_files#
 board/tools/freerouting.log
 board/tools/last_route.dsn
 board/_repair.*
+# KiCad reports and local history (File > Local History), and its restore backups
+board/*-erc.rpt
+board/*-drc.rpt
+board/.history/
+board/_restore_backup_*/

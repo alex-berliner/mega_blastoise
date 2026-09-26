@@ -13,7 +13,7 @@ Two players face each other across a 3.5in 320x480 IPS screen; each has a
 D-pad and four face buttons under DS Lite silicone at their end. One Li-ion
 cell, one speaker, one USB-C for charging and firmware. No radios.
 
-Case 75.4 x 156.2 mm, 15.0 mm thick at the screen and 12.86 at the ends: each end steps down 2.14 mm to a button deck (a spine between the clusters stays full height over J2 and the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
+Case 75.4 x 156.2 mm, 15.1 mm thick at the screen and 12.86 at the ends: each end steps down 2.24 mm to a button deck (a spine between the clusters stays full height over J2 and the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
 line width, the size JLC quotes), 2 layers, 1.6 mm, ENIG,
 every hole 0.3 mm or larger.
 
@@ -179,16 +179,16 @@ every hole 0.3 mm or larger.
   (0.6 mm on power). Every hole is 0.3 mm or larger, JLC's standard: smaller ones
   cost about $40 an order (a fee, a required 4-wire test and TG155 material).
 - Heights: the panel (2.35 +-0.1 mm in its drawing, counted as 2.45) hangs from the
-  lid's window ledge on 0.15 mm double-sided tape, in a 4.9 mm bay that leaves it
-  2.3 mm clear of the board, so every part under it is 2.1 mm or less; the SOIC-8
+  lid's window ledge on 0.15 mm double-sided tape, in a 5.0 mm bay that leaves it
+  2.4 mm clear of the board, so every part under it is 2.2 mm or less; the SOIC-8
   amplifier and the ESOP-8 charger (1.75 mm, at the panel's edge) and the panel's
-  connector (2.0 mm, 0.3 mm clear) sit under it.
+  connector (2.0 mm, 0.4 mm clear: the bay went from 4.9 to 5.0 mm for it) sit under it.
   Taller parts live in the side bezels or between a seat's clusters: USB-C
   (3.3 mm), debug connectors (2.9), battery connector (5.5, under a pocket in the
   lid). The case is built around the bay, not the panel: a panel that fits
-  56.0 x 86.24 x 4.9 mm changes nothing else.
+  56.0 x 86.24 x 5.0 mm changes nothing else.
 - The lid's snap hooks hang 4.3 mm below it, just inside the tub wall, so nothing
-  taller than 0.6 mm may sit under them (`case/check_fit.py` checks it).
+  taller than 0.7 mm may sit under them (`case/check_fit.py` checks it).
 
 ## Checks run
 

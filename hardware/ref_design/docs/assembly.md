@@ -79,7 +79,7 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 6. Peel the tape liner and lower the lid straight down until all six hooks click into
    the tub wall: its bosses take the pins and clamp the board, its locating frame centres
    the panel and the tape takes it, the caps come up through their holes and the
-   retainers trap their flanges. From here on the panel hangs from the lid, 2.3 mm clear
+   retainers trap their flanges. From here on the panel hangs from the lid, 2.4 mm clear
    of the board.
 7. Opening it again: work a thin blade down between the lid and the tub wall at a hook
    and ease that hook inwards; go round the six.

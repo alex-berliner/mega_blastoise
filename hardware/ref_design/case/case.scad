@@ -76,7 +76,9 @@ wall = 2.0;  board_clear = 0.5;  corner_r = 8;
 
 // ---------------- stack (z) ----------------
 floor_t = 1.5;  cell_gap = 0.5;  pcb_t = 1.6;  lid_t = 1.5;
-bay_t = 4.9;              // board top to lid underside: the panel and the air under it
+bay_t = 5.0;              // board top to lid underside: the panel and the air under it. 5.0, not 4.9:
+                          // J3 (2.0 mm) under the panel keeps 0.4 mm against the connector's and a
+                          // printed lid's tolerances (Alex, 2026-09-26)
 glass_gap = bay_t - panel_t - tape_t;   // panel back above the board (the panel hangs from the lid on tape)
 z_board = floor_t + cell[2] + cell_gap;                 // board bottom
 z_top_cu = z_board + pcb_t;                             // board top: every height limit counts from here

@@ -12,7 +12,7 @@ they always match the design. Regenerate after any case or board change:
 
 | File | What it is | Print |
 |---|---|---|
-| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, 100% infill over the battery connector pocket, supports under the four button decks (they sit 2.14 mm below the screen face) |
+| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, 100% infill over the battery connector pocket, supports under the four button decks (they sit 2.24 mm below the screen face) |
 | `board_mock.stl` | the board: outline, the six locating holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 16 membrane contacts and the four silicone pieces engraved, J3's outline to tape a real connector on | flat, as exported |
 | `panel_dummy.stl` | the panel at its thickest (2.45 mm), active area engraved on the glass side | flat, glass side up |
 | `cell_dummy.stl` | the 503450 cell (34 x 50 x 5 mm) with its lead tab at the seat-1 end | flat |
@@ -62,7 +62,7 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
    slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
    `case.scad` moves J3.
 4. Panel into the lid's frame on the tape, silicone and caps in, lid down: all six hooks should
-   click, the lid should sit flush, nothing should rattle, the case should measure 15.0 mm at the screen, 12.9 at the ends.
+   click, the lid should sit flush, nothing should rattle, the case should measure 15.1 mm at the screen, 12.9 at the ends.
 5. Press every button: each should click through and spring back.
 
 **3. Measure and record** (design_review.md, "Measure before ordering"): the silicone's pill
