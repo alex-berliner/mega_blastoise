@@ -142,6 +142,8 @@ boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
 
 // edge parts, all on the right (+X) long edge
 usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
+usb_recess = [13.6, 3.9];  // plug overmold (USB-C allows 12.35 x 6.5; many are larger): width, depth below the port's centre
+usb_slot = [10.4, 2.4];    // through the wall around the plug's 8.3 x 2.5 shell: width, depth below the centre
 usb_front = board_w / 2 + 1.35;                         // receptacle face: 1.35 past the board edge
 // left long edge: debug
 pin_pos = [[-(board_w / 2 - 4.0), 20.0], [-(board_w / 2 - 4.0), 12.0]];  // SW18 BOOTSEL, SW19 RESET
@@ -293,9 +295,14 @@ module tub() difference() {
     cube([snap_barb + 0.1 + 0.01, snap_w + 0.6, snap_barb_h + 0.2]);
   // speaker grille
   for (i = [-3:3], j = [-3:3]) if (norm([i, j]) <= 3.2) at([i * 2.4, spk_y + j * 2.4], -2) cylinder(d = 1.4, h = floor_t + 3);
-  // USB-C: plug overmold recess outside, receptacle opening through
-  at([case_w / 2 - 1.3, usb_y], z_top_cu + usb_h / 2) cube([3, 12.6, 6.6], center = true);
-  at([case_w / 2 - wall / 2, usb_y], z_top_cu + usb_h / 2) cube([wall + 2, 9.4, 3.8], center = true);
+  // USB-C: a recess for the plug's overmold outside and a slot through the wall, both open
+  // to the wall's top (the lid closes them), so there is no roof to print over the opening
+  let(zc = z_top_cu + usb_h / 2) {
+    translate([case_w / 2 - 2.8, usb_y - usb_recess[0] / 2, zc - usb_recess[1]])
+      cube([3.0, usb_recess[0], z_lid - zc + usb_recess[1] + 1]);
+    translate([case_w / 2 - wall - 1, usb_y - usb_slot[0] / 2, zc - usb_slot[1]])
+      cube([wall + 2, usb_slot[0], z_lid - zc + usb_slot[1] + 1]);
+  }
 }
 
 // every ABXY cap: [centre, tab direction in OpenSCAD's counter-clockwise degrees]. Seat 2's
