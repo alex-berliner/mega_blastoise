@@ -63,5 +63,17 @@ The silicone: its outline (`piece_d`) and its height at rest (`dome_h`, board to
 underside). `dome_h` sets how far the ends step down: the deck face is `dome_h` + 2.26 mm above
 the board. Measure it with the button coupons before ordering.
 
+A pointer from the DS Lite itself (a 3D scan of an aftermarket shell, Wesk on BitBuilt, and
+gorgyrip's reverse-engineered USG-CPU-10 board): its face plate is 1.4-1.5 mm, the button guide
+tubes end about 3.0 mm under the face, and the board's top sits about 3.0-3.4 mm under the face.
+That would put `dome_h` nearer 1.1 mm than the 2.0 here, which would leave the caps about 0.4 mm
+proud instead of 1.3. Inferred from an aftermarket shell with an unknown board thickness: a
+reason to measure, not a number to use.
+
+Also from the DS Lite: its face holes are 7.6 mm for A/B/X/Y and 18.9 mm across the D-pad's
+cross (taken here: `cap_hole_d`, `dpad_gap`); it closes with seven screws into the face's bosses,
+two of them through the board, with the face nested in a stepped wall (taken here: the six M2
+screws and the lid's lip in the tub's step).
+
 The DS Lite shell itself is 133.0 x 73.9 mm (Nintendo's figure). This case is its own shape
 (the panel and the two seats set it), so only the button geometry is taken from the DS Lite.

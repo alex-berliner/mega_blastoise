@@ -50,6 +50,7 @@ speaker pads, test pads, locating holes and fiducials. The panel's ZIF connector
 | Speaker, 15 mm round, 8 ohm, 0.5-1 W | 1 | 10 | 4 mm thick or less, wire leads | marketplace, not chosen yet | estimate $1-2 |
 | DS Lite silicone pads (NDSL): D-pad and ABXY pieces | 2 sets | 20 sets | "For NDSL"; the Start/Select strip isn't used | AliExpress, HM Trading Store: 20 sets $2.45 + $5.84 shipping | $0.83 |
 | DS Lite button sets: cross and A/B/X/Y | 2 sets | 20 sets | DS Lite; the L/R and other pieces are spares | AliExpress, China Game Store: $0.88 a set + $12.23 shipping | $2.98 |
+| Screws: M2 x 8 self-tapping, wafer head (4 mm, about 1 mm thick), for plastic | 6 | 60 (spares) | | marketplace | estimate about $0.10 |
 | Thin double-sided tape for the panel, adhesive foam pad for the cell | | 1 roll, 1 sheet | | marketplace | estimate about $0.50 |
 | Case: tub and lid, printed at home | 1 | 10 | PETG or PLA, 47 cm3 (about 59 g) of filament | at $20-30 a kg | about $1.20-1.80 |
 | **Total** | | | | | **about $23-25** |

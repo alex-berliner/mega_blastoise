@@ -24,7 +24,7 @@ which this folder never touches.
 - One 403450 Li-ion cell (about 700 mAh) lying on the board under the screen, TP4056 charger with USB load sharing,
   ME6211 3V3 LDO, soft power on seat 1's Y button with MCU hold
 - Case 75.4 x 156.2 mm, 13.9 mm at the screen and 7.9 mm at the button decks (genuine DS Lite
-  caps stand 1.3 mm proud there), two printed parts that snap together
+  caps stand 1.3 mm proud there), two printed parts held by six M2 screws, as a DS Lite
 
 ## Folder
 

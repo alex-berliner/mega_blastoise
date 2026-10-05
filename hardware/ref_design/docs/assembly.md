@@ -76,11 +76,13 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
    (left) up-right. The slots are 30 degrees wide, so close is enough; if the lid won't
    seat, a cap is turned too far.
 6. Peel the tape liner and lower the lid straight down until all six hooks click into
-   the tub wall: its bosses clamp the board, its locating frame centres
-   the panel and the tape takes it, the caps come up through their holes and the
-   retainers trap their flanges. From here on the panel hangs from the lid, 2.4 mm clear
-   of the board.
-7. Opening it again: work a thin blade down between the lid and the tub wall at a hook
-   and ease that hook inwards; go round the six.
+   the tub wall and its lip seats in the wall's step: its locating frame centres the
+   panel and the tape takes it, the caps come up through their holes and the retainers
+   trap their flanges. From here on the panel hangs from the lid, 0.5 mm over the cell.
+7. Turn it over and drive the six M2 x 8 screws up through the tub's bosses and the
+   board into the lid's bosses, snug, not tight (they cut their own thread in the plastic).
+   They clamp the board between the bosses and hold the case shut, as on a DS Lite.
+8. Opening it again: the six screws out, then a thin blade down between the lid and the
+   tub wall at a hook to ease it inwards; go round the six.
 
 The power button is seat 1's Y button: hold it for about a second to turn the device on.

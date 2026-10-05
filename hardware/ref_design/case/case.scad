@@ -68,7 +68,8 @@ cap_tab_r = 5.6;  cap_tab_w = 2.0;                      // each flange's keying 
 dpad_arm_l = 17.8;  dpad_arm_w = 5.9;  dpad_h = 3.34;   // D-pad cross
 dpad_flange_r = 6.5;                                    // its flange fills the corners between the arms
 flange_t = 0.55;                                        // both caps' flanges
-cap_hole_d = 7.4;  pocket_d = 9.2;  pocket_h = 1.4;     // lid: hole, flange pocket under it (Pi Tin's, for genuine caps)
+cap_hole_d = 7.6;  pocket_d = 9.2;  pocket_h = 1.4;     // lid: hole (the DS Lite's own 7.6; Pi Tin 7.34), flange pocket
+dpad_gap = 0.5;                                         // D-pad opening past the cross each side (the DS Lite's 18.9 mm)
 slot_r = 5.95;  slot_a = 30;                            // tab slot in the pocket, a 30 degree wedge: the cap
                                                         // turns a few degrees at most, and the lid still goes on
                                                         // over caps set by eye (facelesstech's are 35)
@@ -153,6 +154,13 @@ pin_x = 31.4;             // midway between the bay and the board edge
 pin_key = 3.0;            // seat 1's centre boss sits off the centre line (the board's hole is there)
 pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [0, seat_y], [-pin_key, -seat_y]];
 boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
+// As the DS Lite closes: screws from the back, through the tub's bosses and the board's holes,
+// into the lid's bosses, clamping the board between them (the snap hooks only hold the lid
+// while it is screwed). M2 x 8 self-tapping, wafer head (4 mm, 1 mm)
+screw_cb = [4.4, 1.0];  screw_clear = 2.4;  screw_pilot = 1.6;  screw_engage = 6.0;
+// Stepped seam, as the DS Lite's face nests in its back shell: a lip under the lid's edge drops
+// into a step in the inner half of the tub's wall. It locates the lid and hides the seam
+lip_h = 1.2;  lip_fit = 0.2;
 
 // edge parts, all on the right (+X) long edge
 usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
@@ -251,6 +259,14 @@ module window() translate([0, aa_off]) square([aa_w + 2 * window_margin, aa_l + 
 module deck2d() for (sy = [-1, 1]) scale([1, sy]) offset(r = deck_r) offset(delta = -deck_r)
   for (sx = [-1, 1]) scale([sx, 1]) translate([spine_w / 2, step_y]) square([case_w, case_l]);
 module deck_cut2d() offset(delta = step_wall) deck2d();
+// the inner half of the case wall, along the full-height (screen-section) edges only: not at the
+// decks (lower walls) or over the USB-C notch (the lid's tongue). fit shrinks it from the outside
+module seam_band(fit) difference() {
+  offset(delta = -wall / 2 - fit) rrect(case_w, case_l, corner_r);
+  offset(delta = -wall - 0.01) rrect(case_w, case_l, corner_r);
+  offset(delta = deck_fit + 1) deck_cut2d();
+  translate([case_w / 2 - wall - 1, usb_y - usb_tongue_w / 2 - 1]) square([wall + 2, usb_tongue_w + 2]);
+}
 module slot2d() translate(slot[0]) square([slot[1][0] - slot[0][0], slot[0][1] - slot[1][1]] * 1) ;
 module board_outline() difference() {
   rrect(board_w, board_l, board_r);
@@ -311,7 +327,7 @@ module tub() difference() {
       // walls drop at the decks, deck_fit clear of the lid's step walls that drop in between
       translate([0, 0, z_deck_lid]) linear_extrude(z_lid) offset(delta = deck_fit) deck_cut2d();
     }
-    // bosses up to the board
+    // bosses up to the board (the screws come up through them)
     for (s = pins) at(s) cylinder(d = boss_d + 1.0, h = z_board);
     // crush ribs: a 45 degree lead-in at the top, so the board slides down onto them
     for (c = crush) at(c) rotate(c[2]) rotate([90, 0, 0]) linear_extrude(1.2, center = true)
@@ -344,6 +360,10 @@ module tub() difference() {
     // feet
     for (sx = [-1, 1], sy = [-1, 1]) at([sx * (case_w / 2 - 7), sy * (case_l / 2 - 9)], -0.8) cylinder(d = 6, h = 0.8 + 0.01);
   }
+  // screws: a counterbore for the head from below, then clearance up through the boss
+  for (s = pins) at(s, -1) { cylinder(d = screw_cb[0], h = 1 + screw_cb[1]); cylinder(d = screw_clear, h = z_board + 2); }
+  // the seam's step: the wall's inner half drops lip_h where the lid sits on it
+  translate([0, 0, z_lid - lip_h]) linear_extrude(lip_h + 1) seam_band(0);
   // grooves for the lid's snap hooks
   for (h = hooks) at(h) rotate(h[2]) translate([-0.01, -(h[3] + 0.6) / 2, z_lid - snap_len + 0.1])
     cube([snap_barb + 0.1 + 0.01, h[3] + 0.6, snap_barb_h + 0.2]);
@@ -372,6 +392,8 @@ module lid() difference() {
     translate([0, 0, z_deck_lid]) linear_extrude(case_h - z_deck_lid) intersection() {
       rrect(case_w, case_l, corner_r); difference() { deck_cut2d(); deck2d(); }
     }
+    // the seam's lip, in the tub wall's step
+    translate([0, 0, z_lid - lip_h + 0.1]) linear_extrude(lip_h - 0.1 + 0.01) seam_band(lip_fit);
     // bosses down to the board top: with the tub's bosses they clamp it
     for (s = pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_lid - z_top_cu + 0.01);
     // stiffening ribs beside the screen
@@ -404,9 +426,11 @@ module lid() difference() {
     linear_extrude(pocket_h + 0.01) polygon([[0, 0], for (t = [-slot_a / 2:slot_a / 6:slot_a / 2]) slot_r * [cos(t), sin(t)]]);
   }
   for (c = [dpad1, dpad2]) at(c, retainer_bot - 0.01) {
-    linear_extrude(case_h) offset(r = 0.2) cross(dpad_arm_w, dpad_arm_l);
+    linear_extrude(case_h) offset(r = dpad_gap) cross(dpad_arm_w, dpad_arm_l);
     linear_extrude(pocket_h + 0.01) offset(r = 0.35) dpad_flange();
   }
+  // pilot holes for the screws
+  for (s = pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
   // pinholes
   for (p = pin_pos) at(p, 0) cylinder(d = 1.2, h = case_h + 1);
 }

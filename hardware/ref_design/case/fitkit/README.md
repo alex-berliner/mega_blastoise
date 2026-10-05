@@ -62,7 +62,7 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
    Fold the real panel's FPC under it and slide it into the connector. The design expects a little
    slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
    `case.scad` moves J3.
-4. Panel into the lid's frame on the tape, silicone and caps in, lid down: all six hooks should
+4. Panel into the lid's frame on the tape, silicone and caps in, lid down (its lip into the wall's step): all six hooks should
    click, the lid should sit flush, nothing should rattle, the case should measure 13.9 mm at the screen, 7.9 at the ends.
 5. Press every button: each should click through and spring back.
 
