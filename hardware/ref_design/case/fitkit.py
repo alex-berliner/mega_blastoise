@@ -20,9 +20,9 @@ import check_fit  # noqa: E402
 KIT = [  # (kit name, file, what it tests)
     ("board", "board_mock.stl", "board stand-in: outline, locating holes, part envelopes, contact and J3 marks"),
     ("panel", "panel_dummy.stl", "ER-TFT035IPS-6 at its thickest, active area engraved"),
-    ("cell", "cell_dummy.stl", "503450 cell with its lead tab"),
+    ("cell", "cell_dummy.stl", "403450 cell with its lead tab"),
     ("plug", "cell_plug_dummy.stl", "JST PHR-2 plug with a cable stub (approximate)"),
-    ("speaker", "speaker_dummy.stl", "20 mm speaker"),
+    ("speaker", "speaker_dummy.stl", "15 mm speaker"),
     ("snap_tub", "coupon_snap_tub.stl", "one snap hook's groove in the tub wall"),
     ("snap_lid", "coupon_snap_lid.stl", "the matching hook on the lid"),
     ("buttons_tub", "coupon_buttons_tub.stl", "seat 1's end of the tub: ribs, bosses, cell slot"),

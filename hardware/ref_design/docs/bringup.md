@@ -5,7 +5,7 @@ says what to measure and what it proves; stop at the first surprise.
 
 Tools: bench supply with current limit, multimeter, an oscilloscope (for step 5's
 unplug test), USB-C cable and a USB power meter, a Raspberry Pi Debug Probe (or any
-CMSIS-DAP) with JST SH 3-pin cables, a 503450 cell that has been checked for polarity.
+CMSIS-DAP) with JST SH 3-pin cables, a 403450 cell that has been checked for polarity.
 
 Test pads on the back: TP1 VBUS, TP2 VSYS, TP3 VBAT, TP4 3V3, TP5 GND.
 

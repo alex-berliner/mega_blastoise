@@ -95,7 +95,7 @@ put("R9", 124.4, 115.6, 90)
 put("R10", 123.2, 115.6, 90)
 put("R39", 125.6, 112.6, 90)                # TEMP divider: VBUS side
 put("R40", 124.4, 112.6, 90)
-put("TH1", 85.2, 124.0, 90)                 # over the cell's left edge, below J3, clear of the FPC and of the MCU-to-J3 channel; 45 mm from U2
+put("TH1", 110.0, 76.0, 90)                # under the cell, which lies on it (on the spacer): it reads the cell itself
 put("C3", 133.2, 121.6, 0)                  # VBAT
 put("C2", 129.0, 121.6, 0)                  # VSYS
 put("Q2", 131.2, 125.0, 0)                  # cell -> VSYS without USB
@@ -106,10 +106,10 @@ put("C9", 131.2, 131.4, 0)                  # holds VSYS through the switch-over
 put("J2", CASE["batt_conn"][0], CASE["batt_conn"][1] + 0.6, 180)
 
 # 3V3 LDO right of the chip, next to the core's 3V3 decoupling (routed to it as a track)
-put("U3", 116.0, 88.0, 90)
-put("C5", 113.0, 88.0, 90)                  # VSYS in
-put("C6", 119.0, 86.4, 90)                  # 3V3 out
-put("C7", 119.0, 89.8, 90)
+put("U3", 129.5, 88.0, 90)                 # right edge, out from under the cell (1.54 mm tall) and off the core's copper
+put("C5", 132.5, 86.25, 90)                 # VSYS in, beside U3
+put("C6", 129.5, 92.0, 90)                  # 3V3 out
+put("C7", 131.5, 92.0, 90)
 
 # power switch latch: right strip above the USB-C (the button is seat 1's Y contact)
 put("R13", 128.4, 70.0, 90)
@@ -127,7 +127,7 @@ put("C8", 106.8, 96.6, 90)
 
 # audio: above the core, speaker pads on the back over the speaker. The PWM comes in on
 # the left through the filter (R32 C37 R33 C38), Ci and Ri; Rf under the chip
-put("U7", 100.0, 64.0, 0)                   # FM8002A: 1 SHUTDOWN .. 4 -IN on the left, 5 VO1 .. 8 VO2 right
+put("U7", 100.0, 56.0, 0)                   # out from under the cell, past the panel's edge (1.75 mm tall). FM8002A: 1 SHUTDOWN .. 4 -IN on the left, 5 VO1 .. 8 VO2 right
 put("R32", 88.2, 68.6, 0)
 put("C37", 88.2, 70.2, 0)
 put("R33", 91.0, 68.6, 0)
@@ -137,11 +137,11 @@ put("R34", 94.6, 65.4, 0)                   # Ri to -IN
 put("R35", 100.0, 67.6, 0)                  # Rf, VO1 to -IN
 put("C40", 94.6, 63.6, 0)                   # BYPASS
 put("R36", 94.6, 61.8, 0)                   # SHUTDOWN pull-up
-put("Q3", 91.4, 61.6, 0)
+put("Q3", 91.5, 56.0, 0)                    # out from under the cell (1.2 mm tall)
 put("R37", 91.4, 59.0, 0)
 put("C34", 105.4, 63.0, 90)                 # VDD
 put("C35", 104.0, 60.4, 0)
-put("J4", 100.0, 57.5, 0, "B")          # leads run up from the speaker below
+put("J4", 92.5, 102.0, 0)                   # beside the speaker, which sits on the board below the cell
 
 # test points on the back, between seat 2's clusters
 for i in range(5):

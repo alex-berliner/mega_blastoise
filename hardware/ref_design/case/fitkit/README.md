@@ -12,14 +12,14 @@ they always match the design. Regenerate after any case or board change:
 
 | File | What it is | Print |
 |---|---|---|
-| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, 100% infill over the battery connector pocket, supports under the four button decks (they sit 2.74 mm below the screen face) |
+| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, supports under the four button decks (they sit 6.0 mm below the screen face) |
 | `board_mock.stl` | the board: outline, the six locating holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 16 membrane contacts and the four silicone pieces engraved, J3's outline to tape a real connector on | flat, as exported |
 | `panel_dummy.stl` | the panel at its thickest (2.45 mm), active area engraved on the glass side | flat, glass side up |
-| `cell_dummy.stl` | the 503450 cell (34 x 50 x 5 mm) with its lead tab at the seat-1 end | flat |
+| `cell_dummy.stl` | the 403450 cell (50 x 34 x 4 mm) with its lead tab at its right-hand end | flat |
 | `cell_plug_dummy.stl` | a JST PHR-2 plug with a cable stub (approximate) | upright |
-| `speaker_dummy.stl` | the 20 mm speaker, 4.5 mm thick | flat |
+| `speaker_dummy.stl` | the 15 mm speaker, 4 mm thick | flat |
 | `coupon_snap_tub.stl` + `coupon_snap_lid.stl` | one snap hook and its groove, cut from the real tub and lid | as exported, same printer settings as the case |
-| `coupon_buttons_tub.stl` + `_board.stl` + `_lid.stl` | seat 1's end of the tub, board and lid: the button stack, the cell slot and J2's pocket | as exported |
+| `coupon_buttons_tub.stl` + `_board.stl` + `_lid.stl` | seat 1's end of the tub, board and lid: the button stack | as exported |
 | `coupon_usb_tub.stl` | the tub wall around the USB-C opening | as exported |
 | `coupon_frame_lid.stl` | the lid's window, ledge and panel frame | face down, as exported |
 
@@ -30,7 +30,7 @@ you'll use for the case: they're how those settings get tuned.
 ## Have on hand
 
 The real parts, as far as they've arrived: the ER-TFT035IPS-6 panel, one Hirose FH12-50S-0.5SH(55)
-connector (LCSC C202116), both DS Lite silicone sets and caps, the 503450 cell with its plug, the
+connector (LCSC C202116), both DS Lite silicone sets and caps, the 403450 cell with its plug, the
 speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
 
 ## Test in this order
@@ -51,19 +51,19 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   design assumes a D-pad pill spacing of 14.0 mm (another source says 13.5): measure it. Tune
   `dome_h` (sets the deck height), `piece_d`, `dpad_pitch`; the cap numbers from `case/DSLITE.md`
   (`cap_*`, `pocket_*`, `slot_*`, `dpad_*`) if a real cap disagrees.
-  While it's together, the JST plug (real or dummy) should fit J2's pocket under the lid.
+  The JST plug (real or dummy) should go into J2 below the cell's right-hand end without forcing the cell's wires.
 - **USB-C:** a USB-C cable's plug should pass the opening in `coupon_usb_tub` with some clearance.
 
 **2. Everything together (about a day of printing):**
-1. Tub: foam and cell (or dummy) in the cell pocket, lead towards seat 1; speaker in its ring.
-2. Board mock onto the bosses (the crush ribs on the walls centre it); the cell's plug up through the slot to J2's
-   block.
+1. Board mock into the tub, onto the floor's ribs (the crush ribs on the walls centre it).
+2. Cell (or dummy) on a 1.2 mm spacer on the board mock, sideways under the screen area, its lead at
+   the right-hand end to J2's block; speaker (or dummy) on 0.6 mm foam over the sound hole.
 3. Tape the real FH12 connector on J3's outline (mouth towards seat 1, pin 1 at the marked end).
    Fold the real panel's FPC under it and slide it into the connector. The design expects a little
    slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
    `case.scad` moves J3.
 4. Panel into the lid's frame on the tape, silicone and caps in, lid down: all six hooks should
-   click, the lid should sit flush, nothing should rattle, the case should measure 15.6 mm at the screen, 12.9 at the ends.
+   click, the lid should sit flush, nothing should rattle, the case should measure 13.9 mm at the screen, 7.9 at the ends.
 5. Press every button: each should click through and spring back.
 
 **3. Measure and record** (design_review.md, "Measure before ordering"): the silicone's pill

@@ -48,9 +48,9 @@ module kit_panel() difference() {                 // the panel at its thickest (
   }
 }
 
-module kit_cell() {                                // 503450 cell; its wires leave at the seat-1 end
+module kit_cell() {                                // 403450 cell, as it lies sideways; wires leave its right-hand end
   linear_extrude(cell[2]) rrect(cell[0], cell[1], 1.0);
-  translate([-4, -cell[1] / 2 - 5, 0]) cube([8, 5.01, 1.0]);                           // protection board lead tab
+  translate([cell[0] / 2 - 0.01, -4, 0]) cube([5.01, 8, 1.0]);                        // protection board lead tab
 }
 
 module kit_plug() {                                // JST PHR-2 plug (approximate), with a cable stub
@@ -58,7 +58,7 @@ module kit_plug() {                                // JST PHR-2 plug (approximat
   translate([1.4, 1.65, 6]) cube([3.2, 1.2, 8]);
 }
 
-module kit_speaker() difference() {               // 20 mm speaker (ESTIMATE in case.scad)
+module kit_speaker() difference() {               // 15 mm speaker (ESTIMATE in case.scad)
   cylinder(d = spk_d, h = spk_h, $fn = 96);
   translate([spk_d / 2 - 2.5, -1.5, spk_h - 1]) cube([3, 3, 2]);                       // lead exit
 }

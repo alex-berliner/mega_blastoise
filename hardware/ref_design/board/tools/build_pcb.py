@@ -158,8 +158,19 @@ def rounded_rect(board, x0, y0, x1, y1, r):
 def outline(board):
     bw, bl, r = CASE["board"]["w"], CASE["board"]["l"], CASE["board"]["r"]
     rounded_rect(board, 100 - bw / 2, 100 - bl / 2, 100 + bw / 2, 100 + bl / 2, r)
+    # the board's one cutout (the speaker's sound hole): round when its corners are
+    # rounded to half its side
     (sx0, sy0), (sx1, sy1) = CASE["slot"]
-    rounded_rect(board, sx0, min(sy0, sy1), sx1, max(sy0, sy1), 0.6)
+    r = CASE.get("slot_r", 0.6)
+    if abs(sx1 - sx0) <= 2 * r + 1e-6:
+        c = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_CIRCLE)
+        c.SetCenter(V((sx0 + sx1) / 2, (sy0 + sy1) / 2))
+        c.SetRadius(mm(r))
+        c.SetLayer(pcbnew.Edge_Cuts)
+        c.SetWidth(mm(0.1))
+        board.Add(c)
+    else:
+        rounded_rect(board, sx0, min(sy0, sy1), sx1, max(sy0, sy1), r)
 
 
 def footprints(board, comps, nets):

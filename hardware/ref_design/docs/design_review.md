@@ -13,7 +13,7 @@ Two players face each other across a 3.5in 320x480 IPS screen; each has a
 D-pad and four face buttons under DS Lite silicone at their end. One Li-ion
 cell, one speaker, one USB-C for charging and firmware. No radios.
 
-Case 75.4 x 156.2 mm, 15.6 mm thick at the screen (a 2.0 mm lid) and 12.86 at the ends: each end steps down 2.74 mm to a button deck (a spine between the clusters stays full height over J2 and the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
+Case 75.4 x 156.2 mm, 13.9 mm thick at the screen and 7.86 at the ends: the cell lies on the board under the screen and the board rests on ribs 0.5 mm over the tub's floor (until 2026-10-05 the cell lay under the board and the case was 15.6 mm: tag ref-design-battery-under-board). Each end steps down 6.0 mm to a button deck (a spine between the clusters stays full height over the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
 line width, the size JLC quotes), 2 layers, 1.6 mm, ENIG,
 every hole 0.3 mm or larger.
 
@@ -28,15 +28,13 @@ every hole 0.3 mm or larger.
   BOOTSEL mode and whenever USB is running) would feed VBUS through the D+ steering
   diode to about 2.7 V, which holds PWR_EN up and half-closes Q2. A JLC preferred part.
 - TP4056 linear charger: 4.2 V; R5 = 2.4k sets about 460-500 mA (the datasheet's
-  revisions give 1100 or 1200 V / R5), about 0.5 C for the 1000 mAh
-  503450). CHRG and STDBY go to GPIOs; there are no LEDs.
+  revisions give 1100 or 1200 V / R5), about 0.7 C for the 403450, about 700 mAh: within its 1 C). CHRG and STDBY go to GPIOs; there are no LEDs.
 - Charge temperature: the TP4056 charges only while TEMP is between 45% and 80% of
-  VBUS. The 503450 has no NTC wire, so TH1 (NCP15XH103F03RC, 10k B3380) sits on the
-  board over the cell (its left edge, below J3), in parallel with R40 (150k), under R39 (5.6k) from
-  VBUS. Window: 1 to 46 C nominal, -3 to 49 C across the datasheet's threshold spread
-  (43-45%, 80-82%). TH1 is about 45 mm from U2, whose 0.65 W while charging would
-  otherwise trip it. It reads the board above the cell, not the cell itself: close for a
-  slow 0.5 C charge in a sealed case, but it lags a fast change. Out of range, CHRG and
+  VBUS. The 403450 has no NTC wire, so TH1 (NCP15XH103F03RC, 10k B3380) sits on the
+  board under the cell, which lies on it through its spacer, in parallel with R40 (150k),
+  under R39 (5.6k) from VBUS. Window: 1 to 46 C nominal, -3 to 49 C across the datasheet's
+  threshold spread (43-45%, 80-82%). TH1 is about 45 mm from U2, whose 0.65 W while
+  charging would otherwise trip it, and it reads the cell's own underside. Out of range, CHRG and
   STDBY are both high-impedance, as with no USB; firmware tells them apart by the CC
   lines. Divider current comes from VBUS only (about 0.6 mA), none from the cell.
 - Worst-case charger dissipation (5 V in, a 3.0 V cell, 500 mA): 1.0 W; about
@@ -163,7 +161,7 @@ every hole 0.3 mm or larger.
 
 - PWM from GPIO8 (PWM4 A, 8 bits at 150 MHz: a 586 kHz carrier) through two RC
   stages (1k and 4.7 nF each). Loaded, the audio band is -3 dB at about 14 kHz, about
-  what a 20 mm speaker reproduces, and the carrier comes out about 49 dB down. 10-bit
+  what a 15 mm speaker reproduces, and the carrier comes out about 49 dB down. 10-bit
   PWM (146 kHz) would only come out 26 dB down, so firmware runs 8 bits and dithers or
   noise-shapes if it wants more resolution. (4.7 nF is a JLC basic part; 3.9 nF, which
   would give 17 kHz, is only an extended one.) C39 (220 nF) blocks the DC and, with
@@ -201,15 +199,16 @@ every hole 0.3 mm or larger.
   stubs, the power button's VSYS comb too), 0.2 mm USB; vias 0.5 mm with 0.3 mm holes
   (0.6 mm on power). Every hole is 0.3 mm or larger, JLC's standard: smaller ones
   cost about $40 an order (a fee, a required 4-wire test and TG155 material).
-- Heights: the panel (2.35 +-0.1 mm in its drawing, counted as 2.45) hangs from the
-  lid's window ledge on 0.15 mm double-sided tape, in a 5.0 mm bay that leaves it
-  2.4 mm clear of the board, so every part under it is 2.2 mm or less; the SOIC-8
-  amplifier and the ESOP-8 charger (1.75 mm, at the panel's edge) and the panel's
-  connector (2.0 mm, 0.4 mm clear: the bay went from 4.9 to 5.0 mm for it) sit under it.
-  Taller parts live in the side bezels or between a seat's clusters: USB-C
-  (3.3 mm), debug connectors (2.9), battery connector (5.5, under a pocket in the
-  lid). The case is built around the bay, not the panel: a panel that fits
-  56.0 x 86.24 x 5.0 mm changes nothing else.
+- Heights, from the floor: tub floor 1.5, board 0.5 over it on ribs, board 1.6. On the
+  board under the screen: the cell (403450, 4 mm) lies sideways on a 1.2 mm spacer over
+  the RP2354B core (nothing under it taller than 1.0 mm), and the panel's back is 0.5 mm
+  above it, 5.7 mm over the board; the panel (2.35 +-0.1 in its drawing, counted as
+  2.45) hangs from the lid's window ledge on 0.15 mm tape. Elsewhere under the panel
+  parts go to 5.5 mm: the battery connector J2 (5.5) beside the cell, the speaker
+  (15 mm, 4 mm, on 0.6 mm foam over flat parts, firing down through a 6 mm hole in the
+  board and the floor's grille), the panel's connector J3. The panel's FPC drops 3.3 mm
+  further to J3 than before, so J3 sits 3.3 mm nearer the seat-1 edge. The parts that
+  were too tall for the cell's spacer moved out from under it: U7, Q3, U3.
 - The lid's snap hooks hang 4.3 mm below it, just inside the tub wall, so nothing
   taller than 0.7 mm may sit under them (`case/check_fit.py` checks it).
 
@@ -254,7 +253,7 @@ the case for these checks.
 |---|---|---|
 | DS Lite silicone piece outline and height, pill spacing; cap keying | the caps are measured from open models (`case/DSLITE.md`), the silicone is still estimated; `dome_h` sets the deck height, so a wrong one leaves the caps high or low; the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `dpad_pitch`; the cap numbers in `case/DSLITE.md` |
 | A real ER-TFT035IPS-6 and an FH12-50S | outline and thickness, active area offset; how far the FPC goes into J3 (Hirose's recommended FPC stops 3.5-4 mm in, so expect 2.5-3 mm of slack, not the 1 mm modelled); that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_rear`; J3's pin map |
-| The chosen cell (503450) | length with its protection board, and connector polarity (JST PH has no standard polarity) | `cell`, J2 |
+| The chosen cell (403450) | length with its protection board, and connector polarity (JST PH has no standard polarity) | `cell`, J2 |
 | The chosen speaker | diameter, thickness, lead position | `spk_*`, J4 |
 | A printed tub and lid | the snap fit | `snap_*` |
 

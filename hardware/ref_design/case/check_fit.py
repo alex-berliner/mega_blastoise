@@ -11,6 +11,9 @@ the case allows at that spot:
   around the clusters      <= retainer_limit (the lid comes down to the cap flanges)
   button decks             <= deck_limit (the ends step down so genuine caps stand proud)
   lid's stiffening ribs    <= rib_limit (beside the screen, under the lid)
+  under the cell           <= cell_limit (it lies on a spacer over them)
+  under the speaker        <= its foam; nothing in its sound hole
+  the board's back         <= board_lift (it rests on ribs on the tub's floor)
   under a silicone piece   nothing at all
   lid pin bosses           nothing within the boss diameter
   lid snap hooks           nothing taller than hook_clear under a hook
@@ -129,6 +132,8 @@ def main():
             for s in POS["pins"]:
                 if near_circle(box, s, POS["boss_d"] / 2 + 0.5):
                     problems.append(f"{ref} (back) sits on a tub pin boss")
+            if height > POS["board_lift"] - 0.1:
+                problems.append(f"{ref} (back) is {height:.2f} mm tall; the board sits {POS['board_lift']} mm over the floor")
             continue
         for i, c in enumerate(POS["pieces"]):
             if near_circle(box, c, POS["piece_d"] / 2):
@@ -152,6 +157,13 @@ def main():
             limit, where = min(limit, POS["retainer_limit"]), "retainer"
         if any(inside_rect(box, d) for d in POS["decks"]) and POS["deck_limit"] < limit:
             limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends
+        if inside_rect(box, POS["cell"]) and POS["cell_limit"] < limit:
+            limit, where = POS["cell_limit"], "cell's spacer"            # the cell lies over these
+        spk = POS["speaker"]
+        if near_circle(box, spk["c"], spk["hole"] / 2 + 0.3):
+            problems.append(f"{ref} is in the speaker's sound hole")
+        elif near_circle(box, spk["c"], spk["d"] / 2) and spk["limit"] < limit:
+            limit, where = spk["limit"], "speaker's foam"
         if any(inside_rect(box, r) for r in POS["lid_ribs"]) and POS["rib_limit"] < limit:
             limit, where = POS["rib_limit"], "lid's stiffening rib"
         frame = POS["frame"]                    # the lid's panel frame hangs lower than the rest of the lid

@@ -25,7 +25,7 @@ pads, test pads, locating holes and fiducials. J3, the panel's ZIF connector, is
 ## 2. Order and make the rest
 
 The list, with the listings found so far: [bom.md](bom.md), "You". In short: the
-ER-TFT035IPS-6 panel (buydisplay.com), a 503450 cell with a JST PH plug, a 20 mm speaker, two sets each of DS
+ER-TFT035IPS-6 panel (buydisplay.com), a 403450 cell with a JST PH plug, a 15 mm speaker, two sets each of DS
 Lite silicone and caps, tape and foam, and the printed case (`case/tub.stl`,
 `case/lid.stl`).
 
@@ -60,12 +60,11 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 
 1. Lid, face down on the bench: stick the tape strips on the window ledge (leave the
    liner on).
-2. Tub: foam pad and cell into the cell pocket, cable towards seat 1; speaker into its
-   ring on the floor, face down.
-3. Board into the tub over them, USB-C into its opening (it goes in one way only), pressed
-   down past the crush ribs that centre it, resting on the bosses
-   and the four ribs under the button clusters, USB-C in its wall opening. Feed the
-   cell's plug up through the slot next to J2 and plug it in (J2's mouth faces the slot).
+2. Board into the tub, USB-C into its opening (it goes in one way only), pressed down past
+   the crush ribs that centre it onto the floor's support ribs and bosses.
+3. On the board: the 1.2 mm spacer (foam tape) over the area marked for the cell, then the
+   cell on it, sideways, its wires at the right-hand end; plug it into J2 below that end.
+   The speaker, face down on its 0.6 mm foam ring over the sound hole, leads to J4.
 4. Panel: lay it face down beyond the board's seat-1 edge, flip J3's lid up, slide the
    FPC's contacts into J3 (contacts down) until it stops, square, and press the lid shut.
    Then fold the panel over onto the board, face up, its FPC looping under it at the

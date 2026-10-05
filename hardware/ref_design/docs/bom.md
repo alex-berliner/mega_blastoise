@@ -46,8 +46,8 @@ speaker pads, test pads, locating holes and fiducials. The panel's ZIF connector
 | Item | Per unit | For 10 | Must match | Source | Per unit cost |
 |---|---|---|---|---|---|
 | EastRising ER-TFT035IPS-6 3.5in IPS panel | 1 | 12 (2 spares) | the "No Touch" option; ILI9488, 320x480, 54.50 x 83.00 x 2.30 mm, a 50-contact 0.5 mm FPC for a ZIF connector (J3 on the board; a connector bundled with the panel isn't needed) | AliExpress, buydisplay.com Store (the maker's own): $11.24 each, 5% off at 10 or more, $13.89 shipping for 12, so 12 for $142.03. The maker's own site: $9.10 each but $45.48 shipping, 12 for $154.68 | $14.20 |
-| Li-ion cell 503450, 1000 mAh | 1 | 12 (spares) | 5 x 34 x 50 mm, protection board, JST PH 2.0 plug with red to J2's `+`; a UN38.3 test summary to ship units to customers | AliExpress, MYWAY Digital Store: 10 for $19.33 + $1.95 shipping | about $2.13 |
-| Speaker, 20 mm round, 8 ohm, 1 W | 1 | 10 | 4.5 mm thick or less, wire leads | marketplace, not chosen yet | estimate $1-2 |
+| Li-ion cell 403450, about 700 mAh | 1 | 12 (spares) | 4 x 34 x 50 mm (with its protection board), protection board, JST PH 2.0 plug with red to J2's `+`; a UN38.3 test summary to ship units to customers | AliExpress, MYWAY Digital Store: 10 for $19.33 + $1.95 shipping | about $2.13 |
+| Speaker, 15 mm round, 8 ohm, 0.5-1 W | 1 | 10 | 4 mm thick or less, wire leads | marketplace, not chosen yet | estimate $1-2 |
 | DS Lite silicone pads (NDSL): D-pad and ABXY pieces | 2 sets | 20 sets | "For NDSL"; the Start/Select strip isn't used | AliExpress, HM Trading Store: 20 sets $2.45 + $5.84 shipping | $0.83 |
 | DS Lite button sets: cross and A/B/X/Y | 2 sets | 20 sets | DS Lite; the L/R and other pieces are spares | AliExpress, China Game Store: $0.88 a set + $12.23 shipping | $2.98 |
 | Thin double-sided tape for the panel, adhesive foam pad for the cell | | 1 roll, 1 sheet | | marketplace | estimate about $0.50 |
