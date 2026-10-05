@@ -1,0 +1,40 @@
+{
+ "part": "SW19",
+ "refs": [
+  "SW19"
+ ],
+ "mpn": "TS-1088-AR02016",
+ "lcsc": "C720477",
+ "datasheet": {
+  "url": "https://www.lcsc.com/datasheet/C720477.pdf",
+  "revision_or_date": "LCSC listing"
+ },
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "terminal",
+   "type": "switch",
+   "requirement": "normally open; the two terminals are interchangeable",
+   "cite": "datasheet circuit diagram",
+   "quote": "",
+   "nets": {
+    "SW19": "RUN_SW"
+   },
+   "ok": true,
+   "issue": ""
+  },
+  {
+   "pin": "2",
+   "ds_name": "terminal",
+   "type": "switch",
+   "requirement": "normally open",
+   "cite": "datasheet circuit diagram",
+   "quote": "",
+   "nets": {
+    "SW19": "GND"
+   },
+   "ok": true,
+   "issue": ""
+  }
+ ]
+}

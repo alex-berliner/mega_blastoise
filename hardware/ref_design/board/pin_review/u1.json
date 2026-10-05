@@ -1,0 +1,142 @@
+{
+ "part": "SRV05-4 4-line steering diode/TVS array, SOT-23-6",
+ "refs": [
+  "U1"
+ ],
+ "mpn": "SRV05-4-P-T7",
+ "lcsc": "C85364",
+ "manufacturer": "ProTek Devices",
+ "symbol": "Power_Protection:SRV05-4",
+ "footprint": "Package_TO_SOT_SMD:SOT-23-6",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0b2cf2fdd2f14e66be3175076b23ed3e.pdf?productCode=C85364",
+  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_1809192313_ProTek-Devices-SRV05-4-P-T7_C85364.pdf",
+  "revision_or_date": "05150.R16 4/16"
+ },
+ "notes": [
+  "Repo datasheets/SOURCES.md cites onsemi's SRV05-4 PDF; the BOM part is ProTek's. The pinout is the same (1 IO1, 2 GND, 3 IO2, 4 IO3, 5 REF/VP, 6 IO4).",
+  "REF tied to +3V3 rather than VBUS (a deliberate design choice). The datasheet only says the TVS sits across pins 2-5 and that it 'can clamp ... the power bus'; it gives no rule for where REF must go."
+ ],
+ "ratings": [
+  {
+   "what": "VWM (REF to GND)",
+   "limit": "5.0 V stand-off; V(BR) >= 6.0 V at 1 mA",
+   "design": "+3V3",
+   "ok": true,
+   "cite": "p2 table"
+  },
+  {
+   "what": "Leakage at VWM",
+   "limit": "5 uA max",
+   "design": "at 3.3 V, below VWM",
+   "ok": true,
+   "cite": "p2"
+  },
+  {
+   "what": "Capacitance I/O-GND",
+   "limit": "3.5 pF typ, 5 pF max",
+   "design": "USB FS D+/D-",
+   "ok": true,
+   "cite": "p2"
+  },
+  {
+   "what": "Steering-diode forward voltage",
+   "limit": "VF 0.5..1.2 V at 10 mA",
+   "design": "D+/D- (<= 3.6 V) vs REF 3.3 V; with 3V3 unpowered the lines back-feed +3V3 through the diodes (validation plan #79 already lists this)",
+   "ok": true,
+   "cite": "p2"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "I/O 1",
+   "type": "io",
+   "requirement": "Protected line.",
+   "cite": "p1 Pin Configuration",
+   "quote": "I/O 1 1",
+   "symbol_name": "IO1",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U1": "USB_DP"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "GND",
+   "type": "ground",
+   "requirement": "Ground (TVS anode).",
+   "cite": "p1; p2 Note 1",
+   "quote": "Across TVS only - pin 2 to pin 5.",
+   "symbol_name": "VN",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U1": "GND"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "I/O 2",
+   "type": "io",
+   "requirement": "Protected line.",
+   "cite": "p1",
+   "quote": "I/O 2 3",
+   "symbol_name": "IO2",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U1": "USB_DM"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "I/O 3",
+   "type": "io",
+   "requirement": "Protected line; datasheet states no requirement for unused lines.",
+   "cite": "p1",
+   "quote": "4 I/O 3",
+   "symbol_name": "IO3",
+   "footprint_pad": "4",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U1": null
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "REF",
+   "type": "supply reference (TVS cathode)",
+   "requirement": "Steering-diode common / TVS cathode; VWM 5 V.",
+   "cite": "p1; p2",
+   "quote": "5 REF",
+   "symbol_name": "VP",
+   "footprint_pad": "5",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U1": "+3V3"
+   }
+  },
+  {
+   "pin": "6",
+   "ds_name": "I/O 4",
+   "type": "io",
+   "requirement": "Protected line; unused lines have no stated requirement.",
+   "cite": "p1",
+   "quote": "6 I/O 4",
+   "symbol_name": "IO4",
+   "footprint_pad": "6",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U1": null
+   }
+  }
+ ]
+}

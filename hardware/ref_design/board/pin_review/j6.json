@@ -1,0 +1,65 @@
+{
+ "ref": "J6",
+ "mpn": "SM03B-SRSS-TB(LF)(SN) (JST, C160403), UART",
+ "datasheet": [
+  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/rpi_debug_connector_spec.pdf",
+  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/rpi_debug_probe_introduction.adoc",
+  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/rp2350-datasheet.pdf"
+ ],
+ "footprint": "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
+ "refs": [
+  "J6"
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "UART RX (target receives; driven by probe TX/SC)",
+   "cite": "Raspberry Pi 3-pin Debug Connector Specification RP-003139-SP-4, p.1 Pinout table; RP-003139-SP-4 p.4 footprint figure (side entry SM03B-SRSS-TB: 1 SC, 2 GND, 3 SD; top entry: 1 UART_RX, 2 GND, 3 UART_TX); Raspberry Pi Debug Probe docs (introduction.adoc): \"Orange:: TX/SC (Output from Probe) / Black:: GND / Yellow:: RX/SD (Input to Probe or I/O)\"",
+   "quote": "\"1  RX  SC\" and \"when talking about UART TX and RX, we are talking about these pins from the target perspective ... RX means the signal driving into the SoC\"; straight-through pin 1 to pin 1 cable; probe pin 1 = \"TX/SC (Output from Probe)\"",
+   "symbol_name": "Pin_1",
+   "ok": true,
+   "issue": "MISMATCH: design puts UART_TX (GPIO20 = UART1 TX, RP2350 datasheet sec 1.2.3 Table 3 p.19; docs/pinmap.md \"UART1 TX to J6 pin 1\") on pin 1. With the straight-through Debug Probe cable the probe's TX output and the RP2354B TX output both drive pin 1 (contention, no link). Swap: pin 1 = UART_RX (GPIO21), pin 3 = UART_TX (GPIO20). PCB pads agree with design.py (battler.kicad_pcb J6 pad 1 = UART_TX).",
+   "nets": {
+    "J6": "UART_RX"
+   },
+   "resolution": "fixed: pin 1 is now UART_RX, as the debug connector spec names it from the board side"
+  },
+  {
+   "pin": "2",
+   "ds_name": "GND",
+   "cite": "Raspberry Pi 3-pin Debug Connector Specification RP-003139-SP-4, p.1 Pinout table",
+   "quote": "\"2  GND  GND\"",
+   "symbol_name": "Pin_2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J6": "GND"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "UART TX (target transmits; read by probe RX/SD)",
+   "cite": "Raspberry Pi 3-pin Debug Connector Specification RP-003139-SP-4, p.1 Pinout table; RP-003139-SP-4 p.4 footprint figure (side entry SM03B-SRSS-TB: 1 SC, 2 GND, 3 SD; top entry: 1 UART_RX, 2 GND, 3 UART_TX)",
+   "quote": "\"3  TX  SD\" ; \"We specify that SD and UART TX are on the same pin.\"",
+   "symbol_name": "Pin_3",
+   "ok": true,
+   "issue": "MISMATCH: design puts UART_RX (GPIO21, UART1 RX) here; should be UART_TX. Also no 100 ohm target series resistors (spec recommends).",
+   "nets": {
+    "J6": "UART_TX"
+   },
+   "resolution": "fixed: pin 3 is now UART_TX"
+  },
+  {
+   "pin": "MP",
+   "ds_name": "SH reinforcement tabs",
+   "cite": "RP spec p.4 figure",
+   "quote": "tabs labelled \"GND\"",
+   "symbol_name": "MountPin",
+   "ok": true,
+   "issue": "Unconnected; optional.",
+   "nets": {
+    "J6": null
+   }
+  }
+ ]
+}

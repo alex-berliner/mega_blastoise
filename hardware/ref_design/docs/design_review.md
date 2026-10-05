@@ -27,8 +27,10 @@ every hole 0.3 mm or larger.
   (two of its lines unused). Not VBUS: with no cable in, the MCU's D+ pull-up (on in
   BOOTSEL mode and whenever USB is running) would feed VBUS through the D+ steering
   diode to about 2.7 V, which holds PWR_EN up and half-closes Q2. A JLC preferred part.
-- TP4056 linear charger: 4.2 V; R5 = 2.4k sets about 460-500 mA (the datasheet's
-  revisions give 1100 or 1200 V / R5), about 0.7 C for the 403450, about 700 mAh: within its 1 C). CHRG and STDBY go to GPIOs; there are no LEDs.
+- TP4056 linear charger: 4.2 V; R5 = 3.3k sets about 333-364 mA (the datasheet's
+  revisions give 1100 or 1200 V / R5), about 0.5 C for the 403450 (about 700 mAh), the
+  usual standard charge rate for small pouch cells. CE is pulled up to VBUS (R43), so it
+  charges by default; firmware can pause it with CHG_OFF (GPIO19, Q4; R44 holds it off). CHRG and STDBY go to GPIOs; there are no LEDs.
 - Charge temperature: the TP4056 charges only while TEMP is between 45% and 80% of
   VBUS. The 403450 has no NTC wire, so TH1 (NCP15XH103F03RC, 10k B3380) sits on the
   board under the cell, which lies on it through its spacer, in parallel with R40 (150k),
@@ -216,6 +218,7 @@ every hole 0.3 mm or larger.
 
 | Check | Tool | Result |
 |---|---|---|
+| Datasheet pin review | `board/tools/check_pins.py` over `board/pin_review/`: every assembled part's every pin against its current datasheet (name, requirement, page/table citation, quote), every resistor and capacitor against its LCSC part and voltage rating; fails when a reviewed pin's net changes or an issue has no fix or waiver | PASS: 27 parts, 247 pins, 85 passives, 5 waived (2026-10-05). Found and fixed: J6 TX/RX swapped, USB series resistors 22 to 27 ohm, the ME6211 CE above VIN at a live plug-in (C47) |
 | Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 123 parts, 115 nets, 79 named and 36 no-connects: all match |
 | ERC | kicad-cli | 0 errors, 0 warnings |
 | DRC with schematic parity | kicad-cli, `board/tools/check_pcb.py` | 0 errors, 0 unconnected, 0 parity issues; 2 cosmetic warnings (USB-C outline silk at the board edge, where the receptacle overhangs by design). `board/fab/drc.txt` |

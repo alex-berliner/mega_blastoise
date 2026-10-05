@@ -1,0 +1,89 @@
+{
+ "part": "BAT54C dual Schottky, common cathode, SOT-23",
+ "refs": [
+  "D2"
+ ],
+ "mpn": "BAT54C,215",
+ "lcsc": "C37704",
+ "manufacturer": "Nexperia",
+ "symbol": "Diode:BAT54C",
+ "footprint": "Package_TO_SOT_SMD:SOT-23",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/753e903e66757b8dda706efd5e61ce1e.pdf?productCode=C37704",
+  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_2407241028_Nexperia-BAT54C-215_C37704.pdf",
+  "revision_or_date": "Product data sheet, 1 July 2022"
+ },
+ "notes": [
+  "KiCad Diode:BAT54C symbol pins are unnamed; from its graphics pin 1 (left) and pin 2 (right) are the two anodes and pin 3 (bottom) is the shared cathode bar, matching Nexperia's table."
+ ],
+ "ratings": [
+  {
+   "what": "VR",
+   "limit": "30 V",
+   "design": "PWR_EN (<= ~6.1 V from VBUS) vs anodes at 0 V",
+   "ok": true,
+   "cite": "p2 Table 5"
+  },
+  {
+   "what": "IF",
+   "limit": "200 mA",
+   "design": "~40-60 uA into R15 100k",
+   "ok": true,
+   "cite": "p2 Table 5"
+  },
+  {
+   "what": "VF at 0.1 mA",
+   "limit": "240 mV max",
+   "design": "used in OR into PWR_EN",
+   "ok": true,
+   "cite": "p3 Table 7"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "A1",
+   "type": "anode (diode 1)",
+   "requirement": "Anode of diode 1.",
+   "cite": "p1 Table 2 Pinning information",
+   "quote": "1 A1 anode (diode 1)",
+   "symbol_name": "(unnamed; anode by graphic)",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "D2": "PWR_BTN_RAW"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "A2",
+   "type": "anode (diode 2)",
+   "requirement": "Anode of diode 2.",
+   "cite": "p1 Table 2",
+   "quote": "2 A2 anode (diode 2)",
+   "symbol_name": "(unnamed; anode by graphic)",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "D2": "PWR_HOLD"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "K1, K2",
+   "type": "common cathode",
+   "requirement": "Common cathode.",
+   "cite": "p1 Table 2",
+   "quote": "3 K1, K2 common cathode",
+   "symbol_name": "(unnamed; cathode by graphic)",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "D2": "PWR_EN"
+   }
+  }
+ ]
+}

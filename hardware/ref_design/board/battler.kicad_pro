@@ -362,6 +362,18 @@
         "pattern": "/Audio/SPK_N"
       },
       {
+        "netclass": "PWR",
+        "pattern": "/USB_Charger/VBUS_D5"
+      },
+      {
+        "netclass": "PWR",
+        "pattern": "/Power/3V3_LDO"
+      },
+      {
+        "netclass": "PWR",
+        "pattern": "/Display/LED_A_DRV"
+      },
+      {
         "netclass": "USB",
         "pattern": "USB_DP"
       },

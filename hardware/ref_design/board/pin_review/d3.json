@@ -1,0 +1,86 @@
+{
+ "part": "BAT54WS single Schottky, SOD-323",
+ "refs": [
+  "D3",
+  "D6"
+ ],
+ "mpn": "BAT54WS",
+ "lcsc": "C7502694",
+ "manufacturer": "Zhuhai Hongjiacheng Technology (hongjiacheng); design.py leaves manufacturer blank",
+ "symbol": "Device:D_Schottky",
+ "footprint": "Diode_SMD:D_SOD-323",
+ "datasheet": {
+  "url": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2308281443_hongjiacheng-BAT54WS_C7502694.pdf",
+  "revision_or_date": "Rev 2.1 (PDF dated 2026-07-31)"
+ },
+ "notes": [
+  "Datasheet has no pin numbers: polarity only by the cathode line. KiCad D_SOD-323 pad 1 is the cathode (silkscreen closes at the pad-1 end, x = -1.61) and Device:D_Schottky pin 1 = K, pin 2 = A, so pad 1 = cathode is consistent.",
+  "Land pattern: the datasheet suggests about 0.70 x 0.70 mm pads (X/Y 0.65-0.75) with a 2.10-2.20 mm overall span (Z); KiCad's pads are 0.60 x 0.45 mm with a 2.70 mm span. This is a footprint-geometry difference, not a pin-numbering one."
+ ],
+ "ratings": [
+  {
+   "what": "VRRM / VDC",
+   "limit": "30 V",
+   "design": "D3: PWR_EN (<= ~4.2 V on cell) vs VBUS_EN 0 V; D6: LS_GATE vs VBUS ~0 V",
+   "ok": true,
+   "cite": "p1 Maximum Ratings"
+  },
+  {
+   "what": "IF(AV)",
+   "limit": "200 mA",
+   "design": "D3 ~45 uA (R15 100k); D6 <= 0.67 mA (R6 10k at 6.7 V)",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "Tj",
+   "limit": "-55..+125 C",
+   "design": "",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "VF",
+   "limit": "240 mV at 0.1 mA, 320 mV at 1 mA (max)",
+   "design": "",
+   "ok": true,
+   "cite": "p2"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "cathode (line end)",
+   "type": "cathode",
+   "requirement": "Cathode marked by line.",
+   "cite": "p1 Mechanical Data",
+   "quote": "Polarity: Cathode line denotes the cathode end",
+   "symbol_name": "K",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "D3": "PWR_EN",
+    "D6": "LS_GATE"
+   },
+   "pin_label": "K"
+  },
+  {
+   "pin": "2",
+   "ds_name": "anode",
+   "type": "anode",
+   "requirement": "Anode.",
+   "cite": "p1 Mechanical Data (by elimination)",
+   "quote": "Polarity: Cathode line denotes the cathode end",
+   "symbol_name": "A",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "D3": "VBUS_EN",
+    "D6": "VBUS"
+   },
+   "pin_label": "A"
+  }
+ ]
+}

@@ -57,7 +57,7 @@ def stl_points(path):
 # this KiCad install lacks: height above the board in mm
 KNOWN_HEIGHT = {}
 PACKAGE_HEIGHT = {"SOIC-8": 1.75, "QFN": 1.0, "SON": 1.0, "DRC0010J": 1.0, "SOT-23": 1.2, "SOD-323": 1.1, "0402": 0.5, "0603": 0.9,
-                  "1008": 1.2, "0806": 1.0}
+                  "1008": 1.2, "0806": 1.0, "SolderJumper": 0.05}
 
 
 def refs():

@@ -1,0 +1,101 @@
+{
+ "part": "2N7002 60 V N-channel MOSFET, SOT-23",
+ "refs": [
+  "Q1",
+  "Q3",
+  "Q4"
+ ],
+ "mpn": "2N7002",
+ "lcsc": "C8545",
+ "manufacturer": "Jiangsu Changjiang Electronics Technology (CJ)",
+ "symbol": "Transistor_FET:Q_NMOS_GSD",
+ "footprint": "Package_TO_SOT_SMD:SOT-23",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/a141b8bd86b14475955ac8c4d3eea0a8.pdf?productCode=C8545",
+  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_Jiangsu-Changjing-Electronics-Technology-Co---Ltd--2N7002_C8545.pdf",
+  "revision_or_date": "J, Sep 2016"
+ },
+ "ratings": [
+  {
+   "what": "VDS",
+   "limit": "60 V",
+   "design": "Q4 drain CHG_CE <= VBUS 6.7 V peak; Q3 AMP_SHDN <= VSYS 5.7 V; Q1 PWR_BTN_N <= 3.3 V",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "VGS",
+   "limit": "\u00b120 V",
+   "design": "Q1 gate = VSYS through button <= 5.7 V; Q3/Q4 <= 3.3 V",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "ID",
+   "limit": "115 mA",
+   "design": "<= 67 uA (100k pull-ups)",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "VGS(th) vs drive",
+   "limit": "1..2.5 V",
+   "design": "3.3 V GPIO (Q3/Q4), >= ~3.5 V cell (Q1); R44 4.7k / R37 100k hold gates low",
+   "ok": true,
+   "cite": "p2"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "GATE",
+   "type": "input (gate)",
+   "requirement": "|VGS| <= 20 V; VGS(th) 1..2.5 V.",
+   "cite": "p1 pin list; p1 Max Ratings; p2",
+   "quote": "1. GATE",
+   "symbol_name": "G",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "Q3/Q4 gates driven by 3.3 V GPIO: RDS(on) only specified at VGS 5 V (7 ohm max) and 10 V; at 3.3 V with VGS(th) up to 2.5 V it is not specified. Loads are 100k pull-ups (<= 67 uA), so adequate in practice.",
+   "nets": {
+    "Q1": "PWR_BTN_RAW",
+    "Q3": "AMP_EN",
+    "Q4": "CHG_OFF"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "SOURCE",
+   "type": "source",
+   "requirement": "Source.",
+   "cite": "p1 pin list",
+   "quote": "2. SOURCE",
+   "symbol_name": "S",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "Q1": "GND",
+    "Q3": "GND",
+    "Q4": "GND"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "DRAIN",
+   "type": "drain",
+   "requirement": "Drain.",
+   "cite": "p1 pin list",
+   "quote": "3. DRAIN",
+   "symbol_name": "D",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "Q1": "PWR_BTN_N",
+    "Q3": "AMP_SHDN",
+    "Q4": "CHG_CE"
+   }
+  }
+ ]
+}

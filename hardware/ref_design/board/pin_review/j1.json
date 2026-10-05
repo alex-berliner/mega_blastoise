@@ -1,0 +1,271 @@
+{
+ "ref": "J1",
+ "mpn": "TYPE-C-31-M-12 (Korean Hroparts, C165948)",
+ "datasheet": [
+  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/C165948_TYPE-C-31-M-12.pdf",
+  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/usb_type-c_spec_r2.0_aug2019.pdf"
+ ],
+ "footprint": "battler:USB_C_Receptacle_HRO_TYPE-C-31-M-12",
+ "refs": [
+  "J1"
+ ],
+ "pins": [
+  {
+   "pin": "A1",
+   "ds_name": "GND",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"A1 GND\"; USB-IF: \"A1 GND Ground return First\"",
+   "symbol_name": "GND",
+   "footprint_pad": "pad A1 at x=-3.25 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "GND"
+   }
+  },
+  {
+   "pin": "A4",
+   "ds_name": "VBUS",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"A4 VBUS\"; USB-IF: \"A4 VBUS Bus Power First\"",
+   "symbol_name": "VBUS",
+   "footprint_pad": "pad A4 at x=-2.45 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "VBUS"
+   }
+  },
+  {
+   "pin": "A5",
+   "ds_name": "CC1",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"A5 CC1\"; USB-IF: \"A5 CC1 Configuration Channel\"",
+   "symbol_name": "CC1",
+   "footprint_pad": "pad A5 at x=-1.25 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "Rd: R1 5.1k 1% (C25905) CC to GND; USB Type-C R2.0 Table 4-25 p.236: \"+/-10% resistor to GND 5.1 kOhm ... Can detect power capability? Yes\". Also R3 10k to CC1_SENSE (ADC) and DNP C42.",
+   "nets": {
+    "J1": "CC1"
+   }
+  },
+  {
+   "pin": "A6",
+   "ds_name": "DP1 / Dp1",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"A6 DP1\"; USB-IF: \"A6 Dp1 Positive half of the USB 2.0 differential pair - Position 1\"",
+   "symbol_name": "D+",
+   "footprint_pad": "pad A6 at x=-0.25 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "USB_DP"
+   }
+  },
+  {
+   "pin": "A7",
+   "ds_name": "DN1 / Dn1",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"A7 DN1\"; USB-IF: \"A7 Dn1 Negative half of the USB 2.0 differential pair - Position 1\"",
+   "symbol_name": "D-",
+   "footprint_pad": "pad A7 at x=0.25 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "USB_DM"
+   }
+  },
+  {
+   "pin": "A8",
+   "ds_name": "SBU1",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"A8 SBU1\"; USB-IF: \"Note 3: Contacts A8 and B8 (SBU1 and SBU2) shall be not connected unless required for a specified purpose\"",
+   "symbol_name": "SBU1",
+   "footprint_pad": "pad A8 at x=1.25 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": null
+   }
+  },
+  {
+   "pin": "A9",
+   "ds_name": "VBUS",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"A9 VBUS\"; USB-IF: \"A9 VBUS Bus Power First\"",
+   "symbol_name": "VBUS",
+   "footprint_pad": "pad A9 at x=2.45 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "VBUS"
+   }
+  },
+  {
+   "pin": "A12",
+   "ds_name": "GND",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"A12 GND\"; USB-IF: \"A12 GND Ground return First\"",
+   "symbol_name": "GND",
+   "footprint_pad": "pad A12 at x=3.25 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "GND"
+   }
+  },
+  {
+   "pin": "B1",
+   "ds_name": "GND",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"B1 GND\"; USB-IF: \"B1 GND Ground return First\"",
+   "symbol_name": "GND",
+   "footprint_pad": "pad B1 at x=3.25 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "GND"
+   }
+  },
+  {
+   "pin": "B4",
+   "ds_name": "VBUS",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"B4 VBUS\"; USB-IF: \"B4 VBUS Bus Power First\"",
+   "symbol_name": "VBUS",
+   "footprint_pad": "pad B4 at x=2.45 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "VBUS"
+   }
+  },
+  {
+   "pin": "B5",
+   "ds_name": "CC2",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"B5 CC2\"; USB-IF: \"B5 CC2 Configuration Channel\"",
+   "symbol_name": "CC2",
+   "footprint_pad": "pad B5 at x=1.75 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "Rd: R2 5.1k 1% (C25905) CC to GND; USB Type-C R2.0 Table 4-25 p.236: \"+/-10% resistor to GND 5.1 kOhm ... Can detect power capability? Yes\". Also R4 10k to CC2_SENSE (ADC) and DNP C43.",
+   "nets": {
+    "J1": "CC2"
+   }
+  },
+  {
+   "pin": "B6",
+   "ds_name": "DP2 / Dp2",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"B6 DP2\"; USB-IF: \"B6 Dp2 Positive half of the USB 2.0 differential pair - Position 2\"",
+   "symbol_name": "D+",
+   "footprint_pad": "pad B6 at x=0.75 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "USB_DP"
+   }
+  },
+  {
+   "pin": "B7",
+   "ds_name": "DN2 / Dn2",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"B7 DN2\"; USB-IF: \"B7 Dn2 Negative half of the USB 2.0 differential pair - Position 2\"",
+   "symbol_name": "D-",
+   "footprint_pad": "pad B7 at x=-0.75 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "USB_DM"
+   }
+  },
+  {
+   "pin": "B8",
+   "ds_name": "SBU2",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"B8 SBU2\"; USB-IF: \"Note 3: Contacts A8 and B8 (SBU1 and SBU2) shall be not connected unless required for a specified purpose\"",
+   "symbol_name": "SBU2",
+   "footprint_pad": "pad B8 at x=-1.75 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": null
+   }
+  },
+  {
+   "pin": "B9",
+   "ds_name": "VBUS",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"B9 VBUS\"; USB-IF: \"B9 VBUS Bus Power First\"",
+   "symbol_name": "VBUS",
+   "footprint_pad": "pad B9 at x=-2.45 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "VBUS"
+   }
+  },
+  {
+   "pin": "B12",
+   "ds_name": "GND",
+   "cite": "HRO TYPE-C-31-M-12 drawing (C165948), sheet 1, pin/signal-name table; USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69",
+   "quote": "HRO: \"B12 GND\"; USB-IF: \"B12 GND Ground return First\"",
+   "symbol_name": "GND",
+   "footprint_pad": "pad B12 at x=-3.25 mm, same row/order as HRO \"RECOMMEND P.C.B LAYOUT (COMPONENT SIDE)\": A1/B12, A4/B9, B8, A5, B7, A6, A7, B6, A8, B5, B4/A9, B1/A12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "GND"
+   }
+  },
+  {
+   "pin": "SH",
+   "ds_name": "Shell (4 THT tabs)",
+   "cite": "USB Type-C Spec R2.0 sec 3.2.1 Interface Definition, note 11, p.40; HRO drawing layout shows 4 plated slots",
+   "quote": "\"11. The receptacle shell shall be connected to the PCB ground plane.\"",
+   "symbol_name": "SHIELD",
+   "footprint_pad": "4 x pad SH (oval THT) at x=+/-4.32 (HRO 8.65 span)",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": "GND"
+   }
+  },
+  {
+   "pin": "(A2,A3,A10,A11,B2,B3,B10,B11)",
+   "ds_name": "TX/RX SuperSpeed pairs: not present on 16P part",
+   "cite": "USB Type-C Spec R2.0 Aug 2019, Table 3-5 (USB 2.0-only receptacle pin assignments), p.69 (rows blank); HRO pin table lists only 16 contacts",
+   "quote": "Table 3-5 note 1: \"Unused contact locations shall be electrically isolated from power, ground or signaling (i.e., not connected).\"",
+   "symbol_name": "(not in symbol)",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J1": null
+   }
+  },
+  {
+   "pin": "(footprint geometry)",
+   "ds_name": "pad centres",
+   "cite": "HRO drawing, RECOMMEND P.C.B LAYOUT: dims 2.50 (A5-A8), 3.50 (B8-B5), 4.80 (A4/B9-B4/A9), 6.40 (A1/B12-B1/A12), 5.78 (pegs), 8.65 (shell slots)",
+   "quote": "\"4.80\" between A4/B9 and B4/A9 centres; \"6.40\" between A1/B12 and B1/A12 centres",
+   "symbol_name": "",
+   "ok": true,
+   "issue": "Minor, not a pin-number issue: battler footprint (identical to KiCad stock USB_C_Receptacle_HRO_TYPE-C-31-M-12 except 3D model) puts A4/B9/A9/B4 at x=+/-2.45 (drawing +/-2.40) and A1/B12/B1/A12 at +/-3.25 (drawing +/-3.20): 0.05 mm outward each, equal to the drawing's +/-0.05 layout tolerance. Signal pads (0.5 pitch), 5.78 peg holes and 8.64 shell slots match. Pad numbering and order match the drawing.",
+   "nets": {
+    "J1": null
+   }
+  },
+  {
+   "pin": "(D+/D- stubs)",
+   "ds_name": "Dp1/Dp2 and Dn1/Dn2 shorted",
+   "cite": "USB Type-C Spec R2.0 Table 3-5 note 2, p.69",
+   "quote": "\"Dp1 and Dp2 may be shorted ... Dn1 and Dn2 may also be shorted. The maximum shorting trace length should not exceed 3.5 mm.\"",
+   "symbol_name": "D+ / D-",
+   "ok": null,
+   "issue": "Schematic correct (A6+B6 on USB_DP, A7+B7 on USB_DM). The 3.5 mm stub limit is a layout property: not measured here (open).",
+   "nets": {
+    "J1": "USB_DP / USB_DM"
+   }
+  }
+ ]
+}

@@ -54,6 +54,7 @@ python3 case/export.py --stl                 # case -> positions.json, DXFs, STL
 cd board
 python3 tools/build_sch.py                   # design.py -> schematic (through Konnect)
 python3 tools/check_netlist.py               # KiCad's netlist == design.py ?
+python3 tools/check_pins.py                  # every part's pins against its datasheet review (pin_review/)
 kicad-cli sch erc battler.kicad_sch          # 0 errors expected
 RP2350B_REF=.../RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb python3 tools/build_pcb.py
 FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # about 10 min

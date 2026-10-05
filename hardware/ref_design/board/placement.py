@@ -137,7 +137,7 @@ put("R34", 94.6, 65.4, 0)                   # Ri to -IN
 put("R35", 100.0, 67.6, 0)                  # Rf, VO1 to -IN
 put("C40", 94.6, 63.6, 0)                   # BYPASS
 put("R36", 94.6, 61.8, 0)                   # SHUTDOWN pull-up
-put("Q3", 91.5, 56.0, 0)                    # out from under the cell (1.2 mm tall)
+put("Q3", 100.00, 51.00, 0)
 put("R37", 91.4, 59.0, 0)
 put("C34", 105.4, 63.0, 90)                 # VDD
 put("C35", 104.0, 60.4, 0)
@@ -146,3 +146,24 @@ put("J4", 92.5, 102.0, 0)                   # beside the speaker, which sits on 
 # test points on the back, between seat 2's clusters
 for i in range(5):
     put(f"TP{i + 1}", 92.0 + 4.0 * i, 53.0, 0, "B")
+
+# 2026-10-05, from the decisions sheet: firmware charge control, PWR_HOLD pull-down, D5's
+# damping resistor, bring-up jumpers and test pads, hand-solderable spare footprints
+put("R42", 127.10, 70.20, 90)
+put("R43", 125.15, 117.90, 90)
+put("Q4", 121.90, 123.40, 0)                # 10.4 mm from U2
+put("R44", 126.65, 121.40, 90)
+put("R47", 126.10, 106.85, 0)               # 7.3 mm from D5
+put("JP1", 125.75, 88.00, 0)                # 3.8 mm from U3
+put("JP2", 117.75, 122.60, 0)               # 4.6 mm from U6
+put("TP6", 133.50, 75.45, 0)                # 5.3 mm from R15
+put("TP7", 128.40, 129.25, 0)               # 2.2 mm from R6
+put("TP8", 94.60, 60.05, 0)                 # 1.8 mm from R36
+put("C41", 116.40, 113.60, 0)               # 8.1 mm from R40
+put("C42", 112.75, 98.15, 90)               # 11.3 mm from R3
+put("C43", 111.75, 103.10, 90)              # 12.3 mm from R4
+put("R48", 91.60, 80.60, 0)
+put("R49", 91.35, 79.25, 0)
+put("R50", 92.60, 76.80, 0)
+put("R51", 89.10, 80.20, 0)
+put("C47", 131.50, 75.70, 90)                 # PWR_EN's slow-rise cap, beside R15

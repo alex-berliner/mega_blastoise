@@ -1,0 +1,166 @@
+{
+ "part": "U7",
+ "mpn": "FM8002A",
+ "lcsc": "C94625",
+ "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+ "datasheet": {
+  "url": "https://www.chipsourcetek.com/DataSheet/FM8002A.pdf ; https://www.lcsc.com/datasheet/lcsc_datasheet_2202252130_Shenzhen-Fuman-Elec-FM8002A_C94625.pdf",
+  "revision_or_date": "Fuman Version 1.0 (LCSC copy, PDF dated 2016-11-11, doc no. S&CICS&CIC1448); ChipSourceTek Version 1.1 (PDF 2020-08-27/2022-05-19). Pinout, shutdown text and ratings identical.",
+  "local": "ds/FM8002A_lcsc.pdf, ds/FM8002A_chipsourcetek.pdf"
+ },
+ "ratings": [
+  {
+   "param": "VDD abs max",
+   "ds": "6 V",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.3 \u6781\u9650\u53c2\u6570 (Ta=25C)",
+   "design": "VSYS up to ~5.7 V transient",
+   "ok": true,
+   "note": "0.3 V margin"
+  },
+  {
+   "param": "VDD operating",
+   "ds": "1.6 to 6 V",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.3 \u7535\u6c14\u53c2\u6570",
+   "design": "VSYS 3.0-5.0 V",
+   "ok": true
+  },
+  {
+   "param": "Shutdown current",
+   "ds": "IOFF 4.2 uA typ",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.3",
+   "design": "plus R36 100k: 0 A when off (both ends at VSYS); ~VSYS/100k = 37-57 uA through R36 when on",
+   "ok": true
+  },
+  {
+   "param": "BYPASS cap",
+   "ds": "CB = 1 uF",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.3",
+   "design": "C40 1u",
+   "ok": true
+  },
+  {
+   "param": "Supply decoupling",
+   "ds": "Cs 1.0 uF tantalum in app circuit",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.6",
+   "design": "C34 10u + C35 100n",
+   "ok": true
+  }
+ ],
+ "refs": [
+  "U7"
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "SHUTDOWN",
+   "type": "I",
+   "requirement": "ACTIVE HIGH shutdown: high (supply voltage) = amp off, 4.2 uA; 0 V = amp on. Must be a defined level (not floating). Datasheet app circuit: pull-up RPU to VDD plus switch to GND",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.1 pin table; p.2 '\u5173\u65ad\u529f\u80fd' (Shutdown function); p.6 typical application",
+   "quote": "\u5f53\u5173\u65ad\u7aef\u4e3a\u9ad8\u7535\u5e73\uff08\u7535\u6e90\u7535\u538b\uff09\u65f6\uff0c\u8fd0\u653e\u5173\u95ed\uff0cFM8002A \u4e0d\u5de5\u4f5c\uff0c\u8fd9\u65f6 FM8002A \u7684\u5de5\u4f5c\u7535\u6d41\u964d\u4f4e\u5230 4.2uA\uff1b\u5f53\u5173\u65ad\u7aef\u4e3a\u96f6\u7535\u5e73\u65f6\u8fd0\u653e\u6253\u5f00 [When SHUTDOWN is high (supply voltage) the amp is off, current 4.2 uA; when SHUTDOWN is at zero level the amp is on]",
+   "symbol_name": "SHUTDOWN",
+   "ok": true,
+   "issue": "Polarity CONFIRMED in both datasheet copies: R36 100k to VSYS (=VDD) keeps the amp off; Q3 (2N7002, gate AMP_EN with R37 pull-down) pulls SHUTDOWN to 0 V = on. Matches the datasheet's own RPU + switch-to-GND circuit. No VIH/VIL thresholds are given (only 'supply voltage' / 'zero level'): unknown, but the design drives rail-to-rail so it does not matter. Datasheet wake-up time TD = 100 ms typ.",
+   "nets": {
+    "U7": "AMP_SHDN"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "BYPASS",
+   "type": "I (reference)",
+   "requirement": "Half-supply reference; 1.0 uF to GND close to the chip (CB)",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.2 '\u57fa\u51c6\u7535\u538b'; p.3 Ci/CB selection; p.6",
+   "quote": "\u7535\u538b\u57fa\u51c6\u7aef\uff08Bypass\uff09\u7684\u5916\u63a5\u7535\u5bb9\u5e94\u5c3d\u53ef\u80fd\u7684\u9760\u8fd1 FM8002A\uff0c1.0\u03bcF \u7684\u7535\u5bb9\u63d0\u9ad8\u4e86\u5185\u90e8\u504f\u7f6e\u7535\u538b\u7684\u7a33\u5b9a\u6027 [Bypass cap as close as possible; 1.0 uF improves bias stability]",
+   "symbol_name": "BYPASS",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U7": "AMP_BYP"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "+IN",
+   "type": "I",
+   "requirement": "Non-inverting input; tied to BYPASS in the typical application (single-ended input on -IN)",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.1; p.6 typical application",
+   "quote": "3 +IN I \u6b63\u5411\u8f93\u5165\u7aef (app circuit: +IN wired to Bypass node)",
+   "symbol_name": "+IN",
+   "ok": true,
+   "issue": "Matches the typical application (+IN to Bypass).",
+   "nets": {
+    "U7": "AMP_BYP"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "-IN",
+   "type": "I",
+   "requirement": "Inverting input: Ri from source via Ci, Rf from VO1. Gain AVD = 2 x Rf/Ri",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.2 '\u6865\u8def\u8bbe\u7f6e'; p.6",
+   "quote": "FM8002A \u589e\u76ca AVD = 2\u00d7(Rf/Ri)",
+   "symbol_name": "-IN",
+   "ok": true,
+   "issue": "R34 Ri 20k, R35 Rf 20k (VO1 to -IN), C39 220n Ci: gain 2, as datasheet example; Ci within datasheet's 0.1-0.39 uF suggestion.",
+   "nets": {
+    "U7": "AMP_INN"
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "VO1",
+   "type": "O",
+   "requirement": "Bridge output 1 (speaker +); Rf to -IN",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.1; p.6",
+   "quote": "5 VO1 O \u97f3\u91cf\u8f93\u51fa\u7aef 1",
+   "symbol_name": "VO1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U7": "SPK_P"
+   }
+  },
+  {
+   "pin": "6",
+   "ds_name": "VDD",
+   "type": "POWER",
+   "requirement": "Supply; abs max 6 V; operating 1.6-6 V; 1.0 uF Cs in app circuit",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.1; p.3 \u6781\u9650\u53c2\u6570/\u7535\u6c14\u53c2\u6570; p.6",
+   "quote": "\u7535\u6e90\u7535\u538b VDD - 6 V (abs max); \u5de5\u4f5c\u7535\u538b VDD 1.6 ~ 6 V",
+   "symbol_name": "VDD",
+   "ok": true,
+   "issue": "VSYS up to ~5.7 V hot-plug transient: inside 6 V abs max and the 1.6-6 V operating range (LCSC listing says 2.5-5.5 V; the datasheet table says 6 V).",
+   "nets": {
+    "U7": "VSYS"
+   }
+  },
+  {
+   "pin": "7",
+   "ds_name": "GND",
+   "type": "POWER",
+   "requirement": "Ground",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.1",
+   "quote": "7 GND POWER \u63a5\u5730\u7aef",
+   "symbol_name": "GND",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U7": "GND"
+   }
+  },
+  {
+   "pin": "8",
+   "ds_name": "VO2",
+   "type": "O",
+   "requirement": "Bridge output 2 (speaker -), internal AV=-1 of VO1",
+   "cite": "FM8002A datasheet (Fuman, Version 1.0, LCSC C94625; same text in ChipSourceTek Version 1.1) p.1; p.6",
+   "quote": "8 VO2 O \u97f3\u91cf\u8f93\u51fa\u7aef 2",
+   "symbol_name": "VO2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U7": "SPK_N"
+   }
+  }
+ ]
+}

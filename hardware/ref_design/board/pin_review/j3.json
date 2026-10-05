@@ -1,0 +1,813 @@
+{
+ "part": "J3",
+ "mpn": "FH12-50S-0.5SH(55)",
+ "lcsc": "C202116",
+ "footprint": "Connector_FFC-FPC:Hirose_FH12-50S-0.5SH_1x50-1MP_P0.50mm_Horizontal",
+ "datasheet": {
+  "url": "https://www.lcsc.com/datasheet/lcsc_datasheet_1811021331_HRS-Hirose-FH12-50S-0-5SH-55_C202116.pdf",
+  "revision_or_date": "Hirose FH12 series catalog, Nov.1.2016 (PDF mod 2019-09-24)",
+  "local": "ds/FH12_lcsc.pdf"
+ },
+ "contact_side": "Bottom contact (catalog p.3/p.4 '0.5mm Pitch Bottom Contact Type'; JLC: '50P Bottom Contact'); panel spec asks for a bottom-contact ZIF -> the folded FPC's conductors face the PCB. Matches.",
+ "pin1": "Catalog p.4 top view (tails up, FPC entering from below) shows the polarizing mark at the left end; it does not print contact numbers for the SH type. KiCad footprint pad 1 is at the left (x=-12.25) with tails at -y. Mapping check uses pad geometry (see PANEL.json fpc_orientation): J3 pin j = panel 51-j is correct.",
+ "ratings": [
+  {
+   "param": "Current rating",
+   "ds": "0.5 A DC per contact",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.2 Product Specifications",
+   "design": "max 120 mA (LED_A, pin 50)",
+   "ok": true
+  },
+  {
+   "param": "FPC thickness",
+   "ds": "0.3 +/-0.05 mm",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.2, p.11",
+   "design": "panel FPC+PI stiffener 0.3 +/-0.03 mm (panel p.6)",
+   "ok": true
+  },
+  {
+   "param": "FPC width",
+   "ds": "B = 25.5 +/-0.07 mm, A = 24.5 +/-0.05 (50 contacts)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.11",
+   "design": "panel 25.5 +/-0.15, 24.5 +/-0.03 (panel p.6)",
+   "ok": true,
+   "note": "Panel width tolerance (+/-0.15) is looser than Hirose's recommended +/-0.07; nominal matches."
+  },
+  {
+   "param": "Conductor width / exposed length",
+   "ds": "0.35 +/-0.03 (FPC), exposed >= 3 mm",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.11",
+   "design": "W0.35 +/-0.03, 3.5 mm",
+   "ok": true
+  }
+ ],
+ "refs": [
+  "J3"
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "contact 1",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 50 (GND)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 50: 50 GND Ground",
+   "mates_panel_pin": 50,
+   "symbol_name": "Pin_1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "contact 2",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 49 (GND)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 49: 49 GND Ground",
+   "mates_panel_pin": 49,
+   "symbol_name": "Pin_2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "contact 3",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 48 (GND)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 48: 48 GND Ground",
+   "mates_panel_pin": 48,
+   "symbol_name": "Pin_3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "contact 4",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 47 (YU(Y-)/RST)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 47: Resistive touch panel output/ Capacitive touch reset signal when low.",
+   "mates_panel_pin": 47,
+   "symbol_name": "Pin_4",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": null
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "contact 5",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 46 (XL(X-)/IRQ)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 46: Resistive touch panel output /Capacitive touch pen interrupt signal when low.",
+   "mates_panel_pin": 46,
+   "symbol_name": "Pin_5",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": null
+   }
+  },
+  {
+   "pin": "6",
+   "ds_name": "contact 6",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 45 (YD(Y+)/SDA)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 45: Resistive touch panel output/ Capacitive touch SDA signal, I2C interface",
+   "mates_panel_pin": 45,
+   "symbol_name": "Pin_6",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": null
+   }
+  },
+  {
+   "pin": "7",
+   "ds_name": "contact 7",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 44 (XR(X+)/SCL)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 44: Resistive touch panel output/ Capacitive touch SCL signal,I2C interface.",
+   "mates_panel_pin": 44,
+   "symbol_name": "Pin_7",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": null
+   }
+  },
+  {
+   "pin": "8",
+   "ds_name": "contact 8",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 43 (GND)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 43: 43 GND Ground",
+   "mates_panel_pin": 43,
+   "symbol_name": "Pin_8",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "9",
+   "ds_name": "contact 9",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 42 (VCI)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 42: High voltage power supply for analog circuit blocks (2.5~3.3V)",
+   "mates_panel_pin": 42,
+   "symbol_name": "Pin_9",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "+3V3"
+   }
+  },
+  {
+   "pin": "10",
+   "ds_name": "contact 10",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 41 (VDDI)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 41: Low voltage power supply for interface logic logic circuits (1.65~3.3V)",
+   "mates_panel_pin": 41,
+   "symbol_name": "Pin_10",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "+3V3"
+   }
+  },
+  {
+   "pin": "11",
+   "ds_name": "contact 11",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 40 (VDDI)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 40: Low voltage power supply for interface logic logic circuits (1.65~3.3V)",
+   "mates_panel_pin": 40,
+   "symbol_name": "Pin_11",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "+3V3"
+   }
+  },
+  {
+   "pin": "12",
+   "ds_name": "contact 12",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 39 (TE)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 39: Tearing effect out pin synchronize MPU to frame writing. Leave the pin open when not in use.",
+   "mates_panel_pin": 39,
+   "symbol_name": "Pin_12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LCD_TE"
+   }
+  },
+  {
+   "pin": "13",
+   "ds_name": "contact 13",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 38 (CSX)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 38: Chip Select Signal. Fix to IOVCC when not in use.",
+   "mates_panel_pin": 38,
+   "symbol_name": "Pin_13",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LCD_CS"
+   }
+  },
+  {
+   "pin": "14",
+   "ds_name": "contact 14",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 37 (D/CX)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 37: Data/Command Selection pin. Fix to IOVCC when not in use.",
+   "mates_panel_pin": 37,
+   "symbol_name": "Pin_14",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LCD_DC"
+   }
+  },
+  {
+   "pin": "15",
+   "ds_name": "contact 15",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 36 (WRX(SCL))",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 36: Serial interface :SCL pin as Serial Clock when operates in the serial interface",
+   "mates_panel_pin": 36,
+   "symbol_name": "Pin_15",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LCD_SCK"
+   }
+  },
+  {
+   "pin": "16",
+   "ds_name": "contact 16",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 35 (RD)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 35: Parallel interface\uff1aRead execution control pin. Fix to IOVCC when not in use.",
+   "mates_panel_pin": 35,
+   "symbol_name": "Pin_16",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "+3V3"
+   }
+  },
+  {
+   "pin": "17",
+   "ds_name": "contact 17",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 34 (SDA)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 34: Serial Interface : Serial input or serial data input/output bi-direction pin. Fix to DGND level when not in use.",
+   "mates_panel_pin": 34,
+   "symbol_name": "Pin_17",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LCD_MOSI"
+   }
+  },
+  {
+   "pin": "18",
+   "ds_name": "contact 18",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 33 (SDO)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 33: SDO Serial Output Signal. Leave the pin open when not in use.",
+   "mates_panel_pin": 33,
+   "symbol_name": "Pin_18",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LCD_MISO"
+   }
+  },
+  {
+   "pin": "19",
+   "ds_name": "contact 19",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 32 (DB0)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 32: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 32,
+   "symbol_name": "Pin_19",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "20",
+   "ds_name": "contact 20",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 31 (DB1)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 31: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 31,
+   "symbol_name": "Pin_20",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "21",
+   "ds_name": "contact 21",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 30 (DB2)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 30: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 30,
+   "symbol_name": "Pin_21",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "22",
+   "ds_name": "contact 22",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 29 (DB3)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 29: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 29,
+   "symbol_name": "Pin_22",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "23",
+   "ds_name": "contact 23",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 28 (DB4)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 28: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 28,
+   "symbol_name": "Pin_23",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "24",
+   "ds_name": "contact 24",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 27 (DB5)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 27: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 27,
+   "symbol_name": "Pin_24",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "25",
+   "ds_name": "contact 25",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 26 (DB6)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 26: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 26,
+   "symbol_name": "Pin_25",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "26",
+   "ds_name": "contact 26",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 25 (DB7)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 25: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 25,
+   "symbol_name": "Pin_26",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "27",
+   "ds_name": "contact 27",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 24 (DB8)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 24: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 24,
+   "symbol_name": "Pin_27",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "28",
+   "ds_name": "contact 28",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 23 (DB9)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 23: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 23,
+   "symbol_name": "Pin_28",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "29",
+   "ds_name": "contact 29",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 22 (DB10)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 22: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 22,
+   "symbol_name": "Pin_29",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "30",
+   "ds_name": "contact 30",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 21 (DB11)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 21: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 21,
+   "symbol_name": "Pin_30",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "31",
+   "ds_name": "contact 31",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 20 (DB12)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 20: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 20,
+   "symbol_name": "Pin_31",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "32",
+   "ds_name": "contact 32",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 19 (DB13)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 19: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 19,
+   "symbol_name": "Pin_32",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "33",
+   "ds_name": "contact 33",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 18 (DB14)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 18: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 18,
+   "symbol_name": "Pin_33",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "34",
+   "ds_name": "contact 34",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 17 (DB15)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 17: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 17,
+   "symbol_name": "Pin_34",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "35",
+   "ds_name": "contact 35",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 16 (DB16)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 16: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 16,
+   "symbol_name": "Pin_35",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "36",
+   "ds_name": "contact 36",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 15 (DB17)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 15: 15-32 DB17-DB0 DATA BUS. Fix to DGND level when not in use.",
+   "mates_panel_pin": 15,
+   "symbol_name": "Pin_36",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "37",
+   "ds_name": "contact 37",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 14 (DE)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 14: Data Enable Signal For RGB Interface. Fix to DGND level when not in use.",
+   "mates_panel_pin": 14,
+   "symbol_name": "Pin_37",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "38",
+   "ds_name": "contact 38",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 13 (DOTCLK)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 13: Dot Clock Signal For RGB Interface. Fix to DGND level when not in use.",
+   "mates_panel_pin": 13,
+   "symbol_name": "Pin_38",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "39",
+   "ds_name": "contact 39",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 12 (HSYNC)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 12: Line Synchronizing Signal For RGB Interface. Fix to DGND level when not in use.",
+   "mates_panel_pin": 12,
+   "symbol_name": "Pin_39",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "40",
+   "ds_name": "contact 40",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 11 (VSYNC)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 11: Frame Synchronizing Signal For RGB Interface. Fix to DGND level when not in use.",
+   "mates_panel_pin": 11,
+   "symbol_name": "Pin_40",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "GND"
+   }
+  },
+  {
+   "pin": "41",
+   "ds_name": "contact 41",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 10 (RESET)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 10: Reset Pin. Initialize the chip with a low input.",
+   "mates_panel_pin": 10,
+   "symbol_name": "Pin_41",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LCD_RST"
+   }
+  },
+  {
+   "pin": "42",
+   "ds_name": "contact 42",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 9 (IM2)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 9: Select Interface Mode ;Note1",
+   "mates_panel_pin": 9,
+   "symbol_name": "Pin_42",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "+3V3"
+   }
+  },
+  {
+   "pin": "43",
+   "ds_name": "contact 43",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 8 (IM1)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 8: Select Interface Mode ;Note1",
+   "mates_panel_pin": 8,
+   "symbol_name": "Pin_43",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "+3V3"
+   }
+  },
+  {
+   "pin": "44",
+   "ds_name": "contact 44",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 7 (IM0)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 7: 1 1 1 4-wire 8-bit data Serial Interface I SCL,SDA/SDO,D/CX,CSX",
+   "mates_panel_pin": 7,
+   "symbol_name": "Pin_44",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "+3V3"
+   }
+  },
+  {
+   "pin": "45",
+   "ds_name": "contact 45",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 6 (NC)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 6: NO Connect",
+   "mates_panel_pin": 6,
+   "symbol_name": "Pin_45",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": null
+   }
+  },
+  {
+   "pin": "46",
+   "ds_name": "contact 46",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 5 (NC)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 5: NO Connect",
+   "mates_panel_pin": 5,
+   "symbol_name": "Pin_46",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": null
+   }
+  },
+  {
+   "pin": "47",
+   "ds_name": "contact 47",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 4 (NC)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 4: NO Connect",
+   "mates_panel_pin": 4,
+   "symbol_name": "Pin_47",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": null
+   }
+  },
+  {
+   "pin": "48",
+   "ds_name": "contact 48",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 3 (LEDK)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 3: Cathode for LED backlighting",
+   "mates_panel_pin": 3,
+   "symbol_name": "Pin_48",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LED_K2"
+   }
+  },
+  {
+   "pin": "49",
+   "ds_name": "contact 49",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 2 (LEDK)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 2: Cathode for LED backlighting",
+   "mates_panel_pin": 2,
+   "symbol_name": "Pin_49",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LED_K1"
+   }
+  },
+  {
+   "pin": "50",
+   "ds_name": "contact 50",
+   "type": "passive (FPC contact, bottom side)",
+   "requirement": "Mates with the FPC conductor at the same position; carries panel pin 1 (LEDA)",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4 (0.5mm bottom contact drawing), p.11 (FPC dims); panel \u00a74.1",
+   "quote": "panel pin 1: Anode for LED backlighting",
+   "mates_panel_pin": 1,
+   "symbol_name": "Pin_50",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J3": "LED_A"
+   }
+  },
+  {
+   "pin": "MP",
+   "ds_name": "metal fitting (solder tabs)",
+   "type": "mechanical",
+   "requirement": "Solder for retention; no electrical function stated",
+   "cite": "Hirose FH12 catalog (Nov.1.2016, LCSC C202116 copy) p.4",
+   "quote": "(tabs drawn, no function given)",
+   "symbol_name": "MountPin",
+   "ok": true,
+   "issue": "Left unconnected (None); no datasheet requirement found to ground them.",
+   "nets": {
+    "J3": null
+   }
+  }
+ ]
+}

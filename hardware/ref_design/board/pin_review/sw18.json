@@ -1,0 +1,40 @@
+{
+ "part": "SW18",
+ "refs": [
+  "SW18"
+ ],
+ "mpn": "TS-1088-AR02016",
+ "lcsc": "C720477",
+ "datasheet": {
+  "url": "https://www.lcsc.com/datasheet/C720477.pdf",
+  "revision_or_date": "LCSC listing"
+ },
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "terminal",
+   "type": "switch",
+   "requirement": "normally open; the two terminals are interchangeable",
+   "cite": "datasheet circuit diagram",
+   "quote": "",
+   "nets": {
+    "SW18": "BOOTSEL"
+   },
+   "ok": true,
+   "issue": ""
+  },
+  {
+   "pin": "2",
+   "ds_name": "terminal",
+   "type": "switch",
+   "requirement": "normally open",
+   "cite": "datasheet circuit diagram",
+   "quote": "",
+   "nets": {
+    "SW18": "GND"
+   },
+   "ok": true,
+   "issue": ""
+  }
+ ]
+}

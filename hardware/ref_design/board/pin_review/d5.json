@@ -1,0 +1,101 @@
+{
+ "part": "B5819W 40 V 1 A Schottky, SOD-123 (marking SL)",
+ "refs": [
+  "D5",
+  "D7"
+ ],
+ "mpn": "B5819W SL",
+ "lcsc": "C8598",
+ "manufacturer": "Jiangsu Changjiang Electronics Technology (CJ)",
+ "symbol": "Device:D_Schottky",
+ "footprint": "Diode_SMD:D_SOD-123",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/4ac2c059be7c462694ab0715ce987a85.pdf?productCode=C8598",
+  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_Jiangsu-Changjing-Electronics-Technology-Co---Ltd--B5819W-SL_C8598.pdf",
+  "revision_or_date": "D, Mar 2015"
+ },
+ "notes": [
+  "Datasheet has no pin numbers: 'The marking bar indicates the cathode' and its drawing marks '-' at the bar end. KiCad D_SOD-123 pad 1 is the cathode (silkscreen closes at x = -2.36 by pad 1); Device:D_Schottky pin 1 = K.",
+  "Reverse leakage: the guaranteed figure is only <= 1 mA at VR = 40 V (25 C). The typical curve (p2) reads about 5 uA at 5 V and 25 C and about 60 uA at 75 C, consistent with design.py's 'about 5 uA at 25 C, 50 uA at 75 C' as typical values."
+ ],
+ "ratings": [
+  {
+   "what": "VRRM/VR",
+   "limit": "40 V",
+   "design": "D5 reverse = VSYS-VBUS <= 4.2 V; D7 reverse = VSYS-VBAT <= 5.7 V",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "IO",
+   "limit": "1 A",
+   "design": "D5: system load about 0.5 A (0.75 A in validation plan); D7: <= 0.5 A for 1.5-3.3 ms at unplug",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "IFSM",
+   "limit": "9 A, 8.3 ms",
+   "design": "D5 plug-in inrush into the VSYS caps through R47: peak not quantified (UNKNOWN)",
+   "ok": null,
+   "cite": "p1"
+  },
+  {
+   "what": "Pd",
+   "limit": "500 mW at 25 C, derated linearly to 0 at 125 C (p2)",
+   "design": "D5 about 0.5 A x ~0.4 V = 0.2 W",
+   "ok": true,
+   "cite": "p1, p2 derating"
+  },
+  {
+   "what": "VF",
+   "limit": "0.6 V max at 1 A",
+   "design": "typical about 0.35-0.4 V at 0.5 A (p2 curve)",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "Tj",
+   "limit": "125 C",
+   "design": "",
+   "ok": true,
+   "cite": "p1"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "cathode (bar, '-')",
+   "type": "cathode",
+   "requirement": "Cathode.",
+   "cite": "p1 marking note and drawing",
+   "quote": "The marking bar indicates the cathode",
+   "symbol_name": "K",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "D5": "VSYS",
+    "D7": "VSYS"
+   },
+   "pin_label": "K"
+  },
+  {
+   "pin": "2",
+   "ds_name": "anode ('+')",
+   "type": "anode",
+   "requirement": "Anode.",
+   "cite": "p1 drawing",
+   "quote": "(drawing) + at the unbarred end",
+   "symbol_name": "A",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "D5": "VBUS_D5",
+    "D7": "VBAT"
+   },
+   "pin_label": "A"
+  }
+ ]
+}

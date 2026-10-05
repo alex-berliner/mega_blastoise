@@ -68,14 +68,18 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "100": ("C25076", "0402WGF1000TCE"),
     "1k": ("C11702", "0402WGF1001TCE"),
     "1k 0603": ("C21190", "0603WAF1001T5E"),
+    "0.1 1206": ("C25334", "1206W4F100LT5E"),
     "2.2 0603": ("C22939", "0603WAF220KT5E"),
     "1.2k": ("C25862", "0402WGF1201TCE"),
     "2.4k": ("C25882", "0402WGF2401TCE"),
+    "3.3k": ("C25890", "0402WGF3301TCE"),
+    "4.7k": ("C25900", "0402WGF4701TCE"),
     "5.1k": ("C25905", "0402WGF5101TCE"),
     "5.6k": ("C25908", "0402WGF5601TCE"),      # JLC Preferred: no Extended fee
     "10k": ("C25744", "0402WGF1002TCE"),
     "22": ("C25092", "0402WGF220JTCE"),
     "20k": ("C25765", "0402WGF2002TCE"),
+    "33k": ("C25779", "0402WGF3302TCE"),
     "47k": ("C25792", "0402WGF4702TCE"),
     "100k": ("C25741", "0402WGF1003TCE"),
     "150k": ("C25755", "0402WGF1503TCE"),      # JLC Preferred
@@ -95,6 +99,25 @@ CAP = {  # value: (lcsc, mpn, footprint)
     "1u 50V": ("C15849", "CL10A105KB8NNNC", C0603),
     "22u 25V": ("C45783", "CL21A226MAQNNNE", C0805),
 }
+
+
+R1206 = "Resistor_SMD:R_1206_3216Metric"
+C1206 = "Capacitor_SMD:C_1206_3216Metric"
+JUMPER = "Jumper:SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm"
+
+
+def DNP(ref, sheet, kind, a, b, rot=0):
+    """An empty 1206 footprint (big enough to hand-solder) for a part fitted only if
+    bring-up asks for it: not in JLC's BOM or placement file."""
+    lib, fp = ("Device:R", R1206) if kind == "R" else ("Device:C", C1206)
+    part(ref, sheet, lib, "DNP", fp, {"1": a, "2": b}, rot=rot, bom=False)
+
+
+def JP(ref, sheet, a, b):
+    """A solder jumper made with its two pads joined by copper: cut the bridge with a
+    knife to open it (to measure a current, or power one part at a time), bridge it
+    again with solder."""
+    part(ref, sheet, "Jumper:SolderJumper_2_Bridged", "Bridged", JUMPER, {"1": a, "2": b}, bom=False)
 
 
 def R(ref, sheet, value, a, b, rot=0, fp=R0402):
@@ -142,11 +165,11 @@ C("C1", S, "10u 25V", "VBUS_C1")
 R("R38", S, "1k 0603", "VBUS", "GND", fp=R0603)
 part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
      "battler:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.3mm_ThermalVias_0.3mm",
-     {"4": "VBUS", "8": "VBUS", "5": "VBAT", "2": "CHG_PROG", "1": "CHG_TEMP",
+     {"4": "VBUS", "8": "CHG_CE", "5": "VBAT", "2": "CHG_PROG", "1": "CHG_TEMP",
       "7": "CHG_STAT_N", "6": "CHG_DONE_N", "3": "GND", "9": "GND"},
      "C16581", "TP4056-42-ESOP8", "TOPPOWER")
 # cell temperature: the TP4056 charges only while TEMP sits between 45% and 80% of VBUS.
-# The 503450 has no NTC wire, so TH1 sits on the board over the cell (its left edge, below J3), about
+# The 403450 has no NTC wire, so TH1 sits on the board under the cell, which lies on it, about
 # 45 mm from U2 (whose 0.65 W while charging would trip it). TH1 is in parallel with R40:
 # the window is 1 to 46 C (-3 to 49 C across the TP4056's threshold spread). Fed from VBUS,
 # so it draws nothing from the cell. Out of range, CHRG and STDBY both go high (as with no USB)
@@ -154,7 +177,15 @@ R("R39", S, "5.6k", "VBUS", "CHG_TEMP")
 R("R40", S, "150k", "CHG_TEMP", "GND")
 part("TH1", S, "Device:Thermistor_NTC", "10k B3380", R0402, {"1": "CHG_TEMP", "2": "GND"},
      "C77131", "NCP15XH103F03RC", "Murata")
-R("R5", S, "2.4k", "CHG_PROG", "GND")          # charge current 1100-1200 V / 2.4k = 460-500 mA (by datasheet revision)
+R("R5", S, "3.3k", "CHG_PROG", "GND")          # charge current 1100-1200 V / 3.3k = 333-364 mA (by datasheet
+                                               # revision): about 0.5 C for the 403450's ~700 mAh
+# CE: firmware can pause charging (a weak USB port, a warm case). R43 pulls CE to VBUS, so
+# the charger charges whenever USB is in and nothing drives Q4; CHG_OFF high turns Q4 on
+# and CE low. R44 holds Q4's gate low through any processor state (E9: <= 8.2k)
+R("R43", S, "100k", "VBUS", "CHG_CE")
+part("Q4", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
+     {"1": "CHG_OFF", "2": "GND", "3": "CHG_CE"}, "C8545", "2N7002", "Changjiang")
+R("R44", S, "4.7k", "CHG_OFF", "GND")
 R("R9", S, "100k", "CHG_DONE_N", "+3V3")       # STDBY: low when the charge is done
 R("R10", S, "100k", "CHG_STAT_N", "+3V3")      # CHRG: low while charging
 C("C2", S, "4.7u", "VSYS")
@@ -164,7 +195,11 @@ C("C3", S, "10u", "VBAT")
 # Q2 turns on as VBUS drains, which R38 (above) does in a few ms. Until then D7 (below)
 # carries VSYS and C9 covers the step (a dip below the chip's supply minimums can crash
 # the MCU, and a reset turns the device off)
-part("D5", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS", "2": "VBUS"},
+# R47 damps the ring a live plug-in drives through D5 into the VSYS capacitors: with no cell
+# (or a tripped pack) VSYS peaked at about 6.6 V against the AP3156's and FM8002A's 6 V
+# maximum; about 5.7 V with it. It costs 50 mV of VSYS at 0.5 A
+R("R47", S, "0.1 1206", "VBUS", "VBUS_D5", fp=R1206)
+part("D5", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS", "2": "VBUS_D5"},
      "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
 part("D6", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323", {"1": "LS_GATE", "2": "VBUS"},
      "C7502694", "BAT54WS", "")
@@ -191,19 +226,29 @@ part("#FLG03", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VSYS"}, bom=False)  #
 # =================================================================================
 S = "power.kicad_sch"
 part("U3", S, "Regulator_Linear:ME6211C33M5", "ME6211C33M5G", "Package_TO_SOT_SMD:SOT-23-5",
-     {"1": "VSYS", "2": "GND", "3": "PWR_EN", "4": None, "5": "+3V3"},
+     {"1": "VSYS", "2": "GND", "3": "PWR_EN", "4": None, "5": "3V3_LDO"},
      "C82942", "ME6211C33M5G-N", "MICRONE")
 C("C5", S, "10u", "VSYS")
-C("C6", S, "10u", "+3V3")
-C("C7", S, "10u", "+3V3")
+C("C6", S, "10u", "3V3_LDO")
+C("C7", S, "10u", "3V3_LDO")
+# JP1: cut it at bring-up to check the regulator alone before the rest of the board sees 3V3
+JP("JP1", S, "3V3_LDO", "+3V3")
+part("#FLG07", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+3V3"}, bom=False)   # fed through JP1
 # the power button is seat 1's Y contact (SW8, on the Buttons sheet): it joins VSYS to PWR_BTN_RAW
-R("R13", S, "100k", "PWR_BTN_RAW", "GND")
+R("R13", S, "33k", "PWR_BTN_RAW", "GND")       # 33k, not 100k: about twice the surface leakage (sweat,
+                                               # condensation) before the Y contact lifts PWR_EN
 part("D2", S, "Diode:BAT54C", "BAT54C", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "PWR_HOLD", "3": "PWR_EN"}, "C37704", "BAT54C,215", "Nexperia")
 R("R14", S, "10k", "VBUS", "VBUS_EN")
 part("D3", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
      {"1": "PWR_EN", "2": "VBUS_EN"}, "C7502694", "BAT54WS", "")
 R("R15", S, "100k", "PWR_EN", "GND")          # 100k keeps the Y contact's pill-resistance margin (Q1 reads it)
+# C47 slows PWR_EN's rise from VBUS (R14, about 1 ms) so a live plug-in can't lift the ME6211's
+# CE above its VIN (VSYS, which lags behind R47/D5) plus 0.3 V, its absolute maximum
+C("C47", S, "100n", "PWR_EN")
+# RP2350-E9 can hold a released pad near 2 V; through D2 that would keep PWR_EN up after a
+# crash. An external 4.7k (E9 needs 8.2k or less) holds PWR_HOLD low unless driven
+R("R42", S, "4.7k", "PWR_HOLD", "GND")
 part("Q1", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "GND", "3": "PWR_BTN_N"}, "C8545", "2N7002", "Changjiang")
 R("R16", S, "100k", "PWR_BTN_N", "+3V3")
@@ -212,11 +257,19 @@ R("R18", S, "470k", "VBAT_SENSE", "GND")
 C("C8", S, "100n", "VBAT_SENSE")
 for i, net in enumerate(["VBUS", "VSYS", "VBAT", "+3V3", "GND"]):
     part(f"TP{i + 1}", S, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
+# bring-up test pads on the top side: the power latch, the load-sharing switch, the amplifier
+for i, net in enumerate(["PWR_EN", "LS_GATE", "AMP_SHDN"]):
+    part(f"TP{i + 6}", S, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
+# hand-solderable spare filter capacitors, fitted only if bring-up shows noise on these lines
+DNP("C41", "usb_charger.kicad_sch", "C", "CHG_TEMP", "GND")
+DNP("C42", "usb_charger.kicad_sch", "C", "CC1", "GND")
+DNP("C43", "usb_charger.kicad_sch", "C", "CC2", "GND")
 
 # =================================================================================
 # RP2350B core (Raspberry Pi RP2350B minimal design, MIT) + flash, boot, debug
 # =================================================================================
 S = "mcu.kicad_sch"
+BOARD_REV = 1             # this board's revision number (0-15), read from GPIO22-25 (R48-R51)
 GPIO = {  # GPIO number: net
     # 2 layers: each net's pin faces where it goes, and along an edge the pins are in the
     # order their nets fan out, so routes don't cross (seat 1 below, seat 2 above,
@@ -226,7 +279,7 @@ GPIO = {  # GPIO number: net
     4: "P2_UP", 5: "P2_DOWN", 6: "P2_LEFT", 7: "P2_RIGHT",
     8: "AUDIO_PWM", 11: "AMP_EN",
     12: "P2_A", 13: "P2_B", 14: "P2_X", 15: "P2_Y",
-    17: "CHG_STAT_N", 18: "CHG_DONE_N",
+    17: "CHG_STAT_N", 18: "CHG_DONE_N", 19: "CHG_OFF",
     20: "UART_TX", 21: "UART_RX",
     # left edge: seat 1's cross and the panel's TE leave south as one bus, after RUN
     28: "P1_UP", 29: "P1_DOWN", 30: "P1_LEFT", 31: "P1_RIGHT", 32: "LCD_TE",
@@ -238,6 +291,8 @@ GPIO = {  # GPIO number: net
     # lines and the cell (P1 Y is the power button: read on GPIO3)
     40: "LCD_RST", 41: "P1_B", 42: "P1_X", 43: "P1_A", 44: "BL_SDI",
     45: "CC2_SENSE", 46: "CC1_SENSE", 47: "VBAT_SENSE",
+    # the board's revision, 4 bits on GPIO22-25 (16 revisions): see R48-R51
+    22: "REV0", 23: "REV1", 24: "REV2", 25: "REV3",
 }
 GPIO_PIN = {0: 77, 1: 78, 2: 79, 3: 80, 4: 1, 5: 2, 6: 3, 7: 4, 8: 6, 9: 7, 10: 8, 11: 9,
             12: 11, 13: 12, 14: 13, 15: 14, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20, 21: 21,
@@ -274,9 +329,17 @@ C("C28", S, "15p", "XO", fp=C0402_RPI)
 R("R20", S, "1k", "XOUT", "XO", fp=R0402_RPI)
 # 22 ohm: a basic part in Raspberry Pi's own 0402 spot (a 27 ohm 0603 doesn't fit the copied
 # layout, and the 27 ohm 0402 is an extended part); 22 ohm is fine for full-speed USB
-R("R21", S, "22", "USB_DP", "USB_DP_MCU", fp=R0402_RPI)
-R("R22", S, "22", "USB_DM", "USB_DM_MCU", fp=R0402_RPI)
+R("R21", S, "27", "USB_DP", "USB_DP_MCU", fp=R0402_RPI)     # 27: the RP2350 datasheet requires it (Table 2),
+R("R22", S, "27", "USB_DM", "USB_DM_MCU", fp=R0402_RPI)     # and Raspberry Pi's own minimal design fits it
 R("R23", S, "10k", "+3V3", "QSPI_SS", fp=R0402_RPI)     # the flash's chip select high at power-up
+# the revision strap: a 1k to GND on each REV bit makes it 0; a bit left unfitted reads 1
+# through the pin's internal pull-up. JLC fits the 0 bits, so a new revision changes the BOM
+# and not the copper (a resistor, not a hard tie, if firmware ever drove a pin high)
+for b in range(4):
+    if (BOARD_REV >> b) & 1:
+        part(f"R{48 + b}", S, "Device:R", "DNP", R0402, {"1": f"REV{b}", "2": "GND"}, bom=False)
+    else:
+        R(f"R{48 + b}", S, "1k", f"REV{b}", "GND")
 R("R25", "debug.kicad_sch", "1k", "QSPI_SS", "BOOTSEL", fp=R0402_RPI)
 part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOTSEL", "battler:SW_SPST_TS-1088-xR020",
      {"1": "BOOTSEL", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
@@ -288,7 +351,9 @@ part("J5", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_Mounting
      {"1": "SWCLK", "2": "GND", "3": "SWDIO", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
 part("J6", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_MountingPin", "UART",
      "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
-     {"1": "UART_TX", "2": "GND", "3": "UART_RX", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
+     {"1": "UART_RX", "2": "GND", "3": "UART_TX", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
+# J6 follows Raspberry Pi's 3-pin debug connector spec (RP-003139-SP), named from the board's
+# side: pin 1 is the board's RX (the probe's TX arrives there), pin 3 the board's TX
 part("#FLG05", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+1V1"}, bom=False)
 part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=False)
 
@@ -320,11 +385,12 @@ C("C29", S, "1u", "+3V3")
 C("C30", S, "100n", "+3V3")
 part("U6", S, "battler:AP3156", "AP3156FVG-7", "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.5x2.5mm_ThermalVias",
      {"10": "VSYS", "2": "BL_SDI", "3": None, "6": "BL_C1P", "7": "BL_C1N", "5": "BL_C2P", "8": "BL_C2N",
-      "4": "LED_A", "12": "LED_K1", "13": "LED_K1", "14": "LED_K1", "15": "LED_K2", "16": "LED_K2", "1": "LED_K2",
+      "4": "LED_A_DRV", "12": "LED_K1", "13": "LED_K1", "14": "LED_K1", "15": "LED_K2", "16": "LED_K2", "1": "LED_K2",
       "9": "GND", "11": "GND", "17": "GND"},
      "C443652", "AP3156FVG-7", "Diodes Incorporated")
 C("C31", S, "1u", "VSYS")                          # charge pump input
-C("C32", S, "1u", "LED_A")                         # charge pump output
+C("C32", S, "1u", "LED_A_DRV")                     # charge pump output
+JP("JP2", S, "LED_A_DRV", "LED_A")                 # cut it and bridge with an ammeter to read the LED current
 C("C33", S, "1u", "BL_C1P", "BL_C1N")              # flying capacitors
 C("C36", S, "1u", "BL_C2P", "BL_C2N")
 R("R31", S, "100k", "BL_SDI", "GND")               # holds the driver off until firmware drives SDI
@@ -356,6 +422,7 @@ C("C34", S, "10u", "VSYS")
 C("C35", S, "100n", "VSYS")
 part("J4", S, "Connector_Generic:Conn_01x02", "SPEAKER", "battler:Speaker_Wire_Pads_P4.0mm",
      {"1": "SPK_P", "2": "SPK_N"}, bom=False)
+
 
 # =================================================================================
 # Membrane contacts: DS Lite silicone over bare ENIG pads

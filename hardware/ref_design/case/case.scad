@@ -76,7 +76,9 @@ slot_r = 5.95;  slot_a = 30;                            // tab slot in the pocke
 // tab directions, degrees clockwise from the seat's right, seen from the front: a pinwheel,
 // each 45 degrees clockwise from the flange's flat (which faces the diamond's centre)
 abxy_tabs = [["A", [1, 0], 135], ["B", [0, -1], 225], ["X", [0, 1], 45], ["Y", [-1, 0], 315]];
-dome_h = 2.0;                                           // ESTIMATE: board to the flange's underside at rest
+dome_h = 1.2;                                           // ESTIMATE: board to the flange's underside at rest.
+                                                        // 1.2, not 2.0: the DS Lite's own stack (board top about
+                                                        // 3.2 under a 1.45 mm face, see DSLITE.md) until measured
 
 // ---------------- layout ----------------
 glass_side = 9.7;         // panel bay edge to long case edge: room for USB-C beside the glass
@@ -112,6 +114,7 @@ deck_face = cap_top - cap_proud;                        // lip over the flanges:
 z_deck_lid = deck_face - lid_t;                         // deck underside; the tub's walls stop here
 step_y = bay_l / 2 + 2.4;                               // the step: clear of the panel and its FPC fold
 step_wall = 1.5;  spine_w = 13.0;  deck_r = 3;          // step wall, spine width, deck corner rounding
+step_chamfer = 2.0;       // the screen block's edges over the decks, chamfered 45 degrees for the thumbs
 
 // ---------------- derived ----------------
 case_w = bay_w + 2 * glass_side;
@@ -417,6 +420,9 @@ module lid() difference() {
   }
   usb_opening();                                                              // its upper half
   translate([0, 0, deck_face]) linear_extrude(case_h) deck2d();              // nothing above the decks
+  // the step's top edge, chamfered (in 0.1 mm layers, as it prints)
+  for (i = [0:19]) translate([0, 0, case_h - step_chamfer + i * step_chamfer / 20])
+    linear_extrude(step_chamfer / 20 + 0.01) offset(delta = step_chamfer * (i + 1) / 20) deck2d();
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_lid - 1]) linear_extrude(lid_t + 2) window();
   // buttons

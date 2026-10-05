@@ -1,0 +1,103 @@
+{
+ "part": "X1",
+ "mpn": "ABM8-272-T3",
+ "lcsc": "C20625731",
+ "footprint": "battler:ABM8-272-T3",
+ "datasheet": {
+  "url": "https://www.lcsc.com/datasheet/lcsc_datasheet_2410121909_Abracon-LLC-ABM8-272-T3_C20625731.pdf",
+  "revision_or_date": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023",
+  "local": "ds/ABM8-272-T3_lcsc.pdf"
+ },
+ "ratings": [
+  {
+   "param": "Load capacitance CL",
+   "ds": "10 pF",
+   "cite": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023 p.1 \u00a71.0; RP2350 datasheet Table 629",
+   "design": "C27 = C28 = 15 pF -> 7.5 pF series + ~3 pF stray = 10.5 pF",
+   "ok": true,
+   "cite2": "Hardware design with RP2350 (build 20/08/2026) p.14: 'we've used 15 pF capacitors, so the series combination is 7.5 pF ... assume a value of 3 pF ... total load capacitance of 10.5pF, which is close enough to the target of 10 pF'"
+  },
+  {
+   "param": "ESR / drive level",
+   "ds": "R1 <= 50 ohm; drive 10 typ / 200 max uW",
+   "cite": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023 p.1",
+   "design": "R20 1k series on XOUT at 3.3 V IOVDD, per RP guide p.14",
+   "ok": true
+  },
+  {
+   "param": "Frequency",
+   "ds": "12.000 MHz fundamental AT, +/-30 ppm",
+   "cite": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023 p.1",
+   "design": "12 MHz",
+   "ok": true
+  },
+  {
+   "param": "Footprint diagonal",
+   "ds": "#1-#3 diagonal crystal, #2-#4 diagonal",
+   "cite": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023 p.2",
+   "design": "battler:ABM8-272-T3 pads 1(-1.1,0.85) 3(1.1,-0.85) diagonal; 2,4 the other diagonal",
+   "ok": true
+  }
+ ],
+ "refs": [
+  "X1"
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "crystal terminal #1",
+   "type": "passive",
+   "requirement": "One end of the crystal blank (drawing shows #1 joined to the blank, blank to #3)",
+   "cite": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023 p.2 \u00a75.0",
+   "quote": "(pad drawing: #1 and #3 connect to the blank)",
+   "symbol_name": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "X1": "XIN"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "#2",
+   "type": "case/unstated",
+   "requirement": "No function stated in the datasheet",
+   "cite": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023 p.2",
+   "quote": "(no label)",
+   "symbol_name": "G",
+   "ok": true,
+   "issue": "Datasheet does not say #2/#4 are ground; grounding them follows Raspberry Pi's minimal design that this core was copied from (not re-verified against RP's schematic image).",
+   "nets": {
+    "X1": "GND"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "crystal terminal #3",
+   "type": "passive",
+   "requirement": "Other end of the crystal",
+   "cite": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023 p.2",
+   "quote": "(pad drawing: #1 and #3 connect to the blank)",
+   "symbol_name": "3",
+   "ok": true,
+   "issue": "XO goes to XOUT through R20 1k, as RP's hardware design guide (p.14).",
+   "nets": {
+    "X1": "XO"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "#4",
+   "type": "case/unstated",
+   "requirement": "No function stated in the datasheet",
+   "cite": "Abracon ABM8-272-T3 drawing #456603, Rev IR, issued Nov 16 2023 p.2",
+   "quote": "(no label)",
+   "symbol_name": "G",
+   "ok": true,
+   "issue": "Datasheet does not say #2/#4 are ground; grounding them follows Raspberry Pi's minimal design that this core was copied from (not re-verified against RP's schematic image).",
+   "nets": {
+    "X1": "GND"
+   }
+  }
+ ]
+}

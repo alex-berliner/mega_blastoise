@@ -17,6 +17,19 @@ Test pads on the back: TP1 VBUS, TP2 VSYS, TP3 VBAT, TP4 3V3, TP5 GND.
 | Diode test from TP3 (VBAT) to TP2 (VSYS) | one diode drop (Q2's body diode), not a short | a shorted or misplaced Q2 |
 | Look at J2's `+` mark and your cell's red lead | same pin | **reversed cell: the charger does not survive it** |
 
+Two solder jumpers come bridged from the factory; cut one with a knife to isolate a fault,
+bridge it again with a blob of solder:
+
+- **JP1** (by U3) carries the 3.3 V regulator's output onto the 3V3 rail. Cut it to power
+  the rail from a bench supply on TP4, or to measure the rail's draw through a meter across
+  the pads.
+- **JP2** (by U6) carries the backlight driver's output to the panel. Cut it to run the
+  panel with its backlight off, or to measure the backlight current.
+
+TP6 (PWR_EN), TP7 (LS_GATE) and TP8 (AMP_SHDN) are bare pads for a scope probe.
+C41-C43 are empty 1206 footprints (C41 on the charger's TEMP input, C42/C43 on CC1/CC2): fit one by hand only
+if bring-up shows noise there; see [assembly.md](assembly.md).
+
 ## 1. USB only, no cell
 
 Plug USB through the power meter.
@@ -45,6 +58,8 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 3. Read CHG_STAT_N and CHG_DONE_N: with USB in and no cell the TP4056 has nothing to
    charge, so they may flicker; that's expected.
 4. SWD: attach with probe-rs or openocd through J5.
+5. Read REV3..REV0 (GPIO25-22, pull-ups on) as a number: 1 on this board (the REV on the
+   back silkscreen).
 
 ## 3. Display
 
@@ -82,8 +97,9 @@ firmware while VSYS is above 4 V.
 
 1. Unplug USB. Connect the cell. Nothing should turn on (PWR_EN low): measure the cell
    current, expect about 20 uA (the divider, the charger's standby and D5's leakage), under 30.
-2. Plug USB: CHG_STAT_N goes low while charging. The meter shows about 0.5 A more than
-   the system draws (R5 sets about 460-500 mA).
+2. Plug USB: CHG_STAT_N goes low while charging. The meter shows about 0.35 A more than
+   the system draws (R5 sets about 333-364 mA). Drive CHG_OFF (GPIO19) high: CHG_STAT_N
+   goes high and the extra current stops; low again and charging resumes.
 3. ADC7 reads VBAT / 2 against the 3V3 rail: with the cell above about 3.6 V (3V3
    regulated), compare the firmware's computed VBAT with a meter on TP3; they should
    agree within about 50 mV. When CHG_DONE_N goes low (charge done), record the reading:
@@ -108,6 +124,9 @@ firmware while VSYS is above 4 V.
    a USB-C source only switches VBUS on after it sees the board). VBUS must stay under
    8 V (the TP4056's maximum) and VSYS under 6.5 V (the ME6211's). Simulated with R41 in
    place: about 6.7 and 6.2 V with a 2 m cable.
+7. **CE at plug-in.** Same setup with the cell connected and the board off, scope on TP6
+   (PWR_EN) and TP2 (VSYS): PWR_EN must never be more than 0.3 V above VSYS (the ME6211's
+   CE limit). C47 slows PWR_EN to about 1 ms for this; if it still leads, raise C47.
 
 ## 6. Power switch
 

@@ -26,13 +26,13 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 16 | (spare) | not connected |
 | 17 | `CHG_STAT_N` | input, pulled up (R10): low while the TP4056 charges |
 | 18 | `CHG_DONE_N` | input, pulled up (R9): low when the charge is done (USB present, cell full) |
-| 19 | (spare) | not connected |
-| 20 | `UART_TX` | UART1 TX to J6 pin 1 (debug console) |
-| 21 | `UART_RX` | UART1 RX from J6 pin 3 |
-| 22 | (spare) | not connected |
-| 23 | (spare) | not connected |
-| 24 | (spare) | not connected |
-| 25 | (spare) | not connected |
+| 19 | `CHG_OFF` |  |
+| 20 | `UART_TX` | UART1 TX to J6 pin 3 (debug console; Raspberry Pi debug connector pinout) |
+| 21 | `UART_RX` | UART1 RX from J6 pin 1 |
+| 22 | `REV0` |  |
+| 23 | `REV1` |  |
+| 24 | `REV2` |  |
+| 25 | `REV3` |  |
 | 26 | (spare) | not connected |
 | 27 | (spare) | not connected |
 | 28 | `P1_UP` | membrane contact SW1, input with pull-up, low = pressed |

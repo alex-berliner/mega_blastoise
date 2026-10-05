@@ -1,0 +1,142 @@
+{
+ "part": "ME6211 C-series 3.3 V LDO with CE, SOT-23-5",
+ "refs": [
+  "U3"
+ ],
+ "mpn": "ME6211C33M5G-N",
+ "lcsc": "C82942",
+ "manufacturer": "MICRONE (Nanjing Micro One Elec)",
+ "symbol": "Regulator_Linear:ME6211C33M5",
+ "footprint": "Package_TO_SOT_SMD:SOT-23-5",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/d15331d096a848ac81a26b001a32d4e3.pdf?productCode=C82942",
+  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_1811131510_MICRONE-Nanjing-Micro-One-Elec-ME6211C33M5G-N_C82942.pdf",
+  "revision_or_date": "V14 (PDF modified 2017-09-12)"
+ },
+ "notes": [
+  "The '-N' suffix of the MPN does not appear in datasheet V14 (selection guide lists ME6211C33M5G); its meaning is unknown.",
+  "Repo datasheets/SOURCES.md points me6211.pdf at a different LCSC number (C235316, ME6211C33R5G), not C82942."
+ ],
+ "ratings": [
+  {
+   "what": "VIN absolute max",
+   "limit": "6.5 V",
+   "design": "VSYS: <= 5.45 V steady with USB; hot-plug peak about 5.7 V (with R47)",
+   "ok": true,
+   "cite": "p5 Abs Max"
+  },
+  {
+   "what": "VIN operating range",
+   "limit": "2 V..6.0 V",
+   "design": "VSYS 3.0..5.7 V",
+   "ok": true,
+   "cite": "p1 Features"
+  },
+  {
+   "what": "CE pin voltage",
+   "limit": "VSS-0.3..VIN+0.3 V",
+   "design": "PWR_EN: steady <= ~5.0 V with VSYS >= ~4.85 V (OK); hot-plug transient up to ~6.1 V vs VSYS possibly lagging (UNVERIFIED)",
+   "ok": null,
+   "cite": "p5 Abs Max"
+  },
+  {
+   "what": "VOUT",
+   "limit": "VSS-0.3..VIN+0.3 V",
+   "design": "3.3 V; note 3V3 can be back-driven (probe/USB) while VSYS is low",
+   "ok": true,
+   "cite": "p5"
+  },
+  {
+   "what": "Output current",
+   "limit": "600 mA abs max; 500 mA max (C33, VIN = VOUT+1)",
+   "design": "3V3 load not stated in design.py (UNKNOWN)",
+   "ok": null,
+   "cite": "p5; p8"
+  },
+  {
+   "what": "Power dissipation SOT23",
+   "limit": "300 mW",
+   "design": "(VSYS-3.3)*I3V3: at VSYS 5.2 V (USB in) this caps I3V3 at about 158 mA; 3V3 budget UNKNOWN",
+   "ok": null,
+   "cite": "p5"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "VIN",
+   "type": "supply",
+   "requirement": "Power input; CIN 1 uF in the application circuit.",
+   "cite": "p4 Pin Assignment (ME6211CXXG SOT23-5); p2 Fig2",
+   "quote": "1 ... VIN ... Power Input",
+   "symbol_name": "V_{IN}",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U3": "VSYS"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "VSS",
+   "type": "ground",
+   "requirement": "Ground.",
+   "cite": "p4",
+   "quote": "2 ... VSS ... Ground",
+   "symbol_name": "V_{SS}",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U3": "GND"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "CE",
+   "type": "input (logic)",
+   "requirement": "ON/OFF control, active high: VCEH >= 1.0 V start-up, VCEL <= 0.5 V shut-down (C33). Abs max VSS-0.3..VIN+0.3. Datasheet does not say whether CE has an internal pull; treat as must-drive.",
+   "cite": "p4; p8 ME6211C33 table; p5 Abs Max",
+   "quote": "CE \"High\" Voltage VCEH Start up 1.0 V ... CE \"Low\" Voltage VCEL Shut down 0.5 V",
+   "symbol_name": "CE",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "CE abs max is VIN+0.3 V (VIN = VSYS) but PWR_EN is fed from VBUS through R14/D3 (divider with R15: PWR_EN ~ 0.909*(VBUS - Vf)). Steady state OK (VBUS 5.5 V: PWR_EN <= 5.0 V vs VSYS >= ~4.85 V -> limit >= 5.15 V). At hot plug PWR_EN can reach ~6.1 V while VSYS lags behind R47/D5 into C9 (peak 5.7 V -> limit 6.0 V), and with a cell present Q2 may hold VSYS near VBAT for the first microseconds: CE may exceed VIN+0.3 transiently. Current is limited by R14 10k. Open question: needs a scope of PWR_EN minus VSYS at a live plug-in.",
+   "nets": {
+    "U3": "PWR_EN"
+   },
+   "resolution": "fixed: C47 (100 nF on PWR_EN) slows its rise from VBUS to about 1 ms, so CE cannot lead VSYS at a live plug-in; scope PWR_EN minus VSYS at bring-up (step 5)"
+  },
+  {
+   "pin": "4",
+   "ds_name": "NC",
+   "type": "NC",
+   "requirement": "No connect.",
+   "cite": "p4",
+   "quote": "4 ... NC ... No Connect",
+   "symbol_name": "NC",
+   "footprint_pad": "4",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U3": null
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "VOUT",
+   "type": "output",
+   "requirement": "Output; CL 1 uF in the application circuit.",
+   "cite": "p4; p2 Fig2",
+   "quote": "5 ... VOUT ... Output",
+   "symbol_name": "V_{OUT}",
+   "footprint_pad": "5",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U3": "3V3_LDO"
+   }
+  }
+ ]
+}

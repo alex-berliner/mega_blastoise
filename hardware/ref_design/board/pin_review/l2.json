@@ -1,0 +1,82 @@
+{
+ "part": "L2",
+ "mpn": "AOTA-B201610S3R3-101-T",
+ "lcsc": "C42411119",
+ "footprint": "battler:AOTA-B201610S3R3-101-T",
+ "datasheet": {
+  "url": "https://www.lcsc.com/datasheet/lcsc_datasheet_2412101620_Abracon-LLC-AOTA-B201610S3R3-101-T_C42411119.pdf ; RP2350: https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf",
+  "revision_or_date": "Abracon AOTA-B201610S3R3-101-T, Revision A 9/13/2024; RP2350 datasheet (build 01/10/2026)",
+  "local": "ds/AOTA-B201610_lcsc.pdf, ds/rp2350-datasheet.pdf"
+ },
+ "ratings": [
+  {
+   "param": "Inductance",
+   "ds": "3.3 uH M (+/-20%) @1MHz",
+   "req": "3.3 uH +/-20%",
+   "cite": "Abracon AOTA-B201610S3R3-101-T, Revision A 9/13/2024 p.1; RP2350 datasheet (build 01/10/2026) \u00a76.3.8.2",
+   "ok": true
+  },
+  {
+   "param": "DCR",
+   "ds": "115 typ / 140 max mOhm",
+   "req": "<= 250 mOhm",
+   "cite": "Abracon AOTA-B201610S3R3-101-T, Revision A 9/13/2024 p.1; RP2350 datasheet (build 01/10/2026) \u00a76.3.8.2",
+   "ok": true
+  },
+  {
+   "param": "Saturation current",
+   "ds": "Isat 2.8 A (Typ column) / 2.4 A (column printed 'Max', read as guaranteed min), -30% L",
+   "req": ">= 1.5 A",
+   "cite": "Abracon AOTA-B201610S3R3-101-T, Revision A 9/13/2024 p.1; RP2350 datasheet (build 01/10/2026) \u00a76.3.8.2: 'Saturation current should be at least 1.5A'",
+   "ok": true
+  },
+  {
+   "param": "Rated current",
+   "ds": "Irms 2.3 / 2.1 A (40 C rise)",
+   "req": "VREG_LX max current 200 mA",
+   "cite": "Abracon AOTA-B201610S3R3-101-T, Revision A 9/13/2024 p.1; RP2350 datasheet (build 01/10/2026) pin description 'VREG_LX ... Max current 200 mA'",
+   "ok": true
+  },
+  {
+   "param": "Shielding/polarity",
+   "ds": "Shielded construction; white ink polarity dot",
+   "req": "fully shielded, polarity marked",
+   "cite": "Abracon AOTA-B201610S3R3-101-T, Revision A 9/13/2024 p.1, p.4; RP2350 datasheet (build 01/10/2026) \u00a76.3.8.2",
+   "ok": true,
+   "note": "RP: 'we recommend the AOTA-B201610S3R3-101-T'"
+  }
+ ],
+ "refs": [
+  "L2"
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "dot (polarity-marked) end",
+   "type": "passive (polarized for field orientation)",
+   "requirement": "Orientation matters for regulator stability; mount per RP Figure 26/28",
+   "cite": "RP2350 datasheet (build 01/10/2026) \u00a76.3.8.2-6.3.8.3, Fig. 28 (pdf p.413-414); Abracon AOTA-B201610S3R3-101-T, Revision A 9/13/2024 p.4 marking",
+   "quote": "The inductor must be marked for polarity (see Figure 28) and placed on the layout as indicated in Figure 26.",
+   "symbol_name": "1",
+   "ok": true,
+   "issue": "Footprint silk/fab dot is on pad 1. RP Fig. 28: current flows from '+' to '-' where '-' is the orientation-indicator end; in the buck, current flows VREG_LX -> VOUT, so the dot end goes to +1V1. Correct.",
+   "nets": {
+    "L2": "+1V1"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "un-dotted end",
+   "type": "passive (polarized for field orientation)",
+   "requirement": "Orientation matters for regulator stability; mount per RP Figure 26/28",
+   "cite": "RP2350 datasheet (build 01/10/2026) \u00a76.3.8.2-6.3.8.3, Fig. 28 (pdf p.413-414); Abracon AOTA-B201610S3R3-101-T, Revision A 9/13/2024 p.4 marking",
+   "quote": "The inductor must be marked for polarity (see Figure 28) and placed on the layout as indicated in Figure 26.",
+   "symbol_name": "2",
+   "ok": true,
+   "issue": "VREG_LX on the un-dotted ('+') end. Correct.",
+   "nets": {
+    "L2": "VREG_LX"
+   }
+  }
+ ]
+}

@@ -39,7 +39,8 @@ G = 1.27                 # connection grid
 STUB = 2.54
 CHAR = 1.2               # label text width per character at 1.27 mm
 STEP = {"right": (1, 0), "left": (-1, 0), "up": (0, -1), "down": (0, 1)}
-TWO_PIN = {"Device:R", "Device:C", "Device:L", "Device:FerriteBead_Small", "Device:Thermistor_NTC"}
+TWO_PIN = {"Device:R", "Device:C", "Device:L", "Device:FerriteBead_Small", "Device:Thermistor_NTC",
+           "Jumper:SolderJumper_2_Bridged"}
 HORIZ = {"Device:LED", "Device:D_Schottky", "Switch:SW_Push"}      # pin 1 left, pin 2 right at 0
 POWER_SYM = {"GND": ("power:GND", "GND"), "+3V3": ("power:+3V3", "+3V3"), "+1V1": ("power:+1V1", "+1V1"),
              "VBUS": ("power:VBUS", "VBUS"), "VSYS": ("power:VCC", "VSYS"), "VBAT": ("power:VCC", "VBAT")}
@@ -48,17 +49,17 @@ POWER_SYM = {"GND": ("power:GND", "GND"), "+3V3": ("power:+3V3", "+3V3"), "+1V1"
 REGIONS = {
     ROOT_FILE: [(20, 150, 175, 190, ["H1", "H2", "H3", "H4", "H5", "H6", "FID1", "FID2", "FID3"])],
     "usb_charger.kicad_sch": [
-        (15, 22, 125, 175, ["J1", "U1", "R1", "R2", "R3", "R4", "R41", "C1", "R38", "#FLG01", "#FLG02"]),
-        (130, 22, 250, 175, ["U2", "R5", "R9", "R10", "R39", "R40", "TH1", "C2", "C3", "D5", "D6", "Q2", "D7", "R6", "C9", "#FLG03", "J2"]),
+        (15, 22, 125, 175, ["J1", "U1", "R1", "R2", "R3", "R4", "R41", "C1", "R38", "C42", "C43", "#FLG01", "#FLG02"]),
+        (130, 22, 250, 175, ["U2", "R5", "R9", "R10", "R39", "R40", "TH1", "C41", "R43", "Q4", "R44", "C2", "C3", "R47", "D5", "D6", "Q2", "D7", "R6", "C9", "#FLG03", "J2"]),
     ],
     "power.kicad_sch": [
-        (15, 22, 250, 80, ["U3", "C5", "C6", "C7"]),
+        (15, 22, 250, 80, ["U3", "C5", "C6", "C7", "JP1", "#FLG07"]),
         (15, 85, 250, 175, ["R13", "D2", "R14", "D3", "R15", "Q1", "R16",
-                             "R17", "R18", "C8", "TP1", "TP2", "TP3", "TP4", "TP5"]),
+                             "R17", "R18", "C8", "R42", "C47", "TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "TP7", "TP8"]),
     ],
     "mcu.kicad_sch": [
         (12, 17, 138, 198, ["U4"]),
-        (142, 28, 280, 172, ["X1", "R20", "C27", "C28", "R21", "R22", "R23"]),
+        (142, 28, 280, 172, ["X1", "R20", "C27", "C28", "R21", "R22", "R23", "R48", "R49", "R50", "R51"]),
     ],
     "mcu_power.kicad_sch": [
         (15, 28, 250, 170, ["C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19",
@@ -71,7 +72,7 @@ REGIONS = {
     "display.kicad_sch": [
         (15, 22, 95, 195, ["J3"]),
         (110, 30, 250, 75, ["R28", "R29", "C29", "C30"]),
-        (110, 80, 250, 175, ["U6", "C31", "C32", "C33", "C36", "R31"]),
+        (110, 80, 250, 175, ["U6", "C31", "C32", "JP2", "C33", "C36", "R31"]),
     ],
     "audio.kicad_sch": [(15, 22, 250, 150, ["U7", "R32", "C37", "R33", "C38", "C39", "R34", "R35", "C40",
                                             "R36", "Q3", "R37", "C34", "C35", "J4"])],

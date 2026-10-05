@@ -1,0 +1,37 @@
+{
+ "ref": "J4",
+ "mpn": "speaker wire pads (no part)",
+ "datasheet": [
+  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/FM8002A_lcsc.pdf"
+ ],
+ "footprint": "battler:Speaker_Wire_Pads_P4.0mm",
+ "refs": [
+  "J4"
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "speaker lead (VO1 side)",
+   "cite": "custom pad pair battler:Speaker_Wire_Pads_P4.0mm (no datasheet); FM8002A datasheet (C94625) pin table",
+   "quote": "FM8002A: \"5 VO1 O\" (output 1)",
+   "symbol_name": "Pin_1",
+   "ok": true,
+   "issue": "U7 pin 5 (VO1) = SPK_P, R35 Rf from SPK_P to -IN (VO1 is the feedback output). BTL: speaker polarity only sets acoustic phase; no standard.",
+   "nets": {
+    "J4": "SPK_P"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "speaker lead (VO2 side)",
+   "cite": "as pin 1",
+   "quote": "FM8002A: \"8 VO2 O\" (output 2)",
+   "symbol_name": "Pin_2",
+   "ok": true,
+   "issue": "Neither lead may touch GND (BTL). PCB pads: 2x3 mm on 4 mm pitch, nets SPK_P/SPK_N as design.",
+   "nets": {
+    "J4": "SPK_N"
+   }
+  }
+ ]
+}

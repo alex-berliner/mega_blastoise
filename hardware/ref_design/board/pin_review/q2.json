@@ -1,0 +1,110 @@
+{
+ "part": "AO3401A 30 V P-channel MOSFET, SOT-23 (load-sharing switch)",
+ "refs": [
+  "Q2"
+ ],
+ "mpn": "AO3401A",
+ "lcsc": "C15127",
+ "manufacturer": "Alpha & Omega Semiconductor",
+ "symbol": "Transistor_FET:Q_PMOS_GSD",
+ "footprint": "Package_TO_SOT_SMD:SOT-23",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/fee353dd1e9e0bc90b295f14f381aa4c.pdf?productCode=C15127",
+  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_2412061733_Alpha---Omega-Semicon-AO3401A_C15127.pdf",
+  "revision_or_date": "Rev 3.1, December 2023"
+ },
+ "notes": [
+  "The datasheet's SOT23 drawing labels leads G/S/D but prints no pin numbers. The pin-1 dot (top view) sits next to the G lead and D is the lone lead on the opposite side, which gives the standard 1=G, 2=S, 3=D; that numbering is inferred from the drawing, not printed."
+ ],
+ "ratings": [
+  {
+   "what": "VDS",
+   "limit": "-30 V",
+   "design": "|VSYS-VBAT| <= 5.7 V",
+   "ok": true,
+   "cite": "p1 Abs Max"
+  },
+  {
+   "what": "VGS",
+   "limit": "\u00b112 V",
+   "design": "no USB: VGS = -VSYS ~ -3.0..-4.2 V; USB in: LS_GATE ~ VBUS-Vf vs VSYS -> |VGS| < 7 V even at a 6.7 V ring",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "ID continuous",
+   "limit": "-4 A (25 C), -3.2 A (70 C)",
+   "design": "system load about 0.5 A (up to 0.75 A in validation plan)",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "Body diode continuous",
+   "limit": "-2 A",
+   "design": "<= 0.5 A during unplug hand-over (D7 shares)",
+   "ok": true,
+   "cite": "p2 IS"
+  },
+  {
+   "what": "RDS(on) at the cell's gate drive",
+   "limit": "85 mOhm max at VGS -2.5 V, 60 mOhm at -4.5 V",
+   "design": "VGS about -3.4 V at a 3.5 V cell",
+   "ok": true,
+   "cite": "p2"
+  },
+  {
+   "what": "VGS(th)",
+   "limit": "-0.5..-1.3 V",
+   "design": "turns off when LS_GATE > VSYS-0.5 V; USB-in gives LS_GATE ~ VSYS + (VfD5 - VfD6) >= VSYS-0.1: off",
+   "ok": true,
+   "cite": "p2"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "G",
+   "type": "input (gate)",
+   "requirement": "Gate; |VGS| <= 12 V; VGS(th) -0.5..-1.3 V.",
+   "cite": "p1 SOT23 drawing; p1 Abs Max; p2 VGS(th)",
+   "quote": "Gate-Source Voltage VGS \u00b112 V",
+   "symbol_name": "G",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "Q2": "LS_GATE"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "S",
+   "type": "power (source)",
+   "requirement": "Source.",
+   "cite": "p1 SOT23 drawing",
+   "quote": "(drawing label) S",
+   "symbol_name": "S",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "Source on VSYS, drain on VBAT: body diode (anode D, cathode S for a P-FET) conducts VBAT->VSYS as the design intends; channel conducts D->S in reverse when gate low.",
+   "nets": {
+    "Q2": "VSYS"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "D",
+   "type": "power (drain)",
+   "requirement": "Drain.",
+   "cite": "p1 SOT23 drawing",
+   "quote": "(drawing label) D",
+   "symbol_name": "D",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "Q2": "VBAT"
+   }
+  }
+ ]
+}

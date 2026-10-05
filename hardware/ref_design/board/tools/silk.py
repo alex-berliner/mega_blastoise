@@ -115,11 +115,13 @@ def main():
             clashes.append(s)
         obstacles[layer].append(b)
 
-    # the board's name, revision and build on the back, over the cell
+    # the board's name, revision (design.BOARD_REV, which firmware also reads from GPIO22-25)
+    # and build, on the back
+    import design
     back = pcbnew.B_SilkS
     text("TWO-PLAYER HANDHELD  REF-A", 100, 116.0, back, h=1.2)
-    text("REV 2026-09-24", 100, 118.2, back)
-    text("2 LAYERS  1.6 MM  ENIG", 100, 119.8, back)
+    text(f"REV {design.BOARD_REV}", 100, 119.0, back, h=2.0)
+    text("2 LAYERS  1.6 MM  ENIG", 100, 121.6, back)
     # test pads (back, above the speaker pads), one name under each
     for i, name in enumerate(["VBUS", "VSYS", "VBAT", "3V3", "GND"]):
         tp = board.FindFootprintByReference(f"TP{i + 1}")

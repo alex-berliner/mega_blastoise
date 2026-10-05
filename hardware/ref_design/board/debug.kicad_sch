@@ -463,181 +463,181 @@
 
   (no_connect
     (at 162.56 22.86)
-    (uuid "2087553a-036b-4fe5-b32b-0291a080c9f9"))
+    (uuid "c946b89f-92bf-4bb8-80af-4fde5003ff47"))
 
   (no_connect
     (at 185.42 22.86)
-    (uuid "5a034474-903f-4df9-b608-6fbaa12b7cdb"))
+    (uuid "d5ef2e6a-6b1a-43c2-8597-4377ee77ac10"))
 
   (wire
     (pts
       (xy 39.37 27.94)
       (xy 41.91 27.94))
-    (uuid "0d95e521-e572-4747-a294-108a4a46a606"))
+    (uuid "f664a5e2-ee24-4428-904f-335f0d012fbe"))
 
   (wire
     (pts
       (xy 31.75 27.94)
       (xy 16.51 27.94))
-    (uuid "a4c9a532-a495-4cf3-8e98-15242781b593"))
+    (uuid "541fc924-d946-472e-b8ba-a41472bacb5b"))
 
   (wire
     (pts
       (xy 73.66 27.94)
       (xy 58.42 27.94))
-    (uuid "56c17544-aace-48ed-bfaa-8ddc3b75e3ad"))
+    (uuid "b0dad00e-3e23-4077-b85e-1d911f045da8"))
 
   (wire
     (pts
       (xy 83.82 27.94)
       (xy 86.36 27.94))
-    (uuid "a58247e8-b9b9-48b2-bfd4-1970fdb29566"))
+    (uuid "771e2fa6-eb84-4a77-8596-a4b23cb409e0"))
 
   (wire
     (pts
       (xy 113.03 27.94)
       (xy 115.57 27.94))
-    (uuid "75099919-b833-442e-b090-c31e147071a5"))
+    (uuid "e63a0480-f202-4ae3-9804-6ca748277976"))
 
   (wire
     (pts
       (xy 105.41 27.94)
       (xy 92.71 27.94))
-    (uuid "2aee5a3c-d3c6-410e-8318-ce383b6b9f4b"))
+    (uuid "18574aca-6ee3-4ac6-acd2-d5d7b022c30f"))
 
   (wire
     (pts
       (xy 139.7 27.94)
       (xy 127 27.94))
-    (uuid "fe86dd3e-4084-4680-aabc-45f89f45eee0"))
+    (uuid "c9d04622-c55c-4959-8762-43de66f135d8"))
 
   (wire
     (pts
       (xy 149.86 27.94)
       (xy 152.4 27.94))
-    (uuid "fbc6457e-a5ec-4a08-837c-6f36c9ad25e4"))
+    (uuid "bfdfff9f-dbdb-4dc9-b838-3f1ba9776fc6"))
 
   (wire
     (pts
       (xy 167.64 27.94)
       (xy 170.18 27.94))
-    (uuid "db688a91-f63f-4fb1-a664-2b66f3ce17a6"))
+    (uuid "51aa7d40-b183-4d15-9a5f-765a78a083b5"))
 
   (wire
     (pts
       (xy 167.64 30.48)
       (xy 170.18 30.48))
-    (uuid "ca0dfb3c-15db-4074-83e0-df75964abbff"))
+    (uuid "3c072d2b-95b8-490a-85ab-e8a69c5c173a"))
 
   (wire
     (pts
       (xy 167.64 33.02)
       (xy 170.18 33.02))
-    (uuid "a74b34a1-a6d7-41f5-a91f-89e416a64a3b"))
+    (uuid "405c2bdd-9766-4f19-aa80-dfcd68916e10"))
 
   (wire
     (pts
       (xy 190.5 27.94)
       (xy 193.04 27.94))
-    (uuid "70fc5200-d0ad-4dcf-9416-79b46506434b"))
+    (uuid "2bc80168-19e8-452e-92f9-17178d476438"))
 
   (wire
     (pts
       (xy 190.5 30.48)
       (xy 193.04 30.48))
-    (uuid "e7334a18-41d2-4d32-b2e9-cc7799f648b9"))
+    (uuid "72bbcbc7-2361-4f16-9500-d04846b5bcf0"))
 
   (wire
     (pts
       (xy 190.5 33.02)
       (xy 193.04 33.02))
-    (uuid "ff99abd2-228e-42c6-9def-e60cc51a9261"))
+    (uuid "f1aec84d-da3f-4163-a404-4aecaa5ac65e"))
 
   (wire
     (pts
       (xy 254 25.4)
       (xy 266.7 25.4))
-    (uuid "a51c230f-b71f-42f3-ae02-a777b2f998c2"))
+    (uuid "6a341a73-b3a4-4dd5-bb5c-2d8238be0595"))
 
   (text "J5 SWD and J6 UART follow the Raspberry Pi 3-pin debug connector pinout (Debug Probe cable)."
     (at 60.96 130 0)
     (effects
       (font
         (size 1.27 1.27)))
-    (uuid "3ac2dbe1-bea0-4282-8dbf-080669ccca1c"))
+    (uuid "f664c02b-560a-4256-9bb3-cbb7aacc0cf3"))
 
   (text "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid."
     (at 43.18 134 0)
     (effects
       (font
         (size 1.27 1.27)))
-    (uuid "a3a90d7c-71ae-410e-a4b8-6c072dcea5d8"))
+    (uuid "a8883011-499f-47b1-8b9f-398886334665"))
 
   (label "BOOTSEL"
     (at 16.51 27.94 0)
-    (uuid "1226ee89-fd5e-4563-9100-0613dacef893"))
+    (uuid "bfcbbd8e-ffff-48e4-8b95-4fa0927ff8e5"))
 
   (label "BOOTSEL"
     (at 58.42 27.94 0)
-    (uuid "4bfc7925-81f2-4f58-8c50-f8d616a61d28"))
+    (uuid "cb15f150-a037-4594-ac04-d9867b511905"))
 
   (label "GND"
     (at 86.36 27.94 0)
-    (uuid "1c86679b-295e-4c07-8673-ca4a137d6450"))
+    (uuid "2da37cf9-77ce-447e-a349-0186d29ff72a"))
 
   (label "RUN_SW"
     (at 92.71 27.94 0)
-    (uuid "d8a4e6a9-885d-4655-bf87-91cde3c80928"))
+    (uuid "ba1bd55e-7d95-432c-a390-50d303e36357"))
 
   (label "RUN_SW"
     (at 127 27.94 0)
-    (uuid "5a9a80f0-5f15-4b6e-a6a5-e137c07cab4b"))
+    (uuid "3ff4266d-5872-4387-8efa-344efb0265a2"))
 
   (label "GND"
     (at 152.4 27.94 0)
-    (uuid "983946b0-6246-4b8f-a58c-86b322cda658"))
+    (uuid "62cc09e8-5de5-4e69-af53-f19d2c6bddc6"))
 
   (label "GND"
     (at 170.18 30.48 0)
-    (uuid "3d4cc1e6-2f15-4e4b-906c-891b810a2d12"))
+    (uuid "8671ca7b-b1b3-4fc6-bde9-19114402dade"))
 
   (label "GND"
     (at 193.04 30.48 0)
-    (uuid "1af294e9-88b2-4b86-9283-b49ebb83a89a"))
+    (uuid "c5405efb-1315-47f2-8db7-ad21f794739b"))
 
   (label "GND"
     (at 254 25.4 0)
-    (uuid "27cf58d9-b5a5-4d95-9d78-30b6a3dc40a8"))
+    (uuid "7c354441-de25-4a67-87b1-4422ae40b5b8"))
 
   (global_label "QSPI_SS"
     (shape passive)
     (at 41.91 27.94 0)
-    (uuid "6340d94a-5e71-4f6e-894f-29893ea0ddb6"))
+    (uuid "26ace4de-1841-4b12-84b5-26de2da847be"))
 
   (global_label "RUN"
     (shape passive)
     (at 115.57 27.94 0)
-    (uuid "54a7552e-2b15-42bd-a707-a3b166887ee1"))
+    (uuid "a5bb722b-1952-409b-8ad9-1296490f469f"))
 
   (global_label "SWDIO"
     (shape passive)
     (at 170.18 27.94 0)
-    (uuid "758f14bf-06c7-400b-8714-fb9e8eeea08a"))
+    (uuid "19149d4c-d935-4831-8242-0d36e9f19b2f"))
 
   (global_label "SWCLK"
     (shape passive)
     (at 170.18 33.02 0)
-    (uuid "80fd3368-7c9d-4755-bddc-749f294810c7"))
-
-  (global_label "UART_RX"
-    (shape passive)
-    (at 193.04 27.94 0)
-    (uuid "a62af18b-dfaf-45e4-ab2b-6cf6221f5dd1"))
+    (uuid "74a216fd-d719-4fd2-901f-1d5864e39baa"))
 
   (global_label "UART_TX"
     (shape passive)
+    (at 193.04 27.94 0)
+    (uuid "d542d29b-232e-49af-a5a0-264a09f0f0b6"))
+
+  (global_label "UART_RX"
+    (shape passive)
     (at 193.04 33.02 0)
-    (uuid "4f840efe-517c-47e7-8d46-88acae389bca"))
+    (uuid "036cccb7-ada7-485b-bd23-d7448184629b"))
 
   (symbol
     (lib_id "Device:R")
@@ -646,7 +646,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "ce455976-762d-4bcc-9e59-83d21012c69f")
+    (uuid "2b68a80d-dfa9-46ce-8923-903e0555a2de")
     (property "Reference" "R25"
       (at 35.56 24.13 0)
       (effects
@@ -700,7 +700,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "bc70d1d2-2c07-4686-8aec-466f51221598")
+    (uuid "4fcd3d18-4dbe-4a40-a2ce-752521f9f8c2")
     (property "Reference" "SW18"
       (at 78.74 24.13 0)
       (effects
@@ -754,7 +754,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "b07864da-a220-4f1a-8915-cd6cb1815924")
+    (uuid "db72dd45-4daf-408f-af1a-51da2b62f495")
     (property "Reference" "R26"
       (at 109.22 24.13 0)
       (effects
@@ -808,7 +808,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "c9f6e3af-b2c5-420d-abcd-dc409105820a")
+    (uuid "d6be39d0-733d-442a-b77c-8c9d47658174")
     (property "Reference" "SW19"
       (at 144.78 24.13 0)
       (effects
@@ -862,7 +862,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "c14ef537-1952-4cb6-b5f8-144ecfe59368")
+    (uuid "28169923-d105-40cd-b179-dd4735127b30")
     (property "Reference" "J5"
       (at 162.56 26.67 0)
       (effects
@@ -916,7 +916,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "84d07f4f-78cc-442f-89b0-fcd00bf58693")
+    (uuid "9c71e55d-fa2d-40e3-919a-c3a9eda353a4")
     (property "Reference" "J6"
       (at 185.42 26.67 0)
       (effects
@@ -970,7 +970,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "7bc3c95b-9ace-44a6-b1c7-7e5902110d21")
+    (uuid "c624cbe2-3ef2-4382-8fe1-7d327625e80b")
     (property "Reference" "#PWR017"
       (at 266.7 21.59 0)
       (effects
