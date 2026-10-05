@@ -2,10 +2,10 @@
  "ref": "J5",
  "mpn": "SM03B-SRSS-TB(LF)(SN) (JST, C160403), SWD",
  "datasheet": [
-  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/rpi_debug_connector_spec.pdf",
-  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/jst_eSH.pdf",
-  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/C160403_SM03B-SRSS-TB.pdf",
-  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/rpi_debug_probe_introduction.adoc"
+  "downloaded as rpi_debug_connector_spec.pdf",
+  "downloaded as jst_eSH.pdf",
+  "downloaded as C160403_SM03B-SRSS-TB.pdf",
+  "downloaded as rpi_debug_probe_introduction.adoc"
  ],
  "footprint": "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
  "refs": [

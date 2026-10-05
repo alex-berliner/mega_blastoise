@@ -2,8 +2,8 @@
  "ref": "J1",
  "mpn": "TYPE-C-31-M-12 (Korean Hroparts, C165948)",
  "datasheet": [
-  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/C165948_TYPE-C-31-M-12.pdf",
-  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/usb_type-c_spec_r2.0_aug2019.pdf"
+  "downloaded as C165948_TYPE-C-31-M-12.pdf",
+  "downloaded as usb_type-c_spec_r2.0_aug2019.pdf"
  ],
  "footprint": "battler:USB_C_Receptacle_HRO_TYPE-C-31-M-12",
  "refs": [

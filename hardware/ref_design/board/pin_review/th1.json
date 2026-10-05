@@ -2,7 +2,7 @@
  "ref": "TH1",
  "mpn": "NCP15XH103F03RC (Murata, C77131)",
  "datasheet": [
-  "/tmp/claude-1000/-home-alex-Code-mega-blastoise/8c72670c-08f9-4b2a-aa0a-4bd2d045daf0/scratchpad/pins/ds/C77131_NCP15XH103F03RC.pdf"
+  "downloaded as C77131_NCP15XH103F03RC.pdf"
  ],
  "footprint": "Resistor_SMD:R_0402_1005Metric",
  "refs": [
