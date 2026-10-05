@@ -29,7 +29,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 22 ohm 0402 series in Raspberry Pi's spots | preferred/basic parts: no JLC setup fee (a 27 ohm 0603 doesn't fit the copied layout) |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes | no LEDs (approved) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
-| Case | tub and lid snap together on six hooks; six pins locate the board (one off centre: it fits one way only); button decks step down 2.24 mm for genuine DS Lite caps, keyed so they can't turn; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
+| Case | tub and lid snap together on six hooks; crush ribs centre the board and bosses clamp it (it fits one way only: J1 and J2 key it); button decks step down 2.74 mm for genuine DS Lite caps, keyed so they can't turn; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` via Konnect; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases

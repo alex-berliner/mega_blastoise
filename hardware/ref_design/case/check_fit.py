@@ -10,6 +10,7 @@ the case allows at that spot:
   side bezels, seat bands  <= bezel_limit (the lid's underside)
   around the clusters      <= retainer_limit (the lid comes down to the cap flanges)
   button decks             <= deck_limit (the ends step down so genuine caps stand proud)
+  lid's stiffening ribs    <= rib_limit (beside the screen, under the lid)
   under a silicone piece   nothing at all
   lid pin bosses           nothing within the boss diameter
   lid snap hooks           nothing taller than hook_clear under a hook
@@ -151,6 +152,8 @@ def main():
             limit, where = min(limit, POS["retainer_limit"]), "retainer"
         if any(inside_rect(box, d) for d in POS["decks"]) and POS["deck_limit"] < limit:
             limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends
+        if any(inside_rect(box, r) for r in POS["lid_ribs"]) and POS["rib_limit"] < limit:
+            limit, where = POS["rib_limit"], "lid's stiffening rib"
         frame = POS["frame"]                    # the lid's panel frame hangs lower than the rest of the lid
         if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit:
             limit, where = frame["limit"], "lid's panel frame"

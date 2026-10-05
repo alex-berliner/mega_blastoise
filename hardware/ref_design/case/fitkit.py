@@ -28,7 +28,8 @@ KIT = [  # (kit name, file, what it tests)
     ("buttons_tub", "coupon_buttons_tub.stl", "seat 1's end of the tub: ribs, bosses, cell slot"),
     ("buttons_board", "coupon_buttons_board.stl", "seat 1's end of the board mock"),
     ("buttons_lid", "coupon_buttons_lid.stl", "seat 1's end of the lid: cap holes, retainers, J2 pocket"),
-    ("usb_tub", "coupon_usb_tub.stl", "the USB-C opening in the tub wall"),
+    ("usb_tub", "coupon_usb_tub.stl", "the USB-C opening's lower half, in the tub wall"),
+    ("usb_lid", "coupon_usb_lid.stl", "its upper half, in the lid's tongue"),
     ("frame_lid", "coupon_frame_lid.stl", "the lid's window, ledge and panel frame"),
 ]
 

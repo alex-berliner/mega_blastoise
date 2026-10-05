@@ -75,7 +75,7 @@ piece_to_glass = 5;       // silicone piece to glass edge
 wall = 2.0;  board_clear = 0.5;  corner_r = 8;
 
 // ---------------- stack (z) ----------------
-floor_t = 1.5;  cell_gap = 0.5;  pcb_t = 1.6;  lid_t = 1.5;
+floor_t = 1.5;  cell_gap = 0.5;  pcb_t = 1.6;  lid_t = 2.0;     // lid 2.0, not 1.5: the first print felt flimsy
 bay_t = 5.0;              // board top to lid underside: the panel and the air under it. 5.0, not 4.9:
                           // J3 (2.0 mm) under the panel keeps 0.4 mm against the connector's and a
                           // printed lid's tolerances (Alex, 2026-09-26)
@@ -130,20 +130,26 @@ seat1 = [
 seat2_names = ["P2 up", "P2 down", "P2 left", "P2 right", "P2 A", "P2 B", "P2 X", "P2 Y"];
 buttons = concat(seat1, [for (i = [0:7]) [str("SW", i + 9), seat2_names[i], rot180(seat1[i][2])]]);
 
-// locating pins: four beside the glass in the side bezels, two between each seat's clusters.
-// Each rises from a tub boss through the board's hole into a lid boss, so the snapped-on lid
-// clamps the board with nothing to screw
+// Bosses that clamp the board: four beside the glass in the side bezels, two between each
+// seat's clusters; a tub boss under the board meets a lid boss above it. (They were printed
+// pins through the board's holes: 1.9 mm FDM pins bound and snapped off, so the first print
+// dropped them. Crush ribs on the tub's walls now centre the board.) The board goes in one
+// way only anyway: turned round, J1's receptacle hits the wall away from the USB opening,
+// and the lid turned round lands on J2, which has its pocket at seat 1's end only.
 pin_x = 31.4;             // midway between the bay and the board edge
-// Anti-dummy: seat 1's centre pin sits pin_key off the centre line, so the board, and the lid,
-// go in one way only (a 180 degree turn or a flip leaves a pin against solid plastic)
-pin_key = 3.0;
+pin_key = 3.0;            // seat 1's centre boss sits off the centre line (the board's hole is there)
 pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [0, seat_y], [-pin_key, -seat_y]];
 boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
 
 // edge parts, all on the right (+X) long edge
 usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
-usb_recess = [13.6, 3.9];  // plug overmold (USB-C allows 12.35 x 6.5; many are larger): width, depth below the port's centre
-usb_slot = [10.4, 2.4];    // through the wall around the plug's 8.3 x 2.5 shell: width, depth below the centre
+// The opening takes the plug's overmold, not just its 8.25 x 2.4 shell: the receptacle's face is
+// 1.15 mm inside the case's surface, so the overmold has to enter the wall. USB-C asks overmolds
+// to fit 12.35 x 6.5 mm; the opening is a rounded oblong round that, centred on the port, split
+// at its middle: the lower half in the tub wall, the upper half in a tongue of the lid that
+// fills a notch in the wall (so neither part has a roof to print over the hole)
+usb_hole = [13.2, 7.0, 2.6];   // width, height, corner radius: holds a 12.35 x 6.5 r1.75 overmold
+usb_tongue_w = 18.0;  usb_fit = 0.2;   // the lid's tongue, and its clearance each side in the notch
 usb_front = board_w / 2 + 1.35;                         // receptacle face: 1.35 past the board edge
 // left long edge: debug
 pin_pos = [[-(board_w / 2 - 4.0), 20.0], [-(board_w / 2 - 4.0), 12.0]];  // SW18 BOOTSEL, SW19 RESET
@@ -167,17 +173,11 @@ assert(retainer_z < z_lid, "button retainer above the lid");
 assert(z_deck_lid > retainer_bot + 0.5, "button deck lower than the retainers");
 assert(step_y - step_wall > (panel_l + panel_fit) / 2 + frame_wall + 0.3, "step over the panel frame");
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "pin under a silicone piece");
-assert(len([for (s = pins) if (len([for (t = pins) if (norm(t - rot180(s)) < 1.5) 1]) == 0) 1]) > 0,
-       "locating pins symmetric under a half turn: the board could go in backwards");
-assert(len([for (s = pins) if (len([for (t = pins) if (norm(t - [-s[0], s[1]]) < 1.5) 1]) == 0) 1]) > 0,
-       "locating pins mirror-symmetric: a flipped board would fit");
-assert(len([for (s = pins) if (len([for (t = pins) if (norm(t - [s[0], -s[1]]) < 1.5) 1]) == 0) 1]) > 0,
-       "locating pins mirror-symmetric end to end: a flipped board would fit");
-assert(pin_key + boss_d / 2 + 0.5 <= spine_w / 2, "keyed pin's boss runs out under a button deck");
+assert(pin_key + boss_d / 2 + 0.5 <= spine_w / 2, "seat 1's centre boss runs out under a button deck");
 
 // ---------------- echo: everything the board script needs ----------------
 // a snap hook's footprint (two corners) from its wall position and direction
-function hook_rect(h) = let(c = cos(h[2]), sn = sin(h[2]), u0 = -snap_gap - snap_t, v0 = -snap_w / 2, v1 = snap_w / 2)
+function hook_rect(h) = let(c = cos(h[2]), sn = sin(h[2]), u0 = -snap_gap - snap_t_root - snap_fillet, v0 = -h[3] / 2, v1 = h[3] / 2)
   [[h[0] + u0 * c - v0 * sn, h[1] + u0 * sn + v0 * c], [h[0] - v1 * sn, h[1] + v1 * c]];
 function jnum(v) = str(round(v * 1000) / 1000);
 function jpt(p) = str("[", jnum(kicad(p)[0]), ", ", jnum(kicad(p)[1]), "]");
@@ -211,7 +211,9 @@ echo(str("JSON {",
     "], \"limit\": ", z_lid - z_top_cu - frame_h - 0.3, "}, ",
   "\"hook_clear\": ", bay_t - snap_len, ", ",
   "\"decks\": [", join([for (sy = [-1, 1], sx = [-1, 1]) str("[", jpt([sx * (spine_w / 2 - step_wall), sy * (step_y - step_wall)]), ", ",
-    jpt([sx * case_w / 2, sy * case_l / 2]), "]")]), "], \"deck_limit\": ", z_deck_lid - z_top_cu - 0.3,
+    jpt([sx * case_w / 2, sy * case_l / 2]), "]")]), "], \"deck_limit\": ", z_deck_lid - z_top_cu - 0.3, ", ",
+  "\"lid_ribs\": [", join([for (r = lid_ribs) str("[", jpt([r[0] - 0.6, r[1]]), ", ", jpt([r[0] + 0.6, r[2]]), "]")]), "], ",
+  "\"rib_limit\": ", z_lid - rib_h - z_top_cu - 0.3,
   "}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
 echo(str("CAPS flange top ", retainer_z - z_top_cu, " above the board, cap top ", cap_top - z_top_cu, ", deck face ",
@@ -251,7 +253,7 @@ if (part == "layout") {
   for (c = clusters) color([0.85, 0.85, 0.9, 0.45]) at(c, 0.5) linear_extrude(0.05) circle(d = piece_d);
   for (b = buttons) color("#f2c94c") at(b[2], 0.6) linear_extrude(0.05) circle(d = 4.8);
   for (s = pins) color("white") at(s, 0.7) linear_extrude(0.05) ring(0.4) circle(d = boss_d);
-  for (h = hooks) color("#56ccf2") at(h, 0.75) rotate(h[2]) translate([-snap_t / 2, 0]) linear_extrude(0.05) square([snap_t, snap_w], center = true);
+  for (h = hooks) color("#56ccf2") at(h, 0.75) rotate(h[2]) translate([-snap_t_root / 2, 0]) linear_extrude(0.05) square([snap_t_root, h[3]], center = true);
   color("#f08a3c") at([usb_front - 3.65, usb_y], 0.8) linear_extrude(0.05) square([7.3, usb_w], center = true);
   color("#f08a3c") at(batt_conn, 0.8) linear_extrude(0.05) square([7.9, 7.6], center = true);
   for (p = pin_pos) color("red") at(p, 0.9) linear_extrude(0.05) circle(d = 1.2);
@@ -259,13 +261,27 @@ if (part == "layout") {
 
 // ---------------- 3D ----------------
 // Snap fit: hooks hang from the lid just inside the tub wall and their barbs click into
-// grooves in the wall. ESTIMATE: FDM snap fits need a test print; snap_barb and snap_t are
-// the numbers to tune (bending strain here is about 1.5 * t * barb / len^2 = 3%, fine in PETG)
-snap_w = 8.0;  snap_t = 1.0;  snap_len = 4.3;  snap_barb = 0.35;  snap_barb_h = 1.2;  snap_gap = 0.15;
+// grooves in the wall. The lid prints face down, so a hook bends across its layers, a print's
+// weakest direction: the first print's hooks (1.0 mm, barb 0.35) snapped in PLA. Now tapered
+// from 1.3 at the root to 0.8 at the tip with a fillet, a 0.25 barb and 12 mm wide on the long
+// walls: about half the root strain. The grip is the barb less the gap to the wall (0.1 mm
+// drawn; FDM prints the gap smaller). PETG takes the bending far better than PLA.
+snap_t_root = 1.3;  snap_t_tip = 0.8;  snap_fillet = 0.6;  snap_len = 4.3;
+snap_barb = 0.25;  snap_barb_h = 1.2;  snap_gap = 0.15;
+deck_fit = 0.3;           // gap between the lid's step walls and the tub's walls they drop between
 in_x = case_w / 2 - wall;  in_y = case_l / 2 - wall;
 // [x, y, direction of the wall]: clear of the USB-C (right wall, y 0), the debug connectors
 // (left wall, y -2 and -12) and the button retainers (|y| beyond 45 on the long walls)
-hooks = [[in_x, 30, 0], [in_x, -30, 0], [-in_x, 30, 180], [-in_x, -30, 180], [0, in_y, 90], [0, -in_y, 270]];
+// [x, y, direction of the wall, width]: 12 mm on the long walls, 8 on the ends (the spine is 13)
+hooks = [[in_x, 30, 0, 12], [in_x, -30, 0, 12], [-in_x, 30, 180, 12], [-in_x, -30, 180, 12],
+         [0, in_y, 90, 8], [0, -in_y, 270, 8]];
+// crush ribs on the tub's inner walls centre the board: [x, y, direction of the wall]
+crush = [[in_x, 48, 0], [in_x, -48, 0], [-in_x, 48, 180], [-in_x, -48, 180],
+         [22, in_y, 90], [-22, in_y, 90], [22, -in_y, 270], [-22, -in_y, 270]];
+crush_reach = board_clear - 0.05;   // how far a rib stands off the wall: 0.05 mm short of the board
+// stiffening ribs under the lid beside the screen: [x, y0, y1], 1.2 wide, rib_h deep
+rib_h = 1.5;
+lid_ribs = [[32.6, -40, -8], [32.6, 8, 40], [-32.6, -40, 40]];      // a gap over J1 on the right
 assert(snap_len < bay_t - 0.3, "snap hooks reach the board");
 
 module tub() difference() {
@@ -273,10 +289,14 @@ module tub() difference() {
     difference() {
       linear_extrude(z_lid) rrect(case_w, case_l, corner_r);
       translate([0, 0, floor_t]) linear_extrude(z_lid) rrect(case_w - 2 * wall, case_l - 2 * wall, corner_r - wall);
-      translate([0, 0, z_deck_lid]) linear_extrude(z_lid) deck_cut2d();      // walls drop at the decks
+      // walls drop at the decks, deck_fit clear of the lid's step walls that drop in between
+      translate([0, 0, z_deck_lid]) linear_extrude(z_lid) offset(delta = deck_fit) deck_cut2d();
     }
-    // bosses up to the board, pins on through its holes into the lid bosses
-    for (s = pins) at(s) { cylinder(d = boss_d + 1.0, h = z_board); cylinder(d = pin_d, h = z_top_cu + 1.8); }
+    // bosses up to the board
+    for (s = pins) at(s) cylinder(d = boss_d + 1.0, h = z_board);
+    // crush ribs: a 45 degree lead-in at the top, so the board slides down onto them
+    for (c = crush) at(c) rotate(c[2]) rotate([90, 0, 0]) linear_extrude(1.2, center = true)
+      polygon([[0.01, floor_t], [-crush_reach, floor_t], [-crush_reach, z_top_cu], [0.01, z_top_cu + crush_reach + 0.01]]);
     // ribs under each silicone piece carry the button presses into the floor
     for (c = clusters) at(c) difference() {
       cylinder(d = piece_d - 4, h = z_board);
@@ -291,19 +311,18 @@ module tub() difference() {
     for (sx = [-1, 1], sy = [-1, 1]) at([sx * (case_w / 2 - 7), sy * (case_l / 2 - 9)], -0.8) cylinder(d = 6, h = 0.8 + 0.01);
   }
   // grooves for the lid's snap hooks
-  for (h = hooks) at(h) rotate(h[2]) translate([-0.01, -(snap_w + 0.6) / 2, z_lid - snap_len + 0.1])
-    cube([snap_barb + 0.1 + 0.01, snap_w + 0.6, snap_barb_h + 0.2]);
+  for (h = hooks) at(h) rotate(h[2]) translate([-0.01, -(h[3] + 0.6) / 2, z_lid - snap_len + 0.1])
+    cube([snap_barb + 0.1 + 0.01, h[3] + 0.6, snap_barb_h + 0.2]);
   // speaker grille
   for (i = [-3:3], j = [-3:3]) if (norm([i, j]) <= 3.2) at([i * 2.4, spk_y + j * 2.4], -2) cylinder(d = 1.4, h = floor_t + 3);
-  // USB-C: a recess for the plug's overmold outside and a slot through the wall, both open
-  // to the wall's top (the lid closes them), so there is no roof to print over the opening
-  let(zc = z_top_cu + usb_h / 2) {
-    translate([case_w / 2 - 2.8, usb_y - usb_recess[0] / 2, zc - usb_recess[1]])
-      cube([3.0, usb_recess[0], z_lid - zc + usb_recess[1] + 1]);
-    translate([case_w / 2 - wall - 1, usb_y - usb_slot[0] / 2, zc - usb_slot[1]])
-      cube([wall + 2, usb_slot[0], z_lid - zc + usb_slot[1] + 1]);
-  }
+  // USB-C: the opening's lower half, and above it the notch the lid's tongue fills
+  usb_opening();
+  translate([in_x - 0.01, usb_y - usb_tongue_w / 2, usb_zc]) cube([wall + 1, usb_tongue_w, z_lid]);
 }
+
+usb_zc = z_top_cu + usb_h / 2;   // the port's centre
+module usb_opening() translate([in_x - 1, usb_y, usb_zc]) rotate([0, 90, 0])
+  linear_extrude(wall + 2) rrect(usb_hole[1], usb_hole[0], usb_hole[2]);
 
 // every ABXY cap: [centre, tab direction in OpenSCAD's counter-clockwise degrees]. Seat 2's
 // cluster is seat 1's turned 180 degrees, caps and all
@@ -319,10 +338,15 @@ module lid() difference() {
     translate([0, 0, z_deck_lid]) linear_extrude(case_h - z_deck_lid) intersection() {
       rrect(case_w, case_l, corner_r); difference() { deck_cut2d(); deck2d(); }
     }
-    // bosses down to the board top: they clamp it, the tub's pins locate them
+    // bosses down to the board top: with the tub's bosses they clamp it
     for (s = pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_lid - z_top_cu + 0.01);
+    // stiffening ribs beside the screen
+    for (r = lid_ribs) translate([r[0] - 0.6, r[1], z_lid - rib_h]) cube([1.2, r[2] - r[1], rib_h + 0.01]);
+    // the tongue that fills the tub's notch over the USB-C opening
+    translate([in_x, usb_y - usb_tongue_w / 2 + usb_fit, usb_zc + 0.1])
+      cube([wall, usb_tongue_w - 2 * usb_fit, z_lid - usb_zc - 0.1 + 0.01]);
     // snap hooks, just inside the tub wall
-    for (h = hooks) at(h) rotate(h[2]) snap_hook();
+    for (h = hooks) at(h) rotate(h[2]) snap_hook(h[3]);
     // button retainers: the lid comes down to the cap flanges around each cluster
     for (c = clusters) at(c, retainer_bot) cylinder(d = piece_d + 1, h = z_lid - retainer_bot + 0.01);
     // pinhole guides reach down towards the switches
@@ -335,7 +359,7 @@ module lid() difference() {
                                                                                              // the neck is only estimated
     }
   }
-  for (s = pins) at(s, z_top_cu - 1) cylinder(d = pin_d + 0.3, h = 1 + 2.2);
+  usb_opening();                                                              // its upper half
   translate([0, 0, deck_face]) linear_extrude(case_h) deck2d();              // nothing above the decks
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_lid - 1]) linear_extrude(lid_t + 2) window();
@@ -355,11 +379,13 @@ module lid() difference() {
 }
 
 // one snap hook in the frame of its wall: the wall's inner face at x = 0, the case inside at -x
-module snap_hook() {
-  z0 = z_lid - snap_len;
-  translate([-snap_gap - snap_t, -snap_w / 2, z0]) cube([snap_t, snap_w, snap_len + 0.01]);
+module snap_hook(w) {
+  z0 = z_lid - snap_len;  zl = z_lid + 0.01;  g = snap_gap;
+  // tapered from the root to the tip, with a 45 degree fillet into the lid on the inside
+  rotate([90, 0, 0]) linear_extrude(w, center = true)
+    polygon([[-g, z0], [-g, zl], [-g - snap_t_root - snap_fillet, zl], [-g - snap_t_root, zl - snap_fillet], [-g - snap_t_tip, z0]]);
   // barb: a 45 degree lead-in below, a steep face above that holds the lid down
-  translate([0, snap_w / 2, 0]) rotate([90, 0, 0]) linear_extrude(snap_w)
+  translate([0, w / 2, 0]) rotate([90, 0, 0]) linear_extrude(w)
     polygon([[-snap_gap, z0 + 0.2], [-snap_gap + snap_barb, z0 + 0.2 + snap_barb],
              [-snap_gap + snap_barb, z0 + snap_barb_h - 0.25], [-snap_gap, z0 + snap_barb_h]]);
 }

@@ -13,7 +13,7 @@ Two players face each other across a 3.5in 320x480 IPS screen; each has a
 D-pad and four face buttons under DS Lite silicone at their end. One Li-ion
 cell, one speaker, one USB-C for charging and firmware. No radios.
 
-Case 75.4 x 156.2 mm, 15.1 mm thick at the screen and 12.86 at the ends: each end steps down 2.24 mm to a button deck (a spine between the clusters stays full height over J2 and the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
+Case 75.4 x 156.2 mm, 15.6 mm thick at the screen (a 2.0 mm lid) and 12.86 at the ends: each end steps down 2.74 mm to a button deck (a spine between the clusters stays full height over J2 and the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
 line width, the size JLC quotes), 2 layers, 1.6 mm, ENIG,
 every hole 0.3 mm or larger.
 
@@ -240,7 +240,9 @@ router starts from a ring of stub ends and no pin gets boxed in by its neighbour
   compliance testing. A product needs FCC/CE (unintentional radiator) and UN38.3
   paperwork for the cell before it ships.
 - The unplug hand-over (USB to cell) is calculated, not measured: bring-up step 5.
-- The snap fit is modelled, not printed: tune `snap_barb` and `snap_t` on a test print.
+- The snap fit: the first print (PLA) found the hooks snapping, the lid too tight at the deck steps and
+  the pins binding; this version drops the pins, adds 0.3 mm at the steps and tapers the hooks. Print
+  the lid in PETG if the hooks still break.
 - Firmware for this board doesn't exist yet: see [pinmap.md](pinmap.md).
 
 ## Measure before ordering

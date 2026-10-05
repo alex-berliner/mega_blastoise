@@ -86,4 +86,5 @@ if (kit == "buttons_tub")  intersection() { tub(); band_box(); }
 if (kit == "buttons_board") intersection() { kit_board(); band_box(); }
 if (kit == "buttons_lid")  flip() intersection() { lid(); band_box(); }
 if (kit == "usb_tub")      intersection() { tub(); usb_box(); }
+if (kit == "usb_lid")      flip() intersection() { lid(); usb_box(); }
 if (kit == "frame_lid")    flip() intersection() { lid(); frame_box(); }

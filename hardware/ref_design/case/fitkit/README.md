@@ -12,7 +12,7 @@ they always match the design. Regenerate after any case or board change:
 
 | File | What it is | Print |
 |---|---|---|
-| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, 100% infill over the battery connector pocket, supports under the four button decks (they sit 2.24 mm below the screen face) |
+| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, 100% infill over the battery connector pocket, supports under the four button decks (they sit 2.74 mm below the screen face) |
 | `board_mock.stl` | the board: outline, the six locating holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 16 membrane contacts and the four silicone pieces engraved, J3's outline to tape a real connector on | flat, as exported |
 | `panel_dummy.stl` | the panel at its thickest (2.45 mm), active area engraved on the glass side | flat, glass side up |
 | `cell_dummy.stl` | the 503450 cell (34 x 50 x 5 mm) with its lead tab at the seat-1 end | flat |
@@ -37,8 +37,9 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
 
 **1. Coupons first (about 2 hours of printing):**
 - **Snap:** press `coupon_snap_lid` onto `coupon_snap_tub`. It should click with firm thumb pressure,
-  hold, and come apart with a blade in the gap. Too tight or cracking: `snap_barb` down (0.35 ->
-  0.25) or `snap_t` down; too loose: `snap_barb` up (0.45).
+  hold, and come apart with a blade in the gap. Too tight or cracking: `snap_barb` down (0.25 ->
+  0.2) or the hook thinner (`snap_t_root`, `snap_t_tip`); too loose: `snap_barb` up (0.3). The first
+  print's hooks snapped in PLA: print the lid in PETG if they still do.
 - **Panel frame:** drop the real panel (or the dummy) into `coupon_frame_lid`, glass down. It should
   go in with a little play, and the active area should sit centred in the window with only a thin
   black border showing; the FPC's neck should pass the notch. Tune `panel_fit`, `window_margin`,
@@ -55,14 +56,14 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
 
 **2. Everything together (about a day of printing):**
 1. Tub: foam and cell (or dummy) in the cell pocket, lead towards seat 1; speaker in its ring.
-2. Board mock onto the bosses, its holes over the pins; the cell's plug up through the slot to J2's
+2. Board mock onto the bosses (the crush ribs on the walls centre it); the cell's plug up through the slot to J2's
    block.
 3. Tape the real FH12 connector on J3's outline (mouth towards seat 1, pin 1 at the marked end).
    Fold the real panel's FPC under it and slide it into the connector. The design expects a little
    slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
    `case.scad` moves J3.
 4. Panel into the lid's frame on the tape, silicone and caps in, lid down: all six hooks should
-   click, the lid should sit flush, nothing should rattle, the case should measure 15.1 mm at the screen, 12.9 at the ends.
+   click, the lid should sit flush, nothing should rattle, the case should measure 15.6 mm at the screen, 12.9 at the ends.
 5. Press every button: each should click through and spring back.
 
 **3. Measure and record** (design_review.md, "Measure before ordering"): the silicone's pill

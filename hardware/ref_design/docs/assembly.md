@@ -40,10 +40,10 @@ numbers to measure are in [design_review.md](design_review.md).
 lead. A reversed cell destroys the charger. If a batch arrives reversed, lift each
 crimp's latch with a needle, pull the two pins out of the plug and swap them.
 
-Printing: PETG (or PLA), the lid face down. The lid is 0.6 mm thick over the battery
-connector: 100% infill there. FDM holes come out small: drill the 1.2 mm pinholes to
-size. The snap fit is untested: print one tub and lid first and tune `snap_barb` and
-`snap_t` in `case/case.scad` if the lid is too loose or too tight.
+Printing: PETG for the lid (its snap hooks bend across its layers; PLA hooks snapped on the
+first print), the lid face down. The lid is 1.1 mm thick over the battery connector: 100%
+infill there. FDM holes come out small: drill the 1.2 mm pinholes to size. Tune `snap_barb`
+and the hook thickness in `case/case.scad` if the lid is too loose or too tight.
 
 ## 3. Hand work on the board
 
@@ -62,8 +62,8 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
    liner on).
 2. Tub: foam pad and cell into the cell pocket, cable towards seat 1; speaker into its
    ring on the floor, face down.
-3. Board into the tub over them, its six holes over the six pins (it goes in one way only:
-   seat 1's centre pin is 3 mm off centre, towards the D-pad), resting on the bosses
+3. Board into the tub over them, USB-C into its opening (it goes in one way only), pressed
+   down past the crush ribs that centre it, resting on the bosses
    and the four ribs under the button clusters, USB-C in its wall opening. Feed the
    cell's plug up through the slot next to J2 and plug it in (J2's mouth faces the slot).
 4. Panel: lay it face down beyond the board's seat-1 edge, flip J3's lid up, slide the
@@ -77,7 +77,7 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
    (left) up-right. The slots are 30 degrees wide, so close is enough; if the lid won't
    seat, a cap is turned too far.
 6. Peel the tape liner and lower the lid straight down until all six hooks click into
-   the tub wall: its bosses take the pins and clamp the board, its locating frame centres
+   the tub wall: its bosses clamp the board, its locating frame centres
    the panel and the tape takes it, the caps come up through their holes and the
    retainers trap their flanges. From here on the panel hangs from the lid, 2.4 mm clear
    of the board.
