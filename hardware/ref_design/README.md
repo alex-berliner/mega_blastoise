@@ -65,7 +65,13 @@ python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders
 python3 ../case/check_fit.py                 # board inside the case?
 python3 ../case/fitkit.py                    # the printable fit kit (about 7 min)
 python3 tools/pinmap.py                      # docs/pinmap.md
+python3 ../viewer/build.py                   # the exploded 3D view (GitHub Pages, /assembly/)
 ```
+
+The exploded view is published at https://alex-berliner.github.io/mega_blastoise/assembly/
+whenever main is pushed. Its parts are built here (GitHub's runners lack KiCad's 3D
+library and OpenSCAD) and committed; `viewer/pre-push`, installed as the repo's pre-push
+hook, rebuilds and commits them when main would go out with stale ones.
 
 Needs KiCad 10 (kicad-cli and its `pcbnew` Python module), OpenSCAD, Java,
 Freerouting 1.9.0, Konnect, and Raspberry Pi's RP2350B minimal KiCad design

@@ -57,6 +57,11 @@ jobs:
           mkdir -p _site/pkg
           cp mega_blastoise_web/pkg/*.js       _site/pkg/
           cp mega_blastoise_web/pkg/*.wasm     _site/pkg/
+          # The reference design's exploded 3D view, built locally (it needs KiCad's 3D
+          # library and OpenSCAD) and kept fresh by its pre-push hook.
+          mkdir -p _site/assembly
+          cp -r hardware/ref_design/viewer/site/. _site/assembly/
+          python3 hardware/ref_design/viewer/build.py --check || echo "::warning::the assembly viewer is older than the board or case it shows; run hardware/ref_design/viewer/build.py"
           # Without this, Jekyll drops anything starting with an underscore.
           touch _site/.nojekyll
           ls -la _site

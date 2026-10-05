@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mega Blastoise Assembly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+/* Layout: a 3D stage beside a parts rail (stacked on phones); the stage is the page. */
+:root {
+  --bg: #eef1f5; --panel: #ffffff; --stage: #dde3ea; --fg: #17202b; --muted: #5b6878;
+  --line: #d2d9e2; --accent: #2a66b0; --accent-soft: #dbe7f6;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1319; --panel: #141b23; --stage: #0a0f14; --fg: #e5ecf3; --muted: #8a99aa;
+  --line: #243040; --accent: #6ea8ee; --accent-soft: #1b2c42; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1319; --panel: #141b23; --stage: #0a0f14; --fg: #e5ecf3; --muted: #8a99aa;
+  --line: #243040; --accent: #6ea8ee; --accent-soft: #1b2c42; color-scheme: dark }
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--body); }
+[hidden] { display: none !important; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+h1 { font: 600 26px/1.1 var(--display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.chip { font: 500 12px var(--mono); padding: 3px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.stage { position: relative; min-width: 0; height: min(78vh, 760px); background: var(--stage); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+canvas:active { cursor: grabbing; }
+.views { position: absolute; top: 10px; left: 10px; display: flex; gap: 4px; }
+.views button, .play { font: 500 12px var(--body); color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+.views button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#status { position: absolute; left: 10px; bottom: 10px; font: 12px var(--mono); color: var(--muted); }
+.hint { position: absolute; right: 10px; bottom: 10px; font-size: 12px; color: var(--muted); }
+.stamp { position: absolute; right: 10px; top: 12px; font: 12px var(--mono); color: var(--muted); }
+.stamp a { color: inherit; }
+@media (max-width: 520px) { .hint { display: none; } .stamp { top: auto; bottom: 10px; } }
+
+.rail { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.ctl { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: grid; gap: 10px; }
+.slider-head { display: flex; align-items: baseline; gap: 8px; }
+.slider-head label { font: 600 15px var(--display); letter-spacing: .04em; text-transform: uppercase; }
+output { margin-left: auto; font: 500 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: -6px; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+.parts { list-style: none; margin: 0; padding: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.parts li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 2px 10px; padding: 9px 12px; border-top: 1px solid var(--line); cursor: pointer; }
+.parts li:first-child { border-top: 0; }
+.parts li.sel { background: var(--accent-soft); }
+.parts li.off .name, .parts li.off .note { opacity: .45; }
+.sw { width: 14px; height: 14px; border-radius: 3px; margin-top: 2px; border: 1px solid var(--line); }
+.name { font-weight: 500; }
+.z { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.note { grid-column: 2 / -1; color: var(--muted); font-size: 13px; }
+.parts input { margin: 0; }
+.vis { display: flex; align-items: center; gap: 8px; }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .stage { height: 62vh; min-height: 340px; }
+  .chips { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>Mega Blastoise Assembly</h1>
+    <p class="sub">The reference design's case, board and bought parts, from the build files.</p>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="c" aria-label="3D view of the handheld's parts"></canvas>
+    <div class="views" role="group" aria-label="Camera">
+      <button type="button" data-view="iso" aria-pressed="true">Angle</button>
+      <button type="button" data-view="side" aria-pressed="false">Side</button>
+      <button type="button" data-view="end" aria-pressed="false">End</button>
+      <button type="button" data-view="top" aria-pressed="false">Top</button>
+    </div>
+    <div id="status">Loading parts…</div>
+    <div class="hint">Drag to turn · scroll or pinch to zoom · tap a part</div>
+    <div class="stamp" id="stamp"></div>
+  </div>
+
+  <aside class="rail">
+    <div class="ctl">
+      <div class="slider-head"><label for="explode">Explode</label><output id="gap" for="explode"></output></div>
+      <input type="range" id="explode" min="0" max="1000" value="600">
+      <div class="ends"><span>Assembled</span><span>Apart</span></div>
+      <div class="row">
+        <button type="button" class="play" id="play">Play</button>
+        <label><input type="checkbox" id="xray"> See through the shell</label>
+      </div>
+    </div>
+    <ol class="parts" id="parts" aria-label="Parts, top to bottom"></ol>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+// Case frame from case.scad: origin at the case centre, z up from the tub bottom, mm.
+// lift = how far each part rises (mm) when fully exploded.
+let MODEL = { z_board: 2.0, case_h: 13.9, z: {} };   // replaced by parts/model.json
+const PARTS = [
+  { key: "lid", name: "Lid", file: "parts/lid.stl", color: "#5a6573", lift: 112, shell: true,
+    note: "Printed. Six hooks click onto the tub; the window frames the panel." },
+  { key: "caps", name: "Button caps", file: "parts/caps.stl", color: "#eef0f4", lift: 88,
+    note: "DS Lite caps, bought. Their flanges sit under the lid, which holds them in." },
+  { key: "panel", name: "Display panel", file: "parts/panel.stl", color: "#0b0e13", lift: 68, rough: 0.25,
+    note: "3.5 in IPS (ER-TFT035IPS-6), taped to the lid's window ledge. Its ribbon folds round to J3." },
+  { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 50, metal: 0.6,
+    note: "403450 Li-ion, 4 × 34 × 50 mm, lying under the screen." },
+  { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 44, metal: 0.5,
+    note: "15 mm, 4 mm thick, over the hole in the board; it plays through the tub floor's grille." },
+  { key: "foam", name: "Foam spacer", file: "parts/foam.stl", color: "#e2bf55", lift: 36,
+    note: "1.2 mm foam tape: lifts the cell clear of the parts under it." },
+  { key: "silicone", name: "Silicone domes", file: "parts/silicone.stl", color: "#8e959f", lift: 32,
+    note: "DS Lite button membranes, 1.2 mm, over the board's contact pads." },
+  { key: "board", name: "Circuit board", file: "parts/board.glb", lift: 18,
+    note: "2 layers, 1.6 mm, assembled by JLC. Every fitted part is shown." },
+  { key: "tub", name: "Tub", file: "parts/tub.stl", color: "#2c343f", lift: 0, shell: true,
+    note: "Printed. Bosses take the screws; the USB-C opening is in the end wall." },
+  { key: "screws", name: "Screws", file: "parts/screws.stl", color: "#a9afb8", lift: -28, metal: 0.9,
+    note: "Six M2 × 8 self-tapping, from the back, through the board into the lid." },
+];
+
+const canvas = document.getElementById("c");
+const stage = document.getElementById("stage");
+const statusEl = document.getElementById("status");
+const slider = document.getElementById("explode");
+const gapOut = document.getElementById("gap");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 1, 4000);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.12;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 0.75));
+const key = new THREE.DirectionalLight(0xffffff, 0.85); key.position.set(120, 220, 160); scene.add(key);
+const rim = new THREE.DirectionalLight(0xbfd6ff, 0.35); rim.position.set(-160, 80, -200); scene.add(rim);
+
+// STL meshes are z-up; this group turns the case frame into three's y-up world.
+const world = new THREE.Group(); world.rotation.x = -Math.PI / 2; scene.add(world);
+
+const slots = {};   // key -> { holder, part, meshes }
+const pickables = [];
+
+function themeColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
+}
+function applyTheme() { scene.background = new THREE.Color(themeColor("--stage")); }
+applyTheme();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+function register(part, object) {
+  const holder = new THREE.Group();
+  holder.add(object);
+  world.add(holder);
+  const meshes = [];
+  object.traverse(o => {
+    if (o.isMesh) {
+      o.material = Array.isArray(o.material) ? o.material.map(m => m.clone()) : o.material.clone();
+      o.userData.key = part.key;
+      meshes.push(o);
+      pickables.push(o);
+    }
+  });
+  meshes.forEach(m => [].concat(m.material).forEach(mat => {
+    mat.userData.base = { transparent: mat.transparent, opacity: mat.opacity, depthWrite: mat.depthWrite };
+  }));
+  slots[part.key] = { holder, part, meshes };
+  update();
+}
+
+const stlLoader = new THREE.STLLoader();
+const gltfLoader = new THREE.GLTFLoader();
+let loaded = 0;
+function done() {
+  loaded++;
+  statusEl.textContent = loaded < PARTS.length ? `Loading parts… ${loaded} of ${PARTS.length}` : "";
+}
+// Models are published as base64 text (artifacts serve text, not raw binary).
+// GitHub Pages serves the binary files; a claude.ai artifact only serves text, so there
+// each model is published beside them as base64 (file + ".txt").
+async function fetchModel(file) {
+  const raw = await fetch(file).catch(() => null);
+  if (raw && raw.ok) return raw.arrayBuffer();
+  const r = await fetch(file + ".txt");
+  if (!r.ok) throw new Error(r.status);
+  const bin = atob((await r.text()).trim());
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return buf.buffer;
+}
+async function start() {
+  try {
+    const r = await fetch("parts/model.json");
+    if (r.ok) MODEL = await r.json();
+  } catch (e) { /* keep the defaults */ }
+  const chip = t => { const c = document.createElement("span"); c.className = "chip"; c.textContent = t; return c; };
+  const chips = document.getElementById("chips");
+  chips.append(chip(`${MODEL.case_h} mm at the screen`));
+  if (MODEL.size) chips.append(chip(`${MODEL.size[0]} × ${MODEL.size[1]} mm`));
+  if (MODEL.rev != null) chips.append(chip(`REV ${MODEL.rev}`));
+  if (MODEL.commit) {
+    const a = document.createElement("a");
+    a.href = `https://github.com/alex-berliner/mega_blastoise/commit/${MODEL.commit}`;
+    a.target = "_blank"; a.rel = "noopener"; a.textContent = MODEL.commit;
+    document.getElementById("stamp").append("built from ", a, `${MODEL.dirty ? " + local edits" : ""}, ${MODEL.built}`);
+  }
+  document.querySelectorAll(".parts li").forEach(li => {
+    const z = MODEL.z[li.dataset.key];
+    if (z) li.querySelector(".z").textContent = `z ${z[0].toFixed(1)} to ${z[1].toFixed(1)}`;
+  });
+  update();
+  PARTS.forEach(loadPart);
+}
+async function loadPart(part) {
+  const fail = () => { statusEl.textContent = `Couldn't load ${part.name.toLowerCase()} (${part.file}). Reload to try again.`; };
+  let data;
+  try { data = await fetchModel(part.file); } catch (e) { fail(); return; }
+  if (part.file.endsWith(".glb")) {
+    gltfLoader.parse(data, "", gltf => {
+      // KiCad's GLB: metres, y up, z = -case y, origin at the board bottom's centre.
+      const g = gltf.scene;
+      g.scale.setScalar(1000);
+      g.rotation.x = Math.PI / 2;
+      const lift = new THREE.Group(); lift.position.z = MODEL.z_board; lift.add(g);
+      register(part, lift); done();
+    }, fail);
+  } else {
+    const geo = stlLoader.parse(data);
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(part.color).convertSRGBToLinear(),
+      roughness: part.rough ?? 0.62, metalness: part.metal ?? 0.05,
+      side: part.shell ? THREE.DoubleSide : THREE.FrontSide,
+    });
+    register(part, new THREE.Mesh(geo, mat)); done();
+  }
+}
+
+// ---- explode ----
+const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+function t() { return slider.value / 1000; }
+function update() {
+  const e = ease(t());
+  for (const k in slots) slots[k].holder.position.z = slots[k].part.lift * e;
+  gapOut.textContent = e < 0.002 ? `closed, ${MODEL.case_h} mm` : `lid ${Math.round(112 * e)} mm up`;
+  controls.target.y = 7 + 44 * e;
+}
+slider.addEventListener("input", () => { stopPlay(); update(); });
+
+let playing = false, playStart = 0, playFrom = 0;
+const playBtn = document.getElementById("play");
+function stopPlay() { playing = false; playBtn.textContent = "Play"; }
+playBtn.addEventListener("click", () => {
+  if (playing) { stopPlay(); return; }
+  playing = true; playBtn.textContent = "Stop";
+  playStart = performance.now(); playFrom = t();
+});
+
+// ---- see-through shell ----
+const xray = document.getElementById("xray");
+function applyXray() {
+  ["tub", "lid"].forEach(k => {
+    const s = slots[k]; if (!s) return;
+    s.meshes.forEach(m => [].concat(m.material).forEach(mat => {
+      mat.transparent = xray.checked; mat.opacity = xray.checked ? 0.2 : 1;
+      mat.depthWrite = !xray.checked; mat.needsUpdate = true;
+    }));
+  });
+}
+xray.addEventListener("change", applyXray);
+
+// ---- parts list, selection, visibility ----
+const list = document.getElementById("parts");
+let selected = null;
+PARTS.forEach(p => {
+  const li = document.createElement("li");
+  li.dataset.key = p.key;
+  const sw = document.createElement("span"); sw.className = "sw";
+  sw.style.background = p.key === "board" ? "#cdd3a0" : p.color;
+  const name = document.createElement("span"); name.className = "name"; name.textContent = p.name;
+  const vis = document.createElement("span"); vis.className = "vis";
+  const z = document.createElement("span"); z.className = "z"; z.textContent = "";
+  const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = true; cb.id = `show-${p.key}`;
+  cb.setAttribute("aria-label", `Show ${p.name}`);
+  cb.addEventListener("click", ev => ev.stopPropagation());
+  cb.addEventListener("change", () => {
+    li.classList.toggle("off", !cb.checked);
+    if (slots[p.key]) slots[p.key].holder.visible = cb.checked;
+  });
+  vis.append(z, cb);
+  const note = document.createElement("span"); note.className = "note"; note.textContent = p.note;
+  li.append(sw, name, vis, note);
+  li.addEventListener("click", () => select(selected === p.key ? null : p.key));
+  list.append(li);
+});
+function select(k) {
+  selected = k;
+  list.querySelectorAll("li").forEach(li => li.classList.toggle("sel", li.dataset.key === k));
+  const accent = new THREE.Color(themeColor("--accent"));
+  for (const key in slots) slots[key].meshes.forEach(m => [].concat(m.material).forEach(mat => {
+    if (!mat.emissive) return;
+    if (!mat.userData.baseEmissive) mat.userData.baseEmissive = mat.emissive.clone();
+    if (key === k) { mat.emissive.copy(accent); mat.emissiveIntensity = 0.45; }
+    else { mat.emissive.copy(mat.userData.baseEmissive); mat.emissiveIntensity = 1; }
+  }));
+  if (k) list.querySelector(`li[data-key="${k}"]`).scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+}
+
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let downAt = null;
+canvas.addEventListener("pointerdown", e => { downAt = [e.clientX, e.clientY]; });
+canvas.addEventListener("pointerup", e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(pickables.filter(m => {
+    let o = m; while (o) { if (!o.visible) return false; o = o.parent; } return true;
+  }), false);
+  const shellSeeThrough = xray.checked;
+  const hit = hits.find(h => !(shellSeeThrough && ["tub", "lid"].includes(h.object.userData.key)));
+  select(hit ? hit.object.userData.key : null);
+});
+
+// ---- camera views ----
+const VIEWS = {
+  iso:  new THREE.Vector3(1.0, 0.85, 1.05),
+  side: new THREE.Vector3(1, 0.02, 0),
+  end:  new THREE.Vector3(0.001, 0.02, 1),
+  top:  new THREE.Vector3(0.001, 1, 0.001),
+};
+let tween = null;
+function viewPos(name) {
+  const aspect = camera.aspect;
+  const span = 200 / Math.min(1, aspect * 0.85);    // fit the 156 mm case plus the exploded stack
+  const dist = span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+  return VIEWS[name].clone().normalize().multiplyScalar(dist).add(controls.target);
+}
+function goView(name) {
+  document.querySelectorAll(".views button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === name)));
+  const to = viewPos(name);
+  if (reduce) { camera.position.copy(to); return; }
+  tween = { from: camera.position.clone(), to, start: performance.now() };
+}
+document.querySelectorAll(".views button").forEach(b => b.addEventListener("click", () => goView(b.dataset.view)));
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+update();
+camera.position.copy(viewPos("iso"));
+
+function frame(now) {
+  if (playing) {
+    const p = ((now - playStart) / 4000 + playFrom * 0.5) % 1;     // 4 s: apart, then back together
+    slider.value = Math.round((p < 0.5 ? p * 2 : 2 - p * 2) * 1000);
+    update();
+  }
+  if (tween) {
+    const k = Math.min(1, (now - tween.start) / 550), s = ease(k);
+    camera.position.lerpVectors(tween.from, tween.to, s);
+    if (k === 1) tween = null;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+start();
+</script>
+</body>
+</html>
