@@ -48,11 +48,11 @@
   156.2
  ],
  "rev": 1,
- "commit": "3015bc6",
+ "commit": "b7a6238",
  "dirty": false,
- "built": "2026-10-05",
+ "built": "2026-10-07",
  "inputs": {
-  "board/battler.kicad_pcb": "02b37fbd862d57daf97c67679ad4c3f0ce9ac02e",
+  "board/battler.kicad_pcb": "f83a056b9981c5d23d33212ea8870c5ddd998e1b",
   "case/case.scad": "f6af5ee39d4117fc867fb8b29c43ad72844ae4ed",
   "case/tub.stl": "26811bdfbccf493cddd19248159a8a1988e197b7",
   "case/lid.stl": "c7f14224d7543829e69ea6b7a1c70f9f28686387",
