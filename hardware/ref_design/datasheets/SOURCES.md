@@ -13,7 +13,7 @@ the design; the file names below are what the notes and tools refer to.
 | `me6211.pdf` | ME6211 LDO series | https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_MICRONE-Nanjing-Micro-One-Elec-ME6211C33R5G_C235316.pdf |
 | `fm8002a.pdf` | FM8002A mono audio amplifier | https://www.chipsourcetek.com/DataSheet/FM8002A.pdf |
 | `ap3156.pdf` | Diodes AP3156 6-channel charge pump LED driver | https://www.diodes.com/assets/Datasheets/AP3156.pdf |
-| `srv05-4.pdf` | SRV05-4 USB ESD array | https://www.onsemi.com/pub/Collateral/SRV05-4-D.PDF |
+| `srv05-4.pdf` | Semtech SRV05-4.TCT USB ESD array (U1), Revision 08/11/04 | https://www.lcsc.com/datasheet/lcsc_datasheet_1809212114_SEMTECH-SRV05-4-TCT_C13612.pdf |
 
 `RPI-RP2350B-MINIMAL_LICENSE.txt` is committed: the RP2350B core (schematic
 values, the QFN80, crystal and inductor footprints and their 3D models) comes

@@ -150,7 +150,7 @@ R("R4", S, "10k", "CC2", "CC2_SENSE")          # 10k keeps a CC short to VBUS of
 # through the D+ steering diode (to about 2.7 V), hold PWR_EN up and half-close Q2
 part("U1", S, "Power_Protection:SRV05-4", "SRV05-4", "Package_TO_SOT_SMD:SOT-23-6",
      {"1": "USB_DP", "3": "USB_DM", "4": None, "6": None, "5": "+3V3", "2": "GND"},
-     "C85364", "SRV05-4-P-T7", "ProTek Devices")
+     "C13612", "SRV05-4.TCT", "Semtech")      # ProTek's C85364 ran out at JLC (2026-10-07)
 # C1 through R41: the TP4056 datasheet's fix for a ceramic input cap ringing when a live
 # source is plugged in (it asks 1.5 ohm; 2.2 is the nearest Basic part). A 2 m cable into a
 # board without a cell: VBUS peaks 6.7 V instead of 7.1 (U2's maximum is 8 V), VSYS 6.2 V
