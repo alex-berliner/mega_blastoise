@@ -20,3 +20,5 @@ board/*-erc.rpt
 board/*-drc.rpt
 board/.history/
 board/_restore_backup_*/
+# vendor SPICE models: board/sim/models.py fetches and translates them
+board/sim/models/

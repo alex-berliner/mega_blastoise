@@ -1,0 +1,92 @@
+
+== loop gain (channel 1), RG 330, RF 10k, CF 1n
+720 corners; worst phase margin 72.5 deg at {'ref': 0.124, 'vsys': 5.7, 'vf': 0, 'lfpc': 5e-08, 'cgs_extra': 0, 'fc': 373324}; lowest phase while |T|>1 leaves 62.8 deg
+no crossover (op-amp output at its rail, the FET fully on: LED dropout, open loop): [(0.124, 3.5, 0.4)]
+
+== DC current per channel (mA); ideal = duty x 56.3 mA
+duty ideal  Vf  | VSYS 3.5 VSYS 3.8 VSYS 4.2 VSYS 4.7 VSYS 5.7
+0.05  2.82 +0.0 |     2.57     2.57     2.57     2.57     2.57
+0.05  2.82 +0.2 |     2.57     2.57     2.57     2.57     2.57
+0.05  2.82 +0.4 |     2.57     2.57     2.57     2.57     2.57
+0.18 10.13 +0.0 |     9.89     9.89     9.89     9.89     9.89
+0.18 10.13 +0.2 |     9.89     9.89     9.89     9.89     9.89
+0.18 10.13 +0.4 |     9.89     9.89     9.89     9.89     9.89
+0.50 28.15 +0.0 |    27.91    27.91    27.91    27.91    27.91
+0.50 28.15 +0.2 |    27.91    27.91    27.91    27.91    27.91
+0.50 28.15 +0.4 |    27.91    27.91    27.91    27.91    27.91
+0.80 45.04 +0.0 |    44.80    44.80    44.80    44.80    44.80
+0.80 45.04 +0.2 |    44.80    44.80    44.80    44.80    44.80
+0.80 45.04 +0.4 |    44.80    44.80    44.80    44.80    44.80
+1.00 56.30 +0.0 |    56.06    56.06    56.06    56.06    56.06
+1.00 56.30 +0.2 |    56.06    56.06    56.06    56.06    56.06
+1.00 56.30 +0.4 |    52.54    56.06    56.06    56.06    56.06
+
+== FET dissipation at full current, Vf typ
+VSYS 4.2: 56.1 mA, Vds 1.08 V, 61 mW per FET
+VSYS 4.7: 56.1 mA, Vds 1.58 V, 89 mW per FET
+VSYS 5.7: 56.1 mA, Vds 2.58 V, 145 mW per FET
+
+== op-amp offset at the datasheet maximum: +4.5 mV on channel 1, -4.5 mV on channel 2 (VSYS 3.8)
+duty 0.05: ideal   2.82, ch1   4.62 (+64.1%), ch2   0.53 (-81.2%)
+duty 0.18: ideal  10.13, ch1  11.94 (+17.8%), ch2   7.85 (-22.6%)
+duty 0.50: ideal  28.15, ch1  29.95 ( +6.4%), ch2  25.86 ( -8.1%)
+duty 1.00: ideal  56.30, ch1  58.10 ( +3.2%), ch2  54.01 ( -4.1%)
+
+== 3V3 at +-2% (ME6211), full duty: the reference follows the GPIO high level
+3V3 3.234: 54.93 mA
+3V3 3.3: 56.06 mA
+3V3 3.366: 57.19 mA
+
+== steps on BL_REF (0.5 us edge, filter bypassed): channel 1
+step        VSYS  Vf   from mA  to mA  overshoot %  settle to 1% (us)
+0.05->0.95   3.5 +0.0     2.57   53.24       0.0       58.5
+0.05->0.95   4.2 +0.0     2.57   53.24       0.0       58.2
+0.05->0.95   5.7 +0.0     2.57   53.24       0.0       58.0
+0.05->0.95   3.5 +0.2     2.57   53.24       0.0       58.7
+0.95->0.05   3.5 +0.0    53.24    3.38       0.2      105.0
+0.95->0.05   4.2 +0.0    53.24    3.38       0.2      105.0
+0.95->0.05   5.7 +0.0    53.24    3.38       0.2      105.1
+0.95->0.05   3.5 +0.2    53.24    3.38       0.2      105.1
+0.05->0.06   3.5 +0.0     2.57    3.04       2.6      128.7
+0.05->0.06   4.2 +0.0     2.57    3.04       2.6      128.7
+0.05->0.06   5.7 +0.0     2.57    3.04       2.6      128.7
+0.05->0.06   3.5 +0.2     2.57    3.03       2.6      128.7
+0.06->0.05   3.5 +0.0     3.14    2.68       2.3      127.5
+0.06->0.05   4.2 +0.0     3.14    2.68       2.3      127.5
+0.06->0.05   5.7 +0.0     3.14    2.68       2.3      127.5
+0.06->0.05   3.5 +0.2     3.14    2.68       2.3      127.6
+0.90->0.95   3.5 +0.0    50.43   53.24       0.0       35.0
+0.90->0.95   4.2 +0.0    50.43   53.24       0.0       34.3
+0.90->0.95   5.7 +0.0    50.43   53.24       0.0       33.6
+0.90->0.95   3.5 +0.2    50.43   53.24       0.0       35.5
+0.95->0.90   3.5 +0.0    53.24   50.43       0.0       35.1
+0.95->0.90   4.2 +0.0    53.24   50.43       0.0       34.4
+0.95->0.90   5.7 +0.0    53.24   50.43       0.0       33.7
+0.95->0.90   3.5 +0.2    53.24   50.43       0.0       35.6
+
+== turn-on from off (BL_REF 0 -> duty in 0.5 us)
+0 -> 0.18 at VSYS 3.5: 9.89 mA, overshoot 0.00%, 90% after 765 us
+0 -> 0.18 at VSYS 5.7: 9.89 mA, overshoot 0.00%, 90% after 763 us
+0 -> 0.5 at VSYS 3.5: 27.91 mA, overshoot 0.00%, 90% after 288 us
+0 -> 0.5 at VSYS 5.7: 27.91 mA, overshoot 0.00%, 90% after 287 us
+
+== GPIO PWM through 100k / 3.9k / 1 uF, steady state after 25 ms
+  36.6 kHz duty 0.18:   9.86 mA, ripple 0.019 mA p-p (0.19%)
+  36.6 kHz duty 0.50:  27.86 mA, ripple 0.076 mA p-p (0.27%)
+  36.6 kHz duty 0.95:  53.14 mA, ripple 0.018 mA p-p (0.03%)
+ 146.5 kHz duty 0.18:   9.84 mA, ripple 0.003 mA p-p (0.04%)
+ 146.5 kHz duty 0.50:  27.86 mA, ripple 0.016 mA p-p (0.06%)
+ 146.5 kHz duty 0.95:  53.11 mA, ripple 0.004 mA p-p (0.01%)
+
+== power sequencing (VSYS 4.2 V)
+3V3 rises 0 -> 3.3 V in 0.5 ms, GPIO low: peak 0.000 mA
+3V3 rises with the GPIO high (100% duty from reset): follows BL_REF (filter, tau 3.75 ms) within 0.27 mA, peak 55.73 mA (setpoint 56.3)
+3V3 and GPIO fall at 3 ms while at 100%: before 56.03 mA, peak after 56.03 mA, at 5 ms 0.000 mA
+VSYS 0 -> 5.7 V in 1 us with 3V3 off (device off): peak LED current 4.677 mA
+VSYS 3.5 -> 5.7 V in 1 us with 3V3 off (device off): peak LED current 0.527 mA
+
+== VSYS steps while lit at 100% (USB plug-in), and back
+3.8 -> 4.7 V in 2 us: 56.0 mA steady; max 91.4 mA (above 1.5x for 1.4 us), min 25.4 mA (below 0.5x for 1.2 us)
+3.8 -> 5.7 V in 2 us: 56.0 mA steady; max 133.5 mA (above 1.5x for 2.0 us), min 7.8 mA (below 0.5x for 2.2 us)
+3.8 -> 4.7 V in 10 us: 56.0 mA steady; max 62.8 mA (above 1.5x for 0.0 us), min 49.4 mA (below 0.5x for 0.0 us)
+3.8 -> 5.7 V in 10 us: 56.0 mA steady; max 70.6 mA (above 1.5x for 0.0 us), min 42.2 mA (below 0.5x for 0.0 us)
