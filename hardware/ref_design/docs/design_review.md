@@ -97,7 +97,7 @@ every hole 0.3 mm or larger.
   sees it through Q1 (2N7002, gate on the button node) on GPIO3, so no MCU pin
   ever touches VSYS; firmware reads seat 1's Y there.
 - Off state: ME6211 off (CE low), amplifier shut down (R36 holds SHUTDOWN high,
-  4.2 uA), backlight driver shut down by R31, charger drawing about 2 uA from the
+  4.2 uA), backlight sinks off (they run from 3V3; R56/R57 hold the FET gates low), charger drawing about 2 uA from the
   cell, battery divider 4.5 uA (up to 9 uA: with the chip unpowered, GPIO47 sits above
   IOVDD and its ESD diode takes a few uA, harmless and the same as on Raspberry Pi's
   Pico), and D5's reverse leakage from VSYS into R38 (1-6 uA at 25 C). About 18-22 uA
@@ -153,11 +153,27 @@ every hole 0.3 mm or larger.
   battle screen redraws in parts. The datasheet rates serial writes to 20 MHz.
 - SPI clock and data get 33 ohm source terminations next to the MCU.
 - Backlight: six LEDs in parallel (3.0-3.2 V, 120 mA at most), common anode, three
-  on each of two cathode pins. The AP3156 charge pump (1x/1.5x/2x) from VSYS drives the
-  anode, and three of its six current sinks go to each cathode pin, so the current is
-  still regulated from a full cell to a flat one. It's set over one GPIO (1-wire
-  pulses, 32 levels, 20 mA per sink at the top); it starts at 0 mA, and R31 holds the
-  line low (off) until the firmware drives it.
+  on each of two cathode pins. The anode is on VSYS (through JP2); each cathode pin has
+  its own linear current sink: half of U6 (MCP6002) drives an AO3400A (Q5, Q6) and
+  holds its 2.2 ohm sense resistor (R52, R53) at BL_REF. BL_REF is GPIO44's PWM through
+  R60/R61 and C50, 0.124 V at 100%: 56 mA a pin, 113 mA in all. The sink needs about
+  0.13 V, so the current holds from a full cell (or USB) down to the 3.5 V cutoff with
+  the panel's 3.2 V maximum Vf; with an LED at the older datasheet's 3.4 V it falls 6% at
+  100% on a 3.5 V cell. Efficiency is that of the AP3156 in its 1x mode (Vf / VSYS), so
+  battery life is unchanged. The LED current is DC (the PWM is filtered), so there is no
+  PWM in the LEDs for the amplifier to pick up. It replaced the AP3156 charge pump, out
+  of stock at JLC and LCSC on 2026-10-07: every part is Basic or Preferred.
+- Backlight loop: R54/R55 (330 ohm) isolate the gate capacitance from the op-amp and
+  C48/C49 (1 nF) with R58/R59 (10k) close a local loop. Simulated in ngspice with
+  Microchip's MCP6001/2 macromodel and Alpha & Omega's AO3400 model before layout
+  (board/sim/backlight.py, results in board/sim/backlight_results.txt): phase margin
+  72.5 deg or more over 720 corners (duty, VSYS 3.5-5.7 V, Vf +0/+0.2/+0.4 V, 20-50 nH
+  of FPC, gate capacitance doubled), no overshoot on large steps (2.6% on a 5%->6%
+  step), 0.3% ripple at 36.6 kHz PWM, no current spike at power-up, power-down or a
+  VSYS hot plug with 3V3 off (0.5-4.7 mA for about a us). A VSYS step of 1.9 V in 2 us
+  while lit (USB plugged in) briefly overshoots to 133 mA a pin for about 2 us. The
+  op-amp's offset (4.5 mV max) sets the accuracy: +-3.6% at full, +-20% a pin at 18%
+  duty, so firmware keeps the dimmest level at about 18%.
 
 ### Audio (sheet Audio)
 
@@ -218,13 +234,14 @@ every hole 0.3 mm or larger.
 
 | Check | Tool | Result |
 |---|---|---|
-| Datasheet pin review | `board/tools/check_pins.py` over `board/pin_review/`: every assembled part's every pin against its current datasheet (name, requirement, page/table citation, quote), every resistor and capacitor against its LCSC part and voltage rating; fails when a reviewed pin's net changes or an issue has no fix or waiver | PASS: 27 parts, 247 pins, 85 passives, 5 waived (2026-10-05). Found and fixed: J6 TX/RX swapped, USB series resistors 22 to 27 ohm, the ME6211 CE above VIN at a live plug-in (C47) |
-| Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 123 parts, 115 nets, 79 named and 36 no-connects: all match |
+| Datasheet pin review | `board/tools/check_pins.py` over `board/pin_review/`: every assembled part's every pin against its current datasheet (name, requirement, page/table citation, quote), every resistor and capacitor against its LCSC part and voltage rating; fails when a reviewed pin's net changes or an issue has no fix or waiver | PASS: 29 parts, 244 pins, 94 passives, 5 waived (2026-10-07, after the backlight sinks replaced the AP3156; first run 2026-10-05). Found and fixed: J6 TX/RX swapped, USB series resistors 22 to 27 ohm, the ME6211 CE above VIN at a live plug-in (C47) |
+| Schematic says what `design.py` means | `board/tools/check_netlist.py` on KiCad's netlist | 157 parts, 124 nets, 94 named and 30 no-connects: all match |
+| Backlight sink stability | ngspice, `board/sim/backlight.py` (Microchip and Alpha & Omega models) | phase margin 72.5 deg or more over 720 corners; flat 3.5-5.7 V; 0.3% ripple; no power-sequencing spikes (`board/sim/backlight_results.txt`) |
 | ERC | kicad-cli | 0 errors, 0 warnings |
 | DRC with schematic parity | kicad-cli, `board/tools/check_pcb.py` | 0 errors, 0 unconnected, 0 parity issues; 2 cosmetic warnings (USB-C outline silk at the board edge, where the receptacle overhangs by design). `board/fab/drc.txt` |
 | Every hole 0.3 mm or larger | the drill file, `board/fab/gerbers/battler.drl` | 0.3, 0.6, 0.65 and 2.2 mm only |
 | Contact pattern | `hardware/membrane/tools/check_contact_fp.py` | 0.200 mm minimum gap, 1.60 mm bridging spot |
-| Board inside the case | every part's 3D model against the case's height limits, bosses, snap hooks and keep-outs (`case/check_fit.py`) | 92 parts, no collisions, including under the lid's panel frame (`case/fit_report.txt`) |
+| Board inside the case | every part's 3D model against the case's height limits, bosses, snap hooks and keep-outs (`case/check_fit.py`) | 123 parts, no collisions, including under the lid's panel frame (`case/fit_report.txt`) |
 
 Routing: two things make the 2-layer board route completely, in about ten minutes.
 The pins are assigned for two layers: each faces where its net goes, in the order the
@@ -264,7 +281,7 @@ the case for these checks.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| RP2354B and AP3156 stock at JLC (1454 and 1490 when checked) | assembly blocked for a larger run | buy ahead, or consign parts |
+| RP2354B stock at JLC (1665 on 2026-10-07; the AP3156 it shared this row with ran out and was replaced by the discrete backlight sink) | assembly blocked for a larger run | buy ahead, or consign parts |
 | Board thermistor, not a cell one | TH1 reads the board over the cell; a charge in a hot car or near the 46 C edge may pause and resume | the pause is safe and charging resumes by itself; bring-up 5.4 and 5.4a check TH1's reading while charging and the pause points |
 | USB-to-cell hand-over | for 1.5-3.3 ms after an unplug D7 carries VSYS until Q2 takes over; below a 3.42-3.49 V cell 3V3 still dips under the flash's 2.97 V minimum | the 3.5 V cutoff keeps the cell above that; bring-up step 5 scopes it with a nearly flat cell; a larger margin would need a lower-dropout 3V3 regulator |
 | Hot plug with no cell | a live source into a bare board rings VSYS to about 6.2 V in simulation (R41 in place), against the ME6211's 6.5 V maximum | bring-up step 5 scopes it; the worst case is an A-to-C cable from an always-on USB-A port (a USB-C source switches VBUS on only after it sees the board, and ramps it), so on the bench prefer a USB-C source or fit the cell first |

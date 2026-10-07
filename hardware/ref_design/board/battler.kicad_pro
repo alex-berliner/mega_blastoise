@@ -371,7 +371,11 @@
       },
       {
         "netclass": "PWR",
-        "pattern": "/Display/LED_A_DRV"
+        "pattern": "/Display/LED_K1"
+      },
+      {
+        "netclass": "PWR",
+        "pattern": "/Display/LED_K2"
       },
       {
         "netclass": "USB",

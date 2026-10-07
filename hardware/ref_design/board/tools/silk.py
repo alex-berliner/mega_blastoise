@@ -135,7 +135,7 @@ def main():
     b1 = box(p1)
     text("+", pcbnew.ToMM(p1.GetPosition().x), b1[3] + 0.9, h=1.0)
     jb = box(j2)
-    text("BATT", jb[0] - 2.4, (jb[1] + jb[3]) / 2)
+    text("BATT", (jb[0] + jb[2]) / 2, jb[1] - 0.9)       # above it: the backlight op-amp sits on its left
     j3 = board.FindFootprintByReference("J3")
     row = [xy for xy in ((pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y)) for p in j3.Pads())]
     text("PANEL", min(x for x, _ in row) - 5.2, row[0][1])

@@ -18,18 +18,15 @@ LIB = os.path.join(os.path.dirname(HERE), "lib", "battler.kicad_sym")
 # name: (reference prefix, value, footprint, datasheet, description, body half width, half height, pins)
 # pin: (number, name, electrical type, side, position along the side in 2.54 mm steps)
 SYMBOLS = {
-    "AP3156": (
-        "U", "AP3156", "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.5x2.5mm_ThermalVias",
-        "https://www.diodes.com/assets/Datasheets/AP3156.pdf",
-        "6-channel 1x/1.5x/2x charge pump white LED driver, 20 mA per channel, 1-wire current control",
-        7.62, 10.16,
-        [("10", "VIN", "power_in", "L", 2), ("2", "SDI", "input", "L", 0), ("3", "NC", "no_connect", "L", -2),
-         ("6", "C1P", "passive", "T", -2), ("7", "C1N", "passive", "T", -1),
-         ("5", "C2P", "passive", "T", 1), ("8", "C2N", "passive", "T", 2),
-         ("4", "VOUT", "power_out", "R", 3), ("12", "D1", "passive", "R", 2), ("13", "D2", "passive", "R", 1),
-         ("14", "D3", "passive", "R", 0), ("15", "D4", "passive", "R", -1), ("16", "D5", "passive", "R", -2),
-         ("1", "D6", "passive", "R", -3),
-         ("9", "GND", "power_in", "B", -1), ("11", "GND", "power_in", "B", 0), ("17", "EP", "power_in", "B", 1)]),
+    "MCP6002": (
+        "U", "MCP6002", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+        "https://ww1.microchip.com/downloads/en/DeviceDoc/MCP6001-1R-1U-2-4-1-MHz-Low-Power-Op-Amp-DS20001733L.pdf",
+        "Dual 1 MHz rail-to-rail input/output op-amp, 1.8-6 V; both halves in one unit",
+        7.62, 7.62,
+        [("3", "+INA", "input", "L", 3), ("2", "-INA", "input", "L", 2),
+         ("5", "+INB", "input", "L", -2), ("6", "-INB", "input", "L", -3),
+         ("1", "OUTA", "output", "R", 2), ("7", "OUTB", "output", "R", -2),
+         ("8", "VDD", "power_in", "T", 0), ("4", "VSS", "power_in", "B", 0)]),
     "FM8002A": (
         "U", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
         "https://www.lcsc.com/product-detail/Audio-Power-OpAmps_Shenzhen-Fuman-Elec_C94625.html",

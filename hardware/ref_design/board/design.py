@@ -66,6 +66,7 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "27": ("C25100", "0402WGF270JTCE"),
     "33": ("C25105", "0402WGF330JTCE"),
     "100": ("C25076", "0402WGF1000TCE"),
+    "330": ("C25104", "0402WGF3300TCE"),
     "1k": ("C11702", "0402WGF1001TCE"),
     "1k 0603": ("C21190", "0603WAF1001T5E"),
     "0.1 1206": ("C25334", "1206W4F100LT5E"),
@@ -73,6 +74,7 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "1.2k": ("C25862", "0402WGF1201TCE"),
     "2.4k": ("C25882", "0402WGF2401TCE"),
     "3.3k": ("C25890", "0402WGF3301TCE"),
+    "3.9k": ("C51721", "0402WGF3901TCE"),      # JLC Preferred
     "4.7k": ("C25900", "0402WGF4701TCE"),
     "5.1k": ("C25905", "0402WGF5101TCE"),
     "5.6k": ("C25908", "0402WGF5601TCE"),      # JLC Preferred: no Extended fee
@@ -87,6 +89,7 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
 }
 CAP = {  # value: (lcsc, mpn, footprint)
     "15p": ("C1548", "0402CG150J500NT", C0402),
+    "1n": ("C1523", "0402B102K500NT", C0402),
     "10n": ("C15195", "CL05B103KB5NNNC", C0402),
     "4.7n": ("C1538", "0402B472K500NT", C0402),
     "100n": ("C1525", "CL05B104KO5NNNC", C0402),
@@ -196,8 +199,8 @@ C("C3", S, "10u", "VBAT")
 # carries VSYS and C9 covers the step (a dip below the chip's supply minimums can crash
 # the MCU, and a reset turns the device off)
 # R47 damps the ring a live plug-in drives through D5 into the VSYS capacitors: with no cell
-# (or a tripped pack) VSYS peaked at about 6.6 V against the AP3156's and FM8002A's 6 V
-# maximum; about 5.7 V with it. It costs 50 mV of VSYS at 0.5 A
+# (or a tripped pack) VSYS peaked at about 6.6 V against the FM8002A's 6 V maximum; about
+# 5.7 V with it. It costs 50 mV of VSYS at 0.5 A
 R("R47", S, "0.1 1206", "VBUS", "VBUS_D5", fp=R1206)
 part("D5", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS", "2": "VBUS_D5"},
      "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
@@ -289,7 +292,7 @@ GPIO = {  # GPIO number: net
     # bottom edge, right half, left to right: the panel's reset, seat 1's face buttons,
     # the backlight, then the ADC inputs (GPIO40-47 are the ADC pins) for the USB-C CC
     # lines and the cell (P1 Y is the power button: read on GPIO3)
-    40: "LCD_RST", 41: "P1_B", 42: "P1_X", 43: "P1_A", 44: "BL_SDI",
+    40: "LCD_RST", 41: "P1_B", 42: "P1_X", 43: "P1_A", 44: "BL_PWM",
     45: "CC2_SENSE", 46: "CC1_SENSE", 47: "VBAT_SENSE",
     # the board's revision, 4 bits on GPIO22-25 (16 revisions): see R48-R51
     22: "REV0", 23: "REV1", 24: "REV2", 25: "REV3",
@@ -359,8 +362,8 @@ part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=Fals
 
 # =================================================================================
 # Display: EastRising ER-TFT035IPS-6 (3.5in IPS 320x480, ILI9488), its FPC in a 50-pin ZIF
-# connector; an AP3156 charge pump drives the panel's six parallel backlight LEDs (common
-# anode, two cathode pins of three LEDs each: three of the driver's sinks per pin)
+# connector; the panel's six parallel backlight LEDs (common anode on VSYS, two cathode pins of
+# three LEDs each) sink through two op-amp current regulators, one per cathode pin
 # =================================================================================
 S = "display.kicad_sch"
 PANEL = {1: "LED_A", 2: "LED_K1", 3: "LED_K2",                  # panel pin -> net (datasheet 4.1)
@@ -383,17 +386,32 @@ R("R28", S, "33", "LCD_SCK_MCU", "LCD_SCK")       # source termination, fitted n
 R("R29", S, "33", "LCD_MOSI_MCU", "LCD_MOSI")
 C("C29", S, "1u", "+3V3")
 C("C30", S, "100n", "+3V3")
-part("U6", S, "battler:AP3156", "AP3156FVG-7", "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.5x2.5mm_ThermalVias",
-     {"10": "VSYS", "2": "BL_SDI", "3": None, "6": "BL_C1P", "7": "BL_C1N", "5": "BL_C2P", "8": "BL_C2N",
-      "4": "LED_A_DRV", "12": "LED_K1", "13": "LED_K1", "14": "LED_K1", "15": "LED_K2", "16": "LED_K2", "1": "LED_K2",
-      "9": "GND", "11": "GND", "17": "GND"},
-     "C443652", "AP3156FVG-7", "Diodes Incorporated")
-C("C31", S, "1u", "VSYS")                          # charge pump input
-C("C32", S, "1u", "LED_A_DRV")                     # charge pump output
-JP("JP2", S, "LED_A_DRV", "LED_A")                 # cut it and bridge with an ammeter to read the LED current
-C("C33", S, "1u", "BL_C1P", "BL_C1N")              # flying capacitors
-C("C36", S, "1u", "BL_C2P", "BL_C2N")
-R("R31", S, "100k", "BL_SDI", "GND")               # holds the driver off until firmware drives SDI
+# Backlight: a current sink per cathode pin. U6 (MCP6002) holds each 2.2 ohm sense resistor at
+# BL_REF: 0.124 V at 100% duty = 56 mA a pin, 113 mA for the six LEDs (the panel's maximum is
+# 120 mA). BL_REF is GPIO44's PWM (BL_PWM) through R60/R61 and C50 (tau 3.75 ms: 0.3% ripple at
+# 36.6 kHz), so the LED current is DC: no PWM in the LEDs, nothing for the amplifier to hear.
+# R54/R55 (330 ohm) isolate the FET's gate capacitance and C48/C49 with R58/R59 close a local
+# loop: 72 deg phase margin or more at every corner simulated (sim/backlight.py). The sink needs
+# about 0.13 V across it: regulation holds to a 3.5 V cell up to the panel's 3.2 V Vf. U6 runs
+# from 3V3 and R56/R57 hold the gates low, so the backlight is off whenever 3V3 is.
+part("U6", S, "battler:MCP6002", "MCP6002", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+     {"3": "BL_REF", "2": "BL_FB2", "1": "BL_OUT2", "5": "BL_REF", "6": "BL_FB1", "7": "BL_OUT1",
+      "8": "+3V3", "4": "GND"},
+     "C7377", "MCP6002T-I/SN", "Microchip Tech")
+C("C51", S, "100n", "+3V3")                        # U6 supply
+for k, (q, rs, rg, rpd, rf, cf) in ((1, ("Q5", "R52", "R54", "R56", "R58", "C48")),
+                                    (2, ("Q6", "R53", "R55", "R57", "R59", "C49"))):
+    part(q, S, "Transistor_FET:Q_NMOS_GSD", "AO3400A", "Package_TO_SOT_SMD:SOT-23",
+         {"1": f"BL_G{k}", "2": f"BL_S{k}", "3": f"LED_K{k}"}, "C20917", "AO3400A", "Alpha & Omega Semicon")
+    R(rs, S, "2.2 0603", f"BL_S{k}", "GND", fp=R0603)   # sense: 2.2 ohm x 56 mA = 0.124 V
+    R(rg, S, "330", f"BL_OUT{k}", f"BL_G{k}")
+    R(rpd, S, "100k", f"BL_G{k}", "GND")
+    R(rf, S, "10k", f"BL_S{k}", f"BL_FB{k}")
+    C(cf, S, "1n", f"BL_OUT{k}", f"BL_FB{k}")
+R("R60", S, "100k", "BL_PWM", "BL_REF")            # GPIO44 PWM into the reference filter
+R("R61", S, "3.9k", "BL_REF", "GND")               # 3.3 V x 3.9 / 103.9 = 0.124 V at 100%
+C("C50", S, "1u", "BL_REF")
+JP("JP2", S, "VSYS", "LED_A")                      # cut it and bridge with an ammeter to read the LED current
 
 # =================================================================================
 # Audio: PWM from the RP2354B, filtered, into an FM8002A bridge amplifier (8 ohm speaker)

@@ -17,7 +17,7 @@ which this folder never touches.
 - RP2354B (2 MB flash inside), USB-C (charging + firmware + debug console)
 - 3.5in 320x480 IPS panel (EastRising ER-TFT035IPS-6, ILI9488, SPI) with a published
   datasheet and 3D model, its FPC in a 50-pin ZIF connector (no soldering); a
-  constant-current backlight driver
+  constant-current backlight sink per LED group
 - 16 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad and
   four face buttons at each end
 - PWM audio through an RC filter into an FM8002A amplifier and a 15 mm speaker
@@ -36,6 +36,7 @@ which this folder never touches.
 | `board/lib/` | project footprints and 3D models |
 | `board/fab/` | gerbers zip, JLC BOM and CPL, STEP, renders, schematic and assembly PDFs |
 | `board/tools/` | the scripts that build and check all of it (below) |
+| `board/sim/` | ngspice simulation of the backlight current sinks (loop stability, accuracy, transients); `backlight_results.txt` is the last run |
 | `case/case.scad` | the case, and the source of every mechanical position |
 | `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts, board outline, positions for the board scripts |
 | `case/fitkit/` | a printable fit kit: board mock, part dummies and case coupons, to test the real parts before ordering ([its README](case/fitkit/README.md)) |
@@ -55,6 +56,7 @@ cd board
 python3 tools/build_sch.py                   # design.py -> schematic (through Konnect)
 python3 tools/check_netlist.py               # KiCad's netlist == design.py ?
 python3 tools/check_pins.py                  # every part's pins against its datasheet review (pin_review/)
+python3 sim/models.py && python3 sim/backlight.py   # backlight sink stability (ngspice, about 40 min; only when it changes)
 kicad-cli sch erc battler.kicad_sch          # 0 errors expected
 RP2350B_REF=.../RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb python3 tools/build_pcb.py
 FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # about 10 min

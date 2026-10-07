@@ -14,24 +14,25 @@ snapshot used for this design (July 2026).
 | | 10 boards | Per unit | Source |
 |---|---|---|---|
 | Bare boards: 2 layers, 70.5 x 151.34 mm (as quoted), 1.6 mm, ENIG, every hole >= 0.3 mm | $33.40 | $3.34 | quote (`tools/quotes/`) |
-| Parts: 45 part numbers, 106 placements a board | $50.10 | $5.01 | JLC parts database |
-| Assembly fees, Economic PCBA (below) | $56.14 | $5.61 | JLC's published rates |
+| Parts: 49 part numbers, 117 placements a board | $47.70 | $4.77 | JLC parts database |
+| Assembly fees, Economic PCBA (below) | $53.29 | $5.33 | JLC's published rates |
 | USB-C through-hole tabs by hand, if JLC charges it | $4.24 | $0.42 | JLC's published rates |
 | Shipping, DHL Express with duties paid at checkout (DDP) | $29.45 | $2.95 | quote; the duty itself isn't known yet |
-| **Total** | **about $173** | **about $17.33** | |
+| **Total** | **about $168** | **about $16.81** | |
 
 | Assembly fee (Economic PCBA, 2-50 boards) | 10 boards |
 |---|---|
 | Setup | $8.18 |
 | Stencil | $1.53 |
-| Solder joints: about 406 a board (JLC's count was 386 before the 9 parts added 2026-10-05), $0.0016 each | $6.50 |
-| Feeder loading: 13 extended part numbers (the thermistor, the 27 ohm USB resistors and, since ProTek's Preferred SRV05-4 ran out on 2026-10-07, the Semtech SRV05-4.TCT ESD array are three), $3.07 each (basic and preferred parts: none) | $39.91 |
-| **Total** | **$56.14** |
+| Solder joints: about 421 a board (JLC's count was 386 before the 9 parts added 2026-10-05; the backlight sinks that replaced the AP3156 on 2026-10-07 add about 15), $0.0016 each | $6.74 |
+| Feeder loading: 12 extended part numbers (the thermistor, the 27 ohm USB resistors and, since ProTek's Preferred SRV05-4 ran out on 2026-10-07, the Semtech SRV05-4.TCT ESD array are three; the AP3156 went the same day, and the backlight sinks that replaced it are all Basic or Preferred), $3.07 each (basic and preferred parts: none) | $36.84 |
+| **Total** | **$53.29** |
 
 The priciest parts: RP2354B $1.43, the panel's connector (Hirose FH12-50S) $0.81,
-AP3156 $0.63, the Abracon crystal and inductor $0.27 each, JST PH battery connector
-$0.18, TP4056 $0.17. Stock to watch for a larger run: RP2354B (1454 at JLC when
-checked), AP3156 (1490) and the FH12-50S (1730).
+the Abracon crystal and inductor $0.27 each, the backlight op-amp (MCP6002) $0.24, JST PH
+battery connector $0.18, TP4056 $0.17. Stock to watch for a larger run: RP2354B (1665 at
+JLC on 2026-10-07) and the Abracon inductor (757); the AP3156 ran out (0 on 2026-10-07)
+and was replaced by the discrete backlight sinks.
 
 The same board elsewhere, from each maker's instant quote: PCBWay is $65.09 for the
 bare boards and $165.33 for assembly labour, parts extra after their review. The
@@ -62,7 +63,7 @@ Hand work per unit: [assembly.md](assembly.md).
 
 ## Per unit, into your hands
 
-About **$40-42** at 10 units: the factory's $17.33 and your $23-25. Not in it: import
+About **$40-42** at 10 units: the factory's $16.81 and your $23-25. Not in it: import
 duties (at the 25% rate an earlier review suggested, unverified, about $3 a unit
 on the board order)
 and JLC's new-account coupons ($30 and $20 on the quote page, up to $5 a unit off if

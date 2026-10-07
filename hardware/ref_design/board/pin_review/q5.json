@@ -1,0 +1,108 @@
+{
+ "part": "AO3400A 30 V N-channel MOSFET, SOT-23: the backlight current sinks' pass transistors",
+ "refs": [
+  "Q5",
+  "Q6"
+ ],
+ "mpn": "AO3400A",
+ "lcsc": "C20917",
+ "manufacturer": "Alpha & Omega Semicon",
+ "symbol": "Transistor_FET:Q_NMOS_GSD",
+ "footprint": "Package_TO_SOT_SMD:SOT-23",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/130876b936da464599428c58fd8de8f6.pdf?productCode=C20917",
+  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_1811081213_Alpha---Omega-Semicon-AO3400A_C20917.pdf",
+  "revision_or_date": "Rev 3: Dec 2011",
+  "local": "datasheets/ao3400a.pdf"
+ },
+ "notes": [
+  "Run in its linear region as a current regulator (not a switch). The simulation used Alpha & Omega's AO3400 subcircuit (the A version's model was not available); checked against this datasheet: Vth 1.08 V (datasheet 0.65-1.45, typ 1.05), RDS(on) 43 mOhm at 2.5 V (max 48), 26 mOhm at 4.5 V (max 32)."
+ ],
+ "ratings": [
+  {
+   "what": "VDS",
+   "limit": "30 V",
+   "design": "drain = LED cathode: at most VSYS 5.7 V (hot plug) less the LEDs' Vf",
+   "ok": true,
+   "cite": "p1 Absolute Maximum Ratings"
+  },
+  {
+   "what": "VGS",
+   "limit": "+-12 V",
+   "design": "0 to 3.3 V (op-amp on 3V3)",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "ID",
+   "limit": "5.7 A continuous",
+   "design": "56 mA at 100% duty (113 mA for both)",
+   "ok": true,
+   "cite": "p1"
+  },
+  {
+   "what": "Power",
+   "limit": "1.4 W (TA 25 C, 1 in2 copper); RthJA 100-125 C/W steady",
+   "design": "61 mW per FET on a full cell, 89 mW on USB (VSYS 4.7 V), 145 mW in a 5.7 V transient: about +11 C on USB",
+   "ok": true,
+   "cite": "p1 Thermal Characteristics; sim/backlight_results.txt"
+  },
+  {
+   "what": "VGS(th)",
+   "limit": "0.65-1.45 V at 250 uA",
+   "design": "op-amp output swings to 3.3 V: any threshold in range regulates; 100k pull-down holds it off with 3V3 off",
+   "ok": true,
+   "cite": "p2"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "G",
+   "type": "input (gate)",
+   "requirement": "|VGS| <= 12 V; VGS(th) 0.65-1.45 V",
+   "cite": "p1 SOT23 Top View pin drawing (G bottom left, S bottom right, D top) = pads 1/2/3",
+   "quote": "G",
+   "symbol_name": "G",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "Q5": "BL_G1",
+    "Q6": "BL_G2"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "S",
+   "type": "source",
+   "requirement": "Source: to the 2.2 ohm sense resistor",
+   "cite": "p1 SOT23 Top View pin drawing (G bottom left, S bottom right, D top) = pads 1/2/3",
+   "quote": "S",
+   "symbol_name": "S",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "Q5": "BL_S1",
+    "Q6": "BL_S2"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "D",
+   "type": "drain",
+   "requirement": "Drain: the panel's LED cathode pin",
+   "cite": "p1 SOT23 Top View pin drawing (G bottom left, S bottom right, D top) = pads 1/2/3",
+   "quote": "D",
+   "symbol_name": "D",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "Q5": "LED_K1",
+    "Q6": "LED_K2"
+   }
+  }
+ ]
+}

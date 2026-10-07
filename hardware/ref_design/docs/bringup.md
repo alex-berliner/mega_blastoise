@@ -23,7 +23,7 @@ bridge it again with a blob of solder:
 - **JP1** (by U3) carries the 3.3 V regulator's output onto the 3V3 rail. Cut it to power
   the rail from a bench supply on TP4, or to measure the rail's draw through a meter across
   the pads.
-- **JP2** (by U6) carries the backlight driver's output to the panel. Cut it to run the
+- **JP2** (right of J3) carries VSYS to the panel's LED anode (LED_A). Cut it to run the
   panel with its backlight off, or to measure the backlight current.
 
 TP6 (PWR_EN), TP7 (LS_GATE) and TP8 (AMP_SHDN) are bare pads for a scope probe.
@@ -74,12 +74,16 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
    and rotation.
 4. Raise SPI step by step; watch for corruption at the far edge of the panel. A full
    frame is 461 kB, so redraw only what changes.
-5. Backlight: drive GPIO44 (BL_SDI) high, send 10 low pulses (1 us low, 1 us high), wait
-   300 us, then 6 pulses and another 300 us: current level 6, 15 mA per sink, so 45 mA on
-   each of the panel's two cathode pins (three LEDs each). The panel should light evenly;
-   the AP3156's VOUT (C32) sits a few hundred mV above the LEDs' forward voltage (about
-   3.0 V). Level 1 is 20 mA per LED, the panel's 120 mA maximum. Hold GPIO44 low for
-   300 us and the backlight goes off.
+5. Backlight: start PWM10 A on GPIO44 (BL_PWM) at 80% duty (12 bits at 36.6 kHz): BL_REF
+   (C50) settles at about 99 mV within 15 ms, and each cathode pin draws 45 mA (15 mA per
+   LED, three LEDs a pin), 90 mA in all through JP2. Check it on the sense resistors:
+   about 99 mV across R52 (LED_K1) and R53 (LED_K2), within a few mV of each other, and
+   the panel lit evenly. 100% duty is 113 mA (0.124 V), the panel's limit is 120 mA. Step
+   the duty 18% <-> 95% and scope R52: no ringing (simulated phase margin 72 deg or more,
+   board/sim/backlight_results.txt). Duty 0 (or GPIO44 low) turns it off. Also check, on a
+   nearly flat cell (3.5 V) at 100%, that the drop across R52 stays at 0.124 V (headroom);
+   and plug USB in with the backlight on and watch for a flash (simulation: a few us at
+   up to 2.4x when VSYS jumps by 1.9 V in 2 us).
 6. Tearing effect: enable it on the panel (TEON, 0x35) and watch GPIO32: one pulse per
    frame, about 60 Hz.
 

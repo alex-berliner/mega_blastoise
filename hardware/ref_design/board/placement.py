@@ -59,12 +59,26 @@ put("R28", 97.6, 96.6, 90)                  # SPI source terminations, next to G
 put("R29", 99.1, 96.6, 90)
 put("C29", 92.3, 112.4, 0)                  # panel VCI/VDDI, behind connector pins 9-11
 put("C30", 94.3, 112.4, 0)
-put("U6", 120.0, 118.6, 180)                # clear of J3's right mounting tab
-put("C31", 116.4, 118.6, 90)                # VIN
-put("C32", 123.4, 118.2, 90)                # VOUT (LED anodes)
-put("C33", 120.0, 115.4, 180)               # flying C1P-C1N
-put("C36", 120.0, 113.9, 180)               # flying C2P-C2N
-put("R31", 123.4, 120.4, 90)                # SDI pull-down
+# backlight current sinks: above J3's LED end (pins 48-50), between J3 and the battery connector,
+# clear of the bar route.py lays over J3's grounded pins (y 117.9, vias at 117.1). The FETs'
+# drains face J3's LED pins; op-amp half A (left) runs LED_K2 (Q6), half B (right) LED_K1 (Q5)
+put("U6", 106.5, 106.5, 0)
+put("C51", 109.5, 103.0, 0)                 # U6 supply, by pin 8
+put("C50", 111.6, 107.8, 90)                # BL_REF filter
+put("Q6", 104.6, 114.5, 0)                  # LED_K2 (J3 pin 48)
+put("R53", 101.0, 115.45, 180)              # its sense resistor: BL_S2 end by the source, GND end away
+put("Q5", 112.0, 114.5, 0)                  # LED_K1 (J3 pin 49)
+put("R52", 108.45, 115.45, 180)
+put("R57", 103.3, 112.0, 0)                 # channel 2: gate pull-down, gate resistor, feedback R and C
+put("R55", 105.4, 112.0, 0)
+put("C49", 102.7, 110.4, 0)
+put("R59", 104.8, 110.4, 0)
+put("R60", 107.6, 112.0, 0)                 # PWM into BL_REF
+put("R61", 107.0, 110.4, 0)
+put("R56", 110.3, 112.0, 0)                 # channel 1
+put("R54", 112.4, 112.0, 0)
+put("C48", 110.2, 110.4, 0)
+put("R58", 112.3, 110.4, 0)
 
 # debug: left bezel
 put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
@@ -155,7 +169,7 @@ put("Q4", 121.90, 123.40, 0)                # 10.4 mm from U2
 put("R44", 126.65, 121.40, 90)
 put("R47", 126.10, 106.85, 0)               # 7.3 mm from D5
 put("JP1", 125.75, 88.00, 0)                # 3.8 mm from U3
-put("JP2", 117.75, 122.60, 0)               # 4.6 mm from U6
+put("JP2", 117.75, 122.60, 0)               # VSYS to LED_A (J3 pin 50)
 put("TP6", 133.50, 75.45, 0)                # 5.3 mm from R15
 put("TP7", 128.40, 129.25, 0)               # 2.2 mm from R6
 put("TP8", 94.60, 60.05, 0)                 # 1.8 mm from R36

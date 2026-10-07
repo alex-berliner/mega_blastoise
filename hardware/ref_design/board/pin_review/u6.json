@@ -1,300 +1,186 @@
 {
- "part": "U6",
- "mpn": "AP3156FVG-7",
- "lcsc": "C443652",
- "footprint": "Package_DFN_QFN:QFN-16-1EP_4x4mm_P0.65mm_EP2.5x2.5mm_ThermalVias",
- "datasheet": {
-  "url": "https://www.diodes.com/assets/Datasheets/AP3156.pdf",
-  "revision_or_date": "AP3156 Rev. 1, September 2009 (diodes.com copy identical in text to LCSC C443652 copy)",
-  "local": "ds/AP3156_diodes.pdf"
- },
- "ratings": [
-  {
-   "param": "VIN abs max",
-   "ds": "-0.3 to 6 V",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.4 Absolute Maximum Ratings",
-   "design": "VSYS up to ~5.7 V transient on hot plug (design.py R47 comment); ~4.7-5.0 V steady from USB",
-   "ok": true,
-   "note": "0.3 V margin to abs max"
-  },
-  {
-   "param": "VIN recommended",
-   "ds": "2.7 to 5.5 V",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.4 Recommended Operating Conditions",
-   "design": "VSYS 3.0-4.2 V on cell, ~4.7 V on USB, ~5.7 V transient",
-   "ok": false,
-   "note": "Transient above 5.5 V recommended max (not damaging per abs max). Below 2.7 V UVLO disables the part."
-  },
-  {
-   "param": "VSDI",
-   "ds": "-0.3 to VIN+0.3 V",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.4",
-   "design": "3V3 GPIO; 3V3 is derived from VSYS by LDO so SDI <= VSYS",
-   "ok": true
-  },
-  {
-   "param": "SDI thresholds",
-   "ds": "VSDI(L) <= 0.4 V (VIN=2.7), VSDI(H) >= 1.4 V (VIN=5.5)",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.5",
-   "design": "3.3 V CMOS GPIO",
-   "ok": true
-  },
-  {
-   "param": "IOUT max DC",
-   "ds": "150 mA",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.4",
-   "design": "6 x 20 mA = 120 mA (20 mA mode, default)",
-   "ok": true,
-   "note": "25 mA mode = 150 mA = at limit and over the panel's 120 mA"
-  },
-  {
-   "param": "Caps",
-   "ds": "CIN=COUT=C1=C2=1 uF ceramic",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.1, p.9",
-   "design": "C31 1u VSYS, C32 1u LED_A_DRV, C33 1u C1P-C1N, C36 1u C2P-C2N",
-   "ok": true
-  }
- ],
+ "part": "MCP6002 dual 1 MHz rail-to-rail op-amp, SOIC-8: the backlight current sinks' error amplifiers",
  "refs": [
   "U6"
+ ],
+ "mpn": "MCP6002T-I/SN",
+ "lcsc": "C7377",
+ "manufacturer": "Microchip Tech",
+ "symbol": "battler:MCP6002",
+ "footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/e34ab395f01d53f1e893b6004de17b98.pdf?productCode=C7377",
+  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_Microchip-Tech-MCP6002T-I-SN_C7377.pdf",
+  "revision_or_date": "DS20001733L (2002-2020)",
+  "local": "datasheets/mcp6002.pdf"
+ },
+ "notes": [
+  "Replaced the AP3156 charge pump (C443652, out of stock at JLC and LCSC, 2026-10-07). The loop (U6 half, Q5/Q6, RG 330, RF 10k, CF 1n) was simulated with Microchip's macromodel before layout: sim/backlight.py, results in sim/backlight_results.txt (phase margin >= 72.5 deg at all 720 corners).",
+  "Offset is the accuracy limit at low brightness: +-4.5 mV max against 124 mV at full current (+-3.6%), 22 mV at 18% duty (+-20% worst case per channel)."
+ ],
+ "ratings": [
+  {
+   "what": "VDD - VSS",
+   "limit": "7.0 V abs max; 1.8-6.0 V operating",
+   "design": "+3V3 (ME6211, 3.23-3.37 V)",
+   "ok": true,
+   "cite": "p3 Absolute Maximum Ratings; p3 DC specs Supply Voltage"
+  },
+  {
+   "what": "Analog inputs",
+   "limit": "VSS - 1.0 V to VDD + 1.0 V, +-2 mA; common-mode range VSS - 0.3 V to VDD + 0.3 V",
+   "design": "+IN = BL_REF 0-0.13 V (from the 3V3 GPIO through 100k); -IN = sense voltage 0-0.13 V through 10k. With 3V3 off both are 0 V (GPIO off, LEDs off)",
+   "ok": true,
+   "cite": "p3"
+  },
+  {
+   "what": "Input offset",
+   "limit": "+-4.5 mV (VCM = VSS)",
+   "design": "124 mV full scale on 2.2 ohm: +-3.6% at full, +-20% at 18% duty (simulated)",
+   "ok": true,
+   "cite": "p3 DC specs"
+  },
+  {
+   "what": "Output",
+   "limit": "rail-to-rail, VSS + 25 mV / VDD - 25 mV; short-circuit +-6 mA (1.8 V) / +-23 mA (5.5 V); +-30 mA abs max",
+   "design": "drives a FET gate (about 1.3-1.5 V) through 330 ohm: mA only while slewing",
+   "ok": true,
+   "cite": "p3"
+  },
+  {
+   "what": "Capacitive load",
+   "limit": "datasheet recommends an isolation resistor (RISO) for large capacitive loads",
+   "design": "R54/R55 330 ohm to the AO3400A gate (Ciss 630 pF at 15 V, more at low Vds), plus CF 1 nF local feedback; simulated phase margin >= 72.5 deg",
+   "ok": true,
+   "cite": "p14 section 4.3 Capacitive Loads, Figure 4-4"
+  },
+  {
+   "what": "Bypass",
+   "limit": "0.01-0.1 uF within 2 mm",
+   "design": "C51 100 nF by pin 8",
+   "ok": true,
+   "cite": "p14 section 4.4 Supply Bypass"
+  }
  ],
  "pins": [
   {
    "pin": "1",
-   "ds_name": "D6",
-   "type": "current sink",
-   "requirement": "Sink for an LED cathode; if unused tie to VOUT. All six sinks used here (D4-D6 paralleled on LED_K2)",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Current Sink Input #6. Connected to VOUT when un-used.",
-   "symbol_name": "D6",
+   "ds_name": "VOUTA",
+   "type": "output",
+   "requirement": "Op amp A output",
+   "cite": "p11 Table 3-1 Pin Function Table (MCP6002, 8-lead SOIC)",
+   "quote": "1 VOUTA",
+   "symbol_name": "OUTA",
+   "footprint_pad": "1",
    "ok": true,
-   "issue": "Three sinks paralleled per panel cathode pin (datasheet: 'current sinks may be operated individually or in parallel'). 20 mA mode => 60 mA per cathode pin, 120 mA total = panel's 120 mA typ. Do NOT use 25 mA mode at code 1 (150 mA total).",
+   "issue": "",
    "nets": {
-    "U6": "LED_K2"
+    "U6": "BL_OUT2"
    }
   },
   {
    "pin": "2",
-   "ds_name": "SDI",
-   "type": "digital input",
-   "requirement": "1-wire control. Held LOW > TOFF(max)=256 us = shutdown (<1 uA); rising edge re-enables. Idle HIGH when not commanding. VIL<=0.4 V, VIH>=1.4 V, leakage +/-1 uA; must stay <= VIN+0.3 V",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions; p.5 Elec. Char. (SDI); p.11 SDI Command Timing; p.4 Abs Max VSDI",
-   "quote": "If at any time the SDI pin is held Low for longer than the maximum chip disable time TOFF(max), then the AP3156 will be turned off and enters the shutdown mode.",
-   "symbol_name": "SDI",
+   "ds_name": "VINA-",
+   "type": "input",
+   "requirement": "Op amp A inverting input",
+   "cite": "p11 Table 3-1 Pin Function Table (MCP6002, 8-lead SOIC)",
+   "quote": "2 VINA-",
+   "symbol_name": "-INA",
+   "footprint_pad": "2",
    "ok": true,
-   "issue": "OK: R31 100k to GND holds SDI low = shutdown until firmware drives it high (matches datasheet). Datasheet does not state the current level the part comes up at when first enabled (only Soft Reset = 0 mA is defined): UNKNOWN, firmware should program it explicitly.",
+   "issue": "",
    "nets": {
-    "U6": "BL_SDI"
+    "U6": "BL_FB2"
    }
   },
   {
    "pin": "3",
-   "ds_name": "NC",
-   "type": "no connect",
-   "requirement": "No internal connection",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "NC 3 No Connection",
-   "symbol_name": "NC",
+   "ds_name": "VINA+",
+   "type": "input",
+   "requirement": "Op amp A noninverting input",
+   "cite": "p11 Table 3-1 Pin Function Table (MCP6002, 8-lead SOIC)",
+   "quote": "3 VINA+",
+   "symbol_name": "+INA",
+   "footprint_pad": "3",
    "ok": true,
    "issue": "",
    "nets": {
-    "U6": null
+    "U6": "BL_REF"
    }
   },
   {
    "pin": "4",
-   "ds_name": "VOUT",
-   "type": "power output",
-   "requirement": "Charge pump output (LED anodes); requires 1 uF to GND",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Charge pump output to drive load circuit. Requires 1\u00b5F capacitor connected between this pin and ground",
-   "symbol_name": "VOUT",
+   "ds_name": "VSS",
+   "type": "ground",
+   "requirement": "Negative supply",
+   "cite": "p11 Table 3-1 Pin Function Table (MCP6002, 8-lead SOIC)",
+   "quote": "4 VSS",
+   "symbol_name": "VSS",
+   "footprint_pad": "4",
    "ok": true,
    "issue": "",
    "nets": {
-    "U6": "LED_A_DRV"
+    "U6": "GND"
    }
   },
   {
    "pin": "5",
-   "ds_name": "C2P",
-   "type": "flying cap",
-   "requirement": "1 uF between C2P and C2N",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Positive Terminal of Flying Capacitor 2. Connects a 1\u00b5F capacitor between C2P and C2N.",
-   "symbol_name": "C2P",
+   "ds_name": "VINB+",
+   "type": "input",
+   "requirement": "Op amp B noninverting input",
+   "cite": "p11 Table 3-1 Pin Function Table (MCP6002, 8-lead SOIC)",
+   "quote": "5 VINB+",
+   "symbol_name": "+INB",
+   "footprint_pad": "5",
    "ok": true,
    "issue": "",
    "nets": {
-    "U6": "BL_C2P"
+    "U6": "BL_REF"
    }
   },
   {
    "pin": "6",
-   "ds_name": "C1P",
-   "type": "flying cap",
-   "requirement": "1 uF between C1P and C1N",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Positive terminal of Flying Capacitor 1. Connects a 1\u00b5F capacitor between C1P and C1N.",
-   "symbol_name": "C1P",
+   "ds_name": "VINB-",
+   "type": "input",
+   "requirement": "Op amp B inverting input",
+   "cite": "p11 Table 3-1 Pin Function Table (MCP6002, 8-lead SOIC)",
+   "quote": "6 VINB-",
+   "symbol_name": "-INB",
+   "footprint_pad": "6",
    "ok": true,
    "issue": "",
    "nets": {
-    "U6": "BL_C1P"
+    "U6": "BL_FB1"
    }
   },
   {
    "pin": "7",
-   "ds_name": "C1N",
-   "type": "flying cap",
-   "requirement": "Negative terminal of flying cap 1",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Negative Terminal of Flying Capacitor 1",
-   "symbol_name": "C1N",
+   "ds_name": "VOUTB",
+   "type": "output",
+   "requirement": "Op amp B output",
+   "cite": "p11 Table 3-1 Pin Function Table (MCP6002, 8-lead SOIC)",
+   "quote": "7 VOUTB",
+   "symbol_name": "OUTB",
+   "footprint_pad": "7",
    "ok": true,
    "issue": "",
    "nets": {
-    "U6": "BL_C1N"
+    "U6": "BL_OUT1"
    }
   },
   {
    "pin": "8",
-   "ds_name": "C2N",
-   "type": "flying cap",
-   "requirement": "Negative terminal of flying cap 2",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Negative Terminal of Flying Capacitor 2",
-   "symbol_name": "C2N",
+   "ds_name": "VDD",
+   "type": "power",
+   "requirement": "Positive supply, 1.8-6.0 V, bypass required",
+   "cite": "p11 Table 3-1 Pin Function Table (MCP6002, 8-lead SOIC)",
+   "quote": "8 VDD",
+   "symbol_name": "VDD",
+   "footprint_pad": "8",
    "ok": true,
    "issue": "",
    "nets": {
-    "U6": "BL_C2N"
-   }
-  },
-  {
-   "pin": "9",
-   "ds_name": "GND",
-   "type": "ground",
-   "requirement": "Ground",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "GND 9, 11 Ground.",
-   "symbol_name": "GND",
-   "ok": true,
-   "issue": "",
-   "nets": {
-    "U6": "GND"
-   }
-  },
-  {
-   "pin": "10",
-   "ds_name": "VIN",
-   "type": "power input",
-   "requirement": "Supply 2.7-5.5 V recommended (abs max 6 V); requires 1 uF to GND",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions; p.4 Abs Max / Rec. Op.",
-   "quote": "Input Power Supply. Requires 1\u00b5F capacitor between this pin and ground.",
-   "symbol_name": "VIN",
-   "ok": true,
-   "issue": "VSYS can reach ~5.7 V on a hot plug (design.py note): inside the 6 V abs max but above the 5.5 V recommended maximum.",
-   "nets": {
-    "U6": "VSYS"
-   }
-  },
-  {
-   "pin": "11",
-   "ds_name": "GND",
-   "type": "ground",
-   "requirement": "Ground",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "GND 9, 11 Ground.",
-   "symbol_name": "GND",
-   "ok": true,
-   "issue": "",
-   "nets": {
-    "U6": "GND"
-   }
-  },
-  {
-   "pin": "12",
-   "ds_name": "D1",
-   "type": "current sink",
-   "requirement": "LED cathode sink #1; tie to VOUT if unused",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Current sink input #1. Connected to VOUT when un-used.",
-   "symbol_name": "D1",
-   "ok": true,
-   "issue": "Three sinks paralleled per panel cathode pin (datasheet: 'current sinks may be operated individually or in parallel'). 20 mA mode => 60 mA per cathode pin, 120 mA total = panel's 120 mA typ. Do NOT use 25 mA mode at code 1 (150 mA total).",
-   "nets": {
-    "U6": "LED_K1"
-   }
-  },
-  {
-   "pin": "13",
-   "ds_name": "D2",
-   "type": "current sink",
-   "requirement": "LED cathode sink #2",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Current sink input #2. Connected to VOUT when un-used.",
-   "symbol_name": "D2",
-   "ok": true,
-   "issue": "Three sinks paralleled per panel cathode pin (datasheet: 'current sinks may be operated individually or in parallel'). 20 mA mode => 60 mA per cathode pin, 120 mA total = panel's 120 mA typ. Do NOT use 25 mA mode at code 1 (150 mA total).",
-   "nets": {
-    "U6": "LED_K1"
-   }
-  },
-  {
-   "pin": "14",
-   "ds_name": "D3",
-   "type": "current sink",
-   "requirement": "LED cathode sink #3",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Current sink input #3. Connected to VOUT when un-used.",
-   "symbol_name": "D3",
-   "ok": true,
-   "issue": "Three sinks paralleled per panel cathode pin (datasheet: 'current sinks may be operated individually or in parallel'). 20 mA mode => 60 mA per cathode pin, 120 mA total = panel's 120 mA typ. Do NOT use 25 mA mode at code 1 (150 mA total).",
-   "nets": {
-    "U6": "LED_K1"
-   }
-  },
-  {
-   "pin": "15",
-   "ds_name": "D4",
-   "type": "current sink",
-   "requirement": "LED cathode sink #4",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Current sink input #4. Connected to VOUT when un-used.",
-   "symbol_name": "D4",
-   "ok": true,
-   "issue": "Three sinks paralleled per panel cathode pin (datasheet: 'current sinks may be operated individually or in parallel'). 20 mA mode => 60 mA per cathode pin, 120 mA total = panel's 120 mA typ. Do NOT use 25 mA mode at code 1 (150 mA total).",
-   "nets": {
-    "U6": "LED_K2"
-   }
-  },
-  {
-   "pin": "16",
-   "ds_name": "D5",
-   "type": "current sink",
-   "requirement": "LED cathode sink #5",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Current sink input #5. Connected to VOUT when un-used.",
-   "symbol_name": "D5",
-   "ok": true,
-   "issue": "Three sinks paralleled per panel cathode pin (datasheet: 'current sinks may be operated individually or in parallel'). 20 mA mode => 60 mA per cathode pin, 120 mA total = panel's 120 mA typ. Do NOT use 25 mA mode at code 1 (150 mA total).",
-   "nets": {
-    "U6": "LED_K2"
-   }
-  },
-  {
-   "pin": "17",
-   "ds_name": "EP (GND)",
-   "type": "thermal/ground pad",
-   "requirement": "Exposed pad to GND directly under the package",
-   "cite": "AP3156 datasheet (Diodes, Rev. 1, Sept 2009) p.3 Pin Descriptions",
-   "quote": "Exposed Pad (bottom). Connected to GND directly underneath the package.",
-   "symbol_name": "EP",
-   "ok": true,
-   "issue": "",
-   "nets": {
-    "U6": "GND"
+    "U6": "+3V3"
    }
   }
  ]

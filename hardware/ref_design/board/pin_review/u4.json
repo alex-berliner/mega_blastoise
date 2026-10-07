@@ -14,7 +14,7 @@
   {
    "id": "RP2350-E9",
    "applies": "Only on A2 stepping (fixed in A3, Appendix C.2.1 p.1349). Stepping of the RP2354B parts JLC/LCSC C39843328 supplies: unknown.",
-   "why": "Bank 0 pad with IE set and output off sits near 2.2 V unless pulled low through <= 8.2 kOhm; internal pull-down can't overcome it. Design already uses 4.7k on PWR_HOLD (GPIO2, R42) and CHG_OFF (GPIO19, R44). AMP_EN (GPIO11, R37 100k) and BL_SDI (GPIO44, R31 100k) rely on > 8.2k pull-downs: safe while the pins are outputs or at reset (IE clear at reset), but not if firmware releases them as inputs with IE set. ADC pins (GPIO45-47): clear IE as the workaround says. Button and REV inputs use pull-ups, which E9 doesn't affect. SWD pads are pull-up and unaffected.",
+   "why": "Bank 0 pad with IE set and output off sits near 2.2 V unless pulled low through <= 8.2 kOhm; internal pull-down can't overcome it. Design already uses 4.7k on PWR_HOLD (GPIO2, R42) and CHG_OFF (GPIO19, R44). AMP_EN (GPIO11, R37 100k) and BL_PWM (GPIO44, R60 + R61 103.9k) rely on > 8.2k pull-downs: safe while the pins are outputs or at reset (IE clear at reset), but not if firmware releases them as inputs with IE set. ADC pins (GPIO45-47): clear IE as the workaround says. Button and REV inputs use pull-ups, which E9 doesn't affect. SWD pads are pull-up and unaffected.",
    "cite": "Appendix D.5.1, p.1358-1359"
   },
   {
@@ -302,10 +302,10 @@
   },
   {
    "gpio": 44,
-   "net": "BL_SDI",
-   "function_needed": "SIO output (F5)",
+   "net": "BL_PWM",
+   "function_needed": "PWM10 A (F4)",
    "available": true,
-   "cite": "Table 3 (1.2.3 GPIO functions, Bank 0), p.19: SIO in column F5"
+   "cite": "Table 3 (1.2.3 GPIO functions, Bank 0), p.19: PWM10 A in column F4 (GPIO36, its other PWM10 A pin, is LCD_MISO on SPI0)"
   },
   {
    "gpio": 45,
@@ -1098,9 +1098,9 @@
    "quote": "GPIO44_ADC4       -        Digital IO /      IOVDD /        Pull-Down     User IO or ADC input",
    "symbol_name": "GPIO44/ADC4",
    "ok": true,
-   "issue": "NOTE (E9, A2 stepping only): BL_SDI's pull-down R31 is 100k, above E9's 8.2 kOhm; same caveat as AMP_EN (do not leave the pad as an input with IE set on A2 silicon).",
+   "issue": "NOTE (E9, A2 stepping only): BL_PWM sees 103.9k to GND (R60 + R61), above E9's 8.2 kOhm; same caveat as AMP_EN (do not leave the pad as an input with IE set on A2 silicon: at 2.2 V it would light the backlight at about 38 mA a pin).",
    "nets": {
-    "U4": "BL_SDI"
+    "U4": "BL_PWM"
    }
   },
   {

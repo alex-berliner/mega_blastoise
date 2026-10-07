@@ -71,8 +71,9 @@ REGIONS = {
     ],
     "display.kicad_sch": [
         (15, 22, 95, 195, ["J3"]),
-        (110, 30, 250, 75, ["R28", "R29", "C29", "C30"]),
-        (110, 80, 250, 175, ["U6", "C31", "C32", "JP2", "C33", "C36", "R31"]),
+        (110, 30, 250, 62, ["R28", "R29", "C29", "C30"]),
+        (110, 64, 250, 122, ["U6", "R60", "R61", "C50", "C51", "JP2"]),
+        (110, 124, 250, 195, ["Q5", "R52", "R54", "R56", "R58", "C48", "Q6", "R53", "R55", "R57", "R59", "C49"]),
     ],
     "audio.kicad_sch": [(15, 22, 250, 150, ["U7", "R32", "C37", "R33", "C38", "C39", "R34", "R35", "C40",
                                             "R36", "Q3", "R37", "C34", "C35", "J4"])],
@@ -88,7 +89,7 @@ SHEET_NOTES = [
     ("mcu.kicad_sch", "MCU", ("RP2354B (2 MB flash inside),", "12 MHz crystal, USB series resistors")),
     ("mcu_power.kicad_sch", "MCU_Power", ("RP2354B decoupling and its", "internal 1.1 V switcher")),
     ("debug.kicad_sch", "Debug", ("SWD and UART connectors,", "BOOTSEL and RESET buttons")),
-    ("display.kicad_sch", "Display", ("50-pin ZIF connector for the 3.5in IPS", "panel, AP3156 backlight driver")),
+    ("display.kicad_sch", "Display", ("50-pin ZIF connector for the 3.5in IPS", "panel, backlight current sinks")),
     ("audio.kicad_sch", "Audio", ("PWM low-pass into an FM8002A", "bridge amplifier, speaker pads")),
     ("buttons.kicad_sch", "Buttons", ("16 membrane contacts,", "one GPIO each")),
 ]
@@ -129,7 +130,8 @@ TEXT = {
     "display.kicad_sch": [
         (110, 15, 1.27, "EastRising ER-TFT035IPS-6 (ILI9488, 4-wire SPI). Its 50-pin FPC folds under the panel into J3 (ZIF)."),
         (110, 19, 1.27, "J3 pin j is panel pin 51 - j. Unused bus pins as the datasheet says: DB0-17 and RGB low, RD and IM2-0 high."),
-        (110, 23, 1.27, "U6 AP3156: three sinks per cathode pin (LED_K1, LED_K2), 20 mA per LED at most, set over SDI (1-wire)."),
+        (110, 23, 1.27, "Backlight: LED_A on VSYS; a current sink per cathode pin (U6 half, Q5/Q6, 2.2 ohm R52/R53). GPIO44 PWM,"),
+        (110, 27, 1.27, "filtered by R60/R61/C50, sets BL_REF: 0.124 V (56 mA a pin) at 100%. Stability: sim/backlight.py."),
     ],
     "audio.kicad_sch": [
         (15, 160, 1.27, "AUDIO_PWM (GPIO8, PWM4 A, 8 bits: 586 kHz) through two RC stages (-3 dB ~14 kHz); gain 2 x R35/R34. AMP_EN high"),

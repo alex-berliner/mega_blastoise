@@ -52,9 +52,9 @@
    "param": "Backlight",
    "ds": "6-chip parallel, If 120 mA, Vf 3.2 typ / 3.4 max (Jun-2023; Feb-2023 doc 3.0/3.2; drawing U=2.9-3.2 V, I=120mA); LED life 30k h at 90 mA",
    "cite": "ER-TFT035IPS-6 datasheet (EastRising, doc REV 1.0 Dec-15-2022, PDF modified 2023-06-28; Wayback copy of 2025-01-09) \u00a74.4 p.11; drawing note p.6",
-   "design": "AP3156 6 x 20 mA = 120 mA, 3 sinks per cathode pin",
+   "design": "current sink per cathode pin (U6/Q5/Q6, 2.2 ohm): 56 mA a pin at 100% duty, 113 mA total; 120 mA worst case with 3V3 +2% and the op-amp offset",
    "ok": true,
-   "note": "The 'Forward current' row prints '110 120' without clear min/typ/max columns; treat 120 mA as the limit and avoid the AP3156 25 mA mode."
+   "note": "The 'Forward current' row prints '110 120' without clear min/typ/max columns; treat 120 mA as the limit (the sink is sized to 113 mA at full duty)."
   }
  ],
  "refs": [],
@@ -71,7 +71,7 @@
    "j3_net": "LED_A",
    "symbol_name": "J3 Pin_50",
    "ok": true,
-   "issue": "Fed from AP3156 VOUT via JP2 (bridged). 120 mA on one FPC contact: FH12 rating 0.5 A/contact.",
+   "issue": "Fed from VSYS via JP2 (bridged). 113 mA on one FPC contact: FH12 rating 0.5 A/contact.",
    "nets": {}
   },
   {
@@ -86,7 +86,7 @@
    "j3_net": "LED_K1",
    "symbol_name": "J3 Pin_49",
    "ok": true,
-   "issue": "Datasheet table names both pins 'LEDK'; the drawing (p.6) shows LED-K1 and LED-K2 with 3 LEDs each but does not say which of pins 2/3 is K1. Irrelevant electrically: both nets get three 20 mA sinks.",
+   "issue": "Datasheet table names both pins 'LEDK'; the drawing (p.6) shows LED-K1 and LED-K2 with 3 LEDs each but does not say which of pins 2/3 is K1. Irrelevant electrically: each pin has its own identical current sink (Q5 on LED_K1, Q6 on LED_K2).",
    "nets": {}
   },
   {
@@ -101,7 +101,7 @@
    "j3_net": "LED_K2",
    "symbol_name": "J3 Pin_48",
    "ok": true,
-   "issue": "Datasheet table names both pins 'LEDK'; the drawing (p.6) shows LED-K1 and LED-K2 with 3 LEDs each but does not say which of pins 2/3 is K1. Irrelevant electrically: both nets get three 20 mA sinks.",
+   "issue": "Datasheet table names both pins 'LEDK'; the drawing (p.6) shows LED-K1 and LED-K2 with 3 LEDs each but does not say which of pins 2/3 is K1. Irrelevant electrically: each pin has its own identical current sink (Q5 on LED_K1, Q6 on LED_K2).",
    "nets": {}
   },
   {

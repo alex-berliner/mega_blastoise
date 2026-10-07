@@ -11,11 +11,11 @@ Files are in `board/fab/` (regenerate with `python3 board/tools/fab.py`).
 | Surface finish | **ENIG** | the silicone pills press straight on the contact combs: they must be gold, not HASL |
 | Min via hole | **0.3 mm** (0.5 mm pads, 0.6 mm on power), tented | JLC's standard: 0.25 mm adds a fee, a 4-wire test and TG155 material (about $40 an order) |
 | Min track / space | 0.15 / 0.15 mm (0.1 mm in the RP2354B pin field) | |
-| Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 97 placements, 42 part numbers |
+| Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 117 placements, 49 part numbers |
 
 In JLC's placement preview, check every polarised part turned the way the silkscreen
-says: the RP2354B, TP4056, AP3156 and FM8002A pin-1 dots, the ME6211, SRV05-4, BAT54C,
-AO3401A and the 2N7002s, the diodes (D2, D3, D5, D6: the band is the cathode), and J3,
+says: the RP2354B, TP4056, MCP6002 (U6) and FM8002A pin-1 dots, the ME6211, SRV05-4, BAT54C,
+AO3401A, the AO3400As (Q5, Q6) and the 2N7002s, the diodes (D2, D3, D5, D6: the band is the cathode), and J3,
 the panel's connector (pin 1 at its left end, its mouth towards seat 1).
 JLC fixes rotation offsets on request; the CPL carries KiCad's angles.
 
@@ -49,7 +49,7 @@ and the hook thickness in `case/case.scad` if the lid is too loose or too tight.
 
 1. Speaker: solder its leads to J4 on the back of the board, `+` to the pad marked `+`.
    Keep the leads short; the speaker sits on the tub floor right below.
-2. Look over the chips with exposed pads (TP4056, AP3156, RP2354B): their pads must have
+2. Look over the chips with exposed pads (TP4056, RP2354B): their pads must have
    wetted. X-ray is not needed for a prototype; a lifted corner pin shows under a loupe.
 3. Leave the empty footprints empty unless bring-up asks for them. C41-C43 are 1206 (the
    largest common size, 1.6 mm between pads, fine with an ordinary iron). R48 is left off on

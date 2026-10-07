@@ -14,7 +14,6 @@ left a connection or two.
   3. pre-routes that the router handles badly:
        membrane contacts: each comb's anchor -> radial stub -> via outside the pill
        display connector: the panel's grounded pins joined by a bar per run
-       AP3156: its GND pins into its thermal pad
        every other GND pad: a short stub and a via down to the GND pour
   4. Freerouting (1.9.0; 2.x loops on this board) routes the signals and the
      supplies (3V3 included: two layers have no 3V3 plane) on F.Cu and B.Cu. GND is
@@ -273,23 +272,6 @@ def fpc_ground_bar(board):
         for i in range(0, len(xs), 5):
             add_track(board, (xs[i], bar_y), (xs[i], via_y), gnd, 0.3)
             add_via(board, (xs[i], via_y), gnd)
-
-
-def led_driver(board):
-    """The AP3156's two GND pins sit beside its thermal pad: straight stubs join them
-    to it (and its vias), the fan-out has no room for a via of their own."""
-    u6 = board.FindFootprintByReference("U6")
-    ep = next(p for p in u6.Pads() if p.GetNumber() == "17")
-    ex, ey = xy(ep.GetPosition())
-    gnd = board.FindNet("GND")
-    for p in u6.Pads():
-        if p.GetNumber() in ("9", "11"):
-            x, y = xy(p.GetPosition())
-            # along the pin's own axis, to the pad's inner third
-            if abs(x - ex) > abs(y - ey):
-                add_track(board, (x, y), (ex + (x - ex) / 3, y), gnd, 0.25)
-            else:
-                add_track(board, (x, y), (x, ey + (y - ey) / 3), gnd, 0.25)
 
 
 def box(item):
@@ -1170,7 +1152,6 @@ def main():
     core_3v3_stubs(board)
     contacts = contact_stubs(board)
     fpc_ground_bar(board)
-    led_driver(board)
     fanout(board)
     freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
     finish_open(board)
