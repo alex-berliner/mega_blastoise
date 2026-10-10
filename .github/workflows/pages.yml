@@ -62,6 +62,16 @@ jobs:
           mkdir -p _site/assembly
           cp -r hardware/ref_design/viewer/site/. _site/assembly/
           python3 hardware/ref_design/viewer/build.py --check || echo "::warning::the assembly viewer is older than the board or case it shows; run hardware/ref_design/viewer/build.py"
+          # The battery-under-board variant's view, from its branch's last push (its own
+          # build.py keeps it fresh there). Deploys only run from main, so a push to the
+          # branch shows up at the next main deploy (or a manual run of this workflow).
+          if git fetch --depth=1 origin ref-design-battery-bottom; then
+            mkdir -p _site/assembly-battery-bottom
+            git archive FETCH_HEAD hardware/ref_design/viewer/site | tar -x -C "$RUNNER_TEMP"
+            cp -r "$RUNNER_TEMP"/hardware/ref_design/viewer/site/. _site/assembly-battery-bottom/
+          else
+            echo "::warning::no ref-design-battery-bottom branch: its assembly view is not published"
+          fi
           # Without this, Jekyll drops anything starting with an underscore.
           touch _site/.nojekyll
           ls -la _site
