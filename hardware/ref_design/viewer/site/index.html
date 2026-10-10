@@ -79,7 +79,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 <div class="app">
   <header>
     <h1>Mega Blastoise Assembly</h1>
-    <p class="sub">The reference design's case, board and bought parts, from the build files. <a href="../assembly-battery-bottom/">A variant</a> puts the cell under the board.</p>
+    <p class="sub">The reference design's case, board and bought parts, from the build files. <a href="../assembly-cell-on-board/">An earlier layout</a> kept the cell on the board under the screen.</p>
     <div class="chips" id="chips"></div>
   </header>
 
@@ -125,15 +125,15 @@ const PARTS = [
     note: "DS Lite caps, bought. Their flanges sit under the lid, which holds them in." },
   { key: "panel", name: "Display panel", file: "parts/panel.stl", color: "#0b0e13", lift: 68, rough: 0.25,
     note: "3.5 in IPS (ER-TFT035IPS-6), taped to the lid's window ledge. Its ribbon folds round to J3." },
-  { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 50, metal: 0.6,
-    note: "403450 Li-ion, 4 × 34 × 50 mm, lying under the screen." },
-  { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 44, metal: 0.5,
-    note: "15 mm, 4 mm thick, over the hole in the board; it plays through the tub floor's grille." },
-  { key: "foam", name: "Foam spacer", file: "parts/foam.stl", color: "#e2bf55", lift: 36,
-    note: "1.2 mm foam tape: lifts the cell clear of the parts under it." },
-  { key: "silicone", name: "Silicone domes", file: "parts/silicone.stl", color: "#8e959f", lift: 32,
+  { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 14, metal: 0.6,
+    note: "403450 Li-ion, 4 × 34 × 50 mm, lying on the tub floor under the board. Its wires come up through a slot to J2." },
+  { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 10, metal: 0.5,
+    note: "15 mm, 4 mm thick, on the tub floor beside the cell; it plays through the floor's grille." },
+  { key: "foam", name: "Foam spacer", file: "parts/foam.stl", color: "#e2bf55", lift: 26,
+    note: "0.45 mm foam pad between the cell and the board's back." },
+  { key: "silicone", name: "Silicone domes", file: "parts/silicone.stl", color: "#8e959f", lift: 52,
     note: "DS Lite button membranes, 1.2 mm, over the board's contact pads." },
-  { key: "board", name: "Circuit board", file: "parts/board.glb", lift: 18,
+  { key: "board", name: "Circuit board", file: "parts/board.glb", lift: 40,
     note: "2 layers, 1.6 mm, assembled by JLC. Every fitted part is shown." },
   { key: "tub", name: "Tub", file: "parts/tub.stl", color: "#2c343f", lift: 0, shell: true,
     note: "Printed. Bosses take the screws; the USB-C opening is in the end wall." },

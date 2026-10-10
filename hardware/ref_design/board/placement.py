@@ -57,28 +57,31 @@ put("FID3", 66.8, 141.6)
 put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["y"], 0)
 put("R28", 97.6, 96.6, 90)                  # SPI source terminations, next to GPIO38/39
 put("R29", 99.1, 96.6, 90)
-put("C29", 92.3, 112.4, 0)                  # panel VCI/VDDI, behind connector pins 9-11
-put("C30", 94.3, 112.4, 0)
+# J3's neighbours keep their place relative to it: it moves with the panel's height (case.scad
+# conn_in), and they were laid out round it at 120.89
+J3_DY = CASE["fpc_conn"]["y"] - 120.89
+put("C29", 92.3, 112.4 + J3_DY, 0)                  # panel VCI/VDDI, behind connector pins 9-11
+put("C30", 94.3, 112.4 + J3_DY, 0)
 # backlight current sinks: above J3's LED end (pins 48-50), between J3 and the battery connector,
-# clear of the bar route.py lays over J3's grounded pins (y 117.9, vias at 117.1). The FETs'
+# clear of the bar route.py lays over J3's grounded pins (3 mm above J3's origin). The FETs'
 # drains face J3's LED pins; op-amp half A (left) runs LED_K2 (Q6), half B (right) LED_K1 (Q5)
-put("U6", 106.5, 106.5, 0)
-put("C51", 109.5, 103.0, 0)                 # U6 supply, by pin 8
-put("C50", 111.6, 107.8, 90)                # BL_REF filter
-put("Q6", 104.6, 114.5, 0)                  # LED_K2 (J3 pin 48)
-put("R53", 101.0, 115.45, 180)              # its sense resistor: BL_S2 end by the source, GND end away
-put("Q5", 112.0, 114.5, 0)                  # LED_K1 (J3 pin 49)
-put("R52", 108.45, 115.45, 180)
-put("R57", 103.3, 112.0, 0)                 # channel 2: gate pull-down, gate resistor, feedback R and C
-put("R55", 105.4, 112.0, 0)
-put("C49", 102.7, 110.4, 0)
-put("R59", 104.8, 110.4, 0)
-put("R60", 107.6, 112.0, 0)                 # PWM into BL_REF
-put("R61", 107.0, 110.4, 0)
-put("R56", 110.3, 112.0, 0)                 # channel 1
-put("R54", 112.4, 112.0, 0)
-put("C48", 110.2, 110.4, 0)
-put("R58", 112.3, 110.4, 0)
+put("U6", 106.5, 106.5 + J3_DY, 0)
+put("C51", 109.5, 103.0 + J3_DY, 0)                 # U6 supply, by pin 8
+put("C50", 111.6, 107.8 + J3_DY, 90)                # BL_REF filter
+put("Q6", 104.6, 114.5 + J3_DY, 0)                  # LED_K2 (J3 pin 48)
+put("R53", 101.0, 115.45 + J3_DY, 180)              # its sense resistor: BL_S2 end by the source, GND end away
+put("Q5", 112.0, 114.5 + J3_DY, 0)                  # LED_K1 (J3 pin 49)
+put("R52", 108.45, 115.45 + J3_DY, 180)
+put("R57", 103.3, 112.0 + J3_DY, 0)                 # channel 2: gate pull-down, gate resistor, feedback R and C
+put("R55", 105.4, 112.0 + J3_DY, 0)
+put("C49", 102.7, 110.4 + J3_DY, 0)
+put("R59", 104.8, 110.4 + J3_DY, 0)
+put("R60", 107.6, 112.0 + J3_DY, 0)                 # PWM into BL_REF
+put("R61", 107.0, 110.4 + J3_DY, 0)
+put("R56", 110.3, 112.0 + J3_DY, 0)                 # channel 1
+put("R54", 112.4, 112.0 + J3_DY, 0)
+put("C48", 110.2, 110.4 + J3_DY, 0)
+put("R58", 112.3, 110.4 + J3_DY, 0)
 
 # debug: left bezel
 put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
@@ -109,7 +112,7 @@ put("R9", 124.4, 115.6, 90)
 put("R10", 123.2, 115.6, 90)
 put("R39", 125.6, 112.6, 90)                # TEMP divider: VBUS side
 put("R40", 124.4, 112.6, 90)
-put("TH1", 110.0, 76.0, 90)                # under the cell, which lies on it (on the spacer): it reads the cell itself
+put("TH1", 85.2, 124.0, 90)                # over the cell (under the board), below J3 and clear of the FPC; 45 mm from U2
 put("C3", 133.2, 121.6, 0)                  # VBAT
 put("C2", 129.0, 121.6, 0)                  # VSYS
 put("Q2", 131.2, 125.0, 0)                  # cell -> VSYS without USB
@@ -120,7 +123,7 @@ put("C9", 131.2, 131.4, 0)                  # holds VSYS through the switch-over
 put("J2", CASE["batt_conn"][0], CASE["batt_conn"][1] + 0.6, 180)
 
 # 3V3 LDO right of the chip, next to the core's 3V3 decoupling (routed to it as a track)
-put("U3", 129.5, 88.0, 90)                 # right edge, out from under the cell (1.54 mm tall) and off the core's copper
+put("U3", 129.5, 88.0, 90)                 # right edge, off the core's copper (1.54 mm tall)
 put("C5", 132.5, 86.25, 90)                 # VSYS in, beside U3
 put("C6", 129.5, 92.0, 90)                  # 3V3 out
 put("C7", 131.5, 92.0, 90)
@@ -139,9 +142,9 @@ put("R17", 104.0, 96.6, 90)
 put("R18", 105.4, 96.6, 90)
 put("C8", 106.8, 96.6, 90)
 
-# audio: above the core, speaker pads on the back over the speaker. The PWM comes in on
+# audio: above the core, speaker pads on the back beside the speaker. The PWM comes in on
 # the left through the filter (R32 C37 R33 C38), Ci and Ri; Rf under the chip
-put("U7", 100.0, 56.0, 0)                   # out from under the cell, past the panel's edge (1.75 mm tall). FM8002A: 1 SHUTDOWN .. 4 -IN on the left, 5 VO1 .. 8 VO2 right
+put("U7", 100.0, 56.0, 0)                   # past the panel's edge (1.75 mm tall). FM8002A: 1 SHUTDOWN .. 4 -IN on the left, 5 VO1 .. 8 VO2 right
 put("R32", 88.2, 68.6, 0)
 put("C37", 88.2, 70.2, 0)
 put("R33", 91.0, 68.6, 0)
@@ -155,7 +158,7 @@ put("Q3", 100.00, 51.00, 0)
 put("R37", 91.4, 59.0, 0)
 put("C34", 105.4, 63.0, 90)                 # VDD
 put("C35", 104.0, 60.4, 0)
-put("J4", 92.5, 102.0, 0)                   # beside the speaker, which sits on the board below the cell
+put("J4", 100.0, 64.5, 0, "B")             # on the back, past the speaker's seat-2 edge: its leads come up from the floor
 
 # test points on the back, between seat 2's clusters
 for i in range(5):
@@ -173,9 +176,9 @@ put("JP2", 117.75, 122.60, 0)               # VSYS to LED_A (J3 pin 50)
 put("TP6", 133.50, 75.45, 0)                # 5.3 mm from R15
 put("TP7", 128.40, 129.25, 0)               # 2.2 mm from R6
 put("TP8", 94.60, 60.05, 0)                 # 1.8 mm from R36
-put("C41", 116.40, 113.60, 0)               # 8.1 mm from R40
+put("C41", 116.40, 113.60 + J3_DY, 0)               # 8.1 mm from R40
 put("C42", 112.75, 98.15, 90)               # 11.3 mm from R3
-put("C43", 111.75, 103.10, 90)              # 12.3 mm from R4
+put("C43", 114.50, 103.10, 90)              # 12.3 mm from R4
 put("R48", 91.60, 80.60, 0)
 put("R49", 91.35, 79.25, 0)
 put("R50", 92.60, 76.80, 0)

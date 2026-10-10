@@ -172,8 +172,8 @@ part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
       "7": "CHG_STAT_N", "6": "CHG_DONE_N", "3": "GND", "9": "GND"},
      "C16581", "TP4056-42-ESOP8", "TOPPOWER")
 # cell temperature: the TP4056 charges only while TEMP sits between 45% and 80% of VBUS.
-# The 403450 has no NTC wire, so TH1 sits on the board under the cell, which lies on it, about
-# 45 mm from U2 (whose 0.65 W while charging would trip it). TH1 is in parallel with R40:
+# The 403450 has no NTC wire, so TH1 sits on the board over the cell (which lies under the
+# board, 0.5 mm from its back: TH1 reads it through the board and lags it), about 45 mm from U2 (whose 0.65 W while charging would trip it). TH1 is in parallel with R40:
 # the window is 1 to 46 C (-3 to 49 C across the TP4056's threshold spread). Fed from VBUS,
 # so it draws nothing from the cell. Out of range, CHRG and STDBY both go high (as with no USB)
 R("R39", S, "5.6k", "VBUS", "CHG_TEMP")

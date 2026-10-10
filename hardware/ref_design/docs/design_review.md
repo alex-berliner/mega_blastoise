@@ -13,7 +13,7 @@ Two players face each other across a 3.5in 320x480 IPS screen; each has a
 D-pad and four face buttons under DS Lite silicone at their end. One Li-ion
 cell, one speaker, one USB-C for charging and firmware. No radios.
 
-Case 75.4 x 156.2 mm, 13.9 mm thick at the screen and 7.86 at the ends: the cell lies on the board under the screen and the board rests on ribs 0.5 mm over the tub's floor (until 2026-10-05 the cell lay under the board and the case was 15.6 mm: tag ref-design-battery-under-board). Each end steps down 6.0 mm to a button deck (a spine between the clusters stays full height over the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
+Case 75.4 x 156.2 mm, 14.6 mm thick at the screen and 11.06 at the ends: the cell lies on the tub's floor under the board and the board rests on ribs 4.5 mm over the floor (since 2026-10-09; branch ref-design-cell-on-board has the cell on the board under the screen, 13.9 mm and 7.86 at the ends). Each end steps down 3.54 mm to a button deck (a spine between the clusters stays full height over the end snap hooks), so genuine DS Lite caps stand 1.3 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
 line width, the size JLC quotes), 2 layers, 1.6 mm, ENIG,
 every hole 0.3 mm or larger.
 
@@ -33,7 +33,7 @@ every hole 0.3 mm or larger.
   charges by default; firmware can pause it with CHG_OFF (GPIO19, Q4; R44 holds it off). CHRG and STDBY go to GPIOs; there are no LEDs.
 - Charge temperature: the TP4056 charges only while TEMP is between 45% and 80% of
   VBUS. The 403450 has no NTC wire, so TH1 (NCP15XH103F03RC, 10k B3380) sits on the
-  board under the cell, which lies on it through its spacer, in parallel with R40 (150k),
+  board over the cell, which lies 0.5 mm under the board's back, in parallel with R40 (150k),
   under R39 (5.6k) from VBUS. Window: 1 to 46 C nominal, -3 to 49 C across the datasheet's
   threshold spread (43-45%, 80-82%). TH1 is about 45 mm from U2, whose 0.65 W while
   charging would otherwise trip it, and it reads the cell's own underside. Out of range, CHRG and
@@ -217,16 +217,14 @@ every hole 0.3 mm or larger.
   stubs, the power button's VSYS comb too), 0.2 mm USB; vias 0.5 mm with 0.3 mm holes
   (0.6 mm on power). Every hole is 0.3 mm or larger, JLC's standard: smaller ones
   cost about $40 an order (a fee, a required 4-wire test and TG155 material).
-- Heights, from the floor: tub floor 1.5, board 0.5 over it on ribs, board 1.6. On the
-  board under the screen: the cell (403450, 4 mm) lies sideways on a 1.2 mm spacer over
-  the RP2354B core (nothing under it taller than 1.0 mm), and the panel's back is 0.5 mm
-  above it, 5.7 mm over the board; the panel (2.35 +-0.1 in its drawing, counted as
-  2.45) hangs from the lid's window ledge on 0.15 mm tape. Elsewhere under the panel
-  parts go to 5.5 mm: the battery connector J2 (5.5) beside the cell, the speaker
-  (15 mm, 4 mm, on 0.6 mm foam over flat parts, firing down through a 6 mm hole in the
-  board and the floor's grille), the panel's connector J3. The panel's FPC drops 3.3 mm
-  further to J3 than before, so J3 sits 3.3 mm nearer the seat-1 edge. The parts that
-  were too tall for the cell's spacer moved out from under it: U7, Q3, U3.
+- Heights, from the floor: tub floor 1.5, the cell (403450, 4 mm) lengthwise on the floor
+  with 0.5 mm to the board's back, board 1.6 on ribs 4.5 mm high everywhere else. Beside
+  the cell on the floor, the speaker (15 mm, 4 mm) fires down through the floor's grille;
+  its leads go to pads on the board's back (J4). The panel's back is 2.4 mm over the board
+  (parts under it to 2.2; J3 is 2.0); the panel (2.35 +-0.1 in its drawing, counted as
+  2.45) hangs from the lid's window ledge on 0.15 mm tape. The battery connector J2
+  (5.5 mm) sits under the spine between seat 1's clusters, in a pocket in the lid; the
+  cell's wires come up through a 5 x 2.3 mm slot beside its plug.
 - The lid's snap hooks hang 4.3 mm below it, just inside the tub wall, so nothing
   taller than 0.7 mm may sit under them (`case/check_fit.py` checks it).
 

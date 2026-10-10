@@ -51,19 +51,20 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   design assumes a D-pad pill spacing of 14.0 mm (another source says 13.5): measure it. Tune
   `dome_h` (sets the deck height), `piece_d`, `dpad_pitch`; the cap numbers from `case/DSLITE.md`
   (`cap_*`, `pocket_*`, `slot_*`, `dpad_*`) if a real cap disagrees.
-  The JST plug (real or dummy) should go into J2 below the cell's right-hand end without forcing the cell's wires.
+  The JST plug (real or dummy) should go into J2 between seat 1's clusters, its wires through the slot beside it, without forcing them.
 - **USB-C:** a USB-C cable's plug should pass the opening in `coupon_usb_tub` with some clearance.
 
 **2. Everything together (about a day of printing):**
-1. Board mock into the tub, onto the floor's ribs (the crush ribs on the walls centre it).
-2. Cell (or dummy) on a 1.2 mm spacer on the board mock, sideways under the screen area, its lead at
-   the right-hand end to J2's block; speaker (or dummy) on 0.6 mm foam over the sound hole.
+1. Cell (or dummy) in its pocket on the tub's floor, its lead at seat 1's end; speaker (or dummy)
+   on the grille beside it.
+2. The cell's lead up through the board mock's slot, then the board mock into the tub, onto the
+   floor's ribs (the crush ribs on the walls centre it); the lead to J2's block.
 3. Tape the real FH12 connector on J3's outline (mouth towards seat 1, pin 1 at the marked end).
    Fold the real panel's FPC under it and slide it into the connector. The design expects a little
    slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
    `case.scad` moves J3.
 4. Panel into the lid's frame on the tape, silicone and caps in, lid down (its lip into the wall's step): all six hooks should
-   click, the lid should sit flush, nothing should rattle, the case should measure 13.9 mm at the screen, 7.9 at the ends.
+   click, the lid should sit flush, nothing should rattle, the case should measure 14.6 mm at the screen, 11.1 at the ends.
 5. Press every button: each should click through and spring back.
 
 **3. Measure and record** (design_review.md, "Measure before ordering"): the silicone's pill
