@@ -4,6 +4,9 @@ A complete, orderable design for the production version of the handheld:
 schematic, 2-layer board, JLCPCB fab and assembly files, a printable case, and
 the documents to build, bring up and review it.
 
+**Branch `ref-design-cell-on-board`:** the layout with the cell on the board under the
+screen (13.9 mm). Main moved the cell back under the board on 2026-10-09.
+
 **This is the 2-layer build**, on `main` since 2026-09-24: the first, 4-layer
 design (kept on branch `ref-design-4layer`) with every cost change Alex approved
 that day, on two copper layers with JLC's standard 0.3 mm holes. Built by Claude in parallel with
