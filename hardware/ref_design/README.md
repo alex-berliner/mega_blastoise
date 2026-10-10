@@ -4,6 +4,11 @@ A complete, orderable design for the production version of the handheld:
 schematic, 2-layer board, JLCPCB fab and assembly files, a printable case, and
 the documents to build, bring up and review it.
 
+**Branch `ref-design-battery-bottom`:** main's design with the cell back under the
+board (on the tub's floor) instead of on the board under the screen; the panel drops to
+2.4 mm over the board. A variant to compare against main, not the reference. Its board
+needs `route.py 80` (twice the default passes) to route completely.
+
 **This is the 2-layer build**, on `main` since 2026-09-24: the first, 4-layer
 design (kept on branch `ref-design-4layer`) with every cost change Alex approved
 that day, on two copper layers with JLC's standard 0.3 mm holes. Built by Claude in parallel with
@@ -21,9 +26,9 @@ which this folder never touches.
 - 16 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad and
   four face buttons at each end
 - PWM audio through an RC filter into an FM8002A amplifier and a 15 mm speaker
-- One 403450 Li-ion cell (about 700 mAh) lying on the board under the screen, TP4056 charger with USB load sharing,
+- One 403450 Li-ion cell (about 700 mAh) lying on the tub's floor under the board, TP4056 charger with USB load sharing,
   ME6211 3V3 LDO, soft power on seat 1's Y button with MCU hold
-- Case 75.4 x 156.2 mm, 13.9 mm at the screen and 7.9 mm at the button decks (genuine DS Lite
+- Case 75.4 x 156.2 mm, 14.6 mm at the screen and 11.1 mm at the button decks (genuine DS Lite
   caps stand 1.3 mm proud there), two printed parts held by six M2 screws, as a DS Lite
 
 ## Folder

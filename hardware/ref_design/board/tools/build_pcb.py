@@ -159,7 +159,7 @@ def rounded_rect(board, x0, y0, x1, y1, r):
 def outline(board):
     bw, bl, r = CASE["board"]["w"], CASE["board"]["l"], CASE["board"]["r"]
     rounded_rect(board, 100 - bw / 2, 100 - bl / 2, 100 + bw / 2, 100 + bl / 2, r)
-    # the board's one cutout (the speaker's sound hole): round when its corners are
+    # the board's one cutout (the cell's cable slot): round when its corners are
     # rounded to half its side
     (sx0, sy0), (sx1, sy1) = CASE["slot"]
     r = CASE.get("slot_r", 0.6)
