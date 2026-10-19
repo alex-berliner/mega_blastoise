@@ -161,7 +161,7 @@ Never existed on any revision, so there is nothing to port.
 3. Layer count. Raspberry Pi's reference core is 2-layer; four may be easier
    once buttons, audio and display routing are on the board.
 4. Enclosure process: 3D print for prototypes, injection moulding at volume.
-   The `cad/` subproject moves onto the critical path because the case is what
+   The case work (once the v1 `cad/` subproject, now at tag `v1-archive`) moves onto the critical path because the case is what
    holds the membranes against the board.
 5. Resolved, see §8.
 

@@ -82,6 +82,5 @@ Also out of scope: AI opponent (the demo is two-player only), full 151-Pokémon 
 ## More Detail
 
 - **Electronics design** — [ELECTRONICS.md](./ELECTRONICS.md)
-- **Software internals** — [TECHNICAL.md](./TECHNICAL.md)
-- **Full spec** — [specs.md](./specs.md)
-- **Architecture deep-dive** — [architecture/](./architecture/README.md)
+- **Software internals** — [TECHNICAL.md](../../../TECHNICAL.md)
+- **Architecture deep-dive** — [architecture/](../../../architecture/README.md)

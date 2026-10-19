@@ -1,5 +1,0 @@
-ato-version: ^0.3.0
-builds:
-  default:
-    entry: elec/src/mega_blastoise.ato:MegaBlastoise
-dependencies: []
