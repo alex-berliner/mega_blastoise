@@ -131,7 +131,15 @@ deck_face = cap_top - cap_proud;                        // lip over the flanges:
 z_deck_lid = deck_face - lid_t;                         // deck underside; the tub's walls stop here
 step_y = bay_l / 2 + 2.4;                               // the step: clear of the panel and its FPC fold
 step_wall = 1.5;  spine_w = 13.0;  deck_r = 3;          // step wall, spine width, deck corner rounding
-step_chamfer = 2.0;       // the screen block's edges over the decks, chamfered 45 degrees for the thumbs
+// The screen block meets each deck in a smooth S-curve (smoothstep) for the thumbs, not a
+// chamfer and a wall (Alex, 2026-10-19: the jump down was too sharp). It starts ramp_out out on
+// the deck (short of the cap retainers) and ends ramp_in into the screen block (where the skin
+// over the panel's pocket still has 0.6 mm); the raised pad over J2 keeps its edge, since cutting
+// into it would open J2's pocket
+ramp_out = 1.5;  ramp_in = 3.0;  ramp_layers = 24;
+function inv_smoothstep(v) = 0.5 - sin(asin(1 - 2 * v) / 3);
+// how far into the screen block (negative: out on the deck) the surface is at layer k
+function ramp_t(k) = -ramp_out + (ramp_out + ramp_in) * inv_smoothstep((k + 0.5) / ramp_layers);
 // Start and Select (2026-10-19): each seat's DS Lite Start/Select membrane (it comes in the same
 // pad kit: one piece, two pills) between its clusters, near the case's end, Start on the
 // player's right. Seat 1's Start is the power button. ESTIMATE: membrane, pill pitch and caps
@@ -486,7 +494,20 @@ module dpad_cut(h, gap = dpad_gap) {
 }
 module dpad_flange() union() { circle(r = dpad_flange_r, $fn = 64); cross(dpad_arm_w, dpad_arm_l); }
 
-module lid() difference() {
+module lid() union() {
+  lid_body();
+  // the S-curve's lower part, added on the deck along the step in layers
+  for (k = [0:ramp_layers - 1]) if (ramp_t(k) < 0)
+    translate([0, 0, deck_face - 0.01 + (case_h - deck_face) * k / ramp_layers])
+      linear_extrude((case_h - deck_face) / ramp_layers + 0.02) intersection() {
+        rrect(case_w, case_l, corner_r);
+        difference() { deck2d(); offset(delta = ramp_t(k)) deck2d(); }
+      }
+}
+// the raised pad over J2 and its chamfer: the S-curve leaves it whole
+module j2_keep2d() at(batt_conn) square(pocket + [2 * (skin_min + j2_bump) + 1, 2 * (skin_min + j2_bump) + 1], center = true);
+
+module lid_body() difference() {
   union() {
     translate([0, 0, z_lid]) linear_extrude(lid_t) difference() { rrect(case_w, case_l, corner_r); deck2d(); }
     // the decks, and the step walls from them up to the screen face
@@ -531,8 +552,10 @@ module lid() difference() {
   }
   translate([0, 0, deck_face]) linear_extrude(case_h) deck2d();              // nothing above the decks
   // the step's top edge, chamfered (in 0.1 mm layers, as it prints)
-  for (i = [0:19]) translate([0, 0, case_h - step_chamfer + i * step_chamfer / 20])
-    linear_extrude(step_chamfer / 20 + 0.01) offset(delta = step_chamfer * (i + 1) / 20) deck2d();
+  // the S-curve's upper part, cut out of the screen block in layers
+  for (k = [0:ramp_layers - 1]) if (ramp_t(k) > 0)
+    translate([0, 0, deck_face + (case_h - deck_face) * k / ramp_layers]) linear_extrude(case_h)
+      difference() { offset(delta = ramp_t(k)) deck2d(); j2_keep2d(); }
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_lid - 1]) linear_extrude(lid_t + 2) window();
   // buttons
