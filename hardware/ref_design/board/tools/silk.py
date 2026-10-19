@@ -135,9 +135,10 @@ def main():
         tp = board.FindFootprintByReference(ref)
         layer = back if tp.IsFlipped() else pcbnew.F_SilkS
         x, y = pcbnew.ToMM(tp.GetPosition().x), pcbnew.ToMM(tp.GetPosition().y)
-        text(name, x, y + 1.5 if name not in ("1V1",) else y - 1.5, layer)
+        text(name, x, y + 1.5 if name not in ("1V1", "BLREF") else y - 1.5, layer)
     j7 = board.FindFootprintByReference("J7")
-    text("SWD PADS", pcbnew.ToMM(j7.GetPosition().x) - 3.4, pcbnew.ToMM(j7.GetPosition().y), back)
+    jb = box(j7)
+    text("SWD PADS", (jb[0] + jb[2]) / 2, jb[1] - 0.9, back)
     j4 = board.FindFootprintByReference("J4")
     text("SPEAKER", pcbnew.ToMM(j4.GetPosition().x), pcbnew.ToMM(j4.GetPosition().y) + 2.7, back)
     # front: connectors and buttons people solder to or press during bring-up

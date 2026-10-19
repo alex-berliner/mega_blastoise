@@ -65,10 +65,10 @@ def main():
         pad.SetLayerSet(lset)
         pad.SetPosition(pcbnew.VECTOR2I(mm(x0 + i * PITCH), 0))
         fp.Add(pad)
-        text(fp, label, x0 + i * PITCH, 1.9, 0.7, pcbnew.F_SilkS)
+        text(fp, label, x0 + i * PITCH, 2.0, 0.8, pcbnew.F_SilkS)
     w = PITCH * (len(LABELS) - 1) / 2 + PAD_D / 2
-    for a, b in (((-w - 0.25, -1.25), (w + 0.25, -1.25)), ((w + 0.25, -1.25), (w + 0.25, 2.6)),
-                 ((w + 0.25, 2.6), (-w - 0.25, 2.6)), ((-w - 0.25, 2.6), (-w - 0.25, -1.25))):
+    for a, b in (((-w - 0.25, -1.25), (w + 0.25, -1.25)), ((w + 0.25, -1.25), (w + 0.25, 2.7)),
+                 ((w + 0.25, 2.7), (-w - 0.25, 2.7)), ((-w - 0.25, 2.7), (-w - 0.25, -1.25))):
         line(fp, a, b, pcbnew.F_CrtYd, 0.05)
     line(fp, (-w - 0.15, -1.15), (-w + 0.9, -1.15), pcbnew.F_SilkS, 0.15)     # pin 1 corner mark
     line(fp, (-w - 0.15, -1.15), (-w - 0.15, -0.1), pcbnew.F_SilkS, 0.15)

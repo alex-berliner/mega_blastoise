@@ -194,5 +194,5 @@ for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD SCK, MOSI, C
 put("TP15", 121.0, 128.0, 0)                # GND for a scope clip, by the charger
 put("TP16", 88.0, 62.0, 0)                  # GND for a scope clip, by the amplifier
 put("JP3", 105.4, 58.6, 0)                  # VSYS -> amplifier, by C34
-put("JP4", 93.75, 110.8, 0)                 # 3V3 -> panel, by C29/C30
+put("JP4", 93.3, 107.0, 0)                  # 3V3 -> panel, above C29/C30
 put("JP5", 108.0, 152.0, 0)                 # cell -> VBAT, beside J2
