@@ -387,8 +387,8 @@ async function run() {
   // degrade to defaults, not throw and black-screen the boot.
   HOLD_MS = wasm.hold_threshold_ms?.() ?? HOLD_MS;
   AI_HOLD_MS = wasm.ai_hold_ms?.() ?? AI_HOLD_MS;
-  // The console's command line drives the same entry point the two-OLED page
-  // types into, which is the firmware's USB grammar.
+  // The console's command line drives submit_text, which speaks the
+  // firmware's USB console grammar.
   setCommandHandler((line) => wasm.submit_text(line));
   const params = new URLSearchParams(location.search);
   if (params.has('demo')) setTimeout(() => wasm.wasm_enter_demo_mode(), 300);

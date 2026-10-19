@@ -206,7 +206,7 @@ export function setCommandHandler(fn) {
 }
 
 // Clicking anywhere in the panel that is not a control puts the caret back in
-// the command line, the same habit the two-OLED page has.
+// the command line.
 panel.addEventListener('pointerdown', (e) => {
   if (e.target.closest('button') || e.target === inputEl) return;
   if (window.getSelection()?.toString()) return;
