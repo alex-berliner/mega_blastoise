@@ -25,3 +25,8 @@ LIB = os.path.join(os.path.dirname(HERE), "lib", "battler.pretty")
 if __name__ == "__main__":
     sys.argv = [sys.argv[0], LIB, "DSL_button_3ring"]
     g.main()
+    # one mask opening over both combs is the point (as on the 4-ring contact): tell DRC
+    io = g.pcbnew.PCB_IO_MGR.FindPlugin(g.pcbnew.PCB_IO_MGR.KICAD_SEXP)
+    fp = io.FootprintLoad(LIB, "DSL_button_3ring")
+    fp.SetAllowSolderMaskBridges(True)
+    io.FootprintSave(LIB, fp)
