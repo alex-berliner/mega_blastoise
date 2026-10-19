@@ -18,6 +18,8 @@ the case allows at that spot:
   lid's panel frame        its band round the panel: <= frame limit (it hangs lower)
   J2 pocket                the battery connector may reach into the lid pocket
   edge parts               the USB-C face reaches the wall
+  through-hole leads       every lead poking out of the board's back lands where the floor's
+                           ribs are cut away (rib_free), not on a rib
 
 Bottom-side parts (speaker pads, test pads) are flat and only checked
 against the tub's bosses and ribs. A whole-board CGAL intersection in
@@ -69,6 +71,21 @@ def refs():
         cy = fp.GetCourtyard(pcbnew.B_CrtYd if fp.IsFlipped() else pcbnew.F_CrtYd).BBox()
         court = (pcbnew.ToMM(cy.GetX()), pcbnew.ToMM(cy.GetY()), pcbnew.ToMM(cy.GetRight()), pcbnew.ToMM(cy.GetBottom()))
         out.append((fp.GetReference(), fp.IsFlipped(), str(fp.GetFPID().GetLibItemName()), court))
+    return out
+
+
+def tht_leads():
+    """Leads that poke out of the board's back: plated holes of parts, not mounting holes or vias in pads."""
+    import pcbnew
+    b = pcbnew.LoadBoard(PCB)
+    out = []
+    for fp in b.GetFootprints():
+        if fp.GetReference().startswith("H"):
+            continue
+        for pad in fp.Pads():
+            if pad.HasHole() and max(pcbnew.ToMM(pad.GetDrillSizeX()), pcbnew.ToMM(pad.GetDrillSizeY())) > 0.45:
+                p = pad.GetPosition()
+                out.append((fp.GetReference(), pcbnew.ToMM(p.x), pcbnew.ToMM(p.y)))
     return out
 
 
@@ -147,7 +164,7 @@ def main():
         pocket = POS["batt_conn"]
         in_pocket = abs((box[0] + box[2]) / 2 - pocket[0]) < POS["pocket"][0] / 2 and \
             abs((box[1] + box[3]) / 2 - pocket[1]) < POS["pocket"][1] / 2
-        limit = POS["bezel_limit"] + (1.2 if in_pocket else 0)
+        limit = POS["pocket_limit"] - 0.2 if in_pocket else POS["bezel_limit"]
         where = "bezel"
         if inside_rect(box, glass):
             limit, where = POS["glass_limit"], "glass"
@@ -165,6 +182,10 @@ def main():
         for zone in POS["fpc_zones"]:
             if inside_rect(box, zone, -0.2) and top > 0.3 and not ref.startswith("J3"):
                 problems.append(f"{ref} is under the display's folded FPC")
+    for ref, x, y in tht_leads():
+        if not any(min(a[0], b[0]) <= x <= max(a[0], b[0]) and min(a[1], b[1]) <= y <= max(a[1], b[1])
+                   for a, b in POS["rib_free"]):
+            problems.append(f"{ref}'s through-hole lead at ({x:.2f}, {y:.2f}) lands on a floor rib")
     usb = boxes.get("J1")
     if usb and abs(usb[2] - POS["usb"]["front_x"]) > 0.3:
         problems.append(f"USB-C face at x={usb[2]:.2f}, the case expects {POS['usb']['front_x']:.2f}")

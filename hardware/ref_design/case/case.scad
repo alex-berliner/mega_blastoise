@@ -46,7 +46,7 @@ tip_in = fpc_body[2] + fpc_tail[2];                     // tip, in from the edge
 bay_w = 56.0;     bay_l = 86.24;
 
 // The cell lies on the tub's floor under the board, lengthwise, its wires leaving its seat-1
-// end; they come up through a slot in the board to J2 under the spine between seat 1's
+// end; its plug comes up through a hole in the board to J2 under the spine between seat 1's
 // clusters, and the panel sits 2.4 mm over the board. 2026-10-05 to -09 it lay on the board
 // under the screen, for a 13.9 mm case: branch ref-design-cell-on-board.
 cell = [34, 50, 4];                                     // 403450 Li-ion, x by y (length) by thickness;
@@ -89,10 +89,14 @@ support_pitch = 12;       // the floor's support ribs under the board
 // ---------------- stack (z) ----------------
 floor_t = 1.5;  pcb_t = 1.6;  lid_t = 2.0;               // lid 2.0, not 1.5: the first print felt flimsy
 board_lift = cell[2] + cell_gap;                         // the board sits this high over the tub's floor, on ribs
-bay_t = 5.0;              // board top to lid underside: the panel and the air under it. 5.0, not 4.9:
-                          // J3 (2.0 mm) under the panel keeps 0.4 mm against the connector's and a
-                          // printed lid's tolerances (Alex, 2026-09-26)
-glass_gap = bay_t - panel_t - tape_t;                   // panel back above the board (the panel hangs from the lid on tape)
+glass_gap = 2.4;          // panel back above the board: J3 (2.0 mm) under the panel keeps 0.4 mm against
+                          // the connector's and a printed lid's tolerances (Alex, 2026-09-26)
+// The panel's top sits in a pocket in the lid's underside, under a skin face_t thick over its
+// black border, so the screen face is only face_t above the glass instead of lid_t (2026-10-19,
+// to lower the ridge to the button decks: 3.54 -> 2.34 mm, Alex's option A). face_t = lid_t is
+// the old flat lid with no pocket. The lid over J2 then needs a pad (j2_bump, below)
+face_t = 0.8;
+bay_t = glass_gap + panel_t + tape_t + face_t - lid_t;  // board top to the lid's underside (outside the panel)
 // The FPC's lengths were fitted to a panel 2.4 mm above the board; a higher panel spends the
 // extra drop on the way down to J3, so J3 moves that much closer to the edge (the safe side:
 // a long FPC bows, a short one can't reach)
@@ -100,8 +104,8 @@ conn_in = tip_in - fpc_slack - conn_rear - (glass_gap - 2.4);   // connector ori
 z_board = floor_t + board_lift;                         // board bottom
 z_top_cu = z_board + pcb_t;                             // board top: every height limit counts from here
 z_glass = z_top_cu + glass_gap;
-z_lid = z_glass + panel_t + tape_t;                     // lid underside
-case_h = z_lid + lid_t;
+case_h = z_glass + panel_t + tape_t + face_t;
+z_lid = case_h - lid_t;                                 // lid underside (the panel's pocket goes higher)
 retainer_z = z_top_cu + dome_h + flange_t;              // the lip the flanges rest against
 // the lid comes down around the buttons to clamp the silicone sheet, as a DS Lite shell does:
 // the flanges travel in pockets pocket_h deep, so the sheet's top is pocket_h under the lip
@@ -156,7 +160,8 @@ buttons = concat(seat1, [for (i = [0:7]) [str("SW", i + 9), seat2_names[i], rot1
 // and the lid turned round lands on J2, which has its pocket at seat 1's end only.
 pin_x = 31.4;             // midway between the bay and the board edge
 pin_key = 3.0;            // seat 1's centre boss sits off the centre line (the board's hole is there)
-pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [0, seat_y], [-pin_key, -seat_y]];
+pin_out = 1.4;            // seat 1's centre boss sits this much further out, behind J2
+pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [0, seat_y], [-pin_key, -seat_y - pin_out]];
 boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
 // As the DS Lite closes: screws from the back, through the tub's bosses and the board's holes,
 // into the lid's bosses, clamping the board between them (the snap hooks only hold the lid
@@ -168,37 +173,57 @@ lip_h = 1.2;  lip_fit = 0.2;
 
 // edge parts, all on the right (+X) long edge
 usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
-// The opening takes the plug's overmold, not just its 8.25 x 2.4 shell: the receptacle's face is
-// 1.15 mm inside the case's surface, so the overmold has to enter the wall. USB-C asks overmolds
-// to fit 12.35 x 6.5 mm; the opening is a rounded oblong round that, centred on the port, split
-// at its middle: the lower half in the tub wall, the upper half in a tongue of the lid that
-// fills a notch in the wall (so neither part has a roof to print over the hole)
-usb_hole = [13.2, 7.0, 2.6];   // width, height, corner radius: holds a 12.35 x 6.5 r1.75 overmold
+// The receptacle's face sits usb_recess under the case's surface, so a plug's overmold rests on
+// the case and the opening only has to clear the receptacle's shell: a stadium the port's shape,
+// usb_gap round it (Alex's fit test: the overmold-sized opening left a big gap round a port
+// sunk 1.15 mm in the wall). To reach the surface the board grows a tab under the receptacle
+// (its face stays 1.35 past the board's edge, as its footprint expects), which sits in a slot
+// in the tub wall. The opening is split at the port's centre: the lower half in the tub wall,
+// the upper half in a tongue of the lid that fills a notch in the wall (no roof over a hole)
+usb_recess = 0.15;  usb_gap = 0.25;
+usb_hole = [usb_w + 2 * usb_gap, usb_h + 2 * usb_gap, (usb_h + 2 * usb_gap) / 2 - 0.01];   // width, height, end radius
 usb_tongue_w = 18.0;  usb_fit = 0.2;   // the lid's tongue, and its clearance each side in the notch
-usb_front = board_w / 2 + 1.35;                         // receptacle face: 1.35 past the board edge
+usb_front = case_w / 2 - usb_recess;                    // receptacle face
+usb_tab = usb_front - 1.35 - board_w / 2;              // the board's tab under it, past the board's edge
+usb_tab_w = 12.0;  usb_tab_fit = 0.3;
 // left long edge: debug
 pin_pos = [[-(board_w / 2 - 4.0), 20.0], [-(board_w / 2 - 4.0), 12.0]];  // SW18 BOOTSEL, SW19 RESET
 swd_pos = [-(board_w / 2 - 3.5), -2.0];  uart_pos = [-(board_w / 2 - 3.5), -12.0];
 
-// J2 sits under the spine between seat 1's clusters, its mouth towards the panel with about
-// 5.5 mm to the FPC's fold for the plug and its wires (ESTIMATE: fit-test it). As far out as
-// seat 1's centre boss allows. 5.5 mm tall against the 5.0 under the lid: a pocket in the lid
-// takes the rest. The cell's wires come up through the slot beside the plug
-batt_conn = [0, -(bay_l / 2 + 9.7)];                   // J2 (its footprint's origin is 0.6 off this)
-slot = [[4.2, -(bay_l / 2 + 0.2)], [9.2, -(bay_l / 2 + 2.5)]];       // slot corners (x0,y0)-(x1,y1)
+// J2 sits under the spine between seat 1's clusters, its mouth towards the panel. The cell's
+// plug has to pass up through the board (the cell lies under it), so the hole is the plug's
+// size, not the wires': a JST PHR-2 is 6.0 x 4.5 mm end on. The hole lies right in front of
+// J2's mouth, so the plug comes up, turns and goes in, and its wires drop back through the
+// hole from the plug's tail. As far out as seat 1's centre boss (moved out pin_out) allows
+batt_conn = [0, -(bay_l / 2 + 10.8)];                  // J2 (its footprint's origin is 0.6 off this)
+j2_front = 4.545;  j2_back = 5.745;                     // J2's courtyard, in front of and behind batt_conn
+j2_h = 5.5;                                             // S2B-PH-SM4-TB, from its 3D model
+plug_xs = [6.0, 4.5];                                   // PHR-2 housing end on: across the pins, through
+hole_fit = 0.6;                                         // each side, round the plug (the hole is drilled: exact)
+slot = [[-(plug_xs[0] / 2 + hole_fit), batt_conn[1] + j2_front + 0.2 + plug_xs[1] + 2 * hole_fit],
+        [plug_xs[0] / 2 + hole_fit, batt_conn[1] + j2_front + 0.2]];    // hole corners (x0,y0)-(x1,y1)
 cut_r = 0.6;                                            // its corner radius
-pocket = [9.4, 9.8];                                    // lid pocket over J2
+// lid pocket over J2: up to j2_h plus 0.2. When that leaves less than skin_min under the screen
+// face (a thin face_t), a pad rises over it on the spine
+pocket = [9.4, 11.0];
+skin_min = 0.6;
+j2_top = z_top_cu + j2_h + 0.2;
+j2_bump = max(0, j2_top + skin_min - case_h);
 
 // ---------------- checks ----------------
 assert(cluster_spacing >= piece_d + 2, "a seat's two silicone pieces would touch");
 assert(seat_y - piece_d / 2 >= bay_l / 2 + piece_to_glass - 1e-6, "cluster runs into the glass");
 assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs off the board");
-assert(cell_y - cell[1] / 2 >= slot[1][1] + 1 && cell[0] / 2 <= pin_x - boss_d / 2 - 2, "cell runs into the slot or a boss");
+assert(cell[0] / 2 <= pin_x - boss_d / 2 - 2, "cell runs into a boss");
+assert(slot[0][1] <= -(panel_l / 2 + 1.9), "plug hole under the panel's FPC fold");
+assert(norm(pins[5] - batt_conn) >= 0 && pins[5][1] + boss_d / 2 + 0.2 <= batt_conn[1] - j2_back, "seat 1's centre boss runs into J2");
+assert(abs(slot[0][0]) <= spine_w / 2 - step_wall, "plug hole wider than the spine");
 assert(spk_pos[1] - spk_d / 2 >= cell_y + cell[1] / 2 + 2, "speaker runs into the cell");
 assert(spk_h <= board_lift - 0.3, "speaker touches the board");
 assert(pin_x - boss_d / 2 >= bay_w / 2 + 0.5 && pin_x + boss_d / 2 <= board_w / 2, "no room for pin bosses beside the glass");
 assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
+assert(face_t >= 0.6 && face_t <= lid_t, "face_t out of range");
 assert(retainer_z < z_lid, "button retainer above the lid");
 assert(z_deck_lid > retainer_bot + 0.5, "button deck lower than the retainers");
 assert(step_y - step_wall > (panel_l + panel_fit) / 2 + frame_wall + 0.3, "step over the panel frame");
@@ -228,10 +253,12 @@ echo(str("JSON {",
   "\"pieces\": [", join([for (c = clusters) jpt(c)]), "], \"piece_d\": ", piece_d, ", ",
   "\"buttons\": {", join([for (b = buttons) str("\"", b[0], "\": ", jpt(b[2]))]), "}, ",
   "\"pins\": [", join([for (s = pins) jpt(s)]), "], \"boss_d\": ", boss_d, ", \"hole_d\": ", hole_d, ", ",
-  "\"usb\": {\"y\": ", jnum(kicad([0, usb_y])[1]), ", \"front_x\": ", jnum(kicad([usb_front, 0])[0]), "}, ",
+  "\"usb\": {\"y\": ", jnum(kicad([0, usb_y])[1]), ", \"front_x\": ", jnum(kicad([usb_front, 0])[0]),
+    ", \"tab\": [", jpt([board_w / 2, usb_y + usb_tab_w / 2]), ", ", jpt([board_w / 2 + usb_tab, usb_y - usb_tab_w / 2]), "]}, ",
+  "\"rib_free\": [", join([for (r = rib_free) str("[", jpt([r[0], r[3]]), ", ", jpt([r[2], r[1]]), "]")]), "], ",
   "\"pinholes\": [", jpt(pin_pos[0]), ", ", jpt(pin_pos[1]), "], ",
   "\"swd\": ", jpt(swd_pos), ", \"uart\": ", jpt(uart_pos), ", ",
-  "\"batt_conn\": ", jpt(batt_conn), ", \"pocket\": [", pocket[0], ", ", pocket[1], "], ",
+  "\"batt_conn\": ", jpt(batt_conn), ", \"pocket\": [", pocket[0], ", ", pocket[1], "], \"pocket_limit\": ", j2_top - z_top_cu, ", ",
   "\"cell\": [", jpt([-cell[0] / 2 - 0.5, cell_y + cell[1] / 2 + 0.25]), ", ", jpt([cell[0] / 2 + 0.5, cell_y - cell[1] / 2 - 0.25]), "], ",
   "\"back_limit\": ", cell_gap, ", ",
   "\"speaker\": {\"c\": ", jpt(spk_pos), ", \"d\": ", spk_d, "}, ",
@@ -250,7 +277,8 @@ for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ",
 echo(str("CAPS flange top ", retainer_z - z_top_cu, " above the board, cap top ", cap_top - z_top_cu, ", deck face ",
          deck_face - z_top_cu, ", screen face ", case_h - z_top_cu, ": ends ", deck_face, " mm thick, a ", case_h - deck_face, " mm step"));
 echo(str("STACK floor ", floor_t, " + cell ", cell[2], " + gap ", cell_gap, " + PCB ", pcb_t, " + under the panel ", glass_gap,
-         " + panel ", panel_t, " + tape ", tape_t, " + lid ", lid_t, " = ", case_h, " mm"));
+         " + panel ", panel_t, " + tape ", tape_t, " + lid over the panel ", face_t, " = ", case_h, " mm; lid underside ",
+         bay_t, " over the board; J2 pad ", j2_bump, " mm"));
 
 // ---------------- 2D ----------------
 module rrect(w, l, r) offset(r = r) square([w - 2 * r, l - 2 * r], center = true);
@@ -273,8 +301,11 @@ module seam_band(fit) difference() {
 }
 module slot2d() translate(slot[0]) square([slot[1][0] - slot[0][0], slot[0][1] - slot[1][1]] * 1) ;
 module board_outline() difference() {
-  rrect(board_w, board_l, board_r);
-  translate([slot[0][0], slot[1][1]]) offset(r = cut_r) offset(delta = -cut_r)   // the cell's cable slot
+  union() {
+    rrect(board_w, board_l, board_r);
+    if (usb_tab > 0) translate([board_w / 2 - 1, usb_y - usb_tab_w / 2]) square([usb_tab + 1, usb_tab_w]);
+  }
+  translate([slot[0][0], slot[1][1]]) offset(r = cut_r) offset(delta = -cut_r)   // the cell plug's hole
     square([slot[1][0] - slot[0][0], slot[0][1] - slot[1][1]]);
 }
 if (part == "board") board_outline();
@@ -306,8 +337,10 @@ if (part == "layout") {
 // from 1.3 at the root to 0.8 at the tip with a fillet, a 0.25 barb and 12 mm wide on the long
 // walls: about half the root strain. The grip is the barb less the gap to the wall (0.1 mm
 // drawn; FDM prints the gap smaller). PETG takes the bending far better than PLA.
-snap_t_root = 1.3;  snap_t_tip = 0.8;  snap_fillet = 0.6;  snap_len = 4.3;
-snap_barb = 0.25;  snap_barb_h = 1.2;  snap_gap = 0.15;
+// A lower lid (thin face_t) shortens them to fit over the board: a short hook is stiffer, so
+// its barb shrinks with it to keep the root strain about the same
+snap_t_root = 1.3;  snap_t_tip = 0.8;  snap_fillet = 0.6;  snap_len = min(4.3, bay_t - 0.4);
+snap_barb = snap_len < 4.0 ? 0.2 : 0.25;  snap_barb_h = 1.2;  snap_gap = 0.15;
 deck_fit = 0.3;           // gap between the lid's step walls and the tub's walls they drop between
 in_x = case_w / 2 - wall;  in_y = case_l / 2 - wall;
 // [x, y, direction of the wall]: clear of the USB-C (right wall, y 0), the debug connectors
@@ -321,8 +354,22 @@ crush = [[in_x, 48, 0], [in_x, -48, 0], [-in_x, 48, 180], [-in_x, -48, 180],
 crush_reach = board_clear - 0.05;   // how far a rib stands off the wall: 0.05 mm short of the board
 // stiffening ribs under the lid beside the screen: [x, y0, y1], 1.2 wide, rib_h deep
 rib_h = 1.5;
-lid_ribs = [[32.6, -40, -8], [32.6, 8, 40], [-32.6, -40, 40]];      // a gap over J1 on the right
+lid_ribs = [[32.6, -40, -8], [32.6, 8, 40], [-32.6, -40, -17], [-32.6, 25, 40]];   // gaps over J1, and over
+                                                                                  // J5, J6 and the pinhole buttons
 assert(snap_len < bay_t - 0.3, "snap hooks reach the board");
+
+// what the floor's ribs keep clear of under the board: [x0, y0, x1, y1] (and the speaker's circle)
+rib_free = [
+  [-cell[0] / 2 - 0.5, cell_y - cell[1] / 2 - 0.5, cell[0] / 2 + 0.5, cell_y + cell[1] / 2 + 0.5],   // the cell
+  [slot[0][0] - 1, slot[1][1] - 1, slot[1][0] + 1, cell_y - cell[1] / 2 + 1],                      // its plug and wires
+  [-6, spk_pos[1] + spk_d / 2 - 1, 6, spk_pos[1] + spk_d / 2 + 5],                                // speaker leads to J4
+  [-10, seat_y - 14.5, 10, seat_y - 9.5],                                                         // TP1-TP5 on the back
+  [usb_front - 8.5, usb_y - usb_tab_w / 2, board_w / 2 + usb_tab, usb_y + usb_tab_w / 2],         // J1's shell legs
+];
+module rib_free2d() {
+  for (r = rib_free) translate([r[0], r[1]]) square([r[2] - r[0], r[3] - r[1]]);
+  at(spk_pos) circle(d = spk_d + 1.0);
+}
 
 module tub() difference() {
   union() {
@@ -345,12 +392,10 @@ module tub() difference() {
     // the board rests on a grid of ribs board_lift high over the whole floor (the old
     // battery-under-board case was hollow there: the board felt flimsy), clear of the cell,
     // the speaker, its pads and the test pads on the board's back, and the cell's wires
-    intersection() {
-      translate([0, 0, floor_t - 0.01]) linear_extrude(board_lift + 0.01) difference() {
-        offset(delta = -1.5) rrect(board_w, board_l, board_r);
-        offset(delta = -2.7) rrect(board_w, board_l, board_r);
-      }
-      cube(1000, center = true);
+    translate([0, 0, floor_t - 0.01]) linear_extrude(board_lift + 0.01) difference() {
+      offset(delta = -1.5) rrect(board_w, board_l, board_r);
+      offset(delta = -2.7) rrect(board_w, board_l, board_r);
+      rib_free2d();
     }
     translate([0, 0, floor_t - 0.01]) linear_extrude(board_lift + 0.01) difference() {
       intersection() {
@@ -360,11 +405,7 @@ module tub() difference() {
           for (y = [-board_l / 2:support_pitch:board_l / 2]) translate([-board_w / 2, y - 0.6]) square([board_w, 1.2]);
         }
       }
-      translate([0, cell_y]) square([cell[0] + 1.0, cell[1] + 1.0], center = true);   // the cell
-      translate([-2, slot[1][1] - 1]) square([slot[1][0] + 3, cell_y - cell[1] / 2 - slot[1][1] + 2]);  // its wires
-      at(spk_pos) circle(d = spk_d + 1.0);                                  // the speaker
-      translate([-6, spk_pos[1] + spk_d / 2 - 1]) square([12, 6]);          // its leads to J4
-      translate([-10, seat_y - 14.5]) square([20, 5]);                      // TP1-TP5 on the board's back
+      rib_free2d();
     }
     // feet
     for (sx = [-1, 1], sy = [-1, 1]) at([sx * (case_w / 2 - 7), sy * (case_l / 2 - 9)], -0.8) cylinder(d = 6, h = 0.8 + 0.01);
@@ -381,6 +422,9 @@ module tub() difference() {
   // USB-C: the opening's lower half, and above it the notch the lid's tongue fills
   usb_opening();
   translate([in_x - 0.01, usb_y - usb_tongue_w / 2, usb_zc]) cube([wall + 1, usb_tongue_w, z_lid]);
+  // the slot the board's tab drops into
+  if (usb_tab > 0) translate([in_x - 0.01, usb_y - usb_tab_w / 2 - usb_tab_fit, z_board - 0.3])
+    cube([usb_tab - board_clear + usb_tab_fit + 0.01, usb_tab_w + 2 * usb_tab_fit, z_lid]);
 }
 
 usb_zc = z_top_cu + usb_h / 2;   // the port's centre
@@ -407,6 +451,11 @@ module lid() difference() {
     for (s = pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_lid - z_top_cu + 0.01);
     // stiffening ribs beside the screen
     for (r = lid_ribs) translate([r[0] - 0.6, r[1], z_lid - rib_h]) cube([1.2, r[2] - r[1], rib_h + 0.01]);
+    // the pad over J2's pocket, when the screen face is too low to cover it (chamfered all round)
+    if (j2_bump > 0) at(batt_conn, case_h - 0.01) hull() {
+      linear_extrude(0.01) square(pocket + [2 * skin_min + 2 * j2_bump, 2 * skin_min + 2 * j2_bump], center = true);
+      translate([0, 0, j2_bump]) linear_extrude(0.01) square(pocket + [2 * skin_min, 2 * skin_min], center = true);
+    }
     // the tongue that fills the tub's notch over the USB-C opening
     translate([in_x, usb_y - usb_tongue_w / 2 + usb_fit, usb_zc + 0.1])
       cube([wall, usb_tongue_w - 2 * usb_fit, z_lid - usb_zc - 0.1 + 0.01]);
@@ -425,6 +474,11 @@ module lid() difference() {
     }
   }
   usb_opening();                                                              // its upper half
+  // the panel's pocket: its top face_t under the screen face, with the FPC fold's notch
+  if (face_t < lid_t) translate([0, 0, z_lid - 0.01]) linear_extrude(lid_t - face_t + 0.01) {
+    square([panel_w + panel_fit, panel_l + panel_fit], center = true);
+    translate([fpc_neck[0], -panel_l / 2]) square([fpc_neck[1] + 7, 6], center = true);
+  }
   translate([0, 0, deck_face]) linear_extrude(case_h) deck2d();              // nothing above the decks
   // the step's top edge, chamfered (in 0.1 mm layers, as it prints)
   for (i = [0:19]) translate([0, 0, case_h - step_chamfer + i * step_chamfer / 20])
@@ -445,7 +499,7 @@ module lid() difference() {
   for (s = pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
   // pinholes, battery connector pocket
   for (p = pin_pos) at(p, 0) cylinder(d = 1.2, h = case_h + 1);
-  at(batt_conn, z_lid - 1) linear_extrude(1 + 0.9) square(pocket, center = true);
+  at(batt_conn, z_lid - 1) linear_extrude(j2_top - z_lid + 1) square(pocket, center = true);
 }
 
 // one snap hook in the frame of its wall: the wall's inner face at x = 0, the case inside at -x

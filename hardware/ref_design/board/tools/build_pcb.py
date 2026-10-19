@@ -158,7 +158,26 @@ def rounded_rect(board, x0, y0, x1, y1, r):
 
 def outline(board):
     bw, bl, r = CASE["board"]["w"], CASE["board"]["l"], CASE["board"]["r"]
-    rounded_rect(board, 100 - bw / 2, 100 - bl / 2, 100 + bw / 2, 100 + bl / 2, r)
+    x0, y0, x1, y1 = 100 - bw / 2, 100 - bl / 2, 100 + bw / 2, 100 + bl / 2
+    tab = CASE["usb"].get("tab")
+    if not tab:
+        rounded_rect(board, x0, y0, x1, y1, r)
+    else:
+        # the right edge steps out under the USB-C receptacle, so its face reaches the case's surface
+        (_, ta), (tx, tb) = tab
+        ta, tb = min(ta, tb), max(ta, tb)
+        line(board, (x0 + r, y0), (x1 - r, y0))
+        line(board, (x1, y0 + r), (x1, ta))
+        line(board, (x1, ta), (tx, ta))
+        line(board, (tx, ta), (tx, tb))
+        line(board, (tx, tb), (x1, tb))
+        line(board, (x1, tb), (x1, y1 - r))
+        line(board, (x1 - r, y1), (x0 + r, y1))
+        line(board, (x0, y1 - r), (x0, y0 + r))
+        arc(board, (x1 - r, y0 + r), r, -90, 0)
+        arc(board, (x1 - r, y1 - r), r, 0, 90)
+        arc(board, (x0 + r, y1 - r), r, 90, 180)
+        arc(board, (x0 + r, y0 + r), r, 180, 270)
     # the board's one cutout (the cell's cable slot): round when its corners are
     # rounded to half its side
     (sx0, sy0), (sx1, sy1) = CASE["slot"]
