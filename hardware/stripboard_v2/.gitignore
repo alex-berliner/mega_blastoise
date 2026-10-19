@@ -5,3 +5,6 @@ __pycache__/
 preview (Copy)*.psd
 *.kicad_pcb-bak
 fp-info-cache
+# make_layered.py output
+preview.psd
+preview.ora
