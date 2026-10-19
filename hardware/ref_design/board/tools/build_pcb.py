@@ -217,7 +217,8 @@ def footprints(board, comps, nets):
         # BOM membership follows the schematic (every symbol is in_bom); the JLC
         # BOM script skips parts without an LCSC number instead
         fp.SetExcludedFromBOM(False)
-        fp.SetExcludedFromPosFiles(ref in NO_ASSEMBLY)
+        # nothing is placed where there's no part to buy: bare pads, contacts, jumpers, holes
+        fp.SetExcludedFromPosFiles(ref in NO_ASSEMBLY or not c["fields"].get("LCSC"))
         for pad in fp.Pads():
             n = pin_net.get((ref, pad.GetNumber()))
             if n:
