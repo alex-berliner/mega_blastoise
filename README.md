@@ -1,8 +1,15 @@
 # mega_blastoise
 
-**[▶ Play live](https://alex-berliner.github.io/mega_blastoise/)** — browser-based Gen 1 random battle simulator
+**[▶ Play live](https://alex-berliner.github.io/mega_blastoise/battler/device.html)** — browser-based random battle simulator.
+Everything published from this repo (the game, its UI notes, the hardware's 3D views) is linked from
+[the site's front page](https://alex-berliner.github.io/mega_blastoise/), built from `site/`.
 
-Workspace layout: `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (RP2040), `mega_blastoise_test` (PC).
+Layout:
+- `crates/`: the Rust workspace. `battle_types`, `gen1_battle`, `gen3_battle` (battle engines),
+  `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (firmware), `mega_blastoise_test` (PC),
+  and `mega_blastoise_web` (its own wasm workspace, the browser build).
+- `firmware/bringup/`: standalone bring-up tools (`rp2350_blink`, `esp32_reset`).
+- `hardware/`: the boards and cases. `docs/`, `architecture/`: notes. `scripts/`: dev scripts.
 
 Architecture overview: see [architecture/README.md](./architecture/README.md).
 
@@ -45,7 +52,7 @@ Add `--release` to `cargo run` for a faster binary. See **Run modes** for `cargo
 rustup target add thumbv6m-none-eabi
 ```
 
-Then either pass the target explicitly (recommended when building from the **workspace root** — Cargo does not apply `mega_blastoise_fw/.cargo/config.toml`’s default target for `-p` builds):
+Then either pass the target explicitly (recommended when building from the **workspace root** — Cargo does not apply `crates/mega_blastoise_fw/.cargo/config.toml`’s default target for `-p` builds):
 
 ```bash
 cargo build -p mega-blastoise-fw --target thumbv6m-none-eabi
@@ -65,12 +72,12 @@ Debug binaries include large `.debug_*` sections, so `llvm-size` totals look hug
 Or `cd` into the firmware crate so its `.cargo/config.toml` sets `thumbv6m-none-eabi` automatically:
 
 ```bash
-cd mega_blastoise_fw
+cd crates/mega_blastoise_fw
 cargo build
 cargo build --release
 ```
 
-Flash/run with `probe-rs` as configured in `mega_blastoise_fw/.cargo/config.toml`.
+Flash/run with `probe-rs` as configured in `crates/mega_blastoise_fw/.cargo/config.toml`.
 
 **Install `probe-rs`:** download and run the latest installer from the [probe-rs releases page](https://github.com/probe-rs/probe-rs/releases), then reload your shell:
 
@@ -82,6 +89,6 @@ source ~/.bashrc   # or ~/.zshrc
 Then flash with a debug probe connected (e.g. Picoprobe, CMSIS-DAP):
 
 ```bash
-cd mega_blastoise_fw
+cd crates/mega_blastoise_fw
 cargo run --release
 ```

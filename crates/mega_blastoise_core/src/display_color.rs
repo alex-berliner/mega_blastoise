@@ -11,7 +11,7 @@
 //! web build and the firmware must produce identical output from identical
 //! state.
 //!
-//! Layout reference: `mega_blastoise_web/www/ui_flow.html`.
+//! Layout reference: `crates/mega_blastoise_web/www/ui_flow.html`.
 
 use embedded_graphics::{
     draw_target::DrawTarget,

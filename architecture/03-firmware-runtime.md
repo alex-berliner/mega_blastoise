@@ -4,7 +4,7 @@ This page describes `mega_blastoise_fw`.
 
 ## Startup Sequence
 
-[`main.rs`](../mega_blastoise_fw/src/main.rs) does the following:
+[`main.rs`](../crates/mega_blastoise_fw/src/main.rs) does the following:
 
 1. Initialize RP2040 peripherals via `embassy_rp::init`.
 2. Initialize heap allocator (`mem_profile::init_heap`).
@@ -22,10 +22,10 @@ This page describes `mega_blastoise_fw`.
 
 ## Firmware Adapters
 
-- [`usb_input.rs`](../mega_blastoise_fw/src/usb_input.rs)
+- [`usb_input.rs`](../crates/mega_blastoise_fw/src/usb_input.rs)
   - implements `BattleInput` over USB CDC packets.
   - prompts for choices, validates user input, returns battler command strings.
-- [`board_effects.rs`](../mega_blastoise_fw/src/board_effects.rs)
+- [`board_effects.rs`](../crates/mega_blastoise_fw/src/board_effects.rs)
   - implements `BoardEffects`.
   - currently logs typed events through defmt.
   - future home for LEDs, buzzer, and physical board outputs.

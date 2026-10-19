@@ -4,12 +4,12 @@ This page describes runtime diagnostics and troubleshooting flow.
 
 ## Heap Profiling
 
-[`mem_profile.rs`](../mega_blastoise_fw/src/mem_profile.rs) provides:
+[`mem_profile.rs`](../crates/mega_blastoise_fw/src/mem_profile.rs) provides:
 
 - global heap allocator
 - snapshot logging: `used`, `free`, `peak`, `total`
 
-[`main.rs`](../mega_blastoise_fw/src/main.rs) and [`usb_input.rs`](../mega_blastoise_fw/src/usb_input.rs) emit snapshots at key points:
+[`main.rs`](../crates/mega_blastoise_fw/src/main.rs) and [`usb_input.rs`](../crates/mega_blastoise_fw/src/usb_input.rs) emit snapshots at key points:
 
 - boot/init checkpoints
 - battle setup checkpoints
@@ -20,8 +20,8 @@ This page describes runtime diagnostics and troubleshooting flow.
 
 Current firmware logs include:
 
-- typed event traces in [`board_effects.rs`](../mega_blastoise_fw/src/board_effects.rs)
-- request and accepted-choice traces in [`usb_input.rs`](../mega_blastoise_fw/src/usb_input.rs)
+- typed event traces in [`board_effects.rs`](../crates/mega_blastoise_fw/src/board_effects.rs)
+- request and accepted-choice traces in [`usb_input.rs`](../crates/mega_blastoise_fw/src/usb_input.rs)
 
 This makes it easier to correlate:
 

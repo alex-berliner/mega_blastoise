@@ -7,7 +7,7 @@ This page is the reference every migration session reads first. It records
 decisions, not aspirations — where a number appears here it was measured, and
 where something is undecided it says so.
 
-Visual spec: [`mega_blastoise_web/www/ui_flow.html`](../mega_blastoise_web/www/ui_flow.html)
+Visual spec: [`crates/mega_blastoise_web/www/ui_flow.html`](../crates/mega_blastoise_web/www/ui_flow.html)
 (published at `/mega_blastoise/ui_flow.html`). Click any mockup to toggle a
 true 240x320 pixel preview.
 
@@ -227,7 +227,7 @@ Showdown's animation sets are the eventual target.
 
 ## 7. Engine
 
-The live engine is `gen1_battle/` — 3,615 lines of hand-written `no_std` Rust,
+The live engine is `crates/gen1_battle/` — 3,615 lines of hand-written `no_std` Rust,
 with 238 mon entries and 167 moves. Upstream `battler` is vendored and remains
 a dependency, but core has **zero** `battler::` call sites today against 49
 `gen1_battle::` ones. It stays for Gen 3 reference.
@@ -271,7 +271,7 @@ this branch deletes it.
 Status as of 2026-08-06: stages 1 and 2 are done, stage 3 is done for the
 foe HUD, stage 4 is done as an additive `cursor_nav` module (the old
 collector is untouched), and stage 6 has a working client at
-`mega_blastoise_web/www/device.html`. Stages 7 through 9 are untouched, and
+`crates/mega_blastoise_web/www/device.html`. Stages 7 through 9 are untouched, and
 the firmware still runs the mono path.
 
 1. **New renderer beside the old one.** `render_half()` consuming the same

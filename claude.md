@@ -3,9 +3,9 @@
 The pico firmware and the web client MUST be indistinguishable in everything
 the player sees and does during a battle. This is enforced structurally:
 
-- `mega_blastoise_core/src/oled_ctl.rs` — the ONLY place that decides what a
+- `crates/mega_blastoise_core/src/oled_ctl.rs` — the ONLY place that decides what a
   screen shows (`OledController` + `oled_cmds_for_event`).
-- `mega_blastoise_core/src/choice_collect.rs` — the ONLY place that decides
+- `crates/mega_blastoise_core/src/choice_collect.rs` — the ONLY place that decides
   how input behaves (`ChoiceCollector`: prompts, accept/reject + messages,
   waiting screen, tap/type-to-unready, the 1 s both-ready grace, invalid
   flashes, long-press detail views, typed-line grammar).

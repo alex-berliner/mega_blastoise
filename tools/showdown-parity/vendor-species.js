@@ -1,8 +1,8 @@
-// Regenerates gen3_battle/vendor/showdown_gen3_species.json from the pinned
+// Regenerates crates/gen3_battle/vendor/showdown_gen3_species.json from the pinned
 // Pokemon Showdown checkout, so the dex the engine compiles against and the
 // dex the parity harness runs against can never drift apart.
 //
-//   node tools/showdown-parity/vendor-species.js > gen3_battle/vendor/showdown_gen3_species.json
+//   node tools/showdown-parity/vendor-species.js > crates/gen3_battle/vendor/showdown_gen3_species.json
 const { Dex } = require('pokemon-showdown/dist/sim');
 
 const dex = Dex.mod('gen3');

@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEB_DIR="$SCRIPT_DIR/../mega_blastoise_web"
+WEB_DIR="$SCRIPT_DIR/../crates/mega_blastoise_web"
 
 cd "$WEB_DIR"
 

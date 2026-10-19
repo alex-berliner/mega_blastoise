@@ -23,7 +23,7 @@ use std::process::{Command, Stdio};
 use serde_json::{json, Value};
 
 fn harness_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../tools/showdown-parity")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/showdown-parity")
 }
 
 fn armed() -> bool {

@@ -313,12 +313,12 @@ web globals instead of hardware channels.
 | It is… | Put it in… |
 |--------|-----------|
 | Pure battle logic, event parsing, or choice formatting | `mega_blastoise_core` |
-| A display renderer using `embedded-graphics` | `mega_blastoise_core/src/display.rs` |
-| CLI input parsing (USB syntax or web syntax) | `mega_blastoise_core/src/cli_parse.rs` |
-| A hardware peripheral task (I2C, PWM, PIO) | `mega_blastoise_fw/src/subsystems/` |
-| Firmware-side `BoardEffects` routing | `mega_blastoise_fw/src/battle_effects.rs` |
-| GPIO input driver | `mega_blastoise_fw/src/pico_battle_input.rs` |
-| A WASM export or JS-facing global | `mega_blastoise_web/src/lib.rs` |
-| Web-side `BoardEffects` rendering | `mega_blastoise_web/src/web_effects.rs` |
-| A stub for testing hardware behaviour | `mega_blastoise_test/src/` |
-| A regression test | `mega_blastoise_test/tests/` |
+| A display renderer using `embedded-graphics` | `crates/mega_blastoise_core/src/display.rs` |
+| CLI input parsing (USB syntax or web syntax) | `crates/mega_blastoise_core/src/cli_parse.rs` |
+| A hardware peripheral task (I2C, PWM, PIO) | `crates/mega_blastoise_fw/src/subsystems/` |
+| Firmware-side `BoardEffects` routing | `crates/mega_blastoise_fw/src/battle_effects.rs` |
+| GPIO input driver | `crates/mega_blastoise_fw/src/pico_battle_input.rs` |
+| A WASM export or JS-facing global | `crates/mega_blastoise_web/src/lib.rs` |
+| Web-side `BoardEffects` rendering | `crates/mega_blastoise_web/src/web_effects.rs` |
+| A stub for testing hardware behaviour | `crates/mega_blastoise_test/src/` |
+| A regression test | `crates/mega_blastoise_test/tests/` |

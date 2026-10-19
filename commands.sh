@@ -8,7 +8,7 @@ unset -f $(compgen -A function mb_)  2>/dev/null
 unalias  $(compgen -a          mb_)  2>/dev/null
 unset    $(compgen -v          _MB_) 2>/dev/null
 
-_MB_FW_DIR="$MB_BASE/mega_blastoise_fw"
+_MB_FW_DIR="$MB_BASE/crates/mega_blastoise_fw"
 _MB_ELF_DEBUG="$MB_BASE/target/thumbv6m-none-eabi/debug/mega-blastoise-fw"
 _MB_ELF_RELEASE="$MB_BASE/target/thumbv6m-none-eabi/release/mega-blastoise-fw"
 _MB_CONSOLE="$MB_BASE/scripts/mb-console.py"

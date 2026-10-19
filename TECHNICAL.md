@@ -11,9 +11,9 @@ For project overview and hardware, see [DESIGN.md](./docs/archive/v1/DESIGN.md) 
 ```
 battler/                    # upstream battle engine (git checkout)
 mega_blastoise/
-  mega_blastoise_core/      # no_std shared library: engine glue, event bus
-  mega_blastoise_fw/        # RP2040 firmware binary
-  mega_blastoise_test/      # PC host binary for development and testing
+  crates/mega_blastoise_core/      # no_std shared library: engine glue, event bus
+  crates/mega_blastoise_fw/        # RP2040 firmware binary
+  crates/mega_blastoise_test/      # PC host binary for development and testing
 ```
 
 `mega_blastoise_core` compiles for both the RP2040 and a standard PC. The full battle pipeline — engine integration, event parsing, input handling — can be developed and tested on a laptop without touching hardware. `mega_blastoise_fw` and `mega_blastoise_test` are thin adapters that plug platform-specific I/O into the same shared core.
@@ -69,7 +69,7 @@ cargo run -p mega-blastoise-test
 cargo test -p mega-blastoise-test
 
 # Build firmware
-cd mega_blastoise_fw
+cd crates/mega_blastoise_fw
 cargo build --release
 
 # Flash and run on hardware

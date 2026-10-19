@@ -8,7 +8,7 @@ Host runs provide fast feedback using the same shared battle logic before flashi
 
 ## Main Harness
 
-[`src/harness.rs`](../mega_blastoise_test/src/harness.rs):
+[`src/harness.rs`](../crates/mega_blastoise_test/src/harness.rs):
 
 - builds a battle with `FlashDataStore`
 - attaches `StdinBattleInput` (interactive choice input)

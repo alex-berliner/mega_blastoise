@@ -4,11 +4,11 @@ Mega Blastoise is organized as a shared battle core plus platform adapters.
 
 ## Workspace Components
 
-- [`mega_blastoise_core`](../mega_blastoise_core/) (`no_std`)
+- [`mega_blastoise_core`](../crates/mega_blastoise_core/) (`no_std`)
   - Battle runner, typed events, input trait, demo teams, and data store.
-- [`mega_blastoise_fw`](../mega_blastoise_fw/) (`no_std`, RP2040)
+- [`mega_blastoise_fw`](../crates/mega_blastoise_fw/) (`no_std`, RP2040)
   - Embassy runtime, USB input adapter, PN532 tasks, defmt logging, memory profiling.
-- [`mega_blastoise_test`](../mega_blastoise_test/) (host/std)
+- [`mega_blastoise_test`](../crates/mega_blastoise_test/) (host/std)
   - Stdin-based interactive harness and tests reusing the same core pipeline.
 
 ## Architectural Goal

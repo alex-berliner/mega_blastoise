@@ -389,7 +389,7 @@ For each mon:
     HP recalc per Gen 1 formula
 ```
 
-The `draw_two_randbat_teams(seed, n)` API in `mega_blastoise_core/src/randbat.rs` is the existing entry point. We'll port it to use `gen1_battle`'s tables.
+The `draw_two_randbat_teams(seed, n)` API in `crates/mega_blastoise_core/src/randbat.rs` is the existing entry point. We'll port it to use `gen1_battle`'s tables.
 
 ---
 

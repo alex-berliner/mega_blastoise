@@ -8,7 +8,7 @@
 //! pushes classified input into, and calls [`DeviceRunner::run`]. The web
 //! build and the firmware run this same future; their diffs are IO skins.
 //!
-//! History: this logic previously lived in `mega_blastoise_web/src/lib.rs`
+//! History: this logic previously lived in `crates/mega_blastoise_web/src/lib.rs`
 //! as ~700 lines of wasm-only glue, so the firmware had no battles behind
 //! its single-screen UI at all. Hoisted 2026-08-27.
 

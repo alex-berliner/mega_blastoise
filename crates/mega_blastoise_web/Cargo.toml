@@ -22,8 +22,8 @@ embassy-futures = "0.1"
 mega-blastoise-core = { path = "../mega_blastoise_core" }
 gen1_battle = { path = "../gen1_battle" }
 gen3_battle = { path = "../gen3_battle" }
-battler = { path = "../battler/battler" }
-battler-data = { path = "../battler/battler-data" }
+battler = { path = "../../battler/battler" }
+battler-data = { path = "../../battler/battler-data" }
 # getrandom is pulled in transitively by battler → rand.
 # Enable wasm_js so it compiles for wasm32-unknown-unknown.
 getrandom = { version = "0.4", features = ["wasm_js"] }
@@ -33,7 +33,7 @@ getrandom = { version = "0.4", features = ["wasm_js"] }
 critical-section = { version = "1", features = ["std"] }
 
 [patch.crates-io]
-once_cell = { path = "../patches/once_cell" }
+once_cell = { path = "../../patches/once_cell" }
 
 [profile.release]
 opt-level = "s"

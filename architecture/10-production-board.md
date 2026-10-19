@@ -140,7 +140,7 @@ Never existed on any revision, so there is nothing to port.
 ## 6. Before it can be sold
 
 - **Rename.** "Mega Blastoise" is a Pokemon. That includes the USB manufacturer
-  string in `mega_blastoise_fw/src/subsystems/usb_v2.rs:157`, which every host
+  string in `crates/mega_blastoise_fw/src/subsystems/usb_v2.rs:157`, which every host
   sees on plug-in.
 - **Real USB IDs.** `usb_v2.rs:156` uses the placeholder `0xc0de:0xcafe`.
   Raspberry Pi allocates free PIDs under its VID for products built on its

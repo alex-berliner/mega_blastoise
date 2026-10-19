@@ -4,7 +4,7 @@ This page documents the primary contracts connecting core and platform code.
 
 ## `BoardEvent` Contract
 
-[`BoardEvent`](../mega_blastoise_core/src/board_event.rs) is the typed event model parsed from battler logs and injected prompts.
+[`BoardEvent`](../crates/mega_blastoise_core/src/board_event.rs) is the typed event model parsed from battler logs and injected prompts.
 
 Examples:
 
@@ -32,7 +32,7 @@ Returned strings must match battler command syntax (`move N`, `switch N`, etc.).
 
 ## Event Queue Semantics
 
-[`BoardEventQueue`](../mega_blastoise_core/src/battle_effects.rs):
+[`BoardEventQueue`](../crates/mega_blastoise_core/src/battle_effects.rs):
 
 - buffers events in FIFO order
 - handles `split` behavior where private/public rows occur in sequence

@@ -29,7 +29,7 @@ if [ "$BUILD_TYPE" != "workflow" ]; then
   gh api -X PUT "repos/$REPO/pages" -f build_type=workflow >/dev/null
 fi
 
-if [ -n "$(git status --porcelain -- mega_blastoise_web .github/workflows/pages.yml)" ]; then
+if [ -n "$(git status --porcelain -- crates/mega_blastoise_web .github/workflows/pages.yml)" ]; then
   echo "warning: uncommitted web changes; the deploy builds from origin/main, not your tree" >&2
 fi
 
