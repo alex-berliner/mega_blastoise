@@ -1,9 +1,13 @@
 /* Single-screen device page. Sized for a tablet lying flat between two
-   players: the panel in the middle, one control cluster per seat, the far
-   seat's cluster rotated 180 so both hands sit the same way round. */
+   players: the panel in the middle, one DS Lite style control deck per seat,
+   the far seat's deck rotated 180 so both hands sit the same way round. */
 
 :root {
-  --u: 66px;
+  /* One millimetre of the real device at the panel's scale: #panel is 640px
+     tall for the 3.5" panel's 73.4 mm, so the controls below are drawn from
+     the genuine DS Lite cap sizes (hardware/ref_design/case/DSLITE.md) and
+     stay in true proportion to the screen. */
+  --k: 8.7px;
   --bg: #15171c;
   --case: #23252a;
   --case-hi: #2f333a;
@@ -51,84 +55,186 @@ body {
 
 /* ── Device body ───────────────────────────────────────────────────────── */
 
-/* Panel centred, four control clusters at the corners — the arrangement on
-   the whiteboard sketch. Two columns, three rows: the panel spans both
-   columns of the middle row, so each corner cell holds one cluster. */
+/* Panel in the middle, a control deck at each end. */
 #device {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto auto;
-  justify-items: center;
+  grid-template-columns: auto;
+  justify-items: stretch;
   align-items: center;
-  gap: calc(var(--u, 28px) * 0.5);
-  background: var(--case);
-  border-radius: calc(var(--u, 28px) * 0.7);
-  padding: calc(var(--u, 28px) * 0.55);
+  gap: calc(var(--k) * 3.6);
+  background: linear-gradient(180deg, #272a30, #212328);
+  border-radius: calc(var(--k) * 6);
+  padding: calc(var(--k) * 4.2) calc(var(--k) * 4.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 40px rgba(0, 0, 0, 0.45);
 }
 
-#panel { grid-column: 1 / span 2; }
+#panel { justify-self: center; }
 
-.cluster { display: flex; }
-.c-tl { grid-area: 1 / 1; justify-self: start; }
-.c-tr { grid-area: 1 / 2; justify-self: end; }
-.c-bl { grid-area: 3 / 1; justify-self: start; }
-.c-br { grid-area: 3 / 2; justify-self: end; }
+/* A seat's deck: D-pad on the left, the face buttons on the right. The far
+   seat's deck is the near one turned around, so its labels read upright
+   from its own side of the table. */
+.deck {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.deck.far { transform: rotate(180deg); }
 
-/* D-pad: a 3x3 grid with the arms filled in. */
+/* ── D-pad: the DS Lite's dark cross. Raised arms that dish down towards a
+   shallow pivot dimple in the middle. 17.8 mm across, 5.9 mm arms. ─────── */
+
 .dpad {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(3, var(--u, 28px));
-  grid-template-rows: repeat(3, var(--u, 28px));
+  grid-template-columns: 1fr calc(var(--k) * 5.9) 1fr;
+  grid-template-rows: 1fr calc(var(--k) * 5.9) 1fr;
+  width: calc(var(--k) * 17.8);
+  height: calc(var(--k) * 17.8);
   flex: none;
+  /* The cross's own thickness, then its shadow on the case. */
+  filter: drop-shadow(0 calc(var(--k) * 0.35) 0 #0d0e10)
+    drop-shadow(0 calc(var(--k) * 0.7) calc(var(--k) * 0.6) rgba(0, 0, 0, 0.55));
 }
 .dpad .d {
   border: none;
-  background: var(--btn);
-  color: transparent;
   padding: 0;
+  color: transparent;
   touch-action: none;
+  --tip: #464a51;
+  --mid: #2f3237;
+  --hub: #26282d;
 }
-.dpad .up    { grid-area: 1 / 2; border-radius: 20% 20% 0 0; }
-.dpad .left  { grid-area: 2 / 1; border-radius: 20% 0 0 20%; }
-.dpad .right { grid-area: 2 / 3; border-radius: 0 20% 20% 0; }
-.dpad .down  { grid-area: 3 / 2; border-radius: 0 0 20% 20%; }
+/* Each arm is lit at its tip and falls away towards the hub: the dish. */
+.dpad .up    { grid-area: 1 / 2; border-radius: calc(var(--k) * 1.1) calc(var(--k) * 1.1) 0 0;
+               background: linear-gradient(to bottom, var(--tip), var(--mid) 62%, var(--hub)); }
+.dpad .down  { grid-area: 3 / 2; border-radius: 0 0 calc(var(--k) * 1.1) calc(var(--k) * 1.1);
+               background: linear-gradient(to top, #3a3d43, var(--mid) 62%, var(--hub)); }
+.dpad .left  { grid-area: 2 / 1; border-radius: calc(var(--k) * 1.1) 0 0 calc(var(--k) * 1.1);
+               background: linear-gradient(to right, #3f4249, var(--mid) 62%, var(--hub)); }
+.dpad .right { grid-area: 2 / 3; border-radius: 0 calc(var(--k) * 1.1) calc(var(--k) * 1.1) 0;
+               background: linear-gradient(to left, #3f4249, var(--mid) 62%, var(--hub)); }
+/* A faint ridge at each arm's tip, where the thumb lands. */
+.dpad .up    { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.dpad .left  { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.09); }
+.dpad .right { box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06); }
 .dpad::after {
   content: "";
   grid-area: 2 / 2;
-  background: var(--btn);
+  background: #26282d;
 }
+.dpad .pivot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--k) * 3);
+  height: calc(var(--k) * 3);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 58%, #222428 0, #26282c 60%, #2b2d32 100%);
+  box-shadow: inset 0 calc(var(--k) * 0.2) calc(var(--k) * 0.3) rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.dpad .d:active, .dpad .d.pressed {
+  --tip: #2b2e33;
+  --mid: #232529;
+  --hub: #1f2125;
+  background-color: #222428;
+  box-shadow: inset 0 0 calc(var(--k) * 0.9) rgba(0, 0, 0, 0.6);
+}
+.dpad .down:active, .dpad .down.pressed,
+.dpad .left:active, .dpad .left.pressed,
+.dpad .right:active, .dpad .right.pressed { background: #24262a; }
 
-/* A / B / ? as a compact triangle, A on the outer corner. */
-.abq {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: calc(var(--u, 28px) * 0.22);
+/* ── Face buttons: four light caps in the DS Lite diamond (X top, A right,
+   B bottom, Y left), 7 mm caps on a 15 mm pitch, with Start and Select as
+   two small round buttons beside them. ─────────────────────────────────── */
+
+.face {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--k) * 2.4);
   flex: none;
 }
-.abq .q { grid-area: 1 / 1; }
-.abq .b { grid-area: 1 / 2; }
-.abq .a { grid-area: 2 / 2; }
-/* Player 2's cluster is player 1's turned around, so their labels read
-   upright from their own seat. */
-.abq.flip { transform: rotate(180deg); }
 
-.rb {
-  touch-action: none;
-  width: calc(var(--u, 28px) * 1.3);
-  height: calc(var(--u, 28px) * 1.3);
-  border-radius: 50%;
-  border: none;
-  font-family: var(--mono);
-  font-size: calc(var(--u, 28px) * 0.5);
-  font-weight: 700;
-  color: #fff;
-  background: var(--btn-lit);
+.abxy {
+  position: relative;
+  width: calc(var(--k) * 22);
+  height: calc(var(--k) * 22);
 }
-.rb.q { background: #3d6fa5; }
-.rb.b { background: #6b6f78; }
 
-.d:active, .rb:active { filter: brightness(1.5); transform: scale(0.94); }
-.abq.flip .rb:active { transform: scale(0.94); }
+.cap, .pill {
+  position: absolute;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: pointer;
+  background: radial-gradient(circle at 42% 30%, #ffffff 0, #f3f3f0 34%, #dfe0dc 70%, #c8c9c5 100%);
+  /* Rim light and face shading, the cap's side, the gap of the hole it sits
+     in, then its shadow on the case. */
+  box-shadow:
+    inset 0 calc(var(--k) * -0.3) calc(var(--k) * 0.5) rgba(0, 0, 0, 0.16),
+    inset 0 calc(var(--k) * 0.18) calc(var(--k) * 0.2) rgba(255, 255, 255, 0.9),
+    0 calc(var(--k) * 0.32) 0 #9c9e9a,
+    0 calc(var(--k) * 0.16) 0 calc(var(--k) * 0.55) #15161a,
+    0 calc(var(--k) * 0.9) calc(var(--k) * 1.1) calc(var(--k) * 0.4) rgba(0, 0, 0, 0.45);
+  transition: transform 40ms, box-shadow 40ms;
+}
+.cap {
+  width: calc(var(--k) * 7);
+  height: calc(var(--k) * 7);
+  font: 700 calc(var(--k) * 3.1) / 1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #a3a6ab;
+  /* Moulded into the cap: a light edge under the glyph, a dark one over it. */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 -1px 0 rgba(0, 0, 0, 0.12);
+}
+.cap.x { left: calc(var(--k) * 7.5); top: 0; }
+.cap.a { left: calc(var(--k) * 15);  top: calc(var(--k) * 7.5); }
+.cap.b { left: calc(var(--k) * 7.5); top: calc(var(--k) * 15); }
+.cap.y { left: 0;                     top: calc(var(--k) * 7.5); }
+
+.cap:active, .cap.pressed, .pill:active, .pill.pressed {
+  transform: translateY(calc(var(--k) * 0.22));
+  box-shadow:
+    inset 0 calc(var(--k) * -0.2) calc(var(--k) * 0.5) rgba(0, 0, 0, 0.22),
+    inset 0 calc(var(--k) * 0.18) calc(var(--k) * 0.2) rgba(255, 255, 255, 0.7),
+    0 calc(var(--k) * 0.1) 0 #9c9e9a,
+    0 calc(var(--k) * -0.06) 0 calc(var(--k) * 0.55) #15161a,
+    0 calc(var(--k) * 0.4) calc(var(--k) * 0.6) calc(var(--k) * 0.2) rgba(0, 0, 0, 0.45);
+  filter: brightness(0.94);
+}
+
+/* X is the seat's ? key (the on-screen hints call it ?), printed on the case
+   beside it. */
+.qmark {
+  position: absolute;
+  left: calc(var(--k) * 3.6);
+  top: calc(var(--k) * 0.4);
+  font: 700 calc(var(--k) * 2) / 1 var(--mono);
+  color: var(--dim);
+  pointer-events: none;
+}
+
+.sys {
+  display: grid;
+  grid-template-columns: auto calc(var(--k) * 4.2);
+  align-items: center;
+  column-gap: calc(var(--k) * 1.3);
+  row-gap: calc(var(--k) * 1.9);
+  margin-bottom: calc(var(--k) * 0.6);
+}
+.sys .sl {
+  justify-self: end;
+  font: 700 calc(var(--k) * 1.4) / 1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+}
+.pill {
+  position: relative;
+  width: calc(var(--k) * 4.2);
+  height: calc(var(--k) * 4.2);
+}
 
 /* ── Debug bar ─────────────────────────────────────────────────────────── */
 

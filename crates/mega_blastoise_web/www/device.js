@@ -244,14 +244,22 @@ function wireSeat(player) {
     el.addEventListener('pointerleave', stop);
   });
 
-  document.querySelectorAll(`.rb[data-player="${player}"]`).forEach((el) => {
+  // The DS Lite face buttons. X is the hardware's INFO key (the ? the
+  // on-screen hints name), Y its MENU key; what MENU does is core's
+  // decision, so it goes in as the raw key. Start and Select have no
+  // representation in core yet: they press, and do nothing else.
+  document.querySelectorAll(`[data-player="${player}"][data-btn]`).forEach((el) => {
     const kind = el.dataset.btn;
     if (kind === 'a') {
       wireHoldable(el, () => wasm.nav_a(player), null, () => wasm.nav_a_hold(player));
     } else if (kind === 'b') {
       wireHoldable(el, () => wasm.nav_b(player), null, null);
-    } else {
+    } else if (kind === 'x') {
       wireHoldable(el, () => wasm.nav_info(player), null, null);
+    } else if (kind === 'y') {
+      wireHoldable(el, () => wasm.nav_menu?.(player), null, null);
+    } else {
+      el.addEventListener('pointerdown', (e) => e.preventDefault());
     }
   });
 }
@@ -274,12 +282,23 @@ canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); panelTap(e);
 
 // ── Keyboard ──────────────────────────────────────────────────────────────
 
+// [player, button, dpad direction]. The face keys sit in A B X Y order
+// after each seat's directions: Z X C V for player 1, , . / M for player 2.
 const KEYS = {
   KeyW: [1, 'd', 0], KeyS: [1, 'd', 1], KeyA: [1, 'd', 2], KeyD: [1, 'd', 3],
-  KeyZ: [1, 'a'], KeyX: [1, 'b'], KeyC: [1, 'q'],
+  KeyZ: [1, 'a'], KeyX: [1, 'b'], KeyC: [1, 'x'], KeyV: [1, 'y'],
+  KeyE: [1, 'start'], KeyQ: [1, 'select'],
   ArrowUp: [2, 'd', 0], ArrowDown: [2, 'd', 1], ArrowLeft: [2, 'd', 2], ArrowRight: [2, 'd', 3],
-  Comma: [2, 'a'], Period: [2, 'b'], Slash: [2, 'q'],
+  Comma: [2, 'a'], Period: [2, 'b'], Slash: [2, 'x'], KeyM: [2, 'y'],
+  Enter: [2, 'start'], ShiftRight: [2, 'select'],
 };
+
+/// The on-page control a key stands for, so a key press shows on it.
+function keyTarget(player, kind, dir) {
+  return kind === 'd'
+    ? document.querySelector(`.dpad[data-player="${player}"] .d[data-dir="${dir}"]`)
+    : document.querySelector(`[data-player="${player}"][data-btn="${kind}"]`);
+}
 
 window.addEventListener('keydown', (e) => {
   // An open console owns the keyboard: every key is text for the command
@@ -289,10 +308,22 @@ window.addEventListener('keydown', (e) => {
   if (!k) return;
   e.preventDefault();
   const [player, kind, dir] = k;
+  keyTarget(player, kind, dir)?.classList.add('pressed');
   if (kind === 'd') wasm.nav_dpad(player, dir);
+  else if (e.repeat) return;
   else if (kind === 'a') wasm.nav_a(player);
   else if (kind === 'b') wasm.nav_b(player);
-  else wasm.nav_info(player);
+  else if (kind === 'x') wasm.nav_info(player);
+  else if (kind === 'y') wasm.nav_menu?.(player);
+});
+
+window.addEventListener('keyup', (e) => {
+  const k = KEYS[e.code];
+  if (k) keyTarget(...k)?.classList.remove('pressed');
+});
+// A key released while the page is not focused never sends keyup.
+window.addEventListener('blur', () => {
+  document.querySelectorAll('.pressed').forEach((el) => el.classList.remove('pressed'));
 });
 
 // ── Debug bar ─────────────────────────────────────────────────────────────

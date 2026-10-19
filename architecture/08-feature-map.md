@@ -151,7 +151,7 @@ The same `DeviceRunner` in a browser page (`www/device.html`, `device.js`).
 `src/lib.rs` is raw IO only: a `DevicePort` impl (JS clock, timeouts, console
 log, entropy, the 320x480 pixel cache the page polls) and exports that turn
 pointer/keyboard input into `DeviceEvent`s (`nav_dpad`, `nav_a`, `nav_a_hold`,
-`nav_b`, `nav_info`, `panel_tap`, `submit_text`, plus `press_move`,
+`nav_b`, `nav_info`, `nav_menu`, `panel_tap`, `submit_text`, plus `press_move`,
 `press_switch`, `nav_cancel` and `screen_state` for the headless probe).
 
 ---

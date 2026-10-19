@@ -270,6 +270,16 @@ pub fn nav_info(player: u8) {
     send(DeviceEvent::Button { player, button: Button::Info });
 }
 
+/// The seat's MENU key (the Y cap on the page). Its meaning is core's: the
+/// press goes in as the raw `pN menu` line, which core's button grammar
+/// (`device_runner::parse_button_line`) turns into a session press, exactly
+/// as a typed `p1 menu` on the firmware console would.
+#[wasm_bindgen]
+pub fn nav_menu(player: u8) {
+    let player = player.clamp(1, 2);
+    send(DeviceEvent::Line(format!("p{player} menu")));
+}
+
 #[wasm_bindgen]
 pub fn nav_a_hold(player: u8) {
     send(DeviceEvent::Button { player, button: Button::AHold });
