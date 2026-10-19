@@ -13,6 +13,7 @@ build item) and the STLs ship beside them in case a project won't open.
 Writes print/package/ and print/mega_blastoise_print_package.zip (build output, not in git).
 """
 import os
+import json
 import re
 import shutil
 import sys
@@ -67,6 +68,19 @@ def template_layout(z):
     return out
 
 
+def tower_keepout(z):
+    """The prime tower's corner of the plate (two toolheads: PLA, and PETG for support interface).
+    Orca puts it at wipe_tower_x/y with prime_tower_width; its depth depends on the purge, so keep
+    a generous 45 mm, plus the brim and ribs round it."""
+    cfg = json.loads(z.read("Metadata/project_settings.config"))
+    if str(cfg.get("enable_prime_tower", "0")) != "1":
+        return []
+    x, y = float(cfg["wipe_tower_x"][0]), float(cfg["wipe_tower_y"][0])
+    w = float(cfg.get("prime_tower_width", 30))
+    m = float(cfg.get("prime_tower_brim_width", 5)) + 3
+    return [(x - m, y - m, x + w + m, y + 45 + m)]
+
+
 def pack(sizes, taken):
     """Shelf-pack footprints (w, l) onto the bed, avoiding the rectangles already taken."""
     spots, x, y, row = [], GAP, GAP, 0.0
@@ -113,7 +127,7 @@ def build(plate, parts, z):
         lo, hi = m.bounds
         m.apply_translation(-(lo + hi) / 2)          # centred on its footprint and its height
         meshes.append((name, m, hi - lo))
-    taken, spots = [], {}
+    taken, spots = tower_keepout(z), {}
     for name, m, size in meshes:
         if name in layout:
             cx, cy = layout[name]
