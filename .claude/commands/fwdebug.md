@@ -8,10 +8,10 @@ This creates two natural modes that should never be mixed in the same session �
 ---
 
 ## Commands
-run `source $MB_BASE/mega_blastoise/commands.sh`
-`cat $MB_BASE/mega_blastoise/commands.sh` to discover the commands
+run `source $MB_BASE/scripts/commands.sh`
+`cat $MB_BASE/scripts/commands.sh` to discover the commands
 
-## fw_test (recommended for automated testing)
+## Test loop over RTT and USB
 
 ```bash
 # 1) first build and flash
@@ -56,8 +56,8 @@ mb_usbpoll
   Do NOT unconditionally `pkill` — if no process exists, pkill can hang or error and stall the loop.
 - Never run two `probe-rs` commands simultaneously against the same probe.
 - `probe-rs run` (Mode A) keeps the probe; `probe-rs download`+`reset` (Mode B) releases it.
-- If `fw_test` hangs at "waiting for battle prompts", the previous `probe-rs attach` subprocess
-  is still alive — kill it and re-run.
+- If an RTT read hangs with no output, the previous `probe-rs attach` subprocess is probably
+  still alive: kill it and re-run.
 
 ## Aggressive timeouts on hardware reads (mandatory)
 

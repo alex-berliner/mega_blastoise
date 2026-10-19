@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Build Pico firmware and print flash/RAM usage (llvm-size / arm-none-eabi-size).
+# Build the Pico 2 firmware and print flash/RAM usage (llvm-size / arm-none-eabi-size).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-FW_DIR="$ROOT/mega_blastoise_fw"
+FW_DIR="$ROOT/crates/mega_blastoise_fw"
 
-TRIPLE=thumbv6m-none-eabi
+TRIPLE=thumbv8m.main-none-eabihf
 PROFILE="${PROFILE:-debug}"
 for arg in "$@"; do
   [[ "$arg" == "--release" ]] && PROFILE=release && break
@@ -13,7 +13,7 @@ done
 ELF_NAME=mega-blastoise-fw
 
 # Must build from the fw subdirectory so cargo picks up
-# mega_blastoise_fw/.cargo/config.toml (linker flags + memory layout).
+# crates/mega_blastoise_fw/.cargo/config.toml (linker flags + memory layout).
 (cd "$FW_DIR" && cargo build --target "$TRIPLE" "$@")
 
 TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"

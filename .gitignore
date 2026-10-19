@@ -7,10 +7,10 @@
 *.uf2
 # wasm-pack output. www/pkg is a TRACKED symlink to ../pkg; a pattern ending in a slash
 # matches only a real directory, so the symlink stays tracked
-mega_blastoise_web/pkg/
-mega_blastoise_web/www/pkg/
+crates/mega_blastoise_web/pkg/
+crates/mega_blastoise_web/www/pkg/
 # probe pages written by scripts/ui-probe.sh and ad-hoc probes (www/ ships whole)
-mega_blastoise_web/www/_*probe.html
+crates/mega_blastoise_web/www/_*probe.html
 
 # ---- Node ----
 node_modules/
@@ -44,3 +44,6 @@ freerouting.log
 # ---- Scratch copies and snapshot archives ----
 *(Copy)*
 /hardware/*.zip
+
+# the Pages site, when assembled locally (the workflow builds it in CI)
+/_site/

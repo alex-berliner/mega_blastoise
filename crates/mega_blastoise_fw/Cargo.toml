@@ -1,0 +1,51 @@
+[package]
+name = "mega-blastoise-fw"
+version = "0.1.0"
+edition = "2021"
+default-run = "mega-blastoise-fw"
+
+[dependencies]
+mega-blastoise-core = { path = "../mega_blastoise_core", features = ["defmt", "timing"] }
+gen1_battle = { path = "../gen1_battle" }
+
+# Cortex-M core
+cortex-m = { version = "0.7", features = ["inline-asm"] }
+cortex-m-rt = "0.7"
+
+# Logging + bidirectional RTT (rtt-target 0.6 provides defmt global logger + down channel RX)
+defmt = "1.0"
+rtt-target = { version = "0.6", features = ["defmt"] }
+
+# RP2350 async runtime + HAL
+embassy-executor = { version = "0.9", features = ["arch-cortex-m", "executor-thread", "defmt"] }
+embassy-rp = { version = "0.8", features = ["defmt", "critical-section-impl", "time-driver"] }
+embassy-time = { version = "0.5", features = ["defmt"] }
+embassy-sync = "0.6"
+embedded-hal-async = "1"
+
+# Heap allocator
+embedded-alloc = "0.5"
+
+# battler types for MonData, TeamData, etc.
+battler = { path = "../../battler/battler", default-features = false, features = ["timing"] }
+battler-data = { path = "../../battler/battler-data", default-features = false }
+anyhow = { version = "1.0", default-features = false }
+embassy-usb = { version = "0.6", features = ["defmt"] }
+embassy-futures = "0.1"
+
+# Raw PIO program assembly + clock divider math (the ST7796 SPI driver)
+pio = { version = "0.3", optional = true }
+fixed = { version = "1", optional = true }
+[features]
+# A plain `cargo build` here builds the device: the stripboard v2 board on a
+# Pico 2. The chip and the board stay features so lib.rs can refuse a build
+# that drops either one.
+default = ["rp2350", "board_v2"]
+rp2350 = ["embassy-rp/rp235xa"]
+# Stripboard v2: one ST7796 320x480 panel (PIO SPI on GP5-GP10), 16
+# direct-GPIO buttons and a USB CDC console driving core's DeviceRunner.
+board_v2 = ["dep:pio", "dep:fixed"]
+# Semi-transparent held-button overlay on the panel (debug aid).
+input-debug = []
+mem-profile = []
+trace = ["mega-blastoise-core/trace"]

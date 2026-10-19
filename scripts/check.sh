@@ -14,12 +14,12 @@ cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "── workspace tests (host) ──"
 cargo test --quiet --workspace --exclude mega-blastoise-fw
 
-echo "── firmware check (thumbv6m) ──"
-(cd mega_blastoise_fw && cargo check --quiet --target thumbv6m-none-eabi)
+echo "── firmware check (thumbv8m, the v2 board's default build) ──"
+(cd crates/mega_blastoise_fw && cargo check --quiet)
 
 if [[ "${1:-}" != "--fast" ]]; then
   echo "── wasm build + headless seat probe ──"
-  (cd mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
+  (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
   scripts/ui-probe.sh --skip-build
 fi
 

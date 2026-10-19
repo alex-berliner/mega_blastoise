@@ -1,0 +1,25 @@
+# Linker args; build.rs supplies the RP2350 memory map underneath them.
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+rustflags = [
+  "-C", "link-arg=-Tlink.x",
+  "-C", "link-arg=-Tdefmt.x",
+  "-C", "link-arg=--nmagic",
+]
+
+[target.'thumbv8m.main-none-eabihf']
+runner = "probe-rs run --preset pico2 --log-format=oneline"
+
+[env]
+DEFMT_LOG = "info"
+
+# The Pico 2 (RP2350, Cortex-M33). With the default features this makes a
+# plain `cargo build` / `cargo run` here the stripboard v2 firmware.
+[build]
+target = "thumbv8m.main-none-eabihf"
+
+[alias]
+rb = "run --bin"
+rrb = "run --release --bin"
+# The device firmware with the held-button overlay drawn on the panel.
+bv2 = "build --features input-debug"
+rv2 = "run --features input-debug"

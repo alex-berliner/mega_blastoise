@@ -22,7 +22,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WEB="$ROOT/mega_blastoise_web"
+WEB="$ROOT/crates/mega_blastoise_web"
 CHROME="${CHROME:-$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux64/chrome 2>/dev/null | head -1)}"
 [ -x "$CHROME" ] || { echo "no chromium found; set \$CHROME" >&2; exit 2; }
 

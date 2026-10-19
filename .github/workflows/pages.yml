@@ -33,30 +33,38 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-          key: wasm-${{ hashFiles('mega_blastoise_web/Cargo.lock') }}
+          key: wasm-${{ hashFiles('crates/mega_blastoise_web/Cargo.lock') }}
           restore-keys: wasm-
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build WASM
-        working-directory: mega_blastoise_web
+        working-directory: crates/mega_blastoise_web
         run: wasm-pack build --target web --release
 
       - name: Assemble site
         run: |
+          # The site's root is a hub (site/) that links to everything below it.
+          mkdir -p _site
+          cp -r site/. _site/
+          # The battler lives under /battler/ (its pages link to each other relatively).
           # EVERYTHING in www/ ships. Naming the files one at a time is how the
           # in-page console stayed missing for two days: the file was written,
           # committed, and present on every branch, and this list simply did
           # not mention it, so the deploy 404'd a file that existed everywhere
           # we looked. A whole-directory copy cannot forget a new one.
-          mkdir -p _site
-          cp -r mega_blastoise_web/www/. _site/
+          mkdir -p _site/battler
+          cp -r crates/mega_blastoise_web/www/. _site/battler/
           # www/pkg is checked in but stale by definition; the fresh build wins.
-          rm -rf _site/pkg
-          mkdir -p _site/pkg
-          cp mega_blastoise_web/pkg/*.js       _site/pkg/
-          cp mega_blastoise_web/pkg/*.wasm     _site/pkg/
+          rm -rf _site/battler/pkg
+          mkdir -p _site/battler/pkg
+          cp crates/mega_blastoise_web/pkg/*.js       _site/battler/pkg/
+          cp crates/mega_blastoise_web/pkg/*.wasm     _site/battler/pkg/
+          # The battler's pages used to sit at the root: old links forward, query string and all
+          for page in device.html ui_flow.html; do
+            printf '<!doctype html><meta charset="utf-8"><title>Moved</title><script>location.replace("battler/%s" + location.search + location.hash)</script><a href="battler/%s">Moved to /battler/%s</a>\n' "$page" "$page" "$page" > "_site/$page"
+          done
           # The reference design's exploded 3D view, built locally (it needs KiCad's 3D
           # library and OpenSCAD) and kept fresh by its pre-push hook.
           mkdir -p _site/assembly

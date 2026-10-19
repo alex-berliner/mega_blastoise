@@ -1,8 +1,8 @@
 // Adds the move flags the engine reads straight off the pinned Showdown dex
-// to gen3_battle/vendor/showdown_gen3_moves.json, leaving every hand-curated
+// to crates/gen3_battle/vendor/showdown_gen3_moves.json, leaving every hand-curated
 // field in that file alone. Run it in place:
 //
-//   node tools/showdown-parity/vendor-move-flags.js gen3_battle/vendor/showdown_gen3_moves.json
+//   node tools/showdown-parity/vendor-move-flags.js crates/gen3_battle/vendor/showdown_gen3_moves.json
 const fs = require('fs');
 const { Dex } = require('pokemon-showdown/dist/sim');
 

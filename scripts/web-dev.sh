@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEB_DIR="$SCRIPT_DIR/../mega_blastoise_web"
+WEB_DIR="$SCRIPT_DIR/../crates/mega_blastoise_web"
 
 cd "$WEB_DIR"
 
@@ -14,4 +14,5 @@ ln -sf ../pkg www/pkg
 
 PORT="${1:-7890}"
 echo "Serving at http://localhost:$PORT"
-python3 -m http.server "$PORT" --directory www
+# serve-dev.py sends no-store, so a reload always shows the fresh wasm build
+python3 "$SCRIPT_DIR/serve-dev.py" "$PORT" www

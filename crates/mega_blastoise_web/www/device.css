@@ -1,0 +1,390 @@
+/* Single-screen device page. Sized for a tablet lying flat between two
+   players: the panel in the middle, one DS Lite style control deck per seat,
+   the far seat's deck rotated 180 so both hands sit the same way round. */
+
+:root {
+  /* One millimetre of the real device at the panel's scale: #panel is 640px
+     tall for the 3.5" panel's 73.4 mm, so the controls below are drawn from
+     the genuine DS Lite cap sizes (hardware/ref_design/case/DSLITE.md) and
+     stay in true proportion to the screen. */
+  --k: 8.7px;
+  --bg: #15171c;
+  --case: #23252a;
+  --case-hi: #2f333a;
+  --btn: #3a3f47;
+  --btn-lit: #d8383e;
+  --ink: #e6e4de;
+  --dim: #8a8f98;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Bottom padding clears the fixed debug bar. */
+  padding: 8px 8px 64px;
+}
+
+#panel {
+  /* Displayed at 2x the panel grid; the backing store is a whole multiple
+     larger and drawn nearest-neighbour, so rotation and fractional page
+     scaling resample a sharp image instead of a tiny one. */
+  width: 480px;
+  height: 640px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+  border: 3px solid var(--case);
+  border-radius: 8px;
+  flex: none;
+  touch-action: none;
+}
+
+/* ── Device body ───────────────────────────────────────────────────────── */
+
+/* Panel in the middle, a control deck at each end. */
+#device {
+  display: grid;
+  grid-template-columns: auto;
+  justify-items: stretch;
+  align-items: center;
+  gap: calc(var(--k) * 3.6);
+  background: linear-gradient(180deg, #272a30, #212328);
+  border-radius: calc(var(--k) * 6);
+  padding: calc(var(--k) * 4.2) calc(var(--k) * 4.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+#panel { justify-self: center; }
+
+/* A seat's deck: D-pad on the left, the face buttons on the right, Select
+   and Start between them. The far seat's deck is the near one turned
+   around, so its labels read upright from its own side of the table. The
+   deck is as tall as the diamond, so its middle is the clusters' centre
+   line. */
+.deck {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: calc(var(--k) * 22);
+}
+.deck.far { transform: rotate(180deg); }
+
+/* ── D-pad: the DS Lite's dark cross. Raised arms that dish down towards a
+   shallow pivot dimple in the middle. 17.8 mm across, 5.9 mm arms. ─────── */
+
+.dpad {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr calc(var(--k) * 5.9) 1fr;
+  grid-template-rows: 1fr calc(var(--k) * 5.9) 1fr;
+  width: calc(var(--k) * 17.8);
+  height: calc(var(--k) * 17.8);
+  flex: none;
+  /* The cross's own thickness, then its shadow on the case. */
+  filter: drop-shadow(0 calc(var(--k) * 0.35) 0 #0d0e10)
+    drop-shadow(0 calc(var(--k) * 0.7) calc(var(--k) * 0.6) rgba(0, 0, 0, 0.55));
+}
+.dpad .d {
+  border: none;
+  padding: 0;
+  color: transparent;
+  touch-action: none;
+  --tip: #464a51;
+  --mid: #2f3237;
+  --hub: #26282d;
+}
+/* Each arm is lit at its tip and falls away towards the hub: the dish. */
+.dpad .up    { grid-area: 1 / 2; border-radius: calc(var(--k) * 1.1) calc(var(--k) * 1.1) 0 0;
+               background: linear-gradient(to bottom, var(--tip), var(--mid) 62%, var(--hub)); }
+.dpad .down  { grid-area: 3 / 2; border-radius: 0 0 calc(var(--k) * 1.1) calc(var(--k) * 1.1);
+               background: linear-gradient(to top, #3a3d43, var(--mid) 62%, var(--hub)); }
+.dpad .left  { grid-area: 2 / 1; border-radius: calc(var(--k) * 1.1) 0 0 calc(var(--k) * 1.1);
+               background: linear-gradient(to right, #3f4249, var(--mid) 62%, var(--hub)); }
+.dpad .right { grid-area: 2 / 3; border-radius: 0 calc(var(--k) * 1.1) calc(var(--k) * 1.1) 0;
+               background: linear-gradient(to left, #3f4249, var(--mid) 62%, var(--hub)); }
+/* A faint ridge at each arm's tip, where the thumb lands. */
+.dpad .up    { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.dpad .left  { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.09); }
+.dpad .right { box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06); }
+.dpad::after {
+  content: "";
+  grid-area: 2 / 2;
+  background: #26282d;
+}
+.dpad .pivot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--k) * 3);
+  height: calc(var(--k) * 3);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 58%, #222428 0, #26282c 60%, #2b2d32 100%);
+  box-shadow: inset 0 calc(var(--k) * 0.2) calc(var(--k) * 0.3) rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.dpad .d:active, .dpad .d.pressed {
+  --tip: #2b2e33;
+  --mid: #232529;
+  --hub: #1f2125;
+  background-color: #222428;
+  box-shadow: inset 0 0 calc(var(--k) * 0.9) rgba(0, 0, 0, 0.6);
+}
+.dpad .down:active, .dpad .down.pressed,
+.dpad .left:active, .dpad .left.pressed,
+.dpad .right:active, .dpad .right.pressed { background: #24262a; }
+
+/* ── Face buttons: four light caps in the DS Lite diamond (X top, A right,
+   B bottom, Y left), 7 mm caps on a 15 mm pitch. ───────────────────────── */
+
+.face { flex: none; }
+
+.abxy {
+  position: relative;
+  width: calc(var(--k) * 22);
+  height: calc(var(--k) * 22);
+}
+
+.cap, .pill {
+  position: absolute;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: pointer;
+  background: radial-gradient(circle at 42% 30%, #ffffff 0, #f3f3f0 34%, #dfe0dc 70%, #c8c9c5 100%);
+  /* Rim light and face shading, the cap's side, the gap of the hole it sits
+     in, then its shadow on the case. */
+  box-shadow:
+    inset 0 calc(var(--k) * -0.3) calc(var(--k) * 0.5) rgba(0, 0, 0, 0.16),
+    inset 0 calc(var(--k) * 0.18) calc(var(--k) * 0.2) rgba(255, 255, 255, 0.9),
+    0 calc(var(--k) * 0.32) 0 #9c9e9a,
+    0 calc(var(--k) * 0.16) 0 calc(var(--k) * 0.55) #15161a,
+    0 calc(var(--k) * 0.9) calc(var(--k) * 1.1) calc(var(--k) * 0.4) rgba(0, 0, 0, 0.45);
+  transition: transform 40ms, box-shadow 40ms;
+}
+.cap {
+  width: calc(var(--k) * 7);
+  height: calc(var(--k) * 7);
+  font: 700 calc(var(--k) * 3.1) / 1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #a3a6ab;
+  /* Moulded into the cap: a light edge under the glyph, a dark one over it. */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 -1px 0 rgba(0, 0, 0, 0.12);
+}
+.cap.x { left: calc(var(--k) * 7.5); top: 0; }
+.cap.a { left: calc(var(--k) * 15);  top: calc(var(--k) * 7.5); }
+.cap.b { left: calc(var(--k) * 7.5); top: calc(var(--k) * 15); }
+.cap.y { left: 0;                     top: calc(var(--k) * 7.5); }
+
+.cap:active, .cap.pressed, .pill:active, .pill.pressed {
+  transform: translateY(calc(var(--k) * 0.22));
+  box-shadow:
+    inset 0 calc(var(--k) * -0.2) calc(var(--k) * 0.5) rgba(0, 0, 0, 0.22),
+    inset 0 calc(var(--k) * 0.18) calc(var(--k) * 0.2) rgba(255, 255, 255, 0.7),
+    0 calc(var(--k) * 0.1) 0 #9c9e9a,
+    0 calc(var(--k) * -0.06) 0 calc(var(--k) * 0.55) #15161a,
+    0 calc(var(--k) * 0.4) calc(var(--k) * 0.6) calc(var(--k) * 0.2) rgba(0, 0, 0, 0.45);
+  filter: brightness(0.94);
+}
+
+/* X is the seat's ? key (the on-screen hints call it ?), printed on the case
+   beside it. */
+.qmark {
+  position: absolute;
+  left: calc(var(--k) * 3.6);
+  top: calc(var(--k) * 0.4);
+  font: 700 calc(var(--k) * 2) / 1 var(--mono);
+  color: var(--dim);
+  pointer-events: none;
+}
+
+/* ── Select and Start: 4.5 mm round caps side by side, 7.5 mm apart,
+   Select on the seat's left. Placed as on the reference design's case
+   (case.scad ss_pitch, ss_y): centred between the D-pad and the diamond,
+   9.1 mm past the clusters' centre line towards the seat's end. The
+   midpoint is computed from the deck's edges: the D-pad's centre is 8.9 mm
+   in from the left, the diamond's 11 mm in from the right. ──────────────── */
+
+.ss {
+  position: absolute;
+  left: calc(50% - var(--k) * 1.05);
+  top: calc(var(--k) * (11 + 9.1));
+  width: 0;
+  height: 0;
+}
+.ssb {
+  position: absolute;
+  top: 0;
+  width: calc(var(--k) * 4.5);
+  height: calc(var(--k) * 4.5);
+  transform: translate(-50%, -50%);
+}
+.ssb.select { left: calc(var(--k) * -3.75); }
+.ssb.start  { left: calc(var(--k) * 3.75); }
+.ssb .pill { inset: 0; }
+/* Printed on the case above each cap, on the screen side. */
+.ssb .sl {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--k) * 1.2);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font: 700 calc(var(--k) * 1.3) / 1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+/* ── Debug bar ─────────────────────────────────────────────────────────── */
+
+#debug {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(20, 22, 26, 0.94);
+  border-top: 1px solid #31353c;
+  font-size: 11px;
+}
+#debug .lbl { color: var(--dim); letter-spacing: 0.1em; }
+#debug .sep { width: 12px; }
+#debug .hint { color: var(--dim); margin-left: auto; }
+#debug button {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--case-hi);
+  border: 1px solid #3d424a;
+  border-radius: 5px;
+  padding: 3px 9px;
+}
+#debug button.on { background: var(--btn-lit); border-color: var(--btn-lit); }
+#debug select {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--case-hi);
+  border: 1px solid #3d424a;
+  border-radius: 5px;
+  padding: 3px 6px;
+}
+
+
+/* ── Console panel ─────────────────────────────────────────────────────── */
+
+#console-btn.has-warn { border-color: #d1a13a; color: #d1a13a; }
+#console-btn.has-error { border-color: #e05257; color: #e05257; }
+
+#console {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Sits above the debug bar rather than over it, so the controls that raised
+     it stay reachable while it is open. The exact offset is set from JS,
+     because the bar wraps to two rows on a narrow screen. */
+  bottom: 30px;
+  max-height: 45vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(14, 16, 19, 0.97);
+  border-top: 1px solid #31353c;
+  z-index: 20;
+}
+#console[hidden] { display: none; }
+
+#console .chead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-bottom: 1px solid #262a30;
+  flex: none;
+}
+#console .lbl {
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+#console .cfilter { display: flex; gap: 4px; margin-left: 8px; }
+#console .cclose { margin-left: auto; }
+#console button {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--case-hi);
+  border: 1px solid #3d424a;
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+#console button.on { background: var(--btn-lit); border-color: var(--btn-lit); }
+
+#console .clog {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px 10px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.45;
+  user-select: text;
+  /* Shrinks before the command line does, so the prompt survives a short
+     viewport instead of being pushed out of the panel. */
+  flex: 1 1 auto;
+  min-height: 60px;
+}
+#console .crow {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink);
+}
+#console .crow.debug { color: var(--dim); }
+#console .crow.info { color: #7fb2e5; }
+#console .crow.warn { color: #d1a13a; }
+#console .crow.error { color: #e05257; }
+#console .crow.cmd { color: #7fd18a; }
+
+#console .cinput {
+  display: flex;
+  background: #171a1f;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-top: 1px solid #262a30;
+  flex: none;
+}
+#console .cprompt { color: #7fd18a; font-family: var(--mono); font-size: 12px; }
+#console .cinput input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 2px 0;
+}
+#console .cinput input::placeholder { color: #565c66; }

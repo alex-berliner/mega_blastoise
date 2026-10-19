@@ -1,17 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
-    "battle_types",
-    "gen1_battle",
-    "gen3_battle",
-    "mega_blastoise_core",
-    "mega_blastoise_fw",
-    "mega_blastoise_test",
+    "crates/battle_types",
+    "crates/gen1_battle",
+    "crates/gen3_battle",
+    "crates/mega_blastoise_core",
+    "crates/mega_blastoise_fw",
+    "crates/mega_blastoise_test",
 ]
-exclude = ["battler", "esp32_reset"]
+exclude = ["battler", "crates/mega_blastoise_web", "firmware/bringup/esp32_reset", "firmware/bringup/rp2350_blink"]
 default-members = [
-    "mega_blastoise_core",
-    "mega_blastoise_test",
+    "crates/mega_blastoise_core",
+    "crates/mega_blastoise_test",
 ]
 
 [patch.crates-io]

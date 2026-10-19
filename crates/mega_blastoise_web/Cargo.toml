@@ -1,0 +1,39 @@
+[workspace]
+# Standalone WASM crate — not a member of the parent workspace.
+# Build with: wasm-pack build --target web [--release]
+
+[package]
+name = "mega-blastoise-web"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Location", "console"] }
+console_error_panic_hook = "0.1"
+embassy-futures = "0.1"
+
+mega-blastoise-core = { path = "../mega_blastoise_core" }
+gen1_battle = { path = "../gen1_battle" }
+gen3_battle = { path = "../gen3_battle" }
+battler = { path = "../../battler/battler" }
+battler-data = { path = "../../battler/battler-data" }
+# getrandom is pulled in transitively by battler → rand.
+# Enable wasm_js so it compiles for wasm32-unknown-unknown.
+getrandom = { version = "0.4", features = ["wasm_js"] }
+# The shared DeviceInputChannel is a CriticalSectionRawMutex channel (the
+# firmware pushes from tasks into a static); wasm is single-threaded, so the
+# std critical-section impl satisfies the link.
+critical-section = { version = "1", features = ["std"] }
+
+[patch.crates-io]
+once_cell = { path = "../../patches/once_cell" }
+
+[profile.release]
+opt-level = "s"
+lto = true
