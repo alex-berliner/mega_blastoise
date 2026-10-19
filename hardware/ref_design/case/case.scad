@@ -136,7 +136,7 @@ step_wall = 1.5;  spine_w = 13.0;  deck_r = 3;          // step wall, spine widt
 // the deck (short of the cap retainers) and ends ramp_in into the screen block (where the skin
 // over the panel's pocket still has 0.6 mm); the raised pad over J2 keeps its edge, since cutting
 // into it would open J2's pocket
-ramp_out = 1.5;  ramp_in = 3.0;  ramp_layers = 24;
+ramp_out = 1.5;  ramp_in = 3.0;  ramp_layers = 48;      // 0.05 mm layers: no terraces at print resolution
 function inv_smoothstep(v) = 0.5 - sin(asin(1 - 2 * v) / 3);
 // how far into the screen block (negative: out on the deck) the surface is at layer k
 function ramp_t(k) = -ramp_out + (ramp_out + ramp_in) * inv_smoothstep((k + 0.5) / ramp_layers);
@@ -198,7 +198,9 @@ boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
 // As the DS Lite closes: screws from the back, through the tub's bosses and the board's holes,
 // into the lid's bosses, clamping the board between them (the snap hooks only hold the lid
 // while it is screwed). M2 x 8 self-tapping, wafer head (4 mm, 1 mm)
-screw_cb = [4.4, 1.0];  screw_clear = 2.4;  screw_pilot = 1.6;  screw_engage = 6.0;
+screw_cb = [4.4, 1.0];  screw_clear = 2.4;  screw_pilot = 1.6;
+screw_engage = min(6.0, case_h - z_top_cu - 0.8);       // the pilot stops 0.8 under the face (it came through it
+                                                        // once the screen face dropped to 5.8 over the board)
 // Stepped seam, as the DS Lite's face nests in its back shell: a lip under the lid's edge drops
 // into a step in the inner half of the tub's wall. It locates the lid and hides the seam
 lip_h = 1.2;  lip_fit = 0.2;
@@ -545,11 +547,11 @@ module lid_body() difference() {
     }
   }
   usb_opening();                                                              // its upper half
-  // the panel's pocket: its top face_t under the screen face, with the FPC fold's notch
-  if (face_t < lid_t) translate([0, 0, z_lid - 0.01]) linear_extrude(lid_t - face_t + 0.01) {
+  // the panel's pocket: its top face_t under the screen face. No FPC notch here: the FPC leaves
+  // the panel's back and folds under it, below the lid (the frame below keeps its notch), and a
+  // notch in the pocket put open slits under the step's S-curve
+  if (face_t < lid_t) translate([0, 0, z_lid - 0.01]) linear_extrude(lid_t - face_t + 0.01)
     square([panel_w + panel_fit, panel_l + panel_fit], center = true);
-    translate([fpc_neck[0], -panel_l / 2]) square([fpc_neck[1] + 7, 6], center = true);
-  }
   translate([0, 0, deck_face]) linear_extrude(case_h) deck2d();              // nothing above the decks
   // the step's top edge, chamfered (in 0.1 mm layers, as it prints)
   // the S-curve's upper part, cut out of the screen block in layers
