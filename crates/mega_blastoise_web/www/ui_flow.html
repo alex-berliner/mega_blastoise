@@ -96,9 +96,14 @@
   .dpad::before, .dpad::after { content: ""; position: absolute; background: var(--ink-soft); border-radius: 3px; }
   .dpad::before { left: 11px; top: 0; width: 12px; height: 34px; }
   .dpad::after { left: 0; top: 11px; width: 34px; height: 12px; }
-  .ab { position: absolute; display: flex; gap: 6px; }
-  .ab i { width: 17px; height: 17px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--mono); font-style: normal; font-size: 9.5px; font-weight: 700; }
-  .ab i.q { background: #3d6fa5; }
+  .abxy { position: absolute; width: 40px; height: 40px; }
+  .abxy i { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #ecece8; border: 1px solid var(--ink-soft); box-sizing: border-box; display: flex; align-items: center; justify-content: center; color: #77797d; font-family: var(--mono); font-style: normal; font-size: 8px; font-weight: 700; }
+  .abxy .x { left: 13px; top: 0; }
+  .abxy .a { left: 26px; top: 13px; }
+  .abxy .b { left: 13px; top: 26px; }
+  .abxy .y { left: 0; top: 13px; }
+  .ssr { position: absolute; display: flex; gap: 6px; }
+  .ssr i { width: 9px; height: 9px; border-radius: 50%; background: #ecece8; border: 1px solid var(--ink-soft); box-sizing: border-box; }
   .hwnote { flex: 1; min-width: 260px; font-size: 14.5px; color: var(--ink-soft); }
   .hwnote b { color: var(--ink); }
   .hwnote ul { padding-left: 20px; margin: 8px 0 0; }
@@ -115,9 +120,9 @@
 <header>
   <p class="eyebrow">UI Concept Mockups</p>
   <h1>Mega Blastoise: one screen, two players</h1>
-  <p class="sub">Flow mockups for the single-screen redesign: a 2.8" IPS 240x320 panel laid flat between the seats, split into two 240x160 halves. The far player's half is rendered rotated 180 degrees, so both players always read upright. Open information by design: no hidden choice. Each seat gets a D-pad plus A, B, and a dedicated ? info button.</p>
+  <p class="sub">Flow mockups for the single-screen redesign: a 2.8" IPS 240x320 panel laid flat between the seats, split into two 240x160 halves. The far player's half is rendered rotated 180 degrees, so both players always read upright. Open information by design: no hidden choice. Each seat gets a DS Lite style D-pad and A/B/X/Y diamond (X is the dedicated ? info key, Y the menu key), plus Select and Start.</p>
   <div class="premise">
-    <span>2.8" IPS ST7789, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B/? per seat</span><span>rotationally symmetric seats</span><span>one orientation, no flips</span>
+    <span>2.8" IPS ST7789, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B/X/Y + Select/Start per seat</span><span>rotationally symmetric seats</span><span>one orientation, no flips</span>
   </div>
 </header>
 
@@ -127,15 +132,19 @@
     <div class="dev">
       <div class="dscr"></div>
       <div class="dpad" style="right: 18px; top: 26px;"></div>
-      <div class="ab" style="left: 16px; top: 34px; transform: rotate(180deg);"><i>A</i><i>B</i><i class="q">?</i></div>
+      <div class="abxy" style="left: 14px; top: 23px; transform: rotate(180deg);"><i class="x">X</i><i class="a">A</i><i class="b">B</i><i class="y">Y</i></div>
+      <div class="ssr" style="right: 93px; top: 10px; transform: rotate(180deg);"><i title="select"></i><i title="start"></i></div>
       <div class="dpad" style="left: 18px; bottom: 26px;"></div>
-      <div class="ab" style="right: 16px; bottom: 34px;"><i class="q">?</i><i>B</i><i>A</i></div>
+      <div class="abxy" style="right: 14px; bottom: 23px;"><i class="x">X</i><i class="a">A</i><i class="b">B</i><i class="y">Y</i></div>
+      <div class="ssr" style="left: 93px; bottom: 10px;"><i title="select"></i><i title="start"></i></div>
     </div>
     <div class="hwnote">
-      <b>Controls are placed with rotational symmetry, not mirrored.</b> Each seat gets D-pad on the left and three buttons on the right (B, A, and a blue <b>?</b>), in its own reading orientation (the far cluster looks upside down from here, which is correct). Notes:
+      <b>Controls are placed with rotational symmetry, not mirrored.</b> Each seat gets genuine DS Lite parts: the D-pad on the left, the A/B/X/Y diamond on the right (X top, A right, B bottom, Y left), and Select and Start side by side between them, toward the seat's end of the case, all in the seat's own reading orientation (the far deck looks upside down from here, which is correct). Notes:
       <ul>
         <li>D-pad moves the cursor, <b>A confirms, B backs out</b>: every state now has an explicit back path, and nothing commits on a stray tap.</li>
-        <li><b>? explains whatever the cursor is on</b>: full move description on the move row, full stats on a party row, foe details on the HUD. Hold or press again to leave. One dedicated "tell me more" verb, discoverable by its label alone.</li>
+        <li><b>X is the ? key: it explains whatever the cursor is on</b>: full move description on the move row, full stats on a party row, foe details on the HUD. Hold or press again to leave. One dedicated "tell me more" verb; the on-screen hints call it ?, so the browser version prints a ? beside X.</li>
+        <li><b>Y is the menu key.</b> The game core decides what it does; today that is the same as B.</li>
+        <li><b>Select and Start</b> are on the hardware (seat 1's Start doubles as the power button) but mean nothing in the game yet.</li>
         <li>Panel must be <b>IPS</b>; a TN panel shows inverted contrast to one of the two seats.</li>
         <li>The WS2812 strips are dropped; HP lives on-screen. Optionally keep one status LED per seat.</li>
       </ul>
