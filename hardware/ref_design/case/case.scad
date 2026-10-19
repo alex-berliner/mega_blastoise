@@ -138,8 +138,29 @@ step_wall = 1.5;  spine_w = 13.0;  deck_r = 3;          // step wall, spine widt
 // into it would open J2's pocket
 ramp_out = 1.5;  ramp_in = 3.0;  ramp_layers = 48;      // 0.05 mm layers: no terraces at print resolution
 function inv_smoothstep(v) = 0.5 - sin(asin(1 - 2 * v) / 3);
+
+// EXPERIMENT (Alex, 2026-10-19): deck inserts. Face down, the decks print 2.3 mm above the bed, so
+// they need supports, and a face printed on supports keeps a peel-away texture. With deck_inserts
+// each end's deck (both clusters and Start/Select) is its own U-shaped part that prints face down
+// on the bed like the screen face: no supports anywhere. Its inner edges carry a 45 degree wedge
+// that the lid's step walls hold down (insert_tongue); its outer end edge tucks under a 45 degree lip on the
+// tub's end wall (tilt it in, then lower it). The tub's walls rise to deck height round it. The
+// step becomes a rounded top edge and a 45 degree slope (step_round), which prints unsupported.
+deck_inserts = false;
+insert_gap = 0.15;                                      // clearance round the insert
+insert_tongue = 0.8;                                    // the wedge under the lid's step walls: width at its foot
+end_lip = 0.8;                                          // the tub end wall's lip over the insert (45 degrees)
+step_round = 1.0;                                       // radius of the step's top edge
+// the inserts' step profile: how far into the screen block (t) the surface is at depth d under the face
+round_d = step_round * (1 - 1 / sqrt(2));               // where the round meets the 45 degree slope
+round_w = sqrt(2 * step_round * round_d - round_d * round_d);
+step_t0 = round_w + (case_h - deck_face) - round_d;     // the slope's top edge, in from the deck's edge
+function step45_t(d) = d <= round_d ? step_t0 - sqrt(max(0, 2 * step_round * d - d * d))
+                                    : step_t0 - round_w - (d - round_d);
 // how far into the screen block (negative: out on the deck) the surface is at layer k
-function ramp_t(k) = -ramp_out + (ramp_out + ramp_in) * inv_smoothstep((k + 0.5) / ramp_layers);
+function ramp_t(k) = deck_inserts
+  ? step45_t((case_h - deck_face) * (1 - (k + 0.5) / ramp_layers))
+  : -ramp_out + (ramp_out + ramp_in) * inv_smoothstep((k + 0.5) / ramp_layers);
 // Start and Select (2026-10-19): each seat's DS Lite Start/Select membrane (it comes in the same
 // pad kit: one piece, two pills) between its clusters, near the case's end, Start on the
 // player's right. Seat 1's Start is the power button. ESTIMATE: membrane, pill pitch and caps
@@ -423,8 +444,16 @@ module tub() difference() {
       linear_extrude(z_lid) rrect(case_w, case_l, corner_r);
       translate([0, 0, floor_t]) linear_extrude(z_lid) rrect(case_w - 2 * wall, case_l - 2 * wall, corner_r - wall);
       // walls drop at the decks, deck_fit clear of the lid's step walls that drop in between
-      translate([0, 0, z_deck_lid]) linear_extrude(z_lid) offset(delta = deck_fit) deck_cut2d();
+      if (!deck_inserts) translate([0, 0, z_deck_lid]) linear_extrude(z_lid) offset(delta = deck_fit) deck_cut2d();
+      else {
+        // the walls drop to the deck's underside only where the lid's step walls come down,
+        // and rise to the deck face round the insert
+        translate([0, 0, z_deck_lid]) linear_extrude(z_lid) difference() { offset(delta = deck_fit) deck_cut2d(); deck2d(); }
+        translate([0, 0, deck_face]) linear_extrude(z_lid) offset(delta = 0.01) deck2d();
+      }
     }
+    // the end walls' lips over the deck inserts
+    if (deck_inserts) for (sy = [-1, 1]) end_lip_cut(sy, 0);
     // bosses up to the board (the screws come up through them)
     for (s = pins) at(s) cylinder(d = boss_d + 1.0, h = z_board);
     // crush ribs: a 45 degree lead-in at the top, so the board slides down onto them
@@ -498,7 +527,13 @@ module dpad_cut(h, gap = dpad_gap) {
 }
 module dpad_flange() union() { circle(r = dpad_flange_r, $fn = 64); cross(dpad_arm_w, dpad_arm_l); }
 
-module lid() union() {
+// with inserts the lid keeps nothing under the deck faces: the tub's walls rise there instead
+module lid() if (deck_inserts) difference() {
+  lid_whole();
+  insert_zone(insert_gap);
+  translate([0, 0, z_top_cu - 1]) linear_extrude(deck_face + 1.01 - z_top_cu) offset(delta = 0.01) deck2d();
+} else lid_whole();
+module lid_whole() union() {
   lid_body();
   // the S-curve's lower part, added on the deck along the step in layers
   for (k = [0:ramp_layers - 1]) if (ramp_t(k) < 0)
@@ -508,6 +543,33 @@ module lid() union() {
         difference() { deck2d(); offset(delta = ramp_t(k)) deck2d(); }
       }
 }
+// the inserts: the deck's outline inside the tub's walls (sy: -1 seat 1's end, 1 seat 2's)
+module insert2d(sy, grow = 0) intersection() {
+  offset(delta = grow) deck2d();
+  scale([1, sy]) translate([-case_w, 0]) square([2 * case_w, case_l]);
+  offset(delta = -insert_gap) rrect(case_w - 2 * wall, case_l - 2 * wall, corner_r - wall);   // grow stops at the walls
+}
+// the space an insert takes (grow > 0: plus clearance, cut from the lid): its plate and all below,
+// and its wedge under the step walls, in 0.1 mm slices (45 degrees: face down it needs no support)
+module insert_zone(grow = 0, sy = 0) for (e = sy == 0 ? [-1, 1] : [sy]) {
+  translate([0, 0, z_top_cu - 1]) linear_extrude(case_h + 2 - z_top_cu) insert2d(e, grow);
+  w = insert_tongue + 1.5 * grow;
+  for (i = [0:ceil(w / 0.1) - 1]) translate([0, 0, z_deck_lid + 0.1 * i - (i == 0 ? 1 : 0)])
+    linear_extrude(0.11 + (i == 0 ? 1 : 0)) difference() {
+      insert2d(e, max(0.01, w - 0.1 * (i + 0.5)) + grow);
+      insert2d(e, -0.01);
+    }
+}
+// one insert, in place: the lid's deck, retainers and button cuts within it, plus the tongue, less
+// the 45 degree rebate under the tub end wall's lip
+module deck_insert(sy) difference() {
+  intersection() { lid_whole(); insert_zone(0, sy); }
+  end_lip_cut(sy, insert_gap);
+}
+// the tub end wall's lip over the insert's end edge, a 45 degree wedge from the wall's inner face
+module end_lip_cut(sy, grow = 0) scale([1, sy, 1])
+  translate([-(case_w / 2 - corner_r), in_y + 0.01, deck_face]) rotate([0, 90, 0])
+    linear_extrude(case_w - 2 * corner_r) polygon([[0.01, 0], [end_lip + grow + 0.01, 0], [0.01, -end_lip - grow]]);
 // the raised pad over J2 and its chamfer: the S-curve leaves it whole
 module j2_keep2d() at(batt_conn) square(pocket + [2 * (skin_min + j2_bump) + 1, 2 * (skin_min + j2_bump) + 1], center = true);
 

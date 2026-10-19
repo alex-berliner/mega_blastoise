@@ -58,7 +58,12 @@ PLATES = {
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
                       ("usb_tub", "usb_lid", "usb_board", "snap_tub", "snap_lid", "frame_lid",
                        "buttons_tub", "buttons_board", "buttons_lid")],
+    # EXPERIMENT (case.scad: deck_inserts): seat 1's end with its deck as a separate insert, no supports;
+    # its board coupon is 0_buttons_end's (the same part)
+    "5_inserts_experiment": [(n, f"{KIT}/coupon_{n}.stl") for n in
+                             ("buttons_tub_inserts", "buttons_lid_inserts", "buttons_insert")],
 }
+NO_SUPPORT = {"5_inserts_experiment"}   # plates that print without any supports
 V5_NAMES = {"tub_print": "tub_print.stl", "lid": "lid.stl", "board_mock": "board_mock.stl",
             "panel_dummy": "panel_dummy.stl", "speaker_dummy": "speaker_dummy.stl"}
 NS = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"
@@ -195,7 +200,7 @@ def build(plate, parts, z):
             data = z.read(n)
             if n == "Metadata/project_settings.config":
                 cfg = json.loads(data)
-                for k, v in SUPPORT.items():
+                for k, v in (dict(SUPPORT, enable_support="0") if plate in NO_SUPPORT else SUPPORT).items():
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                     cfg[k] = v
@@ -211,20 +216,26 @@ def build(plate, parts, z):
 
 
 def main():
-    for _, parts in PLATES.items():
+    for plate, parts in PLATES.items():
+        if sys.argv[1:] and plate not in sys.argv[1:]:
+            continue
         for _, p in parts:
             if not os.path.exists(p):
                 sys.exit(f"missing {p}: run case/export.py --stl, the print_variants tub and case/fitkit.py first")
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(os.path.join(OUT, "stl"))
     z = zipfile.ZipFile(TEMPLATE)
+    only = sys.argv[1:]                 # plate names to build (default: all)
     for plate, parts in PLATES.items():
+        if only and plate not in only:
+            continue
         path, sizes = build(plate, parts, z)
         print(f"{os.path.basename(path):24s} " + ", ".join(n for n, _ in sizes))
         for n, p in parts:
             shutil.copy(p, os.path.join(OUT, "stl", os.path.basename(p)))
     for extra in ("lid.stl", "tub.stl"):
-        shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
+        if os.path.exists(os.path.join(HERE, extra)) and not sys.argv[1:]:
+            shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     shutil.copy(os.path.join(HERE, "print_package_README.md"), os.path.join(OUT, "README.md"))
     with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as o:
         for root, _, names in os.walk(OUT):

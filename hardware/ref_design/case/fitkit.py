@@ -35,10 +35,17 @@ KIT = [  # (kit name, file, what it tests)
     ("tune_stack_dpad_board", "tune_stack_dpad_board.stl", "seat 1's D-pad: board slice with the contact rings"),
     ("tune_stack_abxy_board", "tune_stack_abxy_board.stl", "seat 1's A/B/X/Y: board slice with the contact rings"),
     ("tune_stack_ss_board", "tune_stack_ss_board.stl", "seat 1's Start/Select: board slice with the two small contacts"),
-] + [(f"tune_stack_{c}_lid", f"tune_stack_{c}_lid_dome{d}.stl", f"its lid slice on legs, silicone height {d} mm", d)
-     for c in ("dpad", "abxy", "ss") for d in ("0.9", "1.2", "1.5")] + [
-    # (coupons with a fourth element are rendered with -D dome_h=<it>)
+] + [(f"tune_stack_{c}_lid", f"tune_stack_{c}_lid_dome{d}.stl", f"its lid slice on legs, silicone height {d} mm",
+       {"dome_h": d}) for c in ("dpad", "abxy", "ss") for d in ("0.9", "1.2", "1.5")] + [
+    # (a fourth element: case.scad settings to render that coupon with, as openscad -D name=value)
     ("frame_lid", "coupon_frame_lid.stl", "the lid's window, ledge and panel frame"),
+    # EXPERIMENT: seat 1's end with deck inserts (case.scad: deck_inserts), all printed without supports
+    ("buttons_tub", "coupon_buttons_tub_inserts.stl", "seat 1's end of the tub, walls up round the insert",
+     {"deck_inserts": "true"}),
+    ("buttons_lid", "coupon_buttons_lid_inserts.stl", "seat 1's end of the lid, its deck left out",
+     {"deck_inserts": "true"}),
+    ("buttons_insert", "coupon_buttons_insert.stl", "seat 1's deck insert, printed face down",
+     {"deck_inserts": "true"}),
 ]
 
 
@@ -71,11 +78,11 @@ def main():
             f'  ["{r[0]}", {r[1]:.3f}, {r[2]:.3f}, {r[3]:.3f}, {r[4]:.3f}, {r[5]:.3f}, {r[6]:.3f}]' for r in rows) + "\n];\n")
     print(f"{len(rows)} part envelopes")
     only = sys.argv[1:]                 # names to build (default: all)
-    for kit, name, what, *dome in KIT:
+    for kit, name, what, *defs in KIT:
         if only and not any(o in name for o in only):
             continue
         out = os.path.join(OUT, name)
-        extra = ["-D", f"dome_h={dome[0]}"] if dome else []
+        extra = [a for k, v in (defs[0] if defs else {}).items() for a in ("-D", f"{k}={v}")]
         r = subprocess.run(["openscad", "-o", out, "-D", 'part="kit"', "-D", f'kit="{kit}"', *extra,
                             os.path.join(HERE, "fitkit.scad")], capture_output=True, text=True)
         if r.returncode or not os.path.exists(out) or "ERROR" in r.stderr or "WARNING: Assert" in r.stderr:

@@ -74,6 +74,8 @@ function hook_near(p) = hooks[search(min([for (h = hooks) norm([h[0], h[1]] - p)
                                      [for (h = hooks) norm([h[0], h[1]] - p)])[0]];
 module snap_box(h) translate([h[0], h[1], -1]) rotate(h[2]) translate([-8, -14, 0]) cube([16, 28, case_h + 2]);
 module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the lid prints face down
+// the tub as it prints: without its four feet, so the floor sits flat on the bed
+module tub_flat() intersection() { tub(); translate([-200, -200, 0]) cube([400, 400, 100]); }
 
 band_y1 = -(bay_l / 2) + 2;                          // seat 1's end band: from the case end into the glass by 2 mm
 module band_box() translate([-case_w / 2 - 1, -case_l / 2 - 1, -1]) cube([case_w + 2, band_y1 + case_l / 2 + 1, case_h + 2]);
@@ -135,11 +137,13 @@ if (kit == "panel")        kit_panel();
 if (kit == "cell")         kit_cell();
 if (kit == "plug")         kit_plug();
 if (kit == "speaker")      kit_speaker();
-if (kit == "snap_tub")     intersection() { tub(); snap_box(hook_near([case_w / 2, 0])); }
+if (kit == "snap_tub")     intersection() { tub_flat(); snap_box(hook_near([case_w / 2, 0])); }
 if (kit == "snap_lid")     flip() intersection() { lid(); snap_box(hook_near([case_w / 2, 0])); }
-if (kit == "buttons_tub")  intersection() { tub(); band_box(); }
+if (kit == "buttons_tub")  intersection() { tub_flat(); band_box(); }
 if (kit == "buttons_board") intersection() { kit_board(); band_box(); }
 if (kit == "buttons_lid")  flip() intersection() { lid(); band_box(); }
-if (kit == "usb_tub")      intersection() { tub(); usb_box(); }
+// the deck-insert experiment (render with -D deck_inserts=true): seat 1's insert, face down
+if (kit == "buttons_insert") flip() deck_insert(-1);
+if (kit == "usb_tub")      intersection() { tub_flat(); usb_box(); }
 if (kit == "usb_lid")      flip() intersection() { lid(); usb_box(); }
 if (kit == "frame_lid")    flip() intersection() { lid(); frame_box(); }

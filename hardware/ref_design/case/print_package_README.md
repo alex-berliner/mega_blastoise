@@ -15,6 +15,7 @@ interface on toolhead 1, textured PEI, auto supports. Open it, check the plate, 
 | `3_buttons_heights.3mf` | the same three lid slices at 0.9 and 1.5 mm silicone height | if the 1.2 mm lids don't sit right |
 | `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid) | second |
 | `1_case.3mf` | the tub, the lid, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
+| `5_inserts_experiment.3mf` | **Experiment.** Seat 1's end with its deck as a separate insert (`deck_inserts` in `case.scad`): tub, lid, insert. Use the board coupon from `0_buttons_end`, it is the same part. Supports are off: every part prints flat, the insert face down on the bed | whenever you like |
 
 The lid and the lid slices print face down as exported; let the auto supports go under the button
 decks (they sit 2.34 mm below the screen face). Everything else prints flat as exported.
@@ -22,6 +23,16 @@ decks (they sit 2.34 mm below the screen face). Everything else prints flat as e
 `stl/` has every part as a plain STL, in case a project won't open in your Orca version: drag them
 onto a plate with the same settings. `lid.stl` and `tub.stl` are the real case; `tub_print.stl`
 is the tub without its feet (prints flat without supports).
+
+**The deck-insert experiment (`5_inserts_experiment`).** Printed face down, the lid's decks hang
+2.3 mm above the bed, so they need supports and keep the PETG's peel-away texture. With
+`deck_inserts = true` each end's deck (both clusters and Start/Select) is its own part that prints
+face down on the bed like the screen face, so no part needs supports. The step to the screen
+becomes a rounded edge and a 45 degree slope. To fit it: tilt the insert's outer end under the
+tub end wall's lip, lower it onto the board, then put the lid on. The lid's step walls press down
+on a 45 degree wedge along the insert's inner edges. Check that it sits flat with no rattle, that
+the seam round it looks acceptable, and that the caps press as well as in `0_buttons_end`. The
+default stays `deck_inserts = false` until the experiment wins.
 
 ## What to check, and what to change
 
