@@ -15,20 +15,6 @@ Architecture overview: see [architecture/README.md](./architecture/README.md).
 - [docs/archive/v1/](./docs/archive/v1/): the v1 device (Pico, two OLEDs, button matrix): its design and electronics notes.
   Its board, stripboard and case files were removed from the tree; tag `v1-archive` has them.
 
-## Docker / Podman
-
-Run the interactive battle without installing Rust or any native deps:
-
-```bash
-# Build once
-podman build -t mega-blastoise-test .   # or: docker build ...
-
-# Play
-podman run -i --rm mega-blastoise-test
-```
-
-`-i` is required — the binary reads moves from stdin.
-
 ## Run modes (`mega-blastoise-test`)
 
 The host binary is **interactive only**: stdin battle with the same **typed `BoardEvent` → `BoardEffects`** path as firmware (queue, prompts, combat log).
