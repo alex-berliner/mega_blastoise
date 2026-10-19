@@ -25,7 +25,7 @@ pads, test pads, locating holes and fiducials. J3, the panel's ZIF connector, is
 ## 2. Order and make the rest
 
 The list, with the listings found so far: [bom.md](bom.md), "You". In short: the
-ER-TFT035IPS-6 panel (buydisplay.com), a 403450 cell with a JST PH plug, a 15 mm speaker, two sets each of DS
+ER-TFT035IPS-6 panel (buydisplay.com), a 403450 cell with a Molex PicoBlade (MX1.25) plug, a 15 mm speaker, two sets each of DS
 Lite silicone and caps, tape and foam, and the printed case (`case/tub.stl`,
 `case/lid.stl`).
 
