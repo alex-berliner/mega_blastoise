@@ -207,14 +207,34 @@ All coordinates are Frame S (mm), with the face plate shifted +0.8 in Y. All ent
 |---|---|---|---|
 | Touchscreen window (narrowest opening) | x -34.5 to +34.6, y -28.5 to +25.2; centroid (0.05, -1.58) | 69.1 x 53.7; corner r 0.86 to 1.02 (fits rms 0.02 to 0.06) | 31.8 to 31.9 from each side wall; 8.0 to 8.3 from the front wall; 11.85 from the back wall |
 | Window lip at the opening | z 9.42 to 10.41 own frame (front), 9.25 to 10.29 (side) | lip about 1.0 mm thick | |
-| Raised frame, side ramps | rises from the wing level at x = +/-40 to the top at x = +/-35.2 | about 1.7 mm rise over about 4.8 mm | |
-| Raised frame, front ramp | rises from y = -33.2 to y = -29.0 (both surfaces of the plate rise, so it is a formed step, not a thickening) | about 1.8 mm over about 4.2 mm | |
-| Raised frame, hinge side | top at z = 15.6 for y = +25 to +27, then drops about 3.5 mm to the hinge strip (z about 12.0) by y = +31 | | |
+| Raised frame, sides | crest at x = +34.8 / -35.1, 0.2 to 0.6 mm outside the window edge; tangent to the wing at about x = +41.9 / -41.7 | rise 1.9 to 2.1 mm over a 6.6 to 7.9 mm run, as a concave cove, not a straight ramp (see "Frame to wing profile" below) | |
+| Raised frame, front | crest at y = -28.8 to -29.0; the cove runs about 7.4 mm, which is the whole strip to the front lip (y = -36.0), so the front never flattens. Both surfaces of the plate rise, so it is a formed step, not a thickening | rise about 2.0 mm | |
+| Raised frame, hinge side | flat top at z = 15.55 to 15.64 for y = +25.5 to +27.5, rounded over, then drops 3.6 mm to the hinge strip (z about 12.0) by y = +32.5; steepest (about 60 degrees) near y = +28.75 | | |
 
 - **Derived from the official 0.24 mm dot pitch** ([Nintendo JP](https://www.nintendo.co.jp/ds/spec/)):
   - active area 256 x 0.24 = 61.44 mm by 192 x 0.24 = 46.08 mm;
   - diagonal 76.8 mm, which is 3.02 in.
   - The window is therefore the active area plus (69.1 - 61.44)/2 = 3.8 mm horizontally and (53.7 - 46.08)/2 = 3.8 mm vertically on each side.
+
+#### Frame to wing profile (second pass, 2026-10-19)
+Method: exact plane sections through the stacked face plate (Frame S, z +4.77, y +0.8), top surface sampled every 0.1 mm and median filtered, then a least-squares fit of a circular cove tangent to a flat wing: z = z_wing + R - sqrt(R^2 - u^2), where u is the distance from the tangent point toward the window. Ten side sections (y = -20, -12, -5, +5, +15, both sides) and four front sections (x = -25, -12, +12, +25). All measured (scan) from the [BitBuilt scan](https://bitbuilt.net/forums/posts/65514/).
+
+| | Sides (10 sections) | Front (4 sections) |
+|---|---|---|
+| Rise, crest to wing | 1.89 to 2.12 mm | 1.97 to 2.04 mm |
+| Cove radius R | 11.7 to 12.6 mm (one section 14.6) | 14.0 to 14.6 mm |
+| Run, crest to tangent | 6.6 to 7.1 mm (one section 7.9) | 7.4 to 7.6 mm |
+| Slope at the crest | 32 to 33 degrees | 30 degrees |
+| Fit error (rms) | 0.014 to 0.039 mm | 0.037 to 0.045 mm |
+
+- **Typical profile** (front, x = -12; height above the wing by distance out from the crest): 0.5 mm out 1.80; 1 mm 1.55; 2 mm 1.06; 3 mm 0.68; 4 mm 0.40; 5 mm 0.21; 6 mm 0.10.
+- **Shape:** steepest at the top, flattening smoothly into the wing with no visible foot line. There is no flat bezel top on the sides or front: the cove rises to a narrow rounded crest 0.2 to 0.6 mm outside the window edge, and the 1.0 mm window lip drops from there to the touchscreen. The "frame" is the lip plus the cove.
+- **Corners:** the cove keeps its section around the window's corners. Lines of equal height round the corner with radii that grow with distance from the window: about 2.5 mm at 1.2 mm out from the crest, 3.5 mm at 2.2 mm out, 4.2 mm at 3.6 mm out. That is consistent with the section swept along offsets of the window's 1 mm corner (estimated, from ray sampling of a 0.2 mm height map).
+- **Where it lands:**
+  - On the left, the cove's tangent (x about -41.7) falls right at the D-pad opening's inner edge (x about -42.0).
+  - On the right, the Y hole's inner edge (x about 39.7) sits on the cove's tail, about 0.2 mm above the wing.
+  - Inference: the cove was sized to end where the controls begin.
+- **Supersedes** the first-pass rows above that read the sides as about 1.7 mm over 4.8 mm and the front as 1.8 mm over 4.2 mm. Those measured only the visible slope and missed the long tangent tail.
 
 #### Buttons and other features
 | Feature | Centre, Frame S (mm) | Size (mm) | From edges (mm) |
