@@ -1,0 +1,216 @@
+(footprint "Pogo_Pads_1x06_P2.54mm"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "SWD debug pads: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND; 1.6 mm round pads at 2.54 mm for P75/P100 pogo pins, a clip or soldered wires (no part fitted)")
+	(tags "SWD debug pogo pads")
+	(property "Reference" ""
+		(at 0 -2.4 0)
+		(layer "F.Fab")
+		(uuid "d942dc7e-7158-4685-9ae0-45cb2d935fcf")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Value" ""
+		(at 0 3.6 0)
+		(layer "F.Fab")
+		(uuid "6c6a8815-853d-4398-a076-bbc7fbe8709e")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "e6c38a25-f7f9-432a-86cd-21e9491899ae")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "798df1fa-a79d-4fd8-8cf3-ca327b41f05a")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(attr smd exclude_from_pos_files exclude_from_bom)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -7.3 -1.15)
+		(end -7.3 -0.1)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "dba5ce55-bbd8-4e4c-a8d3-f4cc380b524e")
+	)
+	(fp_line
+		(start -7.3 -1.15)
+		(end -6.249999 -1.15)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "493163d8-c41c-418f-b8d2-ad5ef0ecd22d")
+	)
+	(fp_line
+		(start -7.399999 -1.25)
+		(end 7.399999 -1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "56b1bee4-27cc-42b5-ba41-34203e8b71c5")
+	)
+	(fp_line
+		(start -7.399999 2.6)
+		(end -7.399999 -1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "e71f7dca-30bb-4581-a00b-9fa87e61e38f")
+	)
+	(fp_line
+		(start 7.399999 -1.25)
+		(end 7.399999 2.6)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "401cfc57-493e-4a40-a894-a022724922e3")
+	)
+	(fp_line
+		(start 7.399999 2.6)
+		(end -7.399999 2.6)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "f94803f3-1a54-4861-af63-bfea0ab85dae")
+	)
+	(fp_text user "3V3"
+		(at -6.35 1.9 0)
+		(layer "F.SilkS")
+		(uuid "7c5fb54b-ad42-4e39-adcd-98312f83e05a")
+		(effects
+			(font
+				(size 0.7 0.7)
+				(thickness 0.105)
+			)
+		)
+	)
+	(fp_text user "CLK"
+		(at -3.809999 1.9 0)
+		(layer "F.SilkS")
+		(uuid "fed2b727-76b2-44f4-b953-4a23b71c115f")
+		(effects
+			(font
+				(size 0.7 0.7)
+				(thickness 0.105)
+			)
+		)
+	)
+	(fp_text user "DIO"
+		(at -1.269999 1.9 0)
+		(layer "F.SilkS")
+		(uuid "0428a163-6850-4c2a-92a0-b4241308157a")
+		(effects
+			(font
+				(size 0.7 0.7)
+				(thickness 0.105)
+			)
+		)
+	)
+	(fp_text user "RUN"
+		(at 1.27 1.9 0)
+		(layer "F.SilkS")
+		(uuid "d0a0703a-2157-475d-b240-4de396a644cb")
+		(effects
+			(font
+				(size 0.7 0.7)
+				(thickness 0.105)
+			)
+		)
+	)
+	(fp_text user "BOOT"
+		(at 3.81 1.9 0)
+		(layer "F.SilkS")
+		(uuid "950d10bb-4da7-43a2-8b82-d13d6cb5e9bf")
+		(effects
+			(font
+				(size 0.7 0.7)
+				(thickness 0.105)
+			)
+		)
+	)
+	(fp_text user "GND"
+		(at 6.35 1.9 0)
+		(layer "F.SilkS")
+		(uuid "28f08c81-78cb-4f83-ab2f-f0ba0afd1ee2")
+		(effects
+			(font
+				(size 0.7 0.7)
+				(thickness 0.105)
+			)
+		)
+	)
+	(pad "1" smd rect
+		(at -6.35 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(thermal_bridge_angle 45)
+		(uuid "1c14b2e6-44d6-4ff2-a8fe-7e2b15ba1dd3")
+	)
+	(pad "2" smd circle
+		(at -3.809999 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(uuid "7facae40-3cd3-4519-b22d-e7fc391e9a2e")
+	)
+	(pad "3" smd circle
+		(at -1.269999 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(uuid "94d55719-8a37-4392-a4f3-765d5dd870a7")
+	)
+	(pad "4" smd circle
+		(at 1.27 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(uuid "4b3ac85c-5706-4096-bcbe-c207fdd0501a")
+	)
+	(pad "5" smd circle
+		(at 3.81 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(uuid "c8574dfc-0e37-486a-bbd2-0cbe8ef02ebd")
+	)
+	(pad "6" smd circle
+		(at 6.35 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(uuid "6639733e-031f-4142-bcf9-0f80634baafe")
+	)
+	(embedded_fonts no)
+)

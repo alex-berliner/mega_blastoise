@@ -184,3 +184,15 @@ put("R49", 91.35, 79.25, 0)
 put("R50", 92.60, 76.80, 0)
 put("R51", 89.10, 80.20, 0)
 put("C47", 131.50, 75.70, 90)                 # PWR_EN's slow-rise cap, beside R15
+
+# 2026-10-19, debug readiness (Alex's review): SWD pads, probe pads and isolation jumpers
+put("J7", 76.0, 95.0, 90, "B")              # SWD pogo pads on the back, behind J5
+put("TP9", 92.78, 84.8, 0, "B")             # +1V1: on the core's own +1V1 via (the rail never leaves the core)
+put("TP10", 112.25, 102.15, 0)              # BL_REF, by U6
+for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD SCK, MOSI, CS, DC on the back, under J3's lead-in
+    put(ref, 92.2 + 2.54 * i, 110.0, 0, "B")
+put("TP15", 121.0, 128.0, 0)                # GND for a scope clip, by the charger
+put("TP16", 88.0, 62.0, 0)                  # GND for a scope clip, by the amplifier
+put("JP3", 105.4, 58.6, 0)                  # VSYS -> amplifier, by C34
+put("JP4", 93.75, 110.8, 0)                 # 3V3 -> panel, by C29/C30
+put("JP5", 108.0, 152.0, 0)                 # cell -> VBAT, beside J2

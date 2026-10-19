@@ -18,9 +18,9 @@
    "symbol_name": "Pin_1",
    "footprint_pad": "pad 1 at x=-1.0 (rear row y=-2.85); body opening faces +y, so pin 1 is on the left looking into the mouth: matches JST front view",
    "ok": true,
-   "issue": "Design assumes pin 1 = VBAT (+). JST PH has no standard battery polarity: vendors wire red to either pin. Board relies on J2 silk \"+\" and the pack check in docs/assembly.md / bringup.md step 0 (reversed cell destroys TP4056). Open: confirm the chosen 403450 pack's plug has red on pin 1.",
+   "issue": "Design assumes pin 1 = VBAT (+). JST PH has no standard battery polarity: vendors wire red to either pin. Board relies on J2 silk \"+\" and the pack check in docs/assembly.md / bringup.md step 0 (reversed cell destroys TP4056). Open: confirm the chosen 403450 pack's plug has red on pin 1. 2026-10-19: now CELL_P, the cell's terminal, joined to VBAT by cut jumper JP5 (copper bridge, closed as built): same net as built.",
    "nets": {
-    "J2": "VBAT"
+    "J2": "CELL_P"
    }
   },
   {

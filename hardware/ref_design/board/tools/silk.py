@@ -25,7 +25,11 @@ SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-32
          "Fiducial", "MountingHole", "DSL_button", "AOTA", "ABM8")
 TEXT_H = 0.8        # mm; JLC's minimum legible silk is about 0.8 mm tall, 0.15 mm line
 # parts whose label below says more than their reference would
-LABELLED = {"J2", "J3", "J4", "J5", "J6", "SW18", "SW19", "TP1", "TP2", "TP3", "TP4", "TP5"}
+LABELLED = {"J2", "J3", "J4", "J5", "J6", "J7", "SW18", "SW19", "TP1", "TP2", "TP3", "TP4", "TP5",
+            "TP9", "TP10", "TP11", "TP12", "TP13", "TP14", "TP15", "TP16"}
+# the probe pads added for bring-up (2026-10-19): the name printed beside each
+PROBE_NAMES = {"TP9": "1V1", "TP10": "BLREF", "TP11": "SCK", "TP12": "MOSI", "TP13": "CS", "TP14": "DC",
+               "TP15": "GND", "TP16": "GND"}
 
 
 def mm(v):
@@ -127,6 +131,13 @@ def main():
         tp = board.FindFootprintByReference(f"TP{i + 1}")
         x, y = pcbnew.ToMM(tp.GetPosition().x), pcbnew.ToMM(tp.GetPosition().y)
         text(name, x, y + 1.6, back)
+    for ref, name in PROBE_NAMES.items():
+        tp = board.FindFootprintByReference(ref)
+        layer = back if tp.IsFlipped() else pcbnew.F_SilkS
+        x, y = pcbnew.ToMM(tp.GetPosition().x), pcbnew.ToMM(tp.GetPosition().y)
+        text(name, x, y + 1.5 if name not in ("1V1",) else y - 1.5, layer)
+    j7 = board.FindFootprintByReference("J7")
+    text("SWD PADS", pcbnew.ToMM(j7.GetPosition().x) - 3.4, pcbnew.ToMM(j7.GetPosition().y), back)
     j4 = board.FindFootprintByReference("J4")
     text("SPEAKER", pcbnew.ToMM(j4.GetPosition().x), pcbnew.ToMM(j4.GetPosition().y) + 2.7, back)
     # front: connectors and buttons people solder to or press during bring-up

@@ -129,9 +129,9 @@
    "quote": "\u7535\u6e90\u7535\u538b VDD - 6 V (abs max); \u5de5\u4f5c\u7535\u538b VDD 1.6 ~ 6 V",
    "symbol_name": "VDD",
    "ok": true,
-   "issue": "VSYS up to ~5.7 V hot-plug transient: inside 6 V abs max and the 1.6-6 V operating range (LCSC listing says 2.5-5.5 V; the datasheet table says 6 V).",
+   "issue": "VSYS up to ~5.7 V hot-plug transient: inside 6 V abs max and the 1.6-6 V operating range (LCSC listing says 2.5-5.5 V; the datasheet table says 6 V). 2026-10-19: now AMP_VDD, which is VSYS through cut jumper JP3 (copper bridge, closed as built): same supply and limits.",
    "nets": {
-    "U7": "VSYS"
+    "U7": "AMP_VDD"
    }
   },
   {

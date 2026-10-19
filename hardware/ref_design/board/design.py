@@ -219,7 +219,10 @@ part("D7", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS"
      "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
 part("J2", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "S2B-PH-SM4-TB",
      "battler:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal",
-     {"1": "VBAT", "2": "GND", "MP": None}, "C295747", "S2B-PH-SM4-TB(LF)(SN)", "JST")
+     {"1": "CELL_P", "2": "GND", "MP": None}, "C295747", "S2B-PH-SM4-TB(LF)(SN)", "JST")
+# JP5: cut it and bridge it with an ammeter to read everything the cell gives or takes (sleep
+# current, charge current)
+JP("JP5", S, "CELL_P", "VBAT")
 part("#FLG01", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VBUS"}, bom=False)
 part("#FLG02", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "GND"}, bom=False)
 part("#FLG03", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VSYS"}, bom=False)  # fed through D5 or Q2
@@ -263,6 +266,13 @@ for i, net in enumerate(["VBUS", "VSYS", "VBAT", "+3V3", "GND"]):
 # bring-up test pads on the top side: the power latch, the load-sharing switch, the amplifier
 for i, net in enumerate(["PWR_EN", "LS_GATE", "AMP_SHDN"]):
     part(f"TP{i + 6}", S, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
+# 2026-10-19 (Alex's debug-readiness review): the core's 1.1 V rail, the backlight's set point and the
+# panel's SPI lines get probe pads too (the panel is the part most likely to need a logic analyser)
+for i, (net, sheet) in enumerate([("+1V1", "mcu_power.kicad_sch"), ("BL_REF", "display.kicad_sch"),
+                                  ("LCD_SCK", "display.kicad_sch"), ("LCD_MOSI", "display.kicad_sch"),
+                                  ("LCD_CS", "display.kicad_sch"), ("LCD_DC", "display.kicad_sch"),
+                                  ("GND", S), ("GND", S)]):    # two ground pads on top for scope clips
+    part(f"TP{i + 9}", sheet, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
 # hand-solderable spare filter capacitors, fitted only if bring-up shows noise on these lines
 DNP("C41", "usb_charger.kicad_sch", "C", "CHG_TEMP", "GND")
 DNP("C42", "usb_charger.kicad_sch", "C", "CC1", "GND")
@@ -357,6 +367,12 @@ part("J6", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_Mounting
      {"1": "UART_RX", "2": "GND", "3": "UART_TX", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
 # J6 follows Raspberry Pi's 3-pin debug connector spec (RP-003139-SP), named from the board's
 # side: pin 1 is the board's RX (the probe's TX arrives there), pin 3 the board's TX
+# J7: the same SWD in a row of bare pads on the board's back at 2.54 mm, for pogo pins in a jig,
+# a clip, or soldered wires: flash and debug without J5's cable or the USB port. Power through
+# the 3V3 pad only with the cell out and nothing on USB. BOOTSEL to GND at reset enters the USB
+# boot loader; RUN to GND resets
+part("J7", "debug.kicad_sch", "Connector_Generic:Conn_01x06", "DEBUG PADS", "battler:Pogo_Pads_1x06_P2.54mm",
+     {"1": "+3V3", "2": "SWCLK", "3": "SWDIO", "4": "RUN", "5": "BOOTSEL", "6": "GND"}, bom=False)
 part("#FLG05", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+1V1"}, bom=False)
 part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=False)
 
@@ -367,11 +383,11 @@ part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=Fals
 # =================================================================================
 S = "display.kicad_sch"
 PANEL = {1: "LED_A", 2: "LED_K1", 3: "LED_K2",                  # panel pin -> net (datasheet 4.1)
-         7: "+3V3", 8: "+3V3", 9: "+3V3",                          # IM0-2 = 111: 4-wire 8-bit SPI
+         7: "LCD_3V3", 8: "LCD_3V3", 9: "LCD_3V3",                 # IM0-2 = 111: 4-wire 8-bit SPI
          10: "LCD_RST", 33: "LCD_MISO", 34: "LCD_MOSI",
-         35: "+3V3",                                               # RD: parallel read strobe, unused: high
+         35: "LCD_3V3",                                            # RD: parallel read strobe, unused: high
          36: "LCD_SCK", 37: "LCD_DC", 38: "LCD_CS", 39: "LCD_TE",
-         40: "+3V3", 41: "+3V3", 42: "+3V3",                       # VDDI x2, VCI
+         40: "LCD_3V3", 41: "LCD_3V3", 42: "LCD_3V3",              # VDDI x2, VCI
          43: "GND", 48: "GND", 49: "GND", 50: "GND"}
 PANEL.update({p: "GND" for p in range(11, 33)})                   # VSYNC, HSYNC, DOTCLK, DE, DB17-0: low
 PANEL.update({p: None for p in (4, 5, 6, 44, 45, 46, 47)})        # NC, and the touch pins (no touch layer)
@@ -384,8 +400,12 @@ part("J3", S, "Connector_Generic_MountingPin:Conn_01x50_MountingPin", "FH12-50S-
      "C202116", "FH12-50S-0.5SH(55)", "HRS(Hirose)")
 R("R28", S, "33", "LCD_SCK_MCU", "LCD_SCK")       # source termination, fitted next to the MCU
 R("R29", S, "33", "LCD_MOSI_MCU", "LCD_MOSI")
-C("C29", S, "1u", "+3V3")
-C("C30", S, "100n", "+3V3")
+C("C29", S, "1u", "LCD_3V3")
+C("C30", S, "100n", "LCD_3V3")
+# JP4: cut it to run the board with the panel unpowered, or to read the panel's logic current.
+# With it open, firmware must hold the SPI pins low (the panel's inputs would feed it otherwise)
+JP("JP4", S, "+3V3", "LCD_3V3")
+part("#FLG08", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "LCD_3V3"}, bom=False)   # fed through JP4
 # Backlight: a current sink per cathode pin. U6 (MCP6002) holds each 2.2 ohm sense resistor at
 # BL_REF: 0.124 V at 100% duty = 56 mA a pin, 113 mA for the six LEDs (the panel's maximum is
 # 120 mA). BL_REF is GPIO44's PWM (BL_PWM) through R60/R61 and C50 (tau 3.75 ms: 0.3% ripple at
@@ -419,7 +439,7 @@ JP("JP2", S, "VSYS", "LED_A")                      # cut it and bridge with an a
 S = "audio.kicad_sch"
 part("U7", S, "battler:FM8002A", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
      {"3": "AMP_BYP", "4": "AMP_INN", "2": "AMP_BYP", "1": "AMP_SHDN",
-      "5": "SPK_P", "8": "SPK_N", "6": "VSYS", "7": "GND"},
+      "5": "SPK_P", "8": "SPK_N", "6": "AMP_VDD", "7": "GND"},
      "C94625", "FM8002A", "Shenzhen Fuman Elec")
 # two RC stages (1k, 4.7 nF) take out the PWM carrier: with the PWM at 8 bits (586 kHz) it
 # comes out 49 dB down and the audio band is -3 dB at about 14 kHz loaded. 10-bit PWM
@@ -432,12 +452,15 @@ C("C39", S, "220n", "AUDIO_F2", "AMP_CI")       # Ci: blocks the PWM's DC; 36 Hz
 R("R34", S, "20k", "AMP_CI", "AMP_INN")          # Ri
 R("R35", S, "20k", "SPK_P", "AMP_INN")           # Rf: gain 2 x Rf / Ri = 2
 C("C40", S, "1u", "AMP_BYP")                     # half-supply reference, as the datasheet's circuit
-R("R36", S, "100k", "AMP_SHDN", "VSYS")          # SHUTDOWN high: off unless the MCU turns it on
+R("R36", S, "100k", "AMP_SHDN", "AMP_VDD")       # SHUTDOWN high: off unless the MCU turns it on
 part("Q3", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "AMP_EN", "2": "GND", "3": "AMP_SHDN"}, "C8545", "2N7002", "Changjiang")
 R("R37", S, "100k", "AMP_EN", "GND")             # off while the MCU boots
-C("C34", S, "10u", "VSYS")
-C("C35", S, "100n", "VSYS")
+C("C34", S, "10u", "AMP_VDD")
+C("C35", S, "100n", "AMP_VDD")
+# JP3: cut it to take the amplifier off VSYS (a noisy or shorted amplifier), or to read its current
+JP("JP3", S, "VSYS", "AMP_VDD")
+part("#FLG09", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "AMP_VDD"}, bom=False)   # fed through JP3
 part("J4", S, "Connector_Generic:Conn_01x02", "SPEAKER", "battler:Speaker_Wire_Pads_P4.0mm",
      {"1": "SPK_P", "2": "SPK_N"}, bom=False)
 

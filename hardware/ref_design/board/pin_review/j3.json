@@ -175,9 +175,9 @@
    "mates_panel_pin": 42,
    "symbol_name": "Pin_9",
    "ok": true,
-   "issue": "",
+   "issue": " 2026-10-19: now LCD_3V3, which is +3V3 through cut jumper JP4 (copper bridge, closed as built): same supply. With JP4 cut, firmware must hold the SPI lines low.",
    "nets": {
-    "J3": "+3V3"
+    "J3": "LCD_3V3"
    }
   },
   {
@@ -190,9 +190,9 @@
    "mates_panel_pin": 41,
    "symbol_name": "Pin_10",
    "ok": true,
-   "issue": "",
+   "issue": " 2026-10-19: now LCD_3V3, which is +3V3 through cut jumper JP4 (copper bridge, closed as built): same supply. With JP4 cut, firmware must hold the SPI lines low.",
    "nets": {
-    "J3": "+3V3"
+    "J3": "LCD_3V3"
    }
   },
   {
@@ -205,9 +205,9 @@
    "mates_panel_pin": 40,
    "symbol_name": "Pin_11",
    "ok": true,
-   "issue": "",
+   "issue": " 2026-10-19: now LCD_3V3, which is +3V3 through cut jumper JP4 (copper bridge, closed as built): same supply. With JP4 cut, firmware must hold the SPI lines low.",
    "nets": {
-    "J3": "+3V3"
+    "J3": "LCD_3V3"
    }
   },
   {
@@ -280,9 +280,9 @@
    "mates_panel_pin": 35,
    "symbol_name": "Pin_16",
    "ok": true,
-   "issue": "",
+   "issue": " 2026-10-19: now LCD_3V3, which is +3V3 through cut jumper JP4 (copper bridge, closed as built): same supply. With JP4 cut, firmware must hold the SPI lines low.",
    "nets": {
-    "J3": "+3V3"
+    "J3": "LCD_3V3"
    }
   },
   {
@@ -670,9 +670,9 @@
    "mates_panel_pin": 9,
    "symbol_name": "Pin_42",
    "ok": true,
-   "issue": "",
+   "issue": " 2026-10-19: now LCD_3V3, which is +3V3 through cut jumper JP4 (copper bridge, closed as built): same supply. With JP4 cut, firmware must hold the SPI lines low.",
    "nets": {
-    "J3": "+3V3"
+    "J3": "LCD_3V3"
    }
   },
   {
@@ -685,9 +685,9 @@
    "mates_panel_pin": 8,
    "symbol_name": "Pin_43",
    "ok": true,
-   "issue": "",
+   "issue": " 2026-10-19: now LCD_3V3, which is +3V3 through cut jumper JP4 (copper bridge, closed as built): same supply. With JP4 cut, firmware must hold the SPI lines low.",
    "nets": {
-    "J3": "+3V3"
+    "J3": "LCD_3V3"
    }
   },
   {
@@ -700,9 +700,9 @@
    "mates_panel_pin": 7,
    "symbol_name": "Pin_44",
    "ok": true,
-   "issue": "",
+   "issue": " 2026-10-19: now LCD_3V3, which is +3V3 through cut jumper JP4 (copper bridge, closed as built): same supply. With JP4 cut, firmware must hold the SPI lines low.",
    "nets": {
-    "J3": "+3V3"
+    "J3": "LCD_3V3"
    }
   },
   {

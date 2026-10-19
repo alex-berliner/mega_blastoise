@@ -66,7 +66,7 @@ def refs():
     out = []
     for fp in b.GetFootprints():
         name = str(fp.GetFPID().GetLibItemName())
-        if any(s in name for s in ("MountingHole", "Fiducial", "TestPoint", "DSL_button", "Speaker_Wire", "_Solder")):
+        if any(s in name for s in ("MountingHole", "Fiducial", "TestPoint", "DSL_button", "Speaker_Wire", "_Solder", "Pogo_Pads")):
             continue                                  # flat copper, nothing to collide
         cy = fp.GetCourtyard(pcbnew.B_CrtYd if fp.IsFlipped() else pcbnew.F_CrtYd).BBox()
         court = (pcbnew.ToMM(cy.GetX()), pcbnew.ToMM(cy.GetY()), pcbnew.ToMM(cy.GetRight()), pcbnew.ToMM(cy.GetBottom()))
