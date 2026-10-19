@@ -355,7 +355,7 @@ window.addEventListener('blur', () => {
     if (p) {
       const mm = panelSizeMm(p);
       const note = p.fw
-        ? 'the firmware target (architecture/09-single-screen.md) — what you see is the panel, true size'
+        ? 'the firmware target (docs/architecture/09-single-screen.md) — what you see is the panel, true size'
         : p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h
           ? 'native grid'
           : `NOT the render grid — 320x480 stretched onto ${p.res[0]}x${p.res[1]}`;

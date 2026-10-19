@@ -7,14 +7,14 @@ A plain `cargo build` in the crate builds it (default features `rp2350`,
 
 ## Startup Sequence
 
-[`main.rs`](../crates/mega_blastoise_fw/src/main.rs) does the following:
+[`main.rs`](../../crates/mega_blastoise_fw/src/main.rs) does the following:
 
 1. Initialize the RP2350 peripherals via `embassy_rp::init`.
 2. Initialize the heap (`mem_profile::init_heap`, 384 KB: one 320x480 frame in flight).
 3. Configure the RTT/defmt channel.
 4. Spawn the ST7796 display task, the button task, the sprite-bob pulse task,
    the USB CDC console and the battery task.
-5. Hand over to [`board_v2::run`](../crates/mega_blastoise_fw/src/board_v2.rs),
+5. Hand over to [`board_v2::run`](../../crates/mega_blastoise_fw/src/board_v2.rs),
    which runs core's `DeviceRunner` forever.
 
 ## Long-Lived Tasks
@@ -28,13 +28,13 @@ A plain `cargo build` in the crate builds it (default features `rp2350`,
 
 ## Firmware Adapters
 
-- [`board_v2.rs`](../crates/mega_blastoise_fw/src/board_v2.rs)
+- [`board_v2.rs`](../../crates/mega_blastoise_fw/src/board_v2.rs)
   - implements core's `DevicePort`: clock, timers, console lines, frame
     presentation, entropy and battery level.
   - everything the device does (lobby, ready sequence, battles, narration) is
     `mega_blastoise_core::device_runner`, shared with the web build.
 
 The v1 firmware (two OLEDs, LED strips, buzzer, button matrix) is described in
-[docs/archive/v1/firmware/](../docs/archive/v1/firmware/INTERACTIONS.md).
+[docs/archive/v1/firmware/](../../docs/archive/v1/firmware/INTERACTIONS.md).
 
 Continue with [Host Runtime and Test Harness](./04-host-runtime.md).

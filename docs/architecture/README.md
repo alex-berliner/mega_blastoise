@@ -1,6 +1,6 @@
 # Architecture Docs
 
-This directory contains the architecture documentation for the Mega Blastoise workspace. For build instructions see [README.md](../README.md); for software internals see [TECHNICAL.md](../TECHNICAL.md).
+This directory contains the architecture documentation for the Mega Blastoise workspace. For build instructions see [README.md](../../README.md); for software internals see [TECHNICAL.md](../TECHNICAL.md).
 
 ## Reading Order
 
@@ -17,6 +17,6 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 
 ## Quick Links
 
-- Core crate: [`mega_blastoise_core`](../crates/mega_blastoise_core/)
-- Firmware crate: [`mega_blastoise_fw`](../crates/mega_blastoise_fw/)
-- Host/test crate: [`mega_blastoise_test`](../crates/mega_blastoise_test/)
+- Core crate: [`mega_blastoise_core`](../../crates/mega_blastoise_core/)
+- Firmware crate: [`mega_blastoise_fw`](../../crates/mega_blastoise_fw/)
+- Host/test crate: [`mega_blastoise_test`](../../crates/mega_blastoise_test/)

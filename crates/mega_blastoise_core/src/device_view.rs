@@ -4,7 +4,7 @@
 //! There is exactly one arrangement. The console sits flat on a table between
 //! two players facing each other, and it is never picked up or turned, so
 //! every screen — menus included — is drawn as two head-to-head halves. See
-//! `architecture/09-single-screen.md`.
+//! `docs/architecture/09-single-screen.md`.
 
 extern crate alloc;
 

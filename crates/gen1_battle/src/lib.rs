@@ -6,7 +6,7 @@
 //! by `mega_blastoise_core`. Memory target: ~800 B of RAM per 6v6 battle, all
 //! data tables (species/moves/type chart) flash-resident.
 //!
-//! See `GEN1_SPEC.md` at the workspace root for mechanics details.
+//! See `SPEC.md` in this crate for mechanics details.
 
 extern crate alloc;
 

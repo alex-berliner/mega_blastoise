@@ -4,19 +4,19 @@ This page describes shared logic inside `mega_blastoise_core`.
 
 ## Primary Modules
 
-- [`battle_runner.rs`](../crates/mega_blastoise_core/src/battle_runner.rs)
+- [`runner/`](../../crates/mega_blastoise_core/src/runner/mod.rs) (one runner per engine: `gen1.rs`, `gen3.rs`)
   - `run_battle` is the main orchestration loop.
   - setup helpers: `demo_battle_options`, `demo_engine_opts`, `make_player`.
-- [`board_event.rs`](../crates/mega_blastoise_core/src/board_event.rs)
+- [`board_event.rs`](../../crates/mega_blastoise_core/src/board_event.rs)
   - parses battler log rows into `BoardEvent`.
   - maps battler `Request` into prompt events.
-- [`battle_effects.rs`](../crates/mega_blastoise_core/src/battle_effects.rs)
+- [`battle_effects.rs`](../../crates/mega_blastoise_core/src/battle_effects.rs)
   - defines `BoardEffects`.
   - provides `BoardEventQueue` and split/private/public handling.
-- [`battle_input.rs`](../crates/mega_blastoise_core/src/battle_input.rs)
+- [`battle_input.rs`](../../crates/mega_blastoise_core/src/battle_input.rs)
   - defines async `BattleInput::read_choice`.
   - formats move/switch command strings.
-- [`data_store.rs`](../crates/mega_blastoise_core/src/data_store.rs)
+- [`data_store.rs`](../../crates/mega_blastoise_core/src/data_store.rs)
   - `FlashDataStore` implementation for battler data lookups.
 
 ## `run_battle` Loop Behavior

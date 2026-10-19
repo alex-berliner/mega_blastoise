@@ -9,14 +9,14 @@ Layout:
   `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (firmware), `mega_blastoise_test` (PC),
   and `mega_blastoise_web` (its own wasm workspace, the browser build).
 - `firmware/bringup/`: standalone bring-up tools (`rp2350_blink`, `esp32_reset`).
-- `hardware/`: the boards and cases. `docs/`, `architecture/`: notes. `scripts/`: dev scripts.
+- `hardware/`: the boards and cases ([index](./hardware/README.md)). `docs/`: notes, including `docs/architecture/`. `scripts/`: dev scripts.
 
-Architecture overview: see [architecture/README.md](./architecture/README.md).
+Architecture overview: see [docs/architecture/README.md](./docs/architecture/README.md).
 
 ## Documentation
 
-- [TECHNICAL.md](./TECHNICAL.md): software internals, crate layout, interfaces, data flow
-- [architecture/](./architecture/README.md): deep-dive architecture docs
+- [docs/TECHNICAL.md](./docs/TECHNICAL.md): software internals, crate layout, interfaces, data flow
+- [docs/architecture/](./docs/architecture/README.md): deep-dive architecture docs
 - [hardware/ref_design/](./hardware/ref_design/README.md): the reference design (board, case, docs)
 - [docs/hardware/openscad-methodology.md](./docs/hardware/openscad-methodology.md): how the OpenSCAD cases are built and checked
 - [docs/archive/v1/](./docs/archive/v1/): the v1 device (Pico, two OLEDs, button matrix): its design and electronics notes.
