@@ -226,13 +226,15 @@ swd_pos = [-(board_w / 2 - 3.5), -2.0];  uart_pos = [-(board_w / 2 - 3.5), -12.0
 
 // J2 sits under the spine between seat 1's clusters, its mouth towards the panel. The cell's
 // plug has to pass up through the board (the cell lies under it), so the hole is the plug's
-// size, not the wires': a JST PHR-2 is 6.0 x 4.5 mm end on. The hole lies right in front of
-// J2's mouth, so the plug comes up, turns and goes in, and its wires drop back through the
-// hole from the plug's tail. As far out as seat 1's centre boss (moved out pin_out) allows
-batt_conn = [0, -(bay_l / 2 + 10.8)];                  // J2 (its footprint's origin is 0.6 off this)
-j2_front = 4.545;  j2_back = 5.745;                     // J2's courtyard, in front of and behind batt_conn
-j2_h = 5.5;                                             // S2B-PH-SM4-TB, from its 3D model
-plug_xs = [6.0, 4.5];                                   // PHR-2 housing end on: across the pins, through
+// size, not the wires'. The hole lies right in front of J2's mouth, so the plug comes up, turns
+// and goes in, and its wires drop back through the hole from the plug's tail.
+// J2 is a Molex PicoBlade 53261-0271, 3.4 mm tall (2026-10-19; the 5.5 mm JST PH needed a pad on
+// the lid once the screen face dropped, and the pad lifted the whole face off the print bed)
+batt_conn = [0, -(bay_l / 2 + 8.2)];                   // J2's footprint origin
+j2_front = 3.145;  j2_back = 3.745;                     // J2's courtyard, in front of and behind batt_conn
+j2_h = 3.4;                                             // 53261-0271, from its 3D model
+plug_xs = [4.3, 3.3];                                   // ESTIMATE: PicoBlade 51021-0200 housing end on: across
+                                                        // the pins, through
 hole_fit = 0.6;                                         // each side, round the plug (the hole is drilled: exact)
 slot = [[-(plug_xs[0] / 2 + hole_fit), batt_conn[1] + j2_front + 0.2 + plug_xs[1] + 2 * hole_fit],
         [plug_xs[0] / 2 + hole_fit, batt_conn[1] + j2_front + 0.2]];    // hole corners (x0,y0)-(x1,y1)
@@ -370,7 +372,7 @@ if (part == "layout") {
   for (s = pins) color("white") at(s, 0.7) linear_extrude(0.05) ring(0.4) circle(d = boss_d);
   for (h = hooks) color("#56ccf2") at(h, 0.75) rotate(h[2]) translate([-snap_t_root / 2, 0]) linear_extrude(0.05) square([snap_t_root, h[3]], center = true);
   color("#f08a3c") at([usb_front - 3.65, usb_y], 0.8) linear_extrude(0.05) square([7.3, usb_w], center = true);
-  color("#f08a3c") at(batt_conn, 0.8) linear_extrude(0.05) square([7.9, 7.6], center = true);
+  color("#f08a3c") at(batt_conn + [0, (j2_front - j2_back) / 2], 0.8) linear_extrude(0.05) square([9.55, j2_front + j2_back], center = true);
   for (p = pin_pos) color("red") at(p, 0.9) linear_extrude(0.05) circle(d = 1.2);
 }
 
@@ -557,7 +559,7 @@ module lid_body() difference() {
   // the S-curve's upper part, cut out of the screen block in layers
   for (k = [0:ramp_layers - 1]) if (ramp_t(k) > 0)
     translate([0, 0, deck_face + (case_h - deck_face) * k / ramp_layers]) linear_extrude(case_h)
-      difference() { offset(delta = ramp_t(k)) deck2d(); j2_keep2d(); }
+      difference() { offset(delta = ramp_t(k)) deck2d(); if (j2_bump > 0) j2_keep2d(); }
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_lid - 1]) linear_extrude(lid_t + 2) window();
   // buttons
@@ -571,7 +573,7 @@ module lid_body() difference() {
   for (s = pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
   // pinholes, battery connector pocket
   for (p = pin_pos) at(p, 0) cylinder(d = 1.2, h = case_h + 1);
-  at(batt_conn, z_lid - 1) linear_extrude(j2_top - z_lid + 1) square(pocket, center = true);
+  if (j2_top > z_lid) at(batt_conn, z_lid - 1) linear_extrude(j2_top - z_lid + 1) square(pocket, center = true);
 }
 
 // one snap hook in the frame of its wall: the wall's inner face at x = 0, the case inside at -x

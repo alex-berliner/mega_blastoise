@@ -1,35 +1,35 @@
 {
  "ref": "J2",
- "mpn": "S2B-PH-SM4-TB(LF)(SN) (JST, C295747)",
+ "mpn": "532610271 (Molex PicoBlade 53261-0271, C177225)",
  "datasheet": [
-  "downloaded as jst_ePH.pdf",
-  "downloaded as C295747_S2B-PH-SM4-TB.pdf"
+  "https://media.onlinecomponents.com/productfiles/mf-mol/mol-532610271-38993534.pdf",
+  "KiCad 10 Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal (generated from Molex's drawing)"
  ],
- "footprint": "battler:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal",
+ "footprint": "Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal",
  "refs": [
   "J2"
  ],
  "pins": [
   {
    "pin": "1",
-   "ds_name": "Circuit No.1 (JST defines no function)",
-   "cite": "JST PH catalogue ePH.pdf p.4, Header (SMT type), Side entry type drawing (S2B-PH-SM4-TB row in table)",
-   "quote": "Side entry front view: \"Mark of No. 1 circuit\" at the left end looking into the mating face; table row \"2 S2B-PH-SM4-TB 2.0 7.9 1,000\"",
+   "ds_name": "Circuit 1 (Molex defines no function)",
+   "cite": "Molex product record for 532610271 (OnlineComponents copy of molex.com, part status Active; sales drawing 532610271_sd.pdf not retrievable 2026-10-19); KiCad 10 Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal (generated from Molex's drawing)",
+   "quote": "\"1.25mm Pitch, PicoBlade PCB Header, Single Row, Right-Angle, Surface Mount ... 2 Circuits\"; \"Current - Maximum per Contact 1.0A\"",
    "symbol_name": "Pin_1",
-   "footprint_pad": "pad 1 at x=-1.0 (rear row y=-2.85); body opening faces +y, so pin 1 is on the left looking into the mouth: matches JST front view",
+   "footprint_pad": "pad 1 at x=-0.625, y=-2.4 (rear row); MP tabs at x=+/-3.175, y=+0.5; mouth faces +y",
    "ok": true,
-   "issue": "Design assumes pin 1 = VBAT (+). JST PH has no standard battery polarity: vendors wire red to either pin. Board relies on J2 silk \"+\" and the pack check in docs/assembly.md / bringup.md step 0 (reversed cell destroys TP4056). Open: confirm the chosen 403450 pack's plug has red on pin 1. 2026-10-19: now CELL_P, the cell's terminal, joined to VBAT by cut jumper JP5 (copper bridge, closed as built): same net as built.",
+   "issue": "Design assumes pin 1 = cell + (CELL_P, to VBAT through JP5). PicoBlade has no standard battery polarity: vendors wire red to either pin. Board relies on J2 silk \"+\" and the pack check in docs/assembly.md / bringup.md step 0 (a reversed cell destroys the TP4056). 1.0 A per contact against at most about 0.4 A (charge 0.33-0.36 A, play less).",
    "nets": {
     "J2": "CELL_P"
    }
   },
   {
    "pin": "2",
-   "ds_name": "Circuit No.2",
-   "cite": "JST PH catalogue ePH.pdf p.4, Header (SMT type), Side entry type drawing (S2B-PH-SM4-TB row in table)",
-   "quote": "2.0 mm pitch, 2 circuits",
+   "ds_name": "Circuit 2",
+   "cite": "Molex product record for 532610271 (OnlineComponents copy of molex.com, part status Active; sales drawing 532610271_sd.pdf not retrievable 2026-10-19); KiCad 10 Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal (generated from Molex's drawing)",
+   "quote": "\"2 Circuits\"",
    "symbol_name": "Pin_2",
-   "footprint_pad": "pad 2 at x=+1.0",
+   "footprint_pad": "pad 2 at x=+0.625",
    "ok": true,
    "issue": "pin 2 = GND (cell -)",
    "nets": {
@@ -38,11 +38,11 @@
   },
   {
    "pin": "MP",
-   "ds_name": "Reinforcement (solder tabs), copper alloy tin-plated",
-   "cite": "JST PH catalogue ePH.pdf p.4, Header (SMT type), Side entry type drawing (S2B-PH-SM4-TB row in table)",
-   "quote": "\"Reinforcement: Copper alloy, tin-plated\"",
+   "ds_name": "Solder tabs (mechanical)",
+   "cite": "KiCad 10 Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal (generated from Molex's drawing)",
+   "quote": "footprint pads MP x2, 2.1 x 3.0 mm",
    "symbol_name": "MountPin",
-   "footprint_pad": "2 x MP at x=+/-3.35, y=+2.9 (front)",
+   "footprint_pad": "2 x MP at x=+/-3.175, y=+0.5",
    "ok": true,
    "issue": "Left unconnected (mechanical only); fine.",
    "nets": {

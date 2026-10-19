@@ -33,8 +33,19 @@ PLA = 2                      # the template's toolhead for PLA parts
 KIT = os.path.join(HERE, "fitkit")
 PRINT_TUB = os.path.join(HERE, "print", "tub_print.stl")
 
+# Supports, changed from the template (Alex: keep the PETG, but touch the decks as little and as
+# cleanly as possible): organic trees in PLA from the build plate only, so nothing grows inside the
+# lid; PETG only for the 2 solid interface layers right under the decks (fewer toolhead swaps and
+# purges), no gap and ironed, so the PLA deck face prints onto a smooth surface instead of
+# sagging between sparse lines
+SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_style": "organic",
+           "support_filament": "2", "support_interface_filament": "1", "support_interface_not_for_body": "1",
+           "support_interface_top_layers": "2", "support_interface_spacing": "0", "support_top_z_distance": "0",
+           "support_ironing": "1", "support_on_build_plate_only": "1"}
+
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts
 PLATES = {
+    "0_buttons_end": [(n, f"{KIT}/coupon_{n}.stl") for n in ("buttons_tub", "buttons_board", "buttons_lid")],
     "1_case": [("tub_print", PRINT_TUB), ("lid", os.path.join(HERE, "lid.stl")),
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
@@ -182,6 +193,13 @@ def build(plate, parts, z):
             if n.endswith(".png"):
                 continue
             data = z.read(n)
+            if n == "Metadata/project_settings.config":
+                cfg = json.loads(data)
+                for k, v in SUPPORT.items():
+                    if k not in cfg:
+                        sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
+                    cfg[k] = v
+                data = json.dumps(cfg, indent=4).encode()
             if n == "_rels/.rels":
                 data = re.sub(rb'\s*<Relationship Target="/Metadata/[^"]+\.png"[^>]*/>', b"", data)
             if n == "3D/3dmodel.model":

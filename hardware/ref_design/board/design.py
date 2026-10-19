@@ -217,9 +217,12 @@ C("C9", S, "22u 25V", "VSYS")
 # its reverse leakage (about 5 uA at 25 C, 50 uA at 75 C) flows into the cell while USB is in
 part("D7", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS", "2": "VBAT"},
      "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
-part("J2", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "S2B-PH-SM4-TB",
-     "battler:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal",
-     {"1": "CELL_P", "2": "GND", "MP": None}, "C295747", "S2B-PH-SM4-TB(LF)(SN)", "JST")
+# J2: Molex PicoBlade, 3.4 mm tall (the 5.5 mm JST PH it replaced needed a pad on the lowered lid,
+# 2026-10-19). Cells come with PicoBlade ("MX1.25") plugs; their polarity varies by vendor: check
+# the red lead lands on pin 1 (silk +) before plugging in
+part("J2", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "53261-0271",
+     "Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal",
+     {"1": "CELL_P", "2": "GND", "MP": None}, "C177225", "532610271", "Molex")
 # JP5: cut it and bridge it with an ammeter to read everything the cell gives or takes (sleep
 # current, charge current)
 JP("JP5", S, "CELL_P", "VBAT")

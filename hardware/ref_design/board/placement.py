@@ -122,7 +122,7 @@ put("D7", 126.6, 124.4, 0)                  # Schottky across Q2: carries the un
 put("D6", 131.2, 128.6, 0)                  # Q2's gate from VBUS
 put("R6", 128.4, 127.0, 90)
 put("C9", 131.2, 131.4, 0)                  # holds VSYS through the switch-over
-put("J2", CASE["batt_conn"][0], CASE["batt_conn"][1] + 0.6, 180)
+put("J2", CASE["batt_conn"][0], CASE["batt_conn"][1], 180)     # PicoBlade: mouth towards the panel, contacts behind
 
 # 3V3 LDO right of the chip, next to the core's 3V3 decoupling (routed to it as a track)
 put("U3", 129.5, 88.0, 90)                 # right edge, off the core's copper (1.54 mm tall)
