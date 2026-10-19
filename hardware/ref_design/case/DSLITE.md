@@ -43,7 +43,7 @@ tabs make a pinwheel.
 The tab directions agree across three sources (facelesstech's slots sit 7.5 degrees off, cut
 35 degrees wide). The lid cuts a slot for each tab, so a cap can't turn; it does not add ribs for
 the notches (only two models, possibly not independent, show them), so a swapped cap still fits
-its hole with its tab in the slot. Add the ribs once a real cap confirms the notches.
+its hole with its tab in the slot. Since 2026-10-19 (Alex's caps have notches; the first print's lid had nothing to match) ribs in each pocket fill the notches at these angles (`abxy_notches`, `notch_keys` in case.scad); `case/fitkit/tune_openings.stl` checks them against real caps.
 
 ## D-pad
 

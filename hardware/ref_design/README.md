@@ -28,7 +28,7 @@ which this folder never touches.
 - PWM audio through an RC filter into an FM8002A amplifier and a 15 mm speaker
 - One 403450 Li-ion cell (about 700 mAh) lying on the tub's floor under the board, TP4056 charger with USB load sharing,
   ME6211 3V3 LDO, soft power on seat 1's Y button with MCU hold
-- Case 75.4 x 156.2 mm, 14.6 mm at the screen and 11.1 mm at the button decks (genuine DS Lite
+- Case 75.4 x 156.2 mm, 13.4 mm at the screen and 11.1 mm at the button decks (genuine DS Lite
   caps stand 1.3 mm proud there), two printed parts held by six M2 screws, as a DS Lite
 
 ## Folder

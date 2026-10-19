@@ -66,7 +66,7 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   design assumes a D-pad pill spacing of 14.0 mm (another source says 13.5): measure it. Tune
   `dome_h` (sets the deck height), `piece_d`, `dpad_pitch`; the cap numbers from `case/DSLITE.md`
   (`cap_*`, `pocket_*`, `slot_*`, `dpad_*`) if a real cap disagrees.
-  The JST plug (real or dummy) should go into J2 between seat 1's clusters, its wires through the slot beside it, without forcing them.
+  The JST plug (real or dummy) should pass up through the board's hole in front of J2 and go into J2 between seat 1's clusters, its wires dropping back through the hole, without forcing them.
 - **USB-C:** board coupon into the tub coupon (its tab drops into the wall's slot), lid coupon on
   top. The opening is the receptacle's own stadium shape, `usb_gap` (0.25 mm) round its shell, and
   the shell's face sits 0.15 mm under the case's surface (`usb_recess`): the board now has a tab
@@ -83,7 +83,7 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
    slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
    `case.scad` moves J3.
 4. Panel into the lid's frame on the tape, silicone and caps in, lid down (its lip into the wall's step): all six hooks should
-   click, the lid should sit flush, nothing should rattle, the case should measure 14.6 mm at the screen, 11.1 at the ends.
+   click, the lid should sit flush, nothing should rattle, the case should measure 13.4 mm at the screen, 11.1 at the ends.
 5. Press every button: each should click through and spring back.
 
 **3. Measure and record** (design_review.md, "Measure before ordering"): the silicone's pill
