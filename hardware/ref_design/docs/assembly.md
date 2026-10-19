@@ -82,7 +82,7 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
    A's tab (right cap) points down-left, B's (bottom) up-left, X's (top) down-right, Y's
    (left) up-right. The slots are 30 degrees wide, so close is enough; if the lid won't
    seat, a cap is turned too far.
-6. Peel the tape liner and lower the lid straight down until all six hooks click into
+6. Peel the tape liner and lower the lid straight down until all four hooks click into
    the tub wall and its lip seats in the wall's step: its locating frame centres the
    panel and the tape takes it, the caps come up through their holes and the retainers
    trap their flanges. From here on the panel hangs from the lid, its top in the lid's pocket.
