@@ -13,27 +13,41 @@ H = 1.27
 
 def buttons():
     sh = Sheet("buttons.kicad_sch")
-    for col, (seat, first) in enumerate((("Seat 1 (player 1)", 1), ("Seat 2 (player 2)", 9))):
-        x0 = 35.56 + col * 110.49           # switch origins
-        y0 = 35.56
-        sh.heading(x0 - 17.78, y0 - 12.7, f"{seat}: membrane contacts")
+
+    def column(refs, x0, y0, pitch=15.24):
+        """Contacts one under another, pins to the right labelled, a GND bus on the left;
+        a contact on VSYS (the power button) gets the rail instead of the bus."""
         bus_x = x0 - 12.7
         gnd_rows = []
-        for i in range(8):
-            ref = f"SW{first + i}"
-            y = y0 + i * 15.24
+        for i, ref in enumerate(refs):
+            y = y0 + i * pitch
             sh.place(ref, x0, y, 180, f=(0, H))
-            sh.tag(f"{ref}.1", length=5.08)
+            sh.tag(f"{ref}.1", 5.08)
             if sh.parts[ref]["pins"]["2"] == "GND":
                 sh.wire(f"{ref}.2", (bus_x, y))
                 gnd_rows.append(y)
-            else:                                   # P1 Y: the power button, on VSYS
-                end = sh.stub(f"{ref}.2", 5.08)
-                sh.rail("VSYS", end, "left")
-        sh.wire((bus_x, gnd_rows[0]), (bus_x, gnd_rows[-1]))
-        sh.gnd((bus_x, gnd_rows[-1]))
-    sh.text(17.78, 158.75, "Seat 1's Y contact is also the power button: it joins VSYS to PWR_BTN_RAW (Power sheet),")
-    sh.text(17.78, 162.56, "and the MCU reads it through Q1 as PWR_BTN_N.")
+            else:
+                sh.rail("VSYS", sh.stub(f"{ref}.2", 5.08), "left")
+        if len(gnd_rows) > 1:
+            sh.wire((bus_x, gnd_rows[0]), (bus_x, gnd_rows[-1]))
+        if gnd_rows:
+            sh.gnd((bus_x, gnd_rows[-1]))
+
+    for col, first in enumerate((1, 9)):
+        x0 = 35.56 + col * 124.46
+        sh.heading(x0 - 17.78, 22.86, f"Seat {col + 1}: D-pad and face buttons")
+        column([f"SW{first + i}" for i in range(8)], x0, 35.56)
+    # Start and Select: the smaller contacts; seat 1's Start is also the power button
+    sh.heading(86.36, 22.86, "Seat 1 Start/Select")
+    column(["SW20"], 104.14, 35.56)
+    column(["SW21"], 104.14, 50.8)
+    sh.text(86.36, 63.5, "P1 START is the power button: it joins VSYS")
+    sh.text(86.36, 67.31, "to PWR_BTN_RAW (Power sheet); the MCU reads")
+    sh.text(86.36, 71.12, "it through Q1 as PWR_BTN_N.")
+    sh.heading(231.14, 22.86, "Seat 2 Start/Select")
+    column(["SW22", "SW23"], 248.92, 35.56)
+    sh.text(17.78, 165.1, "Bare ENIG contacts under DS Lite silicone (D-pad and face buttons DSL_button_4ring, Start and")
+    sh.text(17.78, 168.91, "Select DSL_button_3ring); the firmware enables the pull-ups. One GPIO per contact.")
     return sh
 
 
@@ -390,7 +404,7 @@ def power():
     for i, ref in enumerate(("TP5", "TP15", "TP16")):
         a = tp(sh, ref, (241.3 + i * 12.7, 137.16))
         sh.gnd(sh.wire(a, (a[0], a[1] + G)))
-    sh.text(17.78, 177.8, "Power: the button (seat 1's Y contact), the MCU (PWR_HOLD) or USB raise PWR_EN. Releasing it with")
+    sh.text(17.78, 177.8, "Power: the button (seat 1's Start contact), the MCU (PWR_HOLD) or USB raise PWR_EN. Releasing it with")
     sh.text(17.78, 181.61, "PWR_HOLD low turns the device off. A reset drops PWR_HOLD, so a crash turns it off.")
     sh.text(17.78, 185.42, "Q1 lets the MCU see the button (PWR_BTN_N low = pressed) without exposing a pin to VSYS.")
     return sh
@@ -682,8 +696,8 @@ SHEET_NOTES = {
                 "backlight reference", "backlight current sinks ch1, ch2"),
     "Audio": ("PWM low-pass filter, DC block", "amplifier (FM8002A) and supply",
               "shutdown control", "speaker pads J4"),
-    "Buttons": ("seat 1 contacts (P1 Y is the", "power button), seat 2 contacts",
-                "16 membrane contacts,", "one GPIO each"),
+    "Buttons": ("seat 1 and seat 2 contacts", "Start/Select per seat (P1 Start",
+                "is the power button),", "20 contacts, one GPIO each"),
 }
 
 
@@ -696,7 +710,7 @@ def root():
     import design
     sh = Sheet("battler.kicad_sch")
     sh.text(20.32, 20.32, "Two-player handheld: reference design (REF-A)", size=2.0)
-    sh.text(20.32, 27.94, "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 16 membrane contacts under DS Lite silicone,")
+    sh.text(20.32, 27.94, "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 20 membrane contacts under DS Lite silicone,")
     sh.text(20.32, 31.75, "PWM audio into an FM8002A, one Li-ion cell on a TP4056 charger with load sharing, ME6211 3V3.")
     sh.text(20.32, 35.56, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets.")
     for i, (f, name) in enumerate(design.SHEETS):
