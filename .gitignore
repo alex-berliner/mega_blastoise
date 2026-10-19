@@ -1,5 +1,46 @@
+# mega_blastoise: rules for the whole repo. Sub-project .gitignores (hardware/ref_design,
+# hardware/stripboard_v2, ...) keep their own project-specific rules.
+
+# ---- Rust build output ----
 /target
+**/target/
+*.uf2
+# wasm-pack output. www/pkg is a TRACKED symlink to ../pkg; a pattern ending in a slash
+# matches only a real directory, so the symlink stays tracked
 mega_blastoise_web/pkg/
 mega_blastoise_web/www/pkg/
-mega_blastoise_web/target/
-tools/showdown-parity/node_modules/
+# probe pages written by scripts/ui-probe.sh and ad-hoc probes (www/ ships whole)
+mega_blastoise_web/www/_*probe.html
+
+# ---- Node ----
+node_modules/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+
+# ---- OS / editors ----
+.DS_Store
+Thumbs.db
+*.swp
+
+# ---- KiCad: per-user state, locks, backups, local history, caches ----
+*.kicad_prl
+~*.lck
+*-backups/
+_restore_backup_*/
+_autosave-*
+\#auto_saved_files\#
+.history/
+fp-info-cache
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*-erc.rpt
+*-drc.rpt
+# Freerouting scratch (ref_design keeps board/tools/last_route.ses on purpose)
+*.dsn
+freerouting.log
+
+# ---- Scratch copies and snapshot archives ----
+*(Copy)*
+/hardware/*.zip
