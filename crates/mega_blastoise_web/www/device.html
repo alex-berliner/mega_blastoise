@@ -9,9 +9,9 @@
 <body>
 
 <!-- The physical device: one portrait panel in the middle and a control
-     deck at each end, laid out like a DS Lite's lower half: D-pad on the
-     seat's left; X/A/B/Y diamond on its right with Start and Select beside
-     it. Player 2 sits at the top edge, so their deck is player 1's rotated
+     deck at each end, with the reference design's DS Lite parts: D-pad on
+     the seat's left, X/A/B/Y diamond on its right, and Select and Start side
+     by side between them, toward the seat's end of the case. Player 2 sits at the top edge, so their deck is player 1's rotated
      180 and reads upright from their seat. This layout is FIXED: screen
      content rotates, the controls never do. -->
 <div id="device">
@@ -24,15 +24,19 @@
       <button class="d down"  data-dir="1" aria-label="player 2 down"></button>
       <span class="pivot" aria-hidden="true"></span>
     </div>
-    <div class="face">
-      <div class="sys">
-        <span class="sl">START</span>
-        <button class="pill" data-player="2" data-btn="start" aria-label="player 2 start"
-          title="Start: not wired yet (core has no Start button)"></button>
+    <div class="ss">
+      <div class="ssb select">
         <span class="sl">SELECT</span>
         <button class="pill" data-player="2" data-btn="select" aria-label="player 2 select"
           title="Select: not wired yet (core has no Select button)"></button>
       </div>
+      <div class="ssb start">
+        <span class="sl">START</span>
+        <button class="pill" data-player="2" data-btn="start" aria-label="player 2 start"
+          title="Start: not wired yet (core has no Start button)"></button>
+      </div>
+    </div>
+    <div class="face">
       <div class="abxy">
         <span class="qmark" aria-hidden="true">?</span>
         <button class="cap x" data-player="2" data-btn="x" title="X: the ? (info) key">X</button>
@@ -53,15 +57,19 @@
       <button class="d down"  data-dir="1" aria-label="player 1 down"></button>
       <span class="pivot" aria-hidden="true"></span>
     </div>
-    <div class="face">
-      <div class="sys">
-        <span class="sl">START</span>
-        <button class="pill" data-player="1" data-btn="start" aria-label="player 1 start"
-          title="Start: not wired yet (core has no Start button)"></button>
+    <div class="ss">
+      <div class="ssb select">
         <span class="sl">SELECT</span>
         <button class="pill" data-player="1" data-btn="select" aria-label="player 1 select"
           title="Select: not wired yet (core has no Select button)"></button>
       </div>
+      <div class="ssb start">
+        <span class="sl">START</span>
+        <button class="pill" data-player="1" data-btn="start" aria-label="player 1 start"
+          title="Start: not wired yet (core has no Start button)"></button>
+      </div>
+    </div>
+    <div class="face">
       <div class="abxy">
         <span class="qmark" aria-hidden="true">?</span>
         <button class="cap x" data-player="1" data-btn="x" title="X: the ? (info) key">X</button>
