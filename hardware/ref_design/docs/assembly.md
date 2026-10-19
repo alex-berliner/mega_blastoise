@@ -66,24 +66,26 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 2. Into the tub: the cell in its pocket on the floor, lengthwise, its wires at seat 1's end,
    a 0.45 mm foam pad on top; the speaker face down on the grille beside it. Solder the
    speaker's leads to J4's pads on the board's back.
-3. Thread the cell's wires up through the board's slot, then the board into the tub, USB-C
-   into its opening (it goes in one way only), pressed down past the crush ribs that centre
-   it onto the floor's support ribs and bosses. Plug the cell into J2, between seat 1's
-   clusters.
+3. Push the cell's plug up through the board's hole (7.2 x 5.7 mm, right in front of J2,
+   between seat 1's clusters: the whole plug passes), then the board into the tub: its tab
+   under the USB-C drops into the slot in the wall (it goes in one way only), pressed down
+   past the crush ribs that centre it onto the floor's support ribs and bosses. Plug the cell
+   into J2; its wires fold back down through the hole.
 4. Panel: lay it face down beyond the board's seat-1 edge, flip J3's lid up, slide the
    FPC's contacts into J3 (contacts down) until it stops, square, and press the lid shut.
    Then fold the panel over onto the board, face up, its FPC looping under it at the
    seat-1 edge (don't crease it). It rests loosely on the parts under it for now.
    A cracked panel comes out the same way: lid up, FPC out.
 5. Silicone pieces onto the contacts, caps onto the silicone. Each ABXY cap's flange tab
-   drops into a slot in the lid, so turn the caps to match. Seen from that seat's player:
+   drops into a slot in the lid, and ribs in the lid fill the notches in its flange, so each
+   cap fits only its own hole, one way round: turn the caps to match. Seen from that seat's player:
    A's tab (right cap) points down-left, B's (bottom) up-left, X's (top) down-right, Y's
    (left) up-right. The slots are 30 degrees wide, so close is enough; if the lid won't
    seat, a cap is turned too far.
 6. Peel the tape liner and lower the lid straight down until all six hooks click into
    the tub wall and its lip seats in the wall's step: its locating frame centres the
    panel and the tape takes it, the caps come up through their holes and the retainers
-   trap their flanges. From here on the panel hangs from the lid, 0.5 mm over the cell.
+   trap their flanges. From here on the panel hangs from the lid, its top in the lid's pocket.
 7. Turn it over and drive the six M2 x 8 screws up through the tub's bosses and the
    board into the lid's bosses, snug, not tight (they cut their own thread in the plastic).
    They clamp the board between the bosses and hold the case shut, as on a DS Lite.
