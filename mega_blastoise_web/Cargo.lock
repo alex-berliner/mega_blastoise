@@ -706,6 +706,7 @@ dependencies = [
  "battler",
  "battler-data",
  "console_error_panic_hook",
+ "critical-section",
  "embassy-futures",
  "embedded-graphics",
  "gen1_battle",

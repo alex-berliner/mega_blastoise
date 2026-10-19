@@ -54,13 +54,84 @@ fn drive_error_led() {
     }
 }
 
+/// Crash-message persistence: SRAM9 is a direct-mapped 4K bank the linker
+/// never places anything in, and a SYSRESETREQ does not clear RAM — so a
+/// panic leaves its message there, reboots, and the next boot (or the
+/// console's `:panic`) reads it back.
+///
+/// This replaced `udf()`: the lockup state udf left the core in also wedged
+/// the SWD debug port, which made every crash look like a broken probe
+/// cable — and left the device frozen instead of recovering to the lobby.
+pub mod panic_store {
+    const MAGIC: u32 = 0xC0DE_DEAD;
+    const BASE: usize = 0x2008_1000; // SRAM9
+    const CAP: usize = 1024;
+
+    struct Writer {
+        len: usize,
+    }
+
+    impl core::fmt::Write for Writer {
+        fn write_str(&mut self, s: &str) -> core::fmt::Result {
+            for &b in s.as_bytes() {
+                if self.len >= CAP {
+                    break;
+                }
+                unsafe { ((BASE + 8 + self.len) as *mut u8).write_volatile(b) };
+                self.len += 1;
+            }
+            Ok(())
+        }
+    }
+
+    /// Store a message. Called from the panic path only.
+    pub fn store(args: core::fmt::Arguments<'_>) {
+        use core::fmt::Write;
+        let mut w = Writer { len: 0 };
+        let _ = write!(w, "{}", args);
+        unsafe {
+            ((BASE + 4) as *mut u32).write_volatile(w.len as u32);
+            (BASE as *mut u32).write_volatile(MAGIC);
+        }
+    }
+
+    /// The stored message from the previous run, if any. Does not clear.
+    pub fn read(buf: &mut [u8; CAP]) -> Option<&str> {
+        unsafe {
+            if (BASE as *const u32).read_volatile() != MAGIC {
+                return None;
+            }
+            let len = ((BASE + 4) as *const u32).read_volatile() as usize;
+            if len > CAP {
+                return None;
+            }
+            for (i, slot) in buf.iter_mut().take(len).enumerate() {
+                *slot = ((BASE + 8 + i) as *const u8).read_volatile();
+            }
+            core::str::from_utf8(&buf[..len]).ok()
+        }
+    }
+
+    pub fn clear() {
+        unsafe { (BASE as *mut u32).write_volatile(0) };
+    }
+
+    pub const CAPACITY: usize = CAP;
+}
+
 #[cortex_m_rt::exception]
 unsafe fn HardFault(ef: &ExceptionFrame) -> ! {
     cortex_m::interrupt::disable();
     drive_error_led();
     defmt::error!("HardFault! PC=0x{:08x} LR=0x{:08x} PSR=0x{:08x}",
         ef.pc(), ef.lr(), ef.xpsr());
-    loop { cortex_m::asm::wfi(); }
+    panic_store::store(format_args!(
+        "HardFault PC=0x{:08x} LR=0x{:08x} PSR=0x{:08x}",
+        ef.pc(),
+        ef.lr(),
+        ef.xpsr()
+    ));
+    cortex_m::peripheral::SCB::sys_reset()
 }
 
 #[panic_handler]
@@ -68,12 +139,14 @@ fn panic_handler(info: &core::panic::PanicInfo) -> ! {
     cortex_m::interrupt::disable();
     drive_error_led();
     defmt::error!("{}", defmt::Display2Format(info));
-    cortex_m::asm::udf()
+    panic_store::store(format_args!("{}", info));
+    cortex_m::peripheral::SCB::sys_reset()
 }
 
 #[defmt::panic_handler]
 fn defmt_panic() -> ! {
     cortex_m::interrupt::disable();
     drive_error_led();
-    cortex_m::asm::udf()
+    panic_store::store(format_args!("defmt panic"));
+    cortex_m::peripheral::SCB::sys_reset()
 }

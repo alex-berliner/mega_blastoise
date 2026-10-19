@@ -84,6 +84,20 @@ fn dispatch(line: &str) {
             // 100 ms grace so this USB device detaches cleanly first.
             embassy_rp::rom_data::reboot(0x0102, 100, 0, 0);
         }
+        ":panic" => {
+            let mut buf = [0u8; mega_blastoise_fw::panic_store::CAPACITY];
+            match mega_blastoise_fw::panic_store::read(&mut buf) {
+                Some(msg) => {
+                    log_line("[panic] last stored crash:");
+                    log_line(msg);
+                }
+                None => log_line("[panic] none stored"),
+            }
+        }
+        ":panic clear" => {
+            mega_blastoise_fw::panic_store::clear();
+            log_line("[panic] cleared");
+        }
         ":anim off" => {
             let _ = crate::board_v2::INPUT.try_send(DeviceEvent::SetAnim(false));
             log_line("[anim] animations OFF");
