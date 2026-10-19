@@ -4,8 +4,8 @@ What the reference design is, why each part of it is the way it is, what has
 been checked and what hasn't. Numbers here come from the datasheets in
 `datasheets/SOURCES.md` and from the files in this folder.
 
-This is the 2-layer build, `main` since 2026-09-24: the first, 4-layer design (branch
-`ref-design-4layer`) with the cost changes Alex approved that day.
+This is the 2-layer build, `main` since 2026-09-24: the first, 4-layer design (tag
+`archive/ref-design-4layer`) with the cost changes Alex approved that day.
 
 ## The device
 

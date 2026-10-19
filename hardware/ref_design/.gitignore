@@ -22,3 +22,21 @@ board/.history/
 board/_restore_backup_*/
 # vendor SPICE models: board/sim/models.py fetches and translates them
 board/sim/models/
+# build output: every file below comes back from the rebuild pipeline in README.md, so only
+# what can't be regenerated (the routed board, the schematics, the 3D viewer that Pages serves,
+# hand-made print projects, images the docs show) is kept (Alex, 2026-10-19)
+board/fab/gerbers/
+board/fab/battler_gerbers.zip
+board/fab/battler.step
+board/fab/battler_bom_jlc.csv
+board/fab/battler_cpl_jlc.csv
+board/fab/battler_schematic.pdf
+board/fab/battler_assembly.pdf
+board/fab/drc.txt
+case/tub.stl
+case/lid.stl
+case/board.dxf
+case/positions.json
+case/fit_report.txt
+case/fitkit/*.stl
+case/print/tub_print.stl

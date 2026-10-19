@@ -10,7 +10,7 @@ it on the board under the screen (13.9 mm thick, 7.9 at the ends) is on branch
 route completely.
 
 **This is the 2-layer build**, on `main` since 2026-09-24: the first, 4-layer
-design (kept on branch `ref-design-4layer`) with every cost change Alex approved
+design (kept at tag `archive/ref-design-4layer`) with every cost change Alex approved
 that day, on two copper layers with JLC's standard 0.3 mm holes. Built by Claude in parallel with
 Alex's own hand-made board (`hardware/prod_board/`, `hardware/prod_case/`),
 which this folder never touches.
@@ -39,11 +39,11 @@ which this folder never touches.
 | `board/placement.py` | where parts go on the board (the case supplies the rest) |
 | `board/battler.kicad_pro` / `.kicad_sch` / `*.kicad_sch` / `.kicad_pcb` | the KiCad 10 project (generated) |
 | `board/lib/` | project footprints and 3D models |
-| `board/fab/` | gerbers zip, JLC BOM and CPL, STEP, renders, schematic and assembly PDFs |
+| `board/fab/` | gerbers zip, JLC BOM and CPL, STEP, renders, schematic and assembly PDFs: build output from `tools/fab.py`, not in git, except the renders the docs show |
 | `board/tools/` | the scripts that build and check all of it (below) |
 | `board/sim/` | ngspice simulation of the backlight current sinks (loop stability, accuracy, transients); `backlight_results.txt` is the last run |
 | `case/case.scad` | the case, and the source of every mechanical position |
-| `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts, board outline, positions for the board scripts |
+| `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts, board outline, positions for the board scripts: build output from `case/export.py`, not in git (run it first) |
 | `case/fitkit/` | a printable fit kit: board mock, part dummies and case coupons, to test the real parts before ordering ([its README](case/fitkit/README.md)) |
 | `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md), [Konnect notes](docs/konnect_notes.md) |
 | `tools/quotes/` | JLCPCB and PCBWay instant-quote scripts for the bare board and assembly |

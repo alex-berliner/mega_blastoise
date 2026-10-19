@@ -11,7 +11,7 @@ schematic, routed board, fab outputs, case, BOM, docs. It cannot mean
 ## Decisions (locked unless noted)
 
 The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has been
-`main` since that day; branch `ref-design-4layer` keeps the 4-layer design it started from.
+`main` since that day; tag `archive/ref-design-4layer` keeps the 4-layer design it started from.
 
 | Area | Choice | Why |
 |---|---|---|

@@ -1,7 +1,8 @@
 # Fit kit: test the case with the real parts before ordering boards
 
 Printable stand-ins and case coupons, all generated from `case/case.scad` and the routed board, so
-they always match the design. Regenerate after any case or board change:
+they always match the design. The STLs are build output, not in git: generate them (and again after
+any case or board change) with:
 
     python3 case/export.py --stl      # the real tub and lid
     python3 case/fitkit.py            # this folder (about 7 minutes)

@@ -1,3 +1,0 @@
-DRC: 2 violations, 0 unconnected, 0 schematic parity issues
-     2 warning  silk_edge_clearance  (cosmetic)
-RESULT: PASS

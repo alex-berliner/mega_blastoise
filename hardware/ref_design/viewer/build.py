@@ -8,8 +8,9 @@ site/ ships to GitHub Pages at /assembly/ (.github/workflows/pages.yml). GitHub'
 have no KiCad 3D library or OpenSCAD, so the parts are built here and committed; the
 pre-push hook (viewer/pre-push) rebuilds and commits them when main goes out stale.
 
-Inputs are named by their committed blob ids, so the check reads git, not the disk:
-case/tub.stl and case/lid.stl come from case/export.py --stl, which must run first.
+Inputs are named by their committed blob ids, so the check reads git, not the disk. The
+case's tub.stl and lid.stl (case/export.py --stl, which must run first) are build output, not
+in git: case.scad stands for them.
 """
 import datetime
 import json
@@ -25,8 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REF = os.path.dirname(HERE)
 PARTS = os.path.join(HERE, "site", "parts")
 MODEL = os.path.join(PARTS, "model.json")
-INPUTS = ["board/battler.kicad_pcb", "case/case.scad", "case/tub.stl", "case/lid.stl",
-          "viewer/pieces.scad", "viewer/build.py"]
+INPUTS = ["board/battler.kicad_pcb", "case/case.scad", "viewer/pieces.scad", "viewer/build.py"]
 PIECES = ["cell", "foam", "speaker", "panel", "silicone", "caps", "screws"]
 
 
