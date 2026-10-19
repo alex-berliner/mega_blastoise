@@ -34,8 +34,9 @@ KIT = [  # (kit name, file, what it tests)
     ("tune_openings", "tune_openings.stl", "D-pad openings 0.6/0.8/1.0, a keyed A/B/X/Y cluster, holes 7.4/7.8/8.0"),
     ("tune_stack_dpad_board", "tune_stack_dpad_board.stl", "seat 1's D-pad: board slice with the contact rings"),
     ("tune_stack_abxy_board", "tune_stack_abxy_board.stl", "seat 1's A/B/X/Y: board slice with the contact rings"),
+    ("tune_stack_ss_board", "tune_stack_ss_board.stl", "seat 1's Start/Select: board slice with the two small contacts"),
 ] + [(f"tune_stack_{c}_lid", f"tune_stack_{c}_lid_dome{d}.stl", f"its lid slice on legs, silicone height {d} mm", d)
-     for c in ("dpad", "abxy") for d in ("0.9", "1.2", "1.5")] + [
+     for c in ("dpad", "abxy", "ss") for d in ("0.9", "1.2", "1.5")] + [
     # (coupons with a fourth element are rendered with -D dome_h=<it>)
     ("frame_lid", "coupon_frame_lid.stl", "the lid's window, ledge and panel frame"),
 ]

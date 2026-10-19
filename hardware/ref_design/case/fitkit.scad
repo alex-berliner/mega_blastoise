@@ -28,6 +28,9 @@ module kit_board() difference() {
   translate([0, 0, pcb_t - engrave]) {
     // membrane contacts: the combs' edge (4.5 mm) and centre, where the silicone pills should land
     for (b = buttons) at(b[2]) groove() { ring(0.4) circle(r = 2.26, $fn = 48); circle(d = 0.8, $fn = 16); }
+    // Start/Select: the small contacts and each membrane's outline (ESTIMATE in case.scad: ss_mem)
+    for (b = ss_buttons) at(b[2]) groove() { ring(0.4) circle(r = 1.8, $fn = 40); circle(d = 0.8, $fn = 16); }
+    for (c = ss_centres) at(c) groove() ring(0.4) rrect(ss_mem[0], ss_mem[1], 2);
     // each silicone piece's outline (ESTIMATE in case.scad: piece_d)
     for (c = clusters) at(c) groove() ring(0.4) circle(d = piece_d, $fn = 96);
     // J3: tape a real Hirose FH12-50S on this outline (mouth towards seat 1, pin 1 marked)
@@ -100,21 +103,30 @@ module tune_openings() difference() {
 // height over the board, so the silicone and caps sit as in the case. Print a lid at each dome_h
 // (the silicone's height, ESTIMATE in case.scad) and keep the one where the caps stand right
 stack_half = 16;
-module stack_box(c) translate([c[0] - stack_half, c[1] - stack_half, -1]) cube([2 * stack_half, 2 * stack_half, case_h + 2]);
-module stack_legs(c) for (sx = [-1, 1], sy = [-1, 1])
-  at(c + [sx * (stack_half - 3), sy * (stack_half - 3)], z_top_cu) cylinder(d = 3, h = z_deck_lid - z_top_cu + 0.01);
-module tune_stack_lid(c) difference() {
-  union() { intersection() { lid(); stack_box(c); } stack_legs(c); }
-  at(c + [0, -stack_half + 1.8], deck_face - engrave) linear_extrude(engrave + 0.01)
-    text(str("DOME ", dome_h), size = 2.0, halign = "center", valign = "center");
+// Start/Select's stack is smaller and off-centre: it sits against the case's end, so its box and
+// legs stay inside the case (legs in the deck, clear of the membrane's retainer)
+ss_box = [12.6, 5.1, 8.6];          // half width, reach towards the end, reach towards the screen
+function box_of(c, ss) = ss ? [c[0] - ss_box[0], c[1] - ss_box[1], 2 * ss_box[0], ss_box[1] + ss_box[2]]
+                            : [c[0] - stack_half, c[1] - stack_half, 2 * stack_half, 2 * stack_half];
+module stack_box(c, ss = false) let(b = box_of(c, ss)) translate([b[0], b[1], -1]) cube([b[2], b[3], case_h + 2]);
+module stack_legs(c, ss = false)
+  for (p = ss ? [[-10.5, -4.3], [10.5, -4.3], [-10.5, 6.7], [10.5, 6.7]]
+              : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
+    at(c + p, z_top_cu) cylinder(d = 3, h = z_deck_lid - z_top_cu + 0.01);
+module tune_stack_lid(c, ss = false) difference() {
+  union() { intersection() { lid(); stack_box(c, ss); } stack_legs(c, ss); }
+  at(c + (ss ? [0, 5.6] : [0, -stack_half + 1.8]), deck_face - engrave) linear_extrude(engrave + 0.01)
+    text(str("DOME ", dome_h), size = ss ? 1.6 : 2.0, halign = "center", valign = "center");
 }
-module tune_stack_board(c) intersection() { kit_board(); stack_box(c); }
+module tune_stack_board(c, ss = false) intersection() { kit_board(); stack_box(c, ss); }
 
 if (kit == "tune_openings")       flip_at(deck_face) translate([0, 0, retainer_bot]) tune_openings();
 if (kit == "tune_stack_dpad_lid") flip() tune_stack_lid(dpad1);
 if (kit == "tune_stack_abxy_lid") flip() tune_stack_lid(abxy1);
 if (kit == "tune_stack_dpad_board") tune_stack_board(dpad1);
 if (kit == "tune_stack_abxy_board") tune_stack_board(abxy1);
+if (kit == "tune_stack_ss_lid")   flip() tune_stack_lid(ss_centres[0], true);
+if (kit == "tune_stack_ss_board") tune_stack_board(ss_centres[0], true);
 if (kit == "usb_board")    intersection() { kit_board(); usb_box(); }
 module flip_at(z) translate([0, 0, z]) rotate([180, 0, 0]) children();
 
