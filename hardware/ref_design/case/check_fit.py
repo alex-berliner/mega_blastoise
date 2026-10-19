@@ -12,7 +12,7 @@ the case allows at that spot:
   button decks             <= deck_limit (the ends step down so genuine caps stand proud)
   lid's stiffening ribs    <= rib_limit (beside the screen, under the lid)
   the board's back         <= back_limit (the board rests on ribs; the cell and speaker lie under it)
-  under a silicone piece   nothing at all
+  under a silicone piece   nothing at all (the clusters and the Start/Select membranes)
   lid pin bosses           nothing within the boss diameter
   lid snap hooks           nothing taller than hook_clear under a hook
   lid's panel frame        its band round the panel: <= frame limit (it hangs lower)
@@ -153,6 +153,9 @@ def main():
         for i, c in enumerate(POS["pieces"]):
             if near_circle(box, c, POS["piece_d"] / 2):
                 problems.append(f"{ref} is under a silicone piece (cluster {i})")
+        for i, r in enumerate(POS["ss_pieces"]):
+            if inside_rect(box, r):
+                problems.append(f"{ref} is under a Start/Select membrane (seat {i + 1})")
         for s in POS["pins"]:
             if near_circle(box, s, POS["boss_d"] / 2 + 0.3):
                 problems.append(f"{ref} collides with the lid pin boss at {s}")
@@ -168,7 +171,8 @@ def main():
         where = "bezel"
         if inside_rect(box, glass):
             limit, where = POS["glass_limit"], "glass"
-        elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]):
+        elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]) or \
+                any(inside_rect(box, r, 1.5) for r in POS["ss_pieces"]):
             limit, where = min(limit, POS["retainer_limit"]), "retainer"
         if any(inside_rect(box, d) for d in POS["decks"]) and POS["deck_limit"] < limit:
             limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends

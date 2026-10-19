@@ -46,6 +46,8 @@ def put(ref, x, y, rot=0, side="F"):
 
 for i in range(16):
     put(f"SW{i + 1}", *b[f"SW{i + 1}"])
+for ref, xy in CASE["ss_buttons"].items():  # Start/Select, between each seat's clusters at the case's end
+    put(ref, *xy)
 for i, (x, y) in enumerate(s):
     put(f"H{i + 1}", x, y)
 put("FID1", 67.3, 71.0)

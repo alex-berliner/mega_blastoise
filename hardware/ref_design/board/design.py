@@ -240,15 +240,15 @@ C("C7", S, "10u", "3V3_LDO")
 # JP1: cut it at bring-up to check the regulator alone before the rest of the board sees 3V3
 JP("JP1", S, "3V3_LDO", "+3V3")
 part("#FLG07", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+3V3"}, bom=False)   # fed through JP1
-# the power button is seat 1's Y contact (SW8, on the Buttons sheet): it joins VSYS to PWR_BTN_RAW
+# the power button is seat 1's Start contact (SW21, on the Buttons sheet): it joins VSYS to PWR_BTN_RAW
 R("R13", S, "33k", "PWR_BTN_RAW", "GND")       # 33k, not 100k: about twice the surface leakage (sweat,
-                                               # condensation) before the Y contact lifts PWR_EN
+                                               # condensation) before the Start contact lifts PWR_EN
 part("D2", S, "Diode:BAT54C", "BAT54C", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "PWR_HOLD", "3": "PWR_EN"}, "C37704", "BAT54C,215", "Nexperia")
 R("R14", S, "10k", "VBUS", "VBUS_EN")
 part("D3", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
      {"1": "PWR_EN", "2": "VBUS_EN"}, "C7502694", "BAT54WS", "")
-R("R15", S, "100k", "PWR_EN", "GND")          # 100k keeps the Y contact's pill-resistance margin (Q1 reads it)
+R("R15", S, "100k", "PWR_EN", "GND")          # 100k keeps the Start contact's pill-resistance margin (Q1 reads it)
 # C47 slows PWR_EN's rise from VBUS (R14, about 1 ms) so a live plug-in can't lift the ME6211's
 # CE above its VIN (VSYS, which lags behind R47/D5) plus 0.3 V, its absolute maximum
 C("C47", S, "100n", "PWR_EN")
@@ -290,7 +290,7 @@ GPIO = {  # GPIO number: net
     # the chip the way Raspberry Pi's layout takes them out (build_pcb.copy_escapes)
     2: "PWR_HOLD", 3: "PWR_BTN_N",
     4: "P2_UP", 5: "P2_DOWN", 6: "P2_LEFT", 7: "P2_RIGHT",
-    8: "AUDIO_PWM", 11: "AMP_EN",
+    8: "AUDIO_PWM", 9: "P2_SELECT", 10: "P2_START", 11: "AMP_EN",
     12: "P2_A", 13: "P2_B", 14: "P2_X", 15: "P2_Y",
     17: "CHG_STAT_N", 18: "CHG_DONE_N", 19: "CHG_OFF",
     20: "UART_TX", 21: "UART_RX",
@@ -299,9 +299,12 @@ GPIO = {  # GPIO number: net
     # the panel's pins in its connector's order (TE, CS, DC, SCK) where SPI0 allows;
     # GPIO33 is an SPI0 CSn pin as well, DC is a plain output
     33: "LCD_CS", 36: "LCD_MISO", 37: "LCD_DC", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
+    # seat 1's Y (an ordinary button again since Start took over power) and Select, between
+    # the panel's pins, facing seat 1 (2026-10-19)
+    34: "P1_Y", 35: "P1_SELECT",
     # bottom edge, right half, left to right: the panel's reset, seat 1's face buttons,
     # the backlight, then the ADC inputs (GPIO40-47 are the ADC pins) for the USB-C CC
-    # lines and the cell (P1 Y is the power button: read on GPIO3)
+    # lines and the cell (P1 Start is the power button: read on GPIO3)
     40: "LCD_RST", 41: "P1_B", 42: "P1_X", 43: "P1_A", 44: "BL_PWM",
     45: "CC2_SENSE", 46: "CC1_SENSE", 47: "VBAT_SENSE",
     # the board's revision, 4 bits on GPIO22-25 (16 revisions): see R48-R51
@@ -472,14 +475,17 @@ S = "buttons.kicad_sch"
 BUTTONS = ["P1_UP", "P1_DOWN", "P1_LEFT", "P1_RIGHT", "P1_A", "P1_B", "P1_X", "P1_Y",
            "P2_UP", "P2_DOWN", "P2_LEFT", "P2_RIGHT", "P2_A", "P2_B", "P2_X", "P2_Y"]
 for i, net in enumerate(BUTTONS):
-    if net == "P1_Y":
-        # the power button: this contact joins VSYS to PWR_BTN_RAW (the latch on the Power
-        # sheet); the MCU reads it as Y through Q1 on GPIO3 (PWR_BTN_N)
-        part(f"SW{i + 1}", S, "Switch:SW_Push", "P1 Y / PWR", "battler:DSL_button_4ring",
-             {"1": "PWR_BTN_RAW", "2": "VSYS"}, bom=False)
-        continue
     part(f"SW{i + 1}", S, "Switch:SW_Push", net.replace("_", " "), "battler:DSL_button_4ring",
          {"1": net, "2": "GND"}, bom=False)
+# Start and Select under each seat's DS Lite Start/Select membrane (it comes in the same pad
+# kit), between the clusters near the case's end; smaller pills, so a 3-ring contact
+SMALL = "battler:DSL_button_3ring"
+part("SW20", S, "Switch:SW_Push", "P1 SELECT", SMALL, {"1": "P1_SELECT", "2": "GND"}, bom=False)
+# the power button (2026-10-19, was seat 1's Y): this contact joins VSYS to PWR_BTN_RAW (the latch
+# on the Power sheet); the MCU reads it as Start through Q1 on GPIO3 (PWR_BTN_N)
+part("SW21", S, "Switch:SW_Push", "P1 START / PWR", SMALL, {"1": "PWR_BTN_RAW", "2": "VSYS"}, bom=False)
+part("SW22", S, "Switch:SW_Push", "P2 SELECT", SMALL, {"1": "P2_SELECT", "2": "GND"}, bom=False)
+part("SW23", S, "Switch:SW_Push", "P2 START", SMALL, {"1": "P2_START", "2": "GND"}, bom=False)
 
 # =================================================================================
 # Root sheet: mechanical parts
