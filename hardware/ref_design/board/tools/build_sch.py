@@ -31,7 +31,9 @@ sys.path.insert(0, BOARD)
 
 import design  # noqa: E402
 import kisym  # noqa: E402
+import schdraw  # noqa: E402
 from konnect_client import Konnect  # noqa: E402
+from sch_sheets import LAYOUTS  # noqa: E402
 
 PROJECT = "battler"
 ROOT_FILE = PROJECT + ".kicad_sch"
@@ -290,7 +292,30 @@ def layout(sheet):
     return placed
 
 
+def drawn():
+    """Lay out and check every sheet that has a hand layout."""
+    out, bad = {}, 0
+    for f, layout in LAYOUTS.items():
+        sh = layout()
+        sh.finish()
+        errors, warns = sh.check()
+        print(f"{f}: {len(sh.sym)} parts, {len(sh.wires)} wires, {len(sh.labels)} labels, "
+              f"{len(sh.power)} power symbols; {len(errors)} errors, {len(warns)} warnings")
+        for e in errors:
+            print("  ERROR:", e)
+        for w in warns:
+            print("  warn:", w)
+        bad += len(errors)
+        out[f] = sh
+    return out, bad
+
+
 def main():
+    sheets, bad = drawn()
+    if "--check" in sys.argv:
+        return
+    if bad and "--force" not in sys.argv:
+        raise SystemExit(f"{bad} drawing errors: not written")
     # Konnect looks for libraries in KICAD10_SYMBOL_DIR before KiCad's own folder; the
     # project's symbols (tools/sym_lib.py) live in lib/, not in the project's library table
     os.environ["KICAD10_SYMBOL_DIR"] = os.path.join(BOARD, "lib")
@@ -314,8 +339,12 @@ def main():
                x=20 + col * 65, y=50 + row * 45, width=55.88, height=25.4, project_name=PROJECT)
 
     pwr = 0
+    writer = schdraw.Writer(k, BOARD)
     for sheet in [ROOT_FILE] + [s for s, _ in design.SHEETS]:
         path = os.path.join(BOARD, sheet)
+        if sheet in sheets:
+            writer.emit(sheets[sheet])
+            continue
         placed = layout(sheet)
         print(f"{sheet}: {len(placed)} parts")
         for x, y, size, text in TEXT.get(sheet, []):
@@ -360,7 +389,7 @@ def main():
             lib, value = POWER_SYM[net]
             pwr += 1
             k.call("add_schematic_component", schematic=path, lib_id=lib, x=x1, y=y,
-                   reference=f"#PWR{pwr:03d}", value=value)
+                   reference=f"#PWR{500 + pwr:03d}", value=value)
         if edits:
             res = k.call("batch_edit_schematic_components", schematic=path, edits=edits)
             if res.get("errors"):

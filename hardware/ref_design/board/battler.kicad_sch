@@ -153,259 +153,259 @@
     (effects
       (font
         (size 2 2)))
-    (uuid "90214c78-12aa-4b23-967e-f5bac68aa87c"))
+    (uuid "d8169685-c778-456a-bc85-ae776b30fa40"))
 
   (text "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 16 membrane contacts under DS Lite silicone,"
     (at 63.5 27 0)
     (effects
       (font
         (size 1.27 1.27)))
-    (uuid "d73468f8-de6d-4c4a-ac92-74d245ab2596"))
+    (uuid "dabb1177-abc1-49b7-a383-aa17499226d0"))
 
   (text "PWM audio into an FM8002A, one Li-ion cell on a TP4056 charger with load sharing, ME6211 3V3."
     (at 66.04 31 0)
     (effects
       (font
         (size 1.27 1.27)))
-    (uuid "ce47c458-f400-4077-b566-40b316b39c38"))
+    (uuid "75b6f08c-b901-4d75-b4a8-c3d9f7a40c70"))
 
   (text "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets."
     (at 69.85 35 0)
     (effects
       (font
         (size 1.27 1.27)))
-    (uuid "89d26752-c4a4-48e2-a14f-b83d208bb3ee"))
+    (uuid "f441b729-c1e4-4469-ad2e-efc9afd495cb"))
 
   (text "Mechanical: locating holes at positions set by the case; fiducials for assembly."
     (at 59.69 145 0)
     (effects
       (font
         (size 1.27 1.27)))
-    (uuid "e1ecc468-a2d1-4741-b39b-4bad04dedf31"))
+    (uuid "bff3635b-21dc-471f-a68f-afbe13554c22"))
 
   (text "USB_Charger"
     (at 29.21 47 0)
     (effects
       (font
         (size 1.8 1.8)))
-    (uuid "a98c83b5-066d-408f-a6bf-57ad2c1818cd"))
+    (uuid "f9a0ac77-81ba-4528-befc-516867432d41"))
 
   (text "usb_charger.kicad_sch"
     (at 30.48 55 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "c6c7ed0b-8994-4e71-b85b-ef3406accdeb"))
+    (uuid "4a848438-85b9-4bbf-b892-eac3fc8d4250"))
 
   (text "USB-C sink, ESD, TP4056 charger,"
     (at 34.29 60 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "9a76579b-39c2-4719-80ed-bd21d4bffaad"))
+    (uuid "6868da7d-5e53-47ef-89c8-77dc623aef4a"))
 
   (text "load sharing, battery connector"
     (at 34.29 63.5 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "e7cbedc2-58db-4db5-a299-75068f871574"))
+    (uuid "b1726d97-313c-4bfd-8a54-830e0dedfa27"))
 
   (text "Power"
     (at 90.17 47 0)
     (effects
       (font
         (size 1.8 1.8)))
-    (uuid "cafa3199-8e53-4215-a8ca-014fb9bfe931"))
+    (uuid "a84a0423-2eab-4b5f-ae0d-caf3ffac4314"))
 
   (text "power.kicad_sch"
     (at 92.71 55 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "afefb3dd-0b89-43e3-b3fd-655be8792e22"))
+    (uuid "8aa2636d-3b67-4993-8ac4-90109af1df0c"))
 
   (text "ME6211 3V3 LDO, power button latch,"
     (at 100.33 60 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "f4f8f789-5b9b-48b3-b362-57cf512662f4"))
+    (uuid "1810ee61-9962-40d5-a5b9-193286a33dd4"))
 
   (text "battery and button sensing"
     (at 96.52 63.5 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "95f5db85-285f-4beb-af01-9d06b2aa0b2f"))
+    (uuid "2c4df977-5e6c-4989-93f7-1e2f626ac492"))
 
   (text "MCU"
     (at 153.67 47 0)
     (effects
       (font
         (size 1.8 1.8)))
-    (uuid "e50f602f-91da-47cf-8926-bb8e1da4b30a"))
+    (uuid "ec0a2d5e-4c9a-43d2-875d-a097553ebaa9"))
 
   (text "mcu.kicad_sch"
     (at 157.48 55 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "e044e420-d6bd-43a3-b89a-cf6d207018f7"))
+    (uuid "364c231f-50a1-434a-a14e-b7b4562480c0"))
 
   (text "RP2354B (2 MB flash inside),"
     (at 162.56 60 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "6ddb1f18-d461-42ab-a176-82701ba698c5"))
+    (uuid "7f3afe48-5136-4d39-817e-10031314157e"))
 
   (text "12 MHz crystal, USB series resistors"
     (at 166.37 63.5 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "3bd29f63-7012-43e3-af51-db31da3cf97e"))
+    (uuid "c083629b-dc74-43fe-8a12-c3aea2677e11"))
 
   (text "MCU_Power"
     (at 223.52 47 0)
     (effects
       (font
         (size 1.8 1.8)))
-    (uuid "8ac937fe-0f8c-413a-9d52-2d82385c6191"))
+    (uuid "c76045a4-0cfa-4385-82eb-ff14e6cca9b6"))
 
   (text "mcu_power.kicad_sch"
     (at 224.79 55 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "61b58964-b718-4dee-aa6d-827b600bc4aa"))
+    (uuid "84dc28d1-f078-44ca-a8d5-248314ba1ce9"))
 
   (text "RP2354B decoupling and its"
     (at 227.33 60 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "43a95ee9-fba3-4bff-b412-eafcbd5509ed"))
+    (uuid "9611e2d1-cce2-448e-a2d6-1f2d734e7ce2"))
 
   (text "internal 1.1 V switcher"
     (at 226.06 63.5 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "93c65a5d-db91-4a12-8bbf-9bafaec0e019"))
+    (uuid "01bfe03f-60c6-4df2-8951-27f8349c7230"))
 
   (text "Debug"
     (at 25.4 92 0)
     (effects
       (font
         (size 1.8 1.8)))
-    (uuid "fbc09a99-5c31-4aa7-bbd3-2a58bf07207d"))
+    (uuid "d1a17956-a4e2-47c6-b264-354856a971c0"))
 
   (text "debug.kicad_sch"
     (at 27.94 100 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "3650f79e-b662-4e84-a4a9-9518360e63b6"))
+    (uuid "b8777f0a-c0e0-4c27-baf5-1862d0cc4013"))
 
   (text "SWD and UART connectors,"
     (at 31.75 105 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "718a9b64-a650-42cf-94f7-a749812c6d26"))
+    (uuid "0ab19bf7-c8b8-4e0b-ae67-dc9aade44424"))
 
   (text "BOOTSEL and RESET buttons"
     (at 31.75 108.5 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "9a71b64d-1081-47eb-a7df-841d7fef3923"))
+    (uuid "f9034761-5cd1-439d-9f79-2b795ef0339e"))
 
   (text "Display"
     (at 91.44 92 0)
     (effects
       (font
         (size 1.8 1.8)))
-    (uuid "e537a6c6-0701-4bbb-a2fd-38be0bf30ca8"))
+    (uuid "7903871e-d314-418a-8d0b-c59aac5565e7"))
 
   (text "display.kicad_sch"
     (at 93.98 100 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "42a2e0ef-47b9-4df1-a0fd-861cef7f05eb"))
+    (uuid "407aed6e-d7c4-4a55-8962-0c4f886f47c9"))
 
   (text "50-pin ZIF connector for the 3.5in IPS"
     (at 101.6 105 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "a081624f-2c7d-4b80-945c-11e23200ad0e"))
+    (uuid "af68e2ba-a924-44b7-af41-9eeaa02353dd"))
 
   (text "panel, backlight current sinks"
     (at 99.06 108.5 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "334084b7-7d2d-45eb-9e94-261967715453"))
+    (uuid "3fa8ba87-fdb1-4693-aab8-1bf7c901df9d"))
 
   (text "Audio"
     (at 154.94 92 0)
     (effects
       (font
         (size 1.8 1.8)))
-    (uuid "1a2d55de-c01d-460a-b976-f7d7f2a7c745"))
+    (uuid "e3f86cde-c044-4e9f-aff6-fd8cec7de215"))
 
   (text "audio.kicad_sch"
     (at 157.48 100 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "00a16473-cf37-4113-b7ac-088c3d18dbaa"))
+    (uuid "22883772-dbd0-4454-9df6-f9b99aa0ce3d"))
 
   (text "PWM low-pass into an FM8002A"
     (at 162.56 105 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "92f135ac-fcd2-4076-9191-1af8e40aa8f9"))
+    (uuid "7f29cfe9-0ae4-4a07-ba2e-8b7895de12c4"))
 
   (text "bridge amplifier, speaker pads"
     (at 163.83 108.5 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "815f817a-0d74-451b-8708-67c71970af1d"))
+    (uuid "c7abd65c-2ede-4298-9d60-869f3c750f88"))
 
   (text "Buttons"
     (at 222.25 92 0)
     (effects
       (font
         (size 1.8 1.8)))
-    (uuid "0094ddde-15ba-4379-afaf-e710313eb56b"))
+    (uuid "b9b328cc-e575-417f-964b-7abdb807b5bf"))
 
   (text "buttons.kicad_sch"
     (at 223.52 100 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "dad9847a-829d-4b41-8e8d-4f84e3048d46"))
+    (uuid "efa93979-720d-4880-b400-45d6b6fba706"))
 
   (text "16 membrane contacts,"
     (at 224.79 105 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "12c31217-433c-4273-a7b9-7a4ba988896e"))
+    (uuid "e71eeb6b-38e0-4108-bd09-29794aa24b6e"))
 
   (text "one GPIO each"
     (at 222.25 108.5 0)
     (effects
       (font
         (size 1 1)))
-    (uuid "c36ab8e5-753c-47b7-bd7f-558831fc13aa"))
+    (uuid "5693c815-b0ef-4aa0-8c3d-a1b443923c6c"))
 
   (sheet
     (at 20 50)
@@ -416,7 +416,7 @@
       (type solid))
     (fill
       (color 0 0 0 0.0))
-    (uuid "835866fc-20a2-47d1-9339-a898be284d92")
+    (uuid "bab2319c-a152-4336-adc3-6de8a952fc2e")
     (property "Sheetname" "USB_Charger")
     (property "Sheetfile" "usb_charger.kicad_sch")
     (instances
@@ -433,7 +433,7 @@
       (type solid))
     (fill
       (color 0 0 0 0.0))
-    (uuid "cded4de0-0503-4785-bdc5-b808d73ce48a")
+    (uuid "4f96404b-89ce-4592-b8c7-9e79e0f0bef1")
     (property "Sheetname" "Power")
     (property "Sheetfile" "power.kicad_sch")
     (instances
@@ -450,7 +450,7 @@
       (type solid))
     (fill
       (color 0 0 0 0.0))
-    (uuid "e346cd0c-dc1c-43e8-8e19-6717e29c5e49")
+    (uuid "0dd792c4-1f47-47bd-bc22-ca42e96b45fa")
     (property "Sheetname" "MCU")
     (property "Sheetfile" "mcu.kicad_sch")
     (instances
@@ -467,7 +467,7 @@
       (type solid))
     (fill
       (color 0 0 0 0.0))
-    (uuid "17f0e687-cb93-4cd7-9dc0-74bd0148e7ac")
+    (uuid "d8890d16-7676-40d9-a8c2-079b1f67b775")
     (property "Sheetname" "MCU_Power")
     (property "Sheetfile" "mcu_power.kicad_sch")
     (instances
@@ -484,7 +484,7 @@
       (type solid))
     (fill
       (color 0 0 0 0.0))
-    (uuid "e027d72d-2cbd-4c66-8c66-2ce36af859e2")
+    (uuid "48f850ff-64df-4d1e-b68e-ab43d1336249")
     (property "Sheetname" "Debug")
     (property "Sheetfile" "debug.kicad_sch")
     (instances
@@ -501,7 +501,7 @@
       (type solid))
     (fill
       (color 0 0 0 0.0))
-    (uuid "6a7b6e8f-c5a8-4c09-87a4-1b7ca24563e8")
+    (uuid "ca0e0e67-4000-4eb5-bbcb-0de1c6523348")
     (property "Sheetname" "Display")
     (property "Sheetfile" "display.kicad_sch")
     (instances
@@ -518,7 +518,7 @@
       (type solid))
     (fill
       (color 0 0 0 0.0))
-    (uuid "b252427e-9ff2-4c63-a703-4605cc6626b1")
+    (uuid "3df83aa2-879b-4aa2-8bad-78bf6d65a6f3")
     (property "Sheetname" "Audio")
     (property "Sheetfile" "audio.kicad_sch")
     (instances
@@ -535,7 +535,7 @@
       (type solid))
     (fill
       (color 0 0 0 0.0))
-    (uuid "705ef5e7-08a7-4197-a5f7-6dc627c4ee6c")
+    (uuid "e5c46995-c323-489b-b944-5957e0c4b0de")
     (property "Sheetname" "Buttons")
     (property "Sheetfile" "buttons.kicad_sch")
     (instances
@@ -550,7 +550,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "fb9cd128-a705-4a21-9021-257b9dd79856")
+    (uuid "adf92785-6ae3-44b7-8ce6-51a093f2d639")
     (property "Reference" "H1"
       (at 22.86 153.67 0)
       (effects
@@ -592,7 +592,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "e850053c-6eda-4ac4-93ff-e6d327028eef")
+    (uuid "71b98bed-bf69-472c-aef5-7457aa8a3fab")
     (property "Reference" "H2"
       (at 27.94 153.67 0)
       (effects
@@ -634,7 +634,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "c3686798-8bca-4743-b651-af04fd21c9cc")
+    (uuid "c91ae26e-8d27-4b90-9833-b48a67597a23")
     (property "Reference" "H3"
       (at 33.02 153.67 0)
       (effects
@@ -676,7 +676,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "7506cca8-299a-4422-8b27-5e740230f75a")
+    (uuid "a386543b-2d5e-4f00-8b89-2cc6cadfc603")
     (property "Reference" "H4"
       (at 38.1 153.67 0)
       (effects
@@ -718,7 +718,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "00b7b990-12be-412a-aad9-59d7f0c4cc15")
+    (uuid "8aba876a-edbd-4299-a640-db35c50a6b1b")
     (property "Reference" "H5"
       (at 43.18 153.67 0)
       (effects
@@ -760,7 +760,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "269a68dc-227c-449a-ad27-677def4755a8")
+    (uuid "2190d866-2204-44eb-bf03-387625197ada")
     (property "Reference" "H6"
       (at 48.26 153.67 0)
       (effects
@@ -802,7 +802,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "d35371fa-c222-4698-9cc7-7df6c332aa3d")
+    (uuid "edb55911-ae63-49fa-9cca-6a2d56bde410")
     (property "Reference" "FID1"
       (at 58.42 153.67 0)
       (effects
@@ -844,7 +844,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "af4ef58f-5533-47ae-a090-74c80d15d2b2")
+    (uuid "9da70dfc-d3f1-42e9-9363-282b0a562d99")
     (property "Reference" "FID2"
       (at 71.12 153.67 0)
       (effects
@@ -886,7 +886,7 @@
     (in_bom yes)
     (on_board yes)
     (dnp no)
-    (uuid "3e201138-fe0e-4c45-9a1e-07cb975b8261")
+    (uuid "ae5b64e2-2491-47fb-846f-586379e92c38")
     (property "Reference" "FID3"
       (at 83.82 153.67 0)
       (effects
