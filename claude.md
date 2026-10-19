@@ -46,7 +46,7 @@ The RP2040 is chosen specifically because its PIO state machines drive WS2812B p
 ## Language and Toolchain
 
 - **Rust**, `no_std`
-- Target: `thumbv6m-none-eabi`
+- Target: `thumbv8m.main-none-eabihf` (Pico 2 / RP2350, the stripboard v2 board; the RP2040 build was removed)
 - Probe-based flashing/debugging: `probe-rs` (preferred) or `picotool` for USB-mass-storage flashing
 - Logging: `defmt` + `defmt-rtt`
 - Allocator: `embedded-alloc` or `linked-list-allocator` — battler crate likely needs heap allocation

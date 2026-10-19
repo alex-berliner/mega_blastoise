@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Build Pico firmware and print flash/RAM usage (llvm-size / arm-none-eabi-size).
+# Build the Pico 2 firmware and print flash/RAM usage (llvm-size / arm-none-eabi-size).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FW_DIR="$ROOT/crates/mega_blastoise_fw"
 
-TRIPLE=thumbv6m-none-eabi
+TRIPLE=thumbv8m.main-none-eabihf
 PROFILE="${PROFILE:-debug}"
 for arg in "$@"; do
   [[ "$arg" == "--release" ]] && PROFILE=release && break

@@ -9,8 +9,8 @@ unalias  $(compgen -a          mb_)  2>/dev/null
 unset    $(compgen -v          _MB_) 2>/dev/null
 
 _MB_FW_DIR="$MB_BASE/crates/mega_blastoise_fw"
-_MB_ELF_DEBUG="$MB_BASE/target/thumbv6m-none-eabi/debug/mega-blastoise-fw"
-_MB_ELF_RELEASE="$MB_BASE/target/thumbv6m-none-eabi/release/mega-blastoise-fw"
+_MB_ELF_DEBUG="$MB_BASE/target/thumbv8m.main-none-eabihf/debug/mega-blastoise-fw"
+_MB_ELF_RELEASE="$MB_BASE/target/thumbv8m.main-none-eabihf/release/mega-blastoise-fw"
 _MB_CONSOLE="$MB_BASE/scripts/mb-console.py"
 
 # ── Build ────────────────────────────────────────────────────────────────────
@@ -35,10 +35,10 @@ function mb_test {
 function mb_flash {
     local elf="$_MB_ELF_DEBUG"
     for arg in "$@"; do [[ "$arg" == "--release" ]] && elf="$_MB_ELF_RELEASE"; done
-    (cd "$MB_BASE" && probe-rs download --preverify --preset pico "$elf")
+    (cd "$MB_BASE" && probe-rs download --preverify --preset pico2 "$elf")
 }
 
-function mb_reset { (cd "$MB_BASE" && probe-rs reset --preset pico); }
+function mb_reset { (cd "$MB_BASE" && probe-rs reset --preset pico2); }
 function mb_kill  { (cd "$MB_BASE" && pkill -f probe-rs || true && pkill -f picocom || true); }
 
 # ── Console ──────────────────────────────────────────────────────────────────

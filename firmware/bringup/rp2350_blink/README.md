@@ -1,8 +1,8 @@
 # rp2350-blink
 
-Bring-up smoke test for the RP2350. Not part of the game firmware: the parent
-workspace targets the RP2040 (thumbv6m) and pins `embassy-rp` to its `rp2040`
-feature, which is mutually exclusive with `rp235xa`, so this crate stands alone.
+Bring-up smoke test for the RP2350. Not part of the game firmware, and kept as
+its own crate: it was written while the parent workspace still targeted the
+RP2040 and pinned `embassy-rp` to its `rp2040` feature.
 
 ## What it proves
 

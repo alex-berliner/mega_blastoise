@@ -12,9 +12,6 @@
 //! them too). Lines are dropped when no host is attached or the queue is
 //! full — the console is an observer, never allowed to stall the game
 //! (the CDC write-blocks-without-a-reader gotcha).
-//!
-//! NOTE: binds USBCTRL_IRQ, as does the v1 `usb` subsystem — `board_v2`
-//! and `usb` are mutually exclusive features.
 
 extern crate alloc;
 

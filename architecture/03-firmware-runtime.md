@@ -1,33 +1,40 @@
-# Firmware Runtime (RP2040)
+# Firmware Runtime (RP2350)
 
-This page describes `mega_blastoise_fw`.
+This page describes `mega_blastoise_fw`, the firmware for the stripboard v2
+board: a Pico 2 (RP2350), one ST7796 320x480 panel and 16 direct-GPIO buttons.
+A plain `cargo build` in the crate builds it (default features `rp2350`,
+`board_v2`; default target `thumbv8m.main-none-eabihf`).
 
 ## Startup Sequence
 
 [`main.rs`](../crates/mega_blastoise_fw/src/main.rs) does the following:
 
-1. Initialize RP2040 peripherals via `embassy_rp::init`.
-2. Initialize heap allocator (`mem_profile::init_heap`).
-3. Configure RTT/defmt output channels.
-4. Build USB CDC device and spawn USB task.
-5. Configure I2C0/I2C1 and spawn PN532 tasks.
-6. Create battle state and start battle.
-7. Run shared `run_battle` loop.
+1. Initialize the RP2350 peripherals via `embassy_rp::init`.
+2. Initialize the heap (`mem_profile::init_heap`, 384 KB: one 320x480 frame in flight).
+3. Configure the RTT/defmt channel.
+4. Spawn the ST7796 display task, the button task, the sprite-bob pulse task,
+   the USB CDC console and the battery task.
+5. Hand over to [`board_v2::run`](../crates/mega_blastoise_fw/src/board_v2.rs),
+   which runs core's `DeviceRunner` forever.
 
 ## Long-Lived Tasks
 
-- `usb_task`: runs USB device stack forever.
-- `pn532_task_i2c0` and `pn532_task_i2c1`: background reader loops.
-- `main` async context: battle orchestration.
+- `st7796::task`: blits each presented frame to the panel (PIO SPI + DMA).
+- `buttons_v2::task`: debounces the 16 keys, tells an A tap from an A hold,
+  and pushes `DeviceEvent::Button` into the runner's input channel.
+- `board_v2::pulse_task`: the sprite-bob heartbeat and repaint tick.
+- `usb_v2`: the CDC console (typed lines in, log lines out).
+- `battery::task`: samples the cell voltage for the status bar.
 
 ## Firmware Adapters
 
-- [`usb_input.rs`](../crates/mega_blastoise_fw/src/usb_input.rs)
-  - implements `BattleInput` over USB CDC packets.
-  - prompts for choices, validates user input, returns battler command strings.
-- [`board_effects.rs`](../crates/mega_blastoise_fw/src/board_effects.rs)
-  - implements `BoardEffects`.
-  - currently logs typed events through defmt.
-  - future home for LEDs, buzzer, and physical board outputs.
+- [`board_v2.rs`](../crates/mega_blastoise_fw/src/board_v2.rs)
+  - implements core's `DevicePort`: clock, timers, console lines, frame
+    presentation, entropy and battery level.
+  - everything the device does (lobby, ready sequence, battles, narration) is
+    `mega_blastoise_core::device_runner`, shared with the web build.
+
+The v1 firmware (two OLEDs, LED strips, buzzer, button matrix) is described in
+[docs/archive/v1/firmware/](../docs/archive/v1/firmware/INTERACTIONS.md).
 
 Continue with [Host Runtime and Test Harness](./04-host-runtime.md).

@@ -12,11 +12,11 @@ For project overview and hardware, see [DESIGN.md](./docs/archive/v1/DESIGN.md) 
 battler/                    # upstream battle engine (git checkout)
 mega_blastoise/
   crates/mega_blastoise_core/      # no_std shared library: engine glue, event bus
-  crates/mega_blastoise_fw/        # RP2040 firmware binary
+  crates/mega_blastoise_fw/        # RP2350 (Pico 2) firmware for the stripboard v2 board
   crates/mega_blastoise_test/      # PC host binary for development and testing
 ```
 
-`mega_blastoise_core` compiles for both the RP2040 and a standard PC. The full battle pipeline — engine integration, event parsing, input handling — can be developed and tested on a laptop without touching hardware. `mega_blastoise_fw` and `mega_blastoise_test` are thin adapters that plug platform-specific I/O into the same shared core.
+`mega_blastoise_core` compiles for both the RP2350 and a standard PC. The full battle pipeline (engine integration, event parsing, input handling) can be developed and tested on a laptop without touching hardware. `mega_blastoise_fw` and `mega_blastoise_test` are thin adapters that plug platform-specific I/O into the same shared core.
 
 ---
 
@@ -24,7 +24,7 @@ mega_blastoise/
 
 All game logic is handled by [`battler`](https://github.com/jackson-nestelroad/battler), an open-source Pokémon battle engine written in Rust. This project does not reimplement damage formulas, type effectiveness, status effects, or turn resolution — `battler` handles all of that. The firmware is purely presentation and input.
 
-`battler`'s core crates are `no_std`-compatible and compile directly for the RP2040.
+`battler`'s core crates are `no_std`-compatible and compile directly for the RP2350.
 
 ---
 

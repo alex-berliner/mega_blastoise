@@ -13,11 +13,9 @@
 //! math stays honest if either size ever moves again.
 //!
 //! The task consumes frames from [`FRAME`]; a `Signal` rather than a queue
-//! because only the newest frame matters. NOTE: binds PIO0_IRQ_0, as does
-//! the `leds` subsystem — `board_v2` and `leds` are mutually exclusive.
+//! because only the newest frame matters. Binds PIO0_IRQ_0.
 
 use embassy_rp::bind_interrupts;
-use embassy_rp::dma::Channel as DmaChannel;
 use embassy_rp::gpio::Output;
 use embassy_rp::peripherals::PIO0;
 use embassy_rp::pio::{

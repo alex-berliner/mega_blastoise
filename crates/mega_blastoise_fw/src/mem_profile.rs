@@ -3,16 +3,10 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 use defmt::info;
 use embedded_alloc::Heap;
 
-// gen1_battle peaks at <10 KB of heap (vs battler's 115 KB which forced the
-// old 128 KB). 64 KB keeps ~20× headroom over peak; the freed 64 KB goes to
-// the RTT buffer (see main.rs) with stack budget unchanged.
 // The RP2350 has 520 KB of RAM and the single-screen UI heap-allocates its
-// 320x480 RGB565 frame (300 KB), so that chip gets a heap to match. One
-// frame in flight (st7796::IDLE) is what makes 384 KB enough.
-#[cfg(feature = "rp2350")]
+// 320x480 RGB565 frame (300 KB), so the heap is sized for that. One frame in
+// flight (st7796::IDLE) is what makes 384 KB enough.
 pub const HEAP_SIZE: usize = 384 * 1024;
-#[cfg(not(feature = "rp2350"))]
-pub const HEAP_SIZE: usize = 64 * 1024;
 
 #[global_allocator]
 pub static HEAP: Heap = Heap::empty();

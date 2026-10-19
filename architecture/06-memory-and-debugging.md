@@ -9,19 +9,13 @@ This page describes runtime diagnostics and troubleshooting flow.
 - global heap allocator
 - snapshot logging: `used`, `free`, `peak`, `total`
 
-[`main.rs`](../crates/mega_blastoise_fw/src/main.rs) and [`usb_input.rs`](../crates/mega_blastoise_fw/src/usb_input.rs) emit snapshots at key points:
-
-- boot/init checkpoints
-- battle setup checkpoints
-- prompt entry/exit checkpoints
-- per-turn checkpoints (if enabled)
+With the `mem-profile` feature, [`main.rs`](../crates/mega_blastoise_fw/src/main.rs) emits a snapshot at boot.
 
 ## Runtime Tracing
 
-Current firmware logs include:
-
-- typed event traces in [`board_effects.rs`](../crates/mega_blastoise_fw/src/board_effects.rs)
-- request and accepted-choice traces in [`usb_input.rs`](../crates/mega_blastoise_fw/src/usb_input.rs)
+Every console line the shared `DeviceRunner` produces goes to defmt (RTT) and
+to the USB CDC console ([`usb_v2.rs`](../crates/mega_blastoise_fw/src/subsystems/usb_v2.rs));
+the `trace` feature adds core's own traces.
 
 This makes it easier to correlate:
 

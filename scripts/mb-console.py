@@ -95,7 +95,7 @@ def find_elf() -> str | None:
     root = Path(__file__).resolve().parent.parent
     candidates = []
     for profile in ("debug", "release"):
-        elf = root / "target" / "thumbv6m-none-eabi" / profile / "mega-blastoise-fw"
+        elf = root / "target" / "thumbv8m.main-none-eabihf" / profile / "mega-blastoise-fw"
         if elf.is_file():
             candidates.append(elf)
     if not candidates:
@@ -162,7 +162,7 @@ def _rtt_reader(
 ) -> None:
     """Stream probe-rs RTT output into *out_q*.  Restarts on disconnect."""
     cmd = [
-        "probe-rs", "attach", "--preset", "pico",
+        "probe-rs", "attach", "--preset", "pico2",
         "--no-location", "--no-timestamps", elf,
     ]
     while not stop.is_set():
@@ -275,7 +275,7 @@ def _printer(out_q: queue.Queue, stop: threading.Event, log_fh) -> None:
 def _probe_run(args: list[str], out_q: queue.Queue, label: str) -> bool:
     out_q.put(("sys", label))
     r = subprocess.run(
-        ["probe-rs"] + args + ["--preset", "pico"],
+        ["probe-rs"] + args + ["--preset", "pico2"],
         capture_output=True, text=True,
     )
     if r.returncode != 0:
@@ -371,7 +371,7 @@ def main() -> None:
     # the RTT attach exists to race with — and wait for USB to come up.
     if not args.no_usb and usb_dev is None:
         print("firmware USB not found — resetting target…")
-        subprocess.run(["probe-rs", "reset", "--preset", "pico"], capture_output=True)
+        subprocess.run(["probe-rs", "reset", "--preset", "pico2"], capture_output=True)
         deadline = time.monotonic() + 8.0
         while time.monotonic() < deadline:
             usb_dev = find_fw_tty()

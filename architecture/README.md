@@ -6,7 +6,7 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 
 1. [System Overview](./01-system-overview.md)
 2. [Core Battle Engine Flow](./02-core-battle-flow.md)
-3. [Firmware Runtime (RP2040)](./03-firmware-runtime.md)
+3. [Firmware Runtime (RP2350)](./03-firmware-runtime.md)
 4. [Host Runtime and Test Harness](./04-host-runtime.md)
 5. [Events and Input Contracts](./05-events-and-input.md)
 6. [Memory and Debugging](./06-memory-and-debugging.md)

@@ -29,6 +29,7 @@ use mega_blastoise_core::device_session::Button;
 /// overlay in the port's present().
 pub static MASKS: [AtomicU8; 2] = [AtomicU8::new(0), AtomicU8::new(0)];
 
+#[cfg(feature = "input-debug")]
 pub fn masks() -> [u8; 2] {
     [MASKS[0].load(Ordering::Relaxed), MASKS[1].load(Ordering::Relaxed)]
 }

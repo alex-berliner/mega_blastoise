@@ -6,7 +6,7 @@ description = "Hardware recovery line: pulse RP2040 RUN low on a USB trigger"
 
 # NOTE: deliberately NOT a member of the root workspace (see root Cargo.toml
 # `exclude`). This crate builds for xtensa-esp32-none-elf with the Espressif
-# `esp` toolchain; the workspace is nightly + thumbv6m.
+# `esp` toolchain; the workspace is nightly + thumbv8m.
 
 [dependencies]
 esp-hal       = { version = "0.23.1", features = ["esp32"] }

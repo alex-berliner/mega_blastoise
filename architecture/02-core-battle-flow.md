@@ -36,4 +36,4 @@ This page describes shared logic inside `mega_blastoise_core`.
 
 The loop intentionally avoids collecting all active requests into a temporary `Vec`. This lowers peak allocation pressure in constrained firmware runs.
 
-Continue with [Firmware Runtime (RP2040)](./03-firmware-runtime.md).
+Continue with [Firmware Runtime (RP2350)](./03-firmware-runtime.md).

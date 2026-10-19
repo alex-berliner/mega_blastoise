@@ -53,8 +53,8 @@ pub use choice_collect::{
 };
 pub use gen3_battle::Ruleset;
 pub use runner::gen1::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
-pub use hp_bar::{hp_bar_color, hp_bar_count, HpBarState};
-pub use prompt_fmt::{format_active_state, format_lobby_status, format_player_state, format_prompt};
+pub use hp_bar::HpBarState;
+pub use prompt_fmt::{format_active_state, format_player_state, format_prompt};
 pub use data_store::FlashDataStore;
 pub use move_sprites::{move_sprite, MOVE_SPRITE_SIDE};
 pub use demo_teams::{demo_team_blue, demo_team_red};
@@ -62,7 +62,7 @@ pub use randbat::{draw_randbat_team, draw_two_randbat_teams, TEAM_SEED_SALT};
 pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
 pub use cli_parse::{
-    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, LobbyCmd, TurnChoice, LOBBY_HELP,
+    parse_lobby_cmd, parse_switch_line, parse_team_spec, parse_turn_line, LobbyCmd, TurnChoice,
 };
 pub use display_color::{text_aa, text_aa_center, text_aa_font, draw_platform, draw_status_plate, draw_message_box, seat_trim, render_versus, render_choice, render_gen_picker, render_locked, render_log, render_lobby as render_lobby_color, render_move_info, render_options, render_party, render_playback, render_result, render_stats, HalfCtx, OptionRow, HALF_H, HALF_W};
 pub use move_anim::{anim as move_anim_for, Anim, Effect};

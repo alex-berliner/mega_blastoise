@@ -1,5 +1,5 @@
-//! The ONE battle-input state machine, shared verbatim by the RP2040 firmware
-//! and the web client.
+//! The ONE battle-input state machine, shared verbatim by the firmware and
+//! the web client.
 //!
 //! Everything a player experiences while a choice is being collected is
 //! decided here: prompt display, accept/reject validation and messages, the
@@ -1315,17 +1315,6 @@ impl ReadySequence {
         // concealed mode is gone — left them staring at a blank half.
         self.show(me, fx);
         self.grace_start = None;
-    }
-
-    /// CLI convenience (`:ready pN`): ready with the current highlight
-    /// (Normal unless the picker grammar changed it) — skips the picker.
-    pub fn set_ready_cmd(&mut self, player: u8, fx: &mut Vec<Effect>) {
-        if !(1..=2).contains(&player) {
-            return;
-        }
-        let i = (player - 1) as usize;
-        self.st[i] = SeqSlot::Ready;
-        self.show(i, fx);
     }
 
     /// CLI unready: back to the start screen; AI assignments are dropped

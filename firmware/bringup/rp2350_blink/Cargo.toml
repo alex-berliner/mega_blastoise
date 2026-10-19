@@ -1,5 +1,5 @@
-# Standalone: the parent workspace is RP2040 (thumbv6m) and pins embassy-rp to
-# the rp2040 feature, which is mutually exclusive with rp235xa.
+# Standalone: a bring-up smoke test kept independent of the game workspace (it
+# dates from when that workspace pinned embassy-rp to the RP2040).
 [workspace]
 
 [package]

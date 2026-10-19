@@ -1,7 +1,7 @@
 //! Shared OLED screen orchestration — the ONE place that decides what each
 //! player's display shows.
 //!
-//! Both the RP2040 firmware and the web client feed [`OledCmd`]s into an
+//! Both the firmware and the web client feed [`OledCmd`]s into an
 //! [`OledController`] and render whatever [`OledController::screen`] says is
 //! current, via [`render_screen`]. Platforms own only the plumbing (channels,
 //! flushing, pixel upload); putting the state machine here means the two

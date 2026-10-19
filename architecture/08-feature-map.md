@@ -49,8 +49,6 @@ runtime owns it.  Use it when deciding where new code belongs.
 
 | Feature | Symbol |
 |---------|--------|
-| HP fraction → lit LED count (8-bar) | `hp_bar_count` |
-| HP fraction → RGB color tuple | `hp_bar_color` |
 | HP string parser (e.g. `"42/75"`) | `HpBarState` (`parse`, `pct`) |
 
 ### battle_input
@@ -101,7 +99,6 @@ runtime owns it.  Use it when deciding where new code belongs.
 | Full battle state summary (per-turn `on_turn` callback) | `format_active_state` |
 | Single-player state text | `format_player_state` |
 | Move/switch prompt text for CLI display | `format_prompt` |
-| Lobby ready-status line (USB/CLI) | `format_lobby_status` |
 
 ### data_store
 
@@ -120,162 +117,42 @@ runtime owns it.  Use it when deciding where new code belongs.
 
 ---
 
-## mega_blastoise_fw  (RP2040, Embassy, `no_std`)
+## mega_blastoise_fw  (RP2350, Embassy, `no_std`)
 
-### main.rs — startup and game loop
+The stripboard v2 board: Pico 2, one ST7796 320x480 panel, 16 direct buttons.
+Default features `rp2350` + `board_v2`; default target `thumbv8m.main-none-eabihf`.
 
-- Hardware peripheral init (Embassy HAL)
-- Heap initialization and RTT/defmt setup
-- Game loop: lobby → battle → lobby
-- Feature-gated subsystem spawn (see table below)
-
-### lobby.rs — lobby state machine
-
-| Feature | Detail |
-|---------|--------|
-| `LobbyInput` trait | Abstracts USB+button vs. button-only |
-| `LobbyEvent` enum | Typed lobby inputs (P1/P2/Ready/Unready/AI/Demo/Stop) |
-| `run_lobby_inner` | Demo-race loop → ready-up phase → countdown |
-| Demo AI battle | `run_demo_battle` races AI vs. AI until interrupted |
-| USB + button implementation | `UsbButtonLobbyInput` |
-| Button-only implementation | `ButtonOnlyLobbyInput` (no `usb` feature) |
-
-### battle_effects.rs — `BoardEffects` implementation
-
-Implements the `BoardEffects` trait for the firmware.  Routes events to hardware
-subsystems and writes narration strings to `bus.log` for USB display.
-
-| Event | Action |
-|-------|--------|
-| Damage / Heal | HP% → OLED + LED HP bar; buzzer Hit |
-| SwitchIn | Mon name → OLED; move list → OLED; LED party slot on |
-| Faint | HP=0 → OLED; LED party slot off + status clear; buzzer Faint |
-| Win / Tie | OLED win screen; LED win animation; buzzer Win |
-| SuperEffective | Buzzer SuperEffective |
-| CriticalHit | Buzzer Crit |
-| SetStatus / CureStatus | LED status dot |
-| Prompt | OLED restore (clears any long-press detail overlay) |
-| MovesUpdate | OLED move list update |
-
-Animation delay applied after every event per `anim::*` constants (skippable via `:anim off`).
-
-### pico_battle_input.rs — GPIO button matrix
-
-| Feature | Detail |
-|---------|--------|
-| `ButtonMatrix` | 4×4 scan, 12 µs settle, active-LOW with pull-ups |
-| `PicoBattleInput` | `ButtonSource` impl; routes rows 0–1 to P1, rows 2–3 to P2 |
-| `wait_move` | Waits for a usable move button (respects disabled/PP=0 filter) |
-| `wait_switch` | Waits for a party button |
-| `wait_lobby_press` | Short vs. long press detection for lobby AI trigger |
-
-### usb_input.rs — USB CDC battle CLI
-
-| Feature | Detail |
-|---------|--------|
-| `UsbBattleInput` | `InputSource` impl over USB CDC ACM |
-| Line editor | Backspace, CRLF normalization, Enter-to-repeat last line |
-| Turn prompt | Shows move list, accepts move slot or `switch N`; validates disabled/PP |
-| Switch prompt | Accepts party slot 1–6 |
-| AI auto-choice | `RandomAi` for AI-controlled players |
-| Meta commands | `:reset`, `:anim on/off` valid at any prompt |
-| Lobby CLI | `read_lobby_cmd` (delegates to `parse_lobby_cmd` from core) |
-| `last_typed_line` | Persists last non-empty input; cleared by `set_ai_players` |
-
-### subsystems/buzzer.rs — piezo buzzer  (`buzzer` feature)
-
-- Embassy async task; PWM slice 2 channel B (GP21)
-- `BuzzerCmd` channel (capacity 4); `buzz()` enqueue helper
-- Tones: Hit, SuperEffective, Crit, Faint, Win, CountdownBeep
-
-### subsystems/led.rs — WS2812B NeoPixels  (`leds` feature)
-
-- Embassy async task; PIO0 / DMA_CH0 / GP20; 24 LEDs
-- `LedCmd` channel (capacity 8); `send()` helper
-- Per-player state: HP bar (8 LEDs, green→yellow→red), party slots (3 LEDs, slot-indexed bool), status dot
-- Lobby animations: LobbyIdle (breathing blue-purple), LobbyWaiting, LobbyCountdown
-- Win animation: gold winner / dim loser
-
-### subsystems/oled.rs — dual SSD1306 OLEDs  (`oled` feature)
-
-- Embassy async task; I2C0 (GP16/17, P1) and I2C1 (GP18/19, P2)
-- Async I2C (interrupt-driven, no blocking flush)
-- `OledCmd` channel (capacity 8); `send()` helper
-- Commands: HpUpdate, ActiveMon, MovesUpdate, Faint, Win, RestoreScreen, LobbyState
-
-### lib.rs (fw library crate)
-
-- Panic handler (drives GP25 error LED, logs via defmt, UDF)
-- defmt panic handler
-- `HpBarState::parse` — parses `"current/max"` health strings
-- `usb_cdc_line` — USB line helpers (RTT mirror, CRLF write)
-- `mem_profile` — heap snapshot logging (peak/current, `mem-profile` feature)
+| File | Feature |
+|------|---------|
+| `main.rs` | Peripheral init, heap + RTT, task spawns, hands over to `board_v2::run` |
+| `board_v2.rs` | `DevicePort` impl (clock, timers, console, frame presentation, entropy, battery); runs core's `DeviceRunner` |
+| `subsystems/st7796.rs` | Panel driver: PIO SPI + DMA, one frame in flight |
+| `subsystems/buttons_v2.rs` | 16-key debounce, A tap vs. hold, `DeviceEvent::Button` pushes; held-key masks for `input-debug` |
+| `subsystems/usb_v2.rs` | USB CDC console: typed lines to the runner, `:reset`, `:bl`, `:panic`, `:anim` |
+| `subsystems/battery.rs` | Cell voltage sampling for the status bar |
+| `lib.rs` | IMAGE_DEF block, panic/HardFault handlers (GP25 LED, crash message kept across reset), `mem_profile`, `usb_cdc_line` |
+| `bin/gpio_probe.rs`, `bin/usb_loopback.rs` | Bring-up tools: pin discovery, CDC loopback |
 
 ### Cargo feature flags
 
 | Flag | What it enables |
 |------|-----------------|
-| `usb` (default) | USB CDC stack, `UsbBattleInput`, USB lobby input |
-| `oled` (default) | Dual SSD1306 async task |
-| `buzzer` (default) | PWM piezo task |
-| `leds` | WS2812B NeoPixel task |
-| `mem-profile` (default) | Heap snapshot logging |
+| `rp2350` (default) | The RP2350 chip in embassy-rp |
+| `board_v2` (default) | The stripboard v2 drivers (panel, buttons, console, battery) |
+| `input-debug` | Held-button overlay on the panel (`cargo bv2` / `cargo rv2`) |
+| `mem-profile` | Heap snapshot logging |
+| `trace` | Core's trace logging |
 
 ---
 
 ## mega_blastoise_web  (WASM, std)
 
-### lib.rs — WASM entry and global state
-
-| Feature | Detail |
-|---------|--------|
-| Game loop | `run_game_loop`: lobby → battle → lobby |
-| Button queues | Per-player `VecDeque<ButtonEvent>` + `Waker`; `press_move` / `press_switch` WASM exports |
-| `submit_text` | Parses text-box input: global cmds → lobby cmds → `parse_web_game_cmd` from core |
-| Lobby commands | `:ready`, `:ready p1/p2`, `:ready ai`, `:demo` |
-| Lobby button handling | Any press readies that player; long-press triggers AI |
-| Demo mode | Auto-restart loop; interrupted by any button |
-| Global commands | `:reset` (page reload), `:anim on/off` |
-| OLED pixel exports | `get_p1_pixels`, `get_p2_pixels` (RGBA) |
-| LED state export | `get_led_state` (24 packed RGB u32s) |
-| Flash export | `get_flash_state` (super-effective / crit indicators) |
-| Battle transition export | `consume_battle_transitions` (bitmask, clears on read) |
-| Long-press overlays | `wasm_show_move_detail`, `wasm_show_pokemon_stats`, `wasm_restore_screen` |
-| Detail overlay guard | `P_IN_DETAIL` suppresses `update_pixels` while overlay is active |
-| Party LED sync | `sync_party_leds` — status-colored from `P_PARTY` data |
-| HP LED update | `update_hp_leds` — writes 8 HP-bar LEDs per player |
-| Active mon name cache | `P_MON_NAME` — shown on waiting screen |
-| AI pause | `wasm_toggle_ai_pause` — blocks AI `wait_action` without stopping the loop |
-
-### web_controller.rs — `WebButtonSource`
-
-- `ButtonSource` impl backed by `PlayerButtonFuture` (waker-based async)
-- `on_prompt`: renders `format_prompt` to log, calls `restore_screen`, `update_party`, `show_switch_screen`
-- `on_choice_pending`: shows waiting screen (skipped for AI players)
-- `on_waiting_for_other_player`: shows opponent-waiting screen
-- `wait_cancel_window`: 1-second window; any button press cancels
-- `wait_action`: loops on `PlayerButtonFuture`; validates party slot alive before Switch
-- `wait_switch`: loops on `PlayerButtonFuture`; validates party slot alive
-
-### web_effects.rs — `WebBattleEffects`
-
-`BoardEffects` impl for the web target.  Mirrors `battle_effects.rs` functionality using
-web globals instead of hardware channels.
-
-| Event | Action |
-|-------|--------|
-| Damage / Heal | Redraws OLED via `render_player_screen`; updates HP LEDs; flash for SE/crit |
-| SwitchIn | Redraws OLED; updates `P_MON_NAME`; updates moves + party |
-| Faint | Sets `slot.hp = 0` in `P_PARTY`; patches HP bar; syncs party LEDs |
-| Win / Tie | Full LED fill (gold winner / dim loser); win screen on OLED |
-| SetStatus / CureStatus | Patches `P_PARTY` status field; syncs party LEDs |
-| MovesUpdate | Updates `P_MOVES`; redraws OLED |
-| Prompt | Restores OLED screen |
-
-### web_display.rs — `WasmDisplay`
-
-- Implements `embedded_graphics::DrawTarget` over a 128×64 1-bit pixel buffer
-- `to_rgba()` converts to a 4-byte-per-pixel RGBA `Vec<u8>` for canvas transfer
+The same `DeviceRunner` in a browser page (`www/device.html`, `device.js`).
+`src/lib.rs` is raw IO only: a `DevicePort` impl (JS clock, timeouts, console
+log, entropy, the 320x480 pixel cache the page polls) and exports that turn
+pointer/keyboard input into `DeviceEvent`s (`nav_dpad`, `nav_a`, `nav_a_hold`,
+`nav_b`, `nav_info`, `panel_tap`, `submit_text`, plus `press_move`,
+`press_switch`, `nav_cancel` and `screen_state` for the headless probe).
 
 ---
 
@@ -313,12 +190,11 @@ web globals instead of hardware channels.
 | It is… | Put it in… |
 |--------|-----------|
 | Pure battle logic, event parsing, or choice formatting | `mega_blastoise_core` |
-| A display renderer using `embedded-graphics` | `crates/mega_blastoise_core/src/display.rs` |
+| A display renderer using `embedded-graphics` | `crates/mega_blastoise_core/src/display_color.rs` (the single screen) |
 | CLI input parsing (USB syntax or web syntax) | `crates/mega_blastoise_core/src/cli_parse.rs` |
 | A hardware peripheral task (I2C, PWM, PIO) | `crates/mega_blastoise_fw/src/subsystems/` |
-| Firmware-side `BoardEffects` routing | `crates/mega_blastoise_fw/src/battle_effects.rs` |
-| GPIO input driver | `crates/mega_blastoise_fw/src/pico_battle_input.rs` |
+| Firmware-side `DevicePort` plumbing | `crates/mega_blastoise_fw/src/board_v2.rs` |
+| GPIO input driver | `crates/mega_blastoise_fw/src/subsystems/buttons_v2.rs` |
 | A WASM export or JS-facing global | `crates/mega_blastoise_web/src/lib.rs` |
-| Web-side `BoardEffects` rendering | `crates/mega_blastoise_web/src/web_effects.rs` |
 | A stub for testing hardware behaviour | `crates/mega_blastoise_test/src/` |
 | A regression test | `crates/mega_blastoise_test/tests/` |

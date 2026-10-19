@@ -46,20 +46,25 @@ cargo run -p mega-blastoise-test
 
 Add `--release` to `cargo run` for a faster binary. See **Run modes** for `cargo test`.
 
-**Pico / RP2040 firmware:** install the Rust target once:
+**Firmware (Pico 2 / RP2350, the stripboard v2 board):** the Rust target is listed in
+`rust-toolchain.toml`; install it by hand if rustup did not:
 
 ```bash
-rustup target add thumbv6m-none-eabi
+rustup target add thumbv8m.main-none-eabihf
 ```
 
-Then either pass the target explicitly (recommended when building from the **workspace root** — Cargo does not apply `crates/mega_blastoise_fw/.cargo/config.toml`’s default target for `-p` builds):
+Build from inside the firmware crate, so its `.cargo/config.toml` applies (default target
+`thumbv8m.main-none-eabihf`, the linker scripts, the probe-rs runner). The default features
+(`rp2350`, `board_v2`) are the device build:
 
 ```bash
-cargo build -p mega-blastoise-fw --target thumbv6m-none-eabi
-cargo build -p mega-blastoise-fw --target thumbv6m-none-eabi --release
+cd crates/mega_blastoise_fw
+cargo build
+cargo build --release
+cargo bv2          # same, plus the held-button overlay on the panel (input-debug)
 ```
 
-**Firmware size stats** (prints section totals after link — install `rustup component add llvm-tools-preview` for `llvm-size`, or use `arm-none-eabi-size` from the GNU Arm toolchain):
+**Firmware size stats** (prints section totals after link; install `rustup component add llvm-tools-preview` for `llvm-size`, or use `arm-none-eabi-size` from the GNU Arm toolchain):
 
 ```bash
 ./scripts/fw-build.sh                    # debug + llvm-size -t / -A
@@ -67,15 +72,7 @@ PROFILE=release ./scripts/fw-build.sh    # release build + stats
 ./scripts/fw-build.sh --release          # same (cargo passes --release)
 ```
 
-Debug binaries include large `.debug_*` sections, so `llvm-size` totals look huge; prefer **`./scripts/fw-build.sh --release`** when checking flash/RAM against the Pico.
-
-Or `cd` into the firmware crate so its `.cargo/config.toml` sets `thumbv6m-none-eabi` automatically:
-
-```bash
-cd crates/mega_blastoise_fw
-cargo build
-cargo build --release
-```
+Debug binaries include large `.debug_*` sections, so `llvm-size` totals look huge; prefer **`./scripts/fw-build.sh --release`** when checking flash/RAM against the Pico 2.
 
 Flash/run with `probe-rs` as configured in `crates/mega_blastoise_fw/.cargo/config.toml`.
 
