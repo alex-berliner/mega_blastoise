@@ -38,7 +38,7 @@ The same board elsewhere, from each maker's instant quote: PCBWay is $65.09 for 
 bare boards and $165.33 for assembly labour, parts extra after their review. The
 quotes page tracks both makers.
 
-Not placed by JLC (no LCSC number): the 16 membrane contacts (bare gold), the
+Not placed by JLC (no LCSC number): the 20 membrane contacts (bare gold), the
 speaker pads, test pads, locating holes and fiducials. The panel's ZIF connector
 (J3) is placed by JLC like any other part.
 

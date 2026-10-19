@@ -23,11 +23,11 @@ which this folder never touches.
 - 3.5in 320x480 IPS panel (EastRising ER-TFT035IPS-6, ILI9488, SPI) with a published
   datasheet and 3D model, its FPC in a 50-pin ZIF connector (no soldering); a
   constant-current backlight sink per LED group
-- 16 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad and
-  four face buttons at each end
+- 20 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad, four face buttons,
+  Start and Select at each end
 - PWM audio through an RC filter into an FM8002A amplifier and a 15 mm speaker
 - One 403450 Li-ion cell (about 700 mAh) lying on the tub's floor under the board, TP4056 charger with USB load sharing,
-  ME6211 3V3 LDO, soft power on seat 1's Y button with MCU hold
+  ME6211 3V3 LDO, soft power on seat 1's Start button with MCU hold
 - Case 75.4 x 156.2 mm, 13.4 mm at the screen and 11.1 mm at the button decks (genuine DS Lite
   caps stand 1.3 mm proud there), two printed parts held by six M2 screws, as a DS Lite
 

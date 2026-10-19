@@ -19,7 +19,7 @@ AO3401A, the AO3400As (Q5, Q6) and the 2N7002s, the diodes (D2, D3, D5, D6: the 
 the panel's connector (pin 1 at its left end, its mouth towards seat 1).
 JLC fixes rotation offsets on request; the CPL carries KiCad's angles.
 
-Not assembled by JLC (no LCSC number): the 16 membrane contacts (bare gold), the speaker
+Not assembled by JLC (no LCSC number): the 20 membrane contacts (bare gold), the speaker
 pads, test pads, locating holes and fiducials. J3, the panel's ZIF connector, is assembled.
 
 ## 2. Order and make the rest
@@ -92,4 +92,4 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 8. Opening it again: the six screws out, then a thin blade down between the lid and the
    tub wall at a hook to ease it inwards; go round the six.
 
-The power button is seat 1's Y button: hold it for about a second to turn the device on.
+The power button is seat 1's Start button: hold it for about a second to turn the device on.

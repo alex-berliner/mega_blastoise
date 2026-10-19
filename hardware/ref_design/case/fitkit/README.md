@@ -14,7 +14,7 @@ any case or board change) with:
 | File | What it is | Print |
 |---|---|---|
 | `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, supports under the four button decks (they sit 6.0 mm below the screen face) |
-| `board_mock.stl` | the board: outline, the six locating holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 16 membrane contacts and the four silicone pieces engraved, J3's outline to tape a real connector on | flat, as exported |
+| `board_mock.stl` | the board: outline, the six locating holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 20 membrane contacts, the four silicone pieces and the two Start/Select membranes engraved, J3's outline to tape a real connector on | flat, as exported |
 | `panel_dummy.stl` | the panel at its thickest (2.45 mm), active area engraved on the glass side | flat, glass side up |
 | `cell_dummy.stl` | the 403450 cell (50 x 34 x 4 mm) with its lead tab at its right-hand end | flat |
 | `cell_plug_dummy.stl` | a JST PHR-2 plug with a cable stub (approximate) | upright |
@@ -25,6 +25,7 @@ any case or board change) with:
 | `tune_openings.stl` | **the quickest button test (about 30 min):** D-pad openings at 0.6, 0.8 and 1.0 mm round the cross, a whole keyed A/B/X/Y cluster (tab slots and notch ribs), and plain holes at 7.4, 7.8 and 8.0 mm; the numbers are engraved in the face | face down, as exported |
 | `tune_stack_dpad_board.stl` + `tune_stack_dpad_lid_dome*.stl` | one D-pad's slice of the board (contact rings engraved) and of the lid, the lid on four legs at its real height. Three lids, for a silicone 0.9, 1.2 or 1.5 mm tall at rest (`dome_h`); the value is engraved in each | board flat, lids face down |
 | `tune_stack_abxy_board.stl` + `tune_stack_abxy_lid_dome*.stl` | the same for one A/B/X/Y cluster | as above |
+| `tune_stack_ss_board.stl` + `tune_stack_ss_lid_dome*.stl` | the same for seat 1's Start/Select membrane (its outline, pill pitch and caps are ESTIMATEs in `case.scad`: `ss_mem`, `ss_pitch`, `ss_cap_*`) | as above |
 | `coupon_frame_lid.stl` | the lid's window, ledge and panel frame | face down, as exported |
 
 PLA or PETG, 0.2 mm layers, 3 walls; no supports, except under the lid's button decks (the
@@ -83,7 +84,7 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
    Fold the real panel's FPC under it and slide it into the connector. The design expects a little
    slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
    `case.scad` moves J3.
-4. Panel into the lid's frame on the tape, silicone and caps in, lid down (its lip into the wall's step): all six hooks should
+4. Panel into the lid's frame on the tape, silicone and caps in, lid down (its lip into the wall's step): all four hooks should
    click, the lid should sit flush, nothing should rattle, the case should measure 13.4 mm at the screen, 11.1 at the ends.
 5. Press every button: each should click through and spring back.
 

@@ -90,12 +90,13 @@ every hole 0.3 mm or larger.
   about 10 uA (a warm Schottky) would reach the ME6211's 1.0 V CE level. R38 (1k, the
   unplug bleeder, see USB) holds VBUS down: that now takes about 1.3 mA. It costs 5 mA
   with USB in.
-  (A 10k R15 would do the same but cut how much resistance the Y contact's pill may have
+  (A 10k R15 would do the same but cut how much resistance the Start contact's pill may have
   before Q1 misses a press by about five times.)
-- The button is seat 1's Y contact (SW8). Its common comb is VSYS instead of
-  GND, so pressing Y joins VSYS to PWR_BTN_RAW, as the side switch did. The MCU
+- The button is seat 1's Start contact (SW21; seat 1's Y until 2026-10-19, which put it
+  on Start so no game button doubles as power). Its common comb is VSYS instead of
+  GND, so pressing Start joins VSYS to PWR_BTN_RAW, as the side switch did. The MCU
   sees it through Q1 (2N7002, gate on the button node) on GPIO3, so no MCU pin
-  ever touches VSYS; firmware reads seat 1's Y there.
+  ever touches VSYS; firmware reads seat 1's Start there.
 - Off state: ME6211 off (CE low), amplifier shut down (R36 holds SHUTDOWN high,
   4.2 uA), backlight sinks off (they run from 3V3; R56/R57 hold the FET gates low), charger drawing about 2 uA from the
   cell, battery divider 4.5 uA (up to 9 uA: with the chip unpowered, GPIO47 sits above
@@ -199,12 +200,13 @@ every hole 0.3 mm or larger.
 
 ### Membrane contacts (sheet Buttons)
 
-- 16 x DSL_button_4ring: two interleaved combs (0.15 mm lines, 0.20 mm gaps,
+- 16 x DSL_button_4ring (D-pads, A/B/X/Y) and 4 x DSL_button_3ring (Start, Select: the same comb
+  without its outer ring, for the Start/Select membrane's smaller pills; ESTIMATE): two interleaved combs (0.15 mm lines, 0.20 mm gaps,
   checked by `hardware/membrane/tools/check_contact_fp.py`) under one 4.8 mm mask
   opening, ENIG. A carbon pill of 1.6 mm or more bridges them anywhere on the pad.
 - Each comb leaves through a 0.2 mm stub to a via 3.3 mm from the contact's
   centre; nothing else (no vias, no pour) inside 2.9 mm.
-- SW8 (seat 1's Y) is the power button: its combs are VSYS and PWR_BTN_RAW.
+- SW21 (seat 1's Start) is the power button: its combs are VSYS and PWR_BTN_RAW.
 
 ## Board
 
