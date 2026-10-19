@@ -385,7 +385,9 @@ class Sheet:
             for k in (_key((x1, y1)), _key((x2, y2))):
                 deg[k] = deg.get(k, 0) + 1
         for k, n in deg.items():
-            extra = len([i for i in pts.get(k, []) if i[0] in ("pin", "power")])
+            here = pts.get(k, [])
+            # stacked pins of one symbol (the RP2350B's IOVDD) count once
+            extra = len({i[1] for i in here if i[0] == "pin"}) + len([i for i in here if i[0] == "power"])
             if n + extra >= 3:
                 self.junctions.append(k)
 
@@ -536,8 +538,10 @@ class Sheet:
                     if _overlap(b1, b2, 0.1):
                         warns.append(f"bodies overlap: {o1} {o2}")
                     continue
-                if o1 == o2 and {k1, k2} <= {"body", "field"}:
+                if o1 == o2 and k1 == k2 == "field":
                     continue
+                if o1 == o2 and {k1, k2} == {"body", "field"} and o1 in ("U4",):
+                    continue                     # its name sits in the middle of the chip
                 if _overlap(b1, b2, 0.05):
                     warns.append(f"{k1} {o1} overlaps {k2} {o2}")
         for w in self.wires:

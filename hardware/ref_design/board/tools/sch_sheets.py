@@ -48,7 +48,7 @@ def audio():
     sh.place("C37", 44.45, Yc + 3.81, 0, f=("r", G))
     sh.place("R33", 55.88, Yc, 90)
     sh.place("C38", 67.31, Yc + 3.81, 0, f=("r", G))
-    sh.place("C39", 78.74, Yc, 90)
+    sh.place("C39", 78.74, Yc, 90, f=(0, -8.89))
     sh.place("R34", 93.98, Yc, 90)
     a = (20.32, Yc)
     sh.wire(a, "R32.1")
@@ -56,7 +56,7 @@ def audio():
     sh.wire("R32.2", "R33.1"); sh.wire((44.45, Yc), "C37.1"); sh.tag("C37.2", 0)
     sh.wire("R33.2", "C39.1"); sh.wire((67.31, Yc), "C38.1"); sh.tag("C38.2", 0)
     sh.wire("C39.2", "R34.1")
-    sh.heading(73.66, Yc - 10.16, "DC block, Ri")
+    sh.heading(73.66, Yc - 17.78, "DC block, Ri")
     node = (101.6, Yc)
     sh.wire("R34.2", "U7.4")
     # -- feedback Rf over the amplifier, from VO1 back to -IN
@@ -135,7 +135,7 @@ def debug():
     # -- J7: the same SWD on bare pads (pogo jig)
     x, y = 165.1, 55.88
     sh.heading(x - 7.62, y - 20.32, "Debug pads J7 (back side, 2.54 mm)")
-    sh.place("J7", x, y, 180, f=(-5.08, 0))
+    sh.place("J7", x, y, 180, f="l")
     t = x + 5.08
     sh.wire("J7.6", (t + 2.54, y - 7.62), (t + 2.54, y - 12.7), (t + 7.62, y - 12.7), v=False)
     sh.gnd((t + 7.62, y - 12.7))
@@ -166,7 +166,7 @@ def usb_charger():
     # ---- USB-C receptacle, CC pull-downs and sense taps
     Jx, Jy = 30.48, 60.96
     sh.heading(17.78, 25.4, "USB-C receptacle + CC")
-    sh.place("J1", Jx, Jy, 0, f=(0, -24.13))
+    sh.place("J1", Jx, Jy, 0, f=(0, -22.86))
     sh.nc("J1.A8"); sh.nc("J1.B8")
     for n in ("A9", "B4", "B9", "A12", "B1", "B12"):
         pass                                     # stacked on A4 / A1
@@ -213,7 +213,7 @@ def usb_charger():
     # ---- charger
     Ux, Uy = 180.34, 71.12
     sh.heading(160.02, 35.56, "Charger (TP4056)")
-    sh.place("U2", Ux, Uy, 0, f=(12.7, -16.51))
+    sh.place("U2", Ux, Uy, 0, f=(12.7, -15.24))
     sh.wire((Ux, VB), "U2.4")
     sh.wire("U2.3", (Ux, Uy + 15.24)); sh.wire("U2.9", (Ux - 2.54, Uy + 15.24), (Ux, Uy + 15.24))
     sh.gnd((Ux, Uy + 15.24))
@@ -237,10 +237,10 @@ def usb_charger():
     sh.place("R9", 111.76, yd - 3.81, 180, f=("r", -H))
     sh.wire((111.76, yd), "R9.1"); sh.tag("R9.2", 0)
     # PROG and TEMP
-    sh.place("R5", Ux + 12.7, Uy + 2.54 + 3.81, 0, f=("r", G))
+    sh.place("R5", Ux + 12.7, Uy + 2.54 + 3.81 + 12.7, 0, f=("r", G))
     sh.wire("U2.2", "R5.1"); sh.tag("R5.2", 0)
     yt = 99.06
-    sh.heading(187.96, 119.38, "Cell temperature window")
+    sh.heading(187.96, 111.76, "Cell temperature window")
     sh.wire("U2.1", (Ux + 21.59, Uy), (Ux + 21.59, yt), (251.46, yt))
     sh.place("R39", 210.82, yt - 3.81, 0, f=("l", -H))
     sh.wire((210.82, yt), "R39.2"); sh.tag("R39.1", 0)
@@ -284,7 +284,7 @@ def usb_charger():
     sh.heading(231.14, 119.38, "Battery connector J2")
     sh.place("J2", bx, by, 0, f="r")
     sh.nc("J2.MP")
-    sh.place("JP5", bx - 15.24, by, 180)
+    sh.place("JP5", bx - 20.32, by, 180)
     sh.wire("J2.1", "JP5.1")
     sh.rail("VBAT", sh.stub("JP5.2", G))
     sh.wire("J2.2", (bx - 7.62, by + 2.54), (bx - 7.62, by + 5.08), v=False)
@@ -331,7 +331,7 @@ def power():
     sh.text(119.38, Uy + 10.16, "JP1: cut at bring-up to check the")
     sh.text(119.38, Uy + 13.97, "regulator alone (3V3_LDO)")
     # ---- power latch: button, MCU hold, USB, wired-OR into the LDO's CE
-    sh.heading(17.78, 76.2, "Power latch (button, MCU hold, USB)")
+    sh.heading(17.78, 72.39, "Power latch (button, MCU hold, USB)")
     Dx, Dy = 76.2, 88.9
     sh.place("D2", Dx, Dy, 0, f=(-6.35, -6.35))
     raw = (20.32, Dy)
@@ -440,9 +440,9 @@ def display():
         sh.label(net, sh.wire(lane[j], (55.88, lane[j][1])), "right")
     for j, tpr, r in ((17, "TP12", "R29"), (15, "TP11", "R28")):
         ly = lane[j][1]
-        sh.place(r, 71.12, ly, 270)
+        sh.place(r, 83.82, ly, 270)
         sh.wire(lane[j], f"{r}.2")
-        tp(sh, tpr, (58.42, ly))
+        tp(sh, tpr, (68.58, ly))
         sh.label(sh.parts[r]["pins"]["1"], sh.stub(f"{r}.1", 5.08), "right")
     for j, tpr, side in ((14, "TP14", -3.81), (13, "TP13", 3.81)):
         ly = lane[j][1]
@@ -461,7 +461,7 @@ def display():
     sh.label("LCD_3V3", sh.wire((114.3, sy), (119.38, sy)), "right")
     # ---- backlight: reference filter and two current sinks around U6 (MCP6002)
     Ux, Uy = 200.66, 80.01
-    sh.place("U6", Ux, Uy, 0, f=(0, 0))
+    sh.place("U6", Ux, Uy, 0, f=(0, 21.59))
     sh.heading(Ux - 66.04, Uy - 10.16, "Backlight reference")
     ry = Uy + 5.08
     sh.place("R60", Ux - 50.8, ry, 90)
@@ -470,9 +470,9 @@ def display():
     sh.label("BL_PWM", hook, "left", hook="up")
     sh.wire("R60.2", "U6.5")
     for x, ref in ((Ux - 40.64, "R61"), (Ux - 30.48, "C50")):
-        sh.place(ref, x, ry + 3.81, 0, f=("r", G))
+        sh.place(ref, x, ry + 3.81, 0, f=("l", G))
         sh.wire((x, ry), f"{ref}.1"); sh.tag(f"{ref}.2", 0)
-    tp(sh, "TP10", (Ux - 22.86, ry))
+    tp(sh, "TP10", (Ux - 25.4, ry))
     sh.label("BL_REF", sh.wire((Ux - 35.56, ry), (Ux - 35.56, ry - G)), "up")
     sh.label("BL_REF", sh.wire("U6.3", (Ux - 12.7, Uy - 7.62), (Ux - 12.7, Uy - 10.16)), "up")
     sh.place("C51", Ux - 22.86, Uy - 15.24, 0, f="l")
@@ -498,17 +498,17 @@ def display():
         sh.wire((Ux - 15.24, crow), f"{cf}.2"); sh.wire(f"{cf}.1", (Ux + 12.7, crow))
         sh.place(rg, Ux + 20.32, drive, 90)
         sh.wire((Ux + 12.7, drive), f"{rg}.1")
-        sh.place(q, Ux + 35.56, drive, 0, f="r")
+        sh.place(q, Ux + 40.64, drive, 0, f="r")
         sh.wire(f"{rg}.2", f"{q}.1")
-        sh.place(rpd, Ux + 27.94, drive + 3.81, 0, f=("l", G))
-        sh.wire((Ux + 27.94, drive), f"{rpd}.1"); sh.tag(f"{rpd}.2", 0)
+        sh.place(rpd, Ux + 30.48, drive + 3.81, 0, f=("r", G))
+        sh.wire((Ux + 30.48, drive), f"{rpd}.1"); sh.tag(f"{rpd}.2", 0)
         sh.label(f"LED_K{ch}", sh.stub(f"{q}.3", G), "up")
         node = sh.stub(f"{q}.2", G)
-        sh.place(rs, Ux + 38.1, node[1] + 3.81, 0, f=("r", G))
+        sh.place(rs, Ux + 43.18, node[1] + 3.81, 0, f=("r", G))
         sh.tag(f"{rs}.2", 0)
-        sh.wire(node, (Ux + 50.8, node[1]), (Ux + 50.8, frow), v=False)
+        sh.wire(node, (Ux + 55.88, node[1]), (Ux + 55.88, frow), v=False)
         sh.place(rf, Ux + 15.24, frow, 270)
-        sh.wire((Ux + 50.8, frow), f"{rf}.1"); sh.wire(f"{rf}.2", (Ux - 15.24, frow))
+        sh.wire((Ux + 55.88, frow), f"{rf}.1"); sh.wire(f"{rf}.2", (Ux - 15.24, frow))
     sh.text(17.78, 175.26, "EastRising ER-TFT035IPS-6 (ILI9488, 4-wire SPI); its 50-pin FPC folds under the panel into J3 (ZIF). J3 pin j is panel pin 51 - j.")
     sh.text(17.78, 179.07, "Unused bus pins as the datasheet says: DB0-17 and RGB low, RD and IM2-0 high. Backlight: LED_A on VSYS; a current sink per")
     sh.text(17.78, 182.88, "cathode pin (U6 half, Q5/Q6, 2.2 ohm R52/R53). GPIO44 PWM, filtered by R60/R61/C50, sets BL_REF: 0.124 V (56 mA a pin)")
@@ -666,7 +666,56 @@ def mcu_power():
     return sh
 
 
+# ---- root sheet: the sheet symbols, what each sheet holds, mechanical parts
+SHEET_NOTES = {
+    "USB_Charger": ("USB-C receptacle + CC pull-downs", "ESD (SRV05-4), VBUS input",
+                    "charger (TP4056), load sharing", "battery connector J2"),
+    "Power": ("3V3 regulator (ME6211)", "power latch (button, MCU, USB)",
+              "button sense, cell voltage sense", "test points"),
+    "MCU": ("RP2354B (2 MB flash inside)", "USB series resistors",
+            "12 MHz crystal", "board revision straps"),
+    "MCU_Power": ("+3V3 and DVDD decoupling", "core 1.1 V switcher:",
+                  "AVDD filter, inductor, output", ""),
+    "Debug": ("SWD connector J5", "UART connector J6", "debug pads J7",
+              "BOOTSEL and RESET buttons"),
+    "Display": ("panel connector J3 (50-pin ZIF)", "SPI series resistors, panel supply",
+                "backlight reference", "backlight current sinks ch1, ch2"),
+    "Audio": ("PWM low-pass filter, DC block", "amplifier (FM8002A) and supply",
+              "shutdown control", "speaker pads J4"),
+    "Buttons": ("seat 1 contacts (P1 Y is the", "power button), seat 2 contacts",
+                "16 membrane contacts,", "one GPIO each"),
+}
+
+
+def SHEET_BOX(i):
+    """x, y, width, height of the i-th sheet symbol on the root sheet."""
+    return (20.32 + (i % 4) * 66.04, 50.8 + (i // 4) * 50.8, 58.42, 33.02)
+
+
+def root():
+    import design
+    sh = Sheet("battler.kicad_sch")
+    sh.text(20.32, 20.32, "Two-player handheld: reference design (REF-A)", size=2.0)
+    sh.text(20.32, 27.94, "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 16 membrane contacts under DS Lite silicone,")
+    sh.text(20.32, 31.75, "PWM audio into an FM8002A, one Li-ion cell on a TP4056 charger with load sharing, ME6211 3V3.")
+    sh.text(20.32, 35.56, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets.")
+    for i, (f, name) in enumerate(design.SHEETS):
+        x, y, w, h = SHEET_BOX(i)
+        sh.heading(x + 1.27, y - 3.81, name)
+        sh.text(x + 2.54, y + 5.08, f, size=1.0)
+        for j, line in enumerate(SHEET_NOTES[name]):
+            if line:
+                sh.text(x + 2.54, y + 11.43 + j * 4.45, line, size=1.0)
+    sh.text(20.32, 154.94, "Mechanical: locating holes at positions set by the case; fiducials for assembly.")
+    for i in range(6):
+        sh.place(f"H{i + 1}", 25.4 + i * 7.62, 165.1, 0)
+    for i in range(3):
+        sh.place(f"FID{i + 1}", 76.2 + i * 12.7, 165.1, 0)
+    return sh
+
+
 LAYOUTS = {
+    "battler.kicad_sch": root,
     "mcu.kicad_sch": mcu,
     "mcu_power.kicad_sch": mcu_power,
     "display.kicad_sch": display,
