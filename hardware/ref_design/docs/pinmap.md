@@ -16,8 +16,8 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 6 | `P2_LEFT` | membrane contact SW11, input with pull-up, low = pressed |
 | 7 | `P2_RIGHT` | membrane contact SW12, input with pull-up, low = pressed |
 | 8 | `AUDIO_PWM` | PWM4 A, 8 bits (586 kHz): audio through two RC stages (-3 dB at about 14 kHz) into U7 (see Audio) |
-| 9 | (spare) | not connected |
-| 10 | (spare) | not connected |
+| 9 | `P2_SELECT` | membrane contact SW22, input with pull-up, low = pressed |
+| 10 | `P2_START` | membrane contact SW23, input with pull-up, low = pressed |
 | 11 | `AMP_EN` | output: high turns the FM8002A on (Q3 pulls its SHUTDOWN low); low or floating = off (4 uA) |
 | 12 | `P2_A` | membrane contact SW13, input with pull-up, low = pressed |
 | 13 | `P2_B` | membrane contact SW14, input with pull-up, low = pressed |
@@ -41,8 +41,8 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 31 | `P1_RIGHT` | membrane contact SW4, input with pull-up, low = pressed |
 | 32 | `LCD_TE` | input: the panel's tearing-effect signal (enable with TEON); start a frame on its edge |
 | 33 | `LCD_CS` | SPI0 CSn (or drive as a GPIO) |
-| 34 | (spare) | not connected |
-| 35 | (spare) | not connected |
+| 34 | `P1_Y` | membrane contact SW8, input with pull-up, low = pressed |
+| 35 | `P1_SELECT` | membrane contact SW20, input with pull-up, low = pressed |
 | 36 | `LCD_MISO` | SPI0 RX (panel readback, optional) |
 | 37 | `LCD_DC` | display data/command |
 | 38 | `LCD_SCK_MCU` | SPI0 SCK, 33 ohm source termination R28 |
