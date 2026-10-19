@@ -58,10 +58,9 @@ PLATES = {
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
                       ("usb_tub", "usb_lid", "usb_board", "snap_tub", "snap_lid", "frame_lid",
                        "buttons_tub", "buttons_board", "buttons_lid")],
-    # EXPERIMENT (case.scad: deck_inserts): seat 1's end with its deck as a separate insert, no supports;
-    # its board coupon is 0_buttons_end's (the same part)
+    # EXPERIMENT (case.scad: deck_inserts): seat 1's end with its deck as a separate insert, no supports
     "5_inserts_experiment": [(n, f"{KIT}/coupon_{n}.stl") for n in
-                             ("buttons_tub_inserts", "buttons_lid_inserts", "buttons_insert")],
+                             ("buttons_tub_inserts", "buttons_board", "buttons_lid_inserts", "buttons_insert")],
 }
 NO_SUPPORT = {"5_inserts_experiment"}   # plates that print without any supports
 V5_NAMES = {"tub_print": "tub_print.stl", "lid": "lid.stl", "board_mock": "board_mock.stl",
