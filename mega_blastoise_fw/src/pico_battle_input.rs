@@ -2,7 +2,7 @@
 //!
 //! Boards (default = the partner PCB; `breadboard` selects the old board):
 //!
-//! `breadboard` — hand-wired breadboard (per ELECTRONICS.md):
+//! `breadboard` — hand-wired breadboard (per docs/archive/v1/ELECTRONICS.md):
 //!   drives GP5 (P1 moves), GP7 (P1 party), GP8 (P2 moves), GP9 (P2 party);
 //!   senses GP10–GP13.
 //!

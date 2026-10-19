@@ -3,6 +3,10 @@
 How Claude iterates on `board.scad` with a real visual + assertion feedback
 loop, so most design errors are caught without a test print.
 
+Written for the v1 case (`cad/`, now only at tag `v1-archive`); the loop is the same one
+`hardware/stripboard_v2/model/` and `hardware/ref_design/case/` follow, so the paths below
+are examples.
+
 Toolchain: OpenSCAD, code-based. Model is `cad/board.scad` (text, edited
 directly). Requires `openscad` installed (`sudo apt install openscad`).
 
