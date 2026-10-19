@@ -40,3 +40,5 @@ case/positions.json
 case/fit_report.txt
 case/fitkit/*.stl
 case/print/tub_print.stl
+case/print/package/
+case/print/mega_blastoise_print_package.zip
