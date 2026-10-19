@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mega Blastoise</title>
+<meta name="description" content="A two-player handheld Pokemon battler: play it in the browser, or look inside the hardware.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: a short masthead, then one column of link cards grouped by what you'd go there to do */
+:root {
+  --bg: #eef3f6; --card: #ffffff; --fg: #142029; --muted: #5a6a75; --rule: #d3dde3;
+  --shell: #2a6fb0; --shell-deep: #1d4f80; --accent: #e08a2c; --focus: #e08a2c;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0e151b; --card: #16212a; --fg: #e4ecf1; --muted: #93a4ae; --rule: #263540;
+          --shell: #4d93d6; --shell-deep: #8cbdf0; --accent: #f0a04b; --focus: #f0a04b; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 56px; }
+main { max-width: 720px; margin: 0 auto; display: grid; gap: 36px; }
+header { display: grid; gap: 10px; }
+.kicker { font: 400 0.78rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 800 clamp(2.4rem, 7vw, 3.6rem)/1 var(--display); margin: 0; color: var(--shell-deep); letter-spacing: -0.01em; }
+.lede { margin: 0; color: var(--muted); max-width: 56ch; }
+section { display: grid; gap: 12px; }
+h2 { font: 600 1.1rem var(--display); margin: 0; }
+.cards { display: grid; gap: 10px; }
+a.card { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: center; text-decoration: none; color: inherit;
+  background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+a.card:hover { border-color: var(--shell); }
+a.card:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+a.card.primary { border: 2px solid var(--shell); }
+.title { font: 600 1.05rem var(--display); color: var(--fg); }
+.desc { grid-column: 1; color: var(--muted); font-size: 0.95rem; min-width: 0; }
+.path { grid-column: 2; grid-row: 1 / span 2; font: 400 0.78rem var(--mono); color: var(--muted); white-space: nowrap; }
+.go { color: var(--accent); }
+footer { color: var(--muted); font-size: 0.9rem; }
+footer a { color: var(--shell-deep); }
+@media (max-width: 480px) { .path { display: none; } a.card { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="kicker">Two players · one handheld</span>
+    <h1>Mega Blastoise</h1>
+    <p class="lede">A pocket Pokemon battler for two: each player gets a D-pad and face buttons at their end of one shared screen. Play it here in the browser, or look inside the hardware being built for it.</p>
+  </header>
+
+  <section aria-labelledby="play">
+    <h2 id="play">Play</h2>
+    <div class="cards">
+      <a class="card primary" href="battler/device.html">
+        <span class="title">Play in the browser <span class="go">&rarr;</span></span>
+        <span class="desc">The single-screen handheld, emulated in the page: both seats in one window.</span>
+        <span class="path">/battler/device.html</span>
+      </a>
+      <a class="card" href="battler/">
+        <span class="title">The original two-screen version</span>
+        <span class="desc">The first prototype's interface: a small screen in front of each player.</span>
+        <span class="path">/battler/</span>
+      </a>
+      <a class="card" href="battler/ui_flow.html">
+        <span class="title">How a turn flows on one screen</span>
+        <span class="desc">The design notes behind the single-screen interface, step by step.</span>
+        <span class="path">/battler/ui_flow.html</span>
+      </a>
+    </div>
+  </section>
+
+  <section aria-labelledby="hardware">
+    <h2 id="hardware">Hardware</h2>
+    <div class="cards">
+      <a class="card" href="assembly/">
+        <span class="title">The handheld, taken apart in 3D</span>
+        <span class="desc">The reference design's case, board, screen, battery and buttons in an exploded view you can turn.</span>
+        <span class="path">/assembly/</span>
+      </a>
+      <a class="card" href="assembly-cell-on-board/">
+        <span class="title">An earlier layout</span>
+        <span class="desc">The same handheld with its battery on the board under the screen, before it moved under the board.</span>
+        <span class="path">/assembly-cell-on-board/</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>Source, schematics and build notes: <a href="https://github.com/alex-berliner/mega_blastoise">github.com/alex-berliner/mega_blastoise</a></footer>
+</main>
+</body>
+</html>
