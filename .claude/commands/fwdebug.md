@@ -8,8 +8,8 @@ This creates two natural modes that should never be mixed in the same session â€
 ---
 
 ## Commands
-run `source $MB_BASE/commands.sh`
-`cat $MB_BASE/commands.sh` to discover the commands
+run `source $MB_BASE/scripts/commands.sh`
+`cat $MB_BASE/scripts/commands.sh` to discover the commands
 
 ## Test loop over RTT and USB
 

@@ -1,5 +1,5 @@
 # mega-blastoise dev commands
-# Source with:  . $MB_BASE/commands.sh   (MB_BASE = workspace root)
+# Source with:  . $MB_BASE/scripts/commands.sh   (MB_BASE = workspace root)
 
 # Unset previous definitions so re-sourcing always picks up the latest versions.
 # NOTE FOR CLAUDE: every name defined anywhere in this file (functions, aliases,
