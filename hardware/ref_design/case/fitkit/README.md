@@ -20,7 +20,10 @@ they always match the design. Regenerate after any case or board change:
 | `speaker_dummy.stl` | the 15 mm speaker, 4 mm thick | flat |
 | `coupon_snap_tub.stl` + `coupon_snap_lid.stl` | one snap hook and its groove, cut from the real tub and lid | as exported, same printer settings as the case |
 | `coupon_buttons_tub.stl` + `_board.stl` + `_lid.stl` | seat 1's end of the tub, board and lid: the button stack | as exported |
-| `coupon_usb_tub.stl` | the tub wall around the USB-C opening | as exported |
+| `coupon_usb_tub.stl` + `coupon_usb_lid.stl` + `coupon_usb_board.stl` | the USB-C opening: its lower half in the tub wall, its upper half in the lid's tongue, and the board's tab with a stand-in for the receptacle's shell between them | as exported |
+| `tune_openings.stl` | **the quickest button test (about 30 min):** D-pad openings at 0.6, 0.8 and 1.0 mm round the cross, a whole keyed A/B/X/Y cluster (tab slots and notch ribs), and plain holes at 7.4, 7.8 and 8.0 mm; the numbers are engraved in the face | face down, as exported |
+| `tune_stack_dpad_board.stl` + `tune_stack_dpad_lid_dome*.stl` | one D-pad's slice of the board (contact rings engraved) and of the lid, the lid on four legs at its real height. Three lids, for a silicone 0.9, 1.2 or 1.5 mm tall at rest (`dome_h`); the value is engraved in each | board flat, lids face down |
+| `tune_stack_abxy_board.stl` + `tune_stack_abxy_lid_dome*.stl` | the same for one A/B/X/Y cluster | as above |
 | `coupon_frame_lid.stl` | the lid's window, ledge and panel frame | face down, as exported |
 
 PLA or PETG, 0.2 mm layers, 3 walls; no supports, except under the lid's button decks (the
@@ -34,6 +37,18 @@ connector (LCSC C202116), both DS Lite silicone sets and caps, the 403450 cell w
 speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
 
 ## Test in this order
+
+**0. Buttons, quickly (your caps and silicone, about 1 hour of printing in all):**
+- `tune_openings`: drop the D-pad into each of the three openings from the face side. Pick the
+  tightest one it moves freely in without rattling and set `dpad_gap` in `case.scad` to that number
+  (now 0.8; 0.5 was too tight in the first print). Put each of A, B, X and Y into its keyed hole
+  from the back: the flange's tab must drop into the slot and each notch onto its rib, and it must
+  not fit any other hole. If a rib fights a cap whose notch is elsewhere, note the angle and fix
+  `abxy_notches` (or set `notch_keys = false`). The three plain holes tune `cap_hole_d` (now 7.6).
+- `tune_stack_*`: silicone on the board slice, cap in the lid slice, lid on its legs. Try the
+  three lids: keep the one where the cap stands about 1.3 mm proud of the deck, presses cleanly and
+  springs back, and set `dome_h` to its number. If the D-pad then sits higher or lower than A/B/X/Y
+  wants, `dpad_lift` moves only the D-pad's lip.
 
 **1. Coupons first (about 2 hours of printing):**
 - **Snap:** press `coupon_snap_lid` onto `coupon_snap_tub`. It should click with firm thumb pressure,
@@ -52,7 +67,11 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   `dome_h` (sets the deck height), `piece_d`, `dpad_pitch`; the cap numbers from `case/DSLITE.md`
   (`cap_*`, `pocket_*`, `slot_*`, `dpad_*`) if a real cap disagrees.
   The JST plug (real or dummy) should go into J2 between seat 1's clusters, its wires through the slot beside it, without forcing them.
-- **USB-C:** a USB-C cable's plug should pass the opening in `coupon_usb_tub` with some clearance.
+- **USB-C:** board coupon into the tub coupon (its tab drops into the wall's slot), lid coupon on
+  top. The opening is the receptacle's own stadium shape, `usb_gap` (0.25 mm) round its shell, and
+  the shell's face sits 0.15 mm under the case's surface (`usb_recess`): the board now has a tab
+  that carries the receptacle out to the wall, instead of leaving it 1.15 mm inside. Too tight or
+  too loose round the stand-in: `usb_gap`. A real plug's overmold should rest flat on the case.
 
 **2. Everything together (about a day of printing):**
 1. Cell (or dummy) in its pocket on the tub's floor, its lead at seat 1's end; speaker (or dummy)

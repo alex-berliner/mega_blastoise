@@ -7,7 +7,17 @@ Tools: bench supply with current limit, multimeter, an oscilloscope (for step 5'
 unplug test), USB-C cable and a USB power meter, a Raspberry Pi Debug Probe (or any
 CMSIS-DAP) with JST SH 3-pin cables, a 403450 cell that has been checked for polarity.
 
-Test pads on the back: TP1 VBUS, TP2 VSYS, TP3 VBAT, TP4 3V3, TP5 GND.
+Test pads on the back: TP1 VBUS, TP2 VSYS, TP3 VBAT, TP4 3V3, TP5 GND, TP9 1V1 (the core's
+own rail, a pad on its via left of the chip), TP11-TP14 the panel's SCK, MOSI, CS and DC (a logic
+analyser's four channels, under J3's lead-in). On top: TP6 PWR_EN, TP7 LS_GATE, TP8 AMP_SHDN,
+TP10 BL_REF (the backlight's set point, by U6), and TP15/TP16, two GND pads for a scope's ground
+clip (by the charger and by the amplifier).
+
+**SWD without the cable or USB:** J7 on the back is a row of six 1.6 mm pads at 2.54 mm, named
+on the silkscreen: 3V3, CLK (SWCLK), DIO (SWDIO), RUN, BOOT (BOOTSEL), GND. A pogo-pin jig, a
+clip, or six soldered wires reach the chip there; it carries the same SWD as J5. Power through
+the 3V3 pad only with the cell out and USB unplugged (it feeds the 3V3 rail directly).
+Shorting BOOT to GND while tapping RUN to GND puts the chip in its USB boot loader.
 
 ## 0. Unpowered
 
@@ -17,14 +27,21 @@ Test pads on the back: TP1 VBUS, TP2 VSYS, TP3 VBAT, TP4 3V3, TP5 GND.
 | Diode test from TP3 (VBAT) to TP2 (VSYS) | one diode drop (Q2's body diode), not a short | a shorted or misplaced Q2 |
 | Look at J2's `+` mark and your cell's red lead | same pin | **reversed cell: the charger does not survive it** |
 
-Two solder jumpers come bridged from the factory; cut one with a knife to isolate a fault,
-bridge it again with a blob of solder:
+Five solder jumpers come bridged from the factory; cut one with a knife to isolate a fault
+or to put a meter in series, bridge it again with a blob of solder:
 
 - **JP1** (by U3) carries the 3.3 V regulator's output onto the 3V3 rail. Cut it to power
   the rail from a bench supply on TP4, or to measure the rail's draw through a meter across
   the pads.
 - **JP2** (right of J3) carries VSYS to the panel's LED anode (LED_A). Cut it to run the
   panel with its backlight off, or to measure the backlight current.
+- **JP3** (by C34, above the amplifier) carries VSYS to the amplifier (AMP_VDD). Cut it to
+  take a noisy or shorted amplifier off the board, or to measure what it draws.
+- **JP4** (above C29/C30, by J3) carries 3V3 to the panel's logic (LCD_3V3). Cut it to run
+  the board with the panel unpowered, or to read the panel's logic current. With it open,
+  firmware must hold the SPI pins low: the panel's inputs would feed it otherwise.
+- **JP5** (right of J2) joins the cell to the board (CELL_P to VBAT). Cut it and bridge it with
+  an ammeter to read everything the cell gives or takes: sleep current, charge current.
 
 TP6 (PWR_EN), TP7 (LS_GATE) and TP8 (AMP_SHDN) are bare pads for a scope probe.
 C41-C43 are empty 1206 footprints (C41 on the charger's TEMP input, C42/C43 on CC1/CC2): fit one by hand only
@@ -57,7 +74,7 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
    cell voltage.
 3. Read CHG_STAT_N and CHG_DONE_N: with USB in and no cell the TP4056 has nothing to
    charge, so they may flicker; that's expected.
-4. SWD: attach with probe-rs or openocd through J5.
+4. SWD: attach with probe-rs or openocd through J5, then again through J7's pads.
 5. Read REV3..REV0 (GPIO25-22, pull-ups on) as a number: 1 on this board (the REV on the
    back silkscreen).
 

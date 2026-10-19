@@ -30,6 +30,13 @@ KIT = [  # (kit name, file, what it tests)
     ("buttons_lid", "coupon_buttons_lid.stl", "seat 1's end of the lid: cap holes, retainers, J2 pocket"),
     ("usb_tub", "coupon_usb_tub.stl", "the USB-C opening's lower half, in the tub wall"),
     ("usb_lid", "coupon_usb_lid.stl", "its upper half, in the lid's tongue"),
+    ("usb_board", "coupon_usb_board.stl", "the board's tab with a USB-C shell stand-in, between the two halves"),
+    ("tune_openings", "tune_openings.stl", "D-pad openings 0.6/0.8/1.0, a keyed A/B/X/Y cluster, holes 7.4/7.8/8.0"),
+    ("tune_stack_dpad_board", "tune_stack_dpad_board.stl", "seat 1's D-pad: board slice with the contact rings"),
+    ("tune_stack_abxy_board", "tune_stack_abxy_board.stl", "seat 1's A/B/X/Y: board slice with the contact rings"),
+] + [(f"tune_stack_{c}_lid", f"tune_stack_{c}_lid_dome{d}.stl", f"its lid slice on legs, silicone height {d} mm", d)
+     for c in ("dpad", "abxy") for d in ("0.9", "1.2", "1.5")] + [
+    # (coupons with a fourth element are rendered with -D dome_h=<it>)
     ("frame_lid", "coupon_frame_lid.stl", "the lid's window, ledge and panel frame"),
 ]
 
@@ -62,9 +69,13 @@ def main():
         f.write("KIT_PARTS = [\n" + ",\n".join(
             f'  ["{r[0]}", {r[1]:.3f}, {r[2]:.3f}, {r[3]:.3f}, {r[4]:.3f}, {r[5]:.3f}, {r[6]:.3f}]' for r in rows) + "\n];\n")
     print(f"{len(rows)} part envelopes")
-    for kit, name, what in KIT:
+    only = sys.argv[1:]                 # names to build (default: all)
+    for kit, name, what, *dome in KIT:
+        if only and not any(o in name for o in only):
+            continue
         out = os.path.join(OUT, name)
-        r = subprocess.run(["openscad", "-o", out, "-D", 'part="kit"', "-D", f'kit="{kit}"',
+        extra = ["-D", f"dome_h={dome[0]}"] if dome else []
+        r = subprocess.run(["openscad", "-o", out, "-D", 'part="kit"', "-D", f'kit="{kit}"', *extra,
                             os.path.join(HERE, "fitkit.scad")], capture_output=True, text=True)
         if r.returncode or not os.path.exists(out) or "ERROR" in r.stderr or "WARNING: Assert" in r.stderr:
             sys.exit(f"openscad failed for {kit}:\n{r.stderr[-2000:]}")

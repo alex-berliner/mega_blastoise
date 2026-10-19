@@ -68,13 +68,24 @@ dpad_arm_l = 17.8;  dpad_arm_w = 5.9;  dpad_h = 3.34;   // D-pad cross
 dpad_flange_r = 6.5;                                    // its flange fills the corners between the arms
 flange_t = 0.55;                                        // both caps' flanges
 cap_hole_d = 7.6;  pocket_d = 9.2;  pocket_h = 1.4;     // lid: hole (the DS Lite's own 7.6; Pi Tin 7.34), flange pocket
-dpad_gap = 0.5;                                         // D-pad opening past the cross each side (the DS Lite's 18.9 mm)
+dpad_gap = 0.8;           // D-pad opening past the cross each side: the DS Lite's 18.9 mm opening is 0.55, and
+                          // 0.5 was too tight for Alex's AliExpress D-pad in the first print (tune: tune_openings)
+dpad_pocket_gap = 0.5;    // its flange's pocket past the flange (0.35 bound with the cross)
+dpad_lift = 0;            // raises (or, negative, lowers) the D-pad's retaining lip against the A/B/X/Y lips: the
+                          // D-pad sat at the wrong height in the first print (tune: tune_stack_dpad_*)
 slot_r = 5.95;  slot_a = 30;                            // tab slot in the pocket, a 30 degree wedge: the cap
                                                         // turns a few degrees at most, and the lid still goes on
                                                         // over caps set by eye (facelesstech's are 35)
 // tab directions, degrees clockwise from the seat's right, seen from the front: a pinwheel,
 // each 45 degrees clockwise from the flange's flat (which faces the diamond's centre)
 abxy_tabs = [["A", [1, 0], 135], ["B", [0, -1], 225], ["X", [0, 1], 45], ["Y", [-1, 0], 315]];
+// Notches in each flange's edge (same angle convention), from case/DSLITE.md: Alex's caps have them
+// and the first print's lid had nothing to match. A rib in the flange's pocket fills each one, so
+// every cap goes in only one way and only in its own hole. notch_keys = false drops the ribs if a
+// real cap disagrees (check with tune_openings first)
+abxy_notches = [["A", [225]], ["B", [0, 180]], ["X", [225]], ["Y", [90, 180]]];
+notch_keys = true;
+notch_w = 0.8;  notch_reach = 0.45;                     // rib width, and how far it reaches in over the flange
 dome_h = 1.2;                                           // ESTIMATE: board to the flange's underside at rest.
                                                         // 1.2, not 2.0: the DS Lite's own stack (board top about
                                                         // 3.2 under a 1.45 mm face, see DSLITE.md) until measured
@@ -433,8 +444,23 @@ module usb_opening() translate([in_x - 1, usb_y, usb_zc]) rotate([0, 90, 0])
 
 // every ABXY cap: [centre, tab direction in OpenSCAD's counter-clockwise degrees]. Seat 2's
 // cluster is seat 1's turned 180 degrees, caps and all
-function abxy_keys() = [for (s = [[abxy1, 0], [abxy2, 180]]) for (t = abxy_tabs)
-  [s[0] + (s[1] == 0 ? t[1] * a : -t[1] * a), s[1] - t[2]]];
+function abxy_keys() = [for (s = [[abxy1, 0], [abxy2, 180]]) for (i = [0:3]) let(t = abxy_tabs[i])
+  [s[0] + (s[1] == 0 ? t[1] * a : -t[1] * a), s[1] - t[2], [for (n = abxy_notches[i][1]) t[2] - n]]];
+// one A/B/X/Y cap's lid cut, in its own frame (tab along +x), from the pocket's floor up: the hole,
+// the flange's pocket less its notch ribs, the tab's slot
+module abxy_cut(h, notches, hole_d = cap_hole_d) {
+  cylinder(d = hole_d, h = h);
+  difference() {
+    cylinder(d = pocket_d, h = pocket_h + 0.01);
+    if (notch_keys) for (n = notches) rotate(n) translate([cap_flange_d / 2 - notch_reach, -notch_w / 2, -1])
+      cube([pocket_d / 2 - cap_flange_d / 2 + notch_reach + 0.05, notch_w, pocket_h + 2]);
+  }
+  linear_extrude(pocket_h + 0.01) polygon([[0, 0], for (t = [-slot_a / 2:slot_a / 6:slot_a / 2]) slot_r * [cos(t), sin(t)]]);
+}
+module dpad_cut(h, gap = dpad_gap) {
+  translate([0, 0, dpad_lift]) linear_extrude(h) offset(r = gap) cross(dpad_arm_w, dpad_arm_l);
+  linear_extrude(pocket_h + dpad_lift + 0.01) offset(r = dpad_pocket_gap) dpad_flange();
+}
 module dpad_flange() union() { circle(r = dpad_flange_r, $fn = 64); cross(dpad_arm_w, dpad_arm_l); }
 
 module lid() difference() {
@@ -486,15 +512,8 @@ module lid() difference() {
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_lid - 1]) linear_extrude(lid_t + 2) window();
   // buttons
-  for (k = abxy_keys()) at(k[0], retainer_bot - 0.01) rotate(k[1]) {
-    cylinder(d = cap_hole_d, h = case_h);
-    cylinder(d = pocket_d, h = pocket_h + 0.01);
-    linear_extrude(pocket_h + 0.01) polygon([[0, 0], for (t = [-slot_a / 2:slot_a / 6:slot_a / 2]) slot_r * [cos(t), sin(t)]]);
-  }
-  for (c = [dpad1, dpad2]) at(c, retainer_bot - 0.01) {
-    linear_extrude(case_h) offset(r = dpad_gap) cross(dpad_arm_w, dpad_arm_l);
-    linear_extrude(pocket_h + 0.01) offset(r = 0.35) dpad_flange();
-  }
+  for (k = abxy_keys()) at(k[0], retainer_bot - 0.01) rotate(k[1]) abxy_cut(case_h, k[2]);
+  for (c = [dpad1, dpad2]) at(c, retainer_bot - 0.01) dpad_cut(case_h);
   // pilot holes for the screws
   for (s = pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
   // pinholes, battery connector pocket
@@ -524,7 +543,7 @@ module caps() {
     translate([0, -cap_tab_w / 2, 0]) cube([cap_tab_r, cap_tab_w, flange_t]);
     cylinder(d = cap_abxy_d, h = cap_h, $fn = 48);
   }
-  for (c = [dpad1, dpad2]) at(c, z0) {
+  for (c = [dpad1, dpad2]) at(c, z0 + dpad_lift) {
     linear_extrude(flange_t) dpad_flange();
     linear_extrude(dpad_h) cross(dpad_arm_w, dpad_arm_l);
   }

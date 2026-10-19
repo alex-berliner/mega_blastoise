@@ -18,8 +18,11 @@ module kit_board() difference() {
   union() {
     linear_extrude(pcb_t) board_outline();
     // each part's envelope, from the bed up so parts past the board edge (USB-C) print unsupported-free
-    for (p = KIT_PARTS) if (p[0] != "J3" && p[6] >= min_part_h)
+    for (p = KIT_PARTS) if (p[0] != "J3" && p[0] != "J1" && p[6] >= min_part_h)
       translate([p[1], p[2], 0]) cube([p[3] - p[1], p[4] - p[2], pcb_t + p[6]]);
+    // the USB-C receptacle as its shell (a stadium), face at the case's surface less usb_recess
+    translate([usb_front - 7.3, usb_y, pcb_t + usb_h / 2]) rotate([0, 90, 0])
+      linear_extrude(7.3) rrect(usb_h, usb_w, usb_h / 2 - 0.01);
   }
   for (s = pins) at(s, -1) cylinder(d = hole_d + 0.2, h = pcb_t + 2, $fn = 32);        // FDM holes print small
   translate([0, 0, pcb_t - engrave]) {
@@ -74,6 +77,46 @@ module band_box() translate([-case_w / 2 - 1, -case_l / 2 - 1, -1]) cube([case_w
 module usb_box() translate([case_w / 2 - 12, usb_y - 12, -1]) cube([13, 24, case_h + 2]);
 module frame_box() let(w = panel_w + panel_fit + 2 * frame_wall + 8, l = panel_l + panel_fit + 2 * frame_wall + 8)
   translate([-w / 2, -l / 2, -1]) cube([w, l, case_h + 2]);
+
+// ---------------- tuning coupons: small, quick, one question each ----------------
+// tune_openings: the lid's button cuts, seen from the face, at the deck's real thickness (pocket
+// floor to deck face). Top row: D-pad openings 0.6 / 0.8 / 1.0 mm past the cross. Bottom row: a
+// whole keyed A/B/X/Y cluster (tab slots and notch ribs) and three plain hole sizes. Printed face
+// down like the lid; the numbers are engraved in the face
+tune_t = deck_face - retainer_bot;
+module tune_openings() difference() {
+  translate([-40, -31, 0]) cube([80, 60, tune_t]);
+  for (i = [0:2]) translate([-26 + 26 * i, 15, -0.01]) dpad_cut(tune_t + 1, gap = 0.6 + 0.2 * i);
+  for (i = [0:3]) let(t = abxy_tabs[i]) translate([-20 + t[1][0] * a, -15 + t[1][1] * a, -0.01])
+    rotate(-t[2]) abxy_cut(tune_t + 1, [for (n = abxy_notches[i][1]) t[2] - n]);
+  for (i = [0:2]) translate([12 + 10 * i, -15, -0.01]) rotate(-135) abxy_cut(tune_t + 1, [90], hole_d = 7.4 + 0.2 * i + (i > 0 ? 0.2 : 0));
+  translate([0, 0, tune_t - engrave]) linear_extrude(engrave + 0.01) {
+    for (i = [0:2]) translate([-26 + 26 * i, 2.5]) text(str(0.6 + 0.2 * i), size = 2.6, halign = "center", valign = "center");
+    for (i = [0:2]) translate([12 + 10 * i, -25.5]) text(str(7.4 + 0.2 * i + (i > 0 ? 0.2 : 0)), size = 2.2, halign = "center", valign = "center");
+    translate([-20, -29]) text("A B X Y keyed", size = 2.0, halign = "center", valign = "center");
+  }
+}
+// tune_stack: one cluster's slice of the board and of the lid, the lid on four legs at its real
+// height over the board, so the silicone and caps sit as in the case. Print a lid at each dome_h
+// (the silicone's height, ESTIMATE in case.scad) and keep the one where the caps stand right
+stack_half = 16;
+module stack_box(c) translate([c[0] - stack_half, c[1] - stack_half, -1]) cube([2 * stack_half, 2 * stack_half, case_h + 2]);
+module stack_legs(c) for (sx = [-1, 1], sy = [-1, 1])
+  at(c + [sx * (stack_half - 3), sy * (stack_half - 3)], z_top_cu) cylinder(d = 3, h = z_deck_lid - z_top_cu + 0.01);
+module tune_stack_lid(c) difference() {
+  union() { intersection() { lid(); stack_box(c); } stack_legs(c); }
+  at(c + [0, -stack_half + 1.8], deck_face - engrave) linear_extrude(engrave + 0.01)
+    text(str("DOME ", dome_h), size = 2.0, halign = "center", valign = "center");
+}
+module tune_stack_board(c) intersection() { kit_board(); stack_box(c); }
+
+if (kit == "tune_openings")       flip_at(deck_face) translate([0, 0, retainer_bot]) tune_openings();
+if (kit == "tune_stack_dpad_lid") flip() tune_stack_lid(dpad1);
+if (kit == "tune_stack_abxy_lid") flip() tune_stack_lid(abxy1);
+if (kit == "tune_stack_dpad_board") tune_stack_board(dpad1);
+if (kit == "tune_stack_abxy_board") tune_stack_board(abxy1);
+if (kit == "usb_board")    intersection() { kit_board(); usb_box(); }
+module flip_at(z) translate([0, 0, z]) rotate([180, 0, 0]) children();
 
 if (kit == "board")        kit_board();
 if (kit == "panel")        kit_panel();
