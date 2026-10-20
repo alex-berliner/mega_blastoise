@@ -22,14 +22,14 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | Charger | TP4056 at 500 mA, TEMP on a board NTC over the cell (1-46 C); USB load sharing (B5819W, AO3401A, BAT54WS gate feed, 22 uF on VSYS; a second B5819W across the AO3401A carries the unplug gap); 2.2 ohm in series with the input cap against hot-plug ringing | a fifth of the BQ24074's price, no stock risk; the NTC added on request (Extended part, $3 an order) |
 | Cell | 403450, about 700 mAh, Molex PicoBlade (MX1.25) plug into a 3.4 mm J2 (JST PH until 2026-10-19: too tall for the lowered lid), under the board on the tub's floor | 13.4 mm at the screen (the panel sits in a pocket in the lid, 2026-10-19), 11.1 at the ends; the plug passes up through a 5.45 x 4.4 mm hole a plug's length (5.5 mm) past J2's mouth, the cell 5 mm towards seat 2 to make room (Alex, 2026-10-20: the plug had to double over into J2); chosen over the cell on the board under the screen (13.9 mm, 7.9: branch ref-design-cell-on-board) (Alex, 2026-10-09) |
 | 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at 3.5 V as computed (the ADC reads against 3V3, which follows the cell once the LDO drops out) |
-| Audio | PWM (GPIO8, 8 bits at 586 kHz) through two RC stages (1k, 4.7 nF; -3 dB about 14 kHz) into an FM8002A, gain 2 | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
+| Audio | PWM (GPIO8, 8 bits at 586 kHz) through two RC stages (1k, 4.7 nF; -3 dB about 14 kHz) into an FM8002A, gain 2, into INGHAi's GSPK151035PN (15 x 10 mm) on J4, a PicoBlade header, playing out of the left wall's lower edge (2026-10-20) | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
 | Buttons | 16 x DSL_button_4ring (D-pads, A/B/X/Y) and 4 x DSL_button_3ring (each seat's Start and Select, under the DS Lite kit's Start/Select membrane, between the clusters at the case's end), direct GPIO, internal pull-ups; seat 1's Start is also the power button | no matrix; no side switch (approved); Start/Select added and power moved off Y (Alex, 2026-10-19) |
 | Pin map | each pin faces where its net goes, in fan-out order; Raspberry Pi's pin escapes copied with the core | two layers route completely (docs/pinmap.md) |
 | Power switch | seat 1's Start contact joins VSYS to the latch; MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |
 | USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 27 ohm 0402 series in Raspberry Pi's spots | one Extended part ($3 an order): the 27 ohm 0402 (C25100; 22 ohm until the 2026-10-05 pin review, and a 27 ohm 0603 doesn't fit the copied layout) and the ESD array was the second from 2026-10-07 (ProTek's Preferred SRV05-4, C85364, ran out, so U1 became Semtech's Extended SRV05-4.TCT, C13612) until 2026-10-20, when U1 became hongjiacheng's Preferred SRV05-4A (C20615829, Alex): same pinout, no setup fee |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes; SWD again on six 2.54 mm pogo pads on the back (J7: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND); probe pads on every rail (VBUS, VSYS, VBAT, 3V3, 1V1), the panel's SPI, BL_REF, PWR_EN, LS_GATE, AMP_SHDN and two GND clips; cut jumpers isolate the 3V3 regulator, backlight, amplifier, panel logic and cell (JP1-JP5) | no LEDs (approved); pads and jumpers added after Alex's debug-readiness review (2026-10-19) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
-| Case | six M2 screws through the board clamp tub and lid (as a DS Lite); four hooks on the long walls hold the lid while it is screwed; a lip in a step at the seam; crush ribs centre the board and bosses clamp it (it fits one way only: J1 and J2 key it); the board rests on floor ribs; button decks step down 2.34 mm (the panel sits in a pocket in the lid) for DS Lite caps, keyed by tab and notches; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
+| Case | six M2 screws through the board clamp tub and lid (as a DS Lite); four hooks on the long walls hold the lid while it is screwed; a lip in a step at the seam; crush ribs centre the board and bosses clamp it (it fits one way only: J1 and J2 key it); the board rests on floor ribs; no feet (2026-10-20: the tub prints flat as exported); the USB-C opening follows the shell's rounded-rectangle outline, and the lid's tongue over it has stepped seams; button decks step down 2.34 mm (the panel sits in a pocket in the lid) for DS Lite caps, keyed by tab and notches; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` by `tools/build_sch.py`; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
@@ -47,24 +47,29 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 ## To do (from 2026-10-20)
 
 Next:
-- [ ] Router reliability: `route.py 80` passed 1 run in 6 on the J2 rebuild. Most failures leave J1's
+- [x] Router reliability: `route.py 80` passed 1 run in 6 on the J2 rebuild. Most failures leave J1's
       outer rear shell leg (SH at 134.95, 104.32, on the USB tab) cut off from both GND pours, which
       the repair pass can't close; the rest leave a long seat-1 line to U4 open (P1_UP, P1_LEFT,
       P1_RIGHT, P1_SELECT). Pre-route J1's shell legs to GND like the other GND pads, and give
       those lines room, so a single run passes
-- [ ] U1: swap Semtech's SRV05-4.TCT (C13612, Extended, $3 an order) for hongjiacheng's SRV05-4A
+      Done 2026-10-20: route.py joins J1's shell legs on the back and gives each a via
+      (usb_shell_ground), and the maze finish can take one other net's copper up anywhere along a
+      long connection (corridor_ripup). With them 5 runs in 6 passed (2 of 3, then 3 of 3; the
+      failure was P1_UP, before corridor_ripup existed), and J1 never failed again. Corridor
+      rip-up didn't fire in the 3 runs since, so it is untested in a real run
+- [x] U1: swap Semtech's SRV05-4.TCT (C13612, Extended, $3 an order) for hongjiacheng's SRV05-4A
       (C20615829, Preferred, about $0.03): same pinout and 1.0 pF; ±15 kV against ±30 kV ESD, still
       above IEC 61000-4-2 level 4. `design.py` only, then check_pins against its datasheet; no copper
       change. Update the USB row above
-- [ ] Schematic: every power:GND symbol hides its "GND" value (77 of them), so a ground reads as a
+- [x] Schematic: every power:GND symbol hides its "GND" value (77 of them), so a ground reads as a
       bare triangle. Show it (schematic generator: for the schematic session)
-- [ ] Move the speaker to a long side and play it out of the side wall (Alex): the floor grille
+- [x] Move the speaker to a long side and play it out of the side wall (Alex): the floor grille
       (spk_pos, 25 holes of 1.4 mm) faces the table when two players share the screen. The speaker (the
       GSPK151035PN below) lies flat on the tub floor beside the cell (x 17.5 to the wall at 35.7: 18 mm) with a sealed channel or slots out
       through the wall. The right side has USB-C at y = 0; the left has the SWD/UART connectors and
       the BOOTSEL/RESET pinholes, so pick a y clear of them, the hooks (y ±30) and the bosses (y ±36).
       Its leads to J4 and rib_free move with it
-- [ ] The speaker is INGHAi's GSPK151035PN (C530539, Alex): 15 x 10 x 3.5 mm, 8 ohm, 0.5 W, 90 dB,
+- [x] The speaker is INGHAi's GSPK151035PN (C530539, Alex): 15 x 10 x 3.5 mm, 8 ohm, 0.5 W, 90 dB,
       about $0.42, with 35 mm leads crimped into a 1.25 mm 2-pin plug (a PicoBlade-pattern copy).
       No soldering at assembly (Alex): J4's wire pads become a 1.25 mm PicoBlade-style header that
       JLC places. Keep J4 out of reach of the cell's plug, which would also fit it and put the cell
@@ -72,13 +77,13 @@ Next:
       leaves its face, so a printed channel takes it to the side-wall outlet. Before ordering
       boards, try a sample speaker's plug in a genuine 53261-0271 header. Update docs/bom.md
       (speaker row) and docs/assembly.md (no soldering)
-- [ ] Remove the tub's four feet (6 mm, 0.8 mm high, outside the floor) (Alex). Free to do once the
+- [x] Remove the tub's four feet (6 mm, 0.8 mm high, outside the floor) (Alex). Free to do once the
       speaker leaves the floor
-- [ ] USB-C opening (Alex, from the viewer): its outline still doesn't follow the receptacle's
+- [x] USB-C opening (Alex, from the viewer): its outline still doesn't follow the receptacle's
       shell, "a different kind of oval". The opening is a full stadium (usb_hole: ends of radius
       half its height); match it to the TYPE-C-31-M-12 shell's real profile from its drawing or 3D
       model (end radius and flats) with usb_gap all round
-- [ ] USB-C: the lid's part of the closure over the port looks like a single layer that light
+- [x] USB-C: the lid's part of the closure over the port looks like a single layer that light
       shows through (Alex). Check the tongue's thickness above the opening and at the outer face
       (the lid's outline sits tub_lip + seam_fit inside the case's, so the tongue may stop short
       of the surface), then thicken it or let the tub's skin close over it

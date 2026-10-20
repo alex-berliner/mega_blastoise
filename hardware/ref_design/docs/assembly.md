@@ -19,19 +19,21 @@ AO3401A, the AO3400As (Q5, Q6) and the 2N7002s, the diodes (D2, D3, D5, D6: the 
 the panel's connector (pin 1 at its left end, its mouth towards seat 1).
 JLC fixes rotation offsets on request; the CPL carries KiCad's angles.
 
-Not assembled by JLC (no LCSC number): the 20 membrane contacts (bare gold), the speaker
-pads, test pads, locating holes and fiducials. J3, the panel's ZIF connector, is assembled.
+Not assembled by JLC (no LCSC number): the 20 membrane contacts (bare gold), test pads,
+locating holes and fiducials. J3, the panel's ZIF connector, and J4, the speaker's header, are
+assembled.
 
 ## 2. Order and make the rest
 
 The list, with the listings found so far: [bom.md](bom.md), "You". In short: the
-ER-TFT035IPS-6 panel (buydisplay.com), a 403450 cell with a Molex PicoBlade (MX1.25) plug, a 15 mm speaker, two sets each of DS
+ER-TFT035IPS-6 panel (buydisplay.com), a 403450 cell with a Molex PicoBlade (MX1.25) plug, INGHAi's GSPK151035PN speaker (its
+leads end in a 1.25 mm plug), two sets each of DS
 Lite silicone and caps, tape and foam, and the printed case (`case/tub.stl`,
 `case/lid.stl`).
 
 Before the first board order, check the parts against the design (the approved
 fit check): one panel against its drawing, the cell's size with its protection board
-and its plug's polarity, the speaker's thickness, and the silicone and caps in a
+and its plug's polarity, the speaker's plug in a PicoBlade header, and the silicone and caps in a
 printed lid. The fit kit (`case/fitkit/`) has the prints for it: a board mock, dummies
 of the loose parts and quick coupons of the case, with a test order in its README. The
 numbers to measure are in [design_review.md](design_review.md).
@@ -47,11 +49,11 @@ and the hook thickness in `case/case.scad` if the lid is too loose or too tight.
 
 ## 3. Hand work on the board
 
-1. Speaker: solder its leads to J4 on the back of the board, `+` to the pad marked `+`.
-   Keep the leads short; the speaker sits on the tub floor right below.
-2. Look over the chips with exposed pads (TP4056, RP2354B): their pads must have
+Nothing is soldered at assembly (Alex, 2026-10-20): the cell and the speaker both plug in.
+
+1. Look over the chips with exposed pads (TP4056, RP2354B): their pads must have
    wetted. X-ray is not needed for a prototype; a lifted corner pin shows under a loupe.
-3. Leave the empty footprints empty unless bring-up asks for them. C41-C43 are 1206 (the
+2. Leave the empty footprints empty unless bring-up asks for them. C41-C43 are 1206 (the
    largest common size, 1.6 mm between pads, fine with an ordinary iron). R48 is left off on
    purpose: it is the revision strap's bit 0. JP1 and JP2 come bridged; don't cut them.
 
@@ -64,14 +66,19 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 1. Lid, face down on the bench: stick the tape strips on the window ledge (leave the
    liner on).
 2. Into the tub: the cell in its pocket on the floor, lengthwise, its wires at seat 1's end,
-   a 0.45 mm foam pad on top; the speaker face down on the grille beside it. Solder the
-   speaker's leads to J4's pads on the board's back.
+   a 0.45 mm foam pad on top. The speaker face down on its pad beside the left wall, between
+   the cell and seat 2's end: peel its foam ring's liner and press it down, its solder tab
+   towards the wall and its leads towards the middle, so the ring seals round the chamber
+   that opens through the wall.
 3. Push the cell's plug up through the board's hole (5.45 x 4.4 mm, 5.5 mm in front of J2's
-   mouth, between seat 1's clusters at the screen's edge: the whole plug passes), then the
+   mouth, between seat 1's clusters at the screen's edge: the whole plug passes), and the
+   speaker's plug up through the same-sized hole at seat 2's end (in front of J4), then the
    board into the tub: its tab under the USB-C drops into the slot in the wall (it goes in one
    way only), pressed down past the crush ribs that centre it onto the floor's support ribs and
    bosses. Lay the plug flat, wires towards the hole, and push it into J2: its wires run
-   straight from its tail down through the hole, with no fold.
+   straight from its tail down through the hole, with no fold. The speaker's plug goes into
+   J4 the same way (its red lead is +, nearest J4's pin 1; the amplifier is bridge-tied, so a
+   reversed speaker only flips its phase). The cell's plug can't reach J4.
 4. Panel: lay it face down beyond the board's seat-1 edge, flip J3's lid up, slide the
    FPC's contacts into J3 (contacts down) until it stops, square, and press the lid shut.
    Then fold the panel over onto the board, face up, its FPC looping under it at the

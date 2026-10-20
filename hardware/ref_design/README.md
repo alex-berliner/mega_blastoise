@@ -25,7 +25,8 @@ which this folder never touches.
   constant-current backlight sink per LED group
 - 20 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad, four face buttons,
   Start and Select at each end
-- PWM audio through an RC filter into an FM8002A amplifier and a 15 mm speaker
+- PWM audio through an RC filter into an FM8002A amplifier and a 15 x 10 mm speaker that plugs in and
+  plays out of the side
 - One 403450 Li-ion cell (about 700 mAh) lying on the tub's floor under the board, TP4056 charger with USB load sharing,
   ME6211 3V3 LDO, soft power on seat 1's Start button with MCU hold
 - Case 75.4 x 156.2 mm, 13.4 mm at the screen and 11.1 mm at the button decks (genuine DS Lite

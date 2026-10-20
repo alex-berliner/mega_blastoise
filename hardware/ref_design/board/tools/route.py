@@ -15,6 +15,7 @@ left a connection or two.
        membrane contacts: each comb's anchor -> radial stub -> via outside the pill
        display connector: the panel's grounded pins joined by a bar per run
        every other GND pad: a short stub and a via down to the GND pour
+       USB-C's shell legs: joined in pairs on the back, and a via beside each
   4. Freerouting (1.9.0; 2.x loops on this board) routes the signals and the
      supplies (3V3 included: two layers have no 3V3 plane) on F.Cu and B.Cu. GND is
      left out of its job. (Its per-layer costs would keep B.Cu clearer, but 1.9's
@@ -243,6 +244,28 @@ def contact_stubs(board):
     return contacts
 
 
+def usb_shell_ground(board):
+    """J1's four shell legs (all pad "SH") are plated holes, so fanout() leaves them to the
+    pours, but on the USB tab the routing often cut a leg's patch of pour off (2026-10-20: 5
+    runs in 6 failed there). So each side's front and rear legs are joined on the back, and
+    each leg gets its own stub and via down into the pours."""
+    fp = board.FindFootprintByReference("J1")
+    gnd = board.FindNet("GND")
+    legs = [p for p in fp.Pads() if p.GetNumber() == "SH"]
+    for side in (-1, 1):
+        pair = sorted((p for p in legs if (xy(p.GetPosition())[1] - xy(fp.GetPosition())[1]) * side > 0),
+                      key=lambda p: p.GetPosition().x)
+        if len(pair) == 2:
+            add_track(board, xy(pair[0].GetPosition()), xy(pair[1].GetPosition()), gnd, 0.4, pcbnew.B_Cu)
+    space = Space(board)
+    fx, fy = xy(fp.GetPosition())
+    for p in legs:
+        px, py = xy(p.GetPosition())
+        if not via_near(board, space, (px, py), "GND", pcbnew.B_Cu, math.atan2(py - fy, px - fx),
+                        lambda q, p=p: p.HitTest(V(*q)), p):
+            print(f"J1 shell leg at ({px:.2f}, {py:.2f}): no room for its via")
+
+
 def fpc_ground_bar(board):
     """The panel connector's grounded pins (GND, the parallel bus and the RGB interface's
     strobes) come in runs of neighbours: each run is joined by a bar behind its pads (the
@@ -302,8 +325,7 @@ class Space:
         self.contacts = [((x, y), 3.3) for x, y in CASE["buttons"].values()]
         bw, bl = CASE["board"]["w"], CASE["board"]["l"]
         self.edge = (100 - bw / 2 + 0.6, 100 - bl / 2 + 0.6, 100 + bw / 2 - 0.6, 100 + bl / 2 - 0.6)
-        (sx0, sy0), (sx1, sy1) = CASE["slot"]
-        self.slot = (min(sx0, sx1) - 0.6, min(sy0, sy1) - 0.6, max(sx0, sx1) + 0.6, max(sy0, sy1) + 0.6)
+        self.slots = [(b[0] - 0.6, b[1] - 0.6, b[2] + 0.6, b[3] + 0.6) for b in slot_boxes()]
         self.fences = core_fences()
 
     def clear_at(self, p, r, net, via=False):
@@ -312,7 +334,7 @@ class Space:
         x, y = p
         if not (self.edge[0] <= x <= self.edge[2] and self.edge[1] <= y <= self.edge[3]):
             return False
-        if self.slot[0] <= x <= self.slot[2] and self.slot[1] <= y <= self.slot[3]:
+        if any(s[0] <= x <= s[2] and s[1] <= y <= s[3] for s in self.slots):
             return False
         if any(f[0] - r <= x <= f[2] + r and f[1] - r <= y <= f[3] + r for f in self.fences):
             return False
@@ -454,9 +476,13 @@ def edge_box(inset=0.6):
     return (100 - bw / 2 + inset, 100 - bl / 2 + inset, 100 + bw / 2 - inset, 100 + bl / 2 - inset)
 
 
-def slot_box():
-    (sx0, sy0), (sx1, sy1) = CASE["slot"]
-    return (min(sx0, sx1), min(sy0, sy1), max(sx0, sx1), max(sy0, sy1))
+def slot_boxes():
+    """The board's holes for the cell's and the speaker's plugs, as (x0, y0, x1, y1)."""
+    out = []
+    for key in ("slot", "spk_slot"):
+        (sx0, sy0), (sx1, sy1) = CASE[key]
+        out.append((min(sx0, sx1), min(sy0, sy1), max(sx0, sx1), max(sy0, sy1)))
+    return out
 
 
 MAX_RIPPED = 6            # connections the maze pass may take other nets' copper up for
@@ -468,7 +494,7 @@ def maze_for(board, net, a, b, reach=6.0, ignore=()):
     box = (max(min(a[0], b[0]) - reach, e[0]), max(min(a[1], b[1]) - reach, e[1]),
            min(max(a[0], b[0]) + reach, e[2]), min(max(a[1], b[1]) + reach, e[3]))
     return Maze(board, net, box, (pcbnew.F_Cu, pcbnew.B_Cu), c["track"], c["clear"], c["via"], c["drill"],
-                fences=core_fences(), blocks=[slot_box()], edge=e, ignore=set(ignore),
+                fences=core_fences(), blocks=slot_boxes(), edge=e, ignore=set(ignore),
                 discs=[((x, y), CONTACT_R) for x, y in CASE["buttons"].values()])
 
 
@@ -583,6 +609,36 @@ def open_pairs(board):
     return pairs, odd
 
 
+def corridor_ripup(board, net, a, b, tries=12):
+    """A long connection that one other net blocks part-way, away from its ends (2026-10-20:
+    seat 1's D-pad lines to U4): route it as if one other net's tracks in the way weren't
+    there, the nets with the most copper there first, and take up what the new route
+    crosses; that net comes back open for the next round. Locked pre-routes stay."""
+    reach = 6.0
+    x0, y0 = min(a[0], b[0]) - reach, min(a[1], b[1]) - reach
+    x1, y1 = max(a[0], b[0]) + reach, max(a[1], b[1]) + reach
+    def inside(t):
+        bx = box(t)
+        return bx[0] < x1 and bx[2] > x0 and bx[1] < y1 and bx[3] > y0
+    by_net = {}
+    for t in board.GetTracks():
+        n = t.GetNetname()
+        if n in (net, "") or n in PLANE_NETS or t.IsLocked() or not inside(t):
+            continue
+        by_net.setdefault(n, []).append(t)
+    for other in sorted(by_net, key=lambda n: -len(by_net[n]))[:tries]:
+        cand = by_net[other]
+        runs = maze_for(board, net, a[:2], b[:2], ignore={t.m_Uuid.AsString() for t in cand}).route(a[:2], a[2], b[:2], b[2])
+        if not runs:
+            continue
+        for t in [t for t in cand if conflicts(t, runs, net)]:
+            board.Remove(t)
+        add_route(board, net, runs)
+        print(f"  {net}: routed through {other}'s copper, which comes back open", flush=True)
+        return True
+    return False
+
+
 def finish_open(board, rounds=24):
     """Signal connections Freerouting left open, one at a time by tools/maze.py. When a
     pin is boxed in by the router's tracks for a neighbour, the route is found as if
@@ -626,6 +682,10 @@ def finish_open(board, rounds=24):
                 done += 1
                 took_up = progress = True
                 break
+            if not took_up and ripped < MAX_RIPPED and corridor_ripup(board, net, a, b):
+                ripped += 1
+                done += 1
+                took_up = progress = True
             if took_up:
                 break                        # what was taken up changes the open list: ask the DRC again
         if not progress:
@@ -702,12 +762,12 @@ def dsn_for_router(text, contacts, fences, circles=()):
     for x0, y0, x1, y1 in fences:
         pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(x0, y0, x1, y1))
         extra += f'\n    (keepout "" (polygon F.Cu 0 {pts}))'
-    # the battery cable slot: the router's copy of the outline doesn't keep its tracks
-    # 0.2 mm off the slot's rounded ends, so it gets a keep-out on both layers
-    sx0, sy0, sx1, sy1 = slot_box()
-    pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.5, sy0 - 0.5, sx1 + 0.5, sy1 + 0.5))
-    for layer in ("F.Cu", "B.Cu"):
-        extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
+    # the plug holes: the router's copy of the outline doesn't keep its tracks 0.2 mm off
+    # their rounded ends, so each gets a keep-out on both layers
+    for sx0, sy0, sx1, sy1 in slot_boxes():
+        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.5, sy0 - 0.5, sx1 + 0.5, sy1 + 0.5))
+        for layer in ("F.Cu", "B.Cu"):
+            extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     i = text.index("  (placement")
     j = text.rindex("  )", 0, i)          # end of the structure section
     return text[:j] + extra + "\n" + text[j:]
@@ -1155,6 +1215,7 @@ def main():
     core_3v3_stubs(board)
     contacts = contact_stubs(board)
     fpc_ground_bar(board)
+    usb_shell_ground(board)
     fanout(board)
     freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
     finish_open(board)

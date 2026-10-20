@@ -221,8 +221,10 @@ every hole 0.3 mm or larger.
   cost about $40 an order (a fee, a required 4-wire test and TG155 material).
 - Heights, from the floor: tub floor 1.5, the cell (403450, 4 mm) lengthwise on the floor
   with 0.5 mm to the board's back, board 1.6 on ribs 4.5 mm high everywhere else. Beside
-  the cell on the floor, the speaker (15 mm, 4 mm) fires down through the floor's grille;
-  its leads go to pads on the board's back (J4). The panel's back is 2.4 mm over the board
+  the cell on the floor, the speaker (GSPK151035PN, 15 x 10 x 3.5 mm) lies face down on a pad
+  by the left wall over a front chamber in the floor, which opens out of the wall's rounded
+  lower edge (it fired down through a grille a table covers until 2026-10-20); its plug comes
+  up through a hole at seat 2's end to J4, J2's PicoBlade header under seat 2's spine. The panel's back is 2.4 mm over the board
   (parts under it to 2.2; J3 is 2.0); the panel (2.35 +-0.1 in its drawing, counted as
   2.45) hangs from the lid's window ledge on 0.15 mm tape. The battery connector J2
   (5.5 mm) sits under the spine between seat 1's clusters, in a pocket in the lid; the
@@ -274,7 +276,7 @@ the case for these checks.
 | DS Lite silicone piece outline and height, pill spacing; cap keying | the caps are measured from open models (`case/DSLITE.md`), the silicone is still estimated; `dome_h` sets the deck height, so a wrong one leaves the caps high or low; the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `dpad_pitch`; the cap numbers in `case/DSLITE.md` |
 | A real ER-TFT035IPS-6 and an FH12-50S | outline and thickness, active area offset; how far the FPC goes into J3 (Hirose's recommended FPC stops 3.5-4 mm in, so expect 2.5-3 mm of slack, not the 1 mm modelled); that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_rear`; J3's pin map |
 | The chosen cell (403450) | length with its protection board, and connector polarity (PicoBlade has no standard polarity) | `cell`, J2 |
-| The chosen speaker | diameter, thickness, lead position | `spk_*`, J4 |
+| The chosen speaker (GSPK151035PN) | its tab's length (spk_tab is estimated), that its plug mates a genuine 53261-0271, that its foam ring seals on the pad, and how loud it is out of the side | `spk_*`, J4 |
 | A printed tub and lid | the snap fit | `snap_*` |
 
 ## Open risks

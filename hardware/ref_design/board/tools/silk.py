@@ -71,6 +71,12 @@ def main():
         if t.GetClass() == "PCB_VIA":
             obstacles[pcbnew.F_SilkS].append(box(t, 0.1))
             obstacles[pcbnew.B_SilkS].append(box(t, 0.1))
+    # the holes the cell's and the speaker's plugs pass through: no text within 0.6 of them
+    for key in ("slot", "spk_slot"):
+        (x0, y0), (x1, y1) = CASE[key]
+        hole = (min(x0, x1) - 0.6, min(y0, y1) - 0.6, max(x0, x1) + 0.6, max(y0, y1) + 0.6)
+        obstacles[pcbnew.F_SilkS].append(hole)
+        obstacles[pcbnew.B_SilkS].append(hole)
     shown = hidden = 0
     for fp in sorted(board.GetFootprints(), key=lambda f: f.GetReference()):
         ref = fp.Reference()
