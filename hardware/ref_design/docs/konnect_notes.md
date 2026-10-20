@@ -1,7 +1,14 @@
 # Konnect: what this design ran into
 
-The schematic here is written entirely through Konnect (`board/tools/build_sch.py`
-drives it over stdio) and checked by exporting KiCad's own netlist. These are
+**History.** Since 2026-10-20 `board/tools/build_sch.py` writes the sheets itself
+(`board/tools/schwrite.py`, whole files in KiCad 10's format, round-trip checked
+against KiCad's own writer), because what the sheets needed next was exactly what
+Konnect couldn't write: hidden power-symbol references (the `#PWR` fields parked
+at the page's top-left below), field positions, label justification and sheet
+name fields. What follows is the record of the Konnect-written version.
+
+The schematic here was written entirely through Konnect (`board/tools/build_sch.py`
+drove it over stdio) and checked by exporting KiCad's own netlist. These are
 the problems that check and KiCad's renderer turned up, with the workaround
 the generator uses. KiCad 10.0.6, Konnect from `/home/alex/Konnect` as of
 2026-09-24.

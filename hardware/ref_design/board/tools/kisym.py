@@ -1,8 +1,8 @@
 """Read pin geometry out of KiCad symbol libraries (.kicad_sym).
 
-Konnect reports a pin's root, not its tip, so labels placed at its coordinates
-land inside the symbol and never connect. This computes the true connection
-point of every pin for a placed symbol instead.
+A library pin's (at ...) is its connection point (its tip, not its root at the
+body); this places those for a symbol at a given position and rotation, for the
+drawing kit (tools/schdraw.py) to wire to.
 """
 import math
 import os
@@ -23,7 +23,8 @@ def parse(text):
         elif t == ")":
             done = cur; cur = stack.pop(); cur.append(done)
         else:
-            cur.append(t[1:-1] if t.startswith('"') else t)
+            cur.append(re.sub(r'\\(.)', lambda m: "\n" if m.group(1) == "n" else m.group(1), t[1:-1])
+                       if t.startswith('"') else t)
     return cur[0]
 
 

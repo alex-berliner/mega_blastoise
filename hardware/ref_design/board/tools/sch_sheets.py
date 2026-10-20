@@ -6,7 +6,7 @@ only where a net leaves its block. Coordinates are mm on the A4 page (x right,
 y down), on KiCad's 1.27 mm grid. The parts, values and nets all come from
 design.py; this file only says where things go and which pins a wire joins.
 """
-from schdraw import Sheet, G
+from schdraw import Sheet, G, tw
 
 H = 1.27
 
@@ -21,7 +21,7 @@ def buttons():
         gnd_rows = []
         for i, ref in enumerate(refs):
             y = y0 + i * pitch
-            sh.place(ref, x0, y, 180, f=(0, H))
+            sh.place(ref, x0, y, 180, f="c")
             sh.tag(f"{ref}.1", 5.08)
             if sh.parts[ref]["pins"]["2"] == "GND":
                 sh.wire(f"{ref}.2", (bus_x, y))
@@ -62,16 +62,16 @@ def audio():
     sh.place("C37", 44.45, Yc + 3.81, 0, f=("r", G))
     sh.place("R33", 55.88, Yc, 90)
     sh.place("C38", 67.31, Yc + 3.81, 0, f=("r", G))
-    sh.place("C39", 78.74, Yc, 90, f=(0, -8.89))
-    sh.place("R34", 93.98, Yc, 90)
-    a = (20.32, Yc)
+    sh.place("C39", 78.74, Yc, 90)
+    sh.place("R34", 93.98, Yc, 90, f=("at", 93.98, Yc - 3.81))
+    a = (27.94, Yc)
     sh.wire(a, "R32.1")
-    sh.label("AUDIO_PWM", a, "left", hook="up")
+    sh.label("AUDIO_PWM", a, "left")
     sh.wire("R32.2", "R33.1"); sh.wire((44.45, Yc), "C37.1"); sh.tag("C37.2", 0)
     sh.wire("R33.2", "C39.1"); sh.wire((67.31, Yc), "C38.1"); sh.tag("C38.2", 0)
     sh.wire("C39.2", "R34.1")
     sh.heading(73.66, Yc - 17.78, "DC block, Ri")
-    node = (101.6, Yc)
+    node = (99.06, Yc)
     sh.wire("R34.2", "U7.4")
     # -- feedback Rf over the amplifier, from VO1 back to -IN
     Yf = Uy - 33.02
@@ -88,35 +88,37 @@ def audio():
     sh.place("C34", Ux + 7.62, Yv + 3.81, 0, f=("r", G))
     sh.place("C35", Ux + 17.78, Yv + 3.81, 0, f=("r", G))
     sh.wire("JP3.2", (Ux + 17.78, Yv))
-    sh.wire((Ux, Yv), "U7.6")
+    sh.wire((Ux + 2.54, Yv), "U7.6")
     sh.wire((Ux + 7.62, Yv), "C34.1"); sh.tag("C34.2", 0)
     sh.wire((Ux + 17.78, Yv), "C35.1"); sh.tag("C35.2", 0)
     sh.flag("#FLG09", (Ux + 12.7, Yv))
-    sh.label("AMP_VDD", sh.wire((Ux + 2.54, Yv), (Ux + 2.54, Yv - G)), "up")
+    sh.label("AMP_VDD", sh.wire((Ux - 2.54, Yv), (Ux - 2.54, Yv - G)), "up")
     sh.tag("U7.7", G)
     # -- bypass: +IN and BYPASS both on AMP_BYP, C40 to ground
-    sh.tag("U7.3", 10.16)
-    sh.place("C40", Ux - 17.78, Uy + 2.54 + 3.81, 0, f=("l", G))
-    by = (Ux - 27.94, Uy + 2.54)
+    sh.tag("U7.3")
+    sh.place("C40", Ux - 20.32, Uy + 2.54 + 3.81, 0, f=("l", G))
+    by = (Ux - 30.48, Uy + 2.54)
     sh.wire("U7.2", by)
     sh.label("AMP_BYP", by, "left")
-    sh.wire((Ux - 17.78, Uy + 2.54), "C40.1"); sh.tag("C40.2", 0)
+    sh.wire((Ux - 20.32, Uy + 2.54), "C40.1"); sh.tag("C40.2", 0)
     # -- shutdown: R36 holds SHUTDOWN high (off), Q3 pulls it low when AMP_EN is high
     Ysd = Uy + 17.78
     sh.heading(Ux - 66.04, Ysd + 25.4, "Shutdown control")
-    sh.wire("U7.1", (Ux - 12.7, Uy + 5.08), (Ux - 12.7, Ysd))
+    sh.wire("U7.1", (Ux - 15.24, Uy + 5.08), (Ux - 15.24, Ysd))
     sh.place("R36", Ux - 35.56, Ysd - 3.81, 180, f=("l", -G))
     sh.place("Q3", Ux - 25.4 - 2.54, Ysd + 7.62, 0, f="r")
-    sl = (Ux - 55.88, Ysd)
-    sh.wire((Ux - 12.7, Ysd), sl)
+    sl = (Ux - 48.26, Ysd)
+    sh.wire((Ux - 15.24, Ysd), sl)
     sh.wire((Ux - 35.56, Ysd), "R36.1")
     sh.tag("R36.2")
     sh.wire((Ux - 25.4, Ysd), "Q3.3")
     sh.tag("Q3.2", 0)
-    sh.label("AMP_SHDN", sl, "left", hook="up")
+    tp(sh, "TP8", sl, "l")
+    # net names where no wire runs through their text
+    sh.names = {"AMP_SHDN": (sl[0] + 1.27, Ysd, 0), "SPK_P": (Ux + 15.24, Yc, 0)}
     gl = (Ux - 63.5, Ysd + 7.62)
     sh.wire("Q3.1", gl)
-    sh.label("AMP_EN", gl, "left", hook="up")
+    sh.label("AMP_EN", gl, "left")
     sh.place("R37", Ux - 43.18, Ysd + 7.62 + 3.81, 0, f=("r", G))
     sh.wire((Ux - 43.18, Ysd + 7.62), "R37.1"); sh.tag("R37.2", 0)
     # -- speaker
@@ -146,28 +148,25 @@ def debug():
 
     three_pin("J5", 27.94, 50.8, "SWD connector J5")
     three_pin("J6", 91.44, 50.8, "UART connector J6")
-    # -- J7: the same SWD on bare pads (pogo jig)
-    x, y = 165.1, 55.88
-    sh.heading(x - 7.62, y - 20.32, "Debug pads J7 (back side, 2.54 mm)")
-    sh.place("J7", x, y, 180, f="l")
-    t = x + 5.08
-    sh.wire("J7.6", (t + 2.54, y - 7.62), (t + 2.54, y - 12.7), (t + 7.62, y - 12.7), v=False)
-    sh.gnd((t + 7.62, y - 12.7))
-    for n in ("5", "4", "3", "2"):
-        sh.tag(f"J7.{n}", 5.08)
-    sh.rail("+3V3", sh.stub("J7.1", 5.08), "right")
-    # -- BOOTSEL and RESET buttons
-    for i, (r, sw, title) in enumerate((("R25", "SW18", "BOOTSEL button"), ("R26", "SW19", "RESET button"))):
-        bx, by = 40.64 + i * 63.5, 115.57
+    # -- BOOTSEL and RESET buttons, J7 (the same SWD on bare pads, for a pogo jig) between
+    # them with its BOOTSEL pad wired straight to the BOOTSEL button
+    by = 115.57
+    for bx, r, sw, title in ((40.64, "R25", "SW18", "BOOTSEL button"), (152.4, "R26", "SW19", "RESET button")):
         sh.heading(bx - 12.7, by - 17.78, title)
         sh.place(r, bx, by, 0, f="r")
         sh.tag(f"{r}.1", G, d="up")
-        sh.place(sw, bx, by + 3.81 + 5.08 + 10.16, 270, f=(-3.81, 0))
+        sh.place(sw, bx, by + 3.81 + 5.08 + 10.16, 270, f="l")
         sh.wire(f"{r}.2", f"{sw}.1")
         sh.tag(f"{sw}.2", 0)
-        if sh.parts[r]["pins"]["2"] == "BOOTSEL":
-            end = sh.wire((bx, by + 3.81 + 2.54), (bx + 10.16, by + 3.81 + 2.54))
-            sh.label("BOOTSEL", end, "right")
+    yb = by + 3.81 + 2.54                            # the BOOTSEL node
+    x = 83.82
+    sh.heading(x - 22.86, by - 17.78, "Debug pads J7 (back side, 2.54 mm)")
+    sh.place("J7", x, yb - 5.08, 0, f="r")
+    sh.wire((40.64, yb), "J7.5")
+    for n in ("4", "3", "2"):
+        sh.tag(f"J7.{n}")
+    sh.tag("J7.1")
+    sh.tag("J7.6")
     sh.text(17.78, 165.1, "J5 SWD and J6 UART follow the Raspberry Pi 3-pin debug connector pinout (Debug Probe cable).")
     sh.text(17.78, 168.91, "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid. J7: power through its 3V3 pad only with the")
     sh.text(17.78, 172.72, "cell out and nothing on USB; BOOTSEL to GND at reset enters the USB boot loader, RUN to GND resets.")
@@ -198,21 +197,22 @@ def usb_charger():
         sh.tag(f"{ser}.2", G)
     # D- (upper pair) and D+ (lower pair) joined and taken down, then right
     sh.wire("J1.A7", (50.8, 58.42)); sh.wire("J1.B7", (50.8, 60.96))
-    sh.wire((50.8, 58.42), (50.8, 71.12), (63.5, 71.12))
-    sh.label("USB_DM", (63.5, 71.12), "right")
+    sh.wire((50.8, 58.42), (50.8, 71.12), (88.9, 71.12))
+    sh.label("USB_DM", (88.9, 71.12), "right")
     sh.wire("J1.A6", (48.26, 63.5)); sh.wire("J1.B6", (48.26, 66.04))
-    sh.wire((48.26, 63.5), (48.26, 78.74), (63.5, 78.74))
-    sh.label("USB_DP", (63.5, 78.74), "right")
+    sh.wire((48.26, 63.5), (48.26, 78.74), (88.9, 78.74))
+    sh.label("USB_DP", (88.9, 78.74), "right")
     # ground: shield and GND pins together, with the GND power flag
     sh.wire("J1.SH", (22.86, 86.36), (38.1, 86.36))
     sh.wire("J1.A1", (30.48, 86.36))
     sh.gnd((38.1, 86.36))
     sh.flag("#FLG02", (34.29, 86.36))
-    # ---- ESD array on D+/D-
-    Ex, Ey = 63.5, 127.0
-    sh.heading(35.56, 104.14, "ESD (SRV05-4)")
-    sh.place("U1", Ex, Ey, 0, f=(16.51, 10.16))
-    sh.tag("U1.1", 7.62, hook="up"); sh.tag("U1.3", 7.62, hook="down")
+    # ---- ESD array under D+/D- (IO1 = D+ is its upper pin, so D- crosses D+ once)
+    Ex, Ey = 73.66, 101.6
+    sh.heading(20.32, 99.06, "ESD (SRV05-4)")
+    sh.place("U1", Ex, Ey, 0, f=(12.7, 13.97))
+    sh.wire((58.42, 78.74), (58.42, Ey - 2.54), "U1.1")
+    sh.wire((53.34, 71.12), (53.34, Ey + 2.54), "U1.3")
     sh.nc("U1.4"); sh.nc("U1.6")
     sh.tag("U1.5", G); sh.tag("U1.2", 0)
     # ---- VBUS input: TP4056's RC against plug-in ringing, and the bleeder
@@ -238,18 +238,19 @@ def usb_charger():
     sh.wire((160.02, Uy - 5.08), "Q4.3"); sh.tag("Q4.2", 0)
     sh.place("R44", 139.7, Uy + 3.81, 0, f=("l", G))
     sh.wire("Q4.1", (116.84, Uy))
-    sh.label("CHG_OFF", (116.84, Uy), "left", hook="up")
+    sh.label("CHG_OFF", (116.84, Uy), "left")
     sh.wire((139.7, Uy), "R44.1"); sh.tag("R44.2", 0)
     # status outputs: open drain, pulled up to 3V3 for the MCU
+    # (CHG_STAT_N stops short of R9, so R9's rail has the row to itself)
     yc, yd = 91.44, 101.6
-    sh.wire("U2.7", (165.1, Uy), (165.1, yc), (121.92, yc))
-    sh.label("CHG_STAT_N", (121.92, yc), "left", hook="up")
+    sh.wire("U2.7", (165.1, Uy), (165.1, yc), (137.16, yc))
+    sh.label("CHG_STAT_N", (137.16, yc), "left")
     sh.place("R10", 147.32, yc - 3.81, 180, f=("r", -H))
     sh.wire((147.32, yc), "R10.1"); sh.tag("R10.2", 0)
-    sh.wire("U2.6", (167.64, Uy + 2.54), (167.64, yd), (96.52, yd))
-    sh.label("CHG_DONE_N", (96.52, yd), "left", hook="up")
-    sh.place("R9", 111.76, yd - 3.81, 180, f=("r", -H))
-    sh.wire((111.76, yd), "R9.1"); sh.tag("R9.2", 0)
+    sh.wire("U2.6", (167.64, Uy + 2.54), (167.64, yd), (106.68, yd))
+    sh.label("CHG_DONE_N", (106.68, yd), "left")
+    sh.place("R9", 116.84, yd - 3.81, 180, f=("r", -H))
+    sh.wire((116.84, yd), "R9.1"); sh.tag("R9.2", 0)
     # PROG and TEMP
     sh.place("R5", Ux + 12.7, Uy + 2.54 + 3.81 + 12.7, 0, f=("r", G))
     sh.wire("U2.2", "R5.1"); sh.tag("R5.2", 0)
@@ -283,10 +284,10 @@ def usb_charger():
     sh.place("D6", QX + 7.62, yg, 0)
     sh.wire("Q2.1", (QX, yg), "D6.1")
     sh.rail("VBUS", sh.stub("D6.2", G))
-    sh.place("R6", QX - 5.08, yg + 3.81, 0, f=("l", G))
-    sh.wire((QX, yg), (QX - 5.08, yg), "R6.1"); sh.tag("R6.2", 0)
-    sh.wire((QX, yg), (QX, yg + 10.16))
-    sh.label("LS_GATE", (QX, yg + 10.16), "down")
+    sh.place("R6", QX - 10.16, yg + 3.81, 0, f=("l", G))
+    sh.wire((QX, yg), (QX - 10.16, yg), "R6.1"); sh.tag("R6.2", 0)
+    sh.names = {"LS_GATE": (QX - 8.89, yg, 0)}
+    tp(sh, "TP7", sh.wire((QX, yg), (QX, yg + 7.62)), down=True)
     # VSYS out
     sh.rail("VSYS", sh.wire((XS, VB), (XS, VB - G)))
     sh.wire((XS, VB), (QX + 38.1, VB))
@@ -309,10 +310,12 @@ def usb_charger():
     return sh
 
 
-def tp(sh, ref, at, f=(3.81, -H)):
-    """Test point ref with its pin on `at` (on a wire), pad above."""
+def tp(sh, ref, at, side="r", down=False):
+    """Test point ref with its pin on `at` (on a wire), pad above (or below, at the end
+    of a wire coming down), its name and net stacked beside the pad (side 'r' or 'l')."""
     at = sh.P(at)
-    sh.place(ref, at[0], at[1], 0, f=f)
+    w = max(tw(ref), tw(sh.parts[ref]["value"])) / 2 + 1.3
+    sh.place(ref, at[0], at[1], 180 if down else 0, f=(w if side == "r" else -w, 2.84 if down else -2.84))
     return at
 
 
@@ -328,8 +331,8 @@ def power():
     tp(sh, "TP2", (55.88, Uy - 2.54))
     sh.place("C5", 68.58, Uy - 2.54 + 3.81, 0, f=("r", G))
     sh.wire((68.58, Uy - 2.54), "C5.1"); sh.tag("C5.2", 0)
-    end = sh.wire("U3.3", (Ux - 12.7, Uy), (Ux - 12.7, Uy + 12.7))
-    sh.label("PWR_EN", end, "down")
+    # CE: straight down to the latch's PWR_EN node, round the right end of its diode row
+    sh.wire("U3.3", (Ux - 12.7, Uy), (Ux - 12.7, Uy + 12.7), (116.84, Uy + 12.7), (116.84, 104.14))
     sh.nc("U3.4")
     sh.tag("U3.2", 0)
     sh.place("C6", 104.14, Uy - 2.54 + 3.81, 0, f=("r", G))
@@ -339,8 +342,8 @@ def power():
     for c in ("C6", "C7"):
         sh.wire((sh.sym[c]["x"], Uy - 2.54), f"{c}.1"); sh.tag(f"{c}.2", 0)
     sh.wire("JP1.2", (160.02, Uy - 2.54))
-    sh.flag("#FLG07", (139.7, Uy - 2.54))
-    tp(sh, "TP4", (147.32, Uy - 2.54))
+    sh.flag("#FLG07", (135.89, Uy - 2.54))
+    tp(sh, "TP4", (149.86, Uy - 2.54))
     sh.rail("+3V3", (160.02, Uy - 2.54))
     sh.text(119.38, Uy + 10.16, "JP1: cut at bring-up to check the")
     sh.text(119.38, Uy + 13.97, "regulator alone (3V3_LDO)")
@@ -348,11 +351,11 @@ def power():
     sh.heading(17.78, 72.39, "Power latch (button, MCU hold, USB)")
     Dx, Dy = 76.2, 88.9
     sh.place("D2", Dx, Dy, 0, f=(-6.35, -6.35))
-    raw = (20.32, Dy)
+    raw = (33.02, Dy)
     sh.wire(raw, "D2.1")
-    sh.label("PWR_BTN_RAW", raw, "left", hook="up")
-    sh.place("R13", 30.48, Dy + 3.81, 0, f=("r", G))
-    sh.wire((30.48, Dy), "R13.1"); sh.tag("R13.2", 0)
+    sh.label("PWR_BTN_RAW", raw, "left")
+    sh.place("R13", 40.64, Dy + 3.81, 0, f=("r", G))
+    sh.wire((40.64, Dy), "R13.1"); sh.tag("R13.2", 0)
     hold = (99.06, Dy)
     sh.wire("D2.2", hold)
     sh.label("PWR_HOLD", hold, "right")
@@ -361,8 +364,7 @@ def power():
     Ye = 104.14
     sh.wire("D2.3", (Dx, Ye), (118.11, Ye))
     sh.wire((Dx, Ye), (Dx - 7.62, Ye))
-    tp(sh, "TP6", (Dx - 7.62, Ye), f=(-3.81, -H))
-    sh.label("PWR_EN", sh.wire((Dx, Ye), (Dx, Ye + 7.62)), "down")
+    tp(sh, "TP6", (Dx - 7.62, Ye), "l")
     sh.place("R15", 91.44, Ye + 3.81, 0, f=("r", G))
     sh.place("C47", 101.6, Ye + 3.81, 0, f=("r", G))
     for r in ("R15", "C47"):
@@ -370,19 +372,20 @@ def power():
     sh.place("D3", 121.92, Ye, 0)
     sh.place("R14", 140.97, Ye, 270)
     sh.wire("D3.2", "R14.2")
-    v = sh.stub("R14.1", 12.7)
-    tp(sh, "TP1", (148.59, Ye))
+    v = sh.stub("R14.1", 15.24)
+    tp(sh, "TP1", (149.86, Ye))
     sh.rail("VBUS", v)
     # ---- button sense: Q1 lets the MCU read the power button without seeing VSYS
     Qy = 134.62
     sh.heading(17.78, 121.92, "Button sense")
-    sh.place("Q1", 50.8, Qy, 0, f=("r", G))
-    sh.wire((40.64, Dy), (40.64, Qy), "Q1.1")
+    Qx = 58.42
+    sh.place("Q1", Qx, Qy, 0, f=("r", G))
+    sh.wire((48.26, Dy), (48.26, Qy), "Q1.1")
     sh.tag("Q1.2", 0)
-    sh.place("R16", 53.34, Qy - 8.89, 180, f=("l", 0))
+    sh.place("R16", Qx + 2.54, Qy - 8.89, 180, f=("l", 0))
     sh.tag("R16.2", 0)
-    sh.wire("Q1.3", (58.42, Qy - 5.08))
-    sh.label("PWR_BTN_N", (58.42, Qy - 5.08), "right")
+    sh.wire("Q1.3", (Qx + 7.62, Qy - 5.08))
+    sh.label("PWR_BTN_N", (Qx + 7.62, Qy - 5.08), "right")
     # ---- cell voltage divider
     bx, by = 172.72, 86.36
     sh.heading(160.02, 68.58, "Cell voltage sense")
@@ -396,13 +399,10 @@ def power():
     sh.wire((bx, by + 3.81), (bx + 20.32, by + 3.81))
     sh.wire((bx + 10.16, by + 3.81), "C8.1"); sh.tag("C8.2", 0)
     sh.label("VBAT_SENSE", (bx + 20.32, by + 3.81), "right")
-    # ---- probe points for the signals on other sheets, and ground pads
-    sh.heading(195.58, 124.46, "Test points")
-    for i, (ref, net) in enumerate((("TP7", "LS_GATE"), ("TP8", "AMP_SHDN"))):
-        a = tp(sh, ref, (200.66, 137.16 + i * 10.16))
-        sh.label(net, sh.wire(a, (205.74, a[1])), "right")
+    # ---- ground pads for probe and scope clips
+    sh.heading(195.58, 124.46, "Ground pads (probe clips)")
     for i, ref in enumerate(("TP5", "TP15", "TP16")):
-        a = tp(sh, ref, (241.3 + i * 12.7, 137.16))
+        a = tp(sh, ref, (200.66 + i * 15.24, 139.7))
         sh.gnd(sh.wire(a, (a[0], a[1] + G)))
     sh.text(17.78, 177.8, "Power: the button (seat 1's Start contact), the MCU (PWR_HOLD) or USB raise PWR_EN. Releasing it with")
     sh.text(17.78, 181.61, "PWR_HOLD low turns the device off. A reset drops PWR_HOLD, so a crash turns it off.")
@@ -458,10 +458,10 @@ def display():
         sh.wire(lane[j], f"{r}.2")
         tp(sh, tpr, (68.58, ly))
         sh.label(sh.parts[r]["pins"]["1"], sh.stub(f"{r}.1", 5.08), "right")
-    for j, tpr, side in ((14, "TP14", -3.81), (13, "TP13", 3.81)):
+    for j, tpr, side in ((14, "TP14", -3.81), (13, "TP13", -3.81)):
         ly = lane[j][1]
         sh.label(sh.parts["J3"]["pins"][str(j)], sh.wire(lane[j], (66.04, ly)), "right")
-        tp(sh, tpr, (58.42, ly), f=(side, -H))
+        tp(sh, tpr, (58.42, ly), "l" if side < 0 else "r")
     # ---- panel logic supply: JP4 from 3V3, decoupling at the connector
     sy = 132.08
     sh.heading(66.04, 121.92, "Panel supply (LCD_3V3)")
@@ -479,9 +479,9 @@ def display():
     sh.heading(Ux - 66.04, Uy - 10.16, "Backlight reference")
     ry = Uy + 5.08
     sh.place("R60", Ux - 50.8, ry, 90)
-    hook = (Ux - 66.04, ry)
-    sh.wire(hook, "R60.1")
-    sh.label("BL_PWM", hook, "left", hook="up")
+    pwm = (Ux - 66.04, ry)
+    sh.wire(pwm, "R60.1")
+    sh.label("BL_PWM", pwm, "left")
     sh.wire("R60.2", "U6.5")
     for x, ref in ((Ux - 40.64, "R61"), (Ux - 30.48, "C50")):
         sh.place(ref, x, ry + 3.81, 0, f=("l", G))
@@ -536,7 +536,7 @@ def mcu():
     sh.place("U4", Ux, Uy, 0, f=(0, 0))
     pins = sh.parts["U4"]["pins"]
     import kisym
-    geo = kisym.placed("MCU_RaspberryPi:RP2350B", Ux, Uy, 0)
+    geo = kisym.placed(sh.parts["U4"]["lib"], Ux, Uy, 0)
     # right side: GPIO0-39 straight out to their labels
     for num, g in geo.items():
         if g["out"] != "right" or (pins[num] or "").startswith("REV"):
@@ -570,24 +570,44 @@ def mcu():
     sh.wire((Ux + 7.62, yb), (Ux + 12.7, yb))
     sh.rail("+1V1", sh.wire((Ux + 10.16, yb), (Ux + 10.16, yb - G)))
     for num in ("61", "63"):
-        sh.label(pins[num], sh.stub(f"U4.{num}", G), "up", hook="vertical")
+        sh.label(pins[num], sh.stub(f"U4.{num}", G), "up", vertical=True)
     sh.wire("U4.62", (Ux - 2.54, Uy + 60.96), (Ux, Uy + 60.96))
     sh.wire("U4.81", (Ux, Uy + 60.96))
     sh.gnd((Ux, Uy + 60.96))
     # left side
     L = Ux - 25.4
-    sh.label("RUN", sh.wire("U4.35", (Ux - 35.56, Uy - 33.02)), "left", hook="up")
-    sh.tag("U4.66"); sh.tag("U4.67")
+    sh.label("RUN", sh.wire("U4.35", (Ux - 35.56, Uy - 33.02)), "left")
+    # USB series resistors on the D-/D+ pin rows, staggered so each has room for its name
+    sh.heading(58.42, 59.69, "USB series resistors")
+    yd, yp = sh.P("U4.66")[1], sh.P("U4.67")[1]
+    sh.place("R22", 86.36, yd, 90, f=("at", 86.36, yd - 3.81))
+    sh.place("R21", 96.52, yp, 90, f=("at", 96.52, yp + 3.81))
+    sh.wire("U4.66", "R22.2"); sh.wire("U4.67", "R21.2")
+    sh.wire("R22.1", (74.93, yd)); sh.wire("R21.1", (74.93, yp))
+    sh.label("USB_DM", (74.93, yd), "left"); sh.label("USB_DP", (74.93, yp), "left")
     for n in ("71", "72", "74", "73", "70"):
         sh.nc(f"U4.{n}")
-    qs = (Ux - 66.04, Uy - 15.24)
+    qs = (43.18, Uy - 15.24)
     sh.wire("U4.75", qs)
-    sh.label("QSPI_SS", qs, "left", hook="up")
-    sh.place("R23", Ux - 50.8, Uy - 15.24 - 3.81, 0, f=("r", -H))
+    sh.label("QSPI_SS", qs, "left")
+    sh.place("R23", 53.34, Uy - 15.24 - 3.81, 0, f=("r", -H))
     sh.tag("R23.1", 0)
-    sh.tag("U4.30"); sh.tag("U4.31")
-    sh.label("SWCLK", sh.wire("U4.33", (Ux - 38.1, Uy + 22.86)), "left", hook="up")
-    sh.label("SWDIO", sh.wire("U4.34", (Ux - 38.1, Uy + 25.4)), "left", hook="down")
+    # 12 MHz crystal under its pins: XIN straight across, XOUT through R20
+    xi, xo = sh.P("U4.30")[1], sh.P("U4.31")[1]
+    yx = xo + 5.08                                   # the crystal's row
+    sh.heading(50.8, xi - 5.08, "12 MHz crystal")
+    sh.place("X1", 73.66, yx, 0, f=("at", 73.66, yx - 6.99))
+    sh.place("C27", 64.77, yx + 3.81, 0, f=("l", G))
+    sh.place("C28", 82.55, yx + 3.81, 0, f=("r", G))
+    sh.place("R20", 93.98, xo, 270)
+    sh.wire("X1.1", (60.96, yx), (60.96, xi), "U4.30")
+    sh.wire("X1.3", (86.36, yx), (86.36, xo), "R20.2")
+    sh.wire("R20.1", "U4.31")
+    sh.wire((64.77, yx), "C27.1"); sh.tag("C27.2", 0)
+    sh.wire((82.55, yx), "C28.1"); sh.tag("C28.2", 0)
+    sh.wire("X1.2", (73.66, yx + 7.62)); sh.gnd((73.66, yx + 7.62))
+    sh.label("SWCLK", sh.wire("U4.33", (Ux - 38.1, Uy + 22.86)), "left")
+    sh.label("SWDIO", sh.wire("U4.34", (Ux - 38.1, Uy + 25.4)), "left")
     # GPIO40-47 (the ADC pins) fan out into 5.08 mm lanes, each with its label above
     adc = ["49", "52", "53", "54", "55", "56", "57", "58"]
     for k, num in enumerate(adc):
@@ -599,31 +619,7 @@ def mcu():
         else:
             rx = L - 2.54 * (9 - k)
             sh.wire(f"U4.{num}", (rx, y), (rx, lane), end)
-        sh.label(pins[num], end, "left", hook="up")
-    # ---- USB series resistors
-    sh.heading(20.32, 43.18, "USB series resistors")
-    for i, (r, glob) in enumerate((("R22", "USB_DM"), ("R21", "USB_DP"))):
-        y = 55.88 + i * 12.7
-        sh.place(r, 45.72, y, 90)
-        a = (25.4, y)
-        sh.wire(a, f"{r}.1")
-        sh.label(glob, a, "left", hook="up")
-        sh.label(sh.parts[r]["pins"]["2"], sh.stub(f"{r}.2", 5.08), "right")
-    # ---- crystal
-    yc = 99.06
-    sh.heading(20.32, 83.82, "12 MHz crystal")
-    sh.place("X1", 48.26, yc, 0, f=(0, -10.16))
-    sh.place("C27", 35.56, yc + 3.81, 0, f=("l", G))
-    sh.place("C28", 58.42, yc + 3.81, 0, f=("r", G))
-    sh.place("R20", 68.58, yc, 270)
-    xin = (25.4, yc)
-    sh.wire(xin, "X1.1")
-    sh.label("XIN", xin, "left")
-    sh.wire("X1.3", "R20.2")
-    sh.label("XOUT", sh.stub("R20.1", 5.08), "right")
-    sh.wire((35.56, yc), "C27.1"); sh.tag("C27.2", 0)
-    sh.wire((58.42, yc), "C28.1"); sh.tag("C28.2", 0)
-    sh.wire("X1.2", (48.26, yc + 7.62)); sh.gnd((48.26, yc + 7.62))
+        sh.label(pins[num], end, "left")
     sh.text(198.12, 20.32, "Core from Raspberry Pi's RP2350B minimal design (MIT),")
     sh.text(198.12, 24.13, "fitted with an RP2354B: its 2 MB flash is inside the package,")
     sh.text(198.12, 27.94, "so only QSPI_SS (the BOOTSEL strap, R23 pull-up) is wired outside.")
@@ -651,12 +647,11 @@ def mcu_power():
             "+3V3 decoupling: IOVDD, ADC_AVDD, USB_OTP_VDD, QSPI_IOVDD (100 nF each), bulk C23")
     cap_row(30.48, 88.9, ["C20", "C21", "C22"], "+1V1", "DVDD decoupling (+1V1)")
     # ---- the core regulator: VREG_AVDD filter, VREG_VIN cap, inductor and output cap
-    sh.heading(83.82, 76.2, "Core 1.1 V switcher: input, AVDD filter, inductor, output")
+    sh.heading(83.82, 76.2, "Core 1.1 V switcher: VREG_VIN cap, AVDD filter, inductor, output")
     y = 88.9
     sh.rail("+3V3", (88.9, y))
     sh.place("C24", 96.52, y + 3.81, 0, f=("r", G))
     sh.wire((88.9, y), (106.68, y)); sh.wire((96.52, y), "C24.1"); sh.tag("C24.2", 0)
-    sh.text(91.44, y + 13.97, "VREG_VIN")
     sh.place("R19", 111.76, y, 90)
     sh.wire((106.68, y), "R19.1")
     sh.place("C26", 124.46, y + 3.81, 0, f=("r", G))
@@ -666,9 +661,9 @@ def mcu_power():
     sh.label("VREG_AVDD", (134.62, y), "right")
     yl = 121.92
     lx = (88.9, yl)
-    sh.place("L2", 101.6, yl, 270, f=(0, 0))
+    sh.place("L2", 101.6, yl, 270)
     sh.wire(lx, "L2.2")
-    sh.label("VREG_LX", lx, "left", hook="up")
+    sh.label("VREG_LX", lx, "left")
     sh.wire("L2.1", (147.32, yl))
     sh.place("C25", 116.84, yl + 3.81, 0, f=("r", G))
     sh.wire((116.84, yl), "C25.1"); sh.tag("C25.2", 0)
@@ -685,10 +680,10 @@ SHEET_NOTES = {
     "USB_Charger": ("USB-C receptacle + CC pull-downs", "ESD (SRV05-4), VBUS input",
                     "charger (TP4056), load sharing", "battery connector J2"),
     "Power": ("3V3 regulator (ME6211)", "power latch (button, MCU, USB)",
-              "button sense, cell voltage sense", "test points"),
+              "button sense, cell voltage sense", "ground pads"),
     "MCU": ("RP2354B (2 MB flash inside)", "USB series resistors",
             "12 MHz crystal", "board revision straps"),
-    "MCU_Power": ("+3V3 and DVDD decoupling", "core 1.1 V switcher:",
+    "MCU_Power": ("+3V3 and DVDD decoupling", "core 1.1 V switcher: VREG_VIN cap,",
                   "AVDD filter, inductor, output", ""),
     "Debug": ("SWD connector J5", "UART connector J6", "debug pads J7",
               "BOOTSEL and RESET buttons"),
@@ -715,11 +710,10 @@ def root():
     sh.text(20.32, 35.56, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets.")
     for i, (f, name) in enumerate(design.SHEETS):
         x, y, w, h = SHEET_BOX(i)
-        sh.heading(x + 1.27, y - 3.81, name)
-        sh.text(x + 2.54, y + 5.08, f, size=1.0)
+        sh.sheets.append((f, name, x, y, w, h))
         for j, line in enumerate(SHEET_NOTES[name]):
             if line:
-                sh.text(x + 2.54, y + 11.43 + j * 4.45, line, size=1.0)
+                sh.text(x + 2.54, y + 6.35 + j * 4.45, line, size=1.0)
     sh.text(20.32, 154.94, "Mechanical: locating holes at positions set by the case; fiducials for assembly.")
     for i in range(6):
         sh.place(f"H{i + 1}", 25.4 + i * 7.62, 165.1, 0)

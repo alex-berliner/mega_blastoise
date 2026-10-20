@@ -193,18 +193,17 @@ def outline(board):
         rounded_rect(board, sx0, min(sy0, sy1), sx1, max(sy0, sy1), r)
 
 
-def footprints(board, comps, nets):
+def footprints(board, comps, nets, pins):
     netinfo = {}
+
+    def net(name):
+        if name not in netinfo:
+            netinfo[name] = pcbnew.NETINFO_ITEM(board, name)
+            board.Add(netinfo[name])
+        return netinfo[name]
+
     for name in nets:
-        ni = pcbnew.NETINFO_ITEM(board, name)
-        board.Add(ni)
-        netinfo[name] = ni
-    pin_net = {}
-    for name, nodes in nets.items():
-        if name.startswith("unconnected-("):
-            continue            # no-connect pins stay netless, as KiCad's own update leaves them
-        for ref, pin in nodes:
-            pin_net[(ref, pin)] = name
+        net(name)
     fps = {}
     for ref, c in sorted(comps.items()):
         fp = load_fp(c["footprint"])
@@ -219,10 +218,15 @@ def footprints(board, comps, nets):
         fp.SetExcludedFromBOM(False)
         # nothing is placed where there's no part to buy: bare pads, contacts, jumpers, holes
         fp.SetExcludedFromPosFiles(ref in NO_ASSEMBLY or not c["fields"].get("LCSC"))
-        for pad in fp.Pads():
-            n = pin_net.get((ref, pad.GetNumber()))
+        # each pad on its pin's net as KiCad's update puts it; a no-connect pin's pad on its own
+        # unconnected-(...) net, which schematic parity expects
+        pads = list(fp.Pads())
+        for pad, n in zip(pads, netlist.pad_nets(ref, [p.GetNumber() for p in pads], nets, pins)):
             if n:
-                pad.SetNet(netinfo[n])
+                pad.SetNet(net(n))
+                if n.startswith("unconnected-("):
+                    pad.SetPinFunction(pins[(ref, pad.GetNumber())][0])
+                    pad.SetPinType(pins[(ref, pad.GetNumber())][1])
         board.Add(fp)
         fps[ref] = fp
     return fps, netinfo
@@ -480,7 +484,7 @@ def copy_escapes(board, fps, netinfo):
     for pad in sorted(u4.Pads(), key=lambda p: int(p.GetNumber())):
         net, num = pad.GetNetname(), pad.GetNumber()
         rnet = ref_pins.get(num)
-        if net in skip or not rnet:
+        if net in skip or net.startswith("unconnected-(") or not rnet:
             continue
         segs = [(core_xy(*xy(t.GetStart())), core_xy(*xy(t.GetEnd())), pcbnew.ToMM(t.GetWidth()))
                 for t in ref.GetTracks()
@@ -521,12 +525,12 @@ def main():
         sys.exit("set RP2350B_REF to RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb (Raspberry Pi RP-010329-CA)")
     if os.path.exists(os.path.join(BOARD_DIR, "~battler.kicad_pcb.lck")):
         sys.exit("the board is open in KiCad; close it first")
-    comps, nets = netlist.read()
+    comps, nets, pins = netlist.read(pins=True)
     # a fresh board each time (removing items from a loaded board upsets KiCad's SWIG layer)
     board = pcbnew.NewBoard(PCB)
     setup(board)
     outline(board)
-    fps, netinfo = footprints(board, comps, nets)
+    fps, netinfo = footprints(board, comps, nets, pins)
     missing = [r for r in fps if r not in P and r not in CORE.values()]
     if missing:
         sys.exit(f"no position for {missing}")

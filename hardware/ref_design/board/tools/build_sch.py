@@ -1,4 +1,4 @@
-"""Write the reference schematic from design.py, through Konnect.
+"""Write the reference schematic from design.py.
 
     python3 tools/build_sch.py            # from hardware/ref_design/board/
     python3 tools/build_sch.py --check    # lay out and check the sheets, write nothing
@@ -13,12 +13,13 @@ tools/schdraw.py holds the drawing kit and its checks: before anything is
 written, each sheet's wiring is traced and compared with design.py (every
 group of joined pins one net, every net named as design.py names it, nothing
 left dangling), and its geometry is checked for wires through parts or text,
-text on text and parts off the page. Konnect's own quirks, and how the kit
-works around them, are described there and in docs/konnect_notes.md.
+text on text and parts off the page. tools/schwrite.py then writes each sheet
+whole, in KiCad 10's own format.
 
 The result is checked again by check_netlist.py (KiCad's netlist against
-design.py) and by KiCad's ERC. Deletes and regenerates the .kicad_sch files;
-nothing else in the folder.
+design.py) and by KiCad's ERC. Rewrites the .kicad_sch files; nothing else in
+the folder. (Until 2026-10-20 the sheets were written through Konnect:
+docs/konnect_notes.md has what that ran into.)
 """
 import os
 import sys
@@ -29,12 +30,22 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, BOARD)
 
 import design  # noqa: E402
-import schdraw  # noqa: E402
-from konnect_client import Konnect  # noqa: E402
-from sch_sheets import LAYOUTS, SHEET_BOX  # noqa: E402
+import schwrite  # noqa: E402
+from sch_sheets import LAYOUTS  # noqa: E402
 
-PROJECT = "battler"
-ROOT_FILE = PROJECT + ".kicad_sch"
+ROOT_FILE = schwrite.PROJECT + ".kicad_sch"
+COMPANY = "Two-player handheld: reference design (REF-A)"
+TITLES = {  # title block of each sheet
+    ROOT_FILE: "Sheets and mechanical parts",
+    "usb_charger.kicad_sch": "USB-C, charger, load sharing, cell connector",
+    "power.kicad_sch": "3V3 regulator, power latch, cell voltage sense",
+    "mcu.kicad_sch": "RP2354B",
+    "mcu_power.kicad_sch": "RP2354B supply: decoupling and core regulator",
+    "debug.kicad_sch": "SWD, UART, debug pads, BOOTSEL and RESET",
+    "display.kicad_sch": "Panel connector and backlight sinks",
+    "audio.kicad_sch": "PWM audio and amplifier",
+    "buttons.kicad_sch": "Membrane contacts",
+}
 
 
 def drawn():
@@ -61,31 +72,9 @@ def main():
         return
     if bad and "--force" not in sys.argv:
         raise SystemExit(f"{bad} drawing errors: not written")
-    # Konnect looks for libraries in KICAD10_SYMBOL_DIR before KiCad's own folder; the
-    # project's symbols (tools/sym_lib.py) live in lib/, not in the project's library table
-    os.environ["KICAD10_SYMBOL_DIR"] = os.path.join(BOARD, "lib")
-    k = Konnect()
-    for ts in ("project", "sch_components", "sch_wiring", "sch_hierarchy", "library", "sch_batch"):
-        k.call("load_toolset", name=ts)
-    for f in sheets:
-        path = os.path.join(BOARD, f)
-        if os.path.exists(path):
-            os.remove(path)
-    if not os.path.exists(os.path.join(BOARD, PROJECT + ".kicad_pro")):
-        k.call("create_project", path=BOARD, name=PROJECT)
-    else:
-        k.call("create_schematic", path=os.path.join(BOARD, ROOT_FILE))
-    k.call("register_footprint_library", library_path=os.path.join(BOARD, "lib", "battler.pretty"),
-           nickname="battler", project=os.path.join(BOARD, PROJECT + ".kicad_pro"), scope="project")
-    root = os.path.join(BOARD, ROOT_FILE)
-    for i, (f, name) in enumerate(design.SHEETS):
-        x, y, w, h = SHEET_BOX(i)
-        k.call("add_hierarchical_sheet", schematic=root, sheet_file=f, sheet_name=name,
-               x=x, y=y, width=w, height=h, project_name=PROJECT)
-    writer = schdraw.Writer(k, BOARD)
+    writer = schwrite.Writer(BOARD, TITLES, COMPANY)
     for f, sh in sheets.items():
-        writer.emit(sh)
-    k.close()
+        writer.emit(sh, str(design.BOARD_REV))
     print("power symbols:", writer.pwr)
 
 

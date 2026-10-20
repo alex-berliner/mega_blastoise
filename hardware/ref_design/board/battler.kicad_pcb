@@ -127,7 +127,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -186,7 +186,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/26ef6c36-726a-4d28-aa4a-50698db9a6e1")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/ae75f0ae-d872-50a8-8cfc-4d53d73e9843")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -311,7 +311,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -370,7 +370,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/45b28b4e-0f2e-4713-b962-a6127c5eaa79")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/9216e4b6-5278-5bf9-9b77-317ea2b91da3")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -502,7 +502,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -551,7 +551,7 @@
 				)
 			)
 		)
-		(path "/b5ef4b6c-3087-43ec-afa0-4e4a37f482ea/6fc6f710-2004-45f2-9f4a-b20963e9ab58")
+		(path "/74ddddc3-4675-58f5-ac59-5565a292508e/2404067b-50ac-5af6-a3bc-ff9ff15e8b6c")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -665,7 +665,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -700,7 +700,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/2465312d-b3e8-4e33-8f76-c2e022b261eb")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/8f0d517a-21cf-5b2e-9451-8c80ea35597e")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -823,7 +823,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -846,7 +846,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/092aa906-65c9-43a9-927e-ae39079214e2")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/3baf7111-5481-5b85-bda9-872c2368db12")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -1007,7 +1007,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -1032,7 +1032,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/4680b3b1-d31b-4a27-9926-cf329521924c")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/a828de89-5ac8-5f1c-9ab4-7b38e1a457ed")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -1117,7 +1117,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Mounting Hole without connection"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -1152,7 +1152,7 @@
 				)
 			)
 		)
-		(path "/22f2bf02-1916-4c8a-8630-97d400572abd")
+		(path "/fbb19145-ecd2-5a96-88a8-45f4e94510a7")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -1237,7 +1237,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -1296,7 +1296,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/faf38906-e268-44bc-9452-5b98b3c6c891")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/7e82f6bf-dda1-5fe1-9d59-2f623822ff68")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -1421,7 +1421,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Mounting Hole without connection"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -1456,7 +1456,7 @@
 				)
 			)
 		)
-		(path "/5cb206a4-39be-4fea-b137-02cda58ce162")
+		(path "/ad367feb-cf37-5fae-bc42-cf077d5489e5")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -1541,7 +1541,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -1600,7 +1600,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/f67b6bff-cd00-4131-b85d-9f5db4e205d7")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/5dadf377-a895-5544-9632-e826508372ba")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -1726,7 +1726,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Solder Jumper, 2-pole, closed/bridged"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -1751,7 +1751,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/5ad76314-d0be-47e3-8a9a-80322060f427")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/a0bdac9f-b0b9-5f36-84a9-6fba496cc79b")
 		(zone_connect 1)
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(net_tie_pad_groups "1, 2")
@@ -1913,7 +1913,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -1936,7 +1936,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/732ce3c3-4d23-40b7-9274-17330efffab7")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/0493fdae-8819-5ebb-b887-328e14a71708")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -2118,7 +2118,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -2177,7 +2177,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/a4b37f6d-e13e-448a-a4d4-2244b5af288c")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/065f8c7c-af2e-58c4-bcd6-e4337eb93ed1")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -2309,7 +2309,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -2358,7 +2358,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/eab97512-93ea-4f32-92ce-aed13dcf979c")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/0ce6e1ab-fa67-5351-a80d-9b8b5a44c25a")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -2474,7 +2474,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Solder Jumper, 2-pole, closed/bridged"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -2499,7 +2499,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/c0aca4c4-3787-4208-9781-699a0bc3d846")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/78167b2f-8f66-50fe-a649-d0d268f8170a")
 		(zone_connect 1)
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(net_tie_pad_groups "1, 2")
@@ -2663,7 +2663,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -2722,7 +2722,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/ed701ed3-170d-461d-836e-91944d56321c")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/38c9d0d8-fffb-5283-971f-346f98d4c807")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -2836,7 +2836,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "http://www.onsemi.com/pub/Collateral/SRV05-4-D.PDF"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -2847,7 +2847,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "ESD Protection Diodes with Low Clamping Voltage, SOT-23-6"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -2906,7 +2906,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/7ce1c81b-3d25-46b7-90cb-185224023088")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/f4dc86f0-f149-5382-807d-0211a9fbc97b")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -3153,6 +3153,9 @@
 			(size 1.325 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
+			(net "unconnected-(U1-IO3-Pad4)")
+			(pinfunction "IO3_4")
+			(pintype "passive+no_connect")
 			(uuid "520a770d-25c9-4ef9-9167-1530f968c0f9")
 		)
 		(pad "5" smd roundrect
@@ -3168,6 +3171,9 @@
 			(size 1.325 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
+			(net "unconnected-(U1-IO4-Pad6)")
+			(pinfunction "IO4_6")
+			(pintype "passive+no_connect")
 			(uuid "c0edfb70-05f2-458c-8265-72c11bf9f5e5")
 		)
 		(embedded_fonts no)
@@ -3223,7 +3229,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -3282,7 +3288,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/16e9d06e-a370-4b2b-ae6c-85c276e12cfd")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/667f0df8-0130-5c2a-8f55-fbb2722ff3bb")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -3407,7 +3413,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -3466,7 +3472,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/9442e530-1872-425d-9c79-563cd98e4fe7")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/0a0980a6-887a-5e0e-869f-2cc4b483101c")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -3598,7 +3604,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -3647,7 +3653,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/1cf44988-6461-4e0e-a231-74f143b428cb")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/d0df4e09-eafe-5312-bb6b-17729c441875")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -3769,7 +3775,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -3818,7 +3824,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/40813454-1a13-4c13-9925-6a9f3cd12c5f")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/a300247e-0326-5722-a77f-4088f5f054c4")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -3933,7 +3939,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -3992,7 +3998,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/d06b950b-bbac-4dfd-a124-375b3f0f162a")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/6b1b631d-511a-552b-ab12-fb6a14c64419")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -4117,7 +4123,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -4176,7 +4182,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/57762f08-5dc9-448f-89f0-7f5be2515f01")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/b60a97d4-0dcb-58f6-b149-75fb514393e2")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -4302,7 +4308,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -4327,7 +4333,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/9f76c48f-081c-4c93-9c1d-4a4ea116ebb1")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/12cf9ba1-ffbe-5ade-bb0e-c80dcfcbb13d")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -4367,7 +4373,7 @@
 			(at 0 0)
 			(size 1 1)
 			(layers "F.Cu" "F.Mask")
-			(net "AMP_SHDN")
+			(net "/Audio/AMP_SHDN")
 			(uuid "ffedaeed-b8e8-4596-a6d6-956511c344b0")
 		)
 		(embedded_fonts no)
@@ -4412,7 +4418,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Generic connectable mounting pin connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -4471,7 +4477,7 @@
 				)
 			)
 		)
-		(path "/b5ef4b6c-3087-43ec-afa0-4e4a37f482ea/d51a5be9-af88-4d18-9a9d-b7c8f3fb4109")
+		(path "/74ddddc3-4675-58f5-ac59-5565a292508e/77637f0d-72c8-5bb6-9c02-3ae98fed1dac")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -4794,6 +4800,9 @@
 			(size 1.2 1.8)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.208333)
+			(net "unconnected-(J6-MountPin-PadMP)")
+			(pinfunction "MountPin_MP")
+			(pintype "passive+no_connect")
 			(uuid "6b671359-925b-400d-8f57-19fc8ec9c034")
 		)
 		(pad "MP" smd roundrect
@@ -4801,6 +4810,9 @@
 			(size 1.2 1.8)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.208333)
+			(net "unconnected-(J6-MountPin-PadMP)_1")
+			(pinfunction "MountPin_MP")
+			(pintype "passive+no_connect")
 			(uuid "702c00a4-21b1-4712-841b-da37575c5c46")
 		)
 		(embedded_fonts no)
@@ -4845,7 +4857,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2410121619_TOPPOWER-Nanjing-Extension-Microelectronics-TP4056-42-ESOP8_C16581.pdf"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -4856,7 +4868,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "1A Standalone Linear Li-ion/LiPo single-cell battery charger, 4.2V ±1% charge voltage, VCC = 4.0..8.0V, SOIC-8 (SOP-8)"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -4915,7 +4927,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/3b231298-312b-4b09-a611-aea8d9a234d2")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/4f4f7466-fbe8-5b7b-aa19-84d08e3f0367")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -5356,7 +5368,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Temperature dependent resistor, negative temperature coefficient"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -5415,7 +5427,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/1540c7a4-988a-49a8-a0b1-7cc22c9bec2c")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/e4c51316-6629-543b-ae5a-136ce7bb6c2d")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -5540,7 +5552,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -5599,7 +5611,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/015dc44f-e25d-4c56-b738-cc1985c47873")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/eb543e60-70ff-5d05-bdf2-59a948b8b2a6")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -5724,7 +5736,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -5783,7 +5795,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/b77ad250-ba44-4586-bae8-77a20d427e12")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/6501eb93-902a-5439-bde1-04ee4f3c7826")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -5908,7 +5920,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -5967,7 +5979,7 @@
 				)
 			)
 		)
-		(path "/b5ef4b6c-3087-43ec-afa0-4e4a37f482ea/6e7b835e-4a81-4d79-8811-f1b6884c5071")
+		(path "/74ddddc3-4675-58f5-ac59-5565a292508e/df96d979-031a-54af-9148-11dd15fc9b5a")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -6092,7 +6104,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -6151,7 +6163,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/02cac8d5-fb19-42a7-bed3-b64e022484be")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/dca3d942-da1f-5c5a-b6c9-74ee2b1841a1")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -6276,7 +6288,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Generic connectable mounting pin connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"
 			(at 0 0 180)
 			(layer "F.Fab")
 			(hide yes)
@@ -6335,7 +6347,7 @@
 				)
 			)
 		)
-		(path "/b5ef4b6c-3087-43ec-afa0-4e4a37f482ea/3664a4a7-6850-44d7-b647-50bd206859d9")
+		(path "/74ddddc3-4675-58f5-ac59-5565a292508e/10513920-df72-5765-802f-1dbba94b68e1")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -6658,6 +6670,9 @@
 			(size 1.2 1.8)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.208333)
+			(net "unconnected-(J5-MountPin-PadMP)")
+			(pinfunction "MountPin_MP")
+			(pintype "passive+no_connect")
 			(uuid "0465fdc0-9c85-4b10-a93a-9c9652bcd58c")
 		)
 		(pad "MP" smd roundrect
@@ -6665,6 +6680,9 @@
 			(size 1.2 1.8)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.208333)
+			(net "unconnected-(J5-MountPin-PadMP)_1")
+			(pinfunction "MountPin_MP")
+			(pintype "passive+no_connect")
 			(uuid "774b739d-b5f9-4ea5-8754-6f98f9e43400")
 		)
 		(embedded_fonts no)
@@ -6720,7 +6738,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -6779,7 +6797,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/7fe4da58-10ac-4d18-9ecd-6dc8130b4d8e")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/025af7f8-281e-5a6a-a963-371c553c43af")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -6904,7 +6922,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -6963,7 +6981,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/58fd33b9-f117-4414-96d6-899062dbdf0a")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/36d40ad5-c018-50f2-86b0-ae81c7873be1")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -7024,7 +7042,7 @@
 			(size 0.54 0.64)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "LS_GATE")
+			(net "/USB_Charger/LS_GATE")
 			(uuid "5dd53cea-9f2b-46d3-88ab-83888be6c500")
 		)
 		(pad "2" smd roundrect
@@ -7088,7 +7106,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -7147,7 +7165,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/a12a38e0-7bab-460d-9513-bb6387cb4637")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/0a3571bc-17c8-5e48-8cff-4f5b28d8825b")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -7272,7 +7290,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -7331,7 +7349,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/48b94212-8e90-458b-bdec-5935dc5428fe")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/ff34950f-f60d-50d0-903c-f1d34919de07")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -7463,7 +7481,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7512,7 +7530,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/efc185fc-8285-4ec7-8bab-d86a35ddbce3")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/7938e5f3-0bf0-57e1-b0fe-8362f262126f")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -7634,7 +7652,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7683,7 +7701,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/93a247f8-1dc3-4ada-8d6e-e9903d649760")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/0043a91b-399f-560e-b18e-c749beaec57b")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -7800,7 +7818,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -7825,7 +7843,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/a2e51fe5-ecb2-459e-9724-4b63e7f03e0c")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/a718ed78-f1bd-51cf-9a0c-4e70cad16191")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -7910,7 +7928,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -7969,7 +7987,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/5cbfc1e4-c7c8-4f59-9aea-17dcf6ebf3d6")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/198c303e-642c-55d9-a91f-bba0c32e1690")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -8030,7 +8048,7 @@
 			(size 0.54 0.64)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "AMP_SHDN")
+			(net "/Audio/AMP_SHDN")
 			(uuid "42583a16-037c-4d5d-ba0b-eb20567ac466")
 		)
 		(pad "2" smd roundrect
@@ -8094,7 +8112,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "\"Generic connectable mounting pin connector, single row, 01x50, script generated\""
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -8153,7 +8171,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/527f0f38-15b5-4f6f-a271-3a5718d481ca")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/6406f686-d149-55cf-bf1f-c30b8a8f0e18")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -8443,24 +8461,36 @@
 			(at -10.75 -1.85)
 			(size 0.3 1.3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-Pin_4-Pad4)")
+			(pinfunction "Pin_4_4")
+			(pintype "passive+no_connect")
 			(uuid "016394fb-5aa2-403f-a817-412a833410c2")
 		)
 		(pad "5" smd rect
 			(at -10.25 -1.85)
 			(size 0.3 1.3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-Pin_5-Pad5)")
+			(pinfunction "Pin_5_5")
+			(pintype "passive+no_connect")
 			(uuid "bb84c317-5dd1-4f84-866a-00f6a6003e67")
 		)
 		(pad "6" smd rect
 			(at -9.75 -1.85)
 			(size 0.3 1.3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-Pin_6-Pad6)")
+			(pinfunction "Pin_6_6")
+			(pintype "passive+no_connect")
 			(uuid "ec6c6e37-f5f2-4790-b9bc-938b59bb1256")
 		)
 		(pad "7" smd rect
 			(at -9.25 -1.85)
 			(size 0.3 1.3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-Pin_7-Pad7)")
+			(pinfunction "Pin_7_7")
+			(pintype "passive+no_connect")
 			(uuid "eecdfb83-e450-485a-9fe1-5e728c8116d7")
 		)
 		(pad "8" smd rect
@@ -8726,18 +8756,27 @@
 			(at 9.75 -1.85)
 			(size 0.3 1.3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-Pin_45-Pad45)")
+			(pinfunction "Pin_45_45")
+			(pintype "passive+no_connect")
 			(uuid "17ebfc27-cac5-4a93-b342-e407eed071f7")
 		)
 		(pad "46" smd rect
 			(at 10.25 -1.85)
 			(size 0.3 1.3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-Pin_46-Pad46)")
+			(pinfunction "Pin_46_46")
+			(pintype "passive+no_connect")
 			(uuid "a80c90d2-00bd-4685-b0e2-6ccfd02534f7")
 		)
 		(pad "47" smd rect
 			(at 10.75 -1.85)
 			(size 0.3 1.3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-Pin_47-Pad47)")
+			(pinfunction "Pin_47_47")
+			(pintype "passive+no_connect")
 			(uuid "44db666e-9290-4988-bae0-88ca5cfac5fd")
 		)
 		(pad "48" smd rect
@@ -8765,12 +8804,18 @@
 			(at -14.15 1.4)
 			(size 1.8 2.2)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-MountPin-PadMP)")
+			(pinfunction "MountPin_MP")
+			(pintype "passive+no_connect")
 			(uuid "4980bebf-1aa2-4fd4-8bbd-243628e2013f")
 		)
 		(pad "MP" smd rect
 			(at 14.15 1.4)
 			(size 1.8 2.2)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(J3-MountPin-PadMP)_1")
+			(pinfunction "MountPin_MP")
+			(pintype "passive+no_connect")
 			(uuid "caf05c9e-a9c6-4796-b3d1-68f02d678ac7")
 		)
 		(embedded_fonts no)
@@ -8826,7 +8871,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -8885,7 +8930,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/6fd4ce6a-fc40-489e-b5a3-af0d845a62ee")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/daaf9bc1-d4ee-5ff3-8404-a82b2ba9e277")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -8998,7 +9043,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -9009,7 +9054,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -9068,7 +9113,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/9b7e844c-2cab-4e82-97ca-b1afeb483f37")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/5f7f6e12-98b6-59d3-9734-1a6e25f0b7e3")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -9413,7 +9458,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Fiducial Marker"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -9448,7 +9493,7 @@
 				)
 			)
 		)
-		(path "/c26a994b-ce90-4f7a-96ef-59d0f556f584")
+		(path "/4b120a70-fd76-5172-98a3-7584569749a6")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -9522,7 +9567,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "http://www.diodes.com/_files/datasheets/ds11005.pdf"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -9533,7 +9578,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "dual schottky barrier diode, common cathode"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -9592,7 +9637,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/0032fdfc-75e8-454c-8a25-8ea2c2473a67")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/cdd75922-bbb6-570a-ac8e-c9c437f0fc10")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -9944,7 +9989,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9993,7 +10038,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/843d1636-5f79-4680-833a-44aac441d9b6")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/6214aba5-b922-5a68-b2a4-f2d2eb2b4ede")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -10108,7 +10153,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -10167,7 +10212,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/798862f7-0507-41c5-a946-92ca7c9bb07e")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/54ba2baf-2b32-5f2d-be1d-fc53fcc7ea6c")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -10292,7 +10337,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -10351,7 +10396,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/1d787bc2-1ad4-40d9-87bf-a7bfccb85ce7")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/c2b39def-db4d-5f24-8d83-f2833cd6731a")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -10478,7 +10523,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Schottky diode"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -10515,7 +10560,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/71afc19e-dabf-46ac-b7ea-8402190bf1b6")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/e8463157-16a1-58be-b30e-9be45562e339")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -10766,7 +10811,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -10789,7 +10834,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/063a8282-d44f-40f6-a9ac-7f33389c94a8")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/32fdf08a-c046-576e-8b62-96aebe7a61ab")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -10978,7 +11023,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -11027,7 +11072,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/f10aea04-3349-4fd5-afa9-daa5378c5a6b")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/066f1056-01d1-5643-8a9f-8c7f1ed5a927")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -11142,7 +11187,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -11201,7 +11246,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/a0ddf5c3-d893-47f4-856d-cd863d6a6512")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/0af32c10-cde4-5efe-884a-4624780fb370")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -11326,7 +11371,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -11385,7 +11430,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/b808bb9b-70cb-4ef6-ab1a-89dbc167e69c")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/ea6aafbe-1009-55a6-8541-4588f2e50b13")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -11510,7 +11555,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Mounting Hole without connection"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -11545,7 +11590,7 @@
 				)
 			)
 		)
-		(path "/ee6f5508-710b-4796-9454-003cd4c2cde6")
+		(path "/7770ec07-553a-50fd-8fbf-fb49601b5942")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -11633,7 +11678,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Inductor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -11917,7 +11962,7 @@
 			)
 		)
 		(property ki_fp_filters "RPI_COMPILED:abracon_aota-b201610s3r3-101-t")
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/823bee74-2602-4b81-a21a-73281918a82a")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/56523df9-bd9a-51e0-9887-ceef80c5efd2")
 		(sheetname "/")
 		(sheetfile "RPI-RP2350B-MINIMAL_R4-S1.kicad_sch")
 		(attr smd)
@@ -12054,7 +12099,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -12077,7 +12122,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/48106aa9-7ae3-4e8d-bb4e-0e24ba848ec1")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/bd536165-8dea-5c7f-af7c-7d4e09985731")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -12259,7 +12304,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -12318,7 +12363,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/f0b0798a-1a7d-49a3-85ca-7acfdf126c88")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/de68bccc-efa2-5fbe-afa0-998bca19280f")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -12445,7 +12490,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -12470,7 +12515,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/507ab187-45d3-4bda-b7da-98bd7e455a81")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/539282ee-6624-56b1-8726-5e36f4e4eaba")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -12555,7 +12600,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -12614,7 +12659,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/587ca8a3-894c-4a3f-a22a-ff68ea823b6c")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/62538059-c727-5450-ae01-5bcd4514fb3a")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -12739,7 +12784,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -12798,7 +12843,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/5fb34920-8c2f-4b1b-a713-e8dfc69c3898")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/46a5fa17-b125-57c3-a36d-e685cee494d7")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -12921,7 +12966,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -12944,7 +12989,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/038a3454-3a30-4b6d-906d-a1be09a0f2a5")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/52c64c52-9ce5-5c2d-8d9c-fac727572e46")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -13106,7 +13151,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Schottky diode"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -13143,7 +13188,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/891ebf19-a365-4084-b071-2f5c9fec1e6c")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/522dc2b3-8ee1-51ee-8e2b-e802a368f372")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -13332,7 +13377,7 @@
 			(size 0.6 0.45)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "LS_GATE")
+			(net "/USB_Charger/LS_GATE")
 			(uuid "b0293bb3-1769-41f6-bfc7-b8cbdf93576f")
 		)
 		(pad "2" smd roundrect
@@ -13385,7 +13430,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "http://www.aosmd.com/pdfs/datasheet/AO3401A.pdf"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -13396,7 +13441,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "-4.0A Id, -30V Vds, P-Channel MOSFET, SOT-23"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -13455,7 +13500,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/3f9aa5b8-4896-44fa-a1c1-864cfa277d8a")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/b4f1ba31-8585-5193-b490-2a02359f1608")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -13728,7 +13773,7 @@
 			(size 1.475 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "LS_GATE")
+			(net "/USB_Charger/LS_GATE")
 			(uuid "f4c41f8c-de7b-4ad1-b247-62a267045d7d")
 		)
 		(pad "2" smd roundrect
@@ -13788,7 +13833,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -13799,7 +13844,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -13858,7 +13903,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/4d63dd4b-658e-44d8-b245-94ac063a4c6c")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/4505edca-81ac-527a-9259-8573f1cbe864")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -14147,7 +14192,7 @@
 			(size 1.475 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "AMP_SHDN")
+			(net "/Audio/AMP_SHDN")
 			(uuid "ba0a9ddc-f911-4ad1-9ebf-07d4547e497c")
 		)
 		(embedded_fonts no)
@@ -14201,7 +14246,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -14224,7 +14269,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/f807a55b-3f1d-4e23-b458-adc3e9f0ffb1")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/8f4bf0ec-1b6d-51f6-8905-0211f8f0a1fe")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -14404,7 +14449,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -14427,7 +14472,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/c3c8050d-2fe0-49af-8e2f-82beb06aacb5")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/2c45a90d-dbb0-5cf1-95d5-e28feb4cceec")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -14609,7 +14654,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -14668,7 +14713,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/c2e0bec7-5e0f-4f87-9888-c76728550cf2")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/a1207cd2-c619-5fa8-b40c-44c2088d834e")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -14793,7 +14838,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -14852,7 +14897,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/c511d835-32d7-4495-8b88-da287f301c85")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/b0102cf1-5a3b-5a62-b9c3-418947e8f79e")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -14977,7 +15022,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -15036,7 +15081,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/40fd8210-bea7-4e38-a72c-5cdb7f4a6d99")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/4a8d686b-293a-52a8-b456-7e64b1a1fba4")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -15168,7 +15213,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -15217,7 +15262,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/eead9dba-171d-42d9-95c4-5b11770d1fac")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/c6a7f94b-2299-571b-8ec8-04c9853b4906")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -15320,7 +15365,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -15331,7 +15376,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -15390,7 +15435,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/561b2b9f-d7ec-4dcd-8466-60c2d749887e")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/3a221c0a-ec11-5278-8eca-1eef6fce56b6")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -15735,7 +15780,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -15794,7 +15839,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/ea7193a8-1829-401e-bafc-9237a45144b3")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/ce6075d7-ada9-55f0-8d99-f565fc9923b2")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -15919,7 +15964,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 270)
 			(layer "F.Fab")
 			(hide yes)
@@ -15978,7 +16023,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/172b5206-0ba4-489c-95b0-07f790b8c668")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/e0227d89-a685-59ab-a9c6-377822a5a82e")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -16104,7 +16149,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Solder Jumper, 2-pole, closed/bridged"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -16129,7 +16174,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/419dbb3b-6511-44de-9002-2188a7c44f53")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/59ec68d8-cc9a-5d22-9b41-7d50fcba5b08")
 		(zone_connect 1)
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(net_tie_pad_groups "1, 2")
@@ -16291,7 +16336,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -16314,7 +16359,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/79fadb30-c81c-4898-b598-a4561b993715")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/2098757e-3c6f-527a-b45f-7305b8819727")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -16503,7 +16548,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -16552,7 +16597,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/5bc85b92-32b8-4e0f-ad21-3322b77bbbae")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/4f37c4e8-34ff-56a9-80c0-45b2444d09d0")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -16667,7 +16712,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -16726,7 +16771,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/b1cd4ef9-5969-4152-b5aa-c2ec437c822d")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/38477d25-007d-579f-a7e6-5041c7a83020")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -16851,7 +16896,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Mounting Hole without connection"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -16886,7 +16931,7 @@
 				)
 			)
 		)
-		(path "/5513fc0f-98ba-4fbe-b4ff-ef386bddcd98")
+		(path "/1ac2ffe0-cd9b-5991-87f4-5a0960c25275")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -16978,7 +17023,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -17027,7 +17072,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/c7b0b1d1-e004-4ef5-b33e-b861c1926da0")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/b9814ee0-3530-5e75-b563-002ab62b45cd")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -17142,7 +17187,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Fiducial Marker"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -17177,7 +17222,7 @@
 				)
 			)
 		)
-		(path "/485173cc-8221-44ab-bdd4-9ed018f526a2")
+		(path "/80499d62-9391-5cbb-a8b6-a59d69112d32")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -17270,7 +17315,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -17319,7 +17364,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/9b206d44-4f24-432c-ab7d-bd32112781e7")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/be6cf595-6bcd-5e51-986e-8a805504686b")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -17441,7 +17486,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -17490,7 +17535,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/999d5311-ffbd-4d35-aeff-721dc5bb2de2")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/0bf911d2-1553-516d-b312-14833ecd2ab4")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -17605,7 +17650,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -17664,7 +17709,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/34e230b0-b07f-4458-b97a-a8fbd0d1ab24")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/262a50a1-7f6b-5125-95bc-6ee373fabaac")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -17789,7 +17834,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -17848,7 +17893,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/4eb37dbb-99e3-4f37-9061-57807832e62c")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/86b88c6a-1d47-5ca1-af8f-6a6554ec4f9b")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -17971,7 +18016,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -17994,7 +18039,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/4df54bc8-39fc-4441-9fa8-bed6485412e5")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/a90dc01a-ba31-54eb-b000-42841b76c8bb")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -18154,7 +18199,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -18213,7 +18258,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/42d0e43c-3197-42f7-a6ed-e8ce2a16e45b")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/86d7165d-513c-54a3-9959-570d06659f4c")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -18336,7 +18381,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -18359,7 +18404,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/e751f95c-d052-4bf7-b44d-3fa365da137a")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/1ff1586b-6a27-536a-8fc5-4a73523ef3fa")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -18548,7 +18593,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -18597,7 +18642,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/66e0cfe2-cd37-4fdf-a6c1-6eb2190e9f04")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/129997ca-fc0a-5a50-a0e1-d2af67890156")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -18700,7 +18745,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://ww1.microchip.com/downloads/en/DeviceDoc/MCP6001-1R-1U-2-4-1-MHz-Low-Power-Op-Amp-DS20001733L.pdf"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -18711,7 +18756,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Dual 1 MHz rail-to-rail input/output op-amp, 1.8-6 V; both halves in one unit"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -18770,7 +18815,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/a9c94143-3132-4c8c-b927-ab13c279c262")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/a1893f3a-9a4a-51a2-ae21-262f0fa61390")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -19105,7 +19150,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -19164,7 +19209,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/1e116ee1-b90c-4358-8451-578ab53883e1")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/87a64807-db7c-52ad-ab44-44ded90e86be")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -19289,7 +19334,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 180)
 			(layer "F.Fab")
 			(hide yes)
@@ -19348,7 +19393,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/1cf6e334-ea3c-4758-94d3-c7fe4fca5e73")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/3cc838bb-4e0a-5be8-87f3-81852b8f0100")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -19462,7 +19507,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "http://www.aosmd.com/pdfs/datasheet/AO3400A.pdf"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -19473,7 +19518,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "30V Vds, 5.7A Id, N-Channel MOSFET, SOT-23"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -19532,7 +19577,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/98e78985-3e3d-4449-8969-27a733428ec9")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/1c6cd3f6-3ccd-59a3-96a3-8f1185012a58")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -19879,7 +19924,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Schottky diode"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -19928,7 +19973,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/cea3ee2a-b279-4a92-9f2c-2d8130c26af8")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/79b0f4bd-2b13-5aea-b115-e9276f10b837")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -20193,7 +20238,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Schottky diode"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -20242,7 +20287,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/eb1998f8-deb2-46b6-a5fe-6f3b02dc4215")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/f1a6eb80-3784-53d7-821f-31cc1f7a1e0d")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -20503,7 +20548,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -20526,7 +20571,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/1a5803e6-5a8a-4ce7-8017-09f31402234c")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/6b43c341-b15d-535e-9937-1981f4c06b43")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -20708,7 +20753,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -20767,7 +20812,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/c882d375-ace4-4d30-9fc9-9ec71077fb90")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/c2dcc018-2ddc-5336-8189-ef08afe0069c")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -20892,7 +20937,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -20951,7 +20996,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/d18cdcd6-c780-4be3-a5ba-9fe1809dd1ca")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/0a5f7531-4f80-51b7-9d70-a3f00c871801")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -21076,7 +21121,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -21135,7 +21180,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/4f451aa1-4bf0-4c2e-8b5f-c2c252dcf515")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/95734266-8da6-5dc8-909b-1d818a79f319")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -21258,7 +21303,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -21281,7 +21326,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/01bd40dd-edc7-4faa-be15-9b0831b04fcc")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/8bbff017-4b85-55c5-8714-2642d3432f35")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -21464,7 +21509,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Solder Jumper, 2-pole, closed/bridged"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -21489,7 +21534,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/91a681ee-69f2-4517-9351-0bec44fd8976")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/b12e3531-7ce2-5bc7-a5d4-c8c7c46389a4")
 		(zone_connect 1)
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(net_tie_pad_groups "1, 2")
@@ -21651,7 +21696,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -21674,7 +21719,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/64f4e1b8-2966-4918-af14-a4cb96020581")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/e787d8a3-ae4c-5694-857b-c6a752841276")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -21856,7 +21901,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -21915,7 +21960,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/ca9b4943-48b9-4fe9-85a4-509db4cdbed7")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/9dfe0013-2744-5d5f-8759-6a6a2870cbaf")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -22039,7 +22084,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -22074,7 +22119,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/adb84d8b-7f02-44de-98e7-b8fe5c62e905")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/92f48314-8746-5e74-8495-678b87bba603")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -22199,7 +22244,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -22258,7 +22303,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/064e1a0a-858e-454f-8df6-fd4139513f05")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/366f2274-6809-507c-bf7a-14394265c7d1")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -22385,7 +22430,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -22410,7 +22455,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/a06cd5c9-c981-444f-9d50-bb79f5d54a2d")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/d0566c26-aece-5113-b6ac-67a2596391c4")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -22500,7 +22545,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Four pin crystal, GND on pins 2 and 4"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -22784,7 +22829,7 @@
 			)
 		)
 		(property ki_fp_filters "RPI_COMPILED:generic_xtalcc320x250x80-4")
-		(path "/3f734146-b39d-4568-b184-743d262a6390/540ac061-f6b4-4a1b-83b8-2864d3c0aef4")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/25ae35f6-1f06-5fbf-b08f-f2354ada6b8e")
 		(sheetname "/")
 		(sheetfile "RPI-RP2350B-MINIMAL_R4-S1.kicad_sch")
 		(attr smd)
@@ -22926,7 +22971,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Mounting Hole without connection"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -22961,7 +23006,7 @@
 				)
 			)
 		)
-		(path "/d54e48a8-c833-4784-952b-52c4a91139d1")
+		(path "/502ba9e4-9515-5920-98a0-35fc176052b1")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -23044,7 +23089,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -23067,7 +23112,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/76829b7b-5bb2-471f-b787-2b97cb698e18")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/570e6a88-4579-5ff8-acf3-38ce161d2f02")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -23256,7 +23301,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -23305,7 +23350,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/60c27b5c-7735-41dc-a968-b4a8d5f8599b")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/bcad6365-1bd2-5558-835c-9297ee327cc3")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -23427,7 +23472,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -23476,7 +23521,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/f4e94cd5-e1bc-4f2f-b6f3-ebaf43107237")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/f56b0857-04ff-54bd-93e2-67ab2056a6a2")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -23591,7 +23636,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -23650,7 +23695,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/035141ce-7a12-4d85-bb92-3efcdde8a1c1")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/d51ba09e-839e-581e-9111-34109afd6365")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -23775,7 +23820,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -23834,7 +23879,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/7750a875-c6e8-4c70-930b-8b96e4010533")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/d7c84217-f887-563d-b504-852b39769efd")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -23959,7 +24004,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -24018,7 +24063,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/930e3355-7441-4ac5-9ce3-125e9f61ce59")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/cd7fbb2a-f96c-5383-9986-ff457cb41f79")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -24142,7 +24187,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -24177,7 +24222,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/6d70e2dc-540b-4082-87d3-87a4ba9a8129")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/2e1ea82a-fe16-590c-9557-9dbb6dc68fa5")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -24302,7 +24347,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -24361,7 +24406,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/5d4f07b3-5f44-4e07-87bc-972d252ac67a")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/62fac296-a57e-531d-8714-0af33d928b41")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -24474,7 +24519,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "http://www.aosmd.com/pdfs/datasheet/AO3400A.pdf"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -24485,7 +24530,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "30V Vds, 5.7A Id, N-Channel MOSFET, SOT-23"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -24544,7 +24589,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/6738368c-e245-43c3-af68-e745e744de6a")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/fa34c5db-1f23-55ea-a25c-2d94a7868d67")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -24889,7 +24934,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -24948,7 +24993,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/d6902ffa-a9d8-471f-8133-5f714676373e")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/e8b83855-d1b9-533a-b4de-e4043ecee106")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -25080,7 +25125,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -25129,7 +25174,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/3aa6e41e-5a25-43b1-8eab-1044575d94a4")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/9ba6ec12-9c4d-5f9e-a816-3432d9761466")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -25251,7 +25296,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -25300,7 +25345,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/e8718ba9-7110-440a-9e64-bf8820a631db")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/a116a0b9-bcfd-5551-8d96-0a424b613bd4")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -25415,7 +25460,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -25474,7 +25519,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/619f0b48-9c0e-442f-b6cb-c1cf91f0b034")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/e6886063-fd33-54f9-a636-8f8a97d089a4")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -25599,7 +25644,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -25658,7 +25703,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/8588c509-5e9f-47f8-99da-4f8b2ce9f3a6")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/c2062cc0-ffe5-5233-8614-96db5c0f8996")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -25783,7 +25828,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -25842,7 +25887,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/036c5201-7a2d-40e1-8455-35898214a0fd")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/0efa9b0a-3220-566c-a6b9-9dfd8bbc30da")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -25967,7 +26012,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 180)
 			(layer "F.Fab")
 			(hide yes)
@@ -26026,7 +26071,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/2789001c-6390-40fa-b3f9-6f73111a8234")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/8d61200b-9e50-57aa-86e8-467426307759")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -26151,7 +26196,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Fiducial Marker"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -26186,7 +26231,7 @@
 				)
 			)
 		)
-		(path "/4e6ace06-e5e3-4e3f-8a27-334becb52426")
+		(path "/d2299595-da47-56b8-b334-7ca9d09be0ae")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -26274,7 +26319,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -26323,7 +26368,7 @@
 				)
 			)
 		)
-		(path "/b5ef4b6c-3087-43ec-afa0-4e4a37f482ea/94d712b9-09bd-4570-a228-d539a500c88c")
+		(path "/74ddddc3-4675-58f5-ac59-5565a292508e/dde7ed70-5a1b-59ef-b508-e6d99df82ea8")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -26564,7 +26609,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -26613,7 +26658,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/2c6aff0d-f79d-4b6d-b93d-b26a9bf4ac28")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/e5f920ce-19de-5678-8593-24059c7d43b8")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -26716,7 +26761,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.usb.org/sites/default/files/documents/usb_type-c.zip"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -26729,7 +26774,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "USB 2.0-only 16P Type-C Receptacle connector"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -26778,7 +26823,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/12870918-6d9b-4231-b64e-06b5a835bbf7")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/6030fbbe-2c6a-551e-8e2d-d44bfc38bc88")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -26981,6 +27026,9 @@
 			(size 0.3 1.45)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
+			(net "unconnected-(J1-SBU1-PadA8)")
+			(pinfunction "SBU1_A8")
+			(pintype "bidirectional+no_connect")
 			(uuid "fc80ce57-6d7d-4e47-859f-b01c3d85f5a6")
 		)
 		(pad "A9" smd roundrect
@@ -27044,6 +27092,9 @@
 			(size 0.3 1.45)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
+			(net "unconnected-(J1-SBU2-PadB8)")
+			(pinfunction "SBU2_B8")
+			(pintype "bidirectional+no_connect")
 			(uuid "e8168540-2551-4424-bada-e43c0cf60820")
 		)
 		(pad "B9" smd roundrect
@@ -27155,7 +27206,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -27214,7 +27265,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/1d773164-1998-4f41-b86e-8535f67094c5")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/f640c466-8038-5c11-8a8f-bfe42663eb4a")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -27339,7 +27390,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -27398,7 +27449,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/e893070d-c2ae-4d6f-ab25-0f819db92e10")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/105aade5-492e-581c-b072-a57a633116a3")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -27530,7 +27581,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -27579,7 +27630,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/54b97f42-1ad9-42d8-a1ed-f8753fd43209")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/c2ffb8c2-8c33-560b-bfa8-7f3461d573b4")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -27693,7 +27744,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -27752,7 +27803,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/0b50f2a9-052a-41ea-9683-70a6a2f9d94f")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/a39623cd-f7e1-52f8-910d-d6abc1170c3d")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -27877,7 +27928,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -27936,7 +27987,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/33eaa191-a80e-4dd4-9de6-fcca23a2ab58")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/7d2afd29-9532-5a5a-864e-8f2bb8724563")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -28061,7 +28112,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -28120,7 +28171,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/303fc6de-fd5c-4e49-94d3-a6cc6e8d9f6b")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/4cf7f162-fac2-51f0-9bdc-e8bc029b6fd1")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -28238,7 +28289,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -28251,7 +28302,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "A microcontroller by Raspberry Pi, dual CPU architecture (ARM Cortex-M33 / RISC-V Hazard3), 150MHz, 2MB flash, 520KB SRAM, 12 PIO state machines, VQFN-80"
 			(at 0 0 270)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -28470,7 +28521,7 @@
 			)
 		)
 		(property ki_fp_filters "RPI_COMPILED:rpi_rp2350b RPI_COMPILED:rpi_rp2350b_vias")
-		(path "/3f734146-b39d-4568-b184-743d262a6390/d4910a58-6c30-4e2e-865f-e60531d2028a")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/8f4b51d1-d59a-5f85-9b77-caf39844821f")
 		(sheetname "/")
 		(sheetfile "RPI-RP2350B-MINIMAL_R4-S1.kicad_sch")
 		(attr smd)
@@ -28967,6 +29018,9 @@
 			(at -4.9 2.2 270)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-GPIO16-Pad16)")
+			(pinfunction "GPIO16_16")
+			(pintype "bidirectional+no_connect")
 			(uuid "7e6caf5a-f55e-41fb-aaa7-fc64a5062eea")
 		)
 		(pad "17" smd rect
@@ -29043,12 +29097,18 @@
 			(at -1.4 4.9)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-GPIO26-Pad27)")
+			(pinfunction "GPIO26_27")
+			(pintype "bidirectional+no_connect")
 			(uuid "7ad63193-5566-4695-9329-53955c3167d8")
 		)
 		(pad "28" smd rect
 			(at -1 4.9)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-GPIO27-Pad28)")
+			(pinfunction "GPIO27_28")
+			(pintype "bidirectional+no_connect")
 			(uuid "4fcbc569-c065-4551-b2ac-2b600f232d97")
 		)
 		(pad "29" smd rect
@@ -29344,30 +29404,45 @@
 			(at 0.2 -4.9 180)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-QSPI_SD3-Pad70)")
+			(pinfunction "QSPI_SD3_70")
+			(pintype "bidirectional+no_connect")
 			(uuid "c94294d9-5b3c-4d80-a4b9-b7d0f01a7746")
 		)
 		(pad "71" smd rect
 			(at -0.2 -4.9 180)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-QSPI_SCLK-Pad71)")
+			(pinfunction "QSPI_SCLK_71")
+			(pintype "output+no_connect")
 			(uuid "2dd04161-c7ce-48d8-ae8f-481af53ec075")
 		)
 		(pad "72" smd rect
 			(at -0.6 -4.9 180)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-QSPI_SD0-Pad72)")
+			(pinfunction "QSPI_SD0_72")
+			(pintype "bidirectional+no_connect")
 			(uuid "dba67c2b-7934-4e28-b0a2-f5ecca06083d")
 		)
 		(pad "73" smd rect
 			(at -1 -4.9 180)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-QSPI_SD2-Pad73)")
+			(pinfunction "QSPI_SD2_73")
+			(pintype "bidirectional+no_connect")
 			(uuid "da46b7ec-c1d8-4b9f-8269-7e9e05c6da07")
 		)
 		(pad "74" smd rect
 			(at -1.4 -4.9 180)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-QSPI_SD1-Pad74)")
+			(pinfunction "QSPI_SD1_74")
+			(pintype "bidirectional+no_connect")
 			(uuid "34977dc2-330a-4aad-b74b-69cdc56035f3")
 		)
 		(pad "75" smd rect
@@ -29388,12 +29463,18 @@
 			(at -2.6 -4.9 180)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-GPIO0-Pad77)")
+			(pinfunction "GPIO0_77")
+			(pintype "bidirectional+no_connect")
 			(uuid "f1738136-6f3b-435c-9847-6ac2c48d190b")
 		)
 		(pad "78" smd rect
 			(at -3 -4.9 180)
 			(size 0.8 0.23)
 			(layers "F.Cu" "F.Mask" "F.Paste")
+			(net "unconnected-(U4-GPIO1-Pad78)")
+			(pinfunction "GPIO1_78")
+			(pintype "bidirectional+no_connect")
 			(uuid "d4a787d4-b754-4d9f-ac42-91d273fe1096")
 		)
 		(pad "79" smd rect
@@ -29568,7 +29649,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -29617,7 +29698,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/4d6efd2b-22a7-4eb6-9425-c77b3ac4f313")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/7e27be0b-64fb-5c70-9490-db1ead74598d")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -29732,7 +29813,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -29791,7 +29872,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/cddd68f7-51dd-4df1-bdaf-a0538c360102")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/47837e24-3c14-5e9d-b396-6c43f9d84cdc")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -29916,7 +29997,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -29975,7 +30056,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/515e41be-6163-4410-8b9e-b60fb7146e9b")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/d08aabdd-8922-5cd9-acaf-69b3d82dfa0b")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -30100,7 +30181,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Mounting Hole without connection"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -30135,7 +30216,7 @@
 				)
 			)
 		)
-		(path "/6430fd92-384b-43d2-8480-6d5ef317c0a8")
+		(path "/fd1f81d2-902d-5f34-96b2-285b1bdccfd2")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -30220,7 +30301,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -30279,7 +30360,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/167beebe-a798-45a3-90c8-e1c3fb2a8f49")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/e9327473-2261-5f3a-a30f-0f522a9f61dd")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -30404,7 +30485,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -30439,7 +30520,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/d90dcd58-051d-40f2-851c-e0a73c642117")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/71207541-a9aa-5c22-86cb-06250090c17a")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -30571,7 +30652,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -30620,7 +30701,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/327cbbfe-9fb3-40ba-b6de-187a5405724c")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/34172fcc-96f8-5260-80d8-79c4919db939")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -30735,7 +30816,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -30794,7 +30875,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/2fd9792b-78f6-4eb5-b657-0dfc2918d693")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/d9a32074-4241-5fac-b773-56ca24b33d53")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -30919,7 +31000,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Generic connectable mounting pin connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
 			(at 0 0 180)
 			(layer "F.Fab")
 			(hide yes)
@@ -30978,7 +31059,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/b866ec8c-7376-4ed7-9993-17913569a725")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/cf694c3a-5624-556d-a2a4-999206cbd5aa")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -31473,6 +31554,9 @@
 			(size 2.1 3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.119048)
+			(net "unconnected-(J2-MountPin-PadMP)")
+			(pinfunction "MountPin_MP")
+			(pintype "passive+no_connect")
 			(uuid "6bc48cd1-d2d0-44bb-a642-7e76f56b849c")
 		)
 		(pad "MP" smd roundrect
@@ -31480,6 +31564,9 @@
 			(size 2.1 3)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.119048)
+			(net "unconnected-(J2-MountPin-PadMP)_1")
+			(pinfunction "MountPin_MP")
+			(pintype "passive+no_connect")
 			(uuid "67999bf0-217f-4448-899e-dde0330c3606")
 		)
 		(embedded_fonts no)
@@ -31535,7 +31622,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -31594,7 +31681,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/f461d80d-d894-4947-afbd-3247b8e95d1d")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/19df7bb8-f8c8-5286-9d92-4d5a39961eac")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -31726,7 +31813,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -31775,7 +31862,7 @@
 				)
 			)
 		)
-		(path "/3f734146-b39d-4568-b184-743d262a6390/72d76b48-83fb-4049-bb67-43257f5ed2a5")
+		(path "/aa8f4b61-4c36-5dda-b850-0bd2b7465442/a718b2ff-78a2-523b-ae6b-9d007dfe5233")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -31890,7 +31977,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -31949,7 +32036,7 @@
 				)
 			)
 		)
-		(path "/49f5199e-0f6f-4874-896b-f16dc177cefb/7878883d-14c4-420d-b0f4-7f78aba8acea")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/56a9f3ab-b943-52e5-a79d-dc416b1d24b3")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -32072,7 +32159,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -32095,7 +32182,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/c21138d7-9a6f-4d5d-bffd-e0934ece066d")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/6d7a0388-1c09-55f4-80bd-42023957930b")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -32277,7 +32364,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Resistor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -32336,7 +32423,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/770543e6-535c-4a26-a359-445e4495b79b")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/2c7062fd-9aa8-59d8-a936-13eac7445779")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -32461,7 +32548,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -32520,7 +32607,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/e14a9faa-7a8c-4b7c-90b9-3f8985b471f4")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/320b8c32-3315-5eb9-a6c4-5e389fa71c8e")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -32643,7 +32730,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -32666,7 +32753,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/ca857708-8927-4ef4-9cbb-a4c182a8289d")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/60b59a2d-56fe-5f44-89c5-7a3894b3b72d")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -32824,7 +32911,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -32847,7 +32934,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/59b45530-2c10-441f-99c9-3c77e2eebaf9")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/42cf37f5-01e6-5e7d-9695-c80495625281")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -33027,7 +33114,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -33050,7 +33137,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/df557279-8cd9-4a8b-90ff-d1a4ebf28cb2")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/f7a90b95-92cd-5bc5-8e97-a253cfc16f52")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -33230,7 +33317,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -33253,7 +33340,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/b19ce978-abf4-4208-a79d-64bc861316aa")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/63710ce6-5ce2-515f-a4af-9da12e7874a1")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -33436,7 +33523,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -33461,7 +33548,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/07ce9952-80cd-4b44-b1a7-cbd150967e5a")
+		(path "/34c3a0f3-db0f-5e9b-90be-d20314b97177/9112562d-7097-5d0a-9999-5beaf4cfe481")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -33501,7 +33588,7 @@
 			(at 0 0)
 			(size 1 1)
 			(layers "F.Cu" "F.Mask")
-			(net "LS_GATE")
+			(net "/USB_Charger/LS_GATE")
 			(uuid "0cac5a9f-c100-4cd5-875e-ae0bb41f483e")
 		)
 		(embedded_fonts no)
@@ -33544,7 +33631,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -33567,7 +33654,7 @@
 				)
 			)
 		)
-		(path "/97cb18a5-69ff-4a62-88ac-5bdfe0c5900e/be9f1040-18c7-413f-9d71-1f6ed5aeebc8")
+		(path "/adaa66b2-a56d-591f-95e3-969ec1fb6ac3/c133e167-011f-561a-8c88-a012fa77fce3")
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -33737,7 +33824,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.lcsc.com/product-detail/Audio-Power-OpAmps_Shenzhen-Fuman-Elec_C94625.html"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -33748,7 +33835,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "2 W mono bridge-tied audio amplifier, 2.5-5.5 V, gain 2 x Rf/Ri, SHUTDOWN high = off"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -33807,7 +33894,7 @@
 				)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/8888535c-2b81-4126-b216-85f96b216f22")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/ea4c36e4-534e-534d-8ed2-17170bcc11db")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -34030,7 +34117,7 @@
 			(size 1.95 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
-			(net "AMP_SHDN")
+			(net "/Audio/AMP_SHDN")
 			(uuid "93ba7690-c3bf-427c-a045-f50d1fc0e339")
 		)
 		(pad "2" smd roundrect
@@ -34130,7 +34217,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_MICRONE-Nanjing-Micro-One-Elec-ME6211C33R5G_C235316.pdf"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -34141,7 +34228,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "500mA low dropout linear regulator, shutdown pin, 6.5V max input voltage, 3.3V fixed positive output, SOT-23-5"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -34200,7 +34287,7 @@
 				)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/4fd0b92e-c14e-4c24-849c-a58530a195dc")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/4a932cc5-6b1e-55a4-8398-7790891b4ce8")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -34497,6 +34584,9 @@
 			(size 1.325 0.6)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
+			(net "unconnected-(U3-NC-Pad4)")
+			(pinfunction "NC_4")
+			(pintype "no_connect")
 			(uuid "3933c664-b4b3-4043-8c02-e93ac4771ff9")
 		)
 		(pad "5" smd roundrect
@@ -34560,7 +34650,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -34619,7 +34709,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/e04d7849-9f1e-46d8-9b2f-ae29168aee8e")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/418df7db-dc34-55ce-ad45-f76f3dc939f4")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -34751,7 +34841,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Unpolarized capacitor"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -34800,7 +34890,7 @@
 				)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/97f59339-df0e-4fc3-8827-a920563140be")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/e1f1b219-09a7-50db-99bb-15bb2bdf73a3")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_rect
@@ -34916,7 +35006,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Solder Jumper, 2-pole, closed/bridged"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -34941,7 +35031,7 @@
 				)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/883a9ff2-f197-4f5f-a41c-89864fd4a2fc")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/c81cee22-1180-599d-972b-d7de5cdb4d59")
 		(zone_connect 1)
 		(attr exclude_from_pos_files allow_soldermask_bridges)
 		(net_tie_pad_groups "1, 2")
@@ -35107,7 +35197,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Push button switch, generic, two pins"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -35156,7 +35246,7 @@
 				)
 			)
 		)
-		(path "/b5ef4b6c-3087-43ec-afa0-4e4a37f482ea/5ccead13-6d48-4090-b8f5-86dd5e6f9712")
+		(path "/74ddddc3-4675-58f5-ac59-5565a292508e/80246235-47da-532b-86b7-0bc99528317b")
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -35395,7 +35485,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -35422,7 +35512,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/d6b89910-d986-4508-8ac9-9a0166766eab")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/aa39e1ed-7937-58d0-8150-0afde6b98c68")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -35513,7 +35603,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -35540,7 +35630,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/4b05696d-a684-4cbc-9ef7-f001efc24913")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/73066d6e-5a86-581c-aa61-4023bc86b700")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -35631,7 +35721,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -35658,7 +35748,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/9a35387e-0a2d-423c-bbba-5341447e0f43")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/e28577cf-cd0f-598d-933e-d2992412ca8f")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -35749,7 +35839,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -35776,7 +35866,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/7252b39c-a46d-4a5c-ab9e-1b7d95bb3721")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/ceb2e660-4a7f-5b73-8062-7fbeb25e875e")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -35863,7 +35953,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
 			(at 0 0 0)
 			(layer "B.Fab")
 			(hide yes)
@@ -35888,7 +35978,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/d8fbc171-75e8-49b6-9390-fb94b276e18f/269de657-ad71-449d-80c8-2e235e2d665f")
+		(path "/b41458f2-ed86-57fc-9560-c0eacbf9a6ae/663c7b75-c1b8-575f-89d0-bdeac25e04cd")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -36056,7 +36146,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -36083,7 +36173,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/39b7b0f3-463b-4e30-b66b-1f5d46084292")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/1b5bfb80-fed0-5dce-b33d-63b2c9602b26")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -36170,7 +36260,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)"
 			(at 0 0 90)
 			(layer "B.Fab")
 			(hide yes)
@@ -36195,7 +36285,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/b5ef4b6c-3087-43ec-afa0-4e4a37f482ea/5aeec973-7f83-4eeb-bdf9-b87844712a01")
+		(path "/74ddddc3-4675-58f5-ac59-5565a292508e/6d430370-3387-52cd-a221-a096d7575576")
 		(attr smd exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
@@ -36420,7 +36510,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -36447,7 +36537,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/eb144c98-0d49-46fc-9c96-df9ef8a78628")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/2edc70d6-3564-5ed8-a388-e8228675d556")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -36538,7 +36628,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -36565,7 +36655,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/b39c3535-d398-4131-b957-315b6808b71e")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/7fd028e9-ec36-5a42-9625-56e3571ffc52")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -36656,7 +36746,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -36683,7 +36773,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/3bcad269-5bc6-4a4f-b181-c1c9a24b465c/07761e3d-5846-4a29-9ece-e29ff7cb03f6")
+		(path "/12309b0f-8428-588e-b21a-9718fb1af850/d92122fa-8d4f-58c2-ad1c-0d8e217b45fe")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -36774,7 +36864,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -36801,7 +36891,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/026f7b95-8792-4765-8b75-3f17aefa8bfe/1e4608c9-de6c-49bc-a3c8-793b8c5210d8")
+		(path "/99b2b9c1-5178-5fd9-a3fe-39987bd8b040/64151570-8b33-545e-901c-97983d82dd5a")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -36892,7 +36982,7 @@
 				(justify mirror)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "test point"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -36919,7 +37009,7 @@
 				(justify mirror)
 			)
 		)
-		(path "/839fe3cc-93f1-4eef-a7d6-4eb4defacfa7/3fe1cf91-b27c-4ecc-afb3-9198c95adcdc")
+		(path "/758b388a-f172-54f6-bd07-7141bb9c05f9/04fea1ed-473f-56cd-914a-2df948d1cc1b")
 		(attr exclude_from_pos_files)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_circle
@@ -48050,7 +48140,7 @@
 		(end 100.9375 51.3367)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "02b49a1f-b21c-4a18-b4b8-7c82de688f77")
 	)
 	(segment
@@ -48058,7 +48148,7 @@
 		(end 100.938 51.3372)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "288a3c6e-ebad-46b5-810a-d6867cec6f8c")
 	)
 	(segment
@@ -48066,7 +48156,7 @@
 		(end 97.2401 54.095)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "551b021b-b990-420a-ab12-1c9bd8e77102")
 	)
 	(segment
@@ -48074,7 +48164,7 @@
 		(end 94.6 60.05)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "5dfa624f-ef17-41bb-ad94-77f4cf860669")
 	)
 	(segment
@@ -48082,7 +48172,7 @@
 		(end 94.09 60.56)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "8a3f0025-6439-4c5f-80c1-9d66abc02770")
 	)
 	(segment
@@ -48090,7 +48180,7 @@
 		(end 100.938 51.2248)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "8a837c6c-82a2-49e2-b74e-635b5e2f189a")
 	)
 	(segment
@@ -48098,7 +48188,7 @@
 		(end 100.938 51.4497)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "8e6dd277-e2ff-438f-aa16-ad92c31a740b")
 	)
 	(segment
@@ -48106,7 +48196,7 @@
 		(end 100.9375 51)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "afc66852-1edb-432b-bb59-5658a2c74d07")
 	)
 	(segment
@@ -48114,7 +48204,7 @@
 		(end 100.938 51.2248)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "bd78d357-c541-4407-b7d6-b8a7c6fa3b39")
 	)
 	(segment
@@ -48122,7 +48212,7 @@
 		(end 94.09 61.8)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "d9006713-19cf-4d13-93eb-c28c3f2309ee")
 	)
 	(segment
@@ -48130,7 +48220,7 @@
 		(end 98.2922 54.095)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "eece28ce-80f6-4f3f-a919-064a889bb284")
 	)
 	(segment
@@ -48138,7 +48228,7 @@
 		(end 94.6 56.7351)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "AMP_SHDN")
+		(net "/Audio/AMP_SHDN")
 		(uuid "f33eb220-280d-489b-9026-e9339140e47d")
 	)
 	(segment
@@ -50393,7 +50483,7 @@
 		(end 129.86 123.6475)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "043571d1-1aa9-4780-8bad-96f5725f52ee")
 	)
 	(segment
@@ -50401,7 +50491,7 @@
 		(end 129.994 123.782)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "076c7557-4342-4023-ad68-2c2ea5e52105")
 	)
 	(segment
@@ -50409,7 +50499,7 @@
 		(end 129.05 128.6)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "215f61b6-7a9d-4769-a2a9-748e161f99e3")
 	)
 	(segment
@@ -50417,7 +50507,7 @@
 		(end 127.888 123.513)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "244d5e06-468b-4c73-ba0f-e94fe2693653")
 	)
 	(segment
@@ -50425,7 +50515,7 @@
 		(end 128.4 129.25)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "29b5ca7d-52b4-44a3-8f1c-fb5ae345010c")
 	)
 	(segment
@@ -50433,7 +50523,7 @@
 		(end 129.994 123.782)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "32f0ba64-b51b-4f4a-99b1-bfc4d729f438")
 	)
 	(segment
@@ -50441,7 +50531,7 @@
 		(end 128.4 127.51)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "44fae030-014f-4c9a-8d83-2b79b639438a")
 	)
 	(segment
@@ -50449,7 +50539,7 @@
 		(end 129.8595 123.6475)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "58642716-7e2f-42f9-b5c1-80d01a8b9d76")
 	)
 	(segment
@@ -50457,7 +50547,7 @@
 		(end 127.535 123.866)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "69bdb436-1843-4454-871b-306425c9556d")
 	)
 	(segment
@@ -50465,7 +50555,7 @@
 		(end 127.535 126.645)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "85221a46-64eb-4bda-8692-1ff74f95c99e")
 	)
 	(segment
@@ -50473,7 +50563,7 @@
 		(end 129.725 123.513)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "bc5f0fc8-2a66-4b2c-af46-da6c50b84089")
 	)
 	(segment
@@ -50481,7 +50571,7 @@
 		(end 130.262499 124.05)
 		(width 0.15)
 		(layer "F.Cu")
-		(net "LS_GATE")
+		(net "/USB_Charger/LS_GATE")
 		(uuid "fb850593-cb35-4be9-8274-92e39e63ac5e")
 	)
 	(segment

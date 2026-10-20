@@ -59,7 +59,7 @@ cd hardware/ref_design
 python3 case/export.py --stl                 # case -> positions.json, DXFs, STLs
 python3 case/check_buttons.py                # D-pad, A/B/X/Y, Start/Select with their silicone under the shell (about 6 min)
 cd board
-python3 tools/build_sch.py                   # design.py -> schematic (through Konnect)
+python3 tools/build_sch.py                   # design.py -> schematic (tools/schwrite.py writes the sheets)
 python3 tools/check_netlist.py               # KiCad's netlist == design.py ?
 python3 tools/check_pins.py                  # every part's pins against its datasheet review (pin_review/)
 python3 sim/models.py && python3 sim/backlight.py   # backlight sink stability (ngspice, about 40 min; only when it changes)
@@ -68,6 +68,7 @@ RP2350B_REF=.../RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb python3 tools/build_pcb.py
 FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # about 10 min
 python3 tools/route.py --finish              # only if route.py left a connection open
 python3 tools/silk.py
+python3 tools/sync_pcb.py                    # only for a redrawn schematic on a routed board: relink, rename nets
 python3 tools/check_pcb.py                   # DRC with schematic parity
 python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders
 python3 ../case/check_fit.py                 # board inside the case?
@@ -82,7 +83,7 @@ library and OpenSCAD) and committed; `viewer/pre-push`, installed as the repo's 
 hook, rebuilds and commits them when main would go out with stale ones.
 
 Needs KiCad 10 (kicad-cli and its `pcbnew` Python module), OpenSCAD, Java,
-Freerouting 1.9.0, Konnect, and Raspberry Pi's RP2350B minimal KiCad design
+Freerouting 1.9.0, and Raspberry Pi's RP2350B minimal KiCad design
 (document RP-010329-CA) for the core layout. The project library in `lib/` is
 already built; `tools/lib_from_ref.py` (the core's land patterns, from that
 design) and `tools/sym_lib.py` (symbols KiCad lacks) rebuild it.

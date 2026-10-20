@@ -1,9 +1,9 @@
 """The reference design as data: every part, its value, footprint, LCSC number
 and which net each pin lands on.
 
-This file is the source for the schematic (tools/build_sch.py writes it through
-Konnect) and the check that the schematic says what was meant
-(tools/check_netlist.py compares KiCad's exported netlist against it).
+This file is the source for the schematic (tools/build_sch.py writes it) and
+the check that the schematic says what was meant (tools/check_netlist.py
+compares KiCad's exported netlist against it).
 
 Net naming:
   POWER nets get KiCad power symbols (GND, +3V3, +1V1, VBUS; VSYS and VBAT use
@@ -18,10 +18,9 @@ connectors and switches) or a land-pattern change noted in its description.
 The RP2350B core's 0402 passives use Raspberry Pi's own pads
 (tools/lib_from_ref.py): the core's copied tracks and zones were drawn around them.
 
-Symbols are always root symbols. Konnect writes a derived symbol (one that
-"extends" another in KiCad's library) without flattening it, and KiCad then
-reads it with no pins. So the RP2354B, 2N7002 and AO3401A are drawn with the
-symbols they derive from (same pins); the value is the real part.
+Symbols are KiCad's own for the real part where its library has one (the
+RP2354B, 2N7002, AO3400A, AO3401A); generic ones (Device:R, Device:D_Schottky)
+carry the part number as their value.
 
 This is the 2-layer build: TP4056 charger with USB load sharing, ME6211 3V3,
 RP2354B (flash inside), PWM audio into an FM8002A, a face button as the power
@@ -186,7 +185,7 @@ R("R5", S, "3.3k", "CHG_PROG", "GND")          # charge current 1100-1200 V / 3.
 # the charger charges whenever USB is in and nothing drives Q4; CHG_OFF high turns Q4 on
 # and CE low. R44 holds Q4's gate low through any processor state (E9: <= 8.2k)
 R("R43", S, "100k", "VBUS", "CHG_CE")
-part("Q4", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
+part("Q4", S, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "CHG_OFF", "2": "GND", "3": "CHG_CE"}, "C8545", "2N7002", "Changjiang")
 R("R44", S, "4.7k", "CHG_OFF", "GND")
 R("R9", S, "100k", "CHG_DONE_N", "+3V3")       # STDBY: low when the charge is done
@@ -206,7 +205,7 @@ part("D5", S, "Device:D_Schottky", "B5819W", "Diode_SMD:D_SOD-123", {"1": "VSYS"
      "C8598", "B5819W SL", "Changjiang Electronics Tech (CJ)")
 part("D6", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323", {"1": "LS_GATE", "2": "VBUS"},
      "C7502694", "BAT54WS", "")
-part("Q2", S, "Transistor_FET:Q_PMOS_GSD", "AO3401A", "Package_TO_SOT_SMD:SOT-23",
+part("Q2", S, "Transistor_FET:AO3401A", "AO3401A", "Package_TO_SOT_SMD:SOT-23",
      {"1": "LS_GATE", "2": "VSYS", "3": "VBAT"}, "C15127", "AO3401A", "Alpha & Omega Semicon")
 R("R6", S, "10k", "LS_GATE", "GND")
 C("C9", S, "22u 25V", "VSYS")
@@ -258,7 +257,7 @@ C("C47", S, "100n", "PWR_EN")
 # RP2350-E9 can hold a released pad near 2 V; through D2 that would keep PWR_EN up after a
 # crash. An external 4.7k (E9 needs 8.2k or less) holds PWR_HOLD low unless driven
 R("R42", S, "4.7k", "PWR_HOLD", "GND")
-part("Q1", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
+part("Q1", S, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "GND", "3": "PWR_BTN_N"}, "C8545", "2N7002", "Changjiang")
 R("R16", S, "100k", "PWR_BTN_N", "+3V3")
 R("R17", S, "470k", "VBAT", "VBAT_SENSE")
@@ -267,8 +266,9 @@ C("C8", S, "100n", "VBAT_SENSE")
 for i, net in enumerate(["VBUS", "VSYS", "VBAT", "+3V3", "GND"]):
     part(f"TP{i + 1}", S, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
 # bring-up test pads on the top side: the power latch, the load-sharing switch, the amplifier
-for i, net in enumerate(["PWR_EN", "LS_GATE", "AMP_SHDN"]):
-    part(f"TP{i + 6}", S, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
+# (each on the sheet that draws its net)
+for i, (net, sheet) in enumerate([("PWR_EN", S), ("LS_GATE", "usb_charger.kicad_sch"), ("AMP_SHDN", "audio.kicad_sch")]):
+    part(f"TP{i + 6}", sheet, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
 # 2026-10-19 (Alex's debug-readiness review): the core's 1.1 V rail, the backlight's set point and the
 # panel's SPI lines get probe pads too (the panel is the part most likely to need a logic analyser)
 for i, (net, sheet) in enumerate([("+1V1", "mcu_power.kicad_sch"), ("BL_REF", "display.kicad_sch"),
@@ -327,7 +327,7 @@ u4.update({"61": "VREG_AVDD", "63": "VREG_LX", "62": "GND", "81": "GND",
            # the RP2354B's 2 MB flash sits on these inside the package: only the chip
            # select (the BOOTSEL strap) is used outside
            "75": "QSPI_SS", "71": None, "72": None, "74": None, "73": None, "70": None})
-part("U4", S, "MCU_RaspberryPi:RP2350B", "RP2354B", "battler:RP2350B_QFN80_RPi", u4,
+part("U4", S, "MCU_RaspberryPi:RP2354B", "RP2354B", "battler:RP2350B_QFN80_RPi", u4,
      "C39843328", "RP2354B", "Raspberry Pi")
 P = "mcu_power.kicad_sch"                         # the RP2350B's supply: decoupling + 1V1 switcher
 for i in range(10):                              # IOVDD, ADC, VREG_VIN, OTP, QSPI decoupling
@@ -427,7 +427,7 @@ part("U6", S, "battler:MCP6002", "MCP6002", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm
 C("C51", S, "100n", "+3V3")                        # U6 supply
 for k, (q, rs, rg, rpd, rf, cf) in ((1, ("Q5", "R52", "R54", "R56", "R58", "C48")),
                                     (2, ("Q6", "R53", "R55", "R57", "R59", "C49"))):
-    part(q, S, "Transistor_FET:Q_NMOS_GSD", "AO3400A", "Package_TO_SOT_SMD:SOT-23",
+    part(q, S, "Transistor_FET:AO3400A", "AO3400A", "Package_TO_SOT_SMD:SOT-23",
          {"1": f"BL_G{k}", "2": f"BL_S{k}", "3": f"LED_K{k}"}, "C20917", "AO3400A", "Alpha & Omega Semicon")
     R(rs, S, "2.2 0603", f"BL_S{k}", "GND", fp=R0603)   # sense: 2.2 ohm x 56 mA = 0.124 V
     R(rg, S, "330", f"BL_OUT{k}", f"BL_G{k}")
@@ -459,7 +459,7 @@ R("R34", S, "20k", "AMP_CI", "AMP_INN")          # Ri
 R("R35", S, "20k", "SPK_P", "AMP_INN")           # Rf: gain 2 x Rf / Ri = 2
 C("C40", S, "1u", "AMP_BYP")                     # half-supply reference, as the datasheet's circuit
 R("R36", S, "100k", "AMP_SHDN", "AMP_VDD")       # SHUTDOWN high: off unless the MCU turns it on
-part("Q3", S, "Transistor_FET:Q_NMOS_GSD", "2N7002", "Package_TO_SOT_SMD:SOT-23",
+part("Q3", S, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "AMP_EN", "2": "GND", "3": "AMP_SHDN"}, "C8545", "2N7002", "Changjiang")
 R("R37", S, "100k", "AMP_EN", "GND")             # off while the MCU boots
 C("C34", S, "10u", "AMP_VDD")
