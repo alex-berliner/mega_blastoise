@@ -31,7 +31,9 @@ PIECES = ["cell", "foam", "speaker", "panel", "silicone", "caps", "screws"]
 
 
 def git(*args):
-    return subprocess.run(["git", "-C", REF, *args], capture_output=True, text=True).stdout.strip()
+    # without the pre-push hook's GIT_DIR, which in a linked worktree sends HEAD:./ paths astray
+    env = {k: v for k, v in os.environ.items() if k not in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_PREFIX")}
+    return subprocess.run(["git", "-C", REF, *args], capture_output=True, text=True, env=env).stdout.strip()
 
 
 def input_ids():
