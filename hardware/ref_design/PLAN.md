@@ -75,6 +75,14 @@ Next:
       (speaker row) and docs/assembly.md (no soldering)
 - [ ] Remove the tub's four feet (6 mm, 0.8 mm high, outside the floor) (Alex). Free to do once the
       speaker leaves the floor
+- [ ] USB-C opening (Alex, from the viewer): its outline still doesn't follow the receptacle's
+      shell, "a different kind of oval". The opening is a full stadium (usb_hole: ends of radius
+      half its height); match it to the TYPE-C-31-M-12 shell's real profile from its drawing or 3D
+      model (end radius and flats) with usb_gap all round
+- [ ] USB-C: the lid's part of the closure over the port looks like a single layer that light
+      shows through (Alex). Check the tongue's thickness above the opening and at the outer face
+      (the lid's outline sits tub_lip + seam_fit inside the case's, so the tongue may stop short
+      of the surface), then thicken it or let the tub's skin close over it
 - [ ] PLAN.md's Cell row still describes the plug hole "in front of J2": it now sits a plug's length
       past J2 (5.5 mm, the cell 5 mm towards seat 2)
 
