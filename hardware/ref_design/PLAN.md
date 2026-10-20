@@ -44,6 +44,38 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 - [x] 8 Docs: README, BOM, assembly, bring-up, pin map, design review, Konnect notes
 - [x] 9 Fit kit to print: board mock, part dummies, case coupons (`case/fitkit/`)
 
+## To do (from 2026-10-20)
+
+Next:
+- [ ] Router reliability: `route.py 80` passed 1 run in 6 on the J2 rebuild. Most failures leave J1's
+      outer rear shell leg (SH at 134.95, 104.32, on the USB tab) cut off from both GND pours, which
+      the repair pass can't close; the rest leave a long seat-1 line to U4 open (P1_UP, P1_LEFT,
+      P1_RIGHT, P1_SELECT). Pre-route J1's shell legs to GND like the other GND pads, and give
+      those lines room, so a single run passes
+- [ ] U1: swap Semtech's SRV05-4.TCT (C13612, Extended, $3 an order) for hongjiacheng's SRV05-4A
+      (C20615829, Preferred, about $0.03): same pinout and 1.0 pF; ±15 kV against ±30 kV ESD, still
+      above IEC 61000-4-2 level 4. `design.py` only, then check_pins against its datasheet; no copper
+      change. Update the USB row above
+- [ ] Schematic: every power:GND symbol hides its "GND" value (77 of them), so a ground reads as a
+      bare triangle. Show it (schematic generator: for the schematic session)
+- [ ] PLAN.md's Cell row still describes the plug hole "in front of J2": it now sits a plug's length
+      past J2 (5.5 mm, the cell 5 mm towards seat 2)
+
+Later (Alex: wait until the other edits settle):
+- [ ] Narrow the case 1 mm a side (75.4 to 73.4 mm; a DS Lite is 73.9): USB-C to the panel frame
+      1.5 to 0.5 mm, silicone edge_margin 4 to 3, about 15 edge parts re-placed, re-route. Only
+      once a real silicone piece measures 26 mm or less
+- [ ] The battery plug on the fit kit: a pocket in the board mock for a real 53261-0271 header
+      (or a printed shroud) to try the plug's tilt from the hole into J2. The plug's size is from
+      distributor listings, and plug_out = 3.0 in case.scad is an estimate
+- [ ] End bezels: seat 1's 10.1 mm against seat 2's 5.5 (the panel's own border is 7.06 against
+      2.5); matching them makes the case 4.6 mm longer (tabled 2026-10-20)
+
+Housekeeping:
+- [ ] Delete branch ref-design-j2-hole: its commit went in as 4241580 by cherry-pick, so `git branch -d` refuses
+- [ ] Alex's main checkout (~/Code/mega_blastoise) is still at 76955d2 with uncommitted changes,
+      among them ref_design/board/battler.kicad_pro, which the pull touches: pull it with Alex
+
 ## Measure before ordering
 
 - DS Lite silicone piece outline and cap sizes (pads and caps ordered)
