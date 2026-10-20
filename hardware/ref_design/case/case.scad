@@ -164,14 +164,15 @@ step_wall = 1.5;  spine_w = 13.0;  deck_r = 3;          // step wall, spine widt
 ramp_out = 1.5;  ramp_in = 3.0;  ramp_layers = 48;      // 0.05 mm layers: no terraces at print resolution
 function inv_smoothstep(v) = 0.5 - sin(asin(1 - 2 * v) / 3);
 
-// EXPERIMENT (Alex, 2026-10-19): deck inserts. Face down, the decks print 2.3 mm above the bed, so
-// they need supports, and a face printed on supports keeps a peel-away texture. With deck_inserts
-// each end's deck (both clusters and Start/Select) is its own U-shaped part that prints face down
+// Deck inserts (Alex: tried 2026-10-19, the main build from 2026-10-20). Face down, a one-piece
+// lid's decks print 2.3 mm above the bed, so they need supports, and a face printed on supports
+// keeps a peel-away texture. So each end's deck (both clusters and Start/Select) is its own U-shaped part that prints face down
 // on the bed like the screen face: no supports anywhere. Its inner edges carry a 45 degree wedge
 // that the lid's step walls hold down (insert_tongue); its outer end edge tucks under a 45 degree lip on the
 // tub's end wall (tilt it in, then lower it). The tub's walls rise to deck height round it. The
 // step becomes a rounded top edge and a 45 degree slope (step_round), which prints unsupported.
-deck_inserts = false;
+// false: the one-piece lid (printed on supports)
+deck_inserts = true;
 insert_gap = 0.15;                                      // clearance round the insert
 insert_tongue = 0.8;                                    // the wedge under the lid's step walls: width at its foot
 end_lip = 0.8;                                          // the tub end wall's lip over the insert (45 degrees)
@@ -844,3 +845,5 @@ if (part == "3d") {
 }
 if (part == "tub") tub();
 if (part == "lid") translate([0, 0, case_h]) rotate([180, 0, 0]) lid();       // printed face down
+if (part == "insert1" && deck_inserts) translate([0, 0, deck_face]) rotate([180, 0, 0]) deck_insert(-1);   // face down
+if (part == "insert2" && deck_inserts) translate([0, 0, deck_face]) rotate([180, 0, 0]) deck_insert(1);

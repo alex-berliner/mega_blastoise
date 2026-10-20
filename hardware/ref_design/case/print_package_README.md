@@ -1,7 +1,8 @@
 # Mega Blastoise: 3D print package
 
 Everything to print for the reference design's case and fit kit, generated from `case/case.scad`
-on the current design (screen in a lid pocket, smooth step to the decks, Start/Select, flush USB-C).
+on the current design (screen in a lid pocket, the button decks as separate inserts, Start/Select,
+flush USB-C).
 
 ## The projects
 
@@ -13,28 +14,30 @@ interface on toolhead 1, textured PEI, auto supports. Open it, check the plate, 
 |---|---|---|
 | `2_buttons_quick.3mf` | **Start here (about an hour).** `tune_openings` (three D-pad opening sizes, the keyed A/B/X/Y cluster, three hole sizes), and the D-pad, A/B/X/Y and Start/Select stacks: a board slice each and a lid slice at the 1.75 mm silicone height | first |
 | `3_buttons_heights.3mf` | the same three lid slices at 1.6 and 1.9 mm silicone height | if the 1.75 mm lids don't sit right |
-| `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid) | second |
+| `0_buttons_end.3mf` | Seat 1's whole end: tub, board mock (to place the silicone on), lid, deck insert. Supports off. `0_buttons_end_P1S.3mf` is the same plate as a Bambu Studio project for a P1S (PLA only) | any time |
+| `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid, insert) | second |
 | `1_case.3mf` | the tub, the lid, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
-| `5_inserts_experiment.3mf` | **Experiment.** Seat 1's end with its deck as a separate insert (`deck_inserts` in `case.scad`): tub, board mock (to place the silicone on), lid, insert. `5_inserts_experiment_P1S.3mf` is the same plate as a Bambu Studio project for a P1S (PLA only) Supports are off: every part prints flat, the insert face down on the bed | whenever you like |
+| `1_case_inserts.3mf` | both deck inserts (`insert1` is seat 1's end, `insert2` seat 2's). Supports off | with `1_case` |
 
-The lid and the lid slices print face down as exported; let the auto supports go under the button
-decks (they sit 2.34 mm below the screen face). Everything else prints flat as exported.
+The lid, the deck inserts and the lid slices print face down as exported, everything else flat.
+The lid and the inserts need no supports (every overhang is 45 degrees or steeper); the tuning
+lid slices stand on legs, so let the auto supports go under those.
 
 `stl/` has every part as a plain STL, in case a project won't open in your Orca version: drag them
-onto a plate with the same settings. `lid.stl` and `tub.stl` are the real case; `tub_print.stl`
-is the tub without its feet (prints flat without supports).
+onto a plate with the same settings. `lid.stl`, `insert1.stl` (seat 1's end), `insert2.stl` (seat
+2's) and `tub.stl` are the real case; `tub_print.stl` is the tub without its feet (prints flat
+without supports).
 
-**The deck-insert experiment (`5_inserts_experiment`).** Printed face down, the lid's decks hang
-2.3 mm above the bed, so they need supports and keep the PETG's peel-away texture. With
-`deck_inserts = true` each end's deck (both clusters and Start/Select) is its own part that prints
-face down on the bed like the screen face, so no part needs supports. The step to the screen
-becomes a rounded edge and a 45 degree slope. To fit it: tilt the insert's outer end under the
-tub end wall's lip, lower it onto the board, then put the lid on. The lid's step walls press down
-on a 45 degree wedge along the insert's inner edges, and the insert's deck runs on under the
-spine to a ring round the end screw's boss: the lid's boss drops through it as the lid goes on,
-so the end screw holds the insert too. Check that it sits flat with no rattle, that
-the seam round it looks acceptable, and that the caps press as well as in `0_buttons_end`. The
-default stays `deck_inserts = false` until the experiment wins.
+**The deck inserts.** Each end's deck (both clusters and Start/Select) is its own part, printed
+face down on the bed like the screen face, so it comes out smooth with no supports. The step
+to the screen is a rounded edge and a 45 degree slope. The two inserts differ only round their
+end screw (seat 1's boss sits off the centre line), so each fits only its own end. To fit one:
+caps into it, tilt its outer end under the tub end wall's lip, lower it onto the board, then put
+the lid on. The lid's step walls press down on a 45 degree wedge along the insert's inner edges,
+and the insert's deck runs on under the spine to a ring round the end screw's boss: the lid's
+boss drops through it, so the end screw holds the insert too. Check that it sits flat with no
+rattle and the seam round it looks right. (`deck_inserts = false` in `case.scad` gives back the
+one-piece lid, which needs supports under its decks.)
 
 ## What to check, and what to change
 
@@ -64,9 +67,9 @@ Numbers live in `case/case.scad`; after changing one, rebuild the package
 - Panel frame: the real panel (or the dummy) drops in glass down with a little play, the active
   area centred in the window (`panel_fit`, `window_margin`).
 - Seat 1's end: the cell plug (real or dummy) passes up through the board mock's hole in front of
-  J2; caps, silicone and the smooth step from the deck up to the screen face.
+  J2; caps, silicone, the insert, and the step from the deck up to the screen face.
 
 **The whole case (`1_case`):** cell (or dummy) on the tub floor, plug up through the board mock's
-hole, board mock in, panel into the lid's pocket on tape, silicone and caps, lid down: the four
-hooks click, the lid sits flush, nothing rattles. It should measure 13.4 mm at the screen and
+hole, board mock in, panel into the lid's pocket on tape, silicone, caps into the inserts, inserts
+in, lid down: the four hooks click, the lid and inserts sit flush, nothing rattles. It should measure 13.4 mm at the screen and
 11.1 mm at the ends.

@@ -25,9 +25,10 @@ KIT = [  # (kit name, file, what it tests)
     ("speaker", "speaker_dummy.stl", "15 mm speaker"),
     ("snap_tub", "coupon_snap_tub.stl", "one snap hook's groove in the tub wall"),
     ("snap_lid", "coupon_snap_lid.stl", "the matching hook on the lid"),
-    ("buttons_tub", "coupon_buttons_tub.stl", "seat 1's end of the tub: ribs, bosses, cell slot"),
+    ("buttons_tub", "coupon_buttons_tub.stl", "seat 1's end of the tub: ribs, bosses, cell slot, walls up round the insert"),
     ("buttons_board", "coupon_buttons_board.stl", "seat 1's end of the board mock"),
-    ("buttons_lid", "coupon_buttons_lid.stl", "seat 1's end of the lid: cap holes, retainers, J2 pocket"),
+    ("buttons_lid", "coupon_buttons_lid.stl", "seat 1's end of the lid: J2 pocket, the step, its deck left out"),
+    ("buttons_insert", "coupon_buttons_insert.stl", "seat 1's deck insert: cap holes, retainers, printed face down"),
     ("usb_tub", "coupon_usb_tub.stl", "the USB-C opening's lower half, in the tub wall"),
     ("usb_lid", "coupon_usb_lid.stl", "its upper half, in the lid's tongue"),
     ("usb_board", "coupon_usb_board.stl", "the board's tab with a USB-C shell stand-in, between the two halves"),
@@ -39,13 +40,6 @@ KIT = [  # (kit name, file, what it tests)
        {"dome_h": d}) for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.75", "1.9")] + [
     # (a fourth element: case.scad settings to render that coupon with, as openscad -D name=value)
     ("frame_lid", "coupon_frame_lid.stl", "the lid's window, ledge and panel frame"),
-    # EXPERIMENT: seat 1's end with deck inserts (case.scad: deck_inserts), all printed without supports
-    ("buttons_tub", "coupon_buttons_tub_inserts.stl", "seat 1's end of the tub, walls up round the insert",
-     {"deck_inserts": "true"}),
-    ("buttons_lid", "coupon_buttons_lid_inserts.stl", "seat 1's end of the lid, its deck left out",
-     {"deck_inserts": "true"}),
-    ("buttons_insert", "coupon_buttons_insert.stl", "seat 1's deck insert, printed face down",
-     {"deck_inserts": "true"}),
 ]
 
 

@@ -4,8 +4,8 @@
 Renders case/check_buttons.scad: the pads must clear the lid (and the deck insert, with
 deck_inserts), every cap must sit at rest and press (A/B/X/Y and Start/Select straight down
 dome_travel, the D-pad rocked toward each of its 8 directions) without touching the shell, and at
-rest the caps may only touch the domes (no preload). Both the one-piece lid and the deck-insert
-experiment are checked.
+rest the caps may only touch the domes (no preload). Both the deck inserts (the main build) and
+the one-piece lid are checked.
 
     python3 case/check_buttons.py                       # every check, both lids
     python3 case/check_buttons.py silicone_shell -D sil_rib_gap=0.5   # some checks, with a setting changed

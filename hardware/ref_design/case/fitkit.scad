@@ -116,7 +116,8 @@ module stack_legs(c, ss = false)
               : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
     at(c + p, z_top_cu) cylinder(d = 3, h = z_deck_lid - z_top_cu + 0.01);
 module tune_stack_lid(c, ss = false) difference() {
-  union() { intersection() { lid(); stack_box(c, ss); } stack_legs(c, ss); }
+  // lid_whole: the deck as one with the step, whether or not the case splits it into inserts
+  union() { intersection() { lid_whole(); stack_box(c, ss); } stack_legs(c, ss); }
   at(c + (ss ? [0, 5.6] : [0, -stack_half + 1.8]), deck_face - engrave) linear_extrude(engrave + 0.01)
     text(str("DOME ", dome_h), size = ss ? 1.6 : 2.0, halign = "center", valign = "center");
 }
@@ -142,8 +143,8 @@ if (kit == "snap_lid")     flip() intersection() { lid(); snap_box(hook_near([ca
 if (kit == "buttons_tub")  intersection() { tub_flat(); band_box(); }
 if (kit == "buttons_board") intersection() { kit_board(); band_box(); }
 if (kit == "buttons_lid")  flip() intersection() { lid(); band_box(); }
-// the deck-insert experiment (render with -D deck_inserts=true): seat 1's insert, face down
-if (kit == "buttons_insert") flip() deck_insert(-1);
+// seat 1's deck insert, face down
+if (kit == "buttons_insert" && deck_inserts) flip_at(deck_face) deck_insert(-1);
 if (kit == "usb_tub")      intersection() { tub_flat(); usb_box(); }
 if (kit == "usb_lid")      flip() intersection() { lid(); usb_box(); }
 if (kit == "frame_lid")    flip() intersection() { lid(); frame_box(); }
