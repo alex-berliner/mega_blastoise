@@ -51,7 +51,8 @@ bay_w = 56.0;     bay_l = 86.24;
 // under the screen, for a 13.9 mm case: branch ref-design-cell-on-board.
 cell = [34, 50, 4];                                     // 403450 Li-ion, x by y (length) by thickness;
                                                         // ESTIMATE: length with its protection board
-cell_y = -17;                                           // centre: its wire end 42 mm towards seat 1
+cell_y = -12;                                           // centre: its wire end 37 mm towards seat 1, past the
+                                                        // plug's hole (was -17 with the hole at J2's mouth)
 cell_gap = 0.5;                                         // its top to the board's back
 // the speaker lies on the floor too, beside the cell, firing down through the tub's grille;
 // its leads go to pads on the board's back (J4)
@@ -277,18 +278,25 @@ swd_pos = [-(board_w / 2 - 3.5), -2.0];  uart_pos = [-(board_w / 2 - 3.5), -12.0
 
 // J2 sits under the spine between seat 1's clusters, its mouth towards the panel. The cell's
 // plug has to pass up through the board (the cell lies under it), so the hole is the plug's
-// size, not the wires'. The hole lies right in front of J2's mouth, so the plug comes up, turns
-// and goes in, and its wires drop back through the hole from the plug's tail.
+// size, not the wires'. The hole lies a plug's length plus a wire bend past J2's mouth (Alex,
+// 2026-10-20: with the hole right at the mouth the wires had to double back over into it and
+// could crimp): the plug comes up, lies flat and pushes into J2, and its wires run straight from
+// its tail down through the hole, under the panel's edge (only wires there once it's plugged)
 // J2 is a Molex PicoBlade 53261-0271, 3.4 mm tall (2026-10-19; the 5.5 mm JST PH needed a pad on
 // the lid once the screen face dropped, and the pad lifted the whole face off the print bed)
 batt_conn = [0, -(bay_l / 2 + 8.2)];                   // J2's footprint origin
 j2_front = 3.145;  j2_back = 3.745;                     // J2's courtyard, in front of and behind batt_conn
 j2_h = 3.4;                                             // 53261-0271, from its 3D model
-plug_xs = [4.3, 3.3];                                   // ESTIMATE: PicoBlade 51021-0200 housing end on: across
-                                                        // the pins, through
+j2_mouth = 2.6;                                         // its mating face, in front of batt_conn (3D model, fab layer)
+plug_xs = [4.25, 3.2];  plug_l = 4.15;                  // PicoBlade 51021-0200 housing: across the pins, through,
+                                                        // and along the wires (distributor data; Molex SD-51021)
+plug_out = 3.0;                                         // ESTIMATE: the mated plug's tail past J2's mouth (at least
+                                                        // 1.2 of the housing inside J2's shroud)
+wire_bend = 2.5;                                        // from the plug's tail to the hole: the wires turn down there
 hole_fit = 0.6;                                         // each side, round the plug (the hole is drilled: exact)
-slot = [[-(plug_xs[0] / 2 + hole_fit), batt_conn[1] + j2_front + 0.2 + plug_xs[1] + 2 * hole_fit],
-        [plug_xs[0] / 2 + hole_fit, batt_conn[1] + j2_front + 0.2]];    // hole corners (x0,y0)-(x1,y1)
+plug_tail = batt_conn[1] + j2_mouth + plug_out;        // y of the mated plug's tail
+slot = [[-(plug_xs[0] / 2 + hole_fit), plug_tail + wire_bend + plug_xs[1] + 2 * hole_fit],
+        [plug_xs[0] / 2 + hole_fit, plug_tail + wire_bend]];           // hole corners (x0,y0)-(x1,y1)
 cut_r = 0.6;                                            // its corner radius
 // lid pocket over J2: up to j2_h plus 0.2. When that leaves less than skin_min under the screen
 // face (a thin face_t), a pad rises over it on the spine
@@ -302,7 +310,9 @@ assert(cluster_spacing >= piece_d + 2, "a seat's two silicone pieces would touch
 assert(seat_y - piece_d / 2 >= bay_l / 2 + piece_to_glass - 1e-6, "cluster runs into the glass");
 assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs off the board");
 assert(cell[0] / 2 <= pin_x - boss_d / 2 - 2, "cell runs into a boss");
-assert(slot[0][1] <= -(panel_l / 2 + 1.9), "plug hole under the panel's FPC fold");
+assert(plug_tail <= -(panel_l / 2 + 1.5), "the mated plug runs into the panel's FPC fold");
+assert(cell_y - cell[1] / 2 >= slot[0][1] + 1.5, "the cell lies over the plug's hole: its wires can't turn up");
+assert(z_lid - z_top_cu >= j2_h + 0.4, "no room for the mated plug under the lid");
 assert(norm(pins[5] - batt_conn) >= 0 && pins[5][1] + boss_d / 2 + 0.2 <= batt_conn[1] - j2_back, "seat 1's centre boss runs into J2");
 assert(abs(slot[0][0]) <= spine_w / 2 - step_wall, "plug hole wider than the spine");
 assert(spk_pos[1] - spk_d / 2 >= cell_y + cell[1] / 2 + 2, "speaker runs into the cell");

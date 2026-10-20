@@ -66,11 +66,12 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 2. Into the tub: the cell in its pocket on the floor, lengthwise, its wires at seat 1's end,
    a 0.45 mm foam pad on top; the speaker face down on the grille beside it. Solder the
    speaker's leads to J4's pads on the board's back.
-3. Push the cell's plug up through the board's hole (7.2 x 5.7 mm, right in front of J2,
-   between seat 1's clusters: the whole plug passes), then the board into the tub: its tab
-   under the USB-C drops into the slot in the wall (it goes in one way only), pressed down
-   past the crush ribs that centre it onto the floor's support ribs and bosses. Plug the cell
-   into J2; its wires fold back down through the hole.
+3. Push the cell's plug up through the board's hole (5.45 x 4.4 mm, 5.5 mm in front of J2's
+   mouth, between seat 1's clusters at the screen's edge: the whole plug passes), then the
+   board into the tub: its tab under the USB-C drops into the slot in the wall (it goes in one
+   way only), pressed down past the crush ribs that centre it onto the floor's support ribs and
+   bosses. Lay the plug flat, wires towards the hole, and push it into J2: its wires run
+   straight from its tail down through the hole, with no fold.
 4. Panel: lay it face down beyond the board's seat-1 edge, flip J3's lid up, slide the
    FPC's contacts into J3 (contacts down) until it stops, square, and press the lid shut.
    Then fold the panel over onto the board, face up, its FPC looping under it at the

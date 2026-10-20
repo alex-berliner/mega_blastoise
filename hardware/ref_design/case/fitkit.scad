@@ -59,9 +59,9 @@ module kit_cell() {                                // 403450 cell, as it lies si
   translate([cell[0] / 2 - 0.01, -4, 0]) cube([5.01, 8, 1.0]);                        // protection board lead tab
 }
 
-module kit_plug() {                                // PicoBlade 51021-0200 plug (approximate), with a cable stub
-  cube([plug_xs[0], plug_xs[1], 6.5]);
-  translate([plug_xs[0] / 2 - 1.3, plug_xs[1] / 2 - 0.5, 6.5]) cube([2.6, 1.0, 8]);
+module kit_plug() {                                // PicoBlade 51021-0200 plug, with a cable stub
+  cube([plug_xs[0], plug_xs[1], plug_l]);
+  translate([plug_xs[0] / 2 - 1.3, plug_xs[1] / 2 - 0.5, plug_l]) cube([2.6, 1.0, 8]);
 }
 
 module kit_speaker() difference() {               // 15 mm speaker (ESTIMATE in case.scad)
