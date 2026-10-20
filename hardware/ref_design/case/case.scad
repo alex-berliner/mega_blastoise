@@ -134,6 +134,8 @@ abxy_ring = 5.55;                                       // A/B/X/Y rings' outer 
 abxy_square = [5.15, 0.65, 2.1];                        // centre square's pocket: inside, wall, roof over the board
 dpad_ring = [4.95, 0.8, 7.0];                           // D-pad ring: lobe radius inside, width, waist radius
 ss_frame_w = 0.9;                                       // Start/Select frames' walls
+ss_cell = 6.4;            // each frame's square cell, for the cap's flange and the pad's square well (DS: 5.4 for a
+                          // 5.0 flange; ss_flange_d here is an ESTIMATE)
 cap_top = retainer_z + cap_h - flange_t;                // at rest
 // Stepped ends: the lid face over the screen is set by the panel stack, which leaves genuine
 // caps below it. So each end drops to a button deck where the caps stand as on a DS Lite,
@@ -632,7 +634,7 @@ module lid_body() difference() {
     for (c = [dpad1, dpad2]) at(c, retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01)
       difference() { offset(r = dpad_ring[1]) dpad_clover(); dpad_clover(); }
     for (b = ss_buttons) at(b[2], retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01)
-      square(ss_flange_d + 0.4 + 2 * ss_frame_w, center = true);
+      square(ss_cell + 2 * ss_frame_w, center = true);
     // pinhole guides reach down towards the switches
     for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_lid - z_top_cu - 2.4 + 0.01);
     // panel locating frame
@@ -662,7 +664,7 @@ module lid_body() difference() {
   for (c = [dpad1, dpad2]) at(c, retainer_bot - 0.01) dpad_cut(case_h);
   for (b = ss_buttons) at(b[2], retainer_bot - 0.01) {
     cylinder(d = ss_cap_d + 2 * ss_gap, h = case_h);
-    cylinder(d = ss_flange_d + 0.4, h = pocket_h + 0.01);
+    translate([0, 0, (pocket_h + 0.02) / 2]) cube([ss_cell, ss_cell, pocket_h + 0.02], center = true);
   }
   for (c = [abxy1, abxy2]) at(c, retainer_bot - 0.01)                        // the A/B/X/Y pad's centre square
     linear_extrude(z_top_cu + abxy_square[2] - retainer_bot + 0.01) square(abxy_square[0], center = true);
@@ -691,7 +693,10 @@ module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_
 module caps() {
   z0 = retainer_z - flange_t;
   for (k = abxy_keys()) at(k[0], z0) rotate(k[1]) {
-    cylinder(d = cap_flange_d, h = flange_t, $fn = 48);
+    difference() {                                      // the flange, less its keying notches
+      cylinder(d = cap_flange_d, h = flange_t, $fn = 48);
+      for (n = k[2]) rotate(n) translate([cap_flange_d / 2 - notch_reach - 0.05, -notch_w / 2 - 0.05, -1]) cube([2, notch_w + 0.1, 3]);
+    }
     translate([0, -cap_tab_w / 2, 0]) cube([cap_tab_r, cap_tab_w, flange_t]);
     cylinder(d = cap_abxy_d, h = cap_h, $fn = 48);
   }
@@ -700,6 +705,34 @@ module caps() {
     linear_extrude(dpad_h) cross(dpad_arm_w, dpad_arm_l);
   }
   for (b = ss_buttons) at(b[2], z0) { cylinder(d = ss_flange_d, h = flange_t, $fn = 48); cylinder(d = ss_cap_d, h = ss_cap_h, $fn = 48); }
+  // the D-pad's pivot peg, through its pad's centre hole onto the board (ESTIMATE: dpad_peg_d)
+  for (c = [dpad1, dpad2]) at(c, z_top_cu) cylinder(d = dpad_peg_d, h = z0 + dpad_lift - z_top_cu + 0.01, $fn = 32);
+}
+// The silicone pads, for pictures and fit checks only (nothing is printed from them). ESTIMATES
+// until Alex measures his pads: web, domes, the A/B/X/Y centre square, the Start/Select wells
+dpad_peg_d = 2.4;                                       // under 2.5: Pi Tin's pad hole fits over the genuine peg
+sil_web_t = 0.6;  dome_base_d = 6.0;  plunger_d = 3.2;  // pad web; each dome's skirt and plunger (HHL photo)
+dpad_hole_d = 3.0;                                      // the D-pad pad's centre hole
+abxy_boss = [5.0, 2.0];                                 // A/B/X/Y centre square: side, top over the board
+ss_well = [5.6, 0.5, 1.4];                              // Start/Select plunger wells: outside, wall, top over the board
+module dome(h) { cylinder(d1 = dome_base_d, d2 = plunger_d + 0.6, h = h - 0.4, $fn = 40);
+                 cylinder(d = plunger_d, h = h, $fn = 32); }
+module silicone() {
+  for (c = [abxy1, abxy2]) at(c, z_top_cu) {
+    linear_extrude(sil_web_t) pad2d(c);
+    for (t = [0:90:270]) rotate(t) translate([a, 0, 0]) dome(dome_h);
+    difference() { translate([0, 0, abxy_boss[1] / 2]) cube([abxy_boss[0], abxy_boss[0], abxy_boss[1]], center = true);
+                   translate([0, 0, -0.01]) cube([abxy_boss[0] - 1.2, abxy_boss[0] - 1.2, 2 * abxy_boss[1] - 1.2], center = true); }
+  }
+  for (c = [dpad1, dpad2]) at(c, z_top_cu) difference() {
+    union() { linear_extrude(sil_web_t) pad2d(c); for (t = [0:90:270]) rotate(t) translate([d, 0, 0]) dome(dome_h); }
+    translate([0, 0, -1]) cylinder(d = dpad_hole_d, h = 3, $fn = 32);
+  }
+  for (c = ss_centres) at(c, z_top_cu) linear_extrude(sil_web_t) rrect(ss_pad[0], ss_pad[1], 2);
+  for (b = ss_buttons) at(b[2], z_top_cu) {
+    dome(dome_h);
+    linear_extrude(ss_well[2]) difference() { square(ss_well[0], center = true); square(ss_well[0] - 2 * ss_well[1], center = true); }
+  }
 }
 
 if (part == "3d") {
@@ -708,8 +741,7 @@ if (part == "3d") {
   color("#b8912e") at(spk_pos, floor_t) cylinder(d = spk_d, h = spk_h);
   board3d();
   color("#101014") translate([0, 0, z_glass]) linear_extrude(panel_t) square([panel_w, panel_l], center = true);
-  for (c = clusters) color("#8f8f99") at(c, z_top_cu) cylinder(d = piece_d, h = dome_h);
-  for (c = ss_centres) color("#8f8f99") at(c, z_top_cu) linear_extrude(dome_h) rrect(ss_mem[0], ss_mem[1], 2);
+  color("#8f8f99") silicone();
   color("#4a4a56") translate([0, 0, explode]) lid();
   color("#e8e8ee") caps();
 }
