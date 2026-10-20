@@ -120,7 +120,9 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 let MODEL = { z_board: 2.0, case_h: 13.9, z: {} };   // replaced by parts/model.json
 const PARTS = [
   { key: "lid", name: "Lid", file: "parts/lid.stl", color: "#5a6573", lift: 112, shell: true,
-    note: "Printed. Six hooks click onto the tub; the window frames the panel." },
+    note: "Printed. Four hooks click onto the tub; the window frames the panel. Its end bosses drop through the deck inserts' rings." },
+  { key: "inserts", name: "Deck inserts", file: "parts/inserts.stl", color: "#d9822b", lift: 100,
+    note: "Printed face down, no supports. Each end's deck tucks under the tub's end lip and is held by the lid's step walls and its end screw boss." },
   { key: "caps", name: "Button caps", file: "parts/caps.stl", color: "#eef0f4", lift: 88,
     note: "DS Lite caps, bought. Their flanges sit under the lid, which holds them in." },
   { key: "panel", name: "Display panel", file: "parts/panel.stl", color: "#0b0e13", lift: 68, rough: 0.25,
@@ -286,7 +288,7 @@ playBtn.addEventListener("click", () => {
 // ---- see-through shell ----
 const xray = document.getElementById("xray");
 function applyXray() {
-  ["tub", "lid"].forEach(k => {
+  ["tub", "lid", "inserts"].forEach(k => {
     const s = slots[k]; if (!s) return;
     s.meshes.forEach(m => [].concat(m.material).forEach(mat => {
       mat.transparent = xray.checked; mat.opacity = xray.checked ? 0.2 : 1;
@@ -345,7 +347,7 @@ canvas.addEventListener("pointerup", e => {
     let o = m; while (o) { if (!o.visible) return false; o = o.parent; } return true;
   }), false);
   const shellSeeThrough = xray.checked;
-  const hit = hits.find(h => !(shellSeeThrough && ["tub", "lid"].includes(h.object.userData.key)));
+  const hit = hits.find(h => !(shellSeeThrough && ["tub", "lid", "inserts"].includes(h.object.userData.key)));
   select(hit ? hit.object.userData.key : null);
 });
 

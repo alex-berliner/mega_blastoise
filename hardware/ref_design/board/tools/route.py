@@ -1077,20 +1077,23 @@ def repair(board, rounds=4):
         plane = [u for u in items if any(f"[{n}]" in i["description"] for i in u["items"] for n in PLANE_NETS)]
         for u in plane:
             for it in u["items"]:
-                m = re.match(r"Pad (\S+) \[([^\]]+)\] of (\S+)", it["description"])
+                # "Pad 3 [GND] of U1", or "PTH pad SH [GND] of J1" for a through-hole pad
+                m = re.match(r"(?:PTH )?[Pp]ad (\S+) \[([^\]]+)\] of (\S+)", it["description"])
                 if not m:
                     continue
                 num, net, ref = m.groups()
                 if net not in PLANE_NETS:
                     continue
                 fp = board.FindFootprintByReference(ref)
-                for pad in fp.Pads():
-                    if pad.GetNumber() == num:
-                        layer = pcbnew.B_Cu if pad.IsOnLayer(pcbnew.B_Cu) else pcbnew.F_Cu
-                        if via_near(board, space, xy(pad.GetPosition()), net, layer, None,
-                                    lambda q, pad=pad: pad.HitTest(V(*q)), pad):
-                            added += 1
-                        break
+                # the pad DRC means, by where it says it is: several pads can share a number (J1's SH)
+                same = [p for p in fp.Pads() if p.GetNumber() == num]
+                if same:
+                    at = (it["pos"]["x"], it["pos"]["y"]) if "pos" in it else xy(same[0].GetPosition())
+                    pad = min(same, key=lambda p: math.dist(xy(p.GetPosition()), at))
+                    layer = pcbnew.B_Cu if pad.IsOnLayer(pcbnew.B_Cu) else pcbnew.F_Cu
+                    if via_near(board, space, xy(pad.GetPosition()), net, layer, None,
+                                lambda q, pad=pad: pad.HitTest(V(*q)), pad):
+                        added += 1
                 break
         print(f"repair round {r + 1}: {len(items)} unconnected ({len(plane)} on planes), {added} vias added")
         if not plane or not added:

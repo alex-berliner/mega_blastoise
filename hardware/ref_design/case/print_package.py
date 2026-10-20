@@ -45,24 +45,22 @@ SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_style":
 
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts
 PLATES = {
-    "0_buttons_end": [(n, f"{KIT}/coupon_{n}.stl") for n in ("buttons_tub", "buttons_board", "buttons_lid")],
+    "0_buttons_end": [(n, f"{KIT}/coupon_{n}.stl") for n in ("buttons_tub", "buttons_board", "buttons_lid", "buttons_insert")],
     "1_case": [("tub_print", PRINT_TUB), ("lid", os.path.join(HERE, "lid.stl")),
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
                ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
+    "1_case_inserts": [(n, os.path.join(HERE, "insert.stl")) for n in ("insert_a", "insert_b")],   # one part, two of it
     "2_buttons_quick": [("tune_openings", f"{KIT}/tune_openings.stl")] +
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
         [(f"tune_stack_{c}_lid_dome1.75", f"{KIT}/tune_stack_{c}_lid_dome1.75.stl") for c in ("dpad", "abxy", "ss")],
     "3_buttons_heights": [(f"tune_stack_{c}_lid_dome{d}", f"{KIT}/tune_stack_{c}_lid_dome{d}.stl")
-                          for c in ("dpad", "abxy", "ss") for d in ("1.45", "2.05")],
+                          for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.9")],
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
                       ("usb_tub", "usb_lid", "usb_board", "snap_tub", "snap_lid", "frame_lid",
-                       "buttons_tub", "buttons_board", "buttons_lid")],
-    # EXPERIMENT (case.scad: deck_inserts): seat 1's end with its deck as a separate insert, no supports
-    "5_inserts_experiment": [(n, f"{KIT}/coupon_{n}.stl") for n in
-                             ("buttons_tub_inserts", "buttons_board", "buttons_lid_inserts", "buttons_insert")],
+                       "buttons_tub", "buttons_board", "buttons_lid", "buttons_insert")],
 }
-NO_SUPPORT = {"5_inserts_experiment"}   # plates that print without any supports
+NO_SUPPORT = {"0_buttons_end", "1_case_inserts"}   # plates that print without any supports
 V5_NAMES = {"tub_print": "tub_print.stl", "lid": "lid.stl", "board_mock": "board_mock.stl",
             "panel_dummy": "panel_dummy.stl", "speaker_dummy": "speaker_dummy.stl"}
 NS = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"
