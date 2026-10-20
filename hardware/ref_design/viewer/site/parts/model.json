@@ -18,11 +18,11 @@
   ],
   "silicone": [
    7.6,
-   8.8
+   9.35
   ],
   "caps": [
-   8.8,
-   12.36
+   7.8,
+   13.04
   ],
   "screws": [
    0.0,
@@ -30,11 +30,11 @@
   ],
   "tub": [
    -0.8,
-   11.4
+   13.4
   ],
   "lid": [
    7.6,
-   13.9
+   13.4
   ],
   "board": [
    6.0,
@@ -48,12 +48,12 @@
   156.2
  ],
  "rev": 1,
- "commit": "912297c",
+ "commit": "269dc87",
  "dirty": false,
  "built": "2026-10-19",
  "inputs": {
-  "board/battler.kicad_pcb": "c010a23e03a5cbd6304416b47a645bbeb09616ba",
-  "case/case.scad": "d8ba694458b1477b28f0593e59bf827002cb0ce8",
+  "board/battler.kicad_pcb": "0f4c867850ff5001165555fc83d60a6f83415b7d",
+  "case/case.scad": "7b8a78b7e1e5bd077f053b0feebbf040a545bb9d",
   "viewer/pieces.scad": "6546d9e4425430d200b51d0db0e2434ce38620eb",
   "viewer/build.py": "4fe049e6d7f34040cff7b4740d91b12078573f04"
  }
