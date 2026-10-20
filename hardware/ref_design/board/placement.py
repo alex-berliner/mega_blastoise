@@ -144,23 +144,25 @@ put("R17", 104.0, 96.6, 90)
 put("R18", 105.4, 96.6, 90)
 put("C8", 106.8, 96.6, 90)
 
-# audio: above the core, speaker pads on the back beside the speaker. The PWM comes in on
-# the left through the filter (R32 C37 R33 C38), Ci and Ri; Rf under the chip
-put("U7", 100.0, 56.0, 0)                   # past the panel's edge (1.75 mm tall). FM8002A: 1 SHUTDOWN .. 4 -IN on the left, 5 VO1 .. 8 VO2 right
+# audio: above the core, under the panel's seat-2 edge, with J4 (the speaker's plug-in header,
+# 2026-10-20) past it under seat 2's spine. The PWM comes in on the left through the filter (R32
+# C37 R33 C38), Ci and Ri; Rf under the chip. U7 and Q3 moved off the spine's centre for J4, its
+# mated plug and the plug's hole (case.scad: spk_conn, spk_slot)
+put("U7", 100.0, 64.8, 0)                   # under the panel (1.75 mm tall, under glass_limit). FM8002A: 1 SHUTDOWN .. 4 -IN on the left, 5 VO1 .. 8 VO2 right
 put("R32", 88.2, 68.6, 0)
 put("C37", 88.2, 70.2, 0)
 put("R33", 91.0, 68.6, 0)
 put("C38", 91.0, 70.2, 0)
 put("C39", 93.8, 67.0, 0)                   # Ci
 put("R34", 94.6, 65.4, 0)                   # Ri to -IN
-put("R35", 100.0, 67.6, 0)                  # Rf, VO1 to -IN
+put("R35", 100.0, 69.1, 0)                  # Rf, VO1 to -IN
 put("C40", 94.6, 63.6, 0)                   # BYPASS
 put("R36", 94.6, 61.8, 0)                   # SHUTDOWN pull-up
-put("Q3", 100.00, 51.00, 0)
+put("Q3", 90.5, 65.5, 0)                    # by R36 and TP8 (SHUTDOWN)
 put("R37", 91.4, 59.0, 0)
 put("C34", 105.4, 63.0, 90)                 # VDD
-put("C35", 104.0, 60.4, 0)
-put("J4", 100.0, 64.5, 0, "B")             # on the back, past the speaker's seat-2 edge: its leads come up from the floor
+put("C35", 105.4, 66.4, 0)                  # by VDD (pin 6)
+put("J4", *CASE["spk_conn"], 0)             # PicoBlade like J2, turned round: mouth towards the panel, the plug's hole past it
 
 # test points on the back, between seat 2's clusters
 for i in range(5):

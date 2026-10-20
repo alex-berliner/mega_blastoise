@@ -25,8 +25,7 @@ lid slices stand on legs, so let the auto supports go under those.
 
 `stl/` has every part as a plain STL, in case a project won't open in your Orca version: drag them
 onto a plate with the same settings. `lid.stl`, `insert.stl` (print two) and `tub.stl` are the
-real case; `tub_print.stl` is the tub without its feet (prints flat
-without supports).
+real case; the tub prints flat as exported (it has no feet).
 
 **The deck inserts.** Each end's deck (both clusters and Start/Select) is its own part, printed
 face down on the bed like the screen face, so it comes out smooth with no supports. The step

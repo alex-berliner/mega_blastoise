@@ -31,7 +31,7 @@ GAP = 6.0
 PLA = 2                      # the template's toolhead for PLA parts
 
 KIT = os.path.join(HERE, "fitkit")
-PRINT_TUB = os.path.join(HERE, "print", "tub_print.stl")
+PRINT_TUB = os.path.join(HERE, "tub.stl")    # prints flat as exported (no feet since 2026-10-20)
 
 # Supports, changed from the template (Alex: keep the PETG, but touch the decks as little and as
 # cleanly as possible): organic trees in PLA from the build plate only, so nothing grows inside the

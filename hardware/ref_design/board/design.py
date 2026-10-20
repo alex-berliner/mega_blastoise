@@ -470,8 +470,11 @@ C("C35", S, "100n", "AMP_VDD")
 # JP3: cut it to take the amplifier off VSYS (a noisy or shorted amplifier), or to read its current
 JP("JP3", S, "VSYS", "AMP_VDD")
 part("#FLG09", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "AMP_VDD"}, bom=False)   # fed through JP3
-part("J4", S, "Connector_Generic:Conn_01x02", "SPEAKER", "battler:Speaker_Wire_Pads_P4.0mm",
-     {"1": "SPK_P", "2": "SPK_N"}, bom=False)
+# J4 (2026-10-20, Alex: no soldering at assembly): the speaker (INGHAi GSPK151035PN) comes with a
+# 1.25 mm 2-pin plug, so J4 is J2's PicoBlade header (no new part number at JLC)
+part("J4", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "53261-0271",
+     "Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal",
+     {"1": "SPK_P", "2": "SPK_N", "MP": None}, "C177225", "532610271", "Molex")
 
 
 # =================================================================================

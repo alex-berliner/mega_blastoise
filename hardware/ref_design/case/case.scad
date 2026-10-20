@@ -54,10 +54,20 @@ cell = [34, 50, 4];                                     // 403450 Li-ion, x by y
 cell_y = -12;                                           // centre: its wire end 37 mm towards seat 1, past the
                                                         // plug's hole (was -17 with the hole at J2's mouth)
 cell_gap = 0.5;                                         // its top to the board's back
-// the speaker lies on the floor too, beside the cell, firing down through the tub's grille;
-// its leads go to pads on the board's back (J4)
-spk_d = 15;  spk_h = 4.0;                               // ESTIMATE: 15 mm 8 ohm speaker
-spk_pos = [0, 26];                                      // its centre, past the cell's seat-2 end
+// The speaker (Alex, 2026-10-20): INGHAi's GSPK151035PN, a 15 x 10 mm racetrack 3.5 mm thick
+// with its adhesive front foam ring, whose 35 mm leads end in a 1.25 mm 2-pin plug (the
+// PicoBlade pattern) for J4: no soldering at assembly. It fired down through a grille in the
+// floor, which a table covers when two players share the screen; now it lies face down beside
+// the left wall, its foam ring stuck to a pad round a front chamber cut into the floor, and the
+// chamber opens through the wall's rounded lower edge in three slots: the sound leaves the side,
+// a millimetre over a table. Its back faces up into the case, which is its back volume. Its
+// leads leave the end towards the middle and come up through a slot in the board to J4
+spk = [15, 10, 3.5];                                    // length (along x), width, thickness with the ring
+spk_tab = 2.5;                                          // ESTIMATE: its solder tab, past the end away from the leads
+spk_lead = 35;                                          // lead length to the plug (datasheet: "35mm/1.25/2P")
+spk_pad = 0.6;  spk_seal = 1.0;                         // the pad it lies on; the ring's width on the pad
+spk_chamber = 0.8;                                      // the front chamber's floor, over the tub's outside
+spk_duct = [0.8, 1.6];  spk_slots = 3;  spk_slot_w = 1.8;   // the outlet: its z range, its slots
 
 abxy_pitch = 15.0;  dpad_pitch = 14.0;                  // DS Lite (gerbers)
 piece_d = 26;                                           // ESTIMATE: silicone piece outline
@@ -210,6 +220,9 @@ case_l = bay_l + 2 * band;
 inset = wall + board_clear;
 board_w = case_w - 2 * inset;
 board_l = case_l - 2 * inset;
+spk_pos = [-(case_w / 2 - wall - back_in(floor_t)) + spk_tab + 0.3 + spk[0] / 2, 27];   // the speaker's centre
+z_spk = floor_t + spk_pad;                              // its face, on the pad
+spk_exit = spk_pos + [spk[0] / 2, 0];                   // where its leads leave it
 seat_y = case_l / 2 - edge_margin - piece_d / 2;
 spine_end = seat_y + 4.9;                               // the spine stops here, past seat 1's screw boss
 ss_y = seat_y + 9.1;                                    // Start/Select's centre line
@@ -259,15 +272,20 @@ screw_engage = min(6.0, case_h - z_top_cu - 0.8);       // the pilot stops 0.8 u
 
 // edge parts, all on the right (+X) long edge
 usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
+usb_r = 1.0;                                            // its corner radius: a rounded rectangle with 1.2 mm flats
+                                                        // on its ends, not a stadium (HRO's 3D model, 2026-10-20)
 // The receptacle's face sits usb_recess under the case's surface, so a plug's overmold rests on
-// the case and the opening only has to clear the receptacle's shell: a stadium the port's shape,
-// usb_gap round it (Alex's fit test: the overmold-sized opening left a big gap round a port
+// the case and the opening only has to clear the receptacle's shell: the shell's shape (Alex,
+// 2026-10-20: the stadium it used to be was "a different kind of oval"), usb_gap round it (Alex's fit test: the overmold-sized opening left a big gap round a port
 // sunk 1.15 mm in the wall). To reach the surface the board grows a tab under the receptacle
 // (its face stays 1.35 past the board's edge, as its footprint expects), which sits in a slot
 // in the tub wall. The opening is split at the port's centre: the lower half in the tub wall,
-// the upper half in a tongue of the lid that fills a notch in the wall (no roof over a hole)
+// the upper half in a tongue of the lid that fills a notch in the wall (no roof over a hole). The
+// seams round the tongue step halfway through the wall (usb_step), so they don't run straight
+// through it (Alex, 2026-10-20: light showed through them)
 usb_recess = 0.15;  usb_gap = 0.25;
-usb_hole = [usb_w + 2 * usb_gap, usb_h + 2 * usb_gap, (usb_h + 2 * usb_gap) / 2 - 0.01];   // width, height, end radius
+usb_hole = [usb_w + 2 * usb_gap, usb_h + 2 * usb_gap, usb_r + usb_gap];   // width, height, corner radius
+usb_step = 1.0;                                         // the step in the tongue's seams, inside the wall's outer half
 usb_tongue_w = 18.0;  usb_fit = 0.2;   // the lid's tongue, and its clearance each side in the notch
 usb_front = case_w / 2 - usb_recess;                    // receptacle face
 usb_tab = usb_front - 1.35 - board_w / 2;              // the board's tab under it, past the board's edge
@@ -298,6 +316,13 @@ plug_tail = batt_conn[1] + j2_mouth + plug_out;        // y of the mated plug's 
 slot = [[-(plug_xs[0] / 2 + hole_fit), plug_tail + wire_bend + plug_xs[1] + 2 * hole_fit],
         [plug_xs[0] / 2 + hole_fit, plug_tail + wire_bend]];           // hole corners (x0,y0)-(x1,y1)
 cut_r = 0.6;                                            // its corner radius
+// J4, the speaker's plug-in header (2026-10-20): J2's part, turned round under seat 2's spine,
+// with the speaker's plug coming up through a hole the same size the same way. It sits as far
+// from the cell's hole as the board allows, since the cell's plug fits it too and would put the
+// cell across the amplifier's outputs
+spk_conn = rot180(batt_conn);                           // J4's footprint origin
+spk_slot = [for (c = [slot[1], slot[0]]) rot180(c)];    // its hole, corners as slot's
+cell_lead = 60;                                         // ESTIMATE: the cell's leads, its end to its plug's tail
 // lid pocket over J2: up to j2_h plus 0.2. When that leaves less than skin_min under the screen
 // face (a thin face_t), a pad rises over it on the spine
 pocket = [9.4, 11.0];
@@ -315,8 +340,18 @@ assert(cell_y - cell[1] / 2 >= slot[0][1] + 1.5, "the cell lies over the plug's 
 assert(z_lid - z_top_cu >= j2_h + 0.4, "no room for the mated plug under the lid");
 assert(norm(pins[5] - batt_conn) >= 0 && pins[5][1] + boss_d / 2 + 0.2 <= batt_conn[1] - j2_back, "seat 1's centre boss runs into J2");
 assert(abs(slot[0][0]) <= spine_w / 2 - step_wall, "plug hole wider than the spine");
-assert(spk_pos[1] - spk_d / 2 >= cell_y + cell[1] / 2 + 2, "speaker runs into the cell");
-assert(spk_h <= board_lift - 0.3, "speaker touches the board");
+assert(spk_pos[0] + spk[0] / 2 <= -cell[0] / 2 - 0.5 || spk_pos[1] - spk[1] / 2 >= cell_y + cell[1] / 2 + 1, "the speaker runs into the cell");
+assert(z_spk + spk[2] <= z_board - 0.3, "the speaker touches the board");
+assert(spk_chamber >= 0.6 && spk_duct[0] >= spk_chamber && spk_duct[1] <= z_spk - 0.4, "the speaker's chamber or outlet leaves too thin a floor or roof");
+assert(norm(spk_pos - [-pin_x, 36]) >= spk[0] / 2 + (boss_d + 1) / 2 + 0.3 || spk_pos[1] + spk[1] / 2 + 0.3 <= 36 - (boss_d + 1) / 2,
+       "the speaker runs into a screw boss");
+// its leads: out along the floor to below J4's hole, up through it, and to the plug's tail at J4
+spk_reach = norm(spk_exit - (spk_slot[0] + spk_slot[1]) / 2) + (z_top_cu - z_spk - spk[2] / 2)
+            + abs(spk_conn[1] - j2_mouth - plug_out - (spk_slot[0][1] + spk_slot[1][1]) / 2);
+assert(spk_reach + 2 <= spk_lead, str("the speaker's leads don't reach J4: ", spk_reach, " mm of ", spk_lead));
+// the cell's plug can't reach J4: it comes up through its own hole at seat 1
+assert(norm([0, spk_conn[1] - j2_mouth] - [0, (slot[0][1] + slot[1][1]) / 2]) >= cell_lead + 10, "the cell's plug could reach J4");
+assert(norm(pins[4] - spk_conn) >= 0 && pins[4][1] - boss_d / 2 - 0.2 >= spk_conn[1] + j2_back, "seat 2's end boss runs into J4");
 assert(pin_x - boss_d / 2 >= bay_w / 2 + 0.5 && pin_x + boss_d / 2 <= board_w / 2, "no room for pin bosses beside the glass");
 assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
@@ -359,6 +394,7 @@ echo(str("CASE ", case_w, " x ", case_l, " x ", case_h, " mm   board ", board_w,
 echo(str("JSON {",
   "\"board\": {\"w\": ", jnum(board_w), ", \"l\": ", jnum(board_l), ", \"r\": ", jnum(board_r), ", \"t\": ", pcb_t, "}, ",
   "\"slot\": [", jpt(slot[0]), ", ", jpt(slot[1]), "], \"slot_r\": ", cut_r, ", ",
+  "\"spk_slot\": [", jpt(spk_slot[0]), ", ", jpt(spk_slot[1]), "], \"spk_conn\": ", jpt(spk_conn), ", ",
   "\"glass\": [", jpt([-bay_w / 2, bay_l / 2]), ", ", jpt([bay_w / 2, -bay_l / 2]), "], ",
   "\"glass_limit\": ", glass_gap - 0.2, ", ",
   "\"bezel_limit\": ", z_lid - z_top_cu - 0.3, ", ",
@@ -381,7 +417,7 @@ echo(str("JSON {",
   "\"batt_conn\": ", jpt(batt_conn), ", \"pocket\": [", pocket[0], ", ", pocket[1], "], \"pocket_limit\": ", j2_top - z_top_cu, ", ",
   "\"cell\": [", jpt([-cell[0] / 2 - 0.5, cell_y + cell[1] / 2 + 0.25]), ", ", jpt([cell[0] / 2 + 0.5, cell_y - cell[1] / 2 - 0.25]), "], ",
   "\"back_limit\": ", cell_gap, ", ",
-  "\"speaker\": {\"c\": ", jpt(spk_pos), ", \"d\": ", spk_d, "}, ",
+  "\"speaker\": {\"c\": ", jpt(spk_pos), ", \"size\": [", spk[0], ", ", spk[1], "]}, ",
   "\"hooks\": [", join([for (h = hooks) str("[", jpt(hook_rect(h)[0]), ", ", jpt(hook_rect(h)[1]), "]")]), "], ",
   "\"frame\": {\"outer\": [", jpt([-(panel_w + panel_fit) / 2 - frame_wall, (panel_l + panel_fit) / 2 + frame_wall]), ", ",
     jpt([(panel_w + panel_fit) / 2 + frame_wall, -(panel_l + panel_fit) / 2 - frame_wall]), "], \"inner\": [",
@@ -455,8 +491,8 @@ module board_outline() difference() {
     rrect(board_w, board_l, board_r);
     if (usb_tab > 0) translate([board_w / 2 - 1, usb_y - usb_tab_w / 2]) square([usb_tab + 1, usb_tab_w]);
   }
-  translate([slot[0][0], slot[1][1]]) offset(r = cut_r) offset(delta = -cut_r)   // the cell plug's hole
-    square([slot[1][0] - slot[0][0], slot[0][1] - slot[1][1]]);
+  for (s = [slot, spk_slot]) translate([s[0][0], s[1][1]]) offset(r = cut_r) offset(delta = -cut_r)   // the cell's
+    square([s[1][0] - s[0][0], s[0][1] - s[1][1]]);                                                // and speaker's plugs
 }
 if (part == "board") board_outline();
 
@@ -464,7 +500,7 @@ if (part == "layout") {
   color("#34343d") linear_extrude(0.05) rrect(case_w, case_l, corner_r);
   color("#2e7d4f") translate([0, 0, 0.1]) linear_extrude(0.05) board_outline();
   color([0.85, 0.35, 0.35, 0.5]) translate([0, cell_y, 0.2]) linear_extrude(0.05) square([cell[0], cell[1]], center = true);
-  color([0.9, 0.7, 0.2, 0.6]) at(spk_pos, 0.2) linear_extrude(0.05) circle(d = spk_d);
+  color([0.9, 0.7, 0.2, 0.6]) translate([0, 0, 0.2]) linear_extrude(0.05) spk2d();
   color("#101014") translate([0, 0, 0.3]) linear_extrude(0.05) square([panel_w, panel_l], center = true);
   color("#3b6fd1") translate([0, 0, 0.4]) linear_extrude(0.05) window();
   color("#c9a227") translate([0, 0, 0.45]) linear_extrude(0.05) {
@@ -513,14 +549,18 @@ assert(snap_len < bay_t - 0.3, "snap hooks reach the board");
 rib_free = [
   [-cell[0] / 2 - 0.5, cell_y - cell[1] / 2 - 0.5, cell[0] / 2 + 0.5, cell_y + cell[1] / 2 + 0.5],   // the cell
   [slot[0][0] - 1, slot[1][1] - 1, slot[1][0] + 1, cell_y - cell[1] / 2 + 1],                      // its plug and wires
-  [-6, spk_pos[1] + spk_d / 2 - 1, 6, spk_pos[1] + spk_d / 2 + 5],                                // speaker leads to J4
+  [spk_exit[0] - 1, spk_pos[1] - 3, spk_slot[1][0] + 1, spk_slot[1][1] + 1],                      // speaker leads to J4's hole
+  [spk_slot[0][0] - 1, spk_slot[1][1] - 1, spk_slot[1][0] + 1, spk_slot[0][1] + 1],                // and the hole itself
   [-10, seat_y - 14.5, 10, seat_y - 9.5],                                                         // TP1-TP5 on the back
   [usb_front - 8.5, usb_y - usb_tab_w / 2, board_w / 2 + usb_tab, usb_y + usb_tab_w / 2],         // J1's shell legs
 ];
 module rib_free2d() {
   for (r = rib_free) translate([r[0], r[1]]) square([r[2] - r[0], r[3] - r[1]]);
-  at(spk_pos) circle(d = spk_d + 1.0);
+  spk2d(1.2 + 0.5);
 }
+// the speaker's outline in the plan (grow: out from it), and the pad it lies on, out to the wall
+module spk2d(grow = 0) at(spk_pos) hull() for (s = [-1, 1]) translate([s * (spk[0] - spk[1]) / 2, 0]) circle(d = spk[1] + 2 * grow);
+module spk_pad2d() hull() { spk2d(1.2); translate([-case_w / 2, spk_pos[1] - spk[1] / 2 - 1.2]) square([1, spk[1] + 2.4]); }
 
 module tub() difference() {
   union() {
@@ -583,25 +623,40 @@ module tub() difference() {
       }
       rib_free2d();
     }
-    // feet
-    for (sx = [-1, 1], sy = [-1, 1]) at([sx * (case_w / 2 - 7), sy * (case_l / 2 - 9)], -0.8) cylinder(d = 6, h = 0.8 + 0.01);
+    // the speaker's pad (no feet any more, Alex 2026-10-20: the back lies on the table)
+    intersection() {
+      translate([0, 0, floor_t - 0.01]) linear_extrude(spk_pad + 0.01) spk_pad2d();
+      linear_extrude(case_h) rrect(case_w, case_l, corner_r);
+    }
   }
   // screws: a counterbore for the head from below, then clearance up through the boss
   for (s = pins) at(s, -1) { cylinder(d = screw_cb[0], h = 1 + screw_cb[1]); cylinder(d = screw_clear, h = z_board + 2); }
   // grooves for the lid's snap hooks
   for (h = hooks) at(h) rotate(h[2]) translate([-0.01, -(h[3] + 0.6) / 2, z_lid - snap_len + 0.1])
     cube([snap_barb + 0.1 + 0.01, h[3] + 0.6, snap_barb_h + 0.2]);
-  // speaker grille, under the speaker
-  for (i = [-2:2], j = [-2:2]) if (norm([i, j]) <= 2.2) at(spk_pos + [i * 2.4, j * 2.4], -2) cylinder(d = 1.4, h = floor_t + 3);
+  // the speaker's front chamber, under its face inside the foam ring, and its outlet: slots from
+  // the chamber's wall end out through the wall's rounded lower edge
+  translate([0, 0, spk_chamber]) linear_extrude(z_spk - spk_chamber + 0.01) spk2d(-spk_seal);
+  for (i = [0:spk_slots - 1]) let(y = spk_pos[1] + (i - (spk_slots - 1) / 2) * (spk_slot_w + 0.8))
+    translate([-case_w / 2 - 1, y - spk_slot_w / 2, spk_duct[0]])
+      cube([spk_pos[0] - spk[0] / 2 + spk_seal + 2 + case_w / 2 + 1, spk_slot_w, spk_duct[1] - spk_duct[0]]);
   // USB-C: the opening's lower half, and above it the notch the lid's tongue fills
   usb_opening();
-  translate([in_x - 0.01, usb_y - usb_tongue_w / 2, usb_zc]) cube([wall + 1, usb_tongue_w, case_h]);
+  usb_notch(0);
   // the slot the board's tab drops into
   if (usb_tab > 0) translate([in_x - 0.01, usb_y - usb_tab_w / 2 - usb_tab_fit, z_board - 0.3])
     cube([usb_tab - board_clear + usb_tab_fit + 0.01, usb_tab_w + 2 * usb_tab_fit, z_lid]);
 }
 
 usb_zc = z_top_cu + usb_h / 2;   // the port's centre
+// the notch in the tub wall over the port (fit 0: as cut from the tub) or the lid's tongue in it
+// (fit, lift: its clearance each side and below): full width in the wall's inner half, usb_step
+// narrower and higher in its outer half, so the tub frames the tongue outside
+module usb_notch(fit = 0, lift = 0) let(o = fit == 0 ? 0.01 : 0, w = usb_tongue_w - 2 * fit, up = fit == 0 ? 1 : 0) {
+  translate([in_x - o, usb_y - w / 2, usb_zc + lift]) cube([wall / 2 + 2 * o, w, case_h - usb_zc - lift + up]);
+  translate([in_x + wall / 2, usb_y - w / 2 + usb_step, usb_zc + usb_step + lift])
+    cube([wall / 2 + up, w - 2 * usb_step, case_h - usb_zc - usb_step - lift + up]);
+}
 module usb_opening() translate([in_x - 1, usb_y, usb_zc]) rotate([0, 90, 0])
   linear_extrude(wall + 2) rrect(usb_hole[1], usb_hole[0], usb_hole[2]);
 
@@ -712,9 +767,8 @@ module lid_body() difference() {
       linear_extrude(0.01) square(pocket + [2 * skin_min + 2 * j2_bump, 2 * skin_min + 2 * j2_bump], center = true);
       translate([0, 0, j2_bump]) linear_extrude(0.01) square(pocket + [2 * skin_min, 2 * skin_min], center = true);
     }
-    // the tongue that fills the tub's notch over the USB-C opening
-    translate([in_x, usb_y - usb_tongue_w / 2 + usb_fit, usb_zc + 0.1])        // up to the face, through the skin
-      cube([wall, usb_tongue_w - 2 * usb_fit, case_h - usb_zc - 0.1]);
+    // the tongue that fills the tub's notch over the USB-C opening, up to the face, through the skin
+    usb_notch(usb_fit, 0.1);
     // snap hooks, just inside the tub wall
     for (h = hooks) at(h) rotate(h[2]) snap_hook(h[3]);
     // the ribs that rest on the silicone pads (the pockets are cut below)
@@ -848,7 +902,7 @@ module silicone() {
 if (part == "3d") {
   color("#3a3a44") tub();
   color("#c9c9d1") translate([0, cell_y, floor_t]) linear_extrude(cell[2]) square([cell[0], cell[1]], center = true);
-  color("#b8912e") at(spk_pos, floor_t) cylinder(d = spk_d, h = spk_h);
+  color("#b8912e") translate([0, 0, z_spk]) linear_extrude(spk[2]) spk2d();
   board3d();
   color("#101014") translate([0, 0, z_glass]) linear_extrude(panel_t) square([panel_w, panel_l], center = true);
   color("#8f8f99") silicone();

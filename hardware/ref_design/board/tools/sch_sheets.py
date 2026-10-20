@@ -125,6 +125,7 @@ def audio():
     Jx = Ux + 45.72
     sh.heading(Jx - 12.7, Yc - 10.16, "Speaker J4")
     sh.place("J4", Jx, Yc, 0, f=(7.62, 1.27))
+    sh.nc("J4.MP")
     sh.wire("U7.5", "J4.1")
     sh.wire("U7.8", (Jx - 10.16, Uy + 2.54), (Jx - 10.16, Yc + 2.54), "J4.2", v=True)
     sh.text(17.78, 160.02, "AUDIO_PWM (GPIO8, PWM4 A, 8 bits: 586 kHz) through two RC stages (-3 dB ~14 kHz); gain 2 x R35/R34.")

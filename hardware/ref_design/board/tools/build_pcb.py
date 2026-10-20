@@ -5,7 +5,7 @@
 Starts from an empty 2-layer board every time:
   1. stack-up, design rules (JLCPCB 2-layer, every hole >= 0.3 mm: smaller ones cost
      extra), net classes
-  2. outline and battery cable slot from case/positions.json
+  2. outline and the cell and speaker plug holes from case/positions.json
   3. every footprint from KiCad's netlist, with its nets, fields and a link to
      its schematic symbol (so KiCad's DRC can check board against schematic)
   4. placement from placement.py
@@ -178,19 +178,20 @@ def outline(board):
         arc(board, (x1 - r, y1 - r), r, 0, 90)
         arc(board, (x0 + r, y1 - r), r, 90, 180)
         arc(board, (x0 + r, y0 + r), r, 180, 270)
-    # the board's one cutout (the cell's cable slot): round when its corners are
-    # rounded to half its side
-    (sx0, sy0), (sx1, sy1) = CASE["slot"]
-    r = CASE.get("slot_r", 0.6)
-    if abs(sx1 - sx0) <= 2 * r + 1e-6:
-        c = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_CIRCLE)
-        c.SetCenter(V((sx0 + sx1) / 2, (sy0 + sy1) / 2))
-        c.SetRadius(mm(r))
-        c.SetLayer(pcbnew.Edge_Cuts)
-        c.SetWidth(mm(0.1))
-        board.Add(c)
-    else:
-        rounded_rect(board, sx0, min(sy0, sy1), sx1, max(sy0, sy1), r)
+    # the board's cutouts, the holes the cell's and the speaker's plugs pass up through: round
+    # when their corners are rounded to half their side
+    for key in ("slot", "spk_slot"):
+        (sx0, sy0), (sx1, sy1) = CASE[key]
+        r = CASE.get("slot_r", 0.6)
+        if abs(sx1 - sx0) <= 2 * r + 1e-6:
+            c = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_CIRCLE)
+            c.SetCenter(V((sx0 + sx1) / 2, (sy0 + sy1) / 2))
+            c.SetRadius(mm(r))
+            c.SetLayer(pcbnew.Edge_Cuts)
+            c.SetWidth(mm(0.1))
+            board.Add(c)
+        else:
+            rounded_rect(board, sx0, min(sy0, sy1), sx1, max(sy0, sy1), r)
 
 
 def footprints(board, comps, nets, pins):

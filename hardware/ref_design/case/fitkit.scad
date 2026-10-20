@@ -64,9 +64,10 @@ module kit_plug() {                                // PicoBlade 51021-0200 plug,
   translate([plug_xs[0] / 2 - 1.3, plug_xs[1] / 2 - 0.5, plug_l]) cube([2.6, 1.0, 8]);
 }
 
-module kit_speaker() difference() {               // 15 mm speaker (ESTIMATE in case.scad)
-  cylinder(d = spk_d, h = spk_h, $fn = 96);
-  translate([spk_d / 2 - 2.5, -1.5, spk_h - 1]) cube([3, 3, 2]);                       // lead exit
+module kit_speaker() union() {                    // GSPK151035PN: 15 x 10 x 3.5 racetrack, face down
+  translate(-[spk_pos[0], spk_pos[1], 0]) linear_extrude(spk[2]) spk2d();
+  translate([-spk[0] / 2 - spk_tab, -1.5, spk[2] - 0.3]) cube([spk_tab + 0.5, 3, 0.3]);   // solder tab
+  translate([spk[0] / 2 - 0.5, -1.0, spk[2] - 1.6]) cube([2.5, 2.0, 1.2]);                  // lead exit
 }
 
 // ---------------- coupons: slices of the real case geometry, quick to print ----------------
@@ -74,8 +75,8 @@ function hook_near(p) = hooks[search(min([for (h = hooks) norm([h[0], h[1]] - p)
                                      [for (h = hooks) norm([h[0], h[1]] - p)])[0]];
 module snap_box(h) translate([h[0], h[1], -1]) rotate(h[2]) translate([-8, -14, 0]) cube([16, 28, case_h + 2]);
 module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the lid prints face down
-// the tub as it prints: without its four feet, so the floor sits flat on the bed
-module tub_flat() intersection() { tub(); translate([-200, -200, 0]) cube([400, 400, 100]); }
+// the tub as it prints, floor down (it has no feet since 2026-10-20, so that's the tub itself)
+module tub_flat() tub();
 
 band_y1 = -(bay_l / 2) + 2;                          // seat 1's end band: from the case end into the glass by 2 mm
 module band_box() translate([-case_w / 2 - 1, -case_l / 2 - 1, -1]) cube([case_w + 2, band_y1 + case_l / 2 + 1, case_h + 2]);

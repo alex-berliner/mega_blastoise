@@ -1,37 +1,57 @@
 {
  "ref": "J4",
- "mpn": "speaker wire pads (no part)",
+ "mpn": "532610271 (Molex PicoBlade 53261-0271, C177225)",
  "datasheet": [
-  "downloaded as FM8002A_lcsc.pdf"
+  "https://media.onlinecomponents.com/productfiles/mf-mol/mol-532610271-38993534.pdf",
+  "KiCad 10 Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal (generated from Molex's drawing)"
  ],
- "footprint": "battler:Speaker_Wire_Pads_P4.0mm",
+ "footprint": "Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal",
  "refs": [
   "J4"
  ],
  "pins": [
   {
    "pin": "1",
-   "ds_name": "speaker lead (VO1 side)",
-   "cite": "custom pad pair battler:Speaker_Wire_Pads_P4.0mm (no datasheet); FM8002A datasheet (C94625) pin table",
-   "quote": "FM8002A: \"5 VO1 O\" (output 1)",
+   "ds_name": "Circuit 1 (Molex defines no function) (speaker +)",
+   "cite": "Molex product record for 532610271 (OnlineComponents copy of molex.com, part status Active; sales drawing 532610271_sd.pdf not retrievable 2026-10-19); KiCad 10 Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal (generated from Molex's drawing)",
+   "quote": "\"1.25mm Pitch, PicoBlade PCB Header, Single Row, Right-Angle, Surface Mount ... 2 Circuits\"; \"Current - Maximum per Contact 1.0A\"",
    "symbol_name": "Pin_1",
+   "footprint_pad": "pad 1 at x=-0.625, y=-2.4 (rear row); MP tabs at x=+/-3.175, y=+0.5; mouth faces +y",
    "ok": true,
-   "issue": "U7 pin 5 (VO1) = SPK_P, R35 Rf from SPK_P to -IN (VO1 is the feedback output). BTL: speaker polarity only sets acoustic phase; no standard.",
+   "issue": "U7 pin 5 (VO1) = SPK_P; speaker red (+).",
    "nets": {
     "J4": "SPK_P"
    }
   },
   {
    "pin": "2",
-   "ds_name": "speaker lead (VO2 side)",
-   "cite": "as pin 1",
-   "quote": "FM8002A: \"8 VO2 O\" (output 2)",
+   "ds_name": "Circuit 2 (speaker -)",
+   "cite": "Molex product record for 532610271 (OnlineComponents copy of molex.com, part status Active; sales drawing 532610271_sd.pdf not retrievable 2026-10-19); KiCad 10 Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal (generated from Molex's drawing)",
+   "quote": "\"2 Circuits\"",
    "symbol_name": "Pin_2",
+   "footprint_pad": "pad 2 at x=+0.625",
    "ok": true,
-   "issue": "Neither lead may touch GND (BTL). PCB pads: 2x3 mm on 4 mm pitch, nets SPK_P/SPK_N as design.",
+   "issue": "U7 pin 8 (VO2) = SPK_N; speaker black (-). BTL: not GND.",
    "nets": {
     "J4": "SPK_N"
    }
+  },
+  {
+   "pin": "MP",
+   "ds_name": "Solder tabs (mechanical)",
+   "cite": "KiCad 10 Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal (generated from Molex's drawing)",
+   "quote": "footprint pads MP x2, 2.1 x 3.0 mm",
+   "symbol_name": "MountPin",
+   "footprint_pad": "2 x MP at x=+/-3.175, y=+0.5",
+   "ok": true,
+   "issue": "Left unconnected (mechanical only); fine.",
+   "nets": {
+    "J4": null
+   }
   }
+ ],
+ "notes": [
+  "2026-10-20 (Alex: no soldering at assembly): J4 was two wire pads for the speaker's leads; it is now J2's PicoBlade header, for INGHAi's GSPK151035PN speaker, whose leads end in a 1.25 mm 2-pin plug (datasheet: '35mm/1.25/2P').",
+  "Polarity: the amplifier is bridge-tied (FM8002A VO1/VO2), so the speaker's polarity only sets its acoustic phase. The speaker's red lead is its +; pin 1 is SPK_P (VO1). Neither pin may touch GND."
  ]
 }
