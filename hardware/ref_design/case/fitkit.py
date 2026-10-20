@@ -36,7 +36,7 @@ KIT = [  # (kit name, file, what it tests)
     ("tune_stack_abxy_board", "tune_stack_abxy_board.stl", "seat 1's A/B/X/Y: board slice with the contact rings"),
     ("tune_stack_ss_board", "tune_stack_ss_board.stl", "seat 1's Start/Select: board slice with the two small contacts"),
 ] + [(f"tune_stack_{c}_lid", f"tune_stack_{c}_lid_dome{d}.stl", f"its lid slice on legs, silicone height {d} mm",
-       {"dome_h": d}) for c in ("dpad", "abxy", "ss") for d in ("0.9", "1.2", "1.5")] + [
+       {"dome_h": d}) for c in ("dpad", "abxy", "ss") for d in ("1.45", "1.75", "2.05")] + [
     # (a fourth element: case.scad settings to render that coupon with, as openscad -D name=value)
     ("frame_lid", "coupon_frame_lid.stl", "the lid's window, ledge and panel frame"),
     # EXPERIMENT: seat 1's end with deck inserts (case.scad: deck_inserts), all printed without supports

@@ -67,11 +67,11 @@ cap_tab_r = 5.6;  cap_tab_w = 2.0;                      // each flange's keying 
 dpad_arm_l = 17.8;  dpad_arm_w = 5.9;  dpad_h = 3.34;   // D-pad cross
 dpad_flange_r = 6.5;                                    // its flange fills the corners between the arms
 flange_t = 0.55;                                        // both caps' flanges
-cap_hole_d = 7.6;  pocket_d = 9.2;  pocket_h = 1.4;     // lid: hole (the DS Lite's own 7.6; Pi Tin 7.34), flange pocket
+cap_hole_d = 7.6;  pocket_d = 9.2;                      // lid: hole (the DS Lite's own 7.6; Pi Tin 7.34), flange pocket
 dpad_gap = 0.8;           // D-pad opening past the cross each side: the DS Lite's 18.9 mm opening is 0.55, and
                           // 0.5 was too tight for Alex's AliExpress D-pad in the first print (tune: tune_openings)
 dpad_pocket_gap = 0.5;    // its flange's pocket past the flange (0.35 bound with the cross)
-dpad_lift = 0;            // raises (or, negative, lowers) the D-pad's retaining lip against the A/B/X/Y lips: the
+dpad_lift = 0.35;         // raises (or, negative, lowers) the D-pad's retaining lip against the A/B/X/Y lips: the
                           // D-pad sat at the wrong height in the first print (tune: tune_stack_dpad_*)
 slot_r = 5.95;  slot_a = 30;                            // tab slot in the pocket, a 30 degree wedge: the cap
                                                         // turns a few degrees at most, and the lid still goes on
@@ -86,9 +86,10 @@ abxy_tabs = [["A", [1, 0], 135], ["B", [0, -1], 225], ["X", [0, 1], 45], ["Y", [
 abxy_notches = [["A", [225]], ["B", [0, 180]], ["X", [225]], ["Y", [90, 180]]];
 notch_keys = true;
 notch_w = 0.8;  notch_reach = 0.45;                     // rib width, and how far it reaches in over the flange
-dome_h = 1.2;                                           // ESTIMATE: board to the flange's underside at rest.
-                                                        // 1.2, not 2.0: the DS Lite's own stack (board top about
-                                                        // 3.2 under a 1.45 mm face, see DSLITE.md) until measured
+dome_h = 1.75;                                          // board to the flange's underside at rest: DS Lite shells
+                                                        // stop the flanges 2.3 mm over the board (scan of an
+                                                        // aftermarket shell, Game Boy Macro and Macro F CAD all
+                                                        // agree, 2026-10-19); 1.2 left the silicone no room
 
 // ---------------- layout ----------------
 glass_side = 9.7;         // panel bay edge to long case edge: room for USB-C beside the glass
@@ -118,16 +119,29 @@ z_glass = z_top_cu + glass_gap;
 case_h = z_glass + panel_t + tape_t + face_t;
 z_lid = case_h - lid_t;                                 // lid underside (the panel's pocket goes higher)
 retainer_z = z_top_cu + dome_h + flange_t;              // the lip the flanges rest against
-// the lid comes down around the buttons to clamp the silicone sheet, as a DS Lite shell does:
-// the flanges travel in pockets pocket_h deep, so the sheet's top is pocket_h under the lip
-retainer_bot = retainer_z - pocket_h;
+// Under the deck, as in a DS Lite shell (measured from a scan of an aftermarket shell and the Game
+// Boy Macro faceplates, 2026-10-19): no solid block, just ribs that rest on each silicone pad's
+// flat web and locate it. A/B/X/Y: a ring round each flange pocket (the rings merge) and a walled
+// pocket for the pad's raised centre square; D-pad: a four-lobed ring round its pad (its cap's peg
+// through the pad's centre hole does the rest); Start/Select: a square frame round each cap.
+// Elsewhere the deck's underside clears the pads. The flange pockets run from the ribs' bottom up
+// to the lip. ESTIMATE until Alex measures his pads: the web (sil_rib_gap; the sources say 0.25
+// to 1.0, Macro F, a printed shell, uses 0.8)
+sil_rib_gap = 0.8;                                      // the ribs' bottom over the board: room for the web
+retainer_bot = z_top_cu + sil_rib_gap;
+pocket_h = retainer_z - retainer_bot;
+abxy_ring = 5.55;                                       // A/B/X/Y rings' outer radius, round each hole (scan, Macro)
+abxy_square = [5.15, 0.65, 2.1];                        // centre square's pocket: inside, wall, roof over the board
+dpad_ring = [4.95, 0.8, 7.0];                           // D-pad ring: lobe radius inside, width, waist radius
+ss_frame_w = 0.9;                                       // Start/Select frames' walls
 cap_top = retainer_z + cap_h - flange_t;                // at rest
 // Stepped ends: the lid face over the screen is set by the panel stack, which leaves genuine
 // caps below it. So each end drops to a button deck where the caps stand as on a DS Lite,
 // except a spine between the clusters (J2 and seat 1's screw boss sit under it), which stops
 // short of the end so Start and Select sit in the deck below it
-cap_proud = 1.3;                                        // above the deck, as a DS Lite (Pi Tin 1.3)
-deck_face = cap_top - cap_proud;                        // lip over the flanges: 1.71, a DS Lite's 1.68
+cap_proud = 1.85;                                       // above the deck: keeps the deck 3.46 over the board, a
+                                                        // DS Lite's 3.45 to 3.67 (Pi Tin's caps stand 1.3)
+deck_face = cap_top - cap_proud;                        // lip over the flanges: 1.16, DS Lite shells 1.08 to 1.25
 z_deck_lid = deck_face - lid_t;                         // deck underside; the tub's walls stop here
 step_y = bay_l / 2 + 2.4;                               // the step: clear of the panel and its FPC fold
 step_wall = 1.5;  spine_w = 13.0;  deck_r = 3;          // step wall, spine width, deck corner rounding
@@ -348,6 +362,19 @@ echo(str("STACK floor ", floor_t, " + cell ", cell[2], " + gap ", cell_gap, " + 
 module rrect(w, l, r) offset(r = r) square([w - 2 * r, l - 2 * r], center = true);
 module at(p, z = 0) translate([p[0], p[1], z]) children();
 module ring(t = 0.35) difference() { offset(r = t) children(); children(); }
+// the D-pad's pad as its ring sees it: a lobe round each dome and the waist between them
+module dpad_clover() union() {
+  circle(r = dpad_ring[2], $fn = 64);
+  for (t = [0:90:270]) rotate(t) translate([d, 0]) circle(r = dpad_ring[0], $fn = 48);
+}
+// a silicone pad's outline, at its cluster's centre: a lobe round each dome on the buttons' axes
+abxy_lobe_r = 6.0;  abxy_waist_r = 9.2;  dpad_lobe_r = 5.0;  dpad_waist_r = 7.9;   // ESTIMATE (HHL photos)
+ss_pad = [15.8, 8.0];
+module pad2d(c) let(dp = c == dpad1 || c == dpad2) union() {
+  circle(r = dp ? dpad_waist_r : abxy_waist_r, $fn = 64);
+  for (t = [0:90:270]) rotate(t) translate([(dp ? dpad_pitch : abxy_pitch) / 2, 0])
+    circle(r = dp ? dpad_lobe_r : abxy_lobe_r, $fn = 48);
+}
 module cross(w, l) union() { square([l, w], center = true); square([w, l], center = true); }
 module window() translate([0, aa_off]) square([aa_w + 2 * window_margin, aa_l + 2 * window_margin], center = true);
 // the two lowered decks at each end (past the case outline; intersect with it), and the
@@ -597,9 +624,15 @@ module lid_body() difference() {
       cube([wall, usb_tongue_w - 2 * usb_fit, z_lid - usb_zc - 0.1 + 0.01]);
     // snap hooks, just inside the tub wall
     for (h = hooks) at(h) rotate(h[2]) snap_hook(h[3]);
-    // button retainers: the lid comes down to the cap flanges around each cluster
-    for (c = clusters) at(c, retainer_bot) cylinder(d = piece_d + 1, h = z_lid - retainer_bot + 0.01);
-    for (c = ss_centres) at(c, retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01) rrect(ss_mem[0] + 1.5, ss_mem[1] + 1.5, 2);
+    // the ribs that rest on the silicone pads (the pockets are cut below)
+    for (c = [abxy1, abxy2]) at(c, retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01) union() {
+      for (t = [0:90:270]) rotate(t) translate([a, 0]) circle(r = abxy_ring, $fn = 64);
+      square(abxy_square[0] + 2 * abxy_square[1], center = true);
+    }
+    for (c = [dpad1, dpad2]) at(c, retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01)
+      difference() { offset(r = dpad_ring[1]) dpad_clover(); dpad_clover(); }
+    for (b = ss_buttons) at(b[2], retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01)
+      square(ss_flange_d + 0.4 + 2 * ss_frame_w, center = true);
     // pinhole guides reach down towards the switches
     for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_lid - z_top_cu - 2.4 + 0.01);
     // panel locating frame
@@ -631,6 +664,8 @@ module lid_body() difference() {
     cylinder(d = ss_cap_d + 2 * ss_gap, h = case_h);
     cylinder(d = ss_flange_d + 0.4, h = pocket_h + 0.01);
   }
+  for (c = [abxy1, abxy2]) at(c, retainer_bot - 0.01)                        // the A/B/X/Y pad's centre square
+    linear_extrude(z_top_cu + abxy_square[2] - retainer_bot + 0.01) square(abxy_square[0], center = true);
   // pilot holes for the screws
   for (s = pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
   // pinholes, battery connector pocket

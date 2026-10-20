@@ -30,9 +30,9 @@ module kit_board() difference() {
     for (b = buttons) at(b[2]) groove() { ring(0.4) circle(r = 2.26, $fn = 48); circle(d = 0.8, $fn = 16); }
     // Start/Select: the small contacts and each membrane's outline (ESTIMATE in case.scad: ss_mem)
     for (b = ss_buttons) at(b[2]) groove() { ring(0.4) circle(r = 1.8, $fn = 40); circle(d = 0.8, $fn = 16); }
-    for (c = ss_centres) at(c) groove() ring(0.4) rrect(ss_mem[0], ss_mem[1], 2);
-    // each silicone piece's outline (ESTIMATE in case.scad: piece_d)
-    for (c = clusters) at(c) groove() ring(0.4) circle(d = piece_d, $fn = 96);
+    for (c = ss_centres) at(c) groove() ring(0.4) rrect(ss_pad[0], ss_pad[1], 2);
+    // each silicone pad's outline, where it goes (ESTIMATE in case.scad: pad2d)
+    for (c = clusters) at(c) groove() ring(0.4) pad2d(c);
     // J3: tape a real Hirose FH12-50S on this outline (mouth towards seat 1, pin 1 marked)
     for (p = KIT_PARTS) if (p[0] == "J3") {
       groove() translate([p[1], p[2]]) ring(0.4) square([p[3] - p[1], p[4] - p[2]]);

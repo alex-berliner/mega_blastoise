@@ -52,9 +52,9 @@ PLATES = {
                ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
     "2_buttons_quick": [("tune_openings", f"{KIT}/tune_openings.stl")] +
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
-        [(f"tune_stack_{c}_lid_dome1.2", f"{KIT}/tune_stack_{c}_lid_dome1.2.stl") for c in ("dpad", "abxy", "ss")],
+        [(f"tune_stack_{c}_lid_dome1.75", f"{KIT}/tune_stack_{c}_lid_dome1.75.stl") for c in ("dpad", "abxy", "ss")],
     "3_buttons_heights": [(f"tune_stack_{c}_lid_dome{d}", f"{KIT}/tune_stack_{c}_lid_dome{d}.stl")
-                          for c in ("dpad", "abxy", "ss") for d in ("0.9", "1.5")],
+                          for c in ("dpad", "abxy", "ss") for d in ("1.45", "2.05")],
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
                       ("usb_tub", "usb_lid", "usb_board", "snap_tub", "snap_lid", "frame_lid",
                        "buttons_tub", "buttons_board", "buttons_lid")],

@@ -36,7 +36,7 @@ panel_w, panel_l = 54.5, 83.0
 cell = (34, 50, cell_y := -17)
 spk = ((0, 26), 15, 4.0)
 board_w, board_l, board_r = POS["board"]["w"], POS["board"]["l"], POS["board"]["r"]
-dome_h, flange_t, cap_h, cap_d, flange_d = 1.2, 0.55, 3.56, 7.0, 8.8
+dome_h, flange_t, cap_h, cap_d, flange_d = 1.75, 0.55, 3.56, 7.0, 8.8
 dpad_l, dpad_w, dpad_h, dpad_fr = 17.8, 5.9, 3.34, 6.5
 piece_d = POS["piece_d"]
 
@@ -207,7 +207,7 @@ def section(x, tub, lid, face_t, j2_h, title):
     for i in (0, 2):
         if abs(x - CLUSTERS[i][0]) < dpad_w / 2:
             name("D-pad", CLUSTERS[i][1], z_top + dome_h + 1.2)
-    deck = z_top + dome_h + cap_h - 1.3
+    deck = z_top + dome_h + cap_h - 1.85
     dims = []
     if x != 0.0:
         dims.append(("ridge", -48.0, deck, case_h))
