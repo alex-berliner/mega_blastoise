@@ -70,7 +70,9 @@ spk_chamber = 0.8;                                      // the front chamber's f
 spk_duct = [0.8, 1.6];  spk_slots = 3;  spk_slot_w = 1.8;   // the outlet: its z range, its slots
 
 abxy_pitch = 15.0;  dpad_pitch = 14.0;                  // DS Lite (gerbers)
-piece_d = 26;                                           // ESTIMATE: silicone piece outline
+piece_d = 26;                                           // the layout's envelope for a silicone piece (Alex's pads,
+                                                        // 2026-10-20: A/B/X/Y 26.5 across its lobes, D-pad 24;
+                                                        // pad2d below has their real outlines)
 // Genuine DS Lite caps, measured from open models of them and of shells built for them
 // (jackw01/pi-tin, CERN-OHL-W; Printables 1178557, 205921, 986494): see case/DSLITE.md
 cap_abxy_d = 7.0;  cap_flange_d = 8.8;  cap_h = 3.56;  // ABXY: body, flange, flange bottom to top
@@ -145,14 +147,20 @@ retainer_z = z_top_cu + dome_h + flange_t;              // the lip the flanges r
 // pocket for the pad's raised centre square; D-pad: a four-lobed ring round its pad (its cap's peg
 // through the pad's centre hole does the rest); Start/Select: a square frame round each cap.
 // Elsewhere the deck's underside clears the pads. The flange pockets run from the ribs' bottom up
-// to the lip. ESTIMATE until Alex measures his pads: the web (sil_rib_gap; the sources say 0.25
-// to 1.0, Macro F, a printed shell, uses 0.8)
+// to the lip. Alex's pads (2026-10-20) have a 0.65 web and a rim 0.4 wide and 1.8 tall round
+// their outer edge, as the DS Lite's shell expects: its clover wall (1.8 thick) stands inside the
+// rim. So the A/B/X/Y rings stay inside the rim, the D-pad's ring stands just outside its pad,
+// and the deck's underside lifts over each pad (rim_relief) so nothing presses on a rim
 sil_rib_gap = 0.8;                                      // the ribs' bottom over the board: room for the web
+rim_relief = 0.15;                                      // the deck's underside over a pad: the rim's top, plus this
 retainer_bot = z_top_cu + sil_rib_gap;
 pocket_h = retainer_z - retainer_bot;
-abxy_ring = 5.55;                                       // A/B/X/Y rings' outer radius, round each hole (scan, Macro)
+abxy_ring = 5.25;                                       // A/B/X/Y rings' outer radius, round each hole: inside the
+                                                        // pad's rim (5.55 from the scan and the Macro sat on it)
 abxy_square = [5.15, 0.65, 2.1];                        // centre square's pocket: inside, wall, roof over the board
-dpad_ring = [4.95, 0.8, 7.0];                           // D-pad ring: lobe radius inside, width, waist radius
+dpad_ring = [5.15, 0.8, 7.95];                          // D-pad ring: lobe radius inside, width, waist radius: just
+                                                        // outside the pad, holding it by its rim (inside the rim
+                                                        // there's 0.3 between the rim and the flange's pocket)
 ss_frame_w = 0.9;                                       // Start/Select frames' walls
 ss_cell = 6.4;            // each frame's square cell, for the cap's flange and the pad's square well (DS: 5.4 for a
                           // 5.0 flange; ss_flange_d here is an ESTIMATE)
@@ -368,6 +376,11 @@ assert(ss_gap >= 0.15 && ss_gap <= 0.5, "Start/Select hole clearance out of rang
 assert(pocket_d >= cap_flange_d + 0.3, "A/B/X/Y flanges bind in their pockets");
 assert(ss_cell >= ss_flange_d + 0.3 && ss_cell >= ss_well[0] + 0.2, "Start/Select cells too small for the flange or the pad's well");
 assert(abxy_ring >= pocket_d / 2 + 0.6, "A/B/X/Y rings too thin to print");
+assert(abxy_ring <= abxy_lobe_r - sil_rim[0] - 0.1, "the A/B/X/Y rings land on the pad's rim");
+assert(dpad_ring[0] >= dpad_lobe_r + 0.15 && dpad_ring[2] >= dpad_waist_r + 0.15 - 1e-6, "the D-pad's ring lands on its pad's rim");
+assert(dpad_ring[2] >= dpad_flange_r + dpad_pocket_gap, "the D-pad's ring cuts into its flange's pocket");
+assert(z_top_cu + sil_rim[1] + rim_relief <= deck_face - 1.2, "the deck over the pads' rims is too thin");
+assert(dpad_peg_d <= dpad_hole_d - 0.2 + 1e-6, "the D-pad's peg doesn't pass through its pad's hole");
 assert(abxy_square[0] >= abxy_boss[0] + 0.1 && abxy_square[2] >= abxy_boss[1] + 0.05, "the A/B/X/Y pad's centre square doesn't fit its pocket");
 assert(dpad_peg_gap >= 0, "the D-pad's peg holds its flange off the lip");
 assert(z_deck_lid > retainer_bot + 0.5, "button deck lower than the retainers");
@@ -447,7 +460,8 @@ module dpad_clover() union() {
   for (t = [0:90:270]) rotate(t) translate([d, 0]) circle(r = dpad_ring[0], $fn = 48);
 }
 // a silicone pad's outline, at its cluster's centre: a lobe round each dome on the buttons' axes
-abxy_lobe_r = 6.0;  abxy_waist_r = 9.2;  dpad_lobe_r = 5.0;  dpad_waist_r = 7.9;   // ESTIMATE (HHL photos)
+// measured (Alex, 2026-10-20): across the lobes A/B/X/Y 26.5 and D-pad 24, notch to notch 17.5 and 15.6
+abxy_lobe_r = 5.75;  abxy_waist_r = 8.75;  dpad_lobe_r = 5.0;  dpad_waist_r = 7.8;
 ss_pad = [15.8, 8.0];
 module pad2d(c) let(dp = c == dpad1 || c == dpad2) union() {
   circle(r = dp ? dpad_waist_r : abxy_waist_r, $fn = 64);
@@ -811,6 +825,13 @@ module lid_body() difference() {
     cylinder(d = ss_cap_d + 2 * ss_gap, h = case_h);
     translate([0, 0, (pocket_h + 0.02) / 2]) cube([ss_cell, ss_cell, pocket_h + 0.02], center = true);
   }
+  // over each pad, the deck's underside up past the rim, round the rings
+  for (c = [abxy1, abxy2]) at(c, z_top_cu) linear_extrude(sil_rim[1] + rim_relief) difference() {
+    offset(r = rim_relief) pad2d(c);
+    for (t = [0:90:270]) rotate(t) translate([a, 0]) circle(r = abxy_ring, $fn = 64);
+    square(abxy_square[0] + 2 * abxy_square[1], center = true);
+  }
+  for (c = [dpad1, dpad2]) at(c, z_top_cu) linear_extrude(sil_rim[1] + rim_relief) dpad_clover();
   for (c = [abxy1, abxy2]) at(c, retainer_bot - 0.01)                        // the A/B/X/Y pad's centre square
     linear_extrude(z_top_cu + abxy_square[2] - retainer_bot + 0.01) square(abxy_square[0], center = true);
   // pilot holes for the screws
@@ -838,12 +859,12 @@ module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_
 // The caps at rest (flanges up against the lip). Pressed (press = true): A/B/X/Y and Start/Select
 // straight down dome_travel; the D-pad tilted toward dpad_dir (degrees, seat frame), rocking on its
 // flange's far edge until the pressed side has gone down dome_travel over its dome(s)
-module caps(press = false, dpad_dir = 0) {
+module caps(press = false, dpad_dir = 0, which = "all") {    // which: "all", "abxy", "ss" or "dpad"
   z0 = retainer_z - flange_t;
   dz = press ? -dome_travel : 0;
-  for (k = abxy_keys()) at(k[0], z0 + dz) rotate(k[1]) abxy_cap(k[2]);
-  for (b = ss_buttons) at(b[2], z0 + dz) ss_cap();
-  for (c = [dpad1, dpad2]) at(c, z0 + dpad_lift) rotate(c == dpad2 ? 180 : 0) dpad_tilt(press ? dpad_dir : undef) dpad_cap();
+  if (which == "all" || which == "abxy") for (k = abxy_keys()) at(k[0], z0 + dz) rotate(k[1]) abxy_cap(k[2]);
+  if (which == "all" || which == "ss") for (b = ss_buttons) at(b[2], z0 + dz) ss_cap();
+  if (which == "all" || which == "dpad") for (c = [dpad1, dpad2]) at(c, z0 + dpad_lift) rotate(c == dpad2 ? 180 : 0) dpad_tilt(press ? dpad_dir : undef) dpad_cap();
 }
 module abxy_cap(notches) {
   difference() {                                        // the flange, less its keying notches
@@ -852,6 +873,7 @@ module abxy_cap(notches) {
   }
   translate([0, -cap_tab_w / 2, 0]) cube([cap_tab_r, cap_tab_w, flange_t]);
   cylinder(d = cap_abxy_d, h = cap_h, $fn = 48);
+  translate([0, 0, -cap_stem[1]]) cylinder(d = cap_stem[0], h = cap_stem[1] + 0.01, $fn = 32);   // its stem
 }
 module ss_cap() { cylinder(d = ss_flange_d, h = flange_t, $fn = 48); cylinder(d = ss_cap_d, h = ss_cap_h, $fn = 48); }
 // the D-pad, its flange's underside at z 0; its pivot peg stops dpad_peg_gap over the board
@@ -868,33 +890,59 @@ module dpad_tilt(dir) if (is_undef(dir)) children(); else
       reach = diag ? d * cos(45) : d, a = atan(dome_travel / (back + reach)), u = [cos(dir), sin(dir)])
     translate([-back * u[0], -back * u[1], flange_t]) rotate(a = a, v = [-u[1], u[0], 0])
       translate([back * u[0], back * u[1], -flange_t]) children();
-// The silicone pads, for pictures and fit checks only (nothing is printed from them). ESTIMATES
-// until Alex measures his pads: web, domes, the A/B/X/Y centre square, the Start/Select wells,
-// and how far a cap travels before its pill closes on the board (a DS Lite's stroke is about
-// twice an original DS's tact switches: 0.5 to 1 mm, dossier section 2)
+// The silicone pads, for pictures and fit checks only (nothing is printed from them). Alex measured
+// his A/B/X/Y and D-pad pads (2026-10-20): outlines, web, rim, plungers, the centre square, the
+// D-pad's hole and its collar's height, the domes' free height and the carbon nub. Still ESTIMATES:
+// the D-pad collar's width, the dome skirts, the Start/Select pad and its wells, and how far a cap
+// travels before its pill closes on the board (a DS Lite's stroke is about twice an original DS's
+// tact switches: 0.5 to 1 mm, dossier section 2)
 dome_travel = 1.0;
 dpad_peg_gap = 0.2;                                     // the D-pad's peg over the board at rest
-dpad_peg_d = 2.4;                                       // under 2.5: Pi Tin's pad hole fits over the genuine peg
-sil_web_t = 0.6;  dome_base_d = 6.0;  plunger_d = 3.2;  // pad web; each dome's skirt and plunger (HHL photo)
-dpad_hole_d = 3.0;                                      // the D-pad pad's centre hole
-abxy_boss = [5.0, 2.0];                                 // A/B/X/Y centre square: side, top over the board
+dpad_peg_d = 2.2;                                       // ESTIMATE: through the pad's 2.4 hole (Alex's pads,
+                                                        // 2026-10-20; was 2.4, under Pi Tin's 2.5 hole)
+sil_web_t = 0.65;  plunger_d = 4.0;                    // measured: the pad's web; each dome's flat top
+dome_base_d = 6.0;                                      // ESTIMATE: each dome's skirt (HHL photo)
+sil_rim = [0.4, 1.8];                                   // measured: the rim round each pad's outer edge: width, height
+dpad_hole_d = 2.4;                                      // measured: the D-pad pad's centre hole, through its collar
+dpad_collar = [3.3, 1.7];                               // measured: that collar's outside at its top (its base may be
+                                                        // wider), and its height
+abxy_boss = [4.9, 1.7];                                 // measured: A/B/X/Y centre square: side, top over the board
+nub_d = 1.5;                                            // measured: each dome's carbon nub
+// measured: each dome's free height, table to its top: D-pad 2.3, A/B/X/Y 2.8. The model still
+// draws the domes at dome_h, where the flanges sit. Whether a real cap is hollow underneath (the
+// plunger rises into it) or presses the dome down by the difference is open: check a cap's underside
+dome_free = [2.3, 2.8];
+// measured: each A/B/X/Y cap's stem under its flange, which presses its dome: diameter, length.
+// At rest it reaches dome_h - 1.3 = 0.45 over the board, through a 2.8 dome drawn at dome_h; unless
+// each dome's top has a recess the stem fits in (Alex is checking), the flanges must sit higher
+cap_stem = [2.4, 1.3];
 ss_well = [5.6, 0.5, 1.4];                              // Start/Select plunger wells: outside, wall, top over the board
 module dome(h) { cylinder(d1 = dome_base_d, d2 = plunger_d + 0.6, h = h - 0.4, $fn = 40);
                  cylinder(d = plunger_d, h = h, $fn = 32); }
-module silicone() {
+// a pad's rim, round its outer edge
+module rim2d(c) difference() { pad2d(c); offset(delta = -sil_rim[0]) pad2d(c); }
+// domes = false leaves the domes out: a pressed cap squashes its dome, so a check of pressed caps
+// against the pads looks at everything else
+module silicone(domes = true) {
   for (c = [abxy1, abxy2]) at(c, z_top_cu) {
     linear_extrude(sil_web_t) pad2d(c);
-    for (t = [0:90:270]) rotate(t) translate([a, 0, 0]) dome(dome_h);
+    linear_extrude(sil_rim[1]) rim2d(c);
+    if (domes) for (t = [0:90:270]) rotate(t) translate([a, 0, 0]) dome(dome_h);
     difference() { translate([0, 0, abxy_boss[1] / 2]) cube([abxy_boss[0], abxy_boss[0], abxy_boss[1]], center = true);
                    translate([0, 0, -0.01]) cube([abxy_boss[0] - 1.2, abxy_boss[0] - 1.2, 2 * abxy_boss[1] - 1.2], center = true); }
   }
   for (c = [dpad1, dpad2]) at(c, z_top_cu) difference() {
-    union() { linear_extrude(sil_web_t) pad2d(c); for (t = [0:90:270]) rotate(t) translate([d, 0, 0]) dome(dome_h); }
+    union() {
+      linear_extrude(sil_web_t) pad2d(c);
+      linear_extrude(sil_rim[1]) rim2d(c);
+      cylinder(d = dpad_collar[0], h = dpad_collar[1], $fn = 48);
+      if (domes) for (t = [0:90:270]) rotate(t) translate([d, 0, 0]) dome(dome_h);
+    }
     translate([0, 0, -1]) cylinder(d = dpad_hole_d, h = 3, $fn = 32);
   }
   for (c = ss_centres) at(c, z_top_cu) linear_extrude(sil_web_t) rrect(ss_pad[0], ss_pad[1], 2);
   for (b = ss_buttons) at(b[2], z_top_cu) {
-    dome(dome_h);
+    if (domes) dome(dome_h);
     linear_extrude(ss_well[2]) difference() { square(ss_well[0], center = true); square(ss_well[0] - 2 * ss_well[1], center = true); }
   }
 }

@@ -4,8 +4,9 @@
 Renders case/check_buttons.scad: the pads must clear the lid (and the deck insert, with
 deck_inserts), every cap must sit at rest and press (A/B/X/Y and Start/Select straight down
 dome_travel, the D-pad rocked toward each of its 8 directions) without touching the shell, and at
-rest the caps may only touch the domes (no preload). Both the deck inserts (the main build) and
-the one-piece lid are checked.
+rest the caps may only touch the domes (no preload), and pressed caps must miss the pads' rims,
+the D-pad's collar and the A/B/X/Y centre square (pressed_silicone, the domes left out: a pressed
+cap squashes its dome). Both the deck inserts (the main build) and the one-piece lid are checked.
 
     python3 case/check_buttons.py                       # every check, both lids
     python3 case/check_buttons.py silicone_shell -D sil_rib_gap=0.5   # some checks, with a setting changed
@@ -22,7 +23,9 @@ SCAD = os.path.join(HERE, "check_buttons.scad")
 TOUCH = 0.01                        # mm^3 two parts may share and still only be touching
 
 CHECKS = [(c, {}) for c in ("silicone_shell", "caps_shell", "caps_silicone", "silicone_tub")] + \
-         [("pressed_shell", {"dpad_dir": d}) for d in range(0, 360, 45)]
+         [("pressed_shell", {"dpad_dir": d}) for d in range(0, 360, 45)] + \
+         [("pressed_silicone", {"which": '"abxy"'}), ("pressed_silicone", {"which": '"ss"'})] + \
+         [("pressed_silicone", {"which": '"dpad"', "dpad_dir": d}) for d in range(0, 360, 45)]
 
 
 def volume(stl):
@@ -68,14 +71,15 @@ def main():
         else:
             only.append(a)
     jobs = [(c, ins) for ins in (False, True) for c in CHECKS
-            if not (ins and c[0] in ("caps_silicone", "silicone_tub"))      # those don't depend on the lid
+            if not (ins and c[0] in ("caps_silicone", "silicone_tub", "pressed_silicone"))   # those don't depend on the lid
             and (not only or c[0] in only)]
     with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
         results = list(pool.map(run, jobs))
     bad = 0
     print("Button stack check (seat 1; seat 2 is the same turned round)")
     for ((check, defs), ins), vol, err in results:
-        what = check + (f" D-pad {defs['dpad_dir']} deg" if defs else "") + ("  [deck inserts]" if ins else "")
+        what = check + (f" {defs['which'].strip(chr(34))}" if "which" in defs else "") + \
+            (f" D-pad {defs['dpad_dir']} deg" if "dpad_dir" in defs else "") + ("  [deck inserts]" if ins else "")
         if vol is None:
             bad += 1
             print(f"  FAIL  {what}: openscad error\n{err}")

@@ -100,6 +100,17 @@ Later (Alex: wait until the other edits settle):
 - [ ] End bezels: seat 1's 10.1 mm against seat 2's 5.5 (the panel's own border is 7.06 against
       2.5); matching them makes the case 4.6 mm longer (tabled 2026-10-20)
 
+Buttons (from Alex's pad measurements, 2026-10-20; check_buttons fails on these until they're settled):
+- [ ] A/B/X/Y stems against the domes: a cap resting at dome_h puts its 1.3 mm stem's tip 0.45 mm over
+      the board, so a 2.8 mm dome would be pushed down about 2.35 mm at rest (caps_silicone, pressed
+      A/B/X/Y). Either each dome's top has a recess the stem fits (Alex checking), or the flanges must
+      sit higher (dome_h, the deck and the tuning heights move)
+- [ ] D-pad pivot: rocked on its far edge (our model), the D-pad's flange sinks 0.16 to 0.17 mm into the
+      pad's 1.7 mm centre collar in every direction (pressed_silicone D-pad). A DS Lite D-pad probably
+      pivots on that collar: model the pivot on it (dpad_lift, dpad_tilt) once the collar is measured
+- [ ] Start/Select: pressed, the cap's flange meets the pad's estimated wells (pressed_silicone ss).
+      Settle it with the Start/Select pad's measurements
+
 Housekeeping:
 - [ ] Delete branch ref-design-j2-hole: its commit went in as 4241580 by cherry-pick, so `git branch -d` refuses
 - [ ] Alex's main checkout (~/Code/mega_blastoise) is still at 76955d2 with uncommitted changes,
@@ -107,7 +118,12 @@ Housekeeping:
 
 ## Measure before ordering
 
-- DS Lite silicone piece outline and cap sizes (pads and caps ordered)
+- DS Lite silicone pads: A/B/X/Y and D-pad measured (Alex, 2026-10-20: outlines, 0.65 web, rim 0.4 x 1.8,
+  4.0 plungers, 4.9 x 1.7 centre square, D-pad collar 3.3 wide at the top x 1.7 round a 2.4 hole, free
+  domes D-pad 2.3 and A/B/X/Y 2.8, 1.5 nubs; A/B/X/Y caps' stems 2.4 x 1.3). Still open: the
+  Start/Select pad (outline, dome spacing, wells); the D-pad collar's base width; whether each dome's
+  top has a recess for the cap's stem; the gap under the nub; the caps' flange thickness; and the
+  DS Lite shell's clover (10.45 across one opening, wall 1.8 thick?)
 - An ER-TFT035IPS-6 against its drawing: outline, that its folded FPC reaches J3 with a little slack, and that contact 1 lands on J3's pin 50 (the right end seen from above, seat 1 nearest)
 - The 403450 cell: length with its protection board, plug polarity
 - A printed tub and lid: the snap fit

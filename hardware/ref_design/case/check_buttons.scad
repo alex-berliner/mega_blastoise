@@ -5,6 +5,7 @@ include <case.scad>
 
 check = "none";
 dpad_dir = 0;
+which = "all";
 module seat1() translate([-case_w, -case_l, -5]) cube([2 * case_w, case_l - bay_l / 2 + 2, case_h + 10]);   // y up to the glass
 // the shell over the buttons: the lid, and with deck_inserts the insert
 module shell() intersection() { seat1(); union() { lid(); if (deck_inserts) deck_insert(-1); } }
@@ -15,3 +16,6 @@ if (check == "caps_shell")     intersection() { shell(); seat() caps(); }
 if (check == "pressed_shell")  intersection() { shell(); seat() caps(press = true, dpad_dir = dpad_dir); }
 if (check == "caps_silicone")  intersection() { seat() caps(); seat() silicone(); }
 if (check == "silicone_tub")   intersection() { seat() tub(); seat() silicone(); }
+// pressed caps against the pads, the domes left out (a pressed cap squashes its dome): the rims,
+// the D-pad's collar, the A/B/X/Y centre square, the web
+if (check == "pressed_silicone") intersection() { seat() caps(press = true, dpad_dir = dpad_dir, which = which); seat() silicone(domes = false); }
