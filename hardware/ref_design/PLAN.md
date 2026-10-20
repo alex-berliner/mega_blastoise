@@ -20,7 +20,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | Backlight | 6 LEDs in parallel on two cathode pins, anode on VSYS; a linear current sink per pin (MCP6002 + AO3400A + 2.2 ohm), set by one GPIO's filtered PWM | constant current down to the 3.5 V cutoff, DC in the LEDs, all Basic/Preferred parts; replaced the AP3156 charge pump, out of stock on 2026-10-07 (stability simulated: board/sim/backlight.py) |
 | MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board); no flash chip to route |
 | Charger | TP4056 at 500 mA, TEMP on a board NTC over the cell (1-46 C); USB load sharing (B5819W, AO3401A, BAT54WS gate feed, 22 uF on VSYS; a second B5819W across the AO3401A carries the unplug gap); 2.2 ohm in series with the input cap against hot-plug ringing | a fifth of the BQ24074's price, no stock risk; the NTC added on request (Extended part, $3 an order) |
-| Cell | 403450, about 700 mAh, Molex PicoBlade (MX1.25) plug into a 3.4 mm J2 (JST PH until 2026-10-19: too tall for the lowered lid), under the board on the tub's floor | 13.4 mm at the screen (the panel sits in a pocket in the lid, 2026-10-19), 11.1 at the ends; the plug passes up through a 5.5 x 4.5 mm hole in front of J2; chosen over the cell on the board under the screen (13.9 mm, 7.9: branch ref-design-cell-on-board) (Alex, 2026-10-09) |
+| Cell | 403450, about 700 mAh, Molex PicoBlade (MX1.25) plug into a 3.4 mm J2 (JST PH until 2026-10-19: too tall for the lowered lid), under the board on the tub's floor | 13.4 mm at the screen (the panel sits in a pocket in the lid, 2026-10-19), 11.1 at the ends; the plug passes up through a 5.45 x 4.4 mm hole a plug's length (5.5 mm) past J2's mouth, the cell 5 mm towards seat 2 to make room (Alex, 2026-10-20: the plug had to double over into J2); chosen over the cell on the board under the screen (13.9 mm, 7.9: branch ref-design-cell-on-board) (Alex, 2026-10-09) |
 | 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at 3.5 V as computed (the ADC reads against 3V3, which follows the cell once the LDO drops out) |
 | Audio | PWM (GPIO8, 8 bits at 586 kHz) through two RC stages (1k, 4.7 nF; -3 dB about 14 kHz) into an FM8002A, gain 2 | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
 | Buttons | 16 x DSL_button_4ring (D-pads, A/B/X/Y) and 4 x DSL_button_3ring (each seat's Start and Select, under the DS Lite kit's Start/Select membrane, between the clusters at the case's end), direct GPIO, internal pull-ups; seat 1's Start is also the power button | no matrix; no side switch (approved); Start/Select added and power moved off Y (Alex, 2026-10-19) |
@@ -82,7 +82,7 @@ Next:
       shows through (Alex). Check the tongue's thickness above the opening and at the outer face
       (the lid's outline sits tub_lip + seam_fit inside the case's, so the tongue may stop short
       of the surface), then thicken it or let the tub's skin close over it
-- [ ] PLAN.md's Cell row still describes the plug hole "in front of J2": it now sits a plug's length
+- [x] PLAN.md's Cell row still describes the plug hole "in front of J2": it now sits a plug's length
       past J2 (5.5 mm, the cell 5 mm towards seat 2)
 
 Later (Alex: wait until the other edits settle):
