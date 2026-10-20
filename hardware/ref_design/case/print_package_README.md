@@ -6,22 +6,32 @@ flush USB-C).
 
 ## The projects
 
+<!-- printer -->
 Each `.3mf` is a Snapmaker Orca project built from your `fit_test_v5.3mf`, so it keeps that
-project's printer and settings: Snapmaker U1, 0.20 mm Standard, PLA on toolhead 2, PETG support
-interface on toolhead 1, textured PEI, auto supports. Open it, check the plate, slice.
+project's printer and settings: Snapmaker U1, 0.20 mm Standard, textured PEI. PLA only, on
+toolhead 2: no PETG, no second toolhead, no prime tower. Open it, check the plate, slice.
+(`mega_blastoise_print_P1S.zip` has the same plates sliced for a Bambu Lab P1S.)
+
+Supports are on only for `1_case` and `4_fit_coupons`, measured part by part (see below).
+<!-- /printer -->
 
 | Project | What's on it | Print it |
 |---|---|---|
 | `2_buttons_quick.3mf` | **Start here (about an hour).** `tune_openings` (three D-pad opening sizes, the keyed A/B/X/Y cluster, three hole sizes), and the D-pad, A/B/X/Y and Start/Select stacks: a board slice each and a lid slice at the 1.75 mm silicone height | first |
 | `3_buttons_heights.3mf` | the same three lid slices at 1.6 and 1.9 mm silicone height | if the 1.75 mm lids don't sit right |
-| `0_buttons_end.3mf` | Seat 1's whole end: tub, board mock (to place the silicone on), lid, deck insert. Supports off. `0_buttons_end_P1S.3mf` is the same plate as a Bambu Studio project for a P1S (PLA only) | any time |
+| `0_buttons_end.3mf` | Seat 1's whole end: tub, board mock (to place the silicone on), lid, deck insert | any time |
 | `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid, insert) | second |
 | `1_case.3mf` | the tub, the lid, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
-| `1_case_inserts.3mf` | the two deck inserts (the same part, one for each end). Supports off | with `1_case` |
+| `1_case_inserts.3mf` | the two deck inserts (the same part, one for each end) | with `1_case` |
 
-The lid, the deck inserts and the lid slices print face down as exported, everything else flat.
-The lid and the inserts need no supports (every overhang is 45 degrees or steeper); the tuning
-lid slices stand on legs, so let the auto supports go under those.
+The lid, the deck inserts and the tuning lid slices print face down as exported (the slices deck
+face down, legs up), everything else flat. `overhangs.py` checked every part for a downward face
+flatter than 45 degrees that the printer can't bridge (5 mm at most) or step out to (1 mm): only
+three parts have one, so only their plates get tree supports from the build plate:
+- `board_mock` (in `1_case`) and `coupon_usb_board` (in `4_fit_coupons`): the USB-C stand-in's
+  front stands 1.2 mm out past the board's edge, round-cornered underneath. Supported, so it
+  doesn't droop: the opening's fit round it is what the coupon tests.
+- `speaker_dummy` (in `1_case`): its solder tab and lead exit stick out 1.9 and 2.4 mm.
 
 `stl/` has every part as a plain STL, in case a project won't open in your Orca version: drag them
 onto a plate with the same settings. `lid.stl`, `insert.stl` (print two) and `tub.stl` are the
@@ -39,8 +49,9 @@ one-piece lid, which needs supports under its decks.)
 
 ## What to check, and what to change
 
-Numbers live in `case/case.scad`; after changing one, rebuild the package
-(`python3 case/export.py --stl`, `python3 case/fitkit.py`, `python3 case/print_package.py`).
+Numbers live in `case/case.scad`; after changing one, rebuild the packages
+(`python3 case/export.py --stl`, `python3 case/fitkit.py`, `python3 case/print_package.py`,
+`python3 case/print_package_p1s.py`).
 
 **Buttons (`2_buttons_quick`):**
 - D-pad in each of the three `tune_openings` crosses (gaps 0.6, 0.8, 1.0 mm, engraved): pick the
@@ -61,7 +72,7 @@ Numbers live in `case/case.scad`; after changing one, rebuild the package
   top. The opening should hug the receptacle stand-in with a small even gap (`usb_gap` 0.25), and
   a real plug's overmold should sit flat on the case.
 - Snap hook: should click with firm thumb pressure and come apart with a blade
-  (`snap_barb`, hook thickness). PETG takes the bending better than PLA.
+  (`snap_barb`, hook thickness). PLA is stiffer than PETG: if the hook cracks, say so.
 - Panel frame: the real panel (or the dummy) drops in glass down with a little play, the active
   area centred in the window (`panel_fit`, `window_margin`).
 - Seat 1's end: the cell plug (real or dummy) passes up through the board mock's hole in front of

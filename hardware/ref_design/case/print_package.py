@@ -4,13 +4,16 @@
     python3 case/print_package.py      # after case/export.py --stl and case/fitkit.py
 
 Each project is built from Alex's own fit_test_v5.3mf (print/), so it keeps his printer,
-filament, toolhead and plate settings (Snapmaker U1, 0.20 mm Standard, PLA on toolhead 2,
-PETG support interface on toolhead 1, textured PEI): only the objects and where they sit on
-the plate change. Orca's CLI can't load U1 projects, so the projects are written the way
+filament and plate settings (Snapmaker U1, 0.20 mm Standard, textured PEI), PLA only on
+toolhead 2 (Alex, 2026-10-20: no PETG, no second toolhead, no prime tower): only the objects,
+where they sit on the plate, and the supports change. Orca's CLI can't load U1 projects, so the projects are written the way
 Orca writes them (one object file per part, mesh centred on its own height, placed by the
 build item) and the STLs ship beside them in case a project won't open.
 
-Writes print/package/ and print/mega_blastoise_print_package.zip (build output, not in git).
+Supports are on only for a plate with a part that needs them, measured by overhangs.py.
+print_package_p1s.py builds the same plates for a Bambu Lab P1S.
+
+Writes print/package_U1/ and print/mega_blastoise_print_U1.zip (build output, not in git).
 """
 import os
 import json
@@ -24,8 +27,8 @@ import trimesh
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "print", "fit_test_v5.3mf")
-OUT = os.path.join(HERE, "print", "package")
-ZIP = os.path.join(HERE, "print", "mega_blastoise_print_package.zip")
+OUT = os.path.join(HERE, "print", "package_U1")
+ZIP = os.path.join(HERE, "print", "mega_blastoise_print_U1.zip")
 BED = 270.0
 GAP = 6.0
 PLA = 2                      # the template's toolhead for PLA parts
@@ -33,15 +36,15 @@ PLA = 2                      # the template's toolhead for PLA parts
 KIT = os.path.join(HERE, "fitkit")
 PRINT_TUB = os.path.join(HERE, "tub.stl")    # prints flat as exported (no feet since 2026-10-20)
 
-# Supports, changed from the template (Alex: keep the PETG, but touch the decks as little and as
-# cleanly as possible): organic trees in PLA from the build plate only, so nothing grows inside the
-# lid; PETG only for the 2 solid interface layers right under the decks (fewer toolhead swaps and
-# purges), no gap and ironed, so the PLA deck face prints onto a smooth surface instead of
-# sagging between sparse lines
+# PLA only (Alex, 2026-10-20): every object, support and interface on the PLA toolhead, and no
+# prime tower (one filament never changes). The deck faces now print on the bed, not on supports,
+# so where a plate does need supports they're plain PLA organic trees from the build plate only,
+# with the usual 0.2 mm gap (PLA on PLA with none would fuse), and bridges aren't supported
 SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_style": "organic",
-           "support_filament": "2", "support_interface_filament": "1", "support_interface_not_for_body": "1",
-           "support_interface_top_layers": "2", "support_interface_spacing": "0", "support_top_z_distance": "0",
-           "support_ironing": "1", "support_on_build_plate_only": "1"}
+           "support_filament": str(PLA), "support_interface_filament": str(PLA),
+           "support_interface_not_for_body": "0", "support_interface_top_layers": "2",
+           "support_interface_spacing": "0.5", "support_top_z_distance": "0.2", "support_ironing": "0",
+           "support_on_build_plate_only": "1", "bridge_no_support": "1", "enable_prime_tower": "0"}
 
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts
 PLATES = {
@@ -60,7 +63,21 @@ PLATES = {
                       ("usb_tub", "usb_lid", "usb_board", "snap_tub", "snap_lid", "frame_lid",
                        "buttons_tub", "buttons_board", "buttons_lid", "buttons_insert")],
 }
-NO_SUPPORT = {"0_buttons_end", "1_case_inserts"}   # plates that print without any supports
+
+
+def support_plates():
+    """The plates with a part that needs supports (overhangs.py), and every part's verdict."""
+    import overhangs
+    from concurrent.futures import ProcessPoolExecutor
+    paths = sorted({p for parts in PLATES.values() for _, p in parts})
+    with ProcessPoolExecutor() as ex:
+        found = dict(zip(paths, ex.map(overhangs.check, paths)))
+    for p in paths:
+        print(f"  {os.path.basename(p):38s} " + ("no supports" if not found[p] else
+              "; ".join(f"{a:.1f} mm2: {why}" for a, z, xy, why in found[p])))
+    return {plate for plate, parts in PLATES.items() if any(found[p] for _, p in parts)}
+
+
 V5_NAMES = {"tub_print": "tub_print.stl", "lid": "lid.stl", "board_mock": "board_mock.stl",
             "panel_dummy": "panel_dummy.stl", "speaker_dummy": "speaker_dummy.stl"}
 NS = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"
@@ -82,10 +99,10 @@ def template_layout(z):
 
 
 def tower_keepout(z):
-    """The prime tower's corner of the plate (two toolheads: PLA, and PETG for support interface).
-    Orca puts it at wipe_tower_x/y with prime_tower_width; its depth depends on the purge, so keep
-    a generous 45 mm, plus the brim and ribs round it."""
-    cfg = json.loads(z.read("Metadata/project_settings.config"))
+    """The prime tower's corner of the plate, if the projects keep one (the template's two
+    toolheads did; PLA only, they don't). Orca puts it at wipe_tower_x/y with prime_tower_width;
+    its depth depends on the purge, so keep a generous 45 mm, plus the brim and ribs round it."""
+    cfg = dict(json.loads(z.read("Metadata/project_settings.config")), **SUPPORT)
     if str(cfg.get("enable_prime_tower", "0")) != "1":
         return []
     x, y = float(cfg["wipe_tower_x"][0]), float(cfg["wipe_tower_y"][0])
@@ -126,7 +143,7 @@ def mesh_xml(oid, uuid, m):
             f' <build/>\n</model>\n')
 
 
-def build(plate, parts, z):
+def build(plate, parts, z, supported):
     model = z.read("3D/3dmodel.model").decode()
     head = model[:model.index("<resources>")]
     some_part = next(n for n in z.namelist() if n.startswith("3D/Objects/"))
@@ -197,7 +214,7 @@ def build(plate, parts, z):
             data = z.read(n)
             if n == "Metadata/project_settings.config":
                 cfg = json.loads(data)
-                for k, v in (dict(SUPPORT, enable_support="0") if plate in NO_SUPPORT else SUPPORT).items():
+                for k, v in (SUPPORT if plate in supported else dict(SUPPORT, enable_support="0")).items():
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                     cfg[k] = v
@@ -222,12 +239,15 @@ def main():
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(os.path.join(OUT, "stl"))
     z = zipfile.ZipFile(TEMPLATE)
+    print("supports, measured part by part:")
+    supported = support_plates()
     only = sys.argv[1:]                 # plate names to build (default: all)
     for plate, parts in PLATES.items():
         if only and plate not in only:
             continue
-        path, sizes = build(plate, parts, z)
-        print(f"{os.path.basename(path):24s} " + ", ".join(n for n, _ in sizes))
+        path, sizes = build(plate, parts, z, supported)
+        print(f"{os.path.basename(path):24s} {'supports' if plate in supported else 'no supports':12s} "
+              + ", ".join(n for n, _ in sizes))
         for n, p in parts:
             shutil.copy(p, os.path.join(OUT, "stl", os.path.basename(p)))
     for extra in ("lid.stl", "tub.stl"):

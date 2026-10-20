@@ -40,5 +40,7 @@ case/board.dxf
 case/positions.json
 case/fit_report.txt
 case/fitkit/*.stl
-case/print/package/
-case/print/mega_blastoise_print_package.zip
+case/print/package_U1/
+case/print/package_P1S/
+case/print/mega_blastoise_print_U1.zip
+case/print/mega_blastoise_print_P1S.zip

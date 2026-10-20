@@ -113,23 +113,30 @@ function box_of(c, ss) = ss ? [c[0] - ss_box[0], c[1] - ss_box[1], 2 * ss_box[0]
                             : [c[0] - stack_half, c[1] - stack_half, 2 * stack_half, 2 * stack_half];
 module stack_box(c, ss = false) let(b = box_of(c, ss)) translate([b[0], b[1], -1]) cube([b[2], b[3], case_h + 2]);
 module stack_legs(c, ss = false)
-  for (p = ss ? [[-10.5, -4.3], [10.5, -4.3], [-10.5, 6.7], [10.5, 6.7]]
+  for (p = ss ? [[-10.5, -4.3], [10.5, -4.3], [-10.5, 3.5], [10.5, 3.5]]   // 3.5: clear of seat 1's Y cap hole
               : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
-    at(c + p, z_top_cu) cylinder(d = 3, h = z_deck_lid - z_top_cu + 0.01);
+    // up into the deck (0.6 under its face), so a leg under one of the lid's reliefs still meets
+    // solid lid and doesn't hang over the relief when printed face down
+    at(c + p, z_top_cu) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
+// It prints deck face down on the bed, as the inserts do, so it needs no supports: whatever of the
+// step or the spine rises above the deck face is left off (the caps' feel doesn't depend on it)
 module tune_stack_lid(c, ss = false) difference() {
   // lid_whole: the deck as one with the step, whether or not the case splits it into inserts
-  union() { intersection() { lid_whole(); stack_box(c, ss); } stack_legs(c, ss); }
+  union() {
+    intersection() { lid_whole(); stack_box(c, ss); translate([-case_w, -case_l, -1]) cube([2 * case_w, 2 * case_l, deck_face + 1]); }
+    stack_legs(c, ss);
+  }
   at(c + (ss ? [0, 5.6] : [0, -stack_half + 1.8]), deck_face - engrave) linear_extrude(engrave + 0.01)
     text(str("DOME ", dome_h), size = ss ? 1.6 : 2.0, halign = "center", valign = "center");
 }
 module tune_stack_board(c, ss = false) intersection() { kit_board(); stack_box(c, ss); }
 
 if (kit == "tune_openings")       flip_at(deck_face) translate([0, 0, retainer_bot]) tune_openings();
-if (kit == "tune_stack_dpad_lid") flip() tune_stack_lid(dpad1);
-if (kit == "tune_stack_abxy_lid") flip() tune_stack_lid(abxy1);
+if (kit == "tune_stack_dpad_lid") flip_at(deck_face) tune_stack_lid(dpad1);
+if (kit == "tune_stack_abxy_lid") flip_at(deck_face) tune_stack_lid(abxy1);
 if (kit == "tune_stack_dpad_board") tune_stack_board(dpad1);
 if (kit == "tune_stack_abxy_board") tune_stack_board(abxy1);
-if (kit == "tune_stack_ss_lid")   flip() tune_stack_lid(ss_centres[0], true);
+if (kit == "tune_stack_ss_lid")   flip_at(deck_face) tune_stack_lid(ss_centres[0], true);
 if (kit == "tune_stack_ss_board") tune_stack_board(ss_centres[0], true);
 if (kit == "usb_board")    intersection() { kit_board(); usb_box(); }
 module flip_at(z) translate([0, 0, z]) rotate([180, 0, 0]) children();
