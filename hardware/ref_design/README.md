@@ -57,6 +57,7 @@ is generated. After changing the design:
 ```sh
 cd hardware/ref_design
 python3 case/export.py --stl                 # case -> positions.json, DXFs, STLs
+python3 case/check_buttons.py                # D-pad, A/B/X/Y, Start/Select with their silicone under the shell (about 6 min)
 cd board
 python3 tools/build_sch.py                   # design.py -> schematic (through Konnect)
 python3 tools/check_netlist.py               # KiCad's netlist == design.py ?

@@ -95,7 +95,16 @@ dome_h = 1.75;                                          // board to the flange's
 glass_side = 9.7;         // panel bay edge to long case edge: room for USB-C beside the glass
 edge_margin = 4;          // case edge to silicone piece
 piece_to_glass = 5;       // silicone piece to glass edge
-wall = 2.0;  board_clear = 0.5;  corner_r = 8;
+wall = 2.0;  board_clear = 0.5;
+corner_r = 4.3;           // plan corners: a DS Lite's 4.3 to 4.4 (8 felt round and toy-like, 2026-10-19)
+board_r = 5.5;            // the board's own corners (its KiCad outline): no longer follow the case's
+// The back rolls into the walls through back_r, as a DS Lite's does (4.2 mm). Printed floor down,
+// the round's lowest part (flatter than 45 degrees) is a 45 degree chamfer instead
+back_r = 4.2;
+// The seam sits on the face, as on a DS Lite: the tub's outer skin rises tub_lip thick to the
+// face all round (following the screen face, the step and the decks), and the lid nests inside
+// it, seam_fit clear. The sides are one surface (2026-10-19)
+tub_lip = 0.8;  seam_fit = 0.15;
 support_pitch = 12;       // the floor's support ribs under the board
 
 // ---------------- stack (z) ----------------
@@ -192,7 +201,6 @@ case_l = bay_l + 2 * band;
 inset = wall + board_clear;
 board_w = case_w - 2 * inset;
 board_l = case_l - 2 * inset;
-board_r = corner_r - inset;
 seat_y = case_l / 2 - edge_margin - piece_d / 2;
 spine_end = seat_y + 4.9;                               // the spine stops here, past seat 1's screw boss
 ss_y = seat_y + 9.1;                                    // Start/Select's centre line
@@ -238,9 +246,6 @@ boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
 screw_cb = [4.4, 1.0];  screw_clear = 2.4;  screw_pilot = 1.6;
 screw_engage = min(6.0, case_h - z_top_cu - 0.8);       // the pilot stops 0.8 under the face (it came through it
                                                         // once the screen face dropped to 5.8 over the board)
-// Stepped seam, as the DS Lite's face nests in its back shell: a lip under the lid's edge drops
-// into a step in the inner half of the tub's wall. It locates the lid and hides the seam
-lip_h = 1.2;  lip_fit = 0.2;
 
 // edge parts, all on the right (+X) long edge
 usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
@@ -298,6 +303,19 @@ assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel does
 assert(glass_gap >= 1.0, "no room under the panel");
 assert(face_t >= 0.6 && face_t <= lid_t, "face_t out of range");
 assert(retainer_z < z_lid, "button retainer above the lid");
+// The button stack's design rules (check_buttons.py checks the geometry itself: the pads clear
+// the shell, every cap sits and presses without touching it, at rest the caps only touch the domes)
+assert(sil_rib_gap >= sil_web_t, "the ribs crush the silicone pads' web");
+assert(retainer_bot > z_top_cu + sil_web_t, "the deck reaches down onto the pads");
+assert(cap_proud - dome_travel >= 0.4, "a pressed cap sinks to the deck: a thumb catches its edge");
+let (r = (cap_hole_d - cap_abxy_d) / 2) assert(r >= 0.15 && r <= 0.5, str("A/B/X/Y hole clearance ", r, " a side: sticks or rattles"));
+assert(dpad_gap >= 0.3 && dpad_gap <= 1.0, "D-pad opening clearance out of range");
+assert(ss_gap >= 0.15 && ss_gap <= 0.5, "Start/Select hole clearance out of range");
+assert(pocket_d >= cap_flange_d + 0.3, "A/B/X/Y flanges bind in their pockets");
+assert(ss_cell >= ss_flange_d + 0.3 && ss_cell >= ss_well[0] + 0.2, "Start/Select cells too small for the flange or the pad's well");
+assert(abxy_ring >= pocket_d / 2 + 0.6, "A/B/X/Y rings too thin to print");
+assert(abxy_square[0] >= abxy_boss[0] + 0.1 && abxy_square[2] >= abxy_boss[1] + 0.05, "the A/B/X/Y pad's centre square doesn't fit its pocket");
+assert(dpad_peg_gap >= 0, "the D-pad's peg holds its flange off the lip");
 assert(z_deck_lid > retainer_bot + 0.5, "button deck lower than the retainers");
 assert(step_y - step_wall > (panel_l + panel_fit) / 2 + frame_wall + 0.3, "step over the panel frame");
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "pin under a silicone piece");
@@ -386,13 +404,27 @@ module deck2d() for (sy = [-1, 1]) scale([1, sy]) offset(r = deck_r) offset(delt
   translate([-case_w, spine_end]) square([2 * case_w, case_l]);    // across the end, below the spine
 }
 module deck_cut2d() offset(delta = step_wall) deck2d();
-// the inner half of the case wall, along the full-height (screen-section) edges only: not at the
-// decks (lower walls) or over the USB-C notch (the lid's tongue). fit shrinks it from the outside
-module seam_band(fit) difference() {
-  offset(delta = -wall / 2 - fit) rrect(case_w, case_l, corner_r);
-  offset(delta = -wall - 0.01) rrect(case_w, case_l, corner_r);
-  offset(delta = deck_fit + 1) deck_cut2d();
-  translate([case_w / 2 - wall - 1, usb_y - usb_tongue_w / 2 - 1]) square([wall + 2, usb_tongue_w + 2]);
+// the lid's outline, inside the tub's skin
+module lid_outline2d() offset(delta = -tub_lip - seam_fit) rrect(case_w, case_l, corner_r);
+// how far in from the case's outline the back's round (and chamfer) has come at height z
+function back_in(z) = let(z45 = back_r * (1 - 1 / sqrt(2)))
+  z >= back_r ? 0 : z >= z45 ? back_r - sqrt(back_r * back_r - (back_r - z) * (back_r - z)) : z45 + (z45 - z);
+// everything under the face: the screen block, the decks and the step between, as lid_body
+// shapes the lid's face (the tub's skin is cut to it, so it meets the face all round)
+module face_solid() difference() {
+  union() {
+    linear_extrude(case_h) difference() { rrect(case_w, case_l, corner_r); deck2d(); }
+    linear_extrude(deck_face) intersection() { rrect(case_w, case_l, corner_r); deck2d(); }
+    for (k = [0:ramp_layers - 1]) if (ramp_t(k) < 0)
+      translate([0, 0, deck_face - 0.01 + (case_h - deck_face) * k / ramp_layers])
+        linear_extrude((case_h - deck_face) / ramp_layers + 0.02) intersection() {
+          rrect(case_w, case_l, corner_r);
+          difference() { deck2d(); offset(delta = ramp_t(k)) deck2d(); }
+        }
+  }
+  for (k = [0:ramp_layers - 1]) if (ramp_t(k) > 0)
+    translate([0, 0, deck_face + (case_h - deck_face) * k / ramp_layers]) linear_extrude(case_h)
+      difference() { offset(delta = ramp_t(k)) deck2d(); if (j2_bump > 0) j2_keep2d(); }
 }
 module slot2d() translate(slot[0]) square([slot[1][0] - slot[0][0], slot[0][1] - slot[1][1]] * 1) ;
 module board_outline() difference() {
@@ -470,8 +502,16 @@ module rib_free2d() {
 module tub() difference() {
   union() {
     difference() {
-      linear_extrude(z_lid) rrect(case_w, case_l, corner_r);
-      translate([0, 0, floor_t]) linear_extrude(z_lid) rrect(case_w - 2 * wall, case_l - 2 * wall, corner_r - wall);
+      // the shell: its back rolls into the walls (in 0.1 mm layers up the round), the cavity
+      // following so the wall keeps its thickness through the round
+      union() {
+        for (k = [0:ceil(back_r / 0.1) - 1]) translate([0, 0, 0.1 * k])
+          linear_extrude(0.1 + 0.01) offset(delta = -back_in(0.1 * k + 0.05)) rrect(case_w, case_l, corner_r);
+        translate([0, 0, back_r]) linear_extrude(z_lid - back_r) rrect(case_w, case_l, corner_r);
+      }
+      for (k = [0:ceil(back_r / 0.1) - 1]) if (0.1 * k + 0.1 > floor_t) translate([0, 0, 0.1 * k])
+        linear_extrude(0.1 + 0.01) offset(delta = -wall - back_in(0.1 * k + 0.05)) rrect(case_w, case_l, corner_r);
+      translate([0, 0, back_r]) linear_extrude(z_lid) rrect(case_w - 2 * wall, case_l - 2 * wall, corner_r - wall);
       // walls drop at the decks, deck_fit clear of the lid's step walls that drop in between
       if (!deck_inserts) translate([0, 0, z_deck_lid]) linear_extrude(z_lid) offset(delta = deck_fit) deck_cut2d();
       else {
@@ -480,6 +520,12 @@ module tub() difference() {
         translate([0, 0, z_deck_lid]) linear_extrude(z_lid) difference() { offset(delta = deck_fit) deck_cut2d(); deck2d(); }
         translate([0, 0, deck_face]) linear_extrude(z_lid) offset(delta = 0.01) deck2d();
       }
+    }
+    // the skin: the outer tub_lip of the wall, up to the face all round
+    intersection() {
+      face_solid();
+      translate([0, 0, z_deck_lid - 0.5]) linear_extrude(case_h)
+        difference() { rrect(case_w, case_l, corner_r); offset(delta = -tub_lip) rrect(case_w, case_l, corner_r); }
     }
     // the end walls' lips over the deck inserts
     if (deck_inserts) for (sy = [-1, 1]) end_lip_cut(sy, 0);
@@ -516,8 +562,6 @@ module tub() difference() {
   }
   // screws: a counterbore for the head from below, then clearance up through the boss
   for (s = pins) at(s, -1) { cylinder(d = screw_cb[0], h = 1 + screw_cb[1]); cylinder(d = screw_clear, h = z_board + 2); }
-  // the seam's step: the wall's inner half drops lip_h where the lid sits on it
-  translate([0, 0, z_lid - lip_h]) linear_extrude(lip_h + 1) seam_band(0);
   // grooves for the lid's snap hooks
   for (h = hooks) at(h) rotate(h[2]) translate([-0.01, -(h[3] + 0.6) / 2, z_lid - snap_len + 0.1])
     cube([snap_barb + 0.1 + 0.01, h[3] + 0.6, snap_barb_h + 0.2]);
@@ -525,7 +569,7 @@ module tub() difference() {
   for (i = [-2:2], j = [-2:2]) if (norm([i, j]) <= 2.2) at(spk_pos + [i * 2.4, j * 2.4], -2) cylinder(d = 1.4, h = floor_t + 3);
   // USB-C: the opening's lower half, and above it the notch the lid's tongue fills
   usb_opening();
-  translate([in_x - 0.01, usb_y - usb_tongue_w / 2, usb_zc]) cube([wall + 1, usb_tongue_w, z_lid]);
+  translate([in_x - 0.01, usb_y - usb_tongue_w / 2, usb_zc]) cube([wall + 1, usb_tongue_w, case_h]);
   // the slot the board's tab drops into
   if (usb_tab > 0) translate([in_x - 0.01, usb_y - usb_tab_w / 2 - usb_tab_fit, z_board - 0.3])
     cube([usb_tab - board_clear + usb_tab_fit + 0.01, usb_tab_w + 2 * usb_tab_fit, z_lid]);
@@ -568,7 +612,7 @@ module lid_whole() union() {
   for (k = [0:ramp_layers - 1]) if (ramp_t(k) < 0)
     translate([0, 0, deck_face - 0.01 + (case_h - deck_face) * k / ramp_layers])
       linear_extrude((case_h - deck_face) / ramp_layers + 0.02) intersection() {
-        rrect(case_w, case_l, corner_r);
+        lid_outline2d();
         difference() { deck2d(); offset(delta = ramp_t(k)) deck2d(); }
       }
 }
@@ -604,14 +648,12 @@ module j2_keep2d() at(batt_conn) square(pocket + [2 * (skin_min + j2_bump) + 1, 
 
 module lid_body() difference() {
   union() {
-    translate([0, 0, z_lid]) linear_extrude(lid_t) difference() { rrect(case_w, case_l, corner_r); deck2d(); }
+    translate([0, 0, z_lid]) linear_extrude(lid_t) difference() { lid_outline2d(); deck2d(); }
     // the decks, and the step walls from them up to the screen face
-    translate([0, 0, z_deck_lid]) linear_extrude(lid_t) intersection() { rrect(case_w, case_l, corner_r); deck2d(); }
+    translate([0, 0, z_deck_lid]) linear_extrude(lid_t) intersection() { lid_outline2d(); deck2d(); }
     translate([0, 0, z_deck_lid]) linear_extrude(case_h - z_deck_lid) intersection() {
-      rrect(case_w, case_l, corner_r); difference() { deck_cut2d(); deck2d(); }
+      lid_outline2d(); difference() { deck_cut2d(); deck2d(); }
     }
-    // the seam's lip, in the tub wall's step
-    translate([0, 0, z_lid - lip_h + 0.1]) linear_extrude(lip_h - 0.1 + 0.01) seam_band(lip_fit);
     // bosses down to the board top: with the tub's bosses they clamp it
     for (s = pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_lid - z_top_cu + 0.01);
     // stiffening ribs beside the screen
@@ -622,8 +664,8 @@ module lid_body() difference() {
       translate([0, 0, j2_bump]) linear_extrude(0.01) square(pocket + [2 * skin_min, 2 * skin_min], center = true);
     }
     // the tongue that fills the tub's notch over the USB-C opening
-    translate([in_x, usb_y - usb_tongue_w / 2 + usb_fit, usb_zc + 0.1])
-      cube([wall, usb_tongue_w - 2 * usb_fit, z_lid - usb_zc - 0.1 + 0.01]);
+    translate([in_x, usb_y - usb_tongue_w / 2 + usb_fit, usb_zc + 0.1])        // up to the face, through the skin
+      cube([wall, usb_tongue_w - 2 * usb_fit, case_h - usb_zc - 0.1]);
     // snap hooks, just inside the tub wall
     for (h = hooks) at(h) rotate(h[2]) snap_hook(h[3]);
     // the ribs that rest on the silicone pads (the pockets are cut below)
@@ -690,26 +732,45 @@ module snap_hook(w) {
 module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
 
 // button caps, for the assembly view only (they are bought DS Lite parts)
-module caps() {
+// The caps at rest (flanges up against the lip). Pressed (press = true): A/B/X/Y and Start/Select
+// straight down dome_travel; the D-pad tilted toward dpad_dir (degrees, seat frame), rocking on its
+// flange's far edge until the pressed side has gone down dome_travel over its dome(s)
+module caps(press = false, dpad_dir = 0) {
   z0 = retainer_z - flange_t;
-  for (k = abxy_keys()) at(k[0], z0) rotate(k[1]) {
-    difference() {                                      // the flange, less its keying notches
-      cylinder(d = cap_flange_d, h = flange_t, $fn = 48);
-      for (n = k[2]) rotate(n) translate([cap_flange_d / 2 - notch_reach - 0.05, -notch_w / 2 - 0.05, -1]) cube([2, notch_w + 0.1, 3]);
-    }
-    translate([0, -cap_tab_w / 2, 0]) cube([cap_tab_r, cap_tab_w, flange_t]);
-    cylinder(d = cap_abxy_d, h = cap_h, $fn = 48);
-  }
-  for (c = [dpad1, dpad2]) at(c, z0 + dpad_lift) {
-    linear_extrude(flange_t) dpad_flange();
-    linear_extrude(dpad_h) cross(dpad_arm_w, dpad_arm_l);
-  }
-  for (b = ss_buttons) at(b[2], z0) { cylinder(d = ss_flange_d, h = flange_t, $fn = 48); cylinder(d = ss_cap_d, h = ss_cap_h, $fn = 48); }
-  // the D-pad's pivot peg, through its pad's centre hole onto the board (ESTIMATE: dpad_peg_d)
-  for (c = [dpad1, dpad2]) at(c, z_top_cu) cylinder(d = dpad_peg_d, h = z0 + dpad_lift - z_top_cu + 0.01, $fn = 32);
+  dz = press ? -dome_travel : 0;
+  for (k = abxy_keys()) at(k[0], z0 + dz) rotate(k[1]) abxy_cap(k[2]);
+  for (b = ss_buttons) at(b[2], z0 + dz) ss_cap();
+  for (c = [dpad1, dpad2]) at(c, z0 + dpad_lift) rotate(c == dpad2 ? 180 : 0) dpad_tilt(press ? dpad_dir : undef) dpad_cap();
 }
+module abxy_cap(notches) {
+  difference() {                                        // the flange, less its keying notches
+    cylinder(d = cap_flange_d, h = flange_t, $fn = 48);
+    for (n = notches) rotate(n) translate([cap_flange_d / 2 - notch_reach - 0.05, -notch_w / 2 - 0.05, -1]) cube([2, notch_w + 0.1, 3]);
+  }
+  translate([0, -cap_tab_w / 2, 0]) cube([cap_tab_r, cap_tab_w, flange_t]);
+  cylinder(d = cap_abxy_d, h = cap_h, $fn = 48);
+}
+module ss_cap() { cylinder(d = ss_flange_d, h = flange_t, $fn = 48); cylinder(d = ss_cap_d, h = ss_cap_h, $fn = 48); }
+// the D-pad, its flange's underside at z 0; its pivot peg stops dpad_peg_gap over the board
+// (ESTIMATE: dpad_peg_d, dpad_peg_gap)
+module dpad_cap() {
+  linear_extrude(flange_t) dpad_flange();
+  linear_extrude(dpad_h) cross(dpad_arm_w, dpad_arm_l);
+  translate([0, 0, z_top_cu + dpad_peg_gap - (retainer_z - flange_t + dpad_lift)])
+    cylinder(d = dpad_peg_d, h = retainer_z - flange_t + dpad_lift - z_top_cu - dpad_peg_gap + 0.01, $fn = 32);
+}
+// a cardinal press rocks on the far arm's tip, a diagonal on the flange's far rim
+module dpad_tilt(dir) if (is_undef(dir)) children(); else
+  let(diag = dir % 90 != 0, back = diag ? dpad_flange_r : dpad_arm_l / 2,
+      reach = diag ? d * cos(45) : d, a = atan(dome_travel / (back + reach)), u = [cos(dir), sin(dir)])
+    translate([-back * u[0], -back * u[1], flange_t]) rotate(a = a, v = [-u[1], u[0], 0])
+      translate([back * u[0], back * u[1], -flange_t]) children();
 // The silicone pads, for pictures and fit checks only (nothing is printed from them). ESTIMATES
-// until Alex measures his pads: web, domes, the A/B/X/Y centre square, the Start/Select wells
+// until Alex measures his pads: web, domes, the A/B/X/Y centre square, the Start/Select wells,
+// and how far a cap travels before its pill closes on the board (a DS Lite's stroke is about
+// twice an original DS's tact switches: 0.5 to 1 mm, dossier section 2)
+dome_travel = 1.0;
+dpad_peg_gap = 0.2;                                     // the D-pad's peg over the board at rest
 dpad_peg_d = 2.4;                                       // under 2.5: Pi Tin's pad hole fits over the genuine peg
 sil_web_t = 0.6;  dome_base_d = 6.0;  plunger_d = 3.2;  // pad web; each dome's skirt and plunger (HHL photo)
 dpad_hole_d = 3.0;                                      // the D-pad pad's centre hole
