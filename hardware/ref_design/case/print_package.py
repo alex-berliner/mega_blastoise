@@ -62,6 +62,9 @@ PLATES = {
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
                       ("usb_tub", "usb_lid", "usb_board", "snap_tub", "snap_lid", "frame_lid",
                        "buttons_tub", "buttons_board", "buttons_lid", "buttons_insert")],
+    "5_unit": [("tub_print", PRINT_TUB), ("lid", os.path.join(HERE, "lid.stl")),     # one whole unit, no dummies
+               ("insert_a", os.path.join(HERE, "insert.stl")), ("insert_b", os.path.join(HERE, "insert.stl")),
+               ("board_mock", f"{KIT}/board_mock.stl")],
 }
 
 
@@ -112,9 +115,11 @@ def tower_keepout(z):
 
 
 def pack(sizes, taken):
-    """Shelf-pack footprints (w, l) onto the bed, avoiding the rectangles already taken."""
-    spots, x, y, row = [], GAP, GAP, 0.0
-    for w, l in sizes:
+    """Shelf-pack footprints (w, l) onto the bed, longest first, avoiding the rectangles already
+    taken; returns their centres in the given order."""
+    spots, x, y, row = {}, GAP, GAP, 0.0
+    for i in sorted(range(len(sizes)), key=lambda i: -sizes[i][1]):
+        w, l = sizes[i]
         while True:
             if x + w > BED - GAP:
                 x, y, row = GAP, y + row + GAP, 0.0
@@ -126,12 +131,12 @@ def pack(sizes, taken):
             if hit:
                 x = hit[2] + GAP
                 continue
-            spots.append((x + w / 2, y + l / 2))
+            spots[i] = (x + w / 2, y + l / 2)
             taken.append(box)
             x += w + GAP
             row = max(row, l)
             break
-    return spots
+    return [spots[i] for i in range(len(sizes))]
 
 
 def mesh_xml(oid, uuid, m):

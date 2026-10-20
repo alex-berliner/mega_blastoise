@@ -12,7 +12,7 @@ project's printer and settings: Snapmaker U1, 0.20 mm Standard, textured PEI. PL
 toolhead 2: no PETG, no second toolhead, no prime tower. Open it, check the plate, slice.
 (`mega_blastoise_print_P1S.zip` has the same plates sliced for a Bambu Lab P1S.)
 
-Supports are on only for `1_case` and `4_fit_coupons`, measured part by part (see below).
+Supports are on only for `1_case`, `4_fit_coupons` and `5_unit`, measured part by part (see below).
 <!-- /printer -->
 
 | Project | What's on it | Print it |
@@ -23,12 +23,13 @@ Supports are on only for `1_case` and `4_fit_coupons`, measured part by part (se
 | `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid, insert) | second |
 | `1_case.3mf` | the tub, the lid, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
 | `1_case_inserts.3mf` | the two deck inserts (the same part, one for each end) | with `1_case` |
+| `5_unit.3mf` | **One whole unit on one plate:** the tub, the lid, both deck inserts and the board mock (no coupons, no dummies) | instead of `1_case` and `1_case_inserts`, once the coupons fit |
 
 The lid, the deck inserts and the tuning lid slices print face down as exported (the slices deck
 face down, legs up), everything else flat. `overhangs.py` checked every part for a downward face
 flatter than 45 degrees that the printer can't bridge (5 mm at most) or step out to (1 mm): only
 three parts have one, so only their plates get tree supports from the build plate:
-- `board_mock` (in `1_case`) and `coupon_usb_board` (in `4_fit_coupons`): the USB-C stand-in's
+- `board_mock` (in `1_case` and `5_unit`) and `coupon_usb_board` (in `4_fit_coupons`): the USB-C stand-in's
   front stands 1.2 mm out past the board's edge, round-cornered underneath. Supported, so it
   doesn't droop: the opening's fit round it is what the coupon tests.
 - `speaker_dummy` (in `1_case`): its solder tab and lead exit stick out 1.9 and 2.4 mm.
