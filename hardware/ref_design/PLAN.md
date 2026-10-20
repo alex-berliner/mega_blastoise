@@ -58,11 +58,15 @@ Next:
       change. Update the USB row above
 - [ ] Schematic: every power:GND symbol hides its "GND" value (77 of them), so a ground reads as a
       bare triangle. Show it (schematic generator: for the schematic session)
-- [ ] Is the downward-facing speaker viable? It plays through a grille in the tub's floor (spk_pos,
-      25 holes of 1.4 mm). Two players share the screen, so the handheld often lies on a table, with
-      the grille against it. Compare a side or face outlet, or a raised floor channel
-- [ ] Remove the tub's four feet (6 mm, 0.8 mm high, outside the floor) (Alex). Decide this together
-      with the speaker: the feet are what keep the grille 0.8 mm off a table
+- [ ] Move the speaker to a long side and play it out of the side wall (Alex): the floor grille
+      (spk_pos, 25 holes of 1.4 mm) faces the table when two players share the screen. The 15 mm,
+      4 mm speaker can't stand on edge (the case is 13.4 mm), so it stays flat on the tub floor
+      beside the cell (x 17.5 to the wall at 35.7: 18 mm) with a sealed channel or slots out
+      through the wall. The right side has USB-C at y = 0; the left has the SWD/UART connectors and
+      the BOOTSEL/RESET pinholes, so pick a y clear of them, the hooks (y ±30) and the bosses (y ±36).
+      Its leads to J4 and rib_free move with it
+- [ ] Remove the tub's four feet (6 mm, 0.8 mm high, outside the floor) (Alex). Free to do once the
+      speaker leaves the floor
 - [ ] PLAN.md's Cell row still describes the plug hole "in front of J2": it now sits a plug's length
       past J2 (5.5 mm, the cell 5 mm towards seat 2)
 
