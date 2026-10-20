@@ -65,6 +65,14 @@ Next:
       through the wall. The right side has USB-C at y = 0; the left has the SWD/UART connectors and
       the BOOTSEL/RESET pinholes, so pick a y clear of them, the hooks (y ±30) and the bosses (y ±36).
       Its leads to J4 and rib_free move with it
+- [ ] The speaker is INGHAi's GSPK151035PN (C530539, Alex): 15 x 10 x 3.5 mm, 8 ohm, 0.5 W, 90 dB,
+      about $0.42, with 35 mm leads crimped into a 1.25 mm 2-pin plug (a PicoBlade-pattern copy).
+      No soldering at assembly (Alex): J4's wire pads become a 1.25 mm PicoBlade-style header that
+      JLC places. Keep J4 out of reach of the cell's plug, which would also fit it and put the cell
+      across the amplifier's outputs. It fits flat under the board (4.5 mm of room); its sound
+      leaves its face, so a printed channel takes it to the side-wall outlet. Before ordering
+      boards, try a sample speaker's plug in a genuine 53261-0271 header. Update docs/bom.md
+      (speaker row) and docs/assembly.md (no soldering)
 - [ ] Remove the tub's four feet (6 mm, 0.8 mm high, outside the floor) (Alex). Free to do once the
       speaker leaves the floor
 - [ ] PLAN.md's Cell row still describes the plug hole "in front of J2": it now sits a plug's length
