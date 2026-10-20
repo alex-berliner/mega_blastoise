@@ -22,7 +22,7 @@ KIT = [  # (kit name, file, what it tests)
     ("panel", "panel_dummy.stl", "ER-TFT035IPS-6 at its thickest, active area engraved"),
     ("cell", "cell_dummy.stl", "403450 cell with its lead tab"),
     ("plug", "cell_plug_dummy.stl", "JST PHR-2 plug with a cable stub (approximate)"),
-    ("speaker", "speaker_dummy.stl", "15 mm speaker"),
+    ("speaker", "speaker_dummy.stl", "GSPK151035PN speaker, 15 x 10 x 3.5 mm, face down"),
     ("snap_tub", "coupon_snap_tub.stl", "one snap hook's groove in the tub wall"),
     ("snap_lid", "coupon_snap_lid.stl", "the matching hook on the lid"),
     ("buttons_tub", "coupon_buttons_tub.stl", "seat 1's end of the tub: ribs, bosses, cell slot, walls up round the insert"),
