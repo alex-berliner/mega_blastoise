@@ -59,9 +59,8 @@ Next:
 - [ ] Schematic: every power:GND symbol hides its "GND" value (77 of them), so a ground reads as a
       bare triangle. Show it (schematic generator: for the schematic session)
 - [ ] Move the speaker to a long side and play it out of the side wall (Alex): the floor grille
-      (spk_pos, 25 holes of 1.4 mm) faces the table when two players share the screen. The 15 mm,
-      4 mm speaker can't stand on edge (the case is 13.4 mm), so it stays flat on the tub floor
-      beside the cell (x 17.5 to the wall at 35.7: 18 mm) with a sealed channel or slots out
+      (spk_pos, 25 holes of 1.4 mm) faces the table when two players share the screen. The speaker (the
+      GSPK151035PN below) lies flat on the tub floor beside the cell (x 17.5 to the wall at 35.7: 18 mm) with a sealed channel or slots out
       through the wall. The right side has USB-C at y = 0; the left has the SWD/UART connectors and
       the BOOTSEL/RESET pinholes, so pick a y clear of them, the hooks (y ±30) and the bosses (y ±36).
       Its leads to J4 and rib_free move with it
