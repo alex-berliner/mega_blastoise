@@ -244,9 +244,10 @@ ss_centres = [[0, -ss_y], [0, ss_y]];
 // way only anyway: turned round, J1's receptacle hits the wall away from the USB opening,
 // and the lid turned round lands on J2, which has its pocket at seat 1's end only.
 pin_x = 31.4;             // midway between the bay and the board edge
-pin_key = 3.0;            // seat 1's centre boss sits off the centre line (the board's hole is there)
-pin_out = 1.4;            // seat 1's centre boss sits this much further out, behind J2
-pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [0, seat_y], [-pin_key, -seat_y - pin_out]];
+pin_key = 3.0;            // the end bosses sit off the centre line (seat 1's board hole is there)
+pin_out = 1.4;            // and this much further out than the clusters, behind J2 at seat 1
+// seat 2's end boss is seat 1's turned round (2026-10-20), so one deck insert fits both ends
+pins = [[pin_x, 36], [-pin_x, 36], [pin_x, -36], [-pin_x, -36], [pin_key, seat_y + pin_out], [-pin_key, -seat_y - pin_out]];
 boss_d = 5.0;  hole_d = 2.2;  pin_d = 1.9;
 // As the DS Lite closes: screws from the back, through the tub's bosses and the board's holes,
 // into the lid's bosses, clamping the board between them (the snap hooks only hold the lid
@@ -327,8 +328,9 @@ assert(dpad_peg_gap >= 0, "the D-pad's peg holds its flange off the lip");
 assert(z_deck_lid > retainer_bot + 0.5, "button deck lower than the retainers");
 assert(step_y - step_wall > (panel_l + panel_fit) / 2 + frame_wall + 0.3, "step over the panel frame");
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "pin under a silicone piece");
-assert(pin_key + boss_d / 2 + 0.5 <= spine_w / 2, "seat 1's centre boss runs out under a button deck");
-assert(seat_y + pin_out + boss_d / 2 <= spine_end, "seat 1's screw boss runs out under the end deck");
+assert(pin_key + boss_d / 2 + 0.5 <= spine_w / 2, "an end boss runs out under a button deck");
+assert(seat_y + pin_out + boss_d / 2 <= spine_end, "an end screw boss runs out under the end deck");
+assert(pins[4] == rot180(pins[5]), "the end bosses aren't each other turned round: the two deck inserts would differ");
 assert(ss_y - ss_mem[1] / 2 - 0.75 >= spine_end, "Start/Select under the spine");
 assert(!anchor || anchor_in(-1) >= abs(batt_conn[1]) + pocket[1] / 2 + 0.5, "the insert's anchor runs into J2's pocket");
 for (e = [-1, 1]) assert(!anchor || abs(end_pin(e)[1]) + boss_d / 2 + insert_gap + anchor_ring <= ss_y - ss_mem[1] / 2 - 0.3,
@@ -845,5 +847,5 @@ if (part == "3d") {
 }
 if (part == "tub") tub();
 if (part == "lid") translate([0, 0, case_h]) rotate([180, 0, 0]) lid();       // printed face down
-if (part == "insert1" && deck_inserts) translate([0, 0, deck_face]) rotate([180, 0, 0]) deck_insert(-1);   // face down
-if (part == "insert2" && deck_inserts) translate([0, 0, deck_face]) rotate([180, 0, 0]) deck_insert(1);
+// one part for both ends (seat 2's is seat 1's turned round): print two, face down
+if (part == "insert" && deck_inserts) translate([0, 0, deck_face]) rotate([180, 0, 0]) deck_insert(-1);

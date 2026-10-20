@@ -17,21 +17,20 @@ interface on toolhead 1, textured PEI, auto supports. Open it, check the plate, 
 | `0_buttons_end.3mf` | Seat 1's whole end: tub, board mock (to place the silicone on), lid, deck insert. Supports off. `0_buttons_end_P1S.3mf` is the same plate as a Bambu Studio project for a P1S (PLA only) | any time |
 | `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid, insert) | second |
 | `1_case.3mf` | the tub, the lid, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
-| `1_case_inserts.3mf` | both deck inserts (`insert1` is seat 1's end, `insert2` seat 2's). Supports off | with `1_case` |
+| `1_case_inserts.3mf` | the two deck inserts (the same part, one for each end). Supports off | with `1_case` |
 
 The lid, the deck inserts and the lid slices print face down as exported, everything else flat.
 The lid and the inserts need no supports (every overhang is 45 degrees or steeper); the tuning
 lid slices stand on legs, so let the auto supports go under those.
 
 `stl/` has every part as a plain STL, in case a project won't open in your Orca version: drag them
-onto a plate with the same settings. `lid.stl`, `insert1.stl` (seat 1's end), `insert2.stl` (seat
-2's) and `tub.stl` are the real case; `tub_print.stl` is the tub without its feet (prints flat
+onto a plate with the same settings. `lid.stl`, `insert.stl` (print two) and `tub.stl` are the
+real case; `tub_print.stl` is the tub without its feet (prints flat
 without supports).
 
 **The deck inserts.** Each end's deck (both clusters and Start/Select) is its own part, printed
 face down on the bed like the screen face, so it comes out smooth with no supports. The step
-to the screen is a rounded edge and a 45 degree slope. The two inserts differ only round their
-end screw (seat 1's boss sits off the centre line), so each fits only its own end. To fit one:
+to the screen is a rounded edge and a 45 degree slope. Both ends take the same insert. To fit one:
 caps into it, tilt its outer end under the tub end wall's lip, lower it onto the board, then put
 the lid on. The lid's step walls press down on a 45 degree wedge along the insert's inner edges,
 and the insert's deck runs on under the spine to a ring round the end screw's boss: the lid's

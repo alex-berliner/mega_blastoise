@@ -50,7 +50,7 @@ PLATES = {
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
                ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
-    "1_case_inserts": [(n, os.path.join(HERE, f"{n}.stl")) for n in ("insert1", "insert2")],
+    "1_case_inserts": [(n, os.path.join(HERE, "insert.stl")) for n in ("insert_a", "insert_b")],   # one part, two of it
     "2_buttons_quick": [("tune_openings", f"{KIT}/tune_openings.stl")] +
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
         [(f"tune_stack_{c}_lid_dome1.75", f"{KIT}/tune_stack_{c}_lid_dome1.75.stl") for c in ("dpad", "abxy", "ss")],

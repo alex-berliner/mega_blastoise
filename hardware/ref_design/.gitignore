@@ -35,8 +35,7 @@ board/fab/battler_assembly.pdf
 board/fab/drc.txt
 case/tub.stl
 case/lid.stl
-case/insert1.stl
-case/insert2.stl
+case/insert.stl
 case/board.dxf
 case/positions.json
 case/fit_report.txt
