@@ -12,7 +12,7 @@ interface on toolhead 1, textured PEI, auto supports. Open it, check the plate, 
 | Project | What's on it | Print it |
 |---|---|---|
 | `2_buttons_quick.3mf` | **Start here (about an hour).** `tune_openings` (three D-pad opening sizes, the keyed A/B/X/Y cluster, three hole sizes), and the D-pad, A/B/X/Y and Start/Select stacks: a board slice each and a lid slice at the 1.75 mm silicone height | first |
-| `3_buttons_heights.3mf` | the same three lid slices at 1.45 and 2.05 mm silicone height | if the 1.75 mm lids don't sit right |
+| `3_buttons_heights.3mf` | the same three lid slices at 1.6 and 1.9 mm silicone height | if the 1.75 mm lids don't sit right |
 | `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid) | second |
 | `1_case.3mf` | the tub, the lid, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
 | `5_inserts_experiment.3mf` | **Experiment.** Seat 1's end with its deck as a separate insert (`deck_inserts` in `case.scad`): tub, board mock (to place the silicone on), lid, insert. `5_inserts_experiment_P1S.3mf` is the same plate as a Bambu Studio project for a P1S (PLA only) Supports are off: every part prints flat, the insert face down on the bed | whenever you like |
@@ -30,7 +30,9 @@ is the tub without its feet (prints flat without supports).
 face down on the bed like the screen face, so no part needs supports. The step to the screen
 becomes a rounded edge and a 45 degree slope. To fit it: tilt the insert's outer end under the
 tub end wall's lip, lower it onto the board, then put the lid on. The lid's step walls press down
-on a 45 degree wedge along the insert's inner edges. Check that it sits flat with no rattle, that
+on a 45 degree wedge along the insert's inner edges, and the insert's deck runs on under the
+spine to a ring round the end screw's boss: the lid's boss drops through it as the lid goes on,
+so the end screw holds the insert too. Check that it sits flat with no rattle, that
 the seam round it looks acceptable, and that the caps press as well as in `0_buttons_end`. The
 default stays `deck_inserts = false` until the experiment wins.
 
@@ -47,7 +49,7 @@ Numbers live in `case/case.scad`; after changing one, rebuild the package
   `notch_keys = false`). The plain holes (7.4, 7.8, 8.0) tune `cap_hole_d` (now 7.6).
 - Each stack: silicone on the board slice, caps in the lid slice, lid on its four legs. The cap
   should stand about 1.85 mm above the deck, press cleanly and spring back. If the 1.75 mm lid is
-  wrong, try the 1.45 and 2.05 lids (`3_buttons_heights`) and set `dome_h`; `dpad_lift` moves only
+  wrong, try the 1.6 and 1.9 lids (`3_buttons_heights`) and set `dome_h`; `dpad_lift` moves only
   the D-pad.
 - **Start/Select:** their membrane, pill spacing and caps are estimates (`ss_mem` 14 x 6 mm,
   `ss_pitch` 7.5, `ss_cap_d` 4.5). Measure your real Start/Select membrane and caps and send the

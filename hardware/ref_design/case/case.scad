@@ -175,6 +175,13 @@ deck_inserts = false;
 insert_gap = 0.15;                                      // clearance round the insert
 insert_tongue = 0.8;                                    // the wedge under the lid's step walls: width at its foot
 end_lip = 0.8;                                          // the tub end wall's lip over the insert (45 degrees)
+// The anchor (Alex, 2026-10-20: the wedges alone felt loose): each insert's deck runs on under
+// the spine, through a notch in the spine's end wall, round that end's screw boss, and a ring
+// under it stands on the board round the boss. The lid's boss drops through it, so the end screw
+// holds the insert as well as the lid: the boss stops it sliding, the board pushing down, the
+// spine lifting. Face down, the extra deck lies on the bed and the ring builds up from it
+anchor = true;
+anchor_wrap = 2.0;  anchor_ring = 1.2;                  // the deck past the boss towards the screen; the ring's wall
 step_round = 1.0;                                       // radius of the step's top edge
 // the inserts' step profile: how far into the screen block (t) the surface is at depth d under the face
 round_d = step_round * (1 - 1 / sqrt(2));               // where the round meets the 45 degree slope
@@ -322,6 +329,9 @@ for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2
 assert(pin_key + boss_d / 2 + 0.5 <= spine_w / 2, "seat 1's centre boss runs out under a button deck");
 assert(seat_y + pin_out + boss_d / 2 <= spine_end, "seat 1's screw boss runs out under the end deck");
 assert(ss_y - ss_mem[1] / 2 - 0.75 >= spine_end, "Start/Select under the spine");
+assert(!anchor || anchor_in(-1) >= abs(batt_conn[1]) + pocket[1] / 2 + 0.5, "the insert's anchor runs into J2's pocket");
+for (e = [-1, 1]) assert(!anchor || abs(end_pin(e)[1]) + boss_d / 2 + insert_gap + anchor_ring <= ss_y - ss_mem[1] / 2 - 0.3,
+                         "the anchor's ring runs into Start/Select");
 assert(ss_y + ss_mem[1] / 2 + 1 <= board_l / 2, "Start/Select off the board's end");
 for (c = clusters) assert(norm([ss_mem[0] / 2, abs(abs(c[1]) - ss_y) < ss_mem[1] / 2 ? 0 : abs(abs(c[1]) - ss_y) - ss_mem[1] / 2] - [abs(c[0]), 0]) >= piece_d / 2 + 0.5, "Start/Select runs into a silicone piece");
 
@@ -509,8 +519,11 @@ module tub() difference() {
           linear_extrude(0.1 + 0.01) offset(delta = -back_in(0.1 * k + 0.05)) rrect(case_w, case_l, corner_r);
         translate([0, 0, back_r]) linear_extrude(z_lid - back_r) rrect(case_w, case_l, corner_r);
       }
-      for (k = [0:ceil(back_r / 0.1) - 1]) if (0.1 * k + 0.1 > floor_t) translate([0, 0, 0.1 * k])
-        linear_extrude(0.1 + 0.01) offset(delta = -wall - back_in(0.1 * k + 0.05)) rrect(case_w, case_l, corner_r);
+      // (from floor_t, not the layer's bottom: 0.1 * 14 + 0.1 > 1.5 in floating point, which cut the
+      // floor to 1.4 under ribs that start at floor_t)
+      for (k = [0:ceil(back_r / 0.1) - 1]) if (0.1 * k + 0.1 > floor_t + 1e-6)
+        translate([0, 0, max(0.1 * k, floor_t)]) linear_extrude(0.1 * k + 0.1 + 0.01 - max(0.1 * k, floor_t))
+          offset(delta = -wall - back_in(0.1 * k + 0.05)) rrect(case_w, case_l, corner_r);
       translate([0, 0, back_r]) linear_extrude(z_lid) rrect(case_w - 2 * wall, case_l - 2 * wall, corner_r - wall);
       // walls drop at the decks, deck_fit clear of the lid's step walls that drop in between
       if (!deck_inserts) translate([0, 0, z_deck_lid]) linear_extrude(z_lid) offset(delta = deck_fit) deck_cut2d();
@@ -605,6 +618,9 @@ module lid() if (deck_inserts) difference() {
   lid_whole();
   insert_zone(insert_gap);
   translate([0, 0, z_top_cu - 1]) linear_extrude(deck_face + 1.01 - z_top_cu) offset(delta = 0.01) deck2d();
+  // the anchors' room under the spine, and the notch in its end wall (the bosses stay whole)
+  if (anchor) for (e = [-1, 1]) translate([0, 0, z_top_cu - 1]) linear_extrude(deck_face + insert_gap + 1 - z_top_cu)
+    difference() { anchor2d(e, insert_gap); translate(end_pin(e)) circle(d = boss_d); }
 } else lid_whole();
 module lid_whole() union() {
   lid_body();
@@ -634,10 +650,30 @@ module insert_zone(grow = 0, sy = 0) for (e = sy == 0 ? [-1, 1] : [sy]) {
     }
 }
 // one insert, in place: the lid's deck, retainers and button cuts within it, plus the tongue, less
-// the 45 degree rebate under the tub end wall's lip
-module deck_insert(sy) difference() {
-  intersection() { lid_whole(); insert_zone(0, sy); }
-  end_lip_cut(sy, insert_gap);
+// the 45 degree rebate under the tub end wall's lip, and its anchor
+module deck_insert(sy) union() {
+  difference() {
+    intersection() { lid_whole(); insert_zone(0, sy); }
+    end_lip_cut(sy, insert_gap);
+  }
+  if (anchor) anchor_part(sy);
+}
+// the anchor (e: -1 seat 1's end, 1 seat 2's): its outline inside the spine (grow: out to the
+// spine's walls, the space cut from the lid), from the deck's edge to anchor_wrap past the boss
+function end_pin(e) = e < 0 ? pins[5] : pins[4];
+anchor_x = spine_w / 2 - step_wall;                     // the spine's inside, each side of the centre line
+function anchor_in(e) = abs(end_pin(e)[1]) - boss_d / 2 - anchor_wrap;
+module anchor2d(e, grow = 0) scale([1, e]) translate([-anchor_x + insert_gap - grow, anchor_in(e) - grow])
+  square([2 * (anchor_x - insert_gap + grow), spine_end - anchor_in(e) + grow + 0.01]);
+module anchor_part(e) let(hole = boss_d + 2 * insert_gap) difference() {
+  union() {
+    translate([0, 0, z_deck_lid]) linear_extrude(deck_face - z_deck_lid) anchor2d(e);
+    translate([0, 0, z_top_cu]) linear_extrude(z_deck_lid - z_top_cu + 0.01) intersection() {
+      anchor2d(e);
+      translate(end_pin(e)) circle(d = hole + 2 * anchor_ring);
+    }
+  }
+  at(end_pin(e), z_top_cu - 1) cylinder(d = hole, h = case_h);
 }
 // the tub end wall's lip over the insert's end edge, a 45 degree wedge from the wall's inner face
 module end_lip_cut(sy, grow = 0) scale([1, sy, 1])

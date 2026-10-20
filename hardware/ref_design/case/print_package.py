@@ -54,7 +54,7 @@ PLATES = {
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
         [(f"tune_stack_{c}_lid_dome1.75", f"{KIT}/tune_stack_{c}_lid_dome1.75.stl") for c in ("dpad", "abxy", "ss")],
     "3_buttons_heights": [(f"tune_stack_{c}_lid_dome{d}", f"{KIT}/tune_stack_{c}_lid_dome{d}.stl")
-                          for c in ("dpad", "abxy", "ss") for d in ("1.45", "2.05")],
+                          for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.9")],
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
                       ("usb_tub", "usb_lid", "usb_board", "snap_tub", "snap_lid", "frame_lid",
                        "buttons_tub", "buttons_board", "buttons_lid")],
