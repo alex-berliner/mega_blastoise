@@ -4,8 +4,8 @@
     BAMBU_STUDIO=/path/to/BambuStudio python3 case/print_package_p1s.py [plate ...]
 
 after case/export.py --stl and case/fitkit.py. BAMBU_STUDIO is Bambu Studio's executable (an
-AppImage's AppRun, extracted with --appimage-extract, works headless). Each plate is arranged
-and sliced by Bambu Studio's command line into a project with its G-code in it, ready to send.
+AppImage's AppRun, extracted with --appimage-extract, works headless). Each plate is laid out
+(print_package's packing) and sliced by Bambu Studio's command line into a project with its G-code in it, ready to send.
 
 PLA only, as the U1 package (Alex, 2026-10-20): Bambu PLA Basic, one filament, no prime tower.
 The profiles are in print/p1s/ (Bambu's system presets for a P1S, 0.4 mm nozzle, 0.20 mm
@@ -42,20 +42,46 @@ same plates for the Snapmaker U1.) Set the plate type in Bambu Studio to the pla
 """
 
 
+BED = 256.0
+EXCLUDE = (0, 0, 18, 28)       # the P1S's no-print corner, front left (machine.json bed_exclude_area)
+
+
+def layout(parts):
+    """Each part placed on the bed: print_package's shelf packing, longest first, from the back
+    (Bambu's own --arrange leaves parts it can't nest on a second plate, and the slice still
+    passes). Returns [(part, mesh moved into place)], or None if the parts don't fit."""
+    import trimesh
+    meshes = [(obj, trimesh.load(path, force="mesh")) for obj, path in parts]
+    sizes = [tuple(m.extents[:2]) for _, m in meshes]
+    x0, y0, x1, y1 = EXCLUDE
+    try:                                           # packed front to back, then turned back to front
+        spots = print_package.pack(sizes, [(x0, BED - y1, x1, BED - y0)], BED)
+    except SystemExit:
+        return None
+    for (obj, m), (x, y) in zip(meshes, spots):
+        lo, hi = m.bounds
+        m.apply_translation([x - (lo[0] + hi[0]) / 2, (BED - y) - (lo[1] + hi[1]) / 2, -lo[2]])
+    return meshes
+
+
 def slice_plate(name, parts, supports, tmp):
-    """Arrange and slice one plate; returns (3mf path, grams, seconds) or None if it doesn't fit."""
+    """Place and slice one plate; returns (3mf path, grams, seconds) or None if it doesn't fit."""
+    placed = layout(parts)
+    if placed is None:
+        print(f"  {name}: doesn't fit the bed")
+        return None
     work = os.path.join(tmp, name)
     os.makedirs(os.path.join(work, "out"))
     stls = []
-    for obj, path in parts:                        # one file per object: two of a part are two files
+    for obj, m in placed:                          # one file per object: two of a part are two files
         dst = os.path.join(work, obj + ".stl")
-        shutil.copy(path, dst)
+        m.export(dst)
         stls.append(dst)
     process = "process_supports.json" if supports else "process.json"
     cmd = [os.environ["BAMBU_STUDIO"],
            "--load-settings", f"{PROFILES}/machine.json;{PROFILES}/{process}",
            "--load-filaments", f"{PROFILES}/filament.json",
-           "--arrange", "1", "--slice", "0", "--export-3mf", name + ".3mf",
+           "--arrange", "0", "--slice", "0", "--export-3mf", name + ".3mf",
            "--outputdir", os.path.join(work, "out"), *stls]
     subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
     try:
@@ -66,8 +92,12 @@ def slice_plate(name, parts, supports, tmp):
         print(f"  {name}: {result.get('error_string', '?').strip()}")
         return None
     plate = result["sliced_plates"][0]
+    out = os.path.join(work, "out", name + ".3mf")
+    on_plate = json.loads(zipfile.ZipFile(out).read("Metadata/plate_1.json"))["bbox_objects"]
+    if len(on_plate) != len(parts):
+        sys.exit(f"{name}: only {len(on_plate)} of its {len(parts)} parts are on the plate")
     grams = sum(f["main_used_g"] for f in plate["filaments"])
-    return os.path.join(work, "out", name + ".3mf"), grams, plate["total_predication"]
+    return out, grams, plate["total_predication"]
 
 
 def halves(parts):

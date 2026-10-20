@@ -114,16 +114,16 @@ def tower_keepout(z):
     return [(x - m, y - m, x + w + m, y + 45 + m)]
 
 
-def pack(sizes, taken):
+def pack(sizes, taken, bed=BED):
     """Shelf-pack footprints (w, l) onto the bed, longest first, avoiding the rectangles already
     taken; returns their centres in the given order."""
     spots, x, y, row = {}, GAP, GAP, 0.0
     for i in sorted(range(len(sizes)), key=lambda i: -sizes[i][1]):
         w, l = sizes[i]
         while True:
-            if x + w > BED - GAP:
+            if x + w > bed - GAP:
                 x, y, row = GAP, y + row + GAP, 0.0
-            if y + l > BED - GAP:
+            if y + l > bed - GAP:
                 raise SystemExit("plate overflows the bed: split it")
             box = (x, y, x + w, y + l)
             hit = next((t for t in taken if box[0] < t[2] + GAP and t[0] < box[2] + GAP and
