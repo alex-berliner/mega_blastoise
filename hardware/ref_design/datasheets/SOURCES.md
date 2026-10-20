@@ -14,7 +14,7 @@ the design; the file names below are what the notes and tools refer to.
 | `fm8002a.pdf` | FM8002A mono audio amplifier | https://www.chipsourcetek.com/DataSheet/FM8002A.pdf |
 | `mcp6002.pdf` | Microchip MCP6002 dual op-amp (U6, backlight sinks), DS20001733L | https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_Microchip-Tech-MCP6002T-I-SN_C7377.pdf |
 | `ao3400a.pdf` | Alpha & Omega AO3400A N-MOSFET (Q5, Q6, backlight sinks), Rev 3 Dec 2011 | https://www.lcsc.com/datasheet/lcsc_datasheet_1811081213_Alpha---Omega-Semicon-AO3400A_C20917.pdf |
-| `srv05-4.pdf` | Semtech SRV05-4.TCT USB ESD array (U1), Revision 08/11/04 | https://www.lcsc.com/datasheet/lcsc_datasheet_1809212114_SEMTECH-SRV05-4-TCT_C13612.pdf |
+| `srv05-4a.pdf` | Zhuhai Hongjiacheng SRV05-4A USB ESD array (U1), Rev 2.0 | https://datasheet.lcsc.com/datasheet/pdf/896c5101b23d5999ade9616dd078e12f.pdf?productCode=C20615829 |
 
 The SPICE models for board/sim (Microchip's MCP6001/2/4 macromodel, Alpha & Omega's AO3400)
 are not committed either: `board/sim/models.py` fetches and translates them.

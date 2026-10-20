@@ -6582,7 +6582,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C13612"
+		(property "LCSC" "C20615829"
 			(at 73.66 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -6593,7 +6593,7 @@
 				)
 			)
 		)
-		(property "MPN" "SRV05-4.TCT"
+		(property "MPN" "SRV05-4A"
 			(at 73.66 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -6604,7 +6604,7 @@
 				)
 			)
 		)
-		(property "Manufacturer" "Semtech"
+		(property "Manufacturer" "Zhuhai Hongjiacheng"
 			(at 73.66 101.6 0)
 			(hide yes)
 			(show_name no)
