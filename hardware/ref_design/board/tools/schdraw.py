@@ -15,7 +15,7 @@ Conventions:
   * Fields are horizontal and centred: a part's Reference above its Value, beside
     or above and below its body (place()'s f).
   * Power symbols are KiCad's own (power:GND, power:+3V3, ...) with the rail's name
-    as the symbol's Value by its arrow; GND shows only its symbol. A power symbol's
+    as the symbol's Value by its arrow, GND's under its bars. A power symbol's
     "#PWR" reference is hidden, as KiCad does.
   * A local label sits at the end of a wire with its text on the wire (left or
     down) or running on past its end (right). A global label points the way its
@@ -221,9 +221,29 @@ class Sheet:
 
     # -- power --
     def gnd(self, at):
+        """GND symbol with its pin at `at`. Its name goes under the bars, or beside them where
+        that is taken (gnd_names, once the sheet is drawn)."""
         at = self.P(at)
         self.power.append(("GND", at[0], at[1], 0, None))
         return at
+
+    def gnd_names(self):
+        """Name every GND symbol (Alex, 2026-10-20: a bare triangle didn't say what it was):
+        under its bars, else to their right, else to their left, wherever the text clears
+        everything else on the sheet."""
+        w = tw("GND") / 2
+        for i, (net, x, y, rot, val) in enumerate(self.power):
+            if net != "GND" or val:
+                continue
+            others = [b for k, o, b in self.boxes()] + [(min(a, c) - 0.2, min(b, d) - 0.2, max(a, c) + 0.2, max(b, d) + 0.2)
+                                                       for a, b, c, d in self.wires]
+            for cx, cy in ((x, y + 3.81), (x + 1.9 + w, y + 1.8), (x - 1.9 - w, y + 1.8)):
+                box = (cx - w, cy - 0.75, cx + w, cy + 0.75)
+                if not any(_overlap(box, b, 0.05) for b in others):
+                    break
+            else:
+                cx, cy = x, y + 3.81             # nowhere clear: under it, and the check says so
+            self.power[i] = (net, x, y, rot, (round(cx, 4), round(cy, 4)))
 
     def rail(self, net, at, d="up"):
         """Power symbol for net with its pin at `at`, pointing d (up/left/right/down), the
@@ -366,6 +386,7 @@ class Sheet:
         self.split()
         self.name_nets()
         self.split()
+        self.gnd_names()
         self.junctions = []
         pts = self.points()
         deg = {}
