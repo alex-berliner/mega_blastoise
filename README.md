@@ -15,6 +15,7 @@ Architecture overview: see [docs/architecture/README.md](./docs/architecture/REA
 
 ## Documentation
 
+- [DESIGN.md](./DESIGN.md): the whole project in one document (goals, history, decisions, architecture, hardware, cost, status), linking to the detailed docs
 - [docs/TECHNICAL.md](./docs/TECHNICAL.md): software internals, crate layout, interfaces, data flow
 - [docs/architecture/](./docs/architecture/README.md): deep-dive architecture docs
 - [hardware/ref_design/](./hardware/ref_design/README.md): the reference design (board, case, docs)
