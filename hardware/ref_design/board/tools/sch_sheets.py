@@ -629,37 +629,58 @@ def mcu():
 
 def mcu_power():
     sh = Sheet("mcu_power.kicad_sch")
+    # which U4 pin each cap serves, from the routed board (the core's caps sit where Raspberry
+    # Pi's minimal design puts them, each on a short track to its pin); lines read top down
+    SERVES = {
+        "C14": ["5 IOVDD"], "C16": ["15 IOVDD"], "C19": ["24 IOVDD"], "C12": ["29 IOVDD"],
+        "C17": ["41 IOVDD"], "C15": ["50 IOVDD"], "C18": ["59 ADC_AVDD", "60 IOVDD"],
+        "C11": ["68 USB_OTP_VDD", "69 QSPI_IOVDD"], "C13": ["76 IOVDD"],
+        "C10": ["3V3 feed,", "no U4 pin"], "C23": ["bulk, by", "regulator"],
+        "C20": ["10 DVDD"], "C21": ["32 DVDD"], "C22": ["51 DVDD"],
+        "C24": ["64 VREG_VIN"], "C26": ["61 VREG_AVDD"], "C25": ["65 VREG_FB", "(output)"],
+    }
+
+    def serves(c, x, y):
+        """The pin(s) cap c serves, centred on x, the last line just above y (its tap)."""
+        lines = SERVES[c]
+        for i, s in enumerate(lines):
+            sh.text(x, y - 2.54 - 2.03 * (len(lines) - 1 - i), s, align="c")
 
     def cap_row(x0, y0, caps, rail, title):
-        """Caps side by side between a supply wire on top and a ground wire below."""
-        sh.heading(x0 - 5.08, y0 - 12.7, title)
-        xs = [x0 + 10.16 * i for i in range(len(caps))]
-        sh.rail(rail, (x0 - 5.08, y0))
-        sh.wire((x0 - 5.08, y0), (xs[-1], y0))
+        """Caps side by side between a supply wire on top and a ground wire below, each
+        with the pin it serves over its tap."""
+        sh.heading(x0 - 10.16, y0 - 12.7, title)
+        xs = [x0 + 17.78 * i for i in range(len(caps))]
+        sh.rail(rail, (x0 - 10.16, y0))
+        sh.wire((x0 - 10.16, y0), (xs[-1], y0))
         for x, c in zip(xs, caps):
             sh.place(c, x, y0 + 6.35, 0, f=("r", 0))
             sh.wire((x, y0), f"{c}.1")
             sh.wire(f"{c}.2", (x, y0 + 12.7))
+            serves(c, x, y0)
         sh.wire((xs[0], y0 + 12.7), (xs[-1], y0 + 12.7))
         sh.gnd((xs[len(xs) // 2], y0 + 12.7))
         return xs
 
-    cap_row(30.48, 45.72, ["C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C23"], "+3V3",
-            "+3V3 decoupling: IOVDD, ADC_AVDD, USB_OTP_VDD, QSPI_IOVDD (100 nF each), bulk C23")
-    cap_row(30.48, 88.9, ["C20", "C21", "C22"], "+1V1", "DVDD decoupling (+1V1)")
+    # in U4's pin order
+    cap_row(30.48 + 5.08, 45.72, ["C14", "C16", "C19", "C12", "C17", "C15", "C18", "C11", "C13", "C10", "C23"], "+3V3",
+            "+3V3 decoupling, by U4 pin: 100 nF at each IOVDD, ADC_AVDD, USB_OTP_VDD, QSPI_IOVDD; bulk C23")
+    cap_row(30.48 + 5.08, 88.9, ["C20", "C21", "C22"], "+1V1", "DVDD decoupling (+1V1), by U4 pin")
     # ---- the core regulator: VREG_AVDD filter, VREG_VIN cap, inductor and output cap
     sh.heading(83.82, 76.2, "Core 1.1 V switcher: VREG_VIN cap, AVDD filter, inductor, output")
     y = 88.9
     sh.rail("+3V3", (88.9, y))
-    sh.place("C24", 96.52, y + 3.81, 0, f=("r", G))
-    sh.wire((88.9, y), (106.68, y)); sh.wire((96.52, y), "C24.1"); sh.tag("C24.2", 0)
+    sh.place("C24", 99.06, y + 3.81, 0, f=("r", G))
+    sh.wire((88.9, y), (106.68, y)); sh.wire((99.06, y), "C24.1"); sh.tag("C24.2", 0)
+    serves("C24", 99.06, y)
     sh.place("R19", 111.76, y, 90)
     sh.wire((106.68, y), "R19.1")
     sh.place("C26", 124.46, y + 3.81, 0, f=("r", G))
-    sh.wire("R19.2", (134.62, y))
+    sh.wire("R19.2", (142.24, y))
     sh.wire((124.46, y), "C26.1"); sh.tag("C26.2", 0)
-    sh.flag("#FLG06", (119.38, y))
-    sh.label("VREG_AVDD", (134.62, y), "right")
+    serves("C26", 124.46, y)
+    sh.flag("#FLG06", (134.62, y))
+    sh.label("VREG_AVDD", (142.24, y), "right")
     yl = 121.92
     lx = (88.9, yl)
     sh.place("L2", 101.6, yl, 270)
@@ -668,11 +689,14 @@ def mcu_power():
     sh.wire("L2.1", (147.32, yl))
     sh.place("C25", 116.84, yl + 3.81, 0, f=("r", G))
     sh.wire((116.84, yl), "C25.1"); sh.tag("C25.2", 0)
+    serves("C25", 116.84, yl)
     sh.flag("#FLG05", (127.0, yl))
     tp(sh, "TP9", (137.16, yl))
     sh.rail("+1V1", (147.32, yl))
-    sh.text(17.78, 177.8, "RP2354B supply, as in Raspberry Pi's minimal design: 100 nF at every IOVDD, DVDD, ADC, OTP and QSPI pin,")
-    sh.text(17.78, 181.61, "4.7 uF at the regulator's input and output, and L2 (a polarity-marked 3.3 uH inductor, fit as drawn).")
+    sh.text(17.78, 170.18, "RP2354B supply, as in Raspberry Pi's minimal design: a 100 nF beside every IOVDD, DVDD, ADC, OTP and QSPI pin")
+    sh.text(17.78, 173.99, "(the number and name over each cap is the U4 pin it sits by on the board), 4.7 uF at the regulator's input")
+    sh.text(17.78, 177.8, "and output, and L2 (a polarity-marked 3.3 uH inductor, fit as drawn). C10 is the 100 nF Raspberry Pi gave its")
+    sh.text(17.78, 181.61, "external flash; the RP2354B has its flash inside, so C10 sits on the 3V3 feed to the core, by no U4 pin.")
     return sh
 
 
