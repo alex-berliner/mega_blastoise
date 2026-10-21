@@ -26,15 +26,15 @@ assembled.
 ## 2. Order and make the rest
 
 The list, with the listings found so far: [bom.md](bom.md), "You". In short: the
-ER-TFT035IPS-6 panel (buydisplay.com), a 403450 cell with a Molex PicoBlade (MX1.25) plug, INGHAi's GSPK151035PN speaker (its
+ER-TFT024IPS-3 panel (buydisplay.com; the board is still laid out for the 3.5 in ER-TFT035IPS-6 until it is re-placed for the 133 mm case), a 403450 cell with a Molex PicoBlade (MX1.25) plug, INGHAi's GSPK151035PN speaker (its
 leads end in a 1.25 mm plug), two sets each of DS
 Lite silicone and caps, tape and foam, and the printed case (`case/tub.stl`,
-`case/lid.stl`).
+`case/top.stl` and two of `case/deck.stl`).
 
 Before the first board order, check the parts against the design (the approved
 fit check): one panel against its drawing, the cell's size with its protection board
 and its plug's polarity, the speaker's plug in a PicoBlade header, and the silicone and caps in a
-printed lid. The fit kit (`case/fitkit/`) has the prints for it: a board mock, dummies
+printed deck. The fit kit (`case/fitkit/`) has the prints for it: a board mock, dummies
 of the loose parts and quick coupons of the case, with a test order in its README. The
 numbers to measure are in [design_review.md](design_review.md).
 
@@ -42,10 +42,8 @@ numbers to measure are in [design_review.md](design_review.md).
 lead. A reversed cell destroys the charger. If a batch arrives reversed, lift each
 crimp's latch with a needle, pull the two pins out of the plug and swap them.
 
-Printing: PETG for the lid (its snap hooks bend across its layers; PLA hooks snapped on the
-first print), the lid face down. The lid is 1.1 mm thick over the battery connector: 100%
-infill there. FDM holes come out small: drill the 1.2 mm pinholes to size. Tune `snap_barb`
-and the hook thickness in `case/case.scad` if the lid is too loose or too tight.
+Printing: PLA, every part as exported and without supports: the tub back down, the top piece
+and the two decks face down. FDM holes come out small: drill the 1.2 mm pinholes to size.
 
 ## 3. Hand work on the board
 
@@ -63,41 +61,43 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 
 ## 5. Put it together
 
-1. Lid, face down on the bench: stick the tape strips on the window ledge (leave the
-   liner on).
-2. Into the tub: the cell in its pocket on the floor, lengthwise, its wires at seat 1's end,
-   a 0.45 mm foam pad on top. The speaker face down on its pad beside the left wall, between
-   the cell and seat 2's end: peel its foam ring's liner and press it down, its solder tab
-   towards the wall and its leads towards the middle, so the ring seals round the chamber
-   that opens through the wall.
-3. Push the cell's plug up through the board's hole (5.45 x 4.4 mm, 5.5 mm in front of J2's
-   mouth, between seat 1's clusters at the screen's edge: the whole plug passes), and the
-   speaker's plug up through the same-sized hole at seat 2's end (in front of J4), then the
-   board into the tub: its tab under the USB-C drops into the slot in the wall (it goes in one
-   way only), pressed down past the crush ribs that centre it onto the floor's support ribs and
-   bosses. Lay the plug flat, wires towards the hole, and push it into J2: its wires run
-   straight from its tail down through the hole, with no fold. The speaker's plug goes into
-   J4 the same way (its red lead is +, nearest J4's pin 1; the amplifier is bridge-tied, so a
-   reversed speaker only flips its phase). The cell's plug can't reach J4.
-4. Panel: lay it face down beyond the board's seat-1 edge, flip J3's lid up, slide the
-   FPC's contacts into J3 (contacts down) until it stops, square, and press the lid shut.
-   Then fold the panel over onto the board, face up, its FPC looping under it at the
-   seat-1 edge (don't crease it). It rests loosely on the parts under it for now.
-   A cracked panel comes out the same way: lid up, FPC out.
-5. Silicone pieces onto the contacts, caps onto the silicone. Each ABXY cap's flange tab
-   drops into a slot in the lid, and ribs in the lid fill the notches in its flange, so each
-   cap fits only its own hole, one way round: turn the caps to match. Seen from that seat's player:
-   A's tab (right cap) points down-left, B's (bottom) up-left, X's (top) down-right, Y's
-   (left) up-right. The slots are 30 degrees wide, so close is enough; if the lid won't
-   seat, a cap is turned too far.
-6. Peel the tape liner and lower the lid straight down until all four hooks click into
-   the tub wall and its lip seats in the wall's step: its locating frame centres the
-   panel and the tape takes it, the caps come up through their holes and the retainers
-   trap their flanges. From here on the panel hangs from the lid, its top in the lid's pocket.
-7. Turn it over and drive the six M2 x 8 screws up through the tub's bosses and the
-   board into the lid's bosses, snug, not tight (they cut their own thread in the plastic).
-   They clamp the board between the bosses and hold the case shut, as on a DS Lite.
-8. Opening it again: the six screws out, then a thin blade down between the lid and the
-   tub wall at a hook to ease it inwards; go round the six.
+It goes together upside down (2026-10-21, `case/SHELL.md`): everything is laid into the top piece
+face down, and the tub closes over it.
+
+1. **The board, face up.** Push the cell's plug up through the board's hole (5.45 x 4.4 mm, in
+   front of J2's mouth, between seat 1's clusters at the screen's edge: the whole plug passes), lay
+   it flat, wires towards the hole, and push it into J2: its wires run straight from its tail down
+   through the hole, with no fold. The speaker's plug goes up through the same-sized hole at seat
+   2's end into J4 the same way (its red lead is +, nearest J4's pin 1; the amplifier is
+   bridge-tied, so a reversed speaker only flips its phase). The cell's plug can't reach J4.
+2. Turn the board over. Stick the cell on its back at its silkscreen outline with the 0.45 mm foam
+   pad, its wires at seat 1's end, and the speaker by its back with thin double-sided tape at its
+   outline beside the left edge, face (and foam ring) away from the board, its leads towards the
+   middle. Peel the speaker ring's liner later, just before the tub goes on.
+3. **The top piece**, face down on a cloth. Stick the tape strips round the panel's pocket (leave
+   the liner on).
+4. **The decks:** lower each into its end of the top piece from behind, face down. It drops onto
+   its wedges along the step and round the spine and sits flat.
+5. **Caps** into the decks from behind. Each ABXY cap's flange tab drops into a slot and ribs fill
+   the notches in its flange, so each cap fits only its own hole, one way round: turn the caps to
+   match. Seen from that seat's player (from the front): A's tab (right cap) points down-left, B's
+   (bottom) up-left, X's (top) down-right, Y's (left) up-right; from behind it is mirrored, so go by
+   the slots. Then the D-pad and Start/Select, then the **silicone** over them: the walls on the
+   deck's back locate each pad.
+6. **The panel:** peel the tape liner and lay the panel glass down into the pocket; the frame
+   centres it. Hold the board on edge at seat 1's end, its face towards the panel, flip J3's latch
+   up, slide the FPC's contacts into J3 (contacts down) until it stops, square, and press the latch
+   shut. A cracked panel comes out the same way.
+7. **The board**, face down onto the bosses (four on the top piece, one on each deck), the FPC
+   folding under the panel at the seat-1 edge (don't crease it). The crush ribs on the side walls and
+   the decks' end walls centre it; its tab under the USB-C sits in the notch.
+8. Peel the speaker ring's liner. **The tub** over it all: its tongue slides inside the skirts all
+   round, its tab rises into the notch under the USB-C, and the speaker's ring lands on its pad round
+   the chamber.
+9. **Six M2 x 8** from the back, up through the tub's bosses and the board into the top piece's and
+   the decks' bosses, snug, not tight (they cut their own thread in the plastic). They clamp the
+   board between the bosses and hold the case shut, as on a DS Lite.
+10. Opening it again: the six screws out, lift the tub off, lift the board out (the cell and the
+    speaker come with it).
 
 The power button is seat 1's Start button: hold it for about a second to turn the device on.

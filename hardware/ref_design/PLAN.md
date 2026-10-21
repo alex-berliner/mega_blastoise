@@ -15,21 +15,21 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 
 | Area | Choice | Why |
 |---|---|---|
-| Panel | EastRising ER-TFT035IPS-6, ILI9488, 320x480 IPS, 54.50 x 83.00 x 2.30 mm, about $14.20 a unit with shipping at 10 | a published datasheet and 3D model, sold by the maker; plugs in instead of being soldered (Alex, 2026-09-24; the QD3525 it replaced only came with a solder tail) |
+| Panel | EastRising ER-TFT024IPS-3, ST7789V, 240x320 IPS, 42.72 x 59.46 x 2.3 mm (2026-10-21; the 3.5 in ER-TFT035IPS-6, ILI9488, 54.50 x 83.00, until then) | the case is a DS Lite's length (132.7 mm, was 156.2) with the width the buttons set; same maker, same 50-pin FPC into J3 (the board's driver and backlight changes are the schematic session's) |
 | Panel FPC | 50 contacts, 0.5 mm pitch, in a Hirose FH12-50S bottom-contact ZIF (J3), assembled by JLC | no hand soldering per unit; a cracked panel swaps in a minute |
 | Backlight | 6 LEDs in parallel on two cathode pins, anode on VSYS; a linear current sink per pin (MCP6002 + AO3400A + 2.2 ohm), set by one GPIO's filtered PWM | constant current down to the 3.5 V cutoff, DC in the LEDs, all Basic/Preferred parts; replaced the AP3156 charge pump, out of stock on 2026-10-07 (stability simulated: board/sim/backlight.py) |
 | MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board); no flash chip to route |
 | Charger | TP4056 at 500 mA, TEMP on a board NTC over the cell (1-46 C); USB load sharing (B5819W, AO3401A, BAT54WS gate feed, 22 uF on VSYS; a second B5819W across the AO3401A carries the unplug gap); 2.2 ohm in series with the input cap against hot-plug ringing | a fifth of the BQ24074's price, no stock risk; the NTC added on request (Extended part, $3 an order) |
-| Cell | 403450, about 700 mAh, Molex PicoBlade (MX1.25) plug into a 3.4 mm J2 (JST PH until 2026-10-19: too tall for the lowered lid), under the board on the tub's floor | 13.4 mm at the screen (the panel sits in a pocket in the lid, 2026-10-19), 11.5 at the ends; the plug passes up through a 5.45 x 4.4 mm hole a plug's length (5.5 mm) past J2's mouth, the cell 5 mm towards seat 2 to make room (Alex, 2026-10-20: the plug had to double over into J2); chosen over the cell on the board under the screen (13.9 mm, 7.9: branch ref-design-cell-on-board) (Alex, 2026-10-09) |
+| Cell | 403450, about 700 mAh, Molex PicoBlade (MX1.25) plug into a 3.4 mm J2 (JST PH until 2026-10-19: too tall for the lowered lid), under the board on the tub's floor | 13.35 mm at the screen (the panel sits in a pocket in the top piece, 2026-10-19), 11.5 at the ends; the plug passes up through a 5.45 x 4.4 mm hole a plug's length (5.5 mm) past J2's mouth, the cell clear of it (centred since the 133 mm case) (Alex, 2026-10-20: the plug had to double over into J2); chosen over the cell on the board under the screen (13.9 mm, 7.9: branch ref-design-cell-on-board) (Alex, 2026-10-09) |
 | 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at 3.5 V as computed (the ADC reads against 3V3, which follows the cell once the LDO drops out) |
 | Audio | PWM (GPIO8, 8 bits at 586 kHz) through two RC stages (1k, 4.7 nF; -3 dB about 14 kHz) into an FM8002A, gain 2, into INGHAi's GSPK151035PN (15 x 10 mm) on J4, a PicoBlade header, playing out of the left wall's lower edge (2026-10-20) | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
 | Buttons | 16 x DSL_button_4ring (D-pads, A/B/X/Y) and 4 x DSL_button_3ring (each seat's Start and Select, under the DS Lite kit's Start/Select membrane, between the clusters at the case's end), direct GPIO, internal pull-ups; seat 1's Start is also the power button | no matrix; no side switch (approved); Start/Select added and power moved off Y (Alex, 2026-10-19) |
 | Pin map | each pin faces where its net goes, in fan-out order; Raspberry Pi's pin escapes copied with the core | two layers route completely (docs/pinmap.md) |
 | Power switch | seat 1's Start contact joins VSYS to the latch; MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |
 | USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 27 ohm 0402 series in Raspberry Pi's spots | one Extended part ($3 an order): the 27 ohm 0402 (C25100; 22 ohm until the 2026-10-05 pin review, and a 27 ohm 0603 doesn't fit the copied layout) and the ESD array was the second from 2026-10-07 (ProTek's Preferred SRV05-4, C85364, ran out, so U1 became Semtech's Extended SRV05-4.TCT, C13612) until 2026-10-20, when U1 became hongjiacheng's Preferred SRV05-4A (C20615829, Alex): same pinout, no setup fee |
-| Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes; SWD again on six 2.54 mm pogo pads on the back (J7: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND); probe pads on every rail (VBUS, VSYS, VBAT, 3V3, 1V1), the panel's SPI, BL_REF, PWR_EN, LS_GATE, AMP_SHDN and two GND clips; cut jumpers isolate the 3V3 regulator, backlight, amplifier, panel logic and cell (JP1-JP5) | no LEDs (approved); pads and jumpers added after Alex's debug-readiness review (2026-10-19) |
+| Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under pinholes in the top piece; SWD again on six 2.54 mm pogo pads on the back (J7: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND); probe pads on every rail (VBUS, VSYS, VBAT, 3V3, 1V1), the panel's SPI, BL_REF, PWR_EN, LS_GATE, AMP_SHDN and two GND clips; cut jumpers isolate the 3V3 regulator, backlight, amplifier, panel logic and cell (JP1-JP5) | no LEDs (approved); pads and jumpers added after Alex's debug-readiness review (2026-10-19) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
-| Case | six M2 screws through the board clamp tub and lid (as a DS Lite); four hooks on the long walls hold the lid while it is screwed; a lip in a step at the seam; crush ribs centre the board and bosses clamp it (it fits one way only: J1 and J2 key it); the board rests on floor ribs; no feet (2026-10-20: the tub prints flat as exported); the USB-C opening follows the shell's rounded-rectangle outline, and the lid's tongue over it has stepped seams; button decks step down 1.9 mm (the panel sits in a pocket in the lid) for DS Lite caps, their openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
+| Case | 75.4 x 132.7 x 13.35 mm (11.5 at the decks): a top piece and two decks (one part) curve over the sides and meet the tub (the back) flush at one seam low on the walls, over the tub's tongue; each deck seats into the top piece from behind on a 45 degree wedge; built upside down; six M2 screws from the back through the board, four into the top piece and one into each deck; no hooks; crush ribs centre the board; every part prints without supports, every edge and the step to each deck an arc ending in a chamfer at `overhang` (45 until the 6_tests ladder) (case/SHELL.md, 2026-10-21); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21); FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` by `tools/build_sch.py`; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
@@ -128,7 +128,7 @@ Buttons (from Alex's pad measurements, 2026-10-20; check_buttons fails on these 
 
 Alex's notes on the print from the kit before f3d5863 (2026-10-21), the ones for the case; the
 shell's redesign (a shorter case for a 2.4 in panel, the top curving over the tub, decks built
-upside down) takes the answers of the `6_tests` plate:
+upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plate:
 - [ ] 5 Openings: confirm the 0.65 D-pad opening and the 8.0 A/B/X/Y holes with real caps
       (`tune_openings`, on `6_tests`). Waiting on Alex's test print
 - [x] 6 "The speaker sticks out of the side of the housing": the speaker sat inside the wall, but
@@ -143,9 +143,33 @@ upside down) takes the answers of the `6_tests` plate:
       sees a lip elsewhere on the next print, it's in the print, not the model: ask where
 - [x] 11 Screw holes filled in: the plate's supports filled the tub's six counterbores. Both kits
       now give supports only to the parts that need them; the P1S kit checks its G-code
-      (`case/support_check.py`). `coupon_screws_tub` and `coupon_screws_lid` on `6_tests` confirm it
-- [ ] 12 The deck insert's ring round the lid's 5.0 boss was too tight (`insert_gap` 0.15 a side):
-      `test_column` and `test_rings` (0.2 to 0.5 a side) on `6_tests`. Waiting on Alex's test print
+      (`case/support_check.py`). `coupon_screws_tub` and `coupon_screws_top` on `6_tests` confirm it
+- [x] 12 The deck insert's ring round the lid's 5.0 boss was too tight (`insert_gap` 0.15 a side).
+      Gone with the new shell: each deck has its own boss, so no column passes through another
+      part. `test_column` and `test_rings` on `6_tests` still say what clearance a column needs
+- [x] 10 "The top pieces should curve over the sides and meet the tub flush, or go over it" (and keep
+      the width): done 2026-10-21 (case/SHELL.md). The top piece and the decks roll over through
+      `face_r` and meet the tub at one seam where the back's round ends, their skirts over the tub's
+      tongue; still 75.4 wide; the hooks went
+- [x] 13 "The top piece's 45 degree ridge down to the control deck: a curve": done as far as the 45
+      degree limit allows: the same round as the outside edges (`step_r` 3.0), an arc that ends in a
+      chamfer at `overhang` near the screen face. Under a 45 degree limit a straight slope is the
+      gentlest line there is, so the curve gets rounder only when `overhang` goes up after the
+      6_tests ladder (one line)
+- [x] 14 No more deck cards slotted in from the front: each deck reaches the case's outline, curves
+      over the end and sides to the seam (the tub supports it all round), seats into the top piece
+      from behind on a 45 degree wedge, and has its own screw (the end screw). No tub lip
+- [x] 15 Built upside down: board (cell and speaker plugged and stuck on its back), top piece face
+      down, decks in, caps and silicone, panel, FPC into J3, board face down, tub, screws
+      (case/SHELL.md, print_package_README.md)
+- [ ] The board for the new case (another session): re-place and re-route it to the new
+      positions.json (case/BOARD_OUTLINE.md: 70.4 x 127.7, the six screws, the clusters moved in
+      11.77 mm, J3's whole range kept clear, the back's silkscreen outlines for the cell and the
+      speaker). check_fit fails 34 ways on today's board, all because it isn't re-placed yet
+- [ ] Questions from the shell (case/SHELL.md, "Open questions"): the deck's wedge clearance and the
+      seam's fit (the `0_buttons_end` and seam coupons), J3's range (`tip_range`) on a real panel,
+      the speaker taped to the board's back, and whether to drop the spines (J2 and J4 into the
+      side bezels)
 
 Housekeeping:
 - [ ] Delete branch ref-design-j2-hole: its commit went in as 4241580 by cherry-pick, so `git branch -d` refuses
@@ -160,6 +184,7 @@ Housekeeping:
   Start/Select pad (outline, dome spacing, wells); the D-pad collar's base width; whether each dome's
   top has a recess for the cap's stem; the gap under the nub; the caps' flange thickness; and the
   DS Lite shell's clover (10.45 across one opening, wall 1.8 thick?)
-- An ER-TFT035IPS-6 against its drawing: outline, that its folded FPC reaches J3 with a little slack, and that contact 1 lands on J3's pin 50 (the right end seen from above, seat 1 nearest)
+- An ER-TFT024IPS-3 against its drawing: outline, where its folded FPC's tip lands (the case keeps 22.5 to 25 mm in from the seat-1 edge clear), that it reaches J3 with a little slack, and which end contact 1 lands on
+- A printed top piece, decks and tub: a deck dropping onto its wedges, the seam's fit
 - The 403450 cell: length with its protection board, plug polarity
-- A printed tub and lid: the snap fit
+

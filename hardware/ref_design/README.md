@@ -20,8 +20,9 @@ which this folder never touches.
 ## What it is
 
 - RP2354B (2 MB flash inside), USB-C (charging + firmware + debug console)
-- 3.5in 320x480 IPS panel (EastRising ER-TFT035IPS-6, ILI9488, SPI) with a published
-  datasheet and 3D model, its FPC in a 50-pin ZIF connector (no soldering); a
+- 2.4in 240x320 IPS panel (EastRising ER-TFT024IPS-3, ST7789V, SPI; the 3.5in ER-TFT035IPS-6
+  until 2026-10-21, which the board still carries until it is re-placed) with a published
+  datasheet, its FPC in a 50-pin ZIF connector (no soldering); a
   constant-current backlight sink per LED group
 - 20 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad, four face buttons,
   Start and Select at each end
@@ -29,9 +30,11 @@ which this folder never touches.
   plays out of the side
 - One 403450 Li-ion cell (about 700 mAh) lying on the tub's floor under the board, TP4056 charger with USB load sharing,
   ME6211 3V3 LDO, soft power on seat 1's Start button with MCU hold
-- Case 75.4 x 156.2 mm, 13.4 mm at the screen and 11.1 mm at the button decks (genuine DS Lite
-  caps stand 1.3 mm proud there): a tub, a lid and a deck insert at each end, all printed without
-  supports, held by six M2 screws as a DS Lite
+- Case 75.4 x 132.7 mm (a DS Lite's length), 13.35 mm at the screen and 11.5 mm at the button decks
+  (genuine DS Lite caps stand 1.41 mm proud there): a tub, a top piece and a deck at each end that
+  curve over the sides to one seam, built upside down, all printed without supports, held by six M2
+  screws as a DS Lite ([case/SHELL.md](case/SHELL.md)). The board is being re-placed for it
+  ([case/BOARD_OUTLINE.md](case/BOARD_OUTLINE.md))
 
 ## Folder
 
@@ -45,7 +48,8 @@ which this folder never touches.
 | `board/tools/` | the scripts that build and check all of it (below) |
 | `board/sim/` | ngspice simulation of the backlight current sinks (loop stability, accuracy, transients); `backlight_results.txt` is the last run |
 | `case/case.scad` | the case, and the source of every mechanical position |
-| `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts, board outline, positions for the board scripts: build output from `case/export.py`, not in git (run it first) |
+| `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts (tub, top, deck), board outline, positions for the board scripts: build output from `case/export.py`, not in git (run it first) |
+| `case/SHELL.md`, `case/BOARD_OUTLINE.md` | the shell's design (2026-10-21) and what it asks of the board |
 | `case/fitkit/` | a printable fit kit: board mock, part dummies and case coupons, to test the real parts before ordering ([its README](case/fitkit/README.md)) |
 | `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md), [Konnect notes](docs/konnect_notes.md) |
 | `tools/quotes/` | JLCPCB and PCBWay instant-quote scripts for the bare board and assembly |
@@ -86,7 +90,7 @@ The stages, by hand:
 
 ```sh
 cd hardware/ref_design
-python3 case/export.py --stl                 # case -> positions.json, DXFs, STLs
+python3 case/export.py --stl                 # case -> positions.json, DXF, tub/top/deck STLs
 python3 case/check_buttons.py                # D-pad, A/B/X/Y, Start/Select with their silicone under the shell
 cd board
 python3 tools/build_sch.py                   # design.py -> schematic (tools/schwrite.py writes the sheets)
