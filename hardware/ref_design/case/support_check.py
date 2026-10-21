@@ -3,8 +3,9 @@
 
     python3 case/support_check.py plate.3mf [object ...]     # objects that must get none
 
-For each object on the plate (its mesh placed by the project's own transforms, not assumed
-offsets), the support and support interface extruded inside its outline, layer by layer, and
+For each object on the plate (its mesh placed by the project's own transforms, then moved onto
+its own first layer in the G-code: Bambu Studio's G-code sits 2.0 mm off the project's placement
+in y on a P1S, so no offset is assumed), the support and support interface extruded inside its outline, layer by layer, and
 for the tub every counterbore found in its own first millimetre. print_package_p1s.py calls
 check() on every plate and fails the build if a part that needs no supports got some.
 """
@@ -81,6 +82,22 @@ def objects(z):
     return {n: trimesh.util.concatenate(ms) for n, ms in out.items()}
 
 
+def register(objs, moves):
+    """Move each object's mesh onto its first layer in the G-code: the centre of the outer wall
+    extruded round it (within 3 mm of its outline) against its own section's centre. (Not the
+    start G-code's purge lines: they're "Custom".)"""
+    import overhangs
+    z0 = min(zz for f, zz, _ in moves if f == "Outer wall")
+    first = np.concatenate([p for f, zz, p in moves if zz == z0 and f == "Outer wall"])
+    for name, m in objs.items():
+        b = np.array(overhangs._slice(m, m.bounds[0][2] + z0 / 2).bounds)
+        near = MultiPoint(m.vertices[:, :2]).convex_hull.buffer(3)
+        q = first[shapely.contains_xy(near, first[:, 0], first[:, 1])]
+        if len(q) and len(b) == 4:
+            m.apply_translation([*((q.min(0) + q.max(0)) / 2 - (b[:2] + b[2:]) / 2), 0])
+    return objs
+
+
 def counterbores(mesh, z=0.5, d=(3.5, 6.0)):
     """The holes in the mesh's section z above its bottom whose size is a counterbore's."""
     import overhangs
@@ -95,8 +112,9 @@ def check(path, no_support):
     (lines of a report, [no_support objects that got some], {object: mm of support in its outline})."""
     z = zipfile.ZipFile(path)
     gcode = z.read("Metadata/plate_1.gcode").decode()
-    objs = objects(z)
-    sup = [(f, zz, p) for f, zz, p in extrusions(gcode) if f in SUPPORT]
+    moves = extrusions(gcode)
+    objs = register(objects(z), moves)
+    sup = [(f, zz, p) for f, zz, p in moves if f in SUPPORT]
     pts = np.concatenate([p for *_, p in sup]) if sup else np.zeros((0, 2))
     zs = np.concatenate([[zz] * len(p) for _, zz, p in sup]) if sup else np.zeros(0)
     report, bad, mm = [f"{len(pts) * 0.1:.0f} mm of support extrusion on the plate"], [], {}
@@ -104,10 +122,13 @@ def check(path, no_support):
         outline = MultiPoint(m.vertices[:, :2]).convex_hull.buffer(-0.3)
         inside = shapely.contains_xy(outline, pts[:, 0], pts[:, 1]) if len(pts) else np.zeros(0, bool)
         must_not = name in no_support
-        mm[name] = inside.sum() * 0.1
+        # beside it: the support's trunks and the parts of it under an overhang past the outline
+        beside = (shapely.contains_xy(outline.buffer(5.3), pts[:, 0], pts[:, 1]) & ~inside) if len(pts) else inside
+        mm[name] = (inside.sum() + beside.sum()) * 0.1
         layers = sorted({float(v) for v in np.round(zs[inside], 2)})
         report.append(f"  {name:28s} {'no supports' if must_not else 'may have supports':18s} "
-                      f"{inside.sum() * 0.1:7.1f} mm inside its outline" + (f" (layers {layers})" if layers else ""))
+                      f"{inside.sum() * 0.1:7.1f} mm inside its outline, {beside.sum() * 0.1:5.1f} within 5 mm of it"
+                      + (f" (layers {layers})" if layers else ""))
         if must_not and inside.any():
             bad.append(name)
         if name.startswith("tub"):
