@@ -1,9 +1,10 @@
 //! Color renderer for the single-screen redesign.
 //!
 //! One 240x320 panel lies flat between two seats and is split into two
-//! 240x160 halves; the far half is drawn rotated 180 degrees so both players
-//! read upright. This module renders **one half**. Composition and rotation
-//! live in [`crate::device_view`].
+//! 240x160 halves (320x240 on 320x480 with the `panel-320x480` feature);
+//! the far half is drawn rotated 180 degrees so both players read upright.
+//! This module renders **one half**. Composition and rotation live in
+//! [`crate::device_view`].
 //!
 //! Same contract as the mono renderer in [`crate::display`]: platforms never
 //! choose a `render_*` function, they hand a [`crate::Screen`] (plus the
@@ -29,10 +30,14 @@ use crate::board_event::MoveSlot;
 use crate::display::{InvalidReason, PartySlotData};
 use crate::sprites_color::{mon_back_sprite_color, mon_sprite_color, species_display_name, ColorSprite};
 
-/// One seat's half of the panel. Native ST7796 size: the stripboard v2
-/// glass is 320x480, split into two 320x240 halves.
-pub const HALF_W: u32 = 320;
-pub const HALF_H: u32 = 240;
+/// One seat's half of the panel: 240x160 on the native 240x320 panel.
+pub const HALF_W: u32 = crate::device_view::DEV_W;
+pub const HALF_H: u32 = crate::device_view::DEV_H / 2;
+
+/// The 320x480 layout. Most geometry derives from the safe area; the few
+/// sizes that are a judgement call (row heights, the recap art) pick per
+/// panel with this.
+const WIDE: bool = HALF_W >= 320;
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 // Derived from the mockup. Kept as functions so the constants stay readable
@@ -815,16 +820,33 @@ where
     }
 }
 
-/// A one-line affordance hint on the battle screens, in the gap along the
-/// top edge between the rival's plate and their sprite — the only band of a
-/// battle half that no plate, art or pane wants. Dim on purpose: it is a
-/// reminder for the first game, not furniture.
-fn hint<D>(d: &mut D, text: &str)
+/// An affordance hint on the battle screens, in the one patch of a battle
+/// half that no plate, art or pane wants. On the 320x480 panel that is the
+/// band along the top edge between the rival's plate and their sprite, and
+/// the hint is one line, `gap` spaces between its parts. At 240x160 the
+/// rival's sprite fills that band, so the parts stack in the pocket under the
+/// rival's plate, between your mon's art and the rival's. Dim on purpose: it
+/// is a reminder for the first game, not furniture.
+fn hint<D>(d: &mut D, first: &str, second: &str, gap: usize)
 where
     D: DrawTarget<Color = Rgb565>,
 {
-    text_aa_font(d, text, LEFT + 118, FRAME + PAD + 2, &FONT_5X8, C_DIM, C_BG);
+    if WIDE {
+        let x = LEFT + 118;
+        text_aa_font(d, first, x, FRAME + PAD + 2, &FONT_5X8, C_DIM, C_BG);
+        let x2 = x + ((first.len() + gap) * 5) as i32;
+        text_aa_font(d, second, x2, FRAME + PAD + 2, &FONT_5X8, C_DIM, C_BG);
+    } else {
+        text_aa_font(d, first, HINT_X, HINT_Y, &FONT_5X8, C_DIM, C_BG);
+        text_aa_font(d, second, HINT_X, HINT_Y + 9, &FONT_5X8, C_DIM, C_BG);
+    }
 }
+
+/// The 240x160 hint pocket: right of the widest back sprite (64 wide,
+/// centred in its 92 box), under the rival's plate and its shadow, left of
+/// the rival's sprite box, above your plate. Seven characters a line.
+const HINT_X: i32 = LEFT + 82;
+const HINT_Y: i32 = TOP + 34;
 
 /// First row a half may draw on. The pokeball divider is painted over the
 /// composed panel and reaches [`crate::device_view::DIVIDER_REACH`] rows into
@@ -847,9 +869,16 @@ const CHART_Y: i32 = BOTTOM - 52;
 
 /// Party list geometry, shared with the tap hit-test in the web client.
 pub(crate) const PARTY_Y: i32 = TOP + 22;
-pub(crate) const PARTY_PITCH: i32 = 24;
-/// A party row's height (the pitch leaves 4px of air between rows).
-pub(crate) const PARTY_ROW_H: u32 = 20;
+pub(crate) const PARTY_PITCH: i32 = if WIDE { 24 } else { 17 };
+/// A party row's height (the pitch leaves air between rows).
+pub(crate) const PARTY_ROW_H: u32 = if WIDE { 20 } else { 16 };
+
+/// Width of the move grid's menu box on the choosing screen; the PP/type
+/// box beside it takes [`PP_W`] plus a 4px gap. Shared with the tap hit test.
+pub(crate) const MOVE_W: u32 = CONTENT_W - PP_W - 4;
+/// The PP/type box: "Psychic" or "PP 10/10" inside its padding. At 240 it
+/// gives up the slack so a twelve-letter move name fits each column.
+const PP_W: u32 = if WIDE { 64 } else { 56 };
 
 /// The play area's frame, in this seat's own color: White's half is edged in
 /// white and Red's in red. The two halves meet at the seam, so the divider's
@@ -1036,14 +1065,20 @@ where
     // The two moves that are not the obvious one. A first-time player finds
     // the D-pad and A on their own; nothing on this screen used to say that
     // the party list and the move description exist at all.
-    hint(d, "B PARTY   ? INFO");
+    hint(d, "B PARTY", "? INFO", 3);
 
     // The move list: a 2x2 grid in a menu box with the cursor beside the
     // highlighted row, and the PP and type of that row in a second box at the
     // right — the Gen 3 arrangement, at this panel's scale.
-    let move_w = CONTENT_W - 68; // the PP/type box keeps its 64 + a 4px gap
+    let move_w = MOVE_W;
     draw_menu_box(d, LEFT, MENU_Y, move_w, MENU_H);
-    let col = (move_w as i32 - 2 * (BOX_PAD + 8)) / 2;
+    // Column pitch. Wide, the box is split evenly; at 240 the right column
+    // ends BOX_PAD short of the box so twelve letters clear the cursor.
+    let col = if WIDE {
+        (move_w as i32 - 2 * (BOX_PAD + 8)) / 2
+    } else {
+        move_w as i32 - 2 * BOX_PAD - 8 - 12 * 5
+    };
     for (i, mv) in moves.iter().take(4).enumerate() {
         let x = LEFT + BOX_PAD + 8 + (i as i32 % 2) * col;
         let y = MENU_Y + 7 + (i as i32 / 2) * 15;
@@ -1058,20 +1093,20 @@ where
     }
 
     let pp_x = LEFT + move_w as i32 + 4;
-    draw_menu_box(d, pp_x, MENU_Y, 64, MENU_H);
+    draw_menu_box(d, pp_x, MENU_Y, PP_W, MENU_H);
     if let Some(mv) = moves.get(ctx.cursor as usize) {
         let mut n = NumBuf::new();
-        text_aa_font(d, "PP", pp_x + BOX_PAD, MENU_Y + 7, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
+        text_aa_font(d, "PP", pp_x + BOX_PAD, MENU_Y + 6, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
         text_right(
             d,
             n.pair(mv.pp as u32, mv.max_pp as u32),
             RIGHT - BOX_PAD,
-            MENU_Y + 7,
+            MENU_Y + 6,
             &FONT_5X8,
             C_MSG_TEXT,
         );
-        text_aa_font(d, "TYPE/", pp_x + BOX_PAD, MENU_Y + 17, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
-        text_aa_font(d, clip(&mv.type_name, 7), pp_x + BOX_PAD, MENU_Y + 26, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
+        text_aa_font(d, "TYPE/", pp_x + BOX_PAD, MENU_Y + 15, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
+        text_aa_font(d, clip(&mv.type_name, 7), pp_x + BOX_PAD, MENU_Y + 24, &FONT_5X8, C_MSG_TEXT, C_MSG_FILL);
     }
 
 }
@@ -1085,7 +1120,7 @@ where
     battle_field(d, ctx, true);
     // A committed seat's one remaining move, said out loud: without this the
     // waiting screen reads as "nothing you can do now".
-    hint(d, "B TAKE IT BACK");
+    hint(d, "B TAKE", "IT BACK", 1);
     // Same field, and the bottom third becomes the narration box instead of
     // the move menu — which is exactly what the games do between choices.
     draw_message_box(d, LEFT, MENU_Y, CONTENT_W, 36);
@@ -1107,7 +1142,10 @@ where
     text_aa_center_font(d, if forced { "SEND WHO NEXT?" } else { "PARTY" }, CX, TOP, &FONT_8X13, C_INK, C_BG);
     fill(d, LEFT, TOP + 16, CONTENT_W, 2, C_INK);
 
+    // Name, bar, numbers, tag; at 240 the bar takes what the others leave.
     let bar_x = LEFT + 84;
+    let bar_w = if WIDE { 100 } else { CONTENT_W - 154 };
+    let (name_y, small_y) = ((PARTY_ROW_H as i32 - 10) / 2, (PARTY_ROW_H as i32 - 8) / 2);
     for (i, slot) in party.iter().take(6).enumerate() {
         let y = PARTY_Y + i as i32 * PARTY_PITCH;
         let sel = i as u8 == ctx.cursor;
@@ -1121,19 +1159,19 @@ where
         };
         let row_bg = if sel { C_SEL } else { C_BOX };
         panel(d, LEFT, y, CONTENT_W, PARTY_ROW_H, if sel { C_SEL } else { C_BOX }, if dead { C_DIM } else { C_INK });
-        text_aa_font(d, clip(species_display_name(&slot.name), 11), LEFT + BOX_PAD, y + 5, &FONT_6X10, fg, row_bg);
+        text_aa_font(d, clip(species_display_name(&slot.name), 11), LEFT + BOX_PAD, y + name_y, &FONT_6X10, fg, row_bg);
         let pct = if slot.max_hp == 0 {
             0
         } else {
             ((slot.hp as u32 * 100) / slot.max_hp as u32) as u8
         };
-        hp_bar(d, bar_x, y + 6, 100, pct);
+        hp_bar(d, bar_x, y + small_y, bar_w, pct);
         let mut n = NumBuf::new();
-        text_aa_font(d, n.pair(slot.hp as u32, slot.max_hp as u32), bar_x + 108, y + 6, &FONT_5X8, fg, row_bg);
+        text_aa_font(d, n.pair(slot.hp as u32, slot.max_hp as u32), bar_x + bar_w as i32 + 8, y + small_y, &FONT_5X8, fg, row_bg);
         if slot.active {
-            text_aa_right_font(d, "OUT", RIGHT - BOX_PAD, y + 6, &FONT_5X8, if sel { C_BOX } else { C_DIM }, row_bg);
+            text_aa_right_font(d, "OUT", RIGHT - BOX_PAD, y + small_y, &FONT_5X8, if sel { C_BOX } else { C_DIM }, row_bg);
         } else if let Some(st) = &slot.status {
-            text_aa_right_font(d, clip(st, 3), RIGHT - BOX_PAD, y + 6, &FONT_5X8, if sel { C_BOX } else { C_ACCENT }, row_bg);
+            text_aa_right_font(d, clip(st, 3), RIGHT - BOX_PAD, y + small_y, &FONT_5X8, if sel { C_BOX } else { C_ACCENT }, row_bg);
         }
     }
 
@@ -1163,20 +1201,31 @@ where
     // reads the battle the right way up on their own half, which is why the
     // mons are drawn here rather than in a band across the seam.
     draw_message_box(d, LEFT, MENU_Y, CONTENT_W, MENU_H);
-    // Top right, the slot the LOCK chip uses on the choosing screen: it is
-    // the only corner of a half that no plate, sprite or pane wants.
-    text_aa_font(d, "A NEXT", RIGHT - 36, FRAME + PAD, &FONT_5X8, C_DIM, C_BG);
-    // The box is the height of the move menu it replaces, so the line reads
-    // at the display size while it fits in two rows and drops to the body
-    // size only for the long ones. Sized the other way round, every line
-    // would be small for the sake of the few that are long.
-    let wide8 = ((CONTENT_W as i32 - 16) / 8) as usize;
-    let wide6 = ((CONTENT_W as i32 - 16) / 6) as usize;
-    let (font, cols, rows, pitch) = if caption.len() <= 2 * wide8 {
-        (&FONT_8X13, wide8, 2, 15)
+    // Top right on the 320x480 panel, the slot the LOCK chip uses on the
+    // choosing screen: the only corner there that no plate, sprite or pane
+    // wants. At 240x160 the rival's sprite fills that corner, so it takes
+    // the hint pocket the choosing screens use.
+    if WIDE {
+        text_aa_font(d, "A NEXT", RIGHT - 36, FRAME + PAD, &FONT_5X8, C_DIM, C_BG);
     } else {
-        (&FONT_6X10, wide6, 3, 11)
-    };
+        text_aa_font(d, "A NEXT", HINT_X, HINT_Y, &FONT_5X8, C_DIM, C_BG);
+    }
+    // The box is the height of the move menu it replaces, so the line reads
+    // at the display size while it fits in two rows and drops a size only
+    // for the long ones: the body size in two rows, then the small size in
+    // three. Sized the other way round, every line would be small for the
+    // sake of the few that are long.
+    let text_w = CONTENT_W as i32 - 16;
+    let tiers: [(&'static MonoFont<'static>, usize, usize, i32, i32); 3] = [
+        (&FONT_8X13, (text_w / 8) as usize, 2, 15, 5),
+        (&FONT_6X10, (text_w / 6) as usize, 2, 12, 6),
+        (&FONT_5X8, (text_w / 5) as usize, 3, 9, 5),
+    ];
+    let (font, cols, rows, pitch, top) = tiers
+        .iter()
+        .copied()
+        .find(|&(_, cols, rows, _, _)| wrapped_rows(caption, cols) <= rows)
+        .unwrap_or(tiers[2]);
     let mut rest = caption;
     for row in 0..rows {
         if rest.is_empty() {
@@ -1191,13 +1240,26 @@ where
             d,
             clip(&rest[..take], cols),
             LEFT + 8,
-            MENU_Y + 5 + row as i32 * pitch,
+            MENU_Y + top + row as i32 * pitch,
             font,
             C_MSG_TEXT,
             C_MSG_FILL,
         );
         rest = rest[take..].trim_start();
     }
+}
+
+/// How many rows `s` word-wraps to at `cols` characters, by the same rule
+/// [`render_playback`] draws with.
+fn wrapped_rows(s: &str, cols: usize) -> usize {
+    let mut rest = s;
+    let mut rows = 0;
+    while !rest.is_empty() {
+        let take = if rest.len() <= cols { rest.len() } else { rest[..cols].rfind(' ').unwrap_or(cols) };
+        rest = rest[take..].trim_start();
+        rows += 1;
+    }
+    rows
 }
 
 /// Lobby half.
@@ -1231,9 +1293,14 @@ where
     let win = msg.starts_with("WIN");
     text_aa_center_font(d, msg, CX, TOP + 8, &FONT_8X13, if win { C_HP_G } else { C_INK }, C_BG);
     if let Some(spr) = mon_sprite_color(ctx.own_name) {
-        // Twice the box of the old panel: the recap owns the screen, so the
-        // winner's art gets drawn at 2x rather than floating in blank space.
-        draw_sprite_fit(d, spr, CX - 64, TOP + 34, 128, 128, false, true);
+        // The recap owns the screen, so on the 320x480 panel the winner's art
+        // gets a double-size box and draws at 2x rather than floating in
+        // blank space. At 240x160 only a native-size box clears the legend.
+        if WIDE {
+            draw_sprite_fit(d, spr, CX - 64, TOP + 34, 128, 128, false, true);
+        } else {
+            draw_sprite_fit(d, spr, CX - 44, TOP + 31, 88, 76, false, true);
+        }
     }
     legend(d, &["A REMATCH", "? BATTLE LOG"]);
 }
@@ -1518,8 +1585,9 @@ pub fn render_options<D>(
         panel(d, 12, y, w - 24, OPT_ROW.2, if sel { C_SEL } else { C_BOX }, C_INK);
         let fg = if sel { C_BOX } else { C_INK };
         let row_bg = if sel { C_SEL } else { C_BOX };
-        text_aa_font(d, r.label, 18, y + 8, &FONT_6X10, fg, row_bg);
-        text_aa_right_font(d, r.value, (w - 18) as i32, y + 8, &FONT_6X10, fg, row_bg);
+        let ty = y + (OPT_ROW.2 as i32 - 10) / 2;
+        text_aa_font(d, r.label, 18, ty, &FONT_6X10, fg, row_bg);
+        text_aa_right_font(d, r.value, (w - 18) as i32, ty, &FONT_6X10, fg, row_bg);
     }
     let mut x = 14;
     for it in ["+ CHANGE", "A CONFIRM", "B BACK"] {
@@ -1533,8 +1601,8 @@ pub fn render_options<D>(
 /// the renderer lays out with, because a tap that lands one row off is
 /// indistinguishable from the menu ignoring the press: tapping GEN 3 started
 /// a Gen 1 battle when the two disagreed.
-pub const GEN_ROW: (i32, i32, u32) = (70, 56, 44);
-pub const OPT_ROW: (i32, i32, u32) = (40, 30, 26);
+pub const GEN_ROW: (i32, i32, u32) = if WIDE { (70, 56, 44) } else { (48, 46, 38) };
+pub const OPT_ROW: (i32, i32, u32) = if WIDE { (40, 30, 26) } else { (32, 22, 20) };
 
 /// Which menu row a point in half-local coordinates is over, if any. `rows`
 /// is what the menu says it is showing.
@@ -1569,10 +1637,12 @@ where
         panel(d, 24, y, w - 48, GEN_ROW.2, if sel { C_SEL } else { C_BOX }, C_INK);
         let fg = if sel { C_BOX } else { C_INK };
         let card_bg = if sel { C_SEL } else { C_BOX };
-        text_aa_font(d, name, 34, y + 9, &FONT_8X13, fg, card_bg);
-        text_aa_font(d, sub, 34, y + 26, &FONT_5X8, if sel { C_BOX } else { C_DIM }, card_bg);
+        // Name and subtitle as one block, centred in the card.
+        let ty = y + (GEN_ROW.2 as i32 - 26) / 2;
+        text_aa_font(d, name, 34, ty, &FONT_8X13, fg, card_bg);
+        text_aa_font(d, sub, 34, ty + 17, &FONT_5X8, if sel { C_BOX } else { C_DIM }, card_bg);
         if !ready {
-            text_aa_right_font(d, "STUB", (w - 34) as i32, y + 9, &FONT_5X8, C_ACCENT, card_bg);
+            text_aa_right_font(d, "STUB", (w - 34) as i32, ty, &FONT_5X8, C_ACCENT, card_bg);
         }
     }
     text_aa_center_font(d, "+ CHOOSE    A START", cx, h as i32 - FRAME - PAD - 10, &FONT_5X8, C_DIM, C_BG);

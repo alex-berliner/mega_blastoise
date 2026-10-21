@@ -4,14 +4,17 @@
 //! CS GP10. GP8/GP9 fit neither hardware SPI block; this is the PIO bus
 //! BUILD.md §10 promises. A two-instruction sideset program clocks mode-0
 //! SPI at 37.5 MHz (first proven at 25; see the clock divider below) and a
-//! single DMA transfer feeds it each frame, so a full 320x480 blit is about
-//! 65 ms, against well over a second for the bit-banged bring-up driver this
-//! replaced (the visible wipe down the panel).
+//! single DMA transfer feeds it each frame, so a full 240x320 frame blits in
+//! about 33 ms (65 ms for the panel's whole 320x480), against well over a
+//! second for the bit-banged bring-up driver this replaced (the visible wipe
+//! down the panel).
 //!
-//! The core renders a 320x480 [`DeviceFrame`] (the single-screen design's
-//! native size, shared with the web build — zero drift), which matches this
-//! panel one-to-one; the centring offsets below are zero and exist so the
-//! math stays honest if either size ever moves again.
+//! The core renders a 240x320 [`DeviceFrame`] (the single-screen design's
+//! native size, shared with the web build, zero drift). This panel is
+//! 320x480, so the frame is centred pixel for pixel with a black border: no
+//! scaling, no resampling, nothing for the two platforms to disagree about.
+//! Built with core's `panel-320x480` feature the frame fills the panel and
+//! the offsets below fall to zero.
 //!
 //! The task consumes frames from [`FRAME`]; a `Signal` rather than a queue
 //! because only the newest frame matters. Binds PIO0_IRQ_0.
@@ -38,8 +41,8 @@ pub static FRAME: Signal<CriticalSectionRawMutex, DeviceFrame> = Signal::new();
 
 const PANEL_W: u16 = 320;
 const PANEL_H: u16 = 480;
-const OFF_X: u16 = (PANEL_W - DEV_W as u16) / 2; // 0
-const OFF_Y: u16 = (PANEL_H - DEV_H as u16) / 2; // 0
+const OFF_X: u16 = (PANEL_W - DEV_W as u16) / 2; // 40
+const OFF_Y: u16 = (PANEL_H - DEV_H as u16) / 2; // 80
 
 pub struct Lcd {
     sm: StateMachine<'static, PIO0, 0>,
@@ -289,7 +292,7 @@ impl Lcd {
                 let x0 = start * TILE;
                 let w = (tx - start) * TILE;
                 let y0 = ty * TILE;
-                self.window(x0 as u16, y0 as u16, w as u16, TILE as u16).await;
+                self.window(OFF_X + x0 as u16, OFF_Y + y0 as u16, w as u16, TILE as u16).await;
                 // The span's rows are strided in the framebuffer; gather
                 // them into the bounce buffer so one DMA covers the span.
                 let bytes = w * 2;
@@ -309,9 +312,9 @@ impl Lcd {
 // ── Dirty-tile bookkeeping ───────────────────────────────────────────────────
 
 const TILE: usize = 16;
-const TILES_X: usize = DEV_W as usize / TILE; // 20
-const TILES_Y: usize = DEV_H as usize / TILE; // 30
-const N_TILES: usize = TILES_X * TILES_Y; // 600 — 2.4 KB of hashes
+const TILES_X: usize = DEV_W as usize / TILE; // 15
+const TILES_Y: usize = DEV_H as usize / TILE; // 20
+const N_TILES: usize = TILES_X * TILES_Y; // 300, 1.2 KB of hashes
 
 /// FNV-1a over one tile's (wire-order) pixels.
 fn tile_hash(px: &[u16], tx: usize, ty: usize) -> u32 {
@@ -330,6 +333,7 @@ extern crate alloc;
 #[embassy_executor::task]
 pub async fn task(mut lcd: Lcd) -> ! {
     lcd.init().await;
+    // Black once: the letterbox border around the frame is never drawn again.
     lcd.fill_rect(0, 0, PANEL_W, PANEL_H, 0x0000).await;
     lcd.bl.set_high();
     defmt::debug!("ST7796 ready: PIO SPI + DMA, dirty-tile blits");
@@ -339,7 +343,7 @@ pub async fn task(mut lcd: Lcd) -> ! {
     loop {
         let mut frame = FRAME.wait().await;
         lcd.blit(&mut frame, &mut hashes, &mut bounce).await;
-        drop(frame); // free the 300 KB before releasing the flag
+        drop(frame); // free the 150 KB before releasing the flag
         crate::board_v2::FRAME_FREE.store(true, core::sync::atomic::Ordering::Release);
         // A present landed while we were blitting: pulse the runner so it
         // re-presents from fresh state now that the frame slot is free.

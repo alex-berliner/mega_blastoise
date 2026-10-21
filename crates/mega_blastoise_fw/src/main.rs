@@ -23,7 +23,7 @@ async fn main(spawner: Spawner) {
     #[cfg(feature = "mem-profile")]
     heap_snapshot("boot");
 
-    // The 384 KB heap wants the RAM, and nothing streams bulk data over RTT,
+    // The heap (mem_profile::HEAP_SIZE) wants the RAM, and nothing streams bulk data over RTT,
     // so the defmt buffer stays small.
     let channels = rtt_init! {
         up: { 0: { size: 16 * 1024, name: "defmt" } }

@@ -128,6 +128,47 @@ fn main() {
         dc::render_log(f, &lines, 0, 1)
     });
 
+    // The worst cases for fit: a full party with long names and big HP, the
+    // detail view, the invalid flash, a long narration line and a log that
+    // overflows its page.
+    let full = vec![
+        slot("Aerodactyl", 301, 301, true, None),
+        slot("Charizard", 0, 297, false, None),
+        slot("Venusaur", 120, 301, false, Some("PSN")),
+        slot("Blastoise", 299, 299, false, Some("SLP")),
+        slot("Electrode", 261, 261, false, Some("PAR")),
+        slot("Kangaskhan", 351, 351, false, None),
+    ];
+    half("party_full", &dir, |f| dc::render_party(f, &full, &ctx, false));
+    let mut stats = slot("Kangaskhan", 120, 351, true, Some("BRN"));
+    stats.types = vec![gen1_battle::Type::Normal];
+    stats.moves = vec![
+        ("Double-Edge".into(), 15, 15),
+        ("Earthquake".into(), 0, 10),
+        ("Hyper Beam".into(), 5, 5),
+        ("Body Slam".into(), 15, 15),
+    ];
+    stats.boost_atk = 2;
+    stats.boost_spe = -1;
+    half("stats", &dir, |f| dc::render_stats(f, &stats, 1));
+    half("invalid", &dir, |f| {
+        dc::render_invalid(f, mega_blastoise_core::display::InvalidReason::NoPp, 1)
+    });
+    half("playback_long", &dir, |f| {
+        dc::render_playback(
+            f,
+            "White's Kangaskhan used Double-Edge! It's super effective! Kangaskhan is hit with recoil!",
+            &ctx,
+        )
+    });
+    half("log_full", &dir, |f| {
+        let lines: Vec<String> = (0..20)
+            .map(|i| format!("{i:02} White's Kangaskhan used Double-Edge on Blue's Aerodactyl, 148 damage"))
+            .collect();
+        let refs: Vec<&str> = lines.iter().map(|s| s.as_str()).collect();
+        dc::render_log(f, &refs, 0, 1)
+    });
+
     // The default view: each seat's own battle, upright to that seat, with
     // the same narration at the bottom of both halves.
     let caption = "Blue's Charizard used Fire Blast! It's not very effective...";

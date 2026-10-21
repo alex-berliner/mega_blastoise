@@ -42,10 +42,14 @@ fixed = { version = "1", optional = true }
 # that drops either one.
 default = ["rp2350", "board_v2"]
 rp2350 = ["embassy-rp/rp235xa"]
-# Stripboard v2: one ST7796 320x480 panel (PIO SPI on GP5-GP10), 16
+# Stripboard v2: one ST7796 320x480 panel (PIO SPI on GP5-GP10; the 240x320
+# UI centred on it), 16
 # direct-GPIO buttons and a USB CDC console driving core's DeviceRunner.
 board_v2 = ["dep:pio", "dep:fixed"]
 # Semi-transparent held-button overlay on the panel (debug aid).
 input-debug = []
 mem-profile = []
+# Core's 320x480 layout, filling the ST7796 instead of a centred 240x320
+# frame. The web build must enable the same core feature to stay in step.
+panel-320x480 = ["mega-blastoise-core/panel-320x480"]
 trace = ["mega-blastoise-core/trace"]

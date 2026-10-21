@@ -31,6 +31,11 @@ getrandom = { version = "0.4", features = ["wasm_js"] }
 # std critical-section impl satisfies the link.
 critical-section = { version = "1", features = ["std"] }
 
+[features]
+# Core's 320x480 layout (wasm-pack build -- --features panel-320x480); the
+# firmware has the same switch, and the two must agree.
+panel-320x480 = ["mega-blastoise-core/panel-320x480"]
+
 [patch.crates-io]
 once_cell = { path = "../../patches/once_cell" }
 

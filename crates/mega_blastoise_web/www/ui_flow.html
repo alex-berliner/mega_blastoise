@@ -120,9 +120,9 @@
 <header>
   <p class="eyebrow">UI Concept Mockups</p>
   <h1>Mega Blastoise: one screen, two players</h1>
-  <p class="sub">Flow mockups for the single-screen redesign: a 2.8" IPS 240x320 panel laid flat between the seats, split into two 240x160 halves. The far player's half is rendered rotated 180 degrees, so both players always read upright. Open information by design: no hidden choice. Each seat gets a DS Lite style D-pad and A/B/X/Y diamond (X is the dedicated ? info key, Y the menu key), plus Select and Start.</p>
+  <p class="sub">Flow mockups for the single-screen redesign: a 2.4" IPS 240x320 panel laid flat between the seats, split into two 240x160 halves. The far player's half is rendered rotated 180 degrees, so both players always read upright. Open information by design: no hidden choice. Each seat gets a DS Lite style D-pad and A/B/X/Y diamond (X is the dedicated ? info key, Y the menu key), plus Select and Start.</p>
   <div class="premise">
-    <span>2.8" IPS ST7789, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B/X/Y + Select/Start per seat</span><span>rotationally symmetric seats</span><span>one orientation, no flips</span>
+    <span>2.4" IPS ST7789V, 240x320</span><span>split portrait, both phases</span><span>D-pad + A/B/X/Y + Select/Start per seat</span><span>rotationally symmetric seats</span><span>one orientation, no flips</span>
   </div>
 </header>
 
@@ -476,7 +476,7 @@ flowchart LR
 (() => {
   const css = Array.from(document.querySelectorAll('style')).map((s) => s.textContent).join('\n')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const HINT_OFF = 'click: 320×480 pixel preview';
+  const HINT_OFF = 'click: 240×320 pixel preview';
   const HINT_ON = 'pixel preview · click: idealized';
   document.querySelectorAll('.scr').forEach((scr) => {
     const hint = document.createElement('div');

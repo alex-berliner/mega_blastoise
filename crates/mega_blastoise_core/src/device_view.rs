@@ -1,5 +1,6 @@
 //! Composition for the single-screen device: two 240x160 halves on one
-//! 240x320 panel, with the far seat's half rotated 180 degrees.
+//! 240x320 panel (two 320x240 on 320x480, see [`DEV_W`]), with the far
+//! seat's half rotated 180 degrees.
 //!
 //! There is exactly one arrangement. The console sits flat on a table between
 //! two players facing each other, and it is never picked up or turned, so
@@ -19,10 +20,19 @@ use embedded_graphics::{
     Pixel,
 };
 
+/// The panel the UI is laid out for: 240x320 (the 2.4 in ST7789V), or
+/// 320x480 with the `panel-320x480` feature. Every layout number in
+/// [`crate::display_color`] derives from these.
+#[cfg(not(feature = "panel-320x480"))]
+pub const DEV_W: u32 = 240;
+#[cfg(not(feature = "panel-320x480"))]
+pub const DEV_H: u32 = 320;
+#[cfg(feature = "panel-320x480")]
 pub const DEV_W: u32 = 320;
+#[cfg(feature = "panel-320x480")]
 pub const DEV_H: u32 = 480;
 
-/// A 240x320 RGB565 framebuffer. Platforms flush it to a panel (firmware) or
+/// A DEV_W x DEV_H RGB565 framebuffer. Platforms flush it to a panel (firmware) or
 /// convert it to RGBA for a canvas (web).
 pub struct DeviceFrame {
     pub px: Vec<u16>,
@@ -148,7 +158,7 @@ pub fn draw_input_debug(frame: &mut DeviceFrame, masks: [u8; 2]) {
     let ink = rgb565(crate::display_color::C_INK);
     let lit = rgb565(crate::display_color::C_HP_G);
 
-    // Cluster origin in seat-local half coords (320 wide, DEV_H/2 tall):
+    // Cluster origin in seat-local half coords (DEV_W wide, DEV_H/2 tall):
     // tucked into the seat's lower-left, inside the play frame.
     let (ox, oy) = (14i32, (DEV_H / 2) as i32 - 14 - 3 * CELL);
 

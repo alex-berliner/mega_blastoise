@@ -19,7 +19,7 @@ use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::device_runner::{DeviceEvent, DeviceInputChannel, DevicePort, DeviceRunner};
 use mega_blastoise_core::device_session::{Button, DeviceSession};
-use mega_blastoise_core::{FlashDataStore, OledController, PadEvent, Screen, BATTLE_HELP};
+use mega_blastoise_core::{FlashDataStore, OledController, PadEvent, Screen, BATTLE_HELP, DEV_H, DEV_W};
 
 // ── Shared input channel ─────────────────────────────────────────────────────
 
@@ -34,7 +34,7 @@ fn send(ev: DeviceEvent) {
 // ── Presentation caches (written by present(), read by exports) ──────────────
 
 thread_local! {
-    static DEVICE_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![0; 320 * 480 * 4]);
+    static DEVICE_PIXELS: RefCell<Vec<u8>> = RefCell::new(vec![0; (DEV_W * DEV_H * 4) as usize]);
 
     static LOBBY: RefCell<bool> = RefCell::new(true);
     static MENU_ACTIVE: RefCell<bool> = RefCell::new(true);
@@ -309,7 +309,7 @@ pub fn nav_cancel(player: u8) {
     }
 }
 
-/// A raw tap on the panel, in 320x480 panel coordinates.
+/// A raw tap on the panel, in panel coordinates (see [`panel_width`]).
 #[wasm_bindgen]
 pub fn panel_tap(x: u32, y: u32) {
     send(DeviceEvent::PanelTap { x, y });
@@ -475,4 +475,16 @@ pub fn hold_threshold_ms() -> u32 {
 #[wasm_bindgen]
 pub fn ai_hold_ms() -> u32 {
     mega_blastoise_core::AI_HOLD_MS as u32
+}
+
+/// The panel grid core renders, so the page sizes its canvas and scales
+/// taps by core's numbers rather than its own.
+#[wasm_bindgen]
+pub fn panel_width() -> u32 {
+    DEV_W
+}
+
+#[wasm_bindgen]
+pub fn panel_height() -> u32 {
+    DEV_H
 }

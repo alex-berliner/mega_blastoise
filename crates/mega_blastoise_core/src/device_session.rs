@@ -357,7 +357,7 @@ impl DeviceSession {
         }
     }
 
-    /// A raw tap on the composed 240x320 panel, in panel coordinates.
+    /// A raw tap on the composed DEV_W x DEV_H panel, in panel coordinates.
     ///
     /// This is the single mapping from a point to a meaning — which half was
     /// touched, the far half's 180° flip, and what the touched pixel is over.
@@ -378,7 +378,7 @@ impl DeviceSession {
         //
         // The picker is drawn into each half, so a tap is mapped through the
         // half it hit; the far half is rotated 180. Rows are laid out by
-        // `display_color::render_gen_picker` at y = 48 + i * 46, 38 tall.
+        // `display_color::render_gen_picker` at `GEN_ROW`.
         if self.menu_active && ctx.lobby {
             let hy = if y < DEV_H / 2 {
                 DEV_H / 2 - 1 - y
@@ -434,7 +434,7 @@ impl DeviceSession {
         let target = match self.seats[i].nav.mode {
             NavMode::Moves => {
                 let (bx, by) = (dc::LEFT as u32, dc::MENU_Y as u32);
-                let (bw, bh) = (148u32, dc::MENU_H);
+                let (bw, bh) = (dc::MOVE_W, dc::MENU_H);
                 if hx < bx || hx >= bx + bw || hy < by || hy >= by + bh {
                     None
                 } else {

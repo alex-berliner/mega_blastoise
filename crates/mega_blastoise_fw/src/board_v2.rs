@@ -23,7 +23,7 @@ pub static INPUT: DeviceInputChannel = DeviceInputChannel::new();
 
 /// True while no frame is rendering/queued/blitting. `present` may only
 /// build a frame after winning this flag; the display task returns it after
-/// each blit. Keeps exactly one 300 KB frame alive (the heap is sized for
+/// each blit. Keeps exactly one 150 KB frame alive (the heap is sized for
 /// that, not for a queue).
 pub static FRAME_FREE: AtomicBool = AtomicBool::new(true);
 /// A present arrived while the panel was busy; the display task answers by

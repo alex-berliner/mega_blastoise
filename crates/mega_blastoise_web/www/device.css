@@ -4,10 +4,11 @@
 
 :root {
   /* One millimetre of the real device at the panel's scale: #panel is 640px
-     tall for the 3.5" panel's 73.4 mm, so the controls below are drawn from
-     the genuine DS Lite cap sizes (hardware/ref_design/case/DSLITE.md) and
-     stay in true proportion to the screen. */
-  --k: 8.7px;
+     tall for the 2.4" ER-TFT024IPS-3's 49 mm, so the controls below are
+     drawn from the genuine DS Lite cap sizes
+     (hardware/ref_design/case/DSLITE.md) and stay in true proportion to the
+     screen. */
+  --k: 13.1px;
   --bg: #15171c;
   --case: #23252a;
   --case-hi: #2f333a;

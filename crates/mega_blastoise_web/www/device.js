@@ -27,7 +27,7 @@ import init, * as wasm from './pkg/mega_blastoise_web.js';
 
 const canvas = document.getElementById('panel');
 const ctx = canvas.getContext('2d');
-// Core hands us a 320x480 image. Painting it straight into a canvas that CSS
+// Core hands us a PANEL_W x PANEL_H image. Painting it straight into a canvas that CSS
 // then rotates and fractionally scales makes the browser resample it, which
 // is what turns crisp 1px strokes into grey mush. Instead we blow the frame
 // up by a whole-number factor with smoothing off, so CSS only ever has to
@@ -35,11 +35,13 @@ const ctx = canvas.getContext('2d');
 // upscaling a small one.
 const UPSCALE = 3;
 const raw = document.createElement('canvas');
-raw.width = 320;
-raw.height = 480;
 const rawCtx = raw.getContext('2d');
-const PANEL_W = 320;
-const PANEL_H = 480;
+// Core's render grid (device_view::DEV_W/DEV_H), read out after the wasm
+// loads like the hold thresholds; these defaults are the native 240x320.
+let PANEL_W = 240;
+let PANEL_H = 320;
+raw.width = PANEL_W;
+raw.height = PANEL_H;
 // Laid-out size of the panel element, which the physical-size presets scale
 // against. Mirrors #panel in device.css.
 const PANEL_CSS_H = 640;
@@ -53,16 +55,16 @@ let AI_HOLD_MS = 2000;
 //
 // Real parts you might put in the physical build, so the page can show the
 // case at the size it would actually be. `res` is the panel's own pixel grid:
-// core renders 320x480 and nothing else, so a panel with a different grid is
-// shown at its true physical size with the 320x480 image stretched onto it —
-// the case size is honest, the pixel density is not.
-const PANEL_NATIVE = { w: 320, h: 480 };
-// The panel the firmware is actually being built for, per
-// hardware/stripboard_v2/BUILD.md: 3.5" IPS ST7796, 320x480, SPI. Its own
-// entry (rather than reusing the generic 2.8" row) so that layout judgements
-// are made against THE target — if the hardware spec ever changes, change
-// this one line and the picker follows.
-const FW_TARGET = { id: 'fw', diag: 3.5, res: [320, 480], part: 'ST7796 IPS', fw: true };
+// core renders one grid (PANEL_W x PANEL_H) and nothing else, so a panel
+// with a different grid is shown at its true physical size with core's image
+// stretched onto it: the case size is honest, the pixel density is not.
+// The panel the handheld is being built around: EastRising's 2.4" IPS
+// ER-TFT024IPS-3, ST7789V, 240x320, SPI. Its own entry (rather than reusing
+// a generic row) so that layout judgements are made against THE target; if
+// the hardware spec ever changes, change this one line and the picker
+// follows. The stripboard v2's 3.5" ST7796 shows the same 240x320 frame
+// centred on its 320x480 glass.
+const FW_TARGET = { id: 'fw', diag: 2.4, res: [240, 320], part: 'ST7789V IPS', fw: true };
 
 const PANELS = [
   FW_TARGET,
@@ -71,7 +73,7 @@ const PANELS = [
   { id: '2.4', diag: 2.4, res: [240, 320], part: 'ILI9341' },
   { id: '2.8', diag: 2.8, res: [240, 320], part: 'ST7789 / ILI9341' },
   { id: '3.2', diag: 3.2, res: [240, 320], part: 'ILI9341' },
-  { id: '3.5', diag: 3.5, res: [320, 480], part: 'ILI9488' },
+  { id: '3.5', diag: 3.5, res: [320, 480], part: 'ILI9488 / ST7796 (stripboard v2)' },
   { id: '4.0', diag: 4.0, res: [320, 480], part: 'ST7796' },
   { id: '5.0', diag: 5.0, res: [800, 480], part: 'RGB parallel' },
 ];
@@ -93,7 +95,7 @@ function panelSizeMm(p) {
 function panelLabel(p) {
   const mm = panelSizeMm(p);
   const ppi = Math.round(Math.hypot(p.res[0], p.res[1]) / p.diag);
-  const native = p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h;
+  const native = p.res[0] === PANEL_W && p.res[1] === PANEL_H;
   const base = `${p.diag.toFixed(2).replace(/0$/, '')}" ${p.res[0]}x${p.res[1]} · `
     + `${Math.round(mm.w)}x${Math.round(mm.h)}mm · ${ppi}ppi${native ? '' : ' · stretched'}`;
   return p.fw ? `firmware — ${base}` : base;
@@ -266,7 +268,7 @@ function wireSeat(player) {
 
 // ── Direct tap on the panel ───────────────────────────────────────────────
 //
-// The page only scales the pointer to the 320x480 grid. Which half was hit,
+// The page only scales the pointer to core's panel grid. Which half was hit,
 // the far half's rotation, and what the pixel means are core's decisions
 // (DeviceSession::panel_tap) — the hit boxes are derived from the same layout
 // constants the renderer draws with, so they cannot go stale here.
@@ -355,10 +357,10 @@ window.addEventListener('blur', () => {
     if (p) {
       const mm = panelSizeMm(p);
       const note = p.fw
-        ? 'the firmware target (docs/archive/architecture/09-single-screen.md) — what you see is the panel, true size'
-        : p.res[0] === PANEL_NATIVE.w && p.res[1] === PANEL_NATIVE.h
+        ? 'the device target: what you see is the panel, true size'
+        : p.res[0] === PANEL_W && p.res[1] === PANEL_H
           ? 'native grid'
-          : `NOT the render grid — 320x480 stretched onto ${p.res[0]}x${p.res[1]}`;
+          : `NOT the render grid: ${PANEL_W}x${PANEL_H} stretched onto ${p.res[0]}x${p.res[1]}`;
       console.log(
         `[screen] ${p.diag}" ${p.part}: ${mm.w.toFixed(1)}x${mm.h.toFixed(1)}mm, ${note}`,
       );
@@ -418,6 +420,10 @@ async function run() {
   // degrade to defaults, not throw and black-screen the boot.
   HOLD_MS = wasm.hold_threshold_ms?.() ?? HOLD_MS;
   AI_HOLD_MS = wasm.ai_hold_ms?.() ?? AI_HOLD_MS;
+  PANEL_W = wasm.panel_width?.() ?? PANEL_W;
+  PANEL_H = wasm.panel_height?.() ?? PANEL_H;
+  raw.width = PANEL_W;
+  raw.height = PANEL_H;
   // The console's command line drives submit_text, which speaks the
   // firmware's USB console grammar.
   setCommandHandler((line) => wasm.submit_text(line));

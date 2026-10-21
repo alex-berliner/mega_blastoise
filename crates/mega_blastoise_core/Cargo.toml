@@ -25,6 +25,9 @@ default = []
 #  - wrapmoves: corner move names wrapped/hyphenated across lines
 bigsprite = []
 wrapmoves = []
+# The 3.5 in 320x480 layout (two 320x240 halves) instead of the native
+# 240x320 one. Every platform must agree, so enable it on core for all.
+panel-320x480 = []
 defmt = ["dep:defmt"]
 timing = ["dep:embassy-time", "defmt"]
 trace = ["defmt"]
