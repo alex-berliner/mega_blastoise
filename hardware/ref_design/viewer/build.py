@@ -9,7 +9,7 @@ have no KiCad 3D library or OpenSCAD, so the parts are built here and committed;
 pre-push hook (viewer/pre-push) rebuilds and commits them when main goes out stale.
 
 Inputs are named by their committed blob ids, so the check reads git, not the disk. The
-case's tub.stl and lid.stl (case/export.py --stl, which must run first) are build output, not
+case's tub.stl and top.stl (case/export.py --stl, which must run first) are build output, not
 in git: case.scad stands for them.
 """
 import datetime
@@ -29,7 +29,7 @@ import scad  # noqa: E402  (which OpenSCAD, which backend)
 PARTS = os.path.join(HERE, "site", "parts")
 MODEL = os.path.join(PARTS, "model.json")
 INPUTS = ["board/battler.kicad_pcb", "case/case.scad", "viewer/pieces.scad", "viewer/build.py"]
-PIECES = ["cell", "foam", "speaker", "panel", "silicone", "caps", "screws", "inserts"]
+PIECES = ["cell", "foam", "speaker", "panel", "silicone", "caps", "screws", "decks"]
 
 
 def git(*args):
@@ -109,13 +109,14 @@ def build():
         model["case_h"], model["z_board"] = float(m.group(1)), float(m.group(2))
         model["z"][p] = write_stl(read_stl(os.path.join(tmp, p + ".stl")), os.path.join(PARTS, p + ".stl"))
 
-    # the printed shell: the tub as exported, the lid turned back over from its print pose
+    # the printed shell: the tub as exported, the top piece turned back over from its print pose
+    # (the decks are rendered in place by pieces.scad)
     tub = read_stl(os.path.join(REF, "case", "tub.stl"))
     model["z"]["tub"] = write_stl(tub, os.path.join(PARTS, "tub.stl"))
-    lid = read_stl(os.path.join(REF, "case", "lid.stl"))
-    lid[:, :, 1] *= -1
-    lid[:, :, 2] = model["case_h"] - lid[:, :, 2]
-    model["z"]["lid"] = write_stl(lid, os.path.join(PARTS, "lid.stl"))
+    top = read_stl(os.path.join(REF, "case", "top.stl"))
+    top[:, :, 1] *= -1
+    top[:, :, 2] = model["case_h"] - top[:, :, 2]
+    model["z"]["top"] = write_stl(top, os.path.join(PARTS, "top.stl"))
     model["z"]["board"] = [model["z_board"], round(model["z_board"] + 1.6, 2)]
     flat = tub.reshape(-1, 3)
     model["size"] = [round(float(flat[:, i].max() - flat[:, i].min()), 1) for i in (0, 1)]

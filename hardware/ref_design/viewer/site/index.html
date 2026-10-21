@@ -119,18 +119,18 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 // lift = how far each part rises (mm) when fully exploded.
 let MODEL = { z_board: 2.0, case_h: 13.9, z: {} };   // replaced by parts/model.json
 const PARTS = [
-  { key: "lid", name: "Lid", file: "parts/lid.stl", color: "#5a6573", lift: 112, shell: true,
-    note: "Printed. Four hooks click onto the tub; the window frames the panel. Its end bosses drop through the deck inserts' rings." },
-  { key: "inserts", name: "Deck inserts", file: "parts/inserts.stl", color: "#d9822b", lift: 100,
-    note: "Printed face down, no supports. Each end's deck tucks under the tub's end lip and is held by the lid's step walls and its end screw boss." },
+  { key: "top", name: "Top piece", file: "parts/top.stl", color: "#5a6573", lift: 112, shell: true,
+    note: "Printed face down, no supports. The screen face, the curved steps down to the decks and the sides, down to the seam with the tub. Four screws hold it; the panel sits in its pocket." },
+  { key: "decks", name: "Decks", file: "parts/decks.stl", color: "#d9822b", lift: 100, shell: true,
+    note: "Printed face down, no supports; one part for both ends. Each seats into the top piece from behind on a 45 degree wedge, curves over the end and sides to the seam, and its own screw holds it." },
   { key: "caps", name: "Button caps", file: "parts/caps.stl", color: "#eef0f4", lift: 88,
-    note: "DS Lite caps, bought. Their flanges sit under the lid, which holds them in." },
+    note: "DS Lite caps, bought. Their flanges sit under the decks, which hold them in." },
   { key: "panel", name: "Display panel", file: "parts/panel.stl", color: "#0b0e13", lift: 68, rough: 0.25,
-    note: "3.5 in IPS (ER-TFT035IPS-6), taped to the lid's window ledge. Its ribbon folds round to J3." },
+    note: "2.4 in IPS (ER-TFT024IPS-3), taped into the top piece's pocket. Its ribbon folds round under it to J3." },
   { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 14, metal: 0.6,
     note: "403450 Li-ion, 4 × 34 × 50 mm, lying on the tub floor under the board. Its wires come up through a slot to J2." },
   { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 10, metal: 0.5,
-    note: "15 mm, 4 mm thick, on the tub floor beside the cell; it plays through the floor's grille." },
+    note: "15 × 10 mm, face down on the tub floor past the cell; it plays out of slots in the left side's lower edge." },
   { key: "foam", name: "Foam spacer", file: "parts/foam.stl", color: "#e2bf55", lift: 26,
     note: "0.45 mm foam pad between the cell and the board's back." },
   { key: "silicone", name: "Silicone domes", file: "parts/silicone.stl", color: "#8e959f", lift: 52,
@@ -138,9 +138,9 @@ const PARTS = [
   { key: "board", name: "Circuit board", file: "parts/board.glb", lift: 40,
     note: "2 layers, 1.6 mm, assembled by JLC. Every fitted part is shown." },
   { key: "tub", name: "Tub", file: "parts/tub.stl", color: "#2c343f", lift: 0, shell: true,
-    note: "Printed. Bosses take the screws; the USB-C opening is in the end wall." },
+    note: "Printed back down. The back and its rounded edge, up to the seam; a tongue inside the top pieces' skirts, and a tab carrying the USB-C opening's lower half." },
   { key: "screws", name: "Screws", file: "parts/screws.stl", color: "#a9afb8", lift: -28, metal: 0.9,
-    note: "Six M2 × 8 self-tapping, from the back, through the board into the lid." },
+    note: "Six M2 × 8 self-tapping, from the back, through the board: four into the top piece, one into each deck." },
 ];
 
 const canvas = document.getElementById("c");
@@ -276,7 +276,7 @@ function t() { return slider.value / 1000; }
 function update() {
   const e = ease(t());
   for (const k in slots) slots[k].holder.position.z = slots[k].part.lift * e;
-  gapOut.textContent = e < 0.002 ? `closed, ${MODEL.case_h} mm` : `lid ${Math.round(112 * e)} mm up`;
+  gapOut.textContent = e < 0.002 ? `closed, ${MODEL.case_h} mm` : `top ${Math.round(112 * e)} mm up`;
   controls.target.y = 7 + 44 * e;
 }
 slider.addEventListener("input", () => { stopPlay(); update(); });
@@ -293,7 +293,7 @@ playBtn.addEventListener("click", () => {
 // ---- see-through shell ----
 const xray = document.getElementById("xray");
 function applyXray() {
-  ["tub", "lid", "inserts"].forEach(k => {
+  ["tub", "top", "decks"].forEach(k => {
     const s = slots[k]; if (!s) return;
     s.meshes.forEach(m => [].concat(m.material).forEach(mat => {
       mat.transparent = xray.checked; mat.opacity = xray.checked ? 0.2 : 1;
@@ -352,7 +352,7 @@ canvas.addEventListener("pointerup", e => {
     let o = m; while (o) { if (!o.visible) return false; o = o.parent; } return true;
   }), false);
   const shellSeeThrough = xray.checked;
-  const hit = hits.find(h => !(shellSeeThrough && ["tub", "lid", "inserts"].includes(h.object.userData.key)));
+  const hit = hits.find(h => !(shellSeeThrough && ["tub", "top", "decks"].includes(h.object.userData.key)));
   select(hit ? hit.object.userData.key : null);
 });
 
