@@ -338,7 +338,8 @@ usb_front = case_w / 2 - usb_recess;                    // receptacle face
 usb_tab = usb_front - 1.35 - board_w / 2;              // the board's tab under it, past the board's edge
 usb_tab_w = 12.0;  usb_tab_fit = 0.3;
 // left long edge: debug
-pin_pos = [[-(board_w / 2 - 4.0), 20.0], [-(board_w / 2 - 4.0), 12.0]];  // SW18 BOOTSEL, SW19 RESET
+pin_pos = [[-(board_w / 2 - 4.0), 13.0], [-(board_w / 2 - 4.0), 6.0]];   // SW18 BOOTSEL, SW19 RESET (20 and 12
+                                                                          // until the side screws moved to y 22)
 swd_pos = [-(board_w / 2 - 3.5), -2.0];  uart_pos = [-(board_w / 2 - 3.5), -12.0];
 
 // J2 sits under the spine between seat 1's clusters, its mouth towards the panel. The cell's
@@ -410,6 +411,8 @@ assert(norm([0, spk_conn[1] - j2_mouth] - [0, (slot[0][1] + slot[1][1]) / 2]) >=
 assert(pins[4][1] - boss_d / 2 - 0.2 >= spk_conn[1] + j2_back, "seat 2's end boss runs into J4");
 assert(pin_x - boss_d / 2 >= bay_w / 2 + 0.5 && pin_x + boss_d / 2 <= board_w / 2, "no room for side bosses beside the glass");
 assert(pin_y + (boss_d + 1) / 2 <= joint_y - joint_w, "a side boss runs into the step's wall");
+for (p = pin_pos) for (q = pins) assert(norm(p - q) >= boss_d / 2 + 2.4 + 0.5, "a pinhole switch (SW18, SW19) runs into a screw boss");
+assert(pin_pos[1][1] - 2.4 >= swd_pos[1] + 2.5 + 0.5, "the RESET switch runs into the SWD connector");
 assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
 assert(face_t >= 0.6 && face_t <= top_t, "face_t out of range");
