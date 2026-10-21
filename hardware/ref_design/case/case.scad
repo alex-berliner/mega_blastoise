@@ -619,6 +619,7 @@ rib_free = [
   [slot[0][0] - 1, slot[1][1] - 1, slot[1][0] + 1, cell_y - cell[1] / 2 + 1],                      // its plug and wires
   [spk_exit[0] - 1, spk_pos[1] - 3, spk_slot[1][0] + 1, spk_slot[1][1] + 1],                      // speaker leads to J4's hole
   [spk_slot[0][0] - 1, spk_slot[1][1] - 1, spk_slot[1][0] + 1, spk_slot[0][1] + 1],                // and the hole itself
+  [spk_pos[0] - spk[0] / 2 - spk_tab - 0.5, spk_pos[1] - 2.5, spk_pos[0] - spk[0] / 2 + 0.5, spk_pos[1] + 2.5],   // its solder tab
   [-10, seat_y - 14.5, 10, seat_y - 9.5],                                                         // TP1-TP5 on the back
   [usb_front - 8.5, usb_y - usb_tab_w / 2, board_w / 2 + usb_tab, usb_y + usb_tab_w / 2],         // J1's shell legs
 ];
@@ -630,16 +631,17 @@ module rib_free2d() {
 module spk2d(grow = 0) at(spk_pos) hull() for (s = [-1, 1]) translate([s * (spk[0] - spk[1]) / 2, 0]) circle(d = spk[1] + 2 * grow);
 module spk_pad2d() hull() { spk2d(1.2); translate([-case_w / 2, spk_pos[1] - spk[1] / 2 - 1.2]) square([1, spk[1] + 2.4]); }
 
+// the tub's outside: its back rolls into the walls (in 0.1 mm layers up the round)
+module tub_outside(h = z_lid) union() {
+  for (k = [0:ceil(back_r / 0.1) - 1]) translate([0, 0, 0.1 * k])
+    linear_extrude(0.1 + 0.01) offset(delta = -back_in(0.1 * k + 0.05)) rrect(case_w, case_l, corner_r);
+  translate([0, 0, back_r]) linear_extrude(h - back_r) rrect(case_w, case_l, corner_r);
+}
 module tub() difference() {
   union() {
     difference() {
-      // the shell: its back rolls into the walls (in 0.1 mm layers up the round), the cavity
-      // following so the wall keeps its thickness through the round
-      union() {
-        for (k = [0:ceil(back_r / 0.1) - 1]) translate([0, 0, 0.1 * k])
-          linear_extrude(0.1 + 0.01) offset(delta = -back_in(0.1 * k + 0.05)) rrect(case_w, case_l, corner_r);
-        translate([0, 0, back_r]) linear_extrude(z_lid - back_r) rrect(case_w, case_l, corner_r);
-      }
+      // the shell, the cavity following the round so the wall keeps its thickness through it
+      tub_outside();
       // (from floor_t, not the layer's bottom: 0.1 * 14 + 0.1 > 1.5 in floating point, which cut the
       // floor to 1.4 under ribs that start at floor_t)
       for (k = [0:ceil(back_r / 0.1) - 1]) if (0.1 * k + 0.1 > floor_t + 1e-6)
@@ -691,10 +693,12 @@ module tub() difference() {
       }
       rib_free2d();
     }
-    // the speaker's pad (no feet any more, Alex 2026-10-20: the back lies on the table)
+    // the speaker's pad (no feet any more, Alex 2026-10-20: the back lies on the table), out to
+    // the wall and no further: cut to the case's plain outline, it stood out of the back's round
+    // as a 0.6 mm slab, up to 1.0 mm proud, under the speaker (Alex's print, 2026-10-21)
     intersection() {
       translate([0, 0, floor_t - 0.01]) linear_extrude(spk_pad + 0.01) spk_pad2d();
-      linear_extrude(case_h) rrect(case_w, case_l, corner_r);
+      tub_outside();
     }
   }
   // screws: a counterbore for the head from below, then clearance up through the boss
