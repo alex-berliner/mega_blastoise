@@ -87,18 +87,19 @@ module frame_box() let(w = panel_w + panel_fit + 2 * frame_wall + 8, l = panel_l
 // ---------------- tuning coupons: small, quick, one question each ----------------
 // tune_openings: the lid's button cuts, seen from the face, at the deck's real thickness (pocket
 // floor to deck face). Top row: D-pad openings 0.6 / 0.8 / 1.0 mm past the cross. Bottom row: a
-// whole keyed A/B/X/Y cluster (tab slots and notch ribs) and three plain hole sizes. Printed face
-// down like the lid; the numbers are engraved in the face
+// whole keyed A/B/X/Y cluster (tab slots and notch ribs) and three plain hole sizes round it. Printed
+// face down like the lid; the numbers are engraved in the face
 tune_t = deck_face - retainer_bot;
+tune_holes = [for (o = [-0.4, -0.2, 0.2]) cap_hole_d + o];
 module tune_openings() difference() {
   translate([-40, -31, 0]) cube([80, 60, tune_t]);
   for (i = [0:2]) translate([-26 + 26 * i, 15, -0.01]) dpad_cut(tune_t + 1, gap = 0.6 + 0.2 * i);
   for (i = [0:3]) let(t = abxy_tabs[i]) translate([-20 + t[1][0] * a, -15 + t[1][1] * a, -0.01])
     rotate(-t[2]) abxy_cut(tune_t + 1, [for (n = abxy_notches[i][1]) t[2] - n]);
-  for (i = [0:2]) translate([12 + 10 * i, -15, -0.01]) rotate(-135) abxy_cut(tune_t + 1, [90], hole_d = 7.4 + 0.2 * i + (i > 0 ? 0.2 : 0));
+  for (i = [0:2]) translate([12 + 10 * i, -15, -0.01]) rotate(-135) abxy_cut(tune_t + 1, [90], hole_d = tune_holes[i]);
   translate([0, 0, tune_t - engrave]) linear_extrude(engrave + 0.01) {
     for (i = [0:2]) translate([-26 + 26 * i, 2.5]) text(str(0.6 + 0.2 * i), size = 2.6, halign = "center", valign = "center");
-    for (i = [0:2]) translate([12 + 10 * i, -25.5]) text(str(7.4 + 0.2 * i + (i > 0 ? 0.2 : 0)), size = 2.2, halign = "center", valign = "center");
+    for (i = [0:2]) translate([12 + 10 * i, -25.5]) text(str(tune_holes[i]), size = 2.2, halign = "center", valign = "center");
     translate([-20, -29]) text("A B X Y keyed", size = 2.0, halign = "center", valign = "center");
   }
 }

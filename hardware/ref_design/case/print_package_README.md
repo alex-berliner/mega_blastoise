@@ -59,13 +59,14 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   tightest it moves freely in. Now `dpad_gap` = 0.8 (0.5 was too tight in the first print).
 - A, B, X, Y into the keyed cluster from the back: tab into its slot, each notch onto its rib, and
   no cap fits another cap's hole. A rib fighting a cap: note the angle, fix `abxy_notches` (or
-  `notch_keys = false`). The plain holes (7.4, 7.8, 8.0) tune `cap_hole_d` (now 7.6).
+  `notch_keys = false`). The keyed holes are 8.0 (`cap_hole_d`, Alex's DS Lite faceplate's, 2026-10-21);
+  the plain holes (7.6, 7.8, 8.2) say whether it can be tighter or must be looser.
 - Each stack: silicone on the board slice, caps in the lid slice, lid on its four legs. The cap
-  should stand about 1.85 mm above the deck, press cleanly and spring back. If the 1.75 mm lid is
+  should stand about 1.4 mm above the deck (1.41, the faceplate's 1.6 mm lip), press cleanly and spring back. If the 1.75 mm lid is
   wrong, try the 1.6 and 1.9 lids (`3_buttons_heights`) and set `dome_h`; `dpad_lift` moves only
   the D-pad.
 - **Start/Select:** their membrane, pill spacing and caps are estimates (`ss_mem` 14 x 6 mm,
-  `ss_pitch` 7.5, `ss_cap_d` 4.5). Measure your real Start/Select membrane and caps and send the
+  `ss_pitch` 7.5, `ss_cap_d` 3.2 from the faceplate's 3.8 mm hole). Measure your real Start/Select membrane and caps and send the
   numbers; the stack shows whether the estimates already work.
 
 **Fit coupons (`4_fit_coupons`):**

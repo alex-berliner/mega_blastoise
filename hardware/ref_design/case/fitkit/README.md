@@ -22,7 +22,7 @@ any case or board change) with:
 | `coupon_snap_tub.stl` + `coupon_snap_lid.stl` | one snap hook and its groove, cut from the real tub and lid | as exported, same printer settings as the case |
 | `coupon_buttons_tub.stl` + `_board.stl` + `_lid.stl` | seat 1's end of the tub, board and lid: the button stack | as exported |
 | `coupon_usb_tub.stl` + `coupon_usb_lid.stl` + `coupon_usb_board.stl` | the USB-C opening: its lower half in the tub wall, its upper half in the lid's tongue, and the board's tab with a stand-in for the receptacle's shell between them | as exported |
-| `tune_openings.stl` | **the quickest button test (about 30 min):** D-pad openings at 0.6, 0.8 and 1.0 mm round the cross, a whole keyed A/B/X/Y cluster (tab slots and notch ribs), and plain holes at 7.4, 7.8 and 8.0 mm; the numbers are engraved in the face | face down, as exported |
+| `tune_openings.stl` | **the quickest button test (about 30 min):** D-pad openings at 0.6, 0.8 and 1.0 mm round the cross, a whole keyed A/B/X/Y cluster (tab slots and notch ribs), and plain holes at 7.6, 7.8 and 8.2 mm round its 8.0 (`cap_hole_d`); the numbers are engraved in the face | face down, as exported |
 | `tune_stack_dpad_board.stl` + `tune_stack_dpad_lid_dome*.stl` | one D-pad's slice of the board (contact rings engraved) and of the lid, the lid on four legs at its real height. Three lids, for a silicone 0.9, 1.2 or 1.5 mm tall at rest (`dome_h`); the value is engraved in each | board flat, lids face down |
 | `tune_stack_abxy_board.stl` + `tune_stack_abxy_lid_dome*.stl` | the same for one A/B/X/Y cluster | as above |
 | `tune_stack_ss_board.stl` + `tune_stack_ss_lid_dome*.stl` | the same for seat 1's Start/Select membrane (its outline, pill pitch and caps are ESTIMATEs in `case.scad`: `ss_mem`, `ss_pitch`, `ss_cap_*`) | as above |
@@ -46,9 +46,10 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   (now 0.8; 0.5 was too tight in the first print). Put each of A, B, X and Y into its keyed hole
   from the back: the flange's tab must drop into the slot and each notch onto its rib, and it must
   not fit any other hole. If a rib fights a cap whose notch is elsewhere, note the angle and fix
-  `abxy_notches` (or set `notch_keys = false`). The three plain holes tune `cap_hole_d` (now 7.6).
+  `abxy_notches` (or set `notch_keys = false`). The three plain holes tune `cap_hole_d` (now 8.0,
+  Alex's DS Lite faceplate's, 2026-10-21).
 - `tune_stack_*`: silicone on the board slice, cap in the lid slice, lid on its legs. Try the
-  three lids: keep the one where the cap stands about 1.3 mm proud of the deck, presses cleanly and
+  three lids: keep the one where the cap stands about 1.4 mm proud of the deck, presses cleanly and
   springs back, and set `dome_h` to its number. If the D-pad then sits higher or lower than A/B/X/Y
   wants, `dpad_lift` moves only the D-pad's lip.
 

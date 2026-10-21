@@ -20,7 +20,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | Backlight | 6 LEDs in parallel on two cathode pins, anode on VSYS; a linear current sink per pin (MCP6002 + AO3400A + 2.2 ohm), set by one GPIO's filtered PWM | constant current down to the 3.5 V cutoff, DC in the LEDs, all Basic/Preferred parts; replaced the AP3156 charge pump, out of stock on 2026-10-07 (stability simulated: board/sim/backlight.py) |
 | MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board); no flash chip to route |
 | Charger | TP4056 at 500 mA, TEMP on a board NTC over the cell (1-46 C); USB load sharing (B5819W, AO3401A, BAT54WS gate feed, 22 uF on VSYS; a second B5819W across the AO3401A carries the unplug gap); 2.2 ohm in series with the input cap against hot-plug ringing | a fifth of the BQ24074's price, no stock risk; the NTC added on request (Extended part, $3 an order) |
-| Cell | 403450, about 700 mAh, Molex PicoBlade (MX1.25) plug into a 3.4 mm J2 (JST PH until 2026-10-19: too tall for the lowered lid), under the board on the tub's floor | 13.4 mm at the screen (the panel sits in a pocket in the lid, 2026-10-19), 11.1 at the ends; the plug passes up through a 5.45 x 4.4 mm hole a plug's length (5.5 mm) past J2's mouth, the cell 5 mm towards seat 2 to make room (Alex, 2026-10-20: the plug had to double over into J2); chosen over the cell on the board under the screen (13.9 mm, 7.9: branch ref-design-cell-on-board) (Alex, 2026-10-09) |
+| Cell | 403450, about 700 mAh, Molex PicoBlade (MX1.25) plug into a 3.4 mm J2 (JST PH until 2026-10-19: too tall for the lowered lid), under the board on the tub's floor | 13.4 mm at the screen (the panel sits in a pocket in the lid, 2026-10-19), 11.5 at the ends; the plug passes up through a 5.45 x 4.4 mm hole a plug's length (5.5 mm) past J2's mouth, the cell 5 mm towards seat 2 to make room (Alex, 2026-10-20: the plug had to double over into J2); chosen over the cell on the board under the screen (13.9 mm, 7.9: branch ref-design-cell-on-board) (Alex, 2026-10-09) |
 | 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at 3.5 V as computed (the ADC reads against 3V3, which follows the cell once the LDO drops out) |
 | Audio | PWM (GPIO8, 8 bits at 586 kHz) through two RC stages (1k, 4.7 nF; -3 dB about 14 kHz) into an FM8002A, gain 2, into INGHAi's GSPK151035PN (15 x 10 mm) on J4, a PicoBlade header, playing out of the left wall's lower edge (2026-10-20) | the cheapest way to keep a speaker (approved over the NS4168, which is 50 cents more and cleaner) |
 | Buttons | 16 x DSL_button_4ring (D-pads, A/B/X/Y) and 4 x DSL_button_3ring (each seat's Start and Select, under the DS Lite kit's Start/Select membrane, between the clusters at the case's end), direct GPIO, internal pull-ups; seat 1's Start is also the power button | no matrix; no side switch (approved); Start/Select added and power moved off Y (Alex, 2026-10-19) |
@@ -29,7 +29,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 27 ohm 0402 series in Raspberry Pi's spots | one Extended part ($3 an order): the 27 ohm 0402 (C25100; 22 ohm until the 2026-10-05 pin review, and a 27 ohm 0603 doesn't fit the copied layout) and the ESD array was the second from 2026-10-07 (ProTek's Preferred SRV05-4, C85364, ran out, so U1 became Semtech's Extended SRV05-4.TCT, C13612) until 2026-10-20, when U1 became hongjiacheng's Preferred SRV05-4A (C20615829, Alex): same pinout, no setup fee |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under lid pinholes; SWD again on six 2.54 mm pogo pads on the back (J7: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND); probe pads on every rail (VBUS, VSYS, VBAT, 3V3, 1V1), the panel's SPI, BL_REF, PWR_EN, LS_GATE, AMP_SHDN and two GND clips; cut jumpers isolate the 3V3 regulator, backlight, amplifier, panel logic and cell (JP1-JP5) | no LEDs (approved); pads and jumpers added after Alex's debug-readiness review (2026-10-19) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
-| Case | six M2 screws through the board clamp tub and lid (as a DS Lite); four hooks on the long walls hold the lid while it is screwed; a lip in a step at the seam; crush ribs centre the board and bosses clamp it (it fits one way only: J1 and J2 key it); the board rests on floor ribs; no feet (2026-10-20: the tub prints flat as exported); the USB-C opening follows the shell's rounded-rectangle outline, and the lid's tongue over it has stepped seams; button decks step down 2.34 mm (the panel sits in a pocket in the lid) for DS Lite caps, keyed by tab and notches; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
+| Case | six M2 screws through the board clamp tub and lid (as a DS Lite); four hooks on the long walls hold the lid while it is screwed; a lip in a step at the seam; crush ribs centre the board and bosses clamp it (it fits one way only: J1 and J2 key it); the board rests on floor ribs; no feet (2026-10-20: the tub prints flat as exported); the USB-C opening follows the shell's rounded-rectangle outline, and the lid's tongue over it has stepped seams; button decks step down 1.9 mm (the panel sits in a pocket in the lid) for DS Lite caps, their openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | approved; FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` by `tools/build_sch.py`; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
@@ -110,6 +110,21 @@ Buttons (from Alex's pad measurements, 2026-10-20; check_buttons fails on these 
       pivots on that collar: model the pivot on it (dpad_lift, dpad_tilt) once the collar is measured
 - [ ] Start/Select: pressed, the cap's flange meets the pad's estimated wells (pressed_silicone ss).
       Settle it with the Start/Select pad's measurements
+- [x] Alex's DS Lite faceplate (`~/Downloads/ds/front.stl`, 2026-10-21) is the basis for the buttons:
+      measured in `case/DSLITE.md`. The case takes its openings and 45 degree chamfers (A/B/X/Y 8.0
+      holes, 0.6 chamfer; D-pad 0.8 chamfer; Start/Select 3.8 holes, 0.6 chamfer), its 1.6 lip (caps
+      1.41 proud, decks 3.90 over the board, a 1.9 step), its wall shapes (the A/B/X/Y clover's runs
+      and fillets, a D-pad wall inside the rim, one Start/Select frame round two cells, a flange
+      pocket over each), its centre-square roof, and its Start/Select lift. Kept over it: `dpad_gap`
+      0.8 (faceplate 0.5), `dpad_pocket_gap` 0.5 (0.25), `pocket_d` 9.2 (9.18), `dpad_lift` 0.35
+      (0.4), `dome_h` 1.75 (1.70), the walls 0.15 over the web, the deck's thickness, the notch ribs
+      and the board's pitches (15.0, 14.0, 7.5 against its 15.13, 7.85)
+- [ ] Faceplate questions for Alex: (1) the D-pad pad's shape along an arm (the faceplate's wall
+      says round-ended stadiums 6.8 out, our model says circles round the domes 7.0 out): its width
+      across one lobe 5 mm in from the tip settles it; (2) do the A/B/X/Y flanges have a flat, and is
+      the tab 45 or 52 degrees from it (the faceplate's slots are at 52; the lid's wedge takes both);
+      (3) the Start/Select caps' body and flange (now estimates from the faceplate's 3.8 hole and 5.35
+      pocket); (4) try the 8.0 holes in `tune_openings` (7.6 was the old size; 7.6, 7.8 and 8.2 round it)
 
 Housekeeping:
 - [ ] Delete branch ref-design-j2-hole: its commit went in as 4241580 by cherry-pick, so `git branch -d` refuses

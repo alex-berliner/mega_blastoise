@@ -80,15 +80,24 @@ cap_tab_r = 5.6;  cap_tab_w = 2.0;                      // each flange's keying 
 dpad_arm_l = 17.8;  dpad_arm_w = 5.9;  dpad_h = 3.34;   // D-pad cross
 dpad_flange_r = 6.5;                                    // its flange fills the corners between the arms
 flange_t = 0.55;                                        // both caps' flanges
-cap_hole_d = 7.6;  pocket_d = 9.2;                      // lid: hole (the DS Lite's own 7.6; Pi Tin 7.34), flange pocket
-dpad_gap = 0.8;           // D-pad opening past the cross each side: the DS Lite's 18.9 mm opening is 0.55, and
+// The openings, lips and the walls under them follow Alex's DS Lite faceplate (front.stl, measured
+// 2026-10-21, case/DSLITE.md), except where a print has tuned a clearance
+cap_hole_d = 8.0;  pocket_d = 9.2;                      // lid: hole (the faceplate's 8.00; was 7.6), flange pocket
+                                                        // (faceplate 9.18)
+cap_chamfer = 0.6;                                      // 45 degree chamfer round each hole at the face (faceplate)
+lip_t = 1.6;                                            // the face down to the A/B/X/Y flanges' tops (faceplate 1.60;
+                                                        // Pi Tin 1.65; was 1.16)
+dpad_gap = 0.8;           // D-pad opening past the cross each side: the faceplate's 18.80 x 6.90 opening is 0.5, and
                           // 0.5 was too tight for Alex's AliExpress D-pad in the first print (tune: tune_openings)
-dpad_pocket_gap = 0.5;    // its flange's pocket past the flange (0.35 bound with the cross)
+dpad_chamfer = 0.8;       // 45 degree chamfer round the D-pad's opening (faceplate)
+dpad_pocket_gap = 0.5;    // its flange's pocket past the flange (0.35 bound with the cross; the faceplate's is 0.25)
 dpad_lift = 0.35;         // raises (or, negative, lowers) the D-pad's retaining lip against the A/B/X/Y lips: the
-                          // D-pad sat at the wrong height in the first print (tune: tune_stack_dpad_*)
-slot_r = 5.95;  slot_a = 30;                            // tab slot in the pocket, a 30 degree wedge: the cap
-                                                        // turns a few degrees at most, and the lid still goes on
-                                                        // over caps set by eye (facelesstech's are 35)
+                          // D-pad sat at the wrong height in the first print (tune: tune_stack_dpad_*). The faceplate
+                          // lifts it 0.4 (a 1.2 lip), which puts its flange 2.10 over the board, as here
+// tab slot in the pocket, a wedge from the cap's centre, slot_off degrees counter-clockwise of the tab (seen from
+// the front): it takes a tab at our 45 degrees from the flat or at the faceplate's 52 (Alex, 2026-10-21: the
+// faceplate's slots sit 7 degrees off ours, as facelesstech's do), and the cap turns a few degrees at most
+slot_r = 5.95;  slot_a = 35;  slot_off = 2.5;
 // tab directions, degrees clockwise from the seat's right, seen from the front: a pinwheel,
 // each 45 degrees clockwise from the flange's flat (which faces the diamond's centre)
 abxy_tabs = [["A", [1, 0], 135], ["B", [0, -1], 225], ["X", [0, 1], 45], ["Y", [-1, 0], 315]];
@@ -102,7 +111,8 @@ notch_w = 0.8;  notch_reach = 0.45;                     // rib width, and how fa
 dome_h = 1.75;                                          // board to the flange's underside at rest: DS Lite shells
                                                         // stop the flanges 2.3 mm over the board (scan of an
                                                         // aftermarket shell, Game Boy Macro and Macro F CAD all
-                                                        // agree, 2026-10-19); 1.2 left the silicone no room
+                                                        // agree, 2026-10-19); 1.2 left the silicone no room. The
+                                                        // faceplate gives 1.70 if its walls stand on the 0.65 web
 
 // ---------------- layout ----------------
 glass_side = 9.7;         // panel bay edge to long case edge: room for USB-C beside the glass
@@ -151,27 +161,36 @@ retainer_z = z_top_cu + dome_h + flange_t;              // the lip the flanges r
 // their outer edge, as the DS Lite's shell expects: its clover wall (1.8 thick) stands inside the
 // rim. So the A/B/X/Y rings stay inside the rim, the D-pad's ring stands just outside its pad,
 // and the deck's underside lifts over each pad (rim_relief) so nothing presses on a rim
-sil_rib_gap = 0.8;                                      // the ribs' bottom over the board: room for the web
+// The faceplate (2026-10-21) builds it the same way: its walls all end 3.2 under the face, which
+// is on the web if the board's top is 3.85 under it. Its A/B/X/Y clover is one wall, round lobes
+// joined by straight runs with 1.0 fillets between them; its D-pad wall is a round-ended lobe per
+// arm, inside the rim too; its Start/Select frame is one rounded rectangle round two square cells
+sil_rib_gap = 0.8;                                      // the ribs' bottom over the board: room for the web (the
+                                                        // faceplate's stand on it: 0.65)
 rim_relief = 0.15;                                      // the deck's underside over a pad: the rim's top, plus this
+rim_clear = 0.1;                                        // every wall stays this far inside a pad's rim
 retainer_bot = z_top_cu + sil_rib_gap;
 pocket_h = retainer_z - retainer_bot;
-abxy_ring = 5.25;                                       // A/B/X/Y rings' outer radius, round each hole: inside the
-                                                        // pad's rim (5.55 from the scan and the Macro sat on it)
-abxy_square = [5.15, 0.65, 2.1];                        // centre square's pocket: inside, wall, roof over the board
-dpad_ring = [5.15, 0.8, 7.95];                          // D-pad ring: lobe radius inside, width, waist radius: just
-                                                        // outside the pad, holding it by its rim (inside the rim
-                                                        // there's 0.3 between the rim and the flange's pocket)
-ss_frame_w = 0.9;                                       // Start/Select frames' walls
-ss_cell = 6.4;            // each frame's square cell, for the cap's flange and the pad's square well (DS: 5.4 for a
-                          // 5.0 flange; ss_flange_d here is an ESTIMATE)
+abxy_ring = 5.25;                                       // the A/B/X/Y clover's lobe radius, round each hole: Alex's
+                                                        // shell's clover is 10.45 across a lobe, inside his pad's
+                                                        // rim (the faceplate's 5.525 would sit on it)
+abxy_fillet = 1.0;                                      // the clover's fillets between the lobes (faceplate)
+abxy_square = [5.15, 0.7, 2.25];                        // centre square's pocket: inside, wall, roof over the board
+                                                        // (faceplate: 5.10, 0.70, at the lip: 2.25)
+dpad_wall = [4.8, 6.8, 0.65];                           // D-pad wall, a lobe per arm: outer radius, its centre out
+                                                        // from the cross's, thickness (faceplate 4.8, 6.8, 0.625),
+                                                        // trimmed to stay inside the pad's rim
+ss_frame_w = 0.6;  ss_frame_r = 1.0;                    // the Start/Select frame's wall and corners (faceplate)
+ss_cell = 5.8;            // each square cell in it, round the pad's well (faceplate 5.70, here + 0.1 for a print)
+ss_cell_r = 0.3;
 cap_top = retainer_z + cap_h - flange_t;                // at rest
 // Stepped ends: the lid face over the screen is set by the panel stack, which leaves genuine
 // caps below it. So each end drops to a button deck where the caps stand as on a DS Lite,
 // except a spine between the clusters (J2 and seat 1's screw boss sit under it), which stops
 // short of the end so Start and Select sit in the deck below it
-cap_proud = 1.85;                                       // above the deck: keeps the deck 3.46 over the board, a
-                                                        // DS Lite's 3.45 to 3.67 (Pi Tin's caps stand 1.3)
-deck_face = cap_top - cap_proud;                        // lip over the flanges: 1.16, DS Lite shells 1.08 to 1.25
+cap_proud = cap_h - flange_t - lip_t;                   // above the deck: 1.41, Pi Tin's 1.3 (1.85 until 2026-10-21,
+                                                        // over a 1.16 lip from scans of aftermarket shells)
+deck_face = cap_top - cap_proud;                        // 3.90 over the board (the faceplate's face is 3.85 over it)
 z_deck_lid = deck_face - lid_t;                         // deck underside; the tub's walls stop here
 step_y = bay_l / 2 + 2.4;                               // the step: clear of the panel and its FPC fold
 step_wall = 1.5;  spine_w = 13.0;  deck_r = 3;          // step wall, spine width, deck corner rounding
@@ -216,9 +235,14 @@ function ramp_t(k) = deck_inserts
 // Start and Select (2026-10-19): each seat's DS Lite Start/Select membrane (it comes in the same
 // pad kit: one piece, two pills) between its clusters, near the case's end, Start on the
 // player's right. Seat 1's Start is the power button. ESTIMATE: membrane, pill pitch and caps
-ss_pitch = 7.5;  ss_mem = [14, 6];                      // pill to pill, membrane outline
-ss_cap_d = 4.5;  ss_flange_d = 6.0;  ss_cap_h = 3.0;    // cap body, flange, flange bottom to top
-ss_gap = 0.3;                                           // hole past the cap each side
+ss_pitch = 7.5;  ss_mem = [14, 6];                      // pill to pill (the faceplate's 7.85), membrane outline
+// The faceplate's openings (2026-10-21): a 3.80 hole (4.5 caps can't pass it) with a 0.6 chamfer, a
+// 5.35 flange pocket 1.0 tall over each cell, a 1.2 lip: the flanges sit 0.4 over the A/B/X/Y ones
+ss_hole_d = 3.8;  ss_pocket = [5.35, 1.0];              // hole; flange pocket: diameter, height
+ss_lift = 0.35;                                         // flange lip over the A/B/X/Y lips, as dpad_lift (faceplate 0.4)
+ss_lid_z = retainer_z + ss_lift;                        // the Start/Select flanges' lip
+ss_cap_d = 3.2;  ss_flange_d = 5.0;  ss_cap_h = 3.0;    // cap body, flange, flange bottom to top (ESTIMATES: the body
+                                                        // and flange from the faceplate's openings; were 4.5 and 6.0)
 
 // ---------------- derived ----------------
 case_w = bay_w + 2 * glass_side;
@@ -372,16 +396,24 @@ assert(retainer_bot > z_top_cu + sil_web_t, "the deck reaches down onto the pads
 assert(cap_proud - dome_travel >= 0.4, "a pressed cap sinks to the deck: a thumb catches its edge");
 let (r = (cap_hole_d - cap_abxy_d) / 2) assert(r >= 0.15 && r <= 0.5, str("A/B/X/Y hole clearance ", r, " a side: sticks or rattles"));
 assert(dpad_gap >= 0.3 && dpad_gap <= 1.0, "D-pad opening clearance out of range");
-assert(ss_gap >= 0.15 && ss_gap <= 0.5, "Start/Select hole clearance out of range");
+let (r = (ss_hole_d - ss_cap_d) / 2) assert(r >= 0.15 && r <= 0.5, str("Start/Select hole clearance ", r, " a side"));
 assert(pocket_d >= cap_flange_d + 0.3, "A/B/X/Y flanges bind in their pockets");
-assert(ss_cell >= ss_flange_d + 0.3 && ss_cell >= ss_well[0] + 0.2, "Start/Select cells too small for the flange or the pad's well");
-assert(abxy_ring >= pocket_d / 2 + 0.6, "A/B/X/Y rings too thin to print");
-assert(abxy_ring <= abxy_lobe_r - sil_rim[0] - 0.1, "the A/B/X/Y rings land on the pad's rim");
-assert(dpad_ring[0] >= dpad_lobe_r + 0.15 && dpad_ring[2] >= dpad_waist_r + 0.15 - 1e-6, "the D-pad's ring lands on its pad's rim");
-assert(dpad_ring[2] >= dpad_flange_r + dpad_pocket_gap, "the D-pad's ring cuts into its flange's pocket");
+assert(ss_pocket[0] >= ss_flange_d + 0.3, "Start/Select flanges bind in their pockets");
+assert(ss_cell >= ss_well[0] + 0.2, "Start/Select cells too small for the pad's well");
+assert(ss_pocket[0] <= ss_cell, "a Start/Select flange pocket wider than its cell: face down, it overhangs");
+assert(ss_lid_z - ss_pocket[1] >= z_top_cu + ss_well[2] + 0.1, "the Start/Select cells' roof lands on the pad's wells");
+// the lips over the flanges (each a 45 degree chamfer and a straight part)
+assert(lip_t >= cap_chamfer + 0.8 && deck_face - (retainer_z + dpad_lift) >= dpad_chamfer + 0.3
+       && deck_face - ss_lid_z >= cap_chamfer + 0.5, "a lip over the flanges is too thin");
+assert(abxy_ring >= pocket_d / 2 + 0.6, "A/B/X/Y clover too thin to print");
+assert(abxy_ring <= abxy_lobe_r - sil_rim[0] - rim_clear, "the A/B/X/Y clover lands on the pad's rim");
+assert(abxy_fillet > 0 && abxy_fillet <= abxy_ring - pocket_d / 2 + 0.6, "the clover's fillet is out of range");
+assert(dpad_wall[2] >= 0.6, "the D-pad's wall is too thin to print");
+assert(dpad_wall[1] + dpad_wall[0] - dpad_wall[2] >= dpad_arm_l / 2 + dpad_gap + 0.5, "the D-pad's wall is in its opening");
 assert(z_top_cu + sil_rim[1] + rim_relief <= deck_face - 1.2, "the deck over the pads' rims is too thin");
 assert(dpad_peg_d <= dpad_hole_d - 0.2 + 1e-6, "the D-pad's peg doesn't pass through its pad's hole");
-assert(abxy_square[0] >= abxy_boss[0] + 0.1 && abxy_square[2] >= abxy_boss[1] + 0.05, "the A/B/X/Y pad's centre square doesn't fit its pocket");
+assert(abxy_square[0] >= abxy_boss[0] + 0.1 && abxy_square[2] >= abxy_boss[1] + 0.05 && abxy_square[2] <= retainer_z - z_top_cu,
+       "the A/B/X/Y pad's centre square doesn't fit its pocket");
 assert(dpad_peg_gap >= 0, "the D-pad's peg holds its flange off the lip");
 assert(z_deck_lid > retainer_bot + 0.5, "button deck lower than the retainers");
 assert(step_y - step_wall > (panel_l + panel_fit) / 2 + frame_wall + 0.3, "step over the panel frame");
@@ -454,10 +486,31 @@ echo(str("STACK floor ", floor_t, " + cell ", cell[2], " + gap ", cell_gap, " + 
 module rrect(w, l, r) offset(r = r) square([w - 2 * r, l - 2 * r], center = true);
 module at(p, z = 0) translate([p[0], p[1], z]) children();
 module ring(t = 0.35) difference() { offset(r = t) children(); children(); }
-// the D-pad's pad as its ring sees it: a lobe round each dome and the waist between them
-module dpad_clover() union() {
-  circle(r = dpad_ring[2], $fn = 64);
-  for (t = [0:90:270]) rotate(t) translate([d, 0]) circle(r = dpad_ring[0], $fn = 48);
+// The walls that stand on the pads' webs, at a cluster's centre (the faceplate's shapes, 2026-10-21),
+// each kept rim_clear inside its pad's rim. The A/B/X/Y clover's outline: a lobe round each hole, the
+// lobes joined by straight runs (each lobe's tangent), filleted where the runs meet
+module inside_rim2d(c) offset(delta = -(sil_rim[0] + rim_clear)) pad2d(c);
+module abxy_clover2d() intersection() {
+  offset(r = -abxy_fillet) offset(r = abxy_fillet) union() {
+    square([2 * a, 2 * abxy_ring], center = true);  square([2 * abxy_ring, 2 * a], center = true);
+    for (t = [0:90:270]) rotate(t) translate([a, 0]) circle(r = abxy_ring, $fn = 64);
+  }
+  inside_rim2d(abxy1);
+}
+// the D-pad's wall: per arm a lobe round-ended at dpad_wall[1] out, chamfered at 45 degrees where
+// two lobes meet (outer outline; the wall is dpad_wall[2] thick inside it)
+module dpad_wall_outer2d() intersection() {
+  union() for (t = [0:90:270]) rotate(t) {
+    hull() { translate([dpad_wall[1], 0]) circle(r = dpad_wall[0], $fn = 64); square([0.01, 2 * dpad_wall[0]], center = true); }
+    polygon([[dpad_wall[0], dpad_wall[0]], [dpad_wall[0], dpad_wall[0] + 0.95], [dpad_wall[0] + 0.95, dpad_wall[0]]]);
+  }
+  inside_rim2d(dpad1);
+}
+module dpad_wall2d() difference() { dpad_wall_outer2d(); offset(delta = -dpad_wall[2]) dpad_wall_outer2d(); }
+// Start/Select: one frame round both cells, at the seat's Start/Select centre (along x)
+module ss_frame2d() difference() {
+  rrect(ss_pitch + ss_cell + 2 * ss_frame_w, ss_cell + 2 * ss_frame_w, ss_frame_r);
+  for (s = [-1, 1]) translate([s * ss_pitch / 2, 0]) rrect(ss_cell, ss_cell, ss_cell_r);
 }
 // a silicone pad's outline, at its cluster's centre: a lobe round each dome on the buttons' axes
 // measured (Alex, 2026-10-20): across the lobes A/B/X/Y 26.5 and D-pad 24, notch to notch 17.5 and 15.6
@@ -680,18 +733,35 @@ function abxy_keys() = [for (s = [[abxy1, 0], [abxy2, 180]]) for (i = [0:3]) let
   [s[0] + (s[1] == 0 ? t[1] * a : -t[1] * a), s[1] - t[2], [for (n = abxy_notches[i][1]) t[2] - n]]];
 // one A/B/X/Y cap's lid cut, in its own frame (tab along +x), from the pocket's floor up: the hole,
 // the flange's pocket less its notch ribs, the tab's slot
-module abxy_cut(h, notches, hole_d = cap_hole_d) {
+// face: the deck's face over the cut's origin, where the 45 degree chamfer opens out (face down it
+// prints as a 45 degree overhang, no support)
+cut_face = deck_face - retainer_bot + 0.01;
+module abxy_cut(h, notches, hole_d = cap_hole_d, face = cut_face) {
   cylinder(d = hole_d, h = h);
+  translate([0, 0, face - cap_chamfer]) cylinder(d1 = hole_d, d2 = hole_d + 2 * cap_chamfer + 0.02, h = cap_chamfer + 0.01);
   difference() {
     cylinder(d = pocket_d, h = pocket_h + 0.01);
     if (notch_keys) for (n = notches) rotate(n) translate([cap_flange_d / 2 - notch_reach, -notch_w / 2, -1])
       cube([pocket_d / 2 - cap_flange_d / 2 + notch_reach + 0.05, notch_w, pocket_h + 2]);
   }
-  linear_extrude(pocket_h + 0.01) polygon([[0, 0], for (t = [-slot_a / 2:slot_a / 6:slot_a / 2]) slot_r * [cos(t), sin(t)]]);
+  linear_extrude(pocket_h + 0.01) polygon([[0, 0], for (i = [0:6]) let(t = slot_off - slot_a / 2 + slot_a * i / 6) slot_r * [cos(t), sin(t)]]);
 }
-module dpad_cut(h, gap = dpad_gap) {
+module dpad_cut(h, gap = dpad_gap, face = cut_face) {
   translate([0, 0, dpad_lift]) linear_extrude(h) offset(r = gap) cross(dpad_arm_w, dpad_arm_l);
+  // the chamfer, an arm at a time (each convex, so a hull): the cross grown by dpad_chamfer at the face
+  for (t = [0, 90]) rotate(t) hull() {
+    translate([0, 0, face - dpad_chamfer]) linear_extrude(0.01) offset(r = gap) square([dpad_arm_l, dpad_arm_w], center = true);
+    translate([0, 0, face]) linear_extrude(0.02) offset(r = gap + dpad_chamfer) square([dpad_arm_l, dpad_arm_w], center = true);
+  }
   linear_extrude(pocket_h + dpad_lift + 0.01) offset(r = dpad_pocket_gap) dpad_flange();
+}
+// one Start/Select cap's cut: the cell for the pad's well, the flange's pocket over it, the hole and its chamfer
+module ss_cut(h, face = cut_face) {
+  top = ss_lid_z - retainer_bot + 0.01;                 // the pocket's roof: the flange's lip
+  linear_extrude(top - ss_pocket[1]) rrect(ss_cell, ss_cell, ss_cell_r);
+  translate([0, 0, top - ss_pocket[1] - 0.01]) cylinder(d = ss_pocket[0], h = ss_pocket[1] + 0.01);
+  cylinder(d = ss_hole_d, h = h);
+  translate([0, 0, face - cap_chamfer]) cylinder(d1 = ss_hole_d, d2 = ss_hole_d + 2 * cap_chamfer + 0.02, h = cap_chamfer + 0.01);
 }
 module dpad_flange() union() { circle(r = dpad_flange_r, $fn = 64); cross(dpad_arm_w, dpad_arm_l); }
 
@@ -786,14 +856,14 @@ module lid_body() difference() {
     // snap hooks, just inside the tub wall
     for (h = hooks) at(h) rotate(h[2]) snap_hook(h[3]);
     // the ribs that rest on the silicone pads (the pockets are cut below)
+    // (the A/B/X/Y clover is solid between its pockets, where the faceplate leaves it open round
+    // pinwheel ears: here the tab slots are cut into it and key the caps with the notch ribs)
     for (c = [abxy1, abxy2]) at(c, retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01) union() {
-      for (t = [0:90:270]) rotate(t) translate([a, 0]) circle(r = abxy_ring, $fn = 64);
+      abxy_clover2d();
       square(abxy_square[0] + 2 * abxy_square[1], center = true);
     }
-    for (c = [dpad1, dpad2]) at(c, retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01)
-      difference() { offset(r = dpad_ring[1]) dpad_clover(); dpad_clover(); }
-    for (b = ss_buttons) at(b[2], retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01)
-      square(ss_cell + 2 * ss_frame_w, center = true);
+    for (c = [dpad1, dpad2]) at(c, retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01) dpad_wall2d();
+    for (c = ss_centres) at(c, retainer_bot) linear_extrude(z_lid - retainer_bot + 0.01) ss_frame2d();
     // pinhole guides reach down towards the switches
     for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_lid - z_top_cu - 2.4 + 0.01);
     // panel locating frame
@@ -821,17 +891,17 @@ module lid_body() difference() {
   // buttons
   for (k = abxy_keys()) at(k[0], retainer_bot - 0.01) rotate(k[1]) abxy_cut(case_h, k[2]);
   for (c = [dpad1, dpad2]) at(c, retainer_bot - 0.01) dpad_cut(case_h);
-  for (b = ss_buttons) at(b[2], retainer_bot - 0.01) {
-    cylinder(d = ss_cap_d + 2 * ss_gap, h = case_h);
-    translate([0, 0, (pocket_h + 0.02) / 2]) cube([ss_cell, ss_cell, pocket_h + 0.02], center = true);
-  }
-  // over each pad, the deck's underside up past the rim, round the rings
+  for (b = ss_buttons) at(b[2], retainer_bot - 0.01) ss_cut(case_h);
+  // over each pad, the deck's underside up past the rim, round the walls
   for (c = [abxy1, abxy2]) at(c, z_top_cu) linear_extrude(sil_rim[1] + rim_relief) difference() {
     offset(r = rim_relief) pad2d(c);
-    for (t = [0:90:270]) rotate(t) translate([a, 0]) circle(r = abxy_ring, $fn = 64);
+    abxy_clover2d();
     square(abxy_square[0] + 2 * abxy_square[1], center = true);
   }
-  for (c = [dpad1, dpad2]) at(c, z_top_cu) linear_extrude(sil_rim[1] + rim_relief) dpad_clover();
+  for (c = [dpad1, dpad2]) at(c, z_top_cu) linear_extrude(sil_rim[1] + rim_relief) difference() {
+    offset(r = rim_relief) pad2d(c);
+    dpad_wall2d();
+  }
   for (c = [abxy1, abxy2]) at(c, retainer_bot - 0.01)                        // the A/B/X/Y pad's centre square
     linear_extrude(z_top_cu + abxy_square[2] - retainer_bot + 0.01) square(abxy_square[0], center = true);
   // pilot holes for the screws
@@ -856,14 +926,14 @@ module snap_hook(w) {
 module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
 
 // button caps, for the assembly view only (they are bought DS Lite parts)
-// The caps at rest (flanges up against the lip). Pressed (press = true): A/B/X/Y and Start/Select
-// straight down dome_travel; the D-pad tilted toward dpad_dir (degrees, seat frame), rocking on its
+// The caps at rest (flanges up against their lips; the D-pad's and Start/Select's lips are lifted).
+// Pressed (press = true): A/B/X/Y and Start/Select straight down dome_travel; the D-pad tilted toward dpad_dir (degrees, seat frame), rocking on its
 // flange's far edge until the pressed side has gone down dome_travel over its dome(s)
 module caps(press = false, dpad_dir = 0, which = "all") {    // which: "all", "abxy", "ss" or "dpad"
   z0 = retainer_z - flange_t;
   dz = press ? -dome_travel : 0;
   if (which == "all" || which == "abxy") for (k = abxy_keys()) at(k[0], z0 + dz) rotate(k[1]) abxy_cap(k[2]);
-  if (which == "all" || which == "ss") for (b = ss_buttons) at(b[2], z0 + dz) ss_cap();
+  if (which == "all" || which == "ss") for (b = ss_buttons) at(b[2], z0 + ss_lift + dz) ss_cap();
   if (which == "all" || which == "dpad") for (c = [dpad1, dpad2]) at(c, z0 + dpad_lift) rotate(c == dpad2 ? 180 : 0) dpad_tilt(press ? dpad_dir : undef) dpad_cap();
 }
 module abxy_cap(notches) {

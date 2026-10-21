@@ -32,7 +32,7 @@ KIT = [  # (kit name, file, what it tests)
     ("usb_tub", "coupon_usb_tub.stl", "the USB-C opening's lower half, in the tub wall"),
     ("usb_lid", "coupon_usb_lid.stl", "its upper half, in the lid's tongue"),
     ("usb_board", "coupon_usb_board.stl", "the board's tab with a USB-C shell stand-in, between the two halves"),
-    ("tune_openings", "tune_openings.stl", "D-pad openings 0.6/0.8/1.0, a keyed A/B/X/Y cluster, holes 7.4/7.8/8.0"),
+    ("tune_openings", "tune_openings.stl", "D-pad openings 0.6/0.8/1.0, a keyed A/B/X/Y cluster (8.0 holes), holes 7.6/7.8/8.2"),
     ("tune_stack_dpad_board", "tune_stack_dpad_board.stl", "seat 1's D-pad: board slice with the contact rings"),
     ("tune_stack_abxy_board", "tune_stack_abxy_board.stl", "seat 1's A/B/X/Y: board slice with the contact rings"),
     ("tune_stack_ss_board", "tune_stack_ss_board.stl", "seat 1's Start/Select: board slice with the two small contacts"),
