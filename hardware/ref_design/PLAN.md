@@ -126,6 +126,27 @@ Buttons (from Alex's pad measurements, 2026-10-20; check_buttons fails on these 
       (3) the Start/Select caps' body and flange (now estimates from the faceplate's 3.8 hole and 5.35
       pocket); (4) try the 8.0 holes and the 0.65 D-pad opening in `tune_openings` (7.6/7.8/8.2 and 0.55/0.65/0.75)
 
+Alex's notes on the print from the kit before f3d5863 (2026-10-21), the ones for the case; the
+shell's redesign (a shorter case for a 2.4 in panel, the top curving over the tub, decks built
+upside down) takes the answers of the `6_tests` plate:
+- [ ] 5 Openings: confirm the 0.65 D-pad opening and the 8.0 A/B/X/Y holes with real caps
+      (`tune_openings`, on `6_tests`). Waiting on Alex's test print
+- [x] 6 "The speaker sticks out of the side of the housing": the speaker sat inside the wall, but
+      the pad it lies on was cut to the case's plain outline, not the back's round, and stood up to
+      1.0 mm proud of the round as a 0.6 mm slab under it. Now cut to the tub's outside
+- [ ] 8 Overhang limit for the redesign: `test_overhangs` on `6_tests` (fins 45 to 75 degrees from
+      vertical, a convex 6 mm round). Waiting on Alex's prints on the P1S and the U1
+- [x] 9 "The curve up from the base ends in a vertical lip": in the model the only vertical face on
+      the round from the base was that speaker pad's (a section every 0.1 mm finds nothing else
+      outside the round); the profile is otherwise tangent all the way: the wall, the 4.2 mm round,
+      and its last 1.23 mm a 45 degree chamfer so it prints flat without supports. If Alex still
+      sees a lip elsewhere on the next print, it's in the print, not the model: ask where
+- [x] 11 Screw holes filled in: the plate's supports filled the tub's six counterbores. Both kits
+      now give supports only to the parts that need them; the P1S kit checks its G-code
+      (`case/support_check.py`). `coupon_screws_tub` and `coupon_screws_lid` on `6_tests` confirm it
+- [ ] 12 The deck insert's ring round the lid's 5.0 boss was too tight (`insert_gap` 0.15 a side):
+      `test_column` and `test_rings` (0.2 to 0.5 a side) on `6_tests`. Waiting on Alex's test print
+
 Housekeeping:
 - [ ] Delete branch ref-design-j2-hole: its commit went in as 4241580 by cherry-pick, so `git branch -d` refuses
 - [ ] Alex's main checkout (~/Code/mega_blastoise) is still at 76955d2 with uncommitted changes,

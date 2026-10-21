@@ -6,7 +6,7 @@
 For each object on the plate (its mesh placed by the project's own transforms, then moved onto
 its own first layer in the G-code: Bambu Studio's G-code sits 2.0 mm off the project's placement
 in y on a P1S, so no offset is assumed), the support and support interface extruded inside its outline, layer by layer, and
-for the tub every counterbore found in its own first millimetre. print_package_p1s.py calls
+for the tub (and its screw holes coupon) every counterbore found in its own first millimetre. print_package_p1s.py calls
 check() on every plate and fails the build if a part that needs no supports got some.
 """
 import io
@@ -131,7 +131,7 @@ def check(path, no_support):
                       + (f" (layers {layers})" if layers else ""))
         if must_not and inside.any():
             bad.append(name)
-        if name.startswith("tub"):
+        if name.startswith("tub") or "screws_tub" in name:      # the tub, and its screw holes coupon
             for i, h in enumerate(counterbores(m)):
                 c = h.centroid
                 n = shapely.contains_xy(h.buffer(0.2), pts[:, 0], pts[:, 1]).sum() if len(pts) else 0

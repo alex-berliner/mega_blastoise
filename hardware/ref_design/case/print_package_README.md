@@ -24,6 +24,7 @@ get them (in `1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see
 | `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid, insert) | second |
 | `1_case.3mf` | the tub, the lid, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
 | `1_case_inserts.3mf` | the two deck inserts (the same part, one for each end) | with `1_case` |
+| `6_tests.3mf` | **Questions for the new shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and a lid screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
 | `5_unit.3mf` | **One whole unit on one plate:** the tub, the lid, both deck inserts and the board mock (no coupons, no dummies) | instead of `1_case` and `1_case_inserts`, once the coupons fit |
 
 The lid, the deck inserts and the tuning lid slices print face down as exported (the slices deck
@@ -73,6 +74,24 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
 - **Start/Select:** their membrane, pill spacing and caps are estimates (`ss_mem` 14 x 6 mm,
   `ss_pitch` 7.5, `ss_cap_d` 3.2 from the faceplate's 3.8 mm hole). Measure your real Start/Select membrane and caps and send the
   numbers; the stack shows whether the estimates already work.
+
+**Test plate (`6_tests`), for the shell's redesign:** print it on the P1S and the U1.
+- Openings: `tune_openings` again, with the D-pad (crosses 0.55, 0.65, 0.75) and A/B/X/Y caps (the
+  keyed cluster is 8.0, the plain holes 7.6, 7.8, 8.2): the tightest the D-pad moves freely in, and
+  the tightest A/B/X/Y hole a cap drops through without catching.
+- Overhangs (`test_overhangs`, printed with no supports on purpose): the fins' undersides slope 45
+  to 75 degrees from vertical (the number on each fin's top). Report the steepest fin whose
+  underside is still clean (no drooping or loose strands) on each printer. The quarter round at the
+  ladder's end goes from 85 degrees (near flat, where it leaves its stem) up to vertical, ticked
+  at 45, 60 and 75 on its end face: report the tick below which it turns rough. The new shell's
+  rounded edges, printed upside down, need that limit.
+- Screw holes: `coupon_screws_tub` (two of the tub's holes, printed flat as the tub) should come out
+  with the 4.4 mm counterbore and the 2.4 mm hole open, and an M2 screw should pass; the old plates
+  had supports in every counterbore (see above). `coupon_screws_lid` (a lid boss, face down) should
+  take an M2 x 8 self-tapper into its 1.6 mm pilot. Say which of the case's holes were filled.
+- Column clearance: slide each ring of `test_rings` over `test_column` (5.0 mm, as the lid's
+  bosses). The deck insert's ring at 0.15 a side was too tight: report the tightest that slides on
+  freely and the loosest that doesn't rattle.
 
 **Fit coupons (`4_fit_coupons`):**
 - USB-C: board coupon into the tub coupon (its tab drops into the wall's slot), lid coupon on

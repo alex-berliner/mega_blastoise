@@ -158,3 +158,78 @@ if (kit == "buttons_insert" && deck_inserts) flip_at(deck_face) deck_insert(-1);
 if (kit == "usb_tub")      intersection() { tub_flat(); usb_box(); }
 if (kit == "usb_lid")      flip() intersection() { lid(); usb_box(); }
 if (kit == "frame_lid")    flip() intersection() { lid(); frame_box(); }
+
+// ---------------- test plate (6_tests): questions for the shell's redesign ----------------
+// Overhangs: a ladder of fins, each a vertical wall then an underside sloping out test_reach at
+// its angle from vertical (45 to 75), the angle engraved on its top; and a convex quarter round,
+// as the shell's rounded edge would print, from near flat (85 degrees from vertical, where it
+// leaves its stem) up to vertical, test_round in radius, ticks at 45, 60 and 75 degrees on its end
+// face (the ladder's end). Printed as exported, no supports: the steepest clean fin and the curve's last clean tick
+// are what the printer can do
+test_angles = [45, 50, 55, 60, 65, 70, 75];
+test_reach = 5;  test_wall = 2;  test_slab = 1.2;  test_fin = 5;  test_back = 5;
+test_round = 6;  test_round_from = 85;  test_round_w = 10;
+module test_fin(t) let(top = test_wall + test_reach / tan(t) + test_slab) difference() {
+  rotate([90, 0, 0]) translate([0, 0, -test_fin]) linear_extrude(test_fin)
+    polygon([[-test_back, 0], [0, 0], [0, test_wall], [test_reach, test_wall + test_reach / tan(t)], [test_reach, top], [-test_back, top]]);
+  translate([-test_back / 2, test_fin / 2, top - engrave]) linear_extrude(engrave + 0.01)
+    text(str(t), size = 2.6, halign = "center", valign = "center");
+}
+// the round's point at a tangent phi degrees from vertical, its stem's wall at x = 0
+function test_round_c() = [-test_round * sin(90 - test_round_from), test_wall + test_round * cos(90 - test_round_from)];
+function test_round_at(phi) = test_round_c() + test_round * [cos(phi), -sin(phi)];
+module test_curve() let(c = test_round_c(), top = c[1] + test_slab) difference() {
+  rotate([90, 0, 0]) translate([0, 0, -test_round_w]) linear_extrude(test_round_w)
+    polygon([[-test_back, 0], [0, 0], for (p = [test_round_from:-2.5:0]) test_round_at(p), [c[0] + test_round, top], [-test_back, top]]);
+  // ticks on the end face (y = 0), in from the surface along its normal, and their angles
+  // (the numbers stand in a staircase up and in from their ticks: by the ticks they'd overlap)
+  for (t = [[45, [2.5, -2.1]], [60, [0.3, -3.5]], [75, [-1.9, -4.9]]]) let(p = t[0], q = test_round_at(p), n = [cos(p), -sin(p)])
+    translate([0, -0.01, 0]) rotate([-90, 0, 0]) linear_extrude(engrave + 0.01) mirror([0, 1]) {
+      hull() { translate(q - 0.2 * n) circle(d = 0.4, $fn = 8); translate(q - 1.0 * n) circle(d = 0.4, $fn = 8); }
+      translate(test_round_c() + t[1] * test_round / 6) text(str(p), size = 1.6, halign = "center", valign = "center");
+    }
+  translate([-test_back / 2, test_round_w / 2, top - engrave]) linear_extrude(engrave + 0.01)
+    text(str("R", test_round), size = 2.4, halign = "center", valign = "center");
+}
+module test_overhangs() {        // the round first, its ticked face at the ladder's end
+  test_curve();
+  for (i = [0:len(test_angles) - 1]) translate([0, test_round_w + 2 + i * (test_fin + 2), 0]) test_fin(test_angles[i]);
+  // the back strip that joins them
+  translate([-test_back, 0, 0]) cube([test_back, len(test_angles) * (test_fin + 2) + test_round_w, test_wall]);
+}
+// Screw holes: two of the tub's (a side boss beside the glass and an end boss), cut from the real
+// tub up to the board with the floor, ribs and wall round them, printed flat as the tub prints;
+// and one of the lid's bosses with its pilot hole, printed face down as the lid prints
+module screws_box(s, r) translate([s[0] - r, s[1] - r, -1]) cube([2 * r, 2 * r, case_h + 2]);
+module coupon_screws_tub() for (i = [0, 1]) let(s = pins[[0, 4][i]]) translate([16 * i, 0, 0] - [s[0], s[1], 0])
+  intersection() { tub_flat(); screws_box(s, 6); translate([-case_w, -case_l, -1]) cube([2 * case_w, 2 * case_l, z_board + 1]); }
+module coupon_screws_lid() translate(-[pins[0][0], -pins[0][1], 0]) flip() intersection() { lid(); screws_box(pins[0], 5); }
+// Clearance round a screw column (the deck insert's ring round the lid's 5.0 boss was too tight
+// at insert_gap 0.15): a boss_d column printed upright as the lid's bosses are, and a strip of
+// rings as the insert's (anchor_ring walls, the insert's height over the board), holes test_fits
+// a side over boss_d, printed with their deck on the bed as the insert is
+test_fits = [0.2, 0.3, 0.4, 0.5];
+test_ring_h = deck_face - z_top_cu;
+module test_column() difference() {
+  union() {
+    translate([-6, -6, 0]) cube([12, 12, lid_t]);
+    cylinder(d = boss_d, h = lid_t + test_ring_h + 2, $fn = 96);
+  }
+  translate([0, -4.3, lid_t - engrave]) linear_extrude(engrave + 0.01) text(str(boss_d), size = 2.4, halign = "center", valign = "center");
+}
+module test_rings() difference() {
+  union() {
+    translate([-6, -10, 0]) cube([11 * len(test_fits) + 1, 16, lid_t]);
+    for (i = [0:len(test_fits) - 1]) translate([11 * i, 0, 0])
+      cylinder(d = boss_d + 2 * test_fits[i] + 2 * anchor_ring, h = lid_t + test_ring_h, $fn = 96);
+  }
+  for (i = [0:len(test_fits) - 1]) translate([11 * i, 0, -1]) {
+    cylinder(d = boss_d + 2 * test_fits[i], h = lid_t + test_ring_h + 2, $fn = 96);
+    translate([0, -7.2, lid_t + 1 - engrave]) linear_extrude(engrave + 0.01) text(str(test_fits[i]), size = 2.4, halign = "center", valign = "center");
+  }
+}
+if (kit == "test_overhangs")    test_overhangs();
+if (kit == "test_screws_tub")   coupon_screws_tub();
+if (kit == "test_screws_lid")   coupon_screws_lid();
+if (kit == "test_column")       test_column();
+if (kit == "test_rings")        test_rings();

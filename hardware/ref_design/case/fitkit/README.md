@@ -27,6 +27,10 @@ any case or board change) with:
 | `tune_stack_abxy_board.stl` + `tune_stack_abxy_lid_dome*.stl` | the same for one A/B/X/Y cluster | as above |
 | `tune_stack_ss_board.stl` + `tune_stack_ss_lid_dome*.stl` | the same for seat 1's Start/Select membrane (its outline, pill pitch and caps are ESTIMATEs in `case.scad`: `ss_mem`, `ss_pitch`, `ss_cap_*`) | as above |
 | `coupon_frame_lid.stl` | the lid's window, ledge and panel frame | face down, as exported |
+| `test_overhangs.stl` | the test plate's overhang ladder: fins whose undersides slope 45, 50, 55, 60, 65, 70 and 75 degrees from vertical (engraved on top), and a convex 6 mm quarter round from 85 degrees up to vertical, ticked at 45, 60 and 75 on its end face | as exported, no supports (on purpose) |
+| `coupon_screws_tub.stl` | two of the tub's screw holes (a side boss and an end boss), cut from the real tub: counterbore, clearance hole, boss, floor | flat, as the tub |
+| `coupon_screws_lid.stl` | one of the lid's screw bosses with its 1.6 mm pilot, cut from the real lid | face down, as the lid |
+| `test_column.stl` + `test_rings.stl` | a 5.0 mm column (the lid's screw bosses) and four rings over it, 0.2, 0.3, 0.4 and 0.5 mm a side (engraved), as the deck insert's ring round the end boss | as exported |
 
 PLA or PETG, 0.2 mm layers, 3 walls; no supports, except under the lid's button decks (the
 lid and `coupon_buttons_lid`). Print the coupons with the same settings

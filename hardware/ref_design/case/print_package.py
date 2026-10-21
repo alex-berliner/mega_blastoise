@@ -74,7 +74,13 @@ PLATES = {
     "5_unit": [("tub_print", PRINT_TUB), ("lid", os.path.join(HERE, "lid.stl")),     # one whole unit, no dummies
                ("insert_a", os.path.join(HERE, "insert.stl")), ("insert_b", os.path.join(HERE, "insert.stl")),
                ("board_mock", f"{KIT}/board_mock.stl")],
+    # questions for the shell's redesign, no supports: openings, overhangs, screw holes, a column's clearance
+    "6_tests": [("tune_openings", f"{KIT}/tune_openings.stl"), ("test_overhangs", f"{KIT}/test_overhangs.stl"),
+                ("screws_tub", f"{KIT}/coupon_screws_tub.stl"), ("screws_lid", f"{KIT}/coupon_screws_lid.stl"),
+                ("test_column", f"{KIT}/test_column.stl"), ("test_rings", f"{KIT}/test_rings.stl")],
 }
+# the overhang ladder overhangs on purpose (it asks how far the printer goes without supports)
+NEVER_SUPPORTED = {f"{KIT}/test_overhangs.stl"}
 
 
 def support_parts():
@@ -86,8 +92,9 @@ def support_parts():
         found = dict(zip(paths, ex.map(overhangs.check, paths)))
     for p in paths:
         print(f"  {os.path.basename(p):38s} " + ("no supports" if not found[p] else
-              "; ".join(f"{a:.1f} mm2: {why}" for a, z, xy, why in found[p])))
-    return {p for p in paths if found[p]}
+              "; ".join(f"{a:.1f} mm2: {why}" for a, z, xy, why in found[p]))
+              + (" (on purpose: printed without)" if found[p] and p in NEVER_SUPPORTED else ""))
+    return {p for p in paths if found[p] and p not in NEVER_SUPPORTED}
 
 
 V5_NAMES = {"tub_print": "tub_print.stl", "lid": "lid.stl", "board_mock": "board_mock.stl",
