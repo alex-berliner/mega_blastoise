@@ -164,9 +164,10 @@ the board (`flange_t` + `lip_t`). Measure it with the button coupons before orde
 A pointer from the DS Lite itself (a 3D scan of an aftermarket shell, Wesk on BitBuilt, and
 gorgyrip's reverse-engineered USG-CPU-10 board): its face plate is 1.4-1.5 mm, the button guide
 tubes end about 3.0 mm under the face, and the board's top sits about 3.0-3.4 mm under the face.
-That would put `dome_h` nearer 1.1 mm than the 2.0 here, which would leave the caps about 0.4 mm
-proud instead of 1.3. Inferred from an aftermarket shell with an unknown board thickness: a
-reason to measure, not a number to use.
+That would put `dome_h` nearer 1.1 mm than the 1.75 here. Inferred from an aftermarket shell with
+an unknown board thickness: a reason to measure, not a number to use. Alex's faceplate (above)
+points to 1.70 instead, and since the lip is now fixed at 1.6 the caps stand 1.41 proud whatever
+`dome_h` is (the deck moves with it).
 
 Also from the DS Lite: its face holes are 7.6 mm for A/B/X/Y and 18.9 mm across the D-pad's
 cross (taken here until 2026-10-21, when Alex's faceplate replaced them); it closes with seven screws into the face's bosses,
