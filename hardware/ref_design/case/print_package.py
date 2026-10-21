@@ -234,6 +234,13 @@ def build(plate, parts, z, supported):
     return out, [(n, s) for n, m, s in meshes]
 
 
+def build_plate(job):
+    """build() for one plate in a worker process, with its own handle on the template."""
+    plate, parts, supported = job
+    with zipfile.ZipFile(TEMPLATE) as z:
+        return build(plate, parts, z, supported)
+
+
 def main():
     for plate, parts in PLATES.items():
         if sys.argv[1:] and plate not in sys.argv[1:]:
@@ -243,14 +250,14 @@ def main():
                 sys.exit(f"missing {p}: run case/export.py --stl, the print_variants tub and case/fitkit.py first")
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(os.path.join(OUT, "stl"))
-    z = zipfile.ZipFile(TEMPLATE)
     print("supports, measured part by part:")
     supported = support_plates()
     only = sys.argv[1:]                 # plate names to build (default: all)
-    for plate, parts in PLATES.items():
-        if only and plate not in only:
-            continue
-        path, sizes = build(plate, parts, z, supported)
+    jobs = [(plate, parts, supported) for plate, parts in PLATES.items() if not only or plate in only]
+    from concurrent.futures import ProcessPoolExecutor
+    with ProcessPoolExecutor() as ex:   # the plates build at once, listed in order
+        built = list(ex.map(build_plate, jobs))
+    for (plate, parts, _), (path, sizes) in zip(jobs, built):
         print(f"{os.path.basename(path):24s} {'supports' if plate in supported else 'no supports':12s} "
               + ", ".join(n for n, _ in sizes))
         for n, p in parts:

@@ -34,8 +34,11 @@ import struct
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tools"))
+import scad  # noqa: E402  (scad.jobs(): how many exports at once)
 PCB = os.path.join(HERE, "..", "board", "battler.kicad_pcb")
 POS = json.load(open(os.path.join(HERE, "positions.json")))
 PCB_T = POS["board"]["t"]
@@ -90,10 +93,11 @@ def tht_leads():
 
 
 def extent(ref, tmp):
-    # one at a time: parallel kicad-cli exports clobber each other's temporary files
+    # in tmp: kicad-cli writes its scratch file ($tempfile$.stl) into its working directory, so
+    # exports running at once each need a folder of their own (extents() gives them one)
     out = os.path.join(tmp, ref + ".stl")
     r = subprocess.run(["kicad-cli", "pcb", "export", "stl", "--no-board-body", "--force", "--subst-models",
-                        "--component-filter", ref, "-o", out, PCB], capture_output=True, text=True)
+                        "--component-filter", ref, "-o", out, PCB], capture_output=True, text=True, cwd=tmp)
     if r.returncode or not os.path.exists(out):
         return ref, None
     pts = stl_points(out)
@@ -102,6 +106,12 @@ def extent(ref, tmp):
     xs, ys, zs = zip(*pts)
     # STL frame: KiCad X, -KiCad Y, z = 0 at the board's bottom face
     return ref, (min(xs), -max(ys), max(xs), -min(ys), min(zs) - PCB_T, max(zs) - PCB_T)
+
+
+def extents(refs):
+    """{ref: extent(ref)[1]} for every ref, several exports at once, each in its own folder."""
+    with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(scad.jobs(cpu_only=True)) as pool:
+        return dict(pool.map(lambda ref: extent(ref, tempfile.mkdtemp(dir=tmp)), refs))
 
 
 def inside_rect(box, rect, margin=0.0):
@@ -123,8 +133,7 @@ def near_circle(box, c, r):
 
 def main():
     parts = refs()
-    with tempfile.TemporaryDirectory() as tmp:
-        boxes = {r[0]: extent(r[0], tmp)[1] for r in parts}
+    boxes = extents([r[0] for r in parts])
     flipped = {r[0]: r[1] for r in parts}
     problems, notes = [], []
     for ref, _, name, court in parts:

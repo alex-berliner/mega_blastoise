@@ -22,10 +22,13 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import print_package  # noqa: E402
+
+SLICERS = max(1, (os.cpu_count() or 4) // 4)      # Bambu Studios slicing at once
 
 PROFILES = os.path.join(HERE, "print", "p1s")
 OUT = os.path.join(HERE, "print", "package_P1S")
@@ -120,19 +123,21 @@ def main():
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(os.path.join(OUT, "stl"))
     rows = []
-    with tempfile.TemporaryDirectory() as tmp:
-        queue = [(n, p, n in supported) for n, p in print_package.PLATES.items() if not only or n in only]
-        while queue:
-            name, parts, sup = queue.pop(0)
+    with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(SLICERS) as pool:
+        def plate(name, parts, sup):
+            """Slice a plate, or its halves if it doesn't fit: [(name, parts, sup, sliced)], in order."""
             done = slice_plate(name, parts, sup, tmp)
             if done is None:
                 if len(parts) < 2:
                     sys.exit(f"{name}: one part that doesn't slice on a P1S")
                 a, b = halves(parts)
                 print(f"  {name}: split into {name}_a and {name}_b")
-                queue[:0] = [(name + "_a", a, sup), (name + "_b", b, sup)]   # (a split half could drop
+                return plate(name + "_a", a, sup) + plate(name + "_b", b, sup)   # (a split half could drop
                 # its supports if none of its parts needs them; kept simple: the plate's decision)
-                continue
+            return [(name, parts, sup, done)]
+        queue = [(n, p, n in supported) for n, p in print_package.PLATES.items() if not only or n in only]
+        # the plates slice at once (each Bambu Studio uses a few cores); listed in the plates' order
+        for name, parts, sup, done in [r for rs in pool.map(lambda q: plate(*q), queue) for r in rs]:
             path, grams, secs = done
             shutil.copy(path, os.path.join(OUT, os.path.basename(path)))
             for _, p in parts:

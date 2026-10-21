@@ -24,6 +24,8 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REF = os.path.dirname(HERE)
+sys.path.insert(0, os.path.join(REF, "tools"))
+import scad  # noqa: E402  (which OpenSCAD, which backend)
 PARTS = os.path.join(HERE, "site", "parts")
 MODEL = os.path.join(PARTS, "model.json")
 INPUTS = ["board/battler.kicad_pcb", "case/case.scad", "viewer/pieces.scad", "viewer/build.py"]
@@ -86,18 +88,21 @@ def build():
     tmp = tempfile.mkdtemp()
     model = {"z": {}}
 
+    # the bought parts, rendered where case.scad puts them (started first: they render while
+    # kicad-cli exports the board)
+    procs = {p: subprocess.Popen([*scad.cmd(), "-o", os.path.join(tmp, p + ".stl"), "-D", 'part="none"',
+                                  "-D", f'piece="{p}"', os.path.join(HERE, "pieces.scad")],
+                                 stderr=open(os.path.join(tmp, p + ".log"), "w")) for p in PIECES}
+
     # the board, with every fitted part's 3D model (KiCad frame centred on the case: 100, 100)
     subprocess.run(["kicad-cli", "pcb", "export", "glb", "-f", "-o", os.path.join(PARTS, "board.glb"),
                     "--user-origin", "100x100mm", "--include-silkscreen", "--include-soldermask",
                     "--no-dnp", os.path.join(REF, "board", "battler.kicad_pcb")],
-                   check=True, capture_output=True)
+                   check=True, capture_output=True, cwd=tmp)
 
-    # the bought parts, rendered where case.scad puts them
-    procs = {p: subprocess.Popen(["openscad", "-o", os.path.join(tmp, p + ".stl"), "-D", 'part="none"',
-                                  "-D", f'piece="{p}"', os.path.join(HERE, "pieces.scad")],
-                                 stderr=subprocess.PIPE, text=True) for p in PIECES}
     for p, proc in procs.items():
-        err = proc.communicate()[1]
+        proc.wait()
+        err = open(os.path.join(tmp, p + ".log")).read()
         if proc.returncode:
             sys.exit(f"openscad failed on {p}:\n{err}")
         m = re.search(r'ECHO: "VIEWER (\S+) (\S+)"', err)

@@ -20,6 +20,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCAD = os.path.join(HERE, "check_buttons.scad")
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tools"))
+import scad  # noqa: E402  (which OpenSCAD, which backend, how many at once)
 TOUCH = 0.01                        # mm^3 two parts may share and still only be touching
 
 CHECKS = [(c, {}) for c in ("silicone_shell", "caps_shell", "caps_silicone", "silicone_tub")] + \
@@ -50,7 +52,7 @@ def run(job):
     (check, defs), inserts = job
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "x.stl")
-        args = ["openscad", "--export-format", "asciistl", "-o", out, "-D", 'part="none"', "-D", f'check="{check}"',
+        args = [*scad.cmd(), "--export-format", "asciistl", "-o", out, "-D", 'part="none"', "-D", f'check="{check}"',
                 "-D", f"deck_inserts={'true' if inserts else 'false'}"]
         for k, v in defs.items():
             args += ["-D", f"{k}={v}"]
@@ -73,7 +75,7 @@ def main():
     jobs = [(c, ins) for ins in (False, True) for c in CHECKS
             if not (ins and c[0] in ("caps_silicone", "silicone_tub", "pressed_silicone"))   # those don't depend on the lid
             and (not only or c[0] in only)]
-    with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
+    with ThreadPoolExecutor(max_workers=scad.jobs()) as pool:
         results = list(pool.map(run, jobs))
     bad = 0
     print("Button stack check (seat 1; seat 2 is the same turned round)")
