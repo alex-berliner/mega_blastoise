@@ -96,8 +96,7 @@ _libs = {}
 def _library(nick):
     path = kisym.PROJECT_LIBS.get(nick) or os.path.join(kisym.SYSLIB, nick + ".kicad_sym")
     if path not in _libs:
-        root = parse(open(path).read())
-        _libs[path] = {n[1]: n for n in root[1:] if isinstance(n, list) and n[0] == "symbol"}
+        _libs[path] = kisym.library(path, parse)       # each symbol parsed when first used
     return _libs[path]
 
 
