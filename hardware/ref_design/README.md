@@ -54,12 +54,40 @@ which this folder never touches.
 ## Rebuilding
 
 Everything in `board/` except `design.py`, `placement.py`, `lib/` and `tools/`
-is generated. After changing the design:
+is generated. After changing the design, run the pipeline:
+
+```sh
+cd hardware/ref_design
+python3 tools/build.py                       # every stage whose inputs changed since its last good run
+python3 tools/build.py --list                # the stages and which are out of date
+python3 tools/build.py --dry-run             # what a run would do
+python3 tools/build.py --only check_fit,fitkit   # just these, always
+python3 tools/build.py --from route          # route again, then whatever that changes
+python3 tools/build.py --keep-going          # a failing check doesn't stop the run
+python3 tools/build.py --touch               # a fresh checkout: take the committed files as built
+```
+
+It skips a stage whose command, tools and input contents match its last good run
+(`.build/state.json`, not committed; logs in `.build/logs/`), so a case change that
+leaves `positions.json` as it was doesn't reroute the board. The end-of-round stages
+(fit kit, print packages, viewer) run only when their inputs changed; the backlight
+simulation, `route.py --finish` and `sync_pcb.py` only when named with `--only`.
+`tools/build.py`'s docstring has the details.
+
+Speed: `tools/scad.py` picks OpenSCAD. With an OpenSCAD development snapshot AppImage
+in `~/Applications` (openscad.org, Development Snapshots) it renders with the Manifold
+backend, minutes down to seconds; otherwise the system `openscad` (CGAL). `OPENSCAD=...`
+picks a binary, `OPENSCAD_BACKEND=CGAL` the old backend. Renders and kicad-cli exports
+run several at once (`REF_JOBS` sets how many). `route.py` routes three copies of the
+board at once and keeps the first with a clean DRC (`--attempts=N` or `ROUTE_ATTEMPTS`;
+1 routes in place as before).
+
+The stages, by hand:
 
 ```sh
 cd hardware/ref_design
 python3 case/export.py --stl                 # case -> positions.json, DXFs, STLs
-python3 case/check_buttons.py                # D-pad, A/B/X/Y, Start/Select with their silicone under the shell (about 6 min)
+python3 case/check_buttons.py                # D-pad, A/B/X/Y, Start/Select with their silicone under the shell
 cd board
 python3 tools/build_sch.py                   # design.py -> schematic (tools/schwrite.py writes the sheets)
 python3 tools/check_netlist.py               # KiCad's netlist == design.py ?
@@ -67,14 +95,14 @@ python3 tools/check_pins.py                  # every part's pins against its dat
 python3 sim/models.py && python3 sim/backlight.py   # backlight sink stability (ngspice, about 40 min; only when it changes)
 kicad-cli sch erc battler.kicad_sch          # 0 errors expected
 RP2350B_REF=.../RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb python3 tools/build_pcb.py
-FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # about 10 min
+FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # about 10 min, 3 attempts at once
 python3 tools/route.py --finish              # only if route.py left a connection open
 python3 tools/silk.py
 python3 tools/sync_pcb.py                    # only for a redrawn schematic on a routed board: relink, rename nets
 python3 tools/check_pcb.py                   # DRC with schematic parity
 python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders
 python3 ../case/check_fit.py                 # board inside the case?
-python3 ../case/fitkit.py                    # the printable fit kit (about 7 min)
+python3 ../case/fitkit.py                    # the printable fit kit (under a minute with Manifold)
 python3 tools/pinmap.py                      # docs/pinmap.md
 python3 ../viewer/build.py                   # the exploded 3D view (GitHub Pages, /assembly/)
 ```
