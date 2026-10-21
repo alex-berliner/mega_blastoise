@@ -4,7 +4,7 @@ The boards and cases for the two-player handheld, newest first.
 
 | Folder | What it is | Whose | Status |
 |---|---|---|---|
-| [`ref_design/`](./ref_design/README.md) | The reference design (REF-A): RP2354B, 3.5in IPS panel, DS Lite buttons (D-pad, A/B/X/Y, Start, Select per seat), one Li-ion cell; the schematic, routed 2-layer board, JLCPCB fab files, printable case, fit kit and docs, all generated from `board/design.py`, `board/placement.py` and `case/case.scad` | Claude, built alongside Alex's own board | Designed and checked, not yet ordered; parts marked ESTIMATE need a real sample first ([PLAN.md](./ref_design/PLAN.md)) |
+| [`ref_design/`](./ref_design/README.md) | The reference design (REF-A): RP2354B, 2.4in IPS panel, DS Lite buttons (D-pad, A/B/X/Y, Start, Select per seat), one Li-ion cell; the schematic, routed 2-layer board, JLCPCB fab files, printable case, fit kit and docs, all generated from `board/design.py`, `board/placement.py` and `case/case.scad` | Claude, built alongside Alex's own board | Designed and checked, not yet ordered; parts marked ESTIMATE need a real sample first ([PLAN.md](./ref_design/PLAN.md)) |
 | [`prod_board/`](./prod_board/), [`prod_case/`](./prod_case/README.md) | Alex's own production board and case, made by hand in KiCad and OpenSCAD to learn the tools | Alex | In progress |
 | [`membrane/`](./membrane/README.md) | DS Lite membrane contact footprints and the generator for them, shared by both boards | shared | In use |
 | [`ds_lite/`](./ds_lite/README.md) | Research on how the Nintendo DS Lite is built and what makes its bottom half look and feel like one: a dossier, its sourced notes, and recommendations for the case | Claude | Research; the owner's caliper and scale checks still to fold in |

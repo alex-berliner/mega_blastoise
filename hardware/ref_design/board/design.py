@@ -24,7 +24,7 @@ carry the part number as their value.
 
 This is the 2-layer build: TP4056 charger with USB load sharing, ME6211 3V3,
 RP2354B (flash inside), PWM audio into an FM8002A, a face button as the power
-button, a board thermistor over the cell (no LEDs), every hole >= 0.3 mm, and an ER-TFT035IPS-6 panel
+button, a board thermistor over the cell (no LEDs), every hole >= 0.3 mm, and an ER-TFT024IPS-3 panel
 in a ZIF connector.
 """
 
@@ -387,20 +387,20 @@ part("#FLG05", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+1V1"}, bom=False)
 part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=False)
 
 # =================================================================================
-# Display: EastRising ER-TFT035IPS-6 (3.5in IPS 320x480, ILI9488), its FPC in a 50-pin ZIF
-# connector; the panel's six parallel backlight LEDs (common anode on VSYS, two cathode pins of
-# three LEDs each) sink through two op-amp current regulators, one per cathode pin
+# Display: EastRising ER-TFT024IPS-3 (2.4in IPS 240x320, ST7789V), its FPC in a 50-pin ZIF
+# connector; the panel's four parallel backlight LEDs (common anode on VSYS, a cathode pin each)
+# sink through two op-amp current regulators, two cathode pins (two LEDs) on each
 # =================================================================================
 S = "display.kicad_sch"
-PANEL = {1: "LED_A", 2: "LED_K1", 3: "LED_K2",                  # panel pin -> net (datasheet 4.1)
-         7: "LCD_3V3", 8: "LCD_3V3", 9: "LCD_3V3",                 # IM0-2 = 111: 4-wire 8-bit SPI
+PANEL = {1: "LED_A", 2: "LED_K1", 3: "LED_K2", 4: "LED_K1", 5: "LED_K2",   # panel pin -> net (datasheet 4.1)
+         6: "GND", 7: "LCD_3V3", 8: "LCD_3V3", 9: "LCD_3V3",      # IM0-3 = 0,1,1,1: 4-wire 8-bit serial II (SDI in, SDO out)
          10: "LCD_RST", 33: "LCD_MISO", 34: "LCD_MOSI",
          35: "LCD_3V3",                                            # RD: parallel read strobe, unused: high
-         36: "LCD_SCK", 37: "LCD_DC", 38: "LCD_CS", 39: "LCD_TE",
+         36: "LCD_DC", 37: "LCD_SCK", 38: "LCD_CS", 39: "LCD_TE",  # WRX is D/CX and D/CX is SCL in serial mode
          40: "LCD_3V3", 41: "LCD_3V3", 42: "LCD_3V3",              # VDDI x2, VCI
          43: "GND", 48: "GND", 49: "GND", 50: "GND"}
 PANEL.update({p: "GND" for p in range(11, 33)})                   # VSYNC, HSYNC, DOTCLK, DE, DB17-0: low
-PANEL.update({p: None for p in (4, 5, 6, 44, 45, 46, 47)})        # NC, and the touch pins (no touch layer)
+PANEL.update({p: None for p in (44, 45, 46, 47)})                 # the touch pins (no touch layer)
 # J3 faces seat 1 with its pin 1 on the left (seen from above); the folded FPC's contact 1
 # lands on the right, so connector pin j carries panel pin 51 - j
 fpc = {str(51 - p): net for p, net in PANEL.items()}
@@ -416,14 +416,15 @@ C("C30", S, "100n", "LCD_3V3")
 # With it open, firmware must hold the SPI pins low (the panel's inputs would feed it otherwise)
 JP("JP4", S, "+3V3", "LCD_3V3")
 part("#FLG08", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "LCD_3V3"}, bom=False)   # fed through JP4
-# Backlight: a current sink per cathode pin. U6 (MCP6002) holds each 2.2 ohm sense resistor at
-# BL_REF: 0.124 V at 100% duty = 56 mA a pin, 113 mA for the six LEDs (the panel's maximum is
-# 120 mA). BL_REF is GPIO44's PWM (BL_PWM) through R60/R61 and C50 (tau 3.75 ms: 0.3% ripple at
-# 36.6 kHz), so the LED current is DC: no PWM in the LEDs, nothing for the amplifier to hear.
-# R54/R55 (330 ohm) isolate the FET's gate capacitance and C48/C49 with R58/R59 close a local
-# loop: 72 deg phase margin or more at every corner simulated (sim/backlight.py). The sink needs
-# about 0.13 V across it: regulation holds to a 3.5 V cell up to the panel's 3.2 V Vf. U6 runs
-# from 3V3 and R56/R57 hold the gates low, so the backlight is off whenever 3V3 is.
+# Backlight: a current sink per pair of cathode pins (LEDK1+K3, LEDK2+K4). U6 (MCP6002) holds each
+# 2.2 ohm sense resistor at BL_REF: 0.077 V at 100% duty = 35 mA a sink, 70 mA for the four LEDs
+# (the panel's typical; 80 mA is its maximum). BL_REF is GPIO44's PWM (BL_PWM) through R60/R61 and
+# C50 (tau 2.3 ms: 0.5% ripple at 36.6 kHz), so the LED current is DC: no PWM in the LEDs, nothing
+# for the amplifier to hear. R54/R55 (330 ohm) isolate the FET's gate capacitance and C48/C49 with
+# R58/R59 close a local loop (simulated at the 3.5in panel's 56 mA a sink: sim/backlight.py). The
+# sink needs about 0.08 V across it: regulation holds while the cell stays that far over the LEDs'
+# Vf (3.2 V typical, 3.4 max). U6 runs from 3V3 and R56/R57 hold the gates low, so the backlight
+# is off whenever 3V3 is.
 part("U6", S, "battler:MCP6002", "MCP6002", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
      {"3": "BL_REF", "2": "BL_FB2", "1": "BL_OUT2", "5": "BL_REF", "6": "BL_FB1", "7": "BL_OUT1",
       "8": "+3V3", "4": "GND"},
@@ -433,13 +434,13 @@ for k, (q, rs, rg, rpd, rf, cf) in ((1, ("Q5", "R52", "R54", "R56", "R58", "C48"
                                     (2, ("Q6", "R53", "R55", "R57", "R59", "C49"))):
     part(q, S, "Transistor_FET:AO3400A", "AO3400A", "Package_TO_SOT_SMD:SOT-23",
          {"1": f"BL_G{k}", "2": f"BL_S{k}", "3": f"LED_K{k}"}, "C20917", "AO3400A", "Alpha & Omega Semicon")
-    R(rs, S, "2.2 0603", f"BL_S{k}", "GND", fp=R0603)   # sense: 2.2 ohm x 56 mA = 0.124 V
+    R(rs, S, "2.2 0603", f"BL_S{k}", "GND", fp=R0603)   # sense: 2.2 ohm x 35 mA = 0.077 V
     R(rg, S, "330", f"BL_OUT{k}", f"BL_G{k}")
     R(rpd, S, "100k", f"BL_G{k}", "GND")
     R(rf, S, "10k", f"BL_S{k}", f"BL_FB{k}")
     C(cf, S, "1n", f"BL_OUT{k}", f"BL_FB{k}")
 R("R60", S, "100k", "BL_PWM", "BL_REF")            # GPIO44 PWM into the reference filter
-R("R61", S, "3.9k", "BL_REF", "GND")               # 3.3 V x 3.9 / 103.9 = 0.124 V at 100%
+R("R61", S, "2.4k", "BL_REF", "GND")               # 3.3 V x 2.4 / 102.4 = 0.077 V at 100%
 C("C50", S, "1u", "BL_REF")
 JP("JP2", S, "VSYS", "LED_A")                      # cut it and bridge with an ammeter to read the LED current
 

@@ -9,7 +9,7 @@ This is the 2-layer build, `main` since 2026-09-24: the first, 4-layer design (t
 
 ## The device
 
-Two players face each other across a 3.5in 320x480 IPS screen; each has a
+Two players face each other across a 2.4in 240x320 IPS screen; each has a
 D-pad and four face buttons under DS Lite silicone at their end. One Li-ion
 cell, one speaker, one USB-C for charging and firmware. No radios.
 
@@ -134,12 +134,11 @@ every hole 0.3 mm or larger.
 
 ### Display (sheet Display)
 
-- EastRising ER-TFT035IPS-6: 3.5in IPS, 320x480, ILI9488, 4-wire SPI, 3.3 V,
-  54.50 x 83.00 x 2.30 mm with its FPC folded, the same 48.96 x 73.44 mm active area
-  as the QD3525 it replaced. Sold by the maker, on its own site and its AliExpress
-  store: about $14.20 a unit with shipping at 10 units, $9.86 at 50 ([bom.md](bom.md)).
-  It has a published datasheet, outline drawing and 3D model
-  ([datasheet](https://www.buydisplay.com/download/manual/ER-TFT035IPS-6_Datasheet.pdf)).
+- EastRising ER-TFT024IPS-3: 2.4in IPS, 240x320, ST7789V, 4-line serial, 3.3 V,
+  42.72 x 59.46 x 2.30 mm (2026-10-21; it replaced the 3.5in ER-TFT035IPS-6 with the
+  133 mm shell). Sold by the maker: about $12.01 a unit with shipping at 10 units, $7.13
+  at 50 ([bom.md](bom.md)). It has a published datasheet and outline drawing
+  ([datasheet](https://www.buydisplay.com/download/manual/ER-TFT024IPS-3_Datasheet.pdf)).
 - Its 50-contact FPC (0.5 mm pitch, 0.3 mm thick with its stiffener) leaves the
   panel's seat-1 edge, folds under the panel and plugs into J3, a Hirose FH12-50S
   bottom-contact ZIF connector that JLC places: no hand soldering. J3 sits where the
@@ -147,20 +146,20 @@ every hole 0.3 mm or larger.
   seat 1. Seen from above the FPC's contact 1 lands at the right, J3's pin 1 is at the
   left, so J3 pin j carries panel pin 51 - j (`board/design.py`).
 - Pins wired as the datasheet says: the parallel bus (DB0-17) and the RGB strobes low,
-  RD and IM2-0 high (4-wire 8-bit SPI); the touch pins open (no touch layer). TE goes
+  RD high, IM3-0 = 1110 (4-line 8-bit serial interface II: SDI in, SDO out, D/CX on pin
+  36, SCL on pin 37); the touch pins open (no touch layer). TE goes
   to GPIO32 so the firmware can start frames on the panel's refresh and avoid tearing.
-- ILI9488 over SPI takes 18-bit colour only: three bytes a pixel, 461 kB a full frame,
-  half as much again as the ST7796U's 16-bit, so full-screen redraws are slower. The
-  battle screen redraws in parts. The datasheet rates serial writes to 20 MHz.
+- The ST7789V takes 16-bit colour over serial: two bytes a pixel, 154 kB a full frame.
+  The battle screen redraws in parts.
 - SPI clock and data get 33 ohm source terminations next to the MCU.
-- Backlight: six LEDs in parallel (3.0-3.2 V, 120 mA at most), common anode, three
-  on each of two cathode pins. The anode is on VSYS (through JP2); each cathode pin has
-  its own linear current sink: half of U6 (MCP6002) drives an AO3400A (Q5, Q6) and
-  holds its 2.2 ohm sense resistor (R52, R53) at BL_REF. BL_REF is GPIO44's PWM through
-  R60/R61 and C50, 0.124 V at 100%: 56 mA a pin, 113 mA in all. The sink needs about
-  0.13 V, so the current holds from a full cell (or USB) down to the 3.5 V cutoff with
-  the panel's 3.2 V maximum Vf; with an LED at the older datasheet's 3.4 V it falls 6% at
-  100% on a 3.5 V cell. Efficiency is that of the AP3156 in its 1x mode (Vf / VSYS), so
+- Backlight: four LEDs in parallel (3.2 V typical, 3.4 V max; 70 mA typical, 80 mA at
+  most), common anode on pin 1, a cathode pin each (K1-K4, pins 2-5). The anode is on VSYS
+  (through JP2); K1 with K3 and K2 with K4 each go to a linear current sink: half of U6
+  (MCP6002) drives an AO3400A (Q5, Q6) and holds its 2.2 ohm sense resistor (R52, R53) at
+  BL_REF. BL_REF is GPIO44's PWM through R60/R61 (2.4k) and C50, 0.077 V at 100%: 35 mA a
+  sink, 70 mA in all. The sink needs about 0.08 V, so the current holds from a full cell
+  (or USB) down to the 3.5 V cutoff even at the 3.4 V maximum Vf. The two LEDs on a sink
+  share its current by their Vf match. Efficiency is that of the AP3156 in its 1x mode (Vf / VSYS), so
   battery life is unchanged. The LED current is DC (the PWM is filtered), so there is no
   PWM in the LEDs for the amplifier to pick up. It replaced the AP3156 charge pump, out
   of stock at JLC and LCSC on 2026-10-07: every part is Basic or Preferred.
@@ -173,8 +172,9 @@ every hole 0.3 mm or larger.
   step), 0.3% ripple at 36.6 kHz PWM, no current spike at power-up, power-down or a
   VSYS hot plug with 3V3 off (0.5-4.7 mA for about a us). A VSYS step of 1.9 V in 2 us
   while lit (USB plugged in) briefly overshoots to 133 mA a pin for about 2 us. The
-  op-amp's offset (4.5 mV max) sets the accuracy: +-3.6% at full, +-20% a pin at 18%
-  duty, so firmware keeps the dimmest level at about 18%.
+  op-amp's offset (4.5 mV max) sets the accuracy: +-6% at full, +-20% a sink at 29%
+  duty, so firmware keeps the dimmest level at about 29%. The loop was simulated at the
+  3.5in panel's 56 mA a sink; the 2.4in panel runs it at 35 mA with R61 the only change.
 
 ### Audio (sheet Audio)
 
@@ -274,7 +274,7 @@ the case for these checks.
 | What | Why | Where it goes |
 |---|---|---|
 | DS Lite silicone piece outline and height, pill spacing; cap keying | the caps are measured from open models (`case/DSLITE.md`), the silicone is still estimated; `dome_h` sets the deck height, so a wrong one leaves the caps high or low; the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `dpad_pitch`; the cap numbers in `case/DSLITE.md` |
-| A real ER-TFT035IPS-6 and an FH12-50S | outline and thickness, active area offset; how far the FPC goes into J3 (Hirose's recommended FPC stops 3.5-4 mm in, so expect 2.5-3 mm of slack, not the 1 mm modelled); that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_rear`; J3's pin map |
+| A real ER-TFT024IPS-3 and an FH12-50S | outline and thickness, active area offset; how far the FPC goes into J3 (Hirose's recommended FPC stops 3.5-4 mm in, so expect 2.5-3 mm of slack, not the 1 mm modelled); that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_rear`; J3's pin map |
 | The chosen cell (403450) | length with its protection board, and connector polarity (PicoBlade has no standard polarity) | `cell`, J2 |
 | The chosen speaker (GSPK151035PN) | its tab's length (spk_tab is estimated), that its plug mates a genuine 53261-0271, that its foam ring seals on the pad, and how loud it is out of the side | `spk_*`, J4 |
 | A printed tub and lid | the snap fit | `snap_*` |
@@ -287,7 +287,7 @@ the case for these checks.
 | Board thermistor, not a cell one | TH1 reads the board over the cell; a charge in a hot car or near the 46 C edge may pause and resume | the pause is safe and charging resumes by itself; bring-up 5.4 and 5.4a check TH1's reading while charging and the pause points |
 | USB-to-cell hand-over | for 1.5-3.3 ms after an unplug D7 carries VSYS until Q2 takes over; below a 3.42-3.49 V cell 3V3 still dips under the flash's 2.97 V minimum | the 3.5 V cutoff keeps the cell above that; bring-up step 5 scopes it with a nearly flat cell; a larger margin would need a lower-dropout 3V3 regulator |
 | Hot plug with no cell | a live source into a bare board rings VSYS to about 6.2 V in simulation (R41 in place), against the ME6211's 6.5 V maximum | bring-up step 5 scopes it; the worst case is an A-to-C cable from an always-on USB-A port (a USB-C source switches VBUS on only after it sees the board, and ramps it), so on the bench prefer a USB-C source or fit the cell first |
-| Panel supply | one maker (EastRising), sold direct | it publishes its drawings; another 3.5in panel that fits the 56.0 x 86.24 x 4.9 mm bay needs only case.scad's panel numbers, J3 and its pin map changed |
+| Panel supply | one maker (EastRising), sold direct | it publishes its drawings; another panel needs case.scad's panel numbers, J3's place and its pin map changed (the 3.5in ER-TFT035IPS-6 to this 2.4in one, 2026-10-21, was that plus R61) |
 | FPC fit in J3 | too short a fold can't reach the connector; too long bows under the panel | the model errs long (safe); if the tail bows, move J3 1.5-2 mm towards seat 1 (`conn_rear` about -0.6); check with a real panel and connector before the board order |
 | DS Lite silicone fit | cap retention and feel depend on unmeasured heights | pads and caps ordered: try them in a printed lid before the board order |
 | Snap fit | too tight cracks a hook, too loose rattles; FDM snap fits wear | tune on a test print; PETG over PLA |

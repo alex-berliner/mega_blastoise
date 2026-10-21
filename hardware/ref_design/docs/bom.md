@@ -46,7 +46,7 @@ pads, locating holes and fiducials. The panel's ZIF connector
 
 | Item | Per unit | For 10 | Must match | Source | Per unit cost |
 |---|---|---|---|---|---|
-| EastRising ER-TFT035IPS-6 3.5in IPS panel | 1 | 12 (2 spares) | the "No Touch" option; ILI9488, 320x480, 54.50 x 83.00 x 2.30 mm, a 50-contact 0.5 mm FPC for a ZIF connector (J3 on the board; a connector bundled with the panel isn't needed) | AliExpress, buydisplay.com Store (the maker's own): $11.24 each, 5% off at 10 or more, $13.89 shipping for 12, so 12 for $142.03. The maker's own site: $9.10 each but $45.48 shipping, 12 for $154.68 | $14.20 |
+| EastRising ER-TFT024IPS-3 2.4in IPS panel | 1 | 12 (2 spares) | the "No Touch" option; ST7789V, 240x320, 42.72 x 59.46 x 2.30 mm, a 50-contact 0.5 mm FPC for a ZIF connector (J3 on the board; a connector bundled with the panel isn't needed) | buydisplay.com (the maker's own): its January-February 2026 price tiers (read from the Wayback Machine) with shipping taken at the 3.5in panel's $45.48 for 12, an upper bound; re-price the cart before ordering | about $12.01 |
 | Li-ion cell 403450, about 700 mAh | 1 | 12 (spares) | 4 x 34 x 50 mm (with its protection board), protection board, Molex PicoBlade (MX1.25, often listed as "JST 1.25") plug with red to J2's `+`: order the cells with that plug; a UN38.3 test summary to ship units to customers | AliExpress, MYWAY Digital Store: 10 for $19.33 + $1.95 shipping | about $2.13 |
 | Speaker: INGHAi GSPK151035PN (LCSC C530539), 15 x 10 x 3.5 mm, 8 ohm, 0.5 W, 90 dB | 1 | 10 | its 35 mm leads with the 1.25 mm 2-pin plug (it plugs into J4, a PicoBlade header) | LCSC | about $0.42 |
 | DS Lite silicone pads (NDSL): D-pad and ABXY pieces | 2 sets | 20 sets | "For NDSL"; the Start/Select strip isn't used | AliExpress, HM Trading Store: 20 sets $2.45 + $5.84 shipping | $0.83 |
@@ -54,7 +54,7 @@ pads, locating holes and fiducials. The panel's ZIF connector
 | Screws: M2 x 8 self-tapping, wafer head (4 mm, about 1 mm thick), for plastic | 6 | 60 (spares) | | marketplace | estimate about $0.10 |
 | Thin double-sided tape for the panel, adhesive foam pad for the cell | | 1 roll, 1 sheet | | marketplace | estimate about $0.50 |
 | Case: tub and lid, printed at home | 1 | 10 | PETG or PLA, 47 cm3 (about 59 g) of filament | at $20-30 a kg | about $1.20-1.80 |
-| **Total** | | | | | **about $22.5-23.5** |
+| **Total** | | | | | **about $20.3-21.3** |
 
 Gone from the 4-layer build's list: the cover lens, the six screws, the light pipes
 and the printed power-button cap.
@@ -63,13 +63,13 @@ Hand work per unit: [assembly.md](assembly.md).
 
 ## Per unit, into your hands
 
-About **$39-40** at 10 units: the factory's $16.47 and your $22.5-23.5. Not in it: import
+About **$37-38** at 10 units: the factory's $16.47 and your $20.3-21.3. Not in it: import
 duties (at the 25% rate an earlier review suggested, unverified, about $3 a unit
 on the board order)
 and JLC's new-account coupons ($30 and $20 on the quote page, up to $5 a unit off if
 they apply). The spread is the tape and filament, the last estimates.
 
 The panel is the largest single item. At 50 panels the maker's own site is the
-cheapest source: $493.10 with shipping, $9.86 a panel (quotes from both shops'
-carts, 2026-09-24, shipping to the US by their standard methods, duties not
-included).
+cheapest source: about $7.13 a panel with shipping (its 2026 price tiers and the 3.5in
+panel's shipping quote of 2026-09-24, $62.60 for 50, duties not included; the 3.5in
+ER-TFT035IPS-6 it replaced was $9.86).

@@ -51,7 +51,7 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 41 | `P1_B` | membrane contact SW6, input with pull-up, low = pressed |
 | 42 | `P1_X` | membrane contact SW7, input with pull-up, low = pressed |
 | 43 | `P1_A` | membrane contact SW5, input with pull-up, low = pressed |
-| 44 | `BL_PWM` | PWM10 A: backlight brightness, duty x 113 mA (filtered to a DC reference, see below); low = off |
+| 44 | `BL_PWM` | PWM10 A: backlight brightness, duty x 70 mA (filtered to a DC reference, see below); low = off |
 | 45 | `CC2_SENSE` | ADC5: USB-C CC2 through 10k |
 | 46 | `CC1_SENSE` | ADC6: USB-C CC1 through 10k; the source's current offer |
 | 47 | `VBAT_SENSE` | ADC7: battery voltage / 2 (R17/R18, 470k each, 100 nF); off with a cell in, the pin sits above IOVDD, clamped by its ESD diode (under 9 uA, accepted) |
@@ -88,14 +88,14 @@ pull-down both off. Board revision = REV3..REV0 read as a binary number (1 on th
 ## Backlight (current sinks on BL_PWM)
 
 GPIO44 runs PWM10 A, for example 12 bits at 36.6 kHz (150 MHz / 4096). R60/R61/C50 filter
-it into BL_REF (0.124 V at 100%, time constant 3.75 ms), and each cathode pin's sink holds
-its 2.2 ohm sense resistor at BL_REF: 56 mA a pin at 100% duty, 113 mA for the six LEDs
-(the panel's maximum is 120 mA; its typical rating, 15 mA per LED, is 80% duty). The LED
-current is DC, so the PWM frequency only sets the ripple (0.3% at 36.6 kHz). Current is
-proportional to duty; apply a gamma curve in firmware. Keep the lowest level at about 18%
-duty (3.4 mA per LED): below it the op-amp's offset (up to 4.5 mV against 22 mV) can make
+it into BL_REF (0.077 V at 100%, time constant 2.3 ms), and each sink (two cathode pins,
+two LEDs) holds its 2.2 ohm sense resistor at BL_REF: 35 mA a sink at 100% duty, 70 mA
+for the four LEDs (the panel's typical; its maximum is 80 mA). The LED
+current is DC, so the PWM frequency only sets the ripple (0.5% at 36.6 kHz). Current is
+proportional to duty; apply a gamma curve in firmware. Keep the lowest level at about 29%
+duty (5 mA per LED): below it the op-amp's offset (up to 4.5 mV against 22 mV) can make
 the two halves of the backlight visibly unequal. A brightness change settles in about
-15 ms (the filter); from off, the sinks start within about 1 ms and then follow BL_REF.
+10 ms (the filter); from off, the sinks start within about 1 ms and then follow BL_REF.
 GPIO44 resets low (pull-down), R61 holds BL_REF at 0 and the sinks run from 3V3, so the
 backlight is off until firmware starts the PWM and whenever 3V3 is off. Off = duty 0.
 Simulated with ngspice before layout: board/sim/backlight.py (results in

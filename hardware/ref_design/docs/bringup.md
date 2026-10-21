@@ -80,25 +80,25 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 
 ## 3. Display
 
-1. Drive LCD_RST low, then high; send the ILI9488 init sequence over SPI0 at 10-20 MHz
-   first (the datasheet rates serial writes to 20 MHz).
-2. Read ID4 (0xD3) back through LCD_MISO at 5 MHz or less (the ILI9488's serial read
-   cycle is 150 ns minimum): expect 0x94 0x88. If nothing reads back, look
-   at the FPC first (fully in J3, square, lid shut), then at the interface pins: IM2-0
-   (J3 pins 42-44, the panel's 9-7) must be high for 4-wire SPI.
-3. Set COLMOD (0x3A) to 0x66: in SPI mode the ILI9488 only takes 18-bit colour, three
-   bytes a pixel. Fill red, green, blue, white; check pixel order (RGB or BGR bit in 0x36)
-   and rotation.
+1. Drive LCD_RST low, then high; send the ST7789V init sequence over SPI0 at 10-20 MHz
+   first (the ST7789V rates serial writes to a 16 ns clock cycle, about 62 MHz).
+2. Read RDDID (0x04) back through LCD_MISO at 5 MHz or less (serial reads are slower than
+   writes): expect 0x85 0x85 0x52. If nothing reads back, look at the FPC first (fully in
+   J3, square, lid shut), then at the interface pins: IM3-0 = 1110 (J3 pins 42-45, the
+   panel's 9-6: IM3-IM1 high, IM0 low) is 4-line serial interface II, SDI in and SDO out.
+3. Set COLMOD (0x3A) to 0x55 (16-bit colour, two bytes a pixel). Fill red, green, blue,
+   white; check pixel order (RGB or BGR bit in 0x36) and rotation.
 4. Raise SPI step by step; watch for corruption at the far edge of the panel. A full
-   frame is 461 kB, so redraw only what changes.
+   frame is 154 kB, so redraw only what changes.
 5. Backlight: start PWM10 A on GPIO44 (BL_PWM) at 80% duty (12 bits at 36.6 kHz): BL_REF
-   (C50) settles at about 99 mV within 15 ms, and each cathode pin draws 45 mA (15 mA per
-   LED, three LEDs a pin), 90 mA in all through JP2. Check it on the sense resistors:
-   about 99 mV across R52 (LED_K1) and R53 (LED_K2), within a few mV of each other, and
-   the panel lit evenly. 100% duty is 113 mA (0.124 V), the panel's limit is 120 mA. Step
-   the duty 18% <-> 95% and scope R52: no ringing (simulated phase margin 72 deg or more,
+   (C50) settles at about 62 mV within 10 ms, and each sink draws 28 mA (14 mA per LED,
+   two LEDs a sink: K1 with K3, K2 with K4), 56 mA in all through JP2. Check it on the
+   sense resistors: about 62 mV across R52 (LED_K1) and R53 (LED_K2), within a few mV of
+   each other, and the panel lit evenly. 100% duty is 70 mA (0.077 V), the panel's typical;
+   its limit is 80 mA. Step
+   the duty 29% <-> 95% and scope R52: no ringing (simulated phase margin 72 deg or more,
    board/sim/backlight_results.txt). Duty 0 (or GPIO44 low) turns it off. Also check, on a
-   nearly flat cell (3.5 V) at 100%, that the drop across R52 stays at 0.124 V (headroom);
+   nearly flat cell (3.5 V) at 100%, that the drop across R52 stays at 0.077 V (headroom);
    and plug USB in with the backlight on and watch for a flash (simulation: a few us at
    up to 2.4x when VSYS jumps by 1.9 V in 2 us).
 6. Tearing effect: enable it on the panel (TEON, 0x35) and watch GPIO32: one pulse per

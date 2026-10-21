@@ -433,7 +433,9 @@ def display():
     sh.place("JP2", T + 15.24, 21.59, 180)
     sh.wire("J3.50", (T + 7.62, yj(50)), (T + 7.62, 21.59), "JP2.2")
     sh.rail("VSYS", sh.stub("JP2.1", G))
-    sh.tag("J3.49", 5.08); sh.tag("J3.48", 5.08)
+    sh.tag("J3.49", 5.08); sh.tag("J3.48", 5.08)     # LEDK1, LEDK2
+    sh.tag("J3.47", 5.08); sh.tag("J3.46", 5.08)     # LEDK3 with K1, LEDK4 with K2
+    sh.gnd(sh.wire("J3.45", (T + 22.86, yj(45)), (T + 22.86, yj(45) + G)))   # IM0 low
     # panel logic supply pins
     for grp in ((44, 43, 42), (11, 10, 9)):
         bus(grp)
@@ -453,13 +455,13 @@ def display():
     sh.heading(53.34, 54.61, "SPI series resistors, probe points")
     for j, net in ((18, "LCD_MISO"), (16, "LCD_3V3"), (12, "LCD_TE")):
         sh.label(net, sh.wire(lane[j], (55.88, lane[j][1])), "right")
-    for j, tpr, r in ((17, "TP12", "R29"), (15, "TP11", "R28")):
+    for j, tpr, r in ((17, "TP12", "R29"), (14, "TP11", "R28")):
         ly = lane[j][1]
         sh.place(r, 83.82, ly, 270)
         sh.wire(lane[j], f"{r}.2")
         tp(sh, tpr, (68.58, ly))
         sh.label(sh.parts[r]["pins"]["1"], sh.stub(f"{r}.1", 5.08), "right")
-    for j, tpr, side in ((14, "TP14", -3.81), (13, "TP13", -3.81)):
+    for j, tpr, side in ((15, "TP14", -3.81), (13, "TP13", -3.81)):
         ly = lane[j][1]
         sh.label(sh.parts["J3"]["pins"][str(j)], sh.wire(lane[j], (66.04, ly)), "right")
         tp(sh, tpr, (58.42, ly), "l" if side < 0 else "r")
@@ -524,9 +526,9 @@ def display():
         sh.wire(node, (Ux + 55.88, node[1]), (Ux + 55.88, frow), v=False)
         sh.place(rf, Ux + 15.24, frow, 270)
         sh.wire((Ux + 55.88, frow), f"{rf}.1"); sh.wire(f"{rf}.2", (Ux - 15.24, frow))
-    sh.text(17.78, 175.26, "EastRising ER-TFT035IPS-6 (ILI9488, 4-wire SPI); its 50-pin FPC folds under the panel into J3 (ZIF). J3 pin j is panel pin 51 - j.")
-    sh.text(17.78, 179.07, "Unused bus pins as the datasheet says: DB0-17 and RGB low, RD and IM2-0 high. Backlight: LED_A on VSYS; a current sink per")
-    sh.text(17.78, 182.88, "cathode pin (U6 half, Q5/Q6, 2.2 ohm R52/R53). GPIO44 PWM, filtered by R60/R61/C50, sets BL_REF: 0.124 V (56 mA a pin)")
+    sh.text(17.78, 175.26, "EastRising ER-TFT024IPS-3 (ST7789V, 4-line serial II); its 50-pin FPC folds under the panel into J3 (ZIF). J3 pin j is panel pin 51 - j.")
+    sh.text(17.78, 179.07, "Unused bus pins as the datasheet says: DB0-17 and RGB low, RD high; IM3-0 = 1110. Backlight: LED_A on VSYS; a current sink per")
+    sh.text(17.78, 182.88, "two cathode pins (U6 half, Q5/Q6, 2.2 ohm R52/R53). GPIO44 PWM, filtered by R60/R61/C50, sets BL_REF: 0.077 V (35 mA a sink)")
     sh.text(17.78, 186.69, "at 100%. Stability: sim/backlight.py. JP2 and JP4: cut to measure the LED or panel logic current.")
     return sh
 
@@ -730,7 +732,7 @@ def root():
     import design
     sh = Sheet("battler.kicad_sch")
     sh.text(20.32, 20.32, "Two-player handheld: reference design (REF-A)", size=2.0)
-    sh.text(20.32, 27.94, "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 20 membrane contacts under DS Lite silicone,")
+    sh.text(20.32, 27.94, "RP2354B, 2.4in 240x320 IPS (ST7789V, SPI), 20 membrane contacts under DS Lite silicone,")
     sh.text(20.32, 31.75, "PWM audio into an FM8002A, one Li-ion cell on a TP4056 charger with load sharing, ME6211 3V3.")
     sh.text(20.32, 35.56, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets.")
     for i, (f, name) in enumerate(design.SHEETS):
