@@ -21,7 +21,7 @@ which this folder never touches.
 
 - RP2354B (2 MB flash inside), USB-C (charging + firmware + debug console)
 - 2.4in 240x320 IPS panel (EastRising ER-TFT024IPS-3, ST7789V, SPI; the 3.5in ER-TFT035IPS-6
-  until 2026-10-21, which the board still carries until it is re-placed) with a published
+  until 2026-10-21) with a published
   datasheet, its FPC in a 50-pin ZIF connector (no soldering); a
   constant-current backlight sink per LED group
 - 20 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad, four face buttons,
@@ -33,8 +33,8 @@ which this folder never touches.
 - Case 75.4 x 132.7 mm (a DS Lite's length), 13.35 mm at the screen and 11.5 mm at the button decks
   (genuine DS Lite caps stand 1.41 mm proud there): a tub, a top piece and a deck at each end that
   curve over the sides to one seam, built upside down, all printed without supports, held by six M2
-  screws as a DS Lite ([case/SHELL.md](case/SHELL.md)). The board is being re-placed for it
-  ([case/BOARD_OUTLINE.md](case/BOARD_OUTLINE.md))
+  screws as a DS Lite ([case/SHELL.md](case/SHELL.md)); the board, 70.4 x 127.7 mm, is placed to
+  its constraints ([case/BOARD_OUTLINE.md](case/BOARD_OUTLINE.md))
 
 ## Folder
 

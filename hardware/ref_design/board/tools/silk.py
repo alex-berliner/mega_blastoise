@@ -7,7 +7,10 @@
 - every visible reference is tried beside its part (above, below, left,
   right) until it clears pads, holes, the board edge and other references;
   one that finds no clear spot is hidden
-- labels: board name and revision (back), test pad names, connector names\n  and the battery's + pin
+- labels: board name and revision (back), test pad names, connector names
+  and the battery's + pin
+- outlines on the back where the shell sticks the cell and the speaker to the board
+  (case/positions.json: cell, speaker), labelled
 Run after routing; it only touches silkscreen text, and can be run again.
 """
 import os
@@ -55,6 +58,7 @@ def main():
     # labels from an earlier run go first, so running this again changes nothing
     old = [d for d in board.GetDrawings() if isinstance(d, pcbnew.PCB_TEXT)
            and d.GetLayer() in (pcbnew.F_SilkS, pcbnew.B_SilkS)]
+    old += [d for d in board.GetDrawings() if isinstance(d, pcbnew.PCB_SHAPE) and d.GetLayer() == pcbnew.B_SilkS]
     for d in old:
         board.Remove(d)
     bb = board.GetBoardEdgesBoundingBox()
@@ -132,6 +136,37 @@ def main():
     text("TWO-PLAYER HANDHELD  REF-A", 100, 116.0, back, h=1.2)
     text(f"REV {design.BOARD_REV}", 100, 119.0, back, h=2.0)
     text("2 LAYERS  1.6 MM  ENIG", 100, 121.6, back)
+    # where the cell and the speaker go: the shell sticks them to the board's back before the
+    # board goes face down (case/SHELL.md), so their outlines show where the tub expects them
+    def line(a, b):
+        sh = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
+        sh.SetStart(V(*a))
+        sh.SetEnd(V(*b))
+        sh.SetLayer(back)
+        sh.SetWidth(mm(0.15))
+        board.Add(sh)
+
+    def arc(c, start):           # a half circle, clockwise from start
+        sh = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_ARC)
+        sh.SetCenter(V(*c))
+        sh.SetStart(V(*start))
+        sh.SetArcAngleAndEnd(pcbnew.EDA_ANGLE(180, pcbnew.DEGREES_T), True)
+        sh.SetLayer(back)
+        sh.SetWidth(mm(0.15))
+        board.Add(sh)
+
+    (cx0, cy0), (cx1, cy1) = CASE["cell"]
+    corners = [(cx0, cy0), (cx1, cy0), (cx1, cy1), (cx0, cy1)]
+    for i in range(4):
+        line(corners[i], corners[(i + 1) % 4])
+    text("CELL", (cx0 + cx1) / 2, cy0 + 2.0, back, h=1.0)
+    (sx, sy), (sw, sh_) = CASE["speaker"]["c"], CASE["speaker"]["size"]
+    r = sh_ / 2                                   # a racetrack: round ends on its short sides
+    line((sx - sw / 2 + r, sy - r), (sx + sw / 2 - r, sy - r))
+    line((sx - sw / 2 + r, sy + r), (sx + sw / 2 - r, sy + r))
+    arc((sx + sw / 2 - r, sy), (sx + sw / 2 - r, sy - r))
+    arc((sx - sw / 2 + r, sy), (sx - sw / 2 + r, sy + r))
+    text("SPEAKER", sx, sy, back, h=1.0)
     # test pads (back, above the speaker pads), one name under each
     for i, name in enumerate(["VBUS", "VSYS", "VBAT", "3V3", "GND"]):
         tp = board.FindFootprintByReference(f"TP{i + 1}")
@@ -146,7 +181,7 @@ def main():
     jb = box(j7)
     text("SWD PADS", (jb[0] + jb[2]) / 2, jb[1] - 0.9, back)
     j4 = board.FindFootprintByReference("J4")
-    text("SPEAKER", pcbnew.ToMM(j4.GetPosition().x), pcbnew.ToMM(j4.GetPosition().y) + 2.7, back)
+    text("SPK PLUG", pcbnew.ToMM(j4.GetPosition().x), pcbnew.ToMM(j4.GetPosition().y) + 2.7, back)
     # front: connectors and buttons people solder to or press during bring-up
     j2 = board.FindFootprintByReference("J2")
     p1 = next(p for p in j2.Pads() if p.GetNumber() == "1")

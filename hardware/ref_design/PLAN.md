@@ -15,9 +15,9 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 
 | Area | Choice | Why |
 |---|---|---|
-| Panel | EastRising ER-TFT024IPS-3, ST7789V, 240x320 IPS, 42.72 x 59.46 x 2.3 mm (2026-10-21; the 3.5 in ER-TFT035IPS-6, ILI9488, 54.50 x 83.00, until then) | the case is a DS Lite's length (132.7 mm, was 156.2) with the width the buttons set; same maker, same 50-pin FPC into J3 (the board's driver and backlight changes are the schematic session's) |
+| Panel | EastRising ER-TFT024IPS-3, ST7789V, 240x320 IPS, 42.72 x 59.46 x 2.3 mm (2026-10-21; the 3.5 in ER-TFT035IPS-6, ILI9488, 54.50 x 83.00, until then) | the case is a DS Lite's length (132.7 mm, was 156.2) with the width the buttons set; same maker, same 50-pin FPC into J3: the pin map changed (K3/K4 on pins 4-5, IM3-0 on 6-9 strapped 1110, D/CX and SCL swapped on 36/37) and R61 went to 2.4k for 70 mA |
 | Panel FPC | 50 contacts, 0.5 mm pitch, in a Hirose FH12-50S bottom-contact ZIF (J3), assembled by JLC | no hand soldering per unit; a cracked panel swaps in a minute |
-| Backlight | 6 LEDs in parallel on two cathode pins, anode on VSYS; a linear current sink per pin (MCP6002 + AO3400A + 2.2 ohm), set by one GPIO's filtered PWM | constant current down to the 3.5 V cutoff, DC in the LEDs, all Basic/Preferred parts; replaced the AP3156 charge pump, out of stock on 2026-10-07 (stability simulated: board/sim/backlight.py) |
+| Backlight | 4 LEDs in parallel on four cathode pins, anode on VSYS; a linear current sink per pair of cathode pins (MCP6002 + AO3400A + 2.2 ohm), 35 mA each, set by one GPIO's filtered PWM | constant current down to the 3.5 V cutoff, DC in the LEDs, all Basic/Preferred parts; replaced the AP3156 charge pump, out of stock on 2026-10-07 (stability simulated: board/sim/backlight.py) |
 | MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board); no flash chip to route |
 | Charger | TP4056 at 500 mA, TEMP on a board NTC over the cell (1-46 C); USB load sharing (B5819W, AO3401A, BAT54WS gate feed, 22 uF on VSYS; a second B5819W across the AO3401A carries the unplug gap); 2.2 ohm in series with the input cap against hot-plug ringing | a fifth of the BQ24074's price, no stock risk; the NTC added on request (Extended part, $3 an order) |
 | Cell | 403450, about 700 mAh, Molex PicoBlade (MX1.25) plug into a 3.4 mm J2 (JST PH until 2026-10-19: too tall for the lowered lid), under the board on the tub's floor | 13.35 mm at the screen (the panel sits in a pocket in the top piece, 2026-10-19), 11.5 at the ends; the plug passes up through a 5.45 x 4.4 mm hole a plug's length (5.5 mm) past J2's mouth, the cell clear of it (centred since the 133 mm case) (Alex, 2026-10-20: the plug had to double over into J2); chosen over the cell on the board under the screen (13.9 mm, 7.9: branch ref-design-cell-on-board) (Alex, 2026-10-09) |
@@ -162,10 +162,12 @@ upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plat
 - [x] 15 Built upside down: board (cell and speaker plugged and stuck on its back), top piece face
       down, decks in, caps and silicone, panel, FPC into J3, board face down, tub, screws
       (case/SHELL.md, print_package_README.md)
-- [ ] The board for the new case (another session): re-place and re-route it to the new
-      positions.json (case/BOARD_OUTLINE.md: 70.4 x 127.7, the six screws, the clusters moved in
-      11.77 mm, J3's whole range kept clear, the back's silkscreen outlines for the cell and the
-      speaker). check_fit fails 34 ways on today's board, all because it isn't re-placed yet
+- [x] The board for the new case: re-placed and re-routed to the new positions.json
+      (case/BOARD_OUTLINE.md: 70.4 x 127.7, the six screws, the clusters moved in 11.77 mm, J3's
+      whole range kept clear, the back's silkscreen outlines for the cell and the speaker). The
+      core moved 2.5 mm towards seat 1 to fan its top pins out below the speaker plug's hole, the
+      amplifier into the left bezel's seat-2 corner, the backlight sinks right of the core.
+      2026-10-21: check_fit 0, DRC 0 errors and 0 unrouted, ERC 0
 - [ ] Questions from the shell (case/SHELL.md, "Open questions"): the deck's wedge clearance and the
       seam's fit (the `0_buttons_end` and seam coupons), J3's range (`tip_range`) on a real panel,
       the speaker taped to the board's back, and whether to drop the spines (J2 and J4 into the

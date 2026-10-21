@@ -52,8 +52,8 @@
   132.7
  ],
  "rev": 1,
- "commit": "3c259ae",
- "dirty": false,
+ "commit": "8f938a3",
+ "dirty": true,
  "built": "2026-10-21",
  "inputs": {
   "board/battler.kicad_pcb": "458221f5e7a846254dd6376208e678e6b89ce91a",
