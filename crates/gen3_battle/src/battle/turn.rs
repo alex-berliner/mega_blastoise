@@ -16,12 +16,10 @@ use super::*;
 impl Battle {
     /// Resolve one turn.
     ///
-    /// Order is switches first, then moves by Speed with the faster mon going
-    /// first and ties broken by the RNG, which is how Gen 3 does it.
-    ///
-    /// Unsupported so far, and silently absent rather than wrongly modelled:
-    /// abilities, held items, weather, move priority, secondary effects, and
-    /// multi-turn moves.
+    /// Order is switches first, then moves by priority bracket, with the
+    /// faster mon going first inside a bracket and ties broken by the RNG,
+    /// which is how Gen 3 does it. Abilities, held items, weather, secondary
+    /// effects and multi-turn moves are all resolved here.
     pub fn step(&mut self, choices: [Choice; 2]) -> Vec<Event> {
         self.step_with(choices, &TurnScript::default())
     }

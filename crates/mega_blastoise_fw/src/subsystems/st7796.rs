@@ -3,9 +3,10 @@
 //! Wiring (BUILD.md §10): BL GP5, DC GP6, RST GP7, MOSI GP8, SCK GP9,
 //! CS GP10. GP8/GP9 fit neither hardware SPI block; this is the PIO bus
 //! BUILD.md §10 promises. A two-instruction sideset program clocks mode-0
-//! SPI at 25 MHz and a single DMA transfer feeds it each frame, so a full
-//! 320x480 blit is ~100 ms — against well over a second for the bit-banged
-//! bring-up driver this replaced (the visible wipe down the panel).
+//! SPI at 37.5 MHz (first proven at 25; see the clock divider below) and a
+//! single DMA transfer feeds it each frame, so a full 320x480 blit is about
+//! 65 ms, against well over a second for the bit-banged bring-up driver this
+//! replaced (the visible wipe down the panel).
 //!
 //! The core renders a 320x480 [`DeviceFrame`] (the single-screen design's
 //! native size, shared with the web build — zero drift), which matches this

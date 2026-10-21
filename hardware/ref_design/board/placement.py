@@ -130,7 +130,7 @@ put("C5", 132.5, 86.25, 90)                 # VSYS in, beside U3
 put("C6", 129.5, 92.0, 90)                  # 3V3 out
 put("C7", 131.5, 92.0, 90)
 
-# power switch latch: right strip above the USB-C (the button is seat 1's Y contact)
+# power switch latch: right strip above the USB-C (the button is seat 1's Start contact, SW21)
 put("R13", 128.4, 70.0, 90)
 put("D2", 131.6, 70.2, 0)
 put("R14", 128.4, 73.4, 90)

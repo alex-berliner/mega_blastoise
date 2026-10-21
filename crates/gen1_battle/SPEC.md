@@ -3,16 +3,18 @@
 Cartridge-accurate RBY mechanics. Goal: drop-in replacement for the `battler` crate in `mega_blastoise_core`/`_fw` consumption, with ~800 B of RAM per 6v6 battle and zero per-turn heap churn.
 
 Authoritative sources cited inline:
-- **pret/pokered** — RBY disassembly. Definitive. https://github.com/pret/pokered
+- **pret/pokered** — RBY disassembly, the cartridge's own code. https://github.com/pret/pokered
 - **Pokémon Showdown gen1 mod** — `data/mods/gen1/{scripts,moves,conditions,typechart}.ts`;
-  the community's cartridge-verified reference implementation. The engine's
+  the community's cartridge-verified reference implementation, and the authority. The engine's
   battle semantics are ported from it (2026-07: full glitch pass — sticky
   modified stats, toxic counter, last-damage register, per-action residuals).
 - **Bulbapedia** — Gen I damage / status / move mechanics pages
 - **Smogon Gen 1 OU / RBY mechanics writeups**
 
-When this doc and pret/pokered disagree, pret wins. Move data (power/type/
-accuracy/pp/effect) is generated from pret's `data/moves/moves.asm`
+Pokémon Showdown wins every disagreement, with this doc, pret/pokered or anything
+else: since 2026-08-16 the project's goal is a complete recreation of Showdown's
+Gen 1 and Gen 3 combat, and the parity and fuzz suites check the engine against it.
+Move data (power/type/accuracy/pp/effect) is generated from pret's `data/moves/moves.asm`
 (vendored as `data/rby_moves.json`); species stats and Gen 1 typing from
 Showdown's gen1 pokedex (`data/rby_species.json`).
 

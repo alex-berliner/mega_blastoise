@@ -2,7 +2,7 @@
 //!
 //! Both are shown before a battle starts, drawn head-to-head like every other
 //! screen so either seat can read and change them, per
-//! `docs/architecture/09-single-screen.md`. Keeping the state machine in core means
+//! `docs/archive/architecture/09-single-screen.md`. Keeping the state machine in core means
 //! the browser and the firmware present identical menus and identical
 //! defaults, the same rule the battle screens already follow.
 
@@ -12,8 +12,10 @@ use crate::cursor_nav::Dir;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Gen {
     One,
-    /// Selectable, but routes to Gen 1 combat until the engine lands — the UI
-    /// must label it a preview and must not advertise Gen 3-only fields.
+    /// Runs the Gen 3 engine (`gen3_battle`: `DeviceSession::ruleset` maps it
+    /// to `Ruleset::Gen3`). Still labelled a preview, and the UI must not
+    /// advertise Gen 3-only fields: the device's Gen 3 draft hands out no
+    /// abilities, held items or EV spreads yet.
     ThreePreview,
 }
 

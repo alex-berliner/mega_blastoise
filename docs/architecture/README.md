@@ -12,8 +12,8 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 6. [Memory and Debugging](./06-memory-and-debugging.md)
 7. [Design Principles and Extension Guide](./07-design-principles.md)
 8. [Feature Map: Core vs. Target-Specific](./08-feature-map.md)
-9. [Single-Screen Redesign](./09-single-screen.md) — target design for the next hardware generation
-10. [Production Board](./10-production-board.md) — what changes when the device becomes a sellable product
+9. [Single-Screen Redesign](../archive/architecture/09-single-screen.md) (archived, superseded: the current design is [DESIGN.md](../../DESIGN.md))
+10. [Production Board](../archive/architecture/10-production-board.md) (archived, superseded: see [DESIGN.md](../../DESIGN.md) and [hardware/ref_design/](../../hardware/ref_design/README.md))
 
 ## Quick Links
 

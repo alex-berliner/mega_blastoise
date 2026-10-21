@@ -1,3 +1,6 @@
+> **Archived (superseded).** The 2.8 in ST7789 panel, the diode-matrix buttons and the stubbed Gen 3 below gave way to a 3.5 in 320x480 panel, one GPIO per button and a working Gen 3 engine.
+> The current design lives in [DESIGN.md](../../../DESIGN.md) and [hardware/ref_design/](../../../hardware/ref_design/README.md).
+
 # Single-Screen Redesign
 
 Target design for the next generation of the device: one shared color screen
@@ -7,7 +10,7 @@ This page is the reference every migration session reads first. It records
 decisions, not aspirations — where a number appears here it was measured, and
 where something is undecided it says so.
 
-Visual spec: [`crates/mega_blastoise_web/www/ui_flow.html`](../../crates/mega_blastoise_web/www/ui_flow.html)
+Visual spec: [`crates/mega_blastoise_web/www/ui_flow.html`](../../../crates/mega_blastoise_web/www/ui_flow.html)
 (published at `/mega_blastoise/ui_flow.html`). Click any mockup to toggle a
 true 240x320 pixel preview.
 

@@ -1,10 +1,10 @@
 //! A Gen 3 singles turn loop.
 //!
-//! Deliberately small. This resolves the parts of a turn that the arithmetic
-//! core already knows how to answer: who moves first, what a hit takes off,
-//! who faints, and when the battle is over. Abilities, held items and weather
-//! are not here yet, and the module says so rather than pretending: see the
-//! `Unsupported` note on [`Battle::step`].
+//! Resolves a whole turn as Showdown's Gen 3 mod does: who moves first, what
+//! a hit takes off, status and secondary effects, abilities and held items
+//! (asked of [`crate::ability`] and [`crate::item`] at each stage), weather,
+//! side conditions, the residual phase, who faints, and when the battle is
+//! over. The turn driver is [`Battle::step`] in `turn.rs`.
 //!
 //! Nothing in here is shared with `gen1_battle`. A Gen 1 battle runs that
 //! engine start to finish and never enters this module, which is what keeps

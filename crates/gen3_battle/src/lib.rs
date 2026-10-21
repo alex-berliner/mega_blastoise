@@ -5,28 +5,35 @@
 //! Gen 1 battle never enters it. Which engine a battle uses is chosen once, at
 //! setup, from the ruleset the players picked in the menu.
 //!
-//! What is here so far is the arithmetic core, which is where Gen 3 actually
-//! departs from Gen 1:
+//! The modules, starting from the arithmetic core, which is where Gen 3
+//! actually departs from Gen 1:
 //!
-//!   * [`types`] — seventeen types (Dark and Steel are new, Fairy does not
+//!   * [`types`]: seventeen types (Dark and Steel are new, Fairy does not
 //!     exist yet), the chart, and the physical/special split, which in Gen 3
 //!     is still a property of the move's TYPE.
-//!   * [`data`] — the dex and move list, generated at build time by merging
-//!     the vendored gen1, gen2 and gen3 layers.
-//!   * [`stats`] — Special split into Sp.Atk and Sp.Def, IVs, EVs and the 25
+//!   * [`data`]: the dex and move list, generated at build time from the
+//!     vendored dump of Pokemon Showdown's gen3 mod (the battler data files
+//!     supply only the level-up learnsets), plus Showdown's Gen 3 random
+//!     battle sets.
+//!   * [`stats`]: Special split into Sp.Atk and Sp.Def, IVs, EVs and the 25
 //!     natures.
-//!   * [`damage`] — the Gen 3 damage formula, with its modifiers applied in
+//!   * [`damage`]: the Gen 3 damage formula, with its modifiers applied in
 //!     the order the games apply them, since each step floors.
-//!   * [`battle`] — a singles turn loop over those: Speed order, damage,
-//!     faints, switches and the win condition.
+//!   * [`ability`] and [`item`]: Gen 3 abilities and held items, answered
+//!     at each pipeline stage that asks rather than through an event bus.
+//!   * [`battle`]: the singles turn loop, covering priority brackets and
+//!     Speed order, damage, status and secondary effects, multi-turn moves,
+//!     weather (sun, rain, sandstorm, hail), screens and the other side
+//!     conditions, the residual phase, switching, faints and the win
+//!     condition.
+//!   * [`draft`]: random teams from the Gen 3 random battle sets (moves
+//!     and species only for now: no abilities, held items or EV spreads).
 //!
-//! Still to come, in rough order of how much they change play: abilities,
-//! held items, weather, and the move set beyond the shared Gen 1 entries.
-//!
-//! The mechanics are implemented from the published Gen 3 formulas. Upstream
-//! `battler` is a useful cross-check for behaviour, but no code is taken from
-//! it: this crate is `no_std` and allocation-free on the hot path, which that
-//! engine is not.
+//! The reference is Pokemon Showdown's Gen 3 mod: its source is read before
+//! a mechanic is implemented, and the parity and fuzz suites in
+//! `mega_blastoise_test` confirm it. No code is taken from upstream
+//! `battler`: this crate is `no_std` and allocation-free on the hot path,
+//! which that engine is not.
 
 #![cfg_attr(not(test), no_std)]
 

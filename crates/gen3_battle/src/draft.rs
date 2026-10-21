@@ -6,9 +6,10 @@
 //! three status moves. A random battle set is a curated role, and drawing a
 //! set is drawing a role.
 //!
-//! Not yet drafted, because the engine has nowhere to put them: abilities,
-//! held items, and per-stat EV and IV spreads. Every drafted mon gets the
-//! same even investment instead.
+//! Not yet drafted: abilities, held items, and per-stat EV and IV spreads.
+//! The engine models abilities and items (a `Mon` carries both), but the
+//! draft leaves them empty for now. Every drafted mon gets the same even
+//! investment instead.
 
 extern crate alloc;
 

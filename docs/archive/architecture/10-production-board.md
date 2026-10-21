@@ -1,3 +1,6 @@
+> **Archived (superseded).** The reference design replaced this page's MAX98357A with PWM audio into an FM8002A, its buck-boost with an ME6211 LDO, and dropped the cover lens (2026-09-24).
+> The current design lives in [DESIGN.md](../../../DESIGN.md) and [hardware/ref_design/](../../../hardware/ref_design/README.md).
+
 # Production Board
 
 Target design for a board that can be batch produced and sold, replacing the

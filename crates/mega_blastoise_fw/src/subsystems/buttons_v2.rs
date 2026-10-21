@@ -1,8 +1,9 @@
 //! Stripboard v2 buttons: 16 tactiles, one GPIO each, no matrix.
 //!
-//! Pin map is BUILD.md §10. Internal pull-ups, LOW = pressed, 20 ms
-//! debounce (4 samples at 5 ms — the cadence the sw_test bring-up tester
-//! validated on this exact board).
+//! Pin map is BUILD.md §10. Internal pull-ups, LOW = pressed, 10 ms
+//! debounce (2 stable samples at a 5 ms poll). The sw_test bring-up tester
+//! validated 4 samples (20 ms) on this exact board; see `STABLE` below for
+//! why it is now 2.
 //!
 //! Presses become `(player, device_session::Button)` events on [`EVENTS`].
 //! Semantics beyond the debounce live in core's `DeviceSession`, not here:

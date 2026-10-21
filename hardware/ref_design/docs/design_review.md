@@ -125,8 +125,9 @@ every hole 0.3 mm or larger.
   reaches that pour from the LDO (U3, right of the chip) through Raspberry Pi's
   copied stubs, 0.15-0.2 mm wide: ample for the chip's 100 mA or less. The copied vias keep Raspberry Pi's 0.6 mm pads with 0.3 mm holes
   instead of 0.25 mm.
-- USB series resistors: 22 ohm 0402 (a basic part) in Raspberry Pi's own spots. The approved
-  27 ohm 0603 doesn't fit the copied layout, and 22 ohm works as well at full speed.
+- USB series resistors: 27 ohm 0402 (R21/R22, C25100) in Raspberry Pi's own spots, as the
+  RP2350 datasheet requires (Table 2). An extended part, as no basic 27 ohm 0402 exists, and a
+  27 ohm 0603 doesn't fit the copied layout; 22 ohm until the 2026-10-05 pin review.
 - 12 MHz ABM8 crystal with 15 pF loads and 1k series, as in the reference.
 - Debug: SWD and UART on JST SH 3-pin in the Raspberry Pi Debug Probe pinout;
   BOOTSEL and RESET buttons under pinholes. No LEDs.

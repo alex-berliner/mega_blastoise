@@ -349,8 +349,8 @@ part("X1", S, "Device:Crystal_GND24", "12MHz", "battler:ABM8-272-T3",
 C("C27", S, "15p", "XIN", fp=C0402_RPI)
 C("C28", S, "15p", "XO", fp=C0402_RPI)
 R("R20", S, "1k", "XOUT", "XO", fp=R0402_RPI)
-# 22 ohm: a basic part in Raspberry Pi's own 0402 spot (a 27 ohm 0603 doesn't fit the copied
-# layout, and the 27 ohm 0402 is an extended part); 22 ohm is fine for full-speed USB
+# 27 ohm 0402 in Raspberry Pi's own spots: an extended part (there is no basic 27 ohm 0402), and a
+# 27 ohm 0603 doesn't fit the copied layout. 22 ohm until the 2026-10-05 pin review
 R("R21", S, "27", "USB_DP", "USB_DP_MCU", fp=R0402_RPI)     # 27: the RP2350 datasheet requires it (Table 2),
 R("R22", S, "27", "USB_DM", "USB_DM_MCU", fp=R0402_RPI)     # and Raspberry Pi's own minimal design fits it
 R("R23", S, "10k", "+3V3", "QSPI_SS", fp=R0402_RPI)     # the flash's chip select high at power-up

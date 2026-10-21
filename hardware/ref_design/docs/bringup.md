@@ -156,7 +156,7 @@ With the cell connected and USB unplugged:
 1. Press seat 1's Start button: 3V3 comes up while it's held. The firmware sets PWR_HOLD
    (GPIO2) high once Start has been held for about a second: release it, it stays on.
    Release before that and the board turns off again.
-2. PWR_BTN_N (GPIO3) reads low while Y is held.
-3. Firmware drops PWR_HOLD after a long press: the board turns off when Y is released.
+2. PWR_BTN_N (GPIO3) reads low while Start is held.
+3. Firmware drops PWR_HOLD after a long press: the board turns off when Start is released.
    Off current back under 20 uA.
 4. Press RESET (SW19) while running on the cell: the board turns off (the hold drops).

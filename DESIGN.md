@@ -74,7 +74,7 @@ seat's HP plate under its own mon and the narration drawn in both halves. When e
 something private (move choice, party list, battle log, options), a divider returns between the
 halves. Each private half is framed in its seat's colour (red or white), so the whole panel reads
 as a Poke Ball. The full rules are in
-[docs/architecture/09-single-screen.md](docs/architecture/09-single-screen.md) section 3, and the
+[docs/archive/architecture/09-single-screen.md](docs/archive/architecture/09-single-screen.md) section 3, and the
 visual spec is [crates/mega_blastoise_web/www/ui_flow.html](crates/mega_blastoise_web/www/ui_flow.html).
 
 The screen needs an IPS panel: a TN panel shows inverted contrast to whichever seat views it from
@@ -145,11 +145,11 @@ Milestones:
 | 2026-05-15 | Hand-written `gen1_battle` replaces `battler` on the device: about 40 times less heap |
 | 2026-07-09 | `ChoiceCollector` and the shared OLED controller move all input and display semantics into core; the zero-drift rule is written down |
 | 2026-07-13 | `gen1_battle` ports Showdown's Gen 1 mechanics and format rules |
-| 2026-08-06 | Single-screen redesign specified ([09-single-screen.md](docs/architecture/09-single-screen.md)) and a working web client built; tag `mono-renderer-final` marks the last mono renderer |
+| 2026-08-06 | Single-screen redesign specified ([09-single-screen.md](docs/archive/architecture/09-single-screen.md)) and a working web client built; tag `mono-renderer-final` marks the last mono renderer |
 | 2026-08-15 to 08-19 | `gen3_battle` added; Showdown parity and fuzz suites; Gen 3 moves, abilities and held items brought in under the fuzzer |
 | 2026-08-20 | Stripboard v2 generated end to end from one layout script |
 | 2026-08-26 to 08-28 | The game runs on the stripboard's panel; the game loop moves into core as `DeviceRunner`; dirty-tile updates |
-| 2026-09-17 to 09-21 | Production board planned ([10-production-board.md](docs/architecture/10-production-board.md)): DS Lite membranes, bare RP2350B, 3.5 in IPS class |
+| 2026-09-17 to 09-21 | Production board planned ([10-production-board.md](docs/archive/architecture/10-production-board.md)): DS Lite membranes, bare RP2350B, 3.5 in IPS class |
 | 2026-09-24 | Reference design started; on the same day its 4-layer first version (tag `archive/ref-design-4layer`) became a cheaper 2-layer build on `main` |
 | 2026-09-25/26 | Three audit rounds and a two-model debate settle the open circuit decisions; printable fit kit |
 | 2026-10-05 | First case print and fixes; joint validation plan; datasheet pin-review gate; exploded 3D viewer on Pages |
@@ -171,7 +171,7 @@ The decisions that shape the project, newest last. Each links to where it is arg
 |---|---|---|---|
 | 2026-05-15 | Own Gen 1 engine instead of `battler` on the device | `battler` held about 13 KB per Pokemon and exhausted the RP2040's 128 KB heap in 3v3 battles; `gen1_battle` keeps a 6v6 battle in about 800 B of RAM with flash-resident tables | [crates/gen1_battle/SPEC.md](crates/gen1_battle/SPEC.md) |
 | 2026-07-09 | All display and input semantics in core; platforms do raw IO only | The browser and the device had drifted (different screens, different input rules); structure, not discipline, keeps them identical | [CLAUDE.md](CLAUDE.md) |
-| 2026-08-06 | One shared colour screen, cursor input, open information | The old scheme let a stray tap commit a move with no way back; an audit of the assembled v1 build (2026-08-05) also found cross-player ghost presses and the LED strips over the power budget | [09-single-screen.md](docs/architecture/09-single-screen.md) |
+| 2026-08-06 | One shared colour screen, cursor input, open information | The old scheme let a stray tap commit a move with no way back; an audit of the assembled v1 build (2026-08-05) also found cross-player ghost presses and the LED strips over the power budget | [09-single-screen.md](docs/archive/architecture/09-single-screen.md) |
 | 2026-08-06 | RP2350, not ESP32-S3 | ESP32-S3 would mean a new toolchain and a rewrite of the embassy-rp IO layer, and losing probe-rs, defmt and RTT; RP2350 has the RAM and flash | 09-single-screen.md section 7 |
 | 2026-08-11 | The battle is one head-to-head scene across the middle | Drawing each mon in its own half staggered the pair; a shared band reads as one field | 09-single-screen.md section 3 |
 | 2026-08-15 | Gen 3 as a sibling engine (`gen3_battle`), written in-house | Gen 1 stays untouched; the new crate is `no_std` and allocation-free on the hot path, which upstream `battler` is not | [crates/gen3_battle/src/lib.rs](crates/gen3_battle/src/lib.rs) |
@@ -179,7 +179,7 @@ The decisions that shape the project, newest last. Each links to where it is arg
 | 2026-08-19 | Stripboard v2: 16 switches straight to GPIO, no matrix | The v1 matrix ghosted presses across players; direct GPIO cannot | [hardware/stripboard_v2/BUILD.md](hardware/stripboard_v2/BUILD.md) |
 | 2026-08-19 | 3.5 in 320x480 panel instead of the 2.8 in 240x320 in the redesign spec | The 3.5 in ST7796 module was what was bought; the UI was regrown to 320x480 native on 2026-08-27 | BUILD.md; firmware history |
 | 2026-08-27 | The game loop (`DeviceRunner`) lives in core | The first single-screen web client kept lobby, battle wiring and pacing in web-only code, so the firmware had a UI with no battles behind it | [crates/mega_blastoise_core/src/device_runner.rs](crates/mega_blastoise_core/src/device_runner.rs) |
-| 2026-09-17 | No radio; one USB-C; audio added | No radio keeps certification on the unintentional-radiator path; the stripboard had two USB ports and no sound | [10-production-board.md](docs/architecture/10-production-board.md) |
+| 2026-09-17 | No radio; one USB-C; audio added | No radio keeps certification on the unintentional-radiator path; the stripboard had two USB ports and no sound | [10-production-board.md](docs/archive/architecture/10-production-board.md) |
 | 2026-09-21 | DS Lite silicone membranes on bare PCB contacts | Half the footprint of SNES parts (15 mm face-button diamond), sold as repair spares; one D-pad piece and one ABXY piece per seat | [hardware/membrane/README.md](hardware/membrane/README.md) |
 | 2026-09-21 | Bare RP2350B family chip, not a module | No RP2350B module exists that JLCPCB will place; the Pico family is placeable but has too few GPIO | 10-production-board.md section 8 |
 | 2026-09-21 | 3.5 in 320x480 IPS class | The only size with datasheet-backed, stocked IPS supply; panels hold their own frame memory, so no framebuffer is needed | 10-production-board.md section 9 |
@@ -383,7 +383,7 @@ which Alex accepted for a prototype.
 
 ### 6.3 Requirements for a sellable board
 
-[10-production-board.md](docs/architecture/10-production-board.md) (2026-09-17 to 09-21) records
+[10-production-board.md](docs/archive/architecture/10-production-board.md) (2026-09-17 to 09-21) records
 what changes when the device becomes a product: no 2.54 mm grid or stripboard outline, ergonomics
 re-decided from scratch, membranes instead of tactile switches, a bare MCU placed by the fab, a
 proper charger and protected cell, one USB-C for charge and data, no radio, an IPS panel, and
@@ -502,10 +502,10 @@ JLCPCB's and PCBWay's instant-quote forms headlessly when the design changes.
 | Stripboard v2 parts, bought in hobby packs (one unit) | about $125 | 2026-08 | [BUILD.md](hardware/stripboard_v2/BUILD.md) |
 | Reference design bare board, 4-layer with 0.25 mm holes, at 10 | $9.74 | 2026-09-24 | quotes |
 | Reference design bare board, 2-layer, at 10 | $3.34 | 2026-09-24 | quotes |
-| Reference design, factory part (board, parts, assembly fees, shipping) at 10 | about $16.47 | 2026-09-24, parts repriced 2026-10-20 | [bom.md](hardware/ref_design/docs/bom.md) |
-| Reference design, all in, at 10 | about $39-40 | same | bom.md |
-| **Reference design, latest, at 10** | **$42.52** | **2026-10-21** | BOM audit |
-| **Reference design, latest, at 50** | **$27.98** | **2026-10-21** | BOM audit |
+| Reference design, factory part (board, parts, assembly fees, shipping) at 10 | about $16.47 | 2026-09-24, parts repriced 2026-10-20 | bom.md, until the audit replaced it |
+| Reference design, all in, at 10 | about $39-40 | same | same |
+| **Reference design, latest, at 10** | **$42.52** | **2026-10-21** | BOM audit, now in [bom.md](hardware/ref_design/docs/bom.md) |
+| **Reference design, latest, at 50** | **$27.98** | **2026-10-21** | same |
 
 The bom.md figures exclude import duties (not yet known), JLC's new-account coupons and hand
 labour. The panel is the
@@ -523,7 +523,7 @@ with screenshots of every polarised part before paying.
 
 ## 8. IP and regulatory stance
 
-Decided so far (2026-09-17, [10-production-board.md](docs/architecture/10-production-board.md)
+Decided so far (2026-09-17, [10-production-board.md](docs/archive/architecture/10-production-board.md)
 section 6):
 
 - **Rename before selling.** "Mega Blastoise" is a Pokemon name; that includes the USB
@@ -663,7 +663,8 @@ From [PLAN.md](hardware/ref_design/PLAN.md) and the validation plan:
 |---|---|
 | [README.md](README.md) | Build and run instructions |
 | [CLAUDE.md](CLAUDE.md) | The zero-drift rule and project rules for Claude Code |
-| [docs/architecture/](docs/architecture/README.md) | Software architecture pages; [09](docs/architecture/09-single-screen.md) single-screen design, [10](docs/architecture/10-production-board.md) production board |
+| [docs/architecture/](docs/architecture/README.md) | Software architecture pages |
+| [docs/archive/architecture/](docs/archive/architecture/09-single-screen.md) | Superseded plans: [09](docs/archive/architecture/09-single-screen.md) single-screen redesign, [10](docs/archive/architecture/10-production-board.md) production board |
 | [docs/TECHNICAL.md](docs/TECHNICAL.md) | Software internals overview |
 | [docs/archive/v1/](docs/archive/v1/DESIGN.md) | The v1 device: design, electronics, firmware interactions, original plan |
 | [docs/hardware/openscad-methodology.md](docs/hardware/openscad-methodology.md) | How the cases are modelled and checked |

@@ -9,8 +9,10 @@ For project overview and hardware, see [DESIGN.md](./archive/v1/DESIGN.md) (the 
 ## Crate Layout
 
 ```
-battler/                    # upstream battle engine (git checkout)
+battler/                    # upstream battle engine (git submodule): data files and types only
 mega_blastoise/
+  crates/gen1_battle/              # no_std Gen 1 engine
+  crates/gen3_battle/              # no_std Gen 3 engine
   crates/mega_blastoise_core/      # no_std shared library: engine glue, event bus
   crates/mega_blastoise_fw/        # RP2350 (Pico 2) firmware for the stripboard v2 board
   crates/mega_blastoise_test/      # PC host binary for development and testing
@@ -22,9 +24,9 @@ mega_blastoise/
 
 ## Battle Engine
 
-All game logic is handled by [`battler`](https://github.com/jackson-nestelroad/battler), an open-source Pokémon battle engine written in Rust. This project does not reimplement damage formulas, type effectiveness, status effects, or turn resolution — `battler` handles all of that. The firmware is purely presentation and input.
+All game logic runs in the project's own engines, both `no_std` and built for the RP2350 and the host alike: [`gen1_battle`](../crates/gen1_battle/SPEC.md) for Gen 1 and [`gen3_battle`](../crates/gen3_battle/src/lib.rs) for Gen 3. The players pick the ruleset in the menu, and a battle runs in one engine from start to finish. The goal (since 2026-08-16) is a complete recreation of Pokémon Showdown's Gen 1 and Gen 3 singles combat: Showdown wins every disagreement, and the parity and fuzz suites in `mega_blastoise_test` check both engines against it. The firmware and the web client are purely presentation and input.
 
-`battler`'s core crates are `no_std`-compatible and compile directly for the RP2350.
+The project began on upstream [`battler`](https://github.com/jackson-nestelroad/battler), an open-source Rust engine; `gen1_battle` replaced it on 2026-05-15 when it ran out of heap on the RP2040. It stays as a git submodule: `mega_blastoise_core`'s build script reads its Gen 1 data files and the data store uses its types, but no battle runs through it.
 
 ---
 

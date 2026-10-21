@@ -10,7 +10,7 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 0 | (spare) | not connected |
 | 1 | (spare) | not connected |
 | 2 | `PWR_HOLD` | output: set high to stay on (see Power control); low turns the device off once the button is up |
-| 3 | `PWR_BTN_N` | input, pulled up (R16): low while seat 1's Y is pressed. Y is the power button, so read seat 1's Y here |
+| 3 | `PWR_BTN_N` | input, pulled up (R16): low while seat 1's Start is pressed. Start is the power button, so read seat 1's Start here |
 | 4 | `P2_UP` | membrane contact SW9, input with pull-up, low = pressed |
 | 5 | `P2_DOWN` | membrane contact SW10, input with pull-up, low = pressed |
 | 6 | `P2_LEFT` | membrane contact SW11, input with pull-up, low = pressed |
@@ -58,15 +58,15 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 
 Other RP2354B pins: the 2 MB flash is inside the package, so of the QSPI pins only QSPI_SS
 is wired (10k pull-up R23, and the BOOTSEL button through 1k). 12 MHz crystal, USB to the
-USB-C (22 ohm series, SRV05-4 ESD), SWD and RUN to J5 and the RESET button.
+USB-C (27 ohm series, SRV05-4 ESD), SWD and RUN to J5 and the RESET button.
 
 ## Power control
 
-PWR_EN (the ME6211's enable) is the OR of: the power button (seat 1's Y contact, which
+PWR_EN (the ME6211's enable) is the OR of: the power button (seat 1's Start contact SW21, which
 joins VSYS to PWR_BTN_RAW), PWR_HOLD, and USB VBUS.
 
-- Turning on: pressing Y starts the regulator. Firmware sets PWR_HOLD high only once Y has
-  been held for about a second (read on PWR_BTN_N), so a knock in a bag doesn't turn the
+- Turning on: pressing Start turns the regulator on. Firmware sets PWR_HOLD high only once Start
+  has been held for about a second (read on PWR_BTN_N), so a knock in a bag doesn't turn the
   device on: let go sooner and it powers off again.
 - Turning off: firmware sets PWR_HOLD low; power drops when the button is released.
   Watch PWR_BTN_N for a long press, then drop PWR_HOLD.
