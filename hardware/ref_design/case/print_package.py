@@ -38,7 +38,7 @@ KIT = os.path.join(HERE, "fitkit")
 PRINT_TUB = os.path.join(HERE, "tub.stl")    # prints flat as exported (no feet since 2026-10-20)
 
 # PLA only (Alex, 2026-10-20): every object, support and interface on the PLA toolhead, and no
-# prime tower (one filament never changes). The deck faces now print on the bed, not on supports,
+# prime tower (one filament never changes). The faces print on the bed, not on supports,
 # so where a plate does need supports they're plain PLA organic trees from the build plate only,
 # with the usual 0.2 mm gap (PLA on PLA with none would fuse), and bridges aren't supported
 SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_style": "organic",
@@ -57,26 +57,26 @@ OBJECT_SUPPORT = {"enable_support": "1", "support_threshold_angle": "45", "suppo
 
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts
 PLATES = {
-    "0_buttons_end": [(n, f"{KIT}/coupon_{n}.stl") for n in ("buttons_tub", "buttons_board", "buttons_lid", "buttons_insert")],
-    "1_case": [("tub_print", PRINT_TUB), ("lid", os.path.join(HERE, "lid.stl")),
+    "0_buttons_end": [(n, f"{KIT}/coupon_{n}.stl") for n in ("buttons_tub", "buttons_board", "buttons_top", "buttons_deck")],
+    "1_case": [("tub_print", PRINT_TUB), ("top", os.path.join(HERE, "top.stl")),
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
                ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
-    "1_case_inserts": [(n, os.path.join(HERE, "insert.stl")) for n in ("insert_a", "insert_b")],   # one part, two of it
+    "1_case_decks": [(n, os.path.join(HERE, "deck.stl")) for n in ("deck_a", "deck_b")],   # one part, two of it
     "2_buttons_quick": [("tune_openings", f"{KIT}/tune_openings.stl")] +
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
         [(f"tune_stack_{c}_lid_dome1.75", f"{KIT}/tune_stack_{c}_lid_dome1.75.stl") for c in ("dpad", "abxy", "ss")],
     "3_buttons_heights": [(f"tune_stack_{c}_lid_dome{d}", f"{KIT}/tune_stack_{c}_lid_dome{d}.stl")
                           for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.9")],
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
-                      ("usb_tub", "usb_lid", "usb_board", "snap_tub", "snap_lid", "frame_lid",
-                       "buttons_tub", "buttons_board", "buttons_lid", "buttons_insert")],
-    "5_unit": [("tub_print", PRINT_TUB), ("lid", os.path.join(HERE, "lid.stl")),     # one whole unit, no dummies
-               ("insert_a", os.path.join(HERE, "insert.stl")), ("insert_b", os.path.join(HERE, "insert.stl")),
+                      ("usb_tub", "usb_top", "usb_board", "seam_tub", "seam_top", "frame_top",
+                       "buttons_tub", "buttons_board", "buttons_top", "buttons_deck")],
+    "5_unit": [("tub_print", PRINT_TUB), ("top", os.path.join(HERE, "top.stl")),     # one whole unit, no dummies
+               ("deck_a", os.path.join(HERE, "deck.stl")), ("deck_b", os.path.join(HERE, "deck.stl")),
                ("board_mock", f"{KIT}/board_mock.stl")],
     # questions for the shell's redesign, no supports: openings, overhangs, screw holes, a column's clearance
     "6_tests": [("tune_openings", f"{KIT}/tune_openings.stl"), ("test_overhangs", f"{KIT}/test_overhangs.stl"),
-                ("screws_tub", f"{KIT}/coupon_screws_tub.stl"), ("screws_lid", f"{KIT}/coupon_screws_lid.stl"),
+                ("screws_tub", f"{KIT}/coupon_screws_tub.stl"), ("screws_top", f"{KIT}/coupon_screws_top.stl"),
                 ("test_column", f"{KIT}/test_column.stl"), ("test_rings", f"{KIT}/test_rings.stl")],
 }
 # the overhang ladder overhangs on purpose (it asks how far the printer goes without supports)
@@ -97,7 +97,7 @@ def support_parts():
     return {p for p in paths if found[p] and p not in NEVER_SUPPORTED}
 
 
-V5_NAMES = {"tub_print": "tub_print.stl", "lid": "lid.stl", "board_mock": "board_mock.stl",
+V5_NAMES = {"tub_print": "tub_print.stl", "board_mock": "board_mock.stl",
             "panel_dummy": "panel_dummy.stl", "speaker_dummy": "speaker_dummy.stl"}
 NS = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"
 
@@ -284,7 +284,7 @@ def main():
                                                            for n, p in parts))
         for n, p in parts:
             shutil.copy(p, os.path.join(OUT, "stl", os.path.basename(p)))
-    for extra in ("lid.stl", "tub.stl"):
+    for extra in ("top.stl", "deck.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not sys.argv[1:]:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     shutil.copy(os.path.join(HERE, "print_package_README.md"), os.path.join(OUT, "README.md"))

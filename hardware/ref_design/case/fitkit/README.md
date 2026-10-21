@@ -4,41 +4,44 @@ Printable stand-ins and case coupons, all generated from `case/case.scad` and th
 they always match the design. The STLs are build output, not in git: generate them (and again after
 any case or board change) with:
 
-    python3 case/export.py --stl      # the real tub and lid
-    python3 case/fitkit.py            # this folder (about 7 minutes)
+    python3 case/export.py --stl      # the real tub, top piece and deck
+    python3 case/fitkit.py            # this folder (under a minute with Manifold)
 
-![kit, exploded](kit_assembly.png)
+![the shell, exploded in its assembly order](kit_assembly.png)
+
+Until the board is re-placed for the 133 mm case (the case sets the board now: `../BOARD_OUTLINE.md`),
+the board mock has the new outline and holes but today's part envelopes, cut to the outline.
 
 ## The parts
 
 | File | What it is | Print |
 |---|---|---|
-| `../tub.stl`, `../lid.stl` | the real case | tub opening up; lid face down as exported, supports under the four button decks (they sit 6.0 mm below the screen face) |
-| `board_mock.stl` | the board: outline, the six locating holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 20 membrane contacts, the four silicone pieces and the two Start/Select membranes engraved, J3's outline to tape a real connector on | flat, as exported |
-| `panel_dummy.stl` | the panel at its thickest (2.45 mm), active area engraved on the glass side | flat, glass side up |
+| `../tub.stl`, `../top.stl`, `../deck.stl` | the real case: the tub (the back), the top piece, a deck (print two: one part for both ends) | each as exported, no supports: the tub back down, the top piece and the decks face down |
+| `board_mock.stl` | the board: outline, the six screw holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 20 membrane contacts, the four silicone pieces and the two Start/Select membranes engraved, J3's outline to tape a real connector on (ticks mark the two ends of the range J3 may move over) | flat, as exported (supports under the USB-C stand-in) |
+| `panel_dummy.stl` | the panel at its thickest (2.4 mm), active area engraved on the glass side | flat, glass side up |
 | `cell_dummy.stl` | the 403450 cell (50 x 34 x 4 mm) with its lead tab at its right-hand end | flat |
 | `cell_plug_dummy.stl` | a PicoBlade (MX1.25) plug with a cable stub (approximate) | upright |
-| `speaker_dummy.stl` | the 15 mm speaker, 4 mm thick | flat |
-| `coupon_snap_tub.stl` + `coupon_snap_lid.stl` | one snap hook and its groove, cut from the real tub and lid | as exported, same printer settings as the case |
-| `coupon_buttons_tub.stl` + `_board.stl` + `_lid.stl` | seat 1's end of the tub, board and lid: the button stack | as exported |
-| `coupon_usb_tub.stl` + `coupon_usb_lid.stl` + `coupon_usb_board.stl` | the USB-C opening: its lower half in the tub wall, its upper half in the lid's tongue, and the board's tab with a stand-in for the receptacle's shell between them | as exported |
+| `speaker_dummy.stl` | the GSPK151035PN speaker, 15 x 10 x 3.5 mm | flat (supports under its tab) |
+| `coupon_seam_tub.stl` + `coupon_seam_top.stl` | a stretch of the left wall at the seam, cut from the real tub and top piece: the tub's tongue, the top piece's skirt over it and a crush rib | as exported |
+| `coupon_buttons_tub.stl` + `_board.stl` + `_top.stl` + `_deck.stl` | seat 1's end of the tub, board, top piece (the step, the spine and the undercut) and seat 1's whole deck: the button stack and the deck's joint | as exported |
+| `coupon_usb_tub.stl` + `coupon_usb_top.stl` + `coupon_usb_board.stl` | the USB-C opening: its lower half in the tub's tab, its upper half in the top piece's skirt, and the board's tab with a stand-in for the receptacle's shell between them | as exported |
 | `tune_openings.stl` | **the quickest button test (about 30 min):** D-pad openings at 0.55, 0.65 and 0.75 mm round the cross, a whole keyed A/B/X/Y cluster (tab slots and notch ribs), and plain holes at 7.6, 7.8 and 8.2 mm round its 8.0 (`cap_hole_d`); the numbers are engraved in the face | face down, as exported |
-| `tune_stack_dpad_board.stl` + `tune_stack_dpad_lid_dome*.stl` | one D-pad's slice of the board (contact rings engraved) and of the lid, the lid on four legs at its real height. Three lids, for a silicone 1.6, 1.75 or 1.9 mm tall at rest (`dome_h`); the value is engraved in each | board flat, lids face down |
+| `tune_stack_dpad_board.stl` + `tune_stack_dpad_lid_dome*.stl` | one D-pad's slice of the board (contact rings engraved) and of the deck, the deck slice on four legs at its real height. Three, for a silicone 1.6, 1.75 or 1.9 mm tall at rest (`dome_h`); the value is engraved in each | board flat, deck slices face down |
 | `tune_stack_abxy_board.stl` + `tune_stack_abxy_lid_dome*.stl` | the same for one A/B/X/Y cluster | as above |
 | `tune_stack_ss_board.stl` + `tune_stack_ss_lid_dome*.stl` | the same for seat 1's Start/Select membrane (its outline, pill pitch and caps are ESTIMATEs in `case.scad`: `ss_mem`, `ss_pitch`, `ss_cap_*`) | as above |
-| `coupon_frame_lid.stl` | the lid's window, ledge and panel frame | face down, as exported |
+| `coupon_frame_top.stl` | the top piece's window, pocket and panel frame | face down, as exported |
 | `test_overhangs.stl` | the test plate's overhang ladder: fins whose undersides slope 45, 50, 55, 60, 65, 70 and 75 degrees from vertical (engraved on top), and a convex 6 mm quarter round from 85 degrees up to vertical, ticked at 45, 60 and 75 on its end face | as exported, no supports (on purpose) |
 | `coupon_screws_tub.stl` | two of the tub's screw holes (a side boss and an end boss), cut from the real tub: counterbore, clearance hole, boss, floor | flat, as the tub |
-| `coupon_screws_lid.stl` | one of the lid's screw bosses with its 1.6 mm pilot, cut from the real lid | face down, as the lid |
-| `test_column.stl` + `test_rings.stl` | a 5.0 mm column (the lid's screw bosses) and four rings over it, 0.2, 0.3, 0.4 and 0.5 mm a side (engraved), as the deck insert's ring round the end boss | as exported |
+| `coupon_screws_top.stl` | one of the top piece's screw bosses with its 1.6 mm pilot, cut from the real top piece | face down, as the top piece |
+| `test_column.stl` + `test_rings.stl` | a 5.0 mm column (as the screw bosses) and four rings over it, 0.2, 0.3, 0.4 and 0.5 mm a side (engraved) | as exported |
 
-PLA or PETG, 0.2 mm layers, 3 walls; no supports, except under the lid's button decks (the
-lid and `coupon_buttons_lid`). Print the coupons with the same settings
-you'll use for the case: they're how those settings get tuned.
+PLA, 0.2 mm layers, 3 walls; no supports except under the board mock's USB-C stand-in and the
+speaker dummy's tab (`overhangs.py` decides). Print the coupons with the same settings you'll use
+for the case: they're how those settings get tuned.
 
 ## Have on hand
 
-The real parts, as far as they've arrived: the ER-TFT035IPS-6 panel, one Hirose FH12-50S-0.5SH(55)
+The real parts, as far as they've arrived: the ER-TFT024IPS-3 panel, one Hirose FH12-50S-0.5SH(55)
 connector (LCSC C202116), both DS Lite silicone sets and caps, the 403450 cell with its plug, the
 speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
 
@@ -52,50 +55,50 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   not fit any other hole. If a rib fights a cap whose notch is elsewhere, note the angle and fix
   `abxy_notches` (or set `notch_keys = false`). The three plain holes tune `cap_hole_d` (now 8.0,
   Alex's DS Lite faceplate's, 2026-10-21).
-- `tune_stack_*`: silicone on the board slice, cap in the lid slice, lid on its legs. Try the
-  three lids: keep the one where the cap stands about 1.4 mm proud of the deck, presses cleanly and
+- `tune_stack_*`: silicone on the board slice, cap in the deck slice, deck slice on its legs. Try the
+  three: keep the one where the cap stands about 1.4 mm proud of the deck, presses cleanly and
   springs back, and set `dome_h` to its number. If the D-pad then sits higher or lower than A/B/X/Y
   wants, `dpad_lift` moves only the D-pad's lip.
 
 **1. Coupons first (about 2 hours of printing):**
-- **Snap:** press `coupon_snap_lid` onto `coupon_snap_tub`. It should click with firm thumb pressure,
-  hold, and come apart with a blade in the gap. Too tight or cracking: `snap_barb` down (0.25 ->
-  0.2) or the hook thinner (`snap_t_root`, `snap_t_tip`); too loose: `snap_barb` up (0.3). The first
-  print's hooks snapped in PLA: print the lid in PETG if they still do.
-- **Panel frame:** drop the real panel (or the dummy) into `coupon_frame_lid`, glass down. It should
+- **Seam:** lower `coupon_seam_top` over `coupon_seam_tub`. The skirt should slide down over the
+  tongue with no force and sit flush with the tub's outside, a thin even line between them
+  (`seam_fit`, `seam_gap`).
+- **Panel frame:** drop the real panel (or the dummy) into `coupon_frame_top`, glass down. It should
   go in with a little play, and the active area should sit centred in the window with only a thin
-  black border showing; the FPC's neck should pass the notch. Tune `panel_fit`, `window_margin`,
-  `aa_to_top`, `fpc_neck`.
-- **Buttons:** put the three button coupons together with the real silicone and caps: silicone on
-  the board coupon (the pills should land on the engraved contact rings), caps in the lid coupon's
-  holes, lid coupon down onto the tub coupon. Check each cap stands about 1.3 mm proud of the deck, can't
+  black border showing; the FPC should pass the notch. Tune `panel_fit`, `window_margin`,
+  `aa_to_top`, `fpc_x`.
+- **Buttons:** build seat 1's end upside down with the real silicone and caps: the top coupon face
+  down, the deck coupon face down into it from behind (its wedge into the undercut: it should drop in,
+  centre itself and not rock), caps into the deck from behind, silicone on them, the board coupon
+  face down on top (the pills should land on the engraved contact rings), the tub coupon over it. Check each cap stands about 1.3 mm proud of the deck, can't
   fall out or turn (its flange tab sits in the pocket's slot), presses cleanly and springs back, and that the D-pad's pills sit on its four rings. The
   design assumes a D-pad pill spacing of 14.0 mm (another source says 13.5): measure it. Tune
   `dome_h` (sets the deck height), `piece_d`, `dpad_pitch`; the cap numbers from `case/DSLITE.md`
   (`cap_*`, `pocket_*`, `slot_*`, `dpad_*`) if a real cap disagrees.
-  The JST plug (real or dummy) should pass up through the board's hole in front of J2 and go into J2 between seat 1's clusters, its wires dropping back through the hole, without forcing them.
-- **USB-C:** board coupon into the tub coupon (its tab drops into the wall's slot), lid coupon on
-  top. The opening is the receptacle's own stadium shape, `usb_gap` (0.25 mm) round its shell, and
+  The PicoBlade plug (real or dummy) should pass up through the board's hole in front of J2 and go into J2 between seat 1's clusters, its wires dropping back through the hole, without forcing them.
+- **USB-C:** board coupon face down into the top coupon, the tub coupon over it (its tab rises into
+  the skirt's notch, the board's tab in its slot). The opening is the receptacle's own shape, `usb_gap` (0.25 mm) round its shell, and
   the shell's face sits 0.15 mm under the case's surface (`usb_recess`): the board now has a tab
   that carries the receptacle out to the wall, instead of leaving it 1.15 mm inside. Too tight or
   too loose round the stand-in: `usb_gap`. A real plug's overmold should rest flat on the case.
 
-**2. Everything together (about a day of printing):**
-1. Cell (or dummy) in its pocket on the tub's floor, its lead at seat 1's end; speaker (or dummy)
-   on the grille beside it.
-2. The cell's lead up through the board mock's slot, then the board mock into the tub, onto the
-   floor's ribs (the crush ribs on the walls centre it); the lead to J2's block.
-3. Tape the real FH12 connector on J3's outline (mouth towards seat 1, pin 1 at the marked end).
-   Fold the real panel's FPC under it and slide it into the connector. The design expects a little
-   slack; if the tail bows up under the panel or can't reach, note by how much: `conn_rear` in
-   `case.scad` moves J3.
-4. Panel into the lid's frame on the tape, silicone and caps in, lid down (its lip into the wall's step): all four hooks should
-   click, the lid should sit flush, nothing should rattle, the case should measure 13.4 mm at the screen, 11.1 at the ends.
+**2. Everything together (about a day of printing), upside down:**
+1. Board mock face up: the cell's lead up through its hole to J2's block, the speaker's to J4's.
+   Tape the real FH12 connector on J3's outline (mouth towards seat 1, pin 1 at the marked end).
+2. Top piece face down on the table; both decks face down into it from behind. Caps into the
+   decks from behind, silicone on them.
+3. Panel glass down into the top piece's pocket on its tape, centred by the frame. Slide its FPC
+   into the connector with the board mock held on edge beside it. The design expects a little
+   slack; if the tail bows up under the panel or can't reach, note by how much (`tip_range`).
+4. Board mock face down onto the bosses (the crush ribs centre it), the cell and speaker on its
+   back; tub over it all; six screws. The case should measure 13.35 mm at the screen, 11.5 at the
+   ends, and nothing should rattle.
 5. Press every button: each should click through and spring back.
 
 **3. Measure and record** (design_review.md, "Measure before ordering"): the silicone's pill
 spacing, pill diameter, piece outline, dome height, cap flange and height; the panel's outline,
-thickness, active-area offset, FPC neck width and how deep the FPC goes into the connector; the
+thickness, active-area offset, where the folded FPC's tip lands and how deep the FPC goes into the connector; the
 cell's size with its protection board and its plug's polarity; the speaker's diameter, thickness
 and lead exit. Enter them in `case.scad` (the values marked ESTIMATE), then run
 `case/export.py --stl` and `case/check_fit.py`. If board positions moved, rebuild the board (the

@@ -18,13 +18,17 @@ module kit_board() difference() {
   union() {
     linear_extrude(pcb_t) board_outline();
     // each part's envelope, from the bed up so parts past the board edge (USB-C) print unsupported-free
-    for (p = KIT_PARTS) if (p[0] != "J3" && p[0] != "J1" && p[6] >= min_part_h)
-      translate([p[1], p[2], 0]) cube([p[3] - p[1], p[4] - p[2], pcb_t + p[6]]);
+    // (cut to the outline: until the board is re-placed for the 133 mm case some lie past it)
+    intersection() {
+      linear_extrude(case_h) board_outline();
+      for (p = KIT_PARTS) if (p[0] != "J3" && p[0] != "J1" && p[6] >= min_part_h)
+        translate([p[1], p[2], 0]) cube([p[3] - p[1], p[4] - p[2], pcb_t + p[6]]);
+    }
     // the USB-C receptacle as its shell (a stadium), face at the case's surface less usb_recess
     translate([usb_front - 7.3, usb_y, pcb_t + usb_h / 2]) rotate([0, 90, 0])
       linear_extrude(7.3) rrect(usb_h, usb_w, usb_h / 2 - 0.01);
   }
-  for (s = pins) at(s, -1) cylinder(d = hole_d + 0.2, h = pcb_t + 2, $fn = 32);        // FDM holes print small
+  for (s = pins) at(s, -1) cylinder(d = hole_d + 0.2, h = case_h, $fn = 32);           // FDM holes print small
   translate([0, 0, pcb_t - engrave]) {
     // membrane contacts: the combs' edge (4.5 mm) and centre, where the silicone pills should land
     for (b = buttons) at(b[2]) groove() { ring(0.4) circle(r = 2.26, $fn = 48); circle(d = 0.8, $fn = 16); }
@@ -33,14 +37,16 @@ module kit_board() difference() {
     for (c = ss_centres) at(c) groove() ring(0.4) rrect(ss_pad[0], ss_pad[1], 2);
     // each silicone pad's outline, where it goes (ESTIMATE in case.scad: pad2d)
     for (c = clusters) at(c) groove() ring(0.4) pad2d(c);
-    // J3: tape a real Hirose FH12-50S on this outline (mouth towards seat 1, pin 1 marked)
-    for (p = KIT_PARTS) if (p[0] == "J3") {
-      groove() translate([p[1], p[2]]) ring(0.4) square([p[3] - p[1], p[4] - p[2]]);
-      groove() translate([(p[1] + p[3]) / 2, p[2] - 1.6]) polygon([[-2, 1.2], [2, 1.2], [0, -0.6]]);   // mouth
-      groove() translate([p[1] + 1.5, p[4] + 1.2]) circle(d = 1.2, $fn = 16);                          // pin 1 end
+    // J3: tape a real Hirose FH12-50S on this outline (mouth towards seat 1, pin 1 marked), at its
+    // nominal place; the case keeps the range it may move over clear (ticks at its two ends)
+    let(y0 = -(panel_l / 2 - conn_in) - conn_front, y1 = -(panel_l / 2 - conn_in) + 2.0, x0 = fpc_x - j3_w / 2) {
+      groove() translate([x0, y0]) ring(0.4) square([j3_w, y1 - y0]);
+      groove() translate([fpc_x, y0 - 1.6]) polygon([[-2, 1.2], [2, 1.2], [0, -0.6]]);   // mouth
+      groove() translate([x0 + 1.5, y1 + 1.2]) circle(d = 1.2, $fn = 16);                 // pin 1 end
+      for (t = tip_range) groove() translate([x0 - 2.5, -(panel_l / 2 - conn_in_at(t)) - 0.2]) square([2, 0.4]);
     }
-    groove() translate([0, -31]) text("REF-A FIT MOCK", size = 3.2, halign = "center", valign = "center");
-    groove() translate([0, -35.5]) text("J3: tape a real FH12-50S here", size = 2.0, halign = "center", valign = "center");
+    groove() translate([0, -2]) text("REF-A FIT MOCK", size = 3.2, halign = "center", valign = "center");
+    groove() translate([0, 2.5]) text("J3: tape a real FH12-50S below", size = 2.0, halign = "center", valign = "center");
   }
 }
 
@@ -49,8 +55,8 @@ module kit_panel() difference() {                 // the panel at its thickest (
   translate([-panel_w / 2, -panel_l / 2, 0]) cube([panel_w, panel_l, panel_t]);
   translate([0, 0, panel_t - 0.3]) {
     translate([0, aa_off]) linear_extrude(1) ring(0.4) square([aa_w, aa_l], center = true);   // active area
-    translate([fpc_neck[0], -panel_l / 2 + 0.6]) linear_extrude(1) square([fpc_neck[1], 1.2], center = true);  // FPC neck (ESTIMATE)
-    translate([0, aa_off]) linear_extrude(1) text("PANEL DUMMY  seat 1 edge v", size = 3, halign = "center", valign = "center");
+    translate([fpc_x, -panel_l / 2 + 0.6]) linear_extrude(1) square([fpc_w, 1.2], center = true);   // where the FPC leaves
+    translate([0, aa_off]) linear_extrude(1) text("PANEL  seat 1 v", size = 3, halign = "center", valign = "center");
   }
 }
 
@@ -71,10 +77,9 @@ module kit_speaker() union() {                    // GSPK151035PN: 15 x 10 x 3.5
 }
 
 // ---------------- coupons: slices of the real case geometry, quick to print ----------------
-function hook_near(p) = hooks[search(min([for (h = hooks) norm([h[0], h[1]] - p)]),
-                                     [for (h = hooks) norm([h[0], h[1]] - p)])[0]];
-module snap_box(h) translate([h[0], h[1], -1]) rotate(h[2]) translate([-8, -14, 0]) cube([16, 28, case_h + 2]);
-module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the lid prints face down
+// the seam: the left wall round a crush rib, the tub's tongue and the top piece's skirt over it
+module seam_box() translate([-case_w / 2 - 1, crush_top[2][1] - 12, -1]) cube([12, 24, case_h + 2]);
+module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the top piece prints face down
 // the tub as it prints, floor down (it has no feet since 2026-10-20, so that's the tub itself)
 module tub_flat() tub();
 
@@ -85,10 +90,10 @@ module frame_box() let(w = panel_w + panel_fit + 2 * frame_wall + 8, l = panel_l
   translate([-w / 2, -l / 2, -1]) cube([w, l, case_h + 2]);
 
 // ---------------- tuning coupons: small, quick, one question each ----------------
-// tune_openings: the lid's button cuts, seen from the face, at the deck's real thickness (pocket
+// tune_openings: the deck's button cuts, seen from the face, at the deck's real thickness (pocket
 // floor to deck face). Top row: D-pad openings 0.1 under, at and 0.1 over dpad_gap past the cross. Bottom row: a
 // whole keyed A/B/X/Y cluster (tab slots and notch ribs) and three plain hole sizes round it. Printed
-// face down like the lid; the numbers are engraved in the face
+// face down like the deck; the numbers are engraved in the face
 tune_t = deck_face - retainer_bot;
 tune_holes = [for (o = [-0.4, -0.2, 0.2]) cap_hole_d + o];
 tune_gaps = [for (o = [-0.1, 0, 0.1]) dpad_gap + o];
@@ -104,8 +109,9 @@ module tune_openings() difference() {
     translate([-20, -29]) text("A B X Y keyed", size = 2.0, halign = "center", valign = "center");
   }
 }
-// tune_stack: one cluster's slice of the board and of the lid, the lid on four legs at its real
-// height over the board, so the silicone and caps sit as in the case. Print a lid at each dome_h
+// tune_stack: one cluster's slice of the board and of the deck (its kit names still say "lid"), the
+// deck slice on four legs at its real height over the board, so the silicone and caps sit as in the
+// case. Print one at each dome_h
 // (the silicone's height, ESTIMATE in case.scad) and keep the one where the caps stand right
 stack_half = 16;
 // Start/Select's stack is smaller and off-centre: it sits against the case's end, so its box and
@@ -117,15 +123,14 @@ module stack_box(c, ss = false) let(b = box_of(c, ss)) translate([b[0], b[1], -1
 module stack_legs(c, ss = false)
   for (p = ss ? [[-10.5, -4.3], [10.5, -4.3], [-10.5, 3.5], [10.5, 3.5]]   // 3.5: clear of seat 1's Y cap hole
               : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
-    // up into the deck (0.6 under its face), so a leg under one of the lid's reliefs still meets
-    // solid lid and doesn't hang over the relief when printed face down
+    // up into the deck (0.6 under its face), so a leg under one of the deck's reliefs still meets
+    // solid deck and doesn't hang over the relief when printed face down
     at(c + p, z_top_cu) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
-// It prints deck face down on the bed, as the inserts do, so it needs no supports: whatever of the
-// step or the spine rises above the deck face is left off (the caps' feel doesn't depend on it)
+// It prints deck face down on the bed, as the deck does, so it needs no supports: a slice of the deck
+// itself, its skirts and boss cut off at the walls' bottom so it stands on its legs
 module tune_stack_lid(c, ss = false) difference() {
-  // lid_whole: the deck as one with the step, whether or not the case splits it into inserts
   union() {
-    intersection() { lid_whole(); stack_box(c, ss); translate([-case_w, -case_l, -1]) cube([2 * case_w, 2 * case_l, deck_face + 1]); }
+    intersection() { deck(-1); stack_box(c, ss); translate([-case_w, -case_l, retainer_bot - 0.01]) cube([2 * case_w, 2 * case_l, case_h]); }
     stack_legs(c, ss);
   }
   at(c + (ss ? [0, 5.6] : [0, -stack_half + 1.8]), deck_face - engrave) linear_extrude(engrave + 0.01)
@@ -148,16 +153,16 @@ if (kit == "panel")        kit_panel();
 if (kit == "cell")         kit_cell();
 if (kit == "plug")         kit_plug();
 if (kit == "speaker")      kit_speaker();
-if (kit == "snap_tub")     intersection() { tub_flat(); snap_box(hook_near([case_w / 2, 0])); }
-if (kit == "snap_lid")     flip() intersection() { lid(); snap_box(hook_near([case_w / 2, 0])); }
+if (kit == "seam_tub")     intersection() { tub_flat(); seam_box(); }
+if (kit == "seam_top")     flip() intersection() { top(); seam_box(); }
 if (kit == "buttons_tub")  intersection() { tub_flat(); band_box(); }
 if (kit == "buttons_board") intersection() { kit_board(); band_box(); }
-if (kit == "buttons_lid")  flip() intersection() { lid(); band_box(); }
-// seat 1's deck insert, face down
-if (kit == "buttons_insert" && deck_inserts) flip_at(deck_face) deck_insert(-1);
+if (kit == "buttons_top")  flip() intersection() { top(); band_box(); }
+// seat 1's deck, face down
+if (kit == "buttons_deck") flip_at(deck_face) deck(-1);
 if (kit == "usb_tub")      intersection() { tub_flat(); usb_box(); }
-if (kit == "usb_lid")      flip() intersection() { lid(); usb_box(); }
-if (kit == "frame_lid")    flip() intersection() { lid(); frame_box(); }
+if (kit == "usb_top")      flip() intersection() { top(); usb_box(); }
+if (kit == "frame_top")    flip() intersection() { top(); frame_box(); }
 
 // ---------------- test plate (6_tests): questions for the shell's redesign ----------------
 // Overhangs: a ladder of fins, each a vertical wall then an underside sloping out test_reach at
@@ -199,37 +204,39 @@ module test_overhangs() {        // the round first, its ticked face at the ladd
 }
 // Screw holes: two of the tub's (a side boss beside the glass and an end boss), cut from the real
 // tub up to the board with the floor, ribs and wall round them, printed flat as the tub prints;
-// and one of the lid's bosses with its pilot hole, printed face down as the lid prints
+// and one of the top piece's bosses with its pilot hole, printed face down as the top piece prints
 module screws_box(s, r) translate([s[0] - r, s[1] - r, -1]) cube([2 * r, 2 * r, case_h + 2]);
 module coupon_screws_tub() for (i = [0, 1]) let(s = pins[[0, 4][i]]) translate([16 * i, 0, 0] - [s[0], s[1], 0])
   intersection() { tub_flat(); screws_box(s, 6); translate([-case_w, -case_l, -1]) cube([2 * case_w, 2 * case_l, z_board + 1]); }
-module coupon_screws_lid() translate(-[pins[0][0], -pins[0][1], 0]) flip() intersection() { lid(); screws_box(pins[0], 5); }
-// Clearance round a screw column (the deck insert's ring round the lid's 5.0 boss was too tight
-// at insert_gap 0.15): a boss_d column printed upright as the lid's bosses are, and a strip of
-// rings as the insert's (anchor_ring walls, the insert's height over the board), holes test_fits
-// a side over boss_d, printed with their deck on the bed as the insert is
+module coupon_screws_top() translate(-[pins[0][0], -pins[0][1], 0]) flip() intersection() { top(); screws_box(pins[0], 5); }
+// Clearance round a screw column (the old deck insert's ring round the lid's 5.0 boss was too tight
+// at 0.15 a side): a boss_d column printed upright as the top piece's bosses are, and a strip of
+// rings (test_ring_w walls, a deck's height over the board), holes test_fits a side over boss_d,
+// printed on their plate as a deck prints. Since 2026-10-21 no column passes through another printed
+// part (each deck has its own boss); the answer sets the clearance if one ever does again
 test_fits = [0.2, 0.3, 0.4, 0.5];
+test_ring_w = 1.2;                  // the rings' wall (the old inserts' anchor ring)
 test_ring_h = deck_face - z_top_cu;
 module test_column() difference() {
   union() {
-    translate([-6, -6, 0]) cube([12, 12, lid_t]);
-    cylinder(d = boss_d, h = lid_t + test_ring_h + 2, $fn = 96);
+    translate([-6, -6, 0]) cube([12, 12, top_t]);
+    cylinder(d = boss_d, h = top_t + test_ring_h + 2, $fn = 96);
   }
-  translate([0, -4.3, lid_t - engrave]) linear_extrude(engrave + 0.01) text(str(boss_d), size = 2.4, halign = "center", valign = "center");
+  translate([0, -4.3, top_t - engrave]) linear_extrude(engrave + 0.01) text(str(boss_d), size = 2.4, halign = "center", valign = "center");
 }
 module test_rings() difference() {
   union() {
-    translate([-6, -10, 0]) cube([11 * len(test_fits) + 1, 16, lid_t]);
+    translate([-6, -10, 0]) cube([11 * len(test_fits) + 1, 16, top_t]);
     for (i = [0:len(test_fits) - 1]) translate([11 * i, 0, 0])
-      cylinder(d = boss_d + 2 * test_fits[i] + 2 * anchor_ring, h = lid_t + test_ring_h, $fn = 96);
+      cylinder(d = boss_d + 2 * test_fits[i] + 2 * test_ring_w, h = top_t + test_ring_h, $fn = 96);
   }
   for (i = [0:len(test_fits) - 1]) translate([11 * i, 0, -1]) {
-    cylinder(d = boss_d + 2 * test_fits[i], h = lid_t + test_ring_h + 2, $fn = 96);
-    translate([0, -7.2, lid_t + 1 - engrave]) linear_extrude(engrave + 0.01) text(str(test_fits[i]), size = 2.4, halign = "center", valign = "center");
+    cylinder(d = boss_d + 2 * test_fits[i], h = top_t + test_ring_h + 2, $fn = 96);
+    translate([0, -7.2, top_t + 1 - engrave]) linear_extrude(engrave + 0.01) text(str(test_fits[i]), size = 2.4, halign = "center", valign = "center");
   }
 }
 if (kit == "test_overhangs")    test_overhangs();
 if (kit == "test_screws_tub")   coupon_screws_tub();
-if (kit == "test_screws_lid")   coupon_screws_lid();
+if (kit == "test_screws_top")   coupon_screws_top();
 if (kit == "test_column")       test_column();
 if (kit == "test_rings")        test_rings();

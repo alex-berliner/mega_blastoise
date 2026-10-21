@@ -179,7 +179,7 @@ def main():
             print(f"{name + '.3mf':24s} {grams:6.1f} g  {int(secs // 3600)} h {int(secs % 3600 // 60):02d} min  "
                   + ", ".join(o for o, _ in parts) + "".join(f"\n{'':24s} supports under {o}: {v:.0f} mm of extrusion"
                                                             for o, v in sup.items()))
-    for extra in ("lid.stl", "tub.stl", "insert.stl"):
+    for extra in ("top.stl", "deck.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not only:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     table = "\n".join(f"| `{n}.3mf` | {'under ' + ', '.join(s) if s else 'none'} | {g:.1f} g | "
