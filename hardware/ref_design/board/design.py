@@ -333,7 +333,8 @@ u4.update({"61": "VREG_AVDD", "63": "VREG_LX", "62": "GND", "81": "GND",
 part("U4", S, "MCU_RaspberryPi:RP2354B", "RP2354B", "battler:RP2350B_QFN80_RPi", u4,
      "C39843328", "RP2354B", "Raspberry Pi")
 P = "mcu_power.kicad_sch"                         # the RP2350B's supply: decoupling + 1V1 switcher
-for i in range(10):                              # IOVDD, ADC, VREG_VIN, OTP, QSPI decoupling
+for i in range(10):                              # IOVDD, ADC, OTP, QSPI decoupling (C10: the reference's
+    # flash cap, on the 3V3 feed by no U4 pin); the pin each serves: sch_sheets.mcu_power
     C(f"C{10 + i}", P, "100n", "+3V3", fp=C0402_RPI)
 for i in range(3):                               # DVDD
     C(f"C{20 + i}", P, "100n", "+1V1", fp=C0402_RPI)
