@@ -7,16 +7,17 @@ Each part's 3D model is exported on its own (kicad-cli pcb export stl
 the case allows at that spot:
 
   under the glass          top of part <= glass_limit above the board
-  side bezels, seat bands  <= bezel_limit (the lid's underside)
-  around the clusters      <= retainer_limit (the lid comes down to the cap flanges)
-  button decks             <= deck_limit (the ends step down so genuine caps stand proud)
-  lid's stiffening ribs    <= rib_limit (beside the screen, under the lid)
+  side bezels, spines      <= bezel_limit (the top piece's underside)
+  around the clusters      <= retainer_limit (the decks come down to the cap flanges)
+  button decks             <= deck_limit (the ends step down so genuine caps stand proud; the
+                              band under the top piece's step walls too)
   the board's back         <= back_limit (the board rests on ribs; the cell and speaker lie under it)
   under a silicone piece   nothing at all (the clusters and the Start/Select membranes)
-  lid pin bosses           nothing within the boss diameter
-  lid snap hooks           nothing taller than hook_clear under a hook
-  lid's panel frame        its band round the panel: <= frame limit (it hangs lower)
-  J2 pocket                the battery connector may reach into the lid pocket
+  screw bosses             nothing within the boss diameter (four on the top piece, one on each deck)
+  crush ribs               nothing within 1 mm of the board's edge at a rib
+  top's panel frame        its band round the panel: <= frame limit (it hangs lower)
+  J2 pocket                the battery connector may reach into the spine's pocket
+  folded FPC, J3's range   nothing but J3 under the panel's FPC, over the whole range J3 may move
   edge parts               the USB-C face reaches the wall
   through-hole leads       every lead poking out of the board's back lands where the floor's
                            ribs are cut away (rib_free), not on a rib
@@ -167,12 +168,10 @@ def main():
                 problems.append(f"{ref} is under a Start/Select membrane (seat {i + 1})")
         for s in POS["pins"]:
             if near_circle(box, s, POS["boss_d"] / 2 + 0.3):
-                problems.append(f"{ref} collides with the lid pin boss at {s}")
-        for (hx0, hy0), (hx1, hy1) in POS["hooks"]:
-            hr = [[min(hx0, hx1), min(hy0, hy1)], [max(hx0, hx1), max(hy0, hy1)]]
-            overlap = box[0] < hr[1][0] and box[2] > hr[0][0] and box[1] < hr[1][1] and box[3] > hr[0][1]
-            if overlap and top > POS["hook_clear"]:
-                problems.append(f"{ref} is under a lid snap hook ({top:.2f} mm; the hook leaves {POS['hook_clear']:.2f})")
+                problems.append(f"{ref} collides with the screw boss at {s}")
+        for c in POS["crush"]:
+            if near_circle(box, c, 1.0):
+                problems.append(f"{ref} is at a crush rib at {c}")
         pocket = POS["batt_conn"]
         in_pocket = abs((box[0] + box[2]) / 2 - pocket[0]) < POS["pocket"][0] / 2 and \
             abs((box[1] + box[3]) / 2 - pocket[1]) < POS["pocket"][1] / 2
@@ -185,16 +184,16 @@ def main():
             limit, where = min(limit, POS["retainer_limit"]), "retainer"
         if any(inside_rect(box, d) for d in POS["decks"]) and POS["deck_limit"] < limit:
             limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends
-        if any(inside_rect(box, r) for r in POS["lid_ribs"]) and POS["rib_limit"] < limit:
-            limit, where = POS["rib_limit"], "lid's stiffening rib"
-        frame = POS["frame"]                    # the lid's panel frame hangs lower than the rest of the lid
+        frame = POS["frame"]                    # the top's panel frame hangs lower than the rest of it
         if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit:
-            limit, where = frame["limit"], "lid's panel frame"
+            limit, where = frame["limit"], "top piece's panel frame"
         if top > limit + 1e-3:
             problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
         for zone in POS["fpc_zones"]:
             if inside_rect(box, zone, -0.2) and top > 0.3 and not ref.startswith("J3"):
                 problems.append(f"{ref} is under the display's folded FPC")
+        if ref.startswith("J3") and not within(box, POS["j3_zone"]):
+            problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
     for ref, x, y in tht_leads():
         if not any(min(a[0], b[0]) <= x <= max(a[0], b[0]) and min(a[1], b[1]) <= y <= max(a[1], b[1])
                    for a, b in POS["rib_free"]):

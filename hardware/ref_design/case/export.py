@@ -1,7 +1,7 @@
 """Regenerate everything derived from case.scad.
 
     python3 export.py          # positions.json, board.dxf
-    python3 export.py --stl    # also tub.stl, lid.stl and insert.stl, the deck insert (slow)
+    python3 export.py --stl    # also tub.stl, top.stl and deck.stl (print two decks), each in its print pose
 
 positions.json is what the board scripts read: button centres, screw holes,
 connector positions and height limits, all in KiCad coordinates. It comes from
@@ -40,12 +40,12 @@ def main():
     data = json.loads(m.group(1).replace('\\"', '"'))
     with open(os.path.join(HERE, "positions.json"), "w") as f:
         json.dump(data, f, indent=1)
-    print("positions.json:", len(data["buttons"]), "buttons,", len(data["pins"]), "locating pins")
+    print("positions.json:", len(data["buttons"]), "buttons,", len(data["pins"]), "screw holes")
     pool, renders = ThreadPoolExecutor(scad.jobs()), []    # the renders run at once, reported in order
     for part in ("board",):
         renders.append((f"{part}.dxf", pool.submit(openscad, os.path.join(HERE, f"{part}.dxf"), part)))
     if "--stl" in sys.argv:
-        for part in ("tub", "lid", "insert"):
+        for part in ("tub", "top", "deck"):
             renders.append((f"{part}.stl", pool.submit(openscad, os.path.join(HERE, f"{part}.stl"), part)))
     for name, render in renders:
         render.result()
