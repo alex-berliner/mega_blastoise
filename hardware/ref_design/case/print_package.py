@@ -10,7 +10,8 @@ where they sit on the plate, and the supports change. Orca's CLI can't load U1 p
 Orca writes them (one object file per part, mesh centred on its own height, placed by the
 build item) and the STLs ship beside them in case a project won't open.
 
-Supports are on only for a plate with a part that needs them, measured by overhangs.py.
+Supports are on only for the parts that need them, measured by overhangs.py: per object, not
+per plate (a plate's supports filled the tub's screw counterbores, 2026-10-21).
 print_package_p1s.py builds the same plates for a Bambu Lab P1S.
 
 Writes print/package_U1/ and print/mega_blastoise_print_U1.zip (build output, not in git).
@@ -45,6 +46,14 @@ SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_style":
            "support_interface_not_for_body": "0", "support_interface_top_layers": "2",
            "support_interface_spacing": "0.5", "support_top_z_distance": "0.2", "support_ironing": "0",
            "support_on_build_plate_only": "1", "bridge_no_support": "1", "enable_prime_tower": "0"}
+# Supports are per object, not per plate: with the plate's on, the slicer also put them in every
+# part's small cavities (the tub's six screw counterbores, 4.4 mm wide and 1.0 deep at the bed,
+# came out plugged: Alex's print, 2026-10-21). So the plate's are off (SUPPORT's other keys stay,
+# they only say what kind) and each part overhangs.py says needs them gets these. The 45 degree
+# threshold and keeping small overhangs are overhangs.py's own measure: at the slicers' defaults
+# (30 degrees, small ones dropped) Bambu Studio gave the board mock's USB-C stand-in nothing
+OBJECT_SUPPORT = {"enable_support": "1", "support_threshold_angle": "45", "support_remove_small_overhang": "0",
+                  "support_on_build_plate_only": "1", "bridge_no_support": "1"}
 
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts
 PLATES = {
@@ -68,8 +77,8 @@ PLATES = {
 }
 
 
-def support_plates():
-    """The plates with a part that needs supports (overhangs.py), and every part's verdict."""
+def support_parts():
+    """The STLs of the parts that need supports (overhangs.py), after printing every part's verdict."""
     import overhangs
     from concurrent.futures import ProcessPoolExecutor
     paths = sorted({p for parts in PLATES.values() for _, p in parts})
@@ -78,7 +87,7 @@ def support_plates():
     for p in paths:
         print(f"  {os.path.basename(p):38s} " + ("no supports" if not found[p] else
               "; ".join(f"{a:.1f} mm2: {why}" for a, z, xy, why in found[p])))
-    return {plate for plate, parts in PLATES.items() if any(found[p] for _, p in parts)}
+    return {p for p in paths if found[p]}
 
 
 V5_NAMES = {"tub_print": "tub_print.stl", "lid": "lid.stl", "board_mock": "board_mock.stl",
@@ -149,6 +158,7 @@ def mesh_xml(oid, uuid, m):
 
 
 def build(plate, parts, z, supported):
+    """One plate's project; supported: the STLs that get supports (support_parts)."""
     model = z.read("3D/3dmodel.model").decode()
     head = model[:model.index("<resources>")]
     some_part = next(n for n in z.namelist() if n.startswith("3D/Objects/"))
@@ -184,7 +194,9 @@ def build(plate, parts, z, supported):
         items.append(f'  <item objectid="{oid}" p:UUID="{oid:08x}-b1ec-4553-aec9-835e5b724bb4" '
                      f'transform="1 0 0 0 1 0 0 0 1 {x:.4f} {y:.4f} {size[2] / 2:.4f}" printable="1"/>')
         stl_name = V5_NAMES.get(name, name + ".stl")
-        settings.append(f'  <object id="{oid}">\n    <metadata key="name" value="{stl_name}"/>\n'
+        own = "".join(f'    <metadata key="{k}" value="{v}"/>\n' for k, v in OBJECT_SUPPORT.items()) \
+            if dict(parts)[name] in supported else ""
+        settings.append(f'  <object id="{oid}">\n    <metadata key="name" value="{stl_name}"/>\n{own}'
                         f'    <metadata key="extruder" value="{PLA}"/>\n    <part id="{mid}" subtype="normal_part">\n'
                         f'      <metadata key="name" value="{stl_name}"/>\n'
                         f'      <metadata key="matrix" value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/>\n'
@@ -219,10 +231,13 @@ def build(plate, parts, z, supported):
             data = z.read(n)
             if n == "Metadata/project_settings.config":
                 cfg = json.loads(data)
-                for k, v in (SUPPORT if plate in supported else dict(SUPPORT, enable_support="0")).items():
+                for k, v in dict(SUPPORT, enable_support="0").items():     # on per object instead
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                     cfg[k] = v
+                for k in OBJECT_SUPPORT:
+                    if k not in cfg:
+                        sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                 data = json.dumps(cfg, indent=4).encode()
             if n == "_rels/.rels":
                 data = re.sub(rb'\s*<Relationship Target="/Metadata/[^"]+\.png"[^>]*/>', b"", data)
@@ -251,15 +266,15 @@ def main():
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(os.path.join(OUT, "stl"))
     print("supports, measured part by part:")
-    supported = support_plates()
+    supported = support_parts()
     only = sys.argv[1:]                 # plate names to build (default: all)
     jobs = [(plate, parts, supported) for plate, parts in PLATES.items() if not only or plate in only]
     from concurrent.futures import ProcessPoolExecutor
     with ProcessPoolExecutor() as ex:   # the plates build at once, listed in order
         built = list(ex.map(build_plate, jobs))
     for (plate, parts, _), (path, sizes) in zip(jobs, built):
-        print(f"{os.path.basename(path):24s} {'supports' if plate in supported else 'no supports':12s} "
-              + ", ".join(n for n, _ in sizes))
+        print(f"{os.path.basename(path):24s} " + ", ".join(n + (" (supports)" if p in supported else "")
+                                                           for n, p in parts))
         for n, p in parts:
             shutil.copy(p, os.path.join(OUT, "stl", os.path.basename(p)))
     for extra in ("lid.stl", "tub.stl"):

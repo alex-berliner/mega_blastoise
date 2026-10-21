@@ -37,10 +37,11 @@ def _slice(mesh, z):
     polys = list(polygonize(lines))
     if not polys:
         return Polygon()
-    # nested loops: the even-odd rule (a hole inside a wall inside a hole...)
+    # nested loops: the even-odd rule (a hole inside a wall inside a hole...), on each face's
+    # outer loop (polygonize already gives a face its holes, and XOR with them would fill them)
     out = Polygon()
     for p in sorted(polys, key=lambda p: -p.area):
-        out = out.symmetric_difference(p)
+        out = out.symmetric_difference(Polygon(p.exterior))
     return out
 
 

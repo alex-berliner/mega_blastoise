@@ -12,7 +12,8 @@ project's printer and settings: Snapmaker U1, 0.20 mm Standard, textured PEI. PL
 toolhead 2: no PETG, no second toolhead, no prime tower. Open it, check the plate, slice.
 (`mega_blastoise_print_P1S.zip` has the same plates sliced for a Bambu Lab P1S.)
 
-Supports are on only for `1_case`, `4_fit_coupons` and `5_unit`, measured part by part (see below).
+Supports are per part, not per plate: only `board_mock`, `coupon_usb_board` and `speaker_dummy`
+get them (in `1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see below).
 <!-- /printer -->
 
 | Project | What's on it | Print it |
@@ -28,7 +29,11 @@ Supports are on only for `1_case`, `4_fit_coupons` and `5_unit`, measured part b
 The lid, the deck inserts and the tuning lid slices print face down as exported (the slices deck
 face down, legs up), everything else flat. `overhangs.py` checked every part for a downward face
 flatter than 45 degrees that the printer can't bridge (5 mm at most) or step out to (1 mm): only
-three parts have one, so only their plates get tree supports from the build plate:
+three parts have one, so only those parts get tree supports from the build plate (each part's own
+setting in the project; the plate's are off). Until 2026-10-21 the whole plate had them, and the
+slicer also filled the tub's six screw counterbores with support that fused into them: if you
+change a plate, keep supports on those parts only. The P1S kit checks its G-code for it
+(`case/support_check.py`):
 - `board_mock` (in `1_case` and `5_unit`) and `coupon_usb_board` (in `4_fit_coupons`): the USB-C stand-in's
   front stands 1.2 mm out past the board's edge, round-cornered underneath. Supported, so it
   doesn't droop: the opening's fit round it is what the coupon tests.
