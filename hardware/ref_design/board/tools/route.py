@@ -4,6 +4,8 @@
 
 --reuse imports tools/last_route.ses instead of routing again (valid while the
 placed board and the pre-routes are unchanged).
+--attempts=N routes N copies at once and keeps the first that DRC passes (default 3, or
+ROUTE_ATTEMPTS; 1 routes the board in place as before). See attempts().
 --finish takes the saved, routed board and only closes what is still open (stubs,
 the maze router with a wide search, plane repairs): the step after a full run that
 left a connection or two.
@@ -43,6 +45,8 @@ from build_pcb import core_xy, net_class  # noqa: E402
 from maze import Maze  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
+SCRATCH = BOARD_DIR       # DRC's scratch copy of the board: beside the project file (its rules)
+LOGS = HERE               # freerouting.log, last_route.dsn and last_route.ses
 JAR = os.environ.get("FREEROUTING_JAR", "")
 STUB_VIAS = []
 STUB_R = 3.3              # contact via distance from the contact centre
@@ -773,7 +777,8 @@ def dsn_for_router(text, contacts, fences, circles=()):
     return text[:j] + extra + "\n" + text[j:]
 
 
-SAVED_SES = os.path.join(HERE, "last_route.ses")
+def saved_ses():
+    return os.path.join(LOGS, "last_route.ses")
 
 
 def freerouting_19(args):
@@ -781,14 +786,23 @@ def freerouting_19(args):
     given carries wiring it can't tidy ("normalization of net ... failed") it waits on
     a warning dialog. Run it on a private Xvfb and click that dialog's OK."""
     import time
-    n = next(n for n in range(99, 200) if not os.path.exists(f"/tmp/.X{n}-lock")
-             and not os.path.exists(f"/tmp/.X11-unix/X{n}"))
-    xvfb = subprocess.Popen(["Xvfb", f":{n}", "-screen", "0", "1280x1024x24", "-nolisten", "tcp"],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    xvfb, n = None, 98
+    while xvfb is None:
+        # routes running at once can pick the same free display: the Xvfb that finds its lock
+        # taken exits, and that route tries the next one
+        n += 1
+        if n >= 200:
+            sys.exit("no free X display for Freerouting")
+        if os.path.exists(f"/tmp/.X{n}-lock") or os.path.exists(f"/tmp/.X11-unix/X{n}"):
+            continue
+        xvfb = subprocess.Popen(["Xvfb", f":{n}", "-screen", "0", "1280x1024x24", "-nolisten", "tcp"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(2)
+        if xvfb.poll() is not None:
+            xvfb = None
     env = dict(os.environ, DISPLAY=f":{n}")
     env.pop("XAUTHORITY", None)
     try:
-        time.sleep(2)
         # in the session's folder: it writes logs/ into its working directory
         java = subprocess.Popen(["java", "-jar", JAR, *args], env=env, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, text=True, cwd=os.path.dirname(args[1]))
@@ -827,7 +841,7 @@ def run_freerouting(board, passes, contacts):
             sys.exit("DSN export failed")
         text = dsn_for_router(open(dsn).read(), contacts, core_fences(), fiducial_keepouts(board))
         open(dsn, "w").write(text)
-        open(os.path.join(HERE, "last_route.dsn"), "w").write(text)
+        open(os.path.join(LOGS, "last_route.dsn"), "w").write(text)
         args = ["-de", dsn, "-do", ses, "-mp", str(passes)]
         print("routing:", " ".join(args), flush=True)
         if "1.9" in os.path.basename(JAR):
@@ -836,7 +850,7 @@ def run_freerouting(board, passes, contacts):
             r = subprocess.run(["java", "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false", *args],
                                capture_output=True, text=True, timeout=3 * 3600, cwd=tmp)
             log = r.stdout + r.stderr
-        open(os.path.join(HERE, "freerouting.log"), "a").write(log)
+        open(os.path.join(LOGS, "freerouting.log"), "a").write(log)
         if not os.path.exists(ses):
             sys.exit("Freerouting wrote no session; see tools/freerouting.log")
         session = open(ses).read()
@@ -846,13 +860,13 @@ def run_freerouting(board, passes, contacts):
 
 
 def freeroute(board, passes, contacts, reuse=False, again=2):
-    if reuse and os.path.exists(SAVED_SES):
+    if reuse and os.path.exists(saved_ses()):
         # same placed board + same pre-routes = the saved session still fits
-        print("reusing", SAVED_SES)
-        if not pcbnew.ImportSpecctraSES(board, SAVED_SES):
+        print("reusing", saved_ses())
+        if not pcbnew.ImportSpecctraSES(board, saved_ses()):
             sys.exit("SES import failed")
         return
-    open(os.path.join(HERE, "freerouting.log"), "w").close()
+    open(os.path.join(LOGS, "freerouting.log"), "w").close()
     session = run_freerouting(board, passes, contacts)
     # what it leaves open often goes through on a second run from its own result
     for _ in range(again):
@@ -861,7 +875,7 @@ def freeroute(board, passes, contacts, reuse=False, again=2):
             break
         print(f"Freerouting left {len(pairs)} open; running it again from its result", flush=True)
         session = run_freerouting(board, max(10, passes // 2), contacts)
-    open(SAVED_SES, "w").write(session)
+    open(saved_ses(), "w").write(session)
 
 
 def drop_unused_stub_vias(board, stub_vias):
@@ -910,15 +924,15 @@ def stitch(board, pitch=5.0):
 def drc_report(board):
     """Save a scratch copy next to the project (so its rules apply) and ask kicad-cli."""
     import json
-    scratch = os.path.join(BOARD_DIR, "_repair.kicad_pcb")
-    pro = os.path.join(BOARD_DIR, "_repair.kicad_pro")
+    scratch = os.path.join(SCRATCH, "_repair.kicad_pcb")
+    pro = os.path.join(SCRATCH, "_repair.kicad_pro")
     open(pro, "w").write(open(os.path.join(BOARD_DIR, "battler.kicad_pro")).read())
     pcbnew.SaveBoard(scratch, board)
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "d.json")
         subprocess.run(["kicad-cli", "pcb", "drc", "--format", "json", "-o", out, scratch], capture_output=True)
         d = json.load(open(out))
-    for f in (scratch, pro, os.path.join(BOARD_DIR, "_repair.kicad_prl")):
+    for f in (scratch, pro, os.path.join(SCRATCH, "_repair.kicad_prl")):
         if os.path.exists(f):
             os.remove(f)
     return d
@@ -975,32 +989,39 @@ def split_at_joins(board):
     repeats another. Returns (splits, duplicates dropped)."""
     tracks = [t for t in board.GetTracks() if not isinstance(t, pcbnew.PCB_VIA)]
     splits = 0
-    changed = True
-    while changed:
-        changed = False
-        ends = {}
-        for t in tracks:
-            for q in (xy(t.GetStart()), xy(t.GetEnd())):
-                ends.setdefault((t.GetNetname(), t.GetLayer()), []).append(q)
-        for t in list(tracks):
-            a, b = xy(t.GetStart()), xy(t.GetEnd())
-            for q in ends.get((t.GetNetname(), t.GetLayer()), []):
-                if seg_dist(q, a, b) < 0.001 and math.dist(q, a) > 0.001 and math.dist(q, b) > 0.001:
-                    u = pcbnew.PCB_TRACK(board)
-                    u.SetStart(V(*q))
-                    u.SetEnd(V(*b))
-                    u.SetWidth(t.GetWidth())
-                    u.SetLayer(t.GetLayer())
-                    u.SetNet(t.GetNet())
-                    u.SetLocked(t.IsLocked())
-                    board.Add(u)
-                    t.SetEnd(V(*q))
-                    tracks.append(u)
-                    splits += 1
-                    changed = True
-                    break
-            if changed:
-                break
+    # One pass, with the same splits in the same order as rescanning from the first track after
+    # each split: a split adds no new end point (q was one already, b stays as the new track's
+    # end), so the tracks before the split one stay clean. ends keeps each net and layer's
+    # points in the order a rescan would list them; end_at, where in it each track's end is.
+    ends, end_at = {}, {}
+    for t in tracks:
+        pts = ends.setdefault((t.GetNetname(), t.GetLayer()), [])
+        pts += [xy(t.GetStart()), xy(t.GetEnd())]
+        end_at[id(t)] = len(pts) - 1
+    i = 0
+    while i < len(tracks):
+        t = tracks[i]
+        a, b = xy(t.GetStart()), xy(t.GetEnd())
+        pts = ends.get((t.GetNetname(), t.GetLayer()), [])
+        q = next((q for q in pts if seg_dist(q, a, b) < 0.001 and math.dist(q, a) > 0.001
+                  and math.dist(q, b) > 0.001), None)
+        if q is None:
+            i += 1
+            continue
+        u = pcbnew.PCB_TRACK(board)
+        u.SetStart(V(*q))
+        u.SetEnd(V(*b))
+        u.SetWidth(t.GetWidth())
+        u.SetLayer(t.GetLayer())
+        u.SetNet(t.GetNet())
+        u.SetLocked(t.IsLocked())
+        board.Add(u)
+        t.SetEnd(V(*q))
+        tracks.append(u)
+        pts[end_at[id(t)]] = xy(t.GetEnd())
+        pts += [xy(u.GetStart()), xy(u.GetEnd())]
+        end_at[id(u)] = len(pts) - 1
+        splits += 1                     # (t again: what is left of it may need another split)
     seen, dropped = set(), 0
     for t in tracks:
         a, b = tuple(round(v, 4) for v in xy(t.GetStart())), tuple(round(v, 4) for v in xy(t.GetEnd()))
@@ -1200,15 +1221,110 @@ def finish():
     print("saved", PCB)
 
 
+def drc_counts(path):
+    """(errors, unconnected) by check_pcb.py's rules (its cosmetic silkscreen kinds don't count;
+    schematic parity is left out: routing doesn't change it)."""
+    import json
+    from check_pcb import COSMETIC
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "drc.json")
+        subprocess.run(["kicad-cli", "pcb", "drc", "--format", "json", "--severity-all", "-o", out, path],
+                       capture_output=True, cwd=tmp)
+        try:
+            d = json.load(open(out))
+        except (OSError, ValueError):
+            return None
+    errors = [v for v in d.get("violations", []) if v["severity"] == "error" and v["type"] not in COSMETIC]
+    return len(errors), len(d.get("unconnected_items", []))
+
+
+def attempts(passes, n, argv):
+    """Route n copies of the board at once and keep the first that comes out clean. Freerouting
+    1.9 has no seed: each connection it routes has a time limit, so runs differ with the
+    machine's load, and about one in six left something open. Each attempt is this script on
+    its own copy of the board (--board=), with its own Xvfb, logs and session; the first whose
+    DRC is clean wins and the rest are stopped. If none is, the one with the fewest problems is
+    kept and --finish closes what it can."""
+    import shutil
+    import signal
+    import time
+    work = tempfile.mkdtemp(prefix="route_")
+    procs, start = {}, time.time()
+    for k in range(1, n + 1):
+        d = os.path.join(work, f"attempt{k}")
+        os.makedirs(d)
+        for f in ("battler.kicad_pcb", "battler.kicad_pro"):       # the board in its project (its rules)
+            shutil.copy(os.path.join(BOARD_DIR, f), d)
+        log = open(os.path.join(d, "route.log"), "w")
+        procs[k] = subprocess.Popen([sys.executable, os.path.abspath(__file__), str(passes), *argv,
+                                     f"--board={os.path.join(d, 'battler.kicad_pcb')}"], cwd=d,
+                                    stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    print(f"routing {n} attempts at once ({work}; ROUTE_ATTEMPTS or --attempts= sets how many)", flush=True)
+    results, winner = {}, None
+    try:
+        while procs and winner is None:
+            time.sleep(2)
+            for k, p in sorted(procs.items()):
+                if p.poll() is None:
+                    continue
+                del procs[k]
+                d = os.path.join(work, f"attempt{k}")
+                results[k] = drc_counts(os.path.join(d, "battler.kicad_pcb")) if p.returncode == 0 else None
+                mins = (time.time() - start) / 60
+                if results[k] is None:
+                    print(f"  attempt {k}: route.py failed after {mins:.1f} min (exit {p.returncode}), "
+                          f"see {d}/route.log", flush=True)
+                    continue
+                print(f"  attempt {k}: {results[k][0]} DRC errors, {results[k][1]} unconnected after {mins:.1f} min",
+                      flush=True)
+                if results[k] == (0, 0):
+                    winner = k
+                    break
+    finally:
+        for p in procs.values():           # each attempt's own session: route.py, Freerouting, Xvfb
+            try:
+                os.killpg(p.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        for p in procs.values():
+            p.wait()
+    done = {k: v for k, v in results.items() if v is not None}
+    if winner is None:
+        if not done:
+            sys.exit(f"every attempt failed: see the logs in {work}")
+        winner = min(done, key=lambda k: (sum(done[k]), k))
+    d = os.path.join(work, f"attempt{winner}")
+    print(f"attempt {winner} kept; its output:")
+    print("    " + open(os.path.join(d, "route.log")).read().rstrip().replace("\n", "\n    "), flush=True)
+    shutil.copy(os.path.join(d, "battler.kicad_pcb"), PCB)
+    for f in ("last_route.ses", "last_route.dsn", "freerouting.log"):
+        if os.path.exists(os.path.join(d, f)):
+            shutil.copy(os.path.join(d, f), os.path.join(LOGS, f))
+    print("saved", PCB)
+    shutil.rmtree(work, ignore_errors=True)
+    if done[winner] != (0, 0):
+        print("no attempt came out clean: closing what is left open (as route.py --finish)", flush=True)
+        finish()
+
+
 def main():
+    global PCB, SCRATCH, LOGS
     if "--finish" in sys.argv:
         return finish()
     if not JAR:
         sys.exit("set FREEROUTING_JAR")
     if os.path.exists(os.path.join(BOARD_DIR, "~battler.kicad_pcb.lck")):
         sys.exit("the board is open in KiCad; close it first")
+    opts = dict(a[2:].split("=", 1) for a in sys.argv[1:] if a.startswith("--") and "=" in a)
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     passes = int(args[0]) if args else 40
+    if "board" in opts:                 # one of several attempts: a copy of the board in its own folder
+        PCB = opts["board"]
+        SCRATCH = LOGS = os.path.dirname(PCB)
+    else:
+        n = int(opts.get("attempts", os.environ.get("ROUTE_ATTEMPTS", "3")))
+        if n > 1 and "--reuse" not in sys.argv:
+            return attempts(passes, n, [a for a in sys.argv[1:] if a.startswith("--") and "=" not in a])
     board = pcbnew.LoadBoard(PCB)
     hide_bom_fields(board)
     planes(board)

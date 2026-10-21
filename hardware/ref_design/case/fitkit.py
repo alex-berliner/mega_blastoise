@@ -10,12 +10,13 @@ fitkit_parts.scad, then renders each kit part from fitkit.scad (which includes c
 import os
 import subprocess
 import sys
-import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "fitkit")
 sys.path.insert(0, HERE)
 import check_fit  # noqa: E402
+import scad  # noqa: E402  (tools/, on the path through check_fit)
 
 KIT = [  # (kit name, file, what it tests)
     ("board", "board_mock.stl", "board stand-in: outline, locating holes, part envelopes, contact and J3 marks"),
@@ -46,8 +47,7 @@ KIT = [  # (kit name, file, what it tests)
 def part_envelopes():
     """Every top-side part's box in case coordinates (x, y from the case centre, z above the board)."""
     parts = check_fit.refs()
-    with tempfile.TemporaryDirectory() as tmp:
-        boxes = {ref: check_fit.extent(ref, tmp)[1] for ref, *_ in parts}
+    boxes = check_fit.extents([ref for ref, *_ in parts])
     rows = []
     for ref, flipped, name, court in parts:
         b = boxes.get(ref)
@@ -72,16 +72,20 @@ def main():
             f'  ["{r[0]}", {r[1]:.3f}, {r[2]:.3f}, {r[3]:.3f}, {r[4]:.3f}, {r[5]:.3f}, {r[6]:.3f}]' for r in rows) + "\n];\n")
     print(f"{len(rows)} part envelopes")
     only = sys.argv[1:]                 # names to build (default: all)
-    for kit, name, what, *defs in KIT:
-        if only and not any(o in name for o in only):
-            continue
-        out = os.path.join(OUT, name)
-        extra = [a for k, v in (defs[0] if defs else {}).items() for a in ("-D", f"{k}={v}")]
-        r = subprocess.run(["openscad", "-o", out, "-D", 'part="kit"', "-D", f'kit="{kit}"', *extra,
-                            os.path.join(HERE, "fitkit.scad")], capture_output=True, text=True)
-        if r.returncode or not os.path.exists(out) or "ERROR" in r.stderr or "WARNING: Assert" in r.stderr:
-            sys.exit(f"openscad failed for {kit}:\n{r.stderr[-2000:]}")
-        print(f"  {name:28s} {os.path.getsize(out) // 1024:5d} kB  {what}")
+    todo = [k for k in KIT if not only or any(o in k[1] for o in only)]
+    with ThreadPoolExecutor(scad.jobs()) as pool:      # the renders run at once, listed in KIT's order
+        for line in pool.map(lambda k: render(*k), todo):
+            print(line)
+
+
+def render(kit, name, what, *defs):
+    out = os.path.join(OUT, name)
+    extra = [a for k, v in (defs[0] if defs else {}).items() for a in ("-D", f"{k}={v}")]
+    r = subprocess.run([*scad.cmd(), "-o", out, "-D", 'part="kit"', "-D", f'kit="{kit}"', *extra,
+                        os.path.join(HERE, "fitkit.scad")], capture_output=True, text=True)
+    if r.returncode or not os.path.exists(out) or "ERROR" in r.stderr or "WARNING: Assert" in r.stderr:
+        sys.exit(f"openscad failed for {kit}:\n{r.stderr[-2000:]}")
+    return f"  {name:28s} {os.path.getsize(out) // 1024:5d} kB  {what}"
 
 
 if __name__ == "__main__":
