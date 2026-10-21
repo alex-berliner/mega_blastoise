@@ -55,11 +55,11 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
 `python3 case/print_package_p1s.py`).
 
 **Buttons (`2_buttons_quick`):**
-- D-pad in each of the three `tune_openings` crosses (gaps 0.6, 0.8, 1.0 mm, engraved): pick the
-  tightest it moves freely in. Now `dpad_gap` = 0.8 (0.5 was too tight in the first print).
+- D-pad in each of the three `tune_openings` crosses (gaps 0.55, 0.65, 0.75 mm, engraved): pick the
+  tightest it moves freely in. Now `dpad_gap` = 0.65 (0.5 was too tight in the first print, 0.8 too loose in the next).
 - A, B, X, Y into the keyed cluster from the back: tab into its slot, each notch onto its rib, and
   no cap fits another cap's hole. A rib fighting a cap: note the angle, fix `abxy_notches` (or
-  `notch_keys = false`). The keyed holes are 8.0 (`cap_hole_d`, Alex's DS Lite faceplate's, 2026-10-21);
+  `notch_keys = false`). The keyed holes are 8.0 (`cap_hole_d`, Alex's DS Lite faceplate's; 7.6 was too tight, 2026-10-21);
   the plain holes (7.6, 7.8, 8.2) say whether it can be tighter or must be looser.
 - Each stack: silicone on the board slice, caps in the lid slice, lid on its four legs. The cap
   should stand about 1.4 mm above the deck (1.41, the faceplate's 1.6 mm lip), press cleanly and spring back. If the 1.75 mm lid is

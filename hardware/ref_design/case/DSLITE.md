@@ -51,7 +51,7 @@ its hole with its tab in the slot. Since 2026-10-19 (Alex's caps have notches; t
 |---|---|---|
 | Cross | 17.5-17.8 x 5.8-5.9 arms, 3.34 tall | `dpad_arm_l` 17.8, `dpad_arm_w` 5.9, `dpad_h` |
 | Flange | fills the corners between the arms to about r 6.5, 0.6 thick | `dpad_flange_r` |
-| Lid opening | 18.2 x 6.2 (Pi Tin), 18.80 x 6.90 (faceplate) | the cross plus `dpad_gap` 0.8 all round (tuned on a print) |
+| Lid opening | 18.2 x 6.2 (Pi Tin), 18.80 x 6.90 (faceplate) | the cross plus `dpad_gap` 0.65 all round (0.5 too tight and 0.8 too loose on prints) |
 | Contact pitch | 14.0 | `dpad_pitch` |
 
 No rotational keying beyond the cross was found; the pivot is a nub on the cap or a boss in
@@ -74,7 +74,7 @@ A/B/X/Y (centres X -248.241, 80.643; Y -255.807, 73.077; B -248.241, 65.511; A -
 | Opposite holes apart | 15.13 | `abxy_pitch` | 15.0 | 15.0 (the board is routed; the faceplate's features are centred on our switches) |
 | Hole at the face | 9.17 | `cap_hole_d` + 2 `cap_chamfer` | 7.6, no chamfer | 9.2 |
 | Chamfer | 45 degrees, 0.6 deep | `cap_chamfer` | none | 0.6 |
-| Hole below it | 8.00, straight from 0.6 to 1.6 | `cap_hole_d` | 7.6 | 8.0 (looser than the 7.6 under test) |
+| Hole below it | 8.00, straight from 0.6 to 1.6 | `cap_hole_d` | 7.6 | 8.0 (7.6 was too tight on a print) |
 | Lip (face to the flange's top) | 1.60 | `lip_t` (sets `cap_proud`) | 1.16 | 1.6 |
 | Flange pocket | 9.18, from 1.6 to 3.2 | `pocket_d` | 9.2 | 9.2 (FDM, kept) |
 | Flat in each pocket | 4.32 from the hole's centre, facing the cluster's centre (the centre frame's side) | none | none | none: our cap model has no flat (see the notes) |
@@ -85,7 +85,7 @@ A/B/X/Y (centres X -248.241, 80.643; Y -255.807, 73.077; B -248.241, 65.511; A -
 | Between the lobes | straight runs tangent to the lobes, 1.0 fillets where they meet; waist 8.23 from the centre (16.46 notch to notch), 1.0 thick there | `abxy_clover2d`, `abxy_fillet` | the circles only | the faceplate's runs and fillets, trimmed `rim_clear` inside the pad's rim |
 | Across the lobes | 26.18 | from `abxy_ring` | 25.5 | 25.5 |
 | Wall's bottom | 3.2 (1.8 below the plate, as Alex's shell's 1.8) | `sil_rib_gap` | 0.8 over the board | 0.8 (0.15 over the web; the faceplate's 0.65 stands on it) |
-| Centre square pocket | 5.10 inside, 0.70 wall, roof at 1.6 (2.25 over the board) | `abxy_square` | 5.15, 0.65, 2.1 | 5.15, 0.7, 2.25 |
+| Centre square pocket | 5.10 inside, 0.70 wall, roof at 1.6 (2.25 over the board, the lip's level) | `abxy_square` | 5.15, 0.65, 2.1 | 5.15, 0.7, at the flanges' lip (2.30) |
 | Tab gaps | between the pockets, round pinwheel ears on the centre frame's corners; a 2.4 wide slot at X 38, A 128, B 218, Y 308 (52 degrees from each flat) | `abxy_tabs`, `slot_a`, `slot_off` | 45/135/225/315, a 30 degree wedge | the same tabs, a 35 degree wedge 2.5 degrees towards the faceplate's: it takes either |
 | Notch ribs | none | `abxy_notches`, `notch_keys` | ribs | ribs (Alex's caps have the notches, 2026-10-19) |
 
@@ -93,9 +93,9 @@ D-pad (centre -350.75, 70.461):
 
 | Feature | Faceplate | case.scad | Old | New |
 |---|---|---|---|---|
-| Opening at the face | 20.38 tip to tip, arms 8.48 wide | the opening + 2 `dpad_chamfer` | 19.4 x 7.5, no chamfer | 21.0 x 9.1 |
+| Opening at the face | 20.38 tip to tip, arms 8.48 wide | the opening + 2 `dpad_chamfer` | 19.4 x 7.5, no chamfer | 20.7 x 8.8 |
 | Chamfer | 45 degrees, 0.8 deep | `dpad_chamfer` | none | 0.8 |
-| Opening below it | 18.80 x 6.90 (0.5 round a 17.8 x 5.9 cross); inside corners sharp, tip corners r 0.42 | `dpad_gap` | 0.8 | 0.8 (0.5 was too tight on a print) |
+| Opening below it | 18.80 x 6.90 (0.5 round a 17.8 x 5.9 cross); inside corners sharp, tip corners r 0.42 | `dpad_gap` | 0.8 | 0.65 (0.5 too tight on the first print, 0.8 too loose on the next) |
 | Lip at the corners | 1.20 (0.4 under the A/B/X/Y lip) | `dpad_lift` | 0.35 | 0.35 (both put the flange 2.10 over the board) |
 | Flange's corner pockets | r 6.75 round the centre, from 1.2 to 3.2 | `dpad_flange_r` + `dpad_pocket_gap` | 7.0 | 7.0 (0.35 bound on a print) |
 | Along the arms | the opening's walls run on to 2.0 deep; inside the wall the ceiling is 2.0 (1.85 over the board) | the rim relief | 1.95 over the board | 1.95 |

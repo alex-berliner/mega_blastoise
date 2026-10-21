@@ -115,8 +115,8 @@ Buttons (from Alex's pad measurements, 2026-10-20; check_buttons fails on these 
       holes, 0.6 chamfer; D-pad 0.8 chamfer; Start/Select 3.8 holes, 0.6 chamfer), its 1.6 lip (caps
       1.41 proud, decks 3.90 over the board, a 1.9 step), its wall shapes (the A/B/X/Y clover's runs
       and fillets, a D-pad wall inside the rim, one Start/Select frame round two cells, a flange
-      pocket over each), its centre-square roof, and its Start/Select lift. Kept over it: `dpad_gap`
-      0.8 (faceplate 0.5), `dpad_pocket_gap` 0.5 (0.25), `pocket_d` 9.2 (9.18), `dpad_lift` 0.35
+      pocket over each), its centre-square roof, and its Start/Select lift. `dpad_gap` 0.65 (faceplate 0.5,
+      too tight on the first print; 0.8 too loose on the next). Kept over it: `dpad_pocket_gap` 0.5 (0.25), `pocket_d` 9.2 (9.18), `dpad_lift` 0.35
       (0.4), `dome_h` 1.75 (1.70), the walls 0.15 over the web, the deck's thickness, the notch ribs
       and the board's pitches (15.0, 14.0, 7.5 against its 15.13, 7.85)
 - [ ] Faceplate questions for Alex: (1) the D-pad pad's shape along an arm (the faceplate's wall
@@ -124,7 +124,7 @@ Buttons (from Alex's pad measurements, 2026-10-20; check_buttons fails on these 
       across one lobe 5 mm in from the tip settles it; (2) do the A/B/X/Y flanges have a flat, and is
       the tab 45 or 52 degrees from it (the faceplate's slots are at 52; the lid's wedge takes both);
       (3) the Start/Select caps' body and flange (now estimates from the faceplate's 3.8 hole and 5.35
-      pocket); (4) try the 8.0 holes in `tune_openings` (7.6 was the old size; 7.6, 7.8 and 8.2 round it)
+      pocket); (4) try the 8.0 holes and the 0.65 D-pad opening in `tune_openings` (7.6/7.8/8.2 and 0.55/0.65/0.75)
 
 Housekeeping:
 - [ ] Delete branch ref-design-j2-hole: its commit went in as 4241580 by cherry-pick, so `git branch -d` refuses

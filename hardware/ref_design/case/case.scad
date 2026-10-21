@@ -87,8 +87,9 @@ cap_hole_d = 8.0;  pocket_d = 9.2;                      // lid: hole (the facepl
 cap_chamfer = 0.6;                                      // 45 degree chamfer round each hole at the face (faceplate)
 lip_t = 1.6;                                            // the face down to the A/B/X/Y flanges' tops (faceplate 1.60;
                                                         // Pi Tin 1.65; was 1.16)
-dpad_gap = 0.8;           // D-pad opening past the cross each side: the faceplate's 18.80 x 6.90 opening is 0.5, and
-                          // 0.5 was too tight for Alex's AliExpress D-pad in the first print (tune: tune_openings)
+dpad_gap = 0.65;          // D-pad opening past the cross each side: 0.5 (the faceplate's 18.80 x 6.90 opening) was
+                          // too tight for Alex's AliExpress D-pad in the first print, 0.8 too loose in the next
+                          // (Alex, 2026-10-21), so halfway (tune: tune_openings, 0.55 / 0.65 / 0.75)
 dpad_chamfer = 0.8;       // 45 degree chamfer round the D-pad's opening (faceplate)
 dpad_pocket_gap = 0.5;    // its flange's pocket past the flange (0.35 bound with the cross; the faceplate's is 0.25)
 dpad_lift = 0.35;         // raises (or, negative, lowers) the D-pad's retaining lip against the A/B/X/Y lips: the
@@ -175,8 +176,8 @@ abxy_ring = 5.25;                                       // the A/B/X/Y clover's 
                                                         // shell's clover is 10.45 across a lobe, inside his pad's
                                                         // rim (the faceplate's 5.525 would sit on it)
 abxy_fillet = 1.0;                                      // the clover's fillets between the lobes (faceplate)
-abxy_square = [5.15, 0.7, 2.25];                        // centre square's pocket: inside, wall, roof over the board
-                                                        // (faceplate: 5.10, 0.70, at the lip: 2.25)
+abxy_square = [5.15, 0.7, dome_h + flange_t];          // centre square's pocket: inside, wall, roof over the board
+                                                        // (faceplate: 5.10, 0.70, at the flanges' lip: 2.25)
 dpad_wall = [4.8, 6.8, 0.65];                           // D-pad wall, a lobe per arm: outer radius, its centre out
                                                         // from the cross's, thickness (faceplate 4.8, 6.8, 0.625),
                                                         // trimmed to stay inside the pad's rim
@@ -412,7 +413,7 @@ assert(dpad_wall[2] >= 0.6, "the D-pad's wall is too thin to print");
 assert(dpad_wall[1] + dpad_wall[0] - dpad_wall[2] >= dpad_arm_l / 2 + dpad_gap + 0.5, "the D-pad's wall is in its opening");
 assert(z_top_cu + sil_rim[1] + rim_relief <= deck_face - 1.2, "the deck over the pads' rims is too thin");
 assert(dpad_peg_d <= dpad_hole_d - 0.2 + 1e-6, "the D-pad's peg doesn't pass through its pad's hole");
-assert(abxy_square[0] >= abxy_boss[0] + 0.1 && abxy_square[2] >= abxy_boss[1] + 0.05 && abxy_square[2] <= retainer_z - z_top_cu,
+assert(abxy_square[0] >= abxy_boss[0] + 0.1 && abxy_square[2] >= abxy_boss[1] + 0.05 && abxy_square[2] <= retainer_z - z_top_cu + 1e-6,
        "the A/B/X/Y pad's centre square doesn't fit its pocket");
 assert(dpad_peg_gap >= 0, "the D-pad's peg holds its flange off the lip");
 assert(z_deck_lid > retainer_bot + 0.5, "button deck lower than the retainers");
