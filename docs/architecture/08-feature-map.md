@@ -119,7 +119,8 @@ runtime owns it.  Use it when deciding where new code belongs.
 
 ## mega_blastoise_fw  (RP2350, Embassy, `no_std`)
 
-The stripboard v2 board: Pico 2, one ST7796 320x480 panel, 16 direct buttons.
+The stripboard v2 board: Pico 2, one ST7796 320x480 panel (the 240x320 UI
+centred on it), 16 direct buttons.
 Default features `rp2350` + `board_v2`; default target `thumbv8m.main-none-eabihf`.
 
 | File | Feature |
@@ -149,7 +150,7 @@ Default features `rp2350` + `board_v2`; default target `thumbv8m.main-none-eabih
 
 The same `DeviceRunner` in a browser page (`www/device.html`, `device.js`).
 `src/lib.rs` is raw IO only: a `DevicePort` impl (JS clock, timeouts, console
-log, entropy, the 320x480 pixel cache the page polls) and exports that turn
+log, entropy, the 240x320 pixel cache the page polls) and exports that turn
 pointer/keyboard input into `DeviceEvent`s (`nav_dpad`, `nav_a`, `nav_a_hold`,
 `nav_b`, `nav_info`, `nav_menu`, `panel_tap`, `submit_text`, plus `press_move`,
 `press_switch`, `nav_cancel` and `screen_state` for the headless probe).

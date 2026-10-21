@@ -10,7 +10,7 @@ A plain `cargo build` in the crate builds it (default features `rp2350`,
 [`main.rs`](../../crates/mega_blastoise_fw/src/main.rs) does the following:
 
 1. Initialize the RP2350 peripherals via `embassy_rp::init`.
-2. Initialize the heap (`mem_profile::init_heap`, 384 KB: one 320x480 frame in flight).
+2. Initialize the heap (`mem_profile::init_heap`, 256 KB: one 240x320 frame in flight).
 3. Configure the RTT/defmt channel.
 4. Spawn the ST7796 display task, the button task, the sprite-bob pulse task,
    the USB CDC console and the battery task.

@@ -193,6 +193,7 @@ The decisions that shape the project, newest last. Each links to where it is arg
 | 2026-10-09 | Cell under the board, on the [tub](#g-tub-lid) floor | Alex's call. The alternative, thinner at the ends, put the cell over the [MCU](#g-mcu) core, which the [validation plan](#g-validation-plan) flagged for heat; it stays on branch `ref-design-cell-on-board` | PLAN.md |
 | 2026-10-19 | Start and Select per seat; seat 1's Start is the power button | Matches the DS Lite layout; no game button doubles as power | PLAN.md |
 | 2026-10-20 | Speaker on a plug-in [header](#g-header), playing out of the side wall | A floor grille faces the table; no soldering at assembly | PLAN.md |
+| 2026-10-21 | The UI goes back to native 240x320, two 240x160 [halves](#g-half) | The handheld moves to the cheaper 2.4 in EastRising ER-TFT024IPS-3 (ST7789V, 240x320 IPS); stripboard v2 shows the frame centred on its 320x480 glass. The 320x480 layout stays one build switch away (`panel-320x480` on core, the firmware and the web crate) | [device_view.rs](crates/mega_blastoise_core/src/device_view.rs) |
 
 ## 5. Software architecture
 
@@ -286,7 +287,7 @@ Which core module owns what:
 | [`device_session.rs`](crates/mega_blastoise_core/src/device_session.rs) | Outside a turn: which menu owns which [half](#g-half), shared options, each seat's cursor and overlays, what a press means in each state |
 | [`device_runner.rs`](crates/mega_blastoise_core/src/device_runner.rs) | The game loop ([attract](#g-attract-demo), lobby, ready sequence, battle, recap) and the [`DevicePort`](#g-devicerunner) [trait](#g-trait) a platform implements |
 | [`cursor_nav.rs`](crates/mega_blastoise_core/src/cursor_nav.rs), [`menu.rs`](crates/mega_blastoise_core/src/menu.rs), [`battle_log.rs`](crates/mega_blastoise_core/src/battle_log.rs) | D-pad cursor, Gen picker and options, the scrollable log |
-| [`display_color.rs`](crates/mega_blastoise_core/src/display_color.rs), [`device_view.rs`](crates/mega_blastoise_core/src/device_view.rs), [`device_ui.rs`](crates/mega_blastoise_core/src/device_ui.rs), `move_anim.rs` | Rendering one half, composing two halves (far one rotated) into the 320x480 frame, the shared battle band and attack effects |
+| [`display_color.rs`](crates/mega_blastoise_core/src/display_color.rs), [`device_view.rs`](crates/mega_blastoise_core/src/device_view.rs), [`device_ui.rs`](crates/mega_blastoise_core/src/device_ui.rs), `move_anim.rs` | Rendering one half, composing two halves (far one rotated) into the 240x320 frame, the shared battle band and attack effects |
 | [`cli_parse.rs`](crates/mega_blastoise_core/src/cli_parse.rs) | The console grammar, shared by the USB console and the web console |
 
 ### 5.4 How a turn flows
@@ -295,8 +296,8 @@ Which core module owns what:
    switch-in, status and so on) and turns the engine's request into a prompt.
 2. `OledController` decides each seat's screen from those events; `DeviceRunner` paces narration.
 3. The renderer draws each half from the `Screen` plus per-seat context (foe [HUD](#g-hud), cursor) and
-   composes the 320x480 frame. The platform's `present` hook only moves pixels: the firmware
-   sends the [16x16 tiles](#g-dirty-tiles) that changed; the web page [blits](#g-blit) the frame to a canvas.
+   composes the 240x320 frame. The platform's `present` hook only moves pixels: the firmware
+   sends the [16x16 tiles](#g-dirty-tiles) that changed (centred on the stripboard's 320x480 panel); the web page [blits](#g-blit) the frame to a canvas.
 4. A press comes in from the platform as a classified [`DeviceEvent`](#g-deviceevent). [`DeviceSession`](#g-devicesession) and
    `CursorNav` turn it into a pad event; `ChoiceCollector` validates it and, once both seats are
    ready and the grace window has passed, hands the engine its command strings.
