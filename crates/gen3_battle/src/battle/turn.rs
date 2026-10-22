@@ -287,6 +287,46 @@ impl Battle {
             self.replace_fainted(&mut events);
         }
 
+        self.finish_turn(TurnRest::DeferredSwitches, *script, &mut events);
+        events
+    }
+
+    /// The rest of a turn, from `rest` on. A replacement the player has to
+    /// choose STOPS it there: in this era the sim checks for faints at every
+    /// action boundary (`checkFainted` when the next action is a move or the
+    /// residual) and asks for the switch on the spot, and `commitChoices`
+    /// queues the answer AHEAD of what was left of the turn. So the turn is
+    /// parked, `send_out` picks it back up, and the pick is on the field for
+    /// the residual phase exactly as the lowest-slot default's is.
+    pub(super) fn finish_turn(
+        &mut self,
+        mut rest: TurnRest,
+        script: TurnScript,
+        events: &mut Vec<Event>,
+    ) {
+        loop {
+            if self.awaiting_replacement.iter().any(|&w| w) {
+                self.parked_turn = Some((rest, script));
+                return;
+            }
+            match rest {
+                TurnRest::DeferredSwitches => {
+                    self.deferred_switches(events);
+                    rest = TurnRest::Residual;
+                }
+                TurnRest::Residual => {
+                    self.residual_phase(&script, events);
+                    rest = TurnRest::Tidy;
+                }
+                TurnRest::Tidy => {
+                    self.tidy_turn(events);
+                    return;
+                }
+            }
+        }
+    }
+
+    fn deferred_switches(&mut self, events: &mut Vec<Event>) {
         // The switch a Pursuit KO pushed back takes its turn now, once the
         // moves are done and BEFORE the residuals — the sim re-queues it at
         // priority -101, so the mon it brings in is on the field to take its
@@ -303,12 +343,15 @@ impl Battle {
                         side: side as u8 + 1,
                         party_index: idx,
                     });
-                    self.switch_in_greet(side, &mut events);
+                    self.switch_in_greet(side, events);
                 }
             }
         }
-        self.replace_fainted(&mut events);
+        self.replace_fainted(events);
+    }
 
+    fn residual_phase(&mut self, script: &TurnScript, events: &mut Vec<Event>) {
+        let scripted = script.seats.iter().any(|s| s.is_some());
         // The whole end-of-turn phase is skipped once the battle is decided
         // — but a wipe DURING the phase does not cut it short (the sim
         // finishes both weather chips even when the first one ends it).
@@ -331,7 +374,7 @@ impl Battle {
                         // Gen 5 moved it to the wisher; this era did not.
                         let want = self.sides[side].mon().max_hp / 2;
                         if !self.sides[side].mon().fainted() {
-                            self.heal(side, want, &mut events);
+                            self.heal(side, want, events);
                         }
                     }
                 }
@@ -385,7 +428,7 @@ impl Battle {
                         side: side as u8 + 1,
                         amount,
                     });
-                    self.announce_faint(side, &mut events);
+                    self.announce_faint(side, events);
                 }
             }
 
@@ -500,7 +543,7 @@ impl Battle {
                 if b == WISH_MARK {
                     continue;
                 }
-                self.residual_bucket(b, s, scripted, &mut events);
+                self.residual_bucket(b, s, scripted, events);
             }
 
             // The White Herb's own residual, at order 29 — after every tick
@@ -591,9 +634,9 @@ impl Battle {
                                     if self.sides[side].mon().raging
                                         && !self.sides[side].mon().fainted()
                                     {
-                                        self.boost(side, Boost::Atk, 1, &mut events);
+                                        self.boost(side, Boost::Atk, 1, events);
                                     }
-                                    self.announce_faint(side, &mut events);
+                                    self.announce_faint(side, events);
                                 }
                             }
                         }
@@ -633,7 +676,7 @@ impl Battle {
                     });
                     if n == 0 {
                         self.sides[side].mon_mut().hp = 0;
-                        self.announce_faint(side, &mut events);
+                        self.announce_faint(side, events);
                     }
                 }
             }
@@ -700,8 +743,10 @@ impl Battle {
         // The residual phase is one action as far as the queue is concerned:
         // whoever it knocked out is replaced when it finishes, not between
         // its individual ticks.
-        self.replace_fainted(&mut events);
+        self.replace_fainted(events);
+    }
 
+    fn tidy_turn(&mut self, events: &mut Vec<Event>) {
         // `nextTurn` walks each mon's attacked-by book and SPLICES OUT every
         // entry whose attacker is no longer on the field. It is a destructive
         // purge, not a filter applied at read time, so a mon that hit you and
@@ -769,7 +814,6 @@ impl Battle {
         if let Some(win) = self.winner() {
             events.push(Event::Win { side: win });
         }
-        events
     }
 
     pub(super) fn first_mover(&mut self, choices: &[Choice; 2], scripted: bool) -> usize {

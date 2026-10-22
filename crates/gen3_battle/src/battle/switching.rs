@@ -472,13 +472,6 @@ impl Battle {
             out.recharge_fresh = false;
     }
 
-    /// Send in replacements for whoever is down. The sim asks for these only
-    /// AFTER the residual phase (`fieldEvent("Residual")`, then
-    /// `checkFainted`), so a mon that faints mid-turn stays in its slot for
-    /// the rest of the turn: the other side's move finds no target, and the
-    /// residuals tick against an empty slot rather than against the
-    /// replacement. The loop repeats because Spikes can drop the incoming
-    /// mon too, and the sim just asks again.
     /// Which sides are waiting for the player to send something out, and the
     /// party slots they may legally choose. Empty when nobody is waiting.
     pub fn pending_replacements(&self) -> [Option<Vec<usize>>; 2] {
@@ -531,6 +524,11 @@ impl Battle {
         // An arrival can faint on the way in (Spikes), which asks the same
         // question again. Let the normal path notice it.
         self.replace_fainted(events);
+        // Then the rest of the turn the faint interrupted, unless that same
+        // question is still open (it parks again if so).
+        if let Some((rest, script)) = self.parked_turn.take() {
+            self.finish_turn(rest, script, events);
+        }
     }
 
     pub(super) fn replace_fainted(&mut self, events: &mut Vec<Event>) {
@@ -567,7 +565,8 @@ impl Battle {
                 // suites see no change. A caller that wants the player asked
                 // sets `player_picks_replacement` and answers through
                 // `send_out`; until it does, the fainted mon simply stays on
-                // the field, which is where the sim leaves it too.
+                // the field, which is where the sim leaves it too, and the
+                // rest of the turn waits (`finish_turn` parks it).
                 if self.player_picks_replacement {
                     if self.sides[side].first_healthy().is_some() {
                         self.awaiting_replacement[side] = true;

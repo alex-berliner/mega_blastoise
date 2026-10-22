@@ -193,11 +193,11 @@ fn fuzz_n() -> usize {
 ///
 /// `FUZZ_WIDE=2` is the same stream with Gen 3's drawn replacements switched
 /// on as well. They go through `player_picks_replacement` and `send_out`,
-/// which can only answer once `step_with` has finished the turn, residuals
-/// and all; the sim asks mid-turn in this era, so a replacement there takes
-/// a poison or burn tick that ours does not. That is a finding about the
-/// engine's chosen-replacement path, and at level 1 it would drown every
-/// other one, so level 1 keeps the engine's own lowest-slot replacement.
+/// the path the game runner uses: `step_with` parks the rest of the turn at
+/// the faint, the way the sim asks for the switch mid-turn in this era, and
+/// `send_out` resumes it with the pick on the field. Level 1 keeps the
+/// engine's own lowest-slot replacement, so its seeds name the battles they
+/// named when the chosen path still skipped that turn's residuals.
 fn fuzz_wide() -> bool {
     std::env::var("FUZZ_WIDE").is_ok_and(|v| v == "1" || v == "2")
 }

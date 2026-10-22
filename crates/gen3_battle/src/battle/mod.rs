@@ -731,6 +731,15 @@ pub struct SeatScript {
     pub band: bool,
 }
 
+/// Where a turn stopped for a chosen replacement picks up again: the switch
+/// a Pursuit KO pushed back, the residual phase, or the end-of-turn tidy.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum TurnRest {
+    DeferredSwitches,
+    Residual,
+    Tidy,
+}
+
 /// Per-turn RNG script; see [`Battle::step_with`].
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TurnScript {
@@ -1032,6 +1041,9 @@ pub struct Battle {
     pub player_picks_replacement: bool,
     /// Set per side when a faint is waiting on that answer.
     pub(crate) awaiting_replacement: [bool; 2],
+    /// The part of the turn still to run while that answer is awaited, with
+    /// the turn's script. `send_out` resumes it.
+    pub(crate) parked_turn: Option<(TurnRest, TurnScript)>,
     /// Present's roll for this use, in base power: the games draw one number
     /// for four outcomes, so the draw happens once and both the gift branch
     /// and the damage read the same answer.
@@ -1148,6 +1160,7 @@ impl Battle {
             present_bp: 120,
             player_picks_replacement: false,
             awaiting_replacement: [false; 2],
+            parked_turn: None,
             bounced: false,
             yawn_landing: false,
             sealed_at_choice: [false; 2],

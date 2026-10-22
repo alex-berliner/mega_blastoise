@@ -873,3 +873,32 @@ fn a_turn_lost_to_its_own_status_does_not_answer_a_white_herb() {
         "and an herb with nothing to restore costs its holder nothing"
     );
 }
+
+#[test]
+fn a_chosen_replacement_takes_the_turns_residual() {
+    // The sim asks for the replacement at the action boundary and runs the
+    // residual phase after it, so a poisoned pick takes this turn's tick
+    // whether the engine chose it or the player did.
+    let build = |picks: bool| {
+        let mut sick = mon("blaziken", 100, &["ember"]);
+        sick.status = Some(Status::Poison);
+        let mut b = Battle::new(
+            Side::new(alloc::vec![mon("magikarp", 5, &["splash"]), sick]),
+            Side::new(alloc::vec![mon("blaziken", 100, &["ember"])]),
+            7,
+        );
+        b.player_picks_replacement = picks;
+        b
+    };
+    let mut auto = build(false);
+    auto.step([Choice::Move(0), Choice::Move(0)]);
+    let mut chosen = build(true);
+    let mut events = chosen.step([Choice::Move(0), Choice::Move(0)]);
+    assert!(chosen.pending_replacements()[0].is_some());
+    assert!(!events.iter().any(|e| matches!(e, Event::Residual { .. })));
+    chosen.send_out([Some(1), None], &mut events);
+    let full = auto.sides[0].mon().max_hp;
+    assert!(auto.sides[0].mon().hp < full, "the automatic pick missed its tick");
+    assert_eq!(chosen.sides[0].mon().hp, auto.sides[0].mon().hp);
+    assert!(events.iter().any(|e| matches!(e, Event::Residual { side: 1, .. })));
+}
