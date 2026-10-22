@@ -69,7 +69,7 @@ it.
    the liner on). Peel the speaker's front ring liner and press the speaker face down into its
    pocket in the right bezel, over the grille: the pocket centres it.
 2. **The decks:** lower each into its end of the top piece from behind, face down. It drops onto
-   its wedges along the step, round the spine and round the shoulder at each corner, and sits flat.
+   its wedges along the step and round the spine, and sits flat.
 3. **Caps** into the decks from behind. Each ABXY cap's flange tab drops into a slot and ribs fill
    the notches in its flange, so each cap fits only its own hole, one way round: turn the caps to
    match. Seen from that seat's player (from the front): A's tab (right cap) points down-left, B's
@@ -82,11 +82,14 @@ it.
    the pocket's right wall (towards the USB-C side, where TH1 reads it), its leads at the left end.
 6. **Plug in, the board on edge** at seat 1's end, its face towards the panel: flip J3's latch up,
    slide the FPC's contacts into J3 (contacts down) until it stops, square, and press the latch
-   shut; the speaker's plug into J4 (its red lead is +, nearest J4's pin 1; the amplifier is
-   bridge-tied, so a reversed speaker only flips its phase); the cell's plug into J2, at the
-   corner of the board's hole, with the tub held beside it.
-7. **The board**, face down onto the bosses (four in the top piece's shoulders, one on each deck),
-   the FPC folding under the panel at the seat-1 edge (don't crease it).
+   shut; the cell's plug into J2, at the corner of the board's hole, with the tub held beside it.
+7. **The board**, face down towards the bosses (four in the top piece, one on each deck), the FPC
+   folding under the panel at the seat-1 edge (don't crease it). Just before it lands, the
+   speaker's plug into J4, by the right edge below the speaker, its mouth towards the glass (its red
+   lead is +, nearest J4's pin 1; the amplifier is bridge-tied, so a reversed speaker only flips its
+   phase): the speaker stays in the top piece and its 35 mm leads reach J4 only with the board
+   nearly in place. Lay the leads round the screw boss between the speaker and J4, on the glass's
+   side, then the board down onto the bosses.
 8. **The tub** over it all: the cell drops into the board's hole, the crush ribs on the tub's walls
    centre the board, its tongue slides inside the skirts all round and its tab rises into the notch
    under the USB-C (the board's tab in its slot).
@@ -94,6 +97,7 @@ it.
    the decks' bosses, snug, not tight (they cut their own thread in the plastic). They clamp the
    board between the bosses and hold the case shut, as on a DS Lite.
 10. Opening it again: the six screws out, lift the tub off (the cell comes with it, on its leads),
-    lift the board out.
+    lift the board a little and unplug J4 first (the speaker stays in the top piece), then lift
+    the board out.
 
 The power button is seat 1's Start button: hold it for about a second to turn the device on.

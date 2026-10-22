@@ -23,7 +23,7 @@ the board mock has the new outline and holes but today's part envelopes, cut to 
 | `cell_plug_dummy.stl` | a PicoBlade (MX1.25) plug with a cable stub (approximate) | upright |
 | `speaker_dummy.stl` | the GSPK151035PN speaker, 10 x 15 x 3.5 mm, its cone's outline engraved: for its pocket under the grille | flat |
 | `coupon_seam_tub.stl` + `coupon_seam_top.stl` | a stretch of the left wall at the seam, cut from the real tub and top piece: the tub's tongue and a crush rib, the top piece's skirt over it | as exported |
-| `coupon_buttons_tub.stl` + `_board.stl` + `_top.stl` + `_deck.stl` | seat 1's end of the tub, board, top piece (the step, the spine, the shoulders and the undercut) and seat 1's whole deck: the button stack and the deck's joint | as exported |
+| `coupon_buttons_tub.stl` + `_board.stl` + `_top.stl` + `_deck.stl` | seat 1's end of the tub, board, top piece (the step, the spine and the undercut) and seat 1's whole deck: the button stack and the deck's joint | as exported |
 | `coupon_usb_tub.stl` + `coupon_usb_top.stl` + `coupon_usb_board.stl` | the USB-C opening: its lower half in the tub's tab, its upper half in the top piece's skirt, and the board's tab with a stand-in for the receptacle's shell between them | as exported |
 | `tune_openings.stl` | **the quickest button test (about 30 min):** D-pad openings at 0.55, 0.65 and 0.75 mm round the cross, a whole keyed A/B/X/Y cluster (tab slots and notch ribs), and plain holes at 7.6, 7.8 and 8.2 mm round its 8.0 (`cap_hole_d`); the numbers are engraved in the face | face down, as exported |
 | `tune_stack_dpad_board.stl` + `tune_stack_dpad_lid_dome*.stl` | one D-pad's slice of the board (contact rings engraved) and of the deck, the deck slice on four legs at its real height. Three, for a silicone 1.6, 1.75 or 1.9 mm tall at rest (`dome_h`); the value is engraved in each | board flat, deck slices face down |
@@ -31,7 +31,7 @@ the board mock has the new outline and holes but today's part envelopes, cut to 
 | `tune_stack_ss_board.stl` + `tune_stack_ss_lid_dome*.stl` | the same for seat 1's Start/Select membrane (its outline, pill pitch and caps are ESTIMATEs in `case.scad`: `ss_mem`, `ss_pitch`, `ss_cap_*`) | as above |
 | `coupon_frame_top.stl` | the top piece's window, pocket and panel frame | face down, as exported |
 | `test_overhangs.stl` | the test plate's overhang ladder: fins whose undersides slope 45, 50, 55, 60, 65, 70 and 75 degrees from vertical (engraved on top), and a convex 6 mm quarter round from 85 degrees up to vertical, ticked at 45, 60 and 75 on its end face | as exported, no supports (on purpose) |
-| `coupon_screws_tub.stl` | two of the tub's screw holes (a side boss and an end boss), cut from the real tub: counterbore, clearance hole, boss, floor | flat, as the tub |
+| `coupon_screws_tub.stl` | two of the tub's screw holes (H4's slimmed side boss by the wall and an end boss), cut from the real tub: counterbore, clearance hole, boss, floor | flat, as the tub |
 | `coupon_screws_top.stl` | one of the top piece's screw bosses with its 1.6 mm pilot, cut from the real top piece | face down, as the top piece |
 | `test_column.stl` + `test_rings.stl` | a 5.0 mm column (as the screw bosses) and four rings over it, 0.2, 0.3, 0.4 and 0.5 mm a side (engraved) | as exported |
 

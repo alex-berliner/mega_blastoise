@@ -47,11 +47,23 @@ onto a plate with the same settings. `top.stl`, `deck.stl` (print two) and `tub.
 real case, each in its print pose.
 
 **The shell (2026-10-21, reworked 2026-10-22).** The top piece (the screen face, the curved steps,
-a shoulder at each corner round a side screw, the speaker's grille in the right bezel, the sides)
+the speaker's grille in the right bezel, the sides; the four side screws go into it beside the glass)
 and the two decks (the button faces) curve over the sides and meet the tub flush at one seam low on
 the walls; each deck seats into the top piece from behind on a 45 degree wedge and has its own
 screw. The cell sits in a hole in the board, its bottom in a pocket in the tub's floor. Everything
-is built upside down, and nothing needs supports. To assemble:
+is built upside down, and nothing needs supports.
+
+The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
+
+| Part | Size (mm) | On |
+|---|---|---|
+| `tub.stl` | 77.4 x 132.7 x 5.7 | `1_case` (56.4 g, 1 h 39 min with the top piece, the board mock and the dummies), `5_unit` |
+| `top.stl` | 77.4 x 92.5 x 5.75 | `1_case`, `5_unit` |
+| `deck.stl` (print two) | 77.4 x 32.9 x 3.9 | `1_case_decks` (8.9 g, 22 min for both), `5_unit` |
+
+`5_unit` (the tub, the top piece, both decks and the board mock on one plate) is 54.1 g and 1 h 43 min.
+
+To assemble:
 1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
    front foam ring stuck to the pocket's ceiling.
 2. Each deck face down into its end of the top piece from behind: it drops onto its wedges and sits
@@ -59,10 +71,16 @@ is built upside down, and nothing needs supports. To assemble:
    them.
 3. Panel glass down into the top piece's pocket on its tape.
 4. The cell into the tub's floor pocket on double-sided tape, against the pocket's right wall.
-5. Board on edge at seat 1's end: the FPC into J3 (close the latch), the speaker's plug into J4, the
-   cell's plug into J2.
-6. Board face down onto the bosses. Tub over it all (the cell drops into the board's hole, the
-   tub's crush ribs centre the board). Six M2 x 6 from the back, snug.
+5. Board on edge at seat 1's end: the FPC into J3 (close the latch), the cell's plug into J2.
+6. Board face down towards the bosses. Just before it lands, the speaker's plug into J4 (by the
+   right edge, under the speaker; its mouth faces the glass): the speaker stays in the top piece, and
+   its 35 mm leads reach J4 only when the board is nearly in place. Lay the leads round the screw boss
+   between the speaker and J4, on the glass's side, then the board down onto the bosses.
+7. Tub over it all (the cell drops into the board's hole, the tub's crush ribs centre the board).
+   Six M2 x 6 from the back, snug.
+
+Opening it: screws out, tub off, then lift the board only a little and unplug J4 before it comes
+away: the top piece comes off with the speaker stuck in it.
 
 Check that each deck drops in without force and doesn't rock, that the seam round the case is an
 even thin line with the outsides flush, and that the seam in the crease at each step's foot looks
@@ -99,7 +117,8 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   ladder's end goes from 85 degrees (near flat, where it leaves its stem) up to vertical, ticked
   at 45, 60 and 75 on its end face: report the tick below which it turns rough. That number goes
   into `overhang` in `case.scad` (45 now): one line makes the steps and every edge rounder.
-- Screw holes: `coupon_screws_tub` (two of the tub's holes, printed flat as the tub) should come out
+- Screw holes: `coupon_screws_tub` (two of the tub's holes, printed flat as the tub: H4's slimmed
+  5.0 boss by the left wall and an end boss) should come out
   with the 4.4 mm counterbore and the 2.4 mm hole open, and an M2 screw should pass; the old plates
   had supports in every counterbore (see above). `coupon_screws_top` (a top piece boss, face down)
   should take an M2 x 6 self-tapper into its 1.6 mm pilot. Say which of the case's holes were filled.
@@ -195,8 +214,7 @@ minutes (the ladder: 30 min with the defaults, about 33 tuned, on the U1).
   area centred in the window (`panel_fit`, `window_margin`).
 - Seat 1's end, built upside down: the top coupon face down, the deck into it (it should drop onto
   its wedges and sit without rocking: `deck_gap`), caps and silicone, the board mock face down, the
-  tub coupon. The shoulder by the seat's side screw should sit in the deck's notch with an even
-  seam round it.
+  tub coupon.
 - Speaker (in `1_case`): the dummy (or the real speaker) drops face down into the top piece's
   pocket over the grille without play to speak of, and the cell dummy into the board mock's hole
   and the tub's pocket.

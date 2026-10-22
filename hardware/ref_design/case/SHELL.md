@@ -8,15 +8,17 @@ differ). Everything here is in `case.scad`; this file says why.
 ## In one paragraph
 
 Four printed parts: a **top piece** (the screen face, the curved steps down to the decks, a spine
-at each end, a shoulder at each corner round a side screw, and the sides), two **decks** (one part,
+at each end, and the sides), two **decks** (one part,
 printed twice: the button faces at each end), and the **tub** (the back, with a pocket for the
 cell). The top piece and the decks all curve over the sides and meet the tub flush at one seam,
 4.2 mm up the walls, where the back's round ends. Each deck seats into the top piece **from behind**
 on a 45 degree wedge, reaches out to the case's outline and curves over the end and the sides
 itself, and has its own screw. The board, with the cell in a hole in it, lies inside the tub's
 walls. Everything is built **upside down**: the speaker into its pocket, caps and silicone into the
-decks, the decks into the face-down top piece, the panel into its pocket, the board face down, the
-tub (the cell stuck in its pocket) over it, six screws from the back. Every part prints without
+decks, the decks into the face-down top piece, the panel into its pocket, the board face down (the
+speaker's plug into J4 first), the tub (the cell stuck in its pocket) over it, six screws from the
+back. The speaker stays in the top piece, so J4 is unplugged before the board and the top piece come
+apart. Every part prints without
 supports in its own pose: the tub back down, the top piece and the decks face down.
 
 | | cb51826 | 2026-10-21 | Now (2026-10-22) |
@@ -27,7 +29,7 @@ supports in its own pose: the tub back down, the top piece and the decks face do
 | Cell | under the board | under the board | in the board's hole, its bottom in a 0.6 pocket in the tub's floor |
 | Speaker | floor grille | floor chamber, side outlet | on the board's top in the right bezel, a grille in the face |
 | Parts | tub, lid, two deck inserts | tub, top piece, two decks | the same |
-| Held by | six screws, four snap hooks | six M2 x 8: four into the top piece, one into each deck | six M2 x 6, the same way (the side ones into the top piece's shoulders) |
+| Held by | six screws, four snap hooks | six M2 x 8: four into the top piece, one into each deck | six M2 x 6, the same way (the side ones into the top piece beside the glass, since the side screws came back inward) |
 | Crush ribs | on the lid | on the top piece's and the decks' walls | on the tub's walls (the board is inside them) |
 
 ![outside, from the front](images/outside_front.png)
@@ -70,27 +72,43 @@ the port and the plug, and check_fit.py checks it against J1's 3D model.
   it. The skirts' cut over the tongue is now only the wall's inner half: the decks' plates come
   down to 5.7, under the tongue's cut, and a cut across the whole inside took 0.1 off them and left
   the pads' walls hanging.
-- **The side screws** moved to (+-31.4, +-36), the long sides' ends, past the hole, 1.65 past the
-  joint between the top piece and the decks. A boss on the deck there would leave the top piece
-  with no screw at all (the decks' wedges only stop it moving in), and a tab of the top piece at
-  the deck's height would print as a 5.6 mm ledge 1.85 off the bed. So the top piece reaches out
-  round each screw in a **shoulder** at the screen face's height (`shoulder`: |x| from 27.4,
-  |y| to 40.0), with the same step and joint round it as the spines, and the deck has a matching
-  notch. The boss runs from the board to the shoulder's face (the pilot stops 0.8 under it). The
-  shoulders clear the caps' openings and the pads' lobes by the joint's rules (asserts); the tub's
-  6.0 bosses clear the cell's hole by 2.3, the top piece's clear J4 by 2.0.
+- **The side screws** are the board's, inside the top piece (Alex, 2026-10-22: no shoulders): H1
+  and H2 at (+-32.5, 29), at the seat-2 ends of the strips beside the cell's hole; H3 at (25.9,
+  -21.95) in the right bezel, between the speaker and J4's plug; H4 at (-33.0, -15.2) in the left
+  bezel, between J2 and the LDO. The top piece's 5.0 bosses run from the board to the ceiling (the
+  pilot stops 0.8 under the screen face). Each keeps 0.3 or more from the panel's frame (H3: 0.54),
+  1.2 from the side wall's inside, 0.72 from the step's top edge and 0.3 from the joint's band where
+  the decks' wedges start (H1, H2: y 31.5 against 31.8), and H3 0.52 from the speaker's pocket, 0.36
+  from J4 and 0.30 from its mated plug (asserts). The **tub's bosses** under the board are only
+  `board_lift` (0.7) tall; 6.0 wide at H1, H3 and the ends, **5.0 at H2 and H4** (`tub_boss_d`): a
+  6.0 boss would come within 0.8 of the cell's hole at H2 and 0.2 of the board's edge at H4. The 5.0
+  ones leave 1.3 to the hole at H2 and 0.7 inside the board's edge at H4, and 1.3 of plastic round
+  the screw's 2.4 clearance hole (the head's 4.4 counterbore is in the floor under them, 1.0 from the
+  tub's bottom chamfer at H4). The shoulders, the decks' notches and their checks went.
 - **Shorter screws:** M2 x 6. An 8 would run 0.9 past the decks' pilots now; a 6's tip stops 0.1
   short of the decks' (which end 0.6 under the face) and 1.75 short of the top piece's.
-- **The speaker** lies on the board's top in the right bezel (centre 28.7, -13.5; 10 x 15 x 3.5,
-  3.8 worst case). The top piece's underside has a 0.5 pocket over it, its outline plus 0.5 (the
+- **The speaker** lies on the board's top in the right bezel (centre 28.7, -11.4 since the side
+  screws came back inward, its seat-2 end 0.1 short of the cell's hole; 10 x 15 x 3.5, 3.8 worst
+  case). The top piece's underside has a 0.5 pocket over it, its outline plus 0.5 (the
   board's keep-out), so 0.45 over a worst-case speaker; the face over it is 1.5. The **grille** is
   three 1.0 slots along the racetrack, 1.8 apart, inside the outline less 1.5 (over the cone):
   12, 10.8 and 10.8 long, about 33 mm2 open. The rim round them is solid, for the front foam ring
   to seal on. Face down they are plain holes in the plate on the bed: nothing to bridge
   (`overhangs.py`: no supports). The bezel next to the screen bay keeps its full 2.0 from the panel
-  frame (x 22.86) to the pocket (x 23.2), 1.5 from there to the grille (x 26.4). A 0.3 pocket over
-  J4 and its mated plug (x 24 to 35.2, y -22 to -31.5) gives the plug room. The floor chamber, the
+  frame (x 22.86) to the pocket (x 23.2), 1.5 from there to the grille (x 26.4); the grille's slots run
+  y -5.4 to -17.4. A 0.3 pocket over J4 (31.9, -27.0) and its mated plug, each grown 0.25, gives
+  the plug room; it goes round H3's boss and stops at the joint's band. The floor chamber, the
   side outlet and the pad went.
+- **The speaker's leads** (35 mm, to a 1.25 mm plug) run on the board from the speaker to the back
+  of J4's mated plug (x 24.75, its mouth faces the glass), round H3's boss, which stands between
+  them. With the leads leaving the speaker's seat-1 end (turn it so they do), the shortest path that
+  keeps a 0.8 lead off the boss, the speaker and J4 is 14.0 mm (1.5 straight out of the plug, then
+  up the 0.65 gap between H3's boss and U7's end, partly over U7's end under the panel frame, 1.0 of
+  room there, and over the boss's top, 1.4 below the speaker). If they can't ride over U7, round U7
+  under the panel it is 27.4. Plugging in takes about 10 more (the plug's 4.0 travel out of the
+  mouth, and a few mm to hold it): 24 or 37 mm against 35. Leads leaving a long side need 17.1
+  (left) to 25.0 (right), the far end 28.1, each over U7's end. So J4 is plugged with the board just
+  off its place: with the leads in, J4 can be at most about 20 mm from where it lands.
 - **J2** (the cell's plug, 3.4) at the hole's seat-1 corner and its mated plug (3.2, over the left
   strip) sit under the left bezel's 3.75; **J5/J6** (2.9) face the left edge. Their plugs go in
   with the tub off; no slot in the wall (debug is case-open, and a slot weakens the wall and lets
@@ -107,15 +125,17 @@ the port and the plug, and check_fit.py checks it against J1's 3D model.
 ![across the cell](images/section_cell.png)
 ![across the speaker and its grille](images/section_speaker.png)
 ![along the speaker and J4](images/section_speaker_along.png)
-![along a side screw: the shoulder](images/section_shoulder.png)
+![across H2: the slimmed tub boss by the cell's hole](images/section_h2.png)
+![across H4: the slimmed tub boss by the board's edge](images/section_h4.png)
+![along H3: between the speaker and J4](images/section_h3.png)
 
 ## The smooth rounds (2026-10-22)
 
 The top piece's and the decks' rounds and the step were stacks of flat 0.1 mm slabs, as the tub's
 was until 4df3f96. They are now solids lofted through the profile every 0.05: the decks' outline as
-the tub's; the top piece as boxes lofted up the step (the screen block, the spines, the shoulders'
-inner edge) and the side walls swept along y under the step's height, so the side round still
-follows the step down to the deck. The chamfers are exactly `overhang`: every downward face is
+the tub's; the top piece as boxes lofted up the step (the screen block, the spines) and the side
+walls swept along y under the step's height, so the side round still follows the step down to the
+deck. The chamfers are exactly `overhang`: every downward face is
 45.0000 degrees from vertical or steeper (166 mm2 of the top piece's and 73 mm2 of a deck's at
 45). Sliced on the P1S (0.2 mm, Bambu Studio's command line), the outer wall now lies on the true
 surface at every layer (0.000 mm off) and steps out 0.2, 0.2, 0.199, 0.18, 0.15, 0.126 ... up each
@@ -158,8 +178,7 @@ parts on the left.
 
 ## Item 13: the step down to the decks is a curve
 
-The step is 1.85 mm tall (the screen face 5.75 over the board, the decks 3.90; since 2026-10-22 the
-same step runs round the shoulders). It belongs to the
+The step is 1.85 mm tall (the screen face 5.75 over the board, the decks 3.90). It belongs to the
 top piece, which prints face down, so every point of it faces down in the print pose, and nowhere
 may it slope flatter than `overhang` (45 degrees, a guess until the `6_tests` ladder). Under that rule a
 straight 45 degree slope is already the gentlest possible line; a curve can only be steeper
@@ -209,15 +228,19 @@ One part fits both ends (the end bosses are each other turned round, as before).
 5. **The cell** into the tub's floor pocket on a strip of double-sided tape, against the pocket's
    right wall (towards TH1).
 6. **Board on edge** at seat 1's end, face towards the panel: the FPC into J3 and its latch, the
-   speaker's plug into J4, the cell's plug into J2 (the tub held beside it).
-7. **Board** face down onto the bosses (four in the top piece's shoulders, one on each deck), the
-   FPC folding under the panel.
+   cell's plug into J2 (the tub held beside it).
+7. **Board** face down towards the bosses (four in the top piece, one on each deck), the FPC
+   folding under the panel. Just before it lands, the **speaker's plug into J4** (its mouth faces the
+   glass; the leads reach about 20 mm, so J4 must be near its place), the leads laid round H3's
+   boss on the panel's side; then the board down onto the bosses.
 8. **Tub** over it all: the cell drops into the board's hole, the crush ribs on the tub's walls
    centre the board, the tongue slides inside the skirts, the tab into the USB-C notch.
 9. **Six M2 x 6** from the back, snug.
 
 Opening it is the same backwards: screws out, lift the tub off (the cell comes with it, on its
-leads), lift the board, and everything else lies where it was.
+leads), lift the board only a little and **unplug J4 first**: the speaker stays stuck in the top
+piece (Alex's choice), on 35 mm leads. Then the board comes away, and everything else lies where it
+was. The same goes for anyone opening it face up: unplug J4 before the top piece comes off.
 
 ## The other parts of the design
 
@@ -231,9 +254,9 @@ leads), lift the board, and everything else lies where it was.
 - **How the board is located:** crush ribs on the tub's side and end walls, 0.05 short of the
   board, with a lead-in at their upper end; the screws line it up. It is clamped between the tub's
   bosses and the top pieces' bosses, and rests on the tub's floor ribs.
-- **Screws:** side bosses at (+-31.4, +-36) in the top piece's shoulders; end bosses at
-  (+-3.0, +-50.75), on the decks.
-- **Debug pinholes:** BOOTSEL and RESET at (-31.2, 13 and 6).
+- **Screws:** side bosses at (+-32.5, 29), (25.9, -21.95) and (-33.0, -15.2) in the top piece;
+  end bosses at (+-3.0, +-50.75), on the decks.
+- **Debug pinholes:** BOOTSEL and RESET at (-31.2, 8.6 and 1.6); J5 and J6 at y 15.2 and 22.7.
 
 ## Print orientation and supports
 
@@ -300,7 +323,11 @@ written 1.2 + `deck_gap`), and the tub's tongue is 0.75 thick (was 0.85).
   seat 1's spine would have to go under the screen or drop to 1.6.
 - **The side screws' bosses on the decks** (2026-10-22): the simplest, but the top piece would have
   no screw, and the decks' wedges only hold it from moving in. **A tab of the top piece at the
-  deck's height** round each screw: a 5.6 mm ledge 1.85 off the bed, face down. So: shoulders.
+  deck's height** round each screw: a 5.6 mm ledge 1.85 off the bed, face down. So: shoulders,
+  until the board brought the side screws back inside the top piece (2026-10-22) and they went.
+- **A D-shaped or wall-merged tub boss at H2 and H4** (2026-10-22): a round 5.0 boss already keeps
+  1.3 from the cell's hole and 0.7 inside the board's edge, and it is only 0.7 tall; a D or a boss
+  run into the wall would gain nothing there.
 - **A slot in the left wall for the debug cables** (J5, J6): not done, debug is case-open.
 - **Keeping the hooks:** nothing needs them when the case is built upside down, and they snapped in
   PLA.
@@ -322,9 +349,11 @@ written 1.2 + `deck_gap`), and the tub's tongue is 0.75 thick (was 0.85).
 5. **The speaker in its pocket:** stuck by its front ring to the pocket's ceiling, its back stands
    0.45 (worst case) to 0.75 off the board. If Alex would rather tape it to the board (as the board
    session drew it), its front then needs a foam ring 0.5 to 0.8 thick to seal on the grille's rim.
-6. **The shoulders** are the visible cost of the side screws at y +-36: four small extensions of
-   the screen face at its corners. Moving H1-H4 back inside the step (|y| <= 29) would remove them,
-   but that is the board's call (they went to y 36 to clear the strips beside the cell's hole).
+6. **J4 and the speaker's leads:** the speaker stays in the top piece, so J4 must be plugged with
+   the board just off its place (the leads reach about 20 mm past the closed path) and unplugged
+   before the parts come apart. Worth trying on the fit kit with a real speaker: whether the leads
+   lie flat round H3's boss and over U7's end, and whether the plug can be reached with the FPC in.
+   The speaker's lead exit is unknown here (assumed at its seat-1 end).
 7. The screw columns: no column passes through another printed part any more, so the `6_tests`
    rings only matter if one ever does again.
 
