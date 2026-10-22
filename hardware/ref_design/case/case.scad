@@ -94,13 +94,15 @@ flange_t = 0.55;                                        // both caps' flanges
 // The openings, lips and the walls under them follow Alex's DS Lite faceplate (front.stl, measured
 // 2026-10-21, case/DSLITE.md), except where a print has tuned a clearance
 cap_hole_d = 8.0;  pocket_d = 9.2;                      // deck: hole (the faceplate's 8.00; was 7.6), flange pocket
-                                                        // (faceplate 9.18)
+                                                        // (faceplate 9.18). GUESS (Alex, 2026-10-21: best guess until
+                                                        // 6_tests): the 8.0 hole; tune_openings (7.6/7.8/8.2) settles it
 cap_chamfer = 0.6;                                      // 45 degree chamfer round each hole at the face (faceplate)
 lip_t = 1.6;                                            // the face down to the A/B/X/Y flanges' tops (faceplate 1.60;
                                                         // Pi Tin 1.65; was 1.16)
 dpad_gap = 0.65;          // D-pad opening past the cross each side: 0.5 (the faceplate's 18.80 x 6.90 opening) was
                           // too tight for Alex's AliExpress D-pad in the first print, 0.8 too loose in the next
-                          // (Alex, 2026-10-21), so halfway (tune: tune_openings, 0.55 / 0.65 / 0.75)
+                          // (Alex, 2026-10-21), so halfway (tune: tune_openings, 0.55 / 0.65 / 0.75).
+                          // GUESS (Alex, 2026-10-21: best guess until 6_tests)
 dpad_chamfer = 0.8;       // 45 degree chamfer round the D-pad's opening (faceplate)
 dpad_pocket_gap = 0.5;    // its flange's pocket past the flange (0.35 bound with the cross; the faceplate's is 0.25)
 dpad_lift = 0.35;         // raises (or, negative, lowers) the D-pad's retaining lip against the A/B/X/Y lips: the
@@ -138,7 +140,9 @@ wall = 2.0;  board_clear = 0.5;
 corner_r = 4.3;           // plan corners: a DS Lite's 4.3 to 4.4 (8 felt round and toy-like, 2026-10-19)
 board_r = 5.5;            // the board's own corners (its KiCad outline): no longer follow the case's
 // The flattest a face may slope downwards in its print pose, in degrees from vertical: no part needs
-// supports. 45 until Alex's 6_tests ladder says how far each printer goes (one line, 2026-10-21)
+// supports. 45 until Alex's 6_tests ladder says how far each printer goes (one line, 2026-10-21).
+// GUESS (Alex, 2026-10-21: best guess until 6_tests): 45, the conservative limit; test_overhangs on
+// both printers settles it, and every round and the step to the decks follow it
 overhang = 45;
 // Every outside edge rounds over as far as that allows: an arc into the wall, and where the arc would
 // go flatter than `overhang` in the print pose, a tangent chamfer at `overhang` (the tub prints back
@@ -154,7 +158,11 @@ support_pitch = 12;       // the floor's support ribs under the board
 // hold it all; the snap hooks went (2026-10-21: built upside down, nothing has to hold the top piece
 // on the tub while the screws go in, and PLA hooks snapped)
 z_seam = back_r;
-tongue_h = 1.5;  seam_fit = 0.15;                       // the tongue's height; its clearance to the skirts
+// Printed part sliding on printed part, each side: the tub's tongue inside the skirts and each deck in
+// the top piece's undercut. 0.15 was too tight for the old deck insert's ring round the lid's boss.
+// GUESS (Alex, 2026-10-21: best guess until 6_tests): 0.25; test_rings (0.2 to 0.5) settles it
+slide_fit = 0.25;
+tongue_h = 1.5;  seam_fit = slide_fit;                  // the tongue's height; its clearance to the skirts
 seam_gap = 0.1;                                         // the skirts stop this short of the tub at the seam, so the
                                                         // screws clamp the board, not the seam
 
@@ -238,13 +246,16 @@ step_d = case_h - deck_face;                            // the step's height (1.
 joint_land = 0.6;          // the top piece runs on flat at the deck's level past the step's foot, so its edge at the
                            // joint is square, not a knife edge (face down, a 0.6 ledge it prints without support)
 joint_y = step_y + joint_land;                          // the joint between the top piece and a deck, across the case
-deck_land = 0.8;  deck_gap = 0.15;                      // the joint: straight down from the face, then the wedge; its
-                                                        // clearance (the inserts' 0.15)
-step_wall_t = 1.2;                                      // the top piece's wall behind the undercut (1.2: room for
-                                                        // the taller step of the 1.6 tuning height)
+deck_land = 0.8;  deck_gap = slide_fit;                 // the joint: straight down from the face, then the wedge; its
+                                                        // clearance (the inserts' 0.15 until 2026-10-21)
+step_wall_t = 1.35;                                     // the top piece's wall behind the undercut (room for the
+                                                        // taller step of the 1.6 tuning height). It was 1.2 + deck_gap
+                                                        // 0.15, but the gap is the deck's (its wedge stops deck_gap
+                                                        // short of the undercut), not the band's: the wall is as it was
 e0 = deck_face - deck_land;                             // the wedge's top edge
-wedge_w = e0 - z_deck_under;                            // how far it reaches in under the top piece (45 degrees)
-joint_w = wedge_w + deck_gap + step_wall_t;             // the band the joint takes inside the top piece's edge
+wedge_w = e0 - z_deck_under;                            // how far the undercut reaches in under the top piece (45
+                                                        // degrees); the deck's wedge reaches wedge_w - deck_gap
+joint_w = wedge_w + step_wall_t;                        // the band the joint takes inside the top piece's edge
 // how far in from the joint the top piece's face is at depth dd under the screen face (0 at the deck)
 function step_s(dd) = dd >= step_d - 1e-6 ? 0 : joint_land + edge_in(dd, step_r) - edge_in(step_d, step_r);
 lay = 0.1;                                              // the rounds' and the step's layers, as they print
@@ -422,7 +433,7 @@ assert(overhang >= 30 && overhang <= 80, "overhang out of range");
 assert(z_seam + tongue_h + seam_gap <= z_board - 0.2, "the tongue reaches the board");
 assert(deck_face - face_r >= z_seam + tongue_h + seam_gap, "the decks' round runs into the seam's tongue");
 assert(step_s(0) <= joint_w - 0.2, "the step runs past the joint's wall: the screen face over it would be too thin");
-assert(wedge_w >= 0.8 && deck_land >= 0.6, "the joint's wedge is too small to hold a deck");
+assert(wedge_w - deck_gap >= 0.8 && deck_land >= 0.6, "the joint's wedge is too small to hold a deck");
 // The button stack's design rules (check_buttons.py checks the geometry itself: the pads clear
 // the shell, every cap sits and presses without touching it, at rest the caps only touch the domes)
 assert(sil_rib_gap >= sil_web_t, "the ribs crush the silicone pads' web");
@@ -646,9 +657,26 @@ module spk_pad2d() hull() { spk2d(1.2); translate([-case_w / 2, spk_pos[1] - spk
 
 // ---- the tub (the back): printed back down, as exported ----
 // its outside: the back rolls into the walls (in 0.1 mm layers up the round), up to the seam
+// Smooth, not in steps: one solid lofted through the outline every 0.1 up the round (the outline
+// inset back_in(z), a rounded rectangle whose corners shrink with it), so the slicer meets the real
+// surface. Stepped 0.1 layers put their flat faces exactly on the P1S's slicing planes (0.1, 0.3,
+// 0.5 ...), and it took the step above or below as it liked: the chamfer at the bed printed 0.35,
+// 0.1, 0.3, 0.1 out per layer, a staircase of 0.4 risers (row 9, Alex: "a vertical lip" at the
+// bottom edge)
+back_n = round(back_r / 0.1);                           // the loft's levels: every 0.1 up the round
+corner_n = 18;                                          // points on each corner's quarter arc
+function rr_pts(d, z) = let(hx = case_w / 2 - corner_r, hy = case_l / 2 - corner_r, r = corner_r - d)
+  [for (q = [0:3]) let(cx = (q == 0 || q == 3) ? hx : -hx, cy = q < 2 ? hy : -hy)
+     for (i = [0:corner_n]) let(a = 90 * q + 90 * i / corner_n) [cx + r * cos(a), cy + r * sin(a), z]];
 module tub_outside(h = z_seam) union() {
-  for (k = [0:ceil(back_r / 0.1) - 1]) translate([0, 0, 0.1 * k])
-    linear_extrude(0.1 + 0.01) offset(delta = -back_in(0.1 * k + 0.05)) outline2d();
+  m = 4 * (corner_n + 1);
+  polyhedron(
+    points = [for (k = [0:back_n]) each rr_pts(back_in(k * back_r / back_n), k * back_r / back_n)],
+    faces = concat(
+      [[for (i = [0:m - 1]) i]],                                          // the back
+      [[for (i = [m - 1:-1:0]) back_n * m + i]],                          // the top of the round
+      [for (k = [0:back_n - 1], i = [0:m - 1]) let(a = k * m + i, b = k * m + (i + 1) % m)
+         [a, b, b + m, a + m]]));
   if (h > back_r) translate([0, 0, back_r]) linear_extrude(h - back_r) outline2d();
 }
 module tub() difference() {
