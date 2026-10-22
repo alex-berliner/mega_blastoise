@@ -960,6 +960,12 @@ pub struct Battle {
     /// split physical/special — what Counter and Mirror Coat bounce.
     taken_physical: [u16; 2],
     taken_special: [u16; 2],
+    /// Whether each side's mon has been HIT by a move this turn, damage or
+    /// not. The damage counters above cannot answer that: the sim fires its
+    /// `Hit` event whatever the move takes off, and the Focus Punch charge
+    /// loses focus on it, so a False Swipe that could not take the last HP,
+    /// or a Present that handed its gift over, still breaks the punch.
+    hit_this_turn: [bool; 2],
     /// Whether each seat's CHOSEN slot was already out of PP at choice
     /// time — that (and only that) is what Struggle substitution reads;
     /// a mid-turn Spite draining it to zero is a silent lost turn.
@@ -1125,6 +1131,7 @@ impl Battle {
             weather_n: 0,
             taken_physical: [0; 2],
             taken_special: [0; 2],
+            hit_this_turn: [false; 2],
             pp0_at_choice: [false; 2],
             acted_this_turn: [false; 2],
             dragged: [false; 2],

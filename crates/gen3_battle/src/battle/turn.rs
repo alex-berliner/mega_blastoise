@@ -58,6 +58,7 @@ impl Battle {
         self.dragged = [false; 2];
         self.taken_physical = [0; 2];
         self.taken_special = [0; 2];
+        self.hit_this_turn = [false; 2];
 
         for side in 0..2 {
             self.pp0_at_choice[side] = match choices[side] {

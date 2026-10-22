@@ -1009,11 +1009,11 @@ impl Battle {
         }
 
         // Focus Punch loses its focus — and the turn — if anything hit the
-        // user before it moved. The sim checks in the move's own onTry,
-        // after every gate has passed and the PP is already spent.
-        if slot.entry.id == "focuspunch"
-            && (self.taken_physical[side] > 0 || self.taken_special[side] > 0)
-        {
+        // user before it moved. The sim's `focuspunch` volatile reads that
+        // off the `Hit` event the move fires on its target, so it is a hit
+        // that counts, not damage taken: the check sits in the move's own
+        // onTry, after every gate has passed and the PP is already spent.
+        if slot.entry.id == "focuspunch" && self.hit_this_turn[side] {
             self.log_failed(side, events);
             return;
         }
@@ -1454,6 +1454,12 @@ impl Battle {
                     self.log_failed(side, events);
                     return;
                 }
+                // Either way the target ends up in Present's attacked-by
+                // book: gen 3 ends `tryMoveHit` with an unconditional
+                // `gotAttacked`, reached by every move that got this far
+                // whatever it then does, so a gift that finds nothing to give
+                // is Mirror Move-able exactly like one that lands.
+                self.note_hit_by(side, foe, slot.entry.id);
                 let target = self.sides[foe].mon_mut();
                 let amount = (target.max_hp / 4).max(1).min(target.max_hp - target.hp);
                 if amount == 0 {
@@ -1466,6 +1472,14 @@ impl Battle {
                         side: foe as u8 + 1,
                         amount,
                     });
+                    // A gift that LANDS is a hit besides that one. The
+                    // heal runs in `runMoveEffects`, and everything below it
+                    // in that loop still fires: the `Hit` event takes the
+                    // focus off anything charging Focus Punch, since Present
+                    // is a damaging move even at zero base power. A gift
+                    // refused leaves that loop before the event ever runs,
+                    // so it costs the charge nothing.
+                    self.hit_this_turn[foe] = true;
                 }
                 return;
             }
@@ -1502,6 +1516,7 @@ impl Battle {
             let amount = thp - uhp;
             self.sides[foe].mon_mut().hp = uhp;
             self.note_hit_by(side, foe, slot.entry.id);
+            self.hit_this_turn[foe] = true;
             self.taken_physical[foe] = amount;
             events.push(Event::Damage {
                 side: foe as u8 + 1,
@@ -2421,6 +2436,9 @@ impl Battle {
                     });
                 }
             } else {
+                // A hit that got past the doll is a hit for the `Hit` event,
+                // which is all Focus Punch's charge watches.
+                self.hit_this_turn[foe] = true;
                 // Which book a hit goes in is the CATEGORY, except that
                 // this era names Hidden Power in both handlers and puts it in
                 // the physical one whatever type it came out as: gen 3's
@@ -2729,6 +2747,7 @@ impl Battle {
         };
         let amount = amount.min(cap);
         target.hp -= amount;
+        self.hit_this_turn[foe] = true;
         let special = special_register.unwrap_or_else(|| {
             !matches!(
                 crate::types::category_of(slot.move_type()),
