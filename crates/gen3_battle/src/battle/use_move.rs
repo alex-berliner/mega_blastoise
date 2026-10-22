@@ -15,6 +15,20 @@ use crate::types::Type;
 
 use super::*;
 
+/// How much of a flat hit's tail runs, named for the two sim events it
+/// carries. The contact abilities (Color Change, Rough Skin, Static, Effect
+/// Spore) answer `DamagingHit`, which every damaging move reaches because the
+/// hit goes through `tryMoveHit`; Shell Bell is an `AfterMoveSecondarySelf`,
+/// which only a move that got as far as `useMoveInner` ever sees.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Tail {
+    /// Bide's unleash: fired from inside `onBeforeMove`, so the move is
+    /// aborted before `useMoveInner` and only the first hook runs.
+    DamagingHit,
+    /// Every other flat hit.
+    Both,
+}
+
 impl Battle {
     /// In Gen 3 a rampage broken by flinch or full paralysis still ends in
     /// fatigue confusion, on the spot. (A miss or a protecting target ends it
@@ -526,14 +540,18 @@ impl Battle {
         };
         // A Disabled locked move cannot continue — a mid-charge release, a
         // rolling Rollout or a rampage all lose the turn silently (the
-        // sim's disable cant; a broken rampage still fatigues).
+        // sim's disable cant; a broken rampage still fatigues). The cant is
+        // an ABORT, and Bide hangs its end off `onMoveAborted`, so a sealed
+        // Bide drops its stored energy with the turn, silently, since the
+        // volatile's own `onEnd` has nothing to say.
         if releasing && self.sides[side].mon().disabled_slot == Some(index as u8) {
             let _ = was_charging;
             self.break_rampage(side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().stall_counter = 0;
+            self.abort_drops_charge(side, index);
             self.log_failed(side, events);
-            return true;
+            return false;
         }
         let forced = self.forced_entry.take();
         let Some(slot) = forced
@@ -574,10 +592,11 @@ impl Battle {
         };
         // A storing Bide sits silent — the games log nothing for the two
         // storing turns — and cannot be re-chosen out of.
+        // Its `onBeforeMove` answers false, so no `AfterMove` either.
         if let Some((stored, left)) = self.sides[side].mon().bide {
             if left > 0 {
                 self.sides[side].mon_mut().bide = Some((stored, left - 1));
-                return true;
+                return false;
             }
         }
 
@@ -1150,16 +1169,24 @@ impl Battle {
         // energy can whiff outright. Only a Bide already going gets here —
         // the start sits just below, so on the opening turn there is
         // nothing banked to unleash.
+        //
+        // The release is a real hit, not a bookkeeping shortcut: the sim
+        // fires it through `tryMoveHit`, so it carries the release's own
+        // `contact` and `protect` flags and answers the Invulnerability,
+        // TryHit and DamagingHit events like any other move. Only the two
+        // things that ride `useMoveInner` are missing: no move line (the
+        // handler returns false, so the move is aborted), no Shell Bell.
+        // Whatever the hit finds, the volatile is gone afterwards.
         if slot.entry.id == "bide" && self.sides[side].mon().bide.is_some() {
-            let (stored, _) = self.sides[side].mon().bide.unwrap();
-            self.sides[side].mon_mut().bide = None;
+            let (stored, _) = self.sides[side].mon_mut().bide.take().expect("bide is set");
+            self.sides[side].mon_mut().locked_move = None;
             if !hit {
-                return true;
+                return false;
             }
             let amount = stored.saturating_mul(2);
             if amount == 0 {
                 self.log_failed(side, events);
-                return true;
+                return false;
             }
             let eff = crate::types::effectiveness_against(
                 slot.move_type(),
@@ -1167,10 +1194,34 @@ impl Battle {
             );
             if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
                 self.no_effect(foe, events);
-                return true;
+                return false;
             }
-            self.flat_hit(side, foe, &slot, amount, Some(false), false, false, script, events);
-            return true;
+            // A shield takes it: `protect` rides the release the flags it is
+            // built with, and TryHit is asked before the damage step.
+            if slot.entry.protectable && self.sides[foe].mon().protected {
+                self.log_failed(side, events);
+                return false;
+            }
+            // A mon off the ground dodges it, and the dodge is asked before
+            // the accuracy roll; nothing pierces a release. A taken aim
+            // (Mind Reader, Lock-On) still reaches it, as it does everything.
+            if !sure && self.sides[foe].mon().semi_invulnerable().is_some() {
+                self.sides[side].mon_mut().last_missed = true;
+                self.log_failed(side, events);
+                return false;
+            }
+            self.flat_hit(
+                side,
+                foe,
+                &slot,
+                amount,
+                Some(false),
+                false,
+                Tail::DamagingHit,
+                script,
+                events,
+            );
+            return false;
         }
         // Bide is started by its own accuracy roll, so it belongs BELOW the
         // roll rather than up with the other locks. This era hands it a real
@@ -1417,7 +1468,7 @@ impl Battle {
                 FixedDamage::Level => self.sides[side].mon().level as u16,
                 FixedDamage::Half => (self.sides[foe].mon().hp / 2).max(1),
             };
-            self.flat_hit(side, foe, &slot, amount, None, true, true, script, events);
+            self.flat_hit(side, foe, &slot, amount, None, true, Tail::Both, script, events);
             return true;
         }
 
@@ -1584,7 +1635,7 @@ impl Battle {
                 None => 50 + self.rng.below(101),
             };
             let amount = ((level * roll) / 100).max(1) as u16;
-            self.flat_hit(side, foe, &slot, amount, Some(true), true, true, script, events);
+            self.flat_hit(side, foe, &slot, amount, Some(true), true, Tail::Both, script, events);
             return true;
         }
 
@@ -1618,7 +1669,7 @@ impl Battle {
                 return true;
             }
             let amount = taken.saturating_mul(2);
-            self.flat_hit(side, foe, &slot, amount, None, false, true, script, events);
+            self.flat_hit(side, foe, &slot, amount, None, false, Tail::Both, script, events);
             return true;
         }
 
@@ -2479,7 +2530,10 @@ impl Battle {
                     effectiveness: eff,
                     crit,
                 });
-                // A biding target banks what it just took.
+                // A biding target banks what it just took, after Endure or a
+                // Focus Band has clipped it: the sim runs `Damage` handlers
+                // highest priority first, so Endure (-10) and the band (-40)
+                // have their say before Bide's own (-101) reads the number.
                 if let Some((stored, left)) = self.sides[foe].mon().bide {
                     self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
                 }
@@ -2722,12 +2776,12 @@ impl Battle {
     /// shared hit tail runs. Four copies of this block each missed a
     /// different fix this month, which is why it is one function now.
     ///
-    /// `kings_rock` and `contact_tail` are per-arm because the copies
-    /// genuinely differed: Bide runs neither (even though Bide is in the
-    /// King's Rock move list — the sim was never consulted on that pairing,
-    /// so the unification must not quietly change it), and Counter skips the
-    /// Rock (its move is not in the list, so the call would only be a no-op
-    /// bought with a flag).
+    /// `kings_rock` and `tail` are per-arm because the copies genuinely
+    /// differed: Bide's unleash runs the contact tail but no Rock (even
+    /// though Bide is in the King's Rock move list; the sim was never
+    /// consulted on that pairing, so the unification must not quietly change
+    /// it), and Counter skips the Rock (its move is not in the list, so the
+    /// call would only be a no-op bought with a flag).
     #[allow(clippy::too_many_arguments)]
     pub(super) fn flat_hit(
         &mut self,
@@ -2737,7 +2791,7 @@ impl Battle {
         amount: u16,
         special_register: Option<bool>,
         kings_rock: bool,
-        contact_tail: bool,
+        tail: Tail,
         script: Option<SeatScript>,
         events: &mut Vec<Event>,
     ) {
@@ -2789,8 +2843,10 @@ impl Battle {
             self.kings_rock(side, foe, slot, script);
         }
         self.took_a_hit(foe, amount, events);
-        if contact_tail {
+        if matches!(tail, Tail::DamagingHit | Tail::Both) {
             self.on_damaged(side, foe, slot, slot.move_type(), amount, script, events);
+        }
+        if matches!(tail, Tail::Both) {
             self.shell_bell(side, amount, events);
         }
         self.resolve_faints(side, foe, events);
