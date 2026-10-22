@@ -19,7 +19,8 @@ Bambu Studio's CLI lists no changed settings in its projects, so each project th
 process preset (P1S_PRESETS, the one at its layer height; Bambu's X1C presets are the P1S's) and
 lists what it changes from it (print_package.mark_presets), or Bambu Studio would load the preset's.
 
-Writes print/package_P1S/ and print/mega_blastoise_print_P1S.zip (build output, not in git).
+Writes print/package_P1S/ and print/mega_blastoise_print_P1S.zip (build output, not in git); the
+printer tests (print_package.TEST_PLATES) go to print/tests_P1S/ and print/overhang_kit.zip instead.
 """
 import json
 import os
@@ -203,8 +204,11 @@ def main():
     only = sys.argv[1:]
     print("supports, measured part by part:")
     supported = print_package.support_parts()
-    shutil.rmtree(OUT, ignore_errors=True)
-    os.makedirs(os.path.join(OUT, "stl"))
+    queue = [(n, p) for n, p in print_package.PLATES.items() if not only or n in only]
+    case = any(n not in print_package.TEST_PLATES for n, _ in queue)  # the case kit or the tests, or both
+    tests = any(n in print_package.TEST_PLATES for n, _ in queue)
+    tests_dir = print_package.TESTS["P1S"]
+    print_package.fresh(([OUT] if case else []) + ([tests_dir] if tests else []))
     rows = []
     with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(SLICERS) as pool:
         def plate(name, parts):
@@ -217,17 +221,23 @@ def main():
                 print(f"  {name}: split into {name}_a and {name}_b")
                 return plate(name + "_a", a) + plate(name + "_b", b)
             return [(name, parts, done)]
-        queue = [(n, p) for n, p in print_package.PLATES.items() if not only or n in only]
         # the plates slice at once (each Bambu Studio uses a few cores); listed in the plates' order
         for name, parts, done in [r for rs in pool.map(lambda q: plate(*q), queue) for r in rs]:
             path, grams, secs, sup = done
-            shutil.copy(path, os.path.join(OUT, os.path.basename(path)))
+            where = print_package.plate_dir(name.removesuffix("_a").removesuffix("_b"), OUT, "P1S")
+            shutil.copy(path, os.path.join(where, os.path.basename(path)))
             for _, p in parts:
-                shutil.copy(p, os.path.join(OUT, "stl", os.path.basename(p)))
-            rows.append((name, sup, grams, secs, [o for o, _ in parts]))
+                shutil.copy(p, os.path.join(where, "stl", os.path.basename(p)))
+            if where == OUT:
+                rows.append((name, sup, grams, secs, [o for o, _ in parts]))
             print(f"{name + '.3mf':24s} {grams:6.1f} g  {int(secs // 3600)} h {int(secs % 3600 // 60):02d} min  "
                   + ", ".join(o for o, _ in parts) + "".join(f"\n{'':24s} supports under {o}: {v:.0f} mm of extrusion"
                                                             for o, v in sup.items()))
+    if tests:
+        shutil.copy(print_package.TESTS_README, os.path.join(tests_dir, "README.md"))
+        print_package.tests_zip()
+    if not case:
+        return
     for extra in ("top.stl", "deck.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not only:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
