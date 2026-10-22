@@ -6,8 +6,8 @@ the documents to build, bring up and review it.
 
 **The cell lies under the board** (on the tub's floor) since 2026-10-09; the layout with
 it on the board under the screen (13.9 mm thick, 7.9 at the ends) is on branch
-`ref-design-cell-on-board`. This board needs `route.py 80` (twice the default passes) to
-route completely.
+`ref-design-cell-on-board`. This board was first routed with `route.py 80`; 20 passes do as
+well (2026-10-21: Freerouting leaves the same connections open after 15 as after 80).
 
 **This is the 2-layer build**, on `main` since 2026-09-24: the first, 4-layer
 design (kept at tag `archive/ref-design-4layer`) with every cost change Alex approved
@@ -82,9 +82,14 @@ Speed: `tools/scad.py` picks OpenSCAD. With an OpenSCAD development snapshot App
 in `~/Applications` (openscad.org, Development Snapshots) it renders with the Manifold
 backend, minutes down to seconds; otherwise the system `openscad` (CGAL). `OPENSCAD=...`
 picks a binary, `OPENSCAD_BACKEND=CGAL` the old backend. Renders and kicad-cli exports
-run several at once (`REF_JOBS` sets how many). `route.py` routes three copies of the
-board at once and keeps the first with a clean DRC (`--attempts=N` or `ROUTE_ATTEMPTS`;
-1 routes in place as before).
+run several at once (`REF_JOBS` sets how many). `route.py` routes four copies of the
+board at once, each handed to Freerouting in another order (`--seed=`: 1.9 routes one file
+the same way every time, so identical copies all end the same way), starts the next seed
+when one ends with something open, and keeps the first with a clean DRC (`--attempts=N` or
+`ROUTE_ATTEMPTS`, 1 routes in place as before; `--tries=M` caps the seeds, default 2N).
+Freerouting gets 20 passes (it gains nothing after about 15), no 20 s start-up dialog and
+no optimizer pass (`--optimize` puts it back); about 4.5 min for a clean board where three
+80-pass attempts took over 10.
 
 The stages, by hand:
 
@@ -99,7 +104,7 @@ python3 tools/check_pins.py                  # every part's pins against its dat
 python3 sim/models.py && python3 sim/backlight.py   # backlight sink stability (ngspice, about 40 min; only when it changes)
 kicad-cli sch erc battler.kicad_sch          # 0 errors expected
 RP2350B_REF=.../RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb python3 tools/build_pcb.py
-FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # about 10 min, 3 attempts at once
+FREEROUTING_JAR=.../freerouting-1.9.0.jar python3 tools/route.py   # about 4.5 min, 4 seeded attempts at once
 python3 tools/route.py --finish              # only if route.py left a connection open
 python3 tools/silk.py
 python3 tools/sync_pcb.py                    # only for a redrawn schematic on a routed board: relink, rename nets
