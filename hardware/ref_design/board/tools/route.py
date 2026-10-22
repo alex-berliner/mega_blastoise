@@ -101,6 +101,18 @@ def footprints(board):
                                                          int("0" + "".join(c for c in f.GetReference() if c.isdigit()))))
 
 
+REMOVED = []      # every item taken off the board, kept referenced (see remove())
+
+
+def remove(board, item):
+    """board.Remove(item), keeping the item's Python proxy alive for the rest of the run: when
+    the last reference to a removed track or via went, its memory went with it while KiCad's
+    connectivity still pointed there, and later lookups came back as bare SwigPyObjects
+    (route.py --finish died in Space(), 2026-10-22)."""
+    REMOVED.append(item)
+    board.Remove(item)
+
+
 def pads_of(fp):
     return sorted(fp.Pads(), key=lambda p: (p.GetNumber(), xy(p.GetPosition())))
 
@@ -798,7 +810,7 @@ def corridor_ripup(board, net, a, b, tries=12):
         if not runs:
             continue
         for t in [t for t in cand if conflicts(t, runs, net)]:
-            board.Remove(t)
+            remove(board, t)
         add_route(board, net, runs)
         print(f"  {net}: routed through {other}'s copper, which comes back open", flush=True)
         return True
@@ -845,7 +857,7 @@ def finish_open(board, rounds=24, known=None):
                     continue                 # only take up one other net's copper per connection
                 ripped += 1
                 for t in gone:
-                    board.Remove(t)
+                    remove(board, t)
                 add_route(board, net, runs)
                 done += 1
                 took_up = progress = True
@@ -1103,7 +1115,7 @@ def drop_unused_stub_vias(board, stub_vias):
         layers = {t.GetLayer() for t in tracks if t.GetNetname() == v.GetNetname()
                   and min(math.dist(p, xy(t.GetStart())), math.dist(p, xy(t.GetEnd()))) < 0.05}
         if v.GetNetname() not in PLANE_NETS and len(layers) < 2:
-            board.Remove(v)
+            remove(board, v)
             gone += 1
     return gone
 
@@ -1178,7 +1190,7 @@ def prune_dangling(board, rounds=5, locked_too=False):
         changed = 0
         for t in items:
             if isinstance(t, pcbnew.PCB_VIA):
-                board.Remove(t)
+                remove(board, t)
                 changed += 1
                 continue
             try:
@@ -1186,7 +1198,7 @@ def prune_dangling(board, rounds=5, locked_too=False):
             except AttributeError:
                 continue                    # an item the pass before took away (its SWIG proxy is stale)
             if span is None:
-                board.Remove(t)
+                remove(board, t)
                 changed += 1
             elif span != (xy(t.GetStart()), xy(t.GetEnd())):
                 t.SetStart(V(*span[0]))
@@ -1243,7 +1255,7 @@ def split_at_joins(board):
         a, b = tuple(round(v, 4) for v in xy(t.GetStart())), tuple(round(v, 4) for v in xy(t.GetEnd()))
         key = (t.GetNetname(), t.GetLayer(), frozenset((a, b)), t.GetWidth())
         if key in seen:
-            board.Remove(t)
+            remove(board, t)
             dropped += 1
         else:
             seen.add(key)

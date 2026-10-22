@@ -151,8 +151,11 @@ put("TP16", 93.0, 141.6, 0)                 # GND for a scope clip
 put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
 put("SW19", CASE["pinholes"][1][0], CASE["pinholes"][1][1], 90)
 put("R26", 71.2, 91.0, 90)
-put("J6", 68.75, 71.65, 0)                  # UART: above the side screw, clear of seat 2's deck
-put("J5", 68.8, 79.6, 180)                 # SWD: in the left strip below J6
+# J6 (UART) and J5 (SWD) one above the other, both turned so their mouths face the board's left
+# edge (2026-10-22, Alex: they faced each other nose to nose and neither plug went in): the plugs
+# go in from the side with the case open, the pins face the cell's hole
+put("J6", 68.4, 70.3, 270)                  # UART: below the side screw H2
+put("J5", 68.4, 77.8, 270)                  # SWD: below J6, above SW18
 
 # edge part on the right: USB-C
 # Moved down the right wall below the cell's hole (2026-10-21, Alex: it may slide along its wall):
@@ -170,15 +173,17 @@ put("J1", usb_x, USB_Y, 90)
 # USB input
 # U1 (ESD) on the USB pair, turned so D+ and D- each run over their own pin (pins 1 and 3) with
 # no stub: route.py's usb_pair() draws the pair from J1 through U1 to R21/R22 by the core. Under
-# the glass's right edge, left of the speaker; the CC resistors above J1 in the right strip
+# the glass's right edge, left of the speaker. The CC resistors in the bezel above J4's plug (in
+# a row across the strip above J1 they walled off its tracks); C42, CC1's spare, along the hole's
+# edge in the strip
 put("U1", 120.6, 106.5, 0)
-put("R1", 127.4, 93.65, 0)
-put("R3", 129.4, 93.65, 0)
-put("R2", 131.4, 93.65, 0)
-put("R4", 133.4, 93.65, 0)
+put("R3", 124.15, 122.25, 0)
+put("R4", 126.15, 122.25, 0)
+put("R1", 124.15, 123.45, 0)
+put("R2", 126.15, 123.45, 0)
 put("C1", 120.3, 109.4, 0)                  # below the USB pair
 put("R41", 120.3, 111.1, 0)                # C1's series resistor (hot-plug ringing)
-put("C42", 125.7, 123.05, 0)                # spares on CC1 and CC2, in the bezel beside J4's plug
+put("C42", 127.7, 89.5, 90)                 # spares on CC1 and CC2
 put("C43", 125.7, 130.4, 0)
 
 # the cell: J2 at its hole's seat-1 corner, mouth into the hole's lead pocket, so the plug's
@@ -194,8 +199,8 @@ put("R9", 121.4, 120.4, 90)
 put("R10", 122.6, 120.4, 90)
 put("R43", 119.0, 120.4, 90)
 put("R44", 120.2, 120.4, 90)
-put("TP7", 127.8, 91.75, 0)                 # CHG_TEMP
-put("TP15", 124.6, 133.2, 0)                 # GND for a scope clip, by the charger
+put("TP7", 113.0, 119.6, 0)                 # CHG_TEMP: flat, under the folded FPC by U2
+put("TP15", 113.0, 130.0, 0)                 # GND for a scope clip, by the charger: flat, under the folded FPC
 # the cell's temperature: TH1 at the hole's right edge, which the cell is pushed against
 put("TH1", 127.1, 86.0, 90)
 put("C41", 133.4, 90.4, 90)                 # spare across TEMP)
@@ -211,7 +216,7 @@ put("Q1", 131.5, 82.9, 0)
 put("R15", 133.6, 86.4, 90)
 put("R16", 131.0, 85.8, 0)
 put("C47", 131.0, 87.4, 90)                 # PWR_EN's slow-rise cap: its long axis along the strip
-put("TP6", 129.6, 89.6, 0)                  # PWR_EN)
+put("TP6", 130.0, 89.6, 0)                  # PWR_EN)
 
 # 3V3 LDO: in the left bezel under the core it feeds
 put("U3", 68.6, 126.4, 90)
@@ -289,7 +294,7 @@ put("R32", 116.55, 133.6, 0)
 put("C37", 118.53, 133.6, 0)
 put("R33", 120.51, 133.6, 0)
 put("C38", 122.49, 133.6, 0)
-put("Q3", 113.8, 135.3, 0)                  # SHUTDOWN switch
+put("Q3", 125.5, 133.4, 0)                  # SHUTDOWN switch: under seat 1's deck above H3, out of the cluster's band
 put("TP8", 113.0, 123.5, 0)                 # SHUTDOWN: flat, under the folded FPC like JP2
 put("JP3", 113.0, 127.0, 0)                 # VSYS -> amplifier
 put("J4", 131.4, 126.75, 270)               # PicoBlade like J2: mouth towards the glass, pins by the wall

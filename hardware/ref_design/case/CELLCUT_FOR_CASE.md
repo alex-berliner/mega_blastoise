@@ -1,6 +1,6 @@
 # The board with the cell in it (2026-10-22): what the case needs to know
 
-Routed clean on branch `ref-design-cellcut` at 4af3024 (0 unconnected, DRC 0 errors). With the speaker back (2026-10-22, WIP): DRC 0 errors, 5 connections still open.
+Routed clean on branch `ref-design-cellcut` at 4af3024 (0 unconnected, DRC 0 errors). With the speaker back (2026-10-22, WIP): DRC 0 errors, 4 connections still open.
 
 For the Blastoise Shell session. The cell now sits in a hole in the board (row 19 of Alex's
 2026-10-21 list), and since 2026-10-22 the speaker lies on the board's top in the right bezel
@@ -80,6 +80,15 @@ Other limits unchanged (glass 2.2, bezels and spines 3.45, decks 1.6, round the 
 nothing under the folded FPC but J3). Seat 2's spine now only covers U9 (the shift register,
 1.2 mm: the deck would do); seat 1's spine covers U6 (1.75 mm, needs it).
 
+## J5 and J6, the debug connectors (2026-10-22)
+
+They faced each other nose to nose, so neither plug went in. Both are now turned with their
+mouths towards the board's left edge (x -35.2), courtyards x -34.3 .. -27.7, J6
+y 26.3 .. 33.1, J5 y 18.8 .. 25.6; each housing's front is about 1.2 mm in from the board's
+edge. The plugs go in sideways with the case open and stick out past the board's edge (a JST
+SH plug is about 4.5 mm long), so a cable can't stay in with the case closed unless the left
+wall gets a notch or slot there (the case's call; debug is case-open).
+
 ## The strips beside the hole (2026-10-22 review)
 
 The board beside the hole is two strips, x -35.2 .. -27.7 (7.5 mm) and 26.3 .. 35.2 (8.9 mm), y
@@ -90,7 +99,7 @@ length, meeting the board's back (only soldermask there: the GND pour, tracks an
 so nothing presses the strips into a bend:
 
 - under the left strip at least at the debug buttons a pin presses (SW18, SW19 at case (-31.2,
-  13.0) and (-31.2, 6.0)) and under J5/J6, where a cable is pushed in (-31.2, 20.4 / 28.35);
+  13.0) and (-31.2, 6.0)) and under J5/J6, where a cable is pushed in (-31.0, 22.2 / 29.7);
 - under the right strip (the power latch and TH1) at its middle, y about 14.
 
 Keep the ribs out of the hole (the cell) and 0.5 mm off its edge.
@@ -100,8 +109,8 @@ Keep the ribs out of the hole (the cell) and 0.5 mm off its edge.
 | Part | Case (x, y) | Height | Note |
 |---|---|---|---|
 | J2 cell plug | -29.7, -7.24 | 3.4 | left bezel |
-| J5 SWD (JST SH) | -31.2, 20.4 | 2.9 | left strip (`swd_pos` was -31.7, -2.0) |
-| J6 UART (JST SH) | -31.25, 28.35 | 2.9 | left strip (`uart_pos` was -31.7, -12.0) |
+| J5 SWD (JST SH) | -31.0, 22.2 | 2.9 | left strip, mouth towards the left wall (`swd_pos` was -31.7, -2.0) |
+| J6 UART (JST SH) | -31.0, 29.7 | 2.9 | left strip, mouth towards the left wall (`uart_pos` was -31.7, -12.0) |
 | U6 backlight op-amp, SOIC-8 | 0, -36.4 | 1.75 | under seat 1's spine |
 | U8 / U9, 74HC165 TSSOP-16 | 1.2, -44.2 / 0, 41.5 | 1.2 | between each seat's clusters |
 | TH1 | 27.1, 14.0 | 0.5 | at the hole's right edge |
@@ -148,16 +157,17 @@ stuck down with foam tape and plugged into J4. The board keeps parts out of its 
   y -22 .. -31.5 would give the plug room if the top piece allows it. J4 keeps 1.1 mm off the
   crush rib at (35.7, -28).
 - The amplifier U7 (SOIC-8, 1.75) is under the glass's right edge at (20.3, -25.5); its small
-  parts are under the glass and the seat-1 deck (Q3, SOT-23, 1.1 tall, at (13.8, -35.3)): all
-  inside today's limits.
+  parts are under the glass and the seat-1 deck (Q3, SOT-23, 1.19 tall, at (25.5, -33.4), above
+  the screw H3 and outside the cluster's 0.5 mm band): all inside today's limits. TP7, TP8, TP15
+  (flat test pads) and JP3 (a solder jumper) lie under the folded FPC.
 - The old side outlet and chamber go.
 
 ## check_fit against this board (today's positions.json, 2026-10-22 WIP)
 
 13 failures. From things the case doesn't know yet: parts within the *old* side screws' bosses
-(C16, JP1 at the old (-31.4, -22); D8, Q7, R62, R63 at (31.4, 22); J5 at (-31.4, 22); and now
-**J4** at the old (31.4, -22)), and the four dome vents on floor ribs. J1's six shell legs no
-longer fail (J1 is back at y 0). One is the board's own and still open: **Q3** (SOT-23, 1.19)
-sits in the 0.5 mm retainer band round seat 1's right cluster; it moves on the next placement.
+(C16, JP1 at the old (-31.4, -22); D8, Q7, R62, R63 at (31.4, 22); J5 at (-31.4, 22); J4 at the
+old (31.4, -22)), and the four dome vents on floor ribs. J1's shell legs and Q3 no longer fail.
+One is the board's own and still open: **J6**'s top edge reaches about 1.3 mm into seat 2's deck
+band (y over 31.8); J6 and J5 move about 1.3 mm towards seat 1 on the next placement.
 Not checked by check_fit (the speaker is not a footprint): the speaker's 3.5-3.8 mm in the
 bezel (the 0.5 mm pocket) and its grille, above.

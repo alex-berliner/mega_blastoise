@@ -159,7 +159,7 @@ def main():
     text("PANEL", min(x for x, _ in row) - 5.2, row[0][1])
     for ref, name in (("J5", "SWD"), ("J6", "UART")):
         jb = box(board.FindFootprintByReference(ref))
-        text(name, jb[2] + 0.4 + 0.33 * len(name), (jb[1] + jb[3]) / 2)
+        text(name, (jb[0] + jb[2]) / 2 - 0.6, (jb[1] + jb[3]) / 2)     # on its body: right of it is the hole
     # the speaker, hand-fitted on the top (build_pcb.py draws its outline): its name inside it
     (sx, sy) = SPEAKER["at"]
     text("SPEAKER", sx, sy - 1.0)
