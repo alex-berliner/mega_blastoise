@@ -143,7 +143,11 @@ impl Battle {
             StatusAction::BellyDrum => {
                 let mon = self.sides[side].mon();
                 let cost = mon.max_hp / 2;
-                if mon.hp > cost && mon.stages[Stat::Atk as usize] < 6 {
+                // The sim's onHit refuses three ways: hp <= maxhp / 2, a drum
+                // already at the +6 cap, or max HP 1. Halving a single point
+                // floors to a zero cost, and the damage that pays for it
+                // clamps sub-1 back up to a lethal full point.
+                if mon.hp > cost && mon.stages[Stat::Atk as usize] < 6 && mon.max_hp > 1 {
                     let mon = self.sides[side].mon_mut();
                     mon.hp -= cost;
                     mon.stages[Stat::Atk as usize] = 6;
@@ -949,7 +953,10 @@ impl Battle {
             StatusAction::Substitute => {
                 let mon = self.sides[side].mon();
                 let cost = mon.max_hp / 4;
-                if mon.sub_hp == 0 && mon.hp > cost {
+                // The sim's onTryHit carries the same 1-max-HP refusal as
+                // Belly Drum: a quarter of one HP floors to nothing, and the
+                // damage that pays for it clamps to a lethal point.
+                if mon.sub_hp == 0 && mon.hp > cost && mon.max_hp > 1 {
                     let mon = self.sides[side].mon_mut();
                     mon.hp -= cost;
                     mon.sub_hp = cost;
