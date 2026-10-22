@@ -77,15 +77,19 @@ cell_pocket_fit = 0.25;                                 // the pocket inside the
 // and the pad it lay on went with it (Alex, 2026-10-22: the side bezel, not the side wall)
 spk = [10, 15, 3.5];                                    // across (x), along (y, the racetrack's length), height
 spk_h_max = 3.8;                                        // its top over the board, worst case
-spk_pos = [28.7, -13.5];                                // its centre and its cone's (placement.py SPEAKER)
+spk_pos = [28.7, -11.4];                                // its centre and its cone's (placement.py SPEAKER; 2.1 up
+                                                        // since the side screws came back inward, 2026-10-22)
 spk_keep = 0.5;                                         // the board's keep-out round it, and the pocket's
 spk_pocket = 0.5;                                       // the pocket's depth into the top piece's underside
 grille_in = 1.5;                                        // the grille stays this far inside the speaker's outline:
                                                         // the rim round it is solid, for its front ring to seal on
 grille_slot = [1.0, 1.8];                               // the grille's slots along the racetrack: width, pitch
 // J4 (the speaker's plug, PicoBlade like J2, 3.4 tall) below the speaker against the right wall, its
-// mouth towards the glass; the mated plug goes in from the left. A 0.3 pocket gives the plug room
-j4_pocket = [[24.0, -31.5], [35.2, -22.0], 0.3];        // its corners, its depth
+// mouth towards the glass; the mated plug goes in from the left. A 0.3 pocket over both gives the plug
+// room; the side screw H3 stands between the speaker and the plug, and the pocket goes round its boss
+j4_body = [[28.75, -31.73], [35.65, -22.17]];           // its body's corners (centre 31.9, -27.0: CELLCUT_FOR_CASE.md)
+j4_plug = [[24.75, -29.25], [28.75, -24.75]];           // the mated plug's (about)
+j4_pocket = 0.3;  j4_pocket_grow = 0.25;                // the pocket's depth, and how far it is grown round them
 j4_h = 3.4;
 
 abxy_pitch = 15.0;  dpad_pitch = 14.0;                  // DS Lite (gerbers)
@@ -321,34 +325,31 @@ ss_centres = [[0, -ss_y], [0, ss_y]];
 // Six M2 screws, as the DS Lite closes: from the back through the tub's bosses and the board's holes,
 // clamping the board between the tub's bosses and the top pieces' (the first print's pins through the
 // board's holes snapped, so they went; crush ribs centre the board and the screws line it up). Four
-// go into the top piece's bosses at the long sides' ends, one into each deck's boss between its
-// clusters. The board goes in one way only: turned round, J1's receptacle hits the wall away from the
-// USB-C opening, and the end bosses are off the centre line
-pin_x = 31.4;             // beside the glass, between the bay and the board edge
-pin_y = 36;               // the side screws (2026-10-22: the board moved them to the long sides' ends, past the
-                          // cell's hole, where the board is full width; at y 22 they closed half of the strips
-                          // beside the hole). Past the step's foot, so each stands in a shoulder of the top
-                          // piece (shoulder, below): the top piece keeps its four screws
+// go into the top piece's bosses beside the glass, one into each deck's boss between its clusters.
+// The board goes in one way only: turned round, J1's receptacle hits the wall away from the USB-C
+// opening, and the end bosses are off the centre line
+// The side screws are the board's (placement.py SIDE_SCREWS; Alex, 2026-10-22: |y| <= 29, inside the
+// top piece, no shoulders): H1 and H2 at the seat-2 ends of the strips beside the cell's hole, H3 in
+// the right bezel between the speaker and J4, H4 in the left bezel between J2 and the LDO
+side_pins = [[32.5, 29.0], [-32.5, 29.0], [25.9, -21.95], [-33.0, -15.2]];
 pin_key = 3.0;            // the end bosses sit off the centre line (seat 1's board hole is there)
 pin_out = 1.4;            // and this much further out than the clusters
 // seat 2's end boss is seat 1's turned round (2026-10-20), so one deck fits both ends
-pins = [[pin_x, pin_y], [-pin_x, pin_y], [pin_x, -pin_y], [-pin_x, -pin_y], [pin_key, seat_y + pin_out], [-pin_key, -seat_y - pin_out]];
+pins = concat(side_pins, [[pin_key, seat_y + pin_out], [-pin_key, -seat_y - pin_out]]);
 boss_d = 5.0;  hole_d = 2.2;
+// The tub's bosses under the board (0.7 tall, board_lift) are 6.0, except at H2 and H4, where 6.0
+// would come within 0.8 of the cell's hole (H2) and 0.2 of the board's edge (H4): there they are
+// boss_d, 1.3 round the screw's 2.4 clearance (the head's counterbore is in the floor under them)
+tub_boss_d = [6.0, boss_d, 6.0, boss_d, 6.0, 6.0];
 // M2 x 6 self-tapping, wafer head (4 mm, 1 mm): M2 x 8 until the case got 3.8 mm thinner (2026-10-22),
 // when an 8 would have run past the decks' pilots
 screw_cb = [4.4, 1.0];  screw_clear = 2.4;  screw_pilot = 1.6;  screw_l = 6;
 screw_engage = min(6.0, case_h - z_top_cu - 0.8);       // the pilot stops 0.8 under the face
 deck_engage = deck_face - z_top_cu - 0.6;               // and 0.6 under the deck's face (the screw's tip 0.1 short)
-// The side screws' shoulders (2026-10-22): at y 36 the screws are 1.65 past the joint between the top
-// piece and the decks, so the top piece reaches out round each one at the case's corners of the screen
-// block, a shoulder at the screen face's height with the step round it like the spines'. Its joint
-// keeps the undercut's reach (wedge_w) and 0.3 off the boss. A boss on the deck would have left the top
-// piece with no screw at all (the decks' wedges only stop it moving inwards); a shoulder at the deck's
-// height would print face down as a 5.6 mm ledge 1.85 off the bed
-shoulder = [pin_x - boss_d / 2 - wedge_w - 0.3, pin_y + boss_d / 2 + wedge_w + 0.3];   // joint: |x| from, |y| to
 
-// edge parts, all on the right (+X) long edge
-usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
+// edge parts, all on the right (+X) long edge. J1 slid 2 mm up its wall (towards seat 2) when the side
+// screws came back inward (2026-10-22, CELLCUT_FOR_CASE.md): its opening, tab, notch and slot follow usb_y
+usb_y = 2.0; usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
 usb_r = 1.0;                                            // its corner radius: a rounded rectangle with 1.2 mm flats
                                                         // on its ends, not a stadium (HRO's 3D model, 2026-10-20)
 // The receptacle's face sits usb_recess under the case's surface, so a plug's overmold comes up to
@@ -374,10 +375,10 @@ usb_tab_w = 12.0;  usb_tab_fit = 0.3;
 // receptacle's face (the receptacle's shell length, 6.20 in the Type-C spec)
 plug_len_min = 6.55;  usb_mate = 6.20;
 // left long edge: debug
-pin_pos = [[-31.2, 13.0], [-31.2, 6.0]];                // SW18 BOOTSEL, SW19 RESET under pinholes in the face
+pin_pos = [[-31.2, 8.6], [-31.2, 1.6]];                 // SW18 BOOTSEL, SW19 RESET under pinholes in the face
 // J5 (SWD) and J6 (UART), JST SH, their mouths towards the left edge (the board's, 2026-10-22): plugged
 // with the case open (the tub off), as the plugs stand past the board's edge; no slot in the wall
-swd_pos = [-32.6, 20.9];  uart_pos = [-32.6, 28.4];
+swd_pos = [-32.6, 15.2];  uart_pos = [-32.6, 22.7];
 debug_h = 2.9;
 // J2, the cell's plug (PicoBlade 53261, 3.4 tall), at the cell hole's seat-1 corner in the left
 // bezel, its mouth into the hole's corner: the mated plug stands 3 mm out over the left strip and
@@ -394,8 +395,6 @@ spine_end = 43.695 + joint_w;                           // the spine's end, its 
 // the distance from point p to the rectangle r = [[x0, y0], [x1, y1]] (0 inside it)
 function rect_dist(p, r) = norm([max(0, min(r[0][0], r[1][0]) - p[0], p[0] - max(r[0][0], r[1][0])),
                                  max(0, min(r[0][1], r[1][1]) - p[1], p[1] - max(r[0][1], r[1][1]))]);
-function rects_apart(a, b) = norm([max(0, min(b[0][0], b[1][0]) - max(a[0][0], a[1][0]), min(a[0][0], a[1][0]) - max(b[0][0], b[1][0])),
-                                   max(0, min(b[0][1], b[1][1]) - max(a[0][1], a[1][1]), min(a[0][1], a[1][1]) - max(b[0][1], b[1][1]))]);
 assert(cluster_spacing >= piece_d + 2, "a seat's two silicone pieces would touch");
 assert(seat_y - piece_d / 2 >= bay_l / 2 + piece_to_glass - 1e-6, "cluster runs into the glass");
 assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs off the board");
@@ -411,16 +410,24 @@ assert(tune || cell_top <= glass_gap - 0.4 && cell_top <= z_deck_under - z_top_c
 assert(cell[2] - cell_top >= pcb_t + 0.5, "the cell doesn't reach through the board to the floor");
 assert(floor_t - cell_pocket >= 0.8, "the floor under the cell is too thin");
 assert(board_lift >= 0.7 - 1e-6, "the board rests on ribs too low to print");
-for (s = [for (i = [0:3]) pins[i]]) assert(rect_dist(s, cell_hole) >= (boss_d + 1) / 2 + 0.5, "a side screw's boss runs into the cell's hole");
+// the side screws' bosses (the tub's under the board, the top piece's on it) on the board, clear of
+// the cell's hole and the board's edge
+for (i = [0:3]) let(s = pins[i], b = max(tub_boss_d[i], boss_d)) {
+  assert(rect_dist(s, cell_hole) >= b / 2 + 1.0, "a side screw's boss runs into the cell's hole");
+  assert(abs(s[0]) + b / 2 <= board_w / 2 - 0.5, "a side screw's boss runs past the board's edge");
+}
 // the speaker in the right bezel, under its pocket, clear of the panel's frame, the cell and J4
 assert(spk_pos[0] - spk[0] / 2 - spk_keep >= (panel_w + panel_fit) / 2 + frame_wall + 0.3, "the speaker's pocket runs into the panel frame");
 assert(spk_pos[0] + spk[0] / 2 + spk_keep <= case_w / 2 - wall - 1.0, "the speaker's pocket runs into the side wall");
 assert(z_ceil + spk_pocket - z_top_cu >= spk_h_max + 0.15, "no room for the speaker under the top piece");
 assert(top_t - spk_pocket >= 1.2, "the face over the speaker is too thin");
-assert(spk_pos[1] + spk[1] / 2 + spk_keep <= cell_hole[0][1] - 1.0, "the speaker runs into the cell's hole");
-assert(spk_pos[1] - spk[1] / 2 - spk_keep >= j4_pocket[1][1], "the speaker runs into J4");
-assert(j4_pocket[0][1] >= -(joint_y - joint_w) + 0.3, "J4's pocket runs into the step's band");
-assert(z_ceil + j4_pocket[2] - z_top_cu >= j4_h + 0.3, "no room for J4 and its plug under the top piece");
+// (since 2026-10-22 its seat-2 end is 0.1 short of the hole's edge: it lies on the board, and its
+// pocket, over the ceiling, reaches 0.4 over the hole, far above the cell's top)
+assert(spk_pos[1] + spk[1] / 2 <= cell_hole[0][1] + 1e-6, "the speaker doesn't lie on the board");
+assert(spk_pos[1] - spk[1] / 2 - spk_keep >= j4_body[1][1], "the speaker runs into J4");
+assert(spk_pos[0] - spk[0] / 2 + grille_in >= (panel_w + panel_fit) / 2 + frame_wall + 2.0, "the grille runs into the screen's bezel");
+assert(j4_body[0][1] >= -(joint_y - joint_w), "J4 runs under the step's band");
+assert(z_ceil + j4_pocket - z_top_cu >= j4_h + 0.3, "no room for J4 and its plug under the top piece");
 // USB-C: the opening centred on the receptacle's mouth (it stands on the board's top), usb_gap round
 // it, cut through the whole wall from inside the tub's round to past the outside, the receptacle's
 // face in the wall, and a mated plug's overmold off the wall (check_fit.py checks the same against
@@ -434,10 +441,21 @@ assert(usb_recess <= plug_len_min - usb_mate - 0.1, "a mated USB-C plug's overmo
 assert(z_ceil - z_top_cu >= j2_h + 0.3 && z_ceil - z_top_cu >= debug_h + 0.3, "J2 or a debug connector touches the top piece");
 assert(j2_plug[1][0] <= cell_hole[0][0] + 0.2, "J2's plug isn't at the hole's corner");
 assert(swd_pos[1] - 3.5 >= pin_pos[0][1] + 2.4 + 0.3, "the BOOTSEL switch runs into the SWD connector");
-// the side screws in the top piece's shoulders
-assert(shoulder[1] > joint_y + 1 && shoulder[0] > cluster_spacing / 2 + 4, "the shoulders aren't where the side screws are");
-assert(pin_x - boss_d / 2 >= bay_w / 2 + 0.5 && pin_x + boss_d / 2 <= board_w / 2, "no room for side bosses beside the glass");
-assert(abs(pin_y) - boss_d / 2 >= (panel_l + panel_fit) / 2 + frame_wall + 0.3, "a side boss runs into the panel frame");
+assert(rect_dist(pin_pos[1], j2_plug) >= 2.4 + 0.3, "the RESET switch runs into J2's plug");
+// the side screws in the top piece, beside the glass: clear of the panel's frame, inside the side
+// walls, under the whole screen face (not the step), clear of the joint's band (the decks' wedges and
+// plates start there) and of the speaker and J4 round H3
+frame_rect = [[-(panel_w + panel_fit) / 2 - frame_wall, -(panel_l + panel_fit) / 2 - frame_wall],
+              [(panel_w + panel_fit) / 2 + frame_wall, (panel_l + panel_fit) / 2 + frame_wall]];
+function racetrack_dist(p, c, w, l) = norm(p - [c[0], max(c[1] - (l - w) / 2, min(c[1] + (l - w) / 2, p[1]))]) - w / 2;
+for (s = side_pins) {
+  assert(rect_dist(s, frame_rect) >= boss_d / 2 + 0.3, "a side boss runs into the panel frame");
+  assert(abs(s[0]) + boss_d / 2 <= in_x - 1.0, "a side boss runs into the side wall");
+  assert(abs(s[1]) + boss_d / 2 + 0.5 <= joint_y - step_in(0), "a side boss runs under the step");
+  assert(abs(s[1]) + boss_d / 2 + 0.3 <= joint_y - joint_w + 1e-6, "a side boss runs into the joint's band");
+  assert(racetrack_dist(s, spk_pos, spk[0] + 2 * spk_keep, spk[1] + 2 * spk_keep) >= boss_d / 2 + 0.3, "a side boss runs into the speaker's pocket");
+  assert(rect_dist(s, j4_body) >= boss_d / 2 + 0.3 && rect_dist(s, j4_plug) >= boss_d / 2 + 0.3 - 1e-6, "a side boss runs into J4 or its plug");
+}
 for (p = pin_pos) for (q = pins) assert(norm(p - q) >= boss_d / 2 + 2.4 + 0.5, "a pinhole switch (SW18, SW19) runs into a screw boss");
 // the screws: each tip short of its pilot's end
 assert(tune || screw_cb[1] + screw_l <= z_top_cu + deck_engage && screw_cb[1] + screw_l <= z_top_cu + screw_engage, "the screws are longer than their pilots");
@@ -492,18 +510,6 @@ for (c = clusters) assert(abs(c[1]) - piece_d / 2 >= joint_y + 0.5 || abs(c[0]) 
                           "a silicone piece runs under the top piece");
 // the openings and their chamfers lie on the deck's face, clear of the joint
 for (b = buttons) assert(abs(b[2][1]) - cap_hole_d / 2 - cap_chamfer >= joint_y + deck_gap + 1.0, "a cap's opening runs into the step");
-// and clear of the shoulders: the openings, and each silicone pad's lobes and waist
-function shoulder_rect(sx, sy) = [[sx * shoulder[0], 0], [sx * case_w, sy * shoulder[1]]];
-for (sx = [-1, 1], sy = [-1, 1]) let(r = shoulder_rect(sx, sy)) {
-  for (b = buttons) assert(rect_dist(b[2], r) >= cap_hole_d / 2 + cap_chamfer + deck_gap + 1.0, "a cap's opening runs into a shoulder");
-  for (c = [dpad1, dpad2]) let(L = dpad_arm_l / 2 + dpad_gap + dpad_chamfer, W = dpad_arm_w / 2 + dpad_gap + dpad_chamfer)
-    for (arm = [[L, W], [W, L]]) assert(rects_apart([c - arm, c + arm], r) >= deck_gap + 1.0, "the D-pad's opening runs into a shoulder");
-  for (c = clusters) let(dp = c == dpad1 || c == dpad2) {
-    assert(rect_dist(c, r) >= (dp ? dpad_waist_r : abxy_waist_r) + 0.5, "a silicone pad runs under a shoulder");
-    for (t = [0:90:270]) assert(rect_dist(c + (dp ? dpad_pitch : abxy_pitch) / 2 * [cos(t), sin(t)], r) >= (dp ? dpad_lobe_r : abxy_lobe_r) + 0.5,
-                                "a silicone pad's lobe runs under a shoulder");
-  }
-}
 for (c = [dpad1, dpad2]) assert(abs(c[1]) - dpad_arm_l / 2 - dpad_gap - dpad_chamfer >= joint_y + deck_gap + 1.0, "the D-pad's opening runs into the step");
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "screw boss under a silicone piece");
 assert(seat_y + pin_out - boss_d / 2 >= spine_end + 0.5, "an end boss runs under the spine");
@@ -610,12 +616,10 @@ module pad2d(c) let(dp = c == dpad1 || c == dpad2) union() {
 module cross(w, l) union() { square([l, w], center = true); square([w, l], center = true); }
 module window() translate([0, aa_off]) square([aa_w + 2 * window_margin, aa_l + 2 * window_margin], center = true);
 // The top piece's plan up to the joint: the screen block across the case (past its sides: intersect
-// with an outline), a spine at each end and a shoulder at each corner round a side screw; the decks
-// are the rest
+// with an outline) and a spine at each end; the decks are the rest
 module top_region2d() union() {
   square([4 * case_w, 2 * joint_y], center = true);
   square([spine_w, 2 * spine_end], center = true);
-  for (sx = [-1, 1]) scale([sx, 1]) translate([shoulder[0], -shoulder[1]]) square([2 * case_w, 2 * shoulder[1]]);
 }
 module half2d(sy) scale([1, sy]) translate([-2 * case_w, 0]) square([4 * case_w, case_l]);
 // a deck's plan (sy: -1 seat 1's end, 1 seat 2's), past the case outline: intersect with one
@@ -660,7 +664,7 @@ if (part == "layout") {
   for (s = pins) color("white") at(s, 0.7) linear_extrude(0.05) ring(0.4) circle(d = boss_d);
   color("#f08a3c") at([usb_front - 3.65, usb_y], 0.8) linear_extrude(0.05) square([7.3, usb_w], center = true);
   color("#f08a3c") at(j2_pos, 0.8) linear_extrude(0.05) square([9.55, 6.9], center = true);
-  color("#f08a3c") translate([0, 0, 0.8]) linear_extrude(0.05) corners2d([j4_pocket[0], j4_pocket[1]]);
+  color("#f08a3c") translate([0, 0, 0.8]) linear_extrude(0.05) for (r = [j4_body, j4_plug]) corners2d(r);
   for (p = pin_pos) color("red") at(p, 0.9) linear_extrude(0.05) circle(d = 1.2);
 }
 
@@ -750,7 +754,7 @@ module tub() difference() {
     // the tab that carries the USB-C opening's lower half, up into the top piece's notch
     intersection() { usb_notch(usb_fit, 0.1); linear_extrude(case_h) outline2d(); }
     // bosses up to the board (the screws come up through them)
-    for (s = pins) at(s) cylinder(d = boss_d + 1.0, h = z_board);
+    for (i = [0:5]) at(pins[i]) cylinder(d = tub_boss_d[i], h = z_board);
     // ribs under each silicone piece carry the button presses into the floor
     for (c = clusters) at(c) difference() {
       cylinder(d = piece_d - 4, h = z_board);
@@ -852,28 +856,31 @@ function step_in(dd) = joint_land + edge_in(min(dd, step_d), step_r) - edge_in(s
 step_levels = concat([[deck_face - 0.01, joint_land]], [for (k = [step_n:-1:0]) [case_h - step_d * k / step_n, step_in(step_d * k / step_n)]]);
 // a box [x0, y0, x1, y1] up to the deck's height, and over it the step: its sides in from the joint
 // at each step level (which sides step: 1 or 0 for each of x0, y0, x1, y1)
-module step_box(r, sides, z0 = z_bot, z1 = case_h) {
-  translate([r[0], r[1], z0]) cube([r[2] - r[0], r[3] - r[1], deck_face - z0]);
-  loft([for (l = concat(step_levels, z1 > case_h ? [[z1, step_in(0)]] : [])) let(s = l[1])
+module step_box(r, sides) {
+  translate([r[0], r[1], z_bot]) cube([r[2] - r[0], r[3] - r[1], deck_face - z_bot]);
+  loft([for (l = step_levels) let(s = l[1])
     [for (c = [[r[0] + sides[0] * s, r[1] + sides[1] * s], [r[2] - sides[2] * s, r[1] + sides[1] * s],
                [r[2] - sides[2] * s, r[3] - sides[3] * s], [r[0] + sides[0] * s, r[3] - sides[3] * s]]) [c[0], c[1], l[0]]]]);
 }
-// the right side's wall and its round, swept along y under a face whose height follows the shoulder's
-// step down to the deck (the left is its mirror): its section at each y, clockwise seen from +x
-side_x0 = shoulder[0] - 1;
+// the right side's wall and its round, swept along y under a face whose height follows the step down
+// to the deck at each end (the left is its mirror): its section at each y, clockwise seen from +x. It
+// starts at side_x0, inside the screen block's edge
+side_x0 = 26.4;
 function side_section(y, h) = concat([[side_x0, y, z_bot], [side_x0, y, h]],
   [for (k = [0:round_n]) let(dd = face_r * k / round_n) [case_w / 2 - edge_in(dd, face_r), y, h - dd]], [[case_w / 2, y, z_bot]]);
-function side_ys() = let(top = [for (k = [step_n:-1:0]) [shoulder[1] - step_in(step_d * k / step_n), case_h - step_d * k / step_n]])
-  concat([[-shoulder[1], deck_face]], [for (i = [0:len(top) - 1]) [-top[i][0], top[i][1]]],
-         [for (i = [len(top) - 1:-1:0]) top[i]], [[shoulder[1], deck_face]]);
+function side_ys() = let(top = [for (k = [step_n:-1:0]) [joint_y - step_in(step_d * k / step_n), case_h - step_d * k / step_n]])
+  concat([[-joint_y, deck_face]], [for (i = [0:len(top) - 1]) [-top[i][0], top[i][1]]],
+         [for (i = [len(top) - 1:-1:0]) top[i]], [[joint_y, deck_face]]);
 module side_sweep() loft([for (yh = side_ys()) side_section(yh[0], yh[1])]);
 module top_outer() {
-  step_box([-(shoulder[0] + 2.6), -joint_y, shoulder[0] + 2.6, joint_y], [0, 1, 0, 1]);    // the screen block
+  step_box([-(side_x0 + 3.6), -joint_y, side_x0 + 3.6, joint_y], [0, 1, 0, 1]);          // the screen block
   step_box([-spine_w / 2, -spine_end, spine_w / 2, spine_end], [1, 1, 1, 1]);              // the spines
-  for (sx = [-1, 1]) scale([sx, 1, 1]) intersection() {                                   // the sides, the shoulders
-    side_sweep();
-    step_box([shoulder[0], -shoulder[1] - 1, 2 * case_w, shoulder[1] + 1], [1, 0, 0, 0], z_bot - 1, case_h + 1);
-  }
+  for (sx = [-1, 1]) scale([sx, 1, 1]) side_sweep();                                       // the sides
+}
+module j4_pocket2d() difference() {
+  for (r = [j4_body, j4_plug]) corners2d(r, grow = j4_pocket_grow);
+  at(pins[2]) circle(d = boss_d);
+  translate([-case_w, -case_l]) square([2 * case_w, case_l - (joint_y - joint_w)]);
 }
 module top() difference() {
   union() {
@@ -895,7 +902,7 @@ module top() difference() {
       translate([0, 0, z_seam - 1]) linear_extrude(crush_z0 - z_seam + 1) difference() { inner2d(wall / 2); inner2d(); }
     }
     // bosses down to the board top: with the tub's bosses they clamp it
-    for (s = [for (i = [0:3]) pins[i]]) at(s, z_top_cu) cylinder(d = boss_d, h = z_ceil - z_top_cu + 0.01);
+    for (s = side_pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_ceil - z_top_cu + 0.01);
     // pinhole guides reach down towards the switches
     for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_ceil - z_top_cu - 2.4 + 0.01);
     // panel locating frame
@@ -914,7 +921,7 @@ module top() difference() {
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_ceil - 1]) linear_extrude(top_t + 2) window();
   // pilot holes for the screws
-  for (s = [for (i = [0:3]) pins[i]]) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
+  for (s = side_pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
   // pinholes
   for (p = pin_pos) at(p, 0) cylinder(d = 1.2, h = case_h + 1);
   // the speaker (2026-10-22): a pocket over it spk_keep round its outline, and its grille, slots
@@ -922,8 +929,8 @@ module top() difference() {
   // rim round them stays solid for its front ring to seal on
   translate([0, 0, z_ceil - 0.01]) linear_extrude(spk_pocket + 0.01) spk2d(spk_keep);
   translate([0, 0, z_ceil]) linear_extrude(top_t + 1) grille2d();
-  // a shallow pocket over J4 and the speaker's mated plug
-  translate([0, 0, z_ceil - 0.01]) linear_extrude(j4_pocket[2] + 0.01) corners2d([j4_pocket[0], j4_pocket[1]]);
+  // a shallow pocket over J4 and the speaker's mated plug, round H3's boss and inside the joint's band
+  translate([0, 0, z_ceil - 0.01]) linear_extrude(j4_pocket + 0.01) j4_pocket2d();
 }
 
 // ---- a deck (sy: -1 seat 1's end, 1 seat 2's): printed face down; seat 2's is seat 1's turned round ----

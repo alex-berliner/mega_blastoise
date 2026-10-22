@@ -120,15 +120,12 @@ ss_box = [12.6, 5.1, 8.6];          // half width, reach towards the end, reach 
 function box_of(c, ss) = ss ? [c[0] - ss_box[0], c[1] - ss_box[1], 2 * ss_box[0], ss_box[1] + ss_box[2]]
                             : [c[0] - stack_half, c[1] - stack_half, 2 * stack_half, 2 * stack_half];
 module stack_box(c, ss = false) let(b = box_of(c, ss)) translate([b[0], b[1], -1]) cube([b[2], b[3], case_h + 2]);
-// (a cluster's leg on the outer side towards the screen moves in, off the top piece's shoulder,
-// and is thinner there, clear of the pad's lobe: [x, y, diameter])
 module stack_legs(c, ss = false)
-  for (p = ss ? [[-10.5, -4.3, 3], [10.5, -4.3, 3], [-10.5, 3.5, 3], [10.5, 3.5, 3]]   // 3.5: clear of seat 1's Y cap hole
-              : [for (sx = [-1, 1], sy = [-1, 1]) sx == sign(c[0]) && sy == -sign(c[1]) ? [sx * 4.4, sy * 13, 2.4]
-                                                   : [sx * (stack_half - 3), sy * (stack_half - 3), 3]])
+  for (p = ss ? [[-10.5, -4.3], [10.5, -4.3], [-10.5, 3.5], [10.5, 3.5]]   // 3.5: clear of seat 1's Y cap hole
+              : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
     // up into the deck (0.6 under its face), so a leg under one of the deck's reliefs still meets
     // solid deck and doesn't hang over the relief when printed face down
-    at(c + [p[0], p[1]], z_top_cu) cylinder(d = p[2], h = deck_face - 0.6 - z_top_cu);
+    at(c + p, z_top_cu) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
 // It prints deck face down on the bed, as the deck does, so it needs no supports: a slice of the deck
 // itself, its skirts and boss cut off at the walls' bottom so it stands on its legs
 module tune_stack_lid(c, ss = false) difference() {
@@ -205,11 +202,11 @@ module test_overhangs() {        // the round first, its ticked face at the ladd
   // the back strip that joins them
   translate([-test_back, 0, 0]) cube([test_back, len(test_angles) * (test_fin + 2) + test_round_w, test_wall]);
 }
-// Screw holes: two of the tub's (a side boss beside the glass and an end boss), cut from the real
-// tub up to the board with the floor, ribs and wall round them, printed flat as the tub prints;
+// Screw holes: two of the tub's (H4's slimmed side boss by the left wall and an end boss), cut from
+// the real tub up to the board with the floor, ribs and wall round them, printed flat as the tub prints;
 // and one of the top piece's bosses with its pilot hole, printed face down as the top piece prints
 module screws_box(s, r) translate([s[0] - r, s[1] - r, -1]) cube([2 * r, 2 * r, case_h + 2]);
-module coupon_screws_tub() for (i = [0, 1]) let(s = pins[[0, 4][i]]) translate([16 * i, 0, 0] - [s[0], s[1], 0])
+module coupon_screws_tub() for (i = [0, 1]) let(s = pins[[3, 4][i]]) translate([16 * i, 0, 0] - [s[0], s[1], 0])
   intersection() { tub_flat(); screws_box(s, 6); translate([-case_w, -case_l, -1]) cube([2 * case_w, 2 * case_l, z_board + 1]); }
 module coupon_screws_top() translate(-[pins[0][0], -pins[0][1], 0]) flip() intersection() { top(); screws_box(pins[0], 5); }
 // Clearance round a screw column (the old deck insert's ring round the lid's 5.0 boss was too tight
