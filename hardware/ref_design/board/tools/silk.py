@@ -19,7 +19,7 @@ import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__))
 BOARD_DIR = os.path.dirname(HERE)
 sys.path.insert(0, BOARD_DIR)
-from placement import CASE, CUTOUTS  # noqa: E402
+from placement import CASE, CUTOUTS, SPEAKER  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-323", "D_SOD-123", "C_0805", "L_1008",
@@ -160,6 +160,10 @@ def main():
     for ref, name in (("J5", "SWD"), ("J6", "UART")):
         jb = box(board.FindFootprintByReference(ref))
         text(name, jb[2] + 0.4 + 0.33 * len(name), (jb[1] + jb[3]) / 2)
+    # the speaker, hand-fitted on the top (build_pcb.py draws its outline): its name inside it
+    (sx, sy) = SPEAKER["at"]
+    text("SPEAKER", sx, sy - 1.0)
+    text("15x10 8R", sx, sy + 1.0)
     text("BOOT", CASE["pinholes"][0][0] + 4.6, CASE["pinholes"][0][1])
     text("RESET", CASE["pinholes"][1][0] + 4.8, CASE["pinholes"][1][1])
     if clashes:

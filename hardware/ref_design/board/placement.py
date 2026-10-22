@@ -6,9 +6,9 @@ case/case.scad. The RP2350B core is not listed here: tools/build_pcb.py copies i
 placement and routing from Raspberry Pi's minimal design (CORE below), turned so its
 USB and flash side faces the USB-C, and turned over onto the back (CORE_SIDE).
 
-Since 2026-10-21 the cell and the speaker sit in holes in the board (CUTOUTS), so J2, J4,
-the debug connectors and the parts round them are placed here, not by the case; the case
-learns the holes from case/CELLCUT_FOR_CASE.md.
+Since 2026-10-21 the cell sits in a hole in the board (CUTOUTS), and since 2026-10-22 the speaker
+lies on the board's top beside the screen (SPEAKER), so J2, J4, the debug connectors and the parts
+round them are placed here, not by the case; the case learns both from case/CELLCUT_FOR_CASE.md.
 
 Height rules (from the case, checked by case/check_fit.py; case/BOARD_OUTLINE.md): under the
 glass <= 2.2 mm, in the side bezels and spines <= 3.45 mm, under the decks <= 1.6 mm, round the
@@ -43,6 +43,17 @@ CASE = json.load(open(os.path.join(HERE, "..", "case", "positions.json")))
 CUTOUTS = [
     dict(name="cell", box=(72.3, 66.8, 126.3, 103.8), r=1.0),     # 54.0 x 37.0
 ]
+
+# ---- the speaker, lying on the board's top (2026-10-22, Alex) --------------------------------
+# The INGHAi GSPK151035PN (15 x 10 x 3.5 mm racetrack, 8 ohm, 35 mm leads to a 1.25 mm plug) lies
+# face up on the board in the right bezel beside the screen, its long axis along the board,
+# stuck down with foam tape and plugged into J4 at assembly (not machine-placed), firing up
+# through a grille in the face. The right bezel below the cell's hole is the only place it fits
+# (the left bezel has the core); it is 28 mm long there, and J1 (10.7 mm), the speaker (16) and
+# J4 with room for its plug (9.5) don't all fit, so J1 went back up its wall to the case's own
+# position (USB_Y 100, beside the hole). build_pcb.py draws the speaker's outline on the
+# silkscreen and keeps parts (not copper) out of its footprint plus `grow` (a rule area).
+SPEAKER = dict(at=(128.7, 113.5), size=(10.0, 15.0), grow=0.5)   # KiCad x, y; x by y, mm
 
 # ---- RP2350B core: copied from the reference board ------------------------------
 # In the left bezel since the cell took the middle of the board (2026-10-21), as Raspberry Pi drew
@@ -147,7 +158,10 @@ put("J5", 68.8, 79.6, 180)                 # SWD: in the left strip below J6
 # Moved down the right wall below the cell's hole (2026-10-21, Alex: it may slide along its wall):
 # beside the hole its pads faced the cut-out with no room to bring their tracks out. The case
 # moves its opening and the tab's slot to match (case/CELLCUT_FOR_CASE.md)
-USB_Y = 111.0                               # KiCad y of the receptacle's centre (case y -11.0; was 100)
+# Back at the case's own position (2026-10-22): the speaker and J4 took the bezel below the hole.
+# Its pads face the hole: the USB pair drops to the back beside them (route.py usb_pair()), the
+# other pads come down the 2.8 mm between them and the hole's edge
+USB_Y = 100.0                               # KiCad y of the receptacle's centre (case y 0.0)
 _dy = USB_Y - CASE["usb"]["y"]
 USB_TAB = [[x, y + _dy] for x, y in CASE["usb"]["tab"]]    # the board's tab under the receptacle
 usb_x = CASE["usb"]["front_x"] - 3.65       # footprint front is 3.65 ahead of its origin
@@ -155,31 +169,32 @@ put("J1", usb_x, USB_Y, 90)
 
 # USB input
 # U1 (ESD) on the USB pair, turned so D+ and D- each run over their own pin (pins 1 and 3) with
-# no stub: route.py's usb_pair() draws the pair from J1 through U1 to R21/R22 by the core
-put("U1", 124.8, 110.5, 0)
-put("R1", 130.0, 103.0, 90)
-put("R3", 131.2, 103.0, 90)
-put("R2", 132.4, 103.0, 90)
-put("R4", 133.6, 103.0, 90)
-put("C1", 125.2, 113.0, 0)                  # below the USB pair
-put("R41", 125.2, 114.6, 0)                # C1's series resistor (hot-plug ringing)
-put("C42", 132.4, 126.6, 0)                 # spares on CC1 and CC2)
-put("C43", 132.0, 129.8, 0)
+# no stub: route.py's usb_pair() draws the pair from J1 through U1 to R21/R22 by the core. Under
+# the glass's right edge, left of the speaker; the CC resistors above J1 in the right strip
+put("U1", 120.6, 106.5, 0)
+put("R1", 127.4, 93.65, 0)
+put("R3", 129.4, 93.65, 0)
+put("R2", 131.4, 93.65, 0)
+put("R4", 133.4, 93.65, 0)
+put("C1", 120.3, 109.4, 0)                  # below the USB pair
+put("R41", 120.3, 111.1, 0)                # C1's series resistor (hot-plug ringing)
+put("C42", 125.7, 123.05, 0)                # spares on CC1 and CC2, in the bezel beside J4's plug
+put("C43", 125.7, 130.4, 0)
 
 # the cell: J2 at its hole's seat-1 corner, mouth into the hole's lead pocket, so the plug's
 # back and wires drop straight down beside the cell's left end; the charger and the load sharing
 # below it, round the screw at 68.6, 122
 put("J2", 70.3, 107.24, 180)                # PicoBlade: mouth towards the hole, contacts behind
 put("JP5", 90.0, 117.0, 0)                  # cell -> VBAT
-put("C3", 125.6, 117.0, 90)                  # VBAT
-put("C2", 127.2, 117.0, 90)                  # VSYS
+put("C3", 116.9, 110.0, 90)                  # VBAT
+put("C2", 120.3, 112.8, 0)                   # VSYS
 put("U2", 121.0, 116.0, 0)                   # TP4056: its thermal pad spreads into the GND pours
-put("R5", 117.0, 120.4, 90)                  # PROG
-put("R9", 121.8, 120.4, 90)
-put("R10", 123.0, 120.4, 90)
-put("R43", 119.4, 120.4, 90)
-put("R44", 120.6, 120.4, 90)
-put("TP7", 131.0, 96.0, 0)                  # LS_GATE
+put("R5", 116.6, 120.4, 90)                  # PROG
+put("R9", 121.4, 120.4, 90)
+put("R10", 122.6, 120.4, 90)
+put("R43", 119.0, 120.4, 90)
+put("R44", 120.2, 120.4, 90)
+put("TP7", 127.8, 91.75, 0)                 # CHG_TEMP
 put("TP15", 124.6, 133.2, 0)                 # GND for a scope clip, by the charger
 # the cell's temperature: TH1 at the hole's right edge, which the cell is pushed against
 put("TH1", 127.1, 86.0, 90)
@@ -212,9 +227,9 @@ put("R25", 71.2, 84.4, 90)
 put("C10", 121.0, 130.8, 90)
 
 # battery sense
-put("R17", 126.6, 128.8, 90)
-put("R18", 127.8, 128.8, 90)
-put("C8", 129.0, 128.8, 90)
+put("R17", 116.6, 105.4, 90)
+put("R18", 116.6, 107.45, 90)
+put("C8", 116.6, 112.6, 90)
 
 # test pads on the back, between seat 2's clusters
 for i in range(5):
@@ -237,7 +252,7 @@ put("D8", 132.6, 76.4, 0)                   # row 1: seat 2's Start into PWR_EN,
 put("R62", 128.6, 76.6, 90)
 put("Q7", 131.5, 79.4, 0)
 put("R63", 128.6, 79.6, 90)
-put("R64", 118.2, 120.4, 90)                # the charger's ILIM
+put("R64", 117.8, 120.4, 90)                # the charger's ILIM
 put("U9", 100.0, 58.5, 90)                  # seat 2's buttons: a 74HC165 between the clusters, 1.2 mm
 put("RN3", 94.2, 57.0, 90)
 put("RN4", 94.2, 60.4, 90)
@@ -257,3 +272,24 @@ put("C16", 71.2, 121.6, 270)
 put("C20", 71.2, 119.3, 90)
 for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD SCK, MOSI, CS, DC on the back, under J3's lead-in
     put(ref, 92.2 + 2.54 * i, 110.0, 0, "B")
+
+# audio (2026-10-22): the amplifier under the glass's right edge beside the speaker, its supply and
+# bypass parts in the column left of it, the PWM filter, Ci, Ri and Rf in two rows below under
+# seat 1's deck, J4 in the bezel below the speaker, its mouth (and the plug) towards the glass
+put("U7", 120.3, 125.5, 90)                 # FM8002A: VO1 (5) and VO2 (8) on top, -IN (4) bottom right
+put("C34", 116.75, 123.2, 90)               # VDD
+put("C35", 116.6, 125.8, 90)
+put("C40", 116.6, 127.8, 90)                # BYPASS
+put("R36", 116.6, 129.75, 90)               # SHUTDOWN pull-up
+put("R37", 116.55, 132.45, 0)
+put("R34", 118.53, 132.45, 0)               # Ri to -IN
+put("R35", 120.51, 132.45, 0)               # Rf, VO1 to -IN
+put("C39", 122.49, 132.45, 0)               # Ci
+put("R32", 116.55, 133.6, 0)
+put("C37", 118.53, 133.6, 0)
+put("R33", 120.51, 133.6, 0)
+put("C38", 122.49, 133.6, 0)
+put("Q3", 113.8, 135.3, 0)                  # SHUTDOWN switch
+put("TP8", 113.0, 123.5, 0)                 # SHUTDOWN: flat, under the folded FPC like JP2
+put("JP3", 113.0, 127.0, 0)                 # VSYS -> amplifier
+put("J4", 131.4, 126.75, 270)               # PicoBlade like J2: mouth towards the glass, pins by the wall

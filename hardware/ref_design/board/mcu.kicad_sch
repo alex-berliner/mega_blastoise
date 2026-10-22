@@ -2649,16 +2649,8 @@
 		(uuid "5801121d-321c-500d-b368-5e8e63ecedc0")
 	)
 	(no_connect
-		(at 166.37 68.58)
-		(uuid "f5152155-79b1-5dac-ad27-b2035b255ccb")
-	)
-	(no_connect
 		(at 166.37 73.66)
 		(uuid "5b476980-1d77-51c7-a31c-b810f2fc60ba")
-	)
-	(no_connect
-		(at 166.37 76.2)
-		(uuid "b8e2f4ab-b7e0-5a78-8240-e2a9601beeb8")
 	)
 	(no_connect
 		(at 166.37 78.74)
@@ -3420,6 +3412,16 @@
 	)
 	(wire
 		(pts
+			(xy 166.37 68.58) (xy 171.45 68.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a742ad06-06a1-5d52-b4c9-a3dae5018b57")
+	)
+	(wire
+		(pts
 			(xy 166.37 71.12) (xy 171.45 71.12)
 		)
 		(stroke
@@ -3427,6 +3429,16 @@
 			(type default)
 		)
 		(uuid "eebc247f-cb9b-5dd6-a740-d1bf3dd3aa18")
+	)
+	(wire
+		(pts
+			(xy 166.37 76.2) (xy 171.45 76.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "710fe71e-5ad0-5f15-9ee7-25dd55740cf5")
 	)
 	(wire
 		(pts
@@ -3935,6 +3947,29 @@
 			)
 		)
 	)
+	(global_label "AUDIO_PWM"
+		(shape passive)
+		(at 171.45 68.58 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "f77357d0-0799-5c7d-8ead-4e74c6b33d77")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 171.45 68.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
 	(global_label "P2_SELECT"
 		(shape passive)
 		(at 171.45 71.12 0)
@@ -3948,6 +3983,29 @@
 		(uuid "b869388c-e676-5a23-a626-c5df1420ba70")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 171.45 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "AMP_EN"
+		(shape passive)
+		(at 171.45 76.2 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "8ba0d8c1-ad02-579b-8e28-6a91285ead10")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 171.45 76.2 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)

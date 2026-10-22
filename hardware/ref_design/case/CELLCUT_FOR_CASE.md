@@ -1,11 +1,13 @@
 # The board with the cell in it (2026-10-22): what the case needs to know
 
-Routed clean on branch `ref-design-cellcut` (0 unconnected, DRC 0 errors).
+Routed clean on branch `ref-design-cellcut` at 4af3024 (0 unconnected, DRC 0 errors). With the speaker back (2026-10-22, WIP): DRC 0 errors, 5 connections still open.
 
 For the Blastoise Shell session. The cell now sits in a hole in the board (row 19 of Alex's
-2026-10-21 list: no speaker). Every machine-placed part is on the top (one-sided assembly).
+2026-10-21 list), and since 2026-10-22 the speaker lies on the board's top in the right bezel
+beside the screen (section "The speaker on the board", below). Every machine-placed part is on the top (one-sided assembly).
 Alex also allowed the board session to move the side screws and to slide the USB-C along its
-wall; both moved. `case.scad` doesn't know any of this yet; nothing in the case was changed.
+wall: the screws moved; the USB-C moved down its wall and, with the speaker, back to the case's own
+position. `case.scad` doesn't know any of this yet; nothing in the case was changed.
 The board's side is `board/placement.py` (`CUTOUTS`, `SIDE_SCREWS`, `USB_Y`).
 
 Coordinates: the case's frame (origin at the case's centre, x right, y up towards seat 2), with
@@ -21,17 +23,16 @@ KiCad's in brackets (y down, the centre at 100, 100). Heights are over the board
 | H4, left, seat 1 side | **-31.4, -36.0** | 68.6, 136.0 | -31.4, -22.0 |
 | H5, seat 2's end | 3.0, 50.75 (unchanged) | 103, 49.25 | |
 | H6, seat 1's end | -3.0, -50.75 (unchanged) | 97, 150.75 | |
-| **USB-C J1 centre** | **x face 37.55, y -11.0** | y 111.0 | y 0.0 |
-| USB-C tab under it | x 35.2..36.2, **y -5.0..-17.0** | 135.2..136.2 x 105..117 | y 6..-6 |
+| USB-C J1 centre | x face 37.55, y 0.0 (the case's own, unchanged) | y 100.0 | |
+| USB-C tab under it | x 35.2..36.2, y 6..-6 (unchanged) | 135.2..136.2 x 94..106 | |
 
 - The side screws sat in the 7-8 mm strips beside the cell's hole and closed half of each; they
   went to the ends of the long sides, past the hole, where the board is full width: 17.1 mm from
   the nearest cluster centre (outside the rings), 2.8 mm or more from every part. The new y
   (+-36) is in the decks' region (the step's foot is at y +-33.75): the bosses there come down
   from the decks or need a pocket in the step; the case's call.
-- J1 moved down its wall (same wall, orientation and tab) below the hole: beside it, its pads
-  faced the cut-out and their tracks couldn't get out. Its shell legs (through-hole) are at
-  y -5.3..-16.7 on the back; `rib_free` needs the new window.
+- J1 is back where `case.scad` has it (2026-10-22): the speaker and J4 took the bezel below the
+  hole, where it had gone. Its opening, tab and `rib_free` window need no change.
 
 ## The hole
 
@@ -48,8 +49,8 @@ KiCad's in brackets (y down, the centre at 100, 100). Heights are over the board
   lower left corner); the plug sticks 3 mm out over the board's left strip and the hole's corner.
 - The size lives in one place, `placement.py` `CUTOUTS`: if Alex measures real cells it changes
   there (and here).
-- The plug holes (`slot`, `spk_slot`) are no longer cut. No speaker, no speaker hole: the
-  speaker pad, chamber and outlet go.
+- The plug holes (`slot`, `spk_slot`) are no longer cut. No speaker hole: the speaker lies on
+  the board's top (below); the speaker pad, chamber and side outlet go.
 
 ## Heights and the stack
 
@@ -116,11 +117,47 @@ Keep the ribs out of the hole (the cell) and 0.5 mm off its edge.
 
 Also for `case.scad`: the tub's tongue no longer fits under the board (`z_seam` + `tongue_h` +
 `seam_gap` must stay under `z_board`, which drops from 6.0 to 2.2-2.8); the screws get shorter;
-the speaker's chamber and outlet go.
+the speaker's chamber and side outlet go (it now fires up through the face: below).
 
-## check_fit against this board (today's positions.json)
+## The speaker on the board (2026-10-22)
 
-No collisions with the glass, frame, decks, clusters, FPC, crush ribs or anything the case still
-has right. Its 17 failures all come from things the case doesn't know yet: parts within the
-*old* side screws' bosses (C16, JP1 at the old (-31.4, -22); D8, Q7, R62, R63 at (31.4, 22); J5
-at (-31.4, 22)), J1's six shell legs at its new y, and the four dome vents on floor ribs.
+The INGHAi GSPK151035PN (15 x 10 x 3.5 mm racetrack, 8 ohm, 35 mm leads to a 1.25 mm plug) lies
+flat on the board's top, face (cone) up, long axis along the case (y), in the right bezel below
+the cell's hole, between J1 and the seat-1 deck. It is not machine-placed: at assembly it is
+stuck down with foam tape and plugged into J4. The board keeps parts out of its outline plus
+0.5 mm (copper runs under it) and marks it on the front silkscreen. `placement.py` `SPEAKER`.
+
+| | Case (x, y) | KiCad | Size |
+|---|---|---|---|
+| Speaker centre (and its cone's) | **28.7, -13.5** | 128.7, 113.5 | |
+| Speaker body | x 23.7 .. 33.7, y -6.0 .. -21.0 | 123.7 .. 133.7 x 106.0 .. 121.0 | 10 x 15 |
+| Parts kept out | x 23.2 .. 34.2, y -5.5 .. -21.5 | 123.2 .. 134.2 x 105.5 .. 121.5 | 11 x 16 |
+| **J4** (speaker plug, PicoBlade 53261, horizontal) | **31.4, -26.75** (body x 28.25 .. 35.2, y -22.0 .. -31.5) | 131.4, 126.75, turned 270 | 3.4 tall |
+| J4's mouth and the mated plug | plug x about 24.4 .. 28.4, y -24.5 .. -29.0 | | about 3.2 tall |
+
+- **Height:** its top is 3.5 mm over the top copper, 3.8 worst case (tolerance and the foam
+  tape), over the bezel's 3.45: **the top piece needs a pocket about 0.5 mm deep** over the parts
+  keep-out above (x 23.2 .. 34.2, y -5.5 .. -21.5), so 3.95 clear there. The panel frame band
+  (x up to 22.86) and the glass are untouched: the speaker starts at x 23.7.
+- **Grille:** in the face over the cone, centred on (28.7, -13.5): holes or slots inside the
+  speaker's outline inset 1.5 mm (a 12 x 7 racetrack, x 25.2 .. 32.2, y -7.5 .. -19.5); keep
+  the pocket's rim (0.5 mm round the body) solid so the speaker's front seals against it.
+- **J4** sits below the speaker against the right wall, mouth towards the glass; the plug goes in
+  from the left (x 28.4 towards 24.4) and its two leads lie on the board up to the speaker.
+  J4 (3.4) and the plug fit under the bezel's 3.45; a 0.3 mm pocket over x 24 .. 35.2,
+  y -22 .. -31.5 would give the plug room if the top piece allows it. J4 keeps 1.1 mm off the
+  crush rib at (35.7, -28).
+- The amplifier U7 (SOIC-8, 1.75) is under the glass's right edge at (20.3, -25.5); its small
+  parts are under the glass and the seat-1 deck (Q3, SOT-23, 1.1 tall, at (13.8, -35.3)): all
+  inside today's limits.
+- The old side outlet and chamber go.
+
+## check_fit against this board (today's positions.json, 2026-10-22 WIP)
+
+13 failures. From things the case doesn't know yet: parts within the *old* side screws' bosses
+(C16, JP1 at the old (-31.4, -22); D8, Q7, R62, R63 at (31.4, 22); J5 at (-31.4, 22); and now
+**J4** at the old (31.4, -22)), and the four dome vents on floor ribs. J1's six shell legs no
+longer fail (J1 is back at y 0). One is the board's own and still open: **Q3** (SOT-23, 1.19)
+sits in the 0.5 mm retainer band round seat 1's right cluster; it moves on the next placement.
+Not checked by check_fit (the speaker is not a footprint): the speaker's 3.5-3.8 mm in the
+bezel (the 0.5 mm pocket) and its grille, above.

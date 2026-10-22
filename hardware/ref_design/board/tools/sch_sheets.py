@@ -70,6 +70,88 @@ def buttons():
     return sh
 
 
+def audio():
+    sh = Sheet("audio.kicad_sch")
+    Ux, Uy = 124.46, 76.2                       # FM8002A
+    Yc = Uy - 2.54                              # signal row: PWM in to -IN
+    sh.place("U7", Ux, Uy, 0, f=(12.7, 10.16))
+    # -- PWM low-pass, DC block, input resistor: left to right along the signal row
+    sh.heading(17.78, Yc - 17.78, "PWM low-pass filter (two RC stages)")
+    sh.place("R32", 36.83, Yc, 90)
+    sh.place("C37", 44.45, Yc + 3.81, 0, f=("r", G))
+    sh.place("R33", 55.88, Yc, 90)
+    sh.place("C38", 67.31, Yc + 3.81, 0, f=("r", G))
+    sh.place("C39", 78.74, Yc, 90)
+    sh.place("R34", 93.98, Yc, 90, f=("at", 93.98, Yc - 3.81))
+    a = (27.94, Yc)
+    sh.wire(a, "R32.1")
+    sh.label("AUDIO_PWM", a, "left")
+    sh.wire("R32.2", "R33.1"); sh.wire((44.45, Yc), "C37.1"); sh.tag("C37.2", 0)
+    sh.wire("R33.2", "C39.1"); sh.wire((67.31, Yc), "C38.1"); sh.tag("C38.2", 0)
+    sh.wire("C39.2", "R34.1")
+    sh.heading(73.66, Yc - 17.78, "DC block, Ri")
+    node = (99.06, Yc)
+    sh.wire("R34.2", "U7.4")
+    # -- feedback Rf over the amplifier, from VO1 back to -IN
+    Yf = Uy - 33.02
+    right = Ux + 27.94
+    sh.place("R35", (node[0] + right) / 2, Yf, 270)
+    sh.wire(node, (node[0], Yf), "R35.2")
+    sh.wire("R35.1", (right, Yf), (right, Yc))
+    sh.text(right + 2.54, Yf, "Rf: gain 2 x R35 / R34 = 2")
+    # -- supply, inside the feedback loop
+    Yv = Uy - 20.32
+    sh.heading(Ux - 17.78, Yf - 8.89, "Amplifier (FM8002A) and its supply")
+    sh.place("JP3", Ux - 10.16, Yv, 0)
+    sh.rail("VSYS", "JP3.1")
+    sh.place("C34", Ux + 7.62, Yv + 3.81, 0, f=("r", G))
+    sh.place("C35", Ux + 17.78, Yv + 3.81, 0, f=("r", G))
+    sh.wire("JP3.2", (Ux + 17.78, Yv))
+    sh.wire((Ux + 2.54, Yv), "U7.6")
+    sh.wire((Ux + 7.62, Yv), "C34.1"); sh.tag("C34.2", 0)
+    sh.wire((Ux + 17.78, Yv), "C35.1"); sh.tag("C35.2", 0)
+    sh.flag("#FLG09", (Ux + 12.7, Yv))
+    sh.label("AMP_VDD", sh.wire((Ux - 2.54, Yv), (Ux - 2.54, Yv - G)), "up")
+    sh.tag("U7.7", G)
+    # -- bypass: +IN and BYPASS both on AMP_BYP, C40 to ground
+    sh.tag("U7.3")
+    sh.place("C40", Ux - 20.32, Uy + 2.54 + 3.81, 0, f=("l", G))
+    by = (Ux - 30.48, Uy + 2.54)
+    sh.wire("U7.2", by)
+    sh.label("AMP_BYP", by, "left")
+    sh.wire((Ux - 20.32, Uy + 2.54), "C40.1"); sh.tag("C40.2", 0)
+    # -- shutdown: R36 holds SHUTDOWN high (off), Q3 pulls it low when AMP_EN is high
+    Ysd = Uy + 17.78
+    sh.heading(Ux - 66.04, Ysd + 25.4, "Shutdown control")
+    sh.wire("U7.1", (Ux - 15.24, Uy + 5.08), (Ux - 15.24, Ysd))
+    sh.place("R36", Ux - 35.56, Ysd - 3.81, 180, f=("l", -G))
+    sh.place("Q3", Ux - 25.4 - 2.54, Ysd + 7.62, 0, f="r")
+    sl = (Ux - 48.26, Ysd)
+    sh.wire((Ux - 15.24, Ysd), sl)
+    sh.wire((Ux - 35.56, Ysd), "R36.1")
+    sh.tag("R36.2")
+    sh.wire((Ux - 25.4, Ysd), "Q3.3")
+    sh.tag("Q3.2", 0)
+    tp(sh, "TP8", sl, "l")
+    # net names where no wire runs through their text
+    sh.names = {"AMP_SHDN": (sl[0] + 1.27, Ysd, 0), "SPK_P": (Ux + 15.24, Yc, 0)}
+    gl = (Ux - 63.5, Ysd + 7.62)
+    sh.wire("Q3.1", gl)
+    sh.label("AMP_EN", gl, "left")
+    sh.place("R37", Ux - 43.18, Ysd + 7.62 + 3.81, 0, f=("r", G))
+    sh.wire((Ux - 43.18, Ysd + 7.62), "R37.1"); sh.tag("R37.2", 0)
+    # -- speaker
+    Jx = Ux + 45.72
+    sh.heading(Jx - 12.7, Yc - 10.16, "Speaker J4")
+    sh.place("J4", Jx, Yc, 0, f=(7.62, 1.27))
+    sh.nc("J4.MP")
+    sh.wire("U7.5", "J4.1")
+    sh.wire("U7.8", (Jx - 10.16, Uy + 2.54), (Jx - 10.16, Yc + 2.54), "J4.2", v=True)
+    sh.text(17.78, 160.02, "AUDIO_PWM (GPIO8, PWM4 A, 8 bits: 586 kHz) through two RC stages (-3 dB ~14 kHz); gain 2 x R35/R34.")
+    sh.text(17.78, 163.83, "AMP_EN high turns the amplifier on (Q3 pulls SHUTDOWN low). 8 ohm speaker on J4 (PicoBlade), lying on the board beside the screen.")
+    return sh
+
+
 def debug():
     sh = Sheet("debug.kicad_sch")
 
@@ -611,6 +693,8 @@ SHEET_NOTES = {
               "BOOTSEL and RESET buttons"),
     "Display": ("panel connector J3 (50-pin ZIF)", "SPI series resistors, panel supply",
                 "backlight reference", "backlight current sinks ch1, ch2"),
+    "Audio": ("PWM low-pass filter, DC block", "amplifier (FM8002A) and supply",
+              "shutdown control", "speaker plug J4"),
     "Buttons": ("seat 1 and seat 2 contacts", "Start/Select per seat (P1 Start",
                 "is the power button),", "20 contacts, one GPIO each"),
 }
@@ -626,7 +710,7 @@ def root():
     sh = Sheet("battler.kicad_sch")
     sh.text(20.32, 20.32, "Two-player handheld: reference design (REF-A)", size=2.0)
     sh.text(20.32, 27.94, "RP2354B, 2.4in 240x320 IPS (ST7789V, SPI), 20 membrane contacts under DS Lite silicone,")
-    sh.text(20.32, 31.75, "one Li-ion cell (in a hole in the board) on a TP4056 charger with load sharing, ME6211 3V3, no audio.")
+    sh.text(20.32, 31.75, "one Li-ion cell (in a hole in the board) on a BQ24073 charger, ME6211 3V3, PWM audio into an FM8002A.")
     sh.text(20.32, 35.56, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets.")
     for i, (f, name) in enumerate(design.SHEETS):
         x, y, w, h = SHEET_BOX(i)
@@ -650,5 +734,6 @@ LAYOUTS = {
     "power.kicad_sch": power,
     "usb_charger.kicad_sch": usb_charger,
     "debug.kicad_sch": debug,
+    "audio.kicad_sch": audio,
     "buttons.kicad_sch": buttons,
 }

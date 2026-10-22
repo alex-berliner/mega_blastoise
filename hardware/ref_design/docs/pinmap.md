@@ -15,10 +15,10 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 5 | (spare) | not connected |
 | 6 | (spare) | not connected |
 | 7 | (spare) | not connected |
-| 8 | (spare) | not connected |
+| 8 | `AUDIO_PWM` | PWM4 A, 8 bits (586 kHz): audio through two RC stages (-3 dB at about 14 kHz) into U7 (see Audio) |
 | 9 | `P2_SELECT` | metal-dome contact SW22 to GND, input with pull-up, low = pressed |
 | 10 | (spare) | not connected |
-| 11 | (spare) | not connected |
+| 11 | `AMP_EN` | output: high turns the FM8002A on (Q3 pulls its SHUTDOWN low); low or floating = off (4 uA) |
 | 12 | (spare) | not connected |
 | 13 | (spare) | not connected |
 | 14 | (spare) | not connected |
@@ -134,11 +134,18 @@ dim the backlight on a weak one. With the 5.1k Rd on each CC, the CC line the ca
 sits at 0.25-0.61 V for default USB power, 0.70-1.16 V for 1.5 A and 1.31-2.04 V for 3 A;
 take the higher of CC1_SENSE and CC2_SENSE.
 
-## Audio
+## Audio (PWM into the FM8002A)
 
-None since 2026-10-21: the cell sits in a hole in the board, and with every machine-placed
-part on the top the speaker and its amplifier didn't fit. GPIO8 (PWM4 A, the old AUDIO_PWM) and
-GPIO11 (the old AMP_EN) are left unconnected.
+GPIO8 is PWM4 A. Run it at 8 bits: at 150 MHz that's a 586 kHz carrier, which R32/C37 and
+R33/C38 (1k, 4.7 nF) take 49 dB down, with the audio band -3 dB at about 14 kHz. Not 10 bits:
+146 kHz would only come out 26 dB down (dither or noise-shape for more resolution). C39
+blocks the DC, and U7 drives the speaker bridge-tied at about 1.8x (R35/R34, with the filter's
+2k in front of R34). VSYS (the BQ24073's output) feeds it through JP3: about 0.5 W full scale
+on USB and 0.4-0.5 W on the cell, and it clips below a 3.7 V cell: back the amplitude off there.
+Idle at half scale so turning on doesn't pop. The FM8002A takes about 100 ms to wake (its
+bypass capacitor charges): keep AMP_EN high while the device is awake (about 4.4 mA), or raise
+it at least 150 ms before a sound, PWM idling. The speaker (15 x 10 mm, 8 ohm) lies on the
+board's top in the right bezel beside the screen and plugs into J4.
 
 ## Battery voltage
 

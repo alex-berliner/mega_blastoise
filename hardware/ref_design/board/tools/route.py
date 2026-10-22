@@ -346,7 +346,10 @@ def usb_pair(board):
     U1 (SRV05-4, turned so pins 1 and 3 face away from J1) has each line run over its own pin
     with no stub: D+ over the top and down the channel between the pin rows onto pin 1, D- under
     the bottom onto pin 3 (the channel also takes GND pin 2's via). Past U1 the pair drops to
-    the back and runs straight under J3 to R21/R22 by the core, up through a via each."""
+    the back and runs straight under J3 to R21/R22 by the core, up through a via each.
+    With J1 beside the cell's hole (2026-10-22, U1 below and left of it) the pair can't head
+    left from J1's pads: it drops to the back beside them, runs down the strip and along under
+    the speaker, and comes up through a via each to the right of U1."""
     w = 0.2
     dp, dm = board.FindNet("USB_DP"), board.FindNet("USB_DM")
     F, B = pcbnew.F_Cu, pcbnew.B_Cu
@@ -368,10 +371,27 @@ def usb_pair(board):
     assert p1[0] < cx and p3[0] < cx and p1[1] < cy < p3[1], "U1 isn't turned as usb_pair() expects"
     out = box(pin["1"])[0]                     # the pins' outer ends, away from J1
     yt, yb = box(pin["6"])[1] - 0.3, box(pin["4"])[3] + 0.3     # over pin 6, under pin 4
-    xs = box(pin["5"])[2] + 0.5 + (b6[1] - yt)  # where the pair splits, 45 degrees to its runs
+    sp, sm = b6, (jx, a7[1])                   # where each line sets off for U1, and at what height
+    yp, ym = b6[1], a7[1]
+    if cy > b7[1] + 2.0:
+        # J1 beside the hole: D+ and D- each drop through a via just left of the pads (D+ the
+        # outer), run down the strip on the back and along under the speaker, D+ 0.65 above
+        # D-, and come up right of U1; from there as before
+        yp, ym = cy - 0.25, cy + 0.4
+        xs0 = box(pin["5"])[2] + 0.5 + (yp - yt)
+        vp, vm = (jx - 1.45, b6[1]), (jx - 0.95, a7[1] + 0.45)     # the drops beside the pads
+        up, um = (xs0 + 0.6, yp), (xs0 + 1.35, ym)                 # and the vias up right of U1
+        run(dp, [b6, vp], F)
+        run(dm, [(jx, a7[1]), (vm[0], a7[1]), vm], F)
+        for v, net in ((vp, dp), (vm, dm), (up, dp), (um, dm)):
+            add_via(board, v, net)
+        run(dp, [vp, (vp[0], yp), up], B)
+        run(dm, [vm, (vm[0], ym), um], B)
+        sp, sm = up, um
+    xs = box(pin["5"])[2] + 0.5 + (yp - yt)     # where the pair splits, 45 degrees to its runs
     assert xs < jx - 0.3, "U1 too close to J1 for usb_pair()"
-    run(dp, [b6, (xs, b6[1]), (xs - (b6[1] - yt), yt), (cx, yt), (cx, p1[1]), (out - 0.55, p1[1])], F)
-    run(dm, [(jx, a7[1]), (xs, a7[1]), (xs - (yb - a7[1]), yb), (cx, yb), (cx, p3[1]), (out - 0.55, p3[1])], F)
+    run(dp, [sp, (xs, yp), (xs - (yp - yt), yt), (cx, yt), (cx, p1[1]), (out - 0.55, p1[1])], F)
+    run(dm, [sm, (xs, ym), (xs - (yb - ym), yb), (cx, yb), (cx, p3[1]), (out - 0.55, p3[1])], F)
     gnd, v33 = board.FindNet("GND"), board.FindNet("+3V3")
     add_track(board, xy(pin["2"].GetPosition()), (cx, cy), gnd, w, F)
     add_via(board, (cx, cy), gnd)
@@ -388,8 +408,8 @@ def usb_pair(board):
     r21, r22 = (xy(next(p for p in board.FindFootprintByReference(r).Pads() if p.GetNumber() == "1").GetPosition())
                 for r in ("R21", "R22"))
     edp, edm = (r21[0], r21[1] - 0.775), (r22[0], r22[1] - 0.625)    # each pad's via, just above it
-    run(dp, [vdp, (vdp[0] - (vdp[1] - ydp), ydp), (edp[0] + (edp[1] - ydp), ydp), edp], B)
-    run(dm, [vdm, (vdm[0] - (vdm[1] - ydm), ydm), (edm[0] + (edm[1] - ydm), ydm), edm], B)
+    run(dp, [vdp, (vdp[0] - abs(vdp[1] - ydp), ydp), (edp[0] + (edp[1] - ydp), ydp), edp], B)
+    run(dm, [vdm, (vdm[0] - abs(vdm[1] - ydm), ydm), (edm[0] + (edm[1] - ydm), ydm), edm], B)
     add_via(board, edp, dp)
     add_via(board, edm, dm)
     add_track(board, edp, r21, dp, w, F)
@@ -1542,8 +1562,8 @@ def main():
     contacts = contact_stubs(board)
     dome_stubs(board)
     fpc_ground_bar(board)
-    usb_shell_ground(board)
     usb_pair(board)
+    usb_shell_ground(board)
     fanout(board)
     known = freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
     finish_open(board, known=known)

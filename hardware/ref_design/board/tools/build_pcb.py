@@ -31,7 +31,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, BOARD_DIR)
 
 import netlist  # noqa: E402
-from placement import CASE, CORE, CORE_AT, CORE_ESCAPES, CORE_NETS, CORE_ROT, CORE_SIDE, CUTOUTS, P, USB_TAB  # noqa: E402
+from placement import CASE, CORE, CORE_AT, CORE_ESCAPES, CORE_NETS, CORE_ROT, CORE_SIDE, CUTOUTS, P, SPEAKER, USB_TAB  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 REF = os.path.join(os.path.dirname(BOARD_DIR), "..", "..", "..", "tmp")  # replaced below
@@ -39,7 +39,7 @@ REF_PCB = os.environ.get("RP2350B_REF", "")
 SYSFP = "/usr/share/kicad/footprints"
 LIBS = {"battler": os.path.join(BOARD_DIR, "lib", "battler.pretty")}
 NO_ASSEMBLY = ("SW1", "SW2", "SW3", "SW4", "SW5", "SW6", "SW7", "SW8", "SW9", "SW10", "SW11", "SW12",
-               "SW13", "SW14", "SW15", "SW16", "TP1", "TP2", "TP3", "TP4", "TP5", "J4",
+               "SW13", "SW14", "SW15", "SW16", "TP1", "TP2", "TP3", "TP4", "TP5",
                "H1", "H2", "H3", "H4", "H5", "H6", "FID1", "FID2", "FID3")
 
 
@@ -138,12 +138,12 @@ def setup(board):
     return CLASSES
 
 
-def arc(board, c, r, a0, a1):
+def arc(board, c, r, a0, a1, layer=pcbnew.Edge_Cuts, w=0.1):
     s = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_ARC)
     pts = [(c[0] + r * math.cos(math.radians(a)), c[1] + r * math.sin(math.radians(a))) for a in (a0, (a0 + a1) / 2, a1)]
     s.SetArcGeometry(V(*pts[0]), V(*pts[1]), V(*pts[2]))
-    s.SetLayer(pcbnew.Edge_Cuts)
-    s.SetWidth(mm(0.1))
+    s.SetLayer(layer)
+    s.SetWidth(mm(w))
     board.Add(s)
 
 
@@ -192,6 +192,33 @@ def outline(board):
     # the board's cutouts: the cell and the speaker sit in them, in the board's plane
     for c in CUTOUTS:
         rounded_rect(board, *c["box"], c["r"])
+
+
+def speaker(board):
+    """The speaker lying on the board's top (placement.SPEAKER, hand-fitted, so not a footprint):
+    its racetrack outline on the front silkscreen, and a rule area over it plus `grow` that keeps
+    parts out (tracks, vias and pours may run under it)."""
+    (cx, cy), (w, l), g = SPEAKER["at"], SPEAKER["size"], SPEAKER["grow"]
+    r = w / 2
+    for sx in (-1, 1):
+        line(board, (cx + sx * r, cy - l / 2 + r), (cx + sx * r, cy + l / 2 - r), pcbnew.F_SilkS, 0.15)
+    arc(board, (cx, cy - l / 2 + r), r, 180, 360, pcbnew.F_SilkS, 0.15)
+    arc(board, (cx, cy + l / 2 - r), r, 0, 180, pcbnew.F_SilkS, 0.15)
+    z = pcbnew.ZONE(board)
+    z.SetIsRuleArea(True)
+    z.SetDoNotAllowFootprints(True)
+    for flag in (z.SetDoNotAllowTracks, z.SetDoNotAllowVias, z.SetDoNotAllowZoneFills, z.SetDoNotAllowPads):
+        flag(False)
+    ls = pcbnew.LSET()
+    ls.AddLayer(pcbnew.F_Cu)
+    ls.AddLayer(pcbnew.B_Cu)
+    z.SetLayerSet(ls)
+    z.SetZoneName("speaker")
+    z.Outline().NewOutline()
+    for x, y in ((cx - w / 2 - g, cy - l / 2 - g), (cx + w / 2 + g, cy - l / 2 - g),
+                 (cx + w / 2 + g, cy + l / 2 + g), (cx - w / 2 - g, cy + l / 2 + g)):
+        z.Outline().Append(mm(x), mm(y))
+    board.Add(z)
 
 
 def footprints(board, comps, nets, pins):
@@ -593,6 +620,7 @@ def main():
     board = pcbnew.NewBoard(PCB)
     setup(board)
     outline(board)
+    speaker(board)
     fps, netinfo = footprints(board, comps, nets, pins)
     missing = [r for r in fps if r not in P and r not in CORE.values()]
     if missing:
