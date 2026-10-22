@@ -112,6 +112,7 @@ python3 tools/check_pcb.py                   # DRC with schematic parity
 python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders
 python3 ../case/check_fit.py                 # board inside the case?
 python3 ../case/fitkit.py                    # the printable fit kit (under a minute with Manifold)
+python3 ../case/check_manifold.py            # every printed part's mesh manifold (each edge on two faces)?
 python3 tools/pinmap.py                      # docs/pinmap.md
 python3 ../viewer/build.py                   # the exploded 3D view (GitHub Pages, /assembly/)
 ```

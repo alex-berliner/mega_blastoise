@@ -751,10 +751,13 @@ module tub() difference() {
     }
     // the tongue: the wall's inner half, up past the seam inside the top pieces' skirts
     translate([0, 0, z_seam - 0.01]) linear_extrude(tongue_h + 0.01) difference() { inner2d(wall / 2 - seam_fit); inner2d(); }
-    // the tab that carries the USB-C opening's lower half, up into the top piece's notch
-    intersection() { usb_notch(usb_fit, 0.1); linear_extrude(case_h) outline2d(); }
+    // the tab that carries the USB-C opening's lower half, up into the top piece's notch (0.01 in
+    // from the outline: its foot overlaps the wall under the seam, and an outer face flush with the
+    // wall's would meet the back's round exactly along the seam)
+    intersection() { usb_notch(usb_fit, 0.1); linear_extrude(case_h) offset(delta = -0.01) outline2d(); }
     // bosses up to the board (the screws come up through them)
-    for (i = [0:5]) at(pins[i]) cylinder(d = tub_boss_d[i], h = z_board);
+    // (turned half a facet: unturned, the floor rib at x 24.4 runs exactly through two of H3's corners)
+    for (i = [0:5]) at(pins[i]) rotate(180 / $fn) cylinder(d = tub_boss_d[i], h = z_board);
     // ribs under each silicone piece carry the button presses into the floor
     for (c = clusters) at(c) difference() {
       cylinder(d = piece_d - 4, h = z_board);
@@ -792,8 +795,9 @@ usb_zc = z_top_cu + usb_h / 2;   // the port's centre
 usb_open_x = [in_x - 1, in_x + wall + 1];   // the opening's cut, through the whole wall
 // the notch in the top piece's skirt under the port (fit 0: as cut from the top piece) or the tub's
 // tab in it (fit, lift: its clearance each side and above): full width in the wall's inner half,
-// usb_step narrower and lower in its outer half, so the top piece frames the tab outside
-module usb_notch(fit = 0, lift = 0) let(o = fit == 0 ? 0.01 : 0, w = usb_notch_w - 2 * fit, dn = fit == 0 ? 1 : 0) {
+// usb_step narrower and lower in its outer half, so the top piece frames the tab outside (the tab
+// starts 0.01 under the seam, in the tub's wall: a solid only touching it leaves non-manifold edges)
+module usb_notch(fit = 0, lift = 0) let(o = fit == 0 ? 0.01 : 0, w = usb_notch_w - 2 * fit, dn = fit == 0 ? 1 : 0.01) {
   translate([in_x - o, usb_y - w / 2, z_seam - dn]) cube([wall / 2 + 2 * o, w, usb_zc - lift - z_seam + dn]);
   translate([in_x + wall / 2, usb_y - w / 2 + usb_step, z_seam - dn])
     cube([wall / 2 + dn, w - 2 * usb_step, usb_zc - usb_step - lift - z_seam + dn]);
@@ -810,15 +814,18 @@ function abxy_keys() = [for (s = [[abxy1, 0], [abxy2, 180]]) for (i = [0:3]) let
 // face: the deck's face over the cut's origin, where the 45 degree chamfer opens out (face down it
 // prints as a 45 degree overhang, no support)
 cut_face = deck_face - retainer_bot + 0.01;
+// (its round cuts are turned half a facet: unturned, corners of the hole and the pocket lie exactly
+// on the tab slot's sides, at -15 and 20 degrees, and leave non-manifold edges)
 module abxy_cut(h, notches, hole_d = cap_hole_d, face = cut_face) {
-  cylinder(d = hole_d, h = h);
-  translate([0, 0, face - cap_chamfer]) cylinder(d1 = hole_d, d2 = hole_d + 2 * cap_chamfer + 0.02, h = cap_chamfer + 0.01);
+  rotate(180 / $fn) cylinder(d = hole_d, h = h);
+  translate([0, 0, face - cap_chamfer]) rotate(180 / $fn) cylinder(d1 = hole_d, d2 = hole_d + 2 * cap_chamfer + 0.02, h = cap_chamfer + 0.01);
   difference() {
-    cylinder(d = pocket_d, h = pocket_h + 0.01);
+    rotate(180 / $fn) cylinder(d = pocket_d, h = pocket_h + 0.01);
     if (notch_keys) for (n = notches) rotate(n) translate([cap_flange_d / 2 - notch_reach, -notch_w / 2, -1])
       cube([pocket_d / 2 - cap_flange_d / 2 + notch_reach + 0.05, notch_w, pocket_h + 2]);
   }
-  linear_extrude(pocket_h + 0.01) polygon([[0, 0], for (i = [0:6]) let(t = slot_off - slot_a / 2 + slot_a * i / 6) slot_r * [cos(t), sin(t)]]);
+  // (0.01 over the pocket's roof: a roof in the same plane leaves non-manifold edges)
+  linear_extrude(pocket_h + 0.02) polygon([[0, 0], for (i = [0:6]) let(t = slot_off - slot_a / 2 + slot_a * i / 6) slot_r * [cos(t), sin(t)]]);
 }
 module dpad_cut(h, gap = dpad_gap, face = cut_face) {
   translate([0, 0, dpad_lift]) linear_extrude(h) offset(r = gap) cross(dpad_arm_w, dpad_arm_l);
@@ -889,8 +896,9 @@ module top() difference() {
       // the inside, under the screen block and the spines, behind the joint's band
       translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1)
         intersection() { inner2d(); offset(delta = -joint_w) top_region2d(); }
-      // nothing of the band below the decks' underside
-      translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) intersection() { inner2d(); top_region2d(); }
+      // nothing of the band below the decks' underside (out past the spines' ends, so the cut's end
+      // isn't the end faces')
+      translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) intersection() { inner2d(); offset(delta = 0.01) top_region2d(); }
       // the undercut the decks' wedges sit in (45 degrees: face down it prints as an upward face)
       for (k = [0:ceil(wedge_w / lay - 1e-6) - 1]) let(z = z_deck_under + lay * k)
         translate([0, 0, z - (k == 0 ? 0.01 : 0)]) linear_extrude(lay + 0.01 + (k == 0 ? 0.01 : 0)) intersection() {
@@ -905,18 +913,18 @@ module top() difference() {
     for (s = side_pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_ceil - z_top_cu + 0.01);
     // pinhole guides reach down towards the switches
     for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_ceil - z_top_cu - 2.4 + 0.01);
-    // panel locating frame
+    // panel locating frame (its opening is the panel's pocket, cut below: one cut, so no two faces
+    // coincide there)
     translate([0, 0, z_ceil - frame_h]) linear_extrude(frame_h + 0.01) difference() {
       square([panel_w + panel_fit + 2 * frame_wall, panel_l + panel_fit + 2 * frame_wall], center = true);
-      square([panel_w + panel_fit, panel_l + panel_fit], center = true);
       translate([fpc_x, -panel_l / 2]) square([fpc_w + 4, 6], center = true);   // the FPC's fold passes here
     }
   }
   // USB-C: the opening's upper half, and below it the notch the tub's tab fills
   usb_opening();
   usb_notch(0);
-  // the panel's pocket: its top face_t under the screen face
-  if (face_t < top_t) translate([0, 0, z_ceil - 0.01]) linear_extrude(top_t - face_t + 0.01)
+  // the panel's frame and its pocket: its top face_t under the screen face
+  translate([0, 0, z_ceil - frame_h - 0.01]) linear_extrude(frame_h + top_t - face_t + 0.01)
     square([panel_w + panel_fit, panel_l + panel_fit], center = true);
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_ceil - 1]) linear_extrude(top_t + 2) window();

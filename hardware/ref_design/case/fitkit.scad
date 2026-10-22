@@ -117,15 +117,18 @@ stack_half = 16;
 // Start/Select's stack is smaller and off-centre: it sits against the case's end, so its box and
 // legs stay inside the case (legs in the deck, clear of the membrane's retainer)
 ss_box = [12.6, 5.1, 8.6];          // half width, reach towards the end, reach towards the screen
-function box_of(c, ss) = ss ? [c[0] - ss_box[0], c[1] - ss_box[1], 2 * ss_box[0], ss_box[1] + ss_box[2]]
-                            : [c[0] - stack_half, c[1] - stack_half, 2 * stack_half, 2 * stack_half];
+// (a cluster's box 0.01 inside stack_half: at stack_half its sides lie on the case's inner wall
+// faces, which leaves non-manifold edges)
+function box_of(c, ss) = let(h = stack_half - 0.01) ss ? [c[0] - ss_box[0], c[1] - ss_box[1], 2 * ss_box[0], ss_box[1] + ss_box[2]]
+                            : [c[0] - h, c[1] - h, 2 * h, 2 * h];
 module stack_box(c, ss = false) let(b = box_of(c, ss)) translate([b[0], b[1], -1]) cube([b[2], b[3], case_h + 2]);
 module stack_legs(c, ss = false)
   for (p = ss ? [[-10.5, -4.3], [10.5, -4.3], [-10.5, 3.5], [10.5, 3.5]]   // 3.5: clear of seat 1's Y cap hole
               : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
     // up into the deck (0.6 under its face), so a leg under one of the deck's reliefs still meets
-    // solid deck and doesn't hang over the relief when printed face down
-    at(c + p, z_top_cu) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
+    // solid deck and doesn't hang over the relief when printed face down (turned half a facet:
+    // unturned, the wedge's top layer runs exactly through two of a cluster leg's corners)
+    at(c + p, z_top_cu) rotate(180 / $fn) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
 // It prints deck face down on the bed, as the deck does, so it needs no supports: a slice of the deck
 // itself, its skirts and boss cut off at the walls' bottom so it stands on its legs
 module tune_stack_lid(c, ss = false) difference() {
@@ -186,11 +189,12 @@ function test_round_at(phi) = test_round_c() + test_round * [cos(phi), -sin(phi)
 module test_curve() let(c = test_round_c(), top = c[1] + test_slab) difference() {
   rotate([90, 0, 0]) translate([0, 0, -test_round_w]) linear_extrude(test_round_w)
     polygon([[-test_back, 0], [0, 0], for (p = [test_round_from:-2.5:0]) test_round_at(p), [c[0] + test_round, top], [-test_back, top]]);
-  // ticks on the end face (y = 0), in from the surface along its normal, and their angles
+  // ticks on the end face (y = 0), in from the surface along its normal (from 0.01 past it: at 45
+  // degrees a tick's corner would touch a corner of the round), and their angles
   // (the numbers stand in a staircase up and in from their ticks: by the ticks they'd overlap)
   for (t = [[45, [2.5, -2.1]], [60, [0.3, -3.5]], [75, [-1.9, -4.9]]]) let(p = t[0], q = test_round_at(p), n = [cos(p), -sin(p)])
     translate([0, -0.01, 0]) rotate([-90, 0, 0]) linear_extrude(engrave + 0.01) mirror([0, 1]) {
-      hull() { translate(q - 0.2 * n) circle(d = 0.4, $fn = 8); translate(q - 1.0 * n) circle(d = 0.4, $fn = 8); }
+      hull() { translate(q - 0.19 * n) circle(d = 0.4, $fn = 8); translate(q - 1.0 * n) circle(d = 0.4, $fn = 8); }
       translate(test_round_c() + t[1] * test_round / 6) text(str(p), size = 1.6, halign = "center", valign = "center");
     }
   translate([-test_back / 2, test_round_w / 2, top - engrave]) linear_extrude(engrave + 0.01)
@@ -279,7 +283,7 @@ module test_overhang_ladder() {
 // Rounds: solid convex quarter rounds as the shell's edges print (face down, the round leaving the
 // bed flat and turning up towards vertical), from 80 degrees from vertical at the stem up to 25,
 // then 1 mm straight up. Ticks on each block's -x end face, in along the surface's normal at its angle
-// from vertical: every 5 degrees (R10) or 10 (R3, R6) from 30 to 80, long at 30, 50 and 70
+// from vertical (from 0.01 past the surface, as test_curve's): every 5 degrees (R10) or 10 (R3, R6) from 30 to 80, long at 30, 50 and 70
 // (R10's numbered). Its radius on its top
 oh_radii = [10, 6, 3];  oh_from = 80;  oh_to = 25;  oh_block = 5;  oh_gap = 6;
 function oh_c(r) = [oh_col - r * cos(oh_from), oh_lift + r * sin(oh_from)];
@@ -291,7 +295,7 @@ module oh_round(r) let(e = oh_at(r, oh_to), top = e[1] + 1, step = r >= 10 ? 5 :
   // (the numbers mirrored so they read from -x)
   for (s = [-1, 1]) translate([-0.01, 0, 0]) rotate([90, 0, 90]) linear_extrude(engrave + 0.01) {
     for (p = [30:step:oh_from]) let(q = oh_at(r, p), n = [cos(p), -sin(p)], d = p % 20 == 10 ? 2.0 : 1.0)
-      scale([s, 1]) hull() { translate(q - 0.15 * n) circle(d = 0.3, $fn = 8); translate(q - d * n) circle(d = 0.3, $fn = 8); }
+      scale([s, 1]) hull() { translate(q - 0.14 * n) circle(d = 0.3, $fn = 8); translate(q - d * n) circle(d = 0.3, $fn = 8); }
     if (r >= 10) for (p = [30, 50, 70]) let(n = [cos(p), -sin(p)], q = oh_at(r, p) - 3.7 * n)
       translate([s * q[0], q[1]]) mirror([1, 0]) text(str(p), size = 1.2, halign = "center", valign = "center");
   }

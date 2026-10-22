@@ -25,8 +25,8 @@ reroute the board. The board is the one file several stages rewrite in place:
   - the checks, fab and everything after see the board on disk: edit it by hand and they run
     again. Run the hand steps through the runner (--only route_finish, --only sync_pcb): their
     result then counts as the routed board, and silk runs again on it.
-End-of-round stages (fitkit, the print kits, viewer) come after every check and run only when
-their inputs changed or when named (--only, --from). On request only, never on their own:
+End-of-round stages (fitkit, check_manifold, the print kits, viewer) come after every check and run
+only when their inputs changed or when named (--only, --from). On request only, never on their own:
 sim (about 40 min), sync_pcb, route_finish. A stage whose tool is missing (P1S kit without
 BAMBU_STUDIO) is skipped with a note.
 
@@ -131,6 +131,9 @@ STAGES = [
            "board/battler.kicad_pcb", "tools/scad.py", *LIB],
           [*FITKIT_STL, "case/fitkit_parts.scad"], kind="end", tools=("scad", "kicad"),
           about="the printable fit kit"),
+    Stage("check_manifold", ".", [PY, "case/check_manifold.py"],
+          ["case/check_manifold.py", "case/print_package.py", *CASE_STL, *FITKIT_STL], kind="end", check=True,
+          about="every printed part's mesh: each edge on two faces"),
     Stage("print_u1", ".", [PY, "case/print_package.py"],
           ["case/print_package.py", "case/overhangs.py", "case/print/fit_test_v5.3mf", "case/print/u1_system/*.json",
            "case/print_package_README.md", "case/print_tests_README.md", *CASE_STL, *FITKIT_STL],
