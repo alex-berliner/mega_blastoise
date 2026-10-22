@@ -364,7 +364,17 @@ impl Battle {
                     }),
                     Some(next) => {
                         let passed = self.sides[side].mon().clone();
+                        // The gaze is held by the TRAPPER, and Baton Pass
+                        // carries it: copyVolatileFrom re-links the victim's
+                        // trapped volatile to the replacement before the
+                        // passer's clearVolatile can cut the link, so the
+                        // victim stays trapped. A plain leave drops it
+                        // (switch_out_reset, as for any other switch-out).
+                        let gaze = self.sides[1 - side].mon().mean_looked;
                         self.switch_out_reset(side);
+                        if gaze {
+                            self.sides[1 - side].mon_mut().mean_looked = true;
+                        }
                         let slot_item = self.hand_slot_item_over(side);
                         self.sides[side].reorder_for_switch(next);
                         self.sides[side].active = next;
