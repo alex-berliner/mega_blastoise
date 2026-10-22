@@ -23,7 +23,7 @@ RP2354B, 2N7002, AO3400A, AO3401A); generic ones (Device:R, Device:D_Schottky)
 carry the part number as their value.
 
 This is the 2-layer build: TP4056 charger with USB load sharing, ME6211 3V3,
-RP2354B (flash inside), PWM audio into an FM8002A, a face button as the power
+RP2354B (flash inside), no audio (since 2026-10-21), a face button as the power
 button, a board thermistor at the cell's hole (no LEDs), every hole >= 0.3 mm, and an ER-TFT024IPS-3 panel
 in a ZIF connector.
 """
@@ -38,7 +38,6 @@ SHEETS = [
     ("mcu_power.kicad_sch", "MCU_Power"),
     ("debug.kicad_sch", "Debug"),
     ("display.kicad_sch", "Display"),
-    ("audio.kicad_sch", "Audio"),
     ("buttons.kicad_sch", "Buttons"),
 ]
 
@@ -270,9 +269,10 @@ R("R18", S, "470k", "VBAT_SENSE", "GND")
 C("C8", S, "100n", "VBAT_SENSE")
 for i, net in enumerate(["VBUS", "VSYS", "VBAT", "+3V3", "GND"]):
     part(f"TP{i + 1}", S, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
-# bring-up test pads on the top side: the power latch, the load-sharing switch, the amplifier
+# bring-up test pads on the top side: the power latch, the load-sharing switch (TP8 was the
+# amplifier's, gone with it)
 # (each on the sheet that draws its net)
-for i, (net, sheet) in enumerate([("PWR_EN", S), ("LS_GATE", "usb_charger.kicad_sch"), ("AMP_SHDN", "audio.kicad_sch")]):
+for i, (net, sheet) in enumerate([("PWR_EN", S), ("LS_GATE", "usb_charger.kicad_sch")]):
     part(f"TP{i + 6}", sheet, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
 # 2026-10-19 (Alex's debug-readiness review): the core's 1.1 V rail, the backlight's set point and the
 # panel's SPI lines get probe pads too (the panel is the part most likely to need a logic analyser)
@@ -293,12 +293,12 @@ S = "mcu.kicad_sch"
 BOARD_REV = 1             # this board's revision number (0-15), read from GPIO22-25 (R48-R51)
 GPIO = {  # GPIO number: net
     # 2 layers: each net's pin faces where it goes, and along an edge the pins are in the
-    # order their nets fan out, so routes don't cross (seat 1 below, seat 2 above,
-    # charger and USB to the right, the panel's connector below the chip). The pins leave
-    # the chip the way Raspberry Pi's layout takes them out (build_pcb.copy_escapes)
+    # order their nets fan out. Since 2026-10-21 the chip sits in the left bezel as Raspberry Pi
+    # drew it: seat 2's pins face the left strip beside the cell's hole, the panel's J3, seat 1's
+    # cross below, USB and the latch above
     2: "PWR_HOLD", 3: "PWR_BTN_N",
     4: "P2_UP", 5: "P2_DOWN", 6: "P2_LEFT", 7: "P2_RIGHT",
-    8: "AUDIO_PWM", 9: "P2_SELECT", 10: "P2_START", 11: "AMP_EN",
+    9: "P2_SELECT", 10: "P2_START",            # GPIO8 and GPIO11 (audio until 2026-10-21): unconnected
     12: "P2_A", 13: "P2_B", 14: "P2_X", 15: "P2_Y",
     17: "CHG_STAT_N", 18: "CHG_DONE_N", 19: "CHG_OFF",
     20: "UART_TX", 21: "UART_RX",
@@ -447,39 +447,11 @@ C("C50", S, "1u", "BL_REF")
 JP("JP2", S, "VSYS", "LED_A")                      # cut it and bridge with an ammeter to read the LED current
 
 # =================================================================================
-# Audio: PWM from the RP2354B, filtered, into an FM8002A bridge amplifier (8 ohm speaker)
+# Audio: none since 2026-10-21 (row 19 of Alex's list). The cell sits in a hole in the board and
+# every machine-placed part stays on the top; the speaker, its hole, J4 and the FM8002A circuit
+# didn't fit with them, so they went. GPIO8 (was AUDIO_PWM, PWM4 A) and GPIO11 (was AMP_EN) are
+# left unconnected for a later board.
 # =================================================================================
-S = "audio.kicad_sch"
-part("U7", S, "battler:FM8002A", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
-     {"3": "AMP_BYP", "4": "AMP_INN", "2": "AMP_BYP", "1": "AMP_SHDN",
-      "5": "SPK_P", "8": "SPK_N", "6": "AMP_VDD", "7": "GND"},
-     "C94625", "FM8002A", "Shenzhen Fuman Elec")
-# two RC stages (1k, 4.7 nF) take out the PWM carrier: with the PWM at 8 bits (586 kHz) it
-# comes out 49 dB down and the audio band is -3 dB at about 14 kHz loaded. 10-bit PWM
-# (146 kHz) would only be 26 dB down: firmware runs 8 bits (dithers for more resolution)
-R("R32", S, "1k", "AUDIO_PWM", "AUDIO_F1")
-C("C37", S, "4.7n", "AUDIO_F1")
-R("R33", S, "1k", "AUDIO_F1", "AUDIO_F2")
-C("C38", S, "4.7n", "AUDIO_F2")
-C("C39", S, "220n", "AUDIO_F2", "AMP_CI")       # Ci: blocks the PWM's DC; 36 Hz corner with Ri
-R("R34", S, "20k", "AMP_CI", "AMP_INN")          # Ri
-R("R35", S, "20k", "SPK_P", "AMP_INN")           # Rf: gain 2 x Rf / Ri = 2
-C("C40", S, "1u", "AMP_BYP")                     # half-supply reference, as the datasheet's circuit
-R("R36", S, "100k", "AMP_SHDN", "AMP_VDD")       # SHUTDOWN high: off unless the MCU turns it on
-part("Q3", S, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
-     {"1": "AMP_EN", "2": "GND", "3": "AMP_SHDN"}, "C8545", "2N7002", "Changjiang")
-R("R37", S, "100k", "AMP_EN", "GND")             # off while the MCU boots
-C("C34", S, "10u", "AMP_VDD")
-C("C35", S, "100n", "AMP_VDD")
-# JP3: cut it to take the amplifier off VSYS (a noisy or shorted amplifier), or to read its current
-JP("JP3", S, "VSYS", "AMP_VDD")
-part("#FLG09", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "AMP_VDD"}, bom=False)   # fed through JP3
-# J4 (2026-10-20, Alex: no soldering at assembly): the speaker (INGHAi GSPK151035PN) comes with a
-# 1.25 mm 2-pin plug, so J4 is J2's PicoBlade header (no new part number at JLC). The cell's plug
-# fits it too: J4 sits by the speaker's hole on the far side of the board from the cell's leads
-part("J4", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "53261-0271",
-     "Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal",
-     {"1": "SPK_P", "2": "SPK_N", "MP": None}, "C177225", "532610271", "Molex")
 
 
 # =================================================================================

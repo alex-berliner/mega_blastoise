@@ -43,7 +43,6 @@ TITLES = {  # title block of each sheet
     "mcu_power.kicad_sch": "RP2354B supply: decoupling and core regulator",
     "debug.kicad_sch": "SWD, UART, debug pads, BOOTSEL and RESET",
     "display.kicad_sch": "Panel connector and backlight sinks",
-    "audio.kicad_sch": "PWM audio and amplifier",
     "buttons.kicad_sch": "Membrane contacts",
 }
 

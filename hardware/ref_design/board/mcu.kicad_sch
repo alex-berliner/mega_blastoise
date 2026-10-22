@@ -2629,6 +2629,14 @@
 		(uuid "bbc8bc74-9198-5a14-bfcf-bae15d19ecdb")
 	)
 	(no_connect
+		(at 166.37 68.58)
+		(uuid "f5152155-79b1-5dac-ad27-b2035b255ccb")
+	)
+	(no_connect
+		(at 166.37 76.2)
+		(uuid "b8e2f4ab-b7e0-5a78-8240-e2a9601beeb8")
+	)
+	(no_connect
 		(at 166.37 88.9)
 		(uuid "9e8082a7-f6cf-5c32-8e22-f2b48f622111")
 	)
@@ -3400,16 +3408,6 @@
 	)
 	(wire
 		(pts
-			(xy 166.37 68.58) (xy 171.45 68.58)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a742ad06-06a1-5d52-b4c9-a3dae5018b57")
-	)
-	(wire
-		(pts
 			(xy 166.37 71.12) (xy 171.45 71.12)
 		)
 		(stroke
@@ -3427,16 +3425,6 @@
 			(type default)
 		)
 		(uuid "ad4ba0ec-4e27-5295-aa68-c05b889f5f4a")
-	)
-	(wire
-		(pts
-			(xy 166.37 76.2) (xy 171.45 76.2)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "710fe71e-5ad0-5f15-9ee7-25dd55740cf5")
 	)
 	(wire
 		(pts
@@ -4140,29 +4128,6 @@
 			)
 		)
 	)
-	(global_label "AUDIO_PWM"
-		(shape passive)
-		(at 171.45 68.58 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "f77357d0-0799-5c7d-8ead-4e74c6b33d77")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 171.45 68.58 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
 	(global_label "P2_SELECT"
 		(shape passive)
 		(at 171.45 71.12 0)
@@ -4199,29 +4164,6 @@
 		(uuid "a85304ea-e290-5241-bcaf-5ee6ac416137")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 171.45 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "AMP_EN"
-		(shape passive)
-		(at 171.45 76.2 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "8ba0d8c1-ad02-579b-8e28-6a91285ead10")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 171.45 76.2 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)

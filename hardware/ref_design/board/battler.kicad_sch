@@ -227,9 +227,9 @@
 		)
 		(uuid "70d57ce9-e31c-5513-8009-e9b37f8b33ea")
 	)
-	(text "PWM audio into an FM8002A, one Li-ion cell on a TP4056 charger with load sharing, ME6211 3V3."
+	(text "one Li-ion cell (in a hole in the board) on a TP4056 charger with load sharing, ME6211 3V3, no audio."
 		(exclude_from_sim no)
-		(at 69.0347 31.75 0)
+		(at 71.7283 31.75 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -477,9 +477,9 @@
 		)
 		(uuid "be444e75-c536-5958-b776-aa026993b964")
 	)
-	(text "PWM low-pass filter, DC block"
+	(text "seat 1 and seat 2 contacts"
 		(exclude_from_sim no)
-		(at 166.632 107.95 0)
+		(at 165.393 107.95 0)
 		(effects
 			(font
 				(size 1 1)
@@ -487,9 +487,9 @@
 		)
 		(uuid "2e6943dc-89f6-5908-9015-0bbef6a2c455")
 	)
-	(text "amplifier (FM8002A) and supply"
+	(text "Start/Select per seat (P1 Start"
 		(exclude_from_sim no)
-		(at 167.0835 112.4 0)
+		(at 166.8915 112.4 0)
 		(effects
 			(font
 				(size 1 1)
@@ -497,9 +497,9 @@
 		)
 		(uuid "1588f925-cbb9-5e9c-bde8-6f8726db42f8")
 	)
-	(text "shutdown control"
+	(text "is the power button),"
 		(exclude_from_sim no)
-		(at 161.346 116.85 0)
+		(at 162.917 116.85 0)
 		(effects
 			(font
 				(size 1 1)
@@ -507,55 +507,15 @@
 		)
 		(uuid "8fef0b2d-8676-5436-bfd4-6ec9d55703e6")
 	)
-	(text "speaker pads J4"
+	(text "20 contacts, one GPIO each"
 		(exclude_from_sim no)
-		(at 161.108 121.3 0)
+		(at 165.607 121.3 0)
 		(effects
 			(font
 				(size 1 1)
 			)
 		)
 		(uuid "7855acca-e43d-5cfb-9bc1-d4a696f79857")
-	)
-	(text "seat 1 and seat 2 contacts"
-		(exclude_from_sim no)
-		(at 231.433 107.95 0)
-		(effects
-			(font
-				(size 1 1)
-			)
-		)
-		(uuid "2110bae2-4340-5769-b6c2-cbd324b135bc")
-	)
-	(text "Start/Select per seat (P1 Start"
-		(exclude_from_sim no)
-		(at 232.9315 112.4 0)
-		(effects
-			(font
-				(size 1 1)
-			)
-		)
-		(uuid "b0749279-23d8-5987-9527-ad45b9a955e8")
-	)
-	(text "is the power button),"
-		(exclude_from_sim no)
-		(at 228.957 116.85 0)
-		(effects
-			(font
-				(size 1 1)
-			)
-		)
-		(uuid "9de1efb6-c29c-5c65-b945-910faca6f9f0")
-	)
-	(text "20 contacts, one GPIO each"
-		(exclude_from_sim no)
-		(at 231.647 121.3 0)
-		(effects
-			(font
-				(size 1 1)
-			)
-		)
-		(uuid "994c49b9-f073-54f3-8b94-758b7659493e")
 	)
 	(text "Mechanical: locating holes at positions set by the case; fiducials for assembly."
 		(exclude_from_sim no)
@@ -565,7 +525,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "9469b27e-c2e3-57a3-a1bd-921945772694")
+		(uuid "2110bae2-4340-5769-b6c2-cbd324b135bc")
 	)
 	(symbol
 		(lib_id "Mechanical:MountingHole")
@@ -1607,8 +1567,8 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "b41458f2-ed86-57fc-9560-c0eacbf9a6ae")
-		(property "Sheetname" "Audio"
+		(uuid "adaa66b2-a56d-591f-95e3-969ec1fb6ac3")
+		(property "Sheetname" "Buttons"
 			(at 152.4 100.8884 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1619,7 +1579,7 @@
 				(justify left bottom)
 			)
 		)
-		(property "Sheetfile" "audio.kicad_sch"
+		(property "Sheetfile" "buttons.kicad_sch"
 			(at 152.4 135.2184 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1634,51 +1594,6 @@
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f"
 					(page "8")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 218.44 101.6)
-		(size 58.42 33.02)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "adaa66b2-a56d-591f-95e3-969ec1fb6ac3")
-		(property "Sheetname" "Buttons"
-			(at 218.44 100.8884 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "buttons.kicad_sch"
-			(at 218.44 135.2184 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "battler"
-				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f"
-					(page "9")
 				)
 			)
 		)
