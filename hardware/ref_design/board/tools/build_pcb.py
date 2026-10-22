@@ -31,7 +31,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, BOARD_DIR)
 
 import netlist  # noqa: E402
-from placement import CASE, CORE, CORE_AT, CORE_ESCAPES, CORE_NETS, CORE_ROT, CORE_SIDE, CUTOUTS, P  # noqa: E402
+from placement import CASE, CORE, CORE_AT, CORE_ESCAPES, CORE_NETS, CORE_ROT, CORE_SIDE, CUTOUTS, P, USB_TAB  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 REF = os.path.join(os.path.dirname(BOARD_DIR), "..", "..", "..", "tmp")  # replaced below
@@ -170,7 +170,7 @@ def rounded_rect(board, x0, y0, x1, y1, r):
 def outline(board):
     bw, bl, r = CASE["board"]["w"], CASE["board"]["l"], CASE["board"]["r"]
     x0, y0, x1, y1 = 100 - bw / 2, 100 - bl / 2, 100 + bw / 2, 100 + bl / 2
-    tab = CASE["usb"].get("tab")
+    tab = USB_TAB
     if not tab:
         rounded_rect(board, x0, y0, x1, y1, r)
     else:
