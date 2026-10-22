@@ -1,6 +1,6 @@
 # The board with the cell in it (2026-10-22): what the case needs to know
 
-Routed clean on branch `ref-design-cellcut` at 4af3024 (0 unconnected, DRC 0 errors). With the speaker back (2026-10-22, WIP): DRC 0 errors, 5 connections still open.
+Routed clean on branch `ref-design-cellcut` at 4af3024 (0 unconnected, DRC 0 errors). With the speaker back and the board 72.4 mm wide (2026-10-22): routed clean again (0 unconnected, DRC 0 errors).
 
 For the Blastoise Shell session. The cell now sits in a hole in the board (row 19 of Alex's
 2026-10-21 list), and since 2026-10-22 the speaker lies on the board's top in the right bezel
@@ -13,6 +13,27 @@ The board's side is `board/placement.py` (`CUTOUTS`, `SIDE_SCREWS`, `USB_Y`).
 Coordinates: the case's frame (origin at the case's centre, x right, y up towards seat 2), with
 KiCad's in brackets (y down, the centre at 100, 100). Heights are over the board's top copper.
 
+## The board 2 mm wider: 72.4 x 127.7 mm (2026-10-22, Alex: up to 2 mm)
+
+The outline grows 1 mm on each side and stays centred on the case: **x -36.2 .. 36.2** (was
+-35.2 .. 35.2), y unchanged (-63.85 .. 63.85), corners r 5.5, the USB-C tab step out 1 mm with it.
+The case grows 2 mm wide to match (walls, crush ribs and the seam 1 mm out on each side). The cell's
+hole moved 1 mm left (below), so the left strip keeps its 7.5 mm and the right strip beside J1
+gets the whole 2 mm (10.9 mm): the power-on nets couldn't get past J1 there. What moved with it:
+
+| | Case (x, y) now | Was |
+|---|---|---|
+| Board edges | x -36.2 / 36.2 | -35.2 / 35.2 |
+| USB-C J1 face | x 38.55, y 0.0 | x 37.55 |
+| USB-C tab | x 36.2 .. 37.2, y 6 .. -6 | 35.2 .. 36.2 |
+| Cell hole | x -28.7 .. 25.3 | -27.7 .. 26.3 |
+| J2, TH1 | -30.7, -7.24 / 26.1, 14.0 | -29.7 / 27.1 |
+| J5, J6 | -32.6, 20.9 / -32.6, 28.4 | -31.6 |
+
+Unchanged: the screws (x +-31.4, y +-36; the end ones), the clusters, Start/Select, the debug
+pinholes (-31.2, 13.0 / 6.0), the glass and frame, the speaker and J4. The tables below give the
+old numbers where they predate this; this table wins.
+
 ## Moved: the screws and the USB-C
 
 | | Case (x, y) | KiCad | Was (case) |
@@ -23,8 +44,8 @@ KiCad's in brackets (y down, the centre at 100, 100). Heights are over the board
 | H4, left, seat 1 side | **-31.4, -36.0** | 68.6, 136.0 | -31.4, -22.0 |
 | H5, seat 2's end | 3.0, 50.75 (unchanged) | 103, 49.25 | |
 | H6, seat 1's end | -3.0, -50.75 (unchanged) | 97, 150.75 | |
-| USB-C J1 centre | x face 37.55, y 0.0 (the case's own, unchanged) | y 100.0 | |
-| USB-C tab under it | x 35.2..36.2, y 6..-6 (unchanged) | 135.2..136.2 x 94..106 | |
+| USB-C J1 centre | x face 38.55 (1 mm out with the wider board), y 0.0 | y 100.0 | |
+| USB-C tab under it | x 36.2..37.2, y 6..-6 | 136.2..137.2 x 94..106 | |
 
 - The side screws sat in the 7-8 mm strips beside the cell's hole and closed half of each; they
   went to the ends of the long sides, past the hole, where the board is full width: 17.1 mm from
@@ -38,14 +59,14 @@ KiCad's in brackets (y down, the centre at 100, 100). Heights are over the board
 
 | | Case (x, y) | KiCad | Size | Corners |
 |---|---|---|---|---|
-| Cell | x -27.7 .. 26.3, y -3.8 .. 33.2 | 72.3 .. 126.3 x 66.8 .. 103.8 | 54.0 x 37.0 | r 1.0 |
+| Cell | x -28.7 .. 25.3, y -3.8 .. 33.2 | 71.3 .. 125.3 x 66.8 .. 103.8 | 54.0 x 37.0 | r 1.0 |
 
 - A worst-case 403450 (50 +-2 x 34 +-2 x 4.0 +-0.5, so 52 x 36 x 4.5) with 0.5 mm round it, plus
   1.0 mm at the left end: the cell's leads come out of its left end and run along it to J2. With
-  the cell pushed right (against x 26.3), the leads get 2 mm (worst case) to 4 mm (nominal).
-- **Push the cell to the right end** (x 26.3): TH1, the charger's thermistor, sits on the board
-  0.45 mm from that edge (case 27.1, 14.0) and reads the cell through it.
-- **J2** (cell plug, PicoBlade, 3.4 mm): case (-29.7, -7.24), mouth towards +y (into the hole's
+  the cell pushed right (against x 25.3), the leads get 2 mm (worst case) to 4 mm (nominal).
+- **Push the cell to the right end** (x 25.3): TH1, the charger's thermistor, sits on the board
+  0.45 mm from that edge (case 26.1, 14.0) and reads the cell through it.
+- **J2** (cell plug, PicoBlade, 3.4 mm): case (-30.7, -7.24), mouth towards +y (into the hole's
   lower left corner); the plug sticks 3 mm out over the board's left strip and the hole's corner.
 - The size lives in one place, `placement.py` `CUTOUTS`: if Alex measures real cells it changes
   there (and here).
@@ -83,7 +104,7 @@ nothing under the folded FPC but J3). Seat 2's spine now only covers U9 (the shi
 ## J5 and J6, the debug connectors (2026-10-22)
 
 They faced each other nose to nose, so neither plug went in. Both are now turned with their
-mouths towards the board's left edge (x -35.2), courtyards x -34.9 .. -28.3, J6
+mouths towards the board's left edge (x -36.2), courtyards x -35.9 .. -29.3, J6
 y 25.0 .. 31.8 (clear of seat 2's deck band), J5 y 17.5 .. 24.3; each housing's front is about
 0.6 mm in from the board's
 edge. The plugs go in sideways with the case open and stick out past the board's edge (a JST
@@ -92,7 +113,7 @@ wall gets a notch or slot there (the case's call; debug is case-open).
 
 ## The strips beside the hole (2026-10-22 review)
 
-The board beside the hole is two strips, x -35.2 .. -27.7 (7.5 mm) and 26.3 .. 35.2 (8.9 mm), y
+The board beside the hole is two strips, x -36.2 .. -28.7 (7.5 mm) and 25.3 .. 36.2 (10.9 mm), y
 -3.8 .. 33.2: the board's weakest part. H1/H2 hold their seat-2 ends 2.8 mm past the hole; their
 seat-1 ends run into the full-width board, so the side screws stay where they are (in the strips
 they closed half of each). What the case should add: **a floor rib under each strip**, along its
@@ -100,7 +121,7 @@ length, meeting the board's back (only soldermask there: the GND pour, tracks an
 so nothing presses the strips into a bend:
 
 - under the left strip at least at the debug buttons a pin presses (SW18, SW19 at case (-31.2,
-  13.0) and (-31.2, 6.0)) and under J5/J6, where a cable is pushed in (-31.6, 20.9 / 28.4);
+  13.0) and (-31.2, 6.0)) and under J5/J6, where a cable is pushed in (-32.6, 20.9 / 28.4);
 - under the right strip (the power latch and TH1) at its middle, y about 14.
 
 Keep the ribs out of the hole (the cell) and 0.5 mm off its edge.
@@ -109,12 +130,12 @@ Keep the ribs out of the hole (the cell) and 0.5 mm off its edge.
 
 | Part | Case (x, y) | Height | Note |
 |---|---|---|---|
-| J2 cell plug | -29.7, -7.24 | 3.4 | left bezel |
-| J5 SWD (JST SH) | -31.6, 20.9 | 2.9 | left strip, mouth towards the left wall (`swd_pos` was -31.7, -2.0) |
-| J6 UART (JST SH) | -31.6, 28.4 | 2.9 | left strip, mouth towards the left wall (`uart_pos` was -31.7, -12.0) |
+| J2 cell plug | -30.7, -7.24 | 3.4 | left bezel |
+| J5 SWD (JST SH) | -32.6, 20.9 | 2.9 | left strip, mouth towards the left wall (`swd_pos` was -31.7, -2.0) |
+| J6 UART (JST SH) | -32.6, 28.4 | 2.9 | left strip, mouth towards the left wall (`uart_pos` was -31.7, -12.0) |
 | U6 backlight op-amp, SOIC-8 | 0, -36.4 | 1.75 | under seat 1's spine |
 | U8 / U9, 74HC165 TSSOP-16 | 1.2, -44.2 / 0, 41.5 | 1.2 | between each seat's clusters |
-| TH1 | 27.1, 14.0 | 0.5 | at the hole's right edge |
+| TH1 | 26.1, 14.0 | 0.5 | at the hole's right edge |
 
 ## Thickness
 
@@ -163,10 +184,11 @@ stuck down with foam tape and plugged into J4. The board keeps parts out of its 
   (flat test pads) and JP3 (a solder jumper) lie under the folded FPC.
 - The old side outlet and chamber go.
 
-## check_fit against this board (today's positions.json, 2026-10-22 WIP)
+## check_fit against this board (today's positions.json, 2026-10-22)
 
-12 failures, all from things the case doesn't know yet: parts within the *old* side screws'
+14 failures, all from things the case doesn't know yet: parts within the *old* side screws'
 bosses (C16, JP1 at the old (-31.4, -22); D8, Q7, R62, R63 at (31.4, 22); J5 at (-31.4, 22); J4
-at the old (31.4, -22)), and the four dome vents on floor ribs. J1's shell legs, Q3 and J6 no
-longer fail. Not checked by check_fit (the speaker is not a footprint): the speaker's 3.5-3.8 mm
-in the bezel (the 0.5 mm pocket) and its grille, above.
+at the old (31.4, -22)), the four dome vents on floor ribs, and the wider board: the USB-C face
+at x 38.55 against the old 37.55, and J6 by the old crush rib at (-35.7, 28) (with the ribs 1 mm
+out at -36.7 it clears by 1.1 mm). Not checked by check_fit (the speaker is not a footprint): the
+speaker's 3.5-3.8 mm in the bezel (the 0.5 mm pocket) and its grille, above.

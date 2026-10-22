@@ -22,6 +22,16 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 CASE = json.load(open(os.path.join(HERE, "..", "case", "positions.json")))
 
+# ---- the board 2 mm wider than the case has it (2026-10-22, Alex: up to 72.4 mm) ----------------
+# 1 mm more on each side, still centred on the case, which grows to match: the USB-C and its tab
+# go out with the right wall. The cell's hole moved 1 mm left (CUTOUTS), so the left strip keeps
+# its 7.5 mm and the right strip beside J1 gains the whole 2 mm (8.9 -> 10.9): the nets out of it
+# had only the 2.8 mm between J1's pads and the hole. case/CELLCUT_FOR_CASE.md has the outline
+WIDEN = 2.0
+CASE["board"]["w"] += WIDEN
+CASE["usb"]["front_x"] += WIDEN / 2
+CASE["usb"]["tab"] = [[x + WIDEN / 2, y] for x, y in CASE["usb"]["tab"]]
+
 # ---- the hole the cell sits in (2026-10-21, row 19 of Alex's list) ------------------------------
 # The case is too thick with the cell under the board, so it sits in a cutout in the board's
 # plane. The cell (403450: 50 +-2 x 34 +-2 x 4.0 +-0.5) lies across the board between seat 2's
@@ -41,7 +51,7 @@ CASE = json.load(open(os.path.join(HERE, "..", "case", "positions.json")))
 # hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
 # floor (case/CELLCUT_FOR_CASE.md, "The strips").
 CUTOUTS = [
-    dict(name="cell", box=(72.3, 66.8, 126.3, 103.8), r=1.0),     # 54.0 x 37.0
+    dict(name="cell", box=(71.3, 66.8, 125.3, 103.8), r=1.0),     # 54.0 x 37.0
 ]
 
 # ---- the speaker, lying on the board's top (2026-10-22, Alex) --------------------------------
@@ -150,12 +160,12 @@ put("TP16", 93.0, 141.6, 0)                 # GND for a scope clip
 # debug: left bezel, beside the cell's hole
 put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
 put("SW19", CASE["pinholes"][1][0], CASE["pinholes"][1][1], 90)
-put("R26", 71.2, 91.0, 90)
+put("R26", 69.6, 99.6, 0)
 # J6 (UART) and J5 (SWD) one above the other, both turned so their mouths face the board's left
 # edge (2026-10-22, Alex: they faced each other nose to nose and neither plug went in): the plugs
 # go in from the side with the case open, the pins face the cell's hole
-put("J6", 68.4, 71.6, 270)                  # UART: below the side screw H2
-put("J5", 68.4, 79.1, 270)                  # SWD: below J6, above SW18
+put("J6", 67.4, 71.6, 270)                  # UART: below the side screw H2
+put("J5", 67.4, 79.1, 270)                  # SWD: below J6, above SW18
 
 # edge part on the right: USB-C
 # Moved down the right wall below the cell's hole (2026-10-21, Alex: it may slide along its wall):
@@ -183,13 +193,13 @@ put("R1", 124.15, 123.45, 0)
 put("R2", 126.15, 123.45, 0)
 put("C1", 120.3, 109.4, 0)                  # below the USB pair
 put("R41", 120.3, 111.1, 0)                # C1's series resistor (hot-plug ringing)
-put("C42", 127.7, 89.5, 90)                 # spares on CC1 and CC2
+put("C42", 126.7, 89.5, 90)                 # spares on CC1 and CC2
 put("C43", 125.7, 130.4, 0)
 
 # the cell: J2 at its hole's seat-1 corner, mouth into the hole's lead pocket, so the plug's
 # back and wires drop straight down beside the cell's left end; the charger and the load sharing
 # below it, round the screw at 68.6, 122
-put("J2", 70.3, 107.24, 180)                # PicoBlade: mouth towards the hole, contacts behind
+put("J2", 69.3, 107.24, 180)                # PicoBlade: mouth towards the hole, contacts behind
 put("JP5", 90.0, 117.0, 0)                  # cell -> VBAT
 put("C3", 116.9, 110.0, 90)                  # VBAT
 put("C2", 120.3, 112.8, 0)                   # VSYS
@@ -202,7 +212,7 @@ put("R44", 120.2, 120.4, 90)
 put("TP7", 113.0, 119.6, 0)                 # CHG_TEMP: flat, under the folded FPC by U2
 put("TP15", 113.0, 130.0, 0)                 # GND for a scope clip, by the charger: flat, under the folded FPC
 # the cell's temperature: TH1 at the hole's right edge, which the cell is pushed against
-put("TH1", 127.1, 86.0, 90)
+put("TH1", 126.1, 86.0, 90)
 put("C41", 133.4, 90.4, 90)                 # spare across TEMP)
 
 # power switch latch: right strip, above and below the screw at 131.4, 78
@@ -228,7 +238,7 @@ put("JP1", 66.4, 121.6, 90)
 # the core's loose parts: the reference's parts by its flash (QSPI_SS's pull-up, its 1k to the
 # BOOTSEL button, a 3V3 decoupler) and the decouplers that would land on the screw or the FPC
 put("R23", 71.2, 113.0, 90)                # QSPI_SS pull-up, by the core (it was across the board)
-put("R25", 71.2, 84.4, 90)
+put("R25", 69.6, 98.3, 0)                 # below SW19 (the hole moved 1 mm left)
 put("C10", 121.0, 130.8, 90)
 
 # battery sense

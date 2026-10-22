@@ -416,8 +416,12 @@ def copy_core(board, fps, netinfo):
         if it[0] == "track":
             a, b = land(it[2]), land(it[3])
         if it[0] == "via":
+            vx, vy = core_xy(*it[2])
+            bw, bl = CASE["board"]["w"], CASE["board"]["l"]
+            if not (100 - bw / 2 + 0.6 <= vx <= 100 + bw / 2 - 0.6 and 100 - bl / 2 + 0.6 <= vy <= 100 + bl / 2 - 0.6):
+                continue                   # lands off this board (or on its edge): a pour via of theirs
             v = pcbnew.PCB_VIA(board)
-            v.SetPosition(V(*core_xy(*it[2])))
+            v.SetPosition(V(vx, vy))
             v.SetWidth(mm(it[4]))
             v.SetDrill(mm(it[5]))
             v.SetNet(netinfo[it[1]])
