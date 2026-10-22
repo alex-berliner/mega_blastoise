@@ -11,18 +11,20 @@ the case allows at that spot:
   around the clusters      <= retainer_limit (the decks come down to the cap flanges)
   button decks             <= deck_limit (the ends step down so genuine caps stand proud; the
                               band under the top piece's step walls too)
-  the board's back         <= back_limit (the board rests on ribs; the cell and speaker lie under it)
+  the board's back         <= back_limit (the board rests on the tub's floor ribs)
   under a silicone piece   nothing at all (the clusters and the Start/Select membranes)
+  the cell's hole          nothing reaching over it
+  the speaker              nothing under it or its keep-out (it lies on the board's top: a racetrack
+                           of speaker.size, plus speaker.keep)
   screw bosses             nothing within the boss diameter (four on the top piece, one on each deck)
   crush ribs               nothing within 1 mm of the board's edge at a rib
   top's panel frame        its band round the panel: <= frame limit (it hangs lower)
-  J2 pocket                the battery connector may reach into the spine's pocket
   folded FPC, J3's range   nothing but J3 under the panel's FPC, over the whole range J3 may move
   edge parts               the USB-C face reaches the wall
   through-hole leads       every lead poking out of the board's back lands where the floor's
                            ribs are cut away (rib_free), not on a rib
 
-Bottom-side parts (speaker pads, test pads) are flat and only checked
+Bottom-side parts (test pads, the SWD pogo pads) are flat and only checked
 against the tub's bosses and ribs. A whole-board CGAL intersection in
 OpenSCAD would be exact but takes hours on these models; boxes are enough for
 parts this blocky.
@@ -132,6 +134,15 @@ def near_circle(box, c, r):
     return math.hypot(cx - c[0], cy - c[1]) < r
 
 
+def near_speaker(box):
+    """Does the box reach into the speaker's racetrack (along y, KiCad frame) grown by its keep-out?"""
+    sp = POS["speaker"]
+    (cx, cy), (w, l), keep = sp["c"], sp["size"], sp["keep"]
+    r, half = w / 2 + keep, (l - w) / 2
+    return near_circle(box, (cx, cy - half), r) or near_circle(box, (cx, cy + half), r) or \
+        inside_rect(box, ((cx - r, cy - half), (cx + r, cy + half)))
+
+
 def main():
     parts = refs()
     boxes = extents([r[0] for r in parts])
@@ -158,7 +169,7 @@ def main():
                 if near_circle(box, s, POS["boss_d"] / 2 + 0.5):
                     problems.append(f"{ref} (back) sits on a tub pin boss")
             if height > POS["back_limit"] - 0.1:
-                problems.append(f"{ref} (back) is {height:.2f} mm tall; the ribs, cell and speaker leave {POS['back_limit']} mm")
+                problems.append(f"{ref} (back) is {height:.2f} mm tall; the floor's ribs leave {POS['back_limit']} mm")
             continue
         for i, c in enumerate(POS["pieces"]):
             if near_circle(box, c, POS["piece_d"] / 2):
@@ -172,11 +183,11 @@ def main():
         for c in POS["crush"]:
             if near_circle(box, c, 1.0):
                 problems.append(f"{ref} is at a crush rib at {c}")
-        pocket = POS["batt_conn"]
-        in_pocket = abs((box[0] + box[2]) / 2 - pocket[0]) < POS["pocket"][0] / 2 and \
-            abs((box[1] + box[3]) / 2 - pocket[1]) < POS["pocket"][1] / 2
-        limit = POS["pocket_limit"] - 0.2 if in_pocket else POS["bezel_limit"]
-        where = "bezel"
+        if inside_rect(box, POS["cell_hole"]):
+            problems.append(f"{ref} reaches over the cell's hole")
+        if near_speaker(box) and top > 0.1:
+            problems.append(f"{ref} is under the speaker (or within its keep-out)")
+        limit, where = POS["bezel_limit"], "bezel"
         if inside_rect(box, glass):
             limit, where = POS["glass_limit"], "glass"
         elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]) or \

@@ -22,12 +22,14 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 CASE = json.load(open(os.path.join(HERE, "..", "case", "positions.json")))
 
-# ---- the board 2 mm wider than the case has it (2026-10-22, Alex: up to 72.4 mm) ----------------
+# ---- the board 2 mm wider than the case had it (2026-10-22, Alex: up to 72.4 mm) ----------------
 # 1 mm more on each side, still centred on the case, which grows to match: the USB-C and its tab
 # go out with the right wall. The cell's hole moved 1 mm left (CUTOUTS), so the left strip keeps
 # its 7.5 mm and the right strip beside J1 gains the whole 2 mm (8.9 -> 10.9): the nets out of it
-# had only the 2.8 mm between J1's pads and the hole. case/CELLCUT_FOR_CASE.md has the outline
-WIDEN = 2.0
+# had only the 2.8 mm between J1's pads and the hole. case/CELLCUT_FOR_CASE.md has the outline.
+# The case took it on 2026-10-22 (case.scad writes the 72.4 board, USB-C and tab into
+# positions.json), so this adds nothing now; it stays so the placement can't widen it twice
+WIDEN = 72.4 - CASE["board"]["w"]
 CASE["board"]["w"] += WIDEN
 CASE["usb"]["front_x"] += WIDEN / 2
 CASE["usb"]["tab"] = [[x + WIDEN / 2, y] for x, y in CASE["usb"]["tab"]]
