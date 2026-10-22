@@ -154,8 +154,8 @@ put("R26", 71.2, 91.0, 90)
 # J6 (UART) and J5 (SWD) one above the other, both turned so their mouths face the board's left
 # edge (2026-10-22, Alex: they faced each other nose to nose and neither plug went in): the plugs
 # go in from the side with the case open, the pins face the cell's hole
-put("J6", 68.4, 70.3, 270)                  # UART: below the side screw H2
-put("J5", 68.4, 77.8, 270)                  # SWD: below J6, above SW18
+put("J6", 68.4, 71.6, 270)                  # UART: below the side screw H2
+put("J5", 68.4, 79.1, 270)                  # SWD: below J6, above SW18
 
 # edge part on the right: USB-C
 # Moved down the right wall below the cell's hole (2026-10-21, Alex: it may slide along its wall):
@@ -227,7 +227,7 @@ put("JP1", 66.4, 121.6, 90)
 
 # the core's loose parts: the reference's parts by its flash (QSPI_SS's pull-up, its 1k to the
 # BOOTSEL button, a 3V3 decoupler) and the decouplers that would land on the screw or the FPC
-put("R23", 111.4, 134.4, 90)
+put("R23", 71.2, 113.0, 90)                # QSPI_SS pull-up, by the core (it was across the board)
 put("R25", 71.2, 84.4, 90)
 put("C10", 121.0, 130.8, 90)
 
