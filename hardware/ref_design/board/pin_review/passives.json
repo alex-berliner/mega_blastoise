@@ -1078,6 +1078,23 @@
    "issue": ""
   },
   {
+   "ref": "R65",
+   "value": "33",
+   "lcsc": "C25105",
+   "mpn": "0402WGF330JTCE",
+   "footprint": "Resistor_SMD:R_0402_1005Metric",
+   "nets": "SR_CLK_MCU / SR_CLK",
+   "db_mfr_part": "0402WGF330JTCE",
+   "db_package": "0402",
+   "db_library_type": "Basic",
+   "db_description": "-55\u2103~+155\u2103 33\u03a9 50V 62.5mW Thick Film Resistor \u00b11% \u00b1100ppm/\u2103 0402 Chip Resistor - Surface Mount ROHS",
+   "rating_v": 50.0,
+   "net_max_v": 3.3,
+   "net_max_basis": "logic/3V3 domain or lower (3.3)",
+   "ok": true,
+   "issue": ""
+  },
+  {
    "ref": "C29",
    "value": "1u",
    "lcsc": "C52923",

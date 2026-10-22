@@ -552,6 +552,146 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Device:R"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "R"
+				(at 2.032 0 90)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "R"
+				(at 0 0 90)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at -1.778 0 90)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Resistor"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "R res resistor"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "R_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "R_0_1"
+				(rectangle
+					(start -1.016 -2.54)
+					(end 1.016 2.54)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "R_1_1"
+				(pin passive line
+					(at 0 3.81 270)
+					(length 1.27)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -3.81 90)
+					(length 1.27)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Device:R_Pack04"
 			(pin_names
 				(offset 0)
@@ -2200,6 +2340,26 @@
 	)
 	(wire
 		(pts
+			(xy 120.65 111.76) (xy 125.73 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c012f924-7124-5628-8c9b-dd660f941bf4")
+	)
+	(wire
+		(pts
+			(xy 133.35 111.76) (xy 138.43 111.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f4787241-3c3b-5222-8658-4df76fa2799e")
+	)
+	(wire
+		(pts
 			(xy 147.32 35.56) (xy 147.32 50.8)
 		)
 		(stroke
@@ -2878,6 +3038,16 @@
 		)
 		(uuid "ee65e379-7884-53b2-b245-e124e266071e")
 	)
+	(text "SR_CLK source termination"
+		(exclude_from_sim no)
+		(at 135.1406 101.6 0)
+		(effects
+			(font
+				(size 1.8 1.8)
+			)
+		)
+		(uuid "8270b345-f18f-55df-aed1-c36ec15715fd")
+	)
 	(text "D-pad and face buttons: bare ENIG combs under DS Lite silicone, read through a 74HC165 per seat (chained: U9's"
 		(exclude_from_sim no)
 		(at 74.6614 165.1 0)
@@ -2886,7 +3056,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "8270b345-f18f-55df-aed1-c36ec15715fd")
+		(uuid "15dcbf78-b084-55e7-9b33-43b69eb4337a")
 	)
 	(text "Q7 into U8's DS; SR_PL low loads, 16 SR_CLK rises shift P1 Y..UP then P2 Y..UP out of SR_DATA, low = pressed)."
 		(exclude_from_sim no)
@@ -2896,7 +3066,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "15dcbf78-b084-55e7-9b33-43b69eb4337a")
+		(uuid "b853b6d0-5c76-5ce6-b6d0-bbe040294df5")
 	)
 	(text "Start/Select: 4 mm metal domes (HYP 600-415S-260), their own GPIOs; both Starts sit on VSYS (Power sheet)."
 		(exclude_from_sim no)
@@ -2906,7 +3076,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "b853b6d0-5c76-5ce6-b6d0-bbe040294df5")
+		(uuid "ae33ed02-c35a-5d03-bb57-d7f3f1070794")
 	)
 	(label "P1_UP"
 		(at 45.72 35.56 0)
@@ -3183,28 +3353,15 @@
 			)
 		)
 	)
-	(global_label "SR_CLK"
-		(shape passive)
-		(at 66.04 91.44 180)
-		(fields_autoplaced yes)
+	(label "SR_CLK"
+		(at 66.04 91.44 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left bottom)
 		)
-		(uuid "43423f1a-f4de-5936-8ae9-22dce7613eb3")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 66.04 91.44 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
+		(uuid "7c760082-a902-5985-abae-e52cbf13d212")
 	)
 	(label "SR_CHAIN"
 		(at 66.04 60.96 0)
@@ -3422,28 +3579,15 @@
 			)
 		)
 	)
-	(global_label "SR_CLK"
-		(shape passive)
-		(at 190.5 91.44 180)
-		(fields_autoplaced yes)
+	(label "SR_CLK"
+		(at 190.5 91.44 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left bottom)
 		)
-		(uuid "2be49130-6d99-5c55-a7e2-4dc31980ed57")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 190.5 91.44 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
+		(uuid "7fc515d2-ba90-5552-8002-194c221c80f9")
 	)
 	(label "SR_CHAIN"
 		(at 226.06 60.96 0)
@@ -3614,6 +3758,39 @@
 			(justify left bottom)
 		)
 		(uuid "65a4a0aa-1069-5c52-9a2d-20fe628e804a")
+	)
+	(global_label "SR_CLK_MCU"
+		(shape passive)
+		(at 120.65 111.76 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "ab514325-4bdb-58c2-b8b1-332766272c72")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 120.65 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(label "SR_CLK"
+		(at 138.43 111.76 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a168ea0c-9fa9-5d33-b9e8-ba1e54cb552d")
 	)
 	(symbol
 		(lib_id "Switch:SW_Push")
@@ -6462,6 +6639,118 @@
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/adaa66b2-a56d-591f-95e3-969ec1fb6ac3"
 					(reference "RN4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 129.54 111.76 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f06b3bef-2b70-5380-86a3-c7c15aa4d478")
+		(property "Reference" "R65"
+			(at 129.54 109.144 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "33"
+			(at 129.54 114.376 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 129.54 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 129.54 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 129.54 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25105"
+			(at 129.54 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0402WGF330JTCE"
+			(at 129.54 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "UNI-ROYAL"
+			(at 129.54 111.76 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "208c275e-92a5-5376-8331-9e54dba210c7")
+		)
+		(pin "2"
+			(uuid "245df35e-5098-5b48-bb7a-a81a94166d76")
+		)
+		(instances
+			(project "battler"
+				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/adaa66b2-a56d-591f-95e3-969ec1fb6ac3"
+					(reference "R65")
 					(unit 1)
 				)
 			)

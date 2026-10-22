@@ -10,13 +10,13 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 0 | (spare) | not connected |
 | 1 | (spare) | not connected |
 | 2 | `PWR_HOLD` | output: set high to stay on (see Power control); low turns the device off once the button is up |
-| 3 | `PWR_BTN_N` | input, pulled up (R16): low while seat 1's Y is pressed. Y is the power button, so read seat 1's Y here |
+| 3 | `PWR_BTN_N` | input, pulled up (R16): low while seat 1's Start (SW21, a power button) is pressed, through Q1 |
 | 4 | (spare) | not connected |
 | 5 | (spare) | not connected |
 | 6 | (spare) | not connected |
 | 7 | (spare) | not connected |
 | 8 | (spare) | not connected |
-| 9 | `P2_SELECT` | membrane contact SW22, input with pull-up, low = pressed |
+| 9 | `P2_SELECT` | metal-dome contact SW22 to GND, input with pull-up, low = pressed |
 | 10 | (spare) | not connected |
 | 11 | (spare) | not connected |
 | 12 | (spare) | not connected |
@@ -35,22 +35,22 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 25 | `REV3` | input, pull-up: board revision bit 3 (R51) |
 | 26 | (spare) | not connected |
 | 27 | (spare) | not connected |
-| 28 | `SR_PL` | membrane contact U9, input with pull-up, low = pressed |
-| 29 | `SR_CLK` |  |
-| 30 | `SR_DATA` |  |
+| 28 | `SR_PL` | output: the 74HC165s' SH/LD (U8, U9 pin 1): low loads the 16 buttons, high to shift them out |
+| 29 | `SR_CLK_MCU` | output: the 74HC165s' clock (SR_CLK) through R65 (33 ohm, at the MCU end); each rising edge shifts one button |
+| 30 | `SR_DATA` | input: U8's Q7, the end of the chain: 16 buttons, low = pressed (see Buttons) |
 | 31 | (spare) | not connected |
 | 32 | `LCD_TE` | input: the panel's tearing-effect signal (enable with TEON); start a frame on its edge |
 | 33 | `LCD_CS` | SPI0 CSn (or drive as a GPIO) |
-| 34 | `P2_START` |  |
-| 35 | `P1_SELECT` | membrane contact SW20, input with pull-up, low = pressed |
+| 34 | `P2_START` | input, pulled up (R63): low while seat 2's Start (SW23, a power button) is pressed, through Q7 |
+| 35 | `P1_SELECT` | metal-dome contact SW20 to GND, input with pull-up, low = pressed |
 | 36 | `LCD_MISO` | SPI0 RX (panel readback, optional) |
 | 37 | `LCD_DC` | display data/command |
 | 38 | `LCD_SCK_MCU` | SPI0 SCK, 33 ohm source termination R28 |
 | 39 | `LCD_MOSI_MCU` | SPI0 TX, 33 ohm source termination R29 |
 | 40 | `LCD_RST` | display reset, active low |
-| 41 | `CHG_STAT_N` | input, pulled up (R10): low while the TP4056 charges |
-| 42 | `CHG_PG_N` |  |
-| 43 | `CHG_OFF` | output: high pauses charging (Q4 pulls the TP4056's CE low); low or released charges (R44 4.7k pulls it low) |
+| 41 | `CHG_STAT_N` | input, pulled up (R10): the BQ24073's CHG, low while charging, 2 Hz on a safety-timer fault |
+| 42 | `CHG_PG_N` | input, pulled up (R9): the BQ24073's PGOOD, low while USB power is valid |
+| 43 | `CHG_OFF` | output: the BQ24073's CE, high stops charging; low or released charges (R44 4.7k pulls it low) |
 | 44 | `BL_PWM` | PWM10 A: backlight brightness, duty x 70 mA (filtered to a DC reference, see below); low = off |
 | 45 | `CC2_SENSE` | ADC5: USB-C CC2 through 10k |
 | 46 | `CC1_SENSE` | ADC6: USB-C CC1 through 10k; the source's current offer |
@@ -58,18 +58,31 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 
 Other RP2354B pins: the 2 MB flash is inside the package, so of the QSPI pins only QSPI_SS
 is wired (10k pull-up R23, and the BOOTSEL button through 1k). 12 MHz crystal, USB to the
-USB-C (22 ohm series, SRV05-4 ESD), SWD and RUN to J5 and the RESET button.
+USB-C (27 ohm series R21/R22, SRV05-4A ESD), SWD and RUN to J5 and the RESET button.
+
+## Buttons
+
+Each seat's D-pad and A/B/X/Y (8 contacts to GND) come in through a 74HC165 at that seat
+(U8 seat 1, U9 seat 2), pulled up by 10k arrays and chained (U9's Q7 into U8's DS). A read:
+SR_PL low then high (parallel load), then 16 rising edges on GPIO29 (SR_CLK through R65);
+SR_DATA shows each bit before the edge that shifts it: P1 Y first, then P1 X, B, A, RIGHT,
+LEFT, DOWN, UP, then seat 2 in the same order; 1 = released. Between reads SR_PL rests high
+and the clock low. Start and Select are metal domes on their own GPIOs: both Selects (GPIO35 seat 1,
+GPIO9 seat 2) to GND with the pin's pull-up; both Starts are power buttons on VSYS, read
+through a transistor (GPIO3 seat 1, GPIO34 seat 2), low = pressed.
 
 ## Power control
 
-PWR_EN (the ME6211's enable) is the OR of: the power button (seat 1's Y contact, which
-joins VSYS to PWR_BTN_RAW), PWR_HOLD, and USB VBUS.
+PWR_EN (the ME6211's enable, pulled down by R15) is the OR of: seat 1's Start (SW21 joins VSYS
+to PWR_BTN_RAW, into PWR_EN through D2), seat 2's Start (SW23 joins VSYS to P2_START_RAW, into
+PWR_EN through D8), PWR_HOLD (through D2), and USB VBUS (R14, D3). Either Start powers the
+device on; the MCU reads seat 1's on PWR_BTN_N (GPIO3, Q1) and seat 2's on P2_START (GPIO34, Q7).
 
-- Turning on: pressing Y starts the regulator. Firmware sets PWR_HOLD high only once Y has
-  been held for about a second (read on PWR_BTN_N), so a knock in a bag doesn't turn the
-  device on: let go sooner and it powers off again.
-- Turning off: firmware sets PWR_HOLD low; power drops when the button is released.
-  Watch PWR_BTN_N for a long press, then drop PWR_HOLD.
+- Turning on: pressing either Start starts the regulator. Firmware sets PWR_HOLD high only once
+  that Start has been held for about a second (read on PWR_BTN_N or P2_START), so a knock in a
+  bag doesn't turn the device on: let go sooner and it powers off again.
+- Turning off: firmware sets PWR_HOLD low; power drops when both Starts are released.
+  Watch PWR_BTN_N and P2_START for a long press, then drop PWR_HOLD.
 - With USB plugged in the 3V3 rail stays up whatever PWR_HOLD does, so the firmware runs
   while charging: show a charging screen, turn the backlight off (BL_PWM low) and sleep.
 - A reset or crash releases PWR_HOLD and R42 (4.7k) pulls it low, so the device turns off
@@ -80,9 +93,10 @@ joins VSYS to PWR_BTN_RAW), PWR_HOLD, and USB VBUS.
 ## Pins at reset
 
 Every GPIO resets with its pull-down on (RP2350 datasheet, Table 1674). Before reading them:
-turn on the pull-ups of REV0-REV3 and of the buttons, and turn off the pull-downs of
-PWR_BTN_N, CHG_STAT_N and CHG_DONE_N (their 100k external pull-ups otherwise sit at about
-1-1.7 V against the pull-down). ADC pins (VBAT_SENSE, CC1/CC2_SENSE): input buffer and
+turn on the pull-ups of REV0-REV3 and of the Selects, and turn off the pull-downs of
+PWR_BTN_N, P2_START, CHG_STAT_N and CHG_PG_N (their 100k external pull-ups otherwise sit at
+about 1-1.7 V against the pull-down). SR_PL resets low (loading) and the clock low: drive
+SR_PL high before clocking. ADC pins (VBAT_SENSE, CC1/CC2_SENSE): input buffer and
 pull-down both off. Board revision = REV3..REV0 read as a binary number (1 on this board).
 
 ## Backlight (current sinks on BL_PWM)
@@ -101,20 +115,21 @@ backlight is off until firmware starts the PWM and whenever 3V3 is off. Off = du
 Simulated with ngspice before layout: board/sim/backlight.py (results in
 board/sim/backlight_results.txt).
 
-## Charger (TP4056) and USB power
+## Charger (BQ24073) and USB power
 
-| CHG_STAT_N | CHG_DONE_N | State |
+| CHG_PG_N | CHG_STAT_N | State |
 |---|---|---|
-| low | high | charging (about 333-364 mA, set by R5) |
-| high | low | charge done |
-| high | high | no USB power, or the cell is outside 1-46 C (TH1): charging paused |
+| low | low | charging (270 mA, 242-295, set by R5) |
+| low | high | charge done, or paused: the cell outside 3.5-47 C (TH1) or CHG_OFF high |
+| low | 2 Hz | safety timer expired (30 min pre-charge, 5 h fast charge) |
+| high | high | no USB power |
 
-Both high with USB in (a CC line reads a source) means the temperature pause: TH1, on the
-board over the cell, stopped the charge; it resumes when TH1 is back in range.
+TH1 sits on the board at the cell's hole, against the cell's end; it lags the cell.
 
-With USB in, the system runs from USB through D5 and the cell only charges; unplugged,
-Q2 connects the cell. The charger has no input current limit: a default-USB port (500 mA)
-can be asked for charge current plus the system's draw, so read the source's offer and
+The BQ24073 is a power-path charger: with USB in it runs the system from USB (VSYS at
+4.4 V) and charges with what is left, inside a 475 mA input limit (USB500, set by R43 on
+EN1); unplugged, VSYS follows the cell through its battery FET with no gap. A default-USB
+port is safe, but a heavy load leaves little for charging: read the source's offer and
 dim the backlight on a weak one. With the 5.1k Rd on each CC, the CC line the cable uses
 sits at 0.25-0.61 V for default USB power, 0.70-1.16 V for 1.5 A and 1.31-2.04 V for 3 A;
 take the higher of CC1_SENSE and CC2_SENSE.
@@ -134,11 +149,12 @@ Shut down at 3.50 V as computed, filtered and under load, never lower. The ADC's
 is the 3V3 rail itself: once the ME6211 drops out (a cell under about 3.4 V) the rail falls
 with the cell and the computed VBAT levels off at 3.37-3.43 V whatever the cell really is,
 so a lower threshold never fires. 3.50 V also keeps 3V3 above the internal flash's 2.97 V
-minimum through a USB unplug (D7 carries that gap).
+minimum as the load steps.
 
-Calibrate the gain once: when CHG_DONE_N goes low (charge done) the cell is at the TP4056's
-4.2 V +-1%. Only a full charge counts: on a weak USB source the cell shares the load, the
-charger stays in constant voltage and CHG_DONE_N never goes low.
+Calibrate the gain once: when CHG_STAT_N goes high at the end of a charge (CHG_PG_N low, TH1
+in range, CHG_OFF low) the cell is at the BQ24073's 4.2 V +-1%. Only a full charge counts:
+the charger doesn't terminate while the input limit or its thermal limit is cutting the
+charge current.
 
 Reading it: set the pad up once and keep its ADC channel for the whole program (in
 embassy-rp 0.8, dropping the `Channel` turns the pad's digital input and pull-down back on,

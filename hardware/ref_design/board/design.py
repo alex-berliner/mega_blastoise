@@ -22,9 +22,9 @@ Symbols are KiCad's own for the real part where its library has one (the
 RP2354B, 2N7002, AO3400A, AO3401A); generic ones (Device:R, Device:D_Schottky)
 carry the part number as their value.
 
-This is the 2-layer build: TP4056 charger with USB load sharing, ME6211 3V3,
-RP2354B (flash inside), no audio (since 2026-10-21), a face button as the power
-button, a board thermistor at the cell's hole (no LEDs), every hole >= 0.3 mm, and an ER-TFT024IPS-3 panel
+This is the 2-layer build: BQ24073 power-path charger, ME6211 3V3, RP2354B (flash
+inside), no audio (since 2026-10-21), either seat's Start as the power button, a board
+thermistor at the cell's hole (no LEDs), every hole >= 0.3 mm, and an ER-TFT024IPS-3 panel
 in a ZIF connector.
 """
 
@@ -281,7 +281,7 @@ GPIO = {  # GPIO number: net
     9: "P2_SELECT",
     20: "UART_TX", 21: "UART_RX",
     # the buttons' shift registers: load (low), clock, data in
-    28: "SR_PL", 29: "SR_CLK", 30: "SR_DATA", 32: "LCD_TE",
+    28: "SR_PL", 29: "SR_CLK_MCU", 30: "SR_DATA", 32: "LCD_TE",
     # the panel's pins in its connector's order where SPI0 allows; GPIO33 is an SPI0 CSn pin as
     # well, DC is a plain output
     33: "LCD_CS", 36: "LCD_MISO", 37: "LCD_DC", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
@@ -453,6 +453,10 @@ for u, seat, ds, q7 in (("U8", "P1", "SR_CHAIN", "SR_DATA"), ("U9", "P2", "+3V3"
     for k, d in enumerate(("11", "12", "13", "14", "3", "4", "5", "6")):   # D0..D7
         pins[d] = BUTTONS[(0 if seat == "P1" else 8) + k]
     part(u, S, "74xx:74HC165", "SN74HC165PWR", SR, pins, "C43420", "SN74HC165PWR", "Texas Instruments")
+# SR_CLK crosses the whole board to both registers: R65, at the RP2354B's end, slows its edges
+# (source termination) so they ring less and couple less into SR_PL and SR_DATA, which run beside
+# it up the left strip (a clearance rule for that left SR_CLK or SR_PL to U9 unrouted, 2026-10-22)
+R("R65", S, "33", "SR_CLK_MCU", "SR_CLK")
 C("C52", S, "100n", "+3V3")                    # U8 supply
 C("C53", S, "100n", "+3V3")                    # U9 supply
 RPACK = "Resistor_SMD:R_Array_Convex_4x0402"

@@ -85,7 +85,7 @@
    "pin": "4",
    "ds_name": "CE",
    "type": "input",
-   "requirement": "Active-low charge enable, internal 285k pull-down; driven by GPIO19 (CHG_OFF) with R44 4.7k to GND: charging on by default.",
+   "requirement": "Active-low charge enable, internal 285k pull-down; driven by GPIO43 (CHG_OFF) with R44 4.7k to GND: charging on by default.",
    "cite": "p8; p10 (7 V abs max)",
    "quote": "",
    "symbol_name": "CE",

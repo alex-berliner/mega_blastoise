@@ -79,6 +79,21 @@ Other limits unchanged (glass 2.2, bezels and spines 3.45, decks 1.6, round the 
 nothing under the folded FPC but J3). Seat 2's spine now only covers U9 (the shift register,
 1.2 mm: the deck would do); seat 1's spine covers U6 (1.75 mm, needs it).
 
+## The strips beside the hole (2026-10-22 review)
+
+The board beside the hole is two strips, x -35.2 .. -27.7 (7.5 mm) and 26.3 .. 35.2 (8.9 mm), y
+-3.8 .. 33.2: the board's weakest part. H1/H2 hold their seat-2 ends 2.8 mm past the hole; their
+seat-1 ends run into the full-width board, so the side screws stay where they are (in the strips
+they closed half of each). What the case should add: **a floor rib under each strip**, along its
+length, meeting the board's back (only soldermask there: the GND pour, tracks and tented vias),
+so nothing presses the strips into a bend:
+
+- under the left strip at least at the debug buttons a pin presses (SW18, SW19 at case (-31.2,
+  13.0) and (-31.2, 6.0)) and under J5/J6, where a cable is pushed in (-31.2, 20.4 / 28.35);
+- under the right strip (the power latch and TH1) at its middle, y about 14.
+
+Keep the ribs out of the hole (the cell) and 0.5 mm off its edge.
+
 ## Parts the case sees that moved
 
 | Part | Case (x, y) | Height | Note |

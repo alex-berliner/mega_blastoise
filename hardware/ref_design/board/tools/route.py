@@ -29,6 +29,7 @@ left a connection or two.
        display connector: the panel's grounded pins joined by a bar per run
        every other GND pad: a short stub and a via down to the GND pour
        USB-C's shell legs: joined in pairs on the back, and a via beside each
+       USB D+/D-: one pair from J1 through U1 to R21/R22 (usb_pair)
   4. Freerouting (1.9.0; 2.x loops on this board: 2.5.0 left 47 connections open,
      2026-10-21) routes the signals and the supplies (3V3 included: two layers have
      no 3V3 plane) on F.Cu and B.Cu. GND is
@@ -36,7 +37,8 @@ left a connection or two.
      reader rejects an autoroute_settings block in the structure.) Its copy of the
      board is adjusted first (see dsn_for_router). Any connection it leaves open goes
      to the maze router.
-  5. GND pours on both layers, unused stub vias removed, GND stitching, zones filled
+  5. GND pours on both layers, unused stub vias removed, GND stitching (denser in the strips
+     beside the cell's hole: strip_stitch), zones filled
 kicad-cli's DRC decides whether it is done (tools/check_pcb.py).
 """
 import math
@@ -335,6 +337,113 @@ def fpc_ground_bar(board):
         for i in range(0, len(xs), 5):
             add_track(board, (xs[i], bar_y), (xs[i], via_y), gnd, 0.3)
             add_via(board, (xs[i], via_y), gnd)
+
+
+def usb_pair(board):
+    """USB D+ and D- as one pair (0.2 mm tracks, 0.3 mm apart), drawn here: Freerouting has no
+    pairs and ran the two apart, with loops at J1. From J1: D+ joins its two pads (B6, A6)
+    behind them round A7, D- its two (A7, B7) at their tips past A6, and the pair heads for U1.
+    U1 (SRV05-4, turned so pins 1 and 3 face away from J1) has each line run over its own pin
+    with no stub: D+ over the top and down the channel between the pin rows onto pin 1, D- under
+    the bottom onto pin 3 (the channel also takes GND pin 2's via). Past U1 the pair drops to
+    the back and runs straight under J3 to R21/R22 by the core, up through a via each."""
+    w = 0.2
+    dp, dm = board.FindNet("USB_DP"), board.FindNet("USB_DM")
+    F, B = pcbnew.F_Cu, pcbnew.B_Cu
+
+    def run(net, pts, layer):
+        for a, b in zip(pts, pts[1:]):
+            add_track(board, a, b, net, w, layer)
+    j1 = {p.GetNumber(): p for p in board.FindFootprintByReference("J1").Pads()}
+    b6, a6, a7, b7 = (xy(j1[n].GetPosition()) for n in ("B6", "A6", "A7", "B7"))
+    assert b6[1] < a7[1] < a6[1] < b7[1], "J1's D+/D- pads aren't in the order usb_pair() expects"
+    tip, far = box(j1["A6"])[0], box(j1["A6"])[2]
+    jx, fx = tip - 0.28, far + 0.37            # 0.18 and 0.27 mm clear of the pads they pass
+    run(dp, [b6, (fx, b6[1]), (fx, a6[1]), a6], F)
+    run(dm, [a7, (jx, a7[1]), (jx, b7[1]), b7], F)
+    u1 = board.FindFootprintByReference("U1")
+    pin = {p.GetNumber(): p for p in u1.Pads()}
+    cx, cy = xy(u1.GetPosition())
+    p1, p3 = xy(pin["1"].GetPosition()), xy(pin["3"].GetPosition())
+    assert p1[0] < cx and p3[0] < cx and p1[1] < cy < p3[1], "U1 isn't turned as usb_pair() expects"
+    out = box(pin["1"])[0]                     # the pins' outer ends, away from J1
+    yt, yb = box(pin["6"])[1] - 0.3, box(pin["4"])[3] + 0.3     # over pin 6, under pin 4
+    xs = box(pin["5"])[2] + 0.5 + (b6[1] - yt)  # where the pair splits, 45 degrees to its runs
+    assert xs < jx - 0.3, "U1 too close to J1 for usb_pair()"
+    run(dp, [b6, (xs, b6[1]), (xs - (b6[1] - yt), yt), (cx, yt), (cx, p1[1]), (out - 0.55, p1[1])], F)
+    run(dm, [(jx, a7[1]), (xs, a7[1]), (xs - (yb - a7[1]), yb), (cx, yb), (cx, p3[1]), (out - 0.55, p3[1])], F)
+    gnd, v33 = board.FindNet("GND"), board.FindNet("+3V3")
+    add_track(board, xy(pin["2"].GetPosition()), (cx, cy), gnd, w, F)
+    add_via(board, (cx, cy), gnd)
+    p5 = xy(pin["5"].GetPosition())
+    add_track(board, p5, (box(pin["5"])[2] + 0.55, cy), v33, w, F)
+    add_via(board, (box(pin["5"])[2] + 0.55, cy), v33)
+    vdp, vdm = (out - 0.55, p1[1]), (out - 0.55, p3[1])
+    add_via(board, vdp, dp)
+    add_via(board, vdm, dm)
+    # the back: D+ 0.5 mm above D-, under J3's lead-in, over the core's copied GND via at
+    # (88.9, 108.5) and TP11-TP14 (y 110)
+    ydp = 107.4
+    ydm = ydp + 0.5
+    r21, r22 = (xy(next(p for p in board.FindFootprintByReference(r).Pads() if p.GetNumber() == "1").GetPosition())
+                for r in ("R21", "R22"))
+    edp, edm = (r21[0], r21[1] - 0.775), (r22[0], r22[1] - 0.625)    # each pad's via, just above it
+    run(dp, [vdp, (vdp[0] - (vdp[1] - ydp), ydp), (edp[0] + (edp[1] - ydp), ydp), edp], B)
+    run(dm, [vdm, (vdm[0] - (vdm[1] - ydm), ydm), (edm[0] + (edm[1] - ydm), ydm), edm], B)
+    add_via(board, edp, dp)
+    add_via(board, edm, dm)
+    add_track(board, edp, r21, dp, w, F)
+    add_track(board, edm, r22, dm, w, F)
+    print("USB pair pre-routed: J1 -> U1 -> R21/R22")
+
+
+def strips():
+    """The strips beside the cell's hole: (x by the hole's edge, y0, y1, x0, x1) for each, between
+    the hole's rounded corners."""
+    bw = CASE["board"]["w"]
+    out = []
+    for x0, y0, x1, y1 in slot_boxes():
+        r = next(c.get("r", 0) for c in CUTOUTS if tuple(c["box"]) == (x0, y0, x1, y1))
+        out.append((x0 - 0.65, y0 + r, y1 - r, 100 - bw / 2, x0))
+        out.append((x1 + 0.65, y0 + r, y1 - r, x1, 100 + bw / 2))
+    return out
+
+
+def strip_stitch(board, pitch=2.0):
+    """After the pours: GND vias in the strips wherever both layers' pours are filled round the
+    spot, so each strip's two pours act as one beside the signals crossing it."""
+    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    by_layer = {}
+    for z in board.Zones():
+        if z.GetIsRuleArea() or z.GetNetname() != "GND":
+            continue
+        for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+            if z.IsOnLayer(layer):
+                by_layer.setdefault(layer, []).append(z.GetFilledPolysList(layer))
+
+    def filled(layer, p):
+        ring = [(0, 0)] + [(0.45 * math.cos(math.radians(a)), 0.45 * math.sin(math.radians(a))) for a in range(0, 360, 45)]
+        return all(any(f.Contains(V(p[0] + dx, p[1] + dy)) for f in by_layer.get(layer, [])) for dx, dy in ring)
+    space = Space(board)
+    gnd = board.FindNet("GND")
+    vias = [xy(v.GetPosition()) for v in board.GetTracks() if v.GetClass() == "PCB_VIA" and v.GetNetname() == "GND"]
+    n = 0
+    for _, y0, y1, x0, x1 in strips():
+        y = y0
+        while y <= y1:
+            x = x0 + 0.6
+            while x <= x1 - 0.6:
+                p = (x, y)
+                if (all(math.dist(p, v) >= pitch for v in vias) and filled(pcbnew.F_Cu, p) and filled(pcbnew.B_Cu, p)
+                        and space.clear_at(p, VIA_D / 2 + CLEAR, "GND", via=True)):
+                    v = add_via(board, p, gnd)
+                    v.SetLocked(False)
+                    space.add(v)
+                    vias.append(p)
+                    n += 1
+                x += 0.25
+            y += 0.25
+    return n
 
 
 def box(item):
@@ -812,7 +921,8 @@ def dsn_for_router(text, contacts, fences, circles=()):
             extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     i = text.index("  (placement")
     j = text.rindex("  )", 0, i)          # end of the structure section
-    return text[:j] + extra + "\n" + text[j:]
+    text = text[:j] + extra + "\n" + text[j:]
+    return text
 
 
 def dsn_blocks(text, head, item):
@@ -1433,6 +1543,7 @@ def main():
     dome_stubs(board)
     fpc_ground_bar(board)
     usb_shell_ground(board)
+    usb_pair(board)
     fanout(board)
     known = freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
     finish_open(board, known=known)
@@ -1440,6 +1551,7 @@ def main():
     pours(board)
     print("unused stub vias removed:", drop_unused_stub_vias(board, STUB_VIAS))
     print("stitching vias:", stitch(board))
+    print("stitching vias in the strips beside the cell's hole:", strip_stitch(board))
     repair(board)
     print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))

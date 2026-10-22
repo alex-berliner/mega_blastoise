@@ -4027,7 +4027,7 @@
 			)
 		)
 	)
-	(global_label "SR_CLK"
+	(global_label "SR_CLK_MCU"
 		(shape passive)
 		(at 171.45 121.92 0)
 		(fields_autoplaced yes)
@@ -4037,7 +4037,7 @@
 			)
 			(justify left)
 		)
-		(uuid "47d4150e-fdc7-59fa-8dd1-dd8710913290")
+		(uuid "532ff727-1903-5700-962a-108f4b1bc350")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 171.45 121.92 0)
 			(hide yes)

@@ -33,6 +33,13 @@ CASE = json.load(open(os.path.join(HERE, "..", "case", "positions.json")))
 # more from the screw bosses, the clusters' rings, J3's range and USB-C. Every machine-placed part
 # stays on the top (Alex: one-sided assembly), and with the core moved to the right bezel there
 # was no room left for the speaker (row 18): it and its amplifier went.
+# The strips beside the hole (7.5 mm on the left, 8.9 on the right, 37 mm long) are the board's
+# weakest part (2026-10-22 review): only the parts that must be there sit in them (the debug
+# connectors and buttons on the left, the power latch and TH1 on the right), every MLCC in them
+# lies with its long axis along the strip (C47; C41 is an unfitted spare), and route.py stitches
+# their two GND pours together (strip_stitch). The screws H1/H2 hold each strip's seat-2 end 2.8 mm past the
+# hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
+# floor (case/CELLCUT_FOR_CASE.md, "The strips").
 CUTOUTS = [
     dict(name="cell", box=(72.3, 66.8, 126.3, 103.8), r=1.0),     # 54.0 x 37.0
 ]
@@ -147,13 +154,15 @@ usb_x = CASE["usb"]["front_x"] - 3.65       # footprint front is 3.65 ahead of i
 put("J1", usb_x, USB_Y, 90)
 
 # USB input
-put("U1", 125.0, 107.6, 90)                 # ESD, beside the core's crystal)
+# U1 (ESD) on the USB pair, turned so D+ and D- each run over their own pin (pins 1 and 3) with
+# no stub: route.py's usb_pair() draws the pair from J1 through U1 to R21/R22 by the core
+put("U1", 124.8, 110.5, 0)
 put("R1", 130.0, 103.0, 90)
 put("R3", 131.2, 103.0, 90)
 put("R2", 132.4, 103.0, 90)
 put("R4", 133.6, 103.0, 90)
-put("C1", 125.2, 111.6, 0)
-put("R41", 125.2, 113.4, 0)                # C1's series resistor (hot-plug ringing)
+put("C1", 125.2, 113.0, 0)                  # below the USB pair
+put("R41", 125.2, 114.6, 0)                # C1's series resistor (hot-plug ringing)
 put("C42", 132.4, 126.6, 0)                 # spares on CC1 and CC2)
 put("C43", 132.0, 129.8, 0)
 
@@ -186,7 +195,7 @@ put("R38", 130.0, 73.6, 90)
 put("Q1", 131.5, 82.9, 0)
 put("R15", 133.6, 86.4, 90)
 put("R16", 131.0, 85.8, 0)
-put("C47", 131.0, 87.4, 0)                  # PWR_EN's slow-rise cap)
+put("C47", 131.0, 87.4, 90)                 # PWR_EN's slow-rise cap: its long axis along the strip
 put("TP6", 129.6, 89.6, 0)                  # PWR_EN)
 
 # 3V3 LDO: in the left bezel under the core it feeds
@@ -233,6 +242,8 @@ put("U9", 100.0, 58.5, 90)                  # seat 2's buttons: a 74HC165 betwee
 put("RN3", 94.2, 57.0, 90)
 put("RN4", 94.2, 60.4, 90)
 put("C53", 100.0, 53.6, 0)
+put("R65", 82.6, 132.7, 90)                # SR_CLK's series resistor, below the core's escapes (GPIO29, pin 37)
+                                            # and clear of the folded FPC: about 12 mm of track from the pin
 put("U8", 101.2, 144.2, 90)                 # seat 1's, below the backlight's op-amp
 put("RN1", 105.6, 143.0, 90)
 put("RN2", 105.6, 146.4, 90)

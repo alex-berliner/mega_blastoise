@@ -59,6 +59,11 @@ def buttons():
             sh.place(rn, x0 + 12.7 + k * 20.32, 129.54, 0, f=(0, -10.16))
             for n in "12345678":
                 sh.tag(f"{rn}.{n}", 5.08)
+    # the clock's series resistor (on the board by the RP2354B's pin)
+    sh.heading(116.84, 101.6, "SR_CLK source termination")
+    sh.place("R65", 129.54, 111.76, 90)
+    sh.tag("R65.1", 5.08)
+    sh.tag("R65.2", 5.08)
     sh.text(17.78, 165.1, "D-pad and face buttons: bare ENIG combs under DS Lite silicone, read through a 74HC165 per seat (chained: U9's")
     sh.text(17.78, 168.91, "Q7 into U8's DS; SR_PL low loads, 16 SR_CLK rises shift P1 Y..UP then P2 Y..UP out of SR_DATA, low = pressed).")
     sh.text(17.78, 172.72, "Start/Select: 4 mm metal domes (HYP 600-415S-260), their own GPIOs; both Starts sit on VSYS (Power sheet).")
