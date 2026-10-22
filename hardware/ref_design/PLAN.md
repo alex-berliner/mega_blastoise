@@ -130,12 +130,15 @@ Alex's notes on the print from the kit before f3d5863 (2026-10-21), the ones for
 shell's redesign (a shorter case for a 2.4 in panel, the top curving over the tub, decks built
 upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plate:
 - [ ] 5 Openings: confirm the 0.65 D-pad opening and the 8.0 A/B/X/Y holes with real caps
-      (`tune_openings`, on `6_tests`). Waiting on Alex's test print
+      (`tune_openings`, on `6_tests`). Best guess committed 2026-10-21: `cap_hole_d` 8.0 and
+      `dpad_gap` 0.65 kept, marked GUESS in case.scad and in case/SHELL.md ("Best guesses until
+      `6_tests`"); `6_tests` confirms or moves them
 - [x] 6 "The speaker sticks out of the side of the housing": the speaker sat inside the wall, but
       the pad it lies on was cut to the case's plain outline, not the back's round, and stood up to
       1.0 mm proud of the round as a 0.6 mm slab under it. Now cut to the tub's outside
 - [ ] 8 Overhang limit for the redesign: `test_overhangs` on `6_tests` (fins 45 to 75 degrees from
-      vertical, a convex 6 mm round). Waiting on Alex's prints on the P1S and the U1
+      vertical, a convex 6 mm round). Best guess committed 2026-10-21: `overhang` 45, the
+      conservative limit, marked GUESS; `6_tests` on the P1S and the U1 confirms or raises it
 - [x] 9 "The curve up from the base ends in a vertical lip": in the model the only vertical face on
       the round from the base was that speaker pad's (a section every 0.1 mm finds nothing else
       outside the round); the profile is otherwise tangent all the way: the wall, the 4.2 mm round,
@@ -146,7 +149,10 @@ upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plat
       (`case/support_check.py`). `coupon_screws_tub` and `coupon_screws_top` on `6_tests` confirm it
 - [x] 12 The deck insert's ring round the lid's 5.0 boss was too tight (`insert_gap` 0.15 a side).
       Gone with the new shell: each deck has its own boss, so no column passes through another
-      part. `test_column` and `test_rings` on `6_tests` still say what clearance a column needs
+      part. The shell has the same kind of fit twice (the deck in the top piece's undercut, the tub's
+      tongue in the skirts), both 0.15 until 2026-10-21; now one parameter, `slide_fit` 0.25 a side
+      (`deck_gap` and `seam_fit` take it), a best guess marked GUESS; `test_rings` (0.2 to 0.5 over
+      `test_column`) on `6_tests` confirms or moves it. positions.json unchanged
 - [x] 10 "The top pieces should curve over the sides and meet the tub flush, or go over it" (and keep
       the width): done 2026-10-21 (case/SHELL.md). The top piece and the decks roll over through
       `face_r` and meet the tub at one seam where the back's round ends, their skirts over the tub's
@@ -155,7 +161,7 @@ upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plat
       degree limit allows: the same round as the outside edges (`step_r` 3.0), an arc that ends in a
       chamfer at `overhang` near the screen face. Under a 45 degree limit a straight slope is the
       gentlest line there is, so the curve gets rounder only when `overhang` goes up after the
-      6_tests ladder (one line)
+      6_tests ladder (one line). `overhang` 45 is a best guess (row 8) until `6_tests` confirms it
 - [x] 14 No more deck cards slotted in from the front: each deck reaches the case's outline, curves
       over the end and sides to the seam (the tub supports it all round), seats into the top piece
       from behind on a 45 degree wedge, and has its own screw (the end screw). No tub lip

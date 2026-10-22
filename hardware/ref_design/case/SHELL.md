@@ -66,7 +66,7 @@ use (and where J2 could go, see "Alternatives").
 
 The step is 1.85 mm tall (the screen face 5.75 over the board, the decks 3.90). It belongs to the
 top piece, which prints face down, so every point of it faces down in the print pose, and nowhere
-may it slope flatter than `overhang` (45 degrees until the `6_tests` ladder). Under that rule a
+may it slope flatter than `overhang` (45 degrees, a guess until the `6_tests` ladder). Under that rule a
 straight 45 degree slope is already the gentlest possible line; a curve can only be steeper
 somewhere. So the step is the same round as every other outside edge, which reads as one shape
 (the screen block's edges all roll over alike): `step_r` = 3.0, an arc that reaches the deck steep
@@ -90,7 +90,7 @@ end wall; they wobbled at the sides and the lip felt fragile. Now each deck:
   by the tub, no lip;
 - **seats into the top piece from behind:** along the step and round the spine its edge goes 0.8
   straight down from the face (`deck_land`) and then out 1.2 at 45 degrees under a matching undercut
-  in the top piece (`wedge_w`, 0.15 clearance). It drops in from behind, centres itself, and can't
+  in the top piece (`wedge_w`, `deck_gap` clearance, 0.25 until `6_tests`). It drops in from behind, centres itself, and can't
   come out of the front. The wedges on the spine's two sides and its end oppose the ones along the
   main step, so pushed home it can't move in x or y either;
 - **has its own screw:** the end screw now goes through the board into a boss on the deck (the end
@@ -163,6 +163,25 @@ speaker come with it), and everything else lies where it was.
 ![the step and the deck's joint](images/section_joint_zoom.png)
 ![the seam](images/section_seam_zoom.png)
 
+## Best guesses until `6_tests`
+
+Alex won't print `6_tests` soon, so these are committed as best guesses (2026-10-21). Each is marked
+"GUESS" in `case.scad`; when the plate is printed, check each against its coupon and move it.
+
+| Parameter | Guess | Checked on `6_tests` by | Which way to move it |
+|---|---|---|---|
+| `cap_hole_d` | 8.0 | `tune_openings`: holes 7.6 / 7.8 / 8.2 beside the keyed 8.0 cluster | the smallest hole a real A/B/X/Y cap drops through and presses without catching; smaller if 8.0 rattles |
+| `dpad_gap` | 0.65 | `tune_openings`: D-pad openings 0.55 / 0.65 / 0.75 | the tightest opening the real D-pad rocks freely in every direction |
+| `overhang` | 45 | `test_overhangs`: fins 45 to 75 degrees from vertical, a convex R6 round (on the P1S and the U1) | up to the steepest fin that prints clean on both printers; every round and the step to the decks get rounder with it |
+| `slide_fit` (`deck_gap`, `seam_fit`) | 0.25 a side | `test_rings`: rings 0.2 / 0.3 / 0.4 / 0.5 a side over the 5.0 `test_column` | the smallest ring that slides on the column by hand without force or rocking (0.15 was too tight on the old insert's ring) |
+
+`slide_fit` is the one parameter for a printed part sliding on a printed part: the tub's tongue
+inside the skirts (`seam_fit`) and each deck's wedge in the top piece's undercut (`deck_gap`) take
+it. Raising it from 0.15 changed no position the board reads (`positions.json` is the same): the
+deck's wedge now stops 0.25 short of the undercut (it reaches 0.95 under the top piece, was 1.05),
+the top piece's wall behind the undercut is as thick as before (`step_wall_t` 1.35, which used to be
+written 1.2 + `deck_gap`), and the tub's tongue is 0.75 thick (was 0.85).
+
 ## Alternatives considered
 
 - **Decks as wells in the top piece** (the top piece's rim at screen height all round each end,
@@ -190,12 +209,12 @@ speaker come with it), and everything else lies where it was.
 
 ## Open questions
 
-1. **The overhang limit** (`overhang`, 45): the `6_tests` ladder on both printers. A higher limit
+1. **The overhang limit** (`overhang`, 45, a guess): the `6_tests` ladder on both printers. A higher limit
    makes the step and every edge rounder in one line.
-2. **The deck's wedge and its clearance** (`deck_gap` 0.15, `wedge_w` 1.2): the `0_buttons_end`
+2. **The deck's wedge and its clearance** (`deck_gap` = `slide_fit` 0.25, a guess; `wedge_w` 1.2): the `0_buttons_end`
    coupons (top piece end + deck) show whether a deck drops in, centres and sits without rocking, and
    whether the seam in the step's crease looks right.
-3. **The seam** (`seam_fit` 0.15, `seam_gap` 0.1, `tongue_h` 1.5): the seam coupons.
+3. **The seam** (`seam_fit` = `slide_fit` 0.25, a guess; `seam_gap` 0.1, `tongue_h` 1.5): the seam coupons.
 4. **J3's range** (`tip_range` 22.5 to 25) is an estimate; a real panel's folded FPC settles it.
 5. **The speaker taped to the board's back:** its foam ring must still meet the tub's pad when the
    tub closes (0.4 mm between its back and the board). If that's fiddly, stick it to the tub's pad
