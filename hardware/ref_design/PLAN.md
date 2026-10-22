@@ -150,8 +150,9 @@ upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plat
       round was built in flat 0.1 steps whose faces fall on the P1S's slicing planes, so its chamfer
       printed 0.35, 0.1, 0.3, 0.1 out per layer, pairs of layers stacked straight (0.4 risers) at the
       bed. The tub's round is now one smooth loft (2026-10-21), so every layer steps out 0.2 on both
-      printers. If the next print still shows a lip, it is the first layer's squish (both kits keep
-      0.15 elephant-foot compensation): a photo or a caliper reading of its height settles it
+      printers. The first-layer test (2026-10-22, P1S, 0.20 first layer): 0.15 elephant-foot
+      compensation left a lip, 0.25 didn't, so the P1S kit prints 0.25. The U1 keeps 0.15 until
+      it's tested (or takes 0.25 if a U1 print shows the lip)
 - [x] 11 Screw holes filled in: the plate's supports filled the tub's six counterbores. Both kits
       now give supports only to the parts that need them; the P1S kit checks its G-code
       (`case/support_check.py`). `coupon_screws_tub` and `coupon_screws_top` on `6_tests` confirm it

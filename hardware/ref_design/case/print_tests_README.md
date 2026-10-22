@@ -64,7 +64,8 @@ each coupon is a 25 mm corner of the tub's bottom, 3 mm tall, with the tub's rea
 on its two outer sides (as `tub.stl` prints, floor down). The engraving on top says how it was printed:
 `L20` or `L12` is the first layer, 0.20 or 0.12 mm (a plate's setting in both slicers, so one plate
 each; the layers above are 0.20), and `E15` or `E25` the elephant's-foot compensation, 0.15 or 0.25
-mm (each object's own setting, in the project). The packages print 0.15 now, with a 0.20 mm first
+mm (each object's own setting, in the project). Result, P1S (Alex, 2026-10-22): L20 E25 clean, E15
+left a lip, so the P1S packages print 0.25 now; the U1's still print 0.15, with a 0.20 mm first
 layer on the P1S and 0.25 on the U1 (Alex's template). Run a fingernail up each coupon's round from
 the bed, and lay a straightedge on the bed against it: the best pair has no ridge or flare at the
 bottom, and the round meets the bed cleanly, with no step. Report the best pair per printer (e.g.
