@@ -1,19 +1,22 @@
-# Mega Blastoise: printer tests (overhang kit)
+# Overhang and first-layer tests (Mega Blastoise)
 
-Test plates for the two printers, apart from the case kits (`mega_blastoise_print_P1S.zip`,
-`mega_blastoise_print_U1.zip`): `P1S/` has Bambu Studio projects for the Bambu Lab P1S, sliced; `U1/`
-Snapmaker Orca projects for the Snapmaker U1, to slice. The same settings as the case kits (PLA only,
-0.20 mm Standard) except where a plate says otherwise; supports off. Built by `case/print_package.py`
-and `case/print_package_p1s.py` with the case kits (`python3 case/print_package.py --tests` packs this
-zip again from what they built).
+Print-settings tests only, no case parts. P1S/ for the Bambu P1S, U1/ for the Snapmaker U1. All print
+without supports at 220 C (black PLA+). Print in number order and stop whenever you like; each one
+answers less than the one before it.
 
-| Project | What's on it | Print it |
-|---|---|---|
-| `7_overhangs_020.3mf`, `_016`, `_012`, `_008` | **The steepest overhang each printer prints clean (about 20, 23, 28 and 40 min, 6 g each, no supports):** an overhang ladder and three convex rounds, the same parts at 0.20, 0.16, 0.12 and 0.08 mm layers (see "Overhang kit" below) | print all four on both printers |
-| `8_first_layer_020.3mf`, `8_first_layer_012.3mf` | **The lip at the tub's bottom edge (about 6 min, 3 g each):** two corners of the tub's bottom, its real round from the bed, at elephant's-foot compensation 0.15 and 0.25 mm; the first layer 0.20 mm on one plate, 0.12 on the other (see "First layer" below) | both, on both printers |
-| `9_overhang_settings.3mf` | **What the slicer's overhang settings buy (about 32 min, 9 g, no supports):** the 0.20 mm overhang ladder twice, `DEF` (the slicer's overhang settings as they are) and `TUNED` (the best it has; see "Overhang settings" below) | with `7_overhangs`, on both printers |
+1. `1_first_layer_020` (about 6 min): the lip at the tub's bottom edge, the one thing a real print
+   showed. Report the best coupon, e.g. "P1S: L20 E25".
+2. `2_overhang_settings` (about 32 min): how steep the 0.20 mm layers overhang cleanly, with the
+   default settings (DEF) and tuned ones (TUNED). Report the steepest clean fin of each.
+3. `3_overhangs_016`, 4. `4_overhangs_012`: the same ladder at finer layers; only matter if the case
+   gets printed finer than 0.20.
+5. `5_first_layer_012`: the lip test with a 0.12 mm first layer, if no coupon in 1 came out clean.
+6. `6_overhangs_008`: the finest layers; least likely to be used.
 
-## What to check
+(`7_overhangs_020` is left out: `2_overhang_settings`'s DEF ladder is the same print.)
+The sections below use the plates' original names: 8_first_layer = 1 and 5, 9_overhang_settings = 2,
+7_overhangs = 3, 4 and 6. Built by `case/print_package.py` and `case/print_package_p1s.py`;
+`python3 case/print_package.py --tests` packs this zip again.
 
 **Overhang kit (`7_overhangs_020`, `_016`, `_012`, `_008`), for the shell's curves:** print all four on
 the P1S and the U1, supports off (they're off in the projects: these parts overhang on purpose). The

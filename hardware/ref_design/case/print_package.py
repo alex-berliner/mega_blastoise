@@ -107,6 +107,12 @@ TEST_PLATES = [p for p in PLATES if p.startswith(("7_", "8_", "9_"))]
 TESTS = {"P1S": os.path.join(HERE, "print", "tests_P1S"), "U1": os.path.join(HERE, "print", "tests_U1")}
 TESTS_ZIP = os.path.join(HERE, "print", "overhang_kit.zip")
 TESTS_README = os.path.join(HERE, "print_tests_README.md")
+# overhang_kit.zip's plates, in the order to print them (each answers less than the one before; Alex
+# prints down the list and stops when he likes), as named there: {name in the zip: plate}.
+# 7_overhangs_020 stays out: 9_overhang_settings' DEF ladder is the same print
+TESTS_ORDER = {"1_first_layer_020": "8_first_layer_020", "2_overhang_settings": "9_overhang_settings",
+               "3_overhangs_016": "7_overhangs_016", "4_overhangs_012": "7_overhangs_012",
+               "5_first_layer_012": "8_first_layer_012", "6_overhangs_008": "7_overhangs_008"}
 # each plate's own settings over the project's (the slicers' names; the same in Orca and Bambu Studio)
 PLATE_SETTINGS = {plate: {"layer_height": h} for plate, h in LAYERS.items()}
 PLATE_SETTINGS.update({f"8_first_layer_0{l}": {"initial_layer_print_height": f"0.{l}"} for l in ("20", "12")})
@@ -227,12 +233,13 @@ def fresh(dirs):
 
 
 def tests_zip():
-    """overhang_kit.zip: both printers' test plates, as far as they're built (P1S/, U1/), and their README."""
+    """overhang_kit.zip: both printers' test plates (P1S/, U1/) as far as they're built, renamed and in
+    TESTS_ORDER's order, and their README."""
     with zipfile.ZipFile(TESTS_ZIP, "w", zipfile.ZIP_DEFLATED) as o:
         for printer, d in TESTS.items():
-            for n in sorted(os.listdir(d)) if os.path.isdir(d) else []:
-                if n.endswith(".3mf"):
-                    o.write(os.path.join(d, n), f"overhang_kit/{printer}/{n}")
+            for name, plate in TESTS_ORDER.items():
+                if os.path.exists(os.path.join(d, plate + ".3mf")):
+                    o.write(os.path.join(d, plate + ".3mf"), f"overhang_kit/{printer}/{name}.3mf")
         o.write(TESTS_README, "overhang_kit/README.md")
         n = sum(1 for i in o.namelist() if i.endswith(".3mf"))
     print(f"{TESTS_ZIP} ({n} plates, {os.path.getsize(TESTS_ZIP) // 1024} kB)")
