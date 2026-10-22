@@ -47,6 +47,21 @@ KIT = [  # (kit name, file, what it tests)
     ("test_screws_top", "coupon_screws_top.stl", "one of the top piece's bosses with its 1.6 pilot, printed face down"),
     ("test_column", "test_column.stl", "a 5.0 column, as the screw bosses"),
     ("test_rings", "test_rings.stl", "rings 0.2/0.3/0.4/0.5 a side over the 5.0 column"),
+] + [
+    # the overhang kit (7_overhangs_*): one of each part per layer height, the height on its pad
+    (f"overhang_{p}", f"test_overhang_{p}_{h.replace('.', '')}.stl", f"{what}, for {h} mm layers", {"oh_layer": f'"{h}"'})
+    for h in ("0.20", "0.16", "0.12", "0.08") for p, what in (
+        ("ladder", "overhang ladder: double fins 30 to 80 degrees from vertical (2.5 apart from 50 to 70), front and back"),
+        ("rounds", "convex rounds R10, R6, R3 from 80 to 25 degrees from vertical, ticked on their end faces"))
+] + [
+    # the overhang settings (9_overhang_settings): the 0.20 ladder, its pad saying which settings
+    ("overhang_ladder", f"test_overhang_ladder_{t}.stl", f"overhang ladder at 0.20, printed with the {what} overhang settings",
+     {"oh_tag": f'"{t}"'}) for t, what in (("DEF", "default"), ("TUNED", "tuned"))
+] + [
+    # the first layer (8_first_layer_*): the tub's bottom edge at a first layer height and an
+    # elephant's-foot compensation, engraved (the slicer settings are the plate's and the object's)
+    ("first_layer", f"test_first_layer_L{l}_E{e}.stl", f"a corner of the tub's bottom edge, for first layer 0.{l}, elephant's foot 0.{e}",
+     {"fl_label": f'"L{l} E{e}"'}) for l in ("20", "12") for e in ("15", "25")
 ]
 
 

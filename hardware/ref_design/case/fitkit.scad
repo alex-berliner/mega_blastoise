@@ -238,7 +238,96 @@ module test_rings() difference() {
     translate([0, -7.2, top_t + 1 - engrave]) linear_extrude(engrave + 0.01) text(str(test_fits[i]), size = 2.4, halign = "center", valign = "center");
   }
 }
+// ---------------- overhang kit (7_overhangs): the steepest clean overhang, finely ----------------
+// For `overhang` above: printed as exported, no supports. Every fin and round reaches out both ways
+// along y, towards the bed's front (-y, engraved F on the pad) and its back (B), so one print says
+// whether the side the part fan blows on does better. Each starts oh_lift up a stem with a 0.4 mm
+// chamfer at the bed, clear of the first layers' elephant's foot.
+// Ladder: double fins, each arm a case wall (`wall`, normal to its slope) reaching oh_reach out
+// at its angle from vertical (less where that would rise past oh_rise: 30 to 50, which print anyway;
+// short is quick), the angle engraved along the fin's column. 30 to 80, 2.5 apart from 50 to 70.
+// Side by side with no gaps between them, as the usual overhang ladders: as fifteen islands every
+// layer the plate took 29 minutes on a P1S at 0.20 mm, side by side 20
+oh_angles = [30, 35, 40, 45, 50, 52.5, 55, 57.5, 60, 62.5, 65, 67.5, 70, 75, 80];
+oh_reach = 8;  oh_rise = 6;  oh_lift = 2;  oh_col = 2.5;  oh_fin = 4;  oh_pitch = oh_fin;  oh_chamfer = 0.4;
+oh_layer = "0.20";               // the layer height it's sliced at (fitkit.py renders one per plate)
+oh_tag = "";                     // or the slicer settings it's printed with, in its place (DEF, TUNED)
+oh_pad = [6, 2 * (oh_col + oh_reach), 1.0];        // the pad with F, B and the layer height, beside each part
+module oh_pad(x) difference() {
+  translate([x, -oh_pad[1] / 2, 0]) cube(oh_pad);
+  translate([x + oh_pad[0] / 2, 0, oh_pad[2] - engrave]) linear_extrude(engrave + 0.01) {
+    for (s = [-1, 1]) translate([0, s * (oh_pad[1] / 2 - 2.5)]) text(s < 0 ? "F" : "B", size = 3, halign = "center", valign = "center");
+    rotate(90) text(oh_tag == "" ? oh_layer : oh_tag, size = 2.4, halign = "center", valign = "center");
+  }
+}
+// a profile in the x-z plane (x out from the column's middle, both ways) extruded w along y, then
+// turned so its x runs along the bed's y and its extrusion along the bed's x, from x = 0
+module oh_extrude(w) translate([w, 0, 0]) rotate([90, 0, -90]) linear_extrude(w) children();
+// one side of the stem: from the bed's chamfer up to oh_lift, where the overhang leaves it
+function oh_stem() = [[oh_col - oh_chamfer, 0], [oh_col, oh_chamfer], [oh_col, oh_lift]];
+function oh_mirror(side) = concat(side, [for (i = [len(side) - 1:-1:0]) [-side[i][0], side[i][1]]]);
+module oh_fin(t) let(reach = min(oh_reach, oh_rise * tan(t)), rise = reach / tan(t), v = wall / sin(t),
+                     top = oh_lift + rise + v) difference() {
+  oh_extrude(oh_fin) polygon(oh_mirror(concat(oh_stem(), [[oh_col + reach, oh_lift + rise], [oh_col + reach, top],
+                                                         [oh_col, oh_lift + v], [oh_col, top]])));
+  translate([oh_fin / 2, 0, top - engrave]) linear_extrude(engrave + 0.01)
+    rotate(90) text(str(t), size = 1.5, halign = "center", valign = "center");
+}
+module test_overhang_ladder() {
+  for (i = [0:len(oh_angles) - 1]) translate([i * oh_pitch, 0, 0]) oh_fin(oh_angles[i]);
+  oh_extrude((len(oh_angles) - 1) * oh_pitch + oh_fin) polygon(oh_mirror(oh_stem()));   // the strip joining them
+  oh_pad(-oh_pad[0] - 1);
+  translate([-1.01, -oh_col, 0]) cube([1.02, 2 * oh_col, oh_pad[2]]);
+}
+// Rounds: solid convex quarter rounds as the shell's edges print (face down, the round leaving the
+// bed flat and turning up towards vertical), from 80 degrees from vertical at the stem up to 25,
+// then 1 mm straight up. Ticks on each block's -x end face, in along the surface's normal at its angle
+// from vertical: every 5 degrees (R10) or 10 (R3, R6) from 30 to 80, long at 30, 50 and 70
+// (R10's numbered). Its radius on its top
+oh_radii = [10, 6, 3];  oh_from = 80;  oh_to = 25;  oh_block = 5;  oh_gap = 6;
+function oh_c(r) = [oh_col - r * cos(oh_from), oh_lift + r * sin(oh_from)];
+function oh_at(r, phi) = oh_c(r) + r * [cos(phi), -sin(phi)];
+module oh_round(r) let(e = oh_at(r, oh_to), top = e[1] + 1, step = r >= 10 ? 5 : 10) difference() {
+  oh_extrude(oh_block) polygon(oh_mirror(concat(oh_stem(), [for (p = [oh_from:-2.5:oh_to]) oh_at(r, p)],
+                                               [[e[0], top], [0, top]])));
+  // -x end face: the profile's plane, seen from -x the front (-y) is on the left
+  // (the numbers mirrored so they read from -x)
+  for (s = [-1, 1]) translate([-0.01, 0, 0]) rotate([90, 0, 90]) linear_extrude(engrave + 0.01) {
+    for (p = [30:step:oh_from]) let(q = oh_at(r, p), n = [cos(p), -sin(p)], d = p % 20 == 10 ? 2.0 : 1.0)
+      scale([s, 1]) hull() { translate(q - 0.15 * n) circle(d = 0.3, $fn = 8); translate(q - d * n) circle(d = 0.3, $fn = 8); }
+    if (r >= 10) for (p = [30, 50, 70]) let(n = [cos(p), -sin(p)], q = oh_at(r, p) - 3.7 * n)
+      translate([s * q[0], q[1]]) mirror([1, 0]) text(str(p), size = 1.2, halign = "center", valign = "center");
+  }
+  translate([oh_block / 2, 0, top - engrave]) linear_extrude(engrave + 0.01)
+    rotate(90) text(str("R", r), size = 2.2, halign = "center", valign = "center");
+}
+module test_overhang_rounds() {
+  for (i = [0:len(oh_radii) - 1]) translate([i * (oh_block + oh_gap), 0, 0]) oh_round(oh_radii[i]);
+  n = len(oh_radii) * (oh_block + oh_gap) - oh_gap;
+  oh_extrude(n) polygon(oh_mirror(oh_stem()));
+  oh_pad(n + 1);
+  translate([n - 0.01, -oh_col, 0]) cube([1.02, 2 * oh_col, oh_pad[2]]);
+}
+
+// ---------------- first layer (8_first_layer_*): the tub's bottom edge ----------------
+// A corner of the tub's outside, fl_size square and fl_h tall, solid: the round from the bed on its
+// two outer sides as the tub prints it (tub_outside), straight cut sides inside. Printed with the
+// first layer and elephant's-foot compensation fl_label names (L20 E15: 0.20 mm and 0.15 mm), to
+// find the pair that leaves no lip where the round meets the bed
+fl_size = 25;  fl_h = 3;  fl_label = "L20 E15";
+module test_first_layer() difference() {
+  translate([fl_size - case_w / 2, fl_size - case_l / 2, 0]) intersection() {
+    tub_outside();
+    translate([case_w / 2 - fl_size, case_l / 2 - fl_size, -1]) cube([fl_size + 1, fl_size + 1, fl_h + 1]);
+  }
+  translate([fl_size / 2 - 1.5, fl_size / 2 - 1.5, fl_h - engrave]) linear_extrude(engrave + 0.01)
+    text(fl_label, size = 3.2, halign = "center", valign = "center");
+}
+
 if (kit == "test_overhangs")    test_overhangs();
+if (kit == "overhang_ladder")   test_overhang_ladder();
+if (kit == "overhang_rounds")   test_overhang_rounds();
+if (kit == "first_layer")       test_first_layer();
 if (kit == "test_screws_tub")   coupon_screws_tub();
 if (kit == "test_screws_top")   coupon_screws_top();
 if (kit == "test_column")       test_column();

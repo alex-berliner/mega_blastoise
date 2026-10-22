@@ -15,6 +15,9 @@ in the project, so each plate is sliced in two steps: Bambu Studio writes the pl
 the parts' own settings go into it, and Bambu Studio slices that. Then support_check.py reads the
 G-code and the build fails if a part that needs no supports got some (a plate's supports filled
 the tub's screw counterbores, 2026-10-21). A plate that doesn't fit the P1S's 256 mm bed is split.
+Bambu Studio's CLI lists no changed settings in its projects, so each project then names its
+process preset (P1S_PRESETS, the one at its layer height; Bambu's X1C presets are the P1S's) and
+lists what it changes from it (print_package.mark_presets), or Bambu Studio would load the preset's.
 
 Writes print/package_P1S/ and print/mega_blastoise_print_P1S.zip (build output, not in git).
 """
@@ -53,6 +56,36 @@ BED = 256.0
 EXCLUDE = (0, 0, 18, 28)       # the P1S's no-print corner, front left (machine.json bed_exclude_area)
 
 
+SYSTEM = os.path.join(PROFILES, "system")      # Bambu's process presets, flattened (print_package --flatten)
+P1S_PRESET = "0.20mm Standard @BBL X1C"
+P1S_PRESETS = {"0.20": P1S_PRESET, "0.16": "0.16mm Optimal @BBL X1C", "0.12": "0.12mm Fine @BBL X1C",
+               "0.08": "0.08mm Extra Fine @BBL X1C"}
+
+
+# The overhang settings Bambu Studio 2.08 has beyond its defaults (wiki.bambulab.com, Bambu Studio's
+# speed and cooling settings): walls over an overhang slower (50 and 30 mm/s at 25 to 50 and 50 to 75 %
+# of a line overhanging, now 30 and 15) and thinner bridge lines (bridge flow 1 to 0.85: the steepest
+# fins print as bridges). Detect overhang wall and smoothing the overhang walls' speed changes are on
+# already, the fan at 100 % all the time for PLA. Bambu Studio has no Reverse on even, extra overhang
+# perimeters or slowing for curled perimeters (OrcaSlicer's). (Two values: its two extruder variants)
+P1S_OBJECT_SETTINGS = {"overhang_ladder_TUNED": {
+    "overhang_2_4_speed": "30,30", "overhang_3_4_speed": "15,15", "bridge_flow": "0.85"}}
+
+
+def mark_presets(project, plate):
+    """Name the plate's process preset in a Bambu project and list the settings it changes."""
+    with zipfile.ZipFile(project) as z:
+        files = {n: z.read(n) for n in z.namelist()}
+    cfg = json.loads(files["Metadata/project_settings.config"])
+    own = print_package.PLATE_SETTINGS.get(plate, {})
+    preset = P1S_PRESETS[own.get("layer_height", "0.20")]
+    print_package.mark_presets(cfg, SYSTEM, preset, own, P1S_PRESET)
+    files["Metadata/project_settings.config"] = json.dumps(cfg, indent=4).encode()
+    with zipfile.ZipFile(project, "w", zipfile.ZIP_DEFLATED) as z:
+        for k, v in files.items():
+            z.writestr(k, v)
+
+
 def layout(parts):
     """Each part placed on the bed: print_package's shelf packing, longest first, from the back
     (Bambu's own --arrange leaves parts it can't nest on a second plate, and the slice still
@@ -71,17 +104,18 @@ def layout(parts):
     return meshes
 
 
-def own_supports(project, objs):
-    """Give the named objects of an unsliced Bambu project their own support settings."""
+def own_settings(project, objs):
+    """Give the named objects of an unsliced Bambu project their own settings ({object: {key: value}})."""
     import re
     with zipfile.ZipFile(project) as z:
         files = {n: z.read(n) for n in z.namelist()}
-    keys = "".join(f'    <metadata key="{k}" value="{v}"/>\n' for k, v in print_package.OBJECT_SUPPORT.items())
     cfg, n = re.subn(r'(  <object id="\d+">\n    <metadata key="name" value="(%s)\.stl"/>\n)'
-                     % "|".join(map(re.escape, objs)), lambda m: m.group(1) + keys,
+                     % "|".join(map(re.escape, objs)),
+                     lambda m: m.group(1) + "".join(f'    <metadata key="{k}" value="{v}"/>\n'
+                                                    for k, v in objs[m.group(2)].items()),
                      files["Metadata/model_settings.config"].decode())
     if n != len(objs):
-        sys.exit(f"{project}: found {n} of the {len(objs)} objects that need supports")
+        sys.exit(f"{project}: found {n} of the {len(objs)} objects with their own settings")
     files["Metadata/model_settings.config"] = cfg.encode()
     with zipfile.ZipFile(project, "w", zipfile.ZIP_DEFLATED) as z:
         for k, v in files.items():
@@ -104,8 +138,17 @@ def slice_plate(name, parts, supported, tmp):
         stls.append(dst)
     # the plate as a project (no slicing yet), its parts' support settings, then the slice
     project = os.path.join(work, name + "_unsliced.3mf")
+    process = os.path.join(PROFILES, "process.json")
+    plate_name = name.removesuffix("_a").removesuffix("_b")
+    own = print_package.PLATE_SETTINGS.get(plate_name)
+    if own:                                        # the plate's own settings (a layer height) over the profile's
+        cfg = json.load(open(process))
+        if any(k not in cfg for k in own):
+            sys.exit(f"{name}: {', '.join(k for k in own if k not in cfg)} isn't a setting in the P1S process")
+        process = os.path.join(work, "process.json")
+        json.dump(dict(cfg, **own), open(process, "w"), indent=4)
     subprocess.run([os.environ["BAMBU_STUDIO"],
-                    "--load-settings", f"{PROFILES}/machine.json;{PROFILES}/process.json",
+                    "--load-settings", f"{PROFILES}/machine.json;{process}",
                     "--load-filaments", f"{PROFILES}/filament.json", "--arrange", "0",
                     "--export-3mf", os.path.basename(project), "--outputdir", work, *stls],
                    capture_output=True, text=True, timeout=600)
@@ -113,8 +156,13 @@ def slice_plate(name, parts, supported, tmp):
         print(f"  {name}: Bambu Studio wrote no project")
         return None
     with_supports = [obj for obj, path in parts if path in supported]
-    if with_supports:
-        own_supports(project, with_supports)
+    own_objs = {obj: dict(print_package.OBJECT_SUPPORT if obj in with_supports else {},
+                          **print_package.OBJECT_SETTINGS.get(obj, {}), **P1S_OBJECT_SETTINGS.get(obj, {}))
+                for obj, _ in parts}
+    own_objs = {obj: own for obj, own in own_objs.items() if own}
+    if own_objs:
+        own_settings(project, own_objs)
+    mark_presets(project, plate_name)
     cmd = [os.environ["BAMBU_STUDIO"], "--slice", "0", "--export-3mf", name + ".3mf",
            "--outputdir", os.path.join(work, "out"), project]
     subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
@@ -127,6 +175,7 @@ def slice_plate(name, parts, supported, tmp):
         return None
     plate = result["sliced_plates"][0]
     out = os.path.join(work, "out", name + ".3mf")
+    mark_presets(out, plate_name)                  # the slice writes the list empty again
     on_plate = json.loads(zipfile.ZipFile(out).read("Metadata/plate_1.json"))["bbox_objects"]
     if len(on_plate) != len(parts):
         sys.exit(f"{name}: only {len(on_plate)} of its {len(parts)} parts are on the plate")
