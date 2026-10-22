@@ -106,11 +106,11 @@ STAGES = [
           ["board/placement.py", "case/positions.json", "board/battler.kicad_pro", *LIB],
           ["board/battler.kicad_pcb"], tools=("kicad",), env=("RP2350B_REF",), netlist=True,
           about="the board from the netlist, placement and the core"),
-    Stage("route", "board", [PY, "tools/route.py", "80"],
+    Stage("route", "board", [PY, "tools/route.py", "20"],
           [BOARD_TOOLS + f for f in ("route.py", "maze.py", "build_pcb.py", "netlist.py", "kisym.py", "check_pcb.py")] +
           ["board/placement.py", "case/positions.json", "board/battler.kicad_pro", "board/battler.kicad_pcb"],
           ["board/battler.kicad_pcb", "board/tools/last_route.ses"], tools=("kicad",), env=("FREEROUTING_JAR",),
-          fresh=("board/battler.kicad_pcb",), about="pours, pre-routes, Freerouting (80 passes, parallel attempts), repairs"),
+          fresh=("board/battler.kicad_pcb",), about="pours, pre-routes, Freerouting (20 passes, parallel seeded attempts), repairs"),
     Stage("silk", "board", [PY, "tools/silk.py"],
           [BOARD_TOOLS + "silk.py", "board/placement.py", "board/design.py", "case/positions.json",
            "board/battler.kicad_pcb"],
