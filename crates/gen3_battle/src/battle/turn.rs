@@ -169,8 +169,10 @@ impl Battle {
             self.use_move(foe, mi, script.seats[foe], &mut events);
             self.run_pending_call(script, &mut events);
             self.settle_choice_lock(foe);
-            self.white_herb(foe);
-            self.white_herb(1 - foe);
+            // No White Herb here: the sim fires an interception from the
+            // switch-out hook through `useMove`, the caller BELOW `runMove`,
+            // and only `runMove` runs `AfterMove`. The arrival that follows
+            // it is a switch-in, which answers one anyway.
             self.end_of_action();
             self.pursuing = false;
             pursued[foe] = true;
@@ -250,14 +252,19 @@ impl Battle {
                     let foe = 1 - side;
                     self.will_act =
                         side == first && !cancelled[foe] && matches!(choices[foe], Choice::Move(_));
-                    self.use_move(side, index, script.seats[side], &mut events);
+                    let moved = self.use_move(side, index, script.seats[side], &mut events);
                     self.run_pending_call(script, &mut events);
                     self.settle_choice_lock(side);
                     // `onAnyAfterMove`: a White Herb on either seat undoes
                     // what the move just did to it, without waiting for the
-                    // end of the turn.
-                    self.white_herb(side);
-                    self.white_herb(1 - side);
+                    // end of the turn. The sim runs that event out of
+                    // `runMove`, so an action a gate turned away before the
+                    // move (a frozen mon, a full paralysis, a slot drained
+                    // dry since the choice) never answers one.
+                    if moved {
+                        self.white_herb(side);
+                        self.white_herb(1 - side);
+                    }
                     self.end_of_action();
                 }
             }

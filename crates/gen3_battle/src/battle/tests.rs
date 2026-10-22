@@ -826,3 +826,50 @@ fn the_callback_power_moves_actually_hit() {
         );
     }
 }
+
+/// A White Herb answers an Intimidate out of `runMove`'s `AfterMove` event,
+/// so an action that never reached the move leaves the drop standing. The
+/// foe's turn lost to its own freeze was the case: the herb came back early,
+/// the Intimidate it was holding never touched a Vital Throw, and the first
+/// hit of the battle came out of full Attack instead of -1.
+///
+/// Deoxys is the faster of the two, so it switched in FIRST and its own item
+/// started before Intimidate landed: the drop is there when turn one opens,
+/// and it is still there when Deoxys swings.
+#[test]
+fn a_turn_lost_to_its_own_status_does_not_answer_a_white_herb() {
+    let hit_with = |herb: bool, cowed: bool| {
+        let mut arcanine = mon("arcanine", 63, &["mistball"]);
+        if cowed {
+            arcanine.ability = "intimidate";
+        }
+        arcanine.status = Some(Status::Freeze);
+        let mut deoxys = mon("deoxys", 63, &["vitalthrow"]);
+        deoxys.item = if herb { "whiteherb" } else { "" };
+        let mut b = Battle::new(
+            Side::new(alloc::vec![arcanine]),
+            Side::new(alloc::vec![deoxys]),
+            1,
+        );
+        b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([PLAIN, SeatScript { random: 94, ..PLAIN }]),
+        );
+        b.sides[0].mon().max_hp - b.sides[0].mon().hp
+    };
+    // 41, which is what the reference sim deals: Deoxys's Attack reads 142
+    // off the -1 Intimidate left it (Gen 3's -1 is two thirds, not a half)
+    // against Arcanine's 125 Defense, and Vital Throw is neutral on Fire.
+    assert_eq!(hit_with(true, true), 41);
+    assert_eq!(
+        hit_with(false, true),
+        41,
+        "nothing was there to restore the drop, and it did not need one"
+    );
+    assert_eq!(hit_with(false, false), 62, "an uncowed Deoxys swings at full Attack");
+    assert_eq!(
+        hit_with(true, false),
+        62,
+        "and an herb with nothing to restore costs its holder nothing"
+    );
+}
