@@ -5,7 +5,8 @@
 
 Each project is built from Alex's own fit_test_v5.3mf (print/), so it keeps his printer,
 filament and plate settings (Snapmaker U1, 0.20 mm Standard, textured PEI), PLA only on
-toolhead 2 (Alex, 2026-10-20: no PETG, no second toolhead, no prime tower): only the objects,
+toolhead 1 (Alex, 2026-10-20: no PETG, no second toolhead, no prime tower; 2026-10-22: the PLA is
+loaded in bay 1, so the template's PETG slot 1 takes slot 2's PLA settings): only the objects,
 where they sit on the plate, and the supports change. Orca's CLI can't load U1 projects, so the projects are written the way
 Orca writes them (one object file per part, mesh centred on its own height, placed by the
 build item) and the STLs ship beside them in case a project won't open.
@@ -22,7 +23,9 @@ flattened from the slicers' own profiles (Snapmaker Orca 2.4.0, Bambu Studio 2.0
     python3 case/print_package.py --flatten <the slicer's resources/profiles/<vendor>> <dir> <preset> ...
 print_package_p1s.py builds the same plates for a Bambu Lab P1S.
 
-Writes print/package_U1/ and print/mega_blastoise_print_U1.zip (build output, not in git).
+Writes print/package_U1/ and print/mega_blastoise_print_U1.zip (build output, not in git); the
+printer tests (TEST_PLATES) go to print/tests_U1/ instead and, with print_package_p1s.py's
+print/tests_P1S/, into print/overhang_kit.zip (tests_zip; `--tests` packs it again alone).
 """
 import os
 import json
@@ -40,7 +43,9 @@ OUT = os.path.join(HERE, "print", "package_U1")
 ZIP = os.path.join(HERE, "print", "mega_blastoise_print_U1.zip")
 BED = 270.0
 GAP = 6.0
-PLA = 2                      # the template's toolhead for PLA parts
+PLA = 1                      # the toolhead for every part: Alex's PLA is in bay 1 (2026-10-22)
+PLA_SLOT = 2                 # the template's slot with the PLA filament settings (its slot 1 is PETG)
+NOT_FILAMENT = {"printable_area"}   # per-slot-length lists that aren't filament settings
 
 KIT = os.path.join(HERE, "fitkit")
 PRINT_TUB = os.path.join(HERE, "tub.stl")    # prints flat as exported (no feet since 2026-10-20)
@@ -100,6 +105,17 @@ PLATES = {
     "9_overhang_settings": [(f"overhang_ladder_{t}", f"{KIT}/test_overhang_ladder_{t}.stl") for t in ("DEF", "TUNED")],
 }
 LAYERS = {f"7_overhangs_{h}": f"0.{h[1:]}" for h in ("020", "016", "012", "008")}
+# the printer tests: not the case's parts, so a kit of their own (overhang_kit.zip), not in the case kits
+TEST_PLATES = [p for p in PLATES if p.startswith(("7_", "8_", "9_"))]
+TESTS = {"P1S": os.path.join(HERE, "print", "tests_P1S"), "U1": os.path.join(HERE, "print", "tests_U1")}
+TESTS_ZIP = os.path.join(HERE, "print", "overhang_kit.zip")
+TESTS_README = os.path.join(HERE, "print_tests_README.md")
+# overhang_kit.zip's plates, in the order to print them (each answers less than the one before; Alex
+# prints down the list and stops when he likes), as named there: {name in the zip: plate}.
+# 7_overhangs_020 stays out: 9_overhang_settings' DEF ladder is the same print
+TESTS_ORDER = {"1_first_layer_020": "8_first_layer_020", "2_overhang_settings": "9_overhang_settings",
+               "3_overhangs_016": "7_overhangs_016", "4_overhangs_012": "7_overhangs_012",
+               "5_first_layer_012": "8_first_layer_012", "6_overhangs_008": "7_overhangs_008"}
 # each plate's own settings over the project's (the slicers' names; the same in Orca and Bambu Studio)
 PLATE_SETTINGS = {plate: {"layer_height": h} for plate, h in LAYERS.items()}
 PLATE_SETTINGS.update({f"8_first_layer_0{l}": {"initial_layer_print_height": f"0.{l}"} for l in ("20", "12")})
@@ -188,6 +204,17 @@ def same(a, b):
     return norm(a) == norm(b)
 
 
+def pla_in_slot_1(cfg):
+    """Slot 1 (bay 1) gets the template's PLA filament settings from PLA_SLOT: every per-filament
+    list, and the filament's entry in different_settings_to_system (process, filaments, printer)."""
+    n, s = len(cfg["filament_settings_id"]), PLA_SLOT - 1
+    for k, v in cfg.items():
+        if isinstance(v, list) and len(v) == n and k not in NOT_FILAMENT:
+            v[0] = v[s]
+    cfg["different_settings_to_system"][1] = cfg["different_settings_to_system"][1 + s]
+    assert set(cfg["filament_type"]) == {"PLA"}, cfg["filament_type"]
+
+
 def mark_presets(cfg, system_dir, preset, keys=(), base=None):
     """Name the system process preset `preset` in a project's settings (cfg, changed in place) and
     list in different_settings_to_system[0] every process setting whose value isn't the preset's,
@@ -205,6 +232,31 @@ def mark_presets(cfg, system_dir, preset, keys=(), base=None):
     cfg["print_settings_id"] = preset
     cfg["different_settings_to_system"][0] = ";".join(sorted(diff))
     return sorted(diff)
+
+
+def plate_dir(plate, case_dir, printer):
+    """Where a plate's project goes: the case kit's folder, or the printer's tests folder."""
+    return TESTS[printer] if plate in TEST_PLATES else case_dir
+
+
+def fresh(dirs):
+    """Empty each folder, with an stl/ in it."""
+    for d in dirs:
+        shutil.rmtree(d, ignore_errors=True)
+        os.makedirs(os.path.join(d, "stl"))
+
+
+def tests_zip():
+    """overhang_kit.zip: both printers' test plates (P1S/, U1/) as far as they're built, renamed and in
+    TESTS_ORDER's order, and their README."""
+    with zipfile.ZipFile(TESTS_ZIP, "w", zipfile.ZIP_DEFLATED) as o:
+        for printer, d in TESTS.items():
+            for name, plate in TESTS_ORDER.items():
+                if os.path.exists(os.path.join(d, plate + ".3mf")):
+                    o.write(os.path.join(d, plate + ".3mf"), f"overhang_kit/{printer}/{name}.3mf")
+        o.write(TESTS_README, "overhang_kit/README.md")
+        n = sum(1 for i in o.namelist() if i.endswith(".3mf"))
+    print(f"{TESTS_ZIP} ({n} plates, {os.path.getsize(TESTS_ZIP) // 1024} kB)")
 
 
 def template_layout(z):
@@ -333,7 +385,7 @@ def build(plate, parts, z, supported):
     plate_xml = plate_xml[:plate_xml.index("    <model_instance>")] + "\n".join(instances) + "\n"
     files["Metadata/model_settings.config"] = ('<?xml version="1.0" encoding="UTF-8"?>\n<config>\n' + "\n".join(settings)
                                                + "\n" + plate_xml + "  </plate>\n</config>\n")
-    out = os.path.join(OUT, f"{plate}.3mf")
+    out = os.path.join(plate_dir(plate, OUT, "U1"), f"{plate}.3mf")
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as o:
         for n in z.namelist():
             if n.startswith("3D/") or n == "Metadata/model_settings.config":
@@ -344,6 +396,7 @@ def build(plate, parts, z, supported):
             data = z.read(n)
             if n == "Metadata/project_settings.config":
                 cfg = json.loads(data)
+                pla_in_slot_1(cfg)
                 for k, v in dict(SUPPORT, enable_support="0", **PLATE_SETTINGS.get(plate, {})).items():   # supports per object
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
@@ -374,18 +427,21 @@ def build_plate(job):
 def main():
     if sys.argv[1:2] == ["--flatten"]:
         return flatten(sys.argv[2], sys.argv[3], sys.argv[4:])
+    if sys.argv[1:] == ["--tests"]:
+        return tests_zip()
     for plate, parts in PLATES.items():
         if sys.argv[1:] and plate not in sys.argv[1:]:
             continue
         for _, p in parts:
             if not os.path.exists(p):
                 sys.exit(f"missing {p}: run case/export.py --stl, the print_variants tub and case/fitkit.py first")
-    shutil.rmtree(OUT, ignore_errors=True)
-    os.makedirs(os.path.join(OUT, "stl"))
     print("supports, measured part by part:")
     supported = support_parts()
     only = sys.argv[1:]                 # plate names to build (default: all)
     jobs = [(plate, parts, supported) for plate, parts in PLATES.items() if not only or plate in only]
+    case = any(plate not in TEST_PLATES for plate, _, _ in jobs)      # the case kit or the tests, or both
+    tests = any(plate in TEST_PLATES for plate, _, _ in jobs)
+    fresh(([OUT] if case else []) + ([TESTS["U1"]] if tests else []))
     from concurrent.futures import ProcessPoolExecutor
     with ProcessPoolExecutor() as ex:   # the plates build at once, listed in order
         built = list(ex.map(build_plate, jobs))
@@ -393,7 +449,12 @@ def main():
         print(f"{os.path.basename(path):24s} " + ", ".join(n + (" (supports)" if p in supported else "")
                                                            for n, p in parts))
         for n, p in parts:
-            shutil.copy(p, os.path.join(OUT, "stl", os.path.basename(p)))
+            shutil.copy(p, os.path.join(plate_dir(plate, OUT, "U1"), "stl", os.path.basename(p)))
+    if tests:
+        shutil.copy(TESTS_README, os.path.join(TESTS["U1"], "README.md"))
+        tests_zip()
+    if not case:
+        return
     for extra in ("top.stl", "deck.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not sys.argv[1:]:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
