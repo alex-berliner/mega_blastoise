@@ -47,6 +47,12 @@ KIT = [  # (kit name, file, what it tests)
     ("test_screws_top", "coupon_screws_top.stl", "one of the top piece's bosses with its 1.6 pilot, printed face down"),
     ("test_column", "test_column.stl", "a 5.0 column, as the screw bosses"),
     ("test_rings", "test_rings.stl", "rings 0.2/0.3/0.4/0.5 a side over the 5.0 column"),
+] + [
+    # the overhang kit (7_overhangs_*): one of each part per layer height, the height on its pad
+    (f"overhang_{p}", f"test_overhang_{p}_{h.replace('.', '')}.stl", f"{what}, for {h} mm layers", {"oh_layer": f'"{h}"'})
+    for h in ("0.20", "0.16", "0.12") for p, what in (
+        ("ladder", "overhang ladder: double fins 30 to 80 degrees from vertical (2.5 apart from 50 to 70), front and back"),
+        ("rounds", "convex rounds R10, R6, R3 from 80 to 25 degrees from vertical, ticked on their end faces"))
 ]
 
 

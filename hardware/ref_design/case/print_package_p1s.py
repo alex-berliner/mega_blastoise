@@ -104,8 +104,16 @@ def slice_plate(name, parts, supported, tmp):
         stls.append(dst)
     # the plate as a project (no slicing yet), its parts' support settings, then the slice
     project = os.path.join(work, name + "_unsliced.3mf")
+    process = os.path.join(PROFILES, "process.json")
+    own = print_package.PLATE_SETTINGS.get(name.removesuffix("_a").removesuffix("_b"))
+    if own:                                        # the plate's own settings (a layer height) over the profile's
+        cfg = json.load(open(process))
+        if any(k not in cfg for k in own):
+            sys.exit(f"{name}: {', '.join(k for k in own if k not in cfg)} isn't a setting in the P1S process")
+        process = os.path.join(work, "process.json")
+        json.dump(dict(cfg, **own), open(process, "w"), indent=4)
     subprocess.run([os.environ["BAMBU_STUDIO"],
-                    "--load-settings", f"{PROFILES}/machine.json;{PROFILES}/process.json",
+                    "--load-settings", f"{PROFILES}/machine.json;{process}",
                     "--load-filaments", f"{PROFILES}/filament.json", "--arrange", "0",
                     "--export-3mf", os.path.basename(project), "--outputdir", work, *stls],
                    capture_output=True, text=True, timeout=600)

@@ -78,9 +78,16 @@ PLATES = {
     "6_tests": [("tune_openings", f"{KIT}/tune_openings.stl"), ("test_overhangs", f"{KIT}/test_overhangs.stl"),
                 ("screws_tub", f"{KIT}/coupon_screws_tub.stl"), ("screws_top", f"{KIT}/coupon_screws_top.stl"),
                 ("test_column", f"{KIT}/test_column.stl"), ("test_rings", f"{KIT}/test_rings.stl")],
+    # the overhang kit, no supports: the steepest clean overhang, straight and round, at three
+    # layer heights (the height on each part's pad); only the layer height differs from the rest
+    **{f"7_overhangs_{h}": [(f"overhang_ladder_{h}", f"{KIT}/test_overhang_ladder_{h}.stl"),
+                            (f"overhang_rounds_{h}", f"{KIT}/test_overhang_rounds_{h}.stl")]
+       for h in ("020", "016", "012")},
 }
-# the overhang ladder overhangs on purpose (it asks how far the printer goes without supports)
-NEVER_SUPPORTED = {f"{KIT}/test_overhangs.stl"}
+# each plate's own settings over the project's (the slicers' names; the same in Orca and Bambu Studio)
+PLATE_SETTINGS = {f"7_overhangs_{h}": {"layer_height": f"0.{h[1:]}"} for h in ("020", "016", "012")}
+# the overhang tests overhang on purpose (they ask how far the printer goes without supports)
+NEVER_SUPPORTED = {f"{KIT}/test_overhangs.stl"} | {p for h in ("020", "016", "012") for _, p in PLATES[f"7_overhangs_{h}"]}
 
 
 def support_parts():
@@ -238,7 +245,7 @@ def build(plate, parts, z, supported):
             data = z.read(n)
             if n == "Metadata/project_settings.config":
                 cfg = json.loads(data)
-                for k, v in dict(SUPPORT, enable_support="0").items():     # on per object instead
+                for k, v in dict(SUPPORT, enable_support="0", **PLATE_SETTINGS.get(plate, {})).items():   # supports per object
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                     cfg[k] = v
