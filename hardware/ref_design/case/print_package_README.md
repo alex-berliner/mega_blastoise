@@ -9,7 +9,7 @@ on the current design (2026-10-21: the 133 mm shell for the 2.4 in panel, built 
 <!-- printer -->
 Each `.3mf` is a Snapmaker Orca project built from your `fit_test_v5.3mf`, so it keeps that
 project's printer and settings: Snapmaker U1, 0.20 mm Standard, textured PEI. PLA only, on
-toolhead 2: no PETG, no second toolhead, no prime tower. Open it, check the plate, slice.
+toolhead 1 (bay 1, where the PLA is loaded): no PETG, no second toolhead, no prime tower. Open it, check the plate, slice.
 (`mega_blastoise_print_P1S.zip` has the same plates sliced for a Bambu Lab P1S.)
 
 Supports are per part, not per plate: only `board_mock`, `coupon_usb_board` and `speaker_dummy`

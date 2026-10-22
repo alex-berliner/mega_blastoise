@@ -5,7 +5,8 @@
 
 Each project is built from Alex's own fit_test_v5.3mf (print/), so it keeps his printer,
 filament and plate settings (Snapmaker U1, 0.20 mm Standard, textured PEI), PLA only on
-toolhead 2 (Alex, 2026-10-20: no PETG, no second toolhead, no prime tower): only the objects,
+toolhead 1 (Alex, 2026-10-20: no PETG, no second toolhead, no prime tower; 2026-10-22: the PLA is
+loaded in bay 1, so the template's PETG slot 1 takes slot 2's PLA settings): only the objects,
 where they sit on the plate, and the supports change. Orca's CLI can't load U1 projects, so the projects are written the way
 Orca writes them (one object file per part, mesh centred on its own height, placed by the
 build item) and the STLs ship beside them in case a project won't open.
@@ -42,7 +43,9 @@ OUT = os.path.join(HERE, "print", "package_U1")
 ZIP = os.path.join(HERE, "print", "mega_blastoise_print_U1.zip")
 BED = 270.0
 GAP = 6.0
-PLA = 2                      # the template's toolhead for PLA parts
+PLA = 1                      # the toolhead for every part: Alex's PLA is in bay 1 (2026-10-22)
+PLA_SLOT = 2                 # the template's slot with the PLA filament settings (its slot 1 is PETG)
+NOT_FILAMENT = {"printable_area"}   # per-slot-length lists that aren't filament settings
 
 KIT = os.path.join(HERE, "fitkit")
 PRINT_TUB = os.path.join(HERE, "tub.stl")    # prints flat as exported (no feet since 2026-10-20)
@@ -199,6 +202,17 @@ def same(a, b):
                 out.append(str(x))
         return out
     return norm(a) == norm(b)
+
+
+def pla_in_slot_1(cfg):
+    """Slot 1 (bay 1) gets the template's PLA filament settings from PLA_SLOT: every per-filament
+    list, and the filament's entry in different_settings_to_system (process, filaments, printer)."""
+    n, s = len(cfg["filament_settings_id"]), PLA_SLOT - 1
+    for k, v in cfg.items():
+        if isinstance(v, list) and len(v) == n and k not in NOT_FILAMENT:
+            v[0] = v[s]
+    cfg["different_settings_to_system"][1] = cfg["different_settings_to_system"][1 + s]
+    assert set(cfg["filament_type"]) == {"PLA"}, cfg["filament_type"]
 
 
 def mark_presets(cfg, system_dir, preset, keys=(), base=None):
@@ -382,6 +396,7 @@ def build(plate, parts, z, supported):
             data = z.read(n)
             if n == "Metadata/project_settings.config":
                 cfg = json.loads(data)
+                pla_in_slot_1(cfg)
                 for k, v in dict(SUPPORT, enable_support="0", **PLATE_SETTINGS.get(plate, {})).items():   # supports per object
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
