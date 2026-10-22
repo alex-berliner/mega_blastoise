@@ -2,9 +2,8 @@
 // build.py renders one at a time: openscad -D part="none" -D piece="cell" pieces.scad
 include <../case/case.scad>
 piece = "none";
-if (piece == "cell") translate([0, cell_y, floor_t]) linear_extrude(cell[2]) square([cell[0], cell[1]], center = true);
-if (piece == "foam") translate([0, cell_y, floor_t + cell[2]]) linear_extrude(cell_gap - 0.05) square([cell[0] - 4, cell[1] - 4], center = true);
-if (piece == "speaker") translate([0, 0, z_spk]) linear_extrude(spk[2]) spk2d();
+if (piece == "cell") cell3d();                                          // in the board's hole, on the floor's pocket
+if (piece == "speaker") speaker3d();                                    // on the board's top, under the grille
 if (piece == "panel") translate([0, 0, z_glass]) linear_extrude(panel_t) square([panel_w, panel_l], center = true);
 if (piece == "silicone") {
   for (c = clusters) at(c, z_top_cu) cylinder(d = piece_d, h = dome_h);
@@ -12,5 +11,5 @@ if (piece == "silicone") {
 }
 if (piece == "caps") caps();
 if (piece == "decks") for (sy = [-1, 1]) deck(sy);                      // in place (the print pose is face down)
-if (piece == "screws") for (s = pins) at(s, 0) { cylinder(d = 4, h = 1, $fn = 32); cylinder(d = 2, h = 8, $fn = 24); }
+if (piece == "screws") for (s = pins) at(s, 0) { cylinder(d = 4, h = 1, $fn = 32); cylinder(d = 2, h = screw_cb[1] + screw_l, $fn = 24); }
 echo(str("VIEWER ", case_h, " ", z_board));

@@ -21,14 +21,14 @@ import scad  # noqa: E402  (tools/, on the path through check_fit)
 KIT = [  # (kit name, file, what it tests)
     ("board", "board_mock.stl", "board stand-in: outline, locating holes, part envelopes, contact and J3 marks"),
     ("panel", "panel_dummy.stl", "ER-TFT024IPS-3 at its thickest, active area engraved"),
-    ("cell", "cell_dummy.stl", "403450 cell with its lead tab"),
+    ("cell", "cell_dummy.stl", "403450 cell (nominal 50 x 34 x 4), for the board mock's hole"),
     ("plug", "cell_plug_dummy.stl", "PicoBlade 51021-0200 plug with a cable stub (approximate)"),
-    ("speaker", "speaker_dummy.stl", "GSPK151035PN speaker, 15 x 10 x 3.5 mm, face down"),
-    ("seam_tub", "coupon_seam_tub.stl", "the left wall of the tub at the seam: its tongue"),
-    ("seam_top", "coupon_seam_top.stl", "the top piece's skirt over it, with a crush rib"),
-    ("buttons_tub", "coupon_buttons_tub.stl", "seat 1's end of the tub: ribs, bosses, cell slot"),
+    ("speaker", "speaker_dummy.stl", "GSPK151035PN speaker, 10 x 15 x 3.5 mm, face up, for its pocket under the grille"),
+    ("seam_tub", "coupon_seam_tub.stl", "the left wall of the tub at the seam: its tongue and a crush rib"),
+    ("seam_top", "coupon_seam_top.stl", "the top piece's skirt over it"),
+    ("buttons_tub", "coupon_buttons_tub.stl", "seat 1's end of the tub: ribs, bosses, crush ribs"),
     ("buttons_board", "coupon_buttons_board.stl", "seat 1's end of the board mock"),
-    ("buttons_top", "coupon_buttons_top.stl", "seat 1's end of the top piece: the step, the spine and its undercut"),
+    ("buttons_top", "coupon_buttons_top.stl", "seat 1's end of the top piece: the step, the spine, the shoulders and the undercut"),
     ("buttons_deck", "coupon_buttons_deck.stl", "seat 1's deck (the real part): cap holes, walls, wedge, printed face down"),
     ("usb_tub", "coupon_usb_tub.stl", "the USB-C opening's lower half, in the tub's tab"),
     ("usb_top", "coupon_usb_top.stl", "its upper half, in the top piece's skirt"),
@@ -38,7 +38,7 @@ KIT = [  # (kit name, file, what it tests)
     ("tune_stack_abxy_board", "tune_stack_abxy_board.stl", "seat 1's A/B/X/Y: board slice with the contact rings"),
     ("tune_stack_ss_board", "tune_stack_ss_board.stl", "seat 1's Start/Select: board slice with the two small contacts"),
 ] + [(f"tune_stack_{c}_lid", f"tune_stack_{c}_lid_dome{d}.stl", f"its deck slice on legs, silicone height {d} mm",
-       {"dome_h": d}) for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.75", "1.9")] + [
+       {"dome_h": d, "tune": "true"}) for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.75", "1.9")] + [
     # (a fourth element: case.scad settings to render that coupon with, as openscad -D name=value)
     ("frame_top", "coupon_frame_top.stl", "the top piece's window, pocket and panel frame"),
     # the test plate (6_tests): questions for the shell's redesign

@@ -45,8 +45,9 @@ module kit_board() difference() {
       groove() translate([x0 + 1.5, y1 + 1.2]) circle(d = 1.2, $fn = 16);                 // pin 1 end
       for (t = tip_range) groove() translate([x0 - 2.5, -(panel_l / 2 - conn_in_at(t)) - 0.2]) square([2, 0.4]);
     }
-    groove() translate([0, -2]) text("REF-A FIT MOCK", size = 3.2, halign = "center", valign = "center");
-    groove() translate([0, 2.5]) text("J3: tape a real FH12-50S below", size = 2.0, halign = "center", valign = "center");
+    // under the folded FPC, where the board has nothing tall (the cell's hole is where they were)
+    groove() translate([0, -22]) text("REF-A FIT MOCK", size = 3.2, halign = "center", valign = "center");
+    groove() translate([0, -17.5]) text("J3: tape a real FH12-50S above", size = 2.0, halign = "center", valign = "center");
   }
 }
 
@@ -60,9 +61,9 @@ module kit_panel() difference() {                 // the panel at its thickest (
   }
 }
 
-module kit_cell() {                                // 403450 cell, as it lies sideways; wires leave its right-hand end
-  linear_extrude(cell[2]) rrect(cell[0], cell[1], 1.0);
-  translate([cell[0] / 2 - 0.01, -4, 0]) cube([5.01, 8, 1.0]);                        // protection board lead tab
+module kit_cell() {                                // 403450 cell, nominal, as it lies in the board's hole; its leads leave its left end
+  linear_extrude(cell_nom[2]) rrect(cell_nom[0], cell_nom[1], 1.0);
+  translate([-cell_nom[0] / 2 - 1.5, -1.5, 0]) cube([1.51, 3, 1.0]);                       // where its leads leave it
 }
 
 module kit_plug() {                                // PicoBlade 51021-0200 plug, with a cable stub
@@ -70,15 +71,14 @@ module kit_plug() {                                // PicoBlade 51021-0200 plug,
   translate([plug_xs[0] / 2 - 1.3, plug_xs[1] / 2 - 0.5, plug_l]) cube([2.6, 1.0, 8]);
 }
 
-module kit_speaker() union() {                    // GSPK151035PN: 15 x 10 x 3.5 racetrack, face down
+module kit_speaker() difference() {               // GSPK151035PN: 10 x 15 x 3.5 racetrack, face up, as it lies on the board
   translate(-[spk_pos[0], spk_pos[1], 0]) linear_extrude(spk[2]) spk2d();
-  translate([-spk[0] / 2 - spk_tab, -1.5, spk[2] - 0.3]) cube([spk_tab + 0.5, 3, 0.3]);   // solder tab
-  translate([spk[0] / 2 - 0.5, -1.0, spk[2] - 1.6]) cube([2.5, 2.0, 1.2]);                  // lead exit
+  translate(-[spk_pos[0], spk_pos[1], 0] + [0, 0, spk[2] - engrave]) linear_extrude(engrave + 0.01) ring(0.4) spk2d(-grille_in);   // its cone
 }
 
 // ---------------- coupons: slices of the real case geometry, quick to print ----------------
 // the seam: the left wall round a crush rib, the tub's tongue and the top piece's skirt over it
-module seam_box() translate([-case_w / 2 - 1, crush_top[2][1] - 12, -1]) cube([12, 24, case_h + 2]);
+module seam_box() translate([-case_w / 2 - 1, crush[2][1] - 12, -1]) cube([12, 24, case_h + 2]);
 module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the top piece prints face down
 // the tub as it prints, floor down (it has no feet since 2026-10-20, so that's the tub itself)
 module tub_flat() tub();
@@ -120,12 +120,15 @@ ss_box = [12.6, 5.1, 8.6];          // half width, reach towards the end, reach 
 function box_of(c, ss) = ss ? [c[0] - ss_box[0], c[1] - ss_box[1], 2 * ss_box[0], ss_box[1] + ss_box[2]]
                             : [c[0] - stack_half, c[1] - stack_half, 2 * stack_half, 2 * stack_half];
 module stack_box(c, ss = false) let(b = box_of(c, ss)) translate([b[0], b[1], -1]) cube([b[2], b[3], case_h + 2]);
+// (a cluster's leg on the outer side towards the screen moves in, off the top piece's shoulder,
+// and is thinner there, clear of the pad's lobe: [x, y, diameter])
 module stack_legs(c, ss = false)
-  for (p = ss ? [[-10.5, -4.3], [10.5, -4.3], [-10.5, 3.5], [10.5, 3.5]]   // 3.5: clear of seat 1's Y cap hole
-              : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
+  for (p = ss ? [[-10.5, -4.3, 3], [10.5, -4.3, 3], [-10.5, 3.5, 3], [10.5, 3.5, 3]]   // 3.5: clear of seat 1's Y cap hole
+              : [for (sx = [-1, 1], sy = [-1, 1]) sx == sign(c[0]) && sy == -sign(c[1]) ? [sx * 4.4, sy * 13, 2.4]
+                                                   : [sx * (stack_half - 3), sy * (stack_half - 3), 3]])
     // up into the deck (0.6 under its face), so a leg under one of the deck's reliefs still meets
     // solid deck and doesn't hang over the relief when printed face down
-    at(c + p, z_top_cu) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
+    at(c + [p[0], p[1]], z_top_cu) cylinder(d = p[2], h = deck_face - 0.6 - z_top_cu);
 // It prints deck face down on the bed, as the deck does, so it needs no supports: a slice of the deck
 // itself, its skirts and boss cut off at the walls' bottom so it stands on its legs
 module tune_stack_lid(c, ss = false) difference() {

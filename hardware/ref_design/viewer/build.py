@@ -29,7 +29,7 @@ import scad  # noqa: E402  (which OpenSCAD, which backend)
 PARTS = os.path.join(HERE, "site", "parts")
 MODEL = os.path.join(PARTS, "model.json")
 INPUTS = ["board/battler.kicad_pcb", "case/case.scad", "viewer/pieces.scad", "viewer/build.py"]
-PIECES = ["cell", "foam", "speaker", "panel", "silicone", "caps", "screws", "decks"]
+PIECES = ["cell", "speaker", "panel", "silicone", "caps", "screws", "decks"]
 
 
 def git(*args):
