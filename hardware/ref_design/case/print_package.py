@@ -84,9 +84,11 @@ PLATES = {
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
                       ("usb_tub", "usb_top", "usb_board", "seam_tub", "seam_top", "frame_top",
                        "buttons_tub", "buttons_board", "buttons_top", "buttons_deck")],
-    "5_unit": [("tub_print", PRINT_TUB), ("top", os.path.join(HERE, "top.stl")),     # one whole unit, no dummies
-               ("deck_a", os.path.join(HERE, "deck.stl")), ("deck_b", os.path.join(HERE, "deck.stl")),
-               ("board_mock", f"{KIT}/board_mock.stl")],
+    "5_unit": [("tub_print", PRINT_TUB), ("top", os.path.join(HERE, "top.stl")),     # one whole unit and the
+               ("deck_a", os.path.join(HERE, "deck.stl")), ("deck_b", os.path.join(HERE, "deck.stl")),   # dummies to
+               ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),     # fit in it
+               ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),  # (Alex,
+               ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],                                      # 2026-10-22)
     # questions for the shell's redesign, no supports: openings, overhangs, screw holes, a column's clearance
     "6_tests": [("tune_openings", f"{KIT}/tune_openings.stl"), ("test_overhangs", f"{KIT}/test_overhangs.stl"),
                 ("screws_tub", f"{KIT}/coupon_screws_tub.stl"), ("screws_top", f"{KIT}/coupon_screws_top.stl"),

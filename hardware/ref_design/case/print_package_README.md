@@ -25,7 +25,7 @@ Supports are per part, not per plate: only `board_mock` and `coupon_usb_board` g
 | `1_case.3mf` | the tub, the top piece, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
 | `1_case_decks.3mf` | the two decks (the same part, one for each end) | with `1_case` |
 | `6_tests.3mf` | **Questions for the shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and a top piece screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
-| `5_unit.3mf` | **One whole unit on one plate:** the tub, the top piece, both decks and the board mock (no coupons, no dummies) | instead of `1_case` and `1_case_decks`, once the coupons fit |
+| `5_unit.3mf` | **One whole unit on one plate:** the tub, the top piece, both decks, the board mock and the dummies of the panel, speaker, cell and cell plug to fit in it (no coupons) | instead of `1_case` and `1_case_decks`, once the coupons fit |
 
 The printer tests (the steepest clean overhang, the first layer at the tub's bottom edge, the
 slicers' overhang settings) are a kit of their own, `overhang_kit.zip`, with their own README.
@@ -61,7 +61,7 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 | `top.stl` | 77.4 x 92.5 x 5.75 | `1_case`, `5_unit` |
 | `deck.stl` (print two) | 77.4 x 32.9 x 3.9 | `1_case_decks` (8.9 g, 22 min for both), `5_unit` |
 
-`5_unit` (the tub, the top piece, both decks and the board mock on one plate) is 54.1 g and 1 h 43 min.
+`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.1 g and 2 h 00 min.
 
 To assemble:
 1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
