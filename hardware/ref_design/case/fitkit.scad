@@ -305,9 +305,25 @@ module test_overhang_rounds() {
   translate([n - 0.01, -oh_col, 0]) cube([1.02, 2 * oh_col, oh_pad[2]]);
 }
 
+// ---------------- first layer (8_first_layer_*): the tub's bottom edge ----------------
+// A corner of the tub's outside, fl_size square and fl_h tall, solid: the round from the bed on its
+// two outer sides as the tub prints it (tub_outside), straight cut sides inside. Printed with the
+// first layer and elephant's-foot compensation fl_label names (L20 E15: 0.20 mm and 0.15 mm), to
+// find the pair that leaves no lip where the round meets the bed
+fl_size = 25;  fl_h = 3;  fl_label = "L20 E15";
+module test_first_layer() difference() {
+  translate([fl_size - case_w / 2, fl_size - case_l / 2, 0]) intersection() {
+    tub_outside();
+    translate([case_w / 2 - fl_size, case_l / 2 - fl_size, -1]) cube([fl_size + 1, fl_size + 1, fl_h + 1]);
+  }
+  translate([fl_size / 2 - 1.5, fl_size / 2 - 1.5, fl_h - engrave]) linear_extrude(engrave + 0.01)
+    text(fl_label, size = 3.2, halign = "center", valign = "center");
+}
+
 if (kit == "test_overhangs")    test_overhangs();
 if (kit == "overhang_ladder")   test_overhang_ladder();
 if (kit == "overhang_rounds")   test_overhang_rounds();
+if (kit == "first_layer")       test_first_layer();
 if (kit == "test_screws_tub")   coupon_screws_tub();
 if (kit == "test_screws_top")   coupon_screws_top();
 if (kit == "test_column")       test_column();

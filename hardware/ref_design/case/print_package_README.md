@@ -26,6 +26,7 @@ get them (in `1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see
 | `1_case_decks.3mf` | the two decks (the same part, one for each end) | with `1_case` |
 | `6_tests.3mf` | **Questions for the shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and a top piece screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
 | `7_overhangs_020.3mf`, `_016`, `_012`, `_008` | **The steepest overhang each printer prints clean (about 20, 23, 28 and 40 min, 6 g each, no supports):** an overhang ladder and three convex rounds, the same parts at 0.20, 0.16, 0.12 and 0.08 mm layers (see "Overhang kit" below) | print all four on both printers |
+| `8_first_layer_020.3mf`, `8_first_layer_012.3mf` | **The lip at the tub's bottom edge (about 6 min, 3 g each):** two corners of the tub's bottom, its real round from the bed, at elephant's-foot compensation 0.15 and 0.25 mm; the first layer 0.20 mm on one plate, 0.12 on the other (see "First layer" below) | both, on both printers |
 | `5_unit.3mf` | **One whole unit on one plate:** the tub, the top piece, both decks and the board mock (no coupons, no dummies) | instead of `1_case` and `1_case_decks`, once the coupons fit |
 
 The top piece, the decks and the tuning deck slices print face down as exported (the slices legs
@@ -142,6 +143,17 @@ the undersides if anything is borderline.
 To build just these (after `python3 case/fitkit.py test_overhang_`): `python3 case/print_package.py
 7_overhangs_020 7_overhangs_016 7_overhangs_012 7_overhangs_008`, and the same names to `case/print_package_p1s.py`
 (a run naming plates leaves only those plates in its package folder and zip).
+
+**First layer (`8_first_layer_020`, `8_first_layer_012`), for the lip at the tub's bottom edge:**
+each coupon is a 25 mm corner of the tub's bottom, 3 mm tall, with the tub's real bottom-edge round
+on its two outer sides (as `tub.stl` prints, floor down). The engraving on top says how it was printed:
+`L20` or `L12` is the first layer, 0.20 or 0.12 mm (a plate's setting in both slicers, so one plate
+each; the layers above are 0.20), and `E15` or `E25` the elephant's-foot compensation, 0.15 or 0.25
+mm (each object's own setting, in the project). The packages print 0.15 now, with a 0.20 mm first
+layer on the P1S and 0.25 on the U1 (Alex's template). Run a fingernail up each coupon's round from
+the bed, and lay a straightedge on the bed against it: the best pair has no ridge or flare at the
+bottom, and the round meets the bed cleanly, with no step. Report the best pair per printer (e.g.
+"P1S: L12 E25"); the packages' first layer and compensation then take it.
 
 **Fit coupons (`4_fit_coupons`):**
 - USB-C: board coupon face down into the top coupon, the tub coupon over it (its tab rises into the

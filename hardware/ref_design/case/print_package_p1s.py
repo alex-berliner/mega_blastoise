@@ -94,17 +94,18 @@ def layout(parts):
     return meshes
 
 
-def own_supports(project, objs):
-    """Give the named objects of an unsliced Bambu project their own support settings."""
+def own_settings(project, objs):
+    """Give the named objects of an unsliced Bambu project their own settings ({object: {key: value}})."""
     import re
     with zipfile.ZipFile(project) as z:
         files = {n: z.read(n) for n in z.namelist()}
-    keys = "".join(f'    <metadata key="{k}" value="{v}"/>\n' for k, v in print_package.OBJECT_SUPPORT.items())
     cfg, n = re.subn(r'(  <object id="\d+">\n    <metadata key="name" value="(%s)\.stl"/>\n)'
-                     % "|".join(map(re.escape, objs)), lambda m: m.group(1) + keys,
+                     % "|".join(map(re.escape, objs)),
+                     lambda m: m.group(1) + "".join(f'    <metadata key="{k}" value="{v}"/>\n'
+                                                    for k, v in objs[m.group(2)].items()),
                      files["Metadata/model_settings.config"].decode())
     if n != len(objs):
-        sys.exit(f"{project}: found {n} of the {len(objs)} objects that need supports")
+        sys.exit(f"{project}: found {n} of the {len(objs)} objects with their own settings")
     files["Metadata/model_settings.config"] = cfg.encode()
     with zipfile.ZipFile(project, "w", zipfile.ZIP_DEFLATED) as z:
         for k, v in files.items():
@@ -145,8 +146,11 @@ def slice_plate(name, parts, supported, tmp):
         print(f"  {name}: Bambu Studio wrote no project")
         return None
     with_supports = [obj for obj, path in parts if path in supported]
-    if with_supports:
-        own_supports(project, with_supports)
+    own_objs = {obj: dict(print_package.OBJECT_SUPPORT if obj in with_supports else {},
+                          **print_package.OBJECT_SETTINGS.get(obj, {}))
+                for obj, _ in parts if obj in with_supports or obj in print_package.OBJECT_SETTINGS}
+    if own_objs:
+        own_settings(project, own_objs)
     mark_presets(project, plate_name)
     cmd = [os.environ["BAMBU_STUDIO"], "--slice", "0", "--export-3mf", name + ".3mf",
            "--outputdir", os.path.join(work, "out"), project]

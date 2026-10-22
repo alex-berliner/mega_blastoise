@@ -53,6 +53,11 @@ KIT = [  # (kit name, file, what it tests)
     for h in ("0.20", "0.16", "0.12", "0.08") for p, what in (
         ("ladder", "overhang ladder: double fins 30 to 80 degrees from vertical (2.5 apart from 50 to 70), front and back"),
         ("rounds", "convex rounds R10, R6, R3 from 80 to 25 degrees from vertical, ticked on their end faces"))
+] + [
+    # the first layer (8_first_layer_*): the tub's bottom edge at a first layer height and an
+    # elephant's-foot compensation, engraved (the slicer settings are the plate's and the object's)
+    ("first_layer", f"test_first_layer_L{l}_E{e}.stl", f"a corner of the tub's bottom edge, for first layer 0.{l}, elephant's foot 0.{e}",
+     {"fl_label": f'"L{l} E{e}"'}) for l in ("20", "12") for e in ("15", "25")
 ]
 
 

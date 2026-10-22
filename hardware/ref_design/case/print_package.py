@@ -91,10 +91,18 @@ PLATES = {
     **{f"7_overhangs_{h}": [(f"overhang_ladder_{h}", f"{KIT}/test_overhang_ladder_{h}.stl"),
                             (f"overhang_rounds_{h}", f"{KIT}/test_overhang_rounds_{h}.stl")]
        for h in ("020", "016", "012", "008")},
+    # the tub's bottom edge at two first layer heights (a plate's setting in both slicers), two
+    # elephant's-foot compensations on each (an object's): the pair that leaves no lip
+    **{f"8_first_layer_0{l}": [(f"first_layer_L{l}_E{e}", f"{KIT}/test_first_layer_L{l}_E{e}.stl") for e in ("15", "25")]
+       for l in ("20", "12")},
 }
 LAYERS = {f"7_overhangs_{h}": f"0.{h[1:]}" for h in ("020", "016", "012", "008")}
 # each plate's own settings over the project's (the slicers' names; the same in Orca and Bambu Studio)
 PLATE_SETTINGS = {plate: {"layer_height": h} for plate, h in LAYERS.items()}
+PLATE_SETTINGS.update({f"8_first_layer_0{l}": {"initial_layer_print_height": f"0.{l}"} for l in ("20", "12")})
+# each object's own settings (kept as they are: a project lists no preset for an object's)
+OBJECT_SETTINGS = {f"first_layer_L{l}_E{e}": {"elefant_foot_compensation": f"0.{e}"}
+                   for l in ("20", "12") for e in ("15", "25")}
 # the system process preset each plate's project names: the one at its layer height
 U1_PRESET = "0.20mm Standard @Snapmaker U1 (0.4 nozzle)"
 U1_PLATE_PRESETS = {plate: f"{h}mm Standard @Snapmaker U1 (0.4 nozzle)" for plate, h in LAYERS.items()}
@@ -284,8 +292,8 @@ def build(plate, parts, z, supported):
         items.append(f'  <item objectid="{oid}" p:UUID="{oid:08x}-b1ec-4553-aec9-835e5b724bb4" '
                      f'transform="1 0 0 0 1 0 0 0 1 {x:.4f} {y:.4f} {size[2] / 2:.4f}" printable="1"/>')
         stl_name = V5_NAMES.get(name, name + ".stl")
-        own = "".join(f'    <metadata key="{k}" value="{v}"/>\n' for k, v in OBJECT_SUPPORT.items()) \
-            if dict(parts)[name] in supported else ""
+        own = dict(OBJECT_SUPPORT if dict(parts)[name] in supported else {}, **OBJECT_SETTINGS.get(name, {}))
+        own = "".join(f'    <metadata key="{k}" value="{v}"/>\n' for k, v in own.items())
         settings.append(f'  <object id="{oid}">\n    <metadata key="name" value="{stl_name}"/>\n{own}'
                         f'    <metadata key="extruder" value="{PLA}"/>\n    <part id="{mid}" subtype="normal_part">\n'
                         f'      <metadata key="name" value="{stl_name}"/>\n'
@@ -325,7 +333,7 @@ def build(plate, parts, z, supported):
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                     cfg[k] = v
-                for k in OBJECT_SUPPORT:
+                for k in [*OBJECT_SUPPORT, *(k for o in OBJECT_SETTINGS.values() for k in o)]:
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                 mark_presets(cfg, U1_SYSTEM, U1_PLATE_PRESETS.get(plate, U1_PRESET),
