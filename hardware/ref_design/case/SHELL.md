@@ -163,6 +163,18 @@ speaker come with it), and everything else lies where it was.
 ![the step and the deck's joint](images/section_joint_zoom.png)
 ![the seam](images/section_seam_zoom.png)
 
+## Row 9: the tub's bottom edge (2026-10-21)
+
+Alex saw a vertical lip on the outside of the tub, all round its bottom edge, on the print of the
+10-20 kit. That tub's mesh has none (its only one was the speaker pad, row 6) and neither kit added
+a brim or support round it. But its round was built in flat 0.1 steps whose faces lay exactly on
+the P1S's slicing planes, and Bambu Studio took the step above or below as it liked: the chamfer
+printed 0.35, 0.1, 0.3, 0.1 out per layer, pairs of layers standing straight at the bed. The
+round is now one smooth solid lofted through the outline every 0.1 (`tub_outside()`), so each
+layer steps out 0.2 on the P1S and the U1, from the wall into the back within `overhang`. If the
+next print still shows a lip, it is the first layer's squish: the kits keep Bambu's and Alex's
+0.15 elephant-foot compensation.
+
 ## Best guesses until `6_tests`
 
 Alex won't print `6_tests` soon, so these are committed as best guesses (2026-10-21). Each is marked

@@ -657,9 +657,26 @@ module spk_pad2d() hull() { spk2d(1.2); translate([-case_w / 2, spk_pos[1] - spk
 
 // ---- the tub (the back): printed back down, as exported ----
 // its outside: the back rolls into the walls (in 0.1 mm layers up the round), up to the seam
+// Smooth, not in steps: one solid lofted through the outline every 0.1 up the round (the outline
+// inset back_in(z), a rounded rectangle whose corners shrink with it), so the slicer meets the real
+// surface. Stepped 0.1 layers put their flat faces exactly on the P1S's slicing planes (0.1, 0.3,
+// 0.5 ...), and it took the step above or below as it liked: the chamfer at the bed printed 0.35,
+// 0.1, 0.3, 0.1 out per layer, a staircase of 0.4 risers (row 9, Alex: "a vertical lip" at the
+// bottom edge)
+back_n = round(back_r / 0.1);                           // the loft's levels: every 0.1 up the round
+corner_n = 18;                                          // points on each corner's quarter arc
+function rr_pts(d, z) = let(hx = case_w / 2 - corner_r, hy = case_l / 2 - corner_r, r = corner_r - d)
+  [for (q = [0:3]) let(cx = (q == 0 || q == 3) ? hx : -hx, cy = q < 2 ? hy : -hy)
+     for (i = [0:corner_n]) let(a = 90 * q + 90 * i / corner_n) [cx + r * cos(a), cy + r * sin(a), z]];
 module tub_outside(h = z_seam) union() {
-  for (k = [0:ceil(back_r / 0.1) - 1]) translate([0, 0, 0.1 * k])
-    linear_extrude(0.1 + 0.01) offset(delta = -back_in(0.1 * k + 0.05)) outline2d();
+  m = 4 * (corner_n + 1);
+  polyhedron(
+    points = [for (k = [0:back_n]) each rr_pts(back_in(k * back_r / back_n), k * back_r / back_n)],
+    faces = concat(
+      [[for (i = [0:m - 1]) i]],                                          // the back
+      [[for (i = [m - 1:-1:0]) back_n * m + i]],                          // the top of the round
+      [for (k = [0:back_n - 1], i = [0:m - 1]) let(a = k * m + i, b = k * m + (i + 1) % m)
+         [a, b, b + m, a + m]]));
   if (h > back_r) translate([0, 0, back_r]) linear_extrude(h - back_r) outline2d();
 }
 module tub() difference() {

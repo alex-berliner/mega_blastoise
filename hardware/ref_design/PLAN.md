@@ -139,11 +139,17 @@ upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plat
 - [ ] 8 Overhang limit for the redesign: `test_overhangs` on `6_tests` (fins 45 to 75 degrees from
       vertical, a convex 6 mm round). Best guess committed 2026-10-21: `overhang` 45, the
       conservative limit, marked GUESS; `6_tests` on the P1S and the U1 confirms or raises it
-- [x] 9 "The curve up from the base ends in a vertical lip": in the model the only vertical face on
-      the round from the base was that speaker pad's (a section every 0.1 mm finds nothing else
-      outside the round); the profile is otherwise tangent all the way: the wall, the 4.2 mm round,
-      and its last 1.23 mm a 45 degree chamfer so it prints flat without supports. If Alex still
-      sees a lip elsewhere on the next print, it's in the print, not the model: ask where
+- [x] 9 "The curve up from the base ends in a vertical lip" (Alex, relayed 2026-10-21: on the
+      outside, at the bottom edge, all round where the floor meets the walls). Rechecked against the
+      10-20 kit's tub (case.scad of e217c6d): the mesh is the same all round (sections every 1 mm of
+      the perimeter, corners too, within 0.003 mm of each other and 0.04 of the ideal profile) and
+      has no lip but the speaker pad (fixed, row 6). The kit had no brim, skirt or perimeter support
+      (P1S: the kit's own G-code; U1: re-sliced with Alex's profile). What the G-code did show: the
+      round was built in flat 0.1 steps whose faces fall on the P1S's slicing planes, so its chamfer
+      printed 0.35, 0.1, 0.3, 0.1 out per layer, pairs of layers stacked straight (0.4 risers) at the
+      bed. The tub's round is now one smooth loft (2026-10-21), so every layer steps out 0.2 on both
+      printers. If the next print still shows a lip, it is the first layer's squish (both kits keep
+      0.15 elephant-foot compensation): a photo or a caliper reading of its height settles it
 - [x] 11 Screw holes filled in: the plate's supports filled the tub's six counterbores. Both kits
       now give supports only to the parts that need them; the P1S kit checks its G-code
       (`case/support_check.py`). `coupon_screws_tub` and `coupon_screws_top` on `6_tests` confirm it
