@@ -48,7 +48,7 @@ def seg_dist(p, a, b):
 
 class Maze:
     def __init__(self, board, net, box, layers, width, clear, via_d, via_drill, fences=(), blocks=(), edge=None,
-                 ignore=(), discs=()):
+                 ignore=(), discs=(), fence_layer=None):
         self.board, self.net, self.layers = board, net, list(layers)
         self.width, self.clear, self.via_d, self.via_drill = width, clear, via_d, via_drill
         self.x0, self.y0 = box[0], box[1]
@@ -93,8 +93,9 @@ class Maze:
                     if z.IsOnLayer(l):
                         self._zone(z, l, self.track[l], grow_t)
                         self._zone(z, l, self.via, grow_v)
-        for f in fences:                         # route.py's fences: top layer (and so no vias)
-            self._rect(f, self.track[self.layers[0]], grow_t)
+        fl = fence_layer if fence_layer in self.layers else self.layers[0]
+        for f in fences:                         # route.py's fences: the core's top layer (and so no vias)
+            self._rect(f, self.track[fl], grow_t)
             self._rect(f, self.via, grow_v)
         for r in blocks:                         # cut-outs: every layer
             for l in self.layers:

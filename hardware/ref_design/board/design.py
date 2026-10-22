@@ -24,7 +24,7 @@ carry the part number as their value.
 
 This is the 2-layer build: TP4056 charger with USB load sharing, ME6211 3V3,
 RP2354B (flash inside), PWM audio into an FM8002A, a face button as the power
-button, a board thermistor over the cell (no LEDs), every hole >= 0.3 mm, and an ER-TFT024IPS-3 panel
+button, a board thermistor at the cell's hole (no LEDs), every hole >= 0.3 mm, and an ER-TFT024IPS-3 panel
 in a ZIF connector.
 """
 
@@ -174,8 +174,10 @@ part("U2", S, "Battery_Management:TP4056-42-ESOP8", "TP4056-42-ESOP8",
       "7": "CHG_STAT_N", "6": "CHG_DONE_N", "3": "GND", "9": "GND"},
      "C16581", "TP4056-42-ESOP8", "TOPPOWER")
 # cell temperature: the TP4056 charges only while TEMP sits between 45% and 80% of VBUS.
-# The 403450 has no NTC wire, so TH1 sits on the board over the cell (which lies under the
-# board, 0.5 mm from its back: TH1 reads it through the board and lags it), about 45 mm from U2 (whose 0.65 W while charging would trip it). TH1 is in parallel with R40:
+# The 403450 has no NTC wire, so TH1 sits on the board at the right edge of the cell's hole,
+# which the case pushes the cell against (2026-10-21: the cell lies in the board's plane; TH1
+# reads it through the board's edge and lags it), about 57 mm from U2 (whose 0.65 W while
+# charging would trip it). TH1 is in parallel with R40:
 # the window is 1 to 46 C (-3 to 49 C across the TP4056's threshold spread). Fed from VBUS,
 # so it draws nothing from the cell. Out of range, CHRG and STDBY both go high (as with no USB)
 R("R39", S, "5.6k", "VBUS", "CHG_TEMP")
@@ -473,7 +475,8 @@ C("C35", S, "100n", "AMP_VDD")
 JP("JP3", S, "VSYS", "AMP_VDD")
 part("#FLG09", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "AMP_VDD"}, bom=False)   # fed through JP3
 # J4 (2026-10-20, Alex: no soldering at assembly): the speaker (INGHAi GSPK151035PN) comes with a
-# 1.25 mm 2-pin plug, so J4 is J2's PicoBlade header (no new part number at JLC)
+# 1.25 mm 2-pin plug, so J4 is J2's PicoBlade header (no new part number at JLC). The cell's plug
+# fits it too: J4 sits by the speaker's hole on the far side of the board from the cell's leads
 part("J4", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "53261-0271",
      "Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal",
      {"1": "SPK_P", "2": "SPK_N", "MP": None}, "C177225", "532610271", "Molex")

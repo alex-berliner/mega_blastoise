@@ -40,8 +40,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BOARD_DIR = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, BOARD_DIR)
-from placement import CASE, CORE  # noqa: E402
-from build_pcb import core_xy, net_class  # noqa: E402
+from placement import CASE, CORE, CUTOUTS  # noqa: E402
+from build_pcb import core_layer, core_xy, net_class  # noqa: E402
 from maze import Maze  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
@@ -53,7 +53,8 @@ STUB_R = 3.3              # contact via distance from the contact centre
 CONTACT_R = 2.9           # nothing but the combs inside this (no pour, no vias, no other tracks)
 VIA_D, VIA_DRILL = 0.5, 0.3     # JLC's standard hole: anything smaller costs extra
 CLEAR = 0.2                 # 0.15 rule + margin: pad outlines are polygons, the check rounds
-# Areas of Raspberry Pi's core the router must stay out of on F.Cu (reference coordinates),
+# Areas of Raspberry Pi's core the router must stay out of on its top layer (F.Cu, or B.Cu when
+# placement.py puts the core on the back; reference coordinates),
 # both already connected by the copied routing:
 #   the 1.1 V switcher's copper (its four small zones)
 #   everything inside the chip's pads (they end 4.5 mm from its centre): the 1.1 V ring
@@ -159,7 +160,7 @@ def planes(board):
         add_zone(board, None, pcbnew.F_Cu, circle(x, y, CONTACT_R), 0, f"{ref} contact", keepout=("pour", "vias"))
     u4 = board.FindFootprintByReference("U4")
     cx, cy = xy(u4.GetPosition())
-    add_zone(board, "+3V3", pcbnew.F_Cu, rect(cx - PAD_RING, cy - PAD_RING, cx + PAD_RING, cy + PAD_RING), 2,
+    add_zone(board, "+3V3", core_layer(pcbnew.F_Cu), rect(cx - PAD_RING, cy - PAD_RING, cx + PAD_RING, cy + PAD_RING), 2,
              "3V3 inside the pads")
 
 
@@ -224,7 +225,7 @@ def core_3v3_stubs(board):
             end = (cx + math.copysign(PAD_RING - 0.6, dx), py)
         else:
             end = (px, cy + math.copysign(PAD_RING - 0.6, dy))
-        add_track(board, (px, py), end, net, 0.2)
+        add_track(board, (px, py), end, net, 0.2, core_layer(pcbnew.F_Cu))
         added.append(pad.GetNumber())
     print("3V3 stubs into the pour for U4 pins:", added)
 
@@ -481,12 +482,8 @@ def edge_box(inset=0.6):
 
 
 def slot_boxes():
-    """The board's holes for the cell's and the speaker's plugs, as (x0, y0, x1, y1)."""
-    out = []
-    for key in ("slot", "spk_slot"):
-        (sx0, sy0), (sx1, sy1) = CASE[key]
-        out.append((min(sx0, sx1), min(sy0, sy1), max(sx0, sx1), max(sy0, sy1)))
-    return out
+    """The board's cutouts (the cell's and the speaker's holes), as (x0, y0, x1, y1)."""
+    return [tuple(c["box"]) for c in CUTOUTS]
 
 
 MAX_RIPPED = 6            # connections the maze pass may take other nets' copper up for
@@ -498,7 +495,8 @@ def maze_for(board, net, a, b, reach=6.0, ignore=()):
     box = (max(min(a[0], b[0]) - reach, e[0]), max(min(a[1], b[1]) - reach, e[1]),
            min(max(a[0], b[0]) + reach, e[2]), min(max(a[1], b[1]) + reach, e[3]))
     return Maze(board, net, box, (pcbnew.F_Cu, pcbnew.B_Cu), c["track"], c["clear"], c["via"], c["drill"],
-                fences=core_fences(), blocks=slot_boxes(), edge=e, ignore=set(ignore),
+                fences=core_fences(), fence_layer=core_layer(pcbnew.F_Cu), blocks=slot_boxes(), edge=e,
+                ignore=set(ignore),
                 discs=[((x, y), CONTACT_R) for x, y in CASE["buttons"].values()])
 
 
@@ -755,21 +753,23 @@ def dsn_for_router(text, contacts, fences, circles=()):
         text = re.sub(r"(\(net " + re.escape(net) + r"\s*\(pins )([^()]*)(\))", r"\1\3", text)
     text = re.sub(r"\(image battler:DSL_button_4ring.*?\n    \)",
                   lambda m: re.sub(r"\n\s*\(pin [^\n]*", "", m.group(0)), text, flags=re.S)
-    while True:
-        i = text.find('(keepout "" (polygon F.Cu')
-        if i < 0:
-            break
-        text = text[:i].rstrip(" ") + text[dsn_block_ends(text, i):].lstrip("\n")
+    for layer in ("F.Cu", "B.Cu"):
+        while True:
+            i = text.find(f'(keepout "" (polygon {layer}')
+            if i < 0:
+                break
+            text = text[:i].rstrip(" ") + text[dsn_block_ends(text, i):].lstrip("\n")
     extra = "".join(f'\n    (keepout "" (circle F.Cu 5800 {x * 1000:.0f} {-y * 1000:.0f}))' for _, x, y in contacts)
     extra += "".join(f'\n    (keepout "" (circle F.Cu {2 * r * 1000:.0f} {x * 1000:.0f} {-y * 1000:.0f}))'
                      for x, y, r in circles)
+    fence_layer = "B.Cu" if core_layer(pcbnew.F_Cu) == pcbnew.B_Cu else "F.Cu"
     for x0, y0, x1, y1 in fences:
         pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(x0, y0, x1, y1))
-        extra += f'\n    (keepout "" (polygon F.Cu 0 {pts}))'
-    # the plug holes: the router's copy of the outline doesn't keep its tracks 0.2 mm off
-    # their rounded ends, so each gets a keep-out on both layers
+        extra += f'\n    (keepout "" (polygon {fence_layer} 0 {pts}))'
+    # the cutouts: the router's copy of the outline doesn't keep its tracks 0.2 mm off
+    # their rounded corners, so each gets a keep-out on both layers
     for sx0, sy0, sx1, sy1 in slot_boxes():
-        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.5, sy0 - 0.5, sx1 + 0.5, sy1 + 0.5))
+        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.3, sy0 - 0.3, sx1 + 0.3, sy1 + 0.3))
         for layer in ("F.Cu", "B.Cu"):
             extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     i = text.index("  (placement")

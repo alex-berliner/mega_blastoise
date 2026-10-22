@@ -5,13 +5,16 @@
 Starts from an empty 2-layer board every time:
   1. stack-up, design rules (JLCPCB 2-layer, every hole >= 0.3 mm: smaller ones cost
      extra), net classes
-  2. outline and the cell and speaker plug holes from case/positions.json
+  2. outline from case/positions.json, and the holes the cell and the speaker sit in
+     (placement.CUTOUTS)
   3. every footprint from KiCad's netlist, with its nets, fields and a link to
      its schematic symbol (so KiCad's DRC can check board against schematic)
   4. placement from placement.py
   5. the RP2354B core: placement, tracks, vias and small zones copied from
      Raspberry Pi's RP2350B minimal design (MIT, 2 layers like this board), turned and
-     moved onto this board; the reference's flash and its routing stay behind
+     moved onto this board, and turned over onto its back when placement.CORE_SIDE is "B"
+     (mirrored top to bottom, its copper on the other layer); the reference's flash and
+     its routing stay behind
   6. the reference's routing out of the chip's pins, for every pin used here, as far
      as ESCAPE past the pads (copy_escapes): the router starts from those ends
 Routing and pours are done afterwards by tools/route.py.
@@ -28,7 +31,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, BOARD_DIR)
 
 import netlist  # noqa: E402
-from placement import CASE, CORE, CORE_AT, CORE_NETS, CORE_ROT, P  # noqa: E402
+from placement import CASE, CORE, CORE_AT, CORE_NETS, CORE_ROT, CORE_SIDE, CUTOUTS, P  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 REF = os.path.join(os.path.dirname(BOARD_DIR), "..", "..", "..", "tmp")  # replaced below
@@ -71,13 +74,21 @@ def xy(v):
 
 
 def core_xy(x, y):
-    """Reference board coordinates -> this board (reference U1 sits at 100,100)."""
+    """Reference board coordinates -> this board (reference U1 sits at 100,100). On the
+    back the core is the front's layout turned over top to bottom (mirrored in y)."""
     dx, dy = x - 100.0, y - 100.0
     a = math.radians(CORE_ROT)
     # KiCad turns counter-clockwise on screen with Y pointing down
     nx = dx * math.cos(a) + dy * math.sin(a)
     ny = -dx * math.sin(a) + dy * math.cos(a)
-    return CORE_AT[0] + nx, CORE_AT[1] + ny
+    return CORE_AT[0] + nx, CORE_AT[1] + (-ny if CORE_SIDE == "B" else ny)
+
+
+def core_layer(layer):
+    """The reference's copper layer -> this board's (the other one when the core is on the back)."""
+    if CORE_SIDE != "B":
+        return layer
+    return {pcbnew.F_Cu: pcbnew.B_Cu, pcbnew.B_Cu: pcbnew.F_Cu}.get(layer, layer)
 
 
 def load_fp(fpid):
@@ -178,20 +189,9 @@ def outline(board):
         arc(board, (x1 - r, y1 - r), r, 0, 90)
         arc(board, (x0 + r, y1 - r), r, 90, 180)
         arc(board, (x0 + r, y0 + r), r, 180, 270)
-    # the board's cutouts, the holes the cell's and the speaker's plugs pass up through: round
-    # when their corners are rounded to half their side
-    for key in ("slot", "spk_slot"):
-        (sx0, sy0), (sx1, sy1) = CASE[key]
-        r = CASE.get("slot_r", 0.6)
-        if abs(sx1 - sx0) <= 2 * r + 1e-6:
-            c = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_CIRCLE)
-            c.SetCenter(V((sx0 + sx1) / 2, (sy0 + sy1) / 2))
-            c.SetRadius(mm(r))
-            c.SetLayer(pcbnew.Edge_Cuts)
-            c.SetWidth(mm(0.1))
-            board.Add(c)
-        else:
-            rounded_rect(board, sx0, min(sy0, sy1), sx1, max(sy0, sy1), r)
+    # the board's cutouts: the cell and the speaker sit in them, in the board's plane
+    for c in CUTOUTS:
+        rounded_rect(board, *c["box"], c["r"])
 
 
 def footprints(board, comps, nets, pins):
@@ -250,6 +250,8 @@ def copy_core(board, fps, netinfo):
         rf = rfps[rref]
         x, y = core_xy(*xy(rf.GetPosition()))
         place(fps[ours], x, y, rf.GetOrientationDegrees() + CORE_ROT)
+        if CORE_SIDE == "B":
+            fps[ours].Flip(fps[ours].GetPosition(), pcbnew.FLIP_DIRECTION_TOP_BOTTOM)
         new_pads = {}
         for p in fps[ours].Pads():
             new_pads.setdefault(p.GetNumber(), []).append(xy(p.GetPosition()))
@@ -292,11 +294,18 @@ def copy_core(board, fps, netinfo):
             continue
         if any((inside(s, b) or inside(e, b)) and t.GetLayer() in layers for b, layers in foreign):
             continue
-        items.append(("track", net, s, e, pcbnew.ToMM(t.GetWidth()), t.GetLayer()))
+        items.append(("track", net, s, e, pcbnew.ToMM(t.GetWidth()), core_layer(t.GetLayer())))
 
     def land(pt):
         k = tuple(round(v, 3) for v in pt)
         return pad_map.get(k) or core_xy(*pt)
+
+    # nothing of the reference's copper in or near this board's cutouts (its parts out by the
+    # flash, placed here by placement.py, left vias and tracks there)
+    def near_cutout(pt, grow=0.6):
+        return any(c["box"][0] - grow <= pt[0] <= c["box"][2] + grow and c["box"][1] - grow <= pt[1] <= c["box"][3] + grow
+                   for c in CUTOUTS)
+    items = [it for it in items if not near_cutout(land(it[2])) and (it[0] == "via" or not near_cutout(land(it[3])))]
     pads = [p for f in fps.values() for p in f.Pads()]
 
     def hits_foreign_pad(net, a, b, width, layer):
@@ -326,9 +335,9 @@ def copy_core(board, fps, netinfo):
     def in_pour(it, pt):
         if it[0] != "track":
             return False
-        if it[1] == "GND" and it[5] == pcbnew.B_Cu:
+        if it[1] == "GND" and it[5] == core_layer(pcbnew.B_Cu):
             return True
-        return it[1] == "+3V3" and it[5] == pcbnew.F_Cu and inside(land(pt), pour)
+        return it[1] == "+3V3" and it[5] == core_layer(pcbnew.F_Cu) and inside(land(pt), pour)
 
     def copied_zone(z):
         bb = z.GetBoundingBox()
@@ -338,7 +347,7 @@ def copy_core(board, fps, netinfo):
                    if not z.GetIsRuleArea() and z.GetNetname() in CORE_NETS and copied_zone(z)]
 
     def zone_layers(net, pt):
-        return {l for z in small_zones if CORE_NETS[z.GetNetname()] == net
+        return {core_layer(l) for z in small_zones if CORE_NETS[z.GetNetname()] == net
                 for l in (pcbnew.F_Cu, pcbnew.B_Cu) if z.IsOnLayer(l) and z.Outline().Contains(V(*pt))}
 
     # drop routing left dangling by what we didn't copy (repeat until stable)
@@ -407,7 +416,11 @@ def copy_core(board, fps, netinfo):
         if not z.GetIsRuleArea() and z.GetNetname() not in CORE_NETS:
             continue
         nz = pcbnew.ZONE(board)
-        nz.SetLayerSet(z.GetLayerSet())
+        ls = pcbnew.LSET()
+        for l in (pcbnew.F_Cu, pcbnew.B_Cu):
+            if z.IsOnLayer(l):
+                ls.AddLayer(core_layer(l))
+        nz.SetLayerSet(ls)
         outline_ = z.Outline().Outline(0)
         pts = [core_xy(*xy(outline_.CPoint(k))) for k in range(outline_.PointCount())]
         nz.Outline().NewOutline()
@@ -471,7 +484,7 @@ def copy_escapes(board, fps, netinfo):
     def hits_pad(net, a, b, width):
         n = max(2, int(math.dist(a, b) / 0.05))
         for p in pads:
-            if p.GetNetname() == net or not p.IsOnLayer(pcbnew.F_Cu):
+            if p.GetNetname() == net or not p.IsOnLayer(core_layer(pcbnew.F_Cu)):
                 continue
             if p.GetBoundingBox().Distance(V(*a)) > mm(4) and p.GetBoundingBox().Distance(V(*b)) > mm(4):
                 continue
@@ -511,7 +524,7 @@ def copy_escapes(board, fps, netinfo):
             t.SetStart(V(*a))
             t.SetEnd(V(*b))
             t.SetWidth(mm(w))
-            t.SetLayer(pcbnew.F_Cu)
+            t.SetLayer(core_layer(pcbnew.F_Cu))
             t.SetNet(netinfo[net])
             t.SetLocked(True)
             board.Add(t)

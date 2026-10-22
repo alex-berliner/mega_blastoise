@@ -9,8 +9,6 @@
   one that finds no clear spot is hidden
 - labels: board name and revision (back), test pad names, connector names
   and the battery's + pin
-- outlines on the back where the shell sticks the cell and the speaker to the board
-  (case/positions.json: cell, speaker), labelled
 Run after routing; it only touches silkscreen text, and can be run again.
 """
 import os
@@ -21,7 +19,7 @@ import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__))
 BOARD_DIR = os.path.dirname(HERE)
 sys.path.insert(0, BOARD_DIR)
-from placement import CASE  # noqa: E402
+from placement import CASE, CUTOUTS  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-323", "D_SOD-123", "C_0805", "L_1008",
@@ -75,10 +73,10 @@ def main():
         if t.GetClass() == "PCB_VIA":
             obstacles[pcbnew.F_SilkS].append(box(t, 0.1))
             obstacles[pcbnew.B_SilkS].append(box(t, 0.1))
-    # the holes the cell's and the speaker's plugs pass through: no text within 0.6 of them
-    for key in ("slot", "spk_slot"):
-        (x0, y0), (x1, y1) = CASE[key]
-        hole = (min(x0, x1) - 0.6, min(y0, y1) - 0.6, max(x0, x1) + 0.6, max(y0, y1) + 0.6)
+    # the cell's and the speaker's holes: no text within 0.6 of them
+    for c in CUTOUTS:
+        x0, y0, x1, y1 = c["box"]
+        hole = (x0 - 0.6, y0 - 0.6, x1 + 0.6, y1 + 0.6)
         obstacles[pcbnew.F_SilkS].append(hole)
         obstacles[pcbnew.B_SilkS].append(hole)
     shown = hidden = 0
@@ -130,44 +128,13 @@ def main():
         obstacles[layer].append(b)
 
     # the board's name, revision (design.BOARD_REV, which firmware also reads from GPIO22-25)
-    # and build, on the back
+    # and build, on the back between seat 2's clusters (the core took the middle of the back)
     import design
     back = pcbnew.B_SilkS
-    text("TWO-PLAYER HANDHELD  REF-A", 100, 116.0, back, h=1.2)
-    text(f"REV {design.BOARD_REV}", 100, 119.0, back, h=2.0)
-    text("2 LAYERS  1.6 MM  ENIG", 100, 121.6, back)
-    # where the cell and the speaker go: the shell sticks them to the board's back before the
-    # board goes face down (case/SHELL.md), so their outlines show where the tub expects them
-    def line(a, b):
-        sh = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
-        sh.SetStart(V(*a))
-        sh.SetEnd(V(*b))
-        sh.SetLayer(back)
-        sh.SetWidth(mm(0.15))
-        board.Add(sh)
-
-    def arc(c, start):           # a half circle, clockwise from start
-        sh = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_ARC)
-        sh.SetCenter(V(*c))
-        sh.SetStart(V(*start))
-        sh.SetArcAngleAndEnd(pcbnew.EDA_ANGLE(180, pcbnew.DEGREES_T), True)
-        sh.SetLayer(back)
-        sh.SetWidth(mm(0.15))
-        board.Add(sh)
-
-    (cx0, cy0), (cx1, cy1) = CASE["cell"]
-    corners = [(cx0, cy0), (cx1, cy0), (cx1, cy1), (cx0, cy1)]
-    for i in range(4):
-        line(corners[i], corners[(i + 1) % 4])
-    text("CELL", (cx0 + cx1) / 2, cy0 + 2.0, back, h=1.0)
-    (sx, sy), (sw, sh_) = CASE["speaker"]["c"], CASE["speaker"]["size"]
-    r = sh_ / 2                                   # a racetrack: round ends on its short sides
-    line((sx - sw / 2 + r, sy - r), (sx + sw / 2 - r, sy - r))
-    line((sx - sw / 2 + r, sy + r), (sx + sw / 2 - r, sy + r))
-    arc((sx + sw / 2 - r, sy), (sx + sw / 2 - r, sy - r))
-    arc((sx - sw / 2 + r, sy), (sx - sw / 2 + r, sy + r))
-    text("SPEAKER", sx, sy, back, h=1.0)
-    # test pads (back, above the speaker pads), one name under each
+    text("TWO-PLAYER HANDHELD  REF-A", 100, 57.6, back, h=1.2)
+    text(f"REV {design.BOARD_REV}", 100, 60.6, back, h=2.0)
+    text("2 LAYERS  1.6 MM  ENIG", 100, 63.2, back)
+    # test pads (back, between seat 2's clusters), one name under each
     for i, name in enumerate(["VBUS", "VSYS", "VBAT", "3V3", "GND"]):
         tp = board.FindFootprintByReference(f"TP{i + 1}")
         x, y = pcbnew.ToMM(tp.GetPosition().x), pcbnew.ToMM(tp.GetPosition().y)
@@ -181,19 +148,21 @@ def main():
     jb = box(j7)
     text("SWD PADS", (jb[0] + jb[2]) / 2, jb[1] - 0.9, back)
     j4 = board.FindFootprintByReference("J4")
-    text("SPK PLUG", pcbnew.ToMM(j4.GetPosition().x), pcbnew.ToMM(j4.GetPosition().y) + 2.7, back)
+    j4b = box(j4)
+    text("SPK", j4b[2] + 1.6, (j4b[1] + j4b[3]) / 2, pcbnew.F_SilkS)
     # front: connectors and buttons people solder to or press during bring-up
     j2 = board.FindFootprintByReference("J2")
     p1 = next(p for p in j2.Pads() if p.GetNumber() == "1")
     b1 = box(p1)
     text("+", pcbnew.ToMM(p1.GetPosition().x), b1[3] + 0.9, h=1.0)
     jb = box(j2)
-    text("BATT", (jb[0] + jb[2]) / 2, jb[1] - 0.9)       # above it: the backlight op-amp sits on its left
+    text("BATT", (jb[0] + jb[2]) / 2, jb[3] + 0.9)       # below it: its mouth faces the cell's hole
     j3 = board.FindFootprintByReference("J3")
     row = [xy for xy in ((pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y)) for p in j3.Pads())]
     text("PANEL", min(x for x, _ in row) - 5.2, row[0][1])
-    text("SWD", CASE["swd"][0] + 4.4, CASE["swd"][1])
-    text("UART", CASE["uart"][0] + 4.6, CASE["uart"][1])
+    for ref, name in (("J5", "SWD"), ("J6", "UART")):
+        jb = box(board.FindFootprintByReference(ref))
+        text(name, jb[2] + 0.4 + 0.33 * len(name), (jb[1] + jb[3]) / 2)
     text("BOOT", CASE["pinholes"][0][0] + 4.6, CASE["pinholes"][0][1])
     text("RESET", CASE["pinholes"][1][0] + 4.8, CASE["pinholes"][1][1])
     if clashes:
