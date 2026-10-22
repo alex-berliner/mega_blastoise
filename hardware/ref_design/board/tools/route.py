@@ -1068,7 +1068,9 @@ def run_freerouting(board, passes, contacts):
             log = freerouting_19(args)
         else:
             print("routing:", " ".join(args), flush=True)
-            r = subprocess.run(["java", "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false", *args],
+            # 2.x sends usage analytics unless told not to (Alex, 2026-10-22: off)
+            r = subprocess.run(["java", "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false",
+                                "--usage_and_diagnostic_data.disable_analytics=true", *args],
                                capture_output=True, text=True, timeout=3 * 3600, cwd=tmp)
             log = r.stdout + r.stderr
         open(os.path.join(LOGS, "freerouting.log"), "a").write(log)
