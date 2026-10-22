@@ -26,7 +26,7 @@ SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-32
          "Fiducial", "MountingHole", "DSL_button", "AOTA", "ABM8")
 TEXT_H = 0.8        # mm; JLC's minimum legible silk is about 0.8 mm tall, 0.15 mm line
 # parts whose label below says more than their reference would
-LABELLED = {"J2", "J3", "J4", "J5", "J6", "J7", "SW18", "SW19", "TP1", "TP2", "TP3", "TP4", "TP5",
+LABELLED = {"J2", "J3", "J5", "J6", "J7", "SW18", "SW19", "TP1", "TP2", "TP3", "TP4", "TP5",
             "TP9", "TP10", "TP11", "TP12", "TP13", "TP14", "TP15", "TP16"}
 # the probe pads added for bring-up (2026-10-19): the name printed beside each
 PROBE_NAMES = {"TP9": "1V1", "TP10": "BLREF", "TP11": "SCK", "TP12": "MOSI", "TP13": "CS", "TP14": "DC",
@@ -147,9 +147,6 @@ def main():
     j7 = board.FindFootprintByReference("J7")
     jb = box(j7)
     text("SWD PADS", (jb[0] + jb[2]) / 2, jb[1] - 0.9, back)
-    j4 = board.FindFootprintByReference("J4")
-    j4b = box(j4)
-    text("SPK", j4b[2] + 1.6, (j4b[1] + j4b[3]) / 2, pcbnew.F_SilkS)
     # front: connectors and buttons people solder to or press during bring-up
     j2 = board.FindFootprintByReference("J2")
     p1 = next(p for p in j2.Pads() if p.GetNumber() == "1")

@@ -46,8 +46,22 @@ def buttons():
     sh.text(86.36, 71.12, "it through Q1 as PWR_BTN_N.")
     sh.heading(231.14, 22.86, "Seat 2 Start/Select")
     column(["SW22", "SW23"], 248.92, 35.56)
-    sh.text(17.78, 165.1, "Bare ENIG contacts under DS Lite silicone (D-pad and face buttons DSL_button_4ring, Start and")
-    sh.text(17.78, 168.91, "Select DSL_button_3ring); the firmware enables the pull-ups. One GPIO per contact.")
+    # the two shift registers and their pull-up arrays
+    for col, (u, c, rns) in enumerate((("U8", "C52", ("RN1", "RN2")), ("U9", "C53", ("RN3", "RN4")))):
+        x0 = 63.5 + col * 124.46
+        sh.place(u, x0 + 20.32, 76.2, 0, f=(0, -15.24))
+        for n in ("1", "2", "15", "8", "16", "10", "9", "11", "12", "13", "14", "3", "4", "5", "6"):
+            sh.tag(f"{u}.{n}", 5.08)
+        sh.nc(f"{u}.7")
+        sh.place(c, x0 + 40.64, 76.2, 0, f=("r", G))
+        sh.tag(f"{c}.1", G); sh.tag(f"{c}.2", G)
+        for k, rn in enumerate(rns):
+            sh.place(rn, x0 + 12.7 + k * 20.32, 129.54, 0, f=(0, -10.16))
+            for n in "12345678":
+                sh.tag(f"{rn}.{n}", 5.08)
+    sh.text(17.78, 165.1, "D-pad and face buttons: bare ENIG combs under DS Lite silicone, read through a 74HC165 per seat (chained: U9's")
+    sh.text(17.78, 168.91, "Q7 into U8's DS; SR_PL low loads, 16 SR_CLK rises shift P1 Y..UP then P2 Y..UP out of SR_DATA, low = pressed).")
+    sh.text(17.78, 172.72, "Start/Select: 4 mm metal domes (HYP 600-415S-260), their own GPIOs; both Starts sit on VSYS (Power sheet).")
     return sh
 
 
@@ -102,7 +116,7 @@ def usb_charger():
     sh.nc("J1.A8"); sh.nc("J1.B8")
     for n in ("A9", "B4", "B9", "A12", "B1", "B12"):
         pass                                     # stacked on A4 / A1
-    sh.wire("J1.A4", (VB_END := 217.17, VB))
+    sh.wire("J1.A4", (VB_END := 139.7, VB))
     sh.rail("VBUS", sh.wire((58.42, VB), (58.42, VB - G)))
     # CC2 hangs off its own row nearest the connector, CC1 runs on past it
     for net, row, xs, pd, dnp, ser in (("CC2", 53.34, (55.88, 68.58, 83.82), "R2", "C43", "R4"),
@@ -143,76 +157,23 @@ def usb_charger():
     sh.place("C1", 139.7, VB + 7.62 + 3.81, 0, f=("r", G))
     sh.wire((139.7, VB), "R41.1"); sh.tag("C1.2", 0)
     sh.label("VBUS_C1", sh.wire("R41.2", (142.24, VB + 7.62)), "right")
-    # ---- charger
-    Ux, Uy = 180.34, 71.12
-    sh.heading(160.02, 35.56, "Charger (TP4056)")
-    sh.place("U2", Ux, Uy, 0, f=(12.7, -15.24))
-    sh.wire((Ux, VB), "U2.4")
-    sh.wire("U2.3", (Ux, Uy + 15.24)); sh.wire("U2.9", (Ux - 2.54, Uy + 15.24), (Ux, Uy + 15.24))
-    sh.gnd((Ux, Uy + 15.24))
-    # CE: R43 pulls it to VBUS, Q4 (CHG_OFF) pulls it low
-    sh.place("R43", 160.02, VB + 3.81 + 7.62, 0, f=("l", 0))
-    sh.wire((160.02, VB), "R43.1"); sh.wire("R43.2", (160.02, Uy - 5.08), "U2.8")
-    sh.place("Q4", 157.48, Uy, 0, f="l")
-    sh.wire((160.02, Uy - 5.08), "Q4.3"); sh.tag("Q4.2", 0)
-    sh.place("R44", 139.7, Uy + 3.81, 0, f=("l", G))
-    sh.wire("Q4.1", (116.84, Uy))
-    sh.label("CHG_OFF", (116.84, Uy), "left")
-    sh.wire((139.7, Uy), "R44.1"); sh.tag("R44.2", 0)
-    # status outputs: open drain, pulled up to 3V3 for the MCU
-    # (CHG_STAT_N stops short of R9, so R9's rail has the row to itself)
-    yc, yd = 91.44, 101.6
-    sh.wire("U2.7", (165.1, Uy), (165.1, yc), (137.16, yc))
-    sh.label("CHG_STAT_N", (137.16, yc), "left")
-    sh.place("R10", 147.32, yc - 3.81, 180, f=("r", -H))
-    sh.wire((147.32, yc), "R10.1"); sh.tag("R10.2", 0)
-    sh.wire("U2.6", (167.64, Uy + 2.54), (167.64, yd), (106.68, yd))
-    sh.label("CHG_DONE_N", (106.68, yd), "left")
-    sh.place("R9", 116.84, yd - 3.81, 180, f=("r", -H))
-    sh.wire((116.84, yd), "R9.1"); sh.tag("R9.2", 0)
-    # PROG and TEMP
-    sh.place("R5", Ux + 12.7, Uy + 2.54 + 3.81 + 12.7, 0, f=("r", G))
-    sh.wire("U2.2", "R5.1"); sh.tag("R5.2", 0)
-    yt = 99.06
-    sh.heading(187.96, 111.76, "Cell temperature window")
-    sh.wire("U2.1", (Ux + 21.59, Uy), (Ux + 21.59, yt), (251.46, yt))
-    sh.place("R39", 210.82, yt - 3.81, 0, f=("l", -H))
-    sh.wire((210.82, yt), "R39.2"); sh.tag("R39.1", 0)
-    for x, ref in ((220.98, "R40"), (233.68, "TH1"), (251.46, "C41")):
-        sh.place(ref, x, yt + 3.81, 0, f=("r", G))
-        sh.wire((x, yt), f"{ref}.1"); sh.tag(f"{ref}.2", 0)
-    # BAT out to the load sharing switch and the cell
-    YB = 66.04
-    QX = 236.22                                  # Q2, D5, D7 column
-    sh.wire("U2.5", (QX - 5.08, YB))
-    sh.place("C3", 207.01, YB + 3.81, 0, f=("r", G))
-    sh.wire((207.01, YB), "C3.1"); sh.tag("C3.2", 0)
-    sh.rail("VBAT", sh.wire((214.63, YB), (214.63, YB - G)))
-    # ---- load sharing: USB through R47/D5, the cell through Q2 (D7 across it)
-    sh.heading(215.9, 35.56, "Load sharing")
-    sh.place("R47", QX - 15.24, VB, 90)
-    sh.place("D5", QX, VB, 180)
-    sh.wire((VB_END, VB), "R47.1"); sh.wire("R47.2", "D5.2")
-    XS = QX + 15.24                              # VSYS node
-    sh.wire("D5.1", (XS, VB), (XS, YB))
-    sh.place("D7", QX, 55.88, 180)
-    sh.wire((QX - 17.78, YB), (QX - 17.78, 55.88), "D7.2"); sh.wire("D7.1", (XS, 55.88))
-    sh.place("Q2", QX, YB + 2.54, 90, f=(-15.24, 5.08))
-    sh.wire("Q2.2", (XS, YB))
-    yg = 78.74
-    sh.place("D6", QX + 7.62, yg, 0)
-    sh.wire("Q2.1", (QX, yg), "D6.1")
-    sh.rail("VBUS", sh.stub("D6.2", G))
-    sh.place("R6", QX - 10.16, yg + 3.81, 0, f=("l", G))
-    sh.wire((QX, yg), (QX - 10.16, yg), "R6.1"); sh.tag("R6.2", 0)
-    sh.names = {"LS_GATE": (QX - 8.89, yg, 0)}
-    tp(sh, "TP7", sh.wire((QX, yg), (QX, yg + 7.62)), down=True)
-    # VSYS out
-    sh.rail("VSYS", sh.wire((XS, VB), (XS, VB - G)))
-    sh.wire((XS, VB), (QX + 38.1, VB))
-    sh.flag("#FLG03", (XS + 3.81, VB))
-    sh.place("C9", XS + 12.7, VB + 3.81, 0, f=("r", G)); sh.wire((XS + 12.7, VB), "C9.1"); sh.tag("C9.2", 0)
-    sh.place("C2", XS + 22.86, VB + 3.81, 0, f=("r", G)); sh.wire((XS + 22.86, VB), "C2.1"); sh.tag("C2.2", 0)
+    # ---- charger: BQ24073 power path (2026-10-21, row 16), every pin labelled
+    Ux, Uy = 190.5, 78.74
+    sh.heading(160.02, 35.56, "Charger and power path (BQ24073)")
+    sh.place("U2", Ux, Uy, 0, f=(0, -20.32))
+    for n in ("13", "10", "11", "2", "3", "16", "12", "6", "5", "4", "15", "1", "7", "9", "8", "17"):
+        sh.tag(f"U2.{n}", 5.08)
+    sh.nc("U2.14")
+    # its resistors, the thermistor and the caps, in a row under it
+    yr = 132.08
+    sh.heading(101.6, yr - 15.24, "Charge current, input mode, status, cell temperature")
+    for i, ref in enumerate(("R5", "R64", "R43", "R44", "R9", "R10", "TH1", "C41", "C3", "C2")):
+        x = 106.68 + i * 12.7
+        sh.place(ref, x, yr, 0, f=("r", G))
+        sh.tag(f"{ref}.1", G)
+        sh.tag(f"{ref}.2", G)
+    tp(sh, "TP7", sh.wire((sh.sym["TH1"]["x"] - 5.08, yr - 7.62), (sh.sym["TH1"]["x"] - 5.08, yr - 7.62)))
+    sh.label("CHG_TEMP", (sh.sym["TH1"]["x"] - 5.08, yr - 7.62), "left")
     # ---- battery connector
     bx, by = 259.08, 129.54
     sh.heading(231.14, 119.38, "Battery connector J2")
@@ -223,8 +184,8 @@ def usb_charger():
     sh.rail("VBAT", sh.stub("JP5.2", G))
     sh.wire("J2.2", (bx - 7.62, by + 2.54), (bx - 7.62, by + 5.08), v=False)
     sh.gnd((bx - 7.62, by + 5.08))
-    sh.text(17.78, 177.8, "TP4056 charges at 333-364 mA (R5), from 1 to 46 C (TH1 over the cell). USB feeds the system through D5;")
-    sh.text(17.78, 181.61, "without USB the cell does, through Q2; on an unplug D7 carries VSYS until R38 has drained VBUS and Q2 is on.")
+    sh.text(17.78, 177.8, "BQ24073: OUT (VSYS) 4.4 V from USB with the system first, 475 mA in (USB500, EN1 high), 270 mA charge (R5),")
+    sh.text(17.78, 181.61, "5 h timer, OVP 6.6 V, TS window 3.5-47 C (TH1 B3950 at the cell hole's edge). Without USB the cell feeds OUT.")
     sh.text(17.78, 185.42, "CC1/CC2_SENSE let firmware read the source's current offer (dim the backlight on a 500 mA port).")
     return sh
 
@@ -305,6 +266,13 @@ def power():
     sh.tag("R16.2", 0)
     sh.wire("Q1.3", (Qx + 7.62, Qy - 5.08))
     sh.label("PWR_BTN_N", (Qx + 7.62, Qy - 5.08), "right")
+    # ---- seat 2's Start (row 1, 2026-10-21): D8 ORs it into PWR_EN, Q7 reads it for GPIO10
+    sh.heading(101.6, 121.92, "Seat 2 Start: power on and sense")
+    for i, ref in enumerate(("D8", "R62", "Q7", "R63")):
+        x = 109.22 + i * 17.78
+        sh.place(ref, x, 139.7, 0 if ref != "D8" else 90, f=("r", G) if ref != "Q7" else "r")
+        for n in (("1", "2") if ref != "Q7" else ("1", "2", "3")):
+            sh.tag(f"{ref}.{n}", G)
     # ---- cell voltage divider
     bx, by = 172.72, 86.36
     sh.heading(160.02, 68.58, "Cell voltage sense")
@@ -323,7 +291,7 @@ def power():
     for i, ref in enumerate(("TP5", "TP15", "TP16")):
         a = tp(sh, ref, (200.66 + i * 15.24, 139.7))
         sh.gnd(sh.wire(a, (a[0], a[1] + G)))
-    sh.text(17.78, 177.8, "Power: the button (seat 1's Start contact), the MCU (PWR_HOLD) or USB raise PWR_EN. Releasing it with")
+    sh.text(17.78, 177.8, "Power: either seat's Start contact, the MCU (PWR_HOLD) or USB raise PWR_EN. Releasing it with")
     sh.text(17.78, 181.61, "PWR_HOLD low turns the device off. A reset drops PWR_HOLD, so a crash turns it off.")
     sh.text(17.78, 185.42, "Q1 lets the MCU see the button (PWR_BTN_N low = pressed) without exposing a pin to VSYS.")
     return sh

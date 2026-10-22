@@ -43,16 +43,16 @@ CUTOUTS = [
 # cross is below. The decouplers on its long sides would land on the side screw, J2 or the folded
 # FPC: they are placed by hand below, as close to their pins as that allows.
 CORE_SIDE = "F"
-CORE_AT = (78.5, 119.5)
+CORE_AT = (77.8, 119.5)
 CORE_Y = CORE_AT[1]
-CORE_ESCAPES = False        # straight stubs (build_pcb.straight_escapes): Raspberry Pi's 45 degree escapes run into the side screw here
+CORE_ESCAPES = True         # Raspberry Pi's pin escapes (False: straight stubs, build_pcb.straight_escapes)
 CORE_ROT = 0                 # the reference as drawn: GPIO4-20 face the left strip, GPIO33-47 J3
 CORE = {                     # reference designator -> ours (same nets, same job); the RP2354B
     "U1": "U4", "X1": "X1", "L1": "L2",    # has its flash inside, so the reference's U3 and R10 stay behind,
     "C12": "C11", "C13": "C12", "C10": "C21",   # and its C2, R1 and R6 (C10, R23, R25 here) sat out by
-    "C6": "C24", "C7": "C25",                   # the flash; the decouplers C13-C20, C22, C23, C26 and R19 here
+    "C6": "C24", "C7": "C25", "C9": "C26",      # the flash; the decouplers C13-C20, C22 and C23 here
     "C3": "C27", "C4": "C28",                   # are placed by hand (the screw, J2 and the folded FPC)
-    "R2": "R20", "R7": "R21", "R8": "R22",
+    "R2": "R20", "R3": "R19", "R7": "R21", "R8": "R22",
 }
 CORE_NETS = {                # reference net -> ours, for the copied tracks and zones
     "+1V1": "+1V1", "+3V3": "+3V3", "GND": "GND", "/QSPI_SS": "QSPI_SS",
@@ -102,7 +102,7 @@ put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["y"], 0)
 put("C29", 84.3, 132.2, 90)                  # panel VCI/VDDI
 put("C30", 85.5, 132.2, 90)
 put("JP4", 90.0, 124.0, 0)                  # 3V3 -> panel
-put("R28", 83.0, 113.3, 90)                # SPI source terminations, by the core's panel pins
+put("R28", 81.2, 105.2, 90)                # SPI source terminations, by the core's panel pins
 put("R29", 76.4, 105.2, 90)
 
 # backlight current sinks: under seat 1's spine (the op-amp, 1.75 mm) and deck, J3's LED pins
@@ -127,14 +127,14 @@ put("C48", 107.4, 136.5, 90)                # channel 1: feedback C and R
 put("R58", 108.6, 136.5, 90)
 put("C51", 109.8, 136.5, 90)                # U6 supply
 put("JP2", 113.0, 116.0, 0)                 # VSYS to LED_A (J3 pin 50): flat, under the FPC
-put("TP16", 97.0, 141.6, 0)                 # GND for a scope clip
+put("TP16", 93.0, 141.6, 0)                 # GND for a scope clip
 
 # debug: left bezel, beside the cell's hole
 put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
 put("SW19", CASE["pinholes"][1][0], CASE["pinholes"][1][1], 90)
 put("R26", 71.2, 91.0, 90)
 put("J6", 68.75, 71.65, 0)                  # UART: above the side screw, clear of seat 2's deck
-put("J5", 68.8, 128.4, 180)                 # SWD: below the seat-1 side screw (J2's plug took its place)
+put("J5", 68.8, 79.6, 180)                 # SWD: in the left strip below J6
 
 # edge part on the right: USB-C
 # Moved down the right wall below the cell's hole (2026-10-21, Alex: it may slide along its wall):
@@ -148,14 +148,12 @@ put("J1", usb_x, USB_Y, 90)
 
 # USB input
 put("U1", 125.0, 107.6, 90)                 # ESD, beside the core's crystal)
-put("R1", 122.0, 106.0, 90)
-put("R3", 120.8, 106.0, 90)
-put("R2", 122.0, 108.4, 90)
-put("R4", 120.8, 108.4, 90)
+put("R1", 130.0, 103.0, 90)
+put("R3", 131.2, 103.0, 90)
+put("R2", 132.4, 103.0, 90)
+put("R4", 133.6, 103.0, 90)
 put("C1", 125.2, 111.6, 0)
 put("R41", 125.2, 113.4, 0)                # C1's series resistor (hot-plug ringing)
-put("D5", 121.0, 111.0, 0)                  # VBUS -> VSYS)
-put("R47", 121.0, 113.6, 0)                # D5's damping resistor)
 put("C42", 132.4, 126.6, 0)                 # spares on CC1 and CC2)
 put("C43", 132.0, 129.8, 0)
 
@@ -164,23 +162,15 @@ put("C43", 132.0, 129.8, 0)
 # below it, round the screw at 68.6, 122
 put("J2", 70.3, 107.24, 180)                # PicoBlade: mouth towards the hole, contacts behind
 put("JP5", 90.0, 117.0, 0)                  # cell -> VBAT
-put("Q2", 126.0, 116.2, 0)                   # cell -> VSYS without USB
-put("C3", 117.0, 123.6, 90)                  # VBAT
-put("D7", 126.4, 119.8, 0)                   # Schottky across Q2: carries the unplug gap
-put("C2", 116.8, 131.8, 90)                  # VSYS
-put("U2", 120.0, 118.6, 0)                   # TP4056: its thermal pad spreads into the GND pours
-put("C9", 120.6, 123.8, 0)                   # holds VSYS through the switch-over
-put("D6", 126.4, 122.8, 0)                   # Q2's gate from VBUS
-put("R6", 124.0, 124.8, 90)
-put("R5", 117.0, 126.4, 90)                  # PROG
-put("R9", 118.2, 126.4, 90)
-put("R10", 119.4, 126.4, 90)
-put("R39", 120.6, 126.4, 90)                 # TEMP divider: VBUS side
-put("R40", 117.0, 128.8, 90)
-put("R43", 118.2, 128.8, 90)
-put("R44", 119.4, 128.8, 90)
-put("Q4", 123.6, 128.8, 0)
-put("TP7", 122.0, 133.2, 0)                  # LS_GATE
+put("C3", 125.6, 117.0, 90)                  # VBAT
+put("C2", 127.2, 117.0, 90)                  # VSYS
+put("U2", 121.0, 116.0, 0)                   # TP4056: its thermal pad spreads into the GND pours
+put("R5", 117.0, 120.4, 90)                  # PROG
+put("R9", 121.8, 120.4, 90)
+put("R10", 123.0, 120.4, 90)
+put("R43", 119.4, 120.4, 90)
+put("R44", 120.6, 120.4, 90)
+put("TP7", 131.0, 96.0, 0)                  # LS_GATE
 put("TP15", 124.6, 133.2, 0)                 # GND for a scope clip, by the charger
 # the cell's temperature: TH1 at the hole's right edge, which the cell is pushed against
 put("TH1", 127.1, 86.0, 90)
@@ -199,12 +189,12 @@ put("R16", 131.0, 85.8, 0)
 put("C47", 131.0, 87.4, 0)                  # PWR_EN's slow-rise cap)
 put("TP6", 129.6, 89.6, 0)                  # PWR_EN)
 
-# 3V3 LDO: under seat 2's deck, by the latch at the right strip's top
-put("U3", 110.0, 64.4, 0)
-put("C5", 106.4, 64.6, 90)                  # VSYS in
-put("C6", 104.4, 64.6, 90)                  # 3V3 out)
-put("C7", 102.6, 64.6, 90)
-put("JP1", 100.0, 61.4, 0)
+# 3V3 LDO: in the left bezel under the core it feeds
+put("U3", 68.6, 126.4, 90)
+put("C5", 66.4, 131.0, 90)                  # VSYS in
+put("C6", 68.6, 131.0, 90)                  # 3V3 out)
+put("C7", 70.8, 131.0, 90)
+put("JP1", 66.4, 121.6, 90)
 
 # the core's loose parts: the reference's parts by its flash (QSPI_SS's pull-up, its 1k to the
 # BOOTSEL button, a 3V3 decoupler) and the decouplers that would land on the screw or the FPC
@@ -220,6 +210,7 @@ put("C8", 129.0, 128.8, 90)
 # test pads on the back, between seat 2's clusters
 for i in range(5):
     put(f"TP{i + 1}", 92.0 + 4.0 * i, 53.0, 0, "B")
+put("TP3", 89.4, 114.0, 0, "B")             # VBAT: on the back under J3, by JP5 and the cell's path
 
 # 2026-10-05: the board revision straps, by their pins
 put("R48", 111.4, 132.2, 90)
@@ -230,17 +221,28 @@ put("R51", 115.0, 132.2, 90)
 # 2026-10-19, debug readiness (Alex's review): SWD pads, probe pads and isolation jumpers
 put("J7", 100.0, 140.4, 0, "B")              # SWD pogo pads on the back, under seat 1's spine
 put("TP9", *core_pt(0.8, 7.22), 0, "B" if CORE_SIDE == "F" else "F")    # +1V1: on the core's own +1V1 via
-put("C23", 82.6, 108.4, 90)
+put("C23", 80.6, 107.9, 90)
 put("C13", 80.0, 105.2, 90)
 put("C19", 73.6, 126.8, 90)
-put("R19", 77.6, 107.6, 90)
-put("C26", 81.2, 105.2, 90)
-put("C14", 78.8, 107.6, 90)                # the core's decouplers, placed by hand (above)
+put("D8", 132.6, 76.4, 0)                   # row 1: seat 2's Start into PWR_EN, beside the latch
+put("R62", 128.6, 76.6, 90)
+put("Q7", 131.5, 79.4, 0)
+put("R63", 128.6, 79.6, 90)
+put("R64", 118.2, 120.4, 90)                # the charger's ILIM
+put("U9", 100.0, 58.5, 90)                  # seat 2's buttons: a 74HC165 between the clusters, 1.2 mm
+put("RN3", 94.2, 57.0, 90)
+put("RN4", 94.2, 60.4, 90)
+put("C53", 100.0, 53.6, 0)
+put("U8", 101.2, 144.2, 90)                 # seat 1's, below the backlight's op-amp
+put("RN1", 105.6, 143.0, 90)
+put("RN2", 105.6, 146.4, 90)
+put("C52", 104.6, 148.8, 0)
+put("C14", 71.2, 117.0, 90)                # the core's decouplers, placed by hand (above)
 put("C15", 86.7, 132.2, 90)
 put("C17", 87.9, 132.2, 90)
 put("C18", 77.6, 105.2, 90)
 put("C22", 86.7, 134.4, 90)
-put("C16", 80.0, 107.6, 90)
-put("C20", 81.2, 107.6, 90)
+put("C16", 71.2, 121.6, 270)
+put("C20", 71.2, 119.3, 90)
 for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD SCK, MOSI, CS, DC on the back, under J3's lead-in
     put(ref, 92.2 + 2.54 * i, 110.0, 0, "B")

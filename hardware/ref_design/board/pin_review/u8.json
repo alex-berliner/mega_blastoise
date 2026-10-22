@@ -1,0 +1,296 @@
+{
+ "part": "74HC165 8-bit parallel-in serial-out shift register, TSSOP-16",
+ "refs": [
+  "U8",
+  "U9"
+ ],
+ "mpn": "SN74HC165PWR",
+ "lcsc": "C43420",
+ "manufacturer": "Texas Instruments",
+ "symbol": "74xx:74HC165",
+ "footprint": "Package_SO:TSSOP-16_4.4x5mm_P0.65mm",
+ "datasheet": {
+  "revision_or_date": "TI SCLS116 (SNx4HC165)"
+ },
+ "ratings": [
+  {
+   "what": "VCC",
+   "limit": "2-6 V",
+   "design": "3.3 V",
+   "ok": true,
+   "cite": "p5"
+  },
+  {
+   "what": "inputs",
+   "limit": "0..VCC",
+   "design": "contacts to GND, 10k pull-ups to 3V3",
+   "ok": true,
+   "cite": "p5"
+  },
+  {
+   "what": "clock rate",
+   "limit": "about 20 MHz at VCC 4.5 V, lower at 3.3 V",
+   "design": "firmware clocks at 1 MHz or less",
+   "ok": true,
+   "cite": "p6"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "SH/LD (PL)",
+   "type": "input",
+   "requirement": "Low loads A-H (asynchronous); high shifts. Driven by GPIO28 (SR_PL).",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "SH/LD (PL)",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "SR_PL",
+    "U9": "SR_PL"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "CLK",
+   "type": "input",
+   "requirement": "Shifts on the rising edge while CLK INH is low; GPIO29 (SR_CLK).",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "CLK",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "SR_CLK",
+    "U9": "SR_CLK"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "E (D4)",
+   "type": "input",
+   "requirement": "Parallel input, CMOS levels from the same 3V3 supply (inputs within 0..VCC): a membrane contact to GND, pulled up to 3V3 by 10k (RN1-RN4); low = pressed.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "E (D4)",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "P1_A",
+    "U9": "P2_A"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "F (D5)",
+   "type": "input",
+   "requirement": "Parallel input, CMOS levels from the same 3V3 supply (inputs within 0..VCC): a membrane contact to GND, pulled up to 3V3 by 10k (RN1-RN4); low = pressed.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "F (D5)",
+   "footprint_pad": "4",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "P1_B",
+    "U9": "P2_B"
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "G (D6)",
+   "type": "input",
+   "requirement": "Parallel input, CMOS levels from the same 3V3 supply (inputs within 0..VCC): a membrane contact to GND, pulled up to 3V3 by 10k (RN1-RN4); low = pressed.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "G (D6)",
+   "footprint_pad": "5",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "P1_X",
+    "U9": "P2_X"
+   }
+  },
+  {
+   "pin": "6",
+   "ds_name": "H (D7)",
+   "type": "input",
+   "requirement": "Parallel input, CMOS levels from the same 3V3 supply (inputs within 0..VCC): a membrane contact to GND, pulled up to 3V3 by 10k (RN1-RN4); low = pressed.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "H (D7)",
+   "footprint_pad": "6",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "P1_Y",
+    "U9": "P2_Y"
+   }
+  },
+  {
+   "pin": "7",
+   "ds_name": "QH' (Q7 inverted)",
+   "type": "output",
+   "requirement": "Inverted output: unused, left open.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "QH' (Q7 inverted)",
+   "footprint_pad": "7",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": null,
+    "U9": null
+   }
+  },
+  {
+   "pin": "8",
+   "ds_name": "GND",
+   "type": "power",
+   "requirement": "Ground.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "GND",
+   "footprint_pad": "8",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "GND",
+    "U9": "GND"
+   }
+  },
+  {
+   "pin": "9",
+   "ds_name": "QH (Q7)",
+   "type": "output",
+   "requirement": "Serial output (H's state after a load): U8's to GPIO30, U9's into U8's SER.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "QH (Q7)",
+   "footprint_pad": "9",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "SR_DATA",
+    "U9": "SR_CHAIN"
+   }
+  },
+  {
+   "pin": "10",
+   "ds_name": "SER (DS)",
+   "type": "input",
+   "requirement": "Serial input: U9's tied to 3V3 (ones follow the 16 bits), U8's from U9's QH (the chain).",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "SER (DS)",
+   "footprint_pad": "10",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "SR_CHAIN",
+    "U9": "+3V3"
+   }
+  },
+  {
+   "pin": "11",
+   "ds_name": "A (D0)",
+   "type": "input",
+   "requirement": "Parallel input, CMOS levels from the same 3V3 supply (inputs within 0..VCC): a membrane contact to GND, pulled up to 3V3 by 10k (RN1-RN4); low = pressed.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "A (D0)",
+   "footprint_pad": "11",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "P1_UP",
+    "U9": "P2_UP"
+   }
+  },
+  {
+   "pin": "12",
+   "ds_name": "B (D1)",
+   "type": "input",
+   "requirement": "Parallel input, CMOS levels from the same 3V3 supply (inputs within 0..VCC): a membrane contact to GND, pulled up to 3V3 by 10k (RN1-RN4); low = pressed.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "B (D1)",
+   "footprint_pad": "12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "P1_DOWN",
+    "U9": "P2_DOWN"
+   }
+  },
+  {
+   "pin": "13",
+   "ds_name": "C (D2)",
+   "type": "input",
+   "requirement": "Parallel input, CMOS levels from the same 3V3 supply (inputs within 0..VCC): a membrane contact to GND, pulled up to 3V3 by 10k (RN1-RN4); low = pressed.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "C (D2)",
+   "footprint_pad": "13",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "P1_LEFT",
+    "U9": "P2_LEFT"
+   }
+  },
+  {
+   "pin": "14",
+   "ds_name": "D (D3)",
+   "type": "input",
+   "requirement": "Parallel input, CMOS levels from the same 3V3 supply (inputs within 0..VCC): a membrane contact to GND, pulled up to 3V3 by 10k (RN1-RN4); low = pressed.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "D (D3)",
+   "footprint_pad": "14",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "P1_RIGHT",
+    "U9": "P2_RIGHT"
+   }
+  },
+  {
+   "pin": "15",
+   "ds_name": "CLK INH (CE)",
+   "type": "input",
+   "requirement": "Clock inhibit, active high: tied low.",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "CLK INH (CE)",
+   "footprint_pad": "15",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "GND",
+    "U9": "GND"
+   }
+  },
+  {
+   "pin": "16",
+   "ds_name": "VCC",
+   "type": "power",
+   "requirement": "2-6 V; 3V3 with 100n (C52/C53).",
+   "cite": "SCLS116 pin functions p3; recommended conditions p5",
+   "quote": "",
+   "symbol_name": "VCC",
+   "footprint_pad": "16",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U8": "+3V3",
+    "U9": "+3V3"
+   }
+  }
+ ]
+}

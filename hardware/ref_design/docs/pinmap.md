@@ -11,22 +11,22 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 1 | (spare) | not connected |
 | 2 | `PWR_HOLD` | output: set high to stay on (see Power control); low turns the device off once the button is up |
 | 3 | `PWR_BTN_N` | input, pulled up (R16): low while seat 1's Y is pressed. Y is the power button, so read seat 1's Y here |
-| 4 | `P2_UP` | membrane contact SW9, input with pull-up, low = pressed |
-| 5 | `P2_DOWN` | membrane contact SW10, input with pull-up, low = pressed |
-| 6 | `P2_LEFT` | membrane contact SW11, input with pull-up, low = pressed |
-| 7 | `P2_RIGHT` | membrane contact SW12, input with pull-up, low = pressed |
+| 4 | (spare) | not connected |
+| 5 | (spare) | not connected |
+| 6 | (spare) | not connected |
+| 7 | (spare) | not connected |
 | 8 | (spare) | not connected |
 | 9 | `P2_SELECT` | membrane contact SW22, input with pull-up, low = pressed |
-| 10 | `P2_START` | membrane contact SW23, input with pull-up, low = pressed |
+| 10 | (spare) | not connected |
 | 11 | (spare) | not connected |
-| 12 | `P2_A` | membrane contact SW13, input with pull-up, low = pressed |
-| 13 | `P2_B` | membrane contact SW14, input with pull-up, low = pressed |
-| 14 | `P2_X` | membrane contact SW15, input with pull-up, low = pressed |
-| 15 | `P2_Y` | membrane contact SW16, input with pull-up, low = pressed |
+| 12 | (spare) | not connected |
+| 13 | (spare) | not connected |
+| 14 | (spare) | not connected |
+| 15 | (spare) | not connected |
 | 16 | (spare) | not connected |
-| 17 | `CHG_STAT_N` | input, pulled up (R10): low while the TP4056 charges |
-| 18 | `CHG_DONE_N` | input, pulled up (R9): low when the charge is done (USB present, cell full) |
-| 19 | `CHG_OFF` | output: high pauses charging (Q4 pulls the TP4056's CE low); low or released charges (R44 4.7k pulls it low) |
+| 17 | (spare) | not connected |
+| 18 | (spare) | not connected |
+| 19 | (spare) | not connected |
 | 20 | `UART_TX` | UART1 TX to J6 pin 3 (debug console; Raspberry Pi debug connector pinout) |
 | 21 | `UART_RX` | UART1 RX from J6 pin 1 |
 | 22 | `REV0` | input, pull-up: board revision bit 0 (1 = R48 unfitted, 0 = R48 fitted to GND) |
@@ -35,22 +35,22 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 25 | `REV3` | input, pull-up: board revision bit 3 (R51) |
 | 26 | (spare) | not connected |
 | 27 | (spare) | not connected |
-| 28 | `P1_UP` | membrane contact SW1, input with pull-up, low = pressed |
-| 29 | `P1_DOWN` | membrane contact SW2, input with pull-up, low = pressed |
-| 30 | `P1_LEFT` | membrane contact SW3, input with pull-up, low = pressed |
-| 31 | `P1_RIGHT` | membrane contact SW4, input with pull-up, low = pressed |
+| 28 | `SR_PL` | membrane contact U9, input with pull-up, low = pressed |
+| 29 | `SR_CLK` |  |
+| 30 | `SR_DATA` |  |
+| 31 | (spare) | not connected |
 | 32 | `LCD_TE` | input: the panel's tearing-effect signal (enable with TEON); start a frame on its edge |
 | 33 | `LCD_CS` | SPI0 CSn (or drive as a GPIO) |
-| 34 | `P1_Y` | membrane contact SW8, input with pull-up, low = pressed |
+| 34 | `P2_START` |  |
 | 35 | `P1_SELECT` | membrane contact SW20, input with pull-up, low = pressed |
 | 36 | `LCD_MISO` | SPI0 RX (panel readback, optional) |
 | 37 | `LCD_DC` | display data/command |
 | 38 | `LCD_SCK_MCU` | SPI0 SCK, 33 ohm source termination R28 |
 | 39 | `LCD_MOSI_MCU` | SPI0 TX, 33 ohm source termination R29 |
 | 40 | `LCD_RST` | display reset, active low |
-| 41 | `P1_B` | membrane contact SW6, input with pull-up, low = pressed |
-| 42 | `P1_X` | membrane contact SW7, input with pull-up, low = pressed |
-| 43 | `P1_A` | membrane contact SW5, input with pull-up, low = pressed |
+| 41 | `CHG_STAT_N` | input, pulled up (R10): low while the TP4056 charges |
+| 42 | `CHG_PG_N` |  |
+| 43 | `CHG_OFF` | output: high pauses charging (Q4 pulls the TP4056's CE low); low or released charges (R44 4.7k pulls it low) |
 | 44 | `BL_PWM` | PWM10 A: backlight brightness, duty x 70 mA (filtered to a DC reference, see below); low = off |
 | 45 | `CC2_SENSE` | ADC5: USB-C CC2 through 10k |
 | 46 | `CC1_SENSE` | ADC6: USB-C CC1 through 10k; the source's current offer |

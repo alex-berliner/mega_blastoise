@@ -3,7 +3,8 @@
  "refs": [
   "Q1",
   "Q3",
-  "Q4"
+  "Q4",
+  "Q7"
  ],
  "mpn": "2N7002",
  "lcsc": "C8545",
@@ -60,7 +61,8 @@
    "nets": {
     "Q1": "PWR_BTN_RAW",
     "Q3": "AMP_EN",
-    "Q4": "CHG_OFF"
+    "Q4": "CHG_OFF",
+    "Q7": "P2_START_RAW"
    }
   },
   {
@@ -77,7 +79,8 @@
    "nets": {
     "Q1": "GND",
     "Q3": "GND",
-    "Q4": "GND"
+    "Q4": "GND",
+    "Q7": "GND"
    }
   },
   {
@@ -94,7 +97,8 @@
    "nets": {
     "Q1": "PWR_BTN_N",
     "Q3": "AMP_SHDN",
-    "Q4": "CHG_CE"
+    "Q4": "CHG_CE",
+    "Q7": "P2_START"
    }
   }
  ]

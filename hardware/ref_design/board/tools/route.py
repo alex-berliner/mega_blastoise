@@ -1031,7 +1031,10 @@ def prune_dangling(board, rounds=5, locked_too=False):
                 board.Remove(t)
                 changed += 1
                 continue
-            span = joined_span(board, t)
+            try:
+                span = joined_span(board, t)
+            except AttributeError:
+                continue                    # an item the pass before took away (its SWIG proxy is stale)
             if span is None:
                 board.Remove(t)
                 changed += 1

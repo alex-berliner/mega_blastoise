@@ -1,0 +1,172 @@
+{
+ "part": "10k x4 resistor array 0402x4 (convex)",
+ "refs": [
+  "RN1",
+  "RN2",
+  "RN3",
+  "RN4"
+ ],
+ "mpn": "4D02WGJ0103TCE",
+ "lcsc": "C25725",
+ "manufacturer": "UNI-ROYAL",
+ "symbol": "Device:R_Pack04",
+ "footprint": "Resistor_SMD:R_Array_Convex_4x0402",
+ "datasheet": {
+  "revision_or_date": "UNI-ROYAL 4D02 thick film chip resistor array"
+ },
+ "ratings": [
+  {
+   "what": "voltage",
+   "limit": "50 V",
+   "design": "3.3 V",
+   "ok": true,
+   "cite": ""
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "R1 end",
+   "type": "passive",
+   "requirement": "4 x 10k 5%, 62.5 mW each, 50 V; pin n pairs with pin 9 - n (convex array).",
+   "cite": "UNI-ROYAL 4D02 series datasheet",
+   "quote": "",
+   "symbol_name": "R1 end",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "RN1": "P1_UP",
+    "RN2": "P1_A",
+    "RN3": "P2_UP",
+    "RN4": "P2_A"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "R2 end",
+   "type": "passive",
+   "requirement": "4 x 10k 5%, 62.5 mW each, 50 V; pin n pairs with pin 9 - n (convex array).",
+   "cite": "UNI-ROYAL 4D02 series datasheet",
+   "quote": "",
+   "symbol_name": "R2 end",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "RN1": "P1_DOWN",
+    "RN2": "P1_B",
+    "RN3": "P2_DOWN",
+    "RN4": "P2_B"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "R3 end",
+   "type": "passive",
+   "requirement": "4 x 10k 5%, 62.5 mW each, 50 V; pin n pairs with pin 9 - n (convex array).",
+   "cite": "UNI-ROYAL 4D02 series datasheet",
+   "quote": "",
+   "symbol_name": "R3 end",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "RN1": "P1_LEFT",
+    "RN2": "P1_X",
+    "RN3": "P2_LEFT",
+    "RN4": "P2_X"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "R4 end",
+   "type": "passive",
+   "requirement": "4 x 10k 5%, 62.5 mW each, 50 V; pin n pairs with pin 9 - n (convex array).",
+   "cite": "UNI-ROYAL 4D02 series datasheet",
+   "quote": "",
+   "symbol_name": "R4 end",
+   "footprint_pad": "4",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "RN1": "P1_RIGHT",
+    "RN2": "P1_Y",
+    "RN3": "P2_RIGHT",
+    "RN4": "P2_Y"
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "R4 end",
+   "type": "passive",
+   "requirement": "4 x 10k 5%, 62.5 mW each, 50 V; pin n pairs with pin 9 - n (convex array).",
+   "cite": "UNI-ROYAL 4D02 series datasheet",
+   "quote": "",
+   "symbol_name": "R4 end",
+   "footprint_pad": "5",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "RN1": "+3V3",
+    "RN2": "+3V3",
+    "RN3": "+3V3",
+    "RN4": "+3V3"
+   }
+  },
+  {
+   "pin": "6",
+   "ds_name": "R3 end",
+   "type": "passive",
+   "requirement": "4 x 10k 5%, 62.5 mW each, 50 V; pin n pairs with pin 9 - n (convex array).",
+   "cite": "UNI-ROYAL 4D02 series datasheet",
+   "quote": "",
+   "symbol_name": "R3 end",
+   "footprint_pad": "6",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "RN1": "+3V3",
+    "RN2": "+3V3",
+    "RN3": "+3V3",
+    "RN4": "+3V3"
+   }
+  },
+  {
+   "pin": "7",
+   "ds_name": "R2 end",
+   "type": "passive",
+   "requirement": "4 x 10k 5%, 62.5 mW each, 50 V; pin n pairs with pin 9 - n (convex array).",
+   "cite": "UNI-ROYAL 4D02 series datasheet",
+   "quote": "",
+   "symbol_name": "R2 end",
+   "footprint_pad": "7",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "RN1": "+3V3",
+    "RN2": "+3V3",
+    "RN3": "+3V3",
+    "RN4": "+3V3"
+   }
+  },
+  {
+   "pin": "8",
+   "ds_name": "R1 end",
+   "type": "passive",
+   "requirement": "4 x 10k 5%, 62.5 mW each, 50 V; pin n pairs with pin 9 - n (convex array).",
+   "cite": "UNI-ROYAL 4D02 series datasheet",
+   "quote": "",
+   "symbol_name": "R1 end",
+   "footprint_pad": "8",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "RN1": "+3V3",
+    "RN2": "+3V3",
+    "RN3": "+3V3",
+    "RN4": "+3V3"
+   }
+  }
+ ]
+}

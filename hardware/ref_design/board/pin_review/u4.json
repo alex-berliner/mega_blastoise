@@ -337,56 +337,56 @@
    "pin": "1",
    "ds_name": "GPIO4",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused (the buttons moved to the shift registers): no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO4 7 1 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO4",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P2_UP"
+    "U4": null
    }
   },
   {
    "pin": "2",
    "ds_name": "GPIO5",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused (the buttons moved to the shift registers): no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO5 8 2 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO5",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P2_DOWN"
+    "U4": null
    }
   },
   {
    "pin": "3",
    "ds_name": "GPIO6",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused (the buttons moved to the shift registers): no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO6 9 3 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO6",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P2_LEFT"
+    "U4": null
    }
   },
   {
    "pin": "4",
    "ds_name": "GPIO7",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused (the buttons moved to the shift registers): no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO7 10 4 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO7",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P2_RIGHT"
+    "U4": null
    }
   },
   {
@@ -435,14 +435,14 @@
    "pin": "8",
    "ds_name": "GPIO10",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused: no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO10 14 8 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO10",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND (2026-10-19: Start/Select added, seat 1's Y freed from the power latch); needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9. FT pad, so a contact to GND is within its ratings.",
    "nets": {
-    "U4": "P2_START"
+    "U4": null
    }
   },
   {
@@ -477,56 +477,56 @@
    "pin": "11",
    "ds_name": "GPIO12",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused (the buttons moved to the shift registers): no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO12 16 11 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO12",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P2_A"
+    "U4": null
    }
   },
   {
    "pin": "12",
    "ds_name": "GPIO13",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused (the buttons moved to the shift registers): no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO13 17 12 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO13",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P2_B"
+    "U4": null
    }
   },
   {
    "pin": "13",
    "ds_name": "GPIO14",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused (the buttons moved to the shift registers): no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO14 18 13 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO14",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P2_X"
+    "U4": null
    }
   },
   {
    "pin": "14",
    "ds_name": "GPIO15",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused (the buttons moved to the shift registers): no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO15 19 14 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO15",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P2_Y"
+    "U4": null
    }
   },
   {
@@ -561,42 +561,42 @@
    "pin": "17",
    "ds_name": "GPIO17",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused: no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO17 28 17 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO17",
    "ok": true,
    "issue": "NOTE (firmware): CHG_STAT_N has R10 100k to +3V3 against the reset pull-down (36-113 kOhm): about 0.87-1.75 V (reads low/undefined) until firmware disables the pull-down.",
    "nets": {
-    "U4": "CHG_STAT_N"
+    "U4": null
    }
   },
   {
    "pin": "18",
    "ds_name": "GPIO18",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused: no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO18 29 18 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO18",
    "ok": true,
    "issue": "NOTE (firmware): CHG_DONE_N has R9 100k to +3V3 against the reset pull-down (36-113 kOhm): about 0.87-1.75 V until firmware disables the pull-down.",
    "nets": {
-    "U4": "CHG_DONE_N"
+    "U4": null
    }
   },
   {
    "pin": "19",
    "ds_name": "GPIO19",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused: no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1332; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO19 31 19 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO19",
    "ok": true,
    "issue": "NOTE: CHG_OFF has R44 4.7k to GND (<= 8.2 kOhm, meets E9).",
    "nets": {
-    "U4": "CHG_OFF"
+    "U4": null
    }
   },
   {
@@ -827,56 +827,56 @@
    "pin": "36",
    "ds_name": "GPIO28",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: SR_PL, a plain GPIO (SIO), no special function needed.",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO28 - 36 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO28",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P1_UP"
+    "U4": "SR_PL"
    }
   },
   {
    "pin": "37",
    "ds_name": "GPIO29",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: SR_CLK, a plain GPIO (SIO), no special function needed.",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO29 - 37 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO29",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P1_DOWN"
+    "U4": "SR_CLK"
    }
   },
   {
    "pin": "38",
    "ds_name": "GPIO30",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: SR_DATA, a plain GPIO (SIO), no special function needed.",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO30 - 38 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO30",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P1_LEFT"
+    "U4": "SR_DATA"
    }
   },
   {
    "pin": "39",
    "ds_name": "GPIO31",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: unused: no datasheet requirement to tie off (reset state is pulled low).",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO31 - 39 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO31",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P1_RIGHT"
+    "U4": null
    }
   },
   {
@@ -925,21 +925,21 @@
    "pin": "43",
    "ds_name": "GPIO34",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: P2_START, a plain GPIO (SIO), no special function needed.",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO34 - 43 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO34",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND (2026-10-19: Start/Select added, seat 1's Y freed from the power latch); needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9. FT pad, so a contact to GND is within its ratings.",
    "nets": {
-    "U4": "P1_Y"
+    "U4": "P2_START"
    }
   },
   {
    "pin": "44",
    "ds_name": "GPIO35",
    "type": "digital io (FT)",
-   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335).",
+   "requirement": "Bank 0 GPIO, IOVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). FT: tolerates up to 5.5 V with IOVDD=3.3 V, <=3.63 V with IOVDD=0 (Table 1680 p.1335). Re-reviewed 2026-10-21: P1_SELECT, a plain GPIO (SIO), no special function needed.",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO35 - 44 Digital IO (FT) IOVDD Pull-Down User IO",
    "symbol_name": "GPIO35",
@@ -1051,42 +1051,42 @@
    "pin": "52",
    "ds_name": "GPIO41_ADC1",
    "type": "digital io / analog (ADC1), NOT fault tolerant",
-   "requirement": "Bank 0 GPIO + ADC input ch1, IOVDD/ADC_AVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). Standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335). ADC input range 0..ADC_AVDD (Table 1685 p.1338).",
+   "requirement": "Bank 0 GPIO + ADC input ch1, IOVDD/ADC_AVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). Standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335). ADC input range 0..ADC_AVDD (Table 1685 p.1338). Re-reviewed 2026-10-21: CHG_STAT_N, a plain GPIO (SIO), no special function needed.",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO41_ADC1       -        Digital IO /      IOVDD /        Pull-Down     User IO or ADC input",
    "symbol_name": "GPIO41/ADC1",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P1_B"
+    "U4": "CHG_STAT_N"
    }
   },
   {
    "pin": "53",
    "ds_name": "GPIO42_ADC2",
    "type": "digital io / analog (ADC2), NOT fault tolerant",
-   "requirement": "Bank 0 GPIO + ADC input ch2, IOVDD/ADC_AVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). Standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335). ADC input range 0..ADC_AVDD (Table 1685 p.1338).",
+   "requirement": "Bank 0 GPIO + ADC input ch2, IOVDD/ADC_AVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). Standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335). ADC input range 0..ADC_AVDD (Table 1685 p.1338). Re-reviewed 2026-10-21: CHG_PG_N, a plain GPIO (SIO), no special function needed.",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO42_ADC2       -        Digital IO /      IOVDD /        Pull-Down     User IO or ADC input",
    "symbol_name": "GPIO42/ADC2",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P1_X"
+    "U4": "CHG_PG_N"
    }
   },
   {
    "pin": "54",
    "ds_name": "GPIO43_ADC3",
    "type": "digital io / analog (ADC3), NOT fault tolerant",
-   "requirement": "Bank 0 GPIO + ADC input ch3, IOVDD/ADC_AVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). Standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335). ADC input range 0..ADC_AVDD (Table 1685 p.1338).",
+   "requirement": "Bank 0 GPIO + ADC input ch3, IOVDD/ADC_AVDD domain; reset: pull-down, input buffer disabled, isolation latched (9.3). Standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335). ADC input range 0..ADC_AVDD (Table 1685 p.1338). Re-reviewed 2026-10-21: CHG_OFF, a plain GPIO (SIO), no special function needed.",
    "cite": "RP2350 datasheet Table 1674 (14.8.2.2 Pin list, GPIO pins), p.1333; Figure 3 (1.2.1.2 QFN-80 pinout), p.16; Section 9.3 Reset state, p.539",
    "quote": "GPIO43_ADC3       -        Digital IO /      IOVDD /        Pull-Down     User IO or ADC input",
    "symbol_name": "GPIO43/ADC3",
    "ok": true,
    "issue": "NOTE (firmware): button contact to GND; needs the internal pull-up enabled (reset state is pull-down). Pull-up is unaffected by E9.",
    "nets": {
-    "U4": "P1_A"
+    "U4": "CHG_OFF"
    }
   },
   {

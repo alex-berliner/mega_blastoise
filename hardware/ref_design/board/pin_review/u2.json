@@ -1,99 +1,49 @@
 {
- "part": "TP4056 1 A linear Li-ion charger, ESOP-8",
+ "part": "BQ24073 power-path Li-ion charger, VQFN-16 3x3",
  "refs": [
   "U2"
  ],
- "mpn": "TP4056-42-ESOP8",
- "lcsc": "C16581",
- "manufacturer": "TOPPOWER (NanJing Top Power ASIC Corp.)",
- "symbol": "Battery_Management:TP4056-42-ESOP8",
- "footprint": "battler:SOIC-8-1EP_3.9x4.9mm_P1.27mm_EP2.41x3.3mm_ThermalVias_0.3mm",
+ "mpn": "BQ24073RGTR",
+ "lcsc": "C15220",
+ "manufacturer": "Texas Instruments",
+ "symbol": "Battery_Management:BQ24073RGT",
+ "footprint": "Package_DFN_QFN:VQFN-16-1EP_3x3mm_P0.5mm_EP1.68x1.68mm",
  "datasheet": {
-  "url": "https://datasheet.lcsc.com/datasheet/pdf/d328ee101cbb1f3719611cd61db479c2.pdf?productCode=C16581",
-  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_1809261820_TOPPOWER-Nanjing-Extension-Microelectronics-TP4056-42-ESOP8_C16581.pdf",
-  "revision_or_date": "REV_2.4 (PDF created 2024-09-02); manufacturer site toppwr.com offers no downloadable PDF"
+  "revision_or_date": "TI SLUS810N (BQ2407x), Rev. N, October 2021",
+  "local": "scratchpad r1416/ds/bq24072.pdf"
  },
  "ratings": [
   {
-   "what": "VCC absolute max",
-   "limit": "-0.3..8 V",
-   "design": "VBUS <= 5.5 V steady; hot-plug peak about 6.7 V",
+   "what": "IN absolute max",
+   "limit": "-0.3..28 V",
+   "design": "VBUS 5 V, hot-plug ring under 7 V; OVP at 6.6 V",
    "ok": true,
-   "cite": "p2 ABSOLUTE MAXIMUM RATINGS"
-  },
-  {
-   "what": "VCC operating range",
-   "limit": "4.0..8.0 V",
-   "design": "4.4..5.5 V (USB)",
-   "ok": true,
-   "cite": "p5 VCC row"
-  },
-  {
-   "what": "CE absolute max",
-   "limit": "-0.3..10 V",
-   "design": "<= VBUS via R43 100k: <= 6.7 V peak",
-   "ok": true,
-   "cite": "p2"
-  },
-  {
-   "what": "TEMP absolute max",
-   "limit": "-0.3..10 V",
-   "design": "VBUS divider (R39 5.6k / R40 150k||TH1): < 6.7 V",
-   "ok": true,
-   "cite": "p2"
-  },
-  {
-   "what": "PROG absolute max",
-   "limit": "-0.3..VCC+0.3 V",
-   "design": "R5 3.3k to GND, regulated about 1 V",
-   "ok": true,
-   "cite": "p2"
+   "cite": "p10"
   },
   {
    "what": "BAT absolute max",
-   "limit": "printed '-0.3V~0.7V' (an obvious typo: BAT regulates 4.2 V); true value UNKNOWN",
-   "design": "VBAT 0..4.2 V",
-   "ok": null,
-   "cite": "p2 (verified on the rendered page, not a text-extraction artefact)"
-  },
-  {
-   "what": "CHRG/STDBY absolute max",
-   "limit": "printed as 'EMBED PBrush: -0.3V~10V' (corrupted label, presumably the status pins)",
-   "design": "pulled to +3V3 via 100k, also while VCC = 0",
-   "ok": null,
-   "cite": "p2"
-  },
-  {
-   "what": "CHRG/STDBY sink",
-   "limit": "VOL 0.6 V max at 5 mA",
-   "design": "33 uA (3.3 V / 100k)",
+   "limit": "5 V",
+   "design": "cell 4.2 V",
    "ok": true,
-   "cite": "p5"
+   "cite": "p10"
   },
   {
-   "what": "BAT pin current / charge current",
-   "limit": "1200 mA (feature list); RPROG table 1.1k -> 1000 mA",
-   "design": "R5 3.3k: about 333-364 mA",
+   "what": "EN1/EN2/CE/TS/PGOOD/CHG/ILIM/ISET absolute max",
+   "limit": "7 V",
+   "design": "EN1 <= 4.9 V at a 6.7 V ring; the rest 3.3 V or less",
    "ok": true,
-   "cite": "p2 features; p9"
-  },
-  {
-   "what": "Thermal",
-   "limit": "thermal regulation about 145 C (p8) / 140 C (p10) inconsistent in datasheet",
-   "design": "about (5-3.0)*0.36 = 0.72 W worst at trickle->CC start",
-   "ok": true,
-   "cite": "p8, p10, p12"
+   "cite": "p10"
   }
  ],
  "pins": [
   {
    "pin": "1",
-   "ds_name": "TEMP",
+   "ds_name": "TS",
    "type": "input (analog)",
-   "requirement": "Charging only while 45%..80% of VCC; grounding TEMP disables the function. Must not float (no default given).",
-   "cite": "p7 Pin Functions; p5 VTEMP-H/VTEMP-L",
-   "quote": "If TEMP pin's voltage is below 45% or above 80% of supply voltage VIN ... charging is suspended.",
-   "symbol_name": "TEMP",
+   "requirement": "75 uA bias; charging between 0.30 V (hot) and 2.1 V (cold); 10k NTC to VSS. TH1 B3950 10k: 3.5-47 C.",
+   "cite": "p8 pin table; p13 TS",
+   "quote": "",
+   "symbol_name": "TS",
    "footprint_pad": "1",
    "ok": true,
    "issue": "",
@@ -103,58 +53,13 @@
   },
   {
    "pin": "2",
-   "ds_name": "PROG",
-   "type": "analog io",
-   "requirement": "RPROG to GND sets IBAT = 1100 V / RPROG (VPROG 1 V in CC); floating PROG = shutdown. Keep RPROG close, low capacitance.",
-   "cite": "p7 Pin Functions; p9 RPROG table; p11 Manual Shutdown",
-   "quote": "Charge current is programmed by connecting a resistor RISET from this pin to GND.",
-   "symbol_name": "PROG",
-   "footprint_pad": "2",
-   "ok": true,
-   "issue": "R5 3.3k -> 333 mA by 1100/3.3k; datasheet table gives 3k->400 mA, 4k->300 mA (consistent).",
-   "nets": {
-    "U2": "CHG_PROG"
-   }
-  },
-  {
-   "pin": "3",
-   "ds_name": "GND",
-   "type": "ground",
-   "requirement": "Ground terminal.",
-   "cite": "p4 pinout; p7",
-   "quote": "GND (Pin3): Ground Terminal",
-   "symbol_name": "GND",
-   "footprint_pad": "3",
-   "ok": true,
-   "issue": "",
-   "nets": {
-    "U2": "GND"
-   }
-  },
-  {
-   "pin": "4",
-   "ds_name": "Vcc",
-   "type": "supply",
-   "requirement": "Positive input supply, 4.0..8.0 V operating; bypass close to pin; ceramic input cap: add ~1.5 ohm series resistor against plug-in transients.",
-   "cite": "p7; p5 VCC row; p13 'CC bypass capacitor'",
-   "quote": "Adding a 1.5 \u03a9 resistor in series with a ceramic capacitor will minimize start-up voltage transients.",
-   "symbol_name": "V_{CC}",
-   "footprint_pad": "4",
-   "ok": true,
-   "issue": "Design uses R41 2.2 ohm + C1 10u (datasheet asks 1.5 ohm; design notes it chose nearest Basic part).",
-   "nets": {
-    "U2": "VBUS"
-   }
-  },
-  {
-   "pin": "5",
    "ds_name": "BAT",
-   "type": "power output",
-   "requirement": "Connect battery positive; regulates 4.2 V float.",
-   "cite": "p7 Pin Functions",
-   "quote": "BAT (Pin5): Battery Connection. Connect the positive terminal of the battery to the BAT pin.",
+   "type": "power",
+   "requirement": "Cell; 4.7-47 uF (C3 10u). Abs max 5 V.",
+   "cite": "p8; p10 abs max",
+   "quote": "",
    "symbol_name": "BAT",
-   "footprint_pad": "5",
+   "footprint_pad": "2",
    "ok": true,
    "issue": "",
    "nets": {
@@ -162,65 +67,229 @@
    }
   },
   {
+   "pin": "3",
+   "ds_name": "BAT",
+   "type": "power",
+   "requirement": "As pin 2.",
+   "cite": "p8",
+   "quote": "",
+   "symbol_name": "BAT",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": "VBAT"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "CE",
+   "type": "input",
+   "requirement": "Active-low charge enable, internal 285k pull-down; driven by GPIO19 (CHG_OFF) with R44 4.7k to GND: charging on by default.",
+   "cite": "p8; p10 (7 V abs max)",
+   "quote": "",
+   "symbol_name": "CE",
+   "footprint_pad": "4",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": "CHG_OFF"
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "EN2",
+   "type": "input",
+   "requirement": "EN2 low with EN1 high: USB500 (475 mA input limit, VIN-DPM 4.5 V). Must not float.",
+   "cite": "p8; p12 table",
+   "quote": "",
+   "symbol_name": "EN2",
+   "footprint_pad": "5",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": "GND"
+   }
+  },
+  {
    "pin": "6",
-   "ds_name": "STDBY (active low)",
-   "type": "open-drain output",
-   "requirement": "Pulled low when charge complete, else Hi-Z. If unused connect to GND. Sinks 5 mA at <=0.6 V.",
-   "cite": "p7; p10 'Charge status indicator'; p5 VSTDBY",
-   "quote": "When battery charge cycle completes, STDBY pin is pulled low by an internal switch, otherwise STDBY pin is high impedance.",
-   "symbol_name": "~{STDBY}",
+   "ds_name": "EN1",
+   "type": "input",
+   "requirement": "Pulled to VBUS through R43 100k against the internal 285k: 3.7 V at 5 V, 4.9 V at a 6.7 V ring; abs max 7 V, VIH 1.4 V.",
+   "cite": "p8; p10; p14",
+   "quote": "",
+   "symbol_name": "EN1",
    "footprint_pad": "6",
    "ok": true,
-   "issue": "Pulled to +3V3 by R9 100k (used, so the 'connect to GND if unused' rule does not apply).",
+   "issue": "",
    "nets": {
-    "U2": "CHG_DONE_N"
+    "U2": "CHG_EN1"
    }
   },
   {
    "pin": "7",
-   "ds_name": "CHRG (active low)",
+   "ds_name": "PGOOD",
    "type": "open-drain output",
-   "requirement": "Pulled low while charging, else Hi-Z (PWM flicker if no battery and TEMP grounded). If unused connect to GND.",
-   "cite": "p7; p10",
-   "quote": "When the battery is charging, the CHRG pin is pulled low by an internal switch, otherwise CHRG pin is high impedance.",
-   "symbol_name": "~{CHRG}",
+   "requirement": "Low while VIN is valid; R9 100k to 3V3; sink 15 mA max.",
+   "cite": "p8; p10",
+   "quote": "",
+   "symbol_name": "PGOOD",
    "footprint_pad": "7",
    "ok": true,
-   "issue": "Pulled to +3V3 by R10 100k.",
+   "issue": "",
+   "nets": {
+    "U2": "CHG_PG_N"
+   }
+  },
+  {
+   "pin": "8",
+   "ds_name": "VSS",
+   "type": "ground",
+   "requirement": "Ground.",
+   "cite": "p8",
+   "quote": "",
+   "symbol_name": "VSS",
+   "footprint_pad": "8",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": "GND"
+   }
+  },
+  {
+   "pin": "9",
+   "ds_name": "CHG",
+   "type": "open-drain output",
+   "requirement": "Low while charging, 2 Hz on a timer fault; R10 100k to 3V3.",
+   "cite": "p8; p29",
+   "quote": "",
+   "symbol_name": "CHG",
+   "footprint_pad": "9",
+   "ok": true,
+   "issue": "",
    "nets": {
     "U2": "CHG_STAT_N"
    }
   },
   {
-   "pin": "8",
-   "ds_name": "CE",
-   "type": "input (logic)",
-   "requirement": "Active high enable: high = normal, low = shutdown; TTL/CMOS drivable. Must be driven/pulled (no internal default stated). Logic thresholds NOT given in the datasheet (unknown).",
-   "cite": "p7 Pin Functions",
-   "quote": "A logic high on CE pin will put the device in normal operation mode. Pulling the CE pin to low will put the TP4056 into shutdown mode.",
-   "symbol_name": "CE",
-   "footprint_pad": "8",
+   "pin": "10",
+   "ds_name": "OUT",
+   "type": "power output",
+   "requirement": "System output, regulated at 4.4 V (4.3-4.5) from IN; 4.7-47 uF (C2 + C5 = 14.7 uF).",
+   "cite": "p8; p12",
+   "quote": "",
+   "symbol_name": "OUT",
+   "footprint_pad": "10",
    "ok": true,
-   "issue": "R43 100k to VBUS (high) + Q4 2N7002 pulls low. CE VIH/VIL unspecified (unknown).",
+   "issue": "",
    "nets": {
-    "U2": "CHG_CE"
+    "U2": "VSYS"
    }
   },
   {
-   "pin": "9",
-   "ds_name": "exposed pad (unnumbered in datasheet)",
-   "type": "exposed pad / thermal",
-   "requirement": "Must be soldered to PCB ground for thermal performance.",
-   "cite": "p13 Board Layout Considerations; p14 ESOP8 drawing",
-   "quote": "requires that the exposed metal pad on the back side of the TP4056 package be soldered to the PC board ground.",
-   "symbol_name": "EPAD",
-   "footprint_pad": "9 (F.Cu 2.41x3.3 + B.Cu 1.9x2.9 + 6x 0.3 mm vias; 4 F.Paste apertures unnumbered)",
+   "pin": "11",
+   "ds_name": "OUT",
+   "type": "power output",
+   "requirement": "As pin 10.",
+   "cite": "p8",
+   "quote": "",
+   "symbol_name": "OUT",
+   "footprint_pad": "11",
    "ok": true,
-   "issue": "EP size in the p14 drawing is a low-resolution raster read as about 3.302 x 2.413 mm (long side along body length); footprint 2.41 x 3.3 mm matches that reading.",
+   "issue": "",
+   "nets": {
+    "U2": "VSYS"
+   }
+  },
+  {
+   "pin": "12",
+   "ds_name": "ILIM",
+   "type": "input",
+   "requirement": "R64 3.3k to VSS: 462 mA in ILIM mode (not selected); leaving it open disables charging.",
+   "cite": "p8",
+   "quote": "",
+   "symbol_name": "ILIM",
+   "footprint_pad": "12",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": "CHG_ILIM"
+   }
+  },
+  {
+   "pin": "13",
+   "ds_name": "IN",
+   "type": "power input",
+   "requirement": "USB VBUS; abs max 28 V; OVP 6.6 V; 1-10 uF (C1 10u behind R41 2.2 ohm).",
+   "cite": "p8; p10; p12",
+   "quote": "",
+   "symbol_name": "IN",
+   "footprint_pad": "13",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": "VBUS"
+   }
+  },
+  {
+   "pin": "14",
+   "ds_name": "TMR",
+   "type": "input",
+   "requirement": "Left open: default timers (30 min pre-charge, 5 h fast charge).",
+   "cite": "p8; p13",
+   "quote": "",
+   "symbol_name": "TMR",
+   "footprint_pad": "14",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": null
+   }
+  },
+  {
+   "pin": "15",
+   "ds_name": "TD",
+   "type": "input",
+   "requirement": "TD on the BQ24072/73 (ITERM on the '74): low enables termination. Tied to VSS.",
+   "cite": "p8-9",
+   "quote": "",
+   "symbol_name": "TD",
+   "footprint_pad": "15",
+   "ok": true,
+   "issue": "",
    "nets": {
     "U2": "GND"
-   },
-   "pin_label": "EP"
+   }
+  },
+  {
+   "pin": "16",
+   "ds_name": "ISET",
+   "type": "input/output",
+   "requirement": "R5 3.3k to VSS: ICHG = 890 / 3.3k = 270 mA (242-295).",
+   "cite": "p8; p13",
+   "quote": "",
+   "symbol_name": "ISET",
+   "footprint_pad": "16",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": "CHG_ISET"
+   }
+  },
+  {
+   "pin": "17",
+   "ds_name": "Thermal pad",
+   "type": "ground",
+   "requirement": "Connect to VSS with vias into the pour.",
+   "cite": "p8",
+   "quote": "",
+   "symbol_name": "Thermal pad",
+   "footprint_pad": "17",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U2": "GND"
+   }
   }
  ]
 }
