@@ -351,8 +351,9 @@ shoulder = [pin_x - boss_d / 2 - wedge_w - 0.3, pin_y + boss_d / 2 + wedge_w + 0
 usb_y = 0;   usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
 usb_r = 1.0;                                            // its corner radius: a rounded rectangle with 1.2 mm flats
                                                         // on its ends, not a stadium (HRO's 3D model, 2026-10-20)
-// The receptacle's face sits usb_recess under the case's surface, so a plug's overmold rests on
-// the case and the opening only has to clear the receptacle's shell: the shell's shape (Alex,
+// The receptacle's face sits usb_recess under the case's surface, so a plug's overmold comes up to
+// the case (a mated plug's stands about 0.25 off it: plug_len_min) and the opening only has to clear
+// the receptacle's shell: the shell's shape (Alex,
 // 2026-10-20: the stadium it used to be was "a different kind of oval"), usb_gap round it (Alex's fit
 // test: the overmold-sized opening left a big gap round a port sunk 1.15 mm in the wall). To reach the
 // surface the board grows a tab under the receptacle (its face stays 1.35 past the board's edge, as
@@ -368,6 +369,10 @@ usb_notch_w = 18.0;  usb_fit = 0.2;    // the notch in the top piece's skirt, an
 usb_front = case_w / 2 - usb_recess;                    // receptacle face
 usb_tab = usb_front - 1.35 - board_w / 2;              // the board's tab under it, past the board's edge
 usb_tab_w = 12.0;  usb_tab_fit = 0.3;
+// a USB-C plug (USB-IF Type-C compliance document rev 1.2): its shell 6.65 +-0.10 long from the
+// overmold's front, the overmold 12.35 x 6.5 at most. Mated, its tip is usb_mate inside the
+// receptacle's face (the receptacle's shell length, 6.20 in the Type-C spec)
+plug_len_min = 6.55;  usb_mate = 6.20;
 // left long edge: debug
 pin_pos = [[-31.2, 13.0], [-31.2, 6.0]];                // SW18 BOOTSEL, SW19 RESET under pinholes in the face
 // J5 (SWD) and J6 (UART), JST SH, their mouths towards the left edge (the board's, 2026-10-22): plugged
@@ -416,6 +421,15 @@ assert(spk_pos[1] + spk[1] / 2 + spk_keep <= cell_hole[0][1] - 1.0, "the speaker
 assert(spk_pos[1] - spk[1] / 2 - spk_keep >= j4_pocket[1][1], "the speaker runs into J4");
 assert(j4_pocket[0][1] >= -(joint_y - joint_w) + 0.3, "J4's pocket runs into the step's band");
 assert(z_ceil + j4_pocket[2] - z_top_cu >= j4_h + 0.3, "no room for J4 and its plug under the top piece");
+// USB-C: the opening centred on the receptacle's mouth (it stands on the board's top), usb_gap round
+// it, cut through the whole wall from inside the tub's round to past the outside, the receptacle's
+// face in the wall, and a mated plug's overmold off the wall (check_fit.py checks the same against
+// J1's 3D model, 2026-10-22)
+assert(abs(usb_zc - (z_top_cu + usb_h / 2)) <= 0.05 && usb_hole[0] >= usb_w + 0.3 && usb_hole[1] >= usb_h + 0.3,
+       "the USB-C opening doesn't clear the receptacle's mouth");
+assert(usb_open_x[0] <= in_x - tub_round_in - 0.5 && usb_open_x[1] >= case_w / 2 + 0.5, "the USB-C opening isn't cut through the wall");
+assert(usb_front > in_x && usb_front <= case_w / 2, "the USB-C receptacle's face isn't in the wall");
+assert(usb_recess <= plug_len_min - usb_mate - 0.1, "a mated USB-C plug's overmold runs into the wall");
 // J2, J5, J6 under the left bezel
 assert(z_ceil - z_top_cu >= j2_h + 0.3 && z_ceil - z_top_cu >= debug_h + 0.3, "J2 or a debug connector touches the top piece");
 assert(j2_plug[1][0] <= cell_hole[0][0] + 0.2, "J2's plug isn't at the hole's corner");
@@ -542,6 +556,11 @@ echo(str("JSON {",
     jpt([sx * case_w / 2, sy * case_l / 2]), "]")], [for (sy = [-1, 1]) str("[", jpt([-spine_w / 2, sy * (spine_end - joint_w)]), ", ",
     jpt([spine_w / 2, sy * case_l / 2]), "]")])), "], \"deck_limit\": ", jnum(z_deck_under - z_top_cu - 0.3),
   "}"));
+// the USB-C opening for check_fit.py (KiCad x, y; z over the board's top), not in positions.json
+echo(str("USBC {\"hole_y\": [", jnum(kicad([0, usb_y + usb_hole[0] / 2])[1]), ", ", jnum(kicad([0, usb_y - usb_hole[0] / 2])[1]),
+  "], \"hole_z\": [", jnum(usb_zc - usb_hole[1] / 2 - z_top_cu), ", ", jnum(usb_zc + usb_hole[1] / 2 - z_top_cu),
+  "], \"wall_x\": [", jnum(kicad([in_x, 0])[0]), ", ", jnum(kicad([case_w / 2, 0])[0]),
+  "], \"plug_len_min\": ", plug_len_min, ", \"mate\": ", usb_mate, "}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
 echo(str("CAPS flange top ", retainer_z - z_top_cu, " above the board, cap top ", cap_top - z_top_cu, ", deck face ",
          deck_face - z_top_cu, ", screen face ", case_h - z_top_cu, ": ends ", deck_face, " mm thick, a ", step_d, " mm step"));
@@ -766,6 +785,7 @@ module tub() difference() {
 }
 
 usb_zc = z_top_cu + usb_h / 2;   // the port's centre
+usb_open_x = [in_x - 1, in_x + wall + 1];   // the opening's cut, through the whole wall
 // the notch in the top piece's skirt under the port (fit 0: as cut from the top piece) or the tub's
 // tab in it (fit, lift: its clearance each side and above): full width in the wall's inner half,
 // usb_step narrower and lower in its outer half, so the top piece frames the tab outside
@@ -774,8 +794,8 @@ module usb_notch(fit = 0, lift = 0) let(o = fit == 0 ? 0.01 : 0, w = usb_notch_w
   translate([in_x + wall / 2, usb_y - w / 2 + usb_step, z_seam - dn])
     cube([wall / 2 + dn, w - 2 * usb_step, usb_zc - usb_step - lift - z_seam + dn]);
 }
-module usb_opening() translate([in_x - 1, usb_y, usb_zc]) rotate([0, 90, 0])
-  linear_extrude(wall + 2) rrect(usb_hole[1], usb_hole[0], usb_hole[2]);
+module usb_opening() translate([usb_open_x[0], usb_y, usb_zc]) rotate([0, 90, 0])
+  linear_extrude(usb_open_x[1] - usb_open_x[0]) rrect(usb_hole[1], usb_hole[0], usb_hole[2]);
 
 // every ABXY cap: [centre, tab direction in OpenSCAD's counter-clockwise degrees]. Seat 2's
 // cluster is seat 1's turned 180 degrees, caps and all

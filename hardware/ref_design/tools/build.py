@@ -122,7 +122,7 @@ STAGES = [
           [BOARD_TOOLS + "fab.py", "board/battler.kicad_pcb", "board/battler.kicad_pro", *SCH, *LIB],
           FAB_OUT, tools=("kicad",), about="gerbers, BOM, CPL, STEP, renders, PDFs"),
     Stage("check_fit", "board", [PY, "../case/check_fit.py"],
-          ["case/check_fit.py", "case/positions.json", "board/battler.kicad_pcb", "tools/scad.py", *LIB],
+          ["case/check_fit.py", "case/case.scad", "case/positions.json", "board/battler.kicad_pcb", "tools/scad.py", *LIB],
           ["case/fit_report.txt"], check=True, tools=("kicad",), about="board inside the case"),
     Stage("pinmap", "board", [PY, "tools/pinmap.py"],
           [BOARD_TOOLS + "pinmap.py", "board/design.py"], ["docs/pinmap.md"], about="docs/pinmap.md"),

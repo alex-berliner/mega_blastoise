@@ -36,6 +36,12 @@ supports in its own pose: the tub back down, the top piece and the decks face do
 
 (The images are rendered from the parts of this commit; see "Images" at the end.)
 
+The side view has no board in it, so the USB-C opening shows the far wall's inside and reads as
+a recess; it is a through-opening (checked 2026-10-22): J1's mouth (8.94 x 3.20, its face 0.19 under
+the surface) sits centred in it, 0.25 clear in y and 0.29 / 0.25 in z, and a mated plug's overmold
+(the shortest the USB-IF allows) stands 0.16 off the wall. case.scad asserts the opening against
+the port and the plug, and check_fit.py checks it against J1's 3D model.
+
 ## The board with the cell in it (2026-10-22)
 
 `CELLCUT_FOR_CASE.md` (final) has the board's side. What the case does with it:

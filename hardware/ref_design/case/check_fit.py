@@ -21,6 +21,9 @@ the case allows at that spot:
   top's panel frame        its band round the panel: <= frame limit (it hangs lower)
   folded FPC, J3's range   nothing but J3 under the panel's FPC, over the whole range J3 may move
   edge parts               the USB-C face reaches the wall
+  USB-C opening            J1's mouth (its model within 1 mm of its face) centred in the wall's
+                           opening (case.scad's USBC echo line) with room round it, and a mated
+                           plug's overmold (the shortest plug the USB-IF allows) clear of the wall
   through-hole leads       every lead poking out of the board's back lands where the floor's
                            ribs are cut away (rib_free), not on a rib
 
@@ -45,6 +48,8 @@ import scad  # noqa: E402  (scad.jobs(): how many exports at once)
 PCB = os.path.join(HERE, "..", "board", "battler.kicad_pcb")
 POS = json.load(open(os.path.join(HERE, "positions.json")))
 PCB_T = POS["board"]["t"]
+MOUTH = {}                                      # J1's mouth: its model's extent within 1 mm of its face
+USB_ROOM, USB_OFF = 0.15, 0.1                   # the opening round the mouth, at least; its centre off the mouth's, at most
 
 
 def stl_points(path):
@@ -107,6 +112,10 @@ def extent(ref, tmp):
     if not pts:
         return ref, None
     xs, ys, zs = zip(*pts)
+    if ref == "J1":
+        front = [p for p in pts if p[0] > max(xs) - 1.0]
+        fx, fy, fz = zip(*front)
+        MOUTH[ref] = (min(fx), -max(fy), max(fx), -min(fy), min(fz) - PCB_T, max(fz) - PCB_T)
     # STL frame: KiCad X, -KiCad Y, z = 0 at the board's bottom face
     return ref, (min(xs), -max(ys), max(xs), -min(ys), min(zs) - PCB_T, max(zs) - PCB_T)
 
@@ -115,6 +124,16 @@ def extents(refs):
     """{ref: extent(ref)[1]} for every ref, several exports at once, each in its own folder."""
     with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(scad.jobs(cpu_only=True)) as pool:
         return dict(pool.map(lambda ref: extent(ref, tempfile.mkdtemp(dir=tmp)), refs))
+
+
+def usb_opening():
+    """The USB-C opening and the plug it is checked with: case.scad's USBC echo line (not in positions.json)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "case.echo")
+        subprocess.run([*scad.cmd(out), "-o", out, "-D", 'part="none"', os.path.join(HERE, "case.scad")],
+                       capture_output=True, text=True)
+        m = re.search(r'ECHO: "USBC (\{.*\})"', open(out).read()) if os.path.exists(out) else None
+    return json.loads(m.group(1).replace('\\"', '"')) if m else None
 
 
 def inside_rect(box, rect, margin=0.0):
@@ -212,6 +231,27 @@ def main():
     usb = boxes.get("J1")
     if usb and abs(usb[2] - POS["usb"]["front_x"]) > 0.3:
         problems.append(f"USB-C face at x={usb[2]:.2f}, the case expects {POS['usb']['front_x']:.2f}")
+    mouth, hole = MOUTH.get("J1"), usb_opening()
+    if not mouth or not hole:
+        problems.append("USB-C: no " + ("J1 model" if not mouth else "USBC line in case.scad's echo") + " to check the opening with")
+    else:
+        (y0, y1), (z0, z1) = hole["hole_y"], hole["hole_z"]
+        room = {"-y": mouth[1] - y0, "+y": y1 - mouth[3], "-z": mouth[4] - z0, "+z": z1 - mouth[5]}
+        off = ((mouth[1] + mouth[3] - y0 - y1) / 2, (mouth[4] + mouth[5] - z0 - z1) / 2)
+        # mated, the plug's tip is hole["mate"] inside J1's face and its overmold plug_len_min out from the tip
+        stand = mouth[2] - hole["mate"] + hole["plug_len_min"] - hole["wall_x"][1]
+        if min(room.values()) < USB_ROOM:
+            problems.append(f"USB-C opening leaves {min(room.values()):.2f} round J1's mouth ({', '.join(f'{k} {v:.2f}' for k, v in room.items())}), "
+                            f"needs {USB_ROOM}")
+        if max(map(abs, off)) > USB_OFF:
+            problems.append(f"USB-C opening is off J1's mouth by y {off[0]:.2f}, z {off[1]:.2f}")
+        if not hole["wall_x"][0] <= mouth[2] <= hole["wall_x"][1]:
+            problems.append(f"J1's face at x={mouth[2]:.2f} is not in the wall ({hole['wall_x']})")
+        if stand < 0:
+            problems.append(f"a mated USB-C plug's overmold runs {-stand:.2f} into the wall")
+        notes.append(f"USB-C: J1's mouth {mouth[3] - mouth[1]:.2f} x {mouth[5] - mouth[4]:.2f}, the opening round it "
+                     f"{', '.join(f'{k} {v:.2f}' for k, v in room.items())}, off centre y {off[0]:.2f} z {off[1]:.2f}; "
+                     f"a mated plug's overmold {stand:.2f} off the wall")
     report = ["Board-in-case check (part boxes against case/positions.json)", ""]
     report += [f"checked {sum(1 for b in boxes.values() if b)} parts"]
     report += [f"  PROBLEM: {p}" for p in problems] or ["  no collisions"]
