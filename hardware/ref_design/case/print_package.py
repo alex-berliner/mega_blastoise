@@ -95,6 +95,9 @@ PLATES = {
     # elephant's-foot compensations on each (an object's): the pair that leaves no lip
     **{f"8_first_layer_0{l}": [(f"first_layer_L{l}_E{e}", f"{KIT}/test_first_layer_L{l}_E{e}.stl") for e in ("15", "25")]
        for l in ("20", "12")},
+    # the overhang ladder at 0.20 twice: the slicer's overhang settings as they are (DEF) and the
+    # best it has (TUNED, each printer's TUNED below), side by side
+    "9_overhang_settings": [(f"overhang_ladder_{t}", f"{KIT}/test_overhang_ladder_{t}.stl") for t in ("DEF", "TUNED")],
 }
 LAYERS = {f"7_overhangs_{h}": f"0.{h[1:]}" for h in ("020", "016", "012", "008")}
 # each plate's own settings over the project's (the slicers' names; the same in Orca and Bambu Studio)
@@ -103,12 +106,23 @@ PLATE_SETTINGS.update({f"8_first_layer_0{l}": {"initial_layer_print_height": f"0
 # each object's own settings (kept as they are: a project lists no preset for an object's)
 OBJECT_SETTINGS = {f"first_layer_L{l}_E{e}": {"elefant_foot_compensation": f"0.{e}"}
                    for l in ("20", "12") for e in ("15", "25")}
+# The overhang settings Snapmaker Orca 2.4.0 has beyond its defaults (the OrcaSlicer wiki, Quality >
+# Overhangs and Speed > Overhang speed): walls over an overhang slower (50 and 30 mm/s at 25 to 50 and
+# 50 to 75 % of a line overhanging, now 30 and 15), slower where perimeters may curl, every other
+# layer's overhanging walls the other way round (Reverse on even), and extra overhang walls where a
+# bridge has no anchor. Detect overhang wall and the fan's overhang boost are on already, the fan at
+# 100 % all the time for PLA, so no fan setting would change anything. Not used: Make overhang
+# printable (it reshapes the model, which `overhang` in case.scad does already). (Two values: the
+# U1's two extruder variants)
+U1_OBJECT_SETTINGS = {"overhang_ladder_TUNED": {
+    "overhang_2_4_speed": "30,30", "overhang_3_4_speed": "15,15", "slowdown_for_curled_perimeters": "1,1",
+    "overhang_reverse": "1", "extra_perimeters_on_overhangs": "1"}}
 # the system process preset each plate's project names: the one at its layer height
 U1_PRESET = "0.20mm Standard @Snapmaker U1 (0.4 nozzle)"
 U1_PLATE_PRESETS = {plate: f"{h}mm Standard @Snapmaker U1 (0.4 nozzle)" for plate, h in LAYERS.items()}
 U1_SYSTEM = os.path.join(HERE, "print", "u1_system")
 # the overhang tests overhang on purpose (they ask how far the printer goes without supports)
-NEVER_SUPPORTED = {f"{KIT}/test_overhangs.stl"} | {p for plate in LAYERS for _, p in PLATES[plate]}
+NEVER_SUPPORTED = {f"{KIT}/test_overhangs.stl"} | {p for plate in [*LAYERS, "9_overhang_settings"] for _, p in PLATES[plate]}
 
 
 def support_parts():
@@ -292,7 +306,8 @@ def build(plate, parts, z, supported):
         items.append(f'  <item objectid="{oid}" p:UUID="{oid:08x}-b1ec-4553-aec9-835e5b724bb4" '
                      f'transform="1 0 0 0 1 0 0 0 1 {x:.4f} {y:.4f} {size[2] / 2:.4f}" printable="1"/>')
         stl_name = V5_NAMES.get(name, name + ".stl")
-        own = dict(OBJECT_SUPPORT if dict(parts)[name] in supported else {}, **OBJECT_SETTINGS.get(name, {}))
+        own = dict(OBJECT_SUPPORT if dict(parts)[name] in supported else {}, **OBJECT_SETTINGS.get(name, {}),
+                   **U1_OBJECT_SETTINGS.get(name, {}))
         own = "".join(f'    <metadata key="{k}" value="{v}"/>\n' for k, v in own.items())
         settings.append(f'  <object id="{oid}">\n    <metadata key="name" value="{stl_name}"/>\n{own}'
                         f'    <metadata key="extruder" value="{PLA}"/>\n    <part id="{mid}" subtype="normal_part">\n'
@@ -333,7 +348,7 @@ def build(plate, parts, z, supported):
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                     cfg[k] = v
-                for k in [*OBJECT_SUPPORT, *(k for o in OBJECT_SETTINGS.values() for k in o)]:
+                for k in [*OBJECT_SUPPORT, *(k for o in [*OBJECT_SETTINGS.values(), *U1_OBJECT_SETTINGS.values()] for k in o)]:
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                 mark_presets(cfg, U1_SYSTEM, U1_PLATE_PRESETS.get(plate, U1_PRESET),

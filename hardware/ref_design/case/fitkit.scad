@@ -248,12 +248,13 @@ module test_rings() difference() {
 oh_angles = [30, 35, 40, 45, 50, 52.5, 55, 57.5, 60, 62.5, 65, 67.5, 70, 75, 80];
 oh_reach = 8;  oh_rise = 6;  oh_lift = 2;  oh_col = 2.5;  oh_fin = 4;  oh_pitch = oh_fin;  oh_chamfer = 0.4;
 oh_layer = "0.20";               // the layer height it's sliced at (fitkit.py renders one per plate)
+oh_tag = "";                     // or the slicer settings it's printed with, in its place (DEF, TUNED)
 oh_pad = [6, 2 * (oh_col + oh_reach), 1.0];        // the pad with F, B and the layer height, beside each part
 module oh_pad(x) difference() {
   translate([x, -oh_pad[1] / 2, 0]) cube(oh_pad);
   translate([x + oh_pad[0] / 2, 0, oh_pad[2] - engrave]) linear_extrude(engrave + 0.01) {
     for (s = [-1, 1]) translate([0, s * (oh_pad[1] / 2 - 2.5)]) text(s < 0 ? "F" : "B", size = 3, halign = "center", valign = "center");
-    rotate(90) text(oh_layer, size = 2.4, halign = "center", valign = "center");
+    rotate(90) text(oh_tag == "" ? oh_layer : oh_tag, size = 2.4, halign = "center", valign = "center");
   }
 }
 // a profile in the x-z plane (x out from the column's middle, both ways) extruded w along y, then

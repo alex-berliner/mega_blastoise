@@ -62,6 +62,16 @@ P1S_PRESETS = {"0.20": P1S_PRESET, "0.16": "0.16mm Optimal @BBL X1C", "0.12": "0
                "0.08": "0.08mm Extra Fine @BBL X1C"}
 
 
+# The overhang settings Bambu Studio 2.08 has beyond its defaults (wiki.bambulab.com, Bambu Studio's
+# speed and cooling settings): walls over an overhang slower (50 and 30 mm/s at 25 to 50 and 50 to 75 %
+# of a line overhanging, now 30 and 15) and thinner bridge lines (bridge flow 1 to 0.85: the steepest
+# fins print as bridges). Detect overhang wall and smoothing the overhang walls' speed changes are on
+# already, the fan at 100 % all the time for PLA. Bambu Studio has no Reverse on even, extra overhang
+# perimeters or slowing for curled perimeters (OrcaSlicer's). (Two values: its two extruder variants)
+P1S_OBJECT_SETTINGS = {"overhang_ladder_TUNED": {
+    "overhang_2_4_speed": "30,30", "overhang_3_4_speed": "15,15", "bridge_flow": "0.85"}}
+
+
 def mark_presets(project, plate):
     """Name the plate's process preset in a Bambu project and list the settings it changes."""
     with zipfile.ZipFile(project) as z:
@@ -147,8 +157,9 @@ def slice_plate(name, parts, supported, tmp):
         return None
     with_supports = [obj for obj, path in parts if path in supported]
     own_objs = {obj: dict(print_package.OBJECT_SUPPORT if obj in with_supports else {},
-                          **print_package.OBJECT_SETTINGS.get(obj, {}))
-                for obj, _ in parts if obj in with_supports or obj in print_package.OBJECT_SETTINGS}
+                          **print_package.OBJECT_SETTINGS.get(obj, {}), **P1S_OBJECT_SETTINGS.get(obj, {}))
+                for obj, _ in parts}
+    own_objs = {obj: own for obj, own in own_objs.items() if own}
     if own_objs:
         own_settings(project, own_objs)
     mark_presets(project, plate_name)

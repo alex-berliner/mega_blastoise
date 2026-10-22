@@ -27,6 +27,7 @@ get them (in `1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see
 | `6_tests.3mf` | **Questions for the shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and a top piece screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
 | `7_overhangs_020.3mf`, `_016`, `_012`, `_008` | **The steepest overhang each printer prints clean (about 20, 23, 28 and 40 min, 6 g each, no supports):** an overhang ladder and three convex rounds, the same parts at 0.20, 0.16, 0.12 and 0.08 mm layers (see "Overhang kit" below) | print all four on both printers |
 | `8_first_layer_020.3mf`, `8_first_layer_012.3mf` | **The lip at the tub's bottom edge (about 6 min, 3 g each):** two corners of the tub's bottom, its real round from the bed, at elephant's-foot compensation 0.15 and 0.25 mm; the first layer 0.20 mm on one plate, 0.12 on the other (see "First layer" below) | both, on both printers |
+| `9_overhang_settings.3mf` | **What the slicer's overhang settings buy (about 32 min, 9 g, no supports):** the 0.20 mm overhang ladder twice, `DEF` (the slicer's overhang settings as they are) and `TUNED` (the best it has; see "Overhang settings" below) | with `7_overhangs`, on both printers |
 | `5_unit.3mf` | **One whole unit on one plate:** the tub, the top piece, both decks and the board mock (no coupons, no dummies) | instead of `1_case` and `1_case_decks`, once the coupons fit |
 
 The top piece, the decks and the tuning deck slices print face down as exported (the slices legs
@@ -154,6 +155,32 @@ layer on the P1S and 0.25 on the U1 (Alex's template). Run a fingernail up each 
 the bed, and lay a straightedge on the bed against it: the best pair has no ridge or flare at the
 bottom, and the round meets the bed cleanly, with no step. Report the best pair per printer (e.g.
 "P1S: L12 E25"); the packages' first layer and compensation then take it.
+
+**Overhang settings (`9_overhang_settings`):** the 0.20 mm ladder twice, side by side, its pad engraved
+`DEF` or `TUNED`. `DEF` prints with the package's settings; `TUNED` has its own settings in the project
+(an object's settings, kept as they are when the project opens; the P1S's G-code shows them at work).
+What the two slicers have for overhangs (Bambu Studio 2.08 and Snapmaker Orca 2.4.0, from their
+settings lists; the OrcaSlicer wiki, Quality > Overhangs and Speed > Overhang speed; the Bambu Lab
+wiki, Bambu Studio's auto cooling):
+
+| Setting (key) | Bambu Studio (P1S) | Snapmaker Orca (U1) | What it does | In TUNED |
+|---|---|---|---|---|
+| Detect overhang wall (`detect_overhang_wall`) | yes, on | yes, on | finds walls over thin air and prints them with the overhang speeds (100 % over air: as a bridge) | already on |
+| Slow down for overhang (`enable_overhang_speed`, `overhang_1_4_speed` to `overhang_4_4_speed`) | yes: 0 (no slowdown), 50, 30, 10 mm/s for 0-25, 25-50, 50-75, 75-100 % of a line overhanging | yes, the same | slower walls cool before the next layer leans on them | 50 to 30, 30 to 15 (a fin's wall at 0.20 mm: 45 degrees is about 50 % over, 55 about 70, 60 and up 80 to 100) |
+| Fan for overhangs (`overhang_fan_speed`, `overhang_fan_threshold`, `enable_overhang_bridge_fan`) | yes: 100 % past 50 % overhang | yes, the same; also `fan_speedup_overhangs` | forces the fan up on overhanging walls | nothing to gain: both PLA profiles run the fan at 100 % all the time |
+| Slow down for curled perimeters (`slowdown_for_curled_perimeters`) | no | yes, off | slows where a wall may curl up (the lip the nozzle hits) | on (U1) |
+| Reverse on even (`overhang_reverse`, `_threshold` 50 %, `_internal_only`) | no | yes, off | prints overhanging walls the other way round on even layers, so the pull alternates and they don't curl one way | on (U1) |
+| Extra perimeters on overhangs (`extra_perimeters_on_overhangs`) | no | yes, off | adds overhang walls over steep overhangs and unanchored bridges | on (U1) |
+| Bridge flow / density (`bridge_flow`, `bridge_density`, `thick_bridges`) | flow 1.0, no density | flow 0.8, density 80 % | thinner bridge lines cool faster and sag less (the 75 and 80 fins print as bridges) | P1S flow 0.85 (the U1 has 0.8 already) |
+| Smooth speed changes (`smooth_speed_discontinuity_area`) | yes, on | no | eases the speed steps between overhang bands | already on |
+| Make overhang printable (`make_overhang_printable`, `_angle`) | no | yes, off | reshapes the model so nothing overhangs past the angle | not used: `overhang` in `case.scad` does that in the design |
+| Arc overhangs (Steven McCulloch's concentric arcs) | no | no | prints flat overhangs in arcs grown from their edge | not in either slicer, nor in OrcaSlicer itself: only Pleccer (a PrusaSlicer fork) and post-processing scripts have it |
+
+Compare the two ladders fin for fin, the same way as `7_overhangs` (clean: no sag over about 0.3 mm,
+no curl the nozzle would hit, a smooth face), F side and B side. Report the steepest clean fin of
+each (e.g. "U1: DEF 57.5, TUNED 62.5"). If `TUNED` gains, the packages take its settings for the
+case; if not, the defaults stay. The settings only change speed and paths, so they cost a few
+minutes (the ladder: 30 min with the defaults, about 33 tuned, on the U1).
 
 **Fit coupons (`4_fit_coupons`):**
 - USB-C: board coupon face down into the top coupon, the tub coupon over it (its tab rises into the
