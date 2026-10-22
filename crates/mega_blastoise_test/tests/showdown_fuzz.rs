@@ -183,6 +183,67 @@ fn fuzz_n() -> usize {
     std::env::var("FUZZ_N").ok().and_then(|s| s.parse().ok()).unwrap_or(200)
 }
 
+/// `FUZZ_WIDE=1` widens the two battle suites past the shape they were built
+/// in: 1-4 moves a mon, 1-6 mons a side, a level, nature and spread per mon,
+/// 2-30 turns, drawn multi-hit counts, and drawn faint replacements (Gen 1
+/// here, Gen 3 at level 2 below). Unset, the generators draw exactly what
+/// they always drew, so an old seed still names the same battles: every
+/// extra draw is made only with the knob on, and the narrow path's own draws
+/// keep their order and count.
+///
+/// `FUZZ_WIDE=2` is the same stream with Gen 3's drawn replacements switched
+/// on as well. They go through `player_picks_replacement` and `send_out`,
+/// which can only answer once `step_with` has finished the turn, residuals
+/// and all; the sim asks mid-turn in this era, so a replacement there takes
+/// a poison or burn tick that ours does not. That is a finding about the
+/// engine's chosen-replacement path, and at level 1 it would drown every
+/// other one, so level 1 keeps the engine's own lowest-slot replacement.
+fn fuzz_wide() -> bool {
+    std::env::var("FUZZ_WIDE").is_ok_and(|v| v == "1" || v == "2")
+}
+
+fn fuzz_wide_replace() -> bool {
+    std::env::var("FUZZ_WIDE").is_ok_and(|v| v == "2")
+}
+
+/// `n` distinct moves from the pool. Two copies of one move is not a legal
+/// set, and the sim folds them into a single slot with shared PP. With
+/// `n == 2` this is draw-for-draw the old "pick, then re-pick while equal".
+fn distinct_moves(fz: &mut Fuzz, pool: &[String], n: usize) -> Vec<String> {
+    let n = n.min(pool.len());
+    let mut set: Vec<String> = Vec::new();
+    while set.len() < n {
+        let m = fz.pick(pool).clone();
+        if !set.contains(&m) {
+            set.push(m);
+        }
+    }
+    set
+}
+
+/// A legal spread, in the sim's stat order (hp, atk, def, spa, spd, spe):
+/// every IV 0-31, every EV 0-255 with at most 510 in all. The EVs are dealt
+/// from a random starting stat so the budget does not always run dry on Speed.
+fn wide_spread(fz: &mut Fuzz) -> ([u8; 6], [u8; 6]) {
+    let mut ivs = [0u8; 6];
+    for iv in ivs.iter_mut() {
+        *iv = fz.below(32) as u8;
+    }
+    let mut evs = [0u8; 6];
+    let start = fz.below(6) as usize;
+    let mut budget = 510u64;
+    for k in 0..6 {
+        let ev = fz.below(budget.min(255) + 1);
+        evs[(start + k) % 6] = ev as u8;
+        budget -= ev;
+    }
+    (ivs, evs)
+}
+
+fn stat_json(xs: [u8; 6]) -> Value {
+    json!({"hp": xs[0], "atk": xs[1], "def": xs[2], "spa": xs[3], "spd": xs[4], "spe": xs[5]})
+}
+
 /// Vanilla move ids for a gen, intersected with our table so both sides can
 /// run every sampled move. Returns (id, priority). `multihit` keeps or drops
 /// the multi-strike moves: the single-hit suites compare one strike's damage,
@@ -1257,15 +1318,43 @@ fn fuzz_gen3_battles() {
             })
             .unwrap_or(false)
     });
-    let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
+    let mut moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
 
     if moves.is_empty() {
         return;
     }
     let mut fz = Fuzz::new("gen3-battles");
+    let wide = fuzz_wide();
+    // The sim's movelist carries Hidden Power once per type and every entry
+    // comes back as `hiddenpower`, so the pool holds it seventeen times. The
+    // narrow run keeps that weighting, as its stream depends on the pool's
+    // length; the wide run draws each move once.
+    if wide {
+        let mut seen = std::collections::HashSet::new();
+        moves.retain(|m| seen.insert(m.clone()));
+    }
+    let wide_replace = fuzz_wide_replace();
     let inv = Invest { iv: 31, ev: 0 };
     let statuses: [Option<&str>; 7] =
         [None, None, None, Some("brn"), Some("psn"), Some("par"), Some("slp")];
+    // The wide run adds freeze, which the narrow list leaves out with no
+    // reason given; the turn suite has always offered it.
+    let wide_statuses: [Option<&str>; 7] =
+        [None, None, Some("brn"), Some("psn"), Some("par"), Some("slp"), Some("frz")];
+    // Hidden Power's type, from the IVs the way the sim's `getHiddenPower`
+    // reads them for gen 3+: one low bit per stat, in hp/atk/def/spe/spa/spd
+    // order. `Mon::new` only takes a uniform spread, so a per-stat one has to
+    // hand the engine the answer.
+    let hp_type = |ivs: &[u8; 6]| {
+        use gen3_battle::Type::*;
+        const ORDER: [gen3_battle::Type; 16] = [
+            Fighting, Flying, Poison, Ground, Rock, Bug, Ghost, Steel, Fire, Water, Grass,
+            Electric, Psychic, Ice, Dragon, Dark,
+        ];
+        let bits = [ivs[0], ivs[1], ivs[2], ivs[5], ivs[3], ivs[4]];
+        let x: u32 = bits.iter().enumerate().map(|(k, iv)| ((*iv as u32) & 1) << k).sum();
+        ORDER[(x * 15 / 63) as usize]
+    };
 
     let mut scenarios = Vec::new();
     let mut expected = Vec::new();
@@ -1274,24 +1363,24 @@ fn fuzz_gen3_battles() {
     for _ in 0..fuzz_n() / 4 {
         let team_n = 2 + fz.below(3) as usize; // 2..=4 per side
         let level = 40 + fz.below(61) as u8;
+        let sizes = if wide {
+            [1 + fz.below(6) as usize, 1 + fz.below(6) as usize]
+        } else {
+            [team_n; 2]
+        };
 
         // Build both teams, then reject any battle where two mons could tie
         // on Speed: the tie-break is each side's own RNG and cannot be pinned.
         let mut teams: [Vec<Mon>; 2] = [Vec::new(), Vec::new()];
         let mut specs: [Vec<Value>; 2] = [Vec::new(), Vec::new()];
         for seat in 0..2 {
-            for _ in 0..team_n {
+            for _ in 0..sizes[seat] {
                 let sp = fz.pick(SPECIES);
-                let m1 = fz.pick(&moves).clone();
-                // Two copies of one move is not a legal set, and the sim
-                // folds them into a single slot with shared PP.
-                let mut m2 = fz.pick(&moves).clone();
-                while m2 == m1 {
-                    m2 = fz.pick(&moves).clone();
-                }
+                let n_moves = if wide { 1 + fz.below(4) as usize } else { 2 };
+                let set = distinct_moves(&mut fz, &moves, n_moves);
                 let st = {
                     use gen3_battle::Type;
-                    let pick = *fz.pick(&statuses);
+                    let pick = *fz.pick(if wide { &wide_statuses } else { &statuses });
                     let has = |t: Type| sp.types.0 == t || sp.types.1 == t;
                     // See the turn suite: a Forecast Castform's type at the
                     // opening is the sky's, not the dex's, and the harness
@@ -1300,6 +1389,7 @@ fn fuzz_gen3_battles() {
                     match pick {
                         Some("brn") | Some("frz") | Some("psn") if weather_forme => None,
                         Some("brn") if has(Type::Fire) => None,
+                        Some("frz") if has(Type::Ice) => None,
                         Some("psn") if has(Type::Poison) || has(Type::Steel) => None,
                         other => other,
                     }
@@ -1307,7 +1397,29 @@ fn fuzz_gen3_battles() {
                 let ability = pick_ability(&mut fz, sp);
                 let item = pick_item(&mut fz);
                 let gender = pick_gender(&mut fz, sp);
-                let mut mon = Mon::new(sp.id, level, Nature::Hardy, inv, &[&m1, &m2]).unwrap();
+                let level = if wide { 40 + fz.below(61) as u8 } else { level };
+                let nature = if wide { Nature::from_index(fz.below(25) as u8) } else { Nature::Hardy };
+                let spread = wide.then(|| wide_spread(&mut fz));
+                let refs: Vec<&str> = set.iter().map(|m| m.as_str()).collect();
+                let mut mon = Mon::new(sp.id, level, nature, inv, &refs).unwrap();
+                if let Some((ivs, evs)) = spread {
+                    use gen3_battle::{hp_stat, other_stat, Stat};
+                    let at = |k: usize| Invest { iv: ivs[k], ev: evs[k] };
+                    let b = sp.base;
+                    mon.max_hp = hp_stat(b.hp, at(0), level);
+                    mon.hp = mon.max_hp;
+                    mon.atk = other_stat(b.atk, at(1), level, nature, Stat::Atk);
+                    mon.def = other_stat(b.def, at(2), level, nature, Stat::Def);
+                    mon.spa = other_stat(b.spa, at(3), level, nature, Stat::SpAtk);
+                    mon.spd = other_stat(b.spd, at(4), level, nature, Stat::SpDef);
+                    mon.spe = other_stat(b.spe, at(5), level, nature, Stat::Spe);
+                    mon.hidden_power = hp_type(&ivs);
+                    for slot in mon.moves.iter_mut() {
+                        if slot.entry.id == "hiddenpower" {
+                            slot.typed_as = Some(mon.hidden_power);
+                        }
+                    }
+                }
                 mon.ability = ability;
                 mon.item = item;
                 mon.gender = gender;
@@ -1316,15 +1428,22 @@ fn fuzz_gen3_battles() {
                     Some("psn") => Some(gen3_battle::data::Status::Poison),
                     Some("par") => Some(gen3_battle::data::Status::Paralysis),
                     Some("slp") => Some(gen3_battle::data::Status::Sleep),
+                    Some("frz") => Some(gen3_battle::data::Status::Freeze),
                     _ => None,
                 };
                 if mon.status == Some(gen3_battle::data::Status::Sleep) {
                     mon.sleep_n = 2;
                 }
-                specs[seat].push(json!({
-                    "species": sp.id, "level": level, "moves": [m1, m2],
+                let mut spec = json!({
+                    "species": sp.id, "level": level, "moves": set,
                     "status": st, "ability": ability, "item": item, "gender": gender,
-                }));
+                });
+                if let Some((ivs, evs)) = spread {
+                    spec["nature"] = json!(nature.name());
+                    spec["ivs"] = stat_json(ivs);
+                    spec["evs"] = stat_json(evs);
+                }
+                specs[seat].push(spec);
                 teams[seat].push(mon);
             }
         }
@@ -1362,9 +1481,13 @@ fn fuzz_gen3_battles() {
 
         let [t0, t1] = teams;
         let mut battle = Battle::new(Side::new(t0), Side::new(t1), 1);
+        // `FUZZ_WIDE=2` answers forced replacements itself, through the same
+        // `send_out` a real game uses, rather than always sending the lowest
+        // living slot. See `fuzz_wide` for why level 1 does not.
+        battle.player_picks_replacement = wide_replace;
 
         // Play the engine, recording what it actually chose each turn.
-        let n_turns = 2 + fz.below(6) as usize;
+        let n_turns = if wide { 2 + fz.below(29) as usize } else { 2 + fz.below(6) as usize };
         let mut turn_json: Vec<Value> = Vec::new();
         let mut our_order: Vec<&str> = Vec::new();
         let mut our_log: Vec<String> = Vec::new();
@@ -1390,6 +1513,7 @@ fn fuzz_gen3_battles() {
                 let switching =
                     !bench.is_empty() && battle.can_switch(seat) && want_switch;
                 let pick = fz.below(2) as usize;
+                let wide_pick = if wide { fz.below(24) as usize } else { 0 };
                 let slot = if switching {
                     *fz.pick(&bench)
                 } else {
@@ -1397,7 +1521,9 @@ fn fuzz_gen3_battles() {
                     // sim's request; choosing it is rejected, not
                     // reinterpreted.
                     let usable = battle.selectable_moves(seat);
-                    if usable.contains(&pick) {
+                    if wide && !usable.is_empty() {
+                        usable[wide_pick % usable.len()]
+                    } else if usable.contains(&pick) {
                         pick
                     } else {
                         // With nothing usable at all the sim's request
@@ -1408,6 +1534,10 @@ fn fuzz_gen3_battles() {
                 };
                 choices[seat] =
                     if switching { Choice::Switch(slot) } else { Choice::Move(slot) };
+                // The 2-5 strike count, drawn per seat rather than per move
+                // so Mimic or Metronome changing what lands cannot desync it.
+                // Both sides only read it for a 2-5 move.
+                let hits = if wide { 2 + fz.below(4) } else { 0 };
                 seats[seat] = json!({
                     "action": if switching { "switch" } else { "move" },
                     "slot": slot,
@@ -1416,7 +1546,7 @@ fn fuzz_gen3_battles() {
                     "roll": 85 + fz.below(16) as u8,
                     "secondary": fz.chance(40),
                     "immobile": fz.chance(15),
-                    "hits": 0,
+                    "hits": hits,
                     "selfhit": fz.chance(50),
                     "stall": fz.chance(50),
                     "band": fz.chance(50),
@@ -1424,6 +1554,10 @@ fn fuzz_gen3_battles() {
             }
             // One Quick Claw coin serves the whole field for the turn.
             let claw = fz.chance(30);
+            // Who comes in after a faint: one draw per seat, every turn, so
+            // the stream does not depend on whether anything fainted. Each
+            // ask in the turn (Spikes can ask twice) reads its own byte.
+            let replace_draw = if wide { [fz.next(), fz.next()] } else { [0, 0] };
             let seat_script = |v: &Value| SeatScript {
                 hit: v["hit"].as_bool().unwrap(),
                 crit: v["crit"].as_bool().unwrap(),
@@ -1439,7 +1573,31 @@ fn fuzz_gen3_battles() {
                 seats: [Some(seat_script(&seats[0])), Some(seat_script(&seats[1]))],
                 claw,
             };
-            let events = battle.step_with(choices, &ts);
+            let mut events = battle.step_with(choices, &ts);
+            let mut replaced: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
+            let mut guard = 0;
+            while wide_replace && !battle.over() && guard < 12 {
+                guard += 1;
+                let pending = battle.pending_replacements();
+                if pending.iter().all(|p| p.is_none()) {
+                    break;
+                }
+                let mut picks: [Option<usize>; 2] = [None, None];
+                for seat in 0..2 {
+                    if let Some(live) = &pending[seat] {
+                        let byte = replace_draw[seat] >> (8 * (replaced[seat].len() % 8)) & 0xff;
+                        let j = live[byte as usize % live.len()];
+                        replaced[seat].push(j);
+                        picks[seat] = Some(j);
+                    }
+                }
+                battle.send_out(picks, &mut events);
+            }
+            if wide_replace {
+                for seat in 0..2 {
+                    seats[seat]["replace"] = json!(replaced[seat]);
+                }
+            }
             our_states.push(snapshot_of(&battle));
             our_log.push(format!("-- turn {}: p1 {:?} p2 {:?}", turn_json.len(), choices[0], choices[1]));
             our_log.extend(events.iter().map(|e| format!("   {e:?}")));
@@ -1622,6 +1780,7 @@ fn fuzz_gen1_battles() {
     let species: Vec<&'static str> = gen1_battle::SPECIES.iter().map(|s| s.id).collect();
 
     let mut fz = Fuzz::new("gen1-battles");
+    let wide = fuzz_wide();
     let data = FlashDataStore::new();
     let statuses: [Option<&str>; 6] =
         [None, None, None, Some("brn"), Some("psn"), Some("par")];
@@ -1633,6 +1792,11 @@ fn fuzz_gen1_battles() {
     for _ in 0..fuzz_n() / 4 {
         let team_n = 2 + fz.below(3) as usize;
         let level = 40 + fz.below(61) as u8;
+        let sizes = if wide {
+            [1 + fz.below(6) as usize, 1 + fz.below(6) as usize]
+        } else {
+            [team_n; 2]
+        };
 
         // Two teams. Statuses stay off sleep and freeze: both stall the
         // battle on clocks the two engines pin differently, and the freeze
@@ -1640,14 +1804,11 @@ fn fuzz_gen1_battles() {
         let mut specs: [Vec<Value>; 2] = [Vec::new(), Vec::new()];
         let mut members: [Vec<MonData>; 2] = [Vec::new(), Vec::new()];
         for seat in 0..2 {
-            for _ in 0..team_n {
+            for _ in 0..sizes[seat] {
                 let id = *fz.pick(&species);
                 let sp = gen1_battle::SPECIES.iter().find(|s| s.id == id).unwrap();
-                let m1 = fz.pick(&moves).clone();
-                let mut m2 = fz.pick(&moves).clone();
-                while m2 == m1 {
-                    m2 = fz.pick(&moves).clone();
-                }
+                let n_moves = if wide { 1 + fz.below(4) as usize } else { 2 };
+                let set = distinct_moves(&mut fz, &moves, n_moves);
                 let st = {
                     let pick = *fz.pick(&statuses);
                     let has =
@@ -1658,10 +1819,14 @@ fn fuzz_gen1_battles() {
                         other => other,
                     }
                 };
+                let level = if wide { 40 + fz.below(61) as u8 } else { level };
                 // The cartridge engine builds every mon at 15 DVs and full
                 // stat experience; the sim needs telling, in its own units.
+                // The wide run cannot vary them: `update_team` builds each mon
+                // through `Mon::from_species`, which reads neither field of
+                // `MonData`, so there is no spread to hand the engine.
                 specs[seat].push(json!({
-                    "species": id, "level": level, "moves": [&m1, &m2], "status": st,
+                    "species": id, "level": level, "moves": set, "status": st,
                     "ivs": {"hp": 30, "atk": 30, "def": 30, "spa": 30, "spd": 30, "spe": 30},
                     "evs": {"hp": 255, "atk": 255, "def": 255, "spa": 255, "spd": 255, "spe": 255},
                 }));
@@ -1669,10 +1834,10 @@ fn fuzz_gen1_battles() {
                     name: String::new(),
                     species: sp.name.to_string(),
                     level,
-                    moves: vec![
-                        G1MoveSlot { name: m1.clone(), id: m1, typ: String::new(), pp: 0, max_pp: 0, disabled: false, target: 0 },
-                        G1MoveSlot { name: m2.clone(), id: m2, typ: String::new(), pp: 0, max_pp: 0, disabled: false, target: 0 },
-                    ],
+                    moves: set
+                        .iter()
+                        .map(|m| G1MoveSlot { name: m.clone(), id: m.clone(), typ: String::new(), pp: 0, max_pp: 0, disabled: false, target: 0 })
+                        .collect(),
                     ivs: Default::default(),
                     evs: Default::default(),
                     gender: None,
@@ -1706,7 +1871,7 @@ fn fuzz_gen1_battles() {
             // No Speed ties anywhere in the two parties: the tie-break is
             // each side's own RNG and cannot be pinned.
             let mut speeds: Vec<u16> = (0..2)
-                .flat_map(|s| (0..team_n).map(move |j| (s, j)))
+                .flat_map(|s| (0..sizes[s]).map(move |j| (s, j)))
                 .map(|(s, j)| sides[s].team[j].modified[4])
                 .collect();
             speeds.sort_unstable();
@@ -1722,7 +1887,7 @@ fn fuzz_gen1_battles() {
             // switch out and back a no-op), so leaving it here would halve
             // a burned Attack twice over.
             for seat in 0..2 {
-                for j in 1..team_n {
+                for j in 1..sizes[seat] {
                     let mon = &mut sides[seat].team[j];
                     mon.modified = mon.stats;
                 }
@@ -1730,7 +1895,7 @@ fn fuzz_gen1_battles() {
         }
         let _ = battle.new_log_entries().count(); // drop the setup log
 
-        let n_turns = 2 + fz.below(5) as usize;
+        let n_turns = if wide { 2 + fz.below(29) as usize } else { 2 + fz.below(5) as usize };
         let mut turn_json: Vec<Value> = Vec::new();
         let mut our_order: Vec<&str> = Vec::new();
         let mut our_states: Vec<Vec<Vec<String>>> = Vec::new();
@@ -1792,12 +1957,15 @@ fn fuzz_gen1_battles() {
                 let want_switch = fz.chance(25);
                 let switching = !alive.is_empty() && !trapped && want_switch;
                 let pick = fz.below(2) as usize;
+                let wide_pick = if wide { fz.below(24) as usize } else { 0 };
                 let slot = if switching {
                     *fz.pick(&alive)
                 } else if locked {
                     // A locked mon's request offers exactly one move, and
                     // that is what the harness will send.
                     0
+                } else if wide {
+                    usable[wide_pick % usable.len()]
                 } else if usable.contains(&pick) {
                     pick
                 } else {
@@ -1806,6 +1974,10 @@ fn fuzz_gen1_battles() {
                 let _ = active;
                 lines[seat] =
                     if switching { format!("switch {slot}") } else { format!("move {slot}") };
+                // Drawn per seat, not per move, so Mimic changing what a slot
+                // holds between the draw and the use cannot desync it. Both
+                // sides read it for a 2-5 strike and a partial trap's length.
+                let hits = if wide { 2 + fz.below(4) } else { 0 };
                 seats[seat] = json!({
                     "action": if switching { "switch" } else { "move" },
                     "slot": slot,
@@ -1814,7 +1986,7 @@ fn fuzz_gen1_battles() {
                     "roll": 217 + fz.below(39) as u8,
                     "secondary": fz.chance(40),
                     "immobile": fz.chance(15),
-                    "hits": 0,
+                    "hits": hits,
                     "selfhit": fz.chance(50),
                 });
             }
@@ -1824,20 +1996,27 @@ fn fuzz_gen1_battles() {
                 roll: Some(v["roll"].as_u64().unwrap() as u8),
                 secondary: Some(v["secondary"].as_bool().unwrap()),
                 immobile: Some(v["immobile"].as_bool().unwrap()),
-                // Pinned to the table floor, matching the harness's `hits ||
-                // 2`. It cannot be drawn per move here the way the turn
-                // suite does it, because Mimic can change what a slot holds
-                // between the draw and the use.
-                hits: Some(2),
+                // Pinned to the table floor in the narrow run, matching the
+                // harness's `hits || 2`. It cannot be drawn per move here the
+                // way the turn suite does it, because Mimic can change what a
+                // slot holds between the draw and the use; the wide run
+                // draws it per seat instead.
+                hits: Some(match v["hits"].as_u64().unwrap() { 0 => 2, h => h as u8 }),
                 selfhit: Some(v["selfhit"].as_bool().unwrap()),
             };
+            // Who comes in after a faint, in the wide run: one draw per seat,
+            // every turn, so the stream does not depend on whether anything
+            // fainted. Each ask in the turn reads its own byte.
+            let replace_draw = if wide { [fz.next(), fz.next()] } else { [0, 0] };
+            let mut replaced: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
             battle.set_turn_force(Some([seat_force(&seats[0]), seat_force(&seats[1])]));
             battle.set_player_choice("p1", &lines[0]).unwrap();
             if !battle.ended() {
                 let _ = battle.set_player_choice("p2", &lines[1]);
             }
             // Answer any forced replacement the same way the harness does:
-            // the lowest-numbered living team slot that is not already out.
+            // the lowest-numbered living team slot that is not already out,
+            // or in the wide run whichever living one the draw names.
             let mut guard = 0;
             while !battle.ended() && guard < 12 {
                 guard += 1;
@@ -1851,14 +2030,23 @@ fn fuzz_gen1_battles() {
                 }
                 for pid in pending {
                     let d = battle.player_data(&pid).unwrap();
-                    let next = d
+                    let live: Vec<usize> = d
                         .mons
                         .iter()
                         .enumerate()
-                        .find(|(_, m)| !m.active && m.hp > 0)
-                        .map(|(j, _)| j);
+                        .filter(|(_, m)| !m.active && m.hp > 0)
+                        .map(|(j, _)| j)
+                        .collect();
+                    let seat = if pid == "p1" { 0 } else { 1 };
+                    let next = if wide && !live.is_empty() {
+                        let byte = replace_draw[seat] >> (8 * (replaced[seat].len() % 8)) & 0xff;
+                        Some(live[byte as usize % live.len()])
+                    } else {
+                        live.first().copied()
+                    };
                     match next {
                         Some(j) => {
+                            replaced[seat].push(j);
                             let _ = battle.set_player_choice(&pid, &format!("switch {j}"));
                         }
                         None => break,
@@ -1904,6 +2092,11 @@ fn fuzz_gen1_battles() {
                     })
                     .collect(),
             );
+            if wide {
+                for seat in 0..2 {
+                    seats[seat]["replace"] = json!(replaced[seat]);
+                }
+            }
             turn_json.push(json!({"p1": seats[0], "p2": seats[1]}));
         }
 

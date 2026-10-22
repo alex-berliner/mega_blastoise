@@ -461,9 +461,16 @@ function runBattle(sc) {
     return i < 0 ? null : i + 1;
   };
   // The replacement rule both engines use: lowest living slot not already out.
-  const forcedChoice = (sideId) => {
+  // A seat's `replace` list overrides it, one original slot per ask in the
+  // order the asks came, which is how a wide fuzz run states what its engine
+  // sent in; an entry that is not a legal pick falls back to the rule.
+  const forcedChoice = (sideId, wanted) => {
     const side = battle.getSide(sideId);
     const arr = side.pokemon;
+    if (wanted !== undefined) {
+      const p = arr.find((q) => q.name === `m${wanted}`);
+      if (p && !p.fainted && !p.isActive) return `switch ${liveIndex(sideId, wanted)}`;
+    }
     let best = null;
     for (let slot = 0; slot < arr.length; slot++) {
       const p = arr.find((q) => q.name === `m${slot}`);
@@ -530,6 +537,7 @@ function runBattle(sc) {
     }
     // Faints open a replacement request; answer it the same way the core
     // engines do until the battle stops asking.
+    const replace = {p1: [...(ts.p1?.replace ?? [])], p2: [...(ts.p2?.replace ?? [])]};
     let guard = 0;
     while (!battle.ended && guard++ < 12) {
       const need1 = battle.p1.activeRequest?.forceSwitch?.some(Boolean);
@@ -538,8 +546,8 @@ function runBattle(sc) {
       // Answer ONLY the side that was asked. Handing the other side a
       // 'pass' through makeChoices wipes the move it already has queued,
       // which silently ate an action every time a mon fainted mid-turn.
-      const f1 = need1 ? forcedChoice('p1') : null;
-      const f2 = need2 ? forcedChoice('p2') : null;
+      const f1 = need1 ? forcedChoice('p1', replace.p1.shift()) : null;
+      const f2 = need2 ? forcedChoice('p2', replace.p2.shift()) : null;
       try {
         if (f1) battle.choose('p1', f1);
         if (f2) battle.choose('p2', f2);
