@@ -25,7 +25,7 @@ get them (in `1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see
 | `1_case.3mf` | the tub, the top piece, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
 | `1_case_decks.3mf` | the two decks (the same part, one for each end) | with `1_case` |
 | `6_tests.3mf` | **Questions for the shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and a top piece screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
-| `7_overhangs_020.3mf`, `7_overhangs_016.3mf`, `7_overhangs_012.3mf` | **The steepest overhang each printer prints clean (about 20, 23 and 28 min, 6 g each, no supports):** an overhang ladder and three convex rounds, the same parts at 0.20, 0.16 and 0.12 mm layers (see "Overhang kit" below) | print all three on both printers |
+| `7_overhangs_020.3mf`, `_016`, `_012`, `_008` | **The steepest overhang each printer prints clean (about 20, 23, 28 and 40 min, 6 g each, no supports):** an overhang ladder and three convex rounds, the same parts at 0.20, 0.16, 0.12 and 0.08 mm layers (see "Overhang kit" below) | print all four on both printers |
 | `5_unit.3mf` | **One whole unit on one plate:** the tub, the top piece, both decks and the board mock (no coupons, no dummies) | instead of `1_case` and `1_case_decks`, once the coupons fit |
 
 The top piece, the decks and the tuning deck slices print face down as exported (the slices legs
@@ -102,10 +102,14 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   report the tightest that slides on freely and the loosest that doesn't rattle. (The new decks have
   their own bosses, so no column passes through another part now; the answer is for later.)
 
-**Overhang kit (`7_overhangs_020`, `_016`, `_012`), for the shell's curves:** print all three on
+**Overhang kit (`7_overhangs_020`, `_016`, `_012`, `_008`), for the shell's curves:** print all four on
 the P1S and the U1, supports off (they're off in the projects: these parts overhang on purpose). The
-three plates are the same two parts and the same settings except the layer height, which is in the
-plate's name and engraved on each part's pad (0.20, 0.16, 0.12), so the prints can't be mixed up.
+four plates are the same two parts and the same settings except the layer height, which is in the
+plate's name and engraved on each part's pad (0.20, 0.16, 0.12, 0.08), so the prints can't be mixed up.
+Each project names the slicer's process preset at its layer height (P1S: 0.20mm Standard, 0.16mm
+Optimal, 0.12mm Fine, 0.08mm Extra Fine @BBL X1C, Bambu's presets for the P1S; U1: 0.20, 0.16, 0.12,
+0.08mm Standard @Snapmaker U1) and lists what it changes from it, so it opens at its own layer height
+(the process shows as modified): check the layer height in the process tab before slicing.
 - `test_overhang_ladder`: fifteen fins side by side, each a 2 mm wall (the case's) whose underside
   leaves a stem 2 mm up and slopes out 8 mm at its angle from vertical: 30, 35, 40, 45, 50, then 52.5
   to 70 every 2.5, 75, 80 (the number on each fin's top; 30 to 50 reach less, to stay low). Every fin
@@ -124,9 +128,9 @@ edge, and you may have heard the nozzle tick over it), and a smooth face, no loo
 On the ladder, start at 45 (clean everywhere) and go up until a fin isn't; read each side. On a
 round, read from vertical down towards the stem: the tick where the surface starts to sag or roughen.
 
-Why three layer heights: each layer steps out layer height x tan(angle) past the one under it, so at
-60 degrees 0.35 mm at 0.20, 0.28 at 0.16 and 0.21 at 0.12; a thinner layer should hold a steeper
-angle, for a longer print. Compare the three parts from one printer side by side, the same fin and
+Why four layer heights: each layer steps out layer height x tan(angle) past the one under it, so at
+60 degrees 0.35 mm at 0.20, 0.28 at 0.16, 0.21 at 0.12 and 0.14 at 0.08; a thinner layer should hold a
+steeper angle, for a longer print. Compare the four parts from one printer side by side, the same fin and
 the same tick on each. The case's curves can then take the layer height and the angle together:
 `overhang` in `case.scad` (45 now) is the angle, and the shell prints at that plate's layer height
 (the steeper the angle, the rounder the steps and edges).
@@ -136,7 +140,7 @@ F 62.5, B 60"), the steepest clean tick on each round (e.g. "R10 65, R6 60, R3 6
 the undersides if anything is borderline.
 
 To build just these (after `python3 case/fitkit.py test_overhang_`): `python3 case/print_package.py
-7_overhangs_020 7_overhangs_016 7_overhangs_012`, and the same names to `case/print_package_p1s.py`
+7_overhangs_020 7_overhangs_016 7_overhangs_012 7_overhangs_008`, and the same names to `case/print_package_p1s.py`
 (a run naming plates leaves only those plates in its package folder and zip).
 
 **Fit coupons (`4_fit_coupons`):**

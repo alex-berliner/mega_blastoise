@@ -139,8 +139,8 @@ upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plat
 - [ ] 8 Overhang limit for the redesign: `test_overhangs` on `6_tests` (fins 45 to 75 degrees from
       vertical, a convex 6 mm round). Best guess committed 2026-10-21: `overhang` 45, the
       conservative limit, marked GUESS; `6_tests` on the P1S and the U1 confirms or raises it
-      (2026-10-22: the finer `7_overhangs_020`/`_016`/`_012` plates bracket it, 30 to 80 every 2.5
-      to 5, rounds R3/R6/R10, at three layer heights: the answer is an angle and a layer height)
+      (2026-10-22: the finer `7_overhangs_020`/`_016`/`_012`/`_008` plates bracket it, 30 to 80 every 2.5
+      to 5, rounds R3/R6/R10, at 0.20/0.16/0.12/0.08 mm: the answer is an angle and a layer height)
 - [x] 9 "The curve up from the base ends in a vertical lip" (Alex, relayed 2026-10-21: on the
       outside, at the bottom edge, all round where the floor meets the walls). Rechecked against the
       10-20 kit's tub (case.scad of e217c6d): the mesh is the same all round (sections every 1 mm of

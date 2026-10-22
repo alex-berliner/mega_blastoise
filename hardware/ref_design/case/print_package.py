@@ -12,6 +12,14 @@ build item) and the STLs ship beside them in case a project won't open.
 
 Supports are on only for the parts that need them, measured by overhangs.py: per object, not
 per plate (a plate's supports filled the tub's screw counterbores, 2026-10-21).
+
+Each project names its slicer's system process preset and lists, in different_settings_to_system,
+every setting it changes from it (mark_presets): on loading a project Orca and Bambu Studio take
+only the listed settings from it and the rest from the named preset (PresetBundle::
+load_config_file_config), so an unlisted change is lost (the 0.12 mm plate opened at 0.20,
+2026-10-22). The presets are compared as print/u1_system/ and print/p1s/system/ have them:
+flattened from the slicers' own profiles (Snapmaker Orca 2.4.0, Bambu Studio 2.08) with
+    python3 case/print_package.py --flatten <the slicer's resources/profiles/<vendor>> <dir> <preset> ...
 print_package_p1s.py builds the same plates for a Bambu Lab P1S.
 
 Writes print/package_U1/ and print/mega_blastoise_print_U1.zip (build output, not in git).
@@ -82,12 +90,17 @@ PLATES = {
     # layer heights (the height on each part's pad); only the layer height differs from the rest
     **{f"7_overhangs_{h}": [(f"overhang_ladder_{h}", f"{KIT}/test_overhang_ladder_{h}.stl"),
                             (f"overhang_rounds_{h}", f"{KIT}/test_overhang_rounds_{h}.stl")]
-       for h in ("020", "016", "012")},
+       for h in ("020", "016", "012", "008")},
 }
+LAYERS = {f"7_overhangs_{h}": f"0.{h[1:]}" for h in ("020", "016", "012", "008")}
 # each plate's own settings over the project's (the slicers' names; the same in Orca and Bambu Studio)
-PLATE_SETTINGS = {f"7_overhangs_{h}": {"layer_height": f"0.{h[1:]}"} for h in ("020", "016", "012")}
+PLATE_SETTINGS = {plate: {"layer_height": h} for plate, h in LAYERS.items()}
+# the system process preset each plate's project names: the one at its layer height
+U1_PRESET = "0.20mm Standard @Snapmaker U1 (0.4 nozzle)"
+U1_PLATE_PRESETS = {plate: f"{h}mm Standard @Snapmaker U1 (0.4 nozzle)" for plate, h in LAYERS.items()}
+U1_SYSTEM = os.path.join(HERE, "print", "u1_system")
 # the overhang tests overhang on purpose (they ask how far the printer goes without supports)
-NEVER_SUPPORTED = {f"{KIT}/test_overhangs.stl"} | {p for h in ("020", "016", "012") for _, p in PLATES[f"7_overhangs_{h}"]}
+NEVER_SUPPORTED = {f"{KIT}/test_overhangs.stl"} | {p for plate in LAYERS for _, p in PLATES[plate]}
 
 
 def support_parts():
@@ -107,6 +120,69 @@ def support_parts():
 V5_NAMES = {"tub_print": "tub_print.stl", "board_mock": "board_mock.stl",
             "panel_dummy": "panel_dummy.stl", "speaker_dummy": "speaker_dummy.stl"}
 NS = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"
+
+
+def flatten(profiles, out, names):
+    """Write each named preset with everything it inherits, as the slicer resolves it (a vendor's
+    profiles, then Orca's shared filament library beside them)."""
+    import glob
+    found = {}
+    for d in (os.path.join(os.path.dirname(profiles), "OrcaFilamentLibrary"), profiles):
+        for f in glob.glob(os.path.join(d, "**", "*.json"), recursive=True):
+            try:
+                p = json.load(open(f, encoding="utf-8-sig"))     # some carry a byte order mark
+            except ValueError:
+                continue
+            if isinstance(p, dict) and "name" in p:
+                found[p["name"]] = p
+
+    def resolve(n):
+        p = found[n]
+        return dict(resolve(p["inherits"]) if p.get("inherits") else {}, **p)
+    os.makedirs(out, exist_ok=True)
+    for n in names:
+        p = {k: v for k, v in resolve(n).items() if k != "inherits"}
+        json.dump(p, open(os.path.join(out, n + ".json"), "w"), indent=4)
+        print(f"  {n}: {len(p)} settings")
+
+
+# a preset's own bookkeeping, never a setting a project changes
+PRESET_META = {"name", "from", "inherits", "type", "setting_id", "instantiation", "description", "version",
+               "renamed_from", "compatible_printers", "compatible_printers_condition", "compatible_prints",
+               "compatible_prints_condition", "print_settings_id", "printer_settings_id", "filament_settings_id",
+               "filament_id", "inherits_group", "different_settings_to_system"}
+
+
+def same(a, b):
+    """Two settings' values equal, as the slicers write them ("100%" and "100", "1.0" and "1")."""
+    def norm(v):
+        out = []
+        for x in (v if isinstance(v, list) else [v]):
+            try:
+                out.append(float(str(x).rstrip("%")))
+            except ValueError:
+                out.append(str(x))
+        return out
+    return norm(a) == norm(b)
+
+
+def mark_presets(cfg, system_dir, preset, keys=(), base=None):
+    """Name the system process preset `preset` in a project's settings (cfg, changed in place) and
+    list in different_settings_to_system[0] every process setting whose value isn't the preset's,
+    with the ones already listed and `keys` (the settings the packages set). base: the preset the
+    project's settings came from, whose settings the named preset may not set at all (Snapmaker's
+    0.20 mm sets eight its other heights leave to the defaults). Returns the list."""
+    def load(n):
+        return json.load(open(os.path.join(system_dir, n + ".json")))
+    system = load(preset)
+    process = set(system) | set(load(base) if base else ())
+    listed = set(cfg.get("different_settings_to_system", [""])[0].split(";")) - {""}
+    diff = {k for k in system if k not in PRESET_META and k in cfg and not same(system[k], cfg[k])}
+    diff |= {k for k in process - set(system) if k not in PRESET_META and k in cfg}
+    diff |= {k for k in listed | set(keys) if k in process}
+    cfg["print_settings_id"] = preset
+    cfg["different_settings_to_system"][0] = ";".join(sorted(diff))
+    return sorted(diff)
 
 
 def template_layout(z):
@@ -252,6 +328,8 @@ def build(plate, parts, z, supported):
                 for k in OBJECT_SUPPORT:
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
+                mark_presets(cfg, U1_SYSTEM, U1_PLATE_PRESETS.get(plate, U1_PRESET),
+                             set(SUPPORT) | set(PLATE_SETTINGS.get(plate, {})), U1_PRESET)
                 data = json.dumps(cfg, indent=4).encode()
             if n == "_rels/.rels":
                 data = re.sub(rb'\s*<Relationship Target="/Metadata/[^"]+\.png"[^>]*/>', b"", data)
@@ -271,6 +349,8 @@ def build_plate(job):
 
 
 def main():
+    if sys.argv[1:2] == ["--flatten"]:
+        return flatten(sys.argv[2], sys.argv[3], sys.argv[4:])
     for plate, parts in PLATES.items():
         if sys.argv[1:] and plate not in sys.argv[1:]:
             continue
