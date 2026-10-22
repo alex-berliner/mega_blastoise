@@ -1,8 +1,6 @@
 # The board with the cell in it (2026-10-22): what the case needs to know
 
-**Provisional: 2 nets unrouted** (QSPI_SS and P1_SELECT; branch `ref-design-cellcut`). The
-positions below are the ones that board uses; a final route may still move small parts, not
-anything listed here.
+Routed clean on branch `ref-design-cellcut` (0 unconnected, DRC 0 errors).
 
 For the Blastoise Shell session. The cell now sits in a hole in the board (row 19 of Alex's
 2026-10-21 list: no speaker). Every machine-placed part is on the top (one-sided assembly).
@@ -74,7 +72,8 @@ KiCad's in brackets (y down, the centre at 100, 100). Heights are over the board
   the switch closes about 0.11 over the board. Per the row 4 note: add `ss_metal_dome = [4.0,
   0.31]` and the two asserts; `ss_lift` stays 0.35 unless the strip's plunger measures under 0.36.
   The domes' vents (0.5 mm holes at the contacts' centres + 1.25 mm towards seat 1) land on floor
-  ribs: keep the ribs off them.
+  ribs: keep the ribs off them. Each dome also has a 0.5 mm via 1.25 mm the other side of its
+  centre (tented), its signal's way out of the ring.
 
 Other limits unchanged (glass 2.2, bezels and spines 3.45, decks 1.6, round the clusters 0.5,
 nothing under the folded FPC but J3). Seat 2's spine now only covers U9 (the shift register,

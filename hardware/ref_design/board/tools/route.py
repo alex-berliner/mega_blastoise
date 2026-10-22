@@ -264,6 +264,26 @@ def contact_stubs(board):
     return contacts
 
 
+def dome_stubs(board):
+    """A metal-dome contact's centre pad sits inside its ring pad: its only way out is a via
+    in the 0.9 mm gap between them (r 0.8 to 1.7), which the router won't place. Each dome
+    gets one at r 1.25 opposite the vent (0.2 mm from both pads) and a stub to it."""
+    n = 0
+    for fp in footprints(board):
+        if not str(fp.GetFPID().GetLibItemName()).startswith("Dome_"):
+            continue
+        centre = next(p for p in fp.Pads() if p.GetNumber() == "1")
+        vent = next(p for p in fp.Pads() if p.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH)
+        cx, cy = xy(centre.GetPosition())
+        vx, vy = xy(vent.GetPosition())
+        d = math.hypot(vx - cx, vy - cy)
+        v = (cx - (vx - cx) * 1.25 / d, cy - (vy - cy) * 1.25 / d)
+        add_track(board, (cx, cy), v, centre.GetNet(), 0.2)
+        add_via(board, v, centre.GetNet())
+        n += 1
+    print("dome contacts given a via in their gap:", n)
+
+
 def usb_shell_ground(board):
     """J1's four shell legs (all pad "SH") are plated holes, so fanout() leaves them to the
     pours, but on the USB tab the routing often cut a leg's patch of pour off (2026-10-20: 5
@@ -1410,6 +1430,7 @@ def main():
     planes(board)
     core_3v3_stubs(board)
     contacts = contact_stubs(board)
+    dome_stubs(board)
     fpc_ground_bar(board)
     usb_shell_ground(board)
     fanout(board)

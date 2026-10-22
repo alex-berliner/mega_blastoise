@@ -47,8 +47,8 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 ## To do (from 2026-10-20)
 
 Next:
-- [ ] Board with the cell in it (row 19, 2026-10-22): provisional, 2 nets unrouted (QSPI_SS,
-      P1_SELECT). Then the case for it ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md): the
+- [x] Board with the cell in it (row 19, 2026-10-22): routed clean, all board checks pass
+- [ ] The case for it ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md): the
       hole, the moved screws and USB-C, the stack, the domes). For the case session
 - [x] Router reliability: `route.py 80` passed 1 run in 6 on the J2 rebuild. Most failures leave J1's
       outer rear shell leg (SH at 134.95, 104.32, on the USB tab) cut off from both GND pours, which
