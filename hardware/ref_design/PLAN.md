@@ -20,16 +20,16 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | Backlight | 4 LEDs in parallel on four cathode pins, anode on VSYS; a linear current sink per pair of cathode pins (MCP6002 + AO3400A + 2.2 ohm), 35 mA each, set by one GPIO's filtered PWM | constant current down to the 3.5 V cutoff, DC in the LEDs, all Basic/Preferred parts; replaced the AP3156 charge pump, out of stock on 2026-10-07 (stability simulated: board/sim/backlight.py) |
 | MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH, in the left bezel since 2026-10-21 (the cell's hole took the middle) | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board), copied as drawn; no flash chip to route; its side decouplers placed by hand beside it |
 | Charger | BQ24073 power path (2026-10-21, row 16): OVP 6.6 V, OUT 4.4 V into VSYS, 475 mA input limit, 270 mA charge, 5 h timer, TS on a B3950 NTC (TH1) at the cell hole's right edge (3.5-47 C) | replaced the TP4056 and its load sharing (hot-plug rings into VSYS, no timer, termination lost under load); about +$0.80 a unit at 10 |
-| Cell | 403450, about 700 mAh, in a 54.0 x 37.0 mm hole in the board (2026-10-21, row 19): across the board between seat 2's deck and J3's range, 0.5 mm round a worst-case 52 x 36 cell plus 1 mm at its left end for its leads to J2 (PicoBlade, 3.4 mm) at the hole's seat-1 corner; its top at most 1.6 mm over the board, its bottom on the tub's floor (case/CELLCUT_FOR_CASE.md) | 10.15 mm at the screen and 8.3 at the ends with a flat floor, 9.55 and 7.7 with the floor pocketed under the cell, against 13.35 and 11.5 (Alex, 2026-10-21) |
+| Cell | 403450, about 700 mAh, in a 54.0 x 37.0 mm hole in the board (2026-10-21, row 19): across the board between seat 2's deck and J3's range, 0.5 mm round a worst-case 52 x 36 cell plus 1 mm at its left end for its leads to J2 (PicoBlade, 3.4 mm) at the hole's seat-1 corner; its top at most 1.6 mm over the board, its bottom in a 0.6 mm pocket in the tub's floor (case/CELLCUT_FOR_CASE.md; the case took it 2026-10-22) | 9.55 mm at the screen and 7.7 at the ends (the floor pocketed under the cell), against 13.35 and 11.5 (Alex, 2026-10-21) |
 | 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at 3.5 V as computed (the ADC reads against 3V3, which follows the cell once the LDO drops out) |
-| Audio | None since 2026-10-21 (row 19): with every machine-placed part on the top, the speaker, its hole, J4 and the FM8002A circuit didn't fit beside the cell. GPIO8 and GPIO11 unconnected | row 18 (keep the speaker) was tried first |
+| Audio | The FM8002A into INGHAi's GSPK151035PN on J4 (2026-10-22): the speaker lies on the board's top in the right bezel beside the screen and plays up through three slots in the face; the case holds it in a pocket in the top piece's underside (case/SHELL.md) | Alex chose the side bezel over the side wall (row 7 dropped); for a while (row 19 on 2026-10-21) there was no audio at all |
 | Buttons | 16 x DSL_button_4ring (D-pads, A/B/X/Y) read through a 74HC165 per seat, chained (SR_PL GPIO28, SR_CLK GPIO29, SR_DATA GPIO30, 10k array pull-ups); Start/Select on 4 mm metal snap domes (HYP 600-415S-260, row 4) on their own GPIOs; either seat's Start turns the device on (row 1, D8/Q7) | only load, clock, data and 3V3 cross the strips beside the cell's hole (2026-10-21) |
 | Pin map | each pin faces where its net goes, in fan-out order; Raspberry Pi's pin escapes copied with the core | two layers route completely (docs/pinmap.md) |
 | Power switch | seat 1's Start contact joins VSYS to the latch; MCU hold or USB raise PWR_EN; releasing with hold low turns off | a reset drops the hold, so a crash turns it off |
 | USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 27 ohm 0402 series in Raspberry Pi's spots | one Extended part ($3 an order): the 27 ohm 0402 (C25100; 22 ohm until the 2026-10-05 pin review, and a 27 ohm 0603 doesn't fit the copied layout) and the ESD array was the second from 2026-10-07 (ProTek's Preferred SRV05-4, C85364, ran out, so U1 became Semtech's Extended SRV05-4.TCT, C13612) until 2026-10-20, when U1 became hongjiacheng's Preferred SRV05-4A (C20615829, Alex): same pinout, no setup fee |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under pinholes in the top piece; SWD again on six 2.54 mm pogo pads on the back (J7: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND); probe pads on every rail (VBUS, VSYS, VBAT, 3V3, 1V1), the panel's SPI, BL_REF, PWR_EN, LS_GATE, AMP_SHDN and two GND clips; cut jumpers isolate the 3V3 regulator, backlight, amplifier, panel logic and cell (JP1-JP5) | no LEDs (approved); pads and jumpers added after Alex's debug-readiness review (2026-10-19) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm; parts on the top only | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
-| Case | 75.4 x 132.7 x 13.35 mm (11.5 at the decks): a top piece and two decks (one part) curve over the sides and meet the tub (the back) flush at one seam low on the walls, over the tub's tongue; each deck seats into the top piece from behind on a 45 degree wedge; built upside down; six M2 screws from the back through the board, four into the top piece and one into each deck; no hooks; crush ribs centre the board; every part prints without supports, every edge and the step to each deck an arc ending in a chamfer at `overhang` (45 until the 6_tests ladder) (case/SHELL.md, 2026-10-21); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21); FDM at home, about $1.50 of filament |
+| Case | 77.4 x 132.7 x 9.55 mm (7.7 at the decks; 2026-10-22, for the board with the cell in it): a top piece and two decks (one part) curve over the sides and meet the tub (the back) flush at one seam low on the walls, over the tub's tongue; each deck seats into the top piece from behind on a 45 degree wedge; built upside down; six M2 x 6 screws from the back through the board, four into the top piece's shoulders and one into each deck; no hooks; crush ribs on the tub centre the board; the cell in a pocket in the tub's floor, the speaker under a grille in the right bezel; every part prints without supports, every edge and the step to each deck an arc ending in a chamfer at `overhang` (45 until the 6_tests ladder) (case/SHELL.md, 2026-10-21); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21); FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` by `tools/build_sch.py`; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
@@ -48,8 +48,21 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 
 Next:
 - [x] Board with the cell in it (row 19, 2026-10-22): routed clean, all board checks pass
-- [ ] The case for it ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md): the
-      hole, the moved screws and USB-C, the stack, the domes). For the case session
+- [x] The case for it ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md), done 2026-10-22,
+      case/SHELL.md): 77.4 x 132.7 x 9.55 mm (7.7 at the decks), the cell's floor pocket and ribs
+      under the strips, the side screws in shoulders of the top piece, M2 x 6, USB-C 1 mm out, the
+      crush ribs on the tub, the speaker's pocket and grille, smooth face rounds. check_fit passes
+      against the final board; placement.py's WIDEN now comes out 0 (the case carries the 72.4 board)
+- [x] Row 4, metal snap domes under Start/Select: the board has them (SW20-SW23); the case has
+      `ss_metal_dome` and `ss_plunger_gap` and two asserts (the dome fits the pad's well; the
+      plunger rests clear of the apex). `ss_lift` stays 0.35 on the assumed 0.36 plunger height.
+      Still open: measure the Start/Select strip's plunger height (g) with the fit kit's coupon; if
+      it is under 0.36, raise `ss_lift` by 0.36 - g (at most 0.15, or 0.45 with a 0.3 chamfer)
+- [x] Row 7, the speaker out of the right wall: dropped. Alex chose the side bezel (2026-10-22): the
+      speaker lies on the board's top and plays up through a grille in the face
+- [x] Rows 18 and 19: row 18 (keep the speaker beside the cell) didn't route with every part on the
+      top; row 19 (the cell in the board, no speaker) did, and the speaker came back on the board's
+      top in the right bezel (2026-10-22). Board final at f0b014b, the case for it after
 - [x] Router reliability: `route.py 80` passed 1 run in 6 on the J2 rebuild. Most failures leave J1's
       outer rear shell leg (SH at 134.95, 104.32, on the USB tab) cut off from both GND pours, which
       the repair pass can't close; the rest leave a long seat-1 line to U4 open (P1_UP, P1_LEFT,
@@ -94,9 +107,9 @@ Next:
       past J2 (5.5 mm, the cell 5 mm towards seat 2)
 
 Later (Alex: wait until the other edits settle):
-- [ ] Narrow the case 1 mm a side (75.4 to 73.4 mm; a DS Lite is 73.9): USB-C to the panel frame
-      1.5 to 0.5 mm, silicone edge_margin 4 to 3, about 15 edge parts re-placed, re-route. Only
-      once a real silicone piece measures 26 mm or less
+- [ ] Narrow the case (77.4 mm since 2026-10-22, when the board grew 2 mm for its strips beside
+      the cell's hole; a DS Lite is 73.9): only with a re-placed board, once a real silicone piece
+      measures 26 mm or less
 - [ ] The battery plug on the fit kit: a pocket in the board mock for a real 53261-0271 header
       (or a printed shroud) to try the plug's tilt from the hole into J2. The plug's size is from
       distributor listings, and plug_out = 3.0 in case.scad is an estimate

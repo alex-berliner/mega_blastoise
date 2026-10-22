@@ -26,15 +26,15 @@ which this folder never touches.
   constant-current backlight sink per LED group
 - 20 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad, four face buttons,
   Start and Select at each end
-- PWM audio through an RC filter into an FM8002A amplifier and a 15 x 10 mm speaker that plugs in and
-  plays out of the side
-- One 403450 Li-ion cell (about 700 mAh) lying on the tub's floor under the board, TP4056 charger with USB load sharing,
+- PWM audio through an RC filter into an FM8002A amplifier and a 15 x 10 mm speaker that plugs in,
+  lies on the board's top beside the screen and plays up through a grille in the face
+- One 403450 Li-ion cell (about 700 mAh) in a hole in the board, its bottom in a pocket in the tub's floor, BQ24073 power-path charger,
   ME6211 3V3 LDO, soft power on seat 1's Start button with MCU hold
-- Case 75.4 x 132.7 mm (a DS Lite's length), 13.35 mm at the screen and 11.5 mm at the button decks
+- Case 77.4 x 132.7 mm (a DS Lite's length), 9.55 mm at the screen and 7.7 mm at the button decks
   (genuine DS Lite caps stand 1.41 mm proud there): a tub, a top piece and a deck at each end that
   curve over the sides to one seam, built upside down, all printed without supports, held by six M2
-  screws as a DS Lite ([case/SHELL.md](case/SHELL.md)); the board, 70.4 x 127.7 mm, is placed to
-  its constraints ([case/BOARD_OUTLINE.md](case/BOARD_OUTLINE.md))
+  screws as a DS Lite ([case/SHELL.md](case/SHELL.md)); the board, 72.4 x 127.7 mm, is placed to
+  its constraints ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md))
 
 ## Folder
 

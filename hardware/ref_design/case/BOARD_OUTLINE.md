@@ -8,6 +8,32 @@ numbers here are a snapshot of it for reading, and the JSON is the source. Coord
 the centre, y up towards seat 2) is in brackets where it helps. Heights are over the board's top
 copper.
 
+## Superseded on 2026-10-22: read `CELLCUT_FOR_CASE.md` first
+
+The board was re-placed with the cell in a hole in it (row 19) and the speaker on its top, and the
+case followed it (`SHELL.md`, "The board with the cell in it"). `CELLCUT_FOR_CASE.md` wins
+wherever it differs from this file; the main changes, in KiCad coordinates:
+
+- **Outline 72.4 x 127.7** (x 63.8 to 136.2), r 5.5; the USB-C tab 136.2 to 137.2 x 94 to 106,
+  the receptacle's face at 138.55. **No plug holes**: one 54.0 x 37.0 hole for the cell,
+  71.3 to 125.3 x 66.8 to 103.8, r 1.0 (`cell_hole` in positions.json).
+- **Side screws at 131.4 / 68.6, 64 and 136** (case +-31.4, +-36), in the top piece's shoulders;
+  the end screws as below.
+- **J2** at the hole's seat-1 corner (69.3, 107.24), **J4** in the right bezel (131.4, 126.75), the
+  **speaker** on the top at (128.7, 113.5), 10 x 15, kept clear 0.5 round (`speaker`), under a
+  pocket and a grille in the top piece; nothing reaches over the cell's hole (check_fit).
+- **J5, J6** at (67.4, 79.1) and (67.4, 71.6), mouths to the left edge (`swd`, `uart`).
+- **The back:** the floor's ribs are 0.7 tall (`back_limit` 0.5 stays), clear of the cell's hole,
+  the Start/Select domes' vents, J1's legs and the test pads (`rib_free`). The cell and the speaker
+  are no longer on the back, so the silkscreen request below is void.
+- **Crush ribs** are on the tub's walls now, at 136.7 / 63.3 (72, 128) and (78, 122) at 35.65 /
+  164.35 (`crush`).
+- The J2 / J4 pockets under the spines are gone (`batt_conn`, `spk_conn`, `slot`, `spk_slot`,
+  `pocket` left positions.json).
+
+Everything else below (buttons, Start/Select, glass, FPC, J3's range, frame, decks, the height
+limits) is unchanged.
+
 ## Outline
 
 - **70.4 x 127.7 mm**, 1.6 thick, corner radius 5.5 (was 70.4 x 151.24: 23.54 shorter, the width

@@ -61,43 +61,39 @@ Follow [bringup.md](bringup.md) with the board on the bench: USB first, then the
 
 ## 5. Put it together
 
-It goes together upside down (2026-10-21, `case/SHELL.md`): everything is laid into the top piece
-face down, and the tub closes over it.
+It goes together upside down (2026-10-21, `case/SHELL.md`; the cell in the board and the speaker on
+its top since 2026-10-22): everything is laid into the top piece face down, and the tub closes over
+it.
 
-1. **The board, face up.** Push the cell's plug up through the board's hole (5.45 x 4.4 mm, in
-   front of J2's mouth, between seat 1's clusters at the screen's edge: the whole plug passes), lay
-   it flat, wires towards the hole, and push it into J2: its wires run straight from its tail down
-   through the hole, with no fold. The speaker's plug goes up through the same-sized hole at seat
-   2's end into J4 the same way (its red lead is +, nearest J4's pin 1; the amplifier is
-   bridge-tied, so a reversed speaker only flips its phase). The cell's plug can't reach J4.
-2. Turn the board over. Stick the cell on its back at its silkscreen outline with the 0.45 mm foam
-   pad, its wires at seat 1's end, and the speaker by its back with thin double-sided tape at its
-   outline beside the left edge, face (and foam ring) away from the board, its leads towards the
-   middle. Peel the speaker ring's liner later, just before the tub goes on.
-3. **The top piece**, face down on a cloth. Stick the tape strips round the panel's pocket (leave
-   the liner on).
-4. **The decks:** lower each into its end of the top piece from behind, face down. It drops onto
-   its wedges along the step and round the spine and sits flat.
-5. **Caps** into the decks from behind. Each ABXY cap's flange tab drops into a slot and ribs fill
+1. **The top piece**, face down on a cloth. Stick the tape strips round the panel's pocket (leave
+   the liner on). Peel the speaker's front ring liner and press the speaker face down into its
+   pocket in the right bezel, over the grille: the pocket centres it.
+2. **The decks:** lower each into its end of the top piece from behind, face down. It drops onto
+   its wedges along the step, round the spine and round the shoulder at each corner, and sits flat.
+3. **Caps** into the decks from behind. Each ABXY cap's flange tab drops into a slot and ribs fill
    the notches in its flange, so each cap fits only its own hole, one way round: turn the caps to
    match. Seen from that seat's player (from the front): A's tab (right cap) points down-left, B's
    (bottom) up-left, X's (top) down-right, Y's (left) up-right; from behind it is mirrored, so go by
    the slots. Then the D-pad and Start/Select, then the **silicone** over them: the walls on the
    deck's back locate each pad.
-6. **The panel:** peel the tape liner and lay the panel glass down into the pocket; the frame
-   centres it. Hold the board on edge at seat 1's end, its face towards the panel, flip J3's latch
-   up, slide the FPC's contacts into J3 (contacts down) until it stops, square, and press the latch
-   shut. A cracked panel comes out the same way.
-7. **The board**, face down onto the bosses (four on the top piece, one on each deck), the FPC
-   folding under the panel at the seat-1 edge (don't crease it). The crush ribs on the side walls and
-   the decks' end walls centre it; its tab under the USB-C sits in the notch.
-8. Peel the speaker ring's liner. **The tub** over it all: its tongue slides inside the skirts all
-   round, its tab rises into the notch under the USB-C, and the speaker's ring lands on its pad round
-   the chamber.
-9. **Six M2 x 8** from the back, up through the tub's bosses and the board into the top piece's and
+4. **The panel:** peel the tape liner and lay the panel glass down into the pocket; the frame
+   centres it.
+5. **The cell** into the pocket in the tub's floor on a strip of double-sided tape, pushed against
+   the pocket's right wall (towards the USB-C side, where TH1 reads it), its leads at the left end.
+6. **Plug in, the board on edge** at seat 1's end, its face towards the panel: flip J3's latch up,
+   slide the FPC's contacts into J3 (contacts down) until it stops, square, and press the latch
+   shut; the speaker's plug into J4 (its red lead is +, nearest J4's pin 1; the amplifier is
+   bridge-tied, so a reversed speaker only flips its phase); the cell's plug into J2, at the
+   corner of the board's hole, with the tub held beside it.
+7. **The board**, face down onto the bosses (four in the top piece's shoulders, one on each deck),
+   the FPC folding under the panel at the seat-1 edge (don't crease it).
+8. **The tub** over it all: the cell drops into the board's hole, the crush ribs on the tub's walls
+   centre the board, its tongue slides inside the skirts all round and its tab rises into the notch
+   under the USB-C (the board's tab in its slot).
+9. **Six M2 x 6** from the back, up through the tub's bosses and the board into the top piece's and
    the decks' bosses, snug, not tight (they cut their own thread in the plastic). They clamp the
    board between the bosses and hold the case shut, as on a DS Lite.
-10. Opening it again: the six screws out, lift the tub off, lift the board out (the cell and the
-    speaker come with it).
+10. Opening it again: the six screws out, lift the tub off (the cell comes with it, on its leads),
+    lift the board out.
 
 The power button is seat 1's Start button: hold it for about a second to turn the device on.

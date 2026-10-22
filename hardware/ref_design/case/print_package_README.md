@@ -1,8 +1,8 @@
 # Mega Blastoise: 3D print package
 
 Everything to print for the reference design's case and fit kit, generated from `case/case.scad`
-on the current design (2026-10-21: the 133 mm shell for the 2.4 in panel, built upside down; see
-`case/SHELL.md`): the tub, the top piece and two decks.
+on the current design (2026-10-22: the 77.4 x 132.7 x 9.55 mm shell for the board with the cell in
+it, built upside down; see `case/SHELL.md`): the tub, the top piece and two decks.
 
 ## The projects
 
@@ -12,8 +12,8 @@ project's printer and settings: Snapmaker U1, 0.20 mm Standard, textured PEI. PL
 toolhead 2: no PETG, no second toolhead, no prime tower. Open it, check the plate, slice.
 (`mega_blastoise_print_P1S.zip` has the same plates sliced for a Bambu Lab P1S.)
 
-Supports are per part, not per plate: only `board_mock`, `coupon_usb_board` and `speaker_dummy`
-get them (in `1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see below).
+Supports are per part, not per plate: only `board_mock` and `coupon_usb_board` get them (in
+`1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see below).
 <!-- /printer -->
 
 | Project | What's on it | Print it |
@@ -30,7 +30,7 @@ get them (in `1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see
 The top piece, the decks and the tuning deck slices print face down as exported (the slices legs
 up), the tub back down, everything else flat. `overhangs.py` checked every part for a downward face
 flatter than 45 degrees that the printer can't bridge (5 mm at most) or step out to (1 mm): only
-three parts have one, so only those parts get tree supports from the build plate (each part's own
+two parts have one, so only those parts get tree supports from the build plate (each part's own
 setting in the project; the plate's are off). Until 2026-10-21 the whole plate had them, and the
 slicer also filled the tub's six screw counterbores with support that fused into them: if you
 change a plate, keep supports on those parts only. The P1S kit checks its G-code for it
@@ -38,25 +38,28 @@ change a plate, keep supports on those parts only. The P1S kit checks its G-code
 - `board_mock` (in `1_case` and `5_unit`) and `coupon_usb_board` (in `4_fit_coupons`): the USB-C stand-in's
   front stands 1.2 mm out past the board's edge, round-cornered underneath. Supported, so it
   doesn't droop: the opening's fit round it is what the coupon tests.
-- `speaker_dummy` (in `1_case`): its solder tab and lead exit stick out 1.9 and 2.4 mm.
 
 `stl/` has every part as a plain STL, in case a project won't open in your Orca version: drag them
 onto a plate with the same settings. `top.stl`, `deck.stl` (print two) and `tub.stl` are the
 real case, each in its print pose.
 
-**The shell (2026-10-21).** The top piece (the screen face, the curved steps, the sides) and the
-two decks (the button faces) curve over the sides and meet the tub flush at one seam low on the
-walls; each deck seats into the top piece from behind on a 45 degree wedge and has its own screw.
-Everything is built upside down, and nothing needs supports. To assemble:
-1. Board face up: the cell's plug up through its hole into J2, the speaker's into J4; the cell on
-   the board's back on its foam pad, the speaker by its back on thin tape (outlines on the back).
-2. Top piece face down on a cloth. Each deck face down into its end from behind: it drops onto its
-   wedges and sits flat.
-3. Caps into the decks from behind (tabs into the slots, notches onto the ribs), silicone on them.
-4. Panel glass down into the top piece's pocket on its tape. Slide its FPC into J3 with the board
-   held on edge at seat 1's end; close the latch.
-5. Board face down onto the bosses (the crush ribs centre it). Tub over it all. Six M2 x 8 from the
-   back, snug.
+**The shell (2026-10-21, reworked 2026-10-22).** The top piece (the screen face, the curved steps,
+a shoulder at each corner round a side screw, the speaker's grille in the right bezel, the sides)
+and the two decks (the button faces) curve over the sides and meet the tub flush at one seam low on
+the walls; each deck seats into the top piece from behind on a 45 degree wedge and has its own
+screw. The cell sits in a hole in the board, its bottom in a pocket in the tub's floor. Everything
+is built upside down, and nothing needs supports. To assemble:
+1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
+   front foam ring stuck to the pocket's ceiling.
+2. Each deck face down into its end of the top piece from behind: it drops onto its wedges and sits
+   flat. Caps into the decks from behind (tabs into the slots, notches onto the ribs), silicone on
+   them.
+3. Panel glass down into the top piece's pocket on its tape.
+4. The cell into the tub's floor pocket on double-sided tape, against the pocket's right wall.
+5. Board on edge at seat 1's end: the FPC into J3 (close the latch), the speaker's plug into J4, the
+   cell's plug into J2.
+6. Board face down onto the bosses. Tub over it all (the cell drops into the board's hole, the
+   tub's crush ribs centre the board). Six M2 x 6 from the back, snug.
 
 Check that each deck drops in without force and doesn't rock, that the seam round the case is an
 even thin line with the outsides flush, and that the seam in the crease at each step's foot looks
@@ -96,7 +99,7 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
 - Screw holes: `coupon_screws_tub` (two of the tub's holes, printed flat as the tub) should come out
   with the 4.4 mm counterbore and the 2.4 mm hole open, and an M2 screw should pass; the old plates
   had supports in every counterbore (see above). `coupon_screws_top` (a top piece boss, face down)
-  should take an M2 x 8 self-tapper into its 1.6 mm pilot. Say which of the case's holes were filled.
+  should take an M2 x 6 self-tapper into its 1.6 mm pilot. Say which of the case's holes were filled.
 - Column clearance: slide each ring of `test_rings` over `test_column` (5.0 mm, as the bosses):
   report the tightest that slides on freely and the loosest that doesn't rattle. (The new decks have
   their own bosses, so no column passes through another part now; the answer is for later.)
@@ -111,8 +114,12 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   area centred in the window (`panel_fit`, `window_margin`).
 - Seat 1's end, built upside down: the top coupon face down, the deck into it (it should drop onto
   its wedges and sit without rocking: `deck_gap`), caps and silicone, the board mock face down, the
-  tub coupon. The cell plug (real or dummy) passes up through the board mock's hole and into J2.
+  tub coupon. The shoulder by the seat's side screw should sit in the deck's notch with an even
+  seam round it.
+- Speaker (in `1_case`): the dummy (or the real speaker) drops face down into the top piece's
+  pocket over the grille without play to speak of, and the cell dummy into the board mock's hole
+  and the tub's pocket.
 
 **The whole case (`1_case` and `1_case_decks`, or `5_unit`):** build it upside down as above. It
-should measure 13.35 mm at the screen and 11.5 mm at the decks, the seam flush all round, and
-nothing should rattle.
+should measure 9.55 mm at the screen and 7.7 mm at the decks, the seam flush all round, and
+nothing should rattle. Press each grille slot's rim: the speaker should sit flat behind it.

@@ -19,11 +19,11 @@ the board mock has the new outline and holes but today's part envelopes, cut to 
 | `../tub.stl`, `../top.stl`, `../deck.stl` | the real case: the tub (the back), the top piece, a deck (print two: one part for both ends) | each as exported, no supports: the tub back down, the top piece and the decks face down |
 | `board_mock.stl` | the board: outline, the six screw holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 20 membrane contacts, the four silicone pieces and the two Start/Select membranes engraved, J3's outline to tape a real connector on (ticks mark the two ends of the range J3 may move over) | flat, as exported (supports under the USB-C stand-in) |
 | `panel_dummy.stl` | the panel at its thickest (2.4 mm), active area engraved on the glass side | flat, glass side up |
-| `cell_dummy.stl` | the 403450 cell (50 x 34 x 4 mm) with its lead tab at its right-hand end | flat |
+| `cell_dummy.stl` | the 403450 cell (50 x 34 x 4 mm, nominal) with a stub where its leads leave its left end: for the board mock's hole and the tub's pocket | flat |
 | `cell_plug_dummy.stl` | a PicoBlade (MX1.25) plug with a cable stub (approximate) | upright |
-| `speaker_dummy.stl` | the GSPK151035PN speaker, 15 x 10 x 3.5 mm | flat (supports under its tab) |
-| `coupon_seam_tub.stl` + `coupon_seam_top.stl` | a stretch of the left wall at the seam, cut from the real tub and top piece: the tub's tongue, the top piece's skirt over it and a crush rib | as exported |
-| `coupon_buttons_tub.stl` + `_board.stl` + `_top.stl` + `_deck.stl` | seat 1's end of the tub, board, top piece (the step, the spine and the undercut) and seat 1's whole deck: the button stack and the deck's joint | as exported |
+| `speaker_dummy.stl` | the GSPK151035PN speaker, 10 x 15 x 3.5 mm, its cone's outline engraved: for its pocket under the grille | flat |
+| `coupon_seam_tub.stl` + `coupon_seam_top.stl` | a stretch of the left wall at the seam, cut from the real tub and top piece: the tub's tongue and a crush rib, the top piece's skirt over it | as exported |
+| `coupon_buttons_tub.stl` + `_board.stl` + `_top.stl` + `_deck.stl` | seat 1's end of the tub, board, top piece (the step, the spine, the shoulders and the undercut) and seat 1's whole deck: the button stack and the deck's joint | as exported |
 | `coupon_usb_tub.stl` + `coupon_usb_top.stl` + `coupon_usb_board.stl` | the USB-C opening: its lower half in the tub's tab, its upper half in the top piece's skirt, and the board's tab with a stand-in for the receptacle's shell between them | as exported |
 | `tune_openings.stl` | **the quickest button test (about 30 min):** D-pad openings at 0.55, 0.65 and 0.75 mm round the cross, a whole keyed A/B/X/Y cluster (tab slots and notch ribs), and plain holes at 7.6, 7.8 and 8.2 mm round its 8.0 (`cap_hole_d`); the numbers are engraved in the face | face down, as exported |
 | `tune_stack_dpad_board.stl` + `tune_stack_dpad_lid_dome*.stl` | one D-pad's slice of the board (contact rings engraved) and of the deck, the deck slice on four legs at its real height. Three, for a silicone 1.6, 1.75 or 1.9 mm tall at rest (`dome_h`); the value is engraved in each | board flat, deck slices face down |
@@ -35,15 +35,15 @@ the board mock has the new outline and holes but today's part envelopes, cut to 
 | `coupon_screws_top.stl` | one of the top piece's screw bosses with its 1.6 mm pilot, cut from the real top piece | face down, as the top piece |
 | `test_column.stl` + `test_rings.stl` | a 5.0 mm column (as the screw bosses) and four rings over it, 0.2, 0.3, 0.4 and 0.5 mm a side (engraved) | as exported |
 
-PLA, 0.2 mm layers, 3 walls; no supports except under the board mock's USB-C stand-in and the
-speaker dummy's tab (`overhangs.py` decides). Print the coupons with the same settings you'll use
+PLA, 0.2 mm layers, 3 walls; no supports except under the board mock's USB-C stand-in
+(`overhangs.py` decides). Print the coupons with the same settings you'll use
 for the case: they're how those settings get tuned.
 
 ## Have on hand
 
 The real parts, as far as they've arrived: the ER-TFT024IPS-3 panel, one Hirose FH12-50S-0.5SH(55)
 connector (LCSC C202116), both DS Lite silicone sets and caps, the 403450 cell with its plug, the
-speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
+speaker, 0.15 mm double-sided tape, a USB-C cable, calipers.
 
 ## Test in this order
 
@@ -76,7 +76,6 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   design assumes a D-pad pill spacing of 14.0 mm (another source says 13.5): measure it. Tune
   `dome_h` (sets the deck height), `piece_d`, `dpad_pitch`; the cap numbers from `case/DSLITE.md`
   (`cap_*`, `pocket_*`, `slot_*`, `dpad_*`) if a real cap disagrees.
-  The PicoBlade plug (real or dummy) should pass up through the board's hole in front of J2 and go into J2 between seat 1's clusters, its wires dropping back through the hole, without forcing them.
 - **USB-C:** board coupon face down into the top coupon, the tub coupon over it (its tab rises into
   the skirt's notch, the board's tab in its slot). The opening is the receptacle's own shape, `usb_gap` (0.25 mm) round its shell, and
   the shell's face sits 0.15 mm under the case's surface (`usb_recess`): the board now has a tab
@@ -84,16 +83,18 @@ speaker, 0.15 mm double-sided tape, the foam pad, a USB-C cable, calipers.
   too loose round the stand-in: `usb_gap`. A real plug's overmold should rest flat on the case.
 
 **2. Everything together (about a day of printing), upside down:**
-1. Board mock face up: the cell's lead up through its hole to J2's block, the speaker's to J4's.
-   Tape the real FH12 connector on J3's outline (mouth towards seat 1, pin 1 at the marked end).
-2. Top piece face down on the table; both decks face down into it from behind. Caps into the
-   decks from behind, silicone on them.
+1. Tape the real FH12 connector on the board mock's J3 outline (mouth towards seat 1, pin 1 at the
+   marked end).
+2. Top piece face down on the table; the speaker (or its dummy) face down into its pocket over the
+   grille; both decks face down into it from behind. Caps into the decks from behind, silicone on
+   them.
 3. Panel glass down into the top piece's pocket on its tape, centred by the frame. Slide its FPC
    into the connector with the board mock held on edge beside it. The design expects a little
    slack; if the tail bows up under the panel or can't reach, note by how much (`tip_range`).
-4. Board mock face down onto the bosses (the crush ribs centre it), the cell and speaker on its
-   back; tub over it all; six screws. The case should measure 13.35 mm at the screen, 11.5 at the
-   ends, and nothing should rattle.
+4. The cell (or its dummy) into the tub's floor pocket on tape, against its right wall. Board mock
+   face down onto the bosses; tub over it all (the cell drops into the board's hole, the tub's
+   crush ribs centre the board); six M2 x 6. The case should measure 9.55 mm at the screen, 7.7 at
+   the ends, and nothing should rattle.
 5. Press every button: each should click through and spring back.
 
 **3. Measure and record** (design_review.md, "Measure before ordering"): the silicone's pill
