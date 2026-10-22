@@ -1,6 +1,6 @@
 # The board with the cell in it (2026-10-22): what the case needs to know
 
-Routed clean on branch `ref-design-cellcut` at 4af3024 (0 unconnected, DRC 0 errors). With the speaker back and the board 72.4 mm wide (2026-10-22): routed clean again (0 unconnected, DRC 0 errors).
+Routed clean on branch `ref-design-cellcut` at 4af3024 (0 unconnected, DRC 0 errors). With the speaker back and the board 72.4 mm wide (2026-10-22): routed clean again (0 unconnected, DRC 0 errors). With the side screws back inward (2026-10-22, next section): routed clean again (0 unconnected, DRC 0 errors).
 
 For the Blastoise Shell session. The cell now sits in a hole in the board (row 19 of Alex's
 2026-10-21 list), and since 2026-10-22 the speaker lies on the board's top in the right bezel
@@ -9,6 +9,46 @@ Alex also allowed the board session to move the side screws and to slide the USB
 wall: the screws moved; the USB-C moved down its wall and, with the speaker, back to the case's own
 position. `case.scad` doesn't know any of this yet; nothing in the case was changed.
 The board's side is `board/placement.py` (`CUTOUTS`, `SIDE_SCREWS`, `USB_Y`).
+
+## Moved again: the side screws back inward (2026-10-22, Alex: no shoulders)
+
+**The four side screws now sit at |y| <= 29, inside the top piece's area**, so the shoulders,
+the decks' notches and the bosses past the step go. This section wins over every older number
+below.
+
+| | Case (x, y) | KiCad | Was (case) |
+|---|---|---|---|
+| **H1**, right strip, seat 2's end | **32.5, 29.0** | 132.5, 71.0 | 31.4, 36.0 |
+| **H2**, left strip, seat 2's end | **-32.5, 29.0** | 67.5, 71.0 | -31.4, 36.0 |
+| **H3**, right bezel, between the speaker and J4 | **25.9, -21.95** | 125.9, 121.95 | 31.4, -36.0 |
+| **H4**, left bezel, between J2 and the LDO | **-33.0, -15.2** | 67.0, 115.2 | -31.4, -36.0 |
+| H5, H6 (the ends) | 3.0, 50.75 / -3.0, -50.75, unchanged | | |
+
+- Every part keeps 2.8 mm (`boss_d` / 2 + 0.3) from each screw's centre. A 5 mm boss keeps 1.2 mm
+  from the board's edge at H1 and H2, 0.7 at H4 (x -35.5 against -36.2), and 1.3 from the cell's
+  hole at H2 (x -30.0 against the hole's -28.7): the tub's 6.0 bosses would leave only 0.8 to the
+  hole at H2 and 0.2 to the board's edge at H4, so slim them there.
+- H3 is 25.9 from the centre, not at the wall: the speaker (10 wide) and J4 fill the bezel's width
+  below the hole, so the screw sits under the bezel next to the panel's frame (x 22.86): a
+  5 mm boss there spans x 23.4 .. 28.4, 0.54 off the frame band, 0.3 below the speaker's
+  parts keep-out (body 0.8 off) and 0.3 above J4's mated plug.
+
+Other things that moved for it (the tables below have the old numbers; this list wins):
+
+| | Case (x, y) now | Was |
+|---|---|---|
+| **USB-C J1** centre (slid up its wall) | x face 38.55, **y 2.0** | y 0.0 |
+| USB-C tab | x 36.2 .. 37.2, **y 8 .. -4** | y 6 .. -6 |
+| **Speaker** centre (and cone, grille) | **28.7, -11.4** (body y -3.9 .. -18.9, parts kept out y -3.4 .. -19.4, x as before) | 28.7, -13.5 |
+| Speaker grille racetrack | x 25.2 .. 32.2, **y -5.4 .. -17.4** | y -7.5 .. -19.5 |
+| **J4** | **31.9, -27.0** (body x 28.75 .. 35.65, y -22.17 .. -31.73; plug x about 24.75 .. 28.75, y -24.75 .. -29.25) | 31.4, -26.75 |
+| **Debug pinholes** SW18 / SW19 | **-31.2, 8.6 / -31.2, 1.6** | -31.2, 13.0 / 6.0 |
+| J6 UART / J5 SWD | **-32.6, 22.7 / -32.6, 15.2** (courtyards y 26.1 .. 19.3 / 18.6 .. 11.8) | -32.6, 28.4 / 20.9 |
+| Q3 (SOT-23) | 25.5, -33.9 | 25.5, -33.4 |
+
+The speaker's top now runs to y -3.9, 0.1 inside the hole's edge (-3.8): the pocket in the top
+piece moves up with it. The power latch's first rows went up under seat 2's deck where the old
+H1 was (all 1.2 mm or lower).
 
 Coordinates: the case's frame (origin at the case's centre, x right, y up towards seat 2), with
 KiCad's in brackets (y down, the centre at 100, 100). Heights are over the board's top copper.
@@ -30,11 +70,11 @@ gets the whole 2 mm (10.9 mm): the power-on nets couldn't get past J1 there. Wha
 | J2, TH1 | -30.7, -7.24 / 26.1, 14.0 | -29.7 / 27.1 |
 | J5, J6 | -32.6, 20.9 / -32.6, 28.4 | -31.6 |
 
-Unchanged: the screws (x +-31.4, y +-36; the end ones), the clusters, Start/Select, the debug
+Unchanged then: the screws (x +-31.4, y +-36; the end ones), the clusters, Start/Select, the debug
 pinholes (-31.2, 13.0 / 6.0), the glass and frame, the speaker and J4. The tables below give the
 old numbers where they predate this; this table wins.
 
-## Moved: the screws and the USB-C
+## Moved: the screws and the USB-C (superseded: the screws moved back inward, above)
 
 | | Case (x, y) | KiCad | Was (case) |
 |---|---|---|---|
@@ -116,12 +156,13 @@ wall gets a notch or slot there (the case's call; debug is case-open).
 The board beside the hole is two strips, x -36.2 .. -28.7 (7.5 mm) and 25.3 .. 36.2 (10.9 mm), y
 -3.8 .. 33.2: the board's weakest part. H1/H2 hold their seat-2 ends 2.8 mm past the hole; their
 seat-1 ends run into the full-width board, so the side screws stay where they are (in the strips
-they closed half of each). What the case should add: **a floor rib under each strip**, along its
+they closed half of each). Since the screws moved back inward (above), H1/H2 sit 4.2 mm inside the
+strips' seat-2 ends. What the case should add: **a floor rib under each strip**, along its
 length, meeting the board's back (only soldermask there: the GND pour, tracks and tented vias),
 so nothing presses the strips into a bend:
 
 - under the left strip at least at the debug buttons a pin presses (SW18, SW19 at case (-31.2,
-  13.0) and (-31.2, 6.0)) and under J5/J6, where a cable is pushed in (-32.6, 20.9 / 28.4);
+  8.6) and (-31.2, 1.6)) and under J5/J6, where a cable is pushed in (-32.6, 15.2 / 22.7);
 - under the right strip (the power latch and TH1) at its middle, y about 14.
 
 Keep the ribs out of the hole (the cell) and 0.5 mm off its edge.
@@ -184,7 +225,18 @@ stuck down with foam tape and plugged into J4. The board keeps parts out of its 
   (flat test pads) and JP3 (a solder jumper) lie under the folded FPC.
 - The old side outlet and chamber go.
 
-## check_fit against this board (today's positions.json, 2026-10-22)
+## check_fit against this board (today's positions.json, 2026-10-22, the screws back inward)
+
+12 failures, all from the case's old positions: D2, D3, R13, R38, R42 inside the old H1 boss at
+(31.4, 36); R1, R3, R4 inside the old speaker keep-out (the speaker moved up 2.1 mm; they now sit
+above J4, right of H3); J1 2 mm up its wall: its opening off the mouth by 2.0 and its two
+through-hole leads (case (31.77, 6.32) and (35.95, 6.32)) on a floor rib, so the `rib_free`
+window under J1 moves up 2 mm too. The case's new bosses at the new positions are not checked
+until `case.scad` has them; the board keeps every part 2.8 mm from each (checked on the board).
+J4's mated plug (about y -24.75 .. -29.25) reaches 0.04 mm into C43's courtyard (1.0 mm tall) at
+its lower edge: an "about" box, as before.
+
+### Before the screws moved back (superseded)
 
 14 failures, all from things the case doesn't know yet: parts within the *old* side screws'
 bosses (C16, JP1 at the old (-31.4, -22); D8, Q7, R62, R63 at (31.4, 22); J5 at (-31.4, 22); J4

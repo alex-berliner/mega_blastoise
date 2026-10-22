@@ -65,7 +65,9 @@ CUTOUTS = [
 # J4 with room for its plug (9.5) don't all fit, so J1 went back up its wall to the case's own
 # position (USB_Y 100, beside the hole). build_pcb.py draws the speaker's outline on the
 # silkscreen and keeps parts (not copper) out of its footprint plus `grow` (a rule area).
-SPEAKER = dict(at=(128.7, 113.5), size=(10.0, 15.0), grow=0.5)   # KiCad x, y; x by y, mm
+# 2026-10-22, the side screws back inward: 2.1 mm up, its top 0.1 below the hole's edge (J1 went up
+# its wall to make room), so the screw H3 fits between it and J4
+SPEAKER = dict(at=(128.7, 111.4), size=(10.0, 15.0), grow=0.5)   # KiCad x, y; x by y, mm
 
 # ---- RP2350B core: copied from the reference board ------------------------------
 # In the left bezel since the cell took the middle of the board (2026-10-21), as Raspberry Pi drew
@@ -107,7 +109,12 @@ b = CASE["buttons"]
 # the screws (2026-10-21, Alex: any of the six may move): the four side screws went to the ends
 # of the long sides, past the cell's hole, where the board is full width; in the strips beside
 # the hole they closed half of each. The end screws stay. The case moves its bosses to match
-SIDE_SCREWS = {0: (131.4, 64.0), 1: (68.6, 64.0), 2: (131.4, 136.0), 3: (68.6, 136.0)}
+# Back inward (2026-10-22, Alex: |case y| <= 29, inside the top piece, no shoulders): H1/H2 at the
+# seat-2 ends of the strips (the wider board left them room; the parts that sat there went down
+# the strip or up where the old H1 was), H3 between the speaker and J4 in the right bezel, H4
+# between J2 and the LDO in the left bezel. Each hole keeps 2 mm or more from the board's and the
+# cell hole's edges, each 5 mm boss 0.7 or more
+SIDE_SCREWS = {0: (132.5, 71.0), 1: (67.5, 71.0), 2: (125.9, 121.95), 3: (67.0, 115.2)}
 s = [SIDE_SCREWS.get(i, xy) for i, xy in enumerate(CASE["pins"])]
 P = {}                       # ref: (x, y, rot, side)   side "F" or "B"
 
@@ -122,7 +129,7 @@ for ref, xy in CASE["ss_buttons"].items():  # Start/Select, between each seat's 
     put(ref, *xy)
 for i, (x, y) in enumerate(s):
     put(f"H{i + 1}", x, y)
-put("FID1", 66.6, 100.6)
+put("FID1", 65.3, 102.6)
 put("FID2", 133.2, 141.6)
 put("FID3", 66.8, 141.6)
 
@@ -160,14 +167,17 @@ put("JP2", 113.0, 116.0, 0)                 # VSYS to LED_A (J3 pin 50): flat, u
 put("TP16", 93.0, 141.6, 0)                 # GND for a scope clip
 
 # debug: left bezel, beside the cell's hole
-put("SW18", CASE["pinholes"][0][0], CASE["pinholes"][0][1], 90)
-put("SW19", CASE["pinholes"][1][0], CASE["pinholes"][1][1], 90)
-put("R26", 69.6, 99.6, 0)
+# the debug buttons (Alex: anywhere, next to each other; the case's pinholes follow): 4.4 mm down
+# the strip with J5 and J6 below the screw H2
+PINHOLES = [(68.8, 91.4), (68.8, 98.4)]
+put("SW18", *PINHOLES[0], 90)
+put("SW19", *PINHOLES[1], 90)
+put("R26", 65.6, 99.8, 90)                 # left of SW19
 # J6 (UART) and J5 (SWD) one above the other, both turned so their mouths face the board's left
 # edge (2026-10-22, Alex: they faced each other nose to nose and neither plug went in): the plugs
 # go in from the side with the case open, the pins face the cell's hole
-put("J6", 67.4, 71.6, 270)                  # UART: below the side screw H2
-put("J5", 67.4, 79.1, 270)                  # SWD: below J6, above SW18
+put("J6", 67.4, 77.3, 270)                  # UART: below the side screw H2
+put("J5", 67.4, 84.8, 270)                  # SWD: below J6, above SW18
 
 # edge part on the right: USB-C
 # Moved down the right wall below the cell's hole (2026-10-21, Alex: it may slide along its wall):
@@ -176,7 +186,8 @@ put("J5", 67.4, 79.1, 270)                  # SWD: below J6, above SW18
 # Back at the case's own position (2026-10-22): the speaker and J4 took the bezel below the hole.
 # Its pads face the hole: the USB pair drops to the back beside them (route.py usb_pair()), the
 # other pads come down the 2.8 mm between them and the hole's edge
-USB_Y = 100.0                               # KiCad y of the receptacle's centre (case y 0.0)
+# 2 mm up its wall (2026-10-22, the side screws back inward), clear of the speaker that moved up
+USB_Y = 98.0                                # KiCad y of the receptacle's centre (case y 2.0)
 _dy = USB_Y - CASE["usb"]["y"]
 USB_TAB = [[x, y + _dy] for x, y in CASE["usb"]["tab"]]    # the board's tab under the receptacle
 usb_x = CASE["usb"]["front_x"] - 3.65       # footprint front is 3.65 ahead of its origin
@@ -189,10 +200,10 @@ put("J1", usb_x, USB_Y, 90)
 # a row across the strip above J1 they walled off its tracks); C42, CC1's spare, along the hole's
 # edge in the strip
 put("U1", 120.6, 106.5, 0)
-put("R3", 124.15, 122.25, 0)
-put("R4", 126.15, 122.25, 0)
-put("R1", 124.15, 123.45, 0)
-put("R2", 126.15, 123.45, 0)
+put("R3", 130.0, 120.0, 0)                  # since 2026-10-22 right of the screw H3, above J4
+put("R4", 132.0, 120.0, 0)
+put("R1", 130.0, 121.15, 0)
+put("R2", 132.0, 121.15, 0)
 put("C1", 120.3, 109.4, 0)                  # below the USB pair
 put("R41", 120.3, 111.1, 0)                # C1's series resistor (hot-plug ringing)
 put("C42", 126.7, 89.5, 90)                 # spares on CC1 and CC2
@@ -200,7 +211,7 @@ put("C43", 125.7, 130.4, 0)
 
 # the cell: J2 at its hole's seat-1 corner, mouth into the hole's lead pocket, so the plug's
 # back and wires drop straight down beside the cell's left end; the charger and the load sharing
-# below it, round the screw at 68.6, 122
+# below it
 put("J2", 69.3, 107.24, 180)                # PicoBlade: mouth towards the hole, contacts behind
 put("JP5", 90.0, 117.0, 0)                  # cell -> VBAT
 put("C3", 116.9, 110.0, 90)                  # VBAT
@@ -215,15 +226,16 @@ put("TP7", 113.0, 119.6, 0)                 # CHG_TEMP: flat, under the folded F
 put("TP15", 113.0, 130.0, 0)                 # GND for a scope clip, by the charger: flat, under the folded FPC
 # the cell's temperature: TH1 at the hole's right edge, which the cell is pushed against
 put("TH1", 126.1, 86.0, 90)
-put("C41", 133.4, 90.4, 90)                 # spare across TEMP)
+put("C41", 133.4, 89.9, 90)                 # spare across TEMP)
 
-# power switch latch: right strip, above and below the screw at 131.4, 78
-put("D2", 132.6, 70.2, 0)
-put("D3", 132.7, 73.4, 180)
-put("R13", 128.6, 70.4, 90)
-put("R42", 129.8, 70.4, 90)
-put("R14", 128.6, 73.4, 90)
-put("R38", 130.0, 73.6, 90)
+# power switch latch: right strip, below the screw H1, its first rows above it (under seat 2's
+# deck, where the old H1 was)
+put("D2", 132.6, 63.4, 0)
+put("D3", 132.7, 66.6, 180)
+put("R13", 128.6, 63.6, 90)
+put("R42", 129.8, 63.6, 90)
+put("R14", 128.6, 66.6, 90)
+put("R38", 130.0, 66.8, 90)
 put("Q1", 131.5, 82.9, 0)
 put("R15", 133.6, 86.4, 90)
 put("R16", 131.0, 85.8, 0)
@@ -240,7 +252,7 @@ put("JP1", 66.4, 121.6, 90)
 # the core's loose parts: the reference's parts by its flash (QSPI_SS's pull-up, its 1k to the
 # BOOTSEL button, a 3V3 decoupler) and the decouplers that would land on the screw or the FPC
 put("R23", 71.2, 113.0, 90)                # QSPI_SS pull-up, by the core (it was across the board)
-put("R25", 69.6, 98.3, 0)                 # below SW19 (the hole moved 1 mm left)
+put("R25", 65.6, 97.6, 90)                # left of SW19
 put("C10", 121.0, 130.8, 90)
 
 # battery sense
@@ -306,7 +318,7 @@ put("R32", 116.55, 133.6, 0)
 put("C37", 118.53, 133.6, 0)
 put("R33", 120.51, 133.6, 0)
 put("C38", 122.49, 133.6, 0)
-put("Q3", 125.5, 133.4, 0)                  # SHUTDOWN switch: under seat 1's deck above H3, out of the cluster's band
+put("Q3", 125.5, 133.4, 0)                  # SHUTDOWN switch: under seat 1's deck, out of the cluster's band
 put("TP8", 113.0, 123.5, 0)                 # SHUTDOWN: flat, under the folded FPC like JP2
 put("JP3", 113.0, 127.0, 0)                 # VSYS -> amplifier
-put("J4", 131.4, 126.75, 270)               # PicoBlade like J2: mouth towards the glass, pins by the wall
+put("J4", 131.9, 127.0, 270)                # PicoBlade like J2: mouth towards the glass, pins by the wall
