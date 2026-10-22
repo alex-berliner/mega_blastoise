@@ -120,19 +120,17 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 let MODEL = { z_board: 2.0, case_h: 13.9, z: {} };   // replaced by parts/model.json
 const PARTS = [
   { key: "top", name: "Top piece", file: "parts/top.stl", color: "#5a6573", lift: 112, shell: true,
-    note: "Printed face down, no supports. The screen face, the curved steps down to the decks and the sides, down to the seam with the tub. Four screws hold it; the panel sits in its pocket." },
+    note: "Printed face down, no supports. The screen face, the curved steps down to the decks, a shoulder at each corner round a side screw, and the sides, down to the seam with the tub. Four screws hold it; the panel sits in its pocket, the speaker under a grille in the right bezel." },
   { key: "decks", name: "Decks", file: "parts/decks.stl", color: "#d9822b", lift: 100, shell: true,
     note: "Printed face down, no supports; one part for both ends. Each seats into the top piece from behind on a 45 degree wedge, curves over the end and sides to the seam, and its own screw holds it." },
   { key: "caps", name: "Button caps", file: "parts/caps.stl", color: "#eef0f4", lift: 88,
     note: "DS Lite caps, bought. Their flanges sit under the decks, which hold them in." },
   { key: "panel", name: "Display panel", file: "parts/panel.stl", color: "#0b0e13", lift: 68, rough: 0.25,
     note: "2.4 in IPS (ER-TFT024IPS-3), taped into the top piece's pocket. Its ribbon folds round under it to J3." },
-  { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 14, metal: 0.6,
-    note: "403450 Li-ion, 4 × 34 × 50 mm, lying on the tub floor under the board. Its wires come up through a slot to J2." },
-  { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 10, metal: 0.5,
-    note: "15 × 10 mm, face down on the tub floor past the cell; it plays out of slots in the left side's lower edge." },
-  { key: "foam", name: "Foam spacer", file: "parts/foam.stl", color: "#e2bf55", lift: 26,
-    note: "0.45 mm foam pad between the cell and the board's back." },
+  { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 20, metal: 0.6,
+    note: "403450 Li-ion, 50 × 34 × 4 mm, in a hole in the board, its bottom in a pocket in the tub's floor. Its leads run from its left end to J2 at the hole's corner." },
+  { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 46, metal: 0.5,
+    note: "15 × 10 mm, face up on the board in the right bezel, plugged into J4; it plays up through a grille in the face." },
   { key: "silicone", name: "Silicone domes", file: "parts/silicone.stl", color: "#8e959f", lift: 52,
     note: "DS Lite button membranes, 1.2 mm, over the board's contact pads." },
   { key: "board", name: "Circuit board", file: "parts/board.glb", lift: 40,
@@ -140,7 +138,7 @@ const PARTS = [
   { key: "tub", name: "Tub", file: "parts/tub.stl", color: "#2c343f", lift: 0, shell: true,
     note: "Printed back down. The back and its rounded edge, up to the seam; a tongue inside the top pieces' skirts, and a tab carrying the USB-C opening's lower half." },
   { key: "screws", name: "Screws", file: "parts/screws.stl", color: "#a9afb8", lift: -28, metal: 0.9,
-    note: "Six M2 × 8 self-tapping, from the back, through the board: four into the top piece, one into each deck." },
+    note: "Six M2 × 6 self-tapping, from the back, through the board: four into the top piece's shoulders, one into each deck." },
 ];
 
 const canvas = document.getElementById("c");
