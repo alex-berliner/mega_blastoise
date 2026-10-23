@@ -166,27 +166,35 @@ back_r = 4.2;             // the back rolls into the walls through back_r, as a 
 face_r = 3.0;             // the top piece's and the decks' faces roll into the walls (Alex, 2026-10-21, item
                           // 10: the top pieces curve over the sides, the tub no longer forms the outer lip)
 support_pitch = 12;       // the floor's support ribs under the board
-// The seam: the top pieces (the top piece and both decks) meet the tub flush where the back's round
-// meets the walls. The tub's wall carries a tongue, the inner half of the wall standing up past the
-// seam, and the top pieces' skirts come down outside it (their outer half to the seam): they sit
-// flush with the tub, can't move inwards, and the seam has no straight path into the case. Six screws
-// lock it all; the snap hooks went (2026-10-21: PLA hooks snapped)
+// The seam: the top pieces (the top piece and both decks) meet the tub flush, low on the back's round.
+// The tub's wall carries a tongue, the inner half of the wall standing up past the seam, and the top
+// pieces' skirts come down outside it (their outer half to the seam): they sit flush with the tub,
+// can't move inwards, and the seam has no straight path into the case. Six screws lock it all; the
+// snap hooks went (2026-10-21: PLA hooks snapped)
 // The joints (Alex, 2026-10-22, after printing this shell: the top pieces "need to flow better and
 // interlock", "the tub has a tall inner wall that the top piece slides farther down", tabs on the tub
 // wall into the top pieces, and the four parts must hold together before the screws, as the last
-// shell did): the tongue is 3.0 tall under the top piece and 2.5 under the decks (it was 1.5), and it
+// shell did): the tongue reaches 7.2 under the top piece and 6.7 under the decks (it was 1.5 tall), and it
 // carries the joints: tabs into pockets in the top piece, posts in the corners that push each deck
 // onto its wedges, and grip ribs (case/SHELL.md, "The joints")
-z_seam = back_r;
+// The seam came down onto the back's round (Alex, 2026-10-22, after the joints: the top pieces' walls
+// over most of the round, to a much lower ledge on the tub, the tub keeping its tongue): it was at the
+// round's end (back_r, 4.2). The skirts follow the round down to it, their inner faces still straight
+// down the tongue, so they slide straight on. 2.55 is as low as the skirts' tips stay skirt_t thick
+// with the tongue where it is (the round comes 0.30 in at their tips, 2.65; at a 2.5 seam it would be
+// 0.32 and the tips 0.68); beside the board's edge there is 0.25 to spare (asserted below)
+z_seam = 2.55;
 // Printed part sliding on printed part, each side: the tub's tongue inside the skirts, the tabs in
 // their pockets. 0.15 was too tight for the old deck insert's ring round the lid's boss.
 // GUESS (Alex, 2026-10-21: best guess until 6_tests): 0.25; test_rings (0.2 to 0.5) settles it
 slide_fit = 0.25;
 seam_fit = slide_fit;                                   // the tongue's clearance to the skirts (and the tabs')
-tongue_h = 3.0;           // the tongue over the seam along the top piece's sides (its top 7.2, 0.35 under the
-                          // top piece's underside), and under the decks and across the step's band, where
-deck_tongue_h = 2.5;      // the faces are 1.85 lower (its top 6.7, 1.0 under the decks' face): there the
-                          // tongue leans in as the face's round comes in, and its tip is chamfered
+tongue_top = 7.2;         // the tongue's top along the top piece's sides (0.35 under the top piece's underside),
+deck_tongue_top = 6.7;    // and under the decks and across the step's band, where the faces are 1.85 lower (1.0
+                          // under the decks' face): there the tongue leans in as the face's round comes in, and
+                          // its tip is chamfered. It rises from the seam: 4.65 and 4.15 tall since the seam came
+                          // down (3.0 and 2.5 over the seam at 4.2; 1.5 before "The joints")
+tongue_h = tongue_top - z_seam;  deck_tongue_h = deck_tongue_top - z_seam;
 skirt_t = 0.7;            // the skirts' outer half is never thinner than this, outside the tongue's groove
 tongue_t = wall / 2 - seam_fit;                         // the tongue's thickness (0.75; its tip tapers)
 tongue_lead = 0.3;        // the tip's outer edge chamfered 45 degrees, a lead-in into the skirts
@@ -382,7 +390,9 @@ usb_r = 1.0;                                            // its corner radius: a 
 // centre: the upper half in the top piece's skirt, the lower half in a tab of the tub that rises from
 // the seam into a notch in the skirt (no roof over a hole, in either print pose). The seams round the
 // tab step halfway through the wall (usb_step), so they don't run straight through it (Alex,
-// 2026-10-20: light showed through them)
+// 2026-10-20: light showed through them). The tab stays with the seam under the port (2026-10-22):
+// the receptacle stands 0.85 into the skirt, and the board goes onto the face-down top piece straight
+// down, so whatever lies under the receptacle's mouth in the wall can't be the top piece's
 usb_recess = 0.15;  usb_gap = 0.25;
 usb_hole = [usb_w + 2 * usb_gap, usb_h + 2 * usb_gap, usb_r + usb_gap];   // width, height, corner radius
 usb_step = 1.0;                                         // the step in the tab's seams, inside the wall's outer half
@@ -457,6 +467,12 @@ assert(abs(usb_zc - (z_top_cu + usb_h / 2)) <= 0.05 && usb_hole[0] >= usb_w + 0.
 assert(usb_open_x[0] <= in_x - tub_round_in - 0.5 && usb_open_x[1] >= case_w / 2 + 0.5, "the USB-C opening isn't cut through the wall");
 assert(usb_front > in_x && usb_front <= case_w / 2, "the USB-C receptacle's face isn't in the wall");
 assert(usb_recess <= plug_len_min - usb_mate - 0.1, "a mated USB-C plug's overmold runs into the wall");
+// the opening's lower half is the tub's tab's, which rises from the seam (under the opening it is 0.8
+// tall or more), and its upper half the top piece's: the receptacle (on the board, face down in the top
+// piece) goes into the notch from behind, past nothing of the top piece
+assert(usb_zc - usb_hole[1] / 2 - z_seam >= 0.8 && usb_zc - usb_step - 0.1 >= usb_zc - usb_hole[1] / 2 + 0.3,
+       "the tub's USB-C tab under the opening is too thin");
+assert(usb_front - (case_w / 2 - wall / 2) > 0 && z_seam < z_top_cu, "the USB-C notch isn't needed: drop the tab");
 // J2, J5, J6 under the left bezel
 assert(z_ceil - z_top_cu >= j2_h + 0.3 && z_ceil - z_top_cu >= debug_h + 0.3, "J2 or a debug connector touches the top piece");
 assert(j2_plug[1][0] <= cell_hole[0][0] + 0.2, "J2's plug isn't at the hole's corner");
@@ -490,6 +506,13 @@ assert(overhang >= 30 && overhang <= 80, "overhang out of range");
 // reach past its top, its walls keep board_clear - tub_round_in off its edge
 assert(z_top_cu + crush_reach <= z_seam + deck_tongue_h && z_board - 0.3 >= floor_t, "the tub's crush ribs miss the board's edge");
 assert(tub_round_in <= board_clear - 0.3, "the tub's wall comes within 0.3 of the board");
+// the seam on the back's round (2026-10-22): the skirts' tips (at z_bot, where the round has come in
+// furthest over the skirts) skirt_t thick outside their grooves, at the top piece and the decks; and
+// beside the board's edge, at every height the skirts cover, the skirt, its fit, the tongue and 0.25
+// to the board inside the round (the round comes in furthest at the skirts' tips)
+assert(z_seam <= back_r && z_seam >= back_r * (1 - sin(overhang)), "the seam isn't on the back's round");
+for (H = [case_h, deck_face]) assert(groove_in(z_bot, H) - back_in(z_bot) >= skirt_t - 1e-6, "a skirt's tip is too thin");
+assert(wall + board_clear - back_in(z_bot) >= skirt_t + seam_fit + tongue_t + 0.25, "no room beside the board's edge for a skirt and the tongue");
 // The joints (2026-10-22, case/SHELL.md "The joints"; tune skips them: its slices move the decks' face).
 // The tongue: as tall as Alex asked (at least 2.5, about 3), its tip whole, 0.2 or more from the
 // board's edge (it passes the edge as the tub goes on), and the groove over it leaves the skirts
@@ -795,11 +818,15 @@ z_tongue = z_seam + tongue_h;  z_deck_tongue = z_seam + deck_tongue_h;
 // Where it is the wall's inner half (all round up to z_tongue_straight, along the top piece's sides up to
 // its tip's chamfer) it is cut from the plan's own offsets, as the USB-C tab and the crush ribs that meet
 // it are; the leaning and chamfered parts are lofts, eps inside it where they overlap
-z_tongue_straight = max([for (k = [0:400]) let(z = z_seam + 0.01 * k)
+z_tongue_straight = max([for (k = [0:800]) let(z = z_seam + 0.01 * k)
   if (z <= z_deck_tongue && tongue_out(z, deck_face, z_deck_tongue) <= wall / 2 + seam_fit + 1e-6) z]);
 module tongue_ring2d() difference() { inner2d(wall / 2 - seam_fit); inner2d(); }
 module tongue() {
   translate([0, 0, z_seam - eps]) linear_extrude(z_tongue_straight - z_seam + eps) tongue_ring2d();
+  // under the round's end, where the board's edge is, the tongue reaches in to the cavity's wall below
+  // the seam (tub_round_in), 0.3 off the board, so the tub's top 1.65 isn't only the tongue's 0.75
+  if (z_seam < back_r) translate([0, 0, z_seam - eps]) linear_extrude(back_r - z_seam + eps)
+    difference() { inner2d(wall / 2 - seam_fit); inner2d(-tub_round_in); }
   intersection() {
     union() {
       translate([0, 0, z_tongue_straight - 0.13]) linear_extrude(z_tongue - tongue_lead - z_tongue_straight + 0.13) tongue_ring2d();
@@ -855,7 +882,7 @@ grips = concat([[1, 25, case_h], [1, -25, case_h], [-1, 25, case_h], [-1, -25, c
                [for (sx = [-1, 1], sy = [-1, 1]) [sx, sy * 52, deck_face]]);
 // a rib runs up the tongue to 0.1 short of where its outside starts to lean in, its top a 45 degree lead-in
 function grip_top(H) = let(zt = H == case_h ? z_tongue : z_deck_tongue)
-  max([for (k = [0:400]) let(z = z_seam + 0.01 * k) if (z <= zt && tongue_out(z, H, zt) <= wall / 2 + seam_fit + 1e-6) z]);
+  max([for (k = [0:800]) let(z = z_seam + 0.01 * k) if (z <= zt && tongue_out(z, H, zt) <= wall / 2 + seam_fit + 1e-6) z]);
 module grip(g) let(sx = g[0], w = len(g) > 3 ? g[3] : grip_w, z1 = grip_top(g[2]) - 0.1)
   translate([sx * (case_w / 2 - wall / 2 - seam_fit), g[1], 0]) scale([sx, 1, 1]) rotate([90, 0, 0]) linear_extrude(w, center = true)
     polygon([[-0.1, z_seam - 0.3], [grip_reach, z_seam - 0.3], [grip_reach, z1 - grip_reach - 0.05], [-0.05, z1], [-0.1, z1]]);
@@ -912,18 +939,19 @@ module loft(rings) let(m = len(rings[0]), n = len(rings) - 1) polyhedron(
     [for (k = [0:n - 1], i = [0:m - 1]) let(a = k * m + i, b = k * m + (i + 1) % m) each [[b, a, a + m], [b, a + m, b + m]]]));
 // a solid lofted through the case's outline at each level [z, inset], from the first level to the last
 module rr_loft(levels) loft([for (l = levels) rr_pts(l[1], l[0])]);
-module tub_outside(h = z_seam) union() {
-  rr_loft([for (k = [0:back_n]) [k * back_r / back_n, back_in(k * back_r / back_n)]]);
-  if (h > back_r) translate([0, 0, back_r]) linear_extrude(h - back_r) outline2d();
-}
+// [z, inset] up the back's round every 0.1 from z0 to z1 (both ends included); grow: that much more in
+function back_levels(z0, z1, grow = 0) = let(k0 = floor(z0 / (back_r / back_n) + 1e-6) + 1, k1 = ceil(z1 / (back_r / back_n) - 1e-6) - 1)
+  [for (z = concat([z0], [for (k = [k0:1:k1]) k * back_r / back_n], [z1])) [z, back_in(z) + grow]];
+// the case's outside up the back's round to h (and straight up past its end), shrink: that much inside it
+// (one loft: a straight prism on its top left non-manifold edges where the USB-C tab met the joint)
+module tub_outside(h = z_seam, shrink = 0) rr_loft(concat(back_levels(0, min(h, back_r), shrink), h > back_r ? [[h, shrink]] : []));
 module tub() difference() {
   union() {
     difference() {
       tub_outside();
       // the cavity: tub_round_in inside the walls up the round (the board's edge is in it, since
       // 2026-10-22), the wall's inside above it
-      translate([0, 0, floor_t]) linear_extrude(back_r - floor_t + 0.01) inner2d(-tub_round_in);
-      translate([0, 0, back_r]) linear_extrude(case_h) inner2d();
+      translate([0, 0, floor_t]) linear_extrude(z_seam - floor_t + 0.01) inner2d(-tub_round_in);
     }
     // the tongue: the wall's inner half, up past the seam inside the top pieces' skirts, its keys (the
     // top piece's tabs, the decks' corner posts) and its grip ribs
@@ -931,10 +959,10 @@ module tub() difference() {
     for (k = keys) key_tab(k);
     for (sx = [-1, 1], sy = [-1, 1]) post(sx, sy);
     for (g = grips) grip(g);
-    // the tab that carries the USB-C opening's lower half, up into the top piece's notch (0.01 in
-    // from the outline: its foot overlaps the wall under the seam, and an outer face flush with the
-    // wall's would meet the back's round exactly along the seam)
-    intersection() { usb_notch(usb_fit, 0.1); linear_extrude(case_h) offset(delta = -0.01) outline2d(); }
+    // the tab that carries the USB-C opening's lower half, up from the seam into the top piece's notch,
+    // its outside the round's (0.01 in from it: its foot overlaps the wall under the seam, and an outer
+    // face flush with the wall's would meet it exactly along the seam)
+    intersection() { usb_notch(usb_fit, 0.1); tub_outside(case_h, 0.01); }
     // bosses up to the board (the screws come up through them)
     // (turned half a facet: unturned, the floor rib at x 24.4 runs exactly through two of H3's corners)
     for (i = [0:5]) at(pins[i]) rotate(180 / $fn) cylinder(d = tub_boss_d[i], h = z_board);
@@ -1055,8 +1083,11 @@ module step_box(r, sides) {
 // to the deck at each end (the left is its mirror): its section at each y, clockwise seen from +x. It
 // starts at side_x0, inside the screen block's edge
 side_x0 = 26.4;
+// Under the round's end the skirt follows the back's round in, down to its tip at z_bot (2026-10-22)
+skirt_levels = back_levels(z_bot, back_r);              // [z, inset] up the round, z_bot to back_r
 function side_section(y, h) = concat([[side_x0, y, z_bot], [side_x0, y, h]],
-  [for (k = [0:round_n]) let(dd = face_r * k / round_n) [case_w / 2 - edge_in(dd, face_r), y, h - dd]], [[case_w / 2, y, z_bot]]);
+  [for (k = [0:round_n]) let(dd = face_r * k / round_n) [case_w / 2 - edge_in(dd, face_r), y, h - dd]],
+  [for (i = [len(skirt_levels) - 1:-1:0]) [case_w / 2 - skirt_levels[i][1], y, skirt_levels[i][0]]]);
 function side_ys() = let(top = [for (k = [step_n:-1:0]) [joint_y - step_in(step_d * k / step_n), case_h - step_d * k / step_n]])
   concat([[-joint_y, deck_face]], [for (i = [0:len(top) - 1]) [-top[i][0], top[i][1]]],
          [for (i = [len(top) - 1:-1:0]) top[i]], [[joint_y, deck_face]]);
@@ -1137,7 +1168,7 @@ module deck(sy) difference() {
         // its face and outside: the outline's round from the deck face, out to the case's outline,
         // one smooth loft (as the top piece's and the tub's)
         intersection() {
-          rr_loft(concat([[z_bot, 0]], [for (k = [round_n:-1:0]) [deck_face - face_r * k / round_n, edge_in(face_r * k / round_n, face_r)]]));
+          rr_loft(concat(skirt_levels, [for (k = [round_n:-1:0]) [deck_face - face_r * k / round_n, edge_in(face_r * k / round_n, face_r)]]));
           translate([0, 0, z_bot - 1]) linear_extrude(deck_face - z_bot + 2) deck_region2d(sy);
         }
       }
