@@ -573,6 +573,9 @@ impl Battle {
                 if mon.trapped_n > 0 {
                     plan.push((7, s));
                 }
+                if mon.bide.is_some() {
+                    plan.push((13, s));
+                }
                 if mon.must_recharge {
                     plan.push((8, s));
                 }

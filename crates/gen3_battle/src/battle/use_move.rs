@@ -339,11 +339,11 @@ impl Battle {
         // is asked last of all: a confused, charmed or paralyzed Bider is
         // stopped by the coin above and loses the volatile with the turn.
         // Its `onBeforeMove` answers false, so no `AfterMove` either.
-        if let Some((stored, left)) = self.sides[side].mon().bide {
-            if left > 0 {
-                self.sides[side].mon_mut().bide = Some((stored, left - 1));
-                return false;
-            }
+        // The clock itself does NOT run here: the sim's volatile is one of
+        // the bare duration ones, ticked at every residual, and the residual
+        // carries the elimination of a release turn that never happened.
+        if self.sides[side].mon().bide.is_some_and(|(_, left)| left > 0) {
+            return false;
         }
         true
     }
@@ -1292,8 +1292,11 @@ impl Battle {
                 return true;
             }
             // Three turns in total, the sim's `duration: 3`: the turn it is
-            // chosen, one silent turn, then the release on the third.
-            self.sides[side].mon_mut().bide = Some((0, 1));
+            // chosen, one silent turn, then the release on the third. The
+            // field counts RESIDUALS left, one less than the sim's own
+            // duration, because the tick runs at the end of every turn rather
+            // than at the Bider's next action (see the residual bucket).
+            self.sides[side].mon_mut().bide = Some((0, 2));
             self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
             events.push(Event::Charging {
                 side: side as u8 + 1,
@@ -1776,7 +1779,8 @@ impl Battle {
             let foe_b = self.sides[foe].mon().bearer();
             let user_i = self.sides[side].mon().holder();
             let foe_i = self.sides[foe].mon().holder();
-            attacker.stat_mod = ability::attack_chain(&user_b, physical);
+            let mate = self.mate_on_field(self.sides[side].mon());
+            attacker.stat_mod = ability::attack_chain(&user_b, physical, mate);
         attacker.stat_pre = ability::hustle_chain(&user_b, physical);
             attacker
                 .stat_mod
@@ -2322,6 +2326,12 @@ impl Battle {
         // reads. Recoil is paid inline inside the substitute hook, so recoil
         // does see the soaked hits and keeps reading `total`.
         let mut past_sub = 0u16;
+        // Whether any strike of this move reached the mon itself, the shape
+        // the sim's `damagedTargets` encodes: a Focus Band's or an Endure's
+        // zero is still a number, so Thief's and Knock Off's AfterHit still
+        // run; a strike the Substitute soaked is not a number, and theirs
+        // does not.
+        let mut reached = false;
         for hit_i in 0..hits {
             let (mut attacker, mut defender) = self.attack_pair(side);
             // Beat Up strikes with each ally's BASE Attack against the
@@ -2531,7 +2541,8 @@ impl Battle {
             let physical = slot.entry.id != "beatup" && ability::physical_category(move_type);
             let user_i = self.sides[side].mon().holder();
             let foe_i = self.sides[foe].mon().holder();
-            attacker.stat_mod = ability::attack_chain(&user_b, physical);
+            let mate = self.mate_on_field(self.sides[side].mon());
+            attacker.stat_mod = ability::attack_chain(&user_b, physical, mate);
             attacker.stat_pre = ability::hustle_chain(&user_b, physical);
             attacker.stat_mod
                 .extend(item::attack_chain(&user_i, move_type, physical));
@@ -2625,6 +2636,7 @@ impl Battle {
                 // A hit that got past the doll is a hit for the `Hit` event,
                 // which is all Focus Punch's charge watches.
                 self.hit_this_turn[foe] = true;
+                reached = true;
                 // Which book a hit goes in is the CATEGORY, except that
                 // this era names Hidden Power in both handlers and puts it in
                 // the physical one whatever type it came out as: gen 3's
@@ -2756,6 +2768,12 @@ impl Battle {
                     mon.recharge_fresh = true;
                 }
             }
+            // The sim's AfterHit fires for every target whose damage is a
+            // number, and a band-or-Endure-clamped zero is one of them, so
+            // a Thief banked nothing but still pockets whatever was held.
+            if reached {
+                self.pocket_after_hit(side, foe, &slot, reached);
+            }
             if boom {
                 self.resolve_faints(side, foe, events);
             }
@@ -2824,42 +2842,7 @@ impl Battle {
             });
         }
 
-        // Thief and Covet pocket what the target was holding, but only if
-        // the thief's own hands are empty; Knock Off simply strikes it away.
-        // Sticky Hold keeps hold of it either way, and in this era Knock Off
-        // gets no extra power for the trouble.
-        // `if (moveData.onAfterHit && pokemon.hp)` — the sim asks after the
-        // THIEF, not after the victim, and the faint is not processed until
-        // the move is over. So a Covet or a Thief that knocks its target out
-        // walks off with the item anyway, and so does a Knock Off.
-        if total > 0 && !self.sides[side].mon().fainted() {
-            let theirs = self.sides[foe].mon().item;
-            let held = self.sides[foe].mon().ability == "stickyhold";
-            match slot.entry.id {
-                // `takeItem` refuses outright when EITHER side of the
-                // exchange has had an item knocked off it in this era.
-                "thief" | "covet"
-                    if self.sides[side].mon().item.is_empty()
-                        && !theirs.is_empty()
-                        && !held
-                        && !self.sides[side].mon().item_knocked_off
-                        && !self.sides[foe].mon().item_knocked_off =>
-                {
-                    self.sides[foe].mon_mut().item = "";
-                    self.sides[side].mon_mut().item = theirs;
-                    // A stolen berry is a berry in hand: the sim's setItem
-                    // runs an update, so a thief that pockets a Rawst eats
-                    // it on the spot and walks away unburned.
-                    self.ability_update(side);
-                }
-                "knockoff" if !theirs.is_empty() && !held => {
-                    let victim = self.sides[foe].mon_mut();
-                    victim.item = "";
-                    victim.item_knocked_off = true;
-                }
-                _ => {}
-            }
-        }
+        self.pocket_after_hit(side, foe, &slot, reached);
         self.shell_bell(side, past_sub, events);
 
 
@@ -2903,6 +2886,54 @@ impl Battle {
     /// it), and Counter skips the Rock (its move is not in the list, so the
     /// call would only be a no-op bought with a flag).
     #[allow(clippy::too_many_arguments)]
+    /// Thief and Covet pocket what the target was holding, but only if the
+    /// thief's own hands are empty; Knock Off simply strikes it away. Sticky
+    /// Hold keeps hold of it either way, and in this era Knock Off gets no
+    /// extra power for the trouble.
+    ///
+    /// `if (moveData.onAfterHit && pokemon.hp)`: the sim asks after the
+    /// THIEF, not after the victim, and the faint is not processed until the
+    /// move is over, so a Covet or a Thief that knocks its target out walks
+    /// off with the item anyway, and so does a Knock Off. And it fires on a
+    /// hit the band or Endure clamped to nothing: a zero is still a number
+    /// in `damagedTargets`, and `move.totalDamage` is only the shell bell's
+    /// ledger.
+    ///
+    /// `reached` says a strike got past any Substitute; the sim nulls a
+    /// substitute-soaked target out of `damagedTargets`, so theirs does not
+    /// run for one.
+    fn pocket_after_hit(&mut self, side: usize, foe: usize, slot: &MoveSlot, reached: bool) {
+        if !reached || self.sides[side].mon().fainted() {
+            return;
+        }
+        let theirs = self.sides[foe].mon().item;
+        let held = self.sides[foe].mon().ability == "stickyhold";
+        match slot.entry.id {
+            // `takeItem` refuses outright when EITHER side of the exchange
+            // has had an item knocked off it in this era.
+            "thief" | "covet"
+                if self.sides[side].mon().item.is_empty()
+                    && !theirs.is_empty()
+                    && !held
+                    && !self.sides[side].mon().item_knocked_off
+                    && !self.sides[foe].mon().item_knocked_off =>
+            {
+                self.sides[foe].mon_mut().item = "";
+                self.sides[side].mon_mut().item = theirs;
+                // A stolen berry is a berry in hand: the sim's setItem runs
+                // an update, so a thief that pockets a Rawst eats it on the
+                // spot and walks away unburned.
+                self.ability_update(side);
+            }
+            "knockoff" if !theirs.is_empty() && !held => {
+                let victim = self.sides[foe].mon_mut();
+                victim.item = "";
+                victim.item_knocked_off = true;
+            }
+            _ => {}
+        }
+    }
+
     pub(super) fn flat_hit(
         &mut self,
         side: usize,
@@ -3183,7 +3214,8 @@ impl Battle {
         // A typeless forty-power physical hit, which means the held items
         // speak as well as the abilities: a confused Choice Band swings half
         // again as hard at itself.
-        let mut atk_chain = ability::attack_chain(&bearer, true);
+        let mate = self.mate_on_field(mon);
+        let mut atk_chain = ability::attack_chain(&bearer, true, mate);
         atk_chain.extend(item::attack_chain(&holder, Type::None, true));
         let mut def_chain = ability::defence_chain(&bearer, true);
         def_chain.extend(item::defence_chain(&holder, true));
@@ -3444,7 +3476,8 @@ impl Battle {
         let physical = ability::physical_category(slot.move_type());
         let user_i = self.sides[side].mon().holder();
         let foe_i = self.sides[foe].mon().holder();
-        attacker.stat_mod = ability::attack_chain(&user_b, physical);
+        let mate = self.mate_on_field(self.sides[side].mon());
+        attacker.stat_mod = ability::attack_chain(&user_b, physical, mate);
             attacker.stat_pre = ability::hustle_chain(&user_b, physical);
         attacker
             .stat_mod
@@ -3473,6 +3506,21 @@ impl Battle {
             amount: crash,
         });
         self.resolve_faints(side, foe, events);
+    }
+
+    /// Whether the field carries the mate of this mon's Plus or Minus
+    /// ability. The sim's gen 3 handlers walk `getAllActive()`, which is
+    /// every standing mon on both sides, so a foe counts just as much as
+    /// an ally here.
+    pub(super) fn mate_on_field(&self, user: &Mon) -> bool {
+        let mate = match user.ability {
+            "plus" => "minus",
+            "minus" => "plus",
+            _ => return false,
+        };
+        self.sides
+            .iter()
+            .any(|s| !s.mon().fainted() && s.mon().ability == mate)
     }
 
     pub(super) fn attack_pair(&self, side: usize) -> (Attacker, Defender) {
