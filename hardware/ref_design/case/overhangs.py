@@ -3,14 +3,16 @@
 
     python3 case/overhangs.py part.stl [...]     # one verdict line per part
 
-A part needs supports only where it has a real overhang: a downward face flatter than 45 degrees,
-off the bed, that a printer can't bridge or step out to. Two kinds don't count:
-  - terraces: the 0.1 mm steps case.scad builds 45 degree slopes from (each under TERRACE wide);
+A part needs supports only where it has a real overhang: a downward face flatter than OVERHANG degrees
+from vertical (case.scad's `overhang`, read from it: 45 on the main line, 60 on the 60 degree variant), off the bed, that a printer can't bridge or step out to. Two kinds don't count:
+  - terraces: the 0.1 mm steps a slope can be built from (each under TERRACE wide);
   - bridges and ledges: a flat underside every point of which is within BRIDGE of an edge held up
     from below on two or more sides (a span up to 2 * BRIDGE, like the 4.4 mm screw counterbore),
     or within LEDGE of one held up on one side only.
 Everything else is reported, with its area and where it is.
 """
+import os
+import re
 import sys
 
 import numpy as np
@@ -19,7 +21,17 @@ import trimesh
 from shapely.geometry import MultiLineString, Polygon
 from shapely.ops import polygonize, unary_union
 
-STEEP = np.cos(np.radians(45)) + 1e-4   # a downward face flatter than 45 degrees has n.z below -STEEP
+
+def case_overhang():
+    """case.scad's `overhang`: the flattest a face may slope downwards in its print pose, degrees from vertical."""
+    text = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "case.scad")).read()
+    return float(re.search(r"^overhang = ([\d.]+);", text, re.M).group(1))
+
+
+OVERHANG = case_overhang()
+# a downward face t degrees from vertical has n.z = -sin(t): one flatter than OVERHANG has n.z below -STEEP
+# (cos until 2026-10-23, the same number at 45 only)
+STEEP = np.sin(np.radians(OVERHANG)) + 1e-4
 BED = 0.2                               # faces this close to the bed print on it
 TERRACE = 0.16                          # a step this narrow is a 45 degree slope's terrace
 BRIDGE = 2.6                            # held up on two sides: spans up to about 5 mm
@@ -105,7 +117,7 @@ def check(path):
         a = mesh.area_faces[sloped].sum()
         if a > 1.0:
             c = mesh.triangles_center[sloped][np.argmax(mesh.area_faces[sloped])]
-            found.append((a, c[2], (c[0], c[1]), "faces sloping flatter than 45 degrees"))
+            found.append((a, c[2], (c[0], c[1]), f"faces sloping flatter than {OVERHANG:g} degrees"))
     zs = np.round(mesh.triangles_center[flat][:, 2], 3)
     idx = np.nonzero(flat)[0]
     for z in np.unique(zs):

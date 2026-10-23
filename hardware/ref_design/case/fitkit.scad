@@ -316,10 +316,12 @@ module test_overhang_rounds() {
 // two outer sides as the tub prints it (tub_outside), straight cut sides inside. Printed with the
 // first layer and elephant's-foot compensation fl_label names (L20 E15: 0.20 mm and 0.15 mm), to
 // find the pair that leaves no lip where the round meets the bed
-fl_size = 25;  fl_h = 3;  fl_label = "L20 E15";
+// (the 45 degree tub's edge, whatever `overhang` is: the overhang kit is one kit for both lines of the
+// case, and the 60 degree variant only differs in the round's last 1.2 mm, where it leaves the bed)
+fl_size = 25;  fl_h = 3;  fl_label = "L20 E15";  fl_overhang = 45;
 module test_first_layer() difference() {
   translate([fl_size - case_w / 2, fl_size - case_l / 2, 0]) intersection() {
-    tub_outside();
+    tub_outside(ov = fl_overhang);
     translate([case_w / 2 - fl_size, case_l / 2 - fl_size, -1]) cube([fl_size + 1, fl_size + 1, fl_h + 1]);
   }
   translate([fl_size / 2 - 1.5, fl_size / 2 - 1.5, fl_h - engrave]) linear_extrude(engrave + 0.01)

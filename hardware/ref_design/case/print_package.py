@@ -62,10 +62,17 @@ SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_style":
 # Supports are per object, not per plate: with the plate's on, the slicer also put them in every
 # part's small cavities (the tub's six screw counterbores, 4.4 mm wide and 1.0 deep at the bed,
 # came out plugged: Alex's print, 2026-10-21). So the plate's are off (SUPPORT's other keys stay,
-# they only say what kind) and each part overhangs.py says needs them gets these. The 45 degree
-# threshold and keeping small overhangs are overhangs.py's own measure: at the slicers' defaults
-# (30 degrees, small ones dropped) Bambu Studio gave the board mock's USB-C stand-in nothing
-OBJECT_SUPPORT = {"enable_support": "1", "support_threshold_angle": "45", "support_remove_small_overhang": "0",
+# they only say what kind) and each part overhangs.py says needs them gets these. The threshold
+# and keeping small overhangs are overhangs.py's own measure: the slicers count the threshold from
+# the bed, so case.scad's `overhang` (from vertical) is 90 less it (45 on the main line, 30 on the
+# 60 degree variant). At the slicers' defaults (30 degrees, small ones dropped) Bambu Studio gave the
+# board mock's USB-C stand-in nothing at all: keeping the small ones is what counts
+def _threshold():
+    import overhangs
+    return f"{90 - overhangs.OVERHANG:g}"
+
+
+OBJECT_SUPPORT = {"enable_support": "1", "support_threshold_angle": _threshold(), "support_remove_small_overhang": "0",
                   "support_on_build_plate_only": "1", "bridge_no_support": "1"}
 
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts

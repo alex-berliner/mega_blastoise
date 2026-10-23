@@ -7,7 +7,8 @@ For each object on the plate (its mesh placed by the project's own transforms, t
 its own first layer in the G-code: Bambu Studio's G-code sits 2.0 mm off the project's placement
 in y on a P1S, so no offset is assumed), the support and support interface extruded inside its outline, layer by layer, and
 for the tub (and its screw holes coupon) every counterbore found in its own first millimetre. print_package_p1s.py calls
-check() on every plate and fails the build if a part that needs no supports got some.
+check() on every plate and fails the build if a part that needs no supports got some: the parts
+overhangs.py passes at case.scad's `overhang` (60 degrees from vertical on the 60 degree variant).
 """
 import io
 import re
@@ -117,7 +118,9 @@ def check(path, no_support):
     sup = [(f, zz, p) for f, zz, p in moves if f in SUPPORT]
     pts = np.concatenate([p for *_, p in sup]) if sup else np.zeros((0, 2))
     zs = np.concatenate([[zz] * len(p) for _, zz, p in sup]) if sup else np.zeros(0)
-    report, bad, mm = [f"{len(pts) * 0.1:.0f} mm of support extrusion on the plate"], [], {}
+    import overhangs
+    report, bad, mm = [f"{len(pts) * 0.1:.0f} mm of support extrusion on the plate (the parts that need none: "
+                       f"no face flatter than {overhangs.OVERHANG:g} degrees from vertical, overhangs.py)"], [], {}
     for name, m in sorted(objs.items()):
         outline = MultiPoint(m.vertices[:, :2]).convex_hull.buffer(-0.3)
         inside = shapely.contains_xy(outline, pts[:, 0], pts[:, 1]) if len(pts) else np.zeros(0, bool)

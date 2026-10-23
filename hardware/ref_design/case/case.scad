@@ -157,14 +157,21 @@ board_r = 5.5;            // the board's own corners (its KiCad outline): no lon
 // The flattest a face may slope downwards in its print pose, in degrees from vertical: no part needs
 // supports. 45 until Alex's 6_tests ladder says how far each printer goes (one line, 2026-10-21).
 // GUESS (Alex, 2026-10-21: best guess until 6_tests): 45, the conservative limit; test_overhangs on
-// both printers settles it, and every round and the step to the decks follow it
-overhang = 45;
+// both printers settles it, and every round and the step to the decks follow it.
+// 60 on this branch (ref-design-cellcut-60, 2026-10-23): a variant, until the overhang test plates
+// (overhang_kit.zip) show both printers print a 60 degree face clean (case/SHELL.md, its first
+// section). overhangs.py reads it from here
+overhang = 60;
 // Every outside edge rounds over as far as that allows: an arc into the wall, and where the arc would
 // go flatter than `overhang` in the print pose, a tangent chamfer at `overhang` (the tub prints back
 // down, the top piece and the decks face down, so all their rounds end in a chamfer at the bed)
 back_r = 4.2;             // the back rolls into the walls through back_r, as a DS Lite's does (4.2 mm)
-face_r = 3.0;             // the top piece's and the decks' faces roll into the walls (Alex, 2026-10-21, item
-                          // 10: the top pieces curve over the sides, the tub no longer forms the outer lip)
+face_r = 2.4;             // the top piece's and the decks' faces roll into the walls (Alex, 2026-10-21, item
+                          // 10: the top pieces curve over the sides, the tub no longer forms the outer lip).
+                          // 3.0 at 45 degrees; at 60 a 3.0 arc would end 2.20 in from the outline, past the
+                          // wall's inside, where the side's blend runs it down over the top piece's hollow and
+                          // J4's pocket (their skin 0.4 to 0.5). 2.4 carried on to 60 ends 1.757 in, where the
+                          // 3.0 at 45 did, so everything inside is as it was (case/SHELL.md, first section)
 support_pitch = 12;       // the floor's support ribs under the board
 // The seam: the top pieces (the top piece and both decks) meet the tub flush, low on the back's round.
 // The tub's wall carries a tongue, the inner half of the wall standing up past the seam, and the top
@@ -293,19 +300,30 @@ step_foot = 0.35;
 // into each other better"): across the face the step is as it was, but the side's round comes down from
 // the screen face's height to the deck's over side_run before the joint, in a smooth S (no slope at
 // either end), so the top piece's side round sweeps into the deck's instead of dropping in the step's 2.1.
-// Over the round's top, between it and the screen face, a 45 degree chamfer (the round's own top
-// chamfer, carried up): every face of it still slopes 45 degrees or steeper face down. side_run is as long
+// Over the round's top, between it and the screen face, a 45 degree chamfer (blend_overhang: at 45 the
+// round's own top chamfer, carried up; at 60 the round's top facet is at 60 and this band stays 45: it is
+// the skin over the top piece's hollow, J4's pocket and the joint's hollow, which a 60 degree band leaves
+// 0.4 to 0.6 thick where the blend comes down furthest): every face of it slopes 45 degrees or steeper
+// face down. side_run is as long
 // as the top piece's keys allow (they sit under the full screen face, on the tongue's tall part). The
 // round reaches the deck's height side_land before the joint (where the step's land began until
 // 2026-10-23), and over the last side_land it is the deck's round: since the step came down to the joint
 // its foot turns over the side's top there in the same 45 degree chamfer, step_foot tall at the joint
-side_run = 9.4;  side_land = 0.6;
+side_run = 9.4;  side_land = 0.6;  blend_overhang = 45;
 side_fill = board_clear - 0.1;                          // (the top piece's underside under it: below)
 function side_drop(d) = let(t = max(0, min(1, (joint_y - side_land - d) / side_run))) step_d * (1 - t * t * (3 - 2 * t));   // the round's
                                                         // top under the screen face at |y| = d (0 to step_d)
 // how far in from the joint the step's face is at depth dd under the screen face: its arc, ending
 // step_foot over the deck, and under that straight down at the joint (0)
 function step_in(dd) = edge_in(min(dd, step_d - step_foot), step_r) - edge_in(step_d - step_foot, step_r);
+// For the checks of the skin under the side's blend: the face's height at |y| = y (the screen face's, or
+// the step's down to its foot), the top piece's outside over the blend's band s in from the outline (s
+// past the round's top, where the band is), and the skin from a corner of its underside (s in, at z) to
+// the band, square to it (to the flat face it is thicker: the band's is the less)
+function face_h(y) = let(d = joint_y - y) d >= step_in(0) ? case_h
+  : case_h - max([for (k = [0:400]) let(dd = step_d * k / 400) if (step_in(dd) >= d - 1e-9) dd]);
+function blend_top(s, y) = let(h = face_h(y)) min(h, min(h, case_h - side_drop(y)) + (s - edge_in(0, face_r)) / tan(blend_overhang));
+function blend_skin(y, s, z) = (blend_top(s, y) - z) * sin(blend_overhang);
 // The joint (2026-10-23, case/SHELL.md "The lip under the step"): along the step and round the spine
 // each deck's plate runs on deck_ext under the top piece at its own level (z_deck_under to deck_face),
 // under a hollow in the top piece deck_gap over it, up to the top piece's wall round the screen's bay
@@ -322,6 +340,12 @@ joint_w = 2.55;           // the band the joint takes inside the top piece's edg
                           // (the old wedge's 1.2 and the wall behind it, 1.35)
 deck_ext = joint_w - end_wall - deck_gap;               // how far the deck's plate runs on under the top piece (1.6)
 lip_w = 0.75;  lip_d = 0.5;  lip_lead = 0.2;            // the lip: width, depth into the deck, its tip's chamfers
+// At the side walls the hollow (and the deck's plate under it, with its groove) stops joint_side inside the
+// wall's inside: there the side's blend has brought the top piece's outside down to the deck's height, and its
+// band leaves the hollow's corner at the wall's inside 0.07 under it (2026-10-23, found in the 60 degree pass).
+// Beyond it the top piece's band is solid down to the deck's underside, deck_gap off the plate's end
+joint_side = 1.0;
+module joint_side2d(grow = 0) square([2 * (in_x - joint_side + grow), 4 * case_l], center = true);   // (the band is far from the ends)
 // Along the step and round the spine's end the end wall's foot comes deck_gap nearer, onto the extension's
 // end, over its lowest foot_h (a 45 degree lead-in over it): the deck's register along the case. The tub's
 // corner posts push the deck onto it as the tub goes on (the lip in its groove would otherwise let it
@@ -530,6 +554,10 @@ assert(overhang >= 30 && overhang <= 80, "overhang out of range");
 // reach past its top, its walls keep board_clear - tub_round_in off its edge
 assert(z_top_cu + crush_reach <= z_seam + deck_tongue_h && z_board - 0.3 >= floor_t, "the tub's crush ribs miss the board's edge");
 assert(tub_round_in <= board_clear - 0.3, "the tub's wall comes within 0.3 of the board");
+// the screws' counterbores in the tub's floor keep a wall to the bottom edge's chamfer at the first layer's
+// middle (0.1 up): at 60 degrees the chamfer comes 0.6 further in (H4's by the left wall: 0.60, was 1.14)
+for (s = pins) assert(min(case_w / 2 - abs(s[0]), case_l / 2 - abs(s[1])) - back_in(0.1) - screw_cb[0] / 2 >= 0.5,
+                      "a screw's counterbore comes within 0.5 of the tub's bottom edge");
 // the seam on the back's round (2026-10-22): the skirts' tips (at z_bot, where the round has come in
 // furthest over the skirts) skirt_t thick outside their grooves, at the top piece and the decks; and
 // beside the board's edge, at every height the skirts cover, the skirt, its fit, the tongue and 0.25
@@ -606,8 +634,10 @@ if (!tune) {
   // (the band's edge, joint_y - joint_w) at least 0.7 off its corner, the underside's fill outside the
   // board's edge, and clear of the side screws' bosses
   assert(side_fill <= board_clear - 0.1, "the underside's fill under the blend comes within 0.1 of the board's edge");
-  assert((case_h - side_drop(joint_y - joint_w) + (wall + side_fill - edge_in(0, face_r)) - z_ceil) / sqrt(2) >= 0.7, "the face over the blend's underside is too thin");
-  for (s = side_pins) assert(abs(s[0]) + boss_d / 2 <= case_w / 2 - edge_in(0, face_r) - step_d || abs(s[1]) + boss_d / 2 <= joint_y - side_land - side_run,
+  assert(blend_skin(joint_y - joint_w, wall + side_fill, z_ceil) >= 0.7, "the face over the blend's underside is too thin");
+  // and over J4's pocket (it reaches the band's edge at seat 1's right wall, grown round J4's body)
+  assert(blend_skin(joint_y - joint_w, case_w / 2 - (j4_body[1][0] + j4_pocket_grow), z_ceil + j4_pocket) >= 0.7, "the face over J4's pocket is too thin");
+  for (s = side_pins) assert(abs(s[0]) + boss_d / 2 <= case_w / 2 - edge_in(0, face_r) - step_d * tan(blend_overhang) || abs(s[1]) + boss_d / 2 <= joint_y - side_land - side_run,
                              "a side screw's boss is under the blend's chamfer");
   assert(grip_reach > 0 && grip_reach < seam_fit, "a grip rib reaches the skirt");
 }
@@ -776,10 +806,11 @@ module inner2d(grow = 0) offset(delta = -wall + grow) outline2d();
 // how far in from an edge's wall line a round is at depth dd under the face it rolls into: an arc of
 // radius r into the wall, and where the arc would be flatter than `overhang` from vertical, its
 // tangent chamfer at `overhang` (as the part prints, the chamfer is the part nearest the bed)
-function edge_in(dd, r) = let(s = sin(overhang), c = cos(overhang))
-  dd >= r ? 0 : dd >= r * (1 - s) ? r - sqrt(r * r - (r - dd) * (r - dd)) : r * (1 - c) + (r * (1 - s) - dd) * tan(overhang);
+// (ov: another limit than `overhang`, for the overhang kit's first-layer coupon, which stays the 45 tub's)
+function edge_in(dd, r, ov = overhang) = let(s = sin(ov), c = cos(ov))
+  dd >= r ? 0 : dd >= r * (1 - s) ? r - sqrt(r * r - (r - dd) * (r - dd)) : r * (1 - c) + (r * (1 - s) - dd) * tan(ov);
 // how far in from the case's outline the back's round (and chamfer) has come at height z
-function back_in(z) = edge_in(z, back_r);
+function back_in(z, ov = overhang) = edge_in(z, back_r, ov);
 // a rectangle from its corners [[x0, y0], [x1, y1]], its corners rounded r (grow: out from it)
 module corners2d(c, r = 0, grow = 0) translate(c[0] - [grow, grow]) offset(r = r + grow) offset(delta = -(r + grow))
   square(c[1] - c[0] + 2 * [grow, grow]);
@@ -1012,7 +1043,7 @@ function hollow_levels() = let(o = deck_ext + deck_gap, nf = round(deck_gap / 0.
          [[zl + lip_lead, deck_face + deck_gap, o, 0]]);
 module joint_hollow() let(o = deck_ext + deck_gap) for (l = hollow_levels())
   translate([0, 0, l[0]]) linear_extrude(l[1] - l[0]) intersection() {
-    inner2d();
+    joint_side2d();
     // (over the lip's tip, not out past the joint: there it would end on the step's foot's face)
     if (l[3] == 0) difference() { top_in2d(lip_w); top_in2d(o, l[2]); }
     else difference() {
@@ -1025,11 +1056,11 @@ module joint_hollow() let(o = deck_ext + deck_gap) for (l = hollow_levels())
 // top piece's, deck_gap off it, and, inside the side walls, its plate on deck_ext under the top piece
 module deck_region2d(sy) union() {
   difference() { half2d(sy); offset(delta = deck_gap) top_region2d(); }
-  intersection() { half2d(sy); inner2d(-deck_gap); difference() { offset(delta = deck_gap + 0.01) top_region2d(); top_in2d(deck_ext); } }
+  intersection() { half2d(sy); inner2d(-deck_gap); joint_side2d(-deck_gap); difference() { offset(delta = deck_gap + 0.01) top_region2d(); top_in2d(deck_ext); } }
 }
 // the groove in the deck's face round the lip: from the deck's face's edge, deck_gap outside the lip, to
 // deck_gap inside it
-module lip_groove2d() intersection() { inner2d(); difference() { offset(delta = deck_gap) top_region2d(); top_in2d(lip_w + deck_gap); } }
+module lip_groove2d() intersection() { joint_side2d(); difference() { offset(delta = deck_gap) top_region2d(); top_in2d(lip_w + deck_gap); } }
 // the skin of the top piece over the hollow at its thinnest: from the hollow's corner at the lip's root to the step's face
 function lip_skin() = min([for (k = [0:ceil(step_d * 100)]) let(dd = min(step_d, k / 100))
   norm([step_in(dd) - lip_w, case_h - dd - (deck_face + deck_gap)])]);
@@ -1047,7 +1078,10 @@ if (!tune) {
   assert(lip_w + 2 * deck_gap <= 1.2, "the groove's roof is too long a bridge face down");
   assert(foot_h >= 0.3 && foot_h + deck_gap <= deck_face - lip_d - deck_gap - z_deck_under, "the end wall's foot is out of range");
   assert(deck_face - lip_d >= z_deck_tongue + seam_gap + 0.3, "the lip runs into the skirts' groove at the side walls");
-  assert(in_x - deck_gap <= case_w / 2 - edge_in(0, face_r) - 0.3, "the groove runs into the side's round");
+  assert(in_x - deck_gap - joint_side <= case_w / 2 - edge_in(0, face_r) - 0.3, "the groove runs into the side's round");
+  // the top piece's skin over the hollow's end at the side walls, along the hollow (the end wall to the lip)
+  for (y = [joint_y - joint_w + end_wall:0.05:joint_y - lip_w]) assert(blend_skin(y, wall + joint_side, deck_face + deck_gap) >= 0.7,
+    str("the top piece's skin over the joint's hollow at the side wall is ", blend_skin(y, wall + joint_side, deck_face + deck_gap), " at |y| ", y));
   assert(lap_slot[0] <= joint_y - deck_ext - 0.3 && lap_slot[1] >= joint_y + deck_gap + 0.3, "the deck's extension runs into the tub's tongue beside a lap");
   assert(step_foot >= 0 && step_foot < step_d - step_r * (1 - sin(overhang)), "the step's foot is out of range");
 }
@@ -1113,11 +1147,11 @@ module loft(rings) let(m = len(rings[0]), n = len(rings) - 1) polyhedron(
 // a solid lofted through the case's outline at each level [z, inset], from the first level to the last
 module rr_loft(levels) loft([for (l = levels) rr_pts(l[1], l[0])]);
 // [z, inset] up the back's round every 0.1 from z0 to z1 (both ends included); grow: that much more in
-function back_levels(z0, z1, grow = 0) = let(k0 = floor(z0 / (back_r / back_n) + 1e-6) + 1, k1 = ceil(z1 / (back_r / back_n) - 1e-6) - 1)
-  [for (z = concat([z0], [for (k = [k0:1:k1]) k * back_r / back_n], [z1])) [z, back_in(z) + grow]];
+function back_levels(z0, z1, grow = 0, ov = overhang) = let(k0 = floor(z0 / (back_r / back_n) + 1e-6) + 1, k1 = ceil(z1 / (back_r / back_n) - 1e-6) - 1)
+  [for (z = concat([z0], [for (k = [k0:1:k1]) k * back_r / back_n], [z1])) [z, back_in(z, ov) + grow]];
 // the case's outside up the back's round to h (and straight up past its end), shrink: that much inside it
 // (one loft: a straight prism on its top left non-manifold edges where the USB-C tab met the joint)
-module tub_outside(h = z_seam, shrink = 0) rr_loft(concat(back_levels(0, min(h, back_r), shrink), h > back_r ? [[h, shrink]] : []));
+module tub_outside(h = z_seam, shrink = 0, ov = overhang) rr_loft(concat(back_levels(0, min(h, back_r), shrink, ov), h > back_r ? [[h, shrink]] : []));
 module tub() difference() {
   union() {
     difference() {
@@ -1258,10 +1292,10 @@ side_x0 = 26.4;
 // Under the round's end the skirt follows the back's round in, down to its tip at z_bot (2026-10-22)
 skirt_levels = back_levels(z_bot, back_r);              // [z, inset] up the round, z_bot to back_r
 // h: the face's height there (the step's, across the case); the round's top is h or the side's blend,
-// the lower, and between them its 45 degree chamfer (c: its height; at least 0.002 wide, so the section
-// keeps its point count)
+// the lower, and between them its chamfer at blend_overhang (c: its height; at least 0.002, so the
+// section keeps its point count)
 function side_section(y, h) = let(hr = min(h, case_h - side_drop(abs(y))), c = max(h - hr, 0.002))
-  concat([[side_x0, y, z_bot], [side_x0, y, h], [case_w / 2 - edge_in(0, face_r) - c, y, min(h, hr + c)]],
+  concat([[side_x0, y, z_bot], [side_x0, y, h], [case_w / 2 - edge_in(0, face_r) - c * tan(blend_overhang), y, min(h, hr + c)]],
   [for (k = [0:round_n]) let(dd = face_r * k / round_n) [case_w / 2 - edge_in(dd, face_r), y, hr - dd]],
   [for (i = [len(skirt_levels) - 1:-1:0]) [case_w / 2 - skirt_levels[i][1], y, skirt_levels[i][0]]]);
 // the sections' [y, h]: the joint (the step's foot, step_foot tall there), the step, and every 0.2 over the
