@@ -1541,3 +1541,89 @@ fn a_leppa_answers_the_blow_that_empties_the_slot() {
         "ten points back, capped at the move's own five",
     );
 }
+
+/// A mon under Torment has its last move greyed out at the REQUEST, so
+/// `getMoves` comes back empty and `chooseMove` queues it a Struggle. An
+/// Encore that lands over it in the same turn has nothing to redirect: the
+/// sim runs `OverrideAction` on the queued move and skips it for Struggle
+/// (`baseMove.id !== "struggle"`), so the Struggle is what goes off and what
+/// becomes `lastMove`. That last move is what the NEXT turn's Torment reads,
+/// so the encored move is free again a turn later.
+///
+/// Redirecting the Struggle made the victim swing the encored move instead,
+/// which also left it with that move as `lastMove` and Torment greying it out
+/// for the turn after, one fight out of step with the reference.
+#[test]
+fn an_encore_over_a_strruggle_leaves_the_struggle_alone() {
+    // The same two turns with and without the Encore over them: a Struggle
+    // either way on the second, and Pound again on the third.
+    let turns = |encore: bool| {
+        let mut b = battle(
+            mon("blaziken", 50, &["torment", if encore { "encore" } else { "splash" }]),
+            mon("treecko", 50, &["pound"]),
+        );
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(b.sides[1].mon().tormented, "the Torment landed");
+        let events = b.step_with([Choice::Move(1), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        let hit = events
+            .iter()
+            .find_map(|e| match e {
+                Event::Damage { side: 1, amount, .. } => Some(*amount),
+                _ => None,
+            })
+            .expect("the victim swung at something");
+        let after_encore = b.sides[1].mon().last_used_id;
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        (hit, after_encore, b.sides[1].mon().last_used_id)
+    };
+    let (struggle, used, again) = turns(false);
+    let (same, used_under_encore, again_under_encore) = turns(true);
+    assert_eq!(same, struggle, "the Encore changed what the victim swung");
+    assert_eq!(used_under_encore, Some("struggle"), "{used:?} without it");
+    assert_eq!(again_under_encore, Some("pound"), "{again:?} without it");
+}
+
+/// Beat Up rallies everyone on the user's side who is neither fainted nor
+/// statused, in `side.pokemon` order. That list is not the party's: every
+/// switch swaps the incoming mon into the front slot and pushes the outgoing
+/// one into the slot it came from, so two switches leave the bench in an
+/// order the party cannot name. Each strike swings the NEXT ally's base
+/// Attack, so the order is the damage.
+///
+/// Walking the party instead struck the bench off the party order, which put
+/// every strike after the first on the wrong ally's Attack.
+#[test]
+fn beat_up_strikes_in_the_sims_own_party_order() {
+    let mut b = Battle::new(
+        Side::new(alloc::vec![
+            mon("snorlax", 50, &["splash"]),
+            mon("gardevoir", 50, &["beatup"]),
+            mon("gloom", 50, &["splash"]),
+            mon("hoothoot", 50, &["splash"]),
+        ]),
+        Side::new(alloc::vec![mon("krabby", 50, &["splash"])]),
+        42,
+    );
+    // Gloom out, then Gardevoir: the sim's list then reads Gardevoir, Gloom,
+    // Snorlax, while the party order would answer Gardevoir, Snorlax, Gloom.
+    // Hoothoot never comes in and is not fainted, so it rallies too; burn it
+    // so three strikes are left.
+    b.step_with([Choice::Switch(2), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    b.step_with([Choice::Switch(1), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    b.sides[0].party[3].status = Some(Status::Burn);
+    assert_eq!(b.sides[0].active, 1);
+    let events = b.step_with(
+        [Choice::Move(0), Choice::Move(0)],
+        &scripted([SeatScript { random: 100, ..PLAIN }, PLAIN]),
+    );
+    let strikes: Vec<u16> = events
+        .iter()
+        .filter_map(|e| match e {
+            Event::Damage { side: 2, amount, .. } => Some(*amount as u16),
+            _ => None,
+        })
+        .collect();
+    // Base Attack 65 (Gardevoir, the user), then 65 (Gloom), then 110
+    // (Snorlax), typeless and special against the target's own base Defence.
+    assert_eq!(strikes, alloc::vec![5, 5, 7], "{events:?}");
+}

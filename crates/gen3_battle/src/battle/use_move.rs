@@ -766,6 +766,13 @@ impl Battle {
         // when the choice was made, so it cannot be what put Struggle in the
         // queue — and those are exactly the lost-turn cases below.
         let struggling_at_request = self.struggling_at_request(side, index, status_movish, releasing);
+        // Same rule as the Encore paragraph above, seen from the other side of
+        // the request: `OverrideAction` is skipped outright for Struggle
+        // (`battle-actions.js`: `if (baseMove.id !== "struggle" && ...)`), so
+        // a mon the request already left with nothing keeps its Struggle even
+        // when an Encore lands over it this turn. That Struggle is the one
+        // that becomes `lastMove`, which is what the next turn's Torment reads.
+        let encore_forced = encore_forced && !struggling_at_request;
         if !struggling_at_request && self.sides[side].mon().taunt_n == 2 && status_movish {
             self.log_failed(side, events);
             return true;
@@ -3671,22 +3678,19 @@ impl Battle {
     }
 
     /// Base Attack of everyone Beat Up can call: unfainted and unstatused,
-    /// the active first (the sim's `side.pokemon` keeps it at the front) and
-    /// the rest in party order. Order only decides which strike lands first,
-    /// since every ally gets one.
+    /// walked in the sim's own `side.pokemon` order. That list is NOT the
+    /// party's: every switch swaps the incoming mon to the front and pushes
+    /// the outgoing one into the slot it came from, so a side that has been
+    /// through a few replacements strikes in an order the party cannot name.
+    /// It decides which base Attack each strike swings, and so the damage of
+    /// every strike after the first.
     pub(super) fn beatup_allies(&self, side: usize) -> Vec<u16> {
         let s = &self.sides[side];
-        let ok = |m: &Mon| !m.fainted() && m.status.is_none();
-        let mut out = Vec::new();
-        if ok(s.mon()) {
-            out.push(s.mon().species.base.atk as u16);
-        }
-        for (i, m) in s.party.iter().enumerate() {
-            if i != s.active && ok(m) {
-                out.push(m.species.base.atk as u16);
-            }
-        }
-        out
+        s.order
+            .iter()
+            .filter(|&&i| !s.party[i].fainted() && s.party[i].status.is_none())
+            .map(|&i| s.party[i].species.base.atk as u16)
+            .collect()
     }
 
     /// The per-strike aftermath of a landed hit: the secondary (script or
