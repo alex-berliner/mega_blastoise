@@ -12,7 +12,7 @@ gen1 = []
 gen3 = []
 # Text codec (PS line protocol + request JSON) lives here for the
 # `Text` transport the harness uses. Off by default on-device.
-text = []
+text = ["ps_protocol/text"]
 # Test-only next-N PRNG outcome override (design section 5.5). The
 # firmware never enables this; thumbv8m builds without it must contain
 # no override symbol (P1-2 acceptance).

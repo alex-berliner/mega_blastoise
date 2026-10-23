@@ -8,12 +8,15 @@
 //! (blocks recorded by hash compare by FNV-1a 64 of the same text).
 //!
 //! The lines and the request JSON go through the `ps_protocol` text codec
-//! (`encode_msg`, `encode_request`), the teams through its `unpack`; this
-//! file adds only `BattleStream`'s `|split|` framing and the dex name
-//! tables the codec reads.
+//! (`encode_log`, `encode_request`), the teams through its `unpack`, with
+//! the dex name tables and battle names of [`crate::text`].
 //!
 //! The hook battles replace PS's `runMove` with a stub, on both sides:
 //! [`stub_run_move`] here, `STUB` in the generator.
+//!
+//! `tests/fixtures/moves_gen1.txt.gz` (`tools/ps-diff/move-fixtures.js`,
+//! same format) holds whole Gen 1 battles with the real pipeline: teams of
+//! ported moves only, played to the end.
 
 extern crate std;
 
@@ -24,13 +27,14 @@ use std::sync::OnceLock;
 use std::vec::Vec;
 
 use ps_protocol::text::json::encode_request;
-use ps_protocol::text::line::encode_msg;
-use ps_protocol::text::names::{Cosmetic, Tables};
+use ps_protocol::text::encode_log;
+use ps_protocol::text::names::Tables;
 use ps_protocol::text::team::unpack;
-use ps_protocol::{BattleNames, Health, HpStatus, Msg, PackedTeam, Request, SideId};
+use ps_protocol::{Msg, PackedTeam, Request, SideId};
 
 use super::*;
 use crate::emit::Sink;
+use crate::text::Names;
 
 const CLOCK: u32 = 1_700_000_000;
 
@@ -81,10 +85,20 @@ struct Fixture {
 }
 
 fn load(gen: u8) -> Vec<Fixture> {
-    let path = format!("{}/tests/fixtures/battles_gen{gen}.txt.gz", env!("CARGO_MANIFEST_DIR"));
+    load_file(&format!("battles_gen{gen}.txt.gz"))
+}
+
+/// The text of a gzipped fixture.
+fn fixture_text(name: &str) -> String {
+    let path = format!("{}/tests/fixtures/{name}", env!("CARGO_MANIFEST_DIR"));
     let raw = std::fs::read(&path).expect("fixture readable");
     let mut text = String::new();
     std::io::Read::read_to_string(&mut flate2::read::GzDecoder::new(&raw[..]), &mut text).expect("gzip");
+    text
+}
+
+fn load_file(name: &str) -> Vec<Fixture> {
+    let text = fixture_text(name);
     let mut out = Vec::new();
     let mut lines = text.split('\n').peekable();
     while let Some(line) = lines.next() {
@@ -162,104 +176,17 @@ fn parse_team(text: &str) -> PackedTeam {
 
 // ---- rendering, through the `ps_protocol` text codec -----------------------
 
-/// The codec's dex names from a `ps_dex` dex: index `i` of each column is
-/// the dex's id `i` (`MoveNum(i)` is `MoveId(i)`, `TypeNum(i)` is
-/// `Type::ALL[i]`), and the cosmetic formes in `cosmeticFormes` order.
+/// [`crate::text::dex_tables`], built once per dex.
 fn tables(dex: &'static Dex) -> &'static Tables {
     static GEN1: OnceLock<Tables> = OnceLock::new();
     static GEN3: OnceLock<Tables> = OnceLock::new();
     let cell = if dex.gen == 1 { &GEN1 } else { &GEN3 };
-    cell.get_or_init(|| {
-        let mut t = Tables::new();
-        let id = |name: &str| -> String { name.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase()).collect() };
-        for m in dex.moves {
-            t.moves.push(&id(m.name.as_str()), m.name.as_str());
-        }
-        for (i, s) in dex.species.iter().enumerate() {
-            t.species.push(&id(s.name.as_str()), s.name.as_str());
-            let base = ps_protocol::SpeciesNum(i as u16);
-            for (k, name) in dex.cosmetic_formes(SpeciesId(i as u16)).iter().enumerate() {
-                let (cid, name) = (id(name.as_str()), name.as_str().to_string());
-                t.cosmetic.push(Cosmetic { id: cid, name, base, forme: k as u8 + 1 });
-            }
-        }
-        for i in dex.items {
-            t.items.push(&id(i.name.as_str()), i.name.as_str());
-        }
-        for a in dex.abilities {
-            t.abilities.push(&id(a.name.as_str()), a.name.as_str());
-        }
-        for ty in Type::ALL {
-            t.types.push(&id(ty.name()), ty.name());
-        }
-        t
-    })
+    cell.get_or_init(|| crate::text::dex_tables(dex))
 }
 
-/// The codec's battle names: what `>player` and the teams set.
-struct Names<'a>(&'a Battle);
-
-impl BattleNames for Names<'_> {
-    fn player_name(&self, side: SideId) -> &str {
-        self.0.sides[side.index()].name.as_str()
-    }
-    fn player_avatar(&self, side: SideId) -> &str {
-        self.0.sides[side.index()].avatar.as_str()
-    }
-    fn player_rating(&self, side: SideId) -> &str {
-        self.0.sides[side.index()].rating.as_str()
-    }
-    fn nickname(&self, side: SideId, slot: u8) -> &str {
-        self.0.sides[side.index()].mons[slot as usize].name.as_str()
-    }
-}
-
-/// The HP of a line that carries one.
-fn health_mut(m: &mut Msg) -> Option<&mut Health> {
-    match m {
-        Msg::Switch { health, .. }
-        | Msg::Drag { health, .. }
-        | Msg::Damage { health, .. }
-        | Msg::Heal { health, .. }
-        | Msg::SetHp { health, .. } => Some(health),
-        _ => None,
-    }
-}
-
-/// `m` with its HP in one form, as one viewer gets it.
-fn with_health(m: &Msg, form: impl Fn(&Health) -> HpStatus) -> Msg {
-    let mut m = *m;
-    let h = health_mut(&mut m).unwrap();
-    *h = Health::plain(form(h));
-    m
-}
-
-/// A log as `BattleStream` writes it: a split line as `|split|pN`, the
-/// secret form, the shared form; a one-sided hint as `|split|pN`, the hint,
-/// an empty line (PS sim/battle.ts `addSplit`).
+/// A log as `BattleStream` writes it ([`encode_log`]).
 fn lines(b: &Battle, msgs: &[Msg]) -> String {
-    let (dex, names) = (tables(b.dex), Names(b));
-    let enc = |m: &Msg| encode_msg(m, dex, &names);
-    let mut out: Vec<String> = Vec::new();
-    for m in msgs {
-        match m.split_side() {
-            Some(side) => {
-                out.push(format!("|split|{}", side.as_str()));
-                match m {
-                    Msg::Hint { text, .. } => {
-                        out.push(enc(&Msg::Hint { text: *text, split: None }));
-                        out.push(String::new());
-                    }
-                    _ => {
-                        out.push(enc(&with_health(m, Health::secret)));
-                        out.push(enc(&with_health(m, Health::shared)));
-                    }
-                }
-            }
-            None => out.push(enc(m)),
-        }
-    }
-    out.join("\n")
+    encode_log(msgs, tables(b.dex), &Names(b))
 }
 
 std::thread_local! {
@@ -351,7 +278,9 @@ fn replay(f: &Fixture, tally: &mut Tally) -> Result<Box<Battle>, String> {
                     let spec = FormatSpec::parse(v["formatid"].as_str().unwrap()).unwrap();
                     let s: Vec<u16> = v["seed"].as_array().unwrap().iter().map(|x| x.as_u64().unwrap() as u16).collect();
                     let mut b = Box::new(Battle::from_start(spec, [s[0], s[1], s[2], s[3]], CLOCK));
-                    b.move_hook = Some(stub_run_move);
+                    if f.kind != "moves" {
+                        b.move_hook = Some(stub_run_move);
+                    }
                     b.spill = Some(spill_to_test);
                     battle = Some(b);
                 }
@@ -661,12 +590,67 @@ fn a_full_log_keeps_the_last_move_line() {
     flush(&mut b);
 }
 
-/// Without the hook, a move is unported: the panic the CLI reports.
+/// Whole Gen 1 battles through the real move pipeline, to the end, every
+/// line and every request as PS has them. The teams carry only
+/// `ported(1)` moves, and the recorder's list is that list.
 #[test]
-#[should_panic(expected = "unported")]
-fn moves_are_unported_without_the_hook() {
-    let f = load(1).into_iter().find(|f| f.kind == "prefix").unwrap();
-    let mut b = setup(&f.chunks[0].commands);
+fn move_battles_match_ps_gen1() {
+    let text = fixture_text("moves_gen1.txt.gz");
+    let header = text.lines().next().unwrap().strip_prefix("#ported ").expect("#ported header");
+    let listed: Vec<&str> = header.split(',').collect();
+    let ported: Vec<&str> = crate::mods::ported(1).iter().filter_map(|e| e.strip_prefix("move:")).collect();
+    assert_eq!(listed, ported, "move-fixtures.js derives another ported list");
+
+    let fixtures = load_file("moves_gen1.txt.gz");
+    let mut tally = Tally::default();
+    let mut failures = Vec::new();
+    let (mut wins, mut ties, mut turns) = (0, 0, 0u32);
+    for f in &fixtures {
+        // Every team move is a ported one.
+        for c in &f.chunks[0].commands[1..] {
+            let (_, json) = c.strip_prefix("player ").unwrap().split_once(' ').unwrap();
+            let v: serde_json::Value = serde_json::from_str(json).unwrap();
+            for set in parse_team(v["team"].as_str().unwrap()).iter() {
+                for m in set.moves.iter().filter(|m| !m.is_empty()) {
+                    let id = crate::mods::PsId(m.as_str()).to_string();
+                    assert!(listed.contains(&id.as_str()), "#{}: {id} is not ported", f.index);
+                }
+            }
+        }
+        match replay(f, &mut tally) {
+            Ok(b) => {
+                assert!(b.ended, "#{}: the battle did not end", f.index);
+                match b.winner {
+                    Some(Some(_)) => wins += 1,
+                    _ => ties += 1,
+                }
+                turns += u32::from(b.turn);
+            }
+            Err(e) => failures.push(e),
+        }
+    }
+    for e in failures.iter().take(3) {
+        std::eprintln!("{e}\n");
+    }
+    assert!(failures.is_empty(), "{} of {} gen 1 move battles diverge", failures.len(), fixtures.len());
+    std::eprintln!("gen 1 move battles: {tally:?}, {wins} wins, {ties} ties, {turns} turns");
+    // 320 random battles and two for gen 1's 999 / 1 stat bounce.
+    assert_eq!(fixtures.len(), 322);
+    assert_eq!(tally.battles, 322);
+}
+
+/// A move with handlers that are not ported panics `unported: <id>`, the
+/// line the CLI reports.
+#[test]
+#[should_panic(expected = "unported: softboiled")]
+fn unported_moves_panic() {
+    let team = "Chansey|||NoAbility|softboiled||255,255,255,255,255,255||30,30,30,30,30,30||70|";
+    let cmds = [
+        String::from(r#"start {"formatid":"gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod","seed":[1,2,3,4]}"#),
+        format!(r#"player p1 {{"name":"Player 1","team":"{team}"}}"#),
+        format!(r#"player p2 {{"name":"Player 2","team":"{team}"}}"#),
+    ];
+    let mut b = setup(&cmds);
     b.move_hook = None;
     b.step(&Command::Choose { side: SideId::P1, choice: ps_protocol::Choice::Move(1) }).unwrap();
     b.step(&Command::Choose { side: SideId::P2, choice: ps_protocol::Choice::Move(1) }).unwrap();

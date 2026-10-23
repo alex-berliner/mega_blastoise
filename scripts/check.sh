@@ -62,11 +62,10 @@ if [[ "${1:-}" != "--fast" ]]; then
     fi
   done
 
-  # Pinned against the rust side. Today pinned.txt is empty, so this is
-  # the green zero-run path; once a port drives in a regression, the
-  # same gate runs the pinned list and the file format pins the
-  # entries.
-  scripts/ps-diff.sh --pinned --quiet
+  # Pinned seeds against the rust side. A battle may stop at an effect
+  # that has no port yet (`--allow-unported`); what it wrote up to there
+  # must still be PS's, line for line.
+  scripts/ps-diff.sh --pinned --ps-cli "$PS_CLI_BIN" --allow-unported --quiet
 
   echo "── wasm build + headless seat probe ──"
   (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)

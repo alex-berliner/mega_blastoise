@@ -47,22 +47,26 @@ pub enum Choice {
     Undo,
 }
 
-/// A base format id, PS `config/formats.ts`. Only the two the harness uses.
+/// A base format id, PS `config/formats.ts`. Only the ones the harnesses use.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FormatId {
     Gen1CustomGame,
     Gen3CustomGame,
+    /// `[Gen 1] Random Battle`: the protocol-diff harness's `--teams random`
+    /// (it supplies the teams, so only the ruleset differs).
+    Gen1RandomBattle,
 }
 
 impl FormatId {
-    pub const ALL: [FormatId; 2] = [FormatId::Gen1CustomGame, FormatId::Gen3CustomGame];
+    pub const ALL: [FormatId; 3] = [FormatId::Gen1CustomGame, FormatId::Gen3CustomGame, FormatId::Gen1RandomBattle];
 
     /// The format id (`gen1customgame`).
     pub const fn id(self) -> &'static str {
         match self {
             FormatId::Gen1CustomGame => "gen1customgame",
             FormatId::Gen3CustomGame => "gen3customgame",
+            FormatId::Gen1RandomBattle => "gen1randombattle",
         }
     }
 
@@ -71,14 +75,21 @@ impl FormatId {
         match self {
             FormatId::Gen1CustomGame => "[Gen 1] Custom Game",
             FormatId::Gen3CustomGame => "[Gen 3] Custom Game",
+            FormatId::Gen1RandomBattle => "[Gen 1] Random Battle",
         }
     }
 
     pub const fn gen(self) -> u8 {
         match self {
-            FormatId::Gen1CustomGame => 1,
+            FormatId::Gen1CustomGame | FormatId::Gen1RandomBattle => 1,
             FormatId::Gen3CustomGame => 3,
         }
+    }
+
+    /// The format's `debug` flag: the custom games have it, random battles
+    /// do not.
+    pub const fn debug(self) -> bool {
+        !matches!(self, FormatId::Gen1RandomBattle)
     }
 
     pub fn parse(id: &str) -> Option<FormatId> {
@@ -90,6 +101,8 @@ impl FormatId {
 /// PS resolves for our two formats). Gen 1 custom game: HP Percentage Mod,
 /// Cancel Mod, Desync Clause Mod, plus the harness's Sleep Clause Mod and
 /// Freeze Clause Mod; Gen 3 custom game: HP Percentage Mod, Cancel Mod.
+/// Gen 1 random battle (`Standard`) adds Endless Battle Clause and the
+/// validator clauses that announce themselves (Species, OHKO, Evasion Moves).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
@@ -99,15 +112,23 @@ pub enum RuleId {
     DesyncClauseMod,
     SleepClauseMod,
     FreezeClauseMod,
+    EndlessBattleClause,
+    SpeciesClause,
+    OhkoClause,
+    EvasionMovesClause,
 }
 
 impl RuleId {
-    pub const ALL: [RuleId; 5] = [
+    pub const ALL: [RuleId; 9] = [
         RuleId::HpPercentageMod,
         RuleId::CancelMod,
         RuleId::DesyncClauseMod,
         RuleId::SleepClauseMod,
         RuleId::FreezeClauseMod,
+        RuleId::EndlessBattleClause,
+        RuleId::SpeciesClause,
+        RuleId::OhkoClause,
+        RuleId::EvasionMovesClause,
     ];
 
     /// The rule's name, as a custom rule after `@@@` and in the infobox.
@@ -118,6 +139,10 @@ impl RuleId {
             RuleId::DesyncClauseMod => "Desync Clause Mod",
             RuleId::SleepClauseMod => "Sleep Clause Mod",
             RuleId::FreezeClauseMod => "Freeze Clause Mod",
+            RuleId::EndlessBattleClause => "Endless Battle Clause",
+            RuleId::SpeciesClause => "Species Clause",
+            RuleId::OhkoClause => "OHKO Clause",
+            RuleId::EvasionMovesClause => "Evasion Moves Clause",
         }
     }
 
@@ -132,6 +157,10 @@ impl RuleId {
             ),
             RuleId::SleepClauseMod => Some("Sleep Clause Mod: Limit one foe put to sleep"),
             RuleId::FreezeClauseMod => Some("Freeze Clause Mod: Limit one foe frozen"),
+            RuleId::EndlessBattleClause => Some("Endless Battle Clause: Forcing endless battles is banned"),
+            RuleId::SpeciesClause => Some("Species Clause: Limit one of each Pok\u{e9}mon"),
+            RuleId::OhkoClause => Some("OHKO Clause: OHKO moves are banned"),
+            RuleId::EvasionMovesClause => Some("Evasion Moves Clause: Evasion moves are banned"),
         }
     }
 
@@ -223,7 +252,8 @@ mod tests {
         assert_eq!(id_of(&g3), "gen3customgame");
         assert_eq!(FormatSpec::parse("gen3customgame"), Some(g3));
         assert_eq!(FormatSpec::parse("gen9ou"), None);
-        assert_eq!(FormatSpec::parse("gen1customgame@@@Species Clause"), None);
+        assert_eq!(FormatSpec::parse("gen1customgame@@@Team Preview"), None);
+        assert_eq!(FormatSpec::parse("gen1randombattle").map(|f| f.base.name()), Some("[Gen 1] Random Battle"));
         assert_eq!(g1.base.name(), "[Gen 1] Custom Game");
         assert_eq!(g1.base.gen(), 1);
     }

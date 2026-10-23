@@ -43,6 +43,11 @@ pub enum Rule {
     FreezeClauseMod,
     /// Our named deviation: Gen 1's bit-width `trunc` (design section 3).
     CartridgeTrunc,
+    EndlessBattleClause,
+    /// Validator rules that only announce themselves in battle.
+    SpeciesClause,
+    OhkoClause,
+    EvasionMovesClause,
 }
 
 /// Any effect. The derived order (variant, then id) is the registry's
@@ -61,6 +66,31 @@ pub enum EffectId {
     Item(ItemId),
     Species(SpeciesId),
     Rule(Rule),
+    /// An id PS looks up with `dex.conditions.getByID` that names no data
+    /// entry: a condition with no handlers but its own `id` and `fullname`.
+    Pseudo(Pseudo),
+}
+
+/// The handler-less conditions PS makes from a bare id string
+/// (`battle.damage(n, pokemon, pokemon, 'recoil')`, `heal(..., 'drain')`).
+/// Handlers and messages tell them apart by `effect.id`.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Pseudo {
+    /// `'recoil'` (fullname `Recoil`): `applyRecoilDamage`.
+    Recoil,
+    /// `'drain'` (fullname `Drain`): `spreadDamage`'s drain heal.
+    Drain,
+}
+
+impl Pseudo {
+    /// `effect.id`.
+    pub const fn id(self) -> &'static str {
+        match self {
+            Pseudo::Recoil => "recoil",
+            Pseudo::Drain => "drain",
+        }
+    }
 }
 
 impl EffectId {
@@ -111,6 +141,7 @@ impl EffectType {
             EffectId::Species(_) => EffectType::Pokemon,
             EffectId::Rule(Rule::Format) => EffectType::Format,
             EffectId::Rule(_) => EffectType::Rule,
+            EffectId::Pseudo(_) => EffectType::Condition,
         }
     }
 }

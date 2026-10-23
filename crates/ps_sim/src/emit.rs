@@ -101,10 +101,17 @@ impl Battle {
     /// PS `hint(hint, once, side)`.
     // PS: sim/battle.ts hint
     pub fn hint(&mut self, text: TextId, once: bool, side: Option<SideId>) {
+        self.hint_text(Text::new(text), once, side);
+    }
+
+    /// PS `hint(hint, once, side)` of a hint with arguments (the `once`
+    /// set holds the whole text).
+    // PS: sim/battle.ts hint
+    pub fn hint_text(&mut self, text: Text, once: bool, side: Option<SideId>) {
         if self.hints.iter().flatten().any(|&h| h == (text, side)) {
             return;
         }
-        self.add(Msg::Hint { text: Text::new(text), split: side });
+        self.add(Msg::Hint { text, split: side });
         if once {
             let slot = self.hints.iter_mut().find(|h| h.is_none()).expect("hint set full");
             *slot = Some((text, side));

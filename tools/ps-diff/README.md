@@ -15,11 +15,13 @@ self-test for the harness; every line has to agree.
 `--ps-cli <path>` runs one PS `BattleStream` on the left and a long-lived
 `ps_sim_cli` (the same BattleStream protocol over stdin/stdout) on
 the right. Same commands in, line-by-line diff out. The diff is what
-tells working ports from broken ones.
+tells working ports from broken ones. Each job process keeps one
+`ps_sim_cli` for all its battles (a new one only after a timeout).
 
 `--pinned` reads `crates/ps_harness/pinned.txt`
 (`<gen> <teams> <seed>  # <commit> <note>`) and replays each entry as a
-self-contained `--self` battle. Pinned seeds are the ones a previous
+self-contained battle: against `ps_sim_cli` with `--ps-cli`, as a
+`--self` battle without it. Pinned seeds are the ones a previous
 regression already pinned to a known-good output; if a future port of
 the same logic breaks one of them, the harness fails at that exact
 seed with full divergence context. Empty / comment-only files print one
@@ -37,8 +39,8 @@ scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 3 --n 200
 ```
 
 `--self` or `--ps-cli` is required; both can be combined with `--pinned`
-to keep the existing behaviour (pinned runs are PS-vs-PS unless a
-`--ps-cli` is given). The smoke runs in `scripts/check.sh` use
+(pinned runs are PS-vs-PS unless a `--ps-cli` is given). `check.sh`
+runs `--pinned --ps-cli ... --allow-unported`. The smoke runs in `scripts/check.sh` use
 `--self --n 20 --teams random|wide`, the deep sweep uses
 `--gen 1|3 --n 200 --teams random`.
 
@@ -118,11 +120,26 @@ If any line at index `i` differs:
     <full normalised log from the right driver>
 ```
 
-Pinned runs also save the parse-able log. Crashes (driver exit
-non-zero, exception during drain, an expected `>...` write that PS
-rejected) and unported hits (the `ps_sim_cli` path was selected but
-ps_sim is still on the old path) land in the same dir under
-`ps-diff-<seed>-crash.log` and set the run's exit code.
+Pinned runs also save the parse-able log. Crashes (a `crash` message
+from `ps_sim_cli`, the process dying, a timeout, an exception during
+drain) land in the same dir under `ps-diff-<seed>-crash.log` with the
+rust side's partial log, and set the run's exit code.
+
+## Unported effects
+
+When `ps_sim` reaches an effect with no port it panics `unported: <id>`;
+`ps_sim_cli` catches that per battle, writes an `unported` message with
+the id, and goes on with the next `>start`. The harness counts the
+battle as `unported` and still diffs everything the rust side wrote
+before the stop against the same stretch of PS's log (a mismatch there
+is a diff). Every summary line carries the counts per id
+(`unported_ids=brn:3,...`) and the `--jobs` parent prints the merged
+list as `ps-diff: unported ids: ...`, most frequent first.
+
+`--allow-unported` keeps unported battles from failing the run (diffs
+and crashes still do). Use it with `--teams random`, whose sets carry
+moves and statuses that are not ported yet; `--teams wide` against
+`ps_sim_cli` draws only from the ported list and should see none.
 
 ## `--self` mode end-to-end
 
@@ -136,7 +153,8 @@ up in the right log and the divergence report naming the line.
 
 ## Exit codes
 
-`diff.js` exits non-zero whenever `diffs + crashes + unported > 0`. The
+`diff.js` exits non-zero whenever `diffs + crashes + unported > 0`
+(`diffs + crashes` with `--allow-unported`). The
 wide/ps-cli lane with an empty `ps_sim_cli --ported` list exits 2 with
 "no ported pipeline for gen N", which is the gate's signal that a port
 has not landed yet for that gen. Sidestep checks (no `--self` and no
@@ -145,23 +163,26 @@ also exit 2.
 
 ## Jobs
 
-`--jobs N` (default 14) splits a run into N node child processes by
-seed range. Each child prints its own summary line on stdout. With
-`--quiet`, the parent suppresses the per-child output and prints a
-single merged `ps-diff: ran=R diffs=D crashes=C unported=U gen=G
-teams=T mode=... jobs=N` summary. Without `--quiet`, the per-child lines
-are forwarded so a long run shows progress and any individual crash is
-labelled with its slice. The gate runs always use 14 jobs.
+`--jobs N` (default 14) splits a run into N node child processes, each
+playing a `--slice a:b` of the same driver list (seeds or pinned
+entries). Each child prints one summary line on stdout; the parent
+prints the merged `ps-diff: ran=R diffs=D crashes=C unported=U gen=G
+teams=T mode=... jobs=N`. Without `--quiet`, the children's other
+output is forwarded too. The gate runs always use 14 jobs.
 
 ## Cargo path
 
 `crates/ps_harness/src/bin/ps_sim_cli.rs` is the server-side binary the
-diff calls from `--ps-cli`. It also exposes `--ported <gen>` (ps_sim
-mods `ported(gen)` is the single const list per gen) so the diff
-harness never carries its own whitelist of effect ids. As of P1-7 the
-scaffold compiles but does not yet implement the battle; the harness
-therefore flags `--ps-cli` runs as `unported` until P1-8 / P2-.* start
-producing real bytes.
+diff calls from `--ps-cli`: `ps_sim` behind the BattleStream protocol.
+It reads `>start`, `>player pN`, `>pN <choice>` and writes each
+BattleStream message as its type line (`update`, `sideupdate`, `end`),
+its data and a newline, rendered by the `ps_protocol` text codec
+(`encode_log` for the `|split|` framing, `encode_request`). `unported`
+and `crash` (each with one payload line) end a battle early. It also
+exposes `--ported <gen>` (ps_sim mods `ported(gen)` is the single
+const list per gen) so the diff harness never carries its own whitelist
+of effect ids. Gen 1 lists `move:<id>` for every handler-free move and
+`species:<id>` for every species (the wide pools need both).
 
 `crates/ps_harness/tests/protocol_diff.rs` is the integration test
 ensuring `pinned.txt` parses, `ps_sim_cli --ported` matches the contract

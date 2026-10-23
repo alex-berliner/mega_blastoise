@@ -1756,6 +1756,7 @@ dependencies = [
  "ps_dex",
  "ps_protocol",
  "ps_sim",
+ "serde_json",
 ]
 
 [[package]]

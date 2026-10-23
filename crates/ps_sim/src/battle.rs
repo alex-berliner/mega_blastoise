@@ -9,8 +9,8 @@
 //! `checkWin`, Gen 1's no-progress check, the turn limit, or `>forcewin` /
 //! `>forcetie`.
 //!
-//! The move pipeline is not here: `runMove` panics `unported` until P1-8
-//! and P1-9 bring the gen scripts. Unit tests install a stub through
+//! The move pipeline is not here: `runMove` is the gen's scripts
+//! (`crate::actions`). Unit tests may install a stub through
 //! [`Battle::move_hook`] (`cfg(test)` / the `test-override` feature).
 //!
 //! PS: sim/battle.ts (constructor, `setPlayer`, `getTeam`, `start`,
@@ -26,7 +26,7 @@
 
 use ps_dex::{AbilityId, Dex, ItemId, MoveId, SpeciesId, Type};
 use ps_protocol::{
-    Arg, ArgValue, Command, FormatSpec, GameType, Kw, Msg, MoveNum, Name, PackedSet, PackedTeam, Pokeball, RuleId,
+    Arg, ArgValue, Command, FormatId, FormatSpec, GameType, Kw, Msg, MoveNum, Name, PackedSet, PackedTeam, Pokeball, RuleId,
     SideId, Text, TextArg, TextId, Word,
 };
 
@@ -80,6 +80,10 @@ fn rule_of(r: RuleId) -> Rule {
         RuleId::DesyncClauseMod => Rule::DesyncClauseMod,
         RuleId::SleepClauseMod => Rule::SleepClauseMod,
         RuleId::FreezeClauseMod => Rule::FreezeClauseMod,
+        RuleId::EndlessBattleClause => Rule::EndlessBattleClause,
+        RuleId::SpeciesClause => Rule::SpeciesClause,
+        RuleId::OhkoClause => Rule::OhkoClause,
+        RuleId::EvasionMovesClause => Rule::EvasionMovesClause,
     }
 }
 
@@ -87,8 +91,13 @@ fn rule_of(r: RuleId) -> Rule {
 /// battle: the format's own `ruleset` (`gen1customgame` adds Desync Clause
 /// Mod to the two both have), then the custom rules. `maxteamsize`,
 /// `maxmovecount`, `maxlevel` and `defaultlevel` only validate teams.
-fn rule_table(spec: &FormatSpec) -> ([RuleId; 8], usize) {
-    let mut out = [RuleId::HpPercentageMod; 8];
+/// `gen1randombattle` is gen 1's `Standard`: `Standard AG` (Obtainable,
+/// Desync Clause Mod, HP Percentage Mod, Cancel Mod, Endless Battle
+/// Clause), then Sleep Clause Mod, Freeze Clause Mod, Species Clause,
+/// Nickname Clause, OHKO Clause and Evasion Moves Clause; `Obtainable` and
+/// Nickname Clause only validate teams.
+fn rule_table(spec: &FormatSpec) -> ([RuleId; 12], usize) {
+    let mut out = [RuleId::HpPercentageMod; 12];
     let mut n = 0;
     let mut push = |r: RuleId| {
         if !out[..n].contains(&r) {
@@ -96,6 +105,21 @@ fn rule_table(spec: &FormatSpec) -> ([RuleId; 8], usize) {
             n += 1;
         }
     };
+    if spec.base == FormatId::Gen1RandomBattle {
+        for r in [
+            RuleId::DesyncClauseMod,
+            RuleId::HpPercentageMod,
+            RuleId::CancelMod,
+            RuleId::EndlessBattleClause,
+            RuleId::SleepClauseMod,
+            RuleId::FreezeClauseMod,
+            RuleId::SpeciesClause,
+            RuleId::OhkoClause,
+            RuleId::EvasionMovesClause,
+        ] {
+            push(r);
+        }
+    }
     push(RuleId::HpPercentageMod);
     push(RuleId::CancelMod);
     if spec.base.gen() == 1 {
@@ -165,9 +189,9 @@ impl Battle {
         if cartridge {
             b.rules |= 1 << Rule::CartridgeTrunc as u8;
         }
-        // Both custom games are `debug` formats.
-        b.debug_mode = true;
-        b.report_exact_hp = true;
+        // Both custom games are `debug` formats; random battles are not.
+        b.debug_mode = spec.base.debug();
+        b.report_exact_hp = spec.base.debug();
         b.add(Msg::GameType(GameType::Singles));
         // Rules with event handlers live on the field as pseudo-weathers.
         for &r in &rules[..n] {
@@ -498,7 +522,13 @@ impl Battle {
                 self.report_percentages = true;
             }
             RuleId::CancelMod => self.support_cancel = true,
-            RuleId::DesyncClauseMod | RuleId::SleepClauseMod | RuleId::FreezeClauseMod => self.add(Msg::Rule(r)),
+            RuleId::DesyncClauseMod
+            | RuleId::SleepClauseMod
+            | RuleId::FreezeClauseMod
+            | RuleId::EndlessBattleClause
+            | RuleId::SpeciesClause
+            | RuleId::OhkoClause
+            | RuleId::EvasionMovesClause => self.add(Msg::Rule(r)),
         }
     }
 
@@ -695,7 +725,7 @@ impl Battle {
         if self.gen <= 1 && matches!(key, "confusion" | "jumpkick" | "highjumpkick") {
             self.last_damage = damage as u16;
             if self.has_volatile_key(target, "substitute") {
-                panic!("unported: gen 1 directDamage against a Substitute (P1-8)");
+                panic!("unported: substitute (gen 1 directDamage against a Substitute)");
             }
         }
         let damage = self.damage_mon(target, damage, source, effect);
@@ -864,19 +894,6 @@ impl Battle {
         self.queue.clear();
     }
 
-    /// PS `actions.runMove(move, pokemon, targetLoc, options)`: the gen's
-    /// move pipeline. Not ported yet (P1-8, P1-9).
-    // PS: sim/battle-actions.ts runMove
-    pub fn run_move(&mut self, mv: ActionMove, pokemon: MonRef, target_loc: i8) {
-        #[cfg(any(test, feature = "test-override"))]
-        if let Some(hook) = self.move_hook {
-            hook(self, mv, pokemon, target_loc);
-            return;
-        }
-        let _ = (mv, pokemon, target_loc);
-        todo!("unported: the gen {} move pipeline (runMove)", self.gen)
-    }
-
     /// PS `runAction(action)`. Returns whether the turn stopped for a
     /// request or the battle ended (PS's `true`).
     // PS: sim/battle.ts runAction
@@ -932,7 +949,7 @@ impl Battle {
                 if !self.mon(pokemon).is_active || self.mon(pokemon).fainted {
                     return false;
                 }
-                self.run_move(action.move_, pokemon, action.target_loc);
+                self.run_move(action.move_, pokemon, action.target_loc, action.source_effect);
             }
             ActionKind::BeforeTurnMove => {
                 let pokemon = action.pokemon.expect("beforeTurnMove without a pokemon");
@@ -1080,7 +1097,8 @@ impl Battle {
     // PS: sim/battle.ts clearActiveMove
     pub fn clear_active_move(&mut self, _failed: bool) {
         if self.active_move.is_some() {
-            // `lastMove` is the pipelines' (P1-8, P1-9).
+            // `this.lastMove = this.activeMove` when not failed: nothing in
+            // gens 1-3 reads `battle.lastMove`.
             self.active_move = None;
             self.active_pokemon = None;
             self.active_target = None;
@@ -1244,8 +1262,9 @@ impl Battle {
     }
 
     /// PS `maybeTriggerEndlessBattleClause(trappedBySide, stalenessBySide)`.
-    /// Neither custom game has Endless Battle Clause, so past the turn
-    /// limit only Gen 1's no-progress check remains.
+    /// Only `gen1randombattle` has Endless Battle Clause; staleness never
+    /// arises in gen 1, so past the turn limit only Gen 1's no-progress
+    /// check can end the battle.
     // PS: sim/battle.ts maybeTriggerEndlessBattleClause
     pub fn maybe_trigger_endless_battle_clause(&mut self, _trapped_by_side: [bool; 2]) -> bool {
         if self.gen <= 1 {
@@ -1303,7 +1322,14 @@ impl Battle {
             };
             self.add(Msg::BigError(text));
         }
-        // No `endlessbattleclause` in the custom games.
+        if !self.has_rule(Rule::EndlessBattleClause) {
+            return false;
+        }
+        // `stalenessBySide.every(s => !!s)`: staleness comes only from
+        // restorative berries, Recycle-like moves and Skill Swap, none of
+        // which exist in gen 1 (the one format with the clause), so no side
+        // is ever stale and the clause never activates.
+        debug_assert!(self.gen == 1);
         false
     }
 

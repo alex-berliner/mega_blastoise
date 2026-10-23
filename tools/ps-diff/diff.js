@@ -26,7 +26,8 @@
 //                         the rust side, otherwise the whole gen.
 //   - `--teams file:<path>` -> two packed teams from a file.
 //
-// Exit codes: 0 green; 1 diff / crash / unported hit; 2 misuse or empty
+// Exit codes: 0 green; 1 diff / crash / unported hit (unported does not
+// count with --allow-unported); 2 misuse or empty
 // `wide --ps-cli`.
 //
 // Important behaviour:
@@ -70,6 +71,8 @@ function parseArgs(argv) {
     timeoutMs: DEFAULT_TIMEOUT_MS,
     jobs: DEFAULT_JOBS,
     tamper: undefined,
+    allowUnported: false,
+    slice: undefined,
   };
   let i = 0;
   while (i < argv.length) {
@@ -91,12 +94,14 @@ function parseArgs(argv) {
       case '--per-battle-timeout': opts.timeoutMs = parseInt(argv[i++], 10); break;
       case '--jobs': opts.jobs = parseInt(argv[i++], 10); break;
       case '--tamper-line': opts.tamper = parseInt(argv[i++], 10); break;
+      case '--allow-unported': opts.allowUnported = true; break;
+      case '--slice': opts.slice = argv[i++].split(':').map((x) => parseInt(x, 10)); break;
       case '--help': case '-h':
         console.log(
           'Usage: node diff.js (--self|--ps-cli P) [--gen 1|3] [--n N] '
           + '[--seed S] [--seed-start X --seed-end Y] '
           + '[--teams random|wide|file:<p>] [--focus ids] '
-          + '[--jobs N] [--tamper-line K] [--pinned] [--quiet]'
+          + '[--jobs N] [--tamper-line K] [--pinned] [--quiet] [--allow-unported]'
         );
         process.exit(0);
       default:
@@ -339,104 +344,132 @@ function writeError(scratch, rec, err) {
     + `${err && err.stack ? err.stack : String(err)}\n`);
 }
 
-// The rust side (ps_sim_cli). Reads the sideupdate block from the
-// child stdout, draws a choice from PS-shaped request JSON, writes it
-// back to stdin. Records the joined log.
-class RustSide {
-  constructor(gen, choiceSeed, psCli, driverSeed, timeoutMs) {
-    this.kind = 'rust';
-    this.gen = gen;
-    this.prngCalls = 0;
-    this.prng = new PRNG(choiceSeed);
-    this.out = '';
-    this.exit = null;
-    this.timedOut = false;
-    this.driverSeed = driverSeed;
-    this.child = spawn(psCli, [], { stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
-    this.spawnError = null;
-    this.exitPromise = new Promise((resolve) => {
-      this.child.on('error', (e) => {
-        this.spawnError = e;
-        this.exit = -1;
-        resolve();
-      });
-      this.child.on('exit', (code) => {
-        this.exit = (code === null ? -1 : code);
-        resolve();
-      });
+// The rust side: one long-lived `ps_sim_cli` per (child) process, playing
+// one battle after another. It writes what PS's BattleStream pushes, each
+// message as its type line, its data and a newline (`update`,
+// `sideupdate`, `end`), plus two messages that end a battle early:
+// `unported` + the effect id, and `crash` + the panic message. The data of
+// every `update` / `sideupdate` goes in the log exactly as drivePS keeps
+// PS's, and each `|request|` is answered with the same choice PRNG.
+const MESSAGE_TYPES = new Set(['update', 'sideupdate', 'end', 'unported', 'crash']);
+const TERMINAL_TYPES = new Set(['end', 'unported', 'crash']);
+
+class RustProc {
+  constructor(psCli) {
+    this.psCli = psCli;
+    this.child = null;
+    this.battle = null;   // the battle being played (see runBattle)
+  }
+  _spawn() {
+    const child = spawn(this.psCli, [], { stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
+    this.child = child;
+    this.type = null;     // the message being read
+    this.lines = [];
+    this.partial = '';
+    child.stdout.on('data', (chunk) => {
+      if (this.child !== child) return;
+      const text = this.partial + chunk.toString();
+      const parts = text.split('\n');
+      this.partial = parts.pop();
+      for (const line of parts) this._onLine(line);
     });
-    this._state = 0;          // 0 = idle, 1 = saw 'sideupdate', 2 = saw 'pN'
-    this._pendingSide = null;
-    this._pendingBuf = '';
-    this.child.stdout.on('data', (chunk) => {
-      const text = chunk.toString();
-      this.out += text;
-      let i = 0;
-      while (i < text.length) {
-        let j = text.indexOf('\n', i);
-        const line = (j >= 0 ? text.slice(i, j) : text.slice(i));
-        if (j >= 0) {
-          this._onLine(line);
-          i = j + 1;
-          continue;
-        }
-        // partial line buffered
-        break;
-      }
-    });
-    this.child.stderr.on('data', (d) => { this.out += `!!STDERR!! ${d.toString()}`; });
-    this.timeoutHandle = setTimeout(() => {
-      if (this.exit === null) {
-        try { this.child.kill('SIGKILL'); } catch (_) {}
-        this.timedOut = true;
-      }
-    }, timeoutMs).unref();
+    child.stderr.on('data', (d) => { if (this.battle) this.battle.stderr += d.toString(); });
+    const gone = (why) => {
+      if (this.child !== child) return;
+      this.child = null;
+      if (this.battle) this._finish('crash', why);
+    };
+    child.on('error', (e) => gone(`spawn: ${e.message}`));
+    child.on('exit', (code, sig) => gone(`ps_sim_cli exited (code ${code}, signal ${sig})`));
+    child.stdin.on('error', () => {});
+  }
+  _endMessage() {
+    if (this.battle && (this.type === 'update' || this.type === 'sideupdate')) {
+      this.battle.log.push(this.lines.join('\n'));
+    }
+    this.type = null;
+    this.lines = [];
   }
   _onLine(line) {
-    if (this._state === 0 && line === 'sideupdate') {
-      this._state = 1;
+    if (TERMINAL_TYPES.has(this.type)) {
+      // The terminal message's one payload line.
+      const type = this.type;
+      this.type = null;
+      this._finish(type, line);
       return;
     }
-    if (this._state === 1 && /^p[12]$/.test(line)) {
-      this._pendingSide = line;
-      this._state = 2;
+    if (MESSAGE_TYPES.has(line)) {
+      this._endMessage();
+      this.type = line;
       return;
     }
-    if (this._state === 2 && line.startsWith('|request|')) {
-      const side = this._pendingSide;
-      this._state = 0; this._pendingSide = null;
-      try {
-        const req = JSON.parse(line.slice('|request|'.length));
-        this.prngCalls += 1;
-        const choice = pickChoice(req, this.prng);
-        if (choice !== null && side) this.child.stdin.write(`>${side} ${choice}\n`);
-      } catch (_) {}
-      return;
-    }
-    // standalone |request|pN|{json}
-    const m = line.match(/^\|request\|(p[12])\|(.*)$/);
-    if (m) {
-      try {
-        const req = JSON.parse(m[2]);
-        this.prngCalls += 1;
-        const choice = pickChoice(req, this.prng);
-        if (choice !== null) this.child.stdin.write(`>${m[1]} ${choice}\n`);
-      } catch (_) {}
-      this._state = 0; this._pendingSide = null;
-      return;
-    }
-    this._state = 0; this._pendingSide = null;
+    if (this.type === null) return;
+    this.lines.push(line);
+    const b = this.battle;
+    if (!b || this.type !== 'sideupdate' || this.lines.length !== 2) return;
+    const side = this.lines[0];
+    if (!/^p[12]$/.test(side) || !line.startsWith('|request|')) return;
+    let req;
+    try { req = JSON.parse(line.slice('|request|'.length)); } catch (_) { return; }
+    b.prngCalls += 1;
+    const choice = pickChoice(req, b.prng);
+    if (choice !== null && this.child) this.child.stdin.write(`>${side} ${choice}\n`);
   }
-  send(cmds) {
-    for (const line of cmds) this.child.stdin.write(line + '\n');
-    this.child.stdin.end();
+  _finish(status, detail) {
+    const b = this.battle;
+    if (!b) return;
+    this._endMessage();
+    this.battle = null;
+    clearTimeout(b.timer);
+    b.resolve({
+      out: b.log.join('\n'), prngCalls: b.prngCalls, status, detail, stderr: b.stderr,
+    });
   }
-  async wait() {
-    await this.exitPromise;
-    if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
-    return { out: this.out, prngCalls: this.prngCalls, exit: this.exit, timedOut: this.timedOut };
+  /// Plays one battle: `cmds` are the `>start` / `>player` lines. Resolves
+  /// with { out, prngCalls, status: end|unported|crash|timeout, detail }.
+  runBattle(cmds, choiceSeed, timeoutMs) {
+    if (!this.child) this._spawn();
+    return new Promise((resolve) => {
+      this.battle = {
+        log: [], prngCalls: 0, prng: new PRNG(choiceSeed), stderr: '', resolve,
+        timer: setTimeout(() => this.kill('timeout'), timeoutMs),
+      };
+      this.type = null;
+      this.lines = [];
+      for (const line of cmds) this.child.stdin.write(line + '\n');
+    });
+  }
+  /// Gives up on the battle being played (the process may be stuck): the
+  /// next battle starts a new process.
+  kill(status) {
+    const child = this.child;
+    this.child = null;
+    if (child) { try { child.kill('SIGKILL'); } catch (_) {} }
+    this._finish(status, `no end within the time limit`);
+  }
+  /// Waits for the battle at most `ms` more (the PS side is done).
+  graceUntil(ms) {
+    const b = this.battle;
+    if (!b) return;
+    clearTimeout(b.timer);
+    b.timer = setTimeout(() => this.kill('timeout'), ms);
+  }
+  close() {
+    if (this.child) { try { this.child.stdin.end(); } catch (_) {} }
   }
 }
+
+let rustProc = null;
+function rustFor(psCli) {
+  if (!rustProc || rustProc.psCli !== psCli) {
+    if (rustProc) rustProc.close();
+    rustProc = new RustProc(psCli);
+  }
+  return rustProc;
+}
+
+// How long the rust side may still take once PS has finished the battle.
+const RUST_GRACE_MS = 5000;
 
 // Apply the test hook: --tamper-line K (positive: right log;
 // negative: left log in absolute terms). The mutation is in a known
@@ -501,15 +534,22 @@ async function runOneBattle(driverSeed, opts, scratch) {
   }
   // PS on the left, ps_sim_cli on the right.
   try {
-    const aPromise = drivePS({ gen: opts.gen, cmds: info.cmds, choiceSeed: info.choiceSeed, doCartridge });
-    const rust = new RustSide(opts.gen, info.choiceSeed, opts.psCli, driverSeed, opts.timeoutMs);
-    rust.send(info.cmds);
-    const [a, bRun] = await Promise.all([aPromise, rust.wait()]);
+    const rust = rustFor(opts.psCli);
+    const bPromise = rust.runBattle(info.cmds, info.choiceSeed, opts.timeoutMs);
+    const a = await drivePS({ gen: opts.gen, cmds: info.cmds, choiceSeed: info.choiceSeed, doCartridge });
+    rust.graceUntil(RUST_GRACE_MS);
+    const bRun = await bPromise;
     const aLog = applyTamper(a.out, opts.tamper < 0 ? opts.tamper : 0);
     const bLog = applyTamper(bRun.out, opts.tamper > 0 ? opts.tamper : 0);
     const aLines = normaliseLines(aLog);
-    const bLines = normaliseLines(bLog);
-    const at = firstDiff(aLines, bLines);
+    let bLines = normaliseLines(bLog);
+    // A battle that stopped early (unported, crash) is compared up to
+    // where it stopped: everything it did write must be PS's.
+    const stoppedEarly = bRun.status !== 'end';
+    if (stoppedEarly && bLog === '') bLines = [];
+    const at = stoppedEarly
+      ? firstDiff(aLines.slice(0, bLines.length), bLines)
+      : firstDiff(aLines, bLines);
     if (at >= 0) {
       result.diff = 1;
       const ctxBefore = aLines.slice(Math.max(0, at - 3), at);
@@ -522,11 +562,13 @@ async function runOneBattle(driverSeed, opts, scratch) {
         ctxBefore, ctxAfter,
       });
     }
-    if (bRun.timedOut) {
+    if (bRun.status === 'unported') {
+      result.unported = 1;
+      result.unportedId = bRun.detail;
+    } else if (bRun.status !== 'end') {
       result.crash = 1;
-      writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode }, new Error('rust side timed out'));
-    } else if (bRun.exit !== null && bRun.exit !== 0) {
-      result.crash = 1;
+      writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode },
+        new Error(`rust side: ${bRun.status}: ${bRun.detail}\n${bRun.stderr}--- right (partial) ---\n${bLog}`));
     }
   } catch (e) {
     result.crash = 1;
@@ -575,12 +617,16 @@ function runWithJobs(drivers, opts) {
   if (opts.teamsMode !== 'random') childArgs.push('--teams', opts.teamsMode);
   if (opts.scratch) childArgs.push('--scratch', opts.scratch);
   if (opts.timeoutMs !== DEFAULT_TIMEOUT_MS) childArgs.push('--per-battle-timeout', String(opts.timeoutMs));
+  if (opts.allowUnported) childArgs.push('--allow-unported');
+  childArgs.push('--seed-start', String(opts.seedStart), '--n', String(opts.n));
+  if (opts.seedEnd !== undefined) childArgs.push('--seed-end', String(opts.seedEnd));
   childArgs.push('--jobs', '1');
 
   const summaries = [];
   let exitCode = 0;
   for (const slice of slices) {
-    const aargs = childArgs.concat(['--seed-start', String(slice.start), '--seed-end', String(slice.end)]);
+    // Each child builds the same driver list and plays its slice of it.
+    const aargs = childArgs.concat(['--slice', `${slice.start}:${slice.end}`]);
     // Children print one summary line on stdout. Each child gets its own
     // quiet flag inherited from opts (the parent strips it during
     // merging: see below).
@@ -600,18 +646,27 @@ function runWithJobs(drivers, opts) {
     if (r.stderr && !opts.quiet) process.stderr.write(r.stderr);
     if (r.status !== 0) exitCode = r.status || 1;
   }
-  if (opts.quiet) {
-    let totalRun = 0, totalDiff = 0, totalCrash = 0, totalUn = 0;
-    for (const line of summaries) {
-      const parsed = parseSummary(line);
-      if (!parsed) continue;
-      totalRun += parsed.ran; totalDiff += parsed.diff;
-      totalCrash += parsed.crash; totalUn += parsed.unported;
-    }
-    const total = `ps-diff: ran=${totalRun} diffs=${totalDiff} crashes=${totalCrash} unported=${totalUn} gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'} jobs=${n}`;
-    process.stdout.write(total + '\n');
+  let totalRun = 0, totalDiff = 0, totalCrash = 0, totalUn = 0;
+  const ids = new Map();
+  for (const line of summaries) {
+    const parsed = parseSummary(line);
+    if (!parsed) continue;
+    totalRun += parsed.ran; totalDiff += parsed.diff;
+    totalCrash += parsed.crash; totalUn += parsed.unported;
+    for (const [id, k] of parsed.unportedIds) ids.set(id, (ids.get(id) || 0) + k);
   }
+  const total = `ps-diff: ran=${totalRun} diffs=${totalDiff} crashes=${totalCrash} unported=${totalUn} gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'} jobs=${n}`;
+  process.stdout.write(total + '\n');
+  if (ids.size) process.stdout.write(`ps-diff: unported ids: ${formatIds(ids)}\n`);
   return exitCode;
+}
+
+/// `id:count` pairs, most frequent first.
+function formatIds(ids) {
+  return [...ids.entries()]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .map(([id, k]) => `${id}:${k}`)
+    .join(',');
 }
 
 function parseSummary(line) {
@@ -619,7 +674,11 @@ function parseSummary(line) {
   // the child with --quiet. Returns null if the line is not a summary.
   const m = line.match(/^ps-diff\:\s+ran=(\d+)\s+diffs=(\d+)\s+crashes=(\d+)\s+unported=(\d+)/);
   if (!m) return null;
-  return { ran: +m[1], diff: +m[2], crash: +m[3], unported: +m[4] };
+  const ids = line.match(/\sunported_ids=(\S+)/);
+  const unportedIds = ids
+    ? ids[1].split(',').map((p) => { const k = p.lastIndexOf(':'); return [p.slice(0, k), +p.slice(k + 1)]; })
+    : [];
+  return { ran: +m[1], diff: +m[2], crash: +m[3], unported: +m[4], unportedIds };
 }
 
 async function main() {
@@ -673,6 +732,8 @@ async function main() {
     process.exit(0);
   }
 
+  if (opts.slice) drivers = drivers.slice(opts.slice[0], opts.slice[1]);
+
   if (opts.jobs > 1 && drivers.length > 1 && opts.seed === undefined) {
     // Forward to the child-process distributer.
     const code = runWithJobs(drivers, opts);
@@ -680,18 +741,22 @@ async function main() {
   }
 
   let nRun = 0, nDiff = 0, nCrash = 0, nUnported = 0;
+  const ids = new Map();
   for (const entry of drivers) {
     const seedInt = parseInt(entry.seed, 10) >>> 0;
     const battleOpts = { ...opts, gen: entry.gen, teamsMode: entry.teams };
     const r = await runOneBattle(seedInt, battleOpts, scratch);
     nRun++; nDiff += r.diff; nCrash += r.crash; nUnported += r.unported;
+    if (r.unportedId) ids.set(r.unportedId, (ids.get(r.unportedId) || 0) + 1);
   }
-  if (!opts.quiet) {
-    process.stdout.write(
-      `ps-diff: ran=${nRun} diffs=${nDiff} crashes=${nCrash} unported=${nUnported}`
-      + ` gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'}\n`);
-  }
-  process.exit((nDiff + nCrash + nUnported) === 0 ? 0 : 1);
+  if (rustProc) rustProc.close();
+  // Always one summary line: the --jobs parent merges them.
+  process.stdout.write(
+    `ps-diff: ran=${nRun} diffs=${nDiff} crashes=${nCrash} unported=${nUnported}`
+    + ` gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'}`
+    + (ids.size ? ` unported_ids=${formatIds(ids)}` : '') + '\n');
+  const failures = nDiff + nCrash + (opts.allowUnported ? 0 : nUnported);
+  process.exit(failures === 0 ? 0 : 1);
 }
 
 if (require.main === module) {

@@ -403,6 +403,9 @@ pub struct Pokemon {
     pub last_move_target_loc: i8,
     pub active_move_actions: u16,
     pub previously_switched_in: u8,
+    /// Gen 1's `subFainted` (`null` is false): the last hit broke this
+    /// Pokemon's Substitute.
+    pub sub_fainted: bool,
 }
 
 impl Pokemon {
@@ -474,6 +477,7 @@ impl Pokemon {
         last_move_target_loc: 0,
         active_move_actions: 0,
         previously_switched_in: 0,
+        sub_fainted: false,
     };
 
     /// `getStatus()` as an effect.
@@ -538,6 +542,8 @@ pub struct Side {
     pub last_enemy_selected_move: SelectedMove,
     /// `side.lastMove` (gen 1).
     pub last_move: MoveId,
+    /// `side.lastEnemyMove` (gen 1).
+    pub last_enemy_move: MoveId,
 }
 
 impl Side {
@@ -564,6 +570,7 @@ impl Side {
             last_selected_move_slot: 0,
             last_enemy_selected_move: SelectedMove::NoMove,
             last_move: MoveId::NONE,
+            last_enemy_move: MoveId::NONE,
         }
     }
 
@@ -638,15 +645,6 @@ pub enum StateRef {
     PseudoWeather(EffectId),
     Weather,
     FormatData,
-}
-
-/// The current move, the fields of PS's `ActiveMove` the event core reads.
-/// The move pipelines (P1-8, P1-9) extend it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ActiveMove {
-    pub id: MoveId,
-    /// `ignoreAbility` (Mold Breaker and friends).
-    pub ignore_ability: bool,
 }
 
 /// PS's `this.event`.
@@ -814,12 +812,17 @@ pub struct Battle {
     pub event: EventFrame,
     /// `this.eventDepth`.
     pub event_depth: u8,
-    /// `activeMove`, `activePokemon`, `activeTarget`.
-    pub active_move: Option<ActiveMove>,
+    /// `activeMove` (a reference into `moves`), `activePokemon`,
+    /// `activeTarget`.
+    pub active_move: Option<crate::actions::MoveRef>,
     pub active_pokemon: Option<MonRef>,
     pub active_target: Option<MonRef>,
     /// `speedOrder`: field position values sorted by speed.
     pub speed_order: [u8; 2],
+    /// The `ActiveMove` objects of the action being run (see
+    /// [`crate::actions`]); the first `move_count` are live.
+    pub moves: [crate::actions::ActiveMove; crate::actions::MOVE_CAP],
+    pub move_count: u8,
     pub log: Log,
     /// Takes the oldest lines of a full [`Log`]. Every driver installs one;
     /// a full log without it panics.
@@ -862,7 +865,7 @@ pub struct Battle {
     /// `sideupdate`s waiting for [`Battle::send_updates`].
     pub outbox: Outbox,
     /// PS's `hints` set.
-    pub hints: [Option<(ps_protocol::TextId, Option<SideId>)>; HINT_CAP],
+    pub hints: [Option<(ps_protocol::Text, Option<SideId>)>; HINT_CAP],
     /// The test-only move pipeline (`cfg(test)` / `test-override`): the
     /// real one arrives with P1-8 and P1-9.
     #[cfg(any(test, feature = "test-override"))]
@@ -900,6 +903,8 @@ impl Battle {
             active_pokemon: None,
             active_target: None,
             speed_order: [0, 1],
+            moves: [crate::actions::ActiveMove::EMPTY; crate::actions::MOVE_CAP],
+            move_count: 0,
             log: Log::new(),
             spill: None,
             spilled: false,
@@ -1276,7 +1281,7 @@ impl Battle {
     // PS: sim/battle.ts suppressingAbility
     pub fn suppressing_ability(&mut self, target: Option<MonRef>) -> bool {
         let Some(t) = target else { return false };
-        let Some(am) = self.active_move else { return false };
+        let Some(am) = self.active_move().copied() else { return false };
         let Some(ap) = self.active_pokemon else { return false };
         let shield = self.known.abilityshield;
         self.mon(ap).is_active

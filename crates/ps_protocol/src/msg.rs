@@ -1269,14 +1269,27 @@ texts! {
     AutoTieIn1 => "You will auto-tie if the battle doesn't end in 1 turn (on turn 1000)." (),
     EvLimitWarning => "Warning: One player isn't adhering to a 510 EV limit, and the other player is." (),
     TurnLimit => "It is turn 1000. You have hit the turn limit!" (),
-    // ---- -hint (PS: sim/battle.ts hint, from the handlers) -------------
+    // ---- -hint (PS: sim/battle.ts hint, from the handlers and gen 1's
+    // scripts.ts) -------------------------------------------------------
     DesyncClauseActivated => "Desync Clause Mod activated!" (),
+    HintDefenseDivZero => "Pokemon Showdown avoids division by zero by rounding defense up to 1. In game, the battle would have crashed." (),
+    HintGen1BoostAt999 => "In Gen 1, boosting a stat at 999 will apply a -1 drop afterwards, and the stat remains at 999." (),
+    HintGen1CannotMoveSleep => "In Gen 1, if a Pokémon spends a turn partially trapped and switches to a Pokémon that is asleep, the sleep counter will not decrease until you select a move with a different Pokémon." (),
     HintGen1Counter => "In Gen 1, from the Counter user's perspective, Counter uses the last announced move by the target's team to determine if it will succeed." (),
     HintGen1CounterSleep => "In Gen 1, if Counter is used against a target that switched in and spent the turn sleeping, from the Counter user's perspective, it will fail if the move in the target's first slot is also Counter." (),
+    HintGen1DesyncDefault => "In Gen 1, if both players would see the same Pokémon using different moves, the Pokemon defaults to the move shown from the perspective of the player controlling that Pokémon." (),
+    HintGen1DropAt1 => "In Gen 1, dropping a stat at 1 will apply a +1 boost afterwards, and the stat remains at 1." (),
     HintGen1ExplosionSub => "In Gen 1, the user of Explosion will not take damage if it breaks a Substitute." (),
+    HintGen1HazeBide => "In Gen 1, when Haze cures the sleep/freeze status of a Pokémon during Bide, the move execution will never resolve." (),
+    HintGen1HazeLockedMove => "In Gen 1, when Haze cures the sleep/freeze status of a Pokémon during a multi-turn move, that Pokémon will become soft-locked." (),
     HintGen1HyperBeamSleep => "In Gen 1, if a Pokémon that has just used Hyper Beam and has yet to recharge is targeted with a sleep inducing move, any other status it may already have will be ignored and sleep will be induced regardless." (),
     HintGen1Miss => "In Gen 1, moves with 100% accuracy can still miss 1/256 of the time." (),
+    HintGen1NoMove => "In Gen 1, if a Pokémon is thawed from freeze and no move has been selected yet, the Pokémon will use a move with Fissure's animation, 102 base power, ??? type, Special category, and around 31.6% accuracy." (),
+    HintGen1PpUnderflow => "In Gen 1, if a Pokémon is forced to use a move with 0 PP, the move will underflow to have 63 PP." (),
+    HintGen1RageBuild => "In Gen 1, using {} causes the target to build Rage, even if it misses or fails" (Move),
     HintGen1Recovery => "In Gen 1, recovery moves fail if (user's maximum HP - user's current HP + 1) is divisible by 256, unless the current hp is also divisible by 256." (),
+    HintGen1SelfDestructSub => "In Gen 1, the user of Self-Destruct will not take damage if it breaks a Substitute." (),
+    HintGen1StatRollover => "In Gen 1, a stat will roll over to a small number if it is larger than 1024." (),
     HintGen3IntimidateSub => "In Gen 3, Intimidate does not activate if every target has a Substitute." (),
     HintGens3To4KnockOff => "In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item." (),
     // PS: sim/battle.ts runAction (faint after Pursuit)

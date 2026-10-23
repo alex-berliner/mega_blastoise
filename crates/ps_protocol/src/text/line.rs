@@ -146,6 +146,48 @@ pub fn encode_msg(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames) -> Str
     out
 }
 
+/// An `update` block's lines as `BattleStream` writes them, joined by `\n`:
+/// a split line as `|split|pN`, the secret form, then the shared form; a
+/// one-sided hint as `|split|pN`, the hint, then an empty line (PS
+/// `sim/battle.ts` `addSplit`, which `BattleStream` passes on unchanged).
+pub fn encode_log(msgs: &[Msg], dex: &dyn DexNames, names: &dyn BattleNames) -> String {
+    let enc = |m: &Msg| encode_msg(m, dex, names);
+    let mut out: Vec<String> = Vec::new();
+    for m in msgs {
+        match m.split_side() {
+            Some(side) => {
+                out.push(format!("|split|{}", side.as_str()));
+                match m {
+                    Msg::Hint { text, .. } => {
+                        out.push(enc(&Msg::Hint { text: *text, split: None }));
+                        out.push(String::new());
+                    }
+                    _ => {
+                        out.push(enc(&with_health(m, Health::secret)));
+                        out.push(enc(&with_health(m, Health::shared)));
+                    }
+                }
+            }
+            None => out.push(enc(m)),
+        }
+    }
+    out.join("\n")
+}
+
+/// `m`, an HP-bearing line, with its HP in one form, as one viewer gets it.
+fn with_health(m: &Msg, form: impl Fn(&Health) -> crate::ident::HpStatus) -> Msg {
+    let mut m = *m;
+    match &mut m {
+        Msg::Switch { health, .. }
+        | Msg::Drag { health, .. }
+        | Msg::Damage { health, .. }
+        | Msg::Heal { health, .. }
+        | Msg::SetHp { health, .. } => *health = Health::plain(form(health)),
+        _ => unreachable!("only HP lines split"),
+    }
+    m
+}
+
 fn push_kind(kind: &str, buf: &mut String) {
     buf.push('|');
     buf.push_str(kind);

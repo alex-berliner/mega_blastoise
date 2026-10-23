@@ -480,6 +480,7 @@ fn lock_answer(r: Relay) -> Option<ActionMove> {
     match r {
         Relay::Bool(true) => None,
         Relay::Move(m) => Some(ActionMove::Move(m)),
+        Relay::Recharge => Some(ActionMove::Recharge),
         other => panic!("LockMove answered {other:?}"),
     }
 }

@@ -58,6 +58,10 @@ pub enum Relay {
     Effect(EffectId),
     /// A types array (`Type` event).
     Types(TypeList),
+    /// The id string `'recharge'`, which names no move: mustrecharge's
+    /// `onLockMove` (the request's Recharge button, PS's
+    /// `getActiveMove('recharge')`).
+    Recharge,
 }
 
 impl Relay {
@@ -79,7 +83,7 @@ impl Relay {
             Relay::Bool(b) => b,
             Relay::Int(n) => n != 0,
             Relay::Null | Relay::NotFail => false,
-            Relay::Move(_) | Relay::Effect(_) | Relay::Types(_) => true,
+            Relay::Move(_) | Relay::Effect(_) | Relay::Types(_) | Relay::Recharge => true,
         }
     }
 

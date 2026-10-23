@@ -6,6 +6,8 @@
 //!
 //! Public surface:
 //! - [`line::encode_msg`] / [`line::decode_line`]: the per-line codec.
+//! - [`line::encode_log`]: an `update` block's lines with `BattleStream`'s
+//!   `|split|pN` framing.
 //! - [`json::encode_request`] / [`json::decode_request`]: the request JSON,
 //!   in PS's insertion order, byte-exact.
 //! - [`command::encode_command`] / [`command::decode_command`]: `BattleStream`
@@ -26,3 +28,5 @@ pub mod json;
 pub mod line;
 pub mod names;
 pub mod team;
+
+pub use line::encode_log;

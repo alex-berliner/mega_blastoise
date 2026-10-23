@@ -26,6 +26,7 @@
 
 extern crate alloc;
 
+pub mod actions;
 pub mod battle;
 pub mod choice;
 pub mod effect;
@@ -39,8 +40,10 @@ pub mod relay;
 pub mod request;
 pub mod state;
 pub mod stats;
+#[cfg(any(test, feature = "text"))]
+pub mod text;
 
-pub use effect::{EffectDef, EffectId, EventArgs, EventId, EventMask, Handler, HandlerFn, Prefix, Registry};
+pub use effect::{EffectDef, EffectId, Pseudo, EventArgs, EventId, EventMask, Handler, HandlerFn, Prefix, Registry};
 pub use relay::Relay;
 pub use battle::{MoveHook, SwitchResult, TeamError};
 pub use emit::Sink;

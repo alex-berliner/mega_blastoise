@@ -18,9 +18,10 @@
 //! - `ps_sim_cli_ported` runs the built `ps_sim_cli` with `--ported
 //!   <gen>`, asserts the contract on gens 1/3 (one line per id or empty),
 //!   and asserts gen 2 exits 2.
-//! - `ps_sim_cli_init_block` runs `ps_sim_cli` against a synthetic
-//!   `>start … >player … >player …` envelope, asserts the
-//!   `|init|battle … |player|p2|...|` block comes back.
+//! - `ps_sim_cli_init_block` plays two battles in one `ps_sim_cli`: the
+//!   `update` / `sideupdate` framing and the battle start come back, a
+//!   battle that reaches an unported move ends with `unported` and its
+//!   id, and the next `>start` plays on.
 //! - `diff_drive_choice_seed` exercises the divergence-on-data-
 //!   change path: tampered line 7 of the right log under --self mode
 //!   surfaces a divergence at exactly line 7. Same shape as "one side's
@@ -153,11 +154,21 @@ fn ps_sim_cli_init_block() {
         eprintln!("(skipping: ps_sim_cli not built; run `cargo build -p ps_harness --bin ps_sim_cli`)");
         return;
     };
-    let payload = concat!(
-        ">start {\"formatid\":\"gen1customgame\",\"seed\":[0,0,0,0]}\n",
-        ">player p1 {\"name\":\"a\",\"team\":\"t1\"}\n",
-        ">player p2 {\"name\":\"b\",\"team\":\"t2\"}\n",
-    );
+    // Two battles in one process: the first reaches Bide (a move with
+    // handlers, unported), the second is left waiting for choices.
+    let team = |mv: &str| format!("Pikachu|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||50|");
+    let start = ">start {\"formatid\":\"gen1customgame\",\"seed\":[0,0,0,0]}\n";
+    let player = |side: &str, name: &str, mv: &str| format!(">player {side} {{\"name\":\"{name}\",\"team\":\"{}\"}}\n", team(mv));
+    let payload = [
+        start.to_string(),
+        player("p1", "a", "bide"),
+        player("p2", "b", "bide"),
+        ">p1 move 1\n>p2 move 1\n".to_string(),
+        start.to_string(),
+        player("p1", "c", "tackle"),
+        player("p2", "d", "tackle"),
+    ]
+    .concat();
     let mut child = Command::new(&bin)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -172,19 +183,23 @@ fn ps_sim_cli_init_block() {
     assert!(out.status.success(), "ps_sim_cli exited {:?}", out.status);
     let s = String::from_utf8_lossy(&out.stdout);
     let needs = [
-        "|init|battle",
+        "update\n|t:|",
         "|gametype|singles",
+        "|player|p1|a||",
+        "|player|p2|b||",
         "|gen|1",
         "|tier|[Gen 1] Custom Game",
-        "|teamsize|p1|6",
-        "|teamsize|p2|6",
-        "|start",
-        "|player|p1|a|",
-        "|player|p2|b|",
+        "|teamsize|p1|1",
+        "|start\n|split|p1\n|switch|p1a: Pikachu|Pikachu, L50|",
+        "sideupdate\np1\n|request|{\"active\":",
+        "\nunported\nbide\n",
+        "|player|p2|d||",
     ];
     for line in &needs {
         assert!(s.contains(line), "ps_sim_cli output missing `{line}`:\n{s}");
     }
+    let second = s.split("\nunported\nbide\n").nth(1).unwrap();
+    assert!(second.contains("|start\n"), "the second battle did not start:\n{second}");
 }
 
 #[test]

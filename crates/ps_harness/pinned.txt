@@ -8,11 +8,18 @@
 # `<note>` is a free-form tag for the corridor the entry covers.
 #
 # The harness reads this verbatim and replays every entry as a single
-# self-contained battle under `--self`. Empty / comment-only files are
-# allowed: today no port of `ps_sim` has landed, so the regression
-# corpus is intentionally empty. A non-empty file activates the
-# `scripts/check.sh` extra-pinned step.
+# self-contained battle: PS against `ps_sim_cli` when `--ps-cli` is given
+# (as `scripts/check.sh` does, with `--allow-unported`), PS against itself
+# otherwise. Empty / comment-only files are allowed.
 #
 # Add an entry when a port fails a seed the integration found: the
 # seed replaces the regression's red-by-red march with a single pin
 # that lands in the same gate.
+
+# P1-8: `gen1randombattle` was not a format ps_sim knew, so every
+# `--teams random` battle crashed at `>start`. These four ran longest
+# before reaching an unported status or move.
+1 random 158  # P1-8 gen1randombattle rules and tier; unported stop after 19 turns
+1 random 22  # P1-8 gen1randombattle; long ported prefix
+1 random 1  # P1-8 gen1randombattle; long ported prefix
+1 random 90  # P1-8 gen1randombattle; long ported prefix
