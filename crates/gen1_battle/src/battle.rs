@@ -659,10 +659,21 @@ impl<'a> Battle<'a> {
                 // the register — an asleep one, which never registers its own
                 // — aborts its turn on it. The sim spells the consequence out
                 // in a hint of its own: the sleep counter does not decrease.
-                if self.sides[side].active().volatile.has(Volatile::TRAPPED) {
-                    self.sides[side].last_selected_move = CANNOT_MOVE;
-                } else if let Some(mv) = self.effective_move(side) {
-                    self.sides[side].last_selected_move = mv.id;
+                //
+                // A side locked into a move is the one case where neither
+                // register moves. Its choice is the lock itself, not the
+                // `fight` pseudo-choice `cannotmove` is written from, so a
+                // Farfetch'd locked into Petal Dance while clamped carries
+                // `petaldance` and not `cannotmove`. The sleeper that
+                // inherits the register that turn then ticks its own sleep on
+                // it. The same no-write is why the slot guard below reads the
+                // same way.
+                if locked_move_id(&self.sides[side]).is_none() {
+                    if self.sides[side].active().volatile.has(Volatile::TRAPPED) {
+                        self.sides[side].last_selected_move = CANNOT_MOVE;
+                    } else if let Some(mv) = self.effective_move(side) {
+                        self.sides[side].last_selected_move = mv.id;
+                    }
                 }
                 // The SLOT register is a separate thing from the move
                 // register, and only a freely chosen move writes it: the sim
@@ -708,8 +719,13 @@ impl<'a> Battle<'a> {
                 Some(Choice::Move(slot)) if stale_choice[side] == CANNOT_MOVE => {
                     // The register says `cannotmove`: the action is thrown
                     // away before the sleep check ever runs, so the sleeper
-                    // loses the turn AND keeps its full counter.
+                    // loses the turn AND keeps its full counter. The sim's
+                    // abort is not silence, though: `abortMove` still runs the
+                    // AfterMoveSelf event, so the residuals tick all the same.
+                    // A seeded sleeper held by a trap drains; a burned one
+                    // scorches.
                     let _ = slot;
+                    after_action_residuals(&mut self.field, &mut self.sides, side, &mut self.log);
                 }
                 // The move register is still at its starting value: nothing
                 // has ever been selected on this side, because it only ever

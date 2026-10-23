@@ -1117,12 +1117,6 @@ fn apply_effect(
                     mv,
                     false,
                 );
-                if roll.dmg == 0 && !roll.immune {
-                    // 0-damage glitch: the trap move outright misses.
-                    let s = &sides[defender_side];
-                    log.push_board(format!("miss|mon:{},{},0", s.active().name, s.player_id));
-                    return outcome;
-                }
                 let mut dealt = 0u16;
                 if roll.dmg > 0 {
                     if roll.crit {
@@ -1151,9 +1145,24 @@ fn apply_effect(
                         }
                     }
                 } else {
-                    // The Ghost's 0 is a number, not a miss: `damage(0)` prints
-                    // the line, zeroes the last-damage register and runs the
-                    // Hit event, so a raging Ghost builds off it.
+                    // A nought is a number, not a miss, for a Ghost held by
+                    // a Normal trap no less than for the 4× resist that
+                    // floors the last step of the formula to nothing. The
+                    // sim's own comment reads "the move is made to miss", but
+                    // the line under it RETURNS the number: only a failed
+                    // accuracy roll leaves `damage === false`, and that is
+                    // the arm that drops the lock without starting one. So
+                    // this is a hit: the damage line prints, the last-damage
+                    // register takes the nought, the Hit event runs (Rage
+                    // builds off it) and the self volatile starts the trap.
+                    if roll.crit {
+                        let s = &sides[defender_side];
+                        log.push_board(format!("crit|mon:{},{},0", s.active().name, s.player_id));
+                    }
+                    if roll.effectiveness > 0 && roll.effectiveness < 100 {
+                        let s = &sides[defender_side];
+                        log.push_board(format!("resisted|mon:{},{},0", s.active().name, s.player_id));
+                    }
                     let res = deal_damage(field, sides, defender_side, 0, log);
                     land_hit(&mut outcome, res, 0, sides, defender_side, log);
                 }
