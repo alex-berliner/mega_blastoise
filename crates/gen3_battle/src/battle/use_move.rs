@@ -64,6 +64,20 @@ impl Battle {
         }
     }
 
+    /// Spit Up's `onAfterMove`, which the sim fires from `runMove` itself
+    /// once `useMove` has returned: the bank empties whatever the move did,
+    /// a miss, a Protect, a dodging Fly and an immune Ghost included. Only a
+    /// refusal BEFORE the move keeps it (sleep, flinch, full paralysis),
+    /// because `runMove` returns at its BeforeMove event and never gets this
+    /// far. A CALLED Spit Up is no different: the sim reaches it through
+    /// `useMove`, below `runMove`, so a Sleep Talk that draws one spends
+    /// nothing and neither does a bounce or a Snatch.
+    fn spend_stockpile(&mut self, side: usize, id: &str) {
+        if id == "spitup" && !self.calling && !self.pursuing {
+            self.sides[side].mon_mut().stockpile_n = 0;
+        }
+    }
+
     /// The sim's `BeforeMove` event: everything that can stop an action
     /// before the move itself is even resolved — Rage ending, a Truant loaf,
     /// sleep, freeze, a flinch, the confusion self-hit, infatuation, full
@@ -153,15 +167,18 @@ impl Battle {
         // choose is Struggle, which cannot Snore, so it is turned away like
         // any other sleeper rather than let loose its doll-swatter.
         if self.sides[side].mon().status == Some(Status::Sleep) {
-            let acting = self.acting_slot(side, index);
+            let acting = self.acting_move_id(side, index);
             let releasing = self.locked_into_move(side);
             let mon = self.sides[side].mon();
-            let status_movish = mon.moves.get(acting).is_some_and(|m| !m.entry.damaging);
-            let snoring = !self.struggling_at_request(side, acting, status_movish, releasing)
-                && mon
-                    .moves
-                    .get(acting)
-                    .is_some_and(|m| matches!(m.entry.id, "snore" | "sleeptalk"));
+            // The request-time Struggle test asks about the slot the request
+            // offered, which an Encore moves.
+            let slot = match (mon.encore_n > 0, mon.encored_slot) {
+                (true, Some(i)) => i as usize,
+                _ => index,
+            };
+            let status_movish = mon.moves.get(slot).is_some_and(|m| !m.entry.damaging);
+            let snoring = !self.struggling_at_request(side, slot, status_movish, releasing)
+                && matches!(acting, Some("snore") | Some("sleeptalk"));
             let mon = self.sides[side].mon_mut();
             if ability::early_bird(&mon.bearer()) {
                 mon.sleep_n = mon.sleep_n.saturating_sub(1);
@@ -226,15 +243,18 @@ impl Battle {
         // move actually executes, so a flinch or full paralysis after this
         // gate leaves the user frozen.
         if self.sides[side].mon().status == Some(Status::Freeze) {
-            let acting = self.acting_slot(side, index);
+            let acting = self.acting_move_id(side, index);
             let releasing = self.locked_into_move(side);
             let mon = self.sides[side].mon();
-            let status_movish = mon.moves.get(acting).is_some_and(|m| !m.entry.damaging);
-            let defrost = !self.struggling_at_request(side, acting, status_movish, releasing)
-                && mon
-                    .moves
-                    .get(acting)
-                    .is_some_and(|slot| matches!(slot.entry.id, "flamewheel" | "sacredfire"));
+            // The request-time Struggle test asks about the slot the request
+            // offered, which an Encore moves.
+            let slot = match (mon.encore_n > 0, mon.encored_slot) {
+                (true, Some(i)) => i as usize,
+                _ => index,
+            };
+            let status_movish = mon.moves.get(slot).is_some_and(|m| !m.entry.damaging);
+            let defrost = !self.struggling_at_request(side, slot, status_movish, releasing)
+                && matches!(acting, Some("flamewheel") | Some("sacredfire"));
             let lucky = match script {
                 Some(_) => false,
                 None => self.rng.below(5) == 0,
@@ -275,7 +295,9 @@ impl Battle {
         // clock has ticked at all: a locked move Disabled this turn costs
         // the turn and NOTHING else, with no self-hit and no `-activate`. The
         // volatile answers about the move the override settles on, which
-        // `acting_slot` mirrors without touching the charge or the lock.
+        // `acting_move_id` mirrors without touching the charge or the lock,
+        // by id as `move.id === this.effectState.move` does: a Disable on the
+        // caller that copied a two-turn move leaves the release standing.
         //
         // The cant is an ABORT, and Bide hangs its end off `onMoveAborted`,
         // so a sealed Bide drops its stored energy with the turn, silently,
@@ -285,7 +307,9 @@ impl Battle {
             || mon.rampage.is_some()
             || mon.bide.is_some()
             || mon.rolling.is_some();
-        if locked && mon.disabled_slot == Some(self.acting_slot(side, index) as u8) {
+        let disabled = mon.disabled_slot.and_then(|i| mon.moves.get(i as usize));
+        if locked && disabled.is_some_and(|m| Some(m.entry.id) == self.acting_move_id(side, index))
+        {
             self.break_rampage(side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().stall_counter = 0;
@@ -923,6 +947,7 @@ impl Battle {
             && self.sides[foe].mon().fainted()
             && !matches!(slot.entry.id, "futuresight" | "doomdesire")
         {
+            self.spend_stockpile(side, slot.entry.id);
             return true;
         }
 
@@ -1422,6 +1447,7 @@ impl Battle {
             }
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().fury_n = 0;
+            self.spend_stockpile(side, chosen_id);
             self.log_failed(side, events);
             // The kicks crash into the shield all the same.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
@@ -1466,6 +1492,7 @@ impl Battle {
                     }
                     self.sides[side].mon_mut().fury_n = 0;
                     self.sides[side].mon_mut().rolling = None;
+                    self.spend_stockpile(side, chosen_id);
                     if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                         self.kick_crash(side, foe, &slot, script, events);
                         return true;
@@ -2232,6 +2259,7 @@ impl Battle {
                 }
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
+                self.spend_stockpile(side, chosen_id);
                 if boom {
                     self.resolve_faints(side, foe, events);
                 }
@@ -2254,6 +2282,7 @@ impl Battle {
             }
             self.sides[side].mon_mut().fury_n = 0;
             self.sides[side].mon_mut().rolling = None;
+            self.spend_stockpile(side, chosen_id);
             // The kicks crash for half the damage they would have dealt.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                 self.kick_crash(side, foe, &slot, script, events);
@@ -2821,9 +2850,7 @@ impl Battle {
                 break;
             }
         }
-        if slot.entry.id == "spitup" {
-            self.sides[side].mon_mut().stockpile_n = 0;
-        }
+        self.spend_stockpile(side, chosen_id);
         // Rollout counts its landed uses and lets go after five. The count
         // rides the sim's base-power callback, so it is spent the moment the
         // damage is COMPUTED, ahead of anything that can clip what the hit
@@ -3108,12 +3135,7 @@ impl Battle {
             self.sides[side].mon_mut().bide = None;
             self.sides[side].mon_mut().locked_move = None;
         }
-        let acting = self.acting_slot(side, index);
-        let keeps = self.sides[side]
-            .mon()
-            .moves
-            .get(acting)
-            .is_some_and(|m| m.entry.id == "charge");
+        let keeps = self.acting_move_id(side, index) == Some("charge");
         if !keeps {
             self.sides[side].mon_mut().charged_elec = false;
         }

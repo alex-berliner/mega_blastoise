@@ -102,14 +102,8 @@ impl Battle {
         for side in 0..2 {
             if let Choice::Move(i) = choices[side] {
                 let mon = self.sides[side].mon();
-                let acting = self.acting_slot(side, i);
-                if !mon.must_recharge
-                    && !mon.fainted()
-                    && mon
-                        .moves
-                        .get(acting)
-                        .is_some_and(|m| m.entry.id == "focuspunch")
-                {
+                let focusing = self.acting_move_id(side, i) == Some("focuspunch");
+                if focusing && !mon.must_recharge && !mon.fainted() {
                     self.sides[side].mon_mut().focusing = true;
                 }
             }
@@ -1031,15 +1025,23 @@ impl Battle {
             || (foe_mon.imprisoning && foe_mon.moves.iter().any(|m| m.entry.id == slot.entry.id))
     }
 
-    /// Which slot a mon is actually about to swing, whatever the player sent.
+    /// Which move a mon is actually about to swing, whatever the player sent.
     /// `Side.chooseMove` throws the choice away and queues `getLockedMove()`
     /// in its place, and `runMove` applies an Encore's override above that —
     /// both of them ABOVE `runEvent('BeforeMove')`. So every gate that reads
     /// the move (the sleep gate asking `sleepUsable`, the freeze gate asking
-    /// whether this one thaws its user) is answered about the lock and never
-    /// about the slot that was picked. This mirrors the override that runs
-    /// for real further down `use_move`, minus its bookkeeping.
-    pub(super) fn acting_slot(&self, side: usize, index: usize) -> usize {
+    /// whether this one thaws its user, Disable naming the move it shut off)
+    /// is answered about the lock and never about the slot that was picked.
+    /// This mirrors the override that runs for real further down `use_move`,
+    /// minus its bookkeeping.
+    ///
+    /// An id, not a slot, because a lock names a MOVE the mon need not know:
+    /// `twoturnmove`'s `onLockMove` hands back the move that charged, so a
+    /// Mirror Move that copied Fly releases Fly on a Steelix that never
+    /// learnt it. Reading such a lock off the moveset finds nothing and falls
+    /// back to the slot that was picked, which is the CALLER, so the gates
+    /// below would answer about Mirror Move where the sim answers about Fly.
+    pub(super) fn acting_move_id(&self, side: usize, index: usize) -> Option<&'static str> {
         let mon = self.sides[side].mon();
         let index = match (mon.encore_n > 0, mon.encored_slot) {
             (true, Some(i)) => i as usize,
@@ -1057,12 +1059,11 @@ impl Battle {
             },
         };
         if releasing {
-            mon.locked_move
-                .and_then(|id| mon.moves.iter().position(|m| m.entry.id == id))
-                .unwrap_or(index)
-        } else {
-            index
+            if let Some(id) = mon.locked_move {
+                return Some(id);
+            }
         }
+        mon.moves.get(index).map(|m| m.entry.id)
     }
 
     pub fn over(&self) -> bool {
