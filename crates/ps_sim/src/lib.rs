@@ -11,12 +11,12 @@
 //! Per-gen overrides live in `mods::{gen1, gen3}` behind a `GenScripts`
 //! enum dispatch (section 5.4). The text codec lives behind the `text`
 //! feature so the on-device path stays typed. The PRNG outcome override
-//! for Rust unit tests lives behind `test-override`.
+//! for Rust unit tests lives behind `test-override` (or `cfg(test)`).
 //!
-//! This crate starts empty in P1-0 (scaffold only); P1-2 brings the PRNG,
-//! P1-3 brings the dex tables, later phases fill in state, queue and
-//! events.
+//! P1-2 brings the PRNG (`prng`); later phases fill in state, queue, events.
 
 #![no_std]
 
 extern crate alloc;
+
+pub mod prng;

@@ -1768,6 +1768,8 @@ dependencies = [
  "defmt 1.0.1",
  "ps_dex",
  "ps_protocol",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
