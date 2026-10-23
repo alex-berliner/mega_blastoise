@@ -88,6 +88,20 @@ impl MoveSlot {
     }
 }
 
+/// The volatiles that carry an end-of-turn handler, in the order
+/// [`Mon::add_volatile`] stamps them. The numbers are only positions in
+/// [`Mon::vol_stamp`]; the end-of-turn buckets live in [`residual_bucket`].
+pub const VOL_INGRAIN: usize = 0;
+pub const VOL_LEECH_SEED: usize = 1;
+pub const VOL_NIGHTMARE: usize = 2;
+pub const VOL_CURSE: usize = 3;
+pub const VOL_BIND: usize = 4;
+pub const VOL_BIDE: usize = 5;
+pub const VOL_RECHARGE: usize = 6;
+pub const VOL_RAMPAGE: usize = 7;
+pub const VOL_YAWN: usize = 8;
+pub const VOL_COUNT: usize = 9;
+
 /// A battle-ready mon: species, level and investment resolved into stats.
 #[derive(Clone, Debug)]
 pub struct Mon {
@@ -248,6 +262,15 @@ pub struct Mon {
     pub cursed: bool,
     /// Ingrain roots: a sixteenth of max HP back every end of turn.
     pub ingrained: bool,
+    /// Which of the `VOL_COUNT` residual volatiles arrived, and when, on
+    /// this mon's own clock. `findPokemonEventHandlers` walks
+    /// `pokemon.volatiles` with `for (const id in ...)`, so the sim hands
+    /// its end-of-turn pool one mon's volatiles in the order they were
+    /// ADDED. Two of them that sort equal are only ever broken by that
+    /// order, so it has to be kept here: a mon seeded on turn 1 and rooted
+    /// on turn 4 pools its Leech Seed ahead of its Ingrain.
+    pub vol_stamp: [u16; VOL_COUNT],
+    pub vol_clock: u16,
     /// Whether this mon has taken any move action yet (Fake Out's window).
     pub acted: bool,
     /// Protect's stall gamble: 0 fresh, then the era's 2-4-8 ladder.
@@ -376,6 +399,14 @@ pub struct Mon {
 }
 
 impl Mon {
+    /// A volatile has just been put on this mon: `pokemon.volatiles[id] = ...`
+    /// appends the key, which is where the sim's end-of-turn order comes
+    /// from. Stamping the clock here is what keeps that order.
+    pub fn add_volatile(&mut self, which: usize) {
+        self.vol_clock = self.vol_clock.wrapping_add(1);
+        self.vol_stamp[which] = self.vol_clock;
+    }
+
     /// The slice of this mon the ability rules read. Handing the rules a
     /// small copy rather than the mon itself keeps them pure, and keeps the
     /// borrow checker out of the middle of a damage calculation.
@@ -506,6 +537,8 @@ impl Mon {
             type_override: None,
             cursed: false,
             ingrained: false,
+            vol_stamp: [0; VOL_COUNT],
+            vol_clock: 0,
             acted: false,
             stall_counter: 0,
             protected: false,

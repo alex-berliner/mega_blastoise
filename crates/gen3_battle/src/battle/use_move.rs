@@ -1185,6 +1185,7 @@ impl Battle {
                 // phase and stores the swings owed here instead.
                 mon.rampage = Some((index as u8, total));
                 mon.rampage_dur = 2;
+                mon.add_volatile(VOL_RAMPAGE);
                 mon.locked_move = Some(slot.entry.id);
             }
         }
@@ -1370,6 +1371,7 @@ impl Battle {
             // duration, because the tick runs at the end of every turn rather
             // than at the Bider's next action (see the residual bucket).
             self.sides[side].mon_mut().bide = Some((0, 2));
+            self.sides[side].mon_mut().add_volatile(VOL_BIDE);
             self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
             events.push(Event::Charging {
                 side: side as u8 + 1,
@@ -1592,6 +1594,15 @@ impl Battle {
             self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
+            // A KO that landed is a move that came off the hand, so the sim
+            // runs its `eachEvent('Update')` here as it does for any other
+            // landed strike (`data/mods/gen3/scripts.js` tryMoveHit, the
+            // `eachEvent` past the `-ohko` line). The blow that empties a
+            // Leppa Berry's last slot is answered on the spot. The level
+            // check and a miss above both return before that line in the sim
+            // too, and neither touches the field.
+            self.ability_update(0);
+            self.ability_update(1);
             return true;
         }
 
@@ -2649,17 +2660,29 @@ impl Battle {
             // The stats, once their stages are in. Gen 3 reads the category
             // off the move's type, so that is what decides whether an
             // Attack ability speaks at all.
-            let physical = slot.entry.id != "beatup" && ability::physical_category(move_type);
-            let user_i = self.sides[side].mon().holder();
-            let foe_i = self.sides[foe].mon().holder();
-            let mate = self.mate_on_field(self.sides[side].mon());
-            attacker.stat_mod = ability::attack_chain(&user_b, physical, mate);
-            attacker.stat_pre = ability::hustle_chain(&user_b, physical);
-            attacker.stat_mod
-                .extend(item::attack_chain(&user_i, move_type, physical));
-            attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
-            defender.stat_mod = ability::defence_chain(&foe_b, physical);
-            defender.stat_mod.extend(item::defence_chain(&foe_i, physical));
+            let beatup = slot.entry.id == "beatup";
+            let physical = !beatup && ability::physical_category(move_type);
+            // Beat Up is the one swing that reads no item and no ability at
+            // all. Its volatile answers the sim's ModifySpA and ModifySpD
+            // events with a bare number off the species line AND pins
+            // `event.modifier` back to 1 as it does, which throws away every
+            // stat chain that had spoken by then (`data/mods/gen3/moves.js`
+            // `beatup.condition`, lines 66 and 71). A Deep Sea Tooth in the
+            // attacker's hand, a Deep Sea Scale or a Soul Dew on either
+            // side, a Plus or a Minus out on the field: none of them are
+            // part of the hit.
+            if !beatup {
+                let user_i = self.sides[side].mon().holder();
+                let foe_i = self.sides[foe].mon().holder();
+                let mate = self.mate_on_field(self.sides[side].mon());
+                attacker.stat_mod = ability::attack_chain(&user_b, physical, mate);
+                attacker.stat_pre = ability::hustle_chain(&user_b, physical);
+                attacker.stat_mod
+                    .extend(item::attack_chain(&user_i, move_type, physical));
+                attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
+                defender.stat_mod = ability::defence_chain(&foe_b, physical);
+                defender.stat_mod.extend(item::defence_chain(&foe_i, physical));
+            }
             let mut phase1 = ability::Chain::new();
             if self.sides[side].mon().flash_fire && move_type == Type::Fire {
                 phase1.mul(ability::X1_5);
@@ -2898,6 +2921,7 @@ impl Battle {
                     let mon = self.sides[side].mon_mut();
                     mon.must_recharge = true;
                     mon.recharge_fresh = true;
+                    mon.add_volatile(VOL_RECHARGE);
                 }
             }
             // The sim's AfterHit fires for every target whose damage is a
@@ -2971,6 +2995,7 @@ impl Battle {
             let mon = self.sides[side].mon_mut();
             mon.must_recharge = true;
             mon.recharge_fresh = true;
+            mon.add_volatile(VOL_RECHARGE);
         }
 
         self.resolve_faints(side, foe, events);
@@ -3541,6 +3566,7 @@ impl Battle {
                 None => 3 + self.rng.below(4) as u8,
             };
             self.sides[foe].mon_mut().trapped_n = n;
+            self.sides[foe].mon_mut().add_volatile(VOL_BIND);
             events.push(Event::Trapped {
                 side: foe as u8 + 1,
             });

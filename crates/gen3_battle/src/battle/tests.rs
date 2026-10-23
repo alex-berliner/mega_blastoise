@@ -1647,3 +1647,110 @@ fn a_grudge_drains_once_and_a_leppa_refill_survives() {
     assert_eq!(b.sides[0].mon().item, "", "the Leppa Berry was eaten");
     assert_eq!(b.sides[0].mon().moves[0].pp, 10, "drained once, then refilled by ten");
 }
+
+/// A one-hit KO comes off the hand like any other strike, so the sim's
+/// `eachEvent('Update')` runs for it as well (`data/mods/gen3/scripts.js`
+/// `tryMoveHit`, the `eachEvent` that follows the `-ohko` line). The blow
+/// that empties the last point of Horn Drill is the one that answers a
+/// Leppa Berry, which is the wide-fuzz seed-5860 shape: that KO also ended
+/// the battle, so there was no next turn to wait for.
+#[test]
+fn a_one_hit_ko_takes_the_update_with_it() {
+    let mut holder = mon("electabuzz", 50, &["horndrill"]);
+    holder.item = "leppaberry";
+    holder.moves[0].pp = 1;
+    let mut b = battle(holder, mon("slowpoke", 50, &["tackle"]));
+    // The drill ends the battle, so the restore has nowhere later to wait.
+    b.sides[1].mon_mut().hp = 1;
+    let events = b.step_with(
+        [Choice::Move(0), Choice::Move(0)],
+        &scripted([PLAIN, PLAIN]),
+    );
+    assert!(b.over(), "the drill took the last point: {events:?}");
+    assert_eq!(b.sides[0].mon().item, "", "the berry was eaten");
+    assert_eq!(
+        b.sides[0].mon().moves[0].pp,
+        5,
+        "ten points back, capped at the move's own five",
+    );
+}
+
+/// Beat Up answers with the bare base stats. Its volatile hands the sim's
+/// ModifySpA and ModifySpD events a number off the species line and pins
+/// `event.modifier` back to 1 as it does, which throws away every stat
+/// chain that had spoken by then (`data/mods/gen3/moves.js` `beatup.condition`
+/// at `onModifySpA` and `onFoeModifySpD`). Two Clamperls, identical in
+/// every stat, land the same damage however their items are dressed.
+#[test]
+fn beat_up_answers_with_the_base_stats_and_nothing_else() {
+    let beat = |user_item: &'static str, foe_item: &'static str| {
+        let mut user = mon("clamperl", 50, &["beatup"]);
+        user.item = user_item;
+        let mut foe = mon("clamperl", 50, &["splash"]);
+        foe.item = foe_item;
+        let mut b = battle(user, foe);
+        let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        events
+            .iter()
+            .filter_map(|e| match e {
+                Event::Damage { side: 2, amount, .. } => Some(*amount),
+                _ => None,
+            })
+            .sum::<u16>()
+    };
+
+    // Level 50 Clamperl into a level 50 Clamperl, 10 BP, one ally on the
+    // field: base Attack 64 into base Defence 85 gives
+    // floor(floor(22 * 10 * 64 / 85) / 50) + 2 = 5. Typeless, so no STAB and
+    // no effectiveness step either way.
+    let bare = beat("", "");
+    assert_eq!(bare, 5, "the bare base stats: {bare}");
+    // A Deep Sea Scale would double the 85 the hit reads, and a Deep Sea
+    // Tooth the 64 it swings with: floor(floor(22 * 10 * 64 / 170) / 50) + 2
+    // is 3, and with the tooth it is 8. The sim deals 5 for all three.
+    assert_eq!(beat("", "deepseascale"), bare, "a Deep Sea Scale is not read");
+    assert_eq!(beat("deepseatooth", ""), bare, "a Deep Sea Tooth is not read");
+}
+
+/// The end-of-turn pool is ONE list, and a mon's own volatiles go into it in
+/// the order they were added: `findPokemonEventHandlers` walks
+/// `pokemon.volatiles` by insertion order (`sim/battle.js`), so a mon that
+/// took its Leech Seed before its Ingrain pools them the other way round. The
+/// sim's `speedSort` is a selection sort, so a Speed tie does not leave the
+/// pair where the gather put it.
+#[test]
+fn the_volatiles_pool_in_the_order_they_landed() {
+    // Two Slowpoke on the same investment tie on Speed, which is what lets
+    // the tie reach the displacement at all.
+    let mut b = battle(
+        mon("slowpoke", 50, &["ingrain", "leechseed"]),
+        mon("slowpoke", 50, &["ingrain", "leechseed"]),
+    );
+    let hp = b.sides[0].mon().max_hp;
+    // Turn 1: p1 roots itself, p2 seeds it. p2 carries nothing yet.
+    b.step_with([Choice::Move(0), Choice::Move(1)], &scripted([PLAIN, PLAIN]));
+    assert_eq!(
+        b.sides[0].mon().hp,
+        hp - hp / 8,
+        "the seed bit came off: {:?}",
+        b.sides[0].mon().hp
+    );
+    // Turn 2: p1 seeds p2, p2 roots itself, so the two sides carry the pair
+    // in opposite orders.
+    b.step_with([Choice::Move(1), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    // Pooled as the sim pools them, p2 pays its seed and its root heals it
+    // straight back, while p1's seed still shows. Pooled by bucket instead
+    // (both roots first) the damage lands the other way round, and the two
+    // sides would each end an eighth light: the order is the whole
+    // difference.
+    assert_eq!(
+        b.sides[0].mon().hp,
+        hp - hp / 8,
+        "p1 pools its ingrain before its seed",
+    );
+    assert_eq!(
+        b.sides[1].mon().hp,
+        hp,
+        "p2's root healed back what its seed took",
+    );
+}

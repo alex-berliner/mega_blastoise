@@ -50,6 +50,7 @@ impl Battle {
                 let grass = target.types().0 == Type::Grass || target.types().1 == Type::Grass;
                 if hit && !grass && !target.fainted() && !target.seeded {
                     self.sides[foe].mon_mut().seeded = true;
+                    self.sides[foe].mon_mut().add_volatile(VOL_LEECH_SEED);
                     events.push(Event::Seeded {
                         side: foe as u8 + 1,
                     });
@@ -180,6 +181,7 @@ impl Battle {
                     && !ability::blocks_yawn(&target.bearer())
                 {
                     self.sides[foe].mon_mut().yawn_n = 2;
+                    self.sides[foe].mon_mut().add_volatile(VOL_YAWN);
                     events.push(Event::Drowsy {
                         side: foe as u8 + 1,
                     });
@@ -791,6 +793,7 @@ impl Battle {
                     self.log_failed(side, events);
                 } else {
                     self.sides[side].mon_mut().ingrained = true;
+                    self.sides[side].mon_mut().add_volatile(VOL_INGRAIN);
                 }
             }
             StatusAction::Conversion2 => {
@@ -873,6 +876,7 @@ impl Battle {
                         let cost = cost.min(user.hp);
                         user.hp -= cost;
                         self.sides[foe].mon_mut().cursed = true;
+                        self.sides[foe].mon_mut().add_volatile(VOL_CURSE);
                         self.announce_faint(side, events);
                     }
                 } else {
@@ -900,6 +904,7 @@ impl Battle {
                     && !target.nightmared
                 {
                     self.sides[foe].mon_mut().nightmared = true;
+                    self.sides[foe].mon_mut().add_volatile(VOL_NIGHTMARE);
                 } else {
                     self.log_failed(side, events);
                 }
@@ -1220,6 +1225,12 @@ impl Battle {
             // Fury Cutter's doubling counter rides along too.
             m.fury_n = passed.fury_n;
             m.fury_fresh = passed.fury_fresh;
+            // …and the arrival they were given in. The sim's
+            // `copyVolatileFrom` clears the receiver and walks the passer's
+            // `pokemon.volatiles` into it key by key, so the pair comes
+            // across in the passer's order, not the arrival's own history.
+            m.vol_stamp = passed.vol_stamp;
+            m.vol_clock = passed.vol_clock;
         }
         events.push(Event::Switched {
             side: side as u8 + 1,

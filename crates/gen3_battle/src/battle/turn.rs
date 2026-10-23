@@ -557,20 +557,33 @@ impl Battle {
                     plan.push((4, s));
                 }
                 // Volatiles with a residual callback or a bare duration.
-                // Their order among themselves approximates the add order;
-                // no two share a sort key, so it only matters in corners
-                // where one mon carries several and ties a foe's.
+                // The sim pools one mon's volatiles in the order they were
+                // ADDED: `findPokemonEventHandlers` walks
+                // `pokemon.volatiles` by insertion order, so a mon seeded
+                // before it was rooted hands the pool its Leech Seed ahead
+                // of its Ingrain. Two of one mon's volatiles that tie in
+                // `comparePriority` are broken by nothing else, and the
+                // selection sort moves tied pairs about, so that order
+                // decides which way they come out. `add_volatile` stamped
+                // each one with the clock it landed on; that is the order
+                // here.
+                let mut vol: [(usize, u16); VOL_COUNT] = [(0, 0); VOL_COUNT];
+                let mut nv = 0;
                 if mon.ingrained {
-                    plan.push((0, s));
+                    vol[nv] = (0, mon.vol_stamp[VOL_INGRAIN]);
+                    nv += 1;
                 }
                 if mon.seeded {
-                    plan.push((3, s));
+                    vol[nv] = (3, mon.vol_stamp[VOL_LEECH_SEED]);
+                    nv += 1;
                 }
                 if mon.nightmared {
-                    plan.push((5, s));
+                    vol[nv] = (5, mon.vol_stamp[VOL_NIGHTMARE]);
+                    nv += 1;
                 }
                 if mon.cursed {
-                    plan.push((6, s));
+                    vol[nv] = (6, mon.vol_stamp[VOL_CURSE]);
+                    nv += 1;
                 }
                 // A stale bind has a handler here too: the sim's volatile
                 // outlives its user and deletes itself in `onResidual`, so
@@ -579,23 +592,29 @@ impl Battle {
                 // Substitute zeroes the clock, and the flag has to be spent
                 // here or it eats the NEXT bind's first chip).
                 if mon.trapped_n > 0 || mon.trap_stale {
-                    plan.push((7, s));
+                    vol[nv] = (7, mon.vol_stamp[VOL_BIND]);
+                    nv += 1;
                 }
                 if mon.bide.is_some() {
-                    plan.push((13, s));
+                    vol[nv] = (13, mon.vol_stamp[VOL_BIDE]);
+                    nv += 1;
                 }
                 if mon.must_recharge {
-                    plan.push((8, s));
+                    vol[nv] = (8, mon.vol_stamp[VOL_RECHARGE]);
+                    nv += 1;
                 }
                 if mon.rampage.is_some() {
-                    if mon.locked_move == Some("uproar") {
-                        plan.push((9, s));
-                    } else {
-                        plan.push((11, s));
-                    }
+                    let bucket = if mon.locked_move == Some("uproar") { 9 } else { 11 };
+                    vol[nv] = (bucket, mon.vol_stamp[VOL_RAMPAGE]);
+                    nv += 1;
                 }
                 if mon.yawn_n > 0 {
-                    plan.push((10, s));
+                    vol[nv] = (10, mon.vol_stamp[VOL_YAWN]);
+                    nv += 1;
+                }
+                vol[..nv].sort_by_key(|&(_, stamp)| stamp);
+                for &(bucket, _) in &vol[..nv] {
+                    plan.push((bucket, s));
                 }
                 // Abilities.
                 if matches!(ability, "raindish" | "shedskin" | "speedboost") {
