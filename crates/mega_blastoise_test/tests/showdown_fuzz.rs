@@ -15,6 +15,13 @@
 //!
 //! Volume via `FUZZ_N` (default 200 per suite). Skips loudly when the harness
 //! is unarmed, like the parity suite.
+//!
+//! `FUZZ_CASE=k` narrows a suite to ONE of its cases: the suite still runs
+//! every case's own side, so the generator's stream (and the choices it
+//! draws while the engine plays) is exactly what it would have been, but
+//! only case `k` is sent to the reference and only case `k` is compared.
+//! The case that fails is the same battle at the same index as when the
+//! finding was made, which is what makes a pinned seed replayable.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -75,7 +82,12 @@ fn harness_stamp() -> u64 {
 /// reference, so changing the engine changes the scenario — and a changed
 /// scenario is simply a different key, which misses and runs live. There is no
 /// way for a stale answer to be served against new behaviour.
-fn showdown(scenarios: &Value) -> Vec<Value> {
+///
+/// `only` names the one case the caller cares about: that case is the only
+/// one asked for live, and the only one answered. The others come back
+/// empty (a JSON null) and the caller skips them. The suites still run
+/// every case's own side, so the generator's stream does not move.
+fn showdown(scenarios: &Value, only: Option<usize>) -> Vec<Value> {
     let list = scenarios.as_array().cloned().unwrap_or_default();
     let caching = std::env::var("FUZZ_NO_CACHE").is_err();
     let dir = cache_dir();
@@ -102,7 +114,13 @@ fn showdown(scenarios: &Value) -> Vec<Value> {
         }
     }
 
-    let misses: Vec<usize> = (0..list.len()).filter(|i| answers[*i].is_none()).collect();
+    // With `only` set, the cases that are not named are not even asked
+    // about: the reference does the work for one case, and the rest of the
+    // list comes back empty for the caller to skip.
+    let misses: Vec<usize> = (0..list.len())
+        .filter(|i| answers[*i].is_none())
+        .filter(|i| only.is_none_or(|k| k == *i))
+        .collect();
     if !misses.is_empty() {
         let batch = Value::Array(misses.iter().map(|i| list[*i].clone()).collect());
         let fresh = run_harness(&batch);
@@ -124,7 +142,17 @@ fn showdown(scenarios: &Value) -> Vec<Value> {
         }
     }
 
-    answers.into_iter().map(|a| a.expect("every scenario answered")).collect()
+    answers
+        .into_iter()
+        .enumerate()
+        .map(|(i, a)| match a {
+            Some(v) => v,
+            None if only == Some(i) => {
+                panic!("the case the filter named was not answered")
+            }
+            None => Value::Null,
+        })
+        .collect()
 }
 
 fn run_harness(scenarios: &Value) -> Vec<Value> {
@@ -181,6 +209,46 @@ impl Fuzz {
 
 fn fuzz_n() -> usize {
     std::env::var("FUZZ_N").ok().and_then(|s| s.parse().ok()).unwrap_or(200)
+}
+
+/// The one case to compare, when `FUZZ_CASE` names it.
+///
+/// The filter narrows the reference's work and the comparison, never the
+/// generator: the suite still runs every case's own side, so the stream of
+/// draws (and the choices drawn while the engine plays) is exactly what it
+/// would have been, and case `k` is the same battle it would have been.
+///
+/// A `FUZZ_CASE` that is not a number is an error, not a shrug: a typo in a
+/// pinned corpus must not quietly turn into "compare everything".
+fn fuzz_case() -> Option<usize> {
+    match std::env::var("FUZZ_CASE") {
+        Err(_) => None,
+        Ok(raw) => {
+            let raw = raw.trim();
+            if raw.is_empty() {
+                return None;
+            }
+            Some(
+                raw.parse()
+                    .unwrap_or_else(|_| panic!("FUZZ_CASE={raw:?} is not a case number")),
+            )
+        }
+    }
+}
+
+/// `FUZZ_CASE` checked against the suite's own case count: a stale number
+/// must not turn the run into a vacuous pass.
+fn checked_case(n_cases: usize, suite: &str) -> Option<usize> {
+    match fuzz_case() {
+        Some(k) => {
+            assert!(
+                k < n_cases,
+                "FUZZ_CASE={k} is past the end of {suite}: it has {n_cases} cases"
+            );
+            Some(k)
+        }
+        None => None,
+    }
 }
 
 /// `FUZZ_WIDE=1` widens the two battle suites past the shape they were built
@@ -276,7 +344,7 @@ fn vanilla_moves(gen: u8, multihit: bool, ours: impl Fn(&str) -> bool) -> Vec<(S
         only.push("tackle");
         only.push("scratch");
     }
-    let results = showdown(&json!([{"kind": "movelist", "gen": gen}]));
+    let results = showdown(&json!([{"kind": "movelist", "gen": gen}]), None);
     results[0]["moves"]
         .as_array()
         .unwrap()
@@ -596,7 +664,8 @@ fn fuzz_gen3_single_hits() {
         ));
     }
 
-    let results = showdown(&Value::Array(scenarios.clone()));
+    let only = checked_case(cases.len(), "gen3-single-hits");
+    let results = showdown(&Value::Array(scenarios.clone()), only);
     let mut bad = 0;
     for (i, (case, got)) in cases.iter().zip(&results).enumerate() {
         let (atk_id, def_id, level, a_nat, d_nat, (a_iv, a_ev), (d_iv, d_ev), mv, burned,
@@ -657,6 +726,12 @@ fn fuzz_gen3_single_hits() {
             0
         };
         let ours_hp = max_hp.saturating_sub(dealt as u16);
+
+        // Our side has run; the reference's answer is only wanted for the
+        // case the filter named.
+        if only.is_some_and(|k| k != i) {
+            continue;
+        }
 
         let theirs_hp = got["p2"]["hp"].as_u64().unwrap() as u16;
         let their_max = got["p2"]["maxhp"].as_u64().unwrap() as u16;
@@ -834,7 +909,8 @@ fn fuzz_gen3_turns() {
         ));
     }
 
-    let results = showdown(&Value::Array(scenarios.clone()));
+    let only = checked_case(cases.len(), "gen3-turns");
+    let results = showdown(&Value::Array(scenarios.clone()), only);
     let inv = Invest { iv: 31, ev: 0 };
     let mut bad = 0;
     for (i, ((s1, s2, level, m1, m2, turns, statuses, abilities, items, genders), got)) in
@@ -906,6 +982,11 @@ fn fuzz_gen3_turns() {
                 Event::Used { side: 2, .. } => Some("p2"),
                 _ => None,
             }));
+        }
+        // Our side has played the battle; the reference's answer is only
+        // wanted for the case the filter named.
+        if only.is_some_and(|k| k != i) {
+            continue;
         }
         let their_order: Vec<&str> =
             got["order"].as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
@@ -1006,7 +1087,8 @@ fn fuzz_gen1_single_hits() {
         cases.push((atk, def, level, mv, hit, crit, roll));
     }
 
-    let results = showdown(&Value::Array(scenarios.clone()));
+    let only = checked_case(cases.len(), "gen1-single-hits");
+    let results = showdown(&Value::Array(scenarios.clone()), only);
     let mut bad = 0;
     for (i, ((atk, def, level, mv, hit, crit, roll), got)) in cases.iter().zip(&results).enumerate() {
         if got.get("error").is_some() {
@@ -1027,6 +1109,12 @@ fn fuzz_gen1_single_hits() {
             0
         };
         let ours_hp = defender.hp_max.saturating_sub(dealt);
+
+        // Our side has run; the reference's answer is only wanted for the
+        // case the filter named.
+        if only.is_some_and(|k| k != i) {
+            continue;
+        }
 
         let theirs_hp = got["p2"]["hp"].as_u64().unwrap() as u16;
         let their_max = got["p2"]["maxhp"].as_u64().unwrap() as u16;
@@ -1160,7 +1248,8 @@ fn fuzz_gen1_turns() {
         cases.push((s1, s2, level, m1, m2, turns, [st1, st2]));
     }
 
-    let results = showdown(&Value::Array(scenarios.clone()));
+    let only = checked_case(cases.len(), "gen1-turns");
+    let results = showdown(&Value::Array(scenarios.clone()), only);
     let data = FlashDataStore::new();
     let mut bad = 0;
     for (i, ((s1, s2, level, m1, m2, turns, statuses), got)) in cases.iter().zip(&results).enumerate() {
@@ -1242,6 +1331,11 @@ fn fuzz_gen1_turns() {
                     our_order.push(if line.contains(",p1,") { "p1" } else { "p2" });
                 }
             }
+        }
+        // Our side has played the battle; the reference's answer is only
+        // wanted for the case the filter named.
+        if only.is_some_and(|k| k != i) {
+            continue;
         }
 
         let their_order: Vec<&str> =
@@ -1637,10 +1731,16 @@ fn fuzz_gen3_battles() {
     if skipped > 0 {
         eprintln!("[gen3-battles] {skipped} cases skipped on a Speed tie");
     }
-    let results = showdown(&Value::Array(scenarios.clone()));
+    let only = checked_case(expected.len(), "gen3-battles");
+    let results = showdown(&Value::Array(scenarios.clone()), only);
     let mut bad = 0;
     let mut crashed = 0;
     for (i, ((battle, our_order, our_log, our_states), got)) in expected.iter().zip(&results).enumerate() {
+        // Our side has played every case's battle; only the case the filter
+        // named is compared.
+        if only.is_some_and(|k| k != i) {
+            continue;
+        }
         if got.get("error").is_some() {
             eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
             bad += 1;
@@ -2141,10 +2241,16 @@ fn fuzz_gen1_battles() {
     if skipped > 0 {
         eprintln!("[gen1-battles] {skipped} cases skipped on a Speed tie");
     }
-    let results = showdown(&Value::Array(scenarios.clone()));
+    let only = checked_case(expected.len(), "gen1-battles");
+    let results = showdown(&Value::Array(scenarios.clone()), only);
     let mut bad = 0;
     let mut crashed = 0;
     for (i, ((battle, our_order, our_states, our_log), got)) in expected.iter().zip(&results).enumerate() {
+        // Our side has played every case's battle; only the case the filter
+        // named is compared.
+        if only.is_some_and(|k| k != i) {
+            continue;
+        }
         if got.get("error").is_some() {
             eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
             bad += 1;

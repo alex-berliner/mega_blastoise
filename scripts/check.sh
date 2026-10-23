@@ -21,6 +21,9 @@ echo "── no_std proof: ps_sim, ps_client, ps_dex, ps_protocol for thumbv8m �
 cargo check --quiet -p ps_sim -p ps_client -p ps_dex -p ps_protocol --target thumbv8m.main-none-eabihf
 
 if [[ "${1:-}" != "--fast" ]]; then
+  echo "── pinned seeds (the old engines' corpus) ──"
+  scripts/pinned-seeds.sh
+
   echo "── wasm build + headless seat probe ──"
   (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
   scripts/ui-probe.sh --skip-build
