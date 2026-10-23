@@ -4,7 +4,7 @@
 //! Everything is fixed capacity and lives inline in [`Battle`]; nothing here
 //! allocates. Identity is by index: a [`MonRef`] names a Pokemon by side and
 //! team slot (the slot never changes; PS's reordering of `side.pokemon` on
-//! switches is a separate permutation, added with switching in P1-6), and a
+//! switches is the separate permutation [`Side::order`]), and a
 //! [`StateRef`] names where an [`EffectState`] lives.
 //!
 //! This file also ports the PS methods that create and destroy effect
@@ -21,12 +21,16 @@
 //! sim/pokemon.ts, sim/side.ts, sim/field.ts.
 
 use ps_dex::{AbilityId, ConditionId, Dex, ItemId, MoveId, SpeciesId, Type};
-use ps_protocol::{Arg, ArgValue, Kw, Msg, MoveNum, PokemonIdent, SideId, Status};
+use ps_protocol::{Arg, ArgValue, FormatSpec, Kw, Msg, MoveNum, Name, Pokeball, PokemonIdent, SideId, Status};
 
+use crate::choice::{Choice, SelectedMove};
 use crate::effect::{EffectId, EffectType, EventArgs, EventId, Prefix, Registry, Rule};
+use crate::emit::Outbox;
 use crate::modify::Trunc;
 use crate::prng::{Prng, Seed};
+use crate::queue::BattleQueue;
 use crate::relay::{Relay, TypeList};
+use crate::request::{RequestState, SideRequestState};
 
 /// Pokemon per side.
 pub const TEAM_CAP: usize = 6;
@@ -41,9 +45,14 @@ pub const SLOT_CONDITION_CAP: usize = 2;
 pub const PSEUDO_WEATHER_CAP: usize = 4;
 /// PS throws "Stack overflow" at `eventDepth >= 8`.
 pub const MAX_EVENT_DEPTH: usize = 8;
-/// Lines the log holds between flushes (design 5.6). P1-6 sets the
-/// flushing; until then a full log panics, as PS's line limit throws.
-pub const LOG_CAP: usize = 128;
+/// Lines the log holds between flushes (design 5.6). A full log hands its
+/// oldest lines to the [`LogSpill`] and goes on, so this bounds memory, not
+/// the length of an `update` block (PS has no limit). A singles turn of
+/// gens 1 and 3 writes well under this many.
+pub const LOG_CAP: usize = 64;
+/// Pokemon the faint queue can hold (every Pokemon on the field, twice
+/// over).
+pub const FAINT_QUEUE_CAP: usize = 4;
 /// Removed effect states kept so a handler gathered before the removal
 /// still sees its state object, as PS's detached objects do.
 const GRAVEYARD_CAP: usize = 4;
@@ -127,6 +136,38 @@ pub struct EffectState {
     pub target: Holder,
     /// `ending` (abilities that are being removed).
     pub ending: bool,
+}
+
+/// PS's `switchFlag`: `false`, `true`, or the id of the move that asked
+/// for the switch (Baton Pass), which becomes the switch's `[from]`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum SwitchFlag {
+    #[default]
+    No,
+    Yes,
+    Move(MoveId),
+}
+
+impl SwitchFlag {
+    pub fn is_set(self) -> bool {
+        self != SwitchFlag::No
+    }
+}
+
+/// PS's `trapped`: `false`, `true`, or `'hidden'`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Trapped {
+    #[default]
+    No,
+    Yes,
+    Hidden,
+}
+
+impl Trapped {
+    /// JS truthiness (`'hidden'` is truthy).
+    pub fn truthy(self) -> bool {
+        self != Trapped::No
+    }
 }
 
 impl EffectState {
@@ -312,6 +353,56 @@ pub struct Pokemon {
     pub last_damage: u16,
     pub attacked_by: [Option<Attacker>; 4],
     pub active_turns: u16,
+
+    // ---- the set (PS `pokemon.set` and what the constructor derives) ----
+    /// `name`: the nickname (the base species' name when unnamed).
+    pub name: Name,
+    /// `set.shiny`.
+    pub shiny: bool,
+    /// The cosmetic forme of `baseSpecies` (PS builds `Unown-T` as its own
+    /// species object): [`ps_protocol::Details::forme`], 0 for none.
+    pub forme: u8,
+    pub happiness: u8,
+    pub pokeball: Pokeball,
+    /// `set.ivs` / `set.evs` in PS's order hp, atk, def, spa, spd, spe,
+    /// after the constructor's clamping (and gen 1-2's `&= 30`).
+    pub ivs: [u8; 6],
+    pub evs: [u8; 6],
+    /// `set.nature`, an index into [`crate::stats::NATURES`].
+    pub nature: Option<u8>,
+    /// `hpType` / `hpPower` and their `base*` copies.
+    pub hp_type: Type,
+    pub hp_power: u8,
+    pub base_hp_type: Type,
+    pub base_hp_power: u8,
+    /// Gen 1's `modifiedStats` (atk, def, spa, spd, spe).
+    pub modified_stats: [u16; 5],
+
+    // ---- turn-loop flags (PS field names) -------------------------------
+    pub switch_flag: SwitchFlag,
+    pub force_switch_flag: bool,
+    pub skip_before_switch_out_event_flag: bool,
+    pub being_called_back: bool,
+    pub is_started: bool,
+    pub newly_switched: bool,
+    pub trapped: Trapped,
+    pub maybe_trapped: bool,
+    pub maybe_disabled: bool,
+    pub maybe_locked: bool,
+    pub used_item_this_turn: bool,
+    pub stats_raised_this_turn: bool,
+    pub stats_lowered_this_turn: bool,
+    /// `hurtThisTurn` (`null` is `None`).
+    pub hurt_this_turn: Option<u16>,
+    /// `moveThisTurn` (`''` is `NONE`).
+    pub move_this_turn: MoveId,
+    /// `moveThisTurnResult` / `moveLastTurnResult`: `None` is `undefined`.
+    pub move_this_turn_result: Option<Relay>,
+    pub move_last_turn_result: Option<Relay>,
+    /// `lastMoveTargetLoc`.
+    pub last_move_target_loc: i8,
+    pub active_move_actions: u16,
+    pub previously_switched_in: u8,
 }
 
 impl Pokemon {
@@ -350,6 +441,39 @@ impl Pokemon {
         last_damage: 0,
         attacked_by: [None; 4],
         active_turns: 0,
+        name: Name::new(),
+        shiny: false,
+        forme: 0,
+        happiness: 255,
+        pokeball: Pokeball::Default,
+        ivs: [31; 6],
+        evs: [0; 6],
+        nature: None,
+        hp_type: Type::None,
+        hp_power: 0,
+        base_hp_type: Type::None,
+        base_hp_power: 0,
+        modified_stats: [0; 5],
+        switch_flag: SwitchFlag::No,
+        force_switch_flag: false,
+        skip_before_switch_out_event_flag: false,
+        being_called_back: false,
+        is_started: false,
+        newly_switched: false,
+        trapped: Trapped::No,
+        maybe_trapped: false,
+        maybe_disabled: false,
+        maybe_locked: false,
+        used_item_this_turn: false,
+        stats_raised_this_turn: false,
+        stats_lowered_this_turn: false,
+        hurt_this_turn: None,
+        move_this_turn: MoveId::NONE,
+        move_this_turn_result: None,
+        move_last_turn_result: None,
+        last_move_target_loc: 0,
+        active_move_actions: 0,
+        previously_switched_in: 0,
     };
 
     /// `getStatus()` as an effect.
@@ -383,12 +507,37 @@ impl Pokemon {
 pub struct Side {
     /// `n`: 0 for p1.
     pub n: u8,
+    /// The team, by team slot (`>player` order); see [`Side::order`].
     pub mons: [Pokemon; TEAM_CAP],
     /// `active[i]`: the team slot in active position `i`.
     pub active: [Option<u8>; 1],
     pub side_conditions: EffectTable<SIDE_CONDITION_CAP>,
     /// `slotConditions[position]`.
     pub slot_conditions: [EffectTable<SLOT_CONDITION_CAP>; 1],
+    /// False until `>player` made the side (PS's `sides[i]` is `null`).
+    pub exists: bool,
+    pub name: Name,
+    pub avatar: Name,
+    /// The `rating` option of `>player`, which only `|player|` shows.
+    pub rating: Name,
+    /// `pokemon.length`.
+    pub team_size: u8,
+    /// `side.pokemon[i]` is team slot `order[i]`: PS's `side.pokemon`,
+    /// which switches permute (`pokemon.position` is the inverse).
+    pub order: [u8; TEAM_CAP],
+    pub pokemon_left: u8,
+    pub total_fainted: u8,
+    pub fainted_this_turn: Option<u8>,
+    pub fainted_last_turn: Option<u8>,
+    pub choice: Choice,
+    /// `activeRequest` (`null` is `None`).
+    pub active_request: Option<SideRequestState>,
+    // Old-gen fields (`lastSelectedMove` and friends are gen 1's).
+    pub last_selected_move: SelectedMove,
+    pub last_selected_move_slot: u8,
+    pub last_enemy_selected_move: SelectedMove,
+    /// `side.lastMove` (gen 1).
+    pub last_move: MoveId,
 }
 
 impl Side {
@@ -399,7 +548,33 @@ impl Side {
             active: [None],
             side_conditions: EffectTable::new(),
             slot_conditions: [EffectTable::new()],
+            exists: false,
+            name: Name::new(),
+            avatar: Name::new(),
+            rating: Name::new(),
+            team_size: 0,
+            order: [0, 1, 2, 3, 4, 5],
+            pokemon_left: 0,
+            total_fainted: 0,
+            fainted_this_turn: None,
+            fainted_last_turn: None,
+            choice: Choice::EMPTY,
+            active_request: None,
+            last_selected_move: SelectedMove::NoMove,
+            last_selected_move_slot: 0,
+            last_enemy_selected_move: SelectedMove::NoMove,
+            last_move: MoveId::NONE,
         }
+    }
+
+    /// `side.pokemon[i]`'s team slot.
+    pub fn pokemon_at(&self, i: usize) -> u8 {
+        self.order[i]
+    }
+
+    /// The team slots in `side.pokemon` order.
+    pub fn pokemon(&self) -> &[u8] {
+        &self.order[..self.team_size as usize]
     }
 
     pub fn id(&self) -> SideId {
@@ -511,6 +686,13 @@ impl EffectFrame {
     pub const TOP: EffectFrame = EffectFrame { effect: EffectId::None, state: StateRef::Scratch, serial: 0 };
 }
 
+/// Where a full log goes in the middle of a command: the oldest lines of
+/// the current `update` block, in order (design 5.6, "a full ring flushes
+/// to the consumer"). The rest of the block reaches [`crate::emit::Sink::update`]
+/// at [`Battle::send_updates`]; the consumer joins the two. A plain `fn`
+/// (no trait object): the driver keeps the lines where its sink finds them.
+pub type LogSpill = fn(&Battle, &[Msg]);
+
 /// The battle log between flushes.
 #[derive(Clone, Copy, Debug)]
 pub struct Log {
@@ -532,6 +714,17 @@ impl Log {
 
     pub fn as_slice(&self) -> &[Msg] {
         &self.msgs[..self.len as usize]
+    }
+
+    pub fn is_full(&self) -> bool {
+        self.len as usize == LOG_CAP
+    }
+
+    /// Drops the first `n` lines.
+    fn drain_front(&mut self, n: usize) {
+        let len = self.len as usize;
+        self.msgs.copy_within(n..len, 0);
+        self.len = (len - n) as u16;
     }
 
     pub fn as_mut_slice(&mut self) -> &mut [Msg] {
@@ -585,8 +778,18 @@ impl KnownIds {
     }
 }
 
-/// The battle. Design 5.1; the queue, requests and turn loop arrive with
-/// P1-6.
+/// One entry of `faintQueue`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FaintData {
+    pub target: MonRef,
+    pub source: Option<MonRef>,
+    pub effect: EffectId,
+}
+
+/// A `|hint|` sent with `once` (PS's `hints` set).
+pub const HINT_CAP: usize = 8;
+
+/// The battle. Design 5.1.
 pub struct Battle {
     pub dex: &'static Dex,
     pub gen: u8,
@@ -618,9 +821,52 @@ pub struct Battle {
     /// `speedOrder`: field position values sorted by speed.
     pub speed_order: [u8; 2],
     pub log: Log,
+    /// Takes the oldest lines of a full [`Log`]. Every driver installs one;
+    /// a full log without it panics.
+    pub spill: Option<LogSpill>,
+    /// Lines of the current `update` block went to the spill.
+    pub spilled: bool,
     /// `lastMoveLine`: the index in [`Log`] of the last `|move|`.
     pub last_move_line: Option<u16>,
     pub known: KnownIds,
+
+    // ---- the turn loop (P1-6) -------------------------------------------
+    /// The `>start` format (`this.format` and its custom rules).
+    pub format_spec: FormatSpec,
+    /// Rules with a bearing on the battle, by `Rule as u8` bit
+    /// (`ruleTable.has`).
+    pub rules: u16,
+    pub queue: BattleQueue,
+    pub faint_queue: [Option<FaintData>; FAINT_QUEUE_CAP],
+    pub request_state: RequestState,
+    pub mid_turn: bool,
+    pub started: bool,
+    pub sent_requests: bool,
+    /// `debugMode` (`format.debug`: both custom games).
+    pub debug_mode: bool,
+    pub report_exact_hp: bool,
+    pub report_percentages: bool,
+    pub support_cancel: bool,
+    /// Gen 2-3's `quickClawRoll`.
+    pub quick_claw_roll: bool,
+    /// `lastSuccessfulMoveThisTurn`.
+    pub last_successful_move_this_turn: MoveId,
+    /// `lastDamage`.
+    pub last_damage: u16,
+    /// `winner`: `None` until the battle ends, then the winner (`None`
+    /// inside for a tie).
+    pub winner: Option<Option<SideId>>,
+    /// Seconds since the Unix epoch, for `|t:|` (PS reads the wall clock;
+    /// the caller sets this).
+    pub clock: u32,
+    /// `sideupdate`s waiting for [`Battle::send_updates`].
+    pub outbox: Outbox,
+    /// PS's `hints` set.
+    pub hints: [Option<(ps_protocol::TextId, Option<SideId>)>; HINT_CAP],
+    /// The test-only move pipeline (`cfg(test)` / `test-override`): the
+    /// real one arrives with P1-8 and P1-9.
+    #[cfg(any(test, feature = "test-override"))]
+    pub move_hook: Option<crate::battle::MoveHook>,
     /// One `initEffectState({})` per event depth.
     pub(crate) scratch: [EffectState; MAX_EVENT_DEPTH + 1],
     /// Recently removed states, by serial.
@@ -630,8 +876,9 @@ pub struct Battle {
 }
 
 impl Battle {
-    /// An empty battle over `dex` with the effects of `registry`. P1-6
-    /// builds the full constructor (format, rules, players) on top.
+    /// An empty battle over `dex` with the effects of `registry`;
+    /// [`Battle::from_start`] builds a format's battle (rules, header) on
+    /// top, and [`Battle::set_player`] the teams.
     pub fn new(dex: &'static Dex, registry: &'static Registry, seed: Seed, trunc: Trunc) -> Battle {
         let mut b = Battle {
             dex,
@@ -654,8 +901,34 @@ impl Battle {
             active_target: None,
             speed_order: [0, 1],
             log: Log::new(),
+            spill: None,
+            spilled: false,
             last_move_line: None,
             known: KnownIds::resolve(dex),
+            format_spec: FormatSpec::new(match dex.gen {
+                1 => ps_protocol::FormatId::Gen1CustomGame,
+                _ => ps_protocol::FormatId::Gen3CustomGame,
+            }),
+            rules: 0,
+            queue: BattleQueue::new(),
+            faint_queue: [None; FAINT_QUEUE_CAP],
+            request_state: RequestState::None,
+            mid_turn: false,
+            started: false,
+            sent_requests: true,
+            debug_mode: false,
+            report_exact_hp: false,
+            report_percentages: false,
+            support_cancel: false,
+            quick_claw_roll: false,
+            last_successful_move_this_turn: MoveId::NONE,
+            last_damage: 0,
+            winner: None,
+            clock: 0,
+            outbox: Outbox::new(),
+            hints: [None; HINT_CAP],
+            #[cfg(any(test, feature = "test-override"))]
+            move_hook: None,
             scratch: [EffectState::EMPTY; MAX_EVENT_DEPTH + 1],
             graveyard: [EffectState::EMPTY; GRAVEYARD_CAP],
             graveyard_next: 0,
@@ -725,6 +998,11 @@ impl Battle {
         m.side + 2 * self.mon(m).position
     }
 
+    /// `side.pokemon[i]` of `side`.
+    pub fn pokemon_at(&self, side: u8, i: usize) -> MonRef {
+        MonRef::new(side, self.sides[side as usize].order[i])
+    }
+
     /// The protocol identity of a Pokemon (`p1a: NAME` when active).
     pub fn ident(&self, m: MonRef) -> PokemonIdent {
         let side = if m.side == 0 { SideId::P1 } else { SideId::P2 };
@@ -741,7 +1019,26 @@ impl Battle {
 
     /// PS `this.add(...)`.
     pub fn add(&mut self, m: Msg) {
+        if self.log.is_full() {
+            self.spill_log();
+        }
         self.log.push(m);
+    }
+
+    /// Hands the oldest lines of the full log to the spill. The lines from
+    /// the last `|move|` on stay while there are others to send, since
+    /// `attrLastMove` may still edit that line; a single move that fills
+    /// the log on its own goes out whole, past `attrLastMove`'s reach.
+    fn spill_log(&mut self) {
+        let spill = self.spill.expect("battle log full and no LogSpill installed");
+        let n = match self.last_move_line {
+            Some(i) if i > 0 => i as usize,
+            _ => LOG_CAP,
+        };
+        spill(self, &self.log.as_slice()[..n]);
+        self.log.drain_front(n);
+        self.last_move_line = self.last_move_line.and_then(|i| (i as usize).checked_sub(n)).map(|i| i as u16);
+        self.spilled = true;
     }
 
     /// PS `attrLastMove('[still]')`: no animation, so the move's target is
@@ -1596,9 +1893,6 @@ impl Battle {
         true
     }
 
-    /// PS `faintMessages()`. The event core calls it after each residual
-    /// handler; the queue task (P1-6) ports the body.
-    pub fn faint_messages(&mut self) {}
 }
 
 // Design section 6: at most 16 KB of RAM per battle, on every target.
@@ -1621,6 +1915,10 @@ mod size_tests {
             core::mem::size_of::<Log>(),
             core::mem::size_of::<Field>(),
         );
+        std::println!("Queue {} Choice {} ReqState {} Outbox {} Name {} MoveSlot {} ActiveRequest {}",
+            core::mem::size_of::<crate::queue::BattleQueue>(), core::mem::size_of::<crate::choice::Choice>(),
+            core::mem::size_of::<Option<crate::request::SideRequestState>>(), core::mem::size_of::<crate::emit::Outbox>(),
+            core::mem::size_of::<Name>(), core::mem::size_of::<MoveSlot>(), core::mem::size_of::<ps_protocol::ActiveRequest>());
         assert!(core::mem::size_of::<Battle>() <= 16384);
     }
 }

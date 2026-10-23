@@ -176,6 +176,7 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
         Msg::Turn(n) => push_arg(buf, &n.to_string()),
         Msg::Win(side) => push_arg(buf, names.player_name(*side)),
         Msg::Debug(t) => push_arg(buf, &render_text_to_str(*t,  dex, names)),
+        Msg::Notice(t) | Msg::BigError(t) => push_arg(buf, &render_text_to_str(*t, dex, names)),
         Msg::Error { unavailable, text, .. } => {
             let prefix = if *unavailable { "[Unavailable choice] " } else { "[Invalid choice] " };
             push_arg(buf, &format!("{}{}", prefix, render_text_to_str(*text, dex, names)));
@@ -541,6 +542,8 @@ fn decode_kind(kind: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle
         "win" => Ok(Msg::Win(parse_win_side(arg(args, 0)?, names))),
         "tie" => Ok(Msg::Tie),
         "debug" => Ok(Msg::Debug(decode_text(&text_arg(args)?, dex, names)?)),
+        "message" => Ok(Msg::Notice(decode_text(&text_arg(args)?, dex, names)?)),
+        "bigerror" => Ok(Msg::BigError(decode_text(&text_arg(args)?, dex, names)?)),
         // The line does not name its side: PS sends it in a `sideupdate pN`
         // block, so the caller that read the header sets `side`.
         "error" => {

@@ -225,6 +225,14 @@ fn check_species(gen: &str) -> usize {
         assert_eq!(sp.weighthg as u64, j["weighthg"].as_u64().unwrap(), "{w} weighthg");
         assert_eq!(sp.nfe, j["nfe"].as_bool().unwrap(), "{w} nfe");
         assert_eq!(sp.max_hp().map(u64::from), opt_u64(&j["maxHP"]), "{w} maxHP");
+        let cosmetic: Vec<&str> = d.cosmetic_formes(SpeciesId(i as u16)).iter().map(|n| n.as_str()).collect();
+        let want = strs(&j["cosmeticFormes"]);
+        assert_eq!(cosmetic, want, "{w} cosmeticFormes");
+        for (k, name) in want.iter().enumerate() {
+            let id: String = name.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_lowercase();
+            assert_eq!(d.cosmetic_forme_id(&id), Some((SpeciesId(i as u16), k as u8 + 1)), "{w} {name}");
+            assert_eq!(d.cosmetic_forme_name(SpeciesId(i as u16), k as u8 + 1).map(|n| n.as_str()), Some(name.as_str()), "{w}");
+        }
     }
     json.len()
 }
@@ -357,6 +365,9 @@ fn gen3_round_trips() {
     assert_eq!(GEN3.gen, 3);
     assert_eq!(check_moves("gen3"), 370);
     assert_eq!(check_species("gen3"), 392);
+    // Unown's 27 letters are gen 3's only cosmetic formes.
+    assert_eq!(GEN3.cosmetic_formes.len(), 1);
+    assert_eq!(GEN3.cosmetic_forme_id("unownquestion"), Some((GEN3.species_id("unown").unwrap(), 27)));
     assert_eq!(check_items("gen3"), 106);
     assert_eq!(check_abilities("gen3"), 76);
     assert_eq!(check_conditions("gen3"), 90);

@@ -1011,7 +1011,7 @@ impl Battle {
                 );
             }
 
-            self.faint_messages();
+            self.faint_messages(false, false, true);
             if self.ended {
                 return;
             }

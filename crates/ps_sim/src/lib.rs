@@ -16,20 +16,32 @@
 //! P1-2 brought the PRNG (`prng`). P1-5 brings the event core: battle state
 //! (`state`), effects and their handlers (`effect`), the dispatch family and
 //! `speedSort` (`events`), relay values (`relay`), fixed-point modifiers
-//! (`modify`) and the per-gen effect registries (`mods`).
+//! (`modify`) and the per-gen effect registries (`mods`). P1-6 brings the
+//! control flow from `>start` to `|win|` / `|tie|`: the action queue
+//! (`queue`), the turn loop, switching and faints (`battle`), choices
+//! (`choice`), requests (`request`) and the output (`emit`), with stats
+//! for sorting and requests (`stats`).
 
 #![no_std]
 
 extern crate alloc;
 
+pub mod battle;
+pub mod choice;
 pub mod effect;
+pub mod emit;
 pub mod events;
 pub mod mods;
 pub mod modify;
 pub mod prng;
+pub mod queue;
 pub mod relay;
+pub mod request;
 pub mod state;
+pub mod stats;
 
 pub use effect::{EffectDef, EffectId, EventArgs, EventId, EventMask, Handler, HandlerFn, Prefix, Registry};
 pub use relay::Relay;
+pub use battle::{MoveHook, SwitchResult, TeamError};
+pub use emit::Sink;
 pub use state::{Battle, EffectState, EffectTable, Field, Holder, MonRef, Pokemon, Side};

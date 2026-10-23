@@ -849,6 +849,8 @@ impl BattleView {
             | Msg::FieldActivate { .. }
             | Msg::EndAbility { .. }
             | Msg::Message(_)
+            | Msg::Notice(_)
+            | Msg::BigError(_)
             | Msg::Hint { .. } => {}
         }
         out

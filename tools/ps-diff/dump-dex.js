@@ -354,6 +354,10 @@ function dumpSpecies(key, species) {
 		battleOnly: strOrNull(species.battleOnly, where),
 		maxHP: intOrNull(species.maxHP, where),
 		requiredItem: strOrNull(species.requiredItem, where),
+		// The formes that differ only in looks (Unown's letters): PS builds
+		// each as its own species object when a set names it, but the table
+		// lists only the base. Their names go in the details line.
+		cosmeticFormes: species.cosmeticFormes ? species.cosmeticFormes.slice() : null,
 	};
 }
 

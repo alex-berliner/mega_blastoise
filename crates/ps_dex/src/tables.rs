@@ -529,7 +529,19 @@ pub struct Dex {
     pub items: &'static [ItemDef],
     pub abilities: &'static [AbilityDef],
     pub conditions: &'static [ConditionDef],
+    /// PS `species.cosmeticFormes` of the species that have them.
+    pub cosmetic_formes: &'static [CosmeticFormes],
     pub typechart: TypeChart,
+}
+
+/// A species' cosmetic formes (PS `species.cosmeticFormes`, in order):
+/// formes that differ only in name, which the details line prints
+/// (`Unown-T`). PS builds one as its own species object when a set names
+/// it; the species table lists only the base.
+#[derive(Clone, Copy, Debug)]
+pub struct CosmeticFormes {
+    pub base: SpeciesId,
+    pub names: &'static [Str],
 }
 
 fn position<T>(table: &[T], id: &str, name: impl Fn(&T) -> Str) -> Option<u16> {
@@ -580,6 +592,25 @@ impl Dex {
 
     pub fn condition_def(&self, id: ConditionId) -> &'static ConditionDef {
         &self.conditions[id.index()]
+    }
+
+    /// The cosmetic formes of `species` (empty for most).
+    pub fn cosmetic_formes(&self, species: SpeciesId) -> &'static [Str] {
+        self.cosmetic_formes.iter().find(|c| c.base == species).map_or(&[], |c| c.names)
+    }
+
+    /// PS's `species.get(id)` for a cosmetic forme (`unownt`): the base
+    /// species and the forme's 1-based index in its `cosmeticFormes`.
+    /// Linear; not for a hot path.
+    pub fn cosmetic_forme_id(&self, id: &str) -> Option<(SpeciesId, u8)> {
+        self.cosmetic_formes.iter().find_map(|c| {
+            c.names.iter().position(|n| name_is_id(n.as_str(), id)).map(|i| (c.base, i as u8 + 1))
+        })
+    }
+
+    /// The name of cosmetic forme `forme` (1-based) of `species`.
+    pub fn cosmetic_forme_name(&self, species: SpeciesId, forme: u8) -> Option<Str> {
+        self.cosmetic_formes(species).get(usize::from(forme).checked_sub(1)?).copied()
     }
 
     /// PS's `move.id`: the placeholder's id for a Hidden Power variant,

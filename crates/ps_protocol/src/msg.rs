@@ -25,6 +25,8 @@
 //! | `\|win\|NAME` | [`Msg::Win`] | |
 //! | `\|tie` | [`Msg::Tie`] | |
 //! | `\|debug\|TEXT` | [`Msg::Debug`] | custom games run in debug mode |
+//! | `\|message\|TEXT` | [`Msg::Notice`] | the turn-limit line (no dash) |
+//! | `\|bigerror\|TEXT` | [`Msg::BigError`] | the auto-tie warnings |
 //! | `\|error\|[Invalid choice] TEXT` | [`Msg::Error`] | a `sideupdate` line |
 //! | `\|move\|USER\|MOVE\|TARGET` | [`Msg::Move`] | `[from]`, `[still]`, `[miss]`, `[notarget]` in [`Kw`] |
 //! | `\|switch\|MON\|DETAILS\|HP` | [`Msg::Switch`] | split pair; `[from] Baton Pass` (PS `switchIn`) |
@@ -146,6 +148,11 @@ pub enum Msg {
     Tie,
     /// `|debug|TEXT`
     Debug(Text),
+    /// `|message|TEXT` (no dash): PS's `add('message', ...)`, which the
+    /// turn limit uses.
+    Notice(Text),
+    /// `|bigerror|TEXT`: the auto-tie warnings past turn 500.
+    BigError(Text),
     /// `|error|[Invalid choice] TEXT` or `|error|[Unavailable choice] TEXT`,
     /// sent to `side` only (PS `emitChoiceError`, a `sideupdate`).
     Error { side: SideId, unavailable: bool, text: Text },
@@ -313,6 +320,8 @@ impl Msg {
             Msg::Win(_) => "win",
             Msg::Tie => "tie",
             Msg::Debug(_) => "debug",
+            Msg::Notice(_) => "message",
+            Msg::BigError(_) => "bigerror",
             Msg::Error { .. } => "error",
             Msg::Move { .. } => "move",
             Msg::Switch { .. } => "switch",
@@ -629,6 +638,7 @@ words! {
     Recharge => "recharge",
     Recoil => "Recoil",
     StealEat => "stealeat",
+    StruggleRecoil => "recoil",
     Stockpile1 => "stockpile1",
     Stockpile2 => "stockpile2",
     Stockpile3 => "stockpile3",
@@ -1248,6 +1258,17 @@ texts! {
     WeatherImmunity => "weather immunity" (),
     // PS: data/abilities.ts wonderguard onTryHit (`move.id`)
     WonderGuardImmunity => "Wonder Guard immunity: {}" (MoveId),
+    // ---- -message (PS: sim/battle.ts maybeTriggerEndlessBattleClause;
+    // data/rulesets.ts freezeclausemod, sleepclausemod) ----------------
+    EndlessBattleNoProgress => "This battle cannot progress. Endless Battle Clause activated!" (),
+    FreezeClauseActivated => "Freeze Clause activated." (),
+    SleepClauseActivated => "Sleep Clause Mod activated." (),
+    // ---- message and bigerror (PS: sim/battle.ts
+    // maybeTriggerEndlessBattleClause, the turn limit; start, the EV check)
+    AutoTieIn => "You will auto-tie if the battle doesn't end in {} turns (on turn 1000)." (Int),
+    AutoTieIn1 => "You will auto-tie if the battle doesn't end in 1 turn (on turn 1000)." (),
+    EvLimitWarning => "Warning: One player isn't adhering to a 510 EV limit, and the other player is." (),
+    TurnLimit => "It is turn 1000. You have hit the turn limit!" (),
     // ---- -hint (PS: sim/battle.ts hint, from the handlers) -------------
     DesyncClauseActivated => "Desync Clause Mod activated!" (),
     HintGen1Counter => "In Gen 1, from the Counter user's perspective, Counter uses the last announced move by the target's team to determine if it will succeed." (),
@@ -1258,22 +1279,35 @@ texts! {
     HintGen1Recovery => "In Gen 1, recovery moves fail if (user's maximum HP - user's current HP + 1) is divisible by 256, unless the current hp is also divisible by 256." (),
     HintGen3IntimidateSub => "In Gen 3, Intimidate does not activate if every target has a Substitute." (),
     HintGens3To4KnockOff => "In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item." (),
+    // PS: sim/battle.ts runAction (faint after Pursuit)
+    HintPursuitSwitch => "Previously chosen switches continue in Gen 2-4 after a Pursuit target faints." (),
+    // PS: data/rulesets.ts sleepclausemod onSetStatus
+    HintSleepClause => "Sleep Clause Mod prevents players from putting more than one of their opponent's Pokémon to sleep at a time" (),
+    // PS: sim/battle-actions.ts switchIn
+    HintSwitchFailed => "A switch failed because the Pokémon trying to switch in is already in." (),
     // ---- raw (PS: sim/battle.ts start, the custom-rules infobox) -------
     CustomRules1 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>1 custom rule:</strong></summary> {}</details></div>" (Rule),
     CustomRules2 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> {}, {}</details></div>" (Rule, Rule),
     // ---- error (PS: sim/side.ts emitChoiceError, after the `[Invalid
     // choice] ` / `[Unavailable choice] ` prefix) ------------------------
+    CantDoGameOver => "Can't do anything: The game is over" (),
+    CantDoNotYourTurn => "Can't do anything: It's not your turn" (),
     CantMoveDisabled => "Can't move: {}'s {} is disabled" (Nickname, Move),
     CantMoveNeedResponse => "Can't move: You need a {} response" (Word),
     CantMoveNoMoveIndex => "Can't move: Your {} doesn't have a move {}" (Nickname, Int),
+    CantMoveTooMany => "Can't move: You sent more choices than unfainted Pokémon." (),
     CantPassMustMove => "Can't pass: Your {} must make a move (or switch)" (Nickname),
     CantPassNotMoveOrSwitch => "Can't pass: Not a move or switch request" (),
     CantPassReplace => "Can't pass: You need to switch in a Pokémon to replace {}" (Nickname),
     CantSwitchActive => "Can't switch: You can't switch to an active Pokémon" (),
     CantSwitchFainted => "Can't switch: You can't switch to a fainted Pokémon" (),
     CantSwitchNeedResponse => "Can't switch: You need a {} response" (Word),
+    CantSwitchNoName => "Can't switch: You do not have a Pokémon named \"{}\" to switch to" (Int),
     CantSwitchNoSlot => "Can't switch: You do not have a Pokémon in slot {} to switch to" (Int),
     CantSwitchOnce => "Can't switch: The Pokémon in slot {} can only switch in once" (Int),
+    CantSwitchSelect => "Can't switch: You need to select a Pokémon to switch in" (),
+    CantSwitchTooMany => "Can't switch: You sent more choices than unfainted Pokémon" (),
+    CantSwitchTooManySwitches => "Can't switch: You sent more switches than Pokémon that need to switch" (),
     CantSwitchTrapped => "Can't switch: The active Pokémon is trapped" (),
     CantUndoLeak => "Can't undo: A trapping/disabling effect would cause undo to leak information" (),
 }
@@ -1357,8 +1391,11 @@ mod tests {
         for &w in Word::ALL {
             assert_eq!(Word::parse(w.as_str()), Some(w));
         }
+        // Both spellings are PS's: `[from] Recoil` (applyRecoilDamage) and
+        // `[from] recoil` (directDamage's Struggle recoil).
         assert_eq!(Word::parse("Recoil"), Some(Word::Recoil));
-        assert_eq!(Word::parse("recoil"), None);
+        assert_eq!(Word::parse("recoil"), Some(Word::StruggleRecoil));
+        assert_eq!(Word::parse("RECOIL"), None);
     }
 
     #[test]

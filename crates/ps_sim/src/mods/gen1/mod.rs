@@ -2,8 +2,14 @@
 //! effect under `moves/`, `conditions/`, `items/`, `abilities/` and
 //! `rules/` (see `mods/mod.rs`). Entries stay sorted by `EffectId`.
 
-use crate::effect::Registry;
+pub mod rules;
 
-/// Gen 1's effect definitions, sorted by id. Empty until the porting tasks
-/// add effects.
-pub static REGISTRY: Registry = Registry { entries: &[] };
+use crate::effect::{EffectId, Registry, Rule};
+
+/// Gen 1's effect definitions, sorted by id.
+pub static REGISTRY: Registry = Registry {
+    entries: &[
+        (EffectId::Rule(Rule::SleepClauseMod), &rules::sleepclausemod::DEF),
+        (EffectId::Rule(Rule::FreezeClauseMod), &rules::freezeclausemod::DEF),
+    ],
+};

@@ -655,6 +655,15 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
     }
     writeln!(s, "];").unwrap();
 
+    // Cosmetic formes, by base species.
+    writeln!(s, "static {up}_COSMETIC_FORMES: &[CosmeticFormes] = &[").unwrap();
+    for (i, sp) in g.species.iter().enumerate() {
+        let Some(formes) = sp["cosmeticFormes"].as_array() else { continue };
+        let names: Vec<String> = formes.iter().map(|f| pool.add(f.as_str().unwrap())).collect();
+        writeln!(s, "    CosmeticFormes {{ base: SpeciesId({i}), names: &[{}] }},", names.join(", ")).unwrap();
+    }
+    writeln!(s, "];").unwrap();
+
     // Items.
     writeln!(s, "static {up}_ITEMS: [ItemDef; {}] = [", g.items.len()).unwrap();
     for it in &g.items {
@@ -803,7 +812,7 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
         s,
         "/// The resolved `Dex.mod('{gn}')` of PS {ps}.\npub static {up}: Dex = Dex {{ gen: {gen}, \
          species: &{up}_SPECIES, moves: &{up}_MOVES, items: &{up}_ITEMS, abilities: &{up}_ABILITIES, \
-         conditions: &{up}_CONDITIONS, typechart: TypeChart {{ order: &[{order}], damage_taken: [{rows}], \
+         conditions: &{up}_CONDITIONS, cosmetic_formes: {up}_COSMETIC_FORMES, typechart: TypeChart {{ order: &[{order}], damage_taken: [{rows}], \
          special: &[{special}] }} }};",
         ps = "0.11.11",
         gen = g.gen,
