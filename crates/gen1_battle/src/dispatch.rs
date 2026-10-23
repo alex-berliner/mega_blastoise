@@ -15,7 +15,7 @@ use crate::combat::{
 };
 use crate::log::Event;
 use crate::rng::Rng;
-use crate::state::{Field, MoveSlot, Side, Status, Volatile};
+use crate::state::{Field, MoveSlot, Side, Status, Volatile, CANNOT_MOVE};
 use crate::tables::{
     move_by_id, targets_self, MoveCategory, MoveEffectKind, MoveEntry, FLAG_HITS_INVULN,
     FLAG_IGNORE_IMMUNITY, MOVES,
@@ -363,8 +363,14 @@ fn run_move(
         return miss_aftermath(rng, field, mv, sides, attacker_side, log);
     }
 
-    // Dream Eater fails against an awake target before accuracy is rolled.
-    if ek == DreamEater && !matches!(sides[defender_side].active().status, Status::Sleep(_)) {
+    // Dream Eater fails against an awake target before accuracy is rolled,
+    // and against a sleeping one behind a Substitute, which it cannot eat
+    // the dream through (gen 4's `dreameater.onTryImmunity`, inherited down
+    // the mod chain to gen 1).
+    if ek == DreamEater
+        && (!matches!(sides[defender_side].active().status, Status::Sleep(_))
+            || sides[defender_side].active().volatile.has(Volatile::SUBSTITUTED))
+    {
         let s = &sides[defender_side];
         log.push_board(format!("immune|mon:{},{},0", s.active().name, s.player_id));
         return MoveOutcome::default();
@@ -1429,8 +1435,20 @@ fn apply_haze(field: &mut Field, sides: &mut [Side; 2], user_side: usize, log: &
     // hasn't acted yet this turn, it loses that action (Gen 1 "cannotmove").
     let foe_status = sides[foe_side].active().status;
     if !matches!(foe_status, Status::None) {
-        if matches!(foe_status, Status::Sleep(_) | Status::Freeze) && !field.foe_acted {
-            sides[foe_side].active_mut().volatile.set(Volatile::SKIP_TURN);
+        if matches!(foe_status, Status::Sleep(_) | Status::Freeze) {
+            // The sim writes `cannotmove` into BOTH of the foe's side
+            // registers here, before it cures (gen 1's `haze.onHit`), and
+            // it does not care whether the foe has acted yet. A locked mon
+            // never rewrites the register: its choice carries no
+            // `moveSlot`, so `commitChoices` leaves the old value standing
+            // and the next action is thrown away, and the one after
+            // that too, for as long as the lock lasts. That is the soft lock
+            // the sim hints about in gen1/scripts.js.
+            sides[foe_side].last_selected_move = CANNOT_MOVE;
+            sides[foe_side].last_enemy_selected_move = CANNOT_MOVE;
+            if !field.foe_acted {
+                sides[foe_side].active_mut().volatile.set(Volatile::SKIP_TURN);
+            }
         }
         sides[foe_side].active_mut().status = Status::None;
     }
@@ -2002,9 +2020,32 @@ pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: us
     let max = sides[side].active().hp_max;
     let base = (max / 16).max(1);
 
+    // Bad poison is Toxic and nothing else, so it always carries the
+    // volatile: gen 2's `tox.onStart` puts it there and zeroes it.
+    if sides[side].active().status == Status::BadPoison {
+        sides[side].active_mut().volatile.set(Volatile::TOX_COUNTER);
+    }
+    // That counter is a volatile of its own (`residualdmg`, inherited from
+    // gen 2) and ticks FIRST after every action, but only a mon carrying
+    // the volatile has a handler to run: a burn or plain poison never puts
+    // one there. Where it is, the tick reads the status alone, so a mon
+    // that is asleep or clean does not count the turn. That is what makes
+    // a Toxic that outlived its own status come back at full strength once
+    // a Poison Gas re-inflicts plain poison.
+    if sides[side].active().volatile.has(Volatile::TOX_COUNTER)
+        && matches!(
+            sides[side].active().status,
+            Status::Poison | Status::Burn | Status::BadPoison
+        )
+    {
+        let m = sides[side].active_mut();
+        m.volatile.toxic_counter = m.volatile.toxic_counter.saturating_add(1);
+    }
+
     match sides[side].active().status {
         Status::Poison | Status::Burn => {
-            // Multiplied by a live toxic counter (kept by Rest), NOT incremented.
+            // Multiplied by a live toxic counter (kept by Rest), which ticked
+            // a moment ago, so a mon without one pays a flat sixteenth.
             let mult = if sides[side].active().volatile.has(Volatile::TOX_COUNTER) {
                 sides[side].active().volatile.toxic_counter.max(1) as u16
             } else {
@@ -2013,10 +2054,9 @@ pub fn after_action_residuals(field: &mut Field, sides: &mut [Side; 2], side: us
             direct_hp_loss(field, sides, side, base.saturating_mul(mult), false, log);
         }
         Status::BadPoison => {
-            let m = sides[side].active_mut();
-            m.volatile.set(Volatile::TOX_COUNTER);
-            m.volatile.toxic_counter = m.volatile.toxic_counter.saturating_add(1);
-            let mult = m.volatile.toxic_counter as u16;
+            // The sim reads the counter bare: `residualdmg` ticked a moment
+            // ago, so it is never zero here.
+            let mult = sides[side].active().volatile.toxic_counter as u16;
             direct_hp_loss(field, sides, side, base.saturating_mul(mult), false, log);
         }
         _ => {}

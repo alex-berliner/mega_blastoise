@@ -201,11 +201,15 @@ fn rest_preserves_toxic_counter() {
     assert!(matches!(sides[0].active().status, Status::Sleep(_)));
     assert!(sides[0].active().volatile.has(Volatile::TOX_COUNTER));
     assert_eq!(sides[0].active().volatile.toxic_counter, 2);
-    // Re-poisoned later: residuals use the PRESERVED counter (×2, flat).
+    // Re-poisoned later: the preserved counter ticks BEFORE the damage it
+    // multiplies, because `residualdmg` counts every action of a mon whose
+    // status is brn/psn/tox, not only a bad-poison one (gen 2's condition,
+    // which gen 1 inherits). So plain poison off a spent Toxic costs one
+    // sixteenth MORE than the counter it kept, not the counter itself.
     sides[0].active_mut().status = Status::Poison;
     let pre = sides[0].active().hp_cur;
     after_action_residuals(&mut field, &mut sides, 0, &mut log);
-    assert_eq!(pre - sides[0].active().hp_cur, base * 2);
+    assert_eq!(pre - sides[0].active().hp_cur, base * 3);
 }
 
 #[test]
@@ -756,6 +760,11 @@ fn haze_cure_costs_the_foe_its_turn() {
     assert!(!pre_move_check(&mut rng, &mut field, &mut sides, 1, Some(0), &mut log));
     // …but only this turn.
     assert!(pre_move_check(&mut rng, &mut field, &mut sides, 1, Some(0), &mut log));
+    // The sim's Haze also writes `cannotmove` into BOTH of the foe's side
+    // registers before it cures, and a locked mon reads the register instead
+    // of its lock: the mon Haze thaws mid-charge never resolves again.
+    assert_eq!(sides[1].last_selected_move, CANNOT_MOVE);
+    assert_eq!(sides[1].last_enemy_selected_move, CANNOT_MOVE);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -765,7 +774,7 @@ fn haze_cure_costs_the_foe_its_turn() {
 #[test]
 fn dream_eater_fails_on_awake_target() {
     let a = fresh_mon("hypno", 100, &["dreameater"]);
-    let d = fresh_mon("snorlax", 100, &["rest"]);
+    let d = fresh_mon("snorlax", 100, &["rest", "substitute"]);
     let mut sides = make_sides(a, d);
     let mut rng = Rng::new(1);
     let mut field = Field::default();
@@ -776,6 +785,14 @@ fn dream_eater_fails_on_awake_target() {
     sides[1].active_mut().status = Status::Sleep(3);
     let out = execute_move(&mut rng, &mut field, &mut sides, 0, 0, &mut log);
     assert!(out.damage_dealt > 0, "dream eater works on a sleeper");
+
+    // …and not through a Substitute either, which stands between it and the
+    // dream (gen 4's `dreameater.onTryImmunity`, inherited down to gen 1).
+    sides[1].active_mut().status = Status::Sleep(3);
+    let _ = execute_move(&mut rng, &mut field, &mut sides, 1, 1, &mut log);
+    assert!(sides[1].active().volatile.has(Volatile::SUBSTITUTED));
+    let out = execute_move(&mut rng, &mut field, &mut sides, 0, 0, &mut log);
+    assert_eq!(out.damage_dealt, 0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

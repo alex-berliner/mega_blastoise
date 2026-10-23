@@ -21,23 +21,9 @@ use crate::dispatch::{
     locked_move_id, pre_move_check, Log,
 };
 use crate::options::{CoreBattleEngineOptions, CoreBattleOptions};
-
-/// What the cartridge writes into a side's move register when its mon is
-/// held by a partial trap and has no real choice to make. It is not a move,
-/// and a later turn that reads it back throws the action away.
-const CANNOT_MOVE: &str = "cannotmove";
-
-/// Where a side's move register starts, before anything has been selected on
-/// it. Like `cannotmove` it is not a move, so the index register answers for
-/// it — and that index starts at the first slot.
-const NO_MOVE: &str = "nomove";
-
-/// What the cartridge puts in the enemy register for a side whose only choice
-/// is Struggle: the pseudo-move itself, not whatever sits in the index.
-const STRUGGLE: &str = "struggle";
 use crate::request::{MonTurnRequest, Request, SwitchRequest, TurnRequest};
 use crate::rng::Rng;
-use crate::state::{Field, Mon, Side, Status, Volatile};
+use crate::state::{Field, Mon, Side, Status, Volatile, CANNOT_MOVE, NO_MOVE, STRUGGLE};
 use crate::tables::{move_by_id, species_by_id, MoveEffectKind, MoveEntry, FLAG_PRIO_MINUS, FLAG_PRIO_PLUS};
 use crate::types::{Stat, Type};
 
@@ -547,22 +533,22 @@ impl<'a> Battle<'a> {
 
     fn do_battle_turn(&mut self) {
         self.turn_count += 1;
-        // A mon frozen or asleep when the choice was made is on the sim's
-        // "fight" pseudo-choice: its request offers that one entry, and
-        // whatever the player picks resolves to the move it last SELECTED
-        // while it could still choose. This matters the moment it thaws
-        // mid-turn — off a Fire move, say — and gets to act after all: the
-        // move that comes out is the old selection, not the new pick.
-        let stale_choice: [&'static str; 2] = [0, 1].map(|i| {
-            if matches!(
-                self.sides[i].active().status,
-                Status::Sleep(_) | Status::Freeze
-            ) {
-                // `nomove` is where the register starts, and a side that has
-                // only ever switched still holds it. It names no move, so the
-                // index register answers instead — which is what makes a mon
-                // frozen the moment it arrived come out swinging its FIRST
-                // move rather than the one just pressed.
+        // What the sim's QUEUE holds for each side, once `commitChoices` has
+        // rewritten every Gen 1 move choice to `lastSelectedMove`. A side
+        // with no free choice at all is answered by that register: a mon
+        // asleep or frozen when it chose (the "fight" pseudo-choice) and a
+        // mon LOCKED into a move (the sim pushes a lock with no `moveSlot`,
+        // so the register is left alone and then read back as the action).
+        // `nomove` is where the register starts, and a side that has only
+        // ever switched still holds it. It names no move, so the index
+        // register answers instead, which is what makes a mon frozen the
+        // moment it arrived come out swinging its FIRST move rather than the
+        // one just pressed.
+        let queued: [&'static str; 2] = [0, 1].map(|i| {
+            let m = self.sides[i].active();
+            let no_free_choice = matches!(m.status, Status::Sleep(_) | Status::Freeze)
+                || locked_move_id(&self.sides[i]).is_some();
+            if no_free_choice {
                 let reg = self.sides[i].last_selected_move;
                 if reg.is_empty() {
                     NO_MOVE
@@ -624,14 +610,17 @@ impl<'a> Battle<'a> {
             // Quick Attack keeps the +1 (its wake-up turn resolves in that
             // early slot, which is how a sleep move re-lands on the
             // just-woken target the same turn), while a mon asleep since
-            // the battle began has selected nothing and sits at 0.
+            // the battle began has selected nothing and sits at 0. A LOCKED
+            // mon reads the same register, so it keeps the lock's bracket,
+            // unless Haze has put `cannotmove` there, which is no move at
+            // all and therefore no bracket either.
             let bracket_move = |b: &Self, i: usize| -> Option<&'static MoveEntry> {
                 let m = b.sides[i].active();
                 if m.volatile.has(Volatile::MUST_RECHARGE) {
                     return None;
                 }
-                if matches!(m.status, Status::Sleep(_) | Status::Freeze) {
-                    return move_by_id(b.sides[i].last_selected_move);
+                if !queued[i].is_empty() {
+                    return move_by_id(queued[i]);
                 }
                 // A mon held by Wrap and kin is on the same "fight" choice,
                 // rewritten to `cannotmove`: no move, so no bracket either,
@@ -750,14 +739,17 @@ impl<'a> Battle<'a> {
                         after_switch_in(&mut self.field, &mut self.sides, side, &mut self.log);
                     }
                 }
-                Some(Choice::Move(slot)) if stale_choice[side] == CANNOT_MOVE => {
+                Some(Choice::Move(slot)) if queued[side] == CANNOT_MOVE => {
                     // The register says `cannotmove`: the action is thrown
                     // away before the sleep check ever runs, so the sleeper
                     // loses the turn AND keeps its full counter. The sim's
                     // abort is not silence, though: `abortMove` still runs the
                     // AfterMoveSelf event, so the residuals tick all the same.
                     // A seeded sleeper held by a trap drains; a burned one
-                    // scorches.
+                    // scorches. A mon LOCKED into a move can read it too:
+                    // its lock never rewrites the register, so once Haze has
+                    // cured it out of a charge there is nothing left to play
+                    // and the soft lock the sim hints about begins.
                     let _ = slot;
                     after_action_residuals(&mut self.field, &mut self.sides, side, &mut self.log);
                 }
@@ -768,7 +760,7 @@ impl<'a> Battle<'a> {
                 // of Fissure — and pays for it from the INDEX register's
                 // slot, which is a different move entirely. The sim states
                 // the whole thing in a hint of its own.
-                Some(Choice::Move(_)) if stale_choice[side] == NO_MOVE => {
+                Some(Choice::Move(_)) if queued[side] == NO_MOVE => {
                     self.run_move_action(side, None, false, Some(&crate::tables::NO_MOVE_GLITCH));
                 }
                 Some(Choice::Move(slot)) if recharge_choice[side] => {
@@ -789,8 +781,9 @@ impl<'a> Battle<'a> {
                     self.run_move_action(side, Some(replay), disabled_choice[side], None);
                 }
                 Some(Choice::Move(slot)) => {
-                    // Frozen or asleep at choice time: the old selection is
-                    // what comes out, whatever slot was pressed.
+                    // Frozen or asleep at choice time, or locked into a move:
+                    // the old selection is what comes out, whatever slot was
+                    // pressed.
                     // The cartridge keeps TWO registers per side: the move
                     // itself, which never resets, and the move-list INDEX,
                     // which resets on every switch. A frozen or sleeping mon
@@ -802,7 +795,7 @@ impl<'a> Battle<'a> {
                     // desync. The slot the player pressed does not come into
                     // it.
                     let stale = self.sides[side].last_selected_slot.min(3);
-                    match stale_choice[side] {
+                    match queued[side] {
                         "" => self.run_move_action(side, Some(slot), disabled_choice[side], None),
                         id if self.sides[side].active().moves.get(stale as usize).is_some_and(|m| m.move_id == id) => {
                             self.run_move_action(side, Some(stale), disabled_choice[side], None)

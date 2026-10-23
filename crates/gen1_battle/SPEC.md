@@ -203,7 +203,10 @@ Per turn:
         LEAVES Fly/Dig invulnerability stuck (invulnerability glitch)
    c. Use move (PP: locked continuations free; two-turn moves pay on release)
    d. RESIDUALS for the acting side (Gen 1: after each action, NOT at EOT):
-      - brn/psn: 1/16 × toxic counter (if one is live; not incremented)
+      - the toxic counter volatile (if live) counts the turn whenever the
+        status is brn/psn/tox (before the tick it multiplies), and a
+        sleep/cold mon does not count
+      - brn/psn: 1/16 × toxic counter (if one is live)
       - tox: counter += 1, then 1/16 × counter
       - Leech Seed: shares AND increments the toxic counter; the seeder's
         heal is not capped by the victim's remaining HP
@@ -235,6 +238,12 @@ Per turn:
   a side that copied Counter last turn fails that test for the whole of the
   turn after it, switch or no switch.
 - **Quick Attack +1 / Counter -1** priority brackets; ties are 50/50.
+- **The queue holds the move register, not the choice**: the sim rewrites
+  every Gen 1 move choice to `Side::last_selected_move`, and a lock is a
+  choice with no `moveSlot`, so a locked mon replays the register too. That
+  is invisible until something else writes the register for it: Haze writing
+  `cannotmove` there soft-locks the mon for the rest of its lock, and the
+  `nomove` a side starts on is the glitch Fissure move.
 - PP underflow glitches: not implemented (see §13).
 
 ---
@@ -248,7 +257,7 @@ Per turn:
 | FRZ | `Status::Freeze` | Cannot act. **Cannot thaw on own.** Thawed only by a Fire move with a burn chance (Ember/Flamethrower/Fire Blast/Fire Punch — NOT Fire Spin), or Haze | Fire hit / Haze / Rest overwrite |
 | SLP | `Status::Sleep(1..=7)` | Counter -- each PreMove; hitting 0 wakes but that turn is LOST | Counter expiration / Haze |
 | PAR | `Status::Paralysis` | 63/256 fail to act; quarters modified Speed (sticky) | Rest / Haze |
-| BAD_PSN | `Status::BadPoison` + `toxic_counter` volatile | counter += 1 then counter × 1/16 after own action. **The counter is a separate volatile: it survives Rest** (and then multiplies plain psn/brn damage without incrementing), a fresh Toxic restarts it at 0, Leech Seed shares AND increments it, and it dies on switch (tox downgrades to psn). | Rest keeps the counter; switch/Haze clear it |
+| BAD_PSN | `Status::BadPoison` + `toxic_counter` volatile | counter += 1 then counter × 1/16 after own action. **The counter is a separate volatile: it survives Rest** (and then multiplies plain psn/brn damage, incrementing on those too, since the same volatile counts every brn/psn/tox action), a fresh Toxic restarts it at 0, Leech Seed shares AND increments it, and it dies on switch (tox downgrades to psn). | Rest keeps the counter; switch/Haze clear it |
 
 **Mutually exclusive**: only one major status at a time. Sleep moves used on
 a RECHARGING target bypass accuracy and overwrite any existing status.
@@ -385,8 +394,9 @@ These get hand-written functions because their behavior is too unique for a sing
 | **Hyper Beam** | After dealing damage, if target NOT fainted, user gains `MustRecharge` and next turn is wasted on "must recharge". **If target fainted, no recharge.** |
 | **Metronome** | Roll 1..=165, skip Metronome (and Struggle). Execute that move with no PP deduction. |
 | **Conversion** | Copy target's primary + secondary type onto user (or just primary if single-typed). |
-| **Haze** | Reset all stat stages on both sides to 0; clear opponent's non-volatile status; clear own confusion. (Gen 1 — see Bulbapedia.) |
+| **Haze** | Reset all stat stages on both sides to 0; clear opponent's non-volatile status; clear own confusion. (Gen 1; see Bulbapedia.) Curing a foe that is asleep or frozen also writes `cannotmove` into both of that side's registers, which a locked mon reads in place of its lock: a mon thawed mid-charge is soft-locked for the rest of the lock. |
 | **Rest** | Restore full HP, set SLP counter to 2, cure other major statuses. Cannot be used at full HP. |
+| **Dream Eater** | Needs a sleeping target (immunity check before the accuracy roll) and fails through a Substitute: the dream is behind it. |
 | **Wrap / Bind / Fire Spin / Clamp** | Lock target for 2..=5 turns; user can attack only with this move; target cannot move. Tiny damage (1/16 max) each turn. If user switches, target frees. |
 
 ---

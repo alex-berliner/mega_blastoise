@@ -5,6 +5,20 @@
 use crate::tables::{move_by_id, species_by_id, SpeciesEntry};
 use crate::types::Type;
 
+/// What the cartridge writes into a side's move register when its mon has no
+/// real choice to make: held by a partial trap, or just thawed by Haze. It is
+/// not a move, and a later turn that reads it back throws the action away.
+pub const CANNOT_MOVE: &str = "cannotmove";
+
+/// Where a side's move register starts, before anything has been selected on
+/// it. Like `cannotmove` it is not a move, so the index register answers for
+/// it, and that index starts at the first slot.
+pub const NO_MOVE: &str = "nomove";
+
+/// What the cartridge puts in the enemy register for a side whose only choice
+/// is Struggle: the pseudo-move itself, not whatever sits in the index.
+pub const STRUGGLE: &str = "struggle";
+
 /// Status (major) — exactly one at a time, plus sleep counter.
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
