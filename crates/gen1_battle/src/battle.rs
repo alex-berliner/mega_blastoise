@@ -368,7 +368,7 @@ impl<'a> Battle<'a> {
                     disabled: false,
                     target: 0,
                 }]
-            } else if m.out_of_pp() && v.multi_turn_move.is_empty() {
+            } else if m.no_usable_move() && v.multi_turn_move.is_empty() {
                 alloc::vec![ApiMoveSlot {
                     name: "Struggle".to_string(),
                     id: "struggle".to_string(),
@@ -517,7 +517,7 @@ impl<'a> Battle<'a> {
         match self.pending_choice[side] {
             Some(Choice::Move(slot)) => {
                 let m = self.sides[side].active();
-                if m.out_of_pp() {
+                if m.no_usable_move() {
                     return move_by_id("struggle");
                 }
                 // A Disabled chosen slot is offered only as Struggle at the
@@ -575,13 +575,16 @@ impl<'a> Battle<'a> {
         // The sim's Struggle-instead-of-Disabled-move decision is made at
         // REQUEST time — before any of this turn's actions. A Disable that
         // lands mid-turn does not rewrite an already-made choice (the
-        // victim's own next action ticks it away instead).
+        // victim's own next action ticks it away instead). A mon whose only
+        // stocked move is Disabled is offered Struggle alone, so that Disable
+        // running out first does not bring an empty slot back.
         let disabled_choice: [bool; 2] = [0, 1].map(|i| {
             locked_move_id(&self.sides[i]).is_none()
                 && matches!(self.pending_choice[i], Some(Choice::Move(sl)) if {
                     let m = self.sides[i].active();
-                    m.volatile.has(Volatile::DISABLED)
-                        && m.volatile.disabled_slot == sl.min(3)
+                    (m.volatile.has(Volatile::DISABLED)
+                        && m.volatile.disabled_slot == sl.min(3))
+                        || m.no_usable_move()
                 })
         });
         // Determine action order: switches first; between moves, priority

@@ -172,7 +172,8 @@ Source: pret `core.asm` `MainBattleLoop`.
 ```
 Per turn:
 1. Get player choice + AI/opponent choice
-2. Choice validation (locked moves override; empty PP pool forces Struggle)
+2. Choice validation (locked moves override; no slot both stocked and
+   un-Disabled forces Struggle)
 3. Selections register (Counter reads the opponent's SELECTED move)
 4. Determine order:
    switches first
@@ -232,7 +233,7 @@ Per turn:
 | FRZ | `Status::Freeze` | Cannot act. **Cannot thaw on own.** Thawed only by a Fire move with a burn chance (Ember/Flamethrower/Fire Blast/Fire Punch — NOT Fire Spin), or Haze | Fire hit / Haze / Rest overwrite |
 | SLP | `Status::Sleep(1..=7)` | Counter -- each PreMove; hitting 0 wakes but that turn is LOST | Counter expiration / Haze |
 | PAR | `Status::Paralysis` | 63/256 fail to act; quarters modified Speed (sticky) | Rest / Haze |
-| BAD_PSN | `Status::BadPoison` + `toxic_counter` volatile | counter += 1 then counter × 1/16 after own action. **The counter is a separate volatile: it survives Rest** (and then multiplies plain psn/brn damage without incrementing), Leech Seed shares AND increments it, and it dies on switch (tox downgrades to psn). | Rest keeps the counter; switch/Haze clear it |
+| BAD_PSN | `Status::BadPoison` + `toxic_counter` volatile | counter += 1 then counter × 1/16 after own action. **The counter is a separate volatile: it survives Rest** (and then multiplies plain psn/brn damage without incrementing), a fresh Toxic restarts it at 0, Leech Seed shares AND increments it, and it dies on switch (tox downgrades to psn). | Rest keeps the counter; switch/Haze clear it |
 
 **Mutually exclusive**: only one major status at a time. Sleep moves used on
 a RECHARGING target bypass accuracy and overwrite any existing status.

@@ -200,6 +200,18 @@ impl Mon {
             && self.moves.iter().any(|s| !s.move_id.is_empty())
     }
 
+    /// True when no filled slot is both stocked and un-Disabled. The sim's
+    /// `getMoves` greys out both kinds, and with nothing left the request
+    /// carries Struggle alone, whatever slot the player presses.
+    pub fn no_usable_move(&self) -> bool {
+        let v = &self.volatile;
+        self.moves.iter().enumerate().all(|(i, s)| {
+            s.move_id.is_empty()
+                || s.pp == 0
+                || (v.has(Volatile::DISABLED) && v.disabled_slot as usize == i)
+        }) && self.moves.iter().any(|s| !s.move_id.is_empty())
+    }
+
     /// Initialize a mon from species id + level + chosen moves.
     /// All IVs and EVs assumed max (15 / 65535) — randbat-style.
     pub fn from_species(species_id: &'static str, level: u8, move_ids: &[&'static str]) -> Option<Self> {

@@ -1529,6 +1529,11 @@ fn rage_build(sides: &mut [Side; 2], side: usize, log: &mut Log) {
     if sides[side].active().fainted() {
         return;
     }
+    // Rage only builds below +6, so a raging mon at 999 never takes the
+    // boost-at-999 quirk that would drop its stage to +5.
+    if sides[side].active().stages[0] >= 6 {
+        return;
+    }
     // No foe re-stack: this path mirrors Showdown's direct boost() call.
     let _ = apply_stage_change(sides, side, side, 1, 1, false, log);
 }
@@ -1621,8 +1626,9 @@ fn self_hit_with_sub_redirect(
         }
         // No sub on the foe: the damage vanishes entirely.
     } else {
-        // A confusion self-hit DOES set the register — Counter can bounce it.
-        direct_hp_loss(field, sides, side, dmg, true, log);
+        // A confusion self-hit DOES set the register (above, uncapped: the
+        // sim's `directDamage` stores the roll before the HP clamp).
+        direct_hp_loss(field, sides, side, dmg, false, log);
     }
 }
 
@@ -1715,9 +1721,9 @@ fn try_apply_status(
             m.rest_sleep = false;
         }
         apply_status_drop(m);
-        if status == Status::BadPoison && !m.volatile.has(Volatile::TOX_COUNTER) {
-            // Toxic counter starts at 0 and survives Rest; if one is already
-            // running (re-toxiced after Rest), it keeps escalating.
+        if status == Status::BadPoison {
+            // Toxic counter starts at 0 and survives Rest, but a fresh Toxic
+            // after Rest starts it over (the sim's `tox.onStart` zeroes it).
             m.volatile.set(Volatile::TOX_COUNTER);
             m.volatile.toxic_counter = 0;
         }
