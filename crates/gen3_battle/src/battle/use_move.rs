@@ -1578,10 +1578,12 @@ impl Battle {
                     // heal runs in `runMoveEffects`, and everything below it
                     // in that loop still fires: the `Hit` event takes the
                     // focus off anything charging Focus Punch, since Present
-                    // is a damaging move even at zero base power. A gift
-                    // refused leaves that loop before the event ever runs,
-                    // so it costs the charge nothing.
+                    // is a damaging move even at zero base power, and it is
+                    // what a rager reads its Attack off. A gift refused
+                    // leaves that loop before the event ever runs, so it
+                    // costs the charge nothing.
                     self.hit_this_turn[foe] = true;
+                    self.rage_on_hit(foe, events);
                 }
                 return true;
             }
@@ -2459,10 +2461,17 @@ impl Battle {
             if solar_cut {
                 bp.mul(ability::X0_5);
             }
-            let power = bp
-                .apply((base_power * pierce_power_mult) as u32)
-                .max(1)
-                .min(u16::MAX as u32) as u16;
+            // What the chain hands back IS the base power, zero included.
+            // The sim floors a power that arrives under one BEFORE the
+            // `BasePower` event (`clampIntRange(basePower, 1)`) and floors
+            // nothing after it: `if (!basePower) return 0`, a move that
+            // connects and takes nothing off. Eruption at a hundredth of its
+            // health is the one power that gets there: 150 BP halved by
+            // Thick Fat floors to zero, and padding it back to one would
+            // invent a point of damage out of thin air.
+            let powered =
+                bp.apply((base_power * pierce_power_mult) as u32).min(u16::MAX as u32);
+            let power = powered as u16;
             // The stats, once their stages are in. Gen 3 reads the category
             // off the move's type, so that is what decides whether an
             // Attack ability speaks at all.
@@ -2491,16 +2500,28 @@ impl Battle {
                 special: slot.entry.id == "beatup",
                 phase1,
             };
-            let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
-            if dealt == 0 {
+            // A zero power never reaches the damage formula, so it never
+            // reaches the type step either: the sim leaves that hit with no
+            // super-effective or resisted line at all, and neutrality is the
+            // closest the engine's one event can say that.
+            let dealt = if powered == 0 {
+                0
+            } else {
+                damage(&attacker, &defender, &m, Roll { crit, random })
+            };
+            if dealt == 0 && powered != 0 {
                 break; // immune: later strikes land no better
             }
             connected = true;
 
-            let eff = crate::types::effectiveness_against(
-                m.move_type,
-                self.immunity_types(foe, m.move_type),
-            );
+            let eff = if powered == 0 {
+                100
+            } else {
+                crate::types::effectiveness_against(
+                    m.move_type,
+                    self.immunity_types(foe, m.move_type),
+                )
+            };
             let survives = self.survives_at_one(foe);
             let target = self.sides[foe].mon_mut();
             let hit_sub = target.sub_hp > 0;
@@ -2570,9 +2591,7 @@ impl Battle {
                     self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
                 }
                 // A raging target's Attack climbs with every hit it takes.
-                if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
-                    self.boost(foe, Boost::Atk, 1, events);
-                }
+                self.rage_on_hit(foe, events);
                 // Rage's own rage state begins only once it actually lands.
                 if slot.entry.id == "rage" {
                     self.sides[side].mon_mut().raging = true;
@@ -2979,6 +2998,17 @@ impl Battle {
         if let Some((stored, left)) = self.sides[foe].mon().bide {
             self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
         }
+        self.rage_on_hit(foe, events);
+    }
+
+    /// Rage's volatile reads the `Hit` event, not the damage: its `onHit`
+    /// fires for anything that reaches the end of the hit loop aimed at the
+    /// rager, so a Present that handed its gift back counts for exactly as
+    /// much as a Present that took HP off. A gift that found nothing to give
+    /// leaves that loop before the event runs, and a move that finds a
+    /// Substitute never gets there at all (the sim nulls the target, so
+    /// `runMoveEffects` skips it); both are already refused upstream.
+    fn rage_on_hit(&mut self, foe: usize, events: &mut Vec<Event>) {
         if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
             self.boost(foe, Boost::Atk, 1, events);
         }

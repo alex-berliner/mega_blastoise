@@ -42,12 +42,6 @@ impl Battle {
         }
     }
 
-    /// The sim's `AfterMove`, as far as a Choice Band is concerned: the lock
-    /// goes on once the move is done, and reads whatever the mon is holding
-    /// by then. The lock also lapses on its own the moment its holder stops
-    /// carrying a Choice item or stops knowing the move — which is how a
-    /// Knock Off frees its victim, and why a Struggle forced out by the lock
-    /// never sticks as the locked move.
     /// Run whatever a Magic Coat or a Snatch put in someone else's hands.
     /// The sim reaches these through `useMove`, which is below the gates and
     /// below the PP charge, so the move simply happens.
@@ -67,21 +61,33 @@ impl Battle {
         }
     }
 
-    pub(super) fn settle_choice_lock(&mut self, side: usize) {
+    /// The sim's `AfterMove`, as far as a Choice Band and a Charge are
+    /// concerned: both hang off that event, so `after_move` says whether the
+    /// action got as far as the tail of `runMove`. It does not for an action
+    /// the can't-move gates turned away before the move, and it does not for
+    /// an intercepting Pursuit, which the switch-out hook fires through
+    /// `useMove`, below `runMove` altogether.
+    ///
+    /// The lock goes on once the move is done, and reads whatever the mon is
+    /// holding by then. The lock also lapses on its own the moment its holder
+    /// stops carrying a Choice item or stops knowing the move, which is how
+    /// a Knock Off frees its victim, and why a Struggle forced out by the
+    /// lock never sticks as the locked move. None of that hangs off
+    /// `AfterMove`: the volatile answers `onDisableMove` and `onBeforeMove`,
+    /// so it is settled after every action either way.
+    pub(super) fn settle_choice_lock(&mut self, side: usize, after_move: bool) {
         let committed = self.committed_move[side].take();
         // Charge's volatile is dropped by `onAfterMove` on ANY move but
         // Charge itself, so a charge spent on something that is not Electric
         // is simply spent. Ours only cleared it when an Electric move cashed
         // it in, which left a Raikou holding the doubling indefinitely.
-        if committed.is_some_and(|id| id != "charge") {
+        if after_move && committed.is_some_and(|id| id != "charge") {
             self.sides[side].mon_mut().charged_elec = false;
         }
         let mon = self.sides[side].mon();
         let banded = mon.item == "choiceband";
-        if let Some(id) = committed {
-            if banded && mon.choice_locked.is_none() {
-                self.sides[side].mon_mut().choice_locked = Some(id);
-            }
+        if after_move {
+            self.apply_choice_lock(side, committed);
         }
         let mon = self.sides[side].mon();
         let lapsed = mon.choice_locked.is_some_and(|id| {
@@ -89,6 +95,21 @@ impl Battle {
         });
         if lapsed {
             self.sides[side].mon_mut().choice_locked = None;
+        }
+    }
+
+    /// `pokemon.addVolatile("choicelock")` on a mon holding a Choice item:
+    /// the item's `onAfterMove` does it for a move that ran, and gen 3's
+    /// Pursuit writes it by hand the moment an interception lands. A mon
+    /// already locked keeps the move it had: `addVolatile` on a live
+    /// volatile finds no `onRestart` and stops right there.
+    pub(super) fn apply_choice_lock(&mut self, side: usize, id: Option<&'static str>) {
+        let Some(id) = id else {
+            return;
+        };
+        let mon = self.sides[side].mon();
+        if mon.item == "choiceband" && mon.choice_locked.is_none() {
+            self.sides[side].mon_mut().choice_locked = Some(id);
         }
     }
 

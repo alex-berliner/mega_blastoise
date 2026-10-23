@@ -166,9 +166,21 @@ impl Battle {
                 continue;
             }
             self.pursuing = true;
-            self.use_move(foe, mi, script.seats[foe], &mut events);
+            let landed = self.use_move(foe, mi, script.seats[foe], &mut events);
             self.run_pending_call(script, &mut events);
-            self.settle_choice_lock(foe);
+            // The interception answers no `AfterMove`: the sim fires it from
+            // the switch-out hook through `useMove`, below `runMove`, so
+            // Charge's cleanup never runs for it. Gen 3's Pursuit writes the
+            // band's lock by hand at the interception itself, right where the
+            // strike is (`if (this.actions.useMove(...) && source.getItem()
+            // .isChoice) source.addVolatile("choicelock")`), so the lock
+            // still goes on. (Ours reads the strike as "reached the move",
+            // so a blow the sim would call a miss still locks; nothing in
+            // this era's Pursuit reaches that branch but a blow it absorbs.)
+            if landed {
+                self.apply_choice_lock(foe, Some("pursuit"));
+            }
+            self.settle_choice_lock(foe, false);
             // No White Herb here: the sim fires an interception from the
             // switch-out hook through `useMove`, the caller BELOW `runMove`,
             // and only `runMove` runs `AfterMove`. The arrival that follows
@@ -254,7 +266,12 @@ impl Battle {
                         side == first && !cancelled[foe] && matches!(choices[foe], Choice::Move(_));
                     let moved = self.use_move(side, index, script.seats[side], &mut events);
                     self.run_pending_call(script, &mut events);
-                    self.settle_choice_lock(side);
+                    // The band's lock and Charge's cleanup both hang off
+                    // `AfterMove`, so they answer an action only if it got
+                    // that far: a frozen, sleeping or fully-paralysed mon,
+                    // or a slot drained dry since the choice, leaves both
+                    // standing. An intercepting Pursuit answers neither.
+                    self.settle_choice_lock(side, moved);
                     // `onAnyAfterMove`: a White Herb on either seat undoes
                     // what the move just did to it, without waiting for the
                     // end of the turn. The sim runs that event out of

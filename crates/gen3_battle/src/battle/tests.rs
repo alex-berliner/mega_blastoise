@@ -902,3 +902,105 @@ fn a_chosen_replacement_takes_the_turns_residual() {
     assert_eq!(chosen.sides[0].mon().hp, auto.sides[0].mon().hp);
     assert!(events.iter().any(|e| matches!(e, Event::Residual { side: 1, .. })));
 }
+
+/// Charge's volatile is dropped by its own `onAfterMove`, and an intercepting
+/// Pursuit is fired from the switch-out hook through `useMove`, below
+/// `runMove`, which is the only thing that runs that event. So the charge
+/// rides straight through an interception, while any move that actually goes
+/// off spends it.
+#[test]
+fn a_pursuit_interception_leaves_the_charge_alone() {
+    let still_charged = |second: Choice| {
+        let mut b = Battle::new(
+            Side::new(alloc::vec![mon("raikou", 50, &["charge", "pursuit", "surf"])]),
+            Side::new(alloc::vec![
+                mon("gyarados", 50, &["splash"]),
+                mon("chansey", 50, &["softboiled"]),
+            ]),
+            3,
+        );
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        assert!(b.sides[0].mon().charged_elec, "the Charge went up");
+        b.step_with([second, Choice::Switch(1)], &scripted([PLAIN, PLAIN]));
+        b.sides[0].mon().charged_elec
+    };
+    assert!(
+        still_charged(Choice::Move(1)),
+        "the interception reaches no AfterMove, so nothing spends the charge"
+    );
+    assert!(
+        !still_charged(Choice::Move(2)),
+        "and a move that does go off spends it, Electric or not"
+    );
+}
+
+/// Rage's volatile hangs its `onHit` off the sim's `Hit` event, not off
+/// damage, so anything that reaches the end of the hit loop aimed at a rager
+/// counts for it: a Present that handed its gift back lands exactly as hard
+/// on the count as one that took HP off, because `runMoveEffects` heals and
+/// then runs the same event. Reading it off damage left a rager untouched by
+/// a Present, and the two sides of that battle drifted a point of damage at
+/// a time apart.
+///
+/// Tauros is faster, so its Rage is already volatile when the gift arrives.
+/// The rival's Present is the whole of the test: a mon at full health finds
+/// nothing to give, the gift fails before the event, and nothing climbs.
+#[test]
+fn a_raging_target_reads_its_attack_off_the_hit_event() {
+    let gained = |healed_first: bool| {
+        let mut b = battle(mon("tauros", 50, &["rage"]), mon("blissey", 50, &["present"]));
+        if healed_first {
+            b.sides[0].mon_mut().hp = b.sides[0].mon().max_hp - 10;
+        }
+        // Present draws its gift or one of three damage tiers off a roll of
+        // its own; the script's secondary knob is the pinned floor, which is
+        // the gift.
+        b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([PLAIN, SeatScript { secondary: true, ..PLAIN }]),
+        );
+        b.sides[0].mon().stages[Stat::Atk as usize]
+    };
+    assert_eq!(
+        gained(true),
+        1,
+        "a Present whose gift lands is a hit, and a rager reads its Attack off that"
+    );
+    assert_eq!(
+        gained(false),
+        0,
+        "a Present refused at full health never reaches the event, so nothing climbs"
+    );
+}
+
+/// The sim floors a base power that arrives under one BEFORE its `BasePower`
+/// event and floors nothing after it: `if (!basePower) return 0`, a move
+/// that connects and takes nothing. Eruption on a sliver of health is the
+/// one power that gets there, and Thick Fat is what halves it; a padding
+/// back to one invented a point of damage the reference never deals.
+#[test]
+fn a_base_power_the_chain_floors_to_zero_takes_nothing() {
+    let dealt = |thick_fat: bool, hp: u16| {
+        let mut seel = mon("seel", 50, &["splash"]);
+        if thick_fat {
+            seel.ability = "thickfat";
+        }
+        let mut b = battle(mon("typhlosion", 50, &["eruption"]), seel);
+        b.sides[0].mon_mut().hp = hp;
+        b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+        b.sides[1].mon().max_hp - b.sides[1].mon().hp
+    };
+    // Typhlosion at 1 of its HP is one base power of Eruption, and Thick Fat
+    // halves a Fire move: 150 * 1 / 130 floors to one, and one halved is
+    // nothing at all.
+    assert_eq!(dealt(true, 1), 0, "the chain floored the power to zero");
+    assert_eq!(
+        dealt(true, 2),
+        0,
+        "and at two HP the power is still just one before the halving"
+    );
+    assert!(
+        dealt(false, 2) > 0,
+        "without Thick Fat to halve it, the same sliver of health still burns"
+    );
+}
