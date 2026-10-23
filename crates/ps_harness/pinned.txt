@@ -1,0 +1,18 @@
+# Pinned seeds for the Showdown protocol-diff harness (`ps_sim_cli`
+# vs PS regressions).
+#
+# Format, one entry per line:
+#   <gen> <teams> <seed>  # <commit> <note>
+# where `<teams>` is `random` or `wide`, `<seed>` is a non-negative u32
+# driver seed, `<commit>` is the integrating commit on `ps-split`, and
+# `<note>` is a free-form tag for the corridor the entry covers.
+#
+# The harness reads this verbatim and replays every entry as a single
+# self-contained battle under `--self`. Empty / comment-only files are
+# allowed: today no port of `ps_sim` has landed, so the regression
+# corpus is intentionally empty. A non-empty file activates the
+# `scripts/check.sh` extra-pinned step.
+#
+# Add an entry when a port fails a seed the integration found: the
+# seed replaces the regression's red-by-red march with a single pin
+# that lands in the same gate.

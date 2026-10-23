@@ -29,6 +29,27 @@ pub mod gen3;
 use crate::effect::{EffectId, Registry};
 use ps_dex::Dex;
 
+/// The ported effects for `gen`: species, moves, items, abilities, conditions
+/// and rules the new `ps_sim` has handlers for. The protocol-diff harness
+/// (P1-7) consumes this via `ps_sim_cli --ported <gen>` so the wide
+/// generator draws only from what a port already covers. Today both gen 1
+/// and gen 3 lists are empty: P1-8 and the gen-3 ports fill them in.
+///
+/// Each entry is `<kind>:<id>` where `kind` is one of `move`, `species`,
+/// `item`, `ability`, `condition`, `rule`. The protocol-diff harness
+/// parses the kind prefix and routes the id to the appropriate pool. An
+/// empty list is a valid output: `--teams wide` against `ps_sim_cli`
+/// exits 2 with "no ported pipeline for gen N" when the list is empty,
+/// while `--self --teams wide` draws from the whole showdown_fuzz space
+/// regardless of the list.
+pub fn ported(gen: u8) -> &'static [&'static str] {
+    match gen {
+        1 => &gen1::PORTED,
+        3 => &gen3::PORTED,
+        _ => &[],
+    }
+}
+
 /// The registry of `dex`'s gen.
 pub fn registry_for(dex: &Dex) -> &'static Registry {
     match dex.gen {

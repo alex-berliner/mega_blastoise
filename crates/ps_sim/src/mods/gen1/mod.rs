@@ -13,3 +13,10 @@ pub static REGISTRY: Registry = Registry {
         (EffectId::Rule(Rule::FreezeClauseMod), &rules::freezeclausemod::DEF),
     ],
 };
+
+/// Ported effects for Gen 1: every `kind:id` the new `ps_sim` carries
+/// handlers for. Today the list is empty (P1-8 fills in the gen-1
+/// handlers). The protocol-diff harness (`ps_sim_cli --ported 1`) reads
+/// this list to restrict the wide generator; an empty list is the signal
+/// that `--teams wide` against `ps_sim_cli` has nothing to draw from.
+pub static PORTED: [&'static str; 0] = [];
