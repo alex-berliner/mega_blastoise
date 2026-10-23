@@ -2749,6 +2749,23 @@ impl Battle {
         if slot.entry.id == "spitup" {
             self.sides[side].mon_mut().stockpile_n = 0;
         }
+        // Rollout counts its landed uses and lets go after five. The count
+        // rides the sim's base-power callback, so it is spent the moment the
+        // damage is COMPUTED, ahead of anything that can clip what the hit
+        // deals. Endure and a Focus Band both work in the Damage event, long
+        // after that, so a blow held at one HP counts and leaves the mon
+        // locked in exactly as a blow that hurt does. Its sleep guard is
+        // there too, so a Sleep Talk swing neither starts a count nor
+        // advances one.
+        if matches!(slot.entry.id, "rollout" | "iceball")
+            && self.sides[side].mon().rolling.is_some()
+            && !asleep_now
+        {
+            let mon = self.sides[side].mon_mut();
+            let n = mon.rolling.unwrap_or(0) + 1;
+            mon.rolling = if n >= 5 { None } else { Some(n) };
+            mon.rolling_fresh = true;
+        }
         if total == 0 {
             // A hit that CONNECTED but was clamped to nothing — Focus Band
             // holding a 1-HP mon, an Endure — still pays the move's own stat
@@ -2799,18 +2816,6 @@ impl Battle {
             let mon = self.sides[side].mon_mut();
             mon.fury_n = (mon.fury_n + 1).min(4);
             mon.fury_fresh = true;
-        }
-        // Rollout counts its landed uses and lets go after five — and its
-        // base-power callback carries the same sleep guard, so a Sleep Talk
-        // swing neither starts a count nor advances one.
-        if matches!(slot.entry.id, "rollout" | "iceball")
-            && self.sides[side].mon().rolling.is_some()
-            && !asleep_now
-        {
-            let mon = self.sides[side].mon_mut();
-            let n = mon.rolling.unwrap_or(0) + 1;
-            mon.rolling = if n >= 5 { None } else { Some(n) };
-            mon.rolling_fresh = true;
         }
         // Rapid Spin flings off the user's own bind and Leech Seed.
         if slot.entry.id == "rapidspin" {

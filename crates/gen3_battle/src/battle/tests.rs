@@ -1289,6 +1289,52 @@ fn a_locked_move_that_misses_keeps_its_lock() {
     );
 }
 
+/// A rolling lock counts its strikes in the sim's base-power callback, which
+/// runs while the damage is COMPUTED, before the Damage event an Endure or a
+/// Focus Band clamps it. So a blow held at one HP counts all the same, and
+/// the `iceball` volatile comes back with `duration: 2`, whose `onLockMove`
+/// hands the request its `trapped` flag: the attacker cannot leave the field.
+#[test]
+fn a_rolling_lock_survives_a_blow_clamped_to_nothing() {
+    // Snorlax is the slower of the two, so the Endure is already up when
+    // its Ice Ball lands; the band asks its tenth out of the target's script.
+    let clamped = |endure: bool| {
+        let mut foe = mon(
+            "blaziken",
+            50,
+            if endure { &["endure"] } else { &["splash"] },
+        );
+        foe.item = if endure { "" } else { "focusband" }.into();
+        let mut b = Battle::new(
+            Side::new(alloc::vec![
+                mon("snorlax", 50, &["iceball"]),
+                mon("mudkip", 50, &["splash"])
+            ]),
+            Side::new(alloc::vec![foe]),
+            42,
+        );
+        b.sides[1].mon_mut().hp = 1;
+        b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([PLAIN, SeatScript { band: true, ..PLAIN }]),
+        );
+        assert_eq!(b.sides[1].mon().hp, 1, "the blow was clamped to nothing");
+        b
+    };
+    for endure in [false, true] {
+        let b = clamped(endure);
+        assert_eq!(
+            b.sides[0].mon().rolling,
+            Some(1),
+            "the strike counted anyway"
+        );
+        assert!(
+            !b.can_switch(0),
+            "and the lock holds the field against a switch"
+        );
+    }
+}
+
 /// `transformInto` answers both halves of the Hidden Power with the target's
 /// before gen 5, so a copy swings the power of the thing it is wearing
 /// rather than the one it was born with, and gives it back on the way out.
