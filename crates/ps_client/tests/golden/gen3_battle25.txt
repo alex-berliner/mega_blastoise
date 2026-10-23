@@ -1,0 +1,1739 @@
+# BoardEvent stream of gen3.log.gz battle index=25: each protocol line that
+# yields events, then its events. `|request|...` is a request's prompt events.
+|start
+    BattleStart
+|switch|p1a: Armaldo|Armaldo, L83, F|260/260
+    SwitchIn p1 name=Armaldo species=Some("Armaldo") slot=Some(0) speed=None moves=[]
+|switch|p2a: Cacturne|Cacturne, L96, F|290/290
+    SwitchIn p2 name=Cacturne species=Some("Cacturne") slot=Some(0) speed=None moves=[]
+|turn|1
+    Turn { n: 1 }
+|request|...
+    ActiveMonUpdate { mon: "Armaldo,p1,0", name: "Armaldo", speed: Some(122) }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 64/64]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    ActiveMonUpdate { mon: "Cacturne,p2,0", name: "Cacturne", speed: Some(160) }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 16/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 16/16; Hidden Power Dark Special 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cacturne|Hidden Power|p1a: Armaldo
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 16/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 16/16; Hidden Power Dark Special 70/100 23/24]
+|-damage|p1a: Armaldo|141/260
+    Damage { mon: "Armaldo,p1,0", health: "141/260" }
+|move|p1a: Armaldo|Rapid Spin|p2a: Cacturne
+    Move { user: Some("Armaldo"), player_id: Some("p1"), name: "Rapid Spin" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 63/64]
+|-damage|p2a: Cacturne|261/290
+    Damage { mon: "Cacturne,p2,0", health: "261/290" }
+|-heal|p2a: Cacturne|279/290|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "279/290" }
+|turn|2
+    Turn { n: 2 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 63/64]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 16/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 16/16; Hidden Power Dark Special 70/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cacturne|Hidden Power|p1a: Armaldo
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 16/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 16/16; Hidden Power Dark Special 70/100 22/24]
+|-damage|p1a: Armaldo|14/260
+    Damage { mon: "Armaldo,p1,0", health: "14/260" }
+|move|p1a: Armaldo|Rapid Spin|p2a: Cacturne
+    Move { user: Some("Armaldo"), player_id: Some("p1"), name: "Rapid Spin" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 62/64]
+|-damage|p2a: Cacturne|251/290
+    Damage { mon: "Cacturne,p2,0", health: "251/290" }
+|-heal|p2a: Cacturne|269/290|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "269/290" }
+|turn|3
+    Turn { n: 3 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 62/64]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 16/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 16/16; Hidden Power Dark Special 70/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cacturne|Substitute|p2a: Cacturne
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Substitute" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 16/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 22/24]
+|-start|p2a: Cacturne|Substitute
+    EffectStart { mon: "Cacturne,p2,0", what: "substitute", detail: None }
+|-damage|p2a: Cacturne|197/290
+    Damage { mon: "Cacturne,p2,0", health: "197/290" }
+|move|p1a: Armaldo|Rapid Spin|p2a: Cacturne
+    Move { user: Some("Armaldo"), player_id: Some("p1"), name: "Rapid Spin" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 61/64]
+|-heal|p2a: Cacturne|215/290|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "215/290" }
+|turn|4
+    Turn { n: 4 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 61/64]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 16/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cacturne|Leech Seed|p1a: Armaldo
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Leech Seed" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 15/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 22/24]
+|-start|p1a: Armaldo|move: Leech Seed
+    EffectStart { mon: "Armaldo,p1,0", what: "seeded", detail: None }
+|move|p1a: Armaldo|Rapid Spin|p2a: Cacturne
+    Move { user: Some("Armaldo"), player_id: Some("p1"), name: "Rapid Spin" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 60/64]
+|-end|p1a: Armaldo|Leech Seed|[from] move: Rapid Spin|[of] p1a: Armaldo
+    EffectEnd { mon: "Armaldo,p1,0", what: "seeded" }
+|-heal|p2a: Cacturne|233/290|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "233/290" }
+|turn|5
+    Turn { n: 5 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 60/64]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 15/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cacturne|Leech Seed|p1a: Armaldo
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Leech Seed" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 14/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 22/24]
+|-start|p1a: Armaldo|move: Leech Seed
+    EffectStart { mon: "Armaldo,p1,0", what: "seeded", detail: None }
+|move|p1a: Armaldo|Rapid Spin|p2a: Cacturne
+    Move { user: Some("Armaldo"), player_id: Some("p1"), name: "Rapid Spin" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 59/64]
+|-crit|p2a: Cacturne
+    CriticalHit { mon: "Cacturne,p2,0" }
+|-end|p2a: Cacturne|Substitute
+    EffectEnd { mon: "Cacturne,p2,0", what: "substitute" }
+|-end|p1a: Armaldo|Leech Seed|[from] move: Rapid Spin|[of] p1a: Armaldo
+    EffectEnd { mon: "Armaldo,p1,0", what: "seeded" }
+|-heal|p2a: Cacturne|251/290|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "251/290" }
+|turn|6
+    Turn { n: 6 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 59/64]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 14/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cacturne|Leech Seed|p1a: Armaldo
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Leech Seed" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 13/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 22/24]
+|-start|p1a: Armaldo|move: Leech Seed
+    EffectStart { mon: "Armaldo,p1,0", what: "seeded", detail: None }
+|move|p1a: Armaldo|Rapid Spin|p2a: Cacturne
+    Move { user: Some("Armaldo"), player_id: Some("p1"), name: "Rapid Spin" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 58/64]
+|-damage|p2a: Cacturne|220/290
+    Damage { mon: "Cacturne,p2,0", health: "220/290" }
+|-end|p1a: Armaldo|Leech Seed|[from] move: Rapid Spin|[of] p1a: Armaldo
+    EffectEnd { mon: "Armaldo,p1,0", what: "seeded" }
+|-heal|p2a: Cacturne|238/290|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "238/290" }
+|turn|7
+    Turn { n: 7 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 58/64]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 13/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cacturne|Hidden Power|p1a: Armaldo
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 13/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 21/24]
+|-damage|p1a: Armaldo|0 fnt
+    Damage { mon: "Armaldo,p1,0", health: "0/260" }
+|faint|p1a: Armaldo
+    Faint { mon: "Armaldo,p1,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Tentacruel|Tentacruel, L79, F|256/256
+    SwitchIn p1 name=Tentacruel species=Some("Tentacruel") slot=Some(1) speed=Some(204) moves=[Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-heal|p2a: Cacturne|256/290|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "256/290" }
+|turn|8
+    Turn { n: 8 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 13/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 21/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Toxic|p2a: Cacturne
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-status|p2a: Cacturne|tox
+    SetStatus { mon: "Cacturne,p2,0", status: "tox" }
+|move|p2a: Cacturne|Hidden Power|p1a: Tentacruel
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 13/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 20/24]
+|-damage|p1a: Tentacruel|164/256
+    Damage { mon: "Tentacruel,p1,0", health: "164/256" }
+|-heal|p1a: Tentacruel|180/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "180/256" }
+|-heal|p2a: Cacturne|274/290 tox|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "274/290" }
+|-damage|p2a: Cacturne|256/290 tox|[from] psn
+    Damage { mon: "Cacturne,p2,0", health: "256/290" }
+|turn|9
+    Turn { n: 9 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 13/16; Focus Punch Fighting Physical 150/100 32/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 20/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|-singleturn|p2a: Cacturne|move: Focus Punch
+    EffectStart { mon: "Cacturne,p2,0", what: "Focus Punch", detail: None }
+|move|p1a: Tentacruel|Ice Beam|p2a: Cacturne
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 15/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-supereffective|p2a: Cacturne
+    SuperEffective { mon: "Cacturne,p2,0" }
+|-damage|p2a: Cacturne|129/290 tox
+    Damage { mon: "Cacturne,p2,0", health: "129/290" }
+|move|p2a: Cacturne|Focus Punch||[still]
+    Move { user: Some("Cacturne"), player_id: Some("p2"), name: "Focus Punch" }
+    MovesUpdate p2 [Leech Seed Grass Status -/90 13/16; Focus Punch Fighting Physical 150/100 31/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 20/24]
+|cant|p2a: Cacturne|Focus Punch|Focus Punch
+    Cant { mon: "Cacturne,p2,0", reason: "focuspunch" }
+|-heal|p1a: Tentacruel|196/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "196/256" }
+|-heal|p2a: Cacturne|147/290 tox|[from] item: Leftovers
+    Heal { mon: "Cacturne,p2,0", health: "147/290" }
+|-damage|p2a: Cacturne|111/290 tox|[from] psn
+    Damage { mon: "Cacturne,p2,0", health: "111/290" }
+|turn|10
+    Turn { n: 10 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 15/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Leech Seed Grass Status -/90 13/16; Focus Punch Fighting Physical 150/100 31/32; Substitute Normal Status -/- 15/16; Hidden Power Dark Special 70/100 20/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Ice Beam|p2a: Cacturne
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 14/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-supereffective|p2a: Cacturne
+    SuperEffective { mon: "Cacturne,p2,0" }
+|-damage|p2a: Cacturne|0 fnt
+    Damage { mon: "Cacturne,p2,0", health: "0/290" }
+|faint|p2a: Cacturne
+    Faint { mon: "Cacturne,p2,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Skarmory|Skarmory, L72, F|213/213
+    SwitchIn p2 name=Skarmory species=Some("Skarmory") slot=Some(2) speed=Some(143) moves=[Toxic Poison Status -/85 16/16; Whirlwind Normal Status -/100 32/32; Spikes Ground Status -/- 32/32; Drill Peck Flying Physical 80/100 32/32]
+|-heal|p1a: Tentacruel|212/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "212/256" }
+|turn|11
+    Turn { n: 11 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 14/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Whirlwind Normal Status -/100 32/32; Spikes Ground Status -/- 32/32; Drill Peck Flying Physical 80/100 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Ice Beam|p2a: Skarmory
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 13/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-damage|p2a: Skarmory|143/213
+    Damage { mon: "Skarmory,p2,0", health: "143/213" }
+|move|p2a: Skarmory|Drill Peck|p1a: Tentacruel
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Drill Peck" }
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Whirlwind Normal Status -/100 32/32; Spikes Ground Status -/- 32/32; Drill Peck Flying Physical 80/100 31/32]
+|-damage|p1a: Tentacruel|138/256
+    Damage { mon: "Tentacruel,p1,0", health: "138/256" }
+|-heal|p1a: Tentacruel|154/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "154/256" }
+|-heal|p2a: Skarmory|156/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "156/213" }
+|turn|12
+    Turn { n: 12 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 13/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Whirlwind Normal Status -/100 32/32; Spikes Ground Status -/- 32/32; Drill Peck Flying Physical 80/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Ice Beam|p2a: Skarmory
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 12/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-damage|p2a: Skarmory|79/213
+    Damage { mon: "Skarmory,p2,0", health: "79/213" }
+|move|p2a: Skarmory|Toxic|p1a: Tentacruel
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 32/32; Spikes Ground Status -/- 32/32; Drill Peck Flying Physical 80/100 31/32]
+|-immune|p1a: Tentacruel
+    Immune { mon: "Tentacruel,p1,0" }
+|-heal|p1a: Tentacruel|170/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "170/256" }
+|-heal|p2a: Skarmory|92/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "92/213" }
+|turn|13
+    Turn { n: 13 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 12/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 32/32; Spikes Ground Status -/- 32/32; Drill Peck Flying Physical 80/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Toxic|p2a: Skarmory
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 12/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-immune|p2a: Skarmory
+    Immune { mon: "Skarmory,p2,0" }
+|move|p2a: Skarmory|Spikes|p1a: Tentacruel
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Spikes" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 32/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+|-sidestart|p1: Player 1|Spikes
+    EffectStart { mon: "Tentacruel,p1,0", what: "Spikes", detail: None }
+|-heal|p1a: Tentacruel|186/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "186/256" }
+|-heal|p2a: Skarmory|105/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "105/213" }
+|turn|14
+    Turn { n: 14 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 12/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 32/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Ice Beam|p2a: Skarmory
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 11/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-damage|p2a: Skarmory|40/213
+    Damage { mon: "Skarmory,p2,0", health: "40/213" }
+|move|p2a: Skarmory|Whirlwind|p1a: Tentacruel
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Whirlwind" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 31/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+|drag|p1a: Ditto|Ditto|258/258
+    SwitchIn p1 name=Ditto species=Some("Ditto") slot=Some(4) speed=Some(153) moves=[Transform Normal Status -/- 16/16]
+|-damage|p1a: Ditto|226/258|[from] Spikes
+    Damage { mon: "Ditto,p1,0", health: "226/258" }
+|-heal|p1a: Ditto|242/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "242/258" }
+|-heal|p2a: Skarmory|53/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "53/213" }
+|turn|15
+    Turn { n: 15 }
+|request|...
+    MovesUpdate p1 [Transform Normal Status -/- 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 31/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Transform|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Transform" }
+    MovesUpdate p1 [Transform Normal Status -/- 15/16]
+|-transform|p1a: Ditto|p2a: Skarmory
+    EffectStart { mon: "Ditto,p1,0", what: "transform", detail: Some("Skarmory") }
+    ActiveMonUpdate { mon: "Ditto,p1,0", name: "Skarmory", speed: Some(143) }
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+|move|p2a: Skarmory|Toxic|p1a: Ditto|[miss]
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Whirlwind Normal Status -/100 31/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+|-miss|p2a: Skarmory|p1a: Ditto
+    Miss { mon: "Ditto,p1,0" }
+|-heal|p2a: Skarmory|66/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "66/213" }
+|-heal|p1a: Ditto|258/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "258/258" }
+|turn|16
+    Turn { n: 16 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Whirlwind Normal Status -/100 31/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Skarmory|Toxic|p1a: Ditto
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 31/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+|-immune|p1a: Ditto
+    Immune { mon: "Ditto,p1,0" }
+|move|p1a: Ditto|Toxic|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+|-immune|p2a: Skarmory
+    Immune { mon: "Skarmory,p2,0" }
+|-heal|p2a: Skarmory|79/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "79/213" }
+|turn|17
+    Turn { n: 17 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 31/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Toxic|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+|-immune|p2a: Skarmory
+    Immune { mon: "Skarmory,p2,0" }
+|move|p2a: Skarmory|Whirlwind|p1a: Ditto
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Whirlwind" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 30/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+|drag|p1a: Persian|Persian, L87, F|255/255
+    SwitchIn p1 name=Persian species=Some("Persian") slot=Some(2) speed=Some(250) moves=[Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 24/24; Return Normal Physical 102/100 32/32]
+|-damage|p1a: Persian|224/255|[from] Spikes
+    Damage { mon: "Persian,p1,0", health: "224/255" }
+|-heal|p2a: Skarmory|92/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "92/213" }
+|turn|18
+    Turn { n: 18 }
+|request|...
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 24/24; Return Normal Physical 102/100 32/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 30/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Persian|Return|p2a: Skarmory
+    Move { user: Some("Persian"), player_id: Some("p1"), name: "Return" }
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 24/24; Return Normal Physical 102/100 31/32]
+|-resisted|p2a: Skarmory
+    Resisted { mon: "Skarmory,p2,0" }
+|-damage|p2a: Skarmory|41/213
+    Damage { mon: "Skarmory,p2,0", health: "41/213" }
+|move|p2a: Skarmory|Whirlwind|p1a: Persian
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Whirlwind" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 29/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+|drag|p1a: Blastoise|Blastoise, L82, F|264/264
+    SwitchIn p1 name=Blastoise species=Some("Blastoise") slot=Some(3) speed=Some(175) moves=[Refresh Normal Status -/- 32/32; Roar Normal Status -/100 32/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
+|-damage|p1a: Blastoise|231/264|[from] Spikes
+    Damage { mon: "Blastoise,p1,0", health: "231/264" }
+|-heal|p1a: Blastoise|247/264|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "247/264" }
+|-heal|p2a: Skarmory|54/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "54/213" }
+|turn|19
+    Turn { n: 19 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 32/32; Roar Normal Status -/100 32/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 29/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Blastoise|Refresh||[still]
+    Move { user: Some("Blastoise"), player_id: Some("p1"), name: "Refresh" }
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 32/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
+|-fail|p1a: Blastoise
+    Fail { mon: "Blastoise,p1,0" }
+|move|p2a: Skarmory|Drill Peck|p1a: Blastoise
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Drill Peck" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 29/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 30/32]
+|-damage|p1a: Blastoise|196/264
+    Damage { mon: "Blastoise,p1,0", health: "196/264" }
+|-heal|p1a: Blastoise|212/264|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "212/264" }
+|-heal|p2a: Skarmory|67/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "67/213" }
+|turn|20
+    Turn { n: 20 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 32/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 29/32; Spikes Ground Status -/- 31/32; Drill Peck Flying Physical 80/100 30/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Skarmory|Spikes|p1a: Blastoise
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Spikes" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 29/32; Spikes Ground Status -/- 30/32; Drill Peck Flying Physical 80/100 30/32]
+|-sidestart|p1: Player 1|Spikes
+    EffectStart { mon: "Blastoise,p1,0", what: "Spikes", detail: None }
+|move|p1a: Blastoise|Roar|p2a: Skarmory
+    Move { user: Some("Blastoise"), player_id: Some("p1"), name: "Roar" }
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 31/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
+|drag|p2a: Tentacruel|Tentacruel, L79, F|256/256
+    SwitchIn p2 name=Tentacruel species=Some("Tentacruel") slot=Some(4) speed=Some(204) moves=[Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+|-heal|p1a: Blastoise|228/264|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "228/264" }
+|turn|21
+    Turn { n: 21 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 31/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Ice Beam|p1a: Blastoise
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+|-resisted|p1a: Blastoise
+    Resisted { mon: "Blastoise,p1,0" }
+|-damage|p1a: Blastoise|206/264
+    Damage { mon: "Blastoise,p1,0", health: "206/264" }
+|move|p1a: Blastoise|Ice Beam|p2a: Tentacruel
+    Move { user: Some("Blastoise"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 31/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 15/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|233/256
+    Damage { mon: "Tentacruel,p2,0", health: "233/256" }
+|-heal|p2a: Tentacruel|249/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "249/256" }
+|-heal|p1a: Blastoise|222/264|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "222/264" }
+|turn|22
+    Turn { n: 22 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 31/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Toxic|p1a: Blastoise
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+|-status|p1a: Blastoise|tox
+    SetStatus { mon: "Blastoise,p1,0", status: "tox" }
+|move|p1a: Blastoise|Roar|p2a: Tentacruel
+    Move { user: Some("Blastoise"), player_id: Some("p1"), name: "Roar" }
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 30/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 15/16]
+|drag|p2a: Skarmory|Skarmory, L72, F|67/213
+    SwitchIn p2 name=Skarmory species=Some("Skarmory") slot=Some(2) speed=Some(143) moves=[Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 29/32; Spikes Ground Status -/- 30/32; Drill Peck Flying Physical 80/100 30/32]
+|-heal|p1a: Blastoise|238/264 tox|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "238/264" }
+|-damage|p1a: Blastoise|222/264 tox|[from] psn
+    Damage { mon: "Blastoise,p1,0", health: "222/264" }
+|-heal|p2a: Skarmory|80/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "80/213" }
+|turn|23
+    Turn { n: 23 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 30/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 29/32; Spikes Ground Status -/- 30/32; Drill Peck Flying Physical 80/100 30/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Blastoise|Ice Beam|p2a: Skarmory
+    Move { user: Some("Blastoise"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 30/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+|-damage|p2a: Skarmory|1/213
+    Damage { mon: "Skarmory,p2,0", health: "1/213" }
+|move|p2a: Skarmory|Whirlwind|p1a: Blastoise
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Whirlwind" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 30/32; Drill Peck Flying Physical 80/100 30/32]
+|drag|p1a: Ditto|Ditto|258/258
+    SwitchIn p1 name=Ditto species=Some("Ditto") slot=Some(4) speed=Some(153) moves=[Transform Normal Status -/- 15/16]
+|-damage|p1a: Ditto|215/258|[from] Spikes
+    Damage { mon: "Ditto,p1,0", health: "215/258" }
+|-heal|p1a: Ditto|231/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "231/258" }
+|-heal|p2a: Skarmory|14/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "14/213" }
+|turn|24
+    Turn { n: 24 }
+|request|...
+    MovesUpdate p1 [Transform Normal Status -/- 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 30/32; Drill Peck Flying Physical 80/100 30/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Transform|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Transform" }
+    MovesUpdate p1 [Transform Normal Status -/- 14/16]
+|-transform|p1a: Ditto|p2a: Skarmory
+    EffectStart { mon: "Ditto,p1,0", what: "transform", detail: Some("Skarmory") }
+    ActiveMonUpdate { mon: "Ditto,p1,0", name: "Skarmory", speed: Some(143) }
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+|move|p2a: Skarmory|Drill Peck|p1a: Ditto
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Drill Peck" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 30/32; Drill Peck Flying Physical 80/100 29/32]
+|-resisted|p1a: Ditto
+    Resisted { mon: "Ditto,p1,0" }
+|-damage|p1a: Ditto|207/258
+    Damage { mon: "Ditto,p1,0", health: "207/258" }
+|-heal|p2a: Skarmory|27/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "27/213" }
+|-heal|p1a: Ditto|223/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "223/258" }
+|turn|25
+    Turn { n: 25 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 30/32; Drill Peck Flying Physical 80/100 29/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Toxic|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+|-immune|p2a: Skarmory
+    Immune { mon: "Skarmory,p2,0" }
+|move|p2a: Skarmory|Spikes|p1a: Ditto
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Spikes" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 29/32; Drill Peck Flying Physical 80/100 29/32]
+|-sidestart|p1: Player 1|Spikes
+    EffectStart { mon: "Ditto,p1,0", what: "Spikes", detail: None }
+|-heal|p2a: Skarmory|40/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "40/213" }
+|-heal|p1a: Ditto|239/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "239/258" }
+|turn|26
+    Turn { n: 26 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 29/32; Drill Peck Flying Physical 80/100 29/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Skarmory|Spikes||[still]
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Spikes" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 28/32; Drill Peck Flying Physical 80/100 29/32]
+|-fail|p2a: Skarmory
+    Fail { mon: "Skarmory,p2,0" }
+|move|p1a: Ditto|Whirlwind|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Whirlwind" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+|drag|p2a: Sunflora|Sunflora, L99, F|308/308
+    SwitchIn p2 name=Sunflora species=Some("Sunflora") slot=Some(1) speed=Some(114) moves=[Toxic Poison Status -/85 16/16; Razor Leaf Grass Special 55/95 40/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Fire Special 70/100 24/24]
+|-heal|p1a: Ditto|255/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "255/258" }
+|turn|27
+    Turn { n: 27 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Razor Leaf Grass Special 55/95 40/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Drill Peck|p2a: Sunflora
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Drill Peck" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 4/20]
+|-supereffective|p2a: Sunflora
+    SuperEffective { mon: "Sunflora,p2,0" }
+|-damage|p2a: Sunflora|116/308
+    Damage { mon: "Sunflora,p2,0", health: "116/308" }
+|move|p2a: Sunflora|Razor Leaf|p1a: Ditto
+    Move { user: Some("Sunflora"), player_id: Some("p2"), name: "Razor Leaf" }
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24]
+|-resisted|p1a: Ditto
+    Resisted { mon: "Ditto,p1,0" }
+|-damage|p1a: Ditto|229/258
+    Damage { mon: "Ditto,p1,0", health: "229/258" }
+|-heal|p1a: Ditto|245/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "245/258" }
+|-heal|p2a: Sunflora|135/308|[from] item: Leftovers
+    Heal { mon: "Sunflora,p2,0", health: "135/308" }
+|turn|28
+    Turn { n: 28 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 4/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Toxic|p2a: Sunflora
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 4/20]
+|-status|p2a: Sunflora|tox
+    SetStatus { mon: "Sunflora,p2,0", status: "tox" }
+|move|p2a: Sunflora|Toxic|p1a: Ditto
+    Move { user: Some("Sunflora"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24]
+|-immune|p1a: Ditto
+    Immune { mon: "Ditto,p1,0" }
+|-heal|p1a: Ditto|258/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "258/258" }
+|-heal|p2a: Sunflora|154/308 tox|[from] item: Leftovers
+    Heal { mon: "Sunflora,p2,0", health: "154/308" }
+|-damage|p2a: Sunflora|135/308 tox|[from] psn
+    Damage { mon: "Sunflora,p2,0", health: "135/308" }
+|turn|29
+    Turn { n: 29 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 4/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sunflora|Toxic|p1a: Ditto|[miss]
+    Move { user: Some("Sunflora"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24]
+|-miss|p2a: Sunflora|p1a: Ditto
+    Miss { mon: "Ditto,p1,0" }
+|move|p1a: Ditto|Whirlwind|p2a: Sunflora
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Whirlwind" }
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 4/20]
+|drag|p2a: Skarmory|Skarmory, L72, F|40/213
+    SwitchIn p2 name=Skarmory species=Some("Skarmory") slot=Some(2) speed=Some(143) moves=[Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 28/32; Drill Peck Flying Physical 80/100 29/32]
+|-heal|p2a: Skarmory|53/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "53/213" }
+|turn|30
+    Turn { n: 30 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 4/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 28/32; Drill Peck Flying Physical 80/100 29/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Drill Peck|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Drill Peck" }
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 3/20]
+|-resisted|p2a: Skarmory
+    Resisted { mon: "Skarmory,p2,0" }
+|-damage|p2a: Skarmory|22/213
+    Damage { mon: "Skarmory,p2,0", health: "22/213" }
+|move|p2a: Skarmory|Drill Peck|p1a: Ditto
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Drill Peck" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 28/32; Drill Peck Flying Physical 80/100 28/32]
+|-resisted|p1a: Ditto
+    Resisted { mon: "Ditto,p1,0" }
+|-damage|p1a: Ditto|235/258
+    Damage { mon: "Ditto,p1,0", health: "235/258" }
+|-heal|p1a: Ditto|251/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "251/258" }
+|-heal|p2a: Skarmory|35/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "35/213" }
+|turn|31
+    Turn { n: 31 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 3/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 28/32; Drill Peck Flying Physical 80/100 28/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Spikes|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Spikes" }
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 4/20; Drill Peck Flying Physical 80/100 3/20]
+|-sidestart|p2: Player 2|Spikes
+    EffectStart { mon: "Skarmory,p2,0", what: "Spikes", detail: None }
+|move|p2a: Skarmory|Spikes||[still]
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Spikes" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 27/32; Drill Peck Flying Physical 80/100 28/32]
+|-fail|p2a: Skarmory
+    Fail { mon: "Skarmory,p2,0" }
+|-heal|p1a: Ditto|258/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "258/258" }
+|-heal|p2a: Skarmory|48/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "48/213" }
+|turn|32
+    Turn { n: 32 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 4/20; Drill Peck Flying Physical 80/100 3/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 28/32; Spikes Ground Status -/- 27/32; Drill Peck Flying Physical 80/100 28/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Spikes|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Spikes" }
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 3/20; Drill Peck Flying Physical 80/100 3/20]
+|-sidestart|p2: Player 2|Spikes
+    EffectStart { mon: "Skarmory,p2,0", what: "Spikes", detail: None }
+|move|p2a: Skarmory|Whirlwind|p1a: Ditto
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Whirlwind" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 27/32; Spikes Ground Status -/- 27/32; Drill Peck Flying Physical 80/100 28/32]
+|drag|p1a: Hitmonchan|Hitmonchan, L87, M|229/229
+    SwitchIn p1 name=Hitmonchan species=Some("Hitmonchan") slot=Some(5) speed=Some(182) moves=[Sky Uppercut Fighting Physical 85/90 24/24; Mach Punch Fighting Physical 40/100 48/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Ghost Physical 70/100 24/24]
+|-damage|p1a: Hitmonchan|172/229|[from] Spikes
+    Damage { mon: "Hitmonchan,p1,0", health: "172/229" }
+|-heal|p2a: Skarmory|61/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "61/213" }
+|turn|33
+    Turn { n: 33 }
+|request|...
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 24/24; Mach Punch Fighting Physical 40/100 48/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 27/32; Spikes Ground Status -/- 27/32; Drill Peck Flying Physical 80/100 28/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Hitmonchan|Mach Punch|p2a: Skarmory
+    Move { user: Some("Hitmonchan"), player_id: Some("p1"), name: "Mach Punch" }
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 24/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+|-damage|p2a: Skarmory|4/213
+    Damage { mon: "Skarmory,p2,0", health: "4/213" }
+|move|p2a: Skarmory|Whirlwind|p1a: Hitmonchan
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Whirlwind" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 26/32; Spikes Ground Status -/- 27/32; Drill Peck Flying Physical 80/100 28/32]
+|drag|p1a: Ditto|Ditto|258/258
+    SwitchIn p1 name=Ditto species=Some("Ditto") slot=Some(4) speed=Some(153) moves=[Transform Normal Status -/- 14/16]
+|-damage|p1a: Ditto|194/258|[from] Spikes
+    Damage { mon: "Ditto,p1,0", health: "194/258" }
+|-heal|p1a: Ditto|210/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "210/258" }
+|-heal|p2a: Skarmory|17/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "17/213" }
+|turn|34
+    Turn { n: 34 }
+|request|...
+    MovesUpdate p1 [Transform Normal Status -/- 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 26/32; Spikes Ground Status -/- 27/32; Drill Peck Flying Physical 80/100 28/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Transform|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Transform" }
+    MovesUpdate p1 [Transform Normal Status -/- 13/16]
+|-transform|p1a: Ditto|p2a: Skarmory
+    EffectStart { mon: "Ditto,p1,0", what: "transform", detail: Some("Skarmory") }
+    ActiveMonUpdate { mon: "Ditto,p1,0", name: "Skarmory", speed: Some(143) }
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+|move|p2a: Skarmory|Drill Peck|p1a: Ditto
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Drill Peck" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 26/32; Spikes Ground Status -/- 27/32; Drill Peck Flying Physical 80/100 27/32]
+|-resisted|p1a: Ditto
+    Resisted { mon: "Ditto,p1,0" }
+|-damage|p1a: Ditto|187/258
+    Damage { mon: "Ditto,p1,0", health: "187/258" }
+|-heal|p2a: Skarmory|30/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "30/213" }
+|-heal|p1a: Ditto|203/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "203/258" }
+|turn|35
+    Turn { n: 35 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 5/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 26/32; Spikes Ground Status -/- 27/32; Drill Peck Flying Physical 80/100 27/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Skarmory|Spikes||[still]
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Spikes" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 26/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 27/32]
+|-fail|p2a: Skarmory
+    Fail { mon: "Skarmory,p2,0" }
+|move|p1a: Ditto|Whirlwind|p2a: Skarmory
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Whirlwind" }
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+|drag|p2a: Sunflora|Sunflora, L99, F|135/308 tox
+    SwitchIn p2 name=Sunflora species=Some("Sunflora") slot=Some(1) speed=Some(114) moves=[Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24]
+|-damage|p2a: Sunflora|84/308 tox|[from] Spikes
+    Damage { mon: "Sunflora,p2,0", health: "84/308" }
+|-heal|p1a: Ditto|219/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "219/258" }
+|-heal|p2a: Sunflora|103/308 tox|[from] item: Leftovers
+    Heal { mon: "Sunflora,p2,0", health: "103/308" }
+|-damage|p2a: Sunflora|84/308 tox|[from] psn
+    Damage { mon: "Sunflora,p2,0", health: "84/308" }
+|turn|36
+    Turn { n: 36 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 5/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Spikes|p2a: Sunflora
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Spikes" }
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 4/20; Drill Peck Flying Physical 80/100 5/20]
+|-sidestart|p2: Player 2|Spikes
+    EffectStart { mon: "Sunflora,p2,0", what: "Spikes", detail: None }
+|move|p2a: Sunflora|Synthesis|p2a: Sunflora
+    Move { user: Some("Sunflora"), player_id: Some("p2"), name: "Synthesis" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 7/8; Hidden Power Fire Special 70/100 24/24]
+|-heal|p2a: Sunflora|238/308 tox
+    Heal { mon: "Sunflora,p2,0", health: "238/308" }
+|-heal|p1a: Ditto|235/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "235/258" }
+|-heal|p2a: Sunflora|257/308 tox|[from] item: Leftovers
+    Heal { mon: "Sunflora,p2,0", health: "257/308" }
+|-damage|p2a: Sunflora|219/308 tox|[from] psn
+    Damage { mon: "Sunflora,p2,0", health: "219/308" }
+|turn|37
+    Turn { n: 37 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 5/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 4/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 7/8; Hidden Power Fire Special 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Toxic|p2a: Sunflora
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 4/20; Drill Peck Flying Physical 80/100 5/20]
+|-fail|p2a: Sunflora|tox
+    Fail { mon: "Sunflora,p2,0" }
+|move|p2a: Sunflora|Hidden Power|p1a: Ditto
+    Move { user: Some("Sunflora"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 7/8; Hidden Power Fire Special 70/100 23/24]
+|-supereffective|p1a: Ditto
+    SuperEffective { mon: "Ditto,p1,0" }
+|-damage|p1a: Ditto|47/258
+    Damage { mon: "Ditto,p1,0", health: "47/258" }
+|-heal|p1a: Ditto|63/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "63/258" }
+|-heal|p2a: Sunflora|238/308 tox|[from] item: Leftovers
+    Heal { mon: "Sunflora,p2,0", health: "238/308" }
+|-damage|p2a: Sunflora|181/308 tox|[from] psn
+    Damage { mon: "Sunflora,p2,0", health: "181/308" }
+|turn|38
+    Turn { n: 38 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 4/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 7/8; Hidden Power Fire Special 70/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Spikes||[still]
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Spikes" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 3/20; Drill Peck Flying Physical 80/100 5/20]
+|-fail|p1a: Ditto
+    Fail { mon: "Ditto,p1,0" }
+|move|p2a: Sunflora|Synthesis|p2a: Sunflora
+    Move { user: Some("Sunflora"), player_id: Some("p2"), name: "Synthesis" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 6/8; Hidden Power Fire Special 70/100 23/24]
+|-heal|p2a: Sunflora|308/308 tox
+    Heal { mon: "Sunflora,p2,0", health: "308/308" }
+|-heal|p1a: Ditto|79/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "79/258" }
+|-damage|p2a: Sunflora|232/308 tox|[from] psn
+    Damage { mon: "Sunflora,p2,0", health: "232/308" }
+|turn|39
+    Turn { n: 39 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 4/20; Spikes Ground Status -/- 3/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 6/8; Hidden Power Fire Special 70/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sunflora|Synthesis|p2a: Sunflora
+    Move { user: Some("Sunflora"), player_id: Some("p2"), name: "Synthesis" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 5/8; Hidden Power Fire Special 70/100 23/24]
+|-heal|p2a: Sunflora|308/308 tox
+    Heal { mon: "Sunflora,p2,0", health: "308/308" }
+|move|p1a: Ditto|Whirlwind|p2a: Sunflora
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Whirlwind" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 3/20; Drill Peck Flying Physical 80/100 5/20]
+|drag|p2a: Tentacruel|Tentacruel, L79, F|249/256
+    SwitchIn p2 name=Tentacruel species=Some("Tentacruel") slot=Some(4) speed=Some(204) moves=[Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+|-damage|p2a: Tentacruel|185/256|[from] Spikes
+    Damage { mon: "Tentacruel,p2,0", health: "185/256" }
+|-heal|p2a: Tentacruel|201/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "201/256" }
+|-heal|p1a: Ditto|95/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "95/258" }
+|turn|40
+    Turn { n: 40 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 3/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Sludge Bomb|p1a: Ditto
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 15/16]
+|-immune|p1a: Ditto
+    Immune { mon: "Ditto,p1,0" }
+|move|p1a: Ditto|Spikes||[still]
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Spikes" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 2/20; Drill Peck Flying Physical 80/100 5/20]
+|-fail|p1a: Ditto
+    Fail { mon: "Ditto,p1,0" }
+|-heal|p2a: Tentacruel|217/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "217/256" }
+|-heal|p1a: Ditto|111/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "111/258" }
+|turn|41
+    Turn { n: 41 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 3/20; Spikes Ground Status -/- 2/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Ice Beam|p1a: Ditto
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 14/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 15/16]
+|-damage|p1a: Ditto|39/258
+    Damage { mon: "Ditto,p1,0", health: "39/258" }
+|move|p1a: Ditto|Whirlwind|p2a: Tentacruel
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Whirlwind" }
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 2/20; Spikes Ground Status -/- 2/20; Drill Peck Flying Physical 80/100 5/20]
+|drag|p2a: Hitmontop|Hitmontop, L86, M|226/226
+    SwitchIn p2 name=Hitmontop species=Some("Hitmontop") slot=Some(5) speed=Some(170) moves=[Hidden Power Ghost Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 24/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 32/32]
+|-damage|p2a: Hitmontop|170/226|[from] Spikes
+    Damage { mon: "Hitmontop,p2,0", health: "170/226" }
+|-unboost|p1a: Ditto|atk|1
+    StatChange { mon: "Ditto,p1,0", stat: "Attack", delta: -1 }
+|-heal|p2a: Hitmontop|184/226|[from] item: Leftovers
+    Heal { mon: "Hitmontop,p2,0", health: "184/226" }
+|-heal|p1a: Ditto|55/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "55/258" }
+|turn|42
+    Turn { n: 42 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 4/16; Whirlwind Normal Status -/100 2/20; Spikes Ground Status -/- 2/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 24/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Hitmontop|Bulk Up|p2a: Hitmontop
+    Move { user: Some("Hitmontop"), player_id: Some("p2"), name: "Bulk Up" }
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 24/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 31/32]
+|-boost|p2a: Hitmontop|atk|1
+    StatChange { mon: "Hitmontop,p2,0", stat: "Attack", delta: 1 }
+|-boost|p2a: Hitmontop|def|1
+    StatChange { mon: "Hitmontop,p2,0", stat: "Defense", delta: 1 }
+|move|p1a: Ditto|Toxic|p2a: Hitmontop
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 2/20; Spikes Ground Status -/- 2/20; Drill Peck Flying Physical 80/100 5/20]
+|-status|p2a: Hitmontop|tox
+    SetStatus { mon: "Hitmontop,p2,0", status: "tox" }
+|-heal|p2a: Hitmontop|198/226 tox|[from] item: Leftovers
+    Heal { mon: "Hitmontop,p2,0", health: "198/226" }
+|-damage|p2a: Hitmontop|184/226 tox|[from] psn
+    Damage { mon: "Hitmontop,p2,0", health: "184/226" }
+|-heal|p1a: Ditto|71/258|[from] item: Leftovers
+    Heal { mon: "Ditto,p1,0", health: "71/258" }
+|turn|43
+    Turn { n: 43 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 3/16; Whirlwind Normal Status -/100 2/20; Spikes Ground Status -/- 2/20; Drill Peck Flying Physical 80/100 5/20]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 24/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Hitmontop|Brick Break|p1a: Ditto
+    Move { user: Some("Hitmontop"), player_id: Some("p2"), name: "Brick Break" }
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 23/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 31/32]
+|-damage|p1a: Ditto|0 fnt
+    Damage { mon: "Ditto,p1,0", health: "0/258" }
+|faint|p1a: Ditto
+    Faint { mon: "Ditto,p1,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Hitmonchan|Hitmonchan, L87, M|172/229
+    SwitchIn p1 name=Hitmonchan species=Some("Hitmonchan") slot=Some(5) speed=Some(182) moves=[Sky Uppercut Fighting Physical 85/90 24/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+|-damage|p1a: Hitmonchan|115/229|[from] Spikes
+    Damage { mon: "Hitmonchan,p1,0", health: "115/229" }
+|-heal|p2a: Hitmontop|198/226 tox|[from] item: Leftovers
+    Heal { mon: "Hitmontop,p2,0", health: "198/226" }
+|-damage|p2a: Hitmontop|170/226 tox|[from] psn
+    Damage { mon: "Hitmontop,p2,0", health: "170/226" }
+|turn|44
+    Turn { n: 44 }
+|request|...
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 24/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 23/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Hitmonchan|Sky Uppercut|p2a: Hitmontop|[miss]
+    Move { user: Some("Hitmonchan"), player_id: Some("p1"), name: "Sky Uppercut" }
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 23/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+|-miss|p1a: Hitmonchan|p2a: Hitmontop
+    Miss { mon: "Hitmontop,p2,0" }
+|move|p2a: Hitmontop|Bulk Up|p2a: Hitmontop
+    Move { user: Some("Hitmontop"), player_id: Some("p2"), name: "Bulk Up" }
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 23/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 30/32]
+|-boost|p2a: Hitmontop|atk|1
+    StatChange { mon: "Hitmontop,p2,0", stat: "Attack", delta: 1 }
+|-boost|p2a: Hitmontop|def|1
+    StatChange { mon: "Hitmontop,p2,0", stat: "Defense", delta: 1 }
+|-heal|p2a: Hitmontop|184/226 tox|[from] item: Leftovers
+    Heal { mon: "Hitmontop,p2,0", health: "184/226" }
+|-damage|p2a: Hitmontop|142/226 tox|[from] psn
+    Damage { mon: "Hitmontop,p2,0", health: "142/226" }
+|turn|45
+    Turn { n: 45 }
+|request|...
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 23/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 23/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 30/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Hitmonchan|Sky Uppercut|p2a: Hitmontop
+    Move { user: Some("Hitmonchan"), player_id: Some("p1"), name: "Sky Uppercut" }
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 22/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+|-damage|p2a: Hitmontop|72/226 tox
+    Damage { mon: "Hitmontop,p2,0", health: "72/226" }
+|move|p2a: Hitmontop|Bulk Up|p2a: Hitmontop
+    Move { user: Some("Hitmontop"), player_id: Some("p2"), name: "Bulk Up" }
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 23/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 29/32]
+|-boost|p2a: Hitmontop|atk|1
+    StatChange { mon: "Hitmontop,p2,0", stat: "Attack", delta: 1 }
+|-boost|p2a: Hitmontop|def|1
+    StatChange { mon: "Hitmontop,p2,0", stat: "Defense", delta: 1 }
+|-heal|p2a: Hitmontop|86/226 tox|[from] item: Leftovers
+    Heal { mon: "Hitmontop,p2,0", health: "86/226" }
+|-damage|p2a: Hitmontop|30/226 tox|[from] psn
+    Damage { mon: "Hitmontop,p2,0", health: "30/226" }
+|turn|46
+    Turn { n: 46 }
+|request|...
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 22/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 23/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 29/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Hitmonchan|Sky Uppercut|p2a: Hitmontop
+    Move { user: Some("Hitmonchan"), player_id: Some("p1"), name: "Sky Uppercut" }
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 21/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+|-damage|p2a: Hitmontop|0 fnt
+    Damage { mon: "Hitmontop,p2,0", health: "0/226" }
+|faint|p2a: Hitmontop
+    Faint { mon: "Hitmontop,p2,0", team_slot: Some(5) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Unown|Unown-G|258/258
+    SwitchIn p2 name=Unown species=Some("Unown") slot=Some(3) speed=Some(152) moves=[Hidden Power Fighting Fighting Physical 70/100 24/24]
+|turn|47
+    Turn { n: 47 }
+|request|...
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 21/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Fighting Physical 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Hitmonchan|Sky Uppercut|p2a: Unown
+    Move { user: Some("Hitmonchan"), player_id: Some("p1"), name: "Sky Uppercut" }
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 20/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+|-resisted|p2a: Unown
+    Resisted { mon: "Unown,p2,0" }
+|-damage|p2a: Unown|154/258
+    Damage { mon: "Unown,p2,0", health: "154/258" }
+|move|p2a: Unown|Hidden Power|p1a: Hitmonchan
+    Move { user: Some("Unown"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Hidden Power Fighting Physical 70/100 23/24]
+|-damage|p1a: Hitmonchan|18/229
+    Damage { mon: "Hitmonchan,p1,0", health: "18/229" }
+|turn|48
+    Turn { n: 48 }
+|request|...
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 20/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Fighting Physical 70/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Hitmonchan|Sky Uppercut|p2a: Unown|[miss]
+    Move { user: Some("Hitmonchan"), player_id: Some("p1"), name: "Sky Uppercut" }
+    MovesUpdate p1 [Sky Uppercut Fighting Physical 85/90 19/24; Mach Punch Fighting Physical 40/100 47/48; Rock Slide Rock Physical 75/90 16/16; Hidden Power Ghost Physical 70/100 24/24]
+|-miss|p1a: Hitmonchan|p2a: Unown
+    Miss { mon: "Unown,p2,0" }
+|move|p2a: Unown|Hidden Power|p1a: Hitmonchan
+    Move { user: Some("Unown"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Hidden Power Fighting Physical 70/100 22/24]
+|-crit|p1a: Hitmonchan
+    CriticalHit { mon: "Hitmonchan,p1,0" }
+|-damage|p1a: Hitmonchan|0 fnt
+    Damage { mon: "Hitmonchan,p1,0", health: "0/229" }
+|faint|p1a: Hitmonchan
+    Faint { mon: "Hitmonchan,p1,0", team_slot: Some(5) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Persian|Persian, L87, F|224/255
+    SwitchIn p1 name=Persian species=Some("Persian") slot=Some(2) speed=Some(250) moves=[Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 24/24; Return Normal Physical 102/100 31/32]
+|-damage|p1a: Persian|161/255|[from] Spikes
+    Damage { mon: "Persian,p1,0", health: "161/255" }
+|turn|49
+    Turn { n: 49 }
+|request|...
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 24/24; Return Normal Physical 102/100 31/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Fighting Physical 70/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Persian|Shadow Ball|p2a: Unown
+    Move { user: Some("Persian"), player_id: Some("p1"), name: "Shadow Ball" }
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 23/24; Return Normal Physical 102/100 31/32]
+|-supereffective|p2a: Unown
+    SuperEffective { mon: "Unown,p2,0" }
+|-damage|p2a: Unown|0 fnt
+    Damage { mon: "Unown,p2,0", health: "0/258" }
+|faint|p2a: Unown
+    Faint { mon: "Unown,p2,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Skarmory|Skarmory, L72, F|30/213
+    SwitchIn p2 name=Skarmory species=Some("Skarmory") slot=Some(2) speed=Some(143) moves=[Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 26/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 27/32]
+|-heal|p2a: Skarmory|43/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "43/213" }
+|turn|50
+    Turn { n: 50 }
+|request|...
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 23/24; Return Normal Physical 102/100 31/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 26/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 27/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Persian|Shadow Ball|p2a: Skarmory
+    Move { user: Some("Persian"), player_id: Some("p1"), name: "Shadow Ball" }
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 22/24; Return Normal Physical 102/100 31/32]
+|-resisted|p2a: Skarmory
+    Resisted { mon: "Skarmory,p2,0" }
+|-damage|p2a: Skarmory|17/213
+    Damage { mon: "Skarmory,p2,0", health: "17/213" }
+|-unboost|p2a: Skarmory|spd|1
+    StatChange { mon: "Skarmory,p2,0", stat: "Sp. Def", delta: -1 }
+|move|p2a: Skarmory|Whirlwind|p1a: Persian
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Whirlwind" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 25/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 27/32]
+|drag|p1a: Blastoise|Blastoise, L82, F|222/264 tox
+    SwitchIn p1 name=Blastoise species=Some("Blastoise") slot=Some(3) speed=Some(175) moves=[Refresh Normal Status -/- 31/32; Roar Normal Status -/100 30/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+|-damage|p1a: Blastoise|156/264 tox|[from] Spikes
+    Damage { mon: "Blastoise,p1,0", health: "156/264" }
+|-heal|p1a: Blastoise|172/264 tox|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "172/264" }
+|-damage|p1a: Blastoise|156/264 tox|[from] psn
+    Damage { mon: "Blastoise,p1,0", health: "156/264" }
+|-heal|p2a: Skarmory|30/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "30/213" }
+|turn|51
+    Turn { n: 51 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 30/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 25/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 27/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Skarmory|Drill Peck|p1a: Blastoise
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Drill Peck" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 25/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 26/32]
+|-damage|p1a: Blastoise|102/264 tox
+    Damage { mon: "Blastoise,p1,0", health: "102/264" }
+|move|p1a: Blastoise|Roar|p2a: Skarmory
+    Move { user: Some("Blastoise"), player_id: Some("p1"), name: "Roar" }
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 29/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+|drag|p2a: Tentacruel|Tentacruel, L79, F|217/256
+    SwitchIn p2 name=Tentacruel species=Some("Tentacruel") slot=Some(4) speed=Some(204) moves=[Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 14/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 15/16]
+|-damage|p2a: Tentacruel|153/256|[from] Spikes
+    Damage { mon: "Tentacruel,p2,0", health: "153/256" }
+|-heal|p2a: Tentacruel|169/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "169/256" }
+|-heal|p1a: Blastoise|118/264 tox|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "118/264" }
+|-damage|p1a: Blastoise|86/264 tox|[from] psn
+    Damage { mon: "Blastoise,p1,0", health: "86/264" }
+|turn|52
+    Turn { n: 52 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 31/32; Roar Normal Status -/100 29/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 14/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Sludge Bomb|p1a: Blastoise
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 14/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 14/16]
+|-damage|p1a: Blastoise|21/264 tox
+    Damage { mon: "Blastoise,p1,0", health: "21/264" }
+|move|p1a: Blastoise|Refresh|p1a: Blastoise
+    Move { user: Some("Blastoise"), player_id: Some("p1"), name: "Refresh" }
+    MovesUpdate p1 [Refresh Normal Status -/- 30/32; Roar Normal Status -/100 29/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+|-curestatus|p1a: Blastoise|tox|[msg]
+    CureStatus { mon: "Blastoise,p1,0", status: "tox" }
+|-heal|p2a: Tentacruel|185/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "185/256" }
+|-heal|p1a: Blastoise|37/264|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "37/264" }
+|turn|53
+    Turn { n: 53 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 30/32; Roar Normal Status -/100 29/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 14/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Ice Beam|p1a: Blastoise
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 14/16]
+|-resisted|p1a: Blastoise
+    Resisted { mon: "Blastoise,p1,0" }
+|-damage|p1a: Blastoise|12/264
+    Damage { mon: "Blastoise,p1,0", health: "12/264" }
+|-status|p1a: Blastoise|frz
+    SetStatus { mon: "Blastoise,p1,0", status: "frz" }
+|cant|p1a: Blastoise|frz
+    Cant { mon: "Blastoise,p1,0", reason: "frz" }
+|-heal|p2a: Tentacruel|201/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "201/256" }
+|-heal|p1a: Blastoise|28/264 frz|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "28/264" }
+|turn|54
+    Turn { n: 54 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 30/32; Roar Normal Status -/100 29/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 15/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Toxic||[still]
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 14/16]
+|-fail|p2a: Tentacruel
+    Fail { mon: "Tentacruel,p2,0" }
+|cant|p1a: Blastoise|frz
+    Cant { mon: "Blastoise,p1,0", reason: "frz" }
+|-heal|p2a: Tentacruel|217/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "217/256" }
+|-heal|p1a: Blastoise|44/264 frz|[from] item: Leftovers
+    Heal { mon: "Blastoise,p1,0", health: "44/264" }
+|turn|55
+    Turn { n: 55 }
+|request|...
+    MovesUpdate p1 [Refresh Normal Status -/- 30/32; Roar Normal Status -/100 29/32; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Sludge Bomb|p1a: Blastoise
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 13/16]
+|-damage|p1a: Blastoise|0 fnt
+    Damage { mon: "Blastoise,p1,0", health: "0/264" }
+|faint|p1a: Blastoise
+    Faint { mon: "Blastoise,p1,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Tentacruel|Tentacruel, L79, F|186/256
+    SwitchIn p1 name=Tentacruel species=Some("Tentacruel") slot=Some(1) speed=Some(204) moves=[Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 11/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-damage|p1a: Tentacruel|122/256|[from] Spikes
+    Damage { mon: "Tentacruel,p1,0", health: "122/256" }
+|-heal|p1a: Tentacruel|138/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "138/256" }
+|-heal|p2a: Tentacruel|233/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "233/256" }
+|turn|56
+    Turn { n: 56 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 11/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 13/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Sludge Bomb|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 12/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|96/256
+    Damage { mon: "Tentacruel,p1,0", health: "96/256" }
+|move|p1a: Tentacruel|Toxic|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 11/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-immune|p2a: Tentacruel
+    Immune { mon: "Tentacruel,p2,0" }
+|-heal|p2a: Tentacruel|249/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "249/256" }
+|-heal|p1a: Tentacruel|112/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "112/256" }
+|turn|57
+    Turn { n: 57 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 8/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 11/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 12/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Hydro Pump|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Hydro Pump" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 7/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 11/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|211/256
+    Damage { mon: "Tentacruel,p2,0", health: "211/256" }
+|move|p2a: Tentacruel|Sludge Bomb|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|69/256
+    Damage { mon: "Tentacruel,p1,0", health: "69/256" }
+|-heal|p2a: Tentacruel|227/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "227/256" }
+|-heal|p1a: Tentacruel|85/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "85/256" }
+|turn|58
+    Turn { n: 58 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 7/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 11/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 14/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Toxic|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+|-immune|p1a: Tentacruel
+    Immune { mon: "Tentacruel,p1,0" }
+|move|p1a: Tentacruel|Ice Beam|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 7/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 16/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|205/256
+    Damage { mon: "Tentacruel,p2,0", health: "205/256" }
+|-heal|p2a: Tentacruel|221/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "221/256" }
+|-heal|p1a: Tentacruel|101/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "101/256" }
+|turn|59
+    Turn { n: 59 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 7/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 13/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Ice Beam|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 12/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|82/256
+    Damage { mon: "Tentacruel,p1,0", health: "82/256" }
+|move|p1a: Tentacruel|Sludge Bomb|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 7/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 15/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|174/256
+    Damage { mon: "Tentacruel,p2,0", health: "174/256" }
+|-heal|p2a: Tentacruel|190/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "190/256" }
+|-heal|p1a: Tentacruel|98/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "98/256" }
+|turn|60
+    Turn { n: 60 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 7/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 12/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Hydro Pump|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Hydro Pump" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 6/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 15/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|148/256
+    Damage { mon: "Tentacruel,p2,0", health: "148/256" }
+|move|p2a: Tentacruel|Ice Beam|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|76/256
+    Damage { mon: "Tentacruel,p1,0", health: "76/256" }
+|-heal|p1a: Tentacruel|92/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "92/256" }
+|-heal|p2a: Tentacruel|164/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "164/256" }
+|turn|61
+    Turn { n: 61 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 6/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Toxic|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 12/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+|-immune|p1a: Tentacruel
+    Immune { mon: "Tentacruel,p1,0" }
+|move|p1a: Tentacruel|Sludge Bomb|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 6/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 14/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|123/256
+    Damage { mon: "Tentacruel,p2,0", health: "123/256" }
+|-heal|p2a: Tentacruel|139/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "139/256" }
+|-heal|p1a: Tentacruel|108/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "108/256" }
+|turn|62
+    Turn { n: 62 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 6/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 12/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Toxic|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 11/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+|-immune|p1a: Tentacruel
+    Immune { mon: "Tentacruel,p1,0" }
+|move|p1a: Tentacruel|Hydro Pump|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Hydro Pump" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 5/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 14/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|98/256
+    Damage { mon: "Tentacruel,p2,0", health: "98/256" }
+|-heal|p2a: Tentacruel|114/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "114/256" }
+|-heal|p1a: Tentacruel|124/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "124/256" }
+|turn|63
+    Turn { n: 63 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 5/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 11/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 11/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Sludge Bomb|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Toxic Poison Status -/85 11/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 10/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|82/256
+    Damage { mon: "Tentacruel,p1,0", health: "82/256" }
+|move|p1a: Tentacruel|Hydro Pump|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Hydro Pump" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 14/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|77/256
+    Damage { mon: "Tentacruel,p2,0", health: "77/256" }
+|-heal|p1a: Tentacruel|98/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "98/256" }
+|-heal|p2a: Tentacruel|93/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "93/256" }
+|turn|64
+    Turn { n: 64 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 10/16; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 11/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 24/24; Sludge Bomb Poison Physical 90/100 10/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Surf|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Surf" }
+    MovesUpdate p2 [Toxic Poison Status -/85 11/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 10/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|67/256
+    Damage { mon: "Tentacruel,p1,0", health: "67/256" }
+|move|p1a: Tentacruel|Ice Beam|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 9/16; Sludge Bomb Poison Physical 90/100 14/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|74/256
+    Damage { mon: "Tentacruel,p2,0", health: "74/256" }
+|-heal|p1a: Tentacruel|83/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "83/256" }
+|-heal|p2a: Tentacruel|90/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "90/256" }
+|turn|65
+    Turn { n: 65 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 9/16; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 11/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 10/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Sludge Bomb|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 9/16; Sludge Bomb Poison Physical 90/100 13/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|47/256
+    Damage { mon: "Tentacruel,p2,0", health: "47/256" }
+|move|p2a: Tentacruel|Toxic|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 10/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 10/16]
+|-immune|p1a: Tentacruel
+    Immune { mon: "Tentacruel,p1,0" }
+|-heal|p1a: Tentacruel|99/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "99/256" }
+|-heal|p2a: Tentacruel|63/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "63/256" }
+|turn|66
+    Turn { n: 66 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 9/16; Sludge Bomb Poison Physical 90/100 13/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 10/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 10/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Sludge Bomb|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 9/16; Sludge Bomb Poison Physical 90/100 12/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|21/256
+    Damage { mon: "Tentacruel,p2,0", health: "21/256" }
+|move|p2a: Tentacruel|Sludge Bomb|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Toxic Poison Status -/85 10/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 9/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|55/256
+    Damage { mon: "Tentacruel,p1,0", health: "55/256" }
+|-heal|p1a: Tentacruel|71/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "71/256" }
+|-heal|p2a: Tentacruel|37/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "37/256" }
+|turn|67
+    Turn { n: 67 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 9/16; Sludge Bomb Poison Physical 90/100 12/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 10/16; Ice Beam Ice Special 95/100 11/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 9/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Ice Beam|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Toxic Poison Status -/85 10/16; Ice Beam Ice Special 95/100 10/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 9/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|50/256
+    Damage { mon: "Tentacruel,p1,0", health: "50/256" }
+|-status|p1a: Tentacruel|frz
+    SetStatus { mon: "Tentacruel,p1,0", status: "frz" }
+|-curestatus|p1a: Tentacruel|frz|[msg]
+    CureStatus { mon: "Tentacruel,p1,0", status: "frz" }
+|move|p1a: Tentacruel|Ice Beam|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 8/16; Sludge Bomb Poison Physical 90/100 12/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|15/256
+    Damage { mon: "Tentacruel,p2,0", health: "15/256" }
+|-heal|p1a: Tentacruel|66/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "66/256" }
+|-heal|p2a: Tentacruel|31/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p2,0", health: "31/256" }
+|turn|68
+    Turn { n: 68 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 8/16; Sludge Bomb Poison Physical 90/100 12/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 10/16; Ice Beam Ice Special 95/100 10/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 9/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Tentacruel|Sludge Bomb|p1a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Toxic Poison Status -/85 10/16; Ice Beam Ice Special 95/100 10/16; Surf Water Special 95/100 23/24; Sludge Bomb Poison Physical 90/100 8/16]
+|-resisted|p1a: Tentacruel
+    Resisted { mon: "Tentacruel,p1,0" }
+|-damage|p1a: Tentacruel|25/256
+    Damage { mon: "Tentacruel,p1,0", health: "25/256" }
+|move|p1a: Tentacruel|Sludge Bomb|p2a: Tentacruel
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 8/16; Sludge Bomb Poison Physical 90/100 11/16]
+|-resisted|p2a: Tentacruel
+    Resisted { mon: "Tentacruel,p2,0" }
+|-damage|p2a: Tentacruel|0 fnt
+    Damage { mon: "Tentacruel,p2,0", health: "0/256" }
+|faint|p2a: Tentacruel
+    Faint { mon: "Tentacruel,p2,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Skarmory|Skarmory, L72, F|30/213
+    SwitchIn p2 name=Skarmory species=Some("Skarmory") slot=Some(2) speed=Some(143) moves=[Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 25/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 26/32]
+|-heal|p1a: Tentacruel|41/256|[from] item: Leftovers
+    Heal { mon: "Tentacruel,p1,0", health: "41/256" }
+|-heal|p2a: Skarmory|43/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "43/213" }
+|turn|69
+    Turn { n: 69 }
+|request|...
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 13/16; Ice Beam Ice Special 95/100 8/16; Sludge Bomb Poison Physical 90/100 11/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 25/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 26/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Tentacruel|Toxic|p2a: Skarmory
+    Move { user: Some("Tentacruel"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 12/16; Ice Beam Ice Special 95/100 8/16; Sludge Bomb Poison Physical 90/100 11/16]
+|-immune|p2a: Skarmory
+    Immune { mon: "Skarmory,p2,0" }
+|move|p2a: Skarmory|Whirlwind|p1a: Tentacruel
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Whirlwind" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 24/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 26/32]
+|drag|p1a: Persian|Persian, L87, F|161/255
+    SwitchIn p1 name=Persian species=Some("Persian") slot=Some(2) speed=Some(250) moves=[Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 22/24; Return Normal Physical 102/100 31/32]
+|-damage|p1a: Persian|98/255|[from] Spikes
+    Damage { mon: "Persian,p1,0", health: "98/255" }
+|-heal|p2a: Skarmory|56/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "56/213" }
+|turn|70
+    Turn { n: 70 }
+|request|...
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 22/24; Return Normal Physical 102/100 31/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 24/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 26/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Persian|Shadow Ball|p2a: Skarmory
+    Move { user: Some("Persian"), player_id: Some("p1"), name: "Shadow Ball" }
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 21/24; Return Normal Physical 102/100 31/32]
+|-resisted|p2a: Skarmory
+    Resisted { mon: "Skarmory,p2,0" }
+|-damage|p2a: Skarmory|26/213
+    Damage { mon: "Skarmory,p2,0", health: "26/213" }
+|move|p2a: Skarmory|Drill Peck|p1a: Persian
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Drill Peck" }
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 24/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 25/32]
+|-damage|p1a: Persian|29/255
+    Damage { mon: "Persian,p1,0", health: "29/255" }
+|-heal|p2a: Skarmory|39/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "39/213" }
+|turn|71
+    Turn { n: 71 }
+|request|...
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 21/24; Return Normal Physical 102/100 31/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 13/16; Whirlwind Normal Status -/100 24/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 25/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Persian|Shadow Ball|p2a: Skarmory
+    Move { user: Some("Persian"), player_id: Some("p1"), name: "Shadow Ball" }
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 20/24; Return Normal Physical 102/100 31/32]
+|-resisted|p2a: Skarmory
+    Resisted { mon: "Skarmory,p2,0" }
+|-damage|p2a: Skarmory|9/213
+    Damage { mon: "Skarmory,p2,0", health: "9/213" }
+|move|p2a: Skarmory|Toxic|p1a: Persian
+    Move { user: Some("Skarmory"), player_id: Some("p2"), name: "Toxic" }
+    MovesUpdate p2 [Toxic Poison Status -/85 12/16; Whirlwind Normal Status -/100 24/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 25/32]
+|-status|p1a: Persian|tox
+    SetStatus { mon: "Persian,p1,0", status: "tox" }
+|-damage|p1a: Persian|14/255 tox|[from] psn
+    Damage { mon: "Persian,p1,0", health: "14/255" }
+|-heal|p2a: Skarmory|22/213|[from] item: Leftovers
+    Heal { mon: "Skarmory,p2,0", health: "22/213" }
+|turn|72
+    Turn { n: 72 }
+|request|...
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 20/24; Return Normal Physical 102/100 31/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 12/16; Whirlwind Normal Status -/100 24/32; Spikes Ground Status -/- 26/32; Drill Peck Flying Physical 80/100 25/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Persian|Shadow Ball|p2a: Skarmory
+    Move { user: Some("Persian"), player_id: Some("p1"), name: "Shadow Ball" }
+    MovesUpdate p1 [Iron Tail Steel Physical 100/75 24/24; Hidden Power Ground Physical 70/100 24/24; Shadow Ball Ghost Physical 80/100 19/24; Return Normal Physical 102/100 31/32]
+|-resisted|p2a: Skarmory
+    Resisted { mon: "Skarmory,p2,0" }
+|-damage|p2a: Skarmory|0 fnt
+    Damage { mon: "Skarmory,p2,0", health: "0/213" }
+|faint|p2a: Skarmory
+    Faint { mon: "Skarmory,p2,0", team_slot: Some(2) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Sunflora|Sunflora, L99, F|308/308 tox
+    SwitchIn p2 name=Sunflora species=Some("Sunflora") slot=Some(1) speed=Some(114) moves=[Toxic Poison Status -/85 14/16; Razor Leaf Grass Special 55/95 39/40; Synthesis Grass Status -/- 5/8; Hidden Power Fire Special 70/100 23/24]
+|-damage|p2a: Sunflora|231/308 tox|[from] Spikes
+    Damage { mon: "Sunflora,p2,0", health: "231/308" }
+|-damage|p1a: Persian|0 fnt|[from] psn
+    Damage { mon: "Persian,p1,0", health: "0/255" }
+|faint|p1a: Persian
+    Faint { mon: "Persian,p1,0", team_slot: Some(2) }
+|-heal|p2a: Sunflora|250/308 tox|[from] item: Leftovers
+    Heal { mon: "Sunflora,p2,0", health: "250/308" }
+|-damage|p2a: Sunflora|231/308 tox|[from] psn
+    Damage { mon: "Sunflora,p2,0", health: "231/308" }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Tentacruel|Tentacruel, L79, F|41/256
+    SwitchIn p1 name=Tentacruel species=Some("Tentacruel") slot=Some(1) speed=Some(204) moves=[Hydro Pump Water Special 120/80 4/8; Toxic Poison Status -/85 12/16; Ice Beam Ice Special 95/100 8/16; Sludge Bomb Poison Physical 90/100 11/16]
+|-damage|p1a: Tentacruel|0 fnt|[from] Spikes
+    Damage { mon: "Tentacruel,p1,0", health: "0/256" }
+|faint|p1a: Tentacruel
+    Faint { mon: "Tentacruel,p1,0", team_slot: Some(1) }
+|win|Player 2
+    Win { side: Some("1") }

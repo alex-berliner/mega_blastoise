@@ -1,0 +1,580 @@
+# BoardEvent stream of gen1.log.gz battle index=39: each protocol line that
+# yields events, then its events. `|request|...` is a request's prompt events.
+|start
+    BattleStart
+|switch|p1a: Nidoran-F|Nidoran-F, L90|282/282
+    SwitchIn p1 name=Nidoran-F species=Some("Nidoran-F") slot=Some(0) speed=None moves=[]
+|switch|p2a: Cubone|Cubone, L89|270/270
+    SwitchIn p2 name=Cubone species=Some("Cubone") slot=Some(0) speed=None moves=[]
+|turn|1
+    Turn { n: 1 }
+|request|...
+    ActiveMonUpdate { mon: "Nidoran-F,p1,0", name: "Nidoran-F", speed: Some(162) }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8; Double Kick Fighting Physical 30/100 48/48]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    ActiveMonUpdate { mon: "Cubone,p2,0", name: "Cubone", speed: Some(150) }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Blizzard Ice Special 120/90 8/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Nidoran-F|Double Kick|p2a: Cubone
+    Move { user: Some("Nidoran-F"), player_id: Some("p1"), name: "Double Kick" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8; Double Kick Fighting Physical 30/100 47/48]
+|-damage|p2a: Cubone|254/270
+    Damage { mon: "Cubone,p2,0", health: "254/270" }
+|-damage|p2a: Cubone|238/270
+    Damage { mon: "Cubone,p2,0", health: "238/270" }
+|move|p2a: Cubone|Earthquake|p1a: Nidoran-F
+    Move { user: Some("Cubone"), player_id: Some("p2"), name: "Earthquake" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Blizzard Ice Special 120/90 8/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+|-supereffective|p1a: Nidoran-F
+    SuperEffective { mon: "Nidoran-F,p1,0" }
+|-damage|p1a: Nidoran-F|94/282
+    Damage { mon: "Nidoran-F,p1,0", health: "94/282" }
+|turn|2
+    Turn { n: 2 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8; Double Kick Fighting Physical 30/100 47/48]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Blizzard Ice Special 120/90 8/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Nidoran-F|Thunderbolt|p2a: Cubone
+    Move { user: Some("Nidoran-F"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 23/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8; Double Kick Fighting Physical 30/100 47/48]
+|-immune|p2a: Cubone
+    Immune { mon: "Cubone,p2,0" }
+|move|p2a: Cubone|Blizzard|p1a: Nidoran-F
+    Move { user: Some("Cubone"), player_id: Some("p2"), name: "Blizzard" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+|-damage|p1a: Nidoran-F|13/282
+    Damage { mon: "Nidoran-F,p1,0", health: "13/282" }
+|turn|3
+    Turn { n: 3 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 23/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8; Double Kick Fighting Physical 30/100 47/48]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Nidoran-F|Double Kick|p2a: Cubone
+    Move { user: Some("Nidoran-F"), player_id: Some("p1"), name: "Double Kick" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 23/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8; Double Kick Fighting Physical 30/100 46/48]
+|-damage|p2a: Cubone|223/270
+    Damage { mon: "Cubone,p2,0", health: "223/270" }
+|-damage|p2a: Cubone|208/270
+    Damage { mon: "Cubone,p2,0", health: "208/270" }
+|move|p2a: Cubone|Earthquake|p1a: Nidoran-F
+    Move { user: Some("Cubone"), player_id: Some("p2"), name: "Earthquake" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 14/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+|-supereffective|p1a: Nidoran-F
+    SuperEffective { mon: "Nidoran-F,p1,0" }
+|-damage|p1a: Nidoran-F|0 fnt
+    Damage { mon: "Nidoran-F,p1,0", health: "0/282" }
+|faint|p1a: Nidoran-F
+    Faint { mon: "Nidoran-F,p1,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Raichu|Raichu, L74|241/241
+    SwitchIn p1 name=Raichu species=Some("Raichu") slot=Some(3) speed=Some(221) moves=[Thunderbolt Electric Special 95/100 24/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Surf Water Special 95/100 24/24]
+|turn|4
+    Turn { n: 4 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Surf Water Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 14/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Raichu|Seismic Toss|p2a: Cubone
+    Move { user: Some("Raichu"), player_id: Some("p1"), name: "Seismic Toss" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 32/32; Surf Water Special 95/100 24/24]
+|-damage|p2a: Cubone|134/270
+    Damage { mon: "Cubone,p2,0", health: "134/270" }
+|move|p2a: Cubone|Earthquake|p1a: Raichu
+    Move { user: Some("Cubone"), player_id: Some("p2"), name: "Earthquake" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+|-supereffective|p1a: Raichu
+    SuperEffective { mon: "Raichu,p1,0" }
+|-damage|p1a: Raichu|16/241
+    Damage { mon: "Raichu,p1,0", health: "16/241" }
+|turn|5
+    Turn { n: 5 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 32/32; Surf Water Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Raichu|Thunder Wave|p2a: Cubone
+    Move { user: Some("Raichu"), player_id: Some("p1"), name: "Thunder Wave" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 31/32; Surf Water Special 95/100 24/24]
+|-immune|p2a: Cubone
+    Immune { mon: "Cubone,p2,0" }
+|move|p2a: Cubone|Seismic Toss|p1a: Raichu
+    Move { user: Some("Cubone"), player_id: Some("p2"), name: "Seismic Toss" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24]
+|-damage|p1a: Raichu|0 fnt
+    Damage { mon: "Raichu,p1,0", health: "0/241" }
+|faint|p1a: Raichu
+    Faint { mon: "Raichu,p1,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Oddish|Oddish, L90|264/264
+    SwitchIn p1 name=Oddish species=Some("Oddish") slot=Some(1) speed=Some(142) moves=[Sleep Powder Grass Status -/75 24/24; Double-Edge Normal Physical 100/100 24/24; Mega Drain Grass Special 40/100 16/16; Stun Spore Grass Status -/75 48/48]
+|turn|6
+    Turn { n: 6 }
+|request|...
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Double-Edge Normal Physical 100/100 24/24; Mega Drain Grass Special 40/100 16/16; Stun Spore Grass Status -/75 48/48]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cubone|Seismic Toss|p1a: Oddish
+    Move { user: Some("Cubone"), player_id: Some("p2"), name: "Seismic Toss" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 30/32; Body Slam Normal Physical 85/100 24/24]
+|-damage|p1a: Oddish|175/264
+    Damage { mon: "Oddish,p1,0", health: "175/264" }
+|move|p1a: Oddish|Mega Drain|p2a: Cubone
+    Move { user: Some("Oddish"), player_id: Some("p1"), name: "Mega Drain" }
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Double-Edge Normal Physical 100/100 24/24; Mega Drain Grass Special 40/100 15/16; Stun Spore Grass Status -/75 48/48]
+|-supereffective|p2a: Cubone
+    SuperEffective { mon: "Cubone,p2,0" }
+|-damage|p2a: Cubone|17/270
+    Damage { mon: "Cubone,p2,0", health: "17/270" }
+|-heal|p1a: Oddish|233/264|[from] drain|[of] p2a: Cubone
+    Heal { mon: "Oddish,p1,0", health: "233/264" }
+|turn|7
+    Turn { n: 7 }
+|request|...
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Double-Edge Normal Physical 100/100 24/24; Mega Drain Grass Special 40/100 15/16; Stun Spore Grass Status -/75 48/48]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 30/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cubone|Seismic Toss|p1a: Oddish
+    Move { user: Some("Cubone"), player_id: Some("p2"), name: "Seismic Toss" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 29/32; Body Slam Normal Physical 85/100 24/24]
+|-damage|p1a: Oddish|144/264
+    Damage { mon: "Oddish,p1,0", health: "144/264" }
+|move|p1a: Oddish|Stun Spore|p2a: Cubone|[miss]
+    Move { user: Some("Oddish"), player_id: Some("p1"), name: "Stun Spore" }
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Double-Edge Normal Physical 100/100 24/24; Mega Drain Grass Special 40/100 15/16; Stun Spore Grass Status -/75 47/48]
+|-miss|p1a: Oddish
+    Miss { mon: "Cubone,p2,0" }
+|turn|8
+    Turn { n: 8 }
+|request|...
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Double-Edge Normal Physical 100/100 24/24; Mega Drain Grass Special 40/100 15/16; Stun Spore Grass Status -/75 47/48]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 29/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Cubone|Body Slam|p1a: Oddish
+    Move { user: Some("Cubone"), player_id: Some("p2"), name: "Body Slam" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 13/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 29/32; Body Slam Normal Physical 85/100 23/24]
+|-crit|p1a: Oddish
+    CriticalHit { mon: "Oddish,p1,0" }
+|-damage|p1a: Oddish|34/264
+    Damage { mon: "Oddish,p1,0", health: "34/264" }
+|move|p1a: Oddish|Double-Edge|p2a: Cubone
+    Move { user: Some("Oddish"), player_id: Some("p1"), name: "Double-Edge" }
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Double-Edge Normal Physical 100/100 23/24; Mega Drain Grass Special 40/100 15/16; Stun Spore Grass Status -/75 47/48]
+|-damage|p2a: Cubone|0 fnt
+    Damage { mon: "Cubone,p2,0", health: "0/270" }
+|-damage|p1a: Oddish|30/264|[from] Recoil
+    Damage { mon: "Oddish,p1,0", health: "30/264" }
+|faint|p2a: Cubone
+    Faint { mon: "Cubone,p2,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Gyarados|Gyarados, L74|293/293
+    SwitchIn p2 name=Gyarados species=Some("Gyarados") slot=Some(5) speed=Some(193) moves=[Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 8/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 24/24]
+|turn|9
+    Turn { n: 9 }
+|request|...
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Double-Edge Normal Physical 100/100 23/24; Mega Drain Grass Special 40/100 15/16; Stun Spore Grass Status -/75 47/48]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 8/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Gyarados|Body Slam|p1a: Oddish
+    Move { user: Some("Gyarados"), player_id: Some("p2"), name: "Body Slam" }
+    MovesUpdate p2 [Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 8/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 23/24]
+|-damage|p1a: Oddish|0 fnt
+    Damage { mon: "Oddish,p1,0", health: "0/264" }
+|faint|p1a: Oddish
+    Faint { mon: "Oddish,p1,0", team_slot: Some(1) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Jigglypuff|Jigglypuff, L89|386/386
+    SwitchIn p1 name=Jigglypuff species=Some("Jigglypuff") slot=Some(5) speed=Some(123) moves=[Sing Normal Status -/55 24/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 24/24]
+|turn|10
+    Turn { n: 10 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 24/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 8/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Gyarados|Hyper Beam|p1a: Jigglypuff
+    Move { user: Some("Gyarados"), player_id: Some("p2"), name: "Hyper Beam" }
+    MovesUpdate p2 [Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 7/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 23/24]
+|-damage|p1a: Jigglypuff|201/386
+    Damage { mon: "Jigglypuff,p1,0", health: "201/386" }
+|move|p1a: Jigglypuff|Body Slam|p2a: Gyarados
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Body Slam" }
+    MovesUpdate p1 [Sing Normal Status -/55 24/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 23/24]
+|-damage|p2a: Gyarados|211/293
+    Damage { mon: "Gyarados,p2,0", health: "211/293" }
+|-status|p2a: Gyarados|par
+    SetStatus { mon: "Gyarados,p2,0", status: "par" }
+|turn|11
+    Turn { n: 11 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 24/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Recharge Normal Status -/- 1/1]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jigglypuff|Sing|p2a: Gyarados
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Sing" }
+    MovesUpdate p1 [Sing Normal Status -/55 23/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 23/24]
+|-status|p2a: Gyarados|slp|[from] move: Sing
+    SetStatus { mon: "Gyarados,p2,0", status: "slp" }
+|cant|p2a: Gyarados|slp
+    Cant { mon: "Gyarados,p2,0", reason: "slp" }
+|turn|12
+    Turn { n: 12 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 23/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 7/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jigglypuff|Body Slam|p2a: Gyarados
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Body Slam" }
+    MovesUpdate p1 [Sing Normal Status -/55 23/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 22/24]
+|-damage|p2a: Gyarados|130/293 slp
+    Damage { mon: "Gyarados,p2,0", health: "130/293" }
+|cant|p2a: Gyarados|slp
+    Cant { mon: "Gyarados,p2,0", reason: "slp" }
+|turn|13
+    Turn { n: 13 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 23/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 7/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jigglypuff|Sing|p2a: Gyarados
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Sing" }
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 22/24]
+|-fail|p2a: Gyarados|slp
+    Fail { mon: "Gyarados,p2,0" }
+|cant|p2a: Gyarados|slp
+    Cant { mon: "Gyarados,p2,0", reason: "slp" }
+|turn|14
+    Turn { n: 14 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 7/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jigglypuff|Body Slam|p2a: Gyarados
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Body Slam" }
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 21/24]
+|-damage|p2a: Gyarados|49/293 slp
+    Damage { mon: "Gyarados,p2,0", health: "49/293" }
+|cant|p2a: Gyarados|slp
+    Cant { mon: "Gyarados,p2,0", reason: "slp" }
+|turn|15
+    Turn { n: 15 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 32/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 21/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hydro Pump Water Special 120/80 8/8; Hyper Beam Normal Physical 150/90 7/8; Blizzard Ice Special 120/90 8/8; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jigglypuff|Seismic Toss|p2a: Gyarados
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Seismic Toss" }
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 21/24]
+|-damage|p2a: Gyarados|0 fnt
+    Damage { mon: "Gyarados,p2,0", health: "0/293" }
+|faint|p2a: Gyarados
+    Faint { mon: "Gyarados,p2,0", team_slot: Some(5) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Rattata|Rattata, L89|235/235
+    SwitchIn p2 name=Rattata species=Some("Rattata") slot=Some(3) speed=Some(215) moves=[Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 16/16; Blizzard Ice Special 120/90 8/8; Double-Edge Normal Physical 100/100 24/24]
+|turn|16
+    Turn { n: 16 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 21/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 16/16; Blizzard Ice Special 120/90 8/8; Double-Edge Normal Physical 100/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Rattata|Double-Edge|p1a: Jigglypuff
+    Move { user: Some("Rattata"), player_id: Some("p2"), name: "Double-Edge" }
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 16/16; Blizzard Ice Special 120/90 8/8; Double-Edge Normal Physical 100/100 23/24]
+|-damage|p1a: Jigglypuff|52/386
+    Damage { mon: "Jigglypuff,p1,0", health: "52/386" }
+|-damage|p2a: Rattata|198/235|[from] Recoil
+    Damage { mon: "Rattata,p2,0", health: "198/235" }
+|move|p1a: Jigglypuff|Body Slam|p2a: Rattata
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Body Slam" }
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 20/24]
+|-damage|p2a: Rattata|100/235
+    Damage { mon: "Rattata,p2,0", health: "100/235" }
+|turn|17
+    Turn { n: 17 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 32/32; Body Slam Normal Physical 85/100 20/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 16/16; Blizzard Ice Special 120/90 8/8; Double-Edge Normal Physical 100/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Rattata|Super Fang|p1a: Jigglypuff
+    Move { user: Some("Rattata"), player_id: Some("p2"), name: "Super Fang" }
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 15/16; Blizzard Ice Special 120/90 8/8; Double-Edge Normal Physical 100/100 23/24]
+|-damage|p1a: Jigglypuff|26/386
+    Damage { mon: "Jigglypuff,p1,0", health: "26/386" }
+|move|p1a: Jigglypuff|Thunder Wave|p2a: Rattata
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Thunder Wave" }
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 31/32; Body Slam Normal Physical 85/100 20/24]
+|-status|p2a: Rattata|par
+    SetStatus { mon: "Rattata,p2,0", status: "par" }
+|turn|18
+    Turn { n: 18 }
+|request|...
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 31/32; Thunder Wave Electric Status -/100 31/32; Body Slam Normal Physical 85/100 20/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 15/16; Blizzard Ice Special 120/90 8/8; Double-Edge Normal Physical 100/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jigglypuff|Seismic Toss|p2a: Rattata
+    Move { user: Some("Jigglypuff"), player_id: Some("p1"), name: "Seismic Toss" }
+    MovesUpdate p1 [Sing Normal Status -/55 22/24; Seismic Toss Fighting Physical 1/100 30/32; Thunder Wave Electric Status -/100 31/32; Body Slam Normal Physical 85/100 20/24]
+|-damage|p2a: Rattata|11/235 par
+    Damage { mon: "Rattata,p2,0", health: "11/235" }
+|move|p2a: Rattata|Blizzard|p1a: Jigglypuff
+    Move { user: Some("Rattata"), player_id: Some("p2"), name: "Blizzard" }
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 15/16; Blizzard Ice Special 120/90 7/8; Double-Edge Normal Physical 100/100 23/24]
+|-damage|p1a: Jigglypuff|0 fnt
+    Damage { mon: "Jigglypuff,p1,0", health: "0/386" }
+|faint|p1a: Jigglypuff
+    Faint { mon: "Jigglypuff,p1,0", team_slot: Some(5) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Zapdos|Zapdos, L68|263/263
+    SwitchIn p1 name=Zapdos species=Some("Zapdos") slot=Some(2) speed=Some(204) moves=[Agility Psychic Status -/- 48/48; Drill Peck Flying Physical 80/100 32/32; Thunder Wave Electric Status -/100 32/32; Thunderbolt Electric Special 95/100 24/24]
+|turn|19
+    Turn { n: 19 }
+|request|...
+    MovesUpdate p1 [Agility Psychic Status -/- 48/48; Drill Peck Flying Physical 80/100 32/32; Thunder Wave Electric Status -/100 32/32; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 15/16; Blizzard Ice Special 120/90 7/8; Double-Edge Normal Physical 100/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Zapdos|Thunder Wave|p2a: Rattata
+    Move { user: Some("Zapdos"), player_id: Some("p1"), name: "Thunder Wave" }
+    MovesUpdate p1 [Agility Psychic Status -/- 48/48; Drill Peck Flying Physical 80/100 32/32; Thunder Wave Electric Status -/100 31/32; Thunderbolt Electric Special 95/100 24/24]
+|-fail|p2a: Rattata|par
+    Fail { mon: "Rattata,p2,0" }
+|move|p2a: Rattata|Double-Edge|p1a: Zapdos
+    Move { user: Some("Rattata"), player_id: Some("p2"), name: "Double-Edge" }
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Super Fang Normal Physical 1/90 15/16; Blizzard Ice Special 120/90 7/8; Double-Edge Normal Physical 100/100 22/24]
+|-crit|p1a: Zapdos
+    CriticalHit { mon: "Zapdos,p1,0" }
+|-damage|p1a: Zapdos|71/263
+    Damage { mon: "Zapdos,p1,0", health: "71/263" }
+|-damage|p2a: Rattata|0 fnt|[from] Recoil
+    Damage { mon: "Rattata,p2,0", health: "0/235" }
+|faint|p2a: Rattata
+    Faint { mon: "Rattata,p2,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Bulbasaur|Bulbasaur, L91|267/267
+    SwitchIn p2 name=Bulbasaur species=Some("Bulbasaur") slot=Some(1) speed=Some(171) moves=[Sleep Powder Grass Status -/75 24/24; Swords Dance Normal Status -/- 48/48; Razor Leaf Grass Special 55/95 40/40; Body Slam Normal Physical 85/100 24/24]
+|turn|20
+    Turn { n: 20 }
+|request|...
+    MovesUpdate p1 [Agility Psychic Status -/- 48/48; Drill Peck Flying Physical 80/100 32/32; Thunder Wave Electric Status -/100 31/32; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Powder Grass Status -/75 24/24; Swords Dance Normal Status -/- 48/48; Razor Leaf Grass Special 55/95 40/40; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Zapdos|Agility|p1a: Zapdos
+    Move { user: Some("Zapdos"), player_id: Some("p1"), name: "Agility" }
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 32/32; Thunder Wave Electric Status -/100 31/32; Thunderbolt Electric Special 95/100 24/24]
+|-boost|p1a: Zapdos|spe|2
+    StatChange { mon: "Zapdos,p1,0", stat: "Speed", delta: 2 }
+|move|p2a: Bulbasaur|Razor Leaf|p1a: Zapdos
+    Move { user: Some("Bulbasaur"), player_id: Some("p2"), name: "Razor Leaf" }
+    MovesUpdate p2 [Sleep Powder Grass Status -/75 24/24; Swords Dance Normal Status -/- 48/48; Razor Leaf Grass Special 55/95 39/40; Body Slam Normal Physical 85/100 24/24]
+|-crit|p1a: Zapdos
+    CriticalHit { mon: "Zapdos,p1,0" }
+|-resisted|p1a: Zapdos
+    Resisted { mon: "Zapdos,p1,0" }
+|-damage|p1a: Zapdos|21/263
+    Damage { mon: "Zapdos,p1,0", health: "21/263" }
+|turn|21
+    Turn { n: 21 }
+|request|...
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 32/32; Thunder Wave Electric Status -/100 31/32; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Powder Grass Status -/75 24/24; Swords Dance Normal Status -/- 48/48; Razor Leaf Grass Special 55/95 39/40; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Zapdos|Thunder Wave|p2a: Bulbasaur
+    Move { user: Some("Zapdos"), player_id: Some("p1"), name: "Thunder Wave" }
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 32/32; Thunder Wave Electric Status -/100 30/32; Thunderbolt Electric Special 95/100 24/24]
+|-status|p2a: Bulbasaur|par
+    SetStatus { mon: "Bulbasaur,p2,0", status: "par" }
+|move|p2a: Bulbasaur|Swords Dance|p2a: Bulbasaur
+    Move { user: Some("Bulbasaur"), player_id: Some("p2"), name: "Swords Dance" }
+    MovesUpdate p2 [Sleep Powder Grass Status -/75 24/24; Swords Dance Normal Status -/- 47/48; Razor Leaf Grass Special 55/95 39/40; Body Slam Normal Physical 85/100 24/24]
+|-boost|p2a: Bulbasaur|atk|2
+    StatChange { mon: "Bulbasaur,p2,0", stat: "Attack", delta: 2 }
+|turn|22
+    Turn { n: 22 }
+|request|...
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 32/32; Thunder Wave Electric Status -/100 30/32; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Powder Grass Status -/75 24/24; Swords Dance Normal Status -/- 47/48; Razor Leaf Grass Special 55/95 39/40; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Zapdos|Drill Peck|p2a: Bulbasaur
+    Move { user: Some("Zapdos"), player_id: Some("p1"), name: "Drill Peck" }
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 31/32; Thunder Wave Electric Status -/100 30/32; Thunderbolt Electric Special 95/100 24/24]
+|-supereffective|p2a: Bulbasaur
+    SuperEffective { mon: "Bulbasaur,p2,0" }
+|-damage|p2a: Bulbasaur|117/267 par
+    Damage { mon: "Bulbasaur,p2,0", health: "117/267" }
+|cant|p2a: Bulbasaur|par
+    Cant { mon: "Bulbasaur,p2,0", reason: "par" }
+|turn|23
+    Turn { n: 23 }
+|request|...
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 31/32; Thunder Wave Electric Status -/100 30/32; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Powder Grass Status -/75 24/24; Swords Dance Normal Status -/- 47/48; Razor Leaf Grass Special 55/95 39/40; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Zapdos|Drill Peck|p2a: Bulbasaur
+    Move { user: Some("Zapdos"), player_id: Some("p1"), name: "Drill Peck" }
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 30/32; Thunder Wave Electric Status -/100 30/32; Thunderbolt Electric Special 95/100 24/24]
+|-crit|p2a: Bulbasaur
+    CriticalHit { mon: "Bulbasaur,p2,0" }
+|-supereffective|p2a: Bulbasaur
+    SuperEffective { mon: "Bulbasaur,p2,0" }
+|-damage|p2a: Bulbasaur|0 fnt
+    Damage { mon: "Bulbasaur,p2,0", health: "0/267" }
+|faint|p2a: Bulbasaur
+    Faint { mon: "Bulbasaur,p2,0", team_slot: Some(1) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Nidoran-F|Nidoran-F, L90|282/282
+    SwitchIn p2 name=Nidoran-F species=Some("Nidoran-F") slot=Some(4) speed=Some(162) moves=[Double-Edge Normal Physical 100/100 24/24; Thunderbolt Electric Special 95/100 24/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8]
+|turn|24
+    Turn { n: 24 }
+|request|...
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 30/32; Thunder Wave Electric Status -/100 30/32; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Double-Edge Normal Physical 100/100 24/24; Thunderbolt Electric Special 95/100 24/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Zapdos|Drill Peck|p2a: Nidoran-F
+    Move { user: Some("Zapdos"), player_id: Some("p1"), name: "Drill Peck" }
+    MovesUpdate p1 [Agility Psychic Status -/- 47/48; Drill Peck Flying Physical 80/100 29/32; Thunder Wave Electric Status -/100 30/32; Thunderbolt Electric Special 95/100 24/24]
+|-crit|p2a: Nidoran-F
+    CriticalHit { mon: "Nidoran-F,p2,0" }
+|-damage|p2a: Nidoran-F|153/282
+    Damage { mon: "Nidoran-F,p2,0", health: "153/282" }
+|move|p2a: Nidoran-F|Thunderbolt|p1a: Zapdos
+    Move { user: Some("Nidoran-F"), player_id: Some("p2"), name: "Thunderbolt" }
+    MovesUpdate p2 [Double-Edge Normal Physical 100/100 24/24; Thunderbolt Electric Special 95/100 23/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8]
+|-damage|p1a: Zapdos|0 fnt
+    Damage { mon: "Zapdos,p1,0", health: "0/263" }
+|faint|p1a: Zapdos
+    Faint { mon: "Zapdos,p1,0", team_slot: Some(2) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Ditto|Ditto|299/299
+    SwitchIn p1 name=Ditto species=Some("Ditto") slot=Some(4) speed=Some(194) moves=[Transform Normal Status -/- 16/16]
+|turn|25
+    Turn { n: 25 }
+|request|...
+    MovesUpdate p1 [Transform Normal Status -/- 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Double-Edge Normal Physical 100/100 24/24; Thunderbolt Electric Special 95/100 23/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Transform|p2a: Nidoran-F
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Transform" }
+    MovesUpdate p1 [Transform Normal Status -/- 15/16]
+|-transform|p1a: Ditto|p2a: Nidoran-F
+    EffectStart { mon: "Ditto,p1,0", what: "transform", detail: Some("Nidoran-F") }
+    ActiveMonUpdate { mon: "Ditto,p1,0", name: "Nidoran-F", speed: Some(162) }
+    MovesUpdate p1 [Double-Edge Normal Physical 100/100 5/24; Thunderbolt Electric Special 95/100 5/15; Body Slam Normal Physical 85/100 5/15; Blizzard Ice Special 120/90 5/5]
+|move|p2a: Nidoran-F|Double-Edge|p1a: Ditto
+    Move { user: Some("Nidoran-F"), player_id: Some("p2"), name: "Double-Edge" }
+    MovesUpdate p2 [Double-Edge Normal Physical 100/100 23/24; Thunderbolt Electric Special 95/100 23/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8]
+|-damage|p1a: Ditto|228/299
+    Damage { mon: "Ditto,p1,0", health: "228/299" }
+|-damage|p2a: Nidoran-F|136/282|[from] Recoil
+    Damage { mon: "Nidoran-F,p2,0", health: "136/282" }
+|turn|26
+    Turn { n: 26 }
+|request|...
+    MovesUpdate p1 [Double-Edge Normal Physical 100/100 5/24; Thunderbolt Electric Special 95/100 5/15; Body Slam Normal Physical 85/100 5/15; Blizzard Ice Special 120/90 5/5]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Double-Edge Normal Physical 100/100 23/24; Thunderbolt Electric Special 95/100 23/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Nidoran-F|Thunderbolt|p1a: Ditto
+    Move { user: Some("Nidoran-F"), player_id: Some("p2"), name: "Thunderbolt" }
+    MovesUpdate p2 [Double-Edge Normal Physical 100/100 23/24; Thunderbolt Electric Special 95/100 22/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8]
+|-damage|p1a: Ditto|164/299
+    Damage { mon: "Ditto,p1,0", health: "164/299" }
+|move|p1a: Ditto|Body Slam|p2a: Nidoran-F
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Body Slam" }
+    MovesUpdate p1 [Double-Edge Normal Physical 100/100 5/24; Thunderbolt Electric Special 95/100 5/15; Body Slam Normal Physical 85/100 4/15; Blizzard Ice Special 120/90 5/5]
+|-damage|p2a: Nidoran-F|78/282
+    Damage { mon: "Nidoran-F,p2,0", health: "78/282" }
+|turn|27
+    Turn { n: 27 }
+|request|...
+    MovesUpdate p1 [Double-Edge Normal Physical 100/100 5/24; Thunderbolt Electric Special 95/100 5/15; Body Slam Normal Physical 85/100 4/15; Blizzard Ice Special 120/90 5/5]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Double-Edge Normal Physical 100/100 23/24; Thunderbolt Electric Special 95/100 22/24; Body Slam Normal Physical 85/100 24/24; Blizzard Ice Special 120/90 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ditto|Blizzard|p2a: Nidoran-F
+    Move { user: Some("Ditto"), player_id: Some("p1"), name: "Blizzard" }
+    MovesUpdate p1 [Double-Edge Normal Physical 100/100 5/24; Thunderbolt Electric Special 95/100 5/15; Body Slam Normal Physical 85/100 4/15; Blizzard Ice Special 120/90 4/5]
+|-damage|p2a: Nidoran-F|0 fnt
+    Damage { mon: "Nidoran-F,p2,0", health: "0/282" }
+|faint|p2a: Nidoran-F
+    Faint { mon: "Nidoran-F,p2,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Magnemite|Magnemite, L88|223/223
+    SwitchIn p2 name=Magnemite species=Some("Magnemite") slot=Some(2) speed=Some(166) moves=[Thunder Electric Special 120/70 16/16; Thunderbolt Electric Special 95/100 24/24; Mimic Normal Status -/100 16/16; Thunder Wave Electric Status -/100 32/32]
+|turn|28
+    Turn { n: 28 }
+|request|...
+    MovesUpdate p1 [Double-Edge Normal Physical 100/100 5/24; Thunderbolt Electric Special 95/100 5/15; Body Slam Normal Physical 85/100 4/15; Blizzard Ice Special 120/90 4/5]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Thunder Electric Special 120/70 16/16; Thunderbolt Electric Special 95/100 24/24; Mimic Normal Status -/100 16/16; Thunder Wave Electric Status -/100 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Magnemite|Thunder|p1a: Ditto
+    Move { user: Some("Magnemite"), player_id: Some("p2"), name: "Thunder" }
+    MovesUpdate p2 [Thunder Electric Special 120/70 15/16; Thunderbolt Electric Special 95/100 24/24; Mimic Normal Status -/100 16/16; Thunder Wave Electric Status -/100 32/32]
+|-damage|p1a: Ditto|0 fnt
+    Damage { mon: "Ditto,p1,0", health: "0/299" }
+|faint|p1a: Ditto
+    Faint { mon: "Ditto,p1,0", team_slot: Some(4) }
+|win|Player 2
+    Win { side: Some("1") }

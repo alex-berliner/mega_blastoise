@@ -1735,6 +1735,7 @@ name = "ps_client"
 version = "0.1.0"
 dependencies = [
  "defmt 1.0.1",
+ "flate2",
  "ps_dex",
  "ps_protocol",
 ]

@@ -12,3 +12,8 @@ defmt = ["dep:defmt"]
 ps_protocol = { path = "../ps_protocol", default-features = false }
 ps_dex = { path = "../ps_dex", default-features = false }
 defmt = { version = "1.0", optional = true }
+
+[dev-dependencies]
+# The fixture tests decode P1-4's recorded PS logs with the text codec.
+ps_protocol = { path = "../ps_protocol", features = ["text"] }
+flate2 = "1"

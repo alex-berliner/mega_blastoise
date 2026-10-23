@@ -1,0 +1,519 @@
+# BoardEvent stream of gen1.log.gz battle index=19: each protocol line that
+# yields events, then its events. `|request|...` is a request's prompt events.
+|start
+    BattleStart
+|switch|p1a: Pidgeotto|Pidgeotto, L85|281/281
+    SwitchIn p1 name=Pidgeotto species=Some("Pidgeotto") slot=Some(0) speed=None moves=[]
+|switch|p2a: Eevee|Eevee, L88|276/276
+    SwitchIn p2 name=Eevee species=Some("Eevee") slot=Some(0) speed=None moves=[]
+|turn|1
+    Turn { n: 1 }
+|request|...
+    ActiveMonUpdate { mon: "Pidgeotto,p1,0", name: "Pidgeotto", speed: Some(204) }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 24/24; Quick Attack Normal Physical 40/100 48/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    ActiveMonUpdate { mon: "Eevee,p2,0", name: "Eevee", speed: Some(183) }
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 48/48; Tail Whip Normal Status -/100 48/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Sand Attack|p2a: Eevee
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Sand Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 48/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 8/8]
+|-unboost|p2a: Eevee|accuracy|1
+    StatChange { mon: "Eevee,p2,0", stat: "accuracy", delta: -1 }
+|move|p2a: Eevee|Body Slam|p1a: Pidgeotto|[miss]
+    Move { user: Some("Eevee"), player_id: Some("p2"), name: "Body Slam" }
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 48/48; Tail Whip Normal Status -/100 48/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+|-miss|p2a: Eevee
+    Miss { mon: "Pidgeotto,p1,0" }
+|turn|2
+    Turn { n: 2 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 48/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 48/48; Tail Whip Normal Status -/100 48/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Quick Attack|p2a: Eevee
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Quick Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 8/8]
+|-damage|p2a: Eevee|232/276
+    Damage { mon: "Eevee,p2,0", health: "232/276" }
+|move|p2a: Eevee|Tail Whip|p1a: Pidgeotto
+    Move { user: Some("Eevee"), player_id: Some("p2"), name: "Tail Whip" }
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 48/48; Tail Whip Normal Status -/100 47/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+|-unboost|p1a: Pidgeotto|def|1
+    StatChange { mon: "Pidgeotto,p1,0", stat: "Defense", delta: -1 }
+|turn|3
+    Turn { n: 3 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 48/48; Tail Whip Normal Status -/100 47/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Eevee|Quick Attack|p1a: Pidgeotto
+    Move { user: Some("Eevee"), player_id: Some("p2"), name: "Quick Attack" }
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 47/48; Tail Whip Normal Status -/100 47/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+|-damage|p1a: Pidgeotto|216/281
+    Damage { mon: "Pidgeotto,p1,0", health: "216/281" }
+|move|p1a: Pidgeotto|Sky Attack||[still]
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Sky Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 7/8]
+|-prepare|p1a: Pidgeotto|Sky Attack
+    EffectStart { mon: "Pidgeotto,p1,0", what: "charging", detail: Some("Sky Attack") }
+|turn|4
+    Turn { n: 4 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 7/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 47/48; Tail Whip Normal Status -/100 47/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Sky Attack|p2a: Eevee|[from] Sky Attack
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Sky Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 7/8]
+|-damage|p2a: Eevee|91/276
+    Damage { mon: "Eevee,p2,0", health: "91/276" }
+|move|p2a: Eevee|Tail Whip|p1a: Pidgeotto
+    Move { user: Some("Eevee"), player_id: Some("p2"), name: "Tail Whip" }
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 47/48; Tail Whip Normal Status -/100 46/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+|-unboost|p1a: Pidgeotto|def|1
+    StatChange { mon: "Pidgeotto,p1,0", stat: "Defense", delta: -1 }
+|turn|5
+    Turn { n: 5 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 7/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 47/48; Tail Whip Normal Status -/100 46/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Sky Attack||[still]
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Sky Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 6/8]
+|-prepare|p1a: Pidgeotto|Sky Attack
+    EffectStart { mon: "Pidgeotto,p1,0", what: "charging", detail: Some("Sky Attack") }
+|move|p2a: Eevee|Tail Whip|p1a: Pidgeotto|[miss]
+    Move { user: Some("Eevee"), player_id: Some("p2"), name: "Tail Whip" }
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 47/48; Tail Whip Normal Status -/100 45/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+|-miss|p2a: Eevee
+    Miss { mon: "Pidgeotto,p1,0" }
+|turn|6
+    Turn { n: 6 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 6/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Quick Attack Normal Physical 40/100 47/48; Tail Whip Normal Status -/100 45/48; Double-Edge Normal Physical 100/100 24/24; Body Slam Normal Physical 85/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Sky Attack|p2a: Eevee|[from] Sky Attack
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Sky Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 6/8]
+|-damage|p2a: Eevee|0 fnt
+    Damage { mon: "Eevee,p2,0", health: "0/276" }
+|faint|p2a: Eevee
+    Faint { mon: "Eevee,p2,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Psyduck|Psyduck, L89|270/270
+    SwitchIn p2 name=Psyduck species=Some("Psyduck") slot=Some(1) speed=Some(185) moves=[Seismic Toss Fighting Physical 1/100 32/32; Surf Water Special 95/100 24/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 32/32]
+|turn|7
+    Turn { n: 7 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 47/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 6/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 32/32; Surf Water Special 95/100 24/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Quick Attack|p2a: Psyduck
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Quick Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 46/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 6/8]
+|-damage|p2a: Psyduck|226/270
+    Damage { mon: "Psyduck,p2,0", health: "226/270" }
+|move|p2a: Psyduck|Surf|p1a: Pidgeotto
+    Move { user: Some("Psyduck"), player_id: Some("p2"), name: "Surf" }
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 32/32; Surf Water Special 95/100 23/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 32/32]
+|-damage|p1a: Pidgeotto|113/281
+    Damage { mon: "Pidgeotto,p1,0", health: "113/281" }
+|turn|8
+    Turn { n: 8 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 46/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 6/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 32/32; Surf Water Special 95/100 23/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Quick Attack|p2a: Psyduck
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Quick Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 45/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 6/8]
+|-damage|p2a: Psyduck|181/270
+    Damage { mon: "Psyduck,p2,0", health: "181/270" }
+|move|p2a: Psyduck|Amnesia|p2a: Psyduck
+    Move { user: Some("Psyduck"), player_id: Some("p2"), name: "Amnesia" }
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 32/32; Surf Water Special 95/100 23/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 31/32]
+|-boost|p2a: Psyduck|spa|2
+    StatChange { mon: "Psyduck,p2,0", stat: "Special", delta: 2 }
+|turn|9
+    Turn { n: 9 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 45/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 6/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 32/32; Surf Water Special 95/100 23/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Sky Attack||[still]
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Sky Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 45/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 5/8]
+|-prepare|p1a: Pidgeotto|Sky Attack
+    EffectStart { mon: "Pidgeotto,p1,0", what: "charging", detail: Some("Sky Attack") }
+|move|p2a: Psyduck|Seismic Toss|p1a: Pidgeotto
+    Move { user: Some("Psyduck"), player_id: Some("p2"), name: "Seismic Toss" }
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 31/32; Surf Water Special 95/100 23/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 31/32]
+|-damage|p1a: Pidgeotto|24/281
+    Damage { mon: "Pidgeotto,p1,0", health: "24/281" }
+|turn|10
+    Turn { n: 10 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 45/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 5/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 31/32; Surf Water Special 95/100 23/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Sky Attack|p2a: Psyduck|[from] Sky Attack
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Sky Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 45/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 5/8]
+|-damage|p2a: Psyduck|22/270
+    Damage { mon: "Psyduck,p2,0", health: "22/270" }
+|move|p2a: Psyduck|Amnesia|p2a: Psyduck
+    Move { user: Some("Psyduck"), player_id: Some("p2"), name: "Amnesia" }
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 31/32; Surf Water Special 95/100 23/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 30/32]
+|-boost|p2a: Psyduck|spa|2
+    StatChange { mon: "Psyduck,p2,0", stat: "Special", delta: 2 }
+|turn|11
+    Turn { n: 11 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 45/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 5/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Seismic Toss Fighting Physical 1/100 31/32; Surf Water Special 95/100 23/24; Blizzard Ice Special 120/90 8/8; Amnesia Psychic Status -/- 30/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Quick Attack|p2a: Psyduck
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Quick Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 44/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 5/8]
+|-damage|p2a: Psyduck|0 fnt
+    Damage { mon: "Psyduck,p2,0", health: "0/270" }
+|faint|p2a: Psyduck
+    Faint { mon: "Psyduck,p2,0", team_slot: Some(1) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Muk|Muk, L76|316/316
+    SwitchIn p2 name=Muk species=Some("Muk") slot=Some(3) speed=Some(151) moves=[Body Slam Normal Physical 85/100 24/24; Mega Drain Grass Special 40/100 16/16; Explosion Normal Physical 170/100 8/8; Fire Blast Fire Special 120/85 8/8]
+|turn|12
+    Turn { n: 12 }
+|request|...
+    MovesUpdate p1 [Sand Attack Normal Status -/100 23/24; Quick Attack Normal Physical 40/100 44/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 5/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Mega Drain Grass Special 40/100 16/16; Explosion Normal Physical 170/100 8/8; Fire Blast Fire Special 120/85 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pidgeotto|Sand Attack|p2a: Muk
+    Move { user: Some("Pidgeotto"), player_id: Some("p1"), name: "Sand Attack" }
+    MovesUpdate p1 [Sand Attack Normal Status -/100 22/24; Quick Attack Normal Physical 40/100 44/48; Double-Edge Normal Physical 100/100 24/24; Sky Attack Flying Physical 140/90 5/8]
+|-unboost|p2a: Muk|accuracy|1
+    StatChange { mon: "Muk,p2,0", stat: "accuracy", delta: -1 }
+|move|p2a: Muk|Explosion|p1a: Pidgeotto
+    Move { user: Some("Muk"), player_id: Some("p2"), name: "Explosion" }
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Mega Drain Grass Special 40/100 16/16; Explosion Normal Physical 170/100 7/8; Fire Blast Fire Special 120/85 8/8]
+|-damage|p1a: Pidgeotto|0 fnt
+    Damage { mon: "Pidgeotto,p1,0", health: "0/281" }
+|faint|p1a: Pidgeotto
+    Faint { mon: "Pidgeotto,p1,0", team_slot: Some(0) }
+|faint|p2a: Muk
+    Faint { mon: "Muk,p2,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p1a: Ninetales|Ninetales, L74|260/260
+    SwitchIn p1 name=Ninetales species=Some("Ninetales") slot=Some(3) speed=Some(221) moves=[Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 8/8; Flamethrower Fire Special 95/100 24/24]
+|switch|p2a: Gloom|Gloom, L83|269/269
+    SwitchIn p2 name=Gloom species=Some("Gloom") slot=Some(2) speed=Some(148) moves=[Swords Dance Normal Status -/- 48/48; Mega Drain Grass Special 40/100 16/16; Double-Edge Normal Physical 100/100 24/24; Sleep Powder Grass Status -/75 24/24]
+|turn|13
+    Turn { n: 13 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 8/8; Flamethrower Fire Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Swords Dance Normal Status -/- 48/48; Mega Drain Grass Special 40/100 16/16; Double-Edge Normal Physical 100/100 24/24; Sleep Powder Grass Status -/75 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ninetales|Body Slam|p2a: Gloom
+    Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Body Slam" }
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 8/8; Flamethrower Fire Special 95/100 24/24]
+|-damage|p2a: Gloom|219/269
+    Damage { mon: "Gloom,p2,0", health: "219/269" }
+|move|p2a: Gloom|Mega Drain|p1a: Ninetales
+    Move { user: Some("Gloom"), player_id: Some("p2"), name: "Mega Drain" }
+    MovesUpdate p2 [Swords Dance Normal Status -/- 48/48; Mega Drain Grass Special 40/100 15/16; Double-Edge Normal Physical 100/100 24/24; Sleep Powder Grass Status -/75 24/24]
+|-resisted|p1a: Ninetales
+    Resisted { mon: "Ninetales,p1,0" }
+|-damage|p1a: Ninetales|240/260
+    Damage { mon: "Ninetales,p1,0", health: "240/260" }
+|-heal|p2a: Gloom|229/269|[from] drain|[of] p1a: Ninetales
+    Heal { mon: "Gloom,p2,0", health: "229/269" }
+|turn|14
+    Turn { n: 14 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 8/8; Flamethrower Fire Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Swords Dance Normal Status -/- 48/48; Mega Drain Grass Special 40/100 15/16; Double-Edge Normal Physical 100/100 24/24; Sleep Powder Grass Status -/75 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ninetales|Body Slam|p2a: Gloom
+    Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Body Slam" }
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 8/8; Flamethrower Fire Special 95/100 24/24]
+|-damage|p2a: Gloom|184/269
+    Damage { mon: "Gloom,p2,0", health: "184/269" }
+|move|p2a: Gloom|Mega Drain|p1a: Ninetales
+    Move { user: Some("Gloom"), player_id: Some("p2"), name: "Mega Drain" }
+    MovesUpdate p2 [Swords Dance Normal Status -/- 48/48; Mega Drain Grass Special 40/100 14/16; Double-Edge Normal Physical 100/100 24/24; Sleep Powder Grass Status -/75 24/24]
+|-resisted|p1a: Ninetales
+    Resisted { mon: "Ninetales,p1,0" }
+|-damage|p1a: Ninetales|221/260
+    Damage { mon: "Ninetales,p1,0", health: "221/260" }
+|-heal|p2a: Gloom|193/269|[from] drain|[of] p1a: Ninetales
+    Heal { mon: "Gloom,p2,0", health: "193/269" }
+|turn|15
+    Turn { n: 15 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 8/8; Flamethrower Fire Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Swords Dance Normal Status -/- 48/48; Mega Drain Grass Special 40/100 14/16; Double-Edge Normal Physical 100/100 24/24; Sleep Powder Grass Status -/75 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ninetales|Fire Blast|p2a: Gloom
+    Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Fire Blast" }
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 7/8; Flamethrower Fire Special 95/100 24/24]
+|-supereffective|p2a: Gloom
+    SuperEffective { mon: "Gloom,p2,0" }
+|-damage|p2a: Gloom|0 fnt
+    Damage { mon: "Gloom,p2,0", health: "0/269" }
+|faint|p2a: Gloom
+    Faint { mon: "Gloom,p2,0", team_slot: Some(2) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Magmar|Magmar, L76|255/255
+    SwitchIn p2 name=Magmar species=Some("Magmar") slot=Some(4) speed=Some(217) moves=[Confuse Ray Ghost Status -/100 16/16; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 8/8]
+|turn|16
+    Turn { n: 16 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 7/8; Flamethrower Fire Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 16/16; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ninetales|Fire Blast|p2a: Magmar
+    Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Fire Blast" }
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 24/24]
+|-resisted|p2a: Magmar
+    Resisted { mon: "Magmar,p2,0" }
+|-damage|p2a: Magmar|202/255
+    Damage { mon: "Magmar,p2,0", health: "202/255" }
+|move|p2a: Magmar|Seismic Toss|p1a: Ninetales
+    Move { user: Some("Magmar"), player_id: Some("p2"), name: "Seismic Toss" }
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 16/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 8/8]
+|-damage|p1a: Ninetales|145/260
+    Damage { mon: "Ninetales,p1,0", health: "145/260" }
+|turn|17
+    Turn { n: 17 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 16/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 16/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ninetales|Confuse Ray|p2a: Magmar
+    Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Confuse Ray" }
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 15/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 24/24]
+|-start|p2a: Magmar|confusion
+    EffectStart { mon: "Magmar,p2,0", what: "confusion", detail: None }
+|-damage|p2a: Magmar|166/255|[from] confusion
+    Cant { mon: "Magmar,p2,0", reason: "confusion" }
+    Damage { mon: "Magmar,p2,0", health: "166/255" }
+|turn|18
+    Turn { n: 18 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 15/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 16/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ninetales|Confuse Ray|p2a: Magmar
+    Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Confuse Ray" }
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 14/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 24/24]
+|move|p2a: Magmar|Fire Blast|p1a: Ninetales
+    Move { user: Some("Magmar"), player_id: Some("p2"), name: "Fire Blast" }
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 16/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 7/8]
+|-resisted|p1a: Ninetales
+    Resisted { mon: "Ninetales,p1,0" }
+|-damage|p1a: Ninetales|98/260
+    Damage { mon: "Ninetales,p1,0", health: "98/260" }
+|turn|19
+    Turn { n: 19 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 14/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 16/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 7/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ninetales|Flamethrower|p2a: Magmar
+    Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Flamethrower" }
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 14/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 23/24]
+|-resisted|p2a: Magmar
+    Resisted { mon: "Magmar,p2,0" }
+|-damage|p2a: Magmar|121/255
+    Damage { mon: "Magmar,p2,0", health: "121/255" }
+|move|p2a: Magmar|Confuse Ray|p1a: Ninetales
+    Move { user: Some("Magmar"), player_id: Some("p2"), name: "Confuse Ray" }
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 7/8]
+|-start|p1a: Ninetales|confusion
+    EffectStart { mon: "Ninetales,p1,0", what: "confusion", detail: None }
+|turn|20
+    Turn { n: 20 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 14/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 7/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ninetales|Flamethrower|p2a: Magmar
+    Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Flamethrower" }
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 14/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 22/24]
+|-resisted|p2a: Magmar
+    Resisted { mon: "Magmar,p2,0" }
+|-damage|p2a: Magmar|75/255
+    Damage { mon: "Magmar,p2,0", health: "75/255" }
+|-end|p2a: Magmar|confusion
+    EffectEnd { mon: "Magmar,p2,0", what: "confusion" }
+|move|p2a: Magmar|Body Slam|p1a: Ninetales
+    Move { user: Some("Magmar"), player_id: Some("p2"), name: "Body Slam" }
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 7/8]
+|-damage|p1a: Ninetales|36/260
+    Damage { mon: "Ninetales,p1,0", health: "36/260" }
+|turn|21
+    Turn { n: 21 }
+|request|...
+    MovesUpdate p1 [Confuse Ray Ghost Status -/100 14/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 7/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|-damage|p1a: Ninetales|9/260|[from] confusion
+    Cant { mon: "Ninetales,p1,0", reason: "confusion" }
+    Damage { mon: "Ninetales,p1,0", health: "9/260" }
+|move|p2a: Magmar|Seismic Toss|p1a: Ninetales
+    Move { user: Some("Magmar"), player_id: Some("p2"), name: "Seismic Toss" }
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 30/32; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 7/8]
+|-damage|p1a: Ninetales|0 fnt
+    Damage { mon: "Ninetales,p1,0", health: "0/260" }
+|faint|p1a: Ninetales
+    Faint { mon: "Ninetales,p1,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Jolteon|Jolteon, L69|232/232
+    SwitchIn p1 name=Jolteon species=Some("Jolteon") slot=Some(5) speed=Some(248) moves=[Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 48/48; Thunderbolt Electric Special 95/100 24/24]
+|turn|22
+    Turn { n: 22 }
+|request|...
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 48/48; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 30/32; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 7/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jolteon|Agility|p1a: Jolteon
+    Move { user: Some("Jolteon"), player_id: Some("p1"), name: "Agility" }
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 47/48; Thunderbolt Electric Special 95/100 24/24]
+|-boost|p1a: Jolteon|spe|2
+    StatChange { mon: "Jolteon,p1,0", stat: "Speed", delta: 2 }
+|move|p2a: Magmar|Fire Blast|p1a: Jolteon|[miss]
+    Move { user: Some("Magmar"), player_id: Some("p2"), name: "Fire Blast" }
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 30/32; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 6/8]
+|-miss|p2a: Magmar
+    Miss { mon: "Jolteon,p1,0" }
+|turn|23
+    Turn { n: 23 }
+|request|...
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 47/48; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 30/32; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 6/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jolteon|Thunderbolt|p2a: Magmar
+    Move { user: Some("Jolteon"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 47/48; Thunderbolt Electric Special 95/100 23/24]
+|-damage|p2a: Magmar|0 fnt
+    Damage { mon: "Magmar,p2,0", health: "0/255" }
+|faint|p2a: Magmar
+    Faint { mon: "Magmar,p2,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Persian|Persian, L73|245/245
+    SwitchIn p2 name=Persian species=Some("Persian") slot=Some(5) speed=Some(240) moves=[Body Slam Normal Physical 85/100 24/24; Thunderbolt Electric Special 95/100 24/24; Slash Normal Physical 70/100 32/32; Bubble Beam Water Special 65/100 32/32]
+|turn|24
+    Turn { n: 24 }
+|request|...
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 47/48; Thunderbolt Electric Special 95/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Thunderbolt Electric Special 95/100 24/24; Slash Normal Physical 70/100 32/32; Bubble Beam Water Special 65/100 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jolteon|Thunderbolt|p2a: Persian
+    Move { user: Some("Jolteon"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 47/48; Thunderbolt Electric Special 95/100 22/24]
+|-crit|p2a: Persian
+    CriticalHit { mon: "Persian,p2,0" }
+|-damage|p2a: Persian|58/245
+    Damage { mon: "Persian,p2,0", health: "58/245" }
+|move|p2a: Persian|Bubble Beam|p1a: Jolteon
+    Move { user: Some("Persian"), player_id: Some("p2"), name: "Bubble Beam" }
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Thunderbolt Electric Special 95/100 24/24; Slash Normal Physical 70/100 32/32; Bubble Beam Water Special 65/100 31/32]
+|-damage|p1a: Jolteon|202/232
+    Damage { mon: "Jolteon,p1,0", health: "202/232" }
+|-unboost|p1a: Jolteon|spe|1
+    StatChange { mon: "Jolteon,p1,0", stat: "Speed", delta: -1 }
+|turn|25
+    Turn { n: 25 }
+|request|...
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 47/48; Thunderbolt Electric Special 95/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Thunderbolt Electric Special 95/100 24/24; Slash Normal Physical 70/100 32/32; Bubble Beam Water Special 65/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jolteon|Agility|p1a: Jolteon
+    Move { user: Some("Jolteon"), player_id: Some("p1"), name: "Agility" }
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 46/48; Thunderbolt Electric Special 95/100 22/24]
+|-boost|p1a: Jolteon|spe|2
+    StatChange { mon: "Jolteon,p1,0", stat: "Speed", delta: 2 }
+|move|p2a: Persian|Bubble Beam|p1a: Jolteon|[miss]
+    Move { user: Some("Persian"), player_id: Some("p2"), name: "Bubble Beam" }
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Thunderbolt Electric Special 95/100 24/24; Slash Normal Physical 70/100 32/32; Bubble Beam Water Special 65/100 30/32]
+|-miss|p2a: Persian
+    Miss { mon: "Jolteon,p1,0" }
+|turn|26
+    Turn { n: 26 }
+|request|...
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 46/48; Thunderbolt Electric Special 95/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Thunderbolt Electric Special 95/100 24/24; Slash Normal Physical 70/100 32/32; Bubble Beam Water Special 65/100 30/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Jolteon|Thunderbolt|p2a: Persian
+    Move { user: Some("Jolteon"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Body Slam Normal Physical 85/100 24/24; Thunder Wave Electric Status -/100 32/32; Agility Psychic Status -/- 46/48; Thunderbolt Electric Special 95/100 21/24]
+|-crit|p2a: Persian
+    CriticalHit { mon: "Persian,p2,0" }
+|-damage|p2a: Persian|0 fnt
+    Damage { mon: "Persian,p2,0", health: "0/245" }
+|faint|p2a: Persian
+    Faint { mon: "Persian,p2,0", team_slot: Some(5) }
+|win|Player 1
+    Win { side: Some("0") }
