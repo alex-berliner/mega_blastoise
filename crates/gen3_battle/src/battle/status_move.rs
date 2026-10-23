@@ -596,7 +596,6 @@ impl Battle {
                 });
                 if shares && !self.sides[side].mon().imprisoning {
                     self.sides[side].mon_mut().imprisoning = true;
-                    self.sides[side].mon_mut().imprison_fresh = true;
                 } else {
                     self.log_failed(side, events);
                 }
@@ -678,12 +677,22 @@ impl Battle {
                 // returns null before `onHit` is ever reached. Trick carries
                 // no `bypasssub` in this era, unlike Torment, Taunt, Spite
                 // and the rest of that set.
+                //
+                // One empty hand is fine (the trade gives it the other mon's
+                // item and the giver logs a silent `-enditem`), but a mon
+                // that has already been robbed cannot give anything away at
+                // all: `takeItem` opens with `if (this.battle.gen <= 4 &&
+                // (this.itemKnockedOff || source.itemKnockedOff)) return
+                // false`, so a Knock Off victim refuses every later trade
+                // even when it is the one doing the taking.
                 if !hit
                     || self.sides[foe].mon().sub_hp > 0
                     || self.sides[foe].mon().ability == "stickyhold"
                     || mine == "mail"
                     || theirs == "mail"
                     || (mine.is_empty() && theirs.is_empty())
+                    || self.sides[side].mon().item_knocked_off
+                    || self.sides[foe].mon().item_knocked_off
                     || self.sides[foe].mon().fainted()
                 {
                     self.log_failed(side, events);

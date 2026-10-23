@@ -252,9 +252,8 @@ impl Battle {
         // A Leppa Berry is an `onUpdate` item too. It waits for a slot to
         // reach zero, then puts ten points back into the FIRST slot at zero
         // — or, failing that, the first slot short of full, which is how a
-        // Leppa handed over by Trick lands on a mon that never ran dry.
-        // (A Mimicked slot's five-point maximum is not modelled: the engine
-        // carries no per-slot maximum, so the move's own PP stands in.)
+        // Leppa handed over by Trick lands on a mon that never ran dry. Both
+        // halves read `maxpp`, which is not always the move's own PP.
         if self.sides[side].mon().item == "leppaberry" {
             let mon = self.sides[side].mon();
             let empty = mon.moves.iter().any(|m| m.pp == 0);
@@ -262,13 +261,14 @@ impl Battle {
                 .moves
                 .iter()
                 .position(|m| m.pp == 0)
-                .or_else(|| mon.moves.iter().position(|m| m.pp < m.entry.pp));
+                .or_else(|| mon.moves.iter().enumerate().position(|(i, m)| m.pp < slot_ceiling(mon, i)));
             if let (true, Some(i)) = (empty, target) {
                 let mon = self.sides[side].mon_mut();
                 mon.last_item = mon.item;
                 mon.item = "";
+                let cap = slot_ceiling(mon, i);
                 let slot = &mut mon.moves[i];
-                slot.pp = (slot.pp + 10).min(slot.entry.pp);
+                slot.pp = (slot.pp + 10).min(cap);
             }
         }
     }
@@ -376,7 +376,8 @@ impl Battle {
 
     /// Announce and replace one side's active if it just fainted.
     pub(super) fn announce_faint(&mut self, side: usize, events: &mut Vec<Event>) {
-        if self.sides[side].mon().fainted() {
+        if self.sides[side].mon().fainted() && !self.sides[side].mon().faint_announced {
+            self.sides[side].mon_mut().faint_announced = true;
             restore_base_moves(self.sides[side].mon_mut());
             self.sides[side].mon_mut().weight_override = None;
             // A borrowed ability goes back with everything else the sim
@@ -471,7 +472,6 @@ impl Battle {
             out.disable_fresh = false;
             out.disable_skip_tick = false;
             out.imprisoning = false;
-            out.imprison_fresh = false;
             out.type_override = None;
             out.cursed = false;
             out.ingrained = false;
@@ -809,10 +809,14 @@ impl Battle {
     /// Announce whoever is down — target first, then the user (recoil can
     /// faint it too). Replacements are NOT sent in here: the sim only asks
     /// for one at an action boundary, so the empty slot has to survive to
-    /// the end of the current move.
+    /// the end of the current move. The volatiles that answer a Faint read
+    /// the announcement, so they fire on the same "not yet announced" test:
+    /// the sim drains its faint queue once per KO and every later call is a
+    /// no-op.
     pub(super) fn resolve_faints(&mut self, side: usize, foe: usize, events: &mut Vec<Event>) {
+        let fresh = self.sides[foe].mon().fainted() && !self.sides[foe].mon().faint_announced;
         // Destiny Bond: KO the bonded target with a move, go down with it.
-        if self.sides[foe].mon().fainted() && self.sides[foe].mon().destiny {
+        if fresh && self.sides[foe].mon().destiny {
             self.sides[side].mon_mut().hp = 0;
         }
         // Grudge: the killing move's PP drains to nothing — unless the mon
@@ -823,10 +827,7 @@ impl Battle {
         // attacker is gone and takes its PP with it. Recoil is different: the
         // target is dequeued first there, so a Double-Edge that kills its
         // user still loses its PP.
-        if self.sides[foe].mon().fainted()
-            && self.sides[foe].mon().grudged
-            && !self.self_destructed
-        {
+        if fresh && self.sides[foe].mon().grudged && !self.self_destructed {
             if let Some(slot_i) = self.sides[side].mon().last_used {
                 if let Some(ms) = self.sides[side].mon_mut().moves.get_mut(slot_i as usize) {
                     ms.pp = 0;
@@ -862,5 +863,28 @@ fn restore_base_moves(out: &mut Mon) {
     }
     if let Some((i, orig)) = out.mimic_backup.take() {
         out.moves[i as usize] = orig;
+    }
+}
+
+/// The most a slot can hold: the sim's `maxpp`, which rides beside `pp` in
+/// every move slot and which only a Leppa Berry ever asks about.
+///
+/// A mon's own slot is the move's own PP. A slot a Mimic or a Transform
+/// wrote carries the era's ceiling instead, `calculatePP(move, ppUps)`,
+/// base PP times eight fifths, because that is what both of them store:
+/// `transformInto` and gen 4's Mimic (which gen 3 inherits) each write
+/// `maxpp: this.battle.calculatePP(move, this.ppUps[i] || 0)` beside the
+/// five points the copy starts with. A Sketch copy is the exception: the
+/// slot it writes is the one holding Sketch, and `ppUps` is 0 for a move
+/// the sim refuses to boost (`move.noPPBoosts || move.id === "trumpcard"`),
+/// so its ceiling stays the move's own PP.
+fn slot_ceiling(mon: &Mon, i: usize) -> u8 {
+    let slot = &mon.moves[i];
+    let copied = mon.transform_backup.is_some()
+        || matches!(mon.mimic_backup, Some((home, _)) if home as usize == i);
+    if copied {
+        (slot.entry.pp as u16 * 8 / 5) as u8
+    } else {
+        slot.entry.pp
     }
 }

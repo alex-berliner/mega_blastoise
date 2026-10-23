@@ -69,26 +69,19 @@ impl Battle {
                     .is_some_and(|m| m.pp == 0),
                 _ => false,
             };
-            // The Imprison seal is read HERE, before anyone switches, and
-            // held for the turn. The sim recomputes its disable flags once in
-            // `nextTurn` and then commits the choice against them, so an
-            // imprisoner that leaves the field partway through the turn does
-            // not hand its victim's moves back until the next one.
+            // The seal, read HERE and held for the turn: `nextTurn` is where
+            // the sim writes the disable flags the choice is then judged
+            // against, and it does not write them again, so an imprisoner
+            // that leaves the field partway through the turn does not hand
+            // its victim's moves back until the turn after. It is asked here
+            // about the whole moveset, because that is the shape of the
+            // answer `chooseMove` gives (see `sealed_at_choice`).
             let foe = 1 - side;
-            self.sealed_at_choice[side] = match choices[side] {
-                Choice::Move(i) => {
-                    let sealed_id = self.sides[side]
-                        .mon()
-                        .moves
-                        .get(i)
-                        .map(|m| m.entry.id);
-                    self.sides[foe].mon().imprisoning
-                        && sealed_id.is_some_and(|id| {
-                            self.sides[foe].mon().moves.iter().any(|m| m.entry.id == id)
-                        })
-                }
-                _ => false,
-            };
+            self.sealed_at_choice[side] = self.sides[foe].mon().imprisoning
+                && !self.sides[side].mon().moves.is_empty()
+                && self.sides[side].mon().moves.iter().all(|m| {
+                    self.sides[foe].mon().moves.iter().any(|f| f.entry.id == m.entry.id)
+                });
         }
         // A seat using Focus Punch tightens its focus before anything else
         // happens this turn (the sim's before-turn charge step); while
@@ -918,7 +911,6 @@ impl Battle {
             mon.enduring = false;
             mon.torment_fresh = false;
             mon.encore_fresh = false;
-            mon.imprison_fresh = false;
             mon.uproar_ending = false;
             // Fury Cutter's ramp is a volatile with a two-turn clock that
             // only a landed Fury Cutter refreshes. So a turn that did not
@@ -1023,6 +1015,14 @@ impl Battle {
     /// decided at CHOICE time, so turn order uses Struggle's priority 0
     /// instead of the dead move's (the sim's request step offers only
     /// Struggle, so the queued action never carries the old priority).
+    ///
+    /// An Imprison is not one of the per-slot reasons, and that is the sim's
+    /// own shape: `onFoeDisableMove` files the seal as a HIDDEN disable, which
+    /// the request data turns back off for the last active mon before
+    /// `getMoves` counts what is left to pick, so a sealed move is shown,
+    /// and only `chooseMove` refuses it, by handing back an empty list for a
+    /// wholly sealed mon and queuing Struggle instead. That is
+    /// `sealed_at_choice`, and it does not depend on the slot pressed.
     pub(super) fn struggles_at_choice(&self, side: usize, i: usize) -> bool {
         let mon = self.sides[side].mon();
         let locked = mon.charging.is_some()
@@ -1036,7 +1036,6 @@ impl Battle {
             return false;
         };
         let status_movish = !slot.entry.damaging;
-        let foe_mon = self.sides[1 - side].mon();
         slot.pp == 0
             // A Choice lock greys out every other slot at REQUEST time, which
             // is where the sim decides Struggle — so the action it queues
@@ -1047,7 +1046,7 @@ impl Battle {
             || mon.disabled_slot == Some(i as u8)
             || (mon.tormented && mon.last_used_id == Some(slot.entry.id))
             || (mon.taunt_n == 1 && status_movish)
-            || (foe_mon.imprisoning && foe_mon.moves.iter().any(|m| m.entry.id == slot.entry.id))
+            || self.sealed_at_choice[side]
     }
 
     /// Which move a mon is actually about to swing, whatever the player sent.

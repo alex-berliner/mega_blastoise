@@ -172,6 +172,12 @@ pub struct Mon {
     pub charged_elec: bool,
     /// Grudge is armed until this mon's next action.
     pub grudged: bool,
+    /// This mon's Faint event has already run. The sim queues a faint once
+    /// (`if (this.fainted) return false`) and drains the queue inside
+    /// `faintMessages`, so a KO that two call sites notice inside one move
+    /// (the strike's own resolve and the move's tail) still runs Destiny
+    /// Bond, Grudge and the faint message exactly one time.
+    pub faint_announced: bool,
     /// Torment: the same move twice in a row is refused.
     pub tormented: bool,
     /// True only for the remainder of the turn Torment landed in: the
@@ -253,9 +259,6 @@ pub struct Mon {
     pub disable_skip_tick: bool,
     /// Imprison is up: the foe cannot use moves this mon also knows.
     pub imprisoning: bool,
-    /// True only for the remainder of the turn Imprison landed in: the
-    /// foe's already-chosen sealed move is a lost turn, not a Struggle.
-    pub imprison_fresh: bool,
     /// Camouflage/Conversion retyping.
     pub type_override: Option<(Type, Type)>,
     /// Ghost-Curse victim: a quarter of max HP every end of turn.
@@ -506,6 +509,7 @@ impl Mon {
             sure_hit_on: 0,
             charged_elec: false,
             grudged: false,
+            faint_announced: false,
             tormented: false,
             torment_fresh: false,
             encore_fresh: false,
@@ -533,7 +537,6 @@ impl Mon {
             disable_fresh: false,
             disable_skip_tick: false,
             imprisoning: false,
-            imprison_fresh: false,
             type_override: None,
             cursed: false,
             ingrained: false,
@@ -1053,6 +1056,19 @@ pub struct Battle {
     /// time — that (and only that) is what Struggle substitution reads;
     /// a mid-turn Spite draining it to zero is a silent lost turn.
     pp0_at_choice: [bool; 2],
+    /// Whether EVERY move this side holds was SEALED by an Imprison as the
+    /// turn opened. The sim files the seal in `nextTurn`, before the request
+    /// is built, as a HIDDEN disable, and `Side.chooseMove` re-derives the
+    /// slot list with `pokemon.getMoves()` and no `restrictData`, which
+    /// leaves those flags hidden. A move the imprisoner knows is therefore
+    /// not pickable, and a mon the imprisoner covers move for move has
+    /// nothing left to pick at all: that restricted list comes back empty and
+    /// `chooseMove` queues Struggle in its place, priority and all. The
+    /// request data itself is built with the flags turned back off for the
+    /// last active mon, so it still SHOWS the sealed moves as enabled, which
+    /// is why this is a whole-moveset question and not a per-slot one. See
+    /// `use_move` for the live half of the seal.
+    sealed_at_choice: [bool; 2],
     /// Which sides have already taken their action this turn. Disable needs
     /// it: its clock counts the target's next N ACTIONS, so landing on a mon
     /// that has already moved does not spend one of them.
@@ -1102,12 +1118,6 @@ pub struct Battle {
     /// exemption into Safeguard's own onSetStatus as `if (effect.id ===
     /// 'yawn') return`.
     yawn_landing: bool,
-    /// Whether each side's chosen slot was SEALED by an Imprison as the turn
-    /// opened. The sim clears and recomputes every disable flag in
-    /// `nextTurn`, before it asks for choices, and never revises them — so an
-    /// imprisoner that switches out mid-turn does not give its victim its
-    /// moves back until the turn after.
-    sealed_at_choice: [bool; 2],
     /// The caller answers forced replacements instead of the engine sending
     /// the lowest living slot. Off by default: the parity harness answers a
     /// forced switch with the lowest living slot, so the default IS the
@@ -1222,6 +1232,7 @@ impl Battle {
             taken_special: [0; 2],
             hit_this_turn: [false; 2],
             pp0_at_choice: [false; 2],
+            sealed_at_choice: [false; 2],
             acted_this_turn: [false; 2],
             dragged: [false; 2],
             will_act: false,
@@ -1241,7 +1252,7 @@ impl Battle {
             parked_turn: None,
             bounced: false,
             yawn_landing: false,
-            sealed_at_choice: [false; 2],
+            
             self_destructed: false,
         };
         // The battle's opening switch-ins are switch-ins, and the sim runs
@@ -1401,10 +1412,19 @@ impl Battle {
             || mon.must_recharge)
     }
 
-    /// Move slots the sim would actually offer this side: PP left and not
-    /// shut off by Disable, Taunt, Torment or Imprison. The sim rejects a
-    /// choice outside this set outright rather than substituting anything,
-    /// so a caller picking a move should pick from here.
+    /// Move slots the sim would actually offer this side: PP left and not shut
+    /// off by Disable, Taunt, Torment, a Choice lock or Imprison. The sim
+    /// rejects a choice outside this set outright rather than substituting
+    /// anything, so a caller picking a move should pick from here.
+    ///
+    /// Imprison is on the list because of WHERE it is refused, not because
+    /// of what it does to the request: `onFoeDisableMove` files the seal as
+    /// a hidden disable, the request data turns hidden flags back off for
+    /// the last active mon (so the seat still SEES a sealed move as enabled),
+    /// and `Side.chooseMove` re-derives the list restricted and refuses the
+    /// choice anyway. A mon the imprisoner covers move for move is the one
+    /// case that still gets something else: the restricted list comes back
+    /// empty and Struggle is queued in its place (`sealed_at_choice`).
     pub fn selectable_moves(&self, side: usize) -> Vec<usize> {
         let mon = self.sides[side].mon();
         // Imprison seals every move the imprisoner itself knows.

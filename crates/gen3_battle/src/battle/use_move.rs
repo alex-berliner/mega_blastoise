@@ -98,10 +98,11 @@ impl Battle {
     /// `runMove` fires the `BeforeMove` event the move in hand is Struggle,
     /// and every gate asked there (sleep and freeze included) answers
     /// about STRUGGLE, not about the slot the player pressed. The `_fresh`
-    /// flags disqualify their own reason (a Disable, a Torment or an
-    /// Imprison that landed earlier this turn was not there when the choice
-    /// was made), and a lock the turn opened with is handled by the
-    /// mid-turn half below instead.
+    /// flags disqualify their own reason (a Disable or a Torment that landed
+    /// earlier this turn was not there when the choice was made), a lock the
+    /// turn opened with is handled by the mid-turn half below instead, and
+    /// the seal is a whole-moveset snapshot rather than a per-slot gate, see
+    /// `struggles_at_choice`.
     fn struggling_at_request(
         &self,
         side: usize,
@@ -118,8 +119,7 @@ impl Battle {
             || (mon.disabled_slot == Some(acting as u8) && !mon.disable_fresh)
             || (mon.tormented && !mon.torment_fresh && mon.last_used_id == picked)
             || (mon.taunt_n == 1 && status_movish)
-            || (self.sealed_at_choice[side]
-                && !self.sides[1 - side].mon().imprison_fresh)
+            || self.sealed_at_choice[side]
             || mon
                 .choice_locked
                 .is_some_and(|id| picked.is_some_and(|p| p != id))
@@ -805,29 +805,30 @@ impl Battle {
             && !releasing
             && !encore_forced
             && !forced;
-        // The seal as it stood when the choice was made, plus the live one —
-        // an Imprison that landed EARLIER this turn seals a mon that has not
-        // moved yet, and that is the `imprison_fresh` path just below.
-        let sealed = self.sealed_at_choice[side]
-            || (self.sides[foe].mon().imprisoning
-                && self.sides[foe]
-                    .mon()
-                    .moves
-                    .iter()
-                    .any(|m| m.entry.id == slot.entry.id));
-        if !struggling_at_request
-            && sealed
-            && self.sides[foe].mon().imprison_fresh
-            && !releasing
+        if !releasing
             && !forced
+            && !struggling_at_request
+            && self.sides[foe].mon().imprisoning
+            && self.sides[foe]
+                .mon()
+                .moves
+                .iter()
+                .any(|m| m.entry.id == slot.entry.id)
         {
-            // Imprison landed earlier this same turn: the chosen move is
-            // simply lost — no move line, no PP, no Struggle.
+            // A move the imprisoner knows is refused outright at
+            // `onBeforeMovePriority: 4`, where the handler asks
+            // `this.effectState.source.hasMove(move.id)`, the seal is read
+            // LIVE off the imprisoner's own moveset, so a Transform that
+            // lands earlier in the turn answers for what it has become, and
+            // the seat's own snapshot (`sealed_at_choice`, which is about
+            // having nothing to pick at all) is not consulted here. The
+            // refusal sits above the confusion, attract and paralysis gates,
+            // and `runMove` returns at it: no move line, no PP, no Struggle
+            // a lost turn, exactly as a `cant` is.
             self.sides[side].mon_mut().stall_counter = 0;
             self.log_failed(side, events);
-            return true;
+            return false;
         }
-        let imprisoned_out = sealed && !releasing && !encore_forced && !forced;
         // A Choice Band greys its move out the same way Disable does, so a
         // choice outside the lock is no more usable than a disabled one.
         let choice_locked_out = !releasing
@@ -840,8 +841,7 @@ impl Battle {
         if slot.pp == 0
             && !releasing
             && !self.pp0_at_choice[side]
-            && !(taunted_out || tormented_out || disabled_out || imprisoned_out
-                || choice_locked_out)
+            && !(taunted_out || tormented_out || disabled_out || choice_locked_out)
         {
             // Drained to zero AFTER the choice was made: the sim's runMove
             // hits "cant: nopp", a silent lost turn and no Struggle. It is
@@ -869,7 +869,11 @@ impl Battle {
         let struggling = (taunted_out
             || tormented_out
             || disabled_out
-            || imprisoned_out
+            // Nothing left to pick, so `chooseMove` queued Struggle for it:
+            // the whole moveset was sealed by the imprisoner when the choice
+            // was made. Unlike the terms above this one is asked about the
+            // whole slot list, because that is the shape of the sim's answer.
+            || (self.sealed_at_choice[side] && !forced)
             || choice_locked_out
             || (slot.pp == 0 && !releasing && self.pp0_at_choice[side]))
             && !releasing;
@@ -3071,6 +3075,14 @@ impl Battle {
                 // spot and walks away unburned.
                 self.ability_update(side);
             }
+            // Gen 4's Knock Off does not go through `takeItem` at all: it
+            // reads `if (!target.item) return;`, runs `TakeItem` (Sticky
+            // Hold, and Mail only when the move did not come from its own
+            // holder) and then writes `target.item = ""` and
+            // `target.itemKnockedOff = true` itself, `mods/gen4/moves.js`
+            // 723-734. So the robbed-hand rule the other two moves inherit
+            // from `takeItem` does not apply here, and a mon that was robbed
+            // once and has since been handed another item loses that one too.
             "knockoff" if !theirs.is_empty() && !held => {
                 let victim = self.sides[foe].mon_mut();
                 victim.item = "";
