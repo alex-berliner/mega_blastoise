@@ -1,52 +1,103 @@
 # Mega Blastoise: 3D print package
 
 Everything to print for the reference design's case and fit kit, generated from `case/case.scad`
-on the current design (screen in a lid pocket, the button decks as separate inserts, Start/Select,
-flush USB-C).
+on the current design (2026-10-22: the 77.4 x 132.7 x 9.55 mm shell for the board with the cell in
+it, built upside down, its parts keyed to hold together before the screws; see `case/SHELL.md`):
+the tub, the top piece and two decks.
 
 ## The projects
 
 <!-- printer -->
 Each `.3mf` is a Snapmaker Orca project built from your `fit_test_v5.3mf`, so it keeps that
 project's printer and settings: Snapmaker U1, 0.20 mm Standard, textured PEI. PLA only, on
-toolhead 2: no PETG, no second toolhead, no prime tower. Open it, check the plate, slice.
+toolhead 1 (bay 1, where the PLA is loaded): no PETG, no second toolhead, no prime tower. Open it, check the plate, slice.
 (`mega_blastoise_print_P1S.zip` has the same plates sliced for a Bambu Lab P1S.)
 
-Supports are on only for `1_case`, `4_fit_coupons` and `5_unit`, measured part by part (see below).
+Supports are per part, not per plate: only `board_mock` and `coupon_usb_board` get them (in
+`1_case`, `4_fit_coupons` and `5_unit`), measured part by part (see below).
 <!-- /printer -->
 
 | Project | What's on it | Print it |
 |---|---|---|
-| `2_buttons_quick.3mf` | **Start here (about an hour).** `tune_openings` (three D-pad opening sizes, the keyed A/B/X/Y cluster, three hole sizes), and the D-pad, A/B/X/Y and Start/Select stacks: a board slice each and a lid slice at the 1.75 mm silicone height | first |
-| `3_buttons_heights.3mf` | the same three lid slices at 1.6 and 1.9 mm silicone height | if the 1.75 mm lids don't sit right |
-| `0_buttons_end.3mf` | Seat 1's whole end: tub, board mock (to place the silicone on), lid, deck insert | any time |
-| `4_fit_coupons.3mf` | USB-C opening (tub, lid tongue, board tab with a receptacle stand-in), one snap hook and its groove, the lid's panel frame, and seat 1's whole end (tub, board mock, lid, insert) | second |
-| `1_case.3mf` | the tub, the lid, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
-| `1_case_inserts.3mf` | the two deck inserts (the same part, one for each end) | with `1_case` |
-| `5_unit.3mf` | **One whole unit on one plate:** the tub, the lid, both deck inserts and the board mock (no coupons, no dummies) | instead of `1_case` and `1_case_inserts`, once the coupons fit |
+| `2_buttons_quick.3mf` | **Start here (about an hour).** `tune_openings` (three D-pad opening sizes, the keyed A/B/X/Y cluster, three hole sizes), and the D-pad, A/B/X/Y and Start/Select stacks: a board slice each and a deck slice at the 1.75 mm silicone height | first |
+| `3_buttons_heights.3mf` | the same three deck slices at 1.6 and 1.9 mm silicone height | if the 1.75 mm slices don't sit right |
+| `0_buttons_end.3mf` | Seat 1's whole end: tub, board mock (to place the silicone on), the top piece's end (the step, the spine, the undercut), seat 1's deck | any time; it also tests the deck's joint |
+| `4_fit_coupons.3mf` | USB-C opening (the tub's tab, the top piece's skirt, the board's tab with a receptacle stand-in), a stretch of the seam (the tub's tongue, 4.65 mm over the seam, under the top piece's skirt, with a key tab, a grip rib and a crush rib), the top piece's panel frame, and seat 1's whole end | second |
+| `1_case.3mf` | the tub, the top piece, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
+| `1_case_decks.3mf` | the two decks (the same part, one for each end) | with `1_case` |
+| `6_tests.3mf` | **Questions for the shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and a top piece screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
+| `5_unit.3mf` | **One whole unit on one plate:** the tub, the top piece, both decks, the board mock and the dummies of the panel, speaker, cell and cell plug to fit in it (no coupons) | instead of `1_case` and `1_case_decks`, once the coupons fit |
 
-The lid, the deck inserts and the tuning lid slices print face down as exported (the slices deck
-face down, legs up), everything else flat. `overhangs.py` checked every part for a downward face
+The printer tests (the steepest clean overhang, the first layer at the tub's bottom edge, the
+slicers' overhang settings) are a kit of their own, `overhang_kit.zip`, with their own README.
+
+The top piece, the decks and the tuning deck slices print face down as exported (the slices legs
+up), the tub back down, everything else flat. `overhangs.py` checked every part for a downward face
 flatter than 45 degrees that the printer can't bridge (5 mm at most) or step out to (1 mm): only
-three parts have one, so only their plates get tree supports from the build plate:
+two parts have one, so only those parts get tree supports from the build plate (each part's own
+setting in the project; the plate's are off). Until 2026-10-21 the whole plate had them, and the
+slicer also filled the tub's six screw counterbores with support that fused into them: if you
+change a plate, keep supports on those parts only. The P1S kit checks its G-code for it
+(`case/support_check.py`):
 - `board_mock` (in `1_case` and `5_unit`) and `coupon_usb_board` (in `4_fit_coupons`): the USB-C stand-in's
   front stands 1.2 mm out past the board's edge, round-cornered underneath. Supported, so it
   doesn't droop: the opening's fit round it is what the coupon tests.
-- `speaker_dummy` (in `1_case`): its solder tab and lead exit stick out 1.9 and 2.4 mm.
 
 `stl/` has every part as a plain STL, in case a project won't open in your Orca version: drag them
-onto a plate with the same settings. `lid.stl`, `insert.stl` (print two) and `tub.stl` are the
-real case; the tub prints flat as exported (it has no feet).
+onto a plate with the same settings. `top.stl`, `deck.stl` (print two) and `tub.stl` are the
+real case, each in its print pose.
 
-**The deck inserts.** Each end's deck (both clusters and Start/Select) is its own part, printed
-face down on the bed like the screen face, so it comes out smooth with no supports. The step
-to the screen is a rounded edge and a 45 degree slope. Both ends take the same insert. To fit one:
-caps into it, tilt its outer end under the tub end wall's lip, lower it onto the board, then put
-the lid on. The lid's step walls press down on a 45 degree wedge along the insert's inner edges,
-and the insert's deck runs on under the spine to a ring round the end screw's boss: the lid's
-boss drops through it, so the end screw holds the insert too. Check that it sits flat with no
-rattle and the seam round it looks right. (`deck_inserts = false` in `case.scad` gives back the
-one-piece lid, which needs supports under its decks.)
+**The shell (2026-10-21, reworked 2026-10-22).** The top piece (the screen face, the curved steps,
+the speaker's grille in the right bezel, the sides; the four side screws go into it beside the glass)
+and the two decks (the button faces) curve over the sides and meet the tub flush at one seam low on
+the back's round (2.55 mm up), their skirts following the round down to it; each deck seats into the top piece from behind on a 45 degree wedge and has its own
+screw. The tub's tongue stands 4.65 mm up inside the skirts (4.15 at the decks) and keys them: four
+tabs into pockets in the top piece, a post in each corner that pushes a deck onto its wedges, and
+grip ribs, so the case holds together before the screws go in. At each side wall a lap on the
+deck's skirt slides in behind the top piece's skirt (the tongue stops either side of it), and the top
+piece's side round sweeps down into the deck's, so the two meet flush. The cell sits in a hole in the
+board, its bottom in a pocket in the tub's floor. Everything is built upside down, and nothing
+needs supports.
+
+The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
+
+| Part | Size (mm) | On |
+|---|---|---|
+| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (55.8 g, 1 h 42 min with the top piece, the board mock and the dummies), `5_unit` |
+| `top.stl` | 77.4 x 92.5 x 6.9 | `1_case`, `5_unit` |
+| `deck.stl` (print two) | 77.4 x 35.0 x 5.05 (the laps reach 1.8 past the face) | `1_case_decks` (9.2 g, 23 min for both), `5_unit` |
+
+`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 64.9 g and 2 h 05 min.
+
+To assemble:
+1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
+   front foam ring stuck to the pocket's ceiling.
+2. Each deck face down into its end of the top piece from behind, the laps at its sides going in
+   behind the top piece's skirts: it drops onto its wedges and sits flat (it may settle a little back along them; the tub pushes it home). Caps into the decks from
+   behind (tabs into the slots, notches onto the ribs), silicone on them.
+3. Panel glass down into the top piece's pocket on its tape.
+4. The cell into the tub's floor pocket on double-sided tape, against the pocket's right wall.
+5. Board on edge at seat 1's end: the FPC into J3 (close the latch), the cell's plug into J2.
+6. Board face down towards the bosses. Just before it lands, the speaker's plug into J4 (by the
+   right edge, under the speaker; its mouth faces the glass): the speaker stays in the top piece, and
+   its 35 mm leads reach J4 only when the board is nearly in place. Lay the leads round the screw boss
+   between the speaker and J4, on the glass's side, then the board down onto the bosses.
+7. Tub over it all, straight down, the board lying centred on its bosses (the cell drops into the
+   board's hole, the tub's crush ribs centre the board, the tongue slides 4.5 mm into the skirts, its
+   tabs into the top piece's pockets, the corner posts push each deck onto its wedges). Press it
+   down all round until the seam is an even line: it grips, and the case now holds together on its
+   own. Six M2 x 6 from the back, snug: they lock it.
+
+Opening it: screws out, ease the tub off (it grips: straight up, an end at a time), then lift the
+board only a little and unplug J4 before it comes away: the top piece comes off with the speaker
+stuck in it.
+
+Check that each deck drops in without force; that with the tub on and no screws the case lifts by
+the top piece without the tub or a deck coming loose and nothing rocks; that the tub still goes on
+and comes off by hand; that the seam round the case is an even thin line with the outsides flush;
+and that the seams at each step's foot and down the sides are an even 0.15, the two skirts flush
+across each side joint (the deck's lap behind the top piece's skirt) and the top piece's side round
+running into the deck's without a step.
 
 ## What to check, and what to change
 
@@ -55,31 +106,56 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
 `python3 case/print_package_p1s.py`).
 
 **Buttons (`2_buttons_quick`):**
-- D-pad in each of the three `tune_openings` crosses (gaps 0.6, 0.8, 1.0 mm, engraved): pick the
-  tightest it moves freely in. Now `dpad_gap` = 0.8 (0.5 was too tight in the first print).
+- D-pad in each of the three `tune_openings` crosses (gaps 0.55, 0.65, 0.75 mm, engraved): pick the
+  tightest it moves freely in. Now `dpad_gap` = 0.65 (0.5 was too tight in the first print, 0.8 too loose in the next).
 - A, B, X, Y into the keyed cluster from the back: tab into its slot, each notch onto its rib, and
   no cap fits another cap's hole. A rib fighting a cap: note the angle, fix `abxy_notches` (or
-  `notch_keys = false`). The plain holes (7.4, 7.8, 8.0) tune `cap_hole_d` (now 7.6).
-- Each stack: silicone on the board slice, caps in the lid slice, lid on its four legs. The cap
-  should stand about 1.85 mm above the deck, press cleanly and spring back. If the 1.75 mm lid is
-  wrong, try the 1.6 and 1.9 lids (`3_buttons_heights`) and set `dome_h`; `dpad_lift` moves only
+  `notch_keys = false`). The keyed holes are 8.0 (`cap_hole_d`, Alex's DS Lite faceplate's; 7.6 was too tight, 2026-10-21);
+  the plain holes (7.6, 7.8, 8.2) say whether it can be tighter or must be looser.
+- Each stack: silicone on the board slice, caps in the deck slice, the slice on its four legs. The cap
+  should stand about 1.4 mm above the deck (1.41, the faceplate's 1.6 mm lip), press cleanly and spring back. If the 1.75 mm slice is
+  wrong, try the 1.6 and 1.9 slices (`3_buttons_heights`) and set `dome_h`; `dpad_lift` moves only
   the D-pad.
 - **Start/Select:** their membrane, pill spacing and caps are estimates (`ss_mem` 14 x 6 mm,
-  `ss_pitch` 7.5, `ss_cap_d` 4.5). Measure your real Start/Select membrane and caps and send the
+  `ss_pitch` 7.5, `ss_cap_d` 3.2 from the faceplate's 3.8 mm hole). Measure your real Start/Select membrane and caps and send the
   numbers; the stack shows whether the estimates already work.
 
+**Test plate (`6_tests`), for the shell:** print it on the P1S and the U1.
+- Openings: `tune_openings` again, with the D-pad (crosses 0.55, 0.65, 0.75) and A/B/X/Y caps (the
+  keyed cluster is 8.0, the plain holes 7.6, 7.8, 8.2): the tightest the D-pad moves freely in, and
+  the tightest A/B/X/Y hole a cap drops through without catching.
+- Overhangs (`test_overhangs`, printed with no supports on purpose): the fins' undersides slope 45
+  to 75 degrees from vertical (the number on each fin's top). Report the steepest fin whose
+  underside is still clean (no drooping or loose strands) on each printer. The quarter round at the
+  ladder's end goes from 85 degrees (near flat, where it leaves its stem) up to vertical, ticked
+  at 45, 60 and 75 on its end face: report the tick below which it turns rough. That number goes
+  into `overhang` in `case.scad` (45 now): one line makes the steps and every edge rounder.
+- Screw holes: `coupon_screws_tub` (two of the tub's holes, printed flat as the tub: H4's slimmed
+  5.0 boss by the left wall and an end boss) should come out
+  with the 4.4 mm counterbore and the 2.4 mm hole open, and an M2 screw should pass; the old plates
+  had supports in every counterbore (see above). `coupon_screws_top` (a top piece boss, face down)
+  should take an M2 x 6 self-tapper into its 1.6 mm pilot. Say which of the case's holes were filled.
+- Column clearance: slide each ring of `test_rings` over `test_column` (5.0 mm, as the bosses):
+  report the tightest that slides on freely and the loosest that doesn't rattle. (The new decks have
+  their own bosses, so no column passes through another part now; the answer is for later.)
+
 **Fit coupons (`4_fit_coupons`):**
-- USB-C: board coupon into the tub coupon (its tab drops into the wall's slot), lid coupon on
-  top. The opening should hug the receptacle stand-in with a small even gap (`usb_gap` 0.25), and
-  a real plug's overmold should sit flat on the case.
-- Snap hook: should click with firm thumb pressure and come apart with a blade
-  (`snap_barb`, hook thickness). PLA is stiffer than PETG: if the hook cracks, say so.
+- USB-C: board coupon face down into the top coupon, the tub coupon over it (its tab rises into the
+  skirt's notch). The opening should hug the receptacle stand-in with a small even gap (`usb_gap`
+  0.25), and a real plug's overmold should sit flat on the case.
+- Seam: lower `coupon_seam_top` over `coupon_seam_tub`: the skirt slides over the tongue without
+  force, the key tab into its pocket, and sits flush with the tub (`seam_fit`, `seam_gap`); the grip
+  rib should hold the two together lightly (`grip_reach`: raise it if they fall apart, lower it if
+  they won't go together by hand).
 - Panel frame: the real panel (or the dummy) drops in glass down with a little play, the active
   area centred in the window (`panel_fit`, `window_margin`).
-- Seat 1's end: the cell plug (real or dummy) passes up through the board mock's hole in front of
-  J2; caps, silicone, the insert, and the step from the deck up to the screen face.
+- Seat 1's end, built upside down: the top coupon face down, the deck into it (it should drop onto
+  its wedges over the spine without force: `deck_gap`), caps and silicone, the board mock face down,
+  the tub coupon: its corner posts push the deck onto its wedges.
+- Speaker (in `1_case`): the dummy (or the real speaker) drops face down into the top piece's
+  pocket over the grille without play to speak of, and the cell dummy into the board mock's hole
+  and the tub's pocket.
 
-**The whole case (`1_case`):** cell (or dummy) on the tub floor, plug up through the board mock's
-hole, board mock in, panel into the lid's pocket on tape, silicone, caps into the inserts, inserts
-in, lid down: the four hooks click, the lid and inserts sit flush, nothing rattles. It should measure 13.4 mm at the screen and
-11.1 mm at the ends.
+**The whole case (`1_case` and `1_case_decks`, or `5_unit`):** build it upside down as above. It
+should measure 9.55 mm at the screen and 7.7 mm at the decks, the seam flush all round, and
+nothing should rattle. Press each grille slot's rim: the speaker should sit flat behind it.

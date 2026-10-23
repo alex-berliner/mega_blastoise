@@ -217,9 +217,9 @@
 		)
 		(uuid "ac129c6b-7c52-5c30-a350-c18109fcee26")
 	)
-	(text "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 20 membrane contacts under DS Lite silicone,"
+	(text "RP2354B, 2.4in 240x320 IPS (ST7789V, SPI), 20 membrane contacts under DS Lite silicone,"
 		(exclude_from_sim no)
-		(at 65.0081 27.94 0)
+		(at 65.5218 27.94 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -227,9 +227,9 @@
 		)
 		(uuid "70d57ce9-e31c-5513-8009-e9b37f8b33ea")
 	)
-	(text "PWM audio into an FM8002A, one Li-ion cell on a TP4056 charger with load sharing, ME6211 3V3."
+	(text "one Li-ion cell (in a hole in the board) on a BQ24073 charger, RT9013 3V3, PWM audio into an FM8002A."
 		(exclude_from_sim no)
-		(at 69.0347 31.75 0)
+		(at 72.9958 31.75 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -287,9 +287,9 @@
 		)
 		(uuid "ba1eaffd-d4ab-5d74-abfb-c011ca19998c")
 	)
-	(text "3V3 regulator (ME6211)"
+	(text "3V3 regulator (RT9013)"
 		(exclude_from_sim no)
-		(at 97.9475 57.15 0)
+		(at 97.8045 57.15 0)
 		(effects
 			(font
 				(size 1 1)
@@ -507,9 +507,9 @@
 		)
 		(uuid "8fef0b2d-8676-5436-bfd4-6ec9d55703e6")
 	)
-	(text "speaker pads J4"
+	(text "speaker plug J4"
 		(exclude_from_sim no)
-		(at 161.108 121.3 0)
+		(at 160.965 121.3 0)
 		(effects
 			(font
 				(size 1 1)

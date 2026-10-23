@@ -1,16 +1,16 @@
 {
     "type": "process",
-    "name": "0.20mm Standard @BBL X1C (tree supports from the plate)",
+    "name": "0.08mm Extra Fine @BBL X1C",
     "from": "system",
     "instantiation": "true",
     "adaptive_layer_height": "0",
-    "bottom_shell_layers": "3",
-    "bottom_color_penetration_layers": "3",
+    "bottom_shell_layers": "7",
+    "bottom_color_penetration_layers": "7",
     "bottom_shell_thickness": "0",
     "bottom_surface_pattern": "monotonic",
     "bottom_surface_density": "100",
     "bridge_flow": "1",
-    "bridge_no_support": "1",
+    "bridge_no_support": "0",
     "bridge_speed": [
         "50",
         "50"
@@ -29,14 +29,14 @@
     "draft_shield": "disabled",
     "elefant_foot_compensation": "0.15",
     "enable_arc_fitting": "1",
-    "enable_prime_tower": "0",
-    "enable_support": "1",
+    "enable_prime_tower": "1",
+    "enable_support": "0",
     "enable_circle_compensation": "0",
     "enable_wrapping_detection": "0",
     "filename_format": "{input_filename_base}_{filament_type[0]}_{print_time}.gcode",
     "gap_infill_speed": [
-        "250",
-        "250"
+        "350",
+        "350"
     ],
     "infill_combination": "0",
     "infill_direction": "45",
@@ -50,17 +50,17 @@
     ],
     "inner_wall_line_width": "0.45",
     "inner_wall_speed": [
-        "300",
-        "400"
+        "350",
+        "350"
     ],
     "interface_shells": "0",
     "internal_bridge_support_thickness": "0.8",
     "internal_solid_infill_line_width": "0.42",
     "internal_solid_infill_speed": [
-        "250",
+        "350",
         "350"
     ],
-    "ironing_flow": "10%",
+    "ironing_flow": "8%",
     "ironing_inset": "0.21",
     "ironing_spacing": "0.15",
     "ironing_speed": "30",
@@ -72,7 +72,7 @@
     ],
     "infill_shift_step": "0.4",
     "infill_rotate_step": "0",
-    "layer_height": "0.2",
+    "layer_height": "0.08",
     "layer_time_smoothing": "0",
     "layer_time_smoothing_threshold": "30",
     "line_width": "0.42",
@@ -86,11 +86,11 @@
     "outer_wall_line_width": "0.42",
     "outer_wall_speed": [
         "200",
-        "350"
+        "200"
     ],
     "overhang_totally_speed": [
         "10",
-        "30"
+        "10"
     ],
     "override_filament_scarf_seam_setting": "0",
     "pre_start_fan_time": [
@@ -127,14 +127,14 @@
     "skeleton_infill_line_width": "0.45",
     "sparse_infill_pattern": "grid",
     "sparse_infill_speed": [
-        "270",
-        "370"
+        "450",
+        "450"
     ],
     "spiral_mode": "0",
     "standby_temperature_delta": "-5",
     "support_base_pattern": "default",
     "support_base_pattern_spacing": "2.5",
-    "support_bottom_z_distance": "0.2",
+    "support_bottom_z_distance": "0.08",
     "support_expansion": "0",
     "support_filament": "0",
     "support_interface_bottom_layers": "2",
@@ -149,14 +149,14 @@
     "support_interface_top_layers": "2",
     "support_line_width": "0.42",
     "support_object_xy_distance": "0.35",
-    "support_on_build_plate_only": "1",
+    "support_on_build_plate_only": "0",
     "support_speed": [
         "150",
         "150"
     ],
     "support_style": "default",
-    "support_threshold_angle": "30",
-    "support_top_z_distance": "0.2",
+    "support_threshold_angle": "15",
+    "support_top_z_distance": "0.08",
     "support_type": "tree(auto)",
     "enable_support_ironing": "0",
     "support_ironing_pattern": "zig-zag",
@@ -172,15 +172,15 @@
     "symmetric_infill_y_axis": "0",
     "sparse_infill_lattice_angle_1": "-45",
     "sparse_infill_lattice_angle_2": "45",
-    "top_shell_layers": "5",
-    "top_color_penetration_layers": "5",
-    "top_shell_thickness": "1.0",
+    "top_shell_layers": "9",
+    "top_color_penetration_layers": "9",
+    "top_shell_thickness": "0.8",
     "top_surface_line_width": "0.42",
     "top_surface_pattern": "monotonicline",
     "top_surface_density": "100",
     "top_surface_speed": [
         "200",
-        "300"
+        "200"
     ],
     "top_solid_infill_flow_ratio": [
         "1",
@@ -247,16 +247,16 @@
         "5000"
     ],
     "overhang_1_4_speed": [
-        "0",
-        "0"
+        "60",
+        "60"
     ],
     "overhang_2_4_speed": [
-        "50",
-        "50"
-    ],
-    "overhang_3_4_speed": [
         "30",
         "30"
+    ],
+    "overhang_3_4_speed": [
+        "10",
+        "10"
     ],
     "overhang_4_4_speed": [
         "10",
@@ -318,8 +318,8 @@
         "80%",
         "80%"
     ],
-    "setting_id": "GP004",
-    "description": "It has a general layer height, and results in general layer lines and printing quality. It is suitable for most general printing cases.",
+    "setting_id": "GP001",
+    "description": "Compared with the default profile of a 0.4 mm nozzle, it has a smaller layer height, and results in almost negligible layer lines and longer printing time.",
     "compatible_printers": [
         "Bambu Lab X1 Carbon 0.4 nozzle",
         "Bambu Lab X1 0.4 nozzle",

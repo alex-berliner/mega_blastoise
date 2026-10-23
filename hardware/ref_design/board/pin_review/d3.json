@@ -2,7 +2,8 @@
  "part": "BAT54WS single Schottky, SOD-323",
  "refs": [
   "D3",
-  "D6"
+  "D6",
+  "D8"
  ],
  "mpn": "BAT54WS",
  "lcsc": "C7502694",
@@ -61,7 +62,8 @@
    "issue": "",
    "nets": {
     "D3": "PWR_EN",
-    "D6": "LS_GATE"
+    "D6": "LS_GATE",
+    "D8": "PWR_EN"
    },
    "pin_label": "K"
   },
@@ -78,7 +80,8 @@
    "issue": "",
    "nets": {
     "D3": "VBUS_EN",
-    "D6": "VBUS"
+    "D6": "VBUS",
+    "D8": "P2_START_RAW"
    },
    "pin_label": "A"
   }

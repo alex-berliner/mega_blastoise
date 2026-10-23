@@ -18,8 +18,10 @@ import csv
 import os
 import subprocess
 import sys
+import tempfile
 import zipfile
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 
 import pcbnew
 
@@ -32,7 +34,10 @@ LAYERS = "F.Cu,B.Cu,F.Mask,B.Mask,F.Paste,B.Paste,F.Silkscreen,B.Silkscreen,Edge
 
 
 def run(*args):
-    r = subprocess.run(["kicad-cli", *args], capture_output=True, text=True)
+    # each in a folder of its own: kicad-cli writes scratch files ($tempfile$.*) into its
+    # working directory, and pictures() runs several at once
+    with tempfile.TemporaryDirectory() as tmp:
+        r = subprocess.run(["kicad-cli", *args], capture_output=True, text=True, cwd=tmp)
     if r.returncode:
         sys.exit(f"kicad-cli {' '.join(args[:3])} failed:\n{r.stderr[-1500:]}")
     return r.stdout
@@ -92,14 +97,17 @@ def bom_cpl():
 
 
 def pictures():
-    run("pcb", "export", "step", "--subst-models", "--force", "-o", os.path.join(OUT, "battler.step"), PCB)
+    jobs = [("pcb", "export", "step", "--subst-models", "--force", "-o", os.path.join(OUT, "battler.step"), PCB)]
     for side, extra in (("top", []), ("bottom", []), ("iso", ["--rotate", "-45,0,45"])):
         view = "top" if side == "iso" else side
-        run("pcb", "render", "--side", view, "--quality", "high", "--width", "1600", "--height", "1600",
-            "--background", "opaque", *extra, "-o", os.path.join(OUT, f"battler_{side}.png"), PCB)
-    run("sch", "export", "pdf", "-o", os.path.join(OUT, "battler_schematic.pdf"), SCH)
-    run("pcb", "export", "pdf", "--layers", "F.Fab,Edge.Cuts", "--mode-single", "--include-border-title", "--sp",
-        "-o", os.path.join(OUT, "battler_assembly.pdf"), PCB)
+        jobs.append(("pcb", "render", "--side", view, "--quality", "high", "--width", "1600", "--height", "1600",
+                     "--background", "opaque", *extra, "-o", os.path.join(OUT, f"battler_{side}.png"), PCB))
+    jobs.append(("sch", "export", "pdf", "-o", os.path.join(OUT, "battler_schematic.pdf"), SCH))
+    jobs.append(("pcb", "export", "pdf", "--layers", "F.Fab,Edge.Cuts", "--mode-single", "--include-border-title",
+                 "--sp", "-o", os.path.join(OUT, "battler_assembly.pdf"), PCB))
+    # all at once: the STEP export is one core's work, a render most of the machine's for a while
+    with ThreadPoolExecutor(len(jobs)) as pool:
+        list(pool.map(lambda a: run(*a), jobs))
 
 
 def main():

@@ -34,8 +34,8 @@ board/fab/battler_schematic.pdf
 board/fab/battler_assembly.pdf
 board/fab/drc.txt
 case/tub.stl
-case/lid.stl
-case/insert.stl
+case/top.stl
+case/deck.stl
 case/board.dxf
 case/positions.json
 case/fit_report.txt
@@ -44,3 +44,7 @@ case/print/package_U1/
 case/print/package_P1S/
 case/print/mega_blastoise_print_U1.zip
 case/print/mega_blastoise_print_P1S.zip
+case/print/tests_U1/
+case/print/tests_P1S/
+case/print/overhang_kit.zip
+.build/

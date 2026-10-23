@@ -5,7 +5,7 @@
 
 What KiCad's "Update PCB from Schematic" does for a schematic whose circuit is
 unchanged: each footprint relinked to its symbol (the symbol's UUID path), its
-fields (LCSC, MPN, Manufacturer, BOM, Datasheet, Description) copied, a net
+value and fields (LCSC, MPN, Manufacturer, BOM, Datasheet, Description) copied, a net
 KiCad now names differently renamed (a net that moved onto one sheet becomes
 /Sheet/NAME), and a no-connect pad put on its pin's own unconnected-(...) net
 (netlist.pad_nets). The copper is untouched. Refuses if the connectivity differs
@@ -41,6 +41,9 @@ def main(path=PCB):
         if fp.GetPath().AsString() != c["path"]:
             fp.SetPath(pcbnew.KIID_PATH(c["path"]))
             relinked += 1
+        if c["value"] and fp.GetValue() != c["value"]:           # a part swapped for another number
+            fp.SetValue(c["value"])
+            fields += 1
         for key in FIELDS:
             if key in c["fields"] and (not fp.HasField(key) or fp.GetFieldText(key) != c["fields"][key]):
                 fp.SetField(key, c["fields"][key])
