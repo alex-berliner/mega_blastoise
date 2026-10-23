@@ -48,12 +48,12 @@
   132.0
  ],
  "rev": 1,
- "commit": "8dbf2c3",
+ "commit": "80953e7",
  "dirty": false,
  "built": "2026-10-22",
  "inputs": {
   "board/battler.kicad_pcb": "bdb756e858d1c39ec95b8040a64fe879fb30dad5",
-  "case/case.scad": "52d406c74a6b3ab12dce684b30003527d98a109a",
+  "case/case.scad": "34c060ec2b24ccbf6cdd24e245097f5a6838037e",
   "viewer/pieces.scad": "5b56ff1f5e31a4ae7fd840d0045f3da7088d4167",
   "viewer/build.py": "36afdd83ba90efeda190e834253a41a4e0aab1f4"
  }
