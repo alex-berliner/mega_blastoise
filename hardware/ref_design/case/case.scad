@@ -160,10 +160,11 @@ board_r = 5.5;            // the board's own corners (its KiCad outline): no lon
 // supports. 45 until Alex's 6_tests ladder says how far each printer goes (one line, 2026-10-21).
 // GUESS (Alex, 2026-10-21: best guess until 6_tests): 45, the conservative limit; test_overhangs on
 // both printers settles it, and every round and the step to the decks follow it.
-// 60 on this branch (ref-design-cellcut-60, 2026-10-23): a variant, until the overhang test plates
-// (overhang_kit.zip) show both printers print a 60 degree face clean (case/SHELL.md, its first
-// section). overhangs.py reads it from here
-overhang = 60;
+// 60 on ref-design-cellcut-60 and the island's main line (2026-10-23): a variant, until the overhang test
+// plates (overhang_kit.zip) show both printers print a 60 degree face clean. 45 on this branch
+// (ref-design-island-45, 2026-10-23): the same island at the conservative limit, so Alex can print both
+// and pick (island_coupons.zip; case/SHELL.md, "The 45 degree version"). overhangs.py reads it from here
+overhang = 45;
 // Every outside edge rounds over as far as that allows: an arc into the wall, and where the arc would
 // go flatter than `overhang` in the print pose, a tangent chamfer at `overhang` (the tub prints back
 // down, the top piece and the decks face down, so all their rounds end in a chamfer at the bed)
@@ -173,7 +174,9 @@ face_r = 3.0;             // the decks' faces (and the island's over the USB-C) 
                           // outer lip). 3.0 at 45 degrees; the 60 degree variant had to take it down to 2.4,
                           // because the side's blend ran it down over the top piece's hollow and J4's pocket.
                           // With the island (2026-10-23) the blend went and nothing hollow is under the side's
-                          // round any more, so it is 3.0 again, carried on to 60 (its top edge 2.20 in)
+                          // round any more, so it is 3.0 again, carried on to 60 (its top edge 2.20 in). At 45 (this
+                          // branch) the same 3.0 is the 45 line's round again: the arc to 45, a 0.88 chamfer at the
+                          // face, its top edge 1.757 in
 support_pitch = 12;       // the floor's support ribs under the board
 // The seam: the top pieces (the top piece and both decks) meet the tub flush, low on the back's round.
 // The tub's wall carries a tongue, the inner half of the wall standing up past the seam, and the top
@@ -542,7 +545,7 @@ assert(overhang >= 30 && overhang <= 80, "overhang out of range");
 assert(z_top_cu + crush_reach <= z_seam + deck_tongue_h && z_board - 0.3 >= floor_t, "the tub's crush ribs miss the board's edge");
 assert(tub_round_in <= board_clear - 0.3, "the tub's wall comes within 0.3 of the board");
 // the screws' counterbores in the tub's floor keep a wall to the bottom edge's chamfer at the first layer's
-// middle (0.1 up): at 60 degrees the chamfer comes 0.6 further in (H4's by the left wall: 0.60, was 1.14)
+// middle (0.1 up): at 60 degrees the chamfer comes 0.6 further in (H4's by the left wall: 0.60; 1.14 at 45)
 for (s = pins) assert(min(case_w / 2 - abs(s[0]), case_l / 2 - abs(s[1])) - back_in(0.1) - screw_cb[0] / 2 >= 0.5,
                       "a screw's counterbore comes within 0.5 of the tub's bottom edge");
 // the seam on the back's round (2026-10-22): the skirts' tips (at z_bot, where the round has come in
@@ -996,7 +999,12 @@ grips = concat([for (sx = [-1, 1], sy = [-1, 1], y = [40, 52]) [sx, sy * y, z_de
 // so its top (the print's underside) falls from its root at `overhang`. The tub's tongue stops either side
 // of each (lap_slot_cut). [side, y0: the carrying skirt's end, dir: the way its free end goes, how far its
 // part can lie back before the tub's posts push it home]
-lap_l = 3.0;  lap_root = 1.5;
+// lap_l: 3.0, or as long as its free end stays lap_tip tall, falling at `overhang` from z_arm_tongue (the arms' tongue
+// is 3.03 tall): 3.0 at 60, 1.9 at 45 (2026-10-23, the 45 degree island; at 45 a 3.0 lap's top would fall past its
+// own bottom)
+lap_tip = 0.85;
+lap_l = min(3.0, floor(((arm_tongue_top - 0.025 - (z_seam + seam_gap) - lap_tip) * tan(overhang) - deck_gap) * 10 + 1e-6) / 10);
+lap_root = 1.5;
 ear_laps = [[1, ear_y[0], -1, 0], [1, ear_y[1], 1, 0]];
 arm_lap = [-1, arm_meet_y - deck_gap / 2, 1, post_lead];
 laps = concat(ear_laps, [arm_lap]);

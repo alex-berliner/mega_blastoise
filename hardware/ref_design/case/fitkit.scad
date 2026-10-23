@@ -85,7 +85,7 @@ module tub_flat() tub();
 
 band_y1 = -(bay_l / 2) + 2;                          // seat 1's end band: from the case end into the glass by 2 mm
 module band_box() translate([-case_w / 2 - 1, -case_l / 2 - 1, -1]) cube([case_w + 2, band_y1 + case_l / 2 + 1, case_h + 2]);
-// the ear and the ends of the right arms that meet it (its laps go 3.15 into them)
+// the ear and the ends of the right arms that meet it (its laps go deck_gap + lap_l into them: 2.05 at 45, 3.15 at 60)
 module usb_box() translate([case_w / 2 - 12, usb_y - 16, -1]) cube([13, 32, case_h + 2]);
 // where the arms meet on the left wall: seat 1's lap behind seat 2's skirt, and the island's side over them
 module meet_box() translate([-case_w / 2 - 1, arm_meet_y - 9, -1]) cube([12, 18, case_h + 2]);
