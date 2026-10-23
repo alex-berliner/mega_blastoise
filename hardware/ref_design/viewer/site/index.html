@@ -120,9 +120,9 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 let MODEL = { z_board: 2.0, case_h: 13.9, z: {} };   // replaced by parts/model.json
 const PARTS = [
   { key: "top", name: "Top piece", file: "parts/top.stl", color: "#5a6573", lift: 112, shell: true,
-    note: "Printed face down, no supports. The screen face, the curved steps down to the decks, and the sides, down to the seam with the tub: its skirts slide 3 mm down over the tub's tongue, and pockets in its sides take the tongue's tabs. Four screws hold it beside the glass; the panel sits in its pocket, the speaker under a grille in the right bezel." },
+    note: "Printed face down, no supports. The screen face, the curved steps down to the decks, and the sides, over most of the back's round down to the seam with the tub: its skirts slide 4.5 mm down over the tub's tongue, and pockets in its sides take the tongue's tabs. Four screws hold it beside the glass; the panel sits in its pocket, the speaker under a grille in the right bezel." },
   { key: "decks", name: "Decks", file: "parts/decks.stl", color: "#d9822b", lift: 100, shell: true,
-    note: "Printed face down, no supports; one part for both ends. Each seats into the top piece from behind on a 45 degree wedge and curves over the end and sides to the seam; the tub's corner posts push it home onto its step, and its own screw holds it." },
+    note: "Printed face down, no supports; one part for both ends. Each seats into the top piece from behind on a 45 degree wedge and curves over the end and sides and down the back's round to the seam; the tub's corner posts push it home onto its step, and its own screw holds it." },
   { key: "caps", name: "Button caps", file: "parts/caps.stl", color: "#eef0f4", lift: 88,
     note: "DS Lite caps, bought. Their flanges sit under the decks, which hold them in." },
   { key: "panel", name: "Display panel", file: "parts/panel.stl", color: "#0b0e13", lift: 68, rough: 0.25,
@@ -136,7 +136,7 @@ const PARTS = [
   { key: "board", name: "Circuit board", file: "parts/board.glb", lift: 40,
     note: "2 layers, 1.6 mm, assembled by JLC. Every fitted part is shown." },
   { key: "tub", name: "Tub", file: "parts/tub.stl", color: "#2c343f", lift: 0, shell: true,
-    note: "Printed back down. The back and its rounded edge, up to the seam; a tongue 3 mm tall (2.5 at the decks) inside the top pieces' skirts, with tabs into the top piece, a post in each corner that keys a deck, and grip ribs that hold the case together before the screws; and a tab carrying the USB-C opening's lower half." },
+    note: "Printed back down. The back and the lower part of its rounded edge, up to the seam (2.55 mm up); a tongue standing 4.65 mm over it (4.15 at the decks) inside the top pieces' skirts, with tabs into the top piece, a post in each corner that keys a deck, and grip ribs that hold the case together before the screws; and a tab rising from the seam that carries the USB-C opening's lower half." },
   { key: "screws", name: "Screws", file: "parts/screws.stl", color: "#a9afb8", lift: -28, metal: 0.9,
     note: "Six M2 × 6 self-tapping, from the back, through the board: four into the top piece beside the glass, one into each deck." },
 ];

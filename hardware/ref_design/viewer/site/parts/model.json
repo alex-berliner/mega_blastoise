@@ -25,7 +25,7 @@
    7.0
   ],
   "decks": [
-   3.8,
+   2.65,
    7.7
   ],
   "tub": [
@@ -33,7 +33,7 @@
    8.5
   ],
   "top": [
-   3.8,
+   2.65,
    9.55
   ],
   "board": [
@@ -44,16 +44,16 @@
  "case_h": 9.55,
  "z_board": 2.2,
  "size": [
-  77.4,
-  132.7
+  77.1,
+  132.0
  ],
  "rev": 1,
- "commit": "93f0a74",
+ "commit": "8dbf2c3",
  "dirty": false,
  "built": "2026-10-22",
  "inputs": {
   "board/battler.kicad_pcb": "bdb756e858d1c39ec95b8040a64fe879fb30dad5",
-  "case/case.scad": "4b9749007827ab1268cf8d1a2e4f3e10598c6e20",
+  "case/case.scad": "52d406c74a6b3ab12dce684b30003527d98a109a",
   "viewer/pieces.scad": "5b56ff1f5e31a4ae7fd840d0045f3da7088d4167",
   "viewer/build.py": "36afdd83ba90efeda190e834253a41a4e0aab1f4"
  }
