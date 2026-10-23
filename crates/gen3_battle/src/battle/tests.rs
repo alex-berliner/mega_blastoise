@@ -1627,3 +1627,23 @@ fn beat_up_strikes_in_the_sims_own_party_order() {
     // (Snorlax), typeless and special against the target's own base Defence.
     assert_eq!(strikes, alloc::vec![5, 5, 7], "{events:?}");
 }
+
+/// Grudge's `onFaint` runs once per faint. The engine settles a faint both
+/// at the tail of the hit and again at the end of the action, and a Leppa
+/// Berry eaten in between used to see its refill drained a second time.
+#[test]
+fn a_grudge_drains_once_and_a_leppa_refill_survives() {
+    let mut attacker = mon("snorlax", 50, &["megapunch"]);
+    attacker.item = "leppaberry";
+    let mut grudger = mon("jolteon", 50, &["grudge"]);
+    grudger.hp = 1;
+    let mut b = Battle::new(
+        Side::new(alloc::vec![attacker]),
+        Side::new(alloc::vec![grudger, mon("chansey", 50, &["splash"])]),
+        3,
+    );
+    b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    assert!(b.sides[1].party[0].fainted(), "the Mega Punch knocked the grudger out");
+    assert_eq!(b.sides[0].mon().item, "", "the Leppa Berry was eaten");
+    assert_eq!(b.sides[0].mon().moves[0].pp, 10, "drained once, then refilled by ten");
+}

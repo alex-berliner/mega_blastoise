@@ -832,6 +832,11 @@ impl Battle {
                     ms.pp = 0;
                 }
             }
+            // The sim's `onFaint` runs once per faint. This settles twice
+            // when a hit's tail and the action's end both look at the same
+            // faint, and a Leppa Berry can refill the slot in between, so the
+            // grudge is spent the first time.
+            self.sides[foe].mon_mut().grudged = false;
         }
         for who in [foe, side] {
             self.announce_faint(who, events);
