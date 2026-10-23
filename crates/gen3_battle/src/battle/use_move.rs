@@ -321,19 +321,24 @@ impl Battle {
     }
 
     /// The rest of the sim's `BeforeMove` event: confusion, attraction and
-    /// full paralysis, at priorities 3, 2 and 1, and then a storing Bide,
-    /// whose condition is the one handler of the event with no priority at
-    /// all. They are asked AFTER the choice machinery (Encore's
+    /// full paralysis at priorities 3, 2 and 1, and then the two handlers
+    /// that sit at the bottom of it, a storing Bide, whose condition is
+    /// the one handler of the event with no priority at all, and this era's
+    /// Taunt, whose gen 3 condition nulls the priority that would have put
+    /// it at 5. They are asked AFTER the choice machinery (Encore's
     /// `onOverrideAction`, the lock a charge or a rampage forced, and the
-    /// Disable, Taunt, Torment, Imprison and Choice gates that come with it),
+    /// Disable, Torment, Imprison and Choice gates that come with it),
     /// because every one of those sits higher in the same event, and a move
     /// any of them cancelled never reaches the confusion coin. `index` is
     /// therefore the slot the override settled on rather than the one the
-    /// player pressed.
+    /// player pressed, and `status_in_hand` asks about the move that is
+    /// really about to go off, a Struggle the request already queued is
+    /// Physical and says nothing about the slot behind it.
     fn before_move_low(
         &mut self,
         side: usize,
         index: usize,
+        status_in_hand: bool,
         script: Option<SeatScript>,
         events: &mut Vec<Event>,
     ) -> bool {
@@ -419,6 +424,27 @@ impl Battle {
         // the bare duration ones, ticked at every residual, and the residual
         // carries the elimination of a release turn that never happened.
         if self.sides[side].mon().bide.is_some_and(|(_, left)| left > 0) {
+            return false;
+        }
+        // Taunt, at `onBeforeMovePriority: 0` in this era and nowhere else:
+        // the gen 3 condition keeps the base handler but nulls the priority
+        // that would have put it at 5 (`data/mods/gen3/moves.js`, taunt's
+        // condition, "no inherit"), which drops it UNDER confusion's 3,
+        // attract's 2 and paralysis's 1. A Taunt landing on a victim that
+        // had already chosen its status move therefore does not save the
+        // victim from the confusion coin or the paralysis coin, and a
+        // self-hit off either still lands before the turn is lost. What is
+        // left of it is the turn-away itself: `runMove` returns at the event,
+        // so the move never goes off and no `AfterMove` runs either, not the
+        // White Herb that would otherwise have answered a dropped item.
+        //
+        // The tie with the Bide gate above is real, both sit at 0, but the
+        // sim sorts equal priorities by Speed and then shuffles what is left
+        // (`speedSort`), and both handlers hang off the same mon, so the
+        // order between them is a coin the sim itself does not fix. Bide
+        // keeps the earlier word here, as it has always had.
+        if status_in_hand && self.sides[side].mon().taunt_n == 2 {
+            self.log_failed(side, events);
             return false;
         }
         true
@@ -788,10 +814,14 @@ impl Battle {
         // when an Encore lands over it this turn. That Struggle is the one
         // that becomes `lastMove`, which is what the next turn's Torment reads.
         let encore_forced = encore_forced && !struggling_at_request;
-        if !struggling_at_request && self.sides[side].mon().taunt_n == 2 && status_movish {
-            self.log_failed(side, events);
-            return true;
-        }
+        // A Taunt that landed THIS turn is answered way below, in
+        // `before_move_low`: the gen 3 condition nulls its own
+        // `onBeforeMovePriority` (`data/mods/gen3/moves.js`, "no inherit"),
+        // so the handler that turns away a status move sits at priority 0 ,
+        // under confusion's 3, attract's 2 and paralysis's 1, all of which
+        // are asked first. A victim taunted into its already-chosen status
+        // move still gets the confusion coin, the paralysis coin and any
+        // self-hit either of them rolls.
         let taunted_out = self.sides[side].mon().taunt_n == 1
             && status_movish
             && !encore_forced
@@ -865,22 +895,18 @@ impl Battle {
             self.log_failed(side, events);
             return false;
         }
-        // Confusion, attraction and full paralysis: the sim's `BeforeMove`
-        // handlers at priorities 3, 2 and 1, which sit BELOW a Disable's 7,
-        // below Taunt's 5 and below Imprison's 4, all three of which are
-        // answered by the machinery between `before_move` and this call. That
-        // is the whole point of the split: a move cancelled by any of them
-        // never reaches the confusion clock, so the coin is not even rolled
-        // and a locked move Disabled this turn costs the turn and nothing
-        // else. See `before_move_low`.
-        if !self.pursuing
-            && !self.calling
-            && !self.before_move_low(side, index, script, events)
-        {
-            // As above: `runMove` returns at the BeforeMove event, so the
-            // move never goes off and `AfterMove` never runs.
-            return false;
-        }
+        // Confusion, attraction, full paralysis and Taunt: the sim's
+        // `BeforeMove` handlers at priorities 3, 2, 1 and 0, which sit BELOW
+        // a Disable's 7 and below Imprison's 4, both of which are answered by
+        // the machinery between `before_move` and this call. That is the
+        // whole point of the split: a move cancelled by either of them never
+        // reaches the confusion clock, so the coin is not even rolled and a
+        // locked move Disabled this turn costs the turn and nothing else. See
+        // `before_move_low`.
+        //
+        // Whether the move in hand is still a STATUS move is asked first,
+        // because everything above already decided whether it is even the
+        // slot the player pressed.
         let struggling = (taunted_out
             || tormented_out
             || disabled_out
@@ -895,6 +921,20 @@ impl Battle {
             // over) does not take that back.
             || (self.pp0_at_choice[side] && !forced))
             && !releasing;
+        if !self.pursuing
+            && !self.calling
+            && !self.before_move_low(
+                side,
+                index,
+                !struggling && !slot.entry.damaging,
+                script,
+                events,
+            )
+        {
+            // As above: `runMove` returns at the BeforeMove event, so the
+            // move never goes off and `AfterMove` never runs.
+            return false;
+        }
         let slot = if struggling {
             MoveSlot {
                 entry: &crate::data::STRUGGLE,
@@ -1024,10 +1064,7 @@ impl Battle {
             // the sim reads `lastAttackedBy.source.lastMove`, and switching
             // out wipes that, so a mon that hit and left leaves nothing to
             // mirror even after it comes back.
-            let same_attacker = self.sides[side].mon().last_hit_by_slot
-                == Some(self.sides[foe].active)
-                && self.sides[foe].mon().last_used_id.is_some();
-            let hit_by = self.sides[side].mon().last_hit_by.filter(|_| same_attacker);
+            let hit_by = self.last_attacked_by(side, foe);
             let callable = hit_by
                 .filter(|id| {
                     !matches!(
@@ -1609,16 +1646,17 @@ impl Battle {
                 return true;
             }
             let survives = self.survives_at_one(foe);
-            let mon = self.sides[foe].mon_mut();
-            let amount = if survives {
-                mon.hp.saturating_sub(1)
-            } else {
-                mon.hp
+            let amount = {
+                let mon = self.sides[foe].mon_mut();
+                let amount = if survives {
+                    mon.hp.saturating_sub(1)
+                } else {
+                    mon.hp
+                };
+                mon.hp -= amount;
+                amount
             };
-            mon.hp -= amount;
-            mon.last_hit_by = Some(slot.entry.id);
-            let who = self.sides[side].active;
-            self.sides[foe].mon_mut().last_hit_by_slot = Some(who);
+            self.note_hit_by(side, foe, slot.entry.id);
             events.push(Event::Damage {
                 side: foe as u8 + 1,
                 amount,
@@ -3273,11 +3311,25 @@ impl Battle {
         });
     }
 
+    /// Append a line to `foe`'s attacked-by book, most recent first. The
+    /// sim pushes onto the end and reads off the end; the shift is the same
+    /// book seen from the top, and it drops the oldest line rather than
+    /// growing, which no turn can notice (see `ATTACKED_BY_LEN`).
     pub(super) fn note_hit_by(&mut self, side: usize, foe: usize, id: &'static str) {
         let from = self.sides[side].active;
         let mon = self.sides[foe].mon_mut();
-        mon.last_hit_by = Some(id);
-        mon.last_hit_by_slot = Some(from);
+        mon.attacked_by.rotate_right(1);
+        mon.attacked_by[0] = Some(HitBy { move_id: id, from });
+    }
+
+    /// The top surviving line of `side`'s book, if the attacker is still the
+    /// mon on the field: the sim asks `lastAttackedBy.source.lastMove`, and
+    /// switching out wipes that.
+    pub(super) fn last_attacked_by(&self, side: usize, foe: usize) -> Option<&'static str> {
+        let mon = self.sides[side].mon();
+        let hit = mon.attacked_by[0].as_ref()?;
+        (hit.from == self.sides[foe].active && self.sides[foe].mon().last_used_id.is_some())
+            .then_some(hit.move_id)
     }
 
     pub(super) fn took_a_hit(&mut self, foe: usize, amount: u16, events: &mut Vec<Event>) {

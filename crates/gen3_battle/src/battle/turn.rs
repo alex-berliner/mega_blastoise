@@ -206,7 +206,14 @@ impl Battle {
         // and what a Trace finds standing opposite: on a double switch the
         // slower side's newcomer is greeted by a field that has already
         // changed, and the faster side's by one that has not.
-        let switch_first = self.faster_side(scripted_now);
+        //
+        // The order is the one the turn was sorted on, held: the sim sorts
+        // as the choices come in, which is before this turn's first
+        // `update()`, so a Cheri Berry eaten a moment later cures the
+        // paralysis of a mon that is on its way OUT and does not reshuffle
+        // the turn. Reading the speeds again here would read them after the
+        // cure and hand the turn to whichever side the berry just freed.
+        let switch_first = self.sorted_first(scripted_now);
         for side in [switch_first, 1 - switch_first] {
             if self.deferred_switch[side].is_some() {
                 continue;
@@ -760,10 +767,24 @@ impl Battle {
                                     // a delayed hit landing is what a Mirror
                                     // Move aimed afterwards finds, and it
                                     // fails on it.
-                                    let who = self.sides[1 - side].active;
+                                    //
+                                    // The line names the LAUNCHER, which is
+                                    // the sim's `effectState.source`, the mon
+                                    // that willed it, not whoever is standing
+                                    // on the far side when it lands. A launcher
+                                    // that has since left the field takes its
+                                    // line out with it at the end of the turn,
+                                    // and the move it was covering on the book
+                                    // surfaces again.
+                                    let who = self.sides[side]
+                                        .incoming_from
+                                        .unwrap_or(self.sides[1 - side].active);
                                     let mon = self.sides[side].mon_mut();
-                                    mon.last_hit_by = Some(id);
-                                    mon.last_hit_by_slot = Some(who);
+                                    mon.attacked_by.rotate_right(1);
+                                    mon.attacked_by[0] = Some(HitBy {
+                                        move_id: id,
+                                        from: who,
+                                    });
                                     // A delayed hit is a real hit: the sim
                                     // resolves it through trySpreadMoveHit,
                                     // so the Hit event runs and everything
@@ -894,16 +915,26 @@ impl Battle {
         // entry whose attacker is no longer on the field. It is a destructive
         // purge, not a filter applied at read time, so a mon that hit you and
         // then switched out leaves no record — and coming back in does not
-        // restore it, because the entry is already gone. Mirror Move is the
-        // only reader, and this is why it fails against an attacker that took
-        // a lap on the bench, even one that returned to the same party slot.
+        // restore it, because the entry is already gone. What is left after
+        // the walk is not the last line but the LAST SURVIVING one: a delayed
+        // hit landing on top of a live attacker's line only hides that
+        // attacker's move until the delayed hitter leaves the field itself,
+        // and a Mirror Move aimed back then finds it. Mirror Move is the only
+        // reader, and this is why it fails against an attacker that took a lap
+        // on the bench, even one that returned to the same party slot.
         for side in 0..2 {
             let foe = 1 - side;
-            if self.sides[side].mon().last_hit_by_slot != Some(self.sides[foe].active) {
-                let mon = self.sides[side].mon_mut();
-                mon.last_hit_by = None;
-                mon.last_hit_by_slot = None;
+            let active = self.sides[foe].active;
+            let mon = self.sides[side].mon_mut();
+            let mut kept = [None; ATTACKED_BY_LEN];
+            let mut n = 0;
+            for entry in mon.attacked_by.iter().flatten() {
+                if entry.from == active {
+                    kept[n] = Some(*entry);
+                    n += 1;
+                }
             }
+            mon.attacked_by = kept;
         }
 
         // A flinch lasts exactly the turn it landed in — as do Protect's
@@ -991,12 +1022,23 @@ impl Battle {
         match p0.cmp(&p1) {
             core::cmp::Ordering::Greater => 0,
             core::cmp::Ordering::Less => 1,
-            core::cmp::Ordering::Equal => match self.speed_first {
-                // The order was settled as the turn opened; a berry eaten
-                // since then cures the paralysis without reshuffling it.
-                Some(first) => first,
-                None => self.faster_side(scripted),
-            },
+            core::cmp::Ordering::Equal => self.sorted_first(scripted),
+        }
+    }
+
+    /// The Speed order the turn was sorted on, or a fresh reading of it when
+    /// nothing has sorted this turn yet.
+    ///
+    /// The sim sorts a turn's actions as the choices come in, which is
+    /// BEFORE the turn's first `update()`, so a paralysis a Cheri Berry
+    /// cures a moment later still decides who went first, and a mon freed by
+    /// it does not get its place back. The switch phase and the move order
+    /// both read the turn's order through here; the residual sorts, which the
+    /// sim re-reads with its own `updateSpeed`, read it fresh instead.
+    pub(super) fn sorted_first(&mut self, scripted: bool) -> usize {
+        match self.speed_first {
+            Some(first) => first,
+            None => self.faster_side(scripted),
         }
     }
 

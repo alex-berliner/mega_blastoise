@@ -447,8 +447,7 @@ impl Battle {
             out.last_used_id = None;
             out.last_move_used_id = None;
             out.last_move_used_sky_type = None;
-            out.last_hit_by = None;
-            out.last_hit_by_slot = None;
+            out.attacked_by = [None; ATTACKED_BY_LEN];
             out.last_missed = false;
             restore_base_moves(out);
             out.weight_override = None;

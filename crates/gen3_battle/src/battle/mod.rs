@@ -102,6 +102,30 @@ pub const VOL_RAMPAGE: usize = 7;
 pub const VOL_YAWN: usize = 8;
 pub const VOL_COUNT: usize = 9;
 
+/// How many lines the attacked-by book keeps. The shift drops the OLDEST
+/// line, never the newest, so the size cannot hide a recent hit; it decides
+/// only whether a turn can push so much that an older survivor of the purge
+/// is lost, and the worst a single turn can land on one mon is a six-strike
+/// Beat Up, a five-hit multi-hit move plus a delayed hit, and a Pursuit
+/// interception besides.
+pub const ATTACKED_BY_LEN: usize = 8;
+
+/// One line of the attacked-by book: what landed, and who used it.
+///
+/// The sim keeps the attacker itself here and reads `source.lastMove` off it
+/// and a mon that switches out has its `lastMove` cleared, so a Mirror
+/// Move aimed back at a since-swapped attacker finds nothing.
+#[derive(Clone, Copy, Debug)]
+pub struct HitBy {
+    /// The move that hit.
+    pub move_id: &'static str,
+    /// The attacker's PARTY slot. The purge compares it against the other
+    /// side's active mon, which is the shape of the sim's own test
+    /// (`attack.source.isActive`), without the party reordering that a
+    /// switch causes elsewhere.
+    pub from: usize,
+}
+
 /// A battle-ready mon: species, level and investment resolved into stats.
 #[derive(Clone, Debug)]
 pub struct Mon {
@@ -192,13 +216,20 @@ pub struct Mon {
     pub fury_n: u8,
     /// Fury Cutter landed THIS turn, so its ramp has been refreshed.
     pub fury_fresh: bool,
-    /// The move id this mon was last HIT by (Mirror Move's source).
-    pub last_hit_by: Option<&'static str>,
-    /// WHICH party slot on the other side landed that hit. The sim keeps the
-    /// attacker itself in its attacked-by book and reads `source.lastMove`
-    /// off it — and a mon that switches out has its `lastMove` cleared, so a
-    /// Mirror Move aimed back at a since-swapped attacker finds nothing.
-    pub last_hit_by_slot: Option<usize>,
+    /// The sim's `attackedBy` book, MOST RECENT FIRST. Every hit appends a
+    /// line and `nextTurn`'s purge splices out the ones whose attacker has
+    /// left the field, so the tail is not necessarily the answer: a Doom
+    /// Desire landing after a Barrade leaves the doomed attacker on top of
+    /// a book whose Barrade line is what a Mirror Move aimed back has to
+    /// find once that attacker is gone. Mirror Move is the only reader, and
+    /// it only ever asks for the top survivor, but the purge cannot be
+    /// applied at read time: dropping an attacker from the field takes its
+    /// lines out for good, and it does not come back with the mon.
+    ///
+    /// Bounded because only one turn's worth can arrive between two purges ,
+    /// the foe's own move (however many times it strikes), at most one
+    /// delayed hit and at most one Pursuit interception.
+    pub attacked_by: [Option<HitBy>; ATTACKED_BY_LEN],
     /// The id of the move this mon last used — survives Transform/Mimic
     /// rewriting the slots, which is exactly when the slot index lies.
     pub last_used_id: Option<&'static str>,
@@ -525,8 +556,7 @@ impl Mon {
             last_used_id: None,
             last_move_used_id: None,
             last_move_used_sky_type: None,
-            last_hit_by: None,
-            last_hit_by_slot: None,
+            attacked_by: [None; ATTACKED_BY_LEN],
             last_missed: false,
             mimic_backup: None,
             transform_backup: None,
