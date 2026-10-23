@@ -1,14 +1,31 @@
-//! Pokemon Showdown dex tables.
+//! Pokemon Showdown dex tables, one resolved dex per generation.
 //!
-//! Per the design (section 4 of `docs/architecture/showdown-split-plan.md`),
-//! `build.rs` reads the per-gen JSON dumps under `data/{gen1,gen3}/*.json`
-//! (produced by `tools/ps-diff/dump-dex.js`, task P1-3) and emits `&'static`
-//! lookup tables with `u16` ids in PS's iteration order. The `Type` enum
-//! that used to live in `crates/battle_types` moves here; `battle_types`
-//! becomes a re-export shim until the Gen 3 engine, its last user, is
-//! deleted. This crate starts empty in P1-0 (scaffold only); the dex dump
-//! and tables land in P1-3.
+//! `build.rs` reads the JSON dumps under `data/{gen1,gen3}/*.json` (made by
+//! `tools/ps-diff/dump-dex.js` from PS 0.11.11's `Dex.mod('gen1')` and
+//! `Dex.mod('gen3')`, the mod chain already resolved) and emits `&'static`
+//! tables: [`GEN1`] and [`GEN3`], with `u16` ids in PS's iteration order
+//! (design section 4 of `docs/architecture/showdown-split-plan.md`). The
+//! [`Type`] enum that used to live in `crates/battle_types` lives here;
+//! `battle_types` re-exports it until the Gen 3 engine, its last user, is
+//! deleted.
+//!
+//! To read an effect's resolved definition, handler source included:
+//! `node tools/ps-diff/show-effect.js <gen> <kind> <id>`.
 
 #![no_std]
 
 extern crate alloc;
+
+pub mod ids;
+pub mod tables;
+pub mod text;
+pub mod types;
+
+pub use ids::{AbilityId, ConditionId, ItemId, MoveId, SpeciesId};
+pub use tables::*;
+pub use text::Str;
+pub use types::*;
+
+use text::s;
+
+include!(concat!(env!("OUT_DIR"), "/dex.rs"));

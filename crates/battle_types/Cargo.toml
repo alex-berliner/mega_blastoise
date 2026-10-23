@@ -2,4 +2,7 @@
 name = "battle_types"
 version = "0.1.0"
 edition = "2021"
-description = "The type chart's alphabet, shared by every generation's engine."
+description = "Re-export shim: the type chart's alphabet, now `ps_dex::Type`."
+
+[dependencies]
+ps_dex = { path = "../ps_dex" }
