@@ -701,6 +701,9 @@ pub struct Side {
     /// A Future Sight/Doom Desire aimed at THIS side: the countdown, the
     /// damage locked in at launch, and which of the two moves it was.
     pub incoming: Option<(u8, u16, &'static str)>,
+    /// Who launched `incoming`: the party index on the OTHER side. The
+    /// landing's source is that mon, so only its own Lock-On reaches.
+    pub incoming_from: Option<usize>,
 }
 
 impl Side {
@@ -718,6 +721,7 @@ impl Side {
             wish_n: 0,
             wish_amount: 0,
             incoming: None,
+            incoming_from: None,
         }
     }
 

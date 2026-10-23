@@ -687,10 +687,16 @@ impl Battle {
                             // locked on, whatever it is doing: the sim's
                             // lockon condition answers the Invulnerability
                             // event the landing runs through, and then the
-                            // accuracy one that follows it.
-                            let sure = self.sides[1 - side].mon().sure_hit > 0
-                                && self.sides[1 - side].mon().sure_hit_on as usize
-                                    == self.sides[side].active;
+                            // accuracy one that follows it. It answers only
+                            // for moves whose SOURCE holds the lock, and the
+                            // landing's source is the launcher, so a lock
+                            // taken by whoever replaced it does not count.
+                            let launcher = self.sides[1 - side].mon();
+                            let sure = self.sides[side].incoming_from
+                                == Some(self.sides[1 - side].active)
+                                && !launcher.fainted()
+                                && launcher.sure_hit > 0
+                                && launcher.sure_hit_on as usize == self.sides[side].active;
                             // A target mid Fly/Dig/Bounce/Dive when the hit
                             // arrives dodges it like any other attack.
                             if !sure && mon.semi_invulnerable().is_some() {

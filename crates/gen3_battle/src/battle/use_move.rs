@@ -1933,6 +1933,7 @@ impl Battle {
                 },
             ) as u16;
             self.sides[foe].incoming = Some((3, dealt, slot.entry.id));
+            self.sides[foe].incoming_from = Some(self.sides[side].active);
             events.push(Event::Charging {
                 side: side as u8 + 1,
             });
