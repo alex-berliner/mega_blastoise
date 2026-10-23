@@ -2874,9 +2874,9 @@
 		)
 		(uuid "13965f4d-f0d0-5b5d-b957-793ff2077634")
 	)
-	(text "3V3 regulator (ME6211)"
+	(text "3V3 regulator (RT9013)"
 		(exclude_from_sim no)
-		(at 34.0655 25.4 0)
+		(at 33.8081 25.4 0)
 		(effects
 			(font
 				(size 1.8 1.8)
@@ -3252,7 +3252,7 @@
 				)
 			)
 		)
-		(property "Value" "ME6211C33M5G"
+		(property "Value" "RT9013-33GB"
 			(at 88.9 36.83 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3295,7 +3295,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C82942"
+		(property "LCSC" "C47773"
 			(at 88.9 45.72 0)
 			(hide yes)
 			(show_name no)
@@ -3306,7 +3306,7 @@
 				)
 			)
 		)
-		(property "MPN" "ME6211C33M5G-N"
+		(property "MPN" "RT9013-33GB"
 			(at 88.9 45.72 0)
 			(hide yes)
 			(show_name no)
@@ -3317,7 +3317,7 @@
 				)
 			)
 		)
-		(property "Manufacturer" "MICRONE"
+		(property "Manufacturer" "Richtek"
 			(at 88.9 45.72 0)
 			(hide yes)
 			(show_name no)

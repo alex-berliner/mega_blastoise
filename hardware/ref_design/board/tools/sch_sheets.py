@@ -290,7 +290,7 @@ def power():
     sh = Sheet("power.kicad_sch")
     # ---- 3V3 LDO
     Ux, Uy = 88.9, 45.72
-    sh.heading(17.78, 25.4, "3V3 regulator (ME6211)")
+    sh.heading(17.78, 25.4, "3V3 regulator (RT9013)")
     sh.place("U3", Ux, Uy, 0, f=(0, -10.16))
     vin = (45.72, Uy - 2.54)
     sh.wire(vin, "U3.1")
@@ -683,7 +683,7 @@ def mcu_power():
 SHEET_NOTES = {
     "USB_Charger": ("USB-C receptacle + CC pull-downs", "ESD (SRV05-4), VBUS input",
                     "charger (TP4056), load sharing", "battery connector J2"),
-    "Power": ("3V3 regulator (ME6211)", "power latch (button, MCU, USB)",
+    "Power": ("3V3 regulator (RT9013)", "power latch (button, MCU, USB)",
               "button sense, cell voltage sense", "ground pads"),
     "MCU": ("RP2354B (2 MB flash inside)", "USB series resistors",
             "12 MHz crystal", "board revision straps"),
@@ -710,7 +710,7 @@ def root():
     sh = Sheet("battler.kicad_sch")
     sh.text(20.32, 20.32, "Two-player handheld: reference design (REF-A)", size=2.0)
     sh.text(20.32, 27.94, "RP2354B, 2.4in 240x320 IPS (ST7789V, SPI), 20 membrane contacts under DS Lite silicone,")
-    sh.text(20.32, 31.75, "one Li-ion cell (in a hole in the board) on a BQ24073 charger, ME6211 3V3, PWM audio into an FM8002A.")
+    sh.text(20.32, 31.75, "one Li-ion cell (in a hole in the board) on a BQ24073 charger, RT9013 3V3, PWM audio into an FM8002A.")
     sh.text(20.32, 35.56, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets.")
     for i, (f, name) in enumerate(design.SHEETS):
         x, y, w, h = SHEET_BOX(i)

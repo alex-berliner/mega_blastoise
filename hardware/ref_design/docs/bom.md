@@ -15,18 +15,18 @@ snapshot used for this design (July 2026).
 |---|---|---|---|
 | Bare boards: 2 layers, 70.5 x 151.34 mm (as quoted), 1.6 mm, ENIG, every hole >= 0.3 mm | $33.40 | $3.34 | quote (`tools/quotes/`) |
 | Parts: 49 part numbers, 118 placements a board | $47.30 | $4.73 | JLC parts database (`tools/cost.py`, 2026-10-20) |
-| Assembly fees, Economic PCBA (below) | $50.28 | $5.03 | JLC's published rates |
+| Assembly fees, Economic PCBA (below) | $53.35 | $5.34 | JLC's published rates |
 | USB-C through-hole tabs by hand, if JLC charges it | $4.24 | $0.42 | JLC's published rates |
 | Shipping, DHL Express with duties paid at checkout (DDP) | $29.45 | $2.95 | quote; the duty itself isn't known yet |
-| **Total** | **about $165** | **about $16.47** | |
+| **Total** | **about $168** | **about $16.78** | |
 
 | Assembly fee (Economic PCBA, 2-50 boards) | 10 boards |
 |---|---|
 | Setup | $8.18 |
 | Stencil | $1.53 |
 | Solder joints: about 425 a board (JLC's count was 386 before the 9 parts added 2026-10-05; the backlight sinks that replaced the AP3156 on 2026-10-07 add about 15, J4's header 4 more on 2026-10-20), $0.0016 each | $6.80 |
-| Feeder loading: 11 extended part numbers (the thermistor and the 27 ohm USB resistors among them; U1, the ESD array, is hongjiacheng's Preferred SRV05-4A since 2026-10-20, and J4 reuses J2's part number), $3.07 each (basic and preferred parts: none) | $33.77 |
-| **Total** | **$50.28** |
+| Feeder loading: 12 extended part numbers (the thermistor and the 27 ohm USB resistors among them; since 2026-10-22 U1, the ESD array, is Semtech's SRV05-4.TCT (C13612) and U3, the 3V3 LDO, Richtek's RT9013-33GB (C47773), both Extended and both stocked at JLC so a 30-board order needs no pre-order; J4 reuses J2's part number), $3.07 each (basic and preferred parts: none) | $36.84 |
+| **Total** | **$53.35** |
 
 The priciest parts: RP2354B $1.43, the panel's connector (Hirose FH12-50S) $0.81,
 the Abracon crystal and inductor $0.27 each, the backlight op-amp (MCP6002) $0.24, PicoBlade

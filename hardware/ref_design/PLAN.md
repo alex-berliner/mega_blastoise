@@ -21,7 +21,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH, in the left bezel since 2026-10-21 (the cell's hole took the middle) | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board), copied as drawn; no flash chip to route; its side decouplers placed by hand beside it |
 | Charger | BQ24073 power path (2026-10-21, row 16): OVP 6.6 V, OUT 4.4 V into VSYS, 475 mA input limit, 270 mA charge, 5 h timer, TS on a B3950 NTC (TH1) at the cell hole's right edge (3.5-47 C) | replaced the TP4056 and its load sharing (hot-plug rings into VSYS, no timer, termination lost under load); about +$0.80 a unit at 10 |
 | Cell | 403450, about 700 mAh, in a 54.0 x 37.0 mm hole in the board (2026-10-21, row 19): across the board between seat 2's deck and J3's range, 0.5 mm round a worst-case 52 x 36 cell plus 1 mm at its left end for its leads to J2 (PicoBlade, 3.4 mm) at the hole's seat-1 corner; its top at most 1.6 mm over the board, its bottom in a 0.6 mm pocket in the tub's floor (case/CELLCUT_FOR_CASE.md; the case took it 2026-10-22) | 9.55 mm at the screen and 7.7 at the ends (the floor pocketed under the cell), against 13.35 and 11.5 (Alex, 2026-10-21) |
-| 3V3 | ME6211 LDO on the power latch | $1.40 a unit cheaper than the buck-boost; firmware shuts down at 3.5 V as computed (the ADC reads against 3V3, which follows the cell once the LDO drops out) |
+| 3V3 | RT9013 LDO on the power latch (the ME6211 until 2026-10-22) | $1.40 a unit cheaper than the buck-boost; firmware shuts down at 3.5 V as computed (the ADC reads against 3V3, which follows the cell once the LDO drops out) |
 | Audio | The FM8002A into INGHAi's GSPK151035PN on J4 (2026-10-22): the speaker lies on the board's top in the right bezel beside the screen and plays up through three slots in the face; the case holds it in a pocket in the top piece's underside (case/SHELL.md) | Alex chose the side bezel over the side wall (row 7 dropped); for a while (row 19 on 2026-10-21) there was no audio at all |
 | Buttons | 16 x DSL_button_4ring (D-pads, A/B/X/Y) read through a 74HC165 per seat, chained (SR_PL GPIO28, SR_CLK GPIO29, SR_DATA GPIO30, 10k array pull-ups); Start/Select on 4 mm metal snap domes (HYP 600-415S-260, row 4) on their own GPIOs; either seat's Start turns the device on (row 1, D8/Q7) | only load, clock, data and 3V3 cross the strips beside the cell's hole (2026-10-21) |
 | Pin map | each pin faces where its net goes, in fan-out order; Raspberry Pi's pin escapes copied with the core | two layers route completely (docs/pinmap.md) |
@@ -84,6 +84,11 @@ Next:
       (C20615829, Preferred, about $0.03): same pinout and 1.0 pF; ±15 kV against ±30 kV ESD, still
       above IEC 61000-4-2 level 4. `design.py` only, then check_pins against its datasheet; no copper
       change. Update the USB row above
+- [x] Parts JLC stocks, for a 30-board order with no pre-orders (2026-10-22, Alex): U1 back to
+      Semtech's SRV05-4.TCT (C13612, Extended), U3 the RT9013-33GB (C47773, Extended) for the
+      ME6211. Same pinouts; `design.py`, the pin reviews, sync_pcb; no copper change, DRC clean.
+      J5/J6's Megastar ZX-SH1.0-3PWT (C7430445) clone is not swapped: its land pattern and body
+      differ from the SM03B-SRSS-TB footprint (tabs 0.475 mm nearer the pins, 3.15 mm tall)
 - [x] Schematic: every power:GND symbol hides its "GND" value (77 of them), so a ground reads as a
       bare triangle. Show it (schematic generator: for the schematic session)
 - [x] Move the speaker to a long side and play it out of the side wall (Alex): the floor grille

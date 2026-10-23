@@ -22,7 +22,7 @@ Symbols are KiCad's own for the real part where its library has one (the
 RP2354B, 2N7002, AO3400A, AO3401A); generic ones (Device:R, Device:D_Schottky)
 carry the part number as their value.
 
-This is the 2-layer build: BQ24073 power-path charger, ME6211 3V3, RP2354B (flash
+This is the 2-layer build: BQ24073 power-path charger, RT9013 3V3, RP2354B (flash
 inside), PWM audio into an FM8002A, either seat's Start as the power button, a board
 thermistor at the cell's hole (no LEDs), every hole >= 0.3 mm, and an ER-TFT024IPS-3 panel
 in a ZIF connector.
@@ -152,10 +152,11 @@ R("R4", S, "10k", "CC2", "CC2_SENSE")          # 10k keeps a CC short to VBUS of
 # through the D+ steering diode (to about 2.7 V), hold PWR_EN up and half-close Q2
 part("U1", S, "Power_Protection:SRV05-4", "SRV05-4", "Package_TO_SOT_SMD:SOT-23-6",
      {"1": "USB_DP", "3": "USB_DM", "4": None, "6": None, "5": "+3V3", "2": "GND"},
-     "C20615829", "SRV05-4A", "Zhuhai Hongjiacheng")
-# U1 (2026-10-20, Alex): hongjiacheng's SRV05-4A, a Preferred part (no setup fee), after
-# Semtech's Extended SRV05-4.TCT (C13612; ProTek's C85364 ran out 2026-10-07). Same pinout,
-# 1.0 pF to GND, 15 kV contact and air
+     "C13612", "SRV05-4.TCT", "Semtech")
+# U1 (2026-10-22, Alex): Semtech's SRV05-4.TCT (C13612, Extended) again, which JLC stocks, so a
+# 30-board order needs no pre-order; hongjiacheng's SRV05-4A (C20615829) held it 2026-10-20 to
+# 10-22. Same pinout (I/O on 1, 3, 4, 6; GND 2; REF 5). JLC's footprint for C13612 is KiCad's
+# turned 180 degrees (C20615829's was 90): check U1's pin 1 in JLC's placement preview
 # C1 through R41 (2.2 ohm): damps a ceramic input cap ringing when a live source is plugged in;
 # the BQ24073 asks 1-10 uF on IN, which is rated 28 V absolute with OVP at 6.6 V
 R("R41", S, "2.2 0603", "VBUS", "VBUS_C1", fp=R0603)
@@ -210,9 +211,14 @@ part("#FLG02", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "GND"}, bom=False)
 # 3V3 LDO, power switch latch, sensing
 # =================================================================================
 S = "power.kicad_sch"
-part("U3", S, "Regulator_Linear:ME6211C33M5", "ME6211C33M5G", "Package_TO_SOT_SMD:SOT-23-5",
+# U3 (2026-10-22, Alex): Richtek's RT9013-33GB (C47773), stocked at JLC, for the ME6211C33M5G-N
+# (C82942). Same SOT-23-5 pinout (VIN 1, GND 2, EN 3, NC 4, VOUT 5; DS9013-10 p2), so it keeps
+# KiCad's ME6211 symbol (RT9013 isn't in KiCad's library). VIN 2.2-5.5 V (6 V absolute) against
+# VSYS at most 4.5 V (BQ24073 OUT 4.3-4.5 V with USB in, VBAT <= 4.2 V without); EN high >= 1.6 V,
+# 6 V absolute whatever VIN is (the ME6211's CE was VIN + 0.3); 1 uF ceramic in and out minimum
+part("U3", S, "Regulator_Linear:ME6211C33M5", "RT9013-33GB", "Package_TO_SOT_SMD:SOT-23-5",
      {"1": "VSYS", "2": "GND", "3": "PWR_EN", "4": None, "5": "3V3_LDO"},
-     "C82942", "ME6211C33M5G-N", "MICRONE")
+     "C47773", "RT9013-33GB", "Richtek")
 C("C5", S, "10u", "VSYS")
 C("C6", S, "10u", "3V3_LDO")
 C("C7", S, "10u", "3V3_LDO")
@@ -228,8 +234,8 @@ R("R14", S, "10k", "VBUS", "VBUS_EN")
 part("D3", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
      {"1": "PWR_EN", "2": "VBUS_EN"}, "C7502694", "BAT54WS", "")
 R("R15", S, "100k", "PWR_EN", "GND")
-# C47 slows PWR_EN's rise from VBUS (R14, about 10 ms) so a live plug-in can't lift the ME6211's
-# CE above its VIN (VSYS, which sits at VBAT until U2's OUT comes up) plus 0.3 V, its maximum
+# C47 slows PWR_EN's rise from VBUS (R14, about 10 ms) so a live plug-in couldn't lift the ME6211's
+# CE above its VIN plus 0.3 V; the RT9013's EN has no such limit (6 V absolute), C47 stays as a filter
 C("C47", S, "1u", "PWR_EN")
 # RP2350-E9 can hold a released pad near 2 V; through D2 that would keep PWR_EN up after a
 # crash. An external 4.7k (E9 needs 8.2k or less) holds PWR_HOLD low unless driven

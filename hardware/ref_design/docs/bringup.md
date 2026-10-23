@@ -55,7 +55,7 @@ Plug USB through the power meter.
 |---|---|---|
 | TP1 VBUS | 5 V | connector, CC pull-downs (a Type-C charger only turns VBUS on when it sees them) |
 | TP2 VSYS | 4.5 to 4.7 V | D5 feeds the system from USB (VBUS less a Schottky drop) |
-| TP4 3V3 | 3.3 V | USB raises PWR_EN through R14/D3; the ME6211 runs |
+| TP4 3V3 | 3.3 V | USB raises PWR_EN through R14/D3; the RT9013 (U3) runs |
 | input current | under 40 mA | nothing is fighting |
 | a USB drive called RP2350 appears on the computer | yes | the RP2354B's flash is blank from the factory, so it boots into BOOTSEL: chip, crystal, USB, 1.1 V core |
 
@@ -143,11 +143,14 @@ firmware while VSYS is above 4 V.
 6. **Hot plug, no cell.** Cell unplugged, scope on TP1 (VBUS) and TP2 (VSYS), trigger on
    VBUS rising, then plug in an A-to-C cable from an always-on USB-A port (the worst case:
    a USB-C source only switches VBUS on after it sees the board). VBUS must stay under
-   8 V (the TP4056's maximum) and VSYS under 6.5 V (the ME6211's). Simulated with R41 in
-   place: about 6.7 and 6.2 V with a 2 m cable.
+   8 V (the TP4056's maximum) and VSYS under 5.5 V (the RT9013's operating maximum, 6 V
+   absolute). Simulated with R41 in place, in the TP4056 design where VSYS followed VBUS
+   through D5: about 6.7 and 6.2 V with a 2 m cable. With the BQ24073 VSYS is its regulated
+   OUT (4.3-4.5 V), so it should stay near 4.4 V: this step confirms it.
 7. **CE at plug-in.** Same setup with the cell connected and the board off, scope on TP6
-   (PWR_EN) and TP2 (VSYS): PWR_EN must never be more than 0.3 V above VSYS (the ME6211's
-   CE limit). C47 slows PWR_EN to about 1 ms for this; if it still leads, raise C47.
+   (PWR_EN) and TP2 (VSYS): PWR_EN must stay under 5.5 V (the RT9013's EN range, 6 V
+   absolute; unlike the ME6211's CE it may lead VIN). C47 slows PWR_EN; if it overshoots,
+   raise C47.
 
 ## 6. Power switch
 

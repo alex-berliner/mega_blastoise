@@ -12083,7 +12083,7 @@
 				)
 			)
 		)
-		(property "Value" "ME6211C33M5G"
+		(property "Value" "RT9013-33GB"
 			(at 0 2.4 90)
 			(layer "F.Fab")
 			(uuid "d9d4a3c4-6f67-4701-839b-d237f24edd88")
@@ -12128,7 +12128,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C82942"
+		(property "LCSC" "C47773"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -12140,7 +12140,7 @@
 				)
 			)
 		)
-		(property "MPN" "ME6211C33M5G-N"
+		(property "MPN" "RT9013-33GB"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -12152,7 +12152,7 @@
 				)
 			)
 		)
-		(property "Manufacturer" "MICRONE"
+		(property "Manufacturer" "Richtek"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
@@ -33872,7 +33872,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C20615829"
+		(property "LCSC" "C13612"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -33884,7 +33884,7 @@
 				)
 			)
 		)
-		(property "MPN" "SRV05-4A"
+		(property "MPN" "SRV05-4.TCT"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
@@ -33896,7 +33896,7 @@
 				)
 			)
 		)
-		(property "Manufacturer" "Zhuhai Hongjiacheng"
+		(property "Manufacturer" "Semtech"
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)

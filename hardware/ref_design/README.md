@@ -29,7 +29,7 @@ which this folder never touches.
 - PWM audio through an RC filter into an FM8002A amplifier and a 15 x 10 mm speaker that plugs in,
   lies on the board's top beside the screen and plays up through a grille in the face
 - One 403450 Li-ion cell (about 700 mAh) in a hole in the board, its bottom in a pocket in the tub's floor, BQ24073 power-path charger,
-  ME6211 3V3 LDO, soft power on seat 1's Start button with MCU hold
+  RT9013 3V3 LDO, soft power on seat 1's Start button with MCU hold
 - Case 77.4 x 132.7 mm (a DS Lite's length), 9.55 mm at the screen and 7.7 mm at the button decks
   (genuine DS Lite caps stand 1.41 mm proud there): a tub, a top piece and a deck at each end that
   curve over the sides to one seam, built upside down, all printed without supports, held by six M2

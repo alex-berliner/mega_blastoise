@@ -26,7 +26,9 @@ every hole 0.3 mm or larger.
 - SRV05-4 on D+/D-, next to the connector: a 4-line TVS array referenced to 3V3
   (two of its lines unused). Not VBUS: with no cable in, the MCU's D+ pull-up (on in
   BOOTSEL mode and whenever USB is running) would feed VBUS through the D+ steering
-  diode to about 2.7 V, which holds PWR_EN up and half-closes Q2. A JLC preferred part.
+  diode to about 2.7 V, which holds PWR_EN up and half-closes Q2. Semtech's SRV05-4.TCT
+  (C13612, Extended, stocked at JLC; hongjiacheng's SRV05-4A held the spot 2026-10-20 to 10-22).
+  JLC's footprint for it is KiCad's turned 180 degrees: check U1 in the placement preview.
 - TP4056 linear charger: 4.2 V; R5 = 3.3k sets about 333-364 mA (the datasheet's
   revisions give 1100 or 1200 V / R5), about 0.5 C for the 403450 (about 700 mAh), the
   usual standard charge rate for small pouch cells. CE is pulled up to VBUS (R43), so it
@@ -54,7 +56,8 @@ every hole 0.3 mm or larger.
   input capacitor ringing when a live source is plugged in (it asks 1.5 ohm; 2.2 is the
   nearest Basic part). Simulated, a 2 m cable into a board with no cell peaks VBUS at
   6.7 V (7.1 without R41; U2's maximum is 8 V) and VSYS at 6.2 V (6.7 without; the
-  ME6211's maximum is 6.5 V). Most of the ring goes through D5 into the VSYS capacitors,
+  ME6211's maximum was 6.5 V; the RT9013 that replaced it is rated 6 V, and with the BQ24073
+  VSYS is its regulated OUT, 4.3-4.5 V). Most of the ring goes through D5 into the VSYS capacitors,
   which damps it; with a cell in, the peaks are lower. No TVS: an SMF5.0A's 5.0 V working
   voltage is below USB's 5.5 V, and it would barely conduct at these peaks.
 - The unplug: Q2's gate is fed from VBUS through D6 (BAT54WS) and pulled down by R6
@@ -70,13 +73,17 @@ every hole 0.3 mm or larger.
   cutoff. The RP2350 has no 3V3 supervisor (its brown-out detector watches the 1.1 V
   core), so an out-of-spec dip would not reset it cleanly: it could corrupt a flash
   access instead. Numbers from a simulation of the unplug (the AO3401A and B5819W
-  curves, the TP4056's shut-off, the ME6211's dropout and the routed copper), checked
+  curves, the TP4056's shut-off, the ME6211's dropout (the RT9013's is lower) and the routed copper), checked
   by two independent model reviews; bring-up step 5 measures it.
 
 ### 3V3 and the power switch (sheet Power)
 
-- ME6211 LDO from VSYS: 500 mA maximum, 120 mV dropout at 100 mA. It holds 3.3 V
-  down to a cell of about 3.42 V; below that 3V3 follows the cell. The firmware shuts
+- RT9013-33GB LDO from VSYS (the ME6211 until 2026-10-22, the same pinout; pin 4 is NC on
+  both): 500 mA maximum, 250 mV typical and 400 mV maximum dropout at 500 mA, so about 50-80 mV
+  at 100 mA against the ME6211's 120 mV. VIN 5.5 V maximum (6 V absolute) against VSYS at
+  most 4.5 V; EN high from 1.6 V, 6 V absolute whatever VIN is; at least 1 uF ceramic in and
+  out with an ESR over 5 mOhm (2 x 10 uF on its output here). It holds 3.3 V
+  down to a cell of about 3.42 V (a little lower with its dropout); below that 3V3 follows the cell. The firmware shuts
   down at 3.50 V as it computes it, never lower: the ADC's reference is the 3V3 rail,
   so once the LDO drops out the computed voltage levels off at 3.37-3.43 V whatever
   the cell is, and a lower threshold would never fire (`docs/pinmap.md` has the
@@ -87,7 +94,7 @@ every hole 0.3 mm or larger.
 - PWR_EN = (button) OR (PWR_HOLD from the MCU) OR (VBUS through 10k and a diode).
   All three through Schottky diodes so none back-feeds another; 100k pull-down (R15).
   With the cell on VSYS, D5's reverse leakage flows into the VBUS node; into R15's 100k
-  about 10 uA (a warm Schottky) would reach the ME6211's 1.0 V CE level. R38 (1k, the
+  about 10 uA (a warm Schottky) would reach the ME6211's 1.0 V CE level (the RT9013's EN needs 1.6 V). R38 (1k, the
   unplug bleeder, see USB) holds VBUS down: that now takes about 1.3 mA. It costs 5 mA
   with USB in.
   (A 10k R15 would do the same but cut how much resistance the Start contact's pill may have
@@ -97,7 +104,7 @@ every hole 0.3 mm or larger.
   GND, so pressing Start joins VSYS to PWR_BTN_RAW, as the side switch did. The MCU
   sees it through Q1 (2N7002, gate on the button node) on GPIO3, so no MCU pin
   ever touches VSYS; firmware reads seat 1's Start there.
-- Off state: ME6211 off (CE low), amplifier shut down (R36 holds SHUTDOWN high,
+- Off state: RT9013 off (EN low, 0.7 uA), amplifier shut down (R36 holds SHUTDOWN high,
   4.2 uA), backlight sinks off (they run from 3V3; R56/R57 hold the FET gates low), charger drawing about 2 uA from the
   cell, battery divider 4.5 uA (up to 9 uA: with the chip unpowered, GPIO47 sits above
   IOVDD and its ESD diode takes a few uA, harmless and the same as on Raspberry Pi's
@@ -286,7 +293,7 @@ the case for these checks.
 | RP2354B stock at JLC (1665 on 2026-10-07; the AP3156 it shared this row with ran out and was replaced by the discrete backlight sink) | assembly blocked for a larger run | buy ahead, or consign parts |
 | Board thermistor, not a cell one | TH1 reads the board over the cell; a charge in a hot car or near the 46 C edge may pause and resume | the pause is safe and charging resumes by itself; bring-up 5.4 and 5.4a check TH1's reading while charging and the pause points |
 | USB-to-cell hand-over | for 1.5-3.3 ms after an unplug D7 carries VSYS until Q2 takes over; below a 3.42-3.49 V cell 3V3 still dips under the flash's 2.97 V minimum | the 3.5 V cutoff keeps the cell above that; bring-up step 5 scopes it with a nearly flat cell; a larger margin would need a lower-dropout 3V3 regulator |
-| Hot plug with no cell | a live source into a bare board rings VSYS to about 6.2 V in simulation (R41 in place), against the ME6211's 6.5 V maximum | bring-up step 5 scopes it; the worst case is an A-to-C cable from an always-on USB-A port (a USB-C source switches VBUS on only after it sees the board, and ramps it), so on the bench prefer a USB-C source or fit the cell first |
+| Hot plug with no cell | a live source into a bare board rang VSYS to about 6.2 V in simulation (R41 in place) in the TP4056 design, where VSYS followed VBUS; the RT9013 is rated 6 V absolute, and with the BQ24073 VSYS is its regulated OUT (4.3-4.5 V) | bring-up step 5 scopes it; the worst case is an A-to-C cable from an always-on USB-A port (a USB-C source switches VBUS on only after it sees the board, and ramps it), so on the bench prefer a USB-C source or fit the cell first |
 | Panel supply | one maker (EastRising), sold direct | it publishes its drawings; another panel needs case.scad's panel numbers, J3's place and its pin map changed (the 3.5in ER-TFT035IPS-6 to this 2.4in one, 2026-10-21, was that plus R61) |
 | FPC fit in J3 | too short a fold can't reach the connector; too long bows under the panel | the model errs long (safe); if the tail bows, move J3 1.5-2 mm towards seat 1 (`conn_rear` about -0.6); check with a real panel and connector before the board order |
 | DS Lite silicone fit | cap retention and feel depend on unmeasured heights | pads and caps ordered: try them in a printed lid before the board order |

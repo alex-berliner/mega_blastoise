@@ -14,10 +14,12 @@ Files are in `board/fab/` (regenerate with `python3 board/tools/fab.py`).
 | Assembly | Economic PCBA, top side only, `battler_bom_jlc.csv` + `battler_cpl_jlc.csv` | 117 placements, 49 part numbers |
 
 In JLC's placement preview, check every polarised part turned the way the silkscreen
-says: the RP2354B, TP4056, MCP6002 (U6) and FM8002A pin-1 dots, the ME6211, SRV05-4, BAT54C,
+says: the RP2354B, TP4056, MCP6002 (U6) and FM8002A pin-1 dots, the RT9013 (U3), SRV05-4 (U1), BAT54C,
 AO3401A, the AO3400As (Q5, Q6) and the 2N7002s, the diodes (D2, D3, D5, D6: the band is the cathode), and J3,
 the panel's connector (pin 1 at its left end, its mouth towards seat 1).
-JLC fixes rotation offsets on request; the CPL carries KiCad's angles.
+JLC fixes rotation offsets on request; the CPL carries KiCad's angles. U1 needs one: JLC's
+footprint for C13612 is KiCad's SOT-23-6 turned 180 degrees, and placed unturned its GND pin
+lands on the +3V3 pad. U3's (C47773) is the same SOT-23-5 footprint JLC used for the ME6211.
 
 Not assembled by JLC (no LCSC number): the 20 membrane contacts (bare gold), test pads,
 locating holes and fiducials. J3, the panel's ZIF connector, and J4, the speaker's header, are
