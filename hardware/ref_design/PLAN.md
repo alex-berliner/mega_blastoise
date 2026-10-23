@@ -29,7 +29,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 27 ohm 0402 series in Raspberry Pi's spots | one Extended part ($3 an order): the 27 ohm 0402 (C25100; 22 ohm until the 2026-10-05 pin review, and a 27 ohm 0603 doesn't fit the copied layout) and the ESD array was the second from 2026-10-07 (ProTek's Preferred SRV05-4, C85364, ran out, so U1 became Semtech's Extended SRV05-4.TCT, C13612) until 2026-10-20, when U1 became hongjiacheng's Preferred SRV05-4A (C20615829, Alex): same pinout, no setup fee |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under pinholes in the top piece; SWD again on six 2.54 mm pogo pads on the back (J7: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND); probe pads on every rail (VBUS, VSYS, VBAT, 3V3, 1V1), the panel's SPI, BL_REF, PWR_EN, LS_GATE, AMP_SHDN and two GND clips; cut jumpers isolate the 3V3 regulator, backlight, amplifier, panel logic and cell (JP1-JP5) | no LEDs (approved); pads and jumpers added after Alex's debug-readiness review (2026-10-19) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm; parts on the top only | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
-| Case | 77.4 x 132.7 x 9.55 mm (7.7 at the decks; 2026-10-22, for the board with the cell in it): since 2026-10-23 two C-shaped decks (a core with the buttons and an arm along each side wall; seat 1's and seat 2's) form the face and the sides at their own height end to end, and the screen block is an island 2.6 mm in from the sides, its edge one rounded profile all round with a 45 degree wedge under the decks' lips, out to the right wall only as an ear over the USB-C; all meet the tub (the back) flush at one seam low on the back's round (2.55 mm up), over the tub's tongue (6.7 round the cores, 5.6 along the sides), which keys them: a tab into each arm, a post in each corner that pushes a deck onto the island, grip ribs, so the parts hold together before the screws; the arms meet in a lap on the left wall and meet the ear's laps on the right; built upside down on two build bars; six M2 x 6 screws from the back through the board, four into the island beside the glass and one into each deck; no hooks; crush ribs on the tub centre the board; the cell in a pocket in the tub's floor, the speaker under a grille in the right bezel; every part prints without supports, every edge an arc ending in a chamfer at `overhang` (60 since 2026-10-23, a variant until the overhang kit confirms it: case/SHELL.md); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21), the island (2026-10-23); FDM at home, about $1.50 of filament |
+| Case | 77.4 x 132.7 x 9.55 mm (7.7 at the decks; 2026-10-22, for the board with the cell in it): since 2026-10-23 two C-shaped decks (a core with the buttons and an arm along each side wall; seat 1's and seat 2's) form the face and the sides at their own height end to end, and the screen block is an island 2.6 mm in from the sides, its edge one rounded profile all round with a 45 degree wedge under the decks' lips, out to the right wall only as an ear over the USB-C; all meet the tub (the back) flush at one seam low on the back's round (2.55 mm up), over the tub's tongue (6.7 round the cores, 5.6 along the sides), which keys them: a tab into each arm, a post in each corner that pushes a deck onto the island, grip ribs, so the parts hold together before the screws; the arms meet in a lap on the left wall and meet the ear's laps on the right; built upside down on two build bars; six M2 x 6 screws from the back through the board, four into the island beside the glass and one into each deck; no hooks; crush ribs on the tub centre the board; the cell in a pocket in the tub's floor, the speaker under a grille in the right bezel; every part prints without supports, every edge an arc ending in a chamfer at `overhang` (45 on this branch, `ref-design-island-45`; 60 on the island's main line, a variant until the overhang kit confirms it: case/SHELL.md); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21), the island (2026-10-23); FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` by `tools/build_sch.py`; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
@@ -134,7 +134,7 @@ Next:
       limit from case.scad (and uses sin, not cos), the slicers' support threshold follows it.
       positions.json unchanged, check_buttons the same 11, check_fit PASS; P1S 1_case 55.6 g,
       1_case_decks 9.8 g, 5_unit 65.2 g. Depends on the overhang kit showing 60 prints clean on
-      both printers (case/SHELL.md, "This branch is the 60 degree variant")
+      both printers (case/SHELL.md, "The 60 degree variant")
 - [x] The island (2026-10-23, Alex on the side blend: "It needs to blend and flow better ... one piece
       one flow, not two"; at 60 degrees): the case's side is the decks' profile end to end. The
       screen block is an island 2.6 in from the sides (J5/J6, J2, J4 and the speaker along the walls
@@ -148,6 +148,17 @@ Next:
       P1S 1_case 55.1 g, 1_case_decks 10.1 g, 5_unit 65.1 g (one plate). To check on the next print:
       the arms don't spring out along the sides, the island seats under the lips without binding, the
       decks sit steady on the bars (case/SHELL.md, "The island")
+- [x] The island at 45 degrees (2026-10-23, branch `ref-design-island-45` only; Alex: "make both and
+      coupons to test them"): the same island at `overhang` 45. Every round follows it (the island's
+      edge a 0.88 x 0.88 bevel at the screen face and the r 3.0 arc, a 1.36 run, was 1.79; the arms'
+      and the ear's r 3.0 a 0.88 bevel, top edge 1.757 in, was 2.20; the tub's bottom chamfer 1.23,
+      was 0.56); the laps are 1.9 long, not 3.0 (their underside falls at 45 from a 3.03 tongue).
+      Nothing else changed; at -D overhang=60 the parts are the main line's exactly. positions.json
+      unchanged, check_buttons the same 11, check_fit PASS, every downward face 45 or steeper; P1S
+      1_case 55.3 g, 1_case_decks 10.2 g, 5_unit 65.3 g (one plate). `island_coupons.zip`
+      (case/island_coupons.py, 1.9 g, 8 min on the P1S): the island's corner and the deck round it,
+      the left arms' lap, the ear's lap into seat 1's right arm, each at 45 and at 60, to print and
+      pick (case/SHELL.md, "The 45 degree version")
 - [x] Row 4, metal snap domes under Start/Select: the board has them (SW20-SW23); the case has
       `ss_metal_dome` and `ss_plunger_gap` and two asserts (the dome fits the pad's well; the
       plunger rests clear of the apex). `ss_lift` stays 0.35 on the assumed 0.36 plunger height.
@@ -257,7 +268,9 @@ upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plat
       conservative limit, marked GUESS; `6_tests` on the P1S and the U1 confirms or raises it
       (2026-10-22: the finer `7_overhangs_020`/`_016`/`_012`/`_008` plates bracket it, 30 to 80 every 2.5
       to 5, rounds R3/R6/R10, at 0.20/0.16/0.12/0.08 mm: the answer is an angle and a layer height;
-      2026-10-23: the branch `ref-design-cellcut-60` is the case at 60, ready if the kit says 60)
+      2026-10-23: the branch `ref-design-cellcut-60` is the case at 60, ready if the kit says 60;
+      the island is at 60 on its main line and at 45 on `ref-design-island-45`, and
+      `island_coupons.zip` prints the two side by side)
 - [x] 9 "The curve up from the base ends in a vertical lip" (Alex, relayed 2026-10-21: on the
       outside, at the bottom edge, all round where the floor meets the walls). Rechecked against the
       10-20 kit's tub (case.scad of e217c6d): the mesh is the same all round (sections every 1 mm of

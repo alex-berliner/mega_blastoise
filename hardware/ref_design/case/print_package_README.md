@@ -5,11 +5,12 @@ on the current design (2026-10-22: the 77.4 x 132.7 x 9.55 mm shell for the boar
 it, built upside down, its parts keyed to hold together before the screws; since 2026-10-23 the
 island: see `case/SHELL.md`, "The island"): the tub, the island (the raised screen block) and two decks.
 
-**This is the 60 degree variant** (2026-10-23): every round, the
-steps to the decks and the tub's bottom edge are shaped for a printer that prints a downward face
-60 degrees from vertical (30 from the bed) clean, not 45. Print it only once the overhang kit
-(`overhang_kit.zip`) has shown your printer does: its 60 degree fin and the R3 round down to its 60
-degree tick clean. Otherwise print the main line's kit (`case/SHELL.md`, first section).
+**This is the 45 degree island** (`ref-design-island-45`, 2026-10-23): the same island, parts and
+joints as the 60 degree main line, with every round, the island's edge and the tub's bottom edge shaped
+for a downward face 45 degrees from vertical, so it prints clean on any printer (`case/SHELL.md`, "The 45
+degree version"). The visible difference is in the edges: each round ends in a 0.88 x 0.88 bevel at
+the face instead of the 60 line's 0.40 tall one. To choose between the two, print
+`island_coupons.zip` first (one small plate, both angles side by side, its own README).
 
 ## The projects
 
@@ -39,7 +40,7 @@ slicers' overhang settings) are a kit of their own, `overhang_kit.zip`, with the
 
 The island, the decks and the tuning deck slices print face down as exported (the slices legs
 up), the tub back down, everything else flat. `overhangs.py` checked every part for a downward face
-flatter than 60 degrees (this variant's limit) that the printer can't bridge (5 mm at most) or step out to (1 mm): only
+flatter than 45 degrees (this version's limit) that the printer can't bridge (5 mm at most) or step out to (1 mm): only
 two parts have one, so only those parts get tree supports from the build plate (each part's own
 setting in the project; the plate's are off). Until 2026-10-21 the whole plate had them, and the
 slicer also filled the tub's six screw counterbores with support that fused into them: if you
@@ -72,12 +73,12 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the cores; 5.6 along the sides, the tabs 6.7) | `1_case` (55.1 g, 1 h 43 min with the island, the board mock and the dummies), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the cores; 5.6 along the sides, the tabs 6.7) | `1_case` (55.3 g, 1 h 41 min with the island, the board mock and the dummies), `5_unit` |
 | `top.stl` (the island) | 76.0 x 94.9 x 6.9 (the ear to the right wall) | `1_case`, `5_unit` |
-| `deck1.stl`, `deck2.stl` | 77.4 x 67.4 x 5.05 and 77.4 x 68.3 x 5.05 (seat 1's lap reaches 3.15 past its left arm) | `1_case_decks` (10.1 g, 25 min for both and the bars), `5_unit` |
+| `deck1.stl`, `deck2.stl` | 77.4 x 66.3 x 5.05 and 77.4 x 68.3 x 5.05 (seat 1's lap reaches 2.05 past its left arm; 3.15 at 60) | `1_case_decks` (10.2 g, 25 min for both and the bars), `5_unit` |
 | `build_bar.stl` (print two) | 71.0 x 2.0 x 1.85 | `1_case_decks`, `5_unit` |
 
-`5_unit` (the tub, the island, both decks, the bars, the board mock and the dummies on one plate) is 65.1 g and 2 h 08 min.
+`5_unit` (the tub, the island, both decks, the bars, the board mock and the dummies on one plate) is 65.3 g and 2 h 05 min.
 
 To assemble (every part goes in straight down):
 1. The two build bars on a flat bench, parallel, about 126 mm apart (centre to centre).
@@ -144,7 +145,7 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   underside is still clean (no drooping or loose strands) on each printer. The quarter round at the
   ladder's end goes from 85 degrees (near flat, where it leaves its stem) up to vertical, ticked
   at 45, 60 and 75 on its end face: report the tick below which it turns rough. That number goes
-  into `overhang` in `case.scad` (60 on this variant, 45 on the main line): one line makes the steps and every edge rounder.
+  into `overhang` in `case.scad` (45 on this branch, 60 on the island's main line): one line makes the steps and every edge rounder.
 - Screw holes: `coupon_screws_tub` (two of the tub's holes, printed flat as the tub: H4's slimmed
   5.0 boss by the left wall and an end boss) should come out
   with the 4.4 mm counterbore and the 2.4 mm hole open, and an M2 screw should pass; the old plates

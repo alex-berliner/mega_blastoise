@@ -5,6 +5,53 @@ to the EastRising ER-TFT024IPS-3, then reworked for the board with the cell in a
 speaker on its top (row 19, `CELLCUT_FOR_CASE.md`, which supersedes `BOARD_OUTLINE.md` where they
 differ). Everything here is in `case.scad`; this file says why.
 
+## The 45 degree version (2026-10-23, branch `ref-design-island-45`)
+
+Alex: "make both and coupons to test them". The island at 60 degrees ("The island", below) is the
+main line; this branch is the same island with `overhang` **45**, so it prints clean on a printer
+that can't do 60. Same parts, joints, build order and positions (`positions.json` unchanged). Where
+"The island" quotes a 60 degree number, this table has the 45 one:
+
+| Shape | At 60 (the main line) | At 45 (this branch) |
+|---|---|---|
+| The island's edge (the step's profile, all round it; `step_r` 3.0) | a 60 degree bevel 0.40 tall (0.70 wide) at the screen face, the arc down to the 0.35 straight foot: a 1.79 run, the flat face 4.39 in from the outline | a **45 degree bevel 0.88 x 0.88**, the same arc and foot: a **1.36** run, the flat face **3.96** in |
+| The arms' and the ear's outside round (`face_r` 3.0) | a 0.40 tall bevel at the face, top edge 2.20 in | a **0.88 x 0.88** bevel, top edge **1.757** in (the 45 line's round as it was) |
+| The tub's back round (`back_r` 4.2) | a 0.56 tall chamfer at the bed, 3.07 in | a **1.23** tall chamfer, **2.46** in |
+| The laps (the left arms', the ear's two; `lap_l`) | 3.0 behind the other skirt (3.15 past its own end), the tip 1.09 tall | **1.9** (2.05 past its end), the tip **0.855** tall |
+| The island's wedge, the decks' lips, the keys, tongue, posts, grip ribs, counterbores | 45 already | the same |
+
+**Why only these.** Every round, the island's edge and the tub's bottom edge are built by
+`edge_in`, which follows `overhang`, so setting it to 45 makes them 45 everywhere, round the island's
+corners too (its loft is of the profile). The radii stay those of the 60 line (and of the 45 line
+before it): a smaller radius would only shrink the bevel and the round together, and the same radii
+mean the two versions differ only in the angle, which is what the coupons compare. The one thing that
+broke was the laps: face down a lap's free end hangs off its part, and its underside rises from its
+root at `overhang`; from the arms' 3.03 tongue a 3.0 lap at 45 would have risen past its own bottom.
+`lap_l` is now the longest whose tip stays 0.85 tall (`lap_tip`), 1.9 at 45 and 3.0 at 60: still
+behind the other skirt, still no straight path through the joint, 1.1 less overlap. Everything else
+(the wedge, the undercut, the keys' pockets, the counterbores, the lead-ins) was already 45 or steeper.
+The asserts that follow the angle all pass, and nothing got thinner: at 45 the rounds come in less, so
+the arms' plate over the wedge, the island's skin over its inside and the counterbores' wall to the
+bottom chamfer (1.14, was 0.60) all gain. Visibly: the island's top edge and the arms' outside edge
+carry a flat 45 bevel where the 60 line has a short steep one and more arc; the island's flat face is
+0.44 wider each side; the tub's bottom edge has a taller chamfer.
+
+**Checks** (from this branch): every downward face of the four parts in their print poses is 45
+degrees or steeper (none flatter; the flat undersides are the same small bridges as at 60);
+`overhangs.py`: no supports; check_buttons the same 11 known failures, same volumes; check_fit PASS;
+every printed part manifold; the P1S slices: supports only under the board mock and the USB-C board
+coupon. P1S (0.20 mm): `1_case` 55.3 g, 1 h 41 min; `1_case_decks` 10.2 g, 25 min; `5_unit` 65.3 g,
+2 h 05 min, one plate. With `-D overhang=60` this branch's four parts are ca1f236's to the last digit
+(volume and bounds), so the 60 coupons are the main line's real geometry.
+
+**The coupons** (`case/island_coupons.py`, `island_coupons.scad`, its README `island_coupons_README.md`;
+`print/island_coupons.zip`, not in the case kits or the overhang kit): one plate, 1.9 g and 8 min on
+the P1S, each piece at 45 and at 60, cut from the real parts in their print poses and tabbed "45" or
+"60": seat 1's right corner of the island with the deck round it (the edge profile, the wedge under the
+lip), the two left arms' ends (the lap), the ear's seat-1 end and seat 1's right arm (the ear's lap).
+If the 60 pieces print as clean as the 45 ones and go together the same way, the 60 line is the
+rounder look; if not, this branch prints anywhere.
+
 ## The island (2026-10-23)
 
 Alex, on where the screen block's side round came down into the decks' (the side blend of "The side
@@ -171,7 +218,7 @@ pockets, its 7.2 tongue. The fit kit's coupons that cut the skirts (`seam_top` b
 which silently replaced `case.scad`'s skirt groove in every fit-kit render, so the kit's skirt coupons
 had no groove for the tongue; the case's is `skirt_groove()` now.
 
-## This branch is the 60 degree variant (2026-10-23)
+## The 60 degree variant (2026-10-23)
 
 Alex: "Can you make a variant with improved curves on the tub sides, the ridges and so forth?
 Assuming that the max angle that the printer can print is 60 degrees instead of 45." So on
