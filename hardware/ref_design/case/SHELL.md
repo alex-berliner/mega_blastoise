@@ -1,4 +1,4 @@
-# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), joints that hold it together, the seam on the round, the side joint (2026-10-22), and the tongue under the step (2026-10-23)
+# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), joints that hold it together, the seam on the round, the side joint (2026-10-22), and the lip under the step (2026-10-23)
 
 The case's redesign after Alex's notes on his last print (items 10, 13, 14 and 15) and the change
 to the EastRising ER-TFT024IPS-3, then reworked for the board with the cell in a hole in it and the
@@ -15,8 +15,8 @@ cell). The top piece and the decks all curve over the sides and meet the tub flu
 4.55 mm (4.05 at the decks) down over the tub's **tongue**, which keys them: tabs into pockets in the top piece, a post in each
 corner that pushes a deck home, and grip ribs, so the four parts hold together before the screws
 go in (see "The joints"). Each deck seats into the top piece **from behind**
-on a 45 degree wedge, which runs on under the step and the spine as a flange that a tongue of the top
-piece drops through (see "The tongue under the step"), reaches out to the case's outline and curves over the end and the sides
+(its plate runs on under the step and round the spine, and a lip at the step's foot goes down into
+a groove in its face: see "The lip under the step"), reaches out to the case's outline and curves over the end and the sides
 itself, and has its own screw. At each side wall a **lap** on the deck's skirt slides in behind
 the top piece's skirt, and the top piece's side round sweeps down into the deck's (see "The side
 joint"). The board, with the cell in a hole in it, lies inside the tub's
@@ -230,8 +230,9 @@ the board's old job (below).
   floor to the tongue's top, its inner corner at (+-34.80, +-62.45), 0.3 outside the board's corner,
   about 2.6 x 2.6, its inner faces chamfered 0.4 at the top. It sits in a notch in the deck's plate:
   across the case with `seam_fit`, along it with none, so as the tub goes on it pushes the deck
-  towards the screen onto its wedges and holds it there. One part still fits both ends.
-- **The decks sit on their wedges:** no clearance on the wedges along the step and round the
+  towards the screen onto its wedges and holds it there (since 2026-10-23 onto the end wall's foot
+  under the step: "The lip under the step"). One part still fits both ends.
+- **The decks sit on their wedges** (until 2026-10-23; now on the end wall's foot): no clearance on the wedges along the step and round the
   spine's end (the posts hold the deck on them, at its place over the board's buttons), `deck_gap`
   0.15 on the straight faces (the land, the skirts' ends at the side walls, the spine's sides; was
   0.25). The seams across the face and down the sides are an even 0.15. (Pushing the deck past its
@@ -249,9 +250,9 @@ the board's old job (below).
 (across), four tabs and the USB-C notch (along, and against twisting) and four grip ribs (on). Each
 deck is on the tub by its skirts over 2.4 of tongue and two grip ribs (across, on) and two corner
 posts (across with 0.25, along by pushing it onto the top piece). Each deck is on the top piece by
-its wedges (held there by the posts: it can't move along the case, towards the face or across), since
-"The tongue under the step" by the top piece's tongue in its flange's slots (it can't slide away from
-the step), and by the lap at each side wall (the skirts flush; until "The side joint", a grip rib across the joint). The board is centred by the tub's crush ribs
+its plate under the step and the top piece's lip in the groove in its face (since 2026-10-23, "The lip
+under the step"; until then its wedges): it can't come out of the front, slide along the case or
+across it, and the posts hold it on the end wall's foot; and by the lap at each side wall (the skirts flush; until "The side joint", a grip rib across the joint). The board is centred by the tub's crush ribs
 and sits between the tub's ribs and bosses and the top pieces' bosses.
 
 All of it prints without supports: the tub back down (the tabs, posts and ribs stand up; every lean
@@ -342,11 +343,10 @@ side wall in a 2.1 mm S right at the seam: a notch that read as two parts.
   root, under the groove's top (6.8). Face down its free end hangs off the deck, so its top (the
   print's underside) falls at 45 degrees from the root to 3.53 at the tip: full height (4.0) at the
   joint's line, 0.88 at the tip.
-- **How it engages.** In the face-down build the deck drops into the top piece from behind onto its
-  wedges, and the lap goes straight up the top piece's groove with it (the groove is open at the
+- **How it engages.** In the face-down build the deck drops into the top piece from behind, and the lap goes straight up the top piece's groove with it (the groove is open at the
   bottom). Clearances: 0.15 to the top piece's skirt (`deck_gap`), 0.25 to the groove's inner side
   (`seam_fit`, where the step's band is solid inside), 0.125 under the groove's top, free along the
-  wall. A deck that settles back down its wedges (0.15) only draws the lap's tip out a little.
+  wall. A deck that lies back (0.15) only draws the lap's tip out a little.
 - **What it holds.** The top piece's skirt can't move in (the lap is behind it) and the deck's can't
   move out past it (its lap is behind the top piece's), and the tub's tongue on either side keeps both
   from moving in: the two skirts lie flush, and there is no straight path through the joint (the
@@ -389,93 +389,85 @@ side wall in a 2.1 mm S right at the seam: a notch that read as two parts.
   has its 11 known failures with the same volumes (the decks' edges at the step didn't move; the laps
   are at the side walls, outside the board).
 
-## The tongue under the step (2026-10-23)
+## The lip under the step (2026-10-23)
 
-Alex, after the side joint: "Can the deck have some kind of indentation that runs across the entire
-surface that the top piece can insert into to keep both in place across their whole contact
-surface? ... Right now the top piece kind of just sits on top of the deck and so it's likely to move
-around still." He sketched it on `section_joint_zoom`: the deck running on under the step's block,
-and a tongue of the top piece down into a groove in it.
+Alex, after "the tongue under the step" (dbf61a6: the deck's wedge carried on down to 4.6 as a
+flange, the top piece's tongue down through slots in it between ties, 0.53 fins on 2 to 4 mm
+bridges): "I think this tooth method isn't viable. I don't want them breaking." Its root cause: with
+the deck printed face down, anything of it past its face's outline had to stay under the 45 degree
+line, so a flat flange under the top piece floats, and a groove in the overhanging wedge has a far
+wall that starts in mid air. So the deck now goes under the top piece at its own level, its face on
+the bed, and the groove is in that face. The plan Alex approved (2026-10-23) had the sizes rough;
+these are the case's.
 
-![the joint at x -10, through a slot: the tongue down through the deck's flange, the fin beyond it](images/section_joint_zoom.png)
-![the joint at x -14.1, through a tie: the deck's wedge whole, on down to 4.6](images/section_flange_tie.png)
-![across the spine's right side at y -38.5, through a slot](images/section_flange_spine.png)
-![through the spine's end at x -3.8: the wedge on down, no slot](images/section_flange_end.png)
-![exploded, as built face down: the top piece's tongues, and the deck from behind with its slots and ties](images/exploded_tongue.png)
+![the joint at x -10 (the same cut and framing as before): the plate under the step, the lip in its groove](images/section_joint_zoom.png)
+![across the spine's right side at y -38.5](images/section_lip_spine.png)
+![through the spine's end at x -3.8](images/section_lip_end.png)
+![cut at z 7.4, the right wall: the lip runs into the top piece's skirt, the groove and the plate stop 0.15 short of it](images/section_lip_wall.png)
+![built face down: the deck drops in over the lip, across the step and down the spine's side](images/exploded_lip.png)
+![as printed, both face down, at x -10: the groove's roof is the only bridge](images/print_lip.png)
+![as printed, at the spine's side and end](images/print_lip_spine.png)
 
-**What the print allows.** Both parts print face down and the deck goes in from behind, so whatever
-of a deck lies under the top piece prints off the deck's face at 45 degrees at most: it must stay
-under the wedge's line (45 degrees from the land's foot, 6.9), or it starts in mid air. A flange
-running flat under the block, as sketched, is a 1.4 to 2.7 mm ledge face down. And a groove under the
-top piece can't have a wall on its far side: that wall, face down, starts in mid air too, with the
-groove between it and the deck. So the deck's part of the joint is its wedge, carried on deeper, and
-the groove's far wall is bridged from places where the wedge is whole.
+**The shape** (`deck_ext`, `lip_*`, `end_wall`, `foot_h`, `step_foot` in `case.scad`):
+- **The deck's plate runs on under the step** at its own level, 5.7 to 7.7 (nothing of the deck is
+  lower than 5.7, the decks' height limit for the board): **1.6** (`deck_ext`) past the joint's line,
+  across the step from the spine to the side walls (0.15 inside them), down both sides of the spine
+  and round its end. That is as far as it goes with the top piece's **end wall** at 0.8 between it
+  and the screen's bay (the spines' hollows behind theirs): the wall's inside stays where the old
+  band's was (31.8 from the centre, `joint_w` 2.55 in from the joint), where the board's decks zone
+  starts, so `positions.json` is the same. The panel's frame and FPC, Start/Select, the pads, the
+  screw bosses and the spine's walls are all outside it (check_fit: 38 of the board's parts under the
+  joint, the tallest 1.19 of the 1.60 it allows).
+- **The top piece's step comes straight down to the deck's face:** no land at the deck's height any
+  more. The step's arc is the same round as before (`step_r`, its chamfer at `overhang`), ending
+  **0.35** (`step_foot`) over the deck, and from there it drops vertically to the joint. Over the
+  plate the top piece is hollow, its ceiling 0.15 over the deck (7.85), out to the end wall. Without
+  the vertical foot, the arc right down to the deck would leave the skin over the hollow 0.55 at the
+  lip's root; with it, 0.74. On the side walls the step's foot turns over the side's top in the same
+  45 degree chamfer as the blend (0.35 tall at the joint, nothing at the round's start), and the
+  side's round itself is the deck's across the joint, as before.
+- **One continuous lip** at the step's foot, its outer face the joint's line (the seam): **0.75**
+  wide (`lip_w`), **0.5** (`lip_d`) down into a groove in the deck's face, its tip's edges chamfered
+  0.2 (`lip_lead`) as lead-ins. The groove is 1.05 wide, 0.65 deep: 0.15 (`deck_gap`) each side of the
+  lip and under it. It runs the whole joint: across the step on both sides of the spine, down the
+  spine's sides and round its end. At the side walls it runs on into the top piece's skirt (over the
+  skirts' groove and the deck's lap, which stop at 6.8); the groove and the plate stop 0.15 short of
+  the wall's inside, 0.4 before the face starts to round over, so the groove never opens on the
+  outside. Looking into the seam there you meet the deck's plate, then the lap: no straight path.
+- **Face down**, the deck's whole plate is on the bed and the groove opens onto it: its roof is a
+  **1.05 bridge** (flat, chosen over 45 degree sides, which would have left the strip beyond it a
+  knife edge on the bed or the lip 0.3 deep). The top piece's lip stands straight up off the hollow's
+  floor. Nothing else hangs: `overhangs.py` and the P1S slices need no supports on either part.
 
-**The flange, the tongue and the slots** (`z_flange`, `lock_*` in `case.scad`):
-- **The flange:** each deck's wedge runs on down its 45 degree line from 5.7 (where it stopped) to
-  **4.6**, 0.8 over the board and 0.3 over its 0402 capacitors (0.5, the tallest parts allowed under it),
-  reaching **2.3** in under the top piece (to y +-32.05; the block's far side is at 31.8). It runs
-  across the step from the spine to 1.0 inside the side walls (x +-35.7: the laps and the tub's
-  tongue are beyond), down both sides of the spine and round its end.
-- **The tongue:** on the top piece, **0.8** thick, its outer face in the land's plane (the joint's
-  line), from the band down to 4.6: 2.3 under the land's foot, 1.1 under the block's underside. Its
-  tip's edges and its ends are chamfered 0.3 as lead-ins.
-- **The slots:** through the flange, 1.1 wide (`deck_gap` 0.15 each side of the tongue: the deck's
-  land on one side, the fin on the other), its ends 0.15 off the tongue's. Each is 2.1 to 4.0 long,
-  between **ties** 1.5 long where the wedge is whole. Per end: across the step, 3 x 3.32 between Q5
-  and Q3, 2 x 2.07 between Q3 and the flange's end, 1 x 4.01 between D3 and X1, 2 x 3.91 between X1
-  and Q6 (25.9 of its 57.9 mm); down each side of the spine, 2 x 3.26 (13.0 of its 23.8). The
-  section at x -10 is through a slot (-13.38 to -9.47).
-- **The fins:** beyond each slot the flange is a fin under the wedge's line (0.12 under it, so a
-  sagging first layer doesn't bear on the top piece), its top flat at **5.13** where it is **0.7**
-  thick (0.65 on the spine's sides, where the wedges keep 0.15 off the top piece), 1.2 at its foot.
-  The tongue engages it **0.53** (4.6 to 5.13); on the deck's side it faces the deck's land over 2.0
-  (5.7 to 7.7). Face down, each fin's top is a bridge from tie to tie (the P1S slices it as overhang
-  walls, the 2.8 layer); `overhangs.py` counts it a bridge, 2.0 from a held edge at most.
+**The thinnest plastic:** the deck's strip beyond the groove **0.70** (from the groove to the
+plate's end), under the groove **1.35**, the top piece's skin over the hollow **0.74** (at the lip's
+root, to the step's face), the end wall **0.8**, the lip 0.75 (0.35 at its chamfered tip). All
+asserted in `case.scad`.
 
-**What it holds.** Across the step the fins stop a deck sliding away from the screen (0.15 of
-play; until now only the corner posts did), and the tongue's ends against the ties stop it across.
-Down the spine's sides the ties stop it along the case both ways (0.15 of play, engaged 1.35 to 2.15
-deep) and the fins and the opposing wedges across. The tongue is straight, along the way the deck goes
-in, so it doesn't hold the parts together that way: the screws and the tub do, as before. **The
-wedge stays:** the ties and the fins' slopes still hold the deck in from the front, and the corner
-posts still push it home onto them (it can lie back only 0.15 now).
+**What it holds.** Across the step and round the spine's end the lip stops a deck sliding along the
+case both ways (0.15 of play each way); down the spine's sides the two lips stop it across. The
+plate under the step holds it in from the front (the wedge's job until now). The lip is straight, along
+the way the deck goes in, so it doesn't hold the parts together that way: the tub, the posts and the
+screws do, as before.
 
-**Where it stops short.** One deck fits both ends, so the flange keeps clear of both ends' parts
-(seat 2's turned round). Over each part taller than 0.5 its foot stops 0.32 over the part (its top
-rounded up, 0.3 and 0.02 more), and no slot ends within a tie's length of one that cuts it off above
-the fins' tops (`flange_keep`, from check_fit's board model):
+**The corner posts stay, as they are.** With the lip the deck would lie anywhere in its 0.15 of play,
+and the posts, pushing it towards the screen, would take it 0.15 past its place (the visible seam
+closed, the openings 0.15 off the buttons: that was rejected in "The joints"). So the top piece's end
+wall has a **foot**: over its lowest 0.5 (`foot_h`) along the step and round the spine's end it comes
+0.15 nearer, onto the end of the deck's plate, with a 45 degree lead-in above it. That is the deck's
+place: the posts push it onto the foot as the tub goes on (their lead-in catches a deck lying back up
+to 0.4), as they pushed it onto its wedges before. Without the tub the deck can lie 0.15 back; the foot
+only touches in the last 0.5 of the deck's travel, so it doesn't bind while the deck goes in.
 
-| Part | Where (seat 1's frame) | Height | The flange's foot over it |
-|---|---|---|---|
-| Q5, Q6 (SOT-23) | each side of the spine at the step, x +-5.15 to +-7.65 | 1.20 | 5.32 |
-| Q3 (SOT-23) | x 24.25 to 26.75 | 1.20 | 5.32 |
-| D3 (seat 2's, SOD-323) | x -33.95 to -31.45 | 1.11 | 5.23 |
-| X1 (crystal) | x -23.8 to -20.6 | 0.80 | 4.92 |
-| C5, C6, C7 (0603) | x -34.0 to -28.8, just past the block's far side | 0.80 | 4.92 |
-| U8, U9 (seat 2's) (TSSOP-16) | under the spine's end, x -2.8 to 4.0 | 1.10 | 5.22 |
+**Assembly** is as before: the deck goes face down into the face-down top piece from behind; its
+plate slides in under the step's hollow and the groove down over the lip in the same straight motion.
 
-At the spine's end U8 and U9 leave no room for a slot: the wedge runs on down (to 5.22 over them,
-4.6 beside them) with no tongue. **The room round it** (asserted in `case.scad`, both ends): the
-side screws' bosses (H1 and H2 turned round, y +-29) 0.55 off its edge, the end bosses 1.84, the
-panel's frame and its FPC's fold 0.82, J4 0.32, the speaker, Start/Select and the pads far off
-(the pads' circles 1.1 at the least), the tub's tongue and the laps 0.75 beyond its ends, and the
-grip ribs and corner posts. `check_fit.py` checks the board under it from case.scad's `FLANGE` line:
-43 parts under it, the tallest of them away from the keepouts 0.50 (0.3 under the flange), 11 under
-the keepouts. `positions.json` is the same, `check_buttons` has its 11 known failures with the same
-volumes, the outside is unchanged (the renders from outside match pixel for pixel), every part is
-manifold and support-free. Each deck is 0.07 cm3 heavier, the top piece 0.10 (P1S: `1_case_decks`
-9.4 g, 26 min; `1_case` 55.9 g; `5_unit` 65.2 g, 2 h 08 min).
-
-**Assembly** is as before: the deck goes face down into the face-down top piece from behind, and the
-slots go down over the tongues in the same motion, the tongues' chamfered tips leading them in. Then
-it sits on its ties' wedges.
-
-**The precedent:** in the deep-tub version (2026-10-20, `anchor` in `0b7d4e5`'s `case.scad`), each
-deck insert ran on under the spine round the end screw's boss, and the lid's boss dropped through a
-ring in it, because the wedges alone felt loose; it went when the 0.15 ring round the boss proved too
-tight and the end screws moved onto the decks. This joint has no ring round a column: its fits are
-the 0.15 on straight faces that the inserts slid on.
+**Gone:** the tongues, slots, ties, fins, the flange and its keepouts (`flange_keep`; the 0402s under
+it no longer matter), the wedge and the undercut, `joint_land`; check_fit's flange check became a
+check of the board under the joint (case.scad's `JOINT` line, the decks' underside less 0.3).
+`positions.json` is the same, `check_buttons` has its 11 known failures with the same volumes, the tub
+is unchanged, every part is manifold and support-free. Each deck is 0.12 cm3 heavier, the top piece
+0.32 lighter (P1S: `1_case_decks` 9.7 g, 24 min; `1_case` 55.6 g; `5_unit` 65.1 g, 2 h 05 min).
 
 ## The smooth rounds (2026-10-22)
 
@@ -536,9 +528,11 @@ straight 45 degree slope is already the gentlest possible line; a curve can only
 somewhere. So the step is the same round as every other outside edge, which reads as one shape
 (the screen block's edges all roll over alike): `step_r` = 3.0, an arc that reaches the deck steep
 (22 degrees off vertical) and turns, near the screen face, into a 45 degree chamfer where it would
-otherwise go flatter. Its run is 1.53 mm plus a 0.6 mm flat at the deck's level (`joint_land`, so the
-top piece's edge at the joint is square, not a knife edge). The seam with the deck lies in the
-crease at its foot.
+otherwise go flatter. Since 2026-10-23 it comes straight down to the deck at the joint: the arc ends
+`step_foot` 0.35 over the deck and drops vertically from there, its run 1.36 mm (until then the arc
+ran right down to the deck, 1.53, and the top piece ran on flat 0.6 at the deck's level, `joint_land`;
+"The lip under the step" took the land away and put the lip under the foot). The seam with the deck
+lies in the crease at its foot.
 
 When Alex's ladder says a printer can do, say, 60 degrees, `overhang = 60` lets the arc run much
 further up before the chamfer starts (and makes every other round rounder too); nothing else
@@ -558,17 +552,14 @@ end wall; they wobbled at the sides and the lip felt fragile. Now each deck:
 - **reaches the case's outline** and curves over the end and the sides itself, down to the seam,
   where its skirt sits on the tub's tongue like the top piece's: supported all round its outer edge
   by the tub, no lip;
-- **seats into the top piece from behind:** along the step and round the spine its edge goes 0.8
-  straight down from the face (`deck_land`) and then out 1.2 at 45 degrees under a matching undercut
-  in the top piece (`wedge_w`; `deck_gap` 0.15 on the straight faces and the spine's sides, none on
-  the wedges along the step and round the spine's end, where the tub's corner posts hold it: "The
-  joints"). It drops in from behind, centres itself, and can't
-  come out of the front. (Since 2026-10-23 the wedge runs on down to 4.6 as a flange and a tongue of
-  the top piece drops through slots in it, so the deck can't slide away from the step either: "The
-  tongue under the step".) The wedges on the spine's two sides oppose each other, so it can't move
-  across the case; along it, the wedges at the step and round the spine's end both face the same
-  way, so they don't hold it: the tub's corner posts push it onto them (2026-10-22; until then
-  nothing did, and a deck slid back down its wedges);
+- **seats into the top piece from behind:** along the step and round the spine its plate runs on
+  1.6 under the top piece, and the top piece's lip goes down into a groove in its face ("The lip
+  under the step", 2026-10-23). It drops in from behind and can't come out of the front, slide along
+  the case or across it; the tub's corner posts push it onto the end wall's foot, its place over the
+  buttons. (Until 2026-10-23 its edge went 0.8 straight down from the face and then out 1.2 at 45
+  degrees under an undercut in the top piece, a wedge, which only held it towards the screen and out
+  of the front; for a few hours that day the wedge ran on down as a flange with the top piece's tongue
+  through slots in it: "Alternatives considered".)
 - **has its own screw:** the end screw now goes through the board into a boss on the deck (the end
   bosses moved off the spine into the deck, just past the spine's end), pulling it down onto the
   board. No anchor ring round a column any more, so the
@@ -582,9 +573,9 @@ One part fits both ends (the end bosses are each other turned round, as before).
    its front foam ring stuck to the pocket's ceiling (the pocket centres it; standing on the board,
    0.45 to 0.75 under the ceiling, its front would be open to its back).
 2. **Decks:** each face down into its end of the top piece from behind, the laps at its sides going
-   in behind the top piece's skirts and the slots in its flange down over the top piece's tongues;
-   it drops onto its wedges and sits flat (it may settle 0.15 back down them, onto the spine's sides: the tub's posts push it
-   home in step 8).
+   in behind the top piece's skirts, its plate in under the step and the groove in its face down over
+   the top piece's lip in the same straight motion; it sits flat (it can lie 0.15 back: the tub's posts
+   push it home in step 8).
 3. **Caps** into the decks from behind (A/B/X/Y tab into its slot, notches onto their ribs; the
    D-pad; Start/Select), then the **silicone** on them: the walls on the deck's back locate each pad.
    The Start/Select metal domes and their Kapton dots are on the board already.
@@ -601,7 +592,7 @@ One part fits both ends (the end bosses are each other turned round, as before).
    the tongue's chamfered tip and the posts' lead-ins guide it in, then the crush ribs centre it):
    the cell drops into the board's hole, the tongue slides 4.5 mm down inside the skirts (either side
    of the decks' laps), its four tabs into the top piece's pockets and the USB-C tab into its notch, the corner posts push each
-   deck onto its wedges, and the grip ribs take hold. Press it down all round until the seam is an
+   deck home onto the end wall's foot, and the grip ribs take hold. Press it down all round until the seam is an
    even line. The case now holds together: lift it by the top piece and nothing falls out.
 9. **Six M2 x 6** from the back, snug: they lock it.
 
@@ -670,8 +661,9 @@ Alex won't print `6_tests` soon, so these are committed as best guesses (2026-10
 
 `slide_fit` is the one parameter for a printed part sliding on a printed part: the tub's tongue
 inside the skirts and the keys in their pockets take it (`seam_fit`). The decks' wedges took it too
-until 2026-10-22 (`deck_gap`); now the posts hold each deck on its wedges, with no clearance there,
-and `deck_gap` is 0.15 on the joint's straight faces. Raising it from 0.15 to 0.25 (2026-10-21)
+until 2026-10-22 (`deck_gap`); then the posts held each deck on its wedges, with no clearance there,
+and `deck_gap` became 0.15 on the joint's straight faces; since 2026-10-23 it is the lip's clearance in
+its groove and over the decks' plates under the step. Raising it from 0.15 to 0.25 (2026-10-21)
 changed no position the board reads (`positions.json` is the same): the top piece's wall behind the
 undercut kept its thickness (`step_wall_t` 1.35, which used to be written 1.2 + `deck_gap`), and the
 tub's tongue became 0.75 thick (was 0.85).
@@ -738,19 +730,26 @@ tub's tongue became 0.75 thick (was 0.85).
   under `skirt_t`, unless the tongue moved inwards. **The USB-C opening wholly in the top piece, the
   tub's tab gone:** the receptacle stands 0.85 into the skirt and the board goes in straight down
   (see that section).
-- **The wedge alone** (until 2026-10-23): the deck's edge under the top piece's 45 degree undercut,
+- **The wedge** (until 2026-10-23): the deck's edge under the top piece's 45 degree undercut,
   along the step and round the spine. Replaced: it only stops a deck towards the screen and out of the
   front (the wedges across the step and round the spine's end all face the same way), so along the case
   only the tub's corner posts held the two together, and with the tub off, or with the parts
-  handled before the screws, the top piece "kind of just sits on top of the deck" (Alex). The wedge
-  stays, carried on deeper, with the tongue through it ("The tongue under the step"). **A flange run
-  flat under the step's block, as sketched:** face down it is a 1.4 to 2.7 mm ledge off the wedge, in
-  mid air. **One groove all along it:** its far wall would start in mid air face down too; the ties
-  bridge it, so the tongue is in pieces. **A groove with a floor under the tongue** (0.7 of plastic
-  under it): over a flange whose foot is 0.8 over the board it would leave the tongue 0.2 of
-  engagement; the slots go through. **The flange lower, for more engagement:** under it there are 0402
-  capacitors (0.5) all along; keeping out of them as well would cut the slots into short pieces for
-  0.15 more. **A tongue at the spine's end:** U8 and U9 (1.1) are under most of it.
+  handled before the screws, the top piece "kind of just sits on top of the deck" (Alex). The plate
+  under the step now holds the deck in from the front ("The lip under the step").
+- **The teeth: a flange and a tongue through it** (dbf61a6, 2026-10-23): the wedge carried on down
+  its 45 degree line to 4.6 as a flange 2.3 under the top piece, and a 0.8 tongue of the top piece
+  down through slots in it (2.1 to 4.0 long) between 1.5 ties, the flange beyond each slot a fin
+  bridged from tie to tie, 0.53 of engagement. Rejected by Alex: "I think this tooth method isn't
+  viable. I don't want them breaking." Face down, all of the deck past its face's outline had to stay
+  under the wedge's line, so the far side of any groove started in mid air and had to be bridged, and
+  the board's 0402s under the flange cut the tongue into pieces. **A flat flange under the step's
+  block, as Alex first sketched it:** face down a 1.4 to 2.7 mm ledge off the wedge, in mid air.
+  The lip turns it round: the groove is in the deck's face, on the bed.
+- **45 degree sides on the lip's groove** (no bridge at all): with the groove 0.65 deep they meet
+  before its floor, so either the strip beyond the groove ends in a knife edge on the bed, or the lip
+  is a 0.3 ridge. The flat 1.05 roof is a short bridge over solid plate.
+- **The plate further under the step** (the plan's 1.8): the end wall would be 0.6; it stays 0.8,
+  and the plate 1.6. Moving the wall's inside nearer the screen would move the board's decks zone.
 - **Shoulders and the decks' notches back** (for the hold): neither kit Alex printed had them (they
   lived from 99e3f04 to c955631), so they weren't what held 4df3f96; the screws stay inward.
 
@@ -758,14 +757,15 @@ tub's tongue became 0.75 thick (was 0.85).
 
 1. **The overhang limit** (`overhang`, 45, a guess): the `6_tests` ladder on both printers. A higher limit
    makes the step and every edge rounder in one line.
-2. **The deck's wedge and its clearance** (`deck_gap` 0.15 on the straight faces, none on the
-   wedges along the case; `wedge_w` 1.2): the `0_buttons_end` coupons (top piece end + deck) show
-   whether a deck drops in over the spine and sits on its wedges, and whether the seam in the
-   step's crease looks right. If it binds over the spine, `deck_gap` back towards 0.25.
+2. **The lip and its clearance** (`deck_gap` 0.15 round the lip, over the plate and down the spine's
+   sides, none on the end wall's foot): the `0_buttons_end` coupons (top piece end + deck) show
+   whether a deck drops in over the lip and round the spine, and whether the seam in the step's
+   crease looks right. If it binds, `deck_gap` towards 0.2 (the groove's roof, 1.05 now, may go to
+   1.15, still a short bridge; the strip beyond it is 0.70, so a wider groove wants `lip_w` 0.7).
 3. **The seam and the joints** (`seam_fit` = `slide_fit` 0.25, `grip_reach` 0.2, guesses; `seam_gap`
    0.1, `tongue_h` 4.65 and `deck_tongue_h` 4.15 over a seam at 2.55): the seam coupons (a tab and a grip rib on them) and the
    case. Whether the tub presses on by hand, stays on when the case is lifted by the top piece and
-   eases off again; whether the corner posts push the decks onto their wedges (each deck's seams
+   eases off again; whether the corner posts push the decks onto the end wall's foot (each deck's seams
    even, no rocking) without forcing the tub's corners out. Too tight at the posts: take 0.1 off
    their inner faces (`post_c`).
 4. **J3's range** (`tip_range` 22.5 to 25) is an estimate; a real panel's folded FPC settles it.
@@ -792,13 +792,13 @@ tub's tongue became 0.75 thick (was 0.85).
    the skirts it is held all along, but off the case it will flex. Handle the tub by its floor. The
    skirts' tips are 0.70 at the seam; if the face-down print leaves them ragged, the seam can go up
    (each 0.1 up the round thickens them about 0.04).
-11. **The tongue under the step** (2026-10-23, guesses until a print): whether each deck still drops
-   in from behind with the slots over the tongues (0.15 a side; if it binds, the slots can go to 0.2,
-   `lock_far` and the tie ends with them), whether the fins' first layers bridge clean from tie to tie
-   (the P1S prints them as overhang walls; a droop under 0.12 doesn't touch the top piece), and whether
-   the deck now stays put along the step with the tub off. The fins are small (0.53 of engagement):
-   if they give, more ties and shorter slots are the way, not a deeper flange (the board's 0402s are
-   0.3 under it).
+11. **The lip under the step** (2026-10-23, guesses until a print): whether each deck drops in from
+   behind with the groove over the lip (0.15 a side, 0.2 lead-ins on the lip's tip), whether the
+   groove's roof (a 1.05 bridge face down) prints clean (a droop under 0.15 doesn't touch the lip's
+   tip), whether the deck stays put along and across the case with the tub off, and whether the
+   posts seat it on the end wall's foot without forcing. If the foot binds as the deck goes in, shave
+   it (or lower `foot_h`); without it the posts would push the deck onto the lip's outer face, 0.15
+   off its buttons, so `post_c` would have to come back 0.15 with it.
 
 ## Images
 
@@ -813,7 +813,10 @@ skirts ending at 4.3; `section_usb` and `outside_usb` are new. Since "The side j
 parts): `joint_outside`, `section_side_joint`, `outside_front`, `outside_back`, `outside_side`,
 `section_h2`, and the new `joint_outside_left`, `section_lap`, `lap_inside`, `exploded_lap` and
 `section_blend_along`; the others don't cut or see the side joints. `exploded_keys` still shows the
-grip rib across the side joint and the left keys at 22 and -24. Since "The tongue under the step"
-(dbf61a6's parts): `section_joint_zoom` (the same cut and framing as before, now through a slot) and
-the new `section_flange_tie`, `section_flange_spine`, `section_flange_end` and `exploded_tongue`; the
-outside is unchanged, so the outside views stay.
+grip rib across the side joint and the left keys at 22 and -24. Since "The lip under the step"
+(3730e7e's parts): `section_joint_zoom` (the same cut and framing), `joint_outside`,
+`joint_outside_left`, `outside_front`, `outside_back`, `outside_side`, `section_length_dpad`,
+`section_spine`, `section_h3`, `section_speaker_along`, `section_side_joint` and `section_blend_along`
+(the step's land went), and the new `section_lip_spine`, `section_lip_end`, `section_lip_wall`,
+`exploded_lip`, `print_lip` and `print_lip_spine`; dbf61a6's `section_flange_*` and `exploded_tongue`
+went with the tongue.

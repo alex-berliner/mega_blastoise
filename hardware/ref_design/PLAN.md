@@ -29,7 +29,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 27 ohm 0402 series in Raspberry Pi's spots | one Extended part ($3 an order): the 27 ohm 0402 (C25100; 22 ohm until the 2026-10-05 pin review, and a 27 ohm 0603 doesn't fit the copied layout) and the ESD array was the second from 2026-10-07 (ProTek's Preferred SRV05-4, C85364, ran out, so U1 became Semtech's Extended SRV05-4.TCT, C13612) until 2026-10-20, when U1 became hongjiacheng's Preferred SRV05-4A (C20615829, Alex): same pinout, no setup fee |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under pinholes in the top piece; SWD again on six 2.54 mm pogo pads on the back (J7: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND); probe pads on every rail (VBUS, VSYS, VBAT, 3V3, 1V1), the panel's SPI, BL_REF, PWR_EN, LS_GATE, AMP_SHDN and two GND clips; cut jumpers isolate the 3V3 regulator, backlight, amplifier, panel logic and cell (JP1-JP5) | no LEDs (approved); pads and jumpers added after Alex's debug-readiness review (2026-10-19) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm; parts on the top only | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
-| Case | 77.4 x 132.7 x 9.55 mm (7.7 at the decks; 2026-10-22, for the board with the cell in it): a top piece and two decks (one part) curve over the sides and meet the tub (the back) flush at one seam low on the walls, low on the back's round (2.55 mm up since 2026-10-22, was 4.2), over the tub's tongue (to 7.2, 6.7 at the decks, since 2026-10-22), which keys them: four tabs into the top piece, a post in each corner that pushes a deck onto its wedges, grip ribs, so the parts hold together before the screws; each deck seats into the top piece from behind on a 45 degree wedge, run on under the step as a flange that the top piece's tongue drops through (2026-10-23), and laps in behind the top piece's skirt at each side wall, where the top piece's side round sweeps down into the deck's over 9.4 mm (2026-10-22); built upside down; six M2 x 6 screws from the back through the board, four into the top piece beside the glass (no shoulders since 2026-10-22) and one into each deck; no hooks; crush ribs on the tub centre the board; the cell in a pocket in the tub's floor, the speaker under a grille in the right bezel; every part prints without supports, every edge and the step to each deck an arc ending in a chamfer at `overhang` (45 until the 6_tests ladder) (case/SHELL.md, 2026-10-21); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21); FDM at home, about $1.50 of filament |
+| Case | 77.4 x 132.7 x 9.55 mm (7.7 at the decks; 2026-10-22, for the board with the cell in it): a top piece and two decks (one part) curve over the sides and meet the tub (the back) flush at one seam low on the walls, low on the back's round (2.55 mm up since 2026-10-22, was 4.2), over the tub's tongue (to 7.2, 6.7 at the decks, since 2026-10-22), which keys them: four tabs into the top piece, a post in each corner that pushes a deck home, grip ribs, so the parts hold together before the screws; each deck seats into the top piece from behind, its plate on 1.6 mm under the step with the top piece's lip in a groove in its face (2026-10-23; a wedge, then a tongue through a flange, until then), and laps in behind the top piece's skirt at each side wall, where the top piece's side round sweeps down into the deck's over 9.4 mm (2026-10-22); built upside down; six M2 x 6 screws from the back through the board, four into the top piece beside the glass (no shoulders since 2026-10-22) and one into each deck; no hooks; crush ribs on the tub centre the board; the cell in a pocket in the tub's floor, the speaker under a grille in the right bezel; every part prints without supports, every edge and the step to each deck an arc ending in a chamfer at `overhang` (45 until the 6_tests ladder) (case/SHELL.md, 2026-10-21); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21); FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` by `tools/build_sch.py`; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
@@ -106,9 +106,24 @@ Next:
       end). Over the board's taller parts (Q3, Q5, Q6, X1, D3, C5-C7, U8, U9) the flange stops 0.3
       over them, with no slot; the spine's end has none. The wedge stays. check_fit checks the board
       under it (case.scad's FLANGE line); positions.json unchanged, check_buttons the same 11, the
-      outside unchanged; P1S 1_case 55.9 g, 1_case_decks 9.4 g, 5_unit 65.2 g (case/SHELL.md, "The
-      tongue under the step"). To check on the next print: the decks drop in over the tongues, the
-      fins' bridges print clean, the deck stays put along the step with the tub off
+      outside unchanged; P1S 1_case 55.9 g, 1_case_decks 9.4 g, 5_unit 65.2 g (case/SHELL.md, "Alternatives
+      considered"). To check on the next print: the decks drop in over the tongues, the
+      fins' bridges print clean, the deck stays put along the step with the tub off. Replaced the
+      same day by the lip, below
+- [x] The lip under the step (2026-10-23, Alex on the tongue: "I think this tooth method isn't
+      viable. I don't want them breaking."): the teeth, slots, ties, fins and the wedge are gone.
+      Each deck's plate runs on 1.6 under the top piece at its own level (5.7 to 7.7, its face on the
+      bed in print), across the step, down the spine's sides and round its end, to a 0.8 end wall;
+      the top piece is hollow over it (0.15), the step comes straight down to the deck (no land, its
+      last 0.35 vertical), and one continuous lip at its foot, 0.75 wide, goes 0.5 into a 1.05 groove
+      in the deck's face (0.15 round it, a 1.05 bridge face down), from side wall to side wall, into
+      the top piece's skirt over the lap. The end wall's lowest 0.5 is the register the corner posts
+      push each deck onto. Thinnest: the strip beyond the groove 0.70, the skin over the hollow 0.74,
+      the plate under the groove 1.35. positions.json unchanged, check_buttons the same 11,
+      check_fit PASS (38 parts under the joint, the tallest 1.19 of 1.60), the tub unchanged; P1S
+      1_case 55.6 g, 1_case_decks 9.7 g, 5_unit 65.1 g (case/SHELL.md, "The lip under the step"). To
+      check on the next print: the decks drop in over the lip, the groove's roof prints clean, the
+      deck stays put with the tub off, and the posts seat it without forcing
 - [x] Row 4, metal snap domes under Start/Select: the board has them (SW20-SW23); the case has
       `ss_metal_dome` and `ss_plunger_gap` and two asserts (the dome fits the pad's well; the
       plunger rests clear of the apex). `ss_lift` stays 0.35 on the assumed 0.36 plunger height.
