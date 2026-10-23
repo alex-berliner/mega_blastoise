@@ -51,7 +51,8 @@ real case, each in its print pose.
 the speaker's grille in the right bezel, the sides; the four side screws go into it beside the glass)
 and the two decks (the button faces) curve over the sides and meet the tub flush at one seam low on
 the back's round (2.55 mm up), their skirts following the round down to it; each deck seats into the top piece from behind on a 45 degree wedge and has its own
-screw. The tub's tongue stands 4.65 mm up inside the skirts (4.15 at the decks) and keys them: four
+screw, and the wedge runs on under the step as a flange that a tongue of the top piece drops through,
+so the deck can't slide away from the step (2026-10-23). The tub's tongue stands 4.65 mm up inside the skirts (4.15 at the decks) and keys them: four
 tabs into pockets in the top piece, a post in each corner that pushes a deck onto its wedges, and
 grip ribs, so the case holds together before the screws go in. At each side wall a lap on the
 deck's skirt slides in behind the top piece's skirt (the tongue stops either side of it), and the top
@@ -63,17 +64,18 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (55.8 g, 1 h 42 min with the top piece, the board mock and the dummies), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (55.9 g, 1 h 43 min with the top piece, the board mock and the dummies), `5_unit` |
 | `top.stl` | 77.4 x 92.5 x 6.9 | `1_case`, `5_unit` |
-| `deck.stl` (print two) | 77.4 x 35.0 x 5.05 (the laps reach 1.8 past the face) | `1_case_decks` (9.2 g, 23 min for both), `5_unit` |
+| `deck.stl` (print two) | 77.4 x 35.0 x 5.05 (the laps reach 1.8 past the face) | `1_case_decks` (9.4 g, 26 min for both), `5_unit` |
 
-`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 64.9 g and 2 h 05 min.
+`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.2 g and 2 h 08 min.
 
 To assemble:
 1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
    front foam ring stuck to the pocket's ceiling.
 2. Each deck face down into its end of the top piece from behind, the laps at its sides going in
-   behind the top piece's skirts: it drops onto its wedges and sits flat (it may settle a little back along them; the tub pushes it home). Caps into the decks from
+   behind the top piece's skirts and the slots along its inner edge down over the top piece's
+   tongues: it drops onto its wedges and sits flat (it may settle a little back along them; the tub pushes it home). Caps into the decks from
    behind (tabs into the slots, notches onto the ribs), silicone on them.
 3. Panel glass down into the top piece's pocket on its tape.
 4. The cell into the tub's floor pocket on double-sided tape, against the pocket's right wall.
