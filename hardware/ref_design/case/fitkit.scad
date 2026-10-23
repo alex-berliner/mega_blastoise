@@ -77,7 +77,7 @@ module kit_speaker() difference() {               // GSPK151035PN: 10 x 15 x 3.5
 }
 
 // ---------------- coupons: slices of the real case geometry, quick to print ----------------
-// the seam: the left wall round a crush rib, the tub's tongue and the top piece's skirt over it
+// the seam: the left wall round a crush rib and a key, the tub's tongue and seat 2's arm's skirt over it
 module seam_box() translate([-case_w / 2 - 1, crush[2][1] - 12, -1]) cube([12, 24, case_h + 2]);
 module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the top piece prints face down
 // the tub as it prints, floor down (it has no feet since 2026-10-20, so that's the tub itself)
@@ -85,7 +85,10 @@ module tub_flat() tub();
 
 band_y1 = -(bay_l / 2) + 2;                          // seat 1's end band: from the case end into the glass by 2 mm
 module band_box() translate([-case_w / 2 - 1, -case_l / 2 - 1, -1]) cube([case_w + 2, band_y1 + case_l / 2 + 1, case_h + 2]);
-module usb_box() translate([case_w / 2 - 12, usb_y - 12, -1]) cube([13, 24, case_h + 2]);
+// the ear and the ends of the right arms that meet it (its laps go 3.15 into them)
+module usb_box() translate([case_w / 2 - 12, usb_y - 16, -1]) cube([13, 32, case_h + 2]);
+// where the arms meet on the left wall: seat 1's lap behind seat 2's skirt, and the island's side over them
+module meet_box() translate([-case_w / 2 - 1, arm_meet_y - 9, -1]) cube([12, 18, case_h + 2]);
 module frame_box() let(w = panel_w + panel_fit + 2 * frame_wall + 8, l = panel_l + panel_fit + 2 * frame_wall + 8)
   translate([-w / 2, -l / 2, -1]) cube([w, l, case_h + 2]);
 
@@ -158,14 +161,30 @@ if (kit == "cell")         kit_cell();
 if (kit == "plug")         kit_plug();
 if (kit == "speaker")      kit_speaker();
 if (kit == "seam_tub")     intersection() { tub_flat(); seam_box(); }
-if (kit == "seam_top")     flip() intersection() { top(); seam_box(); }
+if (kit == "seam_deck")    flip_at(deck_face) intersection() { deck(1); seam_box(); }
 if (kit == "buttons_tub")  intersection() { tub_flat(); band_box(); }
 if (kit == "buttons_board") intersection() { kit_board(); band_box(); }
 if (kit == "buttons_top")  flip() intersection() { top(); band_box(); }
-// seat 1's deck, face down
-if (kit == "buttons_deck") flip_at(deck_face) deck(-1);
+// seat 1's deck's core and its arms' roots, face down
+if (kit == "buttons_deck") flip_at(deck_face) intersection() { deck(-1); band_box(); }
 if (kit == "usb_tub")      intersection() { tub_flat(); usb_box(); }
 if (kit == "usb_top")      flip() intersection() { top(); usb_box(); }
+// the two arms' ends either side of the ear, face down (two pieces)
+if (kit == "usb_arms")     flip_at(deck_face) intersection() { union() { deck(-1); deck(1); } usb_box(); }
+if (kit == "meet_tub")     intersection() { tub_flat(); meet_box(); }
+if (kit == "meet_top")     flip() intersection() { top(); meet_box(); }
+if (kit == "meet_arms")    flip_at(deck_face) intersection() { union() { deck(-1); deck(1); } meet_box(); }
+// The build bars (2026-10-23): built face down, the decks go in first and the island drops into them from
+// behind, so the decks' faces must stand step_d off the bench (the island's face, step_d proud of them, on the
+// bench; the caps, cap_proud proud, clear of it). Two bars, one under each deck's core's end, on its flat face
+// outside every opening (print two)
+stand_w = 2.0;  stand_y = case_l / 2 - edge_in(0, face_r) - 0.3 - stand_w / 2;   // a bar's middle, from the case's centre
+stand_x = case_w / 2 - edge_in(0, face_r) - 1.0;       // a bar's half length, inside the flat face
+for (b = buttons) assert(abs(b[2][1]) + cap_hole_d / 2 + cap_chamfer + 0.3 <= stand_y - stand_w / 2, "a build bar runs under a cap");
+for (c = [dpad1, dpad2]) assert(abs(c[1]) + dpad_arm_l / 2 + dpad_gap + dpad_chamfer + 0.3 <= stand_y - stand_w / 2, "a build bar runs under the D-pad");
+for (b = ss_buttons) assert(abs(b[2][1]) + ss_hole_d / 2 + cap_chamfer + 0.3 <= stand_y - stand_w / 2, "a build bar runs under Start/Select");
+assert(step_d > cap_proud + 0.2, "the caps stand on the bench past the build bars");
+if (kit == "build_bar")    translate([-stand_x, -stand_w / 2, 0]) cube([2 * stand_x, stand_w, step_d]);
 if (kit == "frame_top")    flip() intersection() { top(); frame_box(); }
 
 // ---------------- test plate (6_tests): questions for the shell's redesign ----------------

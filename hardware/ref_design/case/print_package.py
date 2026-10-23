@@ -82,20 +82,24 @@ PLATES = {
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
                ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
-    "1_case_decks": [(n, os.path.join(HERE, "deck.stl")) for n in ("deck_a", "deck_b")],   # one part, two of it
+    # seat 1's and seat 2's decks (two parts since the island, 2026-10-23) and the stand they lie on while the case is built
+    "1_case_decks": [("deck1", os.path.join(HERE, "deck1.stl")), ("deck2", os.path.join(HERE, "deck2.stl")),
+                     ("build_bar_a", f"{KIT}/build_bar.stl"), ("build_bar_b", f"{KIT}/build_bar.stl")],
     "2_buttons_quick": [("tune_openings", f"{KIT}/tune_openings.stl")] +
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
         [(f"tune_stack_{c}_lid_dome1.75", f"{KIT}/tune_stack_{c}_lid_dome1.75.stl") for c in ("dpad", "abxy", "ss")],
     "3_buttons_heights": [(f"tune_stack_{c}_lid_dome{d}", f"{KIT}/tune_stack_{c}_lid_dome{d}.stl")
                           for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.9")],
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
-                      ("usb_tub", "usb_top", "usb_board", "seam_tub", "seam_top", "frame_top",
+                      ("usb_tub", "usb_top", "usb_arms", "usb_board", "seam_tub", "seam_deck", "meet_tub", "meet_top",
+                       "meet_arms", "frame_top",
                        "buttons_tub", "buttons_board", "buttons_top", "buttons_deck")],
     "5_unit": [("tub_print", PRINT_TUB), ("top", os.path.join(HERE, "top.stl")),     # one whole unit and the
-               ("deck_a", os.path.join(HERE, "deck.stl")), ("deck_b", os.path.join(HERE, "deck.stl")),   # dummies to
+               ("deck1", os.path.join(HERE, "deck1.stl")), ("deck2", os.path.join(HERE, "deck2.stl")),   # dummies to
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),     # fit in it
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),  # (Alex,
-               ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],                                      # 2026-10-22)
+               ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl"),
+               ("build_bar_a", f"{KIT}/build_bar.stl"), ("build_bar_b", f"{KIT}/build_bar.stl")],   # 2026-10-22)
     # questions for the shell's redesign, no supports: openings, overhangs, screw holes, a column's clearance
     "6_tests": [("tune_openings", f"{KIT}/tune_openings.stl"), ("test_overhangs", f"{KIT}/test_overhangs.stl"),
                 ("screws_tub", f"{KIT}/coupon_screws_tub.stl"), ("screws_top", f"{KIT}/coupon_screws_top.stl"),
@@ -113,6 +117,19 @@ PLATES = {
     # best it has (TUNED, each printer's TUNED below), side by side
     "9_overhang_settings": [(f"overhang_ladder_{t}", f"{KIT}/test_overhang_ladder_{t}.stl") for t in ("DEF", "TUNED")],
 }
+# parts turned a quarter round on their plate (about z) so it packs: 5_unit's two decks and the cell dummy (the
+# decks are twice as long since the island, 2026-10-23, and the plate overflowed)
+TURN = {"5_unit": {"deck1", "deck2", "cell_dummy"}}
+
+
+def load_part(plate, name, path):
+    """A plate's part as trimesh loads it, turned a quarter round if TURN says so."""
+    m = trimesh.load(path, force="mesh")
+    if name in TURN.get(plate, ()):
+        m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 0, 1]))
+    return m
+
+
 LAYERS = {f"7_overhangs_{h}": f"0.{h[1:]}" for h in ("020", "016", "012", "008")}
 # the printer tests: not the case's parts, so a kit of their own (overhang_kit.zip), not in the case kits
 TEST_PLATES = [p for p in PLATES if p.startswith(("7_", "8_", "9_"))]
@@ -340,7 +357,7 @@ def build(plate, parts, z, supported):
     layout = template_layout(z) if plate == "1_case" else {}
     meshes = []
     for name, path in parts:
-        m = trimesh.load(path, force="mesh")
+        m = load_part(plate, name, path)
         m.merge_vertices()
         lo, hi = m.bounds
         m.apply_translation(-(lo + hi) / 2)          # centred on its footprint and its height
@@ -464,7 +481,7 @@ def main():
         tests_zip()
     if not case:
         return
-    for extra in ("top.stl", "deck.stl", "tub.stl"):
+    for extra in ("top.stl", "deck1.stl", "deck2.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not sys.argv[1:]:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     shutil.copy(os.path.join(HERE, "print_package_README.md"), os.path.join(OUT, "README.md"))

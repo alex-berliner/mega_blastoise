@@ -87,12 +87,12 @@ def mark_presets(project, plate):
             z.writestr(k, v)
 
 
-def layout(parts):
+def layout(parts, plate=""):
     """Each part placed on the bed: print_package's shelf packing, longest first, from the back
     (Bambu's own --arrange leaves parts it can't nest on a second plate, and the slice still
     passes). Returns [(part, mesh moved into place)], or None if the parts don't fit."""
     import trimesh
-    meshes = [(obj, trimesh.load(path, force="mesh")) for obj, path in parts]
+    meshes = [(obj, print_package.load_part(plate, obj, path)) for obj, path in parts]
     sizes = [tuple(m.extents[:2]) for _, m in meshes]
     x0, y0, x1, y1 = EXCLUDE
     try:                                           # packed front to back, then turned back to front
@@ -126,7 +126,7 @@ def own_settings(project, objs):
 def slice_plate(name, parts, supported, tmp):
     """Place and slice one plate (supported: the STLs that get supports); returns (3mf path,
     grams, seconds, {object: mm of support under it}) or None if it doesn't fit."""
-    placed = layout(parts)
+    placed = layout(parts, name)
     if placed is None:
         print(f"  {name}: doesn't fit the bed")
         return None
@@ -238,7 +238,7 @@ def main():
         print_package.tests_zip()
     if not case:
         return
-    for extra in ("top.stl", "deck.stl", "tub.stl"):
+    for extra in ("top.stl", "deck1.stl", "deck2.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not only:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     table = "\n".join(f"| `{n}.3mf` | {'under ' + ', '.join(s) if s else 'none'} | {g:.1f} g | "
