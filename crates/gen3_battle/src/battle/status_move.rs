@@ -614,7 +614,16 @@ impl Battle {
                         mon.transform_stats = Some((
                             [mon.atk, mon.def, mon.spa, mon.spd, mon.spe],
                             mon.type_override,
+                            (mon.hidden_power, mon.hidden_power_bp),
                         ));
+                        // The Hidden Power of a transformed mon belongs to the
+                        // thing it is wearing, not to the IVs it was born with:
+                        // `transformInto` answers both halves with the target's
+                        // before gen 5 (`this.hpType = pokemon.hpType`). The
+                        // move slots already carried the TYPE across, so this is
+                        // what the base power was reading instead.
+                        mon.hidden_power = foe_mon.hidden_power;
+                        mon.hidden_power_bp = foe_mon.hidden_power_bp;
                     }
                     mon.atk = foe_mon.atk;
                     mon.def = foe_mon.def;

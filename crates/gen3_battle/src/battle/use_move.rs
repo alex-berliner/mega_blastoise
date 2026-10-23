@@ -2163,17 +2163,17 @@ impl Battle {
             }
         }
         if !hit {
-            // A first-use miss ends a rampage quietly, but a miss once the
-            // lock is running (the [from] lockedmove turns) still ends in
-            // fatigue confusion. Fury Cutter's ramp and a Rollout reset.
+            // A miss does not end a lock that was ALREADY running. Gen 3's
+            // `tryMoveHit` answers false and leaves the `lockedmove` volatile
+            // alone, and the `onAfterMove` that re-arms its clock is void this
+            // era, so the din simply carries on and the residual is what ends
+            // it, and the fatigue confusion is that volatile's own `onEnd`. A
+            // FIRST use leaves no lock at all: the volatile is added in
+            // `moveHit`, which is where this one was set above, and a move
+            // that missed never reaches it. Fury Cutter's ramp and a Rollout
+            // reset.
             self.sides[side].mon_mut().last_missed = true;
-            if ramping {
-                self.break_rampage(side, script.is_some(), events);
-            } else {
-                // A FIRST-use miss leaves no lock at all: the din's volatile
-                // is a self-effect applied in `moveHit`, which a move that
-                // missed never reaches. Only a miss once the lock is already
-                // running keeps it, and that is the `ramping` branch above.
+            if !ramping {
                 self.sides[side].mon_mut().rampage = None;
             }
             self.sides[side].mon_mut().fury_n = 0;
@@ -2741,6 +2741,16 @@ impl Battle {
                             self.boost(side, boost, delta, events);
                         }
                     }
+                }
+                // The recharge rides the same bill: `selfDrops` reads
+                // `moveData.self`, `mustrecharge` included, off every target
+                // that is not false, and a Focus Band holding a 1-HP mon is
+                // damage zero rather than a failure. A Frenzy Plant the band
+                // ate still costs the attacker its next turn.
+                if slot.entry.recharge {
+                    let mon = self.sides[side].mon_mut();
+                    mon.must_recharge = true;
+                    mon.recharge_fresh = true;
                 }
             }
             if boom {
@@ -3560,6 +3570,22 @@ impl Battle {
     /// through unclamped, because those carry a Recoil or a Status effect.
     pub(super) fn survives_at_one(&mut self, side: usize) -> bool {
         self.survives_lethal(side, true)
+    }
+
+    /// The Focus Band coin on its own, with no Endure in front of it. A
+    /// delayed Future Sight lands through `futuremove`'s `onEnd`, which
+    /// strips the target's Endure off first and then resolves the move
+    /// through `trySpreadMoveHit`, so the band is the only thing left that
+    /// can turn the landing blow into a single point.
+    pub(super) fn band_saves(&mut self, side: usize) -> bool {
+        let mon = self.sides[side].mon();
+        if mon.sub_hp > 0 || mon.item != "focusband" {
+            return false;
+        }
+        match self.turn_seats[side] {
+            Some(s) => s.band,
+            None => self.rng.below(10) == 0,
+        }
     }
 
     /// As above, but `through_sub` says whether a Substitute standing in front

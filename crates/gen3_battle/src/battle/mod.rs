@@ -203,11 +203,12 @@ pub struct Mon {
     /// wearing a Snubbull weighs what a Snubbull weighs — which is the whole
     /// of Low Kick's power.
     pub weight_override: Option<u16>,
-    /// What Transform borrowed besides the move set: the five battle stats
-    /// and the type line. The sim keeps these in `baseStoredStats` and
+    /// What Transform borrowed besides the move set: the five battle stats,
+    /// the type line and the Hidden Power it now answers with. The sim keeps
+    /// these in `baseStoredStats` (and `baseHpType`/`baseHpPower`) and
     /// restores them with the volatile, so a transformed mon that leaves the
     /// field is its own species again.
-    pub transform_stats: Option<([u16; 5], Option<(Type, Type)>)>,
+    pub transform_stats: Option<([u16; 5], Option<(Type, Type)>, (Type, u8))>,
     /// Bide: damage stored and turns of storing left.
     pub bide: Option<(u16, u8)>,
     /// Rollout/Ice Ball: consecutive uses so far (0..=4).

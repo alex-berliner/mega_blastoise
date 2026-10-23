@@ -655,6 +655,11 @@ impl Battle {
                                 continue;
                             }
                             if dealt > 0 {
+                                // The band is the one thing that can still cut
+                                // the landing blow back to a single point. Endure
+                                // is not: the sim's `futuremove.onEnd` strips it
+                                // off the target before the move is resolved.
+                                let banded = self.band_saves(side);
                                 let mon = self.sides[side].mon_mut();
                                 let hit_sub = mon.sub_hp > 0;
                                 if hit_sub {
@@ -670,7 +675,12 @@ impl Battle {
                                         });
                                     }
                                 } else {
-                                    let amount = dealt.min(mon.hp);
+                                    let cap = if banded {
+                                        mon.hp.saturating_sub(1)
+                                    } else {
+                                        mon.hp
+                                    };
+                                    let amount = dealt.min(cap);
                                     mon.hp -= amount;
                                     events.push(Event::Damage {
                                         side: side as u8 + 1,

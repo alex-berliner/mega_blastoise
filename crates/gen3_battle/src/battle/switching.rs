@@ -379,7 +379,7 @@ impl Battle {
             if let Some(born_with) = self.sides[side].mon_mut().ability_backup.take() {
                 self.sides[side].mon_mut().ability = born_with;
             }
-            if let Some((stats, types)) = self.sides[side].mon_mut().transform_stats.take() {
+            if let Some((stats, types, hp)) = self.sides[side].mon_mut().transform_stats.take() {
                 let mon = self.sides[side].mon_mut();
                 mon.atk = stats[0];
                 mon.def = stats[1];
@@ -387,6 +387,8 @@ impl Battle {
                 mon.spd = stats[3];
                 mon.spe = stats[4];
                 mon.type_override = types;
+                mon.hidden_power = hp.0;
+                mon.hidden_power_bp = hp.1;
             }
             // A fainted trapper releases nobody on the spot: the victim's
             // volatile goes STALE and evaporates at its next residual. The
@@ -443,13 +445,15 @@ impl Battle {
             out.last_missed = false;
             restore_base_moves(out);
             out.weight_override = None;
-            if let Some((stats, types)) = out.transform_stats.take() {
+            if let Some((stats, types, hp)) = out.transform_stats.take() {
                 out.atk = stats[0];
                 out.def = stats[1];
                 out.spa = stats[2];
                 out.spd = stats[3];
                 out.spe = stats[4];
                 out.type_override = types;
+                out.hidden_power = hp.0;
+                out.hidden_power_bp = hp.1;
             }
             out.bide = None;
             out.rolling = None;

@@ -1211,3 +1211,113 @@ fn a_chosen_baton_pass_target_takes_the_passed_stages() {
     assert_eq!(chosen.sides[0].party[1].stages, [0; 5]);
     assert!(events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
 }
+
+/// A Focus Band clamps a lethal blow to a point, and a clamp is still a
+/// CONNECTED hit: the sim's `selfDrops` skips only the targets a move failed
+/// on, and zero damage is not a failure. So the Hyper Beam still costs the
+/// attacker its next action, which is what seeds 46 and 18 turned on.
+#[test]
+fn a_band_clamped_hit_still_costs_the_recharge() {
+    let mut b = battle(
+        mon("blaziken", 50, &["hyperbeam"]),
+        mon("snorlax", 50, &["splash"]),
+    );
+    let mon = b.sides[1].mon_mut();
+    mon.item = "focusband".into();
+    mon.hp = 1;
+    b.step_with(
+        [Choice::Move(0), Choice::Move(0)],
+        &scripted([PLAIN, SeatScript { band: true, ..PLAIN }]),
+    );
+    assert_eq!(b.sides[1].mon().hp, 1, "the band held the mon alive");
+    assert!(
+        b.sides[0].mon().must_recharge,
+        "a Hyper Beam the band ate still costs the next turn"
+    );
+}
+
+/// Endure is stripped before a delayed hit resolves (`futuremove`'s `onEnd`),
+/// but the band is not: the release goes through `trySpreadMoveHit`, so it
+/// runs the same Damage event an ordinary move does.
+#[test]
+fn a_future_sight_lands_through_the_band() {
+    let mut b = battle(
+        mon("mew", 50, &["futuresight"]),
+        mon("snorlax", 50, &["splash"]),
+    );
+    let mon = b.sides[1].mon_mut();
+    mon.item = "focusband".into();
+    mon.hp = 1;
+    // The release lands on the third residual counting from the launch.
+    for _ in 0..3 {
+        b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([PLAIN, SeatScript { band: true, ..PLAIN }]),
+        );
+    }
+    assert_eq!(b.sides[1].mon().hp, 1, "the delayed blow asked the band");
+    assert!(!b.sides[1].mon().fainted());
+}
+
+/// Gen 3's `tryMoveHit` answers false on a miss and never touches the
+/// `lockedmove` volatile, and the `onAfterMove` that would re-arm its clock
+/// is void this era. The lock runs out at the residual instead, which is
+/// where the fatigue confusion comes from.
+#[test]
+fn a_locked_move_that_misses_keeps_its_lock() {
+    let mut b = battle(
+        mon("blaziken", 50, &["outrage"]),
+        mon("snorlax", 50, &["splash"]),
+    );
+    b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    let miss = SeatScript {
+        hit: false,
+        ..PLAIN
+    };
+    let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([miss, PLAIN]));
+    let pos = |want: fn(&Event) -> bool| events.iter().position(want);
+    let foe_moved = pos(|e| matches!(e, Event::Used { side: 2, .. }));
+    let fatigued = pos(|e| matches!(e, Event::ConfusionStarted { side: 1 }));
+    assert!(
+        b.sides[0].mon().rampage.is_none(),
+        "the lock ran out at the residual"
+    );
+    assert!(
+        fatigued.is_some() && foe_moved.is_some() && foe_moved < fatigued,
+        "the lock outlived the miss: the foe's whole turn came first, \
+         the fatigue confusion only afterwards"
+    );
+}
+
+/// `transformInto` answers both halves of the Hidden Power with the target's
+/// before gen 5, so a copy swings the power of the thing it is wearing
+/// rather than the one it was born with, and gives it back on the way out.
+#[test]
+fn a_transformed_mon_answers_with_the_hidden_power_it_wears() {
+    let spread = |iv: u8| [Invest { iv, ev: 0 }; 6];
+    let mut b = Battle::new(
+        Side::new(alloc::vec![
+            Mon::with_spread("ditto", 50, Nature::Hardy, &spread(28), &["transform"])
+                .unwrap(),
+            mon("magikarp", 50, &["splash"]),
+        ]),
+        Side::new(alloc::vec![
+            Mon::with_spread("blaziken", 50, Nature::Hardy, &spread(31), &["ember"]).unwrap(),
+        ]),
+        9,
+    );
+    let foe = b.sides[1].mon().clone();
+    let own = b.sides[0].mon().clone();
+    b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    let copy = b.sides[0].mon();
+    assert_eq!(copy.hidden_power, foe.hidden_power);
+    assert_eq!(copy.hidden_power_bp, foe.hidden_power_bp);
+    assert_ne!(
+        own.hidden_power_bp, foe.hidden_power_bp,
+        "these IVs differ, so the copy has to be the foe's"
+    );
+    b.step_with([Choice::Switch(1), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    let back = &b.sides[0].party[0];
+    assert_eq!(back.hidden_power, own.hidden_power, "the copy came off");
+    assert_eq!(back.hidden_power_bp, own.hidden_power_bp);
+}
