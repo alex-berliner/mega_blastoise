@@ -781,6 +781,37 @@ fn a_fire_hit_thaws_the_target_but_its_burn_chance_is_blocked() {
     );
 }
 
+/// A Hidden Power goes through the chart as whatever its holder's IVs typed
+/// it, but gen 3's `frz.onDamagingHit` asks `dex.moves.get(move.id).type`,
+/// which is the TABLE type and so Normal. An IV-typed Fire thaws nobody,
+/// which is the whole of the difference between the two readings.
+#[test]
+fn a_hidden_power_fire_does_not_thaw_the_target_it_hits() {
+    let spread = [30, 30, 31, 30, 30, 31].map(|iv| Invest { iv, ev: 0 });
+    let attacker =
+        Mon::with_spread("weezing", 50, Nature::Hardy, &spread, &["hiddenpower"]).unwrap();
+    assert_eq!(attacker.hidden_power, Type::Fire, "these IVs type it Fire");
+    let mut target = mon("azumarill", 50, &["bide"]);
+    target.status = Some(Status::Freeze);
+    let mut b = Battle::new(
+        Side::new(alloc::vec![attacker]),
+        Side::new(alloc::vec![target]),
+        11,
+    );
+    let events = b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, Event::Damage { side: 2, .. })),
+        "the Hidden Power landed"
+    );
+    assert_eq!(
+        b.sides[1].mon().status,
+        Some(Status::Freeze),
+        "and left the frozen target alone"
+    );
+}
+
 #[test]
 fn the_same_seed_replays_the_same_battle() {
     let run = || {
@@ -795,6 +826,69 @@ fn the_same_seed_replays_the_same_battle() {
         all
     };
     assert_eq!(run(), run(), "a seeded battle has to be reproducible");
+}
+
+/// The sim answers `moveSlots = baseMoveSlots.slice()` when a mon leaves
+/// the field, and neither Mimic nor Transform writes `baseMoveSlots`: Mimic
+/// copies into the slot holding it and Transform replaces the list outright.
+/// A mon that Mimicked and then Transformed therefore has to put the
+/// Mimic's slot back into the list as it stood BEFORE the Transform, which
+/// is the list the Transform's own copy is holding.
+#[test]
+fn a_mimic_that_transformed_after_it_comes_back_with_its_own_moves() {
+    let move_ids = |b: &Battle| -> Vec<&'static str> {
+        b.sides[0].party[0].moves.iter().map(|m| m.entry.id).collect()
+    };
+    let mut b = Battle::new(
+        Side::new(alloc::vec![
+            mon("ditto", 50, &["splash", "tackle", "mimic", "transform"]),
+            mon("chansey", 50, &["softboiled"]),
+        ]),
+        // One move on the other side, so the Transform's copy is one move
+        // long and a Mimic index of two points off its end.
+        Side::new(alloc::vec![mon("snorlax", 50, &["growl"])]),
+        5,
+    );
+    let base = move_ids(&b);
+    // Turn one is the foe's Growl; only then is there a move to copy.
+    b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    b.step_with([Choice::Move(2), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    assert_eq!(b.sides[0].mon().moves[2].entry.id, "growl");
+    b.step_with([Choice::Move(3), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    assert_eq!(b.sides[0].mon().moves.len(), 1, "the copy is the foe's list");
+    b.step_with([Choice::Switch(1), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    assert_eq!(move_ids(&b), base, "the mon left with the set it came out with");
+}
+
+/// The other order, which play cannot reach (a transformed mon cannot Mimic)
+/// and the restore still has to hold: the Transform's copy is taken off
+/// first, so a Mimic index is read against the list it was found in rather
+/// than against the copy standing in its place.
+#[test]
+fn a_transform_copy_is_unwound_before_the_mimic_slot_is_put_back() {
+    let move_ids = |b: &Battle| -> Vec<&'static str> {
+        b.sides[0].party[0].moves.iter().map(|m| m.entry.id).collect()
+    };
+    let mut b = Battle::new(
+        Side::new(alloc::vec![
+            mon("ditto", 50, &["splash", "tackle", "mimic", "transform"]),
+            mon("chansey", 50, &["softboiled"]),
+        ]),
+        Side::new(alloc::vec![mon("snorlax", 50, &["growl"])]),
+        5,
+    );
+    let base = move_ids(&b);
+    let growl = MoveSlot {
+        entry: crate::data::move_by_id("growl").unwrap(),
+        pp: 5,
+        typed_as: None,
+    };
+    let mon = b.sides[0].mon_mut();
+    mon.transform_backup = Some(mon.moves.clone());
+    mon.moves = alloc::vec![growl];
+    mon.mimic_backup = Some((2, mon.transform_backup.as_ref().unwrap()[2]));
+    b.step_with([Choice::Switch(1), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    assert_eq!(move_ids(&b), base, "the mon left with the set it came out with");
 }
 
 /// Two dozen of this era's damaging moves carry 0 in the power column and

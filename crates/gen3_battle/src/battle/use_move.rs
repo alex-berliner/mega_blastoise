@@ -3296,8 +3296,14 @@ impl Battle {
 
         // A Fire-type hit thaws a frozen target — game rule, not RNG. A
         // knocked-out target keeps its freeze; there is nothing left to thaw.
+        //
+        // The type read here is the one in the TABLE, not the one the move
+        // attacks with: gen 3's `frz.onDamagingHit` asks
+        // `dex.moves.get(move.id).type`, which is a Hidden Power's Normal
+        // whatever its holder's IVs typed it as. A Hidden Power Fire goes
+        // through the chart as Fire and still leaves the frozen alone.
         if self.sides[foe].mon().status == Some(Status::Freeze)
-            && slot.move_type() == Type::Fire
+            && slot.entry.move_type == Type::Fire
             && !self.sides[foe].mon().fainted()
         {
             self.sides[foe].mon_mut().status = None;

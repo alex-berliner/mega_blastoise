@@ -373,12 +373,7 @@ impl Battle {
     /// Announce and replace one side's active if it just fainted.
     pub(super) fn announce_faint(&mut self, side: usize, events: &mut Vec<Event>) {
         if self.sides[side].mon().fainted() {
-            if let Some((i, orig)) = self.sides[side].mon_mut().mimic_backup.take() {
-                self.sides[side].mon_mut().moves[i as usize] = orig;
-            }
-            if let Some(orig) = self.sides[side].mon_mut().transform_backup.take() {
-                self.sides[side].mon_mut().moves = orig;
-            }
+            restore_base_moves(self.sides[side].mon_mut());
             self.sides[side].mon_mut().weight_override = None;
             // A borrowed ability goes back with everything else the sim
             // clears when a mon goes down.
@@ -447,12 +442,7 @@ impl Battle {
             out.last_hit_by = None;
             out.last_hit_by_slot = None;
             out.last_missed = false;
-            if let Some((i, orig)) = out.mimic_backup.take() {
-                out.moves[i as usize] = orig;
-            }
-            if let Some(orig) = out.transform_backup.take() {
-                out.moves = orig;
-            }
+            restore_base_moves(out);
             out.weight_override = None;
             if let Some((stats, types)) = out.transform_stats.take() {
                 out.atk = stats[0];
@@ -830,5 +820,26 @@ impl Battle {
         for who in [foe, side] {
             self.announce_faint(who, events);
         }
+    }
+}
+
+/// The move list a mon leaves the field with, shared by the switch and the
+/// faint. The sim answers `moveSlots = baseMoveSlots.slice()` in
+/// `clearVolatile`, and neither of the two moves that ever write here writes
+/// there: Mimic copies into `moveSlots[mimicIndex]` and Transform replaces
+/// the list outright (`transformInto`), so both borrows come off and the
+/// mon walks away with the set it started with.
+///
+/// The Transform comes off FIRST. Its copy is the whole list as it stood
+/// when the Transform landed, which is where the Mimic index was read from,
+/// so restoring the Mimic first would write a slot index belonging to the
+/// pre-Transform list into somebody else's list: a mon that transformed
+/// into a one-move Pokemon indexed three moves past the end.
+fn restore_base_moves(out: &mut Mon) {
+    if let Some(orig) = out.transform_backup.take() {
+        out.moves = orig;
+    }
+    if let Some((i, orig)) = out.mimic_backup.take() {
+        out.moves[i as usize] = orig;
     }
 }
