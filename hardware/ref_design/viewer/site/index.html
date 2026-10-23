@@ -119,14 +119,14 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 // lift = how far each part rises (mm) when fully exploded.
 let MODEL = { z_board: 2.0, case_h: 13.9, z: {} };   // replaced by parts/model.json
 const PARTS = [
-  { key: "top", name: "Top piece", file: "parts/top.stl", color: "#5a6573", lift: 112, shell: true,
-    note: "Printed face down, no supports at a 60 degree overhang limit (this variant: its rounds and the steps carried on to 60). The screen face, the curved steps down to the decks, and the sides, over most of the back's round down to the seam with the tub: its skirts slide 4.5 mm down over the tub's tongue, and pockets in its sides take the tongue's tabs. Near each end its side round sweeps down to the deck's over the last 10 mm, so the two meet flush; at the foot of each step and round the spine a continuous lip goes 0.5 mm down into a groove in the deck's face. Four screws hold it beside the glass; the panel sits in its pocket, the speaker under a grille in the right bezel." },
+  { key: "top", name: "Island", file: "parts/top.stl", color: "#5a6573", lift: 112, shell: true,
+    note: "Printed face down, no supports at a 60 degree overhang limit. The raised screen block, its spines and, on the right wall only, an ear over the USB-C: it sits in the window the two decks form, its foot 2.6 mm in from the sides, one rounded edge all round it. Below the decks' face its edge slopes out at 45 degrees under a lip on the decks' edges, so it can't come out of the front. Four screws hold it beside the glass; the panel sits in its pocket, the speaker under a grille in the right bezel." },
   { key: "decks", name: "Decks", file: "parts/decks.stl", color: "#d9822b", lift: 100, shell: true,
-    note: "Printed face down, no supports at a 60 degree limit; one part for both ends. Each seats into the top piece from behind, its plate running on 1.6 mm under the step with the top piece's lip in a groove in its face, so the two can't slide apart, and curves over the end and sides and down the back's round to the seam; at each side wall a lap on its skirt slides in behind the top piece's skirt, so the two walls hold each other flush; the tub's corner posts push it home onto its step, and its own screw holds it." },
+    note: "Printed face down, no supports at a 60 degree limit; two parts. Each is a core (the buttons) and an arm along each side wall, at the decks' height, so the case's side is one profile from end to end; they curve over the ends and sides and down the back's round to the seam. On the left wall the arms meet with a lap (seat 1's behind seat 2's skirt); on the right they meet the island's ear, whose laps go behind theirs. The tub's corner posts push each deck onto the island's wedge, keys on the tub's tongue sit in pockets in the arms, and each deck's own screw holds it." },
   { key: "caps", name: "Button caps", file: "parts/caps.stl", color: "#eef0f4", lift: 88,
     note: "DS Lite caps, bought. Their flanges sit under the decks, which hold them in." },
   { key: "panel", name: "Display panel", file: "parts/panel.stl", color: "#0b0e13", lift: 68, rough: 0.25,
-    note: "2.4 in IPS (ER-TFT024IPS-3), taped into the top piece's pocket. Its ribbon folds round under it to J3." },
+    note: "2.4 in IPS (ER-TFT024IPS-3), taped into the island's pocket. Its ribbon folds round under it to J3." },
   { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 20, metal: 0.6,
     note: "403450 Li-ion, 50 × 34 × 4 mm, in a hole in the board, its bottom in a pocket in the tub's floor. Its leads run from its left end to J2 at the hole's corner." },
   { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 46, metal: 0.5,
@@ -136,9 +136,9 @@ const PARTS = [
   { key: "board", name: "Circuit board", file: "parts/board.glb", lift: 40,
     note: "2 layers, 1.6 mm, assembled by JLC. Every fitted part is shown." },
   { key: "tub", name: "Tub", file: "parts/tub.stl", color: "#2c343f", lift: 0, shell: true,
-    note: "Printed back down. The back and the lower part of its rounded edge, up to the seam (2.55 mm up); a tongue standing 4.65 mm over it (4.15 at the decks) inside the top pieces' skirts, with tabs into the top piece, a post in each corner that keys a deck, a slot at each side joint for the deck's lap, and grip ribs that hold the case together before the screws; and a tab rising from the seam that carries the USB-C opening's lower half." },
+    note: "Printed back down. The back and the lower part of its rounded edge, up to the seam (2.55 mm up); a tongue standing 4.15 mm over it round the decks' cores (3.0 along the side walls) inside the skirts, with tabs into the decks' arms, a post in each corner that keys a deck, a slot at each lap, and grip ribs that hold the case together before the screws; and a tab rising from the seam that carries the USB-C opening's lower half." },
   { key: "screws", name: "Screws", file: "parts/screws.stl", color: "#a9afb8", lift: -28, metal: 0.9,
-    note: "Six M2 × 6 self-tapping, from the back, through the board: four into the top piece beside the glass, one into each deck." },
+    note: "Six M2 × 6 self-tapping, from the back, through the board: four into the island beside the glass, one into each deck." },
 ];
 
 const canvas = document.getElementById("c");
