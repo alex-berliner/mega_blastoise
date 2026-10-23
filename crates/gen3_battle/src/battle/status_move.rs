@@ -330,8 +330,13 @@ impl Battle {
             StatusAction::LockOn => {
                 // Taking aim at a mon already in your sights does nothing:
                 // addVolatile refuses a lock that is still up, and the move
-                // fails rather than refreshing it.
-                if hit && !self.sides[foe].mon().fainted() && self.sides[side].mon().sure_hit == 0 {
+                // fails rather than refreshing it. Neither Lock-On nor Mind
+                // Reader has `bypasssub`, so a substitute stops the aim too.
+                if hit
+                    && self.sides[foe].mon().sub_hp == 0
+                    && !self.sides[foe].mon().fainted()
+                    && self.sides[side].mon().sure_hit == 0
+                {
                     let aim = self.sides[foe].active as u8;
                     let mon = self.sides[side].mon_mut();
                     mon.sure_hit = 2;

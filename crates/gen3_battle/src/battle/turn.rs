@@ -1038,6 +1038,14 @@ impl Battle {
         if locked {
             return false;
         }
+        // An Encore up at the request greys out every slot but the encored
+        // one (`onDisableMove`), so that slot is the one the request asks
+        // about: an encored move a Taunt or a Torment also greys out leaves
+        // nothing to pick, and the queued action is Struggle.
+        let i = match (mon.encore_n > 0, mon.encored_slot) {
+            (true, Some(e)) => e as usize,
+            _ => i,
+        };
         let Some(slot) = mon.moves.get(i) else {
             return false;
         };

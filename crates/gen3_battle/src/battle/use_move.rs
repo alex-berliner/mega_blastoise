@@ -890,7 +890,10 @@ impl Battle {
             // whole slot list, because that is the shape of the sim's answer.
             || (self.sealed_at_choice[side] && !forced)
             || choice_locked_out
-            || (slot.pp == 0 && !releasing && self.pp0_at_choice[side]))
+            // The slot was dry at the request, so Struggle was queued then;
+            // a Leppa Berry that refills it mid-turn (one a Trick just handed
+            // over) does not take that back.
+            || (self.pp0_at_choice[side] && !forced))
             && !releasing;
         let slot = if struggling {
             MoveSlot {
