@@ -692,6 +692,14 @@ echo(str("USBC {\"hole_y\": [", jnum(kicad([0, usb_y + usb_hole[0] / 2])[1]), ",
   "], \"hole_z\": [", jnum(usb_zc - usb_hole[1] / 2 - z_top_cu), ", ", jnum(usb_zc + usb_hole[1] / 2 - z_top_cu),
   "], \"wall_x\": [", jnum(kicad([in_x, 0])[0]), ", ", jnum(kicad([case_w / 2, 0])[0]),
   "], \"plug_len_min\": ", plug_len_min, ", \"mate\": ", usb_mate, "}"));
+
+// the decks' flange for check_fit.py (KiCad corners; limits over the board's top), not in positions.json:
+// its plan at both ends grown part_clear (the tongue is inside it) and, where the board's taller parts are
+// under it, the keepouts it stops short over
+function jrect(r) = str("[", jpt([r[0][0], r[1][1]]), ", ", jpt([r[1][0], r[0][1]]), "]");
+echo(str("FLANGE {\"limit\": ", jnum(z_flange - z_top_cu - part_clear), ", \"zones\": [",
+  join([for (z = concat(flange_zones, [for (z = flange_zones) rot_rect(z)])) jrect([z[0] - [part_clear, part_clear], z[1] + [part_clear, part_clear]])]), "], \"keep\": [",
+  join([for (k = flange_keep, t = [0, 1]) let(b = keep_box(k)) str("{\"ref\": \"", k[0], "\", \"box\": ", jrect(t ? rot_rect(b) : b), ", \"limit\": ", k[3], "}")]), "]}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
 echo(str("CAPS flange top ", retainer_z - z_top_cu, " above the board, cap top ", cap_top - z_top_cu, ", deck face ",
          deck_face - z_top_cu, ", screen face ", case_h - z_top_cu, ": ends ", deck_face, " mm thick, a ", step_d, " mm step"));
@@ -972,6 +980,123 @@ module grip(g) let(sx = g[0], w = len(g) > 3 ? g[3] : grip_w, z1 = grip_top(g[2]
   translate([sx * (case_w / 2 - wall / 2 - seam_fit), g[1], 0]) scale([sx, 1, 1]) rotate([90, 0, 0]) linear_extrude(w, center = true)
     polygon([[-0.1, z_seam - 0.3], [grip_reach, z_seam - 0.3], [grip_reach, z1 - grip_reach - 0.05], [-0.05, z1], [-0.1, z1]]);
 
+// ---- the decks' flange and the top piece's tongue (2026-10-23, case/SHELL.md "The tongue under the step") ----
+// Alex, on the print: the top piece "kind of just sits on top of the deck", so it moves; he asked for an
+// indentation across their whole contact that the top piece inserts into, and sketched the deck running on
+// under the step's block with a tongue of the top piece down into a groove in it. Both parts print face
+// down and the deck goes in from behind (+z), so all of a deck that lies under the top piece must stay
+// under the 45 degree line from its land (the wedge: anything further in would start in mid air), and a
+// groove under the top piece can't have a far wall unless that wall is bridged. So:
+//  - each deck's wedge runs on down to z_flange (the flange), flange_in under the top piece at its foot;
+//  - the top piece carries a tongue lock_t thick in its land's plane (the joint's line), down through slots
+//    in the flange to z_flange, its tip's edges and ends chamfered lock_lead as lead-ins;
+//  - the slots are lock_slot_max long at most, between ties at least lock_tie long where the wedge is whole:
+//    beyond each slot the flange is a fin under the wedge's line (lock_relief under it), its first layers
+//    a bridge from tie to tie, its top flat at z_lock_cap where it is lock_wall thick;
+//  - the tongue's faces keep deck_gap to the slot's sides (the deck's land, the fin) and its ends to the ties.
+// Across the step the fins hold the deck from sliding away from the screen and the ties hold it across;
+// down the spine's sides the ties hold it along the case and the fins across. The wedges (the ties, and
+// the fins' slopes) still hold it in from the front, so the corner posts still push it home onto them.
+// Where one of the board's taller parts is under it (either end's: one deck fits both), the flange stops
+// part_clear over the part (flange_keep) and there is no slot; at the spine's end U8 and U9 are under
+// most of it, so it has none. check_fit.py checks the board against the flange (the FLANGE echo line)
+part_clear = 0.3;                                       // the flange and the tongue over the board's parts
+flange_part_h = 0.5;                                    // the tallest part allowed under them (the 0402 capacitors)
+flange_n = floor((z_deck_under - z_top_cu - flange_part_h - part_clear) / lay + 1e-6);   // the wedge's layers under the plate
+z_flange = z_deck_under - lay * flange_n;               // the flange's foot (4.6, 0.8 over the board)
+flange_in = e0 - z_flange;                              // how far in under the top piece the wedge reaches there (2.3)
+flange_x = in_x - 1.0;                                  // the flange stops short of the side walls (the laps, the tub's tongue)
+lock_t = 0.8;  lock_lead = 0.3;                         // the tongue's thickness and its lead-ins
+lock_relief = 0.12;  lock_wall = 0.7;                   // the fin under the wedge's line, and its least thickness (0.12,
+                                                        // not 0.1 or 0.15: its slope would run through the slabs' corners)
+lock_tie = 1.5;  lock_slot_max = 4.5;                   // a tie's least length, a slot's most (its fin bridges it)
+lock_far = lock_t + deck_gap;                           // the fin's face, in from the joint's line
+z_lock_cap = max(z_flange + 0.1, e0 - lock_relief - lock_far - lock_wall);   // the fin's flat top (5.13)
+// the board's parts under the flange taller than flange_part_h, from check_fit's board model (2026-10-23),
+// in seat 1's frame (seat 2's turned round, as its deck is): [ref, [x0, y0], [x1, y1], their top over the
+// board, rounded up]
+flange_keep = [["Q6", [-7.65, -34.9], [-5.15, -31.9], 1.20], ["Q5", [5.15, -34.9], [7.65, -31.9], 1.20],
+               ["Q3", [24.25, -34.9], [26.75, -31.9], 1.20], ["X1", [-23.8, -34.75], [-20.6, -32.25], 0.80],
+               ["D3", [-33.95, -34.03], [-31.45, -32.78], 1.11],                   // seat 2's
+               ["C5", [-34.0, -31.8], [-33.2, -30.2], 0.80], ["C6", [-31.8, -31.8], [-31.0, -30.2], 0.80],
+               ["C7", [-29.6, -31.8], [-28.8, -30.2], 0.80],
+               ["U8", [-1.3, -47.4], [3.7, -41.0], 1.10], ["U9", [-2.5, -44.7], [2.5, -38.3], 1.10]];   // U9 seat 2's
+// (each grown 0.02 more, up and round: on part_clear exactly, Q5's and Q6's inner faces lie on a layer of the
+// spine's wedges, and their tops on the layers' planes)
+function keep_box(k) = let(g = part_clear + 0.02) [k[1] - [g, g], k[2] + [g, g]];
+function keep_z(k) = z_top_cu + k[3] + part_clear + 0.02;                  // the flange's foot over it
+function keep_at(n) = keep_box(flange_keep[search([n], flange_keep)[0]]);
+module flange_keep_cuts() for (k = flange_keep) let(b = keep_box(k))
+  translate([b[0][0], b[0][1], z_flange - 1]) cube([b[1][0] - b[0][0], b[1][1] - b[0][1], keep_z(k) - z_flange + 1]);
+// the runs of the tongue, seat 1's frame: [along ("x": across the step, "y": down a spine's side), the
+// joint's line there, which way is in under the top piece, from, to], each between keepouts, the flange's
+// end and the spine's end; seat 2's are these turned round
+lock_runs = [["x", -joint_y, 1, keep_at("Q5")[1][0], keep_at("Q3")[0][0]],
+             ["x", -joint_y, 1, keep_at("Q3")[1][0], flange_x],
+             ["x", -joint_y, 1, keep_at("D3")[1][0], keep_at("X1")[0][0]],
+             ["x", -joint_y, 1, keep_at("X1")[1][0], keep_at("Q6")[0][0]],
+             ["y", spine_w / 2, -1, -spine_end, keep_at("Q5")[0][1]],
+             ["y", -spine_w / 2, 1, -spine_end, keep_at("Q6")[0][1]]];
+// a run's slots, [from, to] along it: as few as keep each within lock_slot_max, a tie lock_tie long between
+// them and at each end (over a keepout the flange is cut short, under most fins' tops: it holds no bridge)
+function lock_slots(r) = let(n = max(1, ceil((r[4] - r[3] - lock_tie) / (lock_slot_max + lock_tie))), l = (r[4] - r[3] - (n + 1) * lock_tie) / n)
+  [for (i = [0:n - 1]) [r[3] + lock_tie + i * (l + lock_tie), r[3] + lock_tie + i * (l + lock_tie) + l]];
+// (u in under the top piece, z, t along the run from t0) to the case's frame
+module along(r, t0) multmatrix(r[0] == "x" ? [[0, 0, 1, t0], [r[2], 0, 0, r[1]], [0, 1, 0, 0], [0, 0, 0, 1]]
+                                           : [[r[2], 0, 0, r[1]], [0, 0, 1, t0], [0, 1, 0, 0], [0, 0, 0, 1]]) children();
+// a slot's plan, [[x0, y0], [x1, y1]]: from the deck's land to the fin's foot, along its span (for the checks)
+function lock_rect(r, s) = let(u0 = -(deck_gap + 0.02), u1 = e0 - lock_relief - z_flange, c = [r[1] + r[2] * u0, r[1] + r[2] * u1])
+  r[0] == "x" ? [[s[0], min(c)], [s[1], max(c)]] : [[min(c), s[0]], [max(c), s[1]]];
+// the deck's slot: through the flange from the deck's land (deck_gap off the tongue; 0.02 into the plate's
+// edge under the land, past the wedge's back face, so no face coincides) to the fin, and over the fin down
+// to its top (lock_relief under the wedge's line, flat at z_lock_cap)
+module lock_slot_cut(r, s) along(r, s[0]) linear_extrude(s[1] - s[0])
+  polygon([[-(deck_gap + 0.02), z_flange - 1], [lock_far, z_flange - 1], [lock_far, z_lock_cap], [e0 - lock_relief - z_lock_cap, z_lock_cap],
+           [4, e0 - lock_relief - 4], [4, e0 + 0.5], [0, e0 + 0.5], [0, e0 + 0.02], [-(deck_gap + 0.02), e0 + 0.02]]);
+// the top piece's tongue in it: eps in from the land's face, up into the band over the undercut, deck_gap
+// short of the ties, its tip chamfered all round
+module lock_tongue(r, s) let(l = s[1] - s[0] - 2 * deck_gap) along(r, s[0] + deck_gap) hull() {
+  translate([eps, z_flange + lock_lead, 0]) cube([lock_t - eps, e0 + eps - z_flange - lock_lead, l]);
+  translate([eps + lock_lead, z_flange, lock_lead]) cube([lock_t - eps - 2 * lock_lead, 0.01, l - 2 * lock_lead]);
+}
+// the flange's plan (seat 1's end): its bounding rectangles across the step each side of the spine, down
+// the spine's sides and round its end (the tongue is inside them)
+flange_zones = let(o = deck_gap + 0.01, sw = spine_w / 2)
+  [[[sw - flange_in, -(joint_y + o)], [flange_x, -(joint_y - flange_in)]], [[-flange_x, -(joint_y + o)], [-(sw - flange_in), -(joint_y - flange_in)]],
+   [[sw - flange_in, -(spine_end + o)], [sw + o, -(joint_y - flange_in)]], [[-(sw + o), -(spine_end + o)], [-(sw - flange_in), -(joint_y - flange_in)]],
+   [[-(sw + o), -(spine_end + o)], [sw + o, -(spine_end - flange_in)]]];
+function rect_gap(a, b) = max(max(a[0][0], b[0][0]) - min(a[1][0], b[1][0]), max(a[0][1], b[0][1]) - min(a[1][1], b[1][1]));   // < 0: they overlap
+function rot_rect(r) = [rot180(r[1]), rot180(r[0])];
+// The flange and the tongue's checks (tune skips them: its slices move the decks' face). The tongue and
+// the fins as sized, every slot's fin a bridge the printers make (overhangs.py: 2.6 from a held edge) and
+// clear of every keepout; and the flange (both ends': seat 2's turned round) clear of the screws' bosses,
+// the panel's frame and FPC, J4, the speaker, the pads, Start/Select, the tub's tongue and laps, and its ribs
+if (!tune) {
+  assert(lock_t >= 0.8 && lock_lead < lock_t / 2 && lock_far + lock_wall < e0 - lock_relief - z_lock_cap + 1e-6, "the tongue or its fin is too thin");
+  assert(z_lock_cap - z_flange >= 0.5, "the tongue engages the fins too little");
+  assert(z_flange - z_top_cu >= flange_part_h + part_clear - 1e-6 && flange_in > wedge_w, "the flange is too low, or no deeper than the wedge");
+  for (r = lock_runs) let(sl = lock_slots(r)) {
+    for (s = sl) assert(s[1] - s[0] >= 2.0 && s[1] - s[0] <= 2 * 2.6, "a slot is too short, or its fin's bridge too long");
+    for (i = [1:1:len(sl) - 1]) assert(sl[i][0] - sl[i - 1][1] >= lock_tie - 1e-6, "a tie is too short");
+    // (a keepout that cuts the flange off over a fin's top can't hold its bridge: a tie between them)
+    for (s = sl, k = flange_keep) let(a = lock_rect(r, s), b = keep_box(k), i = r[0] == "x" ? 0 : 1, gap = function(j) max(a[0][j], b[0][j]) - min(a[1][j], b[1][j]))
+      assert(gap(1 - i) >= 0 || gap(i) >= (keep_z(k) > z_lock_cap ? lock_tie - 1e-6 : 0), str("a slot runs over ", k[0], ", or ends at it without a tie"));
+  }
+  for (z = flange_zones) {
+    for (p = concat(side_pins, [for (s = side_pins) rot180(s)])) assert(rect_dist(p, z) >= boss_d / 2 + 0.3, "the flange runs into a side screw's boss");
+    for (p = [pins[5], rot180(pins[4])]) assert(rect_dist(p, z) >= boss_d / 2 + 0.3, "the flange runs into an end screw's boss");
+    assert(rect_gap(z, frame_rect) >= 0.3 && rect_gap(z, [[fpc_x - fpc_w / 2 - 0.5, fpc_y(tip_range[1] + 0.5)], [fpc_x + fpc_w / 2 + 0.5, fpc_y(-1.5)]]) >= 0.3,
+           "the flange runs into the panel's frame or its FPC's fold");
+    assert(rect_gap(z, j4_body) >= 0.3 && rect_gap(z, j4_plug) >= 0.3, "the flange runs into J4 or its plug");
+    assert(z[1][1] <= spk_pos[1] - spk[1] / 2 - spk_keep - 0.3, "the flange runs into the speaker");
+    assert(z[0][1] >= -ss_y + (ss_cell + 2 * ss_frame_w) / 2 + 0.3, "the flange runs into Start/Select's frame");
+    for (c = clusters) assert(rect_dist(c, z) >= piece_d / 2 + 0.5, "the flange runs under a silicone piece");
+    assert(max(abs(z[0][0]), abs(z[1][0])) <= case_w / 2 - inner_max(deck_face, z_seam, z_deck_tongue) - 0.5, "the flange runs into the tub's tongue or a deck's lap");
+    for (g = grips) assert(rect_gap(z, [[g[0] * in_x - 1, g[1] - grip_w], [g[0] * in_x + 1, g[1] + grip_w]]) >= 0.3, "the flange runs into a grip rib");
+    assert(rect_gap(z, [post_c - [0.5, 0.5], post_c + [5, 5]]) >= 1.0 && rect_gap(z, [-post_c - [5, 5], -post_c + [0.5, 0.5]]) >= 1.0, "the flange runs into a corner post");
+  }
+}
+
 ss_vent = 1.25;           // each Start/Select dome's 0.5 mm vent, this far towards seat 1 from its centre
 // what the floor's ribs keep clear of under the board: [x0, y0, x1, y1]
 rib_free = concat([
@@ -1227,6 +1352,8 @@ module top() difference() {
       translate([0, 0, z_deck_tongue + seam_gap]) linear_extrude(z_ceil - z_deck_tongue - seam_gap + eps) difference() { inner2d(eps); inner2d(-side_fill); }
       difference() { y_out(joint_y - joint_land - side_run); y_out(joint_y - joint_w + eps); }
     }
+    // the tongue down through the decks' flanges, at both ends
+    for (t = [0, 180]) rotate(t) for (r = lock_runs) for (s = lock_slots(r)) lock_tongue(r, s);
     // bosses down to the board top: with the tub's bosses they clamp it
     for (s = side_pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_ceil - z_top_cu + 0.01);
     // pinhole guides reach down towards the switches
@@ -1280,13 +1407,18 @@ module deck_body(sy) difference() {
       }
       translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();   // under the plate
     }
-    // the wedge along its inner edges, in under the top piece's undercut
-    for (k = [0:ceil(wedge_w / lay - 1e-6) - 1]) let(z = z_deck_under + lay * k)
-      translate([0, 0, z]) linear_extrude(lay + 0.01) intersection() {
-        half2d(sy);
-        inner2d(-deck_gap);
-        difference() { offset(delta = deck_gap + 0.01) top_region2d(); top_region_xy2d(-(e0 - z - lay / 2 - deck_gap), -(e0 - z - lay / 2)); }
-      }
+    // the wedge along its inner edges, in under the top piece's undercut, and on down under the band to
+    // z_flange (the flange, short of the side walls), less where the board's taller parts are under it
+    difference() {
+      for (k = [0:ceil(wedge_w / lay - 1e-6) + flange_n - 1]) let(z = z_flange + lay * k)
+        translate([0, 0, z]) linear_extrude(lay + 0.01) intersection() {
+          half2d(sy);
+          inner2d(-deck_gap);
+          square([2 * (z < z_deck_under - 1e-6 ? flange_x : case_w), 4 * case_l], center = true);
+          difference() { offset(delta = deck_gap + 0.01) top_region2d(); top_region_xy2d(-(e0 - z - lay / 2 - deck_gap), -(e0 - z - lay / 2)); }
+        }
+      rotate(sy > 0 ? 180 : 0) flange_keep_cuts();
+    }
     // the walls that rest on the silicone pads (the pockets are cut below)
     // (the A/B/X/Y clover is solid between its pockets, where the faceplate leaves it open round
     // pinwheel ears: here the tab slots are cut into it and key the caps with the notch ribs)
@@ -1320,6 +1452,8 @@ module deck_body(sy) difference() {
   // its corner posts key into
   groove(false);
   for (sx = [-1, 1]) post_notch(sx, sy);
+  // the slots the top piece's tongue drops through
+  rotate(sy > 0 ? 180 : 0) for (r = lock_runs) for (s = lock_slots(r)) lock_slot_cut(r, s);
 }
 
 module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
