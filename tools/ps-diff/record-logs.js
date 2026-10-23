@@ -33,20 +33,31 @@
 // split is unambiguous, and the empty line PS writes after a one-sided split
 // survives as an empty content line.
 //
+// What is committed: 20 of the 60 battles per gen, picked greedily for
+// coverage (see `pickCommitted`), written as `gen1.log.gz` / `gen3.log.gz`
+// (the round-trip test reads them gzipped), plus `names.tsv`. The battles
+// keep their `#battle gen=G index=I` header, so a reader can find any of them
+// in the full corpus.
+//
 // Usage:
-//   node tools/ps-diff/record-logs.js            write the fixtures
-//   node tools/ps-diff/record-logs.js --check    regenerate and compare
-//   node tools/ps-diff/record-logs.js --out DIR  write somewhere else
+//   node tools/ps-diff/record-logs.js             write the fixtures
+//   node tools/ps-diff/record-logs.js --check     regenerate and compare
+//   node tools/ps-diff/record-logs.js --out DIR   write the fixtures somewhere else
+//   node tools/ps-diff/record-logs.js --full DIR  also write all 60 battles per
+//                                                 gen, uncompressed, to DIR (the
+//                                                 round-trip test reads them when
+//                                                 PS_PROTOCOL_FULL_LOGS=DIR)
 
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const {BattleStream, Teams, Dex} = require('pokemon-showdown/dist/sim');
 
 const REPO = path.resolve(__dirname, '..', '..');
 const OUT_DIR = path.join(REPO, 'crates', 'ps_protocol', 'tests', 'fixtures');
 
 // How many battles per generation the recorder plays, and how many of them
-// are committed as fixtures. The task asks for 60 played and 20 committed.
+// are committed as fixtures (P1-4: 60 played, 20 committed).
 const PLAYED_PER_GEN = 60;
 const COMMITTED_PER_GEN = 20;
 
@@ -198,7 +209,10 @@ async function playBattle(gen, formatid, index) {
 // needs a name table. This dumps the dex entries of both generations we
 // play: id and display name, one per line, one kind per section.
 //
-// `kind<TAB>id<TAB>name`, kinds: move, species, item, ability, type, nature.
+// `kind<TAB>id<TAB>name`, kinds: move, species, item, ability, type, nature;
+// and `cosmetic<TAB>id<TAB>name<TAB>base species id` for each cosmetic forme
+// (PS `species.cosmeticFormes`, in that order: Unown-B to Unown-Question),
+// which a details string prints but the species list does not hold.
 function dumpNames() {
   const rows = [];
   const seen = new Set();
@@ -217,6 +231,13 @@ function dumpNames() {
     for (const species of dex.species.all()) {
       if (!species.exists || species.isNonstandard || species.num <= 0) continue;
       add('species', species.id, species.name);
+    }
+    for (const species of dex.species.all()) {
+      if (!species.exists || species.isNonstandard || species.num <= 0) continue;
+      for (const name of species.cosmeticFormes || []) {
+        const forme = dex.species.get(name);
+        add('cosmetic', forme.id, `${forme.name}\t${species.id}`);
+      }
     }
     for (const item of dex.items.all()) {
       if (!item.exists || item.isNonstandard) continue;
@@ -243,19 +264,137 @@ function dumpNames() {
 // Main
 // ---------------------------------------------------------------------------
 
-async function record() {
-  const files = {};
-  for (const {gen, formatid} of GENS) {
-    const lines = [];
-    for (let index = 0; index < PLAYED_PER_GEN; index++) {
-      lines.push(`#battle gen=${gen} index=${index}`);
-      const battle = await playBattle(gen, formatid, index);
-      lines.push(...battle);
+// The coverage features of one transcript line: what the committed subset
+// should keep at least one example of, in two weights. A structural feature
+// (a line kind, an argument's shape, a kwarg, a text line, a request shape)
+// weighs STRUCTURAL; a name (a move, a species, an item in an argument)
+// weighs 1, so names only break ties between equally structural battles.
+// Pokemon names and numbers are abstracted away.
+const STRUCTURAL = 1000;
+const TEXT_KINDS = new Set(['raw', 'debug', 'error', '-message', '-hint']);
+
+function lineFeatures(line, out) {
+  const norm = (str) => str.replace(/p[12][a-z]?: .*/, 'MON').replace(/[0-9]+/g, 'N');
+  if (line.startsWith('|request|')) {
+    const r = JSON.parse(line.slice('|request|'.length));
+    out.set('request:' + Object.keys(r).join(','), STRUCTURAL);
+    for (const a of r.active || []) {
+      out.set('active:' + Object.keys(a).join(','), STRUCTURAL);
+      for (const m of a.moves) {
+        out.set('amove:' + Object.keys(m).join(',') + '=' + JSON.stringify(m.disabled), STRUCTURAL);
+        out.set('amovename:' + norm(m.move), m.id === m.move.toLowerCase().replace(/[^a-z0-9]/g, '') ? 1 : STRUCTURAL);
+      }
     }
-    files[`gen${gen}.log`] = lines.join('\n') + '\n';
+    for (const p of r.side.pokemon) {
+      out.set('mon:' + Object.keys(p).join(','), STRUCTURAL);
+      out.set('details:' + norm(p.details), 1);
+      for (const m of p.moves) out.set('smove:' + norm(m), /[0-9]/.test(m) ? STRUCTURAL : 1);
+    }
+    return;
   }
-  files['names.tsv'] = dumpNames();
-  return files;
+  if (!line.startsWith('|')) return;
+  const parts = line.split('|');
+  const kind = parts[1];
+  out.set('kind:' + kind, STRUCTURAL);
+  if (TEXT_KINDS.has(kind)) {
+    out.set(`${kind}:${norm(parts.slice(2).join('|'))}`, STRUCTURAL);
+    return;
+  }
+  for (let i = 2; i < parts.length; i++) {
+    const arg = norm(parts[i]);
+    // The shape: a kwarg's tag, an effect's prefix, or the value itself
+    // when it is a placeholder (MON, N) or a fixed word.
+    const tag = arg.match(/^(\[[a-z]+\]|[a-z]+:)/);
+    out.set(`${kind}:${i}:${tag ? tag[1] : /^[a-zN]/.test(arg) || arg === 'MON' ? arg : 'Name'}`, STRUCTURAL);
+    out.set(`${kind}:${i}:${arg}`, 1);
+  }
+}
+
+// Lines the typed model once could not hold (P1-4b): a details string with a
+// cosmetic forme (`Unown-T`), and `setAbility`'s `-ability` with the old
+// ability as a third argument (Trace). Every battle that has one is
+// committed, so the round-trip test keeps proving them.
+const MUST_KEEP = [
+  /^\|(switch|drag|detailschange)\|[^|]*\|Unown-/,
+  /^\|-ability\|[^|]*\|[^|]*\|(?!boost(\||$))[^[|]/,
+];
+
+// PS's battles differ in which corners of the protocol they reach. Commit the
+// MUST_KEEP battles, then the battles that reach the most: repeatedly take the
+// battle with the most features no committed battle has yet (ties go to the
+// lower index). The picked battles are kept in index order.
+function pickCommitted(battles, n) {
+  const features = battles.map((lines) => {
+    const map = new Map();
+    for (const line of lines) lineFeatures(line, map);
+    return map;
+  });
+  const seen = new Set();
+  const picked = [];
+  const take = (i) => {
+    picked.push(i);
+    for (const f of features[i].keys()) seen.add(f);
+  };
+  battles.forEach((lines, i) => {
+    if (picked.length < n && lines.some((line) => MUST_KEEP.some((re) => re.test(line)))) take(i);
+  });
+  while (picked.length < n && picked.length < battles.length) {
+    let best = -1;
+    let bestGain = -1;
+    features.forEach((map, i) => {
+      if (picked.includes(i)) return;
+      let gain = 0;
+      for (const [f, weight] of map) if (!seen.has(f)) gain += weight;
+      if (gain > bestGain) {
+        best = i;
+        bestGain = gain;
+      }
+    });
+    take(best);
+  }
+  return picked.sort((a, b) => a - b);
+}
+
+function joinBattles(gen, battles, indices) {
+  const lines = [];
+  for (const index of indices) {
+    lines.push(`#battle gen=${gen} index=${index}`);
+    lines.push(...battles[index]);
+  }
+  return lines.join('\n') + '\n';
+}
+
+async function record() {
+  const fixtures = {};
+  const full = {};
+  for (const {gen, formatid} of GENS) {
+    const battles = [];
+    for (let index = 0; index < PLAYED_PER_GEN; index++) {
+      battles.push(await playBattle(gen, formatid, index));
+    }
+    const all = battles.map((_, i) => i);
+    full[`gen${gen}.log`] = joinBattles(gen, battles, all);
+    const picked = pickCommitted(battles, COMMITTED_PER_GEN);
+    fixtures[`gen${gen}.log.gz`] = joinBattles(gen, battles, picked);
+  }
+  fixtures['names.tsv'] = dumpNames();
+  return {fixtures, full};
+}
+
+// Gzip is only the storage format: `--check` compares the text inside, so a
+// different zlib build cannot make the check fail.
+function readFixture(target) {
+  if (!fs.existsSync(target)) return null;
+  const raw = fs.readFileSync(target);
+  return (target.endsWith('.gz') ? zlib.gunzipSync(raw) : raw).toString('utf8');
+}
+
+function writeFixture(target, content) {
+  const bytes = target.endsWith('.gz') ?
+    zlib.gzipSync(Buffer.from(content, 'utf8'), {level: 9}) :
+    Buffer.from(content, 'utf8');
+  fs.writeFileSync(target, bytes);
+  return bytes.length;
 }
 
 async function main() {
@@ -263,6 +402,8 @@ async function main() {
   const check = argv.includes('--check');
   const outIndex = argv.indexOf('--out');
   const outDir = outIndex >= 0 ? path.resolve(argv[outIndex + 1]) : OUT_DIR;
+  const fullIndex = argv.indexOf('--full');
+  const fullDir = fullIndex >= 0 ? path.resolve(argv[fullIndex + 1]) : null;
 
   // PS stamps the battle log with the wall clock. Freeze it so the corpus is
   // a function of the seeds alone; the codec still sees a real timestamp.
@@ -270,11 +411,21 @@ async function main() {
   const realNow = Date.now;
   Date.now = () => frozenNow;
 
-  let files;
+  let recorded;
   try {
-    files = await record();
+    recorded = await record();
   } finally {
     Date.now = realNow;
+  }
+  const files = recorded.fixtures;
+
+  if (fullDir) {
+    fs.mkdirSync(fullDir, {recursive: true});
+    for (const [name, content] of Object.entries(recorded.full)) {
+      const target = path.join(fullDir, name);
+      fs.writeFileSync(target, content);
+      console.log(`wrote    ${target} (all ${PLAYED_PER_GEN} battles)`);
+    }
   }
 
   fs.mkdirSync(outDir, {recursive: true});
@@ -282,7 +433,7 @@ async function main() {
   for (const [name, content] of Object.entries(files)) {
     const target = path.join(outDir, name);
     if (check) {
-      const old = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : null;
+      const old = readFixture(target);
       if (old === content) {
         console.log(`ok       ${name}`);
       } else {
@@ -306,8 +457,8 @@ async function main() {
       }
       continue;
     }
-    fs.writeFileSync(target, content);
-    const kb = (Buffer.byteLength(content) / 1024).toFixed(1);
+    const bytes = writeFixture(target, content);
+    const kb = (bytes / 1024).toFixed(1);
     console.log(`wrote    ${path.relative(REPO, target)} (${kb} KB)`);
   }
   if (check) {

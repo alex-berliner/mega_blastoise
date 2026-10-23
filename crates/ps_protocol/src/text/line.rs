@@ -20,7 +20,9 @@ use crate::command::{FormatId, RuleId};
 use crate::ident::{
     AbilityNum, Details, Gender, Health, Hp, PokemonIdent, SideId, SpeciesNum, Stat, Status,
 };
-use crate::msg::{Arg, ArgValue, GameType, Kw, KwFlags, KwPart, Msg, Weather, Word};
+use crate::msg::{
+    Arg, ArgValue, GameType, Kw, KwFlags, KwPart, Msg, Text, TextArg, TextArgKind, TextId, Weather, Word,
+};
 use crate::{BattleNames, DexNames, Name};
 
 /// A codec error.
@@ -87,7 +89,7 @@ fn render_textarg(a: crate::msg::TextArg, dex: &dyn DexNames, names: &dyn Battle
         V::MoveId(m) => dex.move_id(m).to_string(),
         V::Move(m) => dex.move_name(m).to_string(),
         V::Mon(m) => mon_str(m, names),
-        V::Nickname(m) => mon_str(m, names),
+        V::Nickname(m) => nickname_only(m, names),
         V::Status(s) => s.as_str().to_string(),
         V::Word(w) => w.as_str().to_string(),
         V::Rule(r) => r.name().to_string(),
@@ -107,6 +109,8 @@ impl<N: DexNames> CodecState<N> {
     pub fn dex(&self) -> &N { &self.0 }
     pub fn battle(&self) -> &Battle { &self.1 }
     pub fn battle_mut(&mut self) -> &mut Battle { &mut self.1 }
+    /// The dex and the mutable name table at once (for [`super::json::decode_request`]).
+    pub fn split_mut(&mut self) -> (&N, &mut Battle) { (&self.0, &mut self.1) }
 }
 
 impl<N: DexNames> DexNames for CodecState<N> {
@@ -115,6 +119,8 @@ impl<N: DexNames> DexNames for CodecState<N> {
     fn move_from_id(&self, id: &str) -> Option<crate::ident::MoveNum> { self.0.move_from_id(id) }
     fn species_name(&self, s: SpeciesNum) -> &str { self.0.species_name(s) }
     fn species_from_id(&self, id: &str) -> Option<SpeciesNum> { self.0.species_from_id(id) }
+    fn cosmetic_forme_name(&self, s: SpeciesNum, forme: u8) -> &str { self.0.cosmetic_forme_name(s, forme) }
+    fn cosmetic_forme_from_id(&self, id: &str) -> Option<(SpeciesNum, u8)> { self.0.cosmetic_forme_from_id(id) }
     fn item_name(&self, i: crate::ident::ItemNum) -> &str { self.0.item_name(i) }
     fn item_id(&self, i: crate::ident::ItemNum) -> &str { self.0.item_id(i) }
     fn item_from_id(&self, id: &str) -> Option<crate::ident::ItemNum> { self.0.item_from_id(id) }
@@ -170,7 +176,10 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
         Msg::Turn(n) => push_arg(buf, &n.to_string()),
         Msg::Win(side) => push_arg(buf, names.player_name(*side)),
         Msg::Debug(t) => push_arg(buf, &render_text_to_str(*t,  dex, names)),
-        Msg::Error { text, .. } => push_arg(buf, &render_text_to_str(*text,  dex, names)),
+        Msg::Error { unavailable, text, .. } => {
+            let prefix = if *unavailable { "[Unavailable choice] " } else { "[Invalid choice] " };
+            push_arg(buf, &format!("{}{}", prefix, render_text_to_str(*text, dex, names)));
+        }
 
         Msg::Move { user, mv, target, kw: _ } => {
             push_arg(buf, &mon_str(*user, names));
@@ -338,11 +347,13 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
             push_arg(buf, &mon_str(*mon, names));
             push_arg(buf, dex.item_name(*item));
         }
-        Msg::Ability { mon, ability, a, kw: _ } => {
+        Msg::Ability { mon, ability, old, boost, kw: _ } => {
             push_arg(buf, &mon_str(*mon, names));
             push_arg(buf, dex.ability_name(*ability));
-            if let Some(a) = a {
-                push_arg(buf, &arg_pos_str(*a, dex));
+            if let Some(old) = old {
+                push_arg(buf, dex.ability_name(*old));
+            } else if *boost {
+                push_arg(buf, Word::Boost.as_str());
             }
         }
         Msg::EndAbility { mon, kw: _ } => push_arg(buf, &mon_str(*mon, names)),
@@ -409,12 +420,17 @@ fn side_full_name(side: SideId, names: &dyn BattleNames) -> String {
     format!("{}: {}", side.as_str(), names.player_name(side))
 }
 
-fn details_str(d: Details, dex: &dyn DexNames, names: &dyn BattleNames) -> String {
+/// PS `getUpdatedDetails`.
+pub(crate) fn details_str(d: Details, dex: &dyn DexNames, names: &dyn BattleNames) -> String {
     let mut s = String::new();
-    s.push_str(dex.species_name(d.species));
+    if d.forme == 0 {
+        s.push_str(dex.species_name(d.species));
+    } else {
+        s.push_str(dex.cosmetic_forme_name(d.species, d.forme));
+    }
     if d.level != 100 {
         s.push_str(", L");
-        s.push_str(&d.level.to_string());
+        s.push_str(&{ d.level }.to_string());
     }
     if let Some(g) = d.gender.details_letter() {
         s.push_str(", ");
@@ -423,7 +439,6 @@ fn details_str(d: Details, dex: &dyn DexNames, names: &dyn BattleNames) -> Strin
     if d.shiny {
         s.push_str(", shiny");
     }
-    // Genre placeholder: omit for now.
     let _ = names;
     s
 }
@@ -445,7 +460,8 @@ fn hp_status_str(h: Health, _is_split_form: bool) -> String {
 
 fn arg_value_to_str(v: ArgValue, dex: &dyn DexNames, s: &mut String, _for_kw: bool) {
     match v {
-        ArgValue::Move(m) | ArgValue::MoveId(m) => s.push_str(dex.move_name(m)),
+        ArgValue::Move(m) => s.push_str(dex.move_name(m)),
+        ArgValue::MoveId(m) => s.push_str(dex.move_id(m)),
         ArgValue::MoveEffect(m) => {
             // MoveEffect is `move: <name>` regardless of context.
             s.push_str("move: ");
@@ -518,14 +534,26 @@ fn decode_kind(kind: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle
         "gen" => Ok(Msg::Gen(parse_u8(arg(args, 0)?, "gen")?)),
         "tier" => Ok(Msg::Tier(parse_tier(arg(args, 0)?)?)),
         "rule" => Ok(Msg::Rule(parse_rule(arg(args, 0)?)?)),
-        "raw" => Ok(Msg::Raw(decode_text(arg(args, 0)?))),
+        "raw" => Ok(Msg::Raw(decode_text(&text_arg(args)?, dex, names)?)),
         "start" => Ok(Msg::Start),
         "upkeep" => Ok(Msg::Upkeep),
         "turn" => Ok(Msg::Turn(parse_u16(arg(args, 0)?, "turn")?)),
         "win" => Ok(Msg::Win(parse_win_side(arg(args, 0)?, names))),
         "tie" => Ok(Msg::Tie),
-        "debug" => Ok(Msg::Debug(decode_text(arg(args, 0)?))),
-        "error" => Ok(Msg::Error { side: SideId::P1, unavailable: false, text: decode_text(arg(args, 0)?) }),
+        "debug" => Ok(Msg::Debug(decode_text(&text_arg(args)?, dex, names)?)),
+        // The line does not name its side: PS sends it in a `sideupdate pN`
+        // block, so the caller that read the header sets `side`.
+        "error" => {
+            let all = text_arg(args)?;
+            let (unavailable, rest) = if let Some(rest) = all.strip_prefix("[Invalid choice] ") {
+                (false, rest)
+            } else if let Some(rest) = all.strip_prefix("[Unavailable choice] ") {
+                (true, rest)
+            } else {
+                return Err(CodecError::BadArg(format!("error prefix {:?}", all)));
+            };
+            Ok(Msg::Error { side: SideId::P1, unavailable, text: decode_text(rest, dex, names)? })
+        }
         k if k.starts_with('-') => decode_minor(k, args, dex, names),
         _ => decode_major(kind, args, dex, names),
     }
@@ -650,12 +678,18 @@ fn decode_minor(k: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle) 
         "-ability" => {
             let mon = parse_mon(arg(args, 0)?, names)?;
             let ability = parse_ability_name(arg(args, 1)?, dex)?;
-            let a = if let Some(s) = args.get(2).copied() {
-                let (ta, used) = parse_arg_simple(s, dex)?;
-                if used { Some(ta) } else { None }
-            } else { None };
-            let i = if a.is_some() { 3 } else { 2 };
-            Ok(Msg::Ability { mon, ability, a, kw: parse_kwargs(&args[i..], dex, names)? })
+            // The third argument, if not a kwarg: `boost` (Intimidate) or the
+            // old ability's name (PS `setAbility`).
+            let (mut old, mut boost, mut i) = (None, false, 2);
+            if let Some(s) = args.get(2).copied().filter(|s| !s.starts_with('[')) {
+                if s == Word::Boost.as_str() {
+                    boost = true;
+                } else {
+                    old = Some(parse_ability_name(s, dex)?);
+                }
+                i = 3;
+            }
+            Ok(Msg::Ability { mon, ability, old, boost, kw: parse_kwargs(&args[i..], dex, names)? })
         }
         "-endability" => Ok(Msg::EndAbility { mon: parse_mon(arg(args, 0)?, names)?, kw: parse_kwargs(&args[1..], dex, names)? }),
         "-formechange" => {
@@ -663,8 +697,10 @@ fn decode_minor(k: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle) 
             let species = parse_move_id_internal_species(arg(args, 1)?, dex)?;
             Ok(Msg::FormeChange { mon, species, kw: parse_kwargs(&args[2..], dex, names)? })
         }
-        "-message" => Ok(Msg::Message(decode_text(arg(args, 0)?))),
-        "-hint" => Ok(Msg::Hint { text: decode_text(arg(args, 0)?), split: None }),
+        "-message" => Ok(Msg::Message(decode_text(&text_arg(args)?, dex, names)?)),
+        // A one-sided hint's `|split|pN` comes on the line before, as its own
+        // `Msg::Split`; this line alone is the unsplit form.
+        "-hint" => Ok(Msg::Hint { text: decode_text(&text_arg(args)?, dex, names)?, split: None }),
         other => Err(CodecError::UnknownKind(other.to_string())),
     }
 }
@@ -768,14 +804,10 @@ fn parse_tier(s: &str) -> Result<FormatId, CodecError> {
 }
 
 fn parse_rule(s: &str) -> Result<RuleId, CodecError> {
-    for r in RuleId::ALL {
-        if let Some(line) = r.line() {
-            if s.starts_with(line) || line.starts_with(s.trim_end_matches(':')) {
-                return Ok(r);
-            }
-        }
-    }
-    Err(CodecError::BadArg(format!("rule {:?}", s)))
+    RuleId::ALL
+        .into_iter()
+        .find(|r| r.line() == Some(s))
+        .ok_or_else(|| CodecError::BadArg(format!("rule {:?}", s)))
 }
 
 fn parse_status(s: &str) -> Result<Status, CodecError> {
@@ -834,17 +866,23 @@ fn parse_opt_mon<'a>(m: Option<&'a str>, names: &mut Battle) -> Option<PokemonId
     }
 }
 
-fn parse_details(s: &str, dex: &dyn DexNames, names: &dyn BattleNames) -> Result<Details, CodecError> {
-    let mut parts = s.split(',');
-    let species_name = parts.next().unwrap_or("").trim();
-    let species = species_from_display(species_name, dex)
-        .ok_or_else(|| CodecError::BadArg(format!("species {:?}", species_name)))?;
+/// Parses a details string (PS `getUpdatedDetails`). The species must be a
+/// dex species or a cosmetic forme, by exact name.
+pub(crate) fn parse_details(s: &str, dex: &dyn DexNames, names: &dyn BattleNames) -> Result<Details, CodecError> {
+    let mut parts = s.split(", ");
+    let species_name = parts.next().unwrap_or("");
+    let id = id_str(species_name);
+    let (species, forme) = if let Some(n) = dex.species_from_id(&id).filter(|&n| dex.species_name(n) == species_name) {
+        (n, 0)
+    } else if let Some((n, f)) = dex.cosmetic_forme_from_id(&id).filter(|&(n, f)| dex.cosmetic_forme_name(n, f) == species_name) {
+        (n, f)
+    } else {
+        return Err(CodecError::BadArg(format!("species {:?}", species_name)));
+    };
     let mut level = 100u16;
     let mut gender = Gender::N;
     let mut shiny = false;
     for p in parts {
-        let p = p.trim();
-        if p.is_empty() { continue; }
         if let Some(rest) = p.strip_prefix('L') {
             level = rest.parse().map_err(|_| CodecError::BadArg(format!("level {:?}", p)))?;
         } else if p == "M" {
@@ -853,33 +891,12 @@ fn parse_details(s: &str, dex: &dyn DexNames, names: &dyn BattleNames) -> Result
             gender = Gender::F;
         } else if p == "shiny" {
             shiny = true;
-        } else if p.starts_with("tera:") {
-            // out of scope
         } else {
             return Err(CodecError::BadArg(format!("details field {:?}", p)));
         }
     }
     let _ = names;
-    Ok(Details { species, level, gender, shiny })
-}
-
-/// Walk the dex by id, then by display name.
-fn species_from_display(name: &str, dex: &dyn DexNames) -> Option<SpeciesNum> {
-    if let Some(n) = dex.species_from_id(&id_str(name)) {
-        return Some(n);
-    }
-    // Strip any forme suffix (`Castform-Sunny` -> `Castform`, `Unown-T` -> `Unown`).
-    let base = name.split('-').next().unwrap_or(name);
-    if let Some(n) = dex.species_from_id(&id_str(base)) {
-        return Some(n);
-    }
-    if let Some(n) = dex.species_from_id(&id_str(name)) {
-        return Some(n);
-    }
-    (0..2000).find_map(|n| {
-        let s = SpeciesNum(n);
-        if dex.species_name(s) == name { Some(s) } else { None }
-    })
+    Ok(Details { species, level, gender, shiny, forme })
 }
 
 fn parse_move_name(s: &str, dex: &dyn DexNames) -> Result<crate::ident::MoveNum, CodecError> {
@@ -905,7 +922,9 @@ fn normalise_move_name(s: &str) -> String {
 }
 
 fn parse_move_id_internal_species(s: &str, dex: &dyn DexNames) -> Result<SpeciesNum, CodecError> {
-    species_from_display(s, dex).ok_or_else(|| CodecError::BadArg(format!("species {:?}", s)))
+    dex.species_from_id(&id_str(s))
+        .filter(|&n| dex.species_name(n) == s)
+        .ok_or_else(|| CodecError::BadArg(format!("species {:?}", s)))
 }
 
 fn parse_item_name(s: &str, dex: &dyn DexNames) -> Result<crate::ident::ItemNum, CodecError> {
@@ -936,8 +955,66 @@ fn id_str(s: &str) -> String {
     })
 }
 
-fn decode_text(_s: &str) -> crate::msg::Text {
-    crate::msg::Text::new(crate::msg::TextId::MoveFailedNothing)
+/// The text of a text line: everything after the kind (a text may hold a `|`).
+fn text_arg(args: &[&str]) -> Result<String, CodecError> {
+    if args.is_empty() {
+        return Err(CodecError::BadTrailingArg(0));
+    }
+    Ok(args.join("|"))
+}
+
+/// Finds the [`TextId`] template `s` was rendered from and reads its
+/// arguments back by their [`TextArgKind`]. Unknown text is an error.
+fn decode_text(s: &str, dex: &dyn DexNames, names: &mut Battle) -> Result<Text, CodecError> {
+    for &id in TextId::ALL {
+        if let Some(text) = match_template(id, s, dex, names) {
+            return Ok(text);
+        }
+    }
+    Err(CodecError::UnsupportedLine(format!("no text template for {:?}", s)))
+}
+
+fn match_template(id: TextId, s: &str, dex: &dyn DexNames, names: &mut Battle) -> Option<Text> {
+    let tmpl = id.template();
+    let kinds = id.arg_kinds();
+    let mut pieces = tmpl.split("{}");
+    let mut rest = s.strip_prefix(pieces.next().unwrap_or(""))?;
+    let mut args = [TextArg::NONE; 2];
+    for (i, &kind) in kinds.iter().enumerate() {
+        let lit = pieces.next().unwrap_or("");
+        // An argument ends at the next literal piece (the end of the text
+        // for a trailing argument).
+        let end = if lit.is_empty() { rest.len() } else { rest.find(lit)? };
+        args[i] = parse_text_arg(kind, &rest[..end], dex, names)?;
+        rest = &rest[end + lit.len()..];
+    }
+    if !rest.is_empty() {
+        return None;
+    }
+    Some(Text { id, args })
+}
+
+fn parse_text_arg(kind: TextArgKind, s: &str, dex: &dyn DexNames, names: &mut Battle) -> Option<TextArg> {
+    Some(match kind {
+        TextArgKind::Int => {
+            let n: i32 = s.parse().ok()?;
+            (n.to_string() == s).then_some(TextArg::int(n))?
+        }
+        TextArgKind::MoveId => TextArg::move_id(dex.move_from_id(s).filter(|&m| dex.move_id(m) == s)?),
+        TextArgKind::Move => TextArg::mv(dex.move_from_id(&id_str(s)).filter(|&m| dex.move_name(m) == s)?),
+        TextArgKind::Mon => TextArg::mon(parse_mon(s, names).ok()?),
+        TextArgKind::Nickname => {
+            // A bare nickname names no side; take the first side that has it.
+            let side = [SideId::P1, SideId::P2]
+                .into_iter()
+                .find(|&side| names.find_nickname_side(side, s).is_some())
+                .unwrap_or(SideId::P1);
+            TextArg::nickname(PokemonIdent::inactive(side, names.set_nickname(side, s)))
+        }
+        TextArgKind::Status => TextArg::status(Status::parse(s)?),
+        TextArgKind::Word => TextArg::word(Word::parse(s)?),
+        TextArgKind::Rule => TextArg::rule(RuleId::ALL.into_iter().find(|r| r.name() == s)?),
+    })
 }
 
 fn parse_win_side(s: &str, names: &Battle) -> SideId {

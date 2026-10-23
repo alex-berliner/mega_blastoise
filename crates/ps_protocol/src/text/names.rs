@@ -37,7 +37,18 @@ impl Names {
     }
 }
 
-/// All six columns of the dex.
+/// One cosmetic forme (PS `species.cosmeticFormes`): its id and name, the
+/// base species, and its 1-based index in the base's list
+/// ([`crate::Details::forme`]).
+#[derive(Clone, Debug)]
+pub struct Cosmetic {
+    pub id: String,
+    pub name: String,
+    pub base: SpeciesNum,
+    pub forme: u8,
+}
+
+/// All six columns of the dex, and the cosmetic formes.
 #[derive(Clone, Debug, Default)]
 pub struct Tables {
     pub moves: Names,
@@ -46,11 +57,14 @@ pub struct Tables {
     pub abilities: Names,
     pub types: Names,
     pub natures: Names,
+    pub cosmetic: Vec<Cosmetic>,
 }
 
 impl Tables {
     pub fn new() -> Self { Self::default() }
-    /// Reads a TSV of `<kind>\t<id>\t<display>` rows.
+    /// Reads a TSV of `<kind>\t<id>\t<display>` rows, and
+    /// `cosmetic\t<id>\t<display>\t<base species id>` rows (each after its
+    /// base species, in `cosmeticFormes` order).
     pub fn from_tsv(input: &str) -> Self {
         let mut t = Self::new();
         for line in input.lines() {
@@ -58,6 +72,12 @@ impl Tables {
             let kind = match parts.next() { Some(k) => k, None => continue };
             let id = parts.next().unwrap_or("");
             let name = parts.next().unwrap_or("");
+            if kind == "cosmetic" {
+                let Some(base) = parts.next().and_then(|b| t.species_from_id(b)) else { continue };
+                let forme = t.cosmetic.iter().filter(|c| c.base == base).count() as u8 + 1;
+                t.cosmetic.push(Cosmetic { id: id.to_string(), name: name.to_string(), base, forme });
+                continue;
+            }
             let col: &mut Names = match kind {
                 "move" => &mut t.moves,
                 "species" => &mut t.species,
@@ -81,6 +101,9 @@ impl core::fmt::Display for Tables {
         for (id, name) in &self.abilities.inner { writeln!(f, "ability\t{}\t{}", id, name)?; }
         for (id, name) in &self.types.inner { writeln!(f, "type\t{}\t{}", id, name)?; }
         for (id, name) in &self.natures.inner { writeln!(f, "nature\t{}\t{}", id, name)?; }
+        for c in &self.cosmetic {
+            writeln!(f, "cosmetic\t{}\t{}\t{}", c.id, c.name, self.species_id(c.base).unwrap_or(""))?;
+        }
         Ok(())
     }
 }
@@ -110,6 +133,12 @@ impl Tables {
     }
     pub fn species_from_id(&self, id: &str) -> Option<SpeciesNum> {
         self.species.from_id(id).map(|i| SpeciesNum(i as u16))
+    }
+    pub fn cosmetic_forme_name(&self, s: SpeciesNum, forme: u8) -> Option<&str> {
+        self.cosmetic.iter().find(|c| c.base == s && c.forme == forme).map(|c| c.name.as_str())
+    }
+    pub fn cosmetic_forme_from_id(&self, id: &str) -> Option<(SpeciesNum, u8)> {
+        self.cosmetic.iter().find(|c| c.id == id).map(|c| (c.base, c.forme))
     }
     // items ----
     pub fn item_name(&self, i: ItemNum) -> Option<&str> {
@@ -160,6 +189,12 @@ impl crate::DexNames for Tables {
     fn move_from_id(&self, id: &str) -> Option<MoveNum> { self.move_from_id(id) }
     fn species_name(&self, n: SpeciesNum) -> &str { self.species_name(n).unwrap_or("") }
     fn species_from_id(&self, id: &str) -> Option<SpeciesNum> { self.species_from_id(id) }
+    fn cosmetic_forme_name(&self, s: SpeciesNum, forme: u8) -> &str {
+        self.cosmetic_forme_name(s, forme).unwrap_or("")
+    }
+    fn cosmetic_forme_from_id(&self, id: &str) -> Option<(SpeciesNum, u8)> {
+        self.cosmetic_forme_from_id(id)
+    }
     fn item_name(&self, n: ItemNum) -> &str { self.item_name(n).unwrap_or("") }
     fn item_id(&self, n: ItemNum) -> &str { self.item_id(n).unwrap_or("") }
     fn item_from_id(&self, id: &str) -> Option<ItemNum> { self.item_from_id(id) }

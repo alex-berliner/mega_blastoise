@@ -4,7 +4,6 @@ use alloc::string::{String, ToString};
 
 use crate::command::{Choice, Command, FormatSpec};
 use crate::ident::SideId;
-use crate::team::PackedTeam;
 use crate::{BoundedStr, NAME_CAP};
 
 use super::line::CodecError;
@@ -18,7 +17,7 @@ pub fn encode_command(cmd: &Command) -> Result<String, CodecError> {
             s.push_str(&format_to_json(format, seed));
             Ok(s)
         }
-        Command::Player { side, name, avatar, rating, team: _ } => {
+        Command::Player { side, name, avatar, rating, team } => {
             let mut buf = String::new();
             buf.push_str(">player ");
             buf.push_str(side.as_str());
@@ -37,7 +36,7 @@ pub fn encode_command(cmd: &Command) -> Result<String, CodecError> {
             buf.push(',');
             buf.push_str(&json_string("team"));
             buf.push(':');
-            buf.push_str("\"PACKED\""); // placeholder until `team::pack` is wired up
+            push_quoted(&mut buf, &super::team::pack(team));
             Ok(buf)
         }
         Command::Choose { side, choice } => {
@@ -135,7 +134,3 @@ pub fn decode_command(_line: &str) -> Result<Command, CodecError> {
 
 // re-exported alias kept for tests
 pub type CmdSide = SideId;
-
-// Preserves the `_team` reference visibly so we can wire `team::pack` later.
-#[allow(dead_code)]
-fn _team_ref(_: &PackedTeam) {}

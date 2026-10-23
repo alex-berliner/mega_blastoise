@@ -65,7 +65,7 @@
 //! | `\|-sideend\|SIDE\|EFFECT` | [`Msg::SideEnd`] | |
 //! | `\|-item\|MON\|ITEM` | [`Msg::Item`] | |
 //! | `\|-enditem\|MON\|ITEM` | [`Msg::EndItem`] | `[eat]`; `[silent]` before `[from]` for Trick |
-//! | `\|-ability\|MON\|ABILITY\|A` | [`Msg::Ability`] | |
+//! | `\|-ability\|MON\|ABILITY\|OLD` | [`Msg::Ability`] | `OLD` is Trace's old ability, or Intimidate's `boost` |
 //! | `\|-endability\|MON` | [`Msg::EndAbility`] | |
 //! | `\|-transform\|MON\|TARGET` | [`Msg::Transform`] | |
 //! | `\|-mustrecharge\|MON` | [`Msg::MustRecharge`] | |
@@ -274,8 +274,11 @@ pub enum Msg {
     Item { mon: PokemonIdent, item: ItemNum, kw: Kw },
     /// `|-enditem|MON|ITEM`
     EndItem { mon: PokemonIdent, item: ItemNum, kw: Kw },
-    /// `|-ability|MON|ABILITY` or `|-ability|MON|ABILITY|A` (Intimidate's `boost`).
-    Ability { mon: PokemonIdent, ability: AbilityNum, a: Option<Arg>, kw: Kw },
+    /// `|-ability|MON|ABILITY`, then a third argument: the old ability's name
+    /// when `old` is set (PS `setAbility`: `-ability|MON|NEW|OLD|[from]
+    /// ability: Trace|[of] SOURCE`), or `boost` when `boost` is (Intimidate).
+    /// PS never writes both; `old` wins if both are set.
+    Ability { mon: PokemonIdent, ability: AbilityNum, old: Option<AbilityNum>, boost: bool, kw: Kw },
     /// `|-endability|MON`
     EndAbility { mon: PokemonIdent, kw: Kw },
 
@@ -1149,12 +1152,28 @@ impl defmt::Format for TextArg {
     }
 }
 
-/// The text templates. `{}` marks an argument. The strings are exactly PS's
-/// (from the `this.debug` / `this.hint` / `this.add('-message', ...)` /
-/// `emitChoiceError` call sites); later tasks add the ones their handlers
-/// emit, keeping this list sorted by variant name within each group.
+/// What one `{}` of a [`TextId`] template holds: which [`TextArgValue`]
+/// variant fills it. The decoder reads an argument back by its kind.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum TextArgKind {
+    Int,
+    MoveId,
+    Move,
+    Mon,
+    Nickname,
+    Status,
+    Word,
+    Rule,
+}
+
+/// The text templates. `{}` marks an argument, and the parenthesised list
+/// gives each argument's [`TextArgKind`]. The strings are exactly PS's (from
+/// the `this.debug` / `this.hint` / `this.add('-message', ...)` /
+/// `emitChoiceError` call sites named on each group); later tasks add the
+/// ones their handlers emit, keeping each group sorted by variant name.
 macro_rules! texts {
-    ($($variant:ident => $text:literal,)*) => {
+    ($($variant:ident => $text:literal ($($arg:ident),*),)*) => {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
         #[cfg_attr(feature = "defmt", derive(defmt::Format))]
         #[repr(u16)]
@@ -1167,54 +1186,96 @@ macro_rules! texts {
             pub const fn template(self) -> &'static str {
                 match self { $(TextId::$variant => $text,)* }
             }
+
+            /// The kind of each `{}`, in order.
+            pub const fn arg_kinds(self) -> &'static [TextArgKind] {
+                match self { $(TextId::$variant => &[$(TextArgKind::$arg),*],)* }
+            }
         }
     };
 }
 
 texts! {
     // ---- debug (custom games run with debug on) ------------------------
-    AddVolatileInterrupted => "add volatile [{}] interrupted",
-    BasePower => "BP: {}",
-    BeforeTurnCallback => "before turn callback: {}",
-    DamageEventFailed => "damage event failed",
-    ImmuneToStatus => "immune to status",
-    MoveFailedNothing => "move failed because it did nothing",
-    NaturalStatusImmunity => "natural status immunity",
-    NegatingAtkBoost => "Negating (sp)atk boost/penalty.",
-    NegatingDefBoost => "Negating (sp)def boost/penalty.",
-    NotAGen1Mechanic => "not a gen 1 mechanic",
-    NothingToLeechInto => "Nothing to leech into",
-    RemovingVolatileOn => "Removing {} volatile on {}",
-    ScreenDoublingDef => "Screen doubling (Sp)Def",
-    SetStatusInterrupted => "set status [{}] interrupted",
-    SuccessChance => "Success chance: {}%",
-    // ---- -hint ---------------------------------------------------------
-    DesyncClauseActivated => "Desync Clause Mod activated!",
-    HintGen1Counter => "In Gen 1, from the Counter user's perspective, Counter uses the last announced move by the target's team to determine if it will succeed.",
-    HintGen1CounterSleep => "In Gen 1, if Counter is used against a target that switched in and spent the turn sleeping, from the Counter user's perspective, it will fail if the move in the target's first slot is also Counter.",
-    HintGen1ExplosionSub => "In Gen 1, the user of Explosion will not take damage if it breaks a Substitute.",
-    HintGen1HyperBeamSleep => "In Gen 1, if a Pokémon that has just used Hyper Beam and has yet to recharge is targeted with a sleep inducing move, any other status it may already have will be ignored and sleep will be induced regardless.",
-    HintGen1Miss => "In Gen 1, moves with 100% accuracy can still miss 1/256 of the time.",
-    HintGen1Recovery => "In Gen 1, recovery moves fail if (user's maximum HP - user's current HP + 1) is divisible by 256, unless the current hp is also divisible by 256.",
-    HintGen3IntimidateSub => "In Gen 3, Intimidate does not activate if every target has a Substitute.",
-    HintGens3To4KnockOff => "In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item.",
-    // ---- raw -----------------------------------------------------------
-    CustomRules1 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>1 custom rule:</strong></summary> {}</details></div>",
-    CustomRules2 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> {}, {}</details></div>",
-    // ---- error (PS `emitChoiceError`) ----------------------------------
-    CantMoveNeedResponse => "Can't move: You need a {} response",
-    CantMoveNoMoveIndex => "Can't move: Your {} doesn't have a move {}",
-    CantMoveDisabled => "Can't move: {}'s {} is disabled",
-    CantSwitchNeedResponse => "Can't switch: You need a {} response",
-    CantSwitchNoSlot => "Can't switch: You do not have a Pokémon in slot {} to switch to",
-    CantSwitchActive => "Can't switch: You can't switch to an active Pokémon",
-    CantSwitchOnce => "Can't switch: The Pokémon in slot {} can only switch in once",
-    CantSwitchFainted => "Can't switch: You can't switch to a fainted Pokémon",
-    CantSwitchTrapped => "Can't switch: The active Pokémon is trapped",
-    CantPassReplace => "Can't pass: You need to switch in a Pokémon to replace {}",
-    CantPassMustMove => "Can't pass: Your {} must make a move (or switch)",
-    CantPassNotMoveOrSwitch => "Can't pass: Not a move or switch request",
-    CantUndoLeak => "Can't undo: A trapping/disabling effect would cause undo to leak information",
+    // PS: sim/pokemon.ts addVolatile (`status.id`)
+    AddVolatileInterrupted => "add volatile [{}] interrupted" (Word),
+    // PS: the moves' basePowerCallback (data/moves.ts and data/mods/gen*/moves.ts:
+    // Flail, Reversal, Hidden Power, ...)
+    BasePower => "BP: {}" (Int),
+    // PS: sim/battle.ts runAction `beforeTurnMove` (`action.move.id`)
+    BeforeTurnCallback => "before turn callback: {}" (MoveId),
+    // PS: data/abilities.ts compoundeyes onSourceModifyAccuracy
+    CompoundEyesAccuracy => "compoundeyes - enhancing accuracy" (),
+    // PS: sim/battle.ts spreadDamage
+    DamageEventFailed => "damage event failed" (),
+    // PS: data/abilities.ts serenegrace onModifyMove
+    DoublingSecondaryChance => "doubling secondary chance" (),
+    // PS: sim/pokemon.ts setStatus
+    ImmuneToStatus => "immune to status" (),
+    // PS: data/moves.ts attract volatileStatus onStart
+    IncompatibleGender => "incompatible gender" (),
+    // PS: sim/battle-actions.ts trySpreadMoveHit
+    MoveFailedNothing => "move failed because it did nothing" (),
+    // PS: sim/pokemon.ts runStatusImmunity
+    NaturalStatusImmunity => "natural status immunity" (),
+    // PS: sim/battle-actions.ts getDamage (crit ignores boosts)
+    NegatingAtkBoost => "Negating (sp)atk boost/penalty." (),
+    NegatingDefBoost => "Negating (sp)def boost/penalty." (),
+    NotAGen1Mechanic => "not a gen 1 mechanic" (),
+    NothingToLeechInto => "Nothing to leech into" (),
+    // PS: data/conditions.ts raindance onWeatherModifyDamage
+    RainFireSuppress => "rain fire suppress" (),
+    RainWaterBoost => "rain water boost" (),
+    // PS: data/moves.ts attract condition onUpdate (`${pokemon}`)
+    RemovingAttractVolatileOn => "Removing Attract volatile on {}" (Mon),
+    // PS: data/moves.ts destinybond condition onBeforeMove
+    RemovingDestinyBond => "removing Destiny Bond before attack" (),
+    // PS: data/mods/gen1/scripts.ts getDamage
+    ScreenDoublingDef => "Screen doubling (Sp)Def" (),
+    // PS: sim/pokemon.ts setStatus (`status.id`)
+    SetStatusInterrupted => "set status [{}] interrupted" (Status),
+    // PS: data/abilities.ts shielddust onModifySecondaries
+    ShieldDustPrevent => "Shield Dust prevent secondary" (),
+    // PS: data/conditions.ts stall onStallMove
+    SuccessChance => "Success chance: {}%" (Int),
+    // PS: data/conditions.ts sunnyday onWeatherModifyDamage
+    SunnyDayFireBoost => "Sunny Day fire boost" (),
+    SunnyDayWaterSuppress => "Sunny Day water suppress" (),
+    // PS: data/abilities.ts swarm / torrent onModifyAtk, onModifySpA
+    SwarmBoost => "Swarm boost" (),
+    TorrentBoost => "Torrent boost" (),
+    // PS: sim/battle.ts spreadDamage
+    WeatherImmunity => "weather immunity" (),
+    // PS: data/abilities.ts wonderguard onTryHit (`move.id`)
+    WonderGuardImmunity => "Wonder Guard immunity: {}" (MoveId),
+    // ---- -hint (PS: sim/battle.ts hint, from the handlers) -------------
+    DesyncClauseActivated => "Desync Clause Mod activated!" (),
+    HintGen1Counter => "In Gen 1, from the Counter user's perspective, Counter uses the last announced move by the target's team to determine if it will succeed." (),
+    HintGen1CounterSleep => "In Gen 1, if Counter is used against a target that switched in and spent the turn sleeping, from the Counter user's perspective, it will fail if the move in the target's first slot is also Counter." (),
+    HintGen1ExplosionSub => "In Gen 1, the user of Explosion will not take damage if it breaks a Substitute." (),
+    HintGen1HyperBeamSleep => "In Gen 1, if a Pokémon that has just used Hyper Beam and has yet to recharge is targeted with a sleep inducing move, any other status it may already have will be ignored and sleep will be induced regardless." (),
+    HintGen1Miss => "In Gen 1, moves with 100% accuracy can still miss 1/256 of the time." (),
+    HintGen1Recovery => "In Gen 1, recovery moves fail if (user's maximum HP - user's current HP + 1) is divisible by 256, unless the current hp is also divisible by 256." (),
+    HintGen3IntimidateSub => "In Gen 3, Intimidate does not activate if every target has a Substitute." (),
+    HintGens3To4KnockOff => "In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item." (),
+    // ---- raw (PS: sim/battle.ts start, the custom-rules infobox) -------
+    CustomRules1 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>1 custom rule:</strong></summary> {}</details></div>" (Rule),
+    CustomRules2 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> {}, {}</details></div>" (Rule, Rule),
+    // ---- error (PS: sim/side.ts emitChoiceError, after the `[Invalid
+    // choice] ` / `[Unavailable choice] ` prefix) ------------------------
+    CantMoveDisabled => "Can't move: {}'s {} is disabled" (Nickname, Move),
+    CantMoveNeedResponse => "Can't move: You need a {} response" (Word),
+    CantMoveNoMoveIndex => "Can't move: Your {} doesn't have a move {}" (Nickname, Int),
+    CantPassMustMove => "Can't pass: Your {} must make a move (or switch)" (Nickname),
+    CantPassNotMoveOrSwitch => "Can't pass: Not a move or switch request" (),
+    CantPassReplace => "Can't pass: You need to switch in a Pokémon to replace {}" (Nickname),
+    CantSwitchActive => "Can't switch: You can't switch to an active Pokémon" (),
+    CantSwitchFainted => "Can't switch: You can't switch to a fainted Pokémon" (),
+    CantSwitchNeedResponse => "Can't switch: You need a {} response" (Word),
+    CantSwitchNoSlot => "Can't switch: You do not have a Pokémon in slot {} to switch to" (Int),
+    CantSwitchOnce => "Can't switch: The Pokémon in slot {} can only switch in once" (Int),
+    CantSwitchTrapped => "Can't switch: The active Pokémon is trapped" (),
+    CantUndoLeak => "Can't undo: A trapping/disabling effect would cause undo to leak information" (),
 }
 
 #[cfg(test)]
@@ -1240,6 +1301,8 @@ mod tests {
         assert_eq!(size_of::<Health>(), 10);
         assert_eq!(size_of::<TextArg>(), 5);
         assert_eq!(size_of::<Text>(), 12);
+        assert_eq!(size_of::<Details>(), 7);
+        assert_eq!(align_of::<Details>(), 1);
     }
 
     #[test]
@@ -1301,7 +1364,18 @@ mod tests {
     #[test]
     fn templates_have_as_many_slots_as_args_fit() {
         for &t in TextId::ALL {
-            assert!(t.template().matches("{}").count() <= 2, "{:?}", t);
+            let slots = t.template().matches("{}").count();
+            assert!(slots <= 2, "{:?}", t);
+            assert_eq!(slots, t.arg_kinds().len(), "{:?}: one kind per slot", t);
+        }
+    }
+
+    #[test]
+    fn templates_are_distinct() {
+        for (i, &a) in TextId::ALL.iter().enumerate() {
+            for &b in &TextId::ALL[i + 1..] {
+                assert_ne!(a.template(), b.template(), "{:?} and {:?}", a, b);
+            }
         }
     }
 
@@ -1352,11 +1426,11 @@ mod tests {
     fn every_variant_has_a_distinct_kind() {
         let m = PokemonIdent::active(SideId::P1, 0);
         let f = PokemonIdent::active(SideId::P2, 1);
-        let d = Details { species: SpeciesNum(1), level: 50, gender: crate::Gender::F, shiny: true };
+        let d = Details { species: SpeciesNum(1), level: 50, gender: crate::Gender::F, shiny: true, forme: 3 };
         let h = Health::split_percent(10, 20, None);
         let a = Arg::mv(MoveNum(1));
         let k = Kw::NONE;
-        let t = Text::new(TextId::BasePower);
+        let t = Text::with1(TextId::BasePower, TextArg::int(70));
         let all = [
             Msg::Spacer,
             Msg::Timestamp(1_792_768_140),
@@ -1422,7 +1496,7 @@ mod tests {
             Msg::SideEnd { side: SideId::P1, effect: a, kw: k },
             Msg::Item { mon: m, item: ItemNum(1), kw: k },
             Msg::EndItem { mon: m, item: ItemNum(1), kw: Kw::flags(KwFlags::EAT) },
-            Msg::Ability { mon: m, ability: AbilityNum(1), a: Some(Arg::word(Word::Boost)), kw: k },
+            Msg::Ability { mon: m, ability: AbilityNum(1), old: None, boost: true, kw: k },
             Msg::EndAbility { mon: m, kw: k },
             Msg::Message(t),
             Msg::Hint { text: t, split: None },

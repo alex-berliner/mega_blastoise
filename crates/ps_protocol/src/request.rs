@@ -318,7 +318,7 @@ mod tests {
     fn mon(slot: u8, active: bool) -> SidePokemon {
         SidePokemon {
             ident: PokemonIdent::inactive(SideId::P1, slot),
-            details: Details { species: SpeciesNum(146), level: 73, gender: Gender::N, shiny: false },
+            details: Details::new(SpeciesNum(146), 73, Gender::N, false),
             condition: HpStatus::exact(282, 282, None),
             active,
             stats: [218, 204, 255, 255, 204],

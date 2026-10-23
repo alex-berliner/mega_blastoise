@@ -42,7 +42,8 @@ pub use ident::{
     SideId, SpeciesNum, Stat, Status, TypeNum,
 };
 pub use msg::{
-    Arg, ArgValue, GameType, Kw, KwFlags, KwPart, Msg, Text, TextArg, TextArgValue, TextId, Weather,
+    Arg, ArgValue, GameType, Kw, KwFlags, KwPart, Msg, Text, TextArg, TextArgKind, TextArgValue, TextId,
+    Weather,
     Word,
 };
 pub use request::{
@@ -315,6 +316,11 @@ pub trait DexNames {
     fn move_from_id(&self, id: &str) -> Option<MoveNum>;
     fn species_name(&self, s: SpeciesNum) -> &str;
     fn species_from_id(&self, id: &str) -> Option<SpeciesNum>;
+    /// The name of cosmetic forme `forme` of `s` ([`Details::forme`], 1-based
+    /// into PS `species.cosmeticFormes`): `Unown-T`.
+    fn cosmetic_forme_name(&self, s: SpeciesNum, forme: u8) -> &str;
+    /// The species and [`Details::forme`] of a cosmetic forme's id (`unownt`).
+    fn cosmetic_forme_from_id(&self, id: &str) -> Option<(SpeciesNum, u8)>;
     fn item_name(&self, i: ItemNum) -> &str;
     fn item_id(&self, i: ItemNum) -> &str;
     fn item_from_id(&self, id: &str) -> Option<ItemNum>;

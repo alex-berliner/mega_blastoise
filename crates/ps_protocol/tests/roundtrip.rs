@@ -1,184 +1,286 @@
-//! Round-trip the recorded log lines.
+//! Round-trip the recorded PS battles.
 //!
-//! Reads `crates/ps_protocol/tests/fixtures/{gen1,gen3}.log`, decodes every
-//! line back to a [`Msg`], re-encodes it, and asserts the result is identical
-//! to the input. The dex name tables come from `fixtures/names.tsv`
-//! (`<kind>\t<id>\t<display>`).
+//! Reads `crates/ps_protocol/tests/fixtures/{gen1,gen3}.log.gz` (20 battles
+//! per gen recorded by `tools/ps-diff/record-logs.js` from PS 0.11.11's
+//! `BattleStream`) and checks every line of them:
+//!
+//! - every protocol line decodes to a [`Msg`] that re-encodes to the same
+//!   bytes, text lines (`raw`, `debug`, `error`, `-message`, `-hint`) through
+//!   their [`TextId`] templates;
+//! - every `|request|` JSON decodes to a [`Request`] that re-encodes to the
+//!   same bytes;
+//! - every team a `>player` command carries unpacks and packs back to the
+//!   same string.
+//!
+//! The only lines not checked are empty lines and the other `>` lines (the
+//! transcript's block headers and the choices sent). Anything else that does
+//! not round-trip, an unknown kind included, fails the test.
+//!
+//! The dex name tables come from `fixtures/names.tsv`. With
+//! `PS_PROTOCOL_FULL_LOGS=DIR` (`record-logs.js --full DIR` writes it), the
+//! `full_corpus_round_trips` test also checks all 60 battles per gen.
+//!
+//! [`Msg`]: ps_protocol::Msg
+//! [`TextId`]: ps_protocol::TextId
+//! [`Request`]: ps_protocol::Request
 
 #![cfg(feature = "text")]
 
-use std::path::Path;
+use std::io::Read;
+use std::path::{Path, PathBuf};
 
+use ps_protocol::text::json::{decode_request, encode_request};
 use ps_protocol::text::line::{decode_line, encode_msg, CodecState};
 use ps_protocol::text::names::Tables;
+use ps_protocol::text::team::{pack, unpack};
+use ps_protocol::{Msg, SideId, Text, TextArg, TextId};
 
-/// The line kind (text between the first two `|` bars) for a protocol line.
-fn kind_of(line: &str) -> &str {
-    let mut it = line.splitn(3, '|');
-    let _ = it.next();
-    match it.next() {
-        Some(k) => k,
-        None => "",
-    }
-}
-
-fn fixture_path(name: &str) -> std::path::PathBuf {
+fn fixture_path(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").join("fixtures").join(name)
 }
 
 fn load_names() -> Tables {
-    let path = fixture_path("names.tsv");
-    let s = std::fs::read_to_string(&path).expect("names.tsv readable");
+    let s = std::fs::read_to_string(fixture_path("names.tsv")).expect("names.tsv readable");
     Tables::from_tsv(&s)
 }
 
-#[test]
-fn decode_kecleon_typechange() {
-    let body = std::fs::read_to_string(fixture_path("names.tsv")).unwrap();
-    let tables = Tables::from_tsv(&body);
-    let mut state = CodecState::new(tables);
-    let line = "|-start|p2a: Kecleon|typechange|Flying|[from] ability: Color Change";
-    let msg = decode_line(line, &mut state);
-    eprintln!("decoded: {:?}", msg);
-    let msg = msg.unwrap();
-    let re = encode_msg(&msg, state.dex(), state.battle());
-    eprintln!("regen: {:?}", re);
+fn read_gz(path: &Path) -> String {
+    let raw = std::fs::read(path).unwrap_or_else(|e| panic!("{}: {}", path.display(), e));
+    let mut s = String::new();
+    flate2::read::GzDecoder::new(&raw[..]).read_to_string(&mut s).expect("gzip");
+    s
+}
+
+/// What one log round-tripped.
+#[derive(Default)]
+struct Counts {
+    lines: u64,
+    requests: u64,
+    teams: u64,
+    /// Lines of the kinds the old types could not hold: a details string
+    /// with a cosmetic forme, and `-ability` with the old ability.
+    forme_or_old_ability: u64,
+    skipped_empty: u64,
+    skipped_commands: u64,
+    failures: Vec<String>,
 }
 
 #[test]
 fn gen1_log_round_trips() {
-    roundtrip_log("gen1.log");
+    let c = roundtrip("gen1.log.gz", &read_gz(&fixture_path("gen1.log.gz")));
+    assert!(c.lines > 10_000 && c.requests > 1_000 && c.teams == 40, "gen 1 corpus shrank");
 }
 
 #[test]
 fn gen3_log_round_trips() {
-    roundtrip_log("gen3.log");
+    let c = roundtrip("gen3.log.gz", &read_gz(&fixture_path("gen3.log.gz")));
+    assert!(c.lines > 10_000 && c.requests > 1_000 && c.teams == 40, "gen 3 corpus shrank");
+    // The 10 Unown switch lines and the 5 Trace lines of the committed battles.
+    assert_eq!(c.forme_or_old_ability, 15, "forme / Trace lines round-tripped");
 }
 
-fn roundtrip_log(name: &str) {
-    let path = fixture_path(name);
-    let body = std::fs::read_to_string(&path).expect("log readable");
+/// All 60 recorded battles per gen, when `PS_PROTOCOL_FULL_LOGS` names the
+/// directory `record-logs.js --full` wrote.
+#[test]
+fn full_corpus_round_trips() {
+    let Some(dir) = std::env::var_os("PS_PROTOCOL_FULL_LOGS") else {
+        eprintln!("PS_PROTOCOL_FULL_LOGS not set; the committed fixtures are checked by the other tests");
+        return;
+    };
+    for name in ["gen1.log", "gen3.log"] {
+        let path = Path::new(&dir).join(name);
+        let body = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {}", path.display(), e));
+        roundtrip(name, &body);
+    }
+}
+
+fn roundtrip(name: &str, body: &str) -> Counts {
     let tables = load_names();
-    let mut state = CodecState::new(tables);
-    let (ok, total, failures) = decode_and_reencode(&body, &mut state);
+    let mut c = Counts::default();
+    let mut state = CodecState::new(tables.clone());
+    for (i, raw) in body.lines().enumerate() {
+        let line_no = i + 1;
+        let mut fail = |what: String| c.failures.push(format!("line {}: {}\n    {:?}", line_no, what, raw));
+        if raw.is_empty() {
+            c.skipped_empty += 1;
+        } else if raw.starts_with("#battle ") {
+            // Each battle has its own players and nicknames.
+            state = CodecState::new(tables.clone());
+        } else if let Some(cmd) = raw.strip_prefix('>') {
+            if cmd.starts_with("player ") {
+                match team_of(cmd) {
+                    Some(team) => match unpack(&team) {
+                        Ok(t) if pack(&t) == team => c.teams += 1,
+                        Ok(t) => fail(format!("team re-packs as {:?}", pack(&t))),
+                        Err(e) => fail(format!("team: {}", e)),
+                    },
+                    None => fail("no team in >player".into()),
+                }
+            } else {
+                c.skipped_commands += 1;
+            }
+        } else if let Some(json) = raw.strip_prefix("|request|") {
+            let (dex, battle) = state.split_mut();
+            match decode_request(json, dex, battle) {
+                Ok(req) => {
+                    let re = encode_request(&req, state.dex(), state.battle());
+                    if re == json {
+                        c.requests += 1;
+                    } else {
+                        fail(format!("request re-encodes as\n    {:?}", re));
+                    }
+                }
+                Err(e) => fail(format!("request: {}", e)),
+            }
+        } else if raw.starts_with('|') {
+            match decode_line(raw, &mut state) {
+                Ok(msg) => {
+                    let re = encode_msg(&msg, state.dex(), state.battle());
+                    if re == raw {
+                        c.lines += 1;
+                        if is_forme_or_old_ability(&msg) {
+                            c.forme_or_old_ability += 1;
+                        }
+                    } else {
+                        fail(format!("re-encodes as\n    {:?}", re));
+                    }
+                }
+                Err(e) => fail(format!("decode: {}", e)),
+            }
+        } else {
+            fail("not a protocol line, a request or a command".into());
+        }
+    }
     eprintln!(
-        "{}: {} / {} lines round-tripped ({} failures)",
-        name, ok, total, failures.len()
+        "{}: {} lines, {} requests, {} teams round-tripped; skipped {} empty and {} `>` lines; {} failures",
+        name,
+        c.lines,
+        c.requests,
+        c.teams,
+        c.skipped_empty,
+        c.skipped_commands,
+        c.failures.len()
     );
-    for f in failures.iter().take(20) {
-        eprintln!("  Line {}: {:?} - {:?}", f.line_no, f.original, f.error);
+    for f in c.failures.iter().take(20) {
+        eprintln!("  {}", f);
     }
-    assert!(failures.is_empty(), "round-trip failures in {}", name);
+    assert!(c.failures.is_empty(), "round-trip failures in {}", name);
+    c
 }
 
-struct Failure {
-    line_no: u32,
-    original: String,
-    error: String,
+fn is_forme_or_old_ability(msg: &Msg) -> bool {
+    match msg {
+        Msg::Switch { details, .. } | Msg::Drag { details, .. } | Msg::DetailsChange { details, .. } => {
+            details.forme != 0
+        }
+        Msg::Ability { old, .. } => old.is_some(),
+        _ => false,
+    }
 }
 
-fn decode_and_reencode(body: &str, state: &mut CodecState<impl ps_protocol::DexNames>)
-    -> (u64, u64, Vec<Failure>)
-{
-    let mut ok = 0u64;
-    let mut total = 0u64;
-    let mut failures = vec![];
-    for (i, line_raw) in body.lines().enumerate() {
-        total += 1;
-        let line = line_raw.trim_end_matches('\r');
-        // Skip empty lines.
-        if line.is_empty() { continue; }
-        // Skip pre-game command / metadata lines and `|request|` lines
-        // (the latter round-trips through the JSON codec, not the line codec).
-        if !line.starts_with('|') {
-            continue;
-        }
-        if line.starts_with("|request|") {
-            continue;
-        }
-        // The text lines (`raw`, `debug`, `error`, `-message`, `-hint`) decode
-        // to a placeholder Text for the round-trip tests; P1-5 / P1-6 wire them
-        // up. Skip them so the test reports only line-grammar regressions.
-        if matches!(
-            kind_of(line),
-            "raw" | "debug" | "error" | "-message" | "-hint"
-        ) {
-            continue;
-        }
-        match decode_line(line, state) {
-            Ok(msg) => {
-                // Skip lines that exhibit the known P1-1 type limitations
-                // (forme names on `Details`, the third positional Ability arg
-                // for Trace's old ability): the encoder would correctly produce
-                // them, but the typed model still collapses them. These are
-                // 15 Gen-3 lines out of 69,589; tracked in WORKER_REPORT.md.
-                if is_typed_model_limitation(&msg, line) {
-                    continue;
+/// The `team` string of a `>player p1 {"name":...,"team":"..."}` command.
+fn team_of(cmd: &str) -> Option<String> {
+    let start = cmd.find("\"team\":\"")? + "\"team\":\"".len();
+    let mut out = String::new();
+    let mut chars = cmd[start..].chars();
+    loop {
+        match chars.next()? {
+            '"' => return Some(out),
+            '\\' => match chars.next()? {
+                'u' => {
+                    let hex: String = chars.by_ref().take(4).collect();
+                    out.push(char::from_u32(u32::from_str_radix(&hex, 16).ok()?)?);
                 }
-                let dex: &dyn ps_protocol::DexNames = &state.0;
-                let names: &dyn ps_protocol::BattleNames = &state.1;
-                let re = encode_msg(&msg, dex, names);
-                if re == line {
-                    ok += 1;
-                } else {
-                    failures.push(Failure {
-                        line_no: (i + 1) as u32,
-                        original: line.to_string(),
-                        error: format!("re-encode mismatch:\n  got: {:?}", re),
-                    });
-                }
-            }
-            Err(e) => {
-                failures.push(Failure {
-                    line_no: (i + 1) as u32,
-                    original: line.to_string(),
-                    error: format!("decode: {}", e),
-                });
-            }
+                'n' => out.push('\n'),
+                c => out.push(c),
+            },
+            c => out.push(c),
         }
     }
-    (ok, total, failures)
 }
 
-/// Lines that the codec round-trip correctly but the typed `Details` /
-/// `Msg::Ability` model collapses. We skip them so the test reports only
-/// codec regressions; a follow-up extends the P1-1 types to carry forme
-/// names and Trace's old ability.
-fn is_typed_model_limitation(msg: &ps_protocol::msg::Msg, line: &str) -> bool {
-    use ps_protocol::msg::Msg;
-    // `Unown-?` forme: details string has a `-X` suffix that `Details.species`
-    // doesn't carry.
-    if matches!(msg, Msg::Switch { .. } | Msg::Drag { .. } | Msg::DetailsChange { .. }) {
-        if let Some(after_kind) = line.splitn(4, '|').nth(2) {
-            // The "details" field is the third `|`-separated slot after
-            // `|kind|slot1|details|`. Pick it out by counting bars.
-            let mut parts = line.split('|');
-            parts.next();
-            parts.next();
-            parts.next();
-            if let Some(details) = parts.next() {
-                if details.split('-').nth(1).is_some_and(|s| s.len() == 1) {
-                    return true;
-                }
-            }
-        }
+#[test]
+fn kecleon_typechange_round_trips() {
+    let mut state = CodecState::new(load_names());
+    let line = "|-start|p2a: Kecleon|typechange|Flying|[from] ability: Color Change";
+    let msg = decode_line(line, &mut state).unwrap();
+    assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+}
+
+#[test]
+fn text_lines_decode_to_their_templates() {
+    let mut state = CodecState::new(load_names());
+    let cases: [(&str, TextId); 5] = [
+        ("|debug|BP: 70", TextId::BasePower),
+        ("|debug|before turn callback: focuspunch", TextId::BeforeTurnCallback),
+        ("|debug|set status [psn] interrupted", TextId::SetStatusInterrupted),
+        ("|-hint|In Gen 1, moves with 100% accuracy can still miss 1/256 of the time.", TextId::HintGen1Miss),
+        (
+            "|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> Sleep Clause Mod, Freeze Clause Mod</details></div>",
+            TextId::CustomRules2,
+        ),
+    ];
+    for (line, id) in cases {
+        let msg = decode_line(line, &mut state).unwrap();
+        let text = match msg {
+            Msg::Debug(t) | Msg::Raw(t) | Msg::Message(t) | Msg::Hint { text: t, .. } => t,
+            other => panic!("{:?}", other),
+        };
+        assert_eq!(text.id, id, "{}", line);
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
     }
-    // Trace's old ability: `|-ability|MON|NEW|OLD|[from] ability: Trace`.
-    // The third positional `ARG2` would land in `a` but our model only
-    // stores one optional `a`. Skipping these keeps the test focused on
-    // pure line-grammar regressions; P1-1 needs `Msg::Ability { a, old }`.
-    if line.starts_with("|-ability|") {
-        let mut parts = line.split('|');
-        parts.next();
-        parts.next();
-        let mon = parts.next().unwrap_or("");
-        let new = parts.next().unwrap_or("");
-        let third = parts.next().unwrap_or("");
-        if !mon.is_empty() && !new.is_empty() && !third.is_empty()
-            && (!third.starts_with('['))
-        {
-            return true;
-        }
+    // A number must read back as written; text no template makes fails.
+    assert!(decode_line("|debug|BP: 070", &mut state).is_err());
+    assert!(decode_line("|debug|something PS never says", &mut state).is_err());
+}
+
+#[test]
+fn error_lines_keep_their_prefix() {
+    let mut state = CodecState::new(load_names());
+    for line in [
+        "|error|[Invalid choice] Can't switch: The active Pokémon is trapped",
+        "|error|[Unavailable choice] Can't switch: You do not have a Pokémon in slot 7 to switch to",
+    ] {
+        let msg = decode_line(line, &mut state).unwrap();
+        assert!(matches!(msg, Msg::Error { side: SideId::P1, .. }));
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
     }
-    false
+    let disabled = Msg::Error {
+        side: SideId::P2,
+        unavailable: false,
+        text: Text::with1(TextId::CantSwitchNoSlot, TextArg::int(3)),
+    };
+    assert_eq!(
+        encode_msg(&disabled, state.dex(), state.battle()),
+        "|error|[Invalid choice] Can't switch: You do not have a Pokémon in slot 3 to switch to"
+    );
+    assert!(decode_line("|error|Can't switch: The active Pokémon is trapped", &mut state).is_err());
+}
+
+#[test]
+fn details_carry_cosmetic_formes_and_reject_unknown_species() {
+    let mut state = CodecState::new(load_names());
+    let line = "|switch|p1a: Unown|Unown-Question, L80, shiny|212/212";
+    let msg = decode_line(line, &mut state).unwrap();
+    let Msg::Switch { details, .. } = msg else { panic!("{:?}", msg) };
+    assert_eq!({ details.forme }, 27);
+    assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    // No silent collapse onto the base species.
+    assert!(decode_line("|switch|p1a: Unown|Unown-Zz|212/212", &mut state).is_err());
+}
+
+#[test]
+fn packed_sets_with_misc_round_trip() {
+    for team in [
+        "Pika|Pikachu|LightBall|Static|thunderbolt,surf|Timid|,,,252,4,252|F|,0,,,,|S|50|128,Fire,ultraball,G,5,Water",
+        "Mew||||transform|||||||",
+        "A|||||||||||]B|||||||||||",
+        "Snorlax||Leftovers|ThickFat|bodyslam||85,85,85,85,85,85||||71|,,pokeball,,,",
+    ] {
+        let t = unpack(team).unwrap_or_else(|e| panic!("{}: {}", team, e));
+        assert_eq!(pack(&t), team);
+    }
+    // Text PS's pack never writes is refused rather than normalised.
+    assert!(unpack("A||||||||||100|").is_err());
+    assert!(unpack("A||||||||,,,,,31|||").is_err());
 }

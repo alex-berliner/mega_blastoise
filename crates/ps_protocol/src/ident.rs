@@ -146,16 +146,54 @@ impl Gender {
 /// A details string, PS `pokemon.details` (`getUpdatedDetails`).
 ///
 /// Encoding: `SPECIES`, then `, L{level}` unless level is 100, then `, M` or
-/// `, F` unless genderless, then `, shiny` if shiny. `SPECIES` is the species'
-/// display name (`Castform-Sunny`). Gen 9's `, tera:TYPE` is out of scope.
+/// `, F` unless genderless, then `, shiny` if shiny. `SPECIES` is
+/// `species.name`: the species' display name (`Castform-Sunny`, a forme with
+/// its own dex entry), or with `forme` set the cosmetic forme's name
+/// ([`crate::DexNames::cosmetic_forme_name`], `Unown-T`). Gen 9's
+/// `, tera:TYPE` is out of scope.
+///
+/// Packed (alignment 1, 7 bytes) so that [`crate::Msg::Switch`] and
+/// [`crate::Msg::Drag`], which carry a `Details`, a [`Health`], a Pokemon and
+/// an [`crate::Arg`], stay inside the 24-byte `Msg`. Read the fields by value
+/// (`d.level`); a reference to `species` or `level` would be unaligned.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(C, packed)]
 pub struct Details {
     pub species: SpeciesNum,
     /// PS levels are 1 to 100 in our formats; custom games allow up to 9999.
     pub level: u16,
     pub gender: Gender,
     pub shiny: bool,
+    /// The cosmetic forme the details print, PS `species.cosmeticFormes`:
+    /// 0 for none (the species' own name), else 1 plus the forme's index in
+    /// that list (Unown-B is 1, Unown-Question is 27). PS builds a cosmetic
+    /// forme as its own species object when a set names one (`Unown-T`), but
+    /// the dex lists only the base species, so the forme rides here.
+    pub forme: u8,
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for Details {
+    fn format(&self, f: defmt::Formatter) {
+        let (species, level, gender, shiny, forme) =
+            (self.species, self.level, self.gender, self.shiny, self.forme);
+        defmt::write!(
+            f,
+            "Details {{ species: {}, level: {=u16}, gender: {}, shiny: {=bool}, forme: {=u8} }}",
+            species,
+            level,
+            gender,
+            shiny,
+            forme
+        )
+    }
+}
+
+impl Details {
+    /// A details string with no cosmetic forme.
+    pub const fn new(species: SpeciesNum, level: u16, gender: Gender, shiny: bool) -> Self {
+        Self { species, level, gender, shiny, forme: 0 }
+    }
 }
 
 /// A major status condition, PS `pokemon.status`. `Fnt` only appears in HP
