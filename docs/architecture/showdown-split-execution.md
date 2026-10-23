@@ -606,3 +606,9 @@ other batches. With three concurrent runs the path is about 17 runs deep.
 | UX drifts during the cut-over | Runner and client only translate (checklist); golden `BoardEvent` tests (P2-1, P2-2); UI probe on both engines until deletion |
 | Board measurements need the probe, which this WSL1 machine cannot reach | On-board runs batched at phase exits on the probe machine (question to Alex) |
 | Node or WSL1 flakiness in long sweeps | Per-battle timeouts, crashes reported apart from diffs, private copies of binaries per sweep, cache for the old suites |
+
+## Decisions taken after this plan was written (Alex, 2026-10-23)
+
+- Formats: implement everything Showdown does for the gens we implement, every format rule included, and default to what Showdown's online Random Battles use. For Gen 1 that means shipping both the truncation (cartridge) rules and the Custom Game (plain math) rules, with truncation on by default; the diff harness covers both.
+- Hardware budgets: there is no RP2350 board for now. Budget checks at the phase exits use host proxies (struct and stack sizes, `cargo size` of the thumbv8m build, a cycle-count estimate) and stay soft gates until a board is available; the on-chip measurement tasks are deferred, not dropped.
+- `battler`: the git submodule is removed in G1-10, together with the last `battler-data` links. The battler repository itself is untouched.
