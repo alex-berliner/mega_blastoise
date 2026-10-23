@@ -494,7 +494,10 @@ async fn narrate<E: BoardEffects>(
                 if side == 0 {
                     effects.on_event(BoardEvent::Tie).await;
                 } else {
-                    effects.on_event(BoardEvent::Win { side: Some(player_id(side)) }).await;
+                    // `win_player_num` reads the winner as "0" / "1", as the
+                    // Gen 1 runner sends it; "p1" / "p2" read as a tie.
+                    let winner = if side == 1 { "0" } else { "1" };
+                    effects.on_event(BoardEvent::Win { side: Some(winner.to_string()) }).await;
                 }
             }
         }
@@ -1195,7 +1198,10 @@ mod tests {
         // and fatal.
         assert!(rec.0.iter().any(|e| matches!(e, BoardEvent::SuperEffective { .. })));
         assert!(rec.0.iter().any(|e| matches!(e, BoardEvent::Faint { .. })));
-        assert!(rec.0.iter().any(|e| matches!(e, BoardEvent::Win { .. })));
+        // A win, not the tie screen.
+        assert!(rec.0.iter().any(
+            |e| matches!(e, BoardEvent::Win { side } if BoardEvent::win_player_num(side) != 0)
+        ));
         assert!(over);
     }
 
