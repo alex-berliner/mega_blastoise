@@ -644,9 +644,17 @@ impl Battle {
                         self.sides[side].incoming = None;
                         let mon = self.sides[side].mon();
                         if !mon.fainted() {
+                            // A taken aim reaches the mon the launcher
+                            // locked on, whatever it is doing: the sim's
+                            // lockon condition answers the Invulnerability
+                            // event the landing runs through, and then the
+                            // accuracy one that follows it.
+                            let sure = self.sides[1 - side].mon().sure_hit > 0
+                                && self.sides[1 - side].mon().sure_hit_on as usize
+                                    == self.sides[side].active;
                             // A target mid Fly/Dig/Bounce/Dive when the hit
                             // arrives dodges it like any other attack.
-                            if mon.semi_invulnerable().is_some() {
+                            if !sure && mon.semi_invulnerable().is_some() {
                                 continue;
                             }
                             // Only ACCURACY waits for the landing — 90 for
@@ -655,12 +663,14 @@ impl Battle {
                             // simply drops the delayed hit. The damage itself
                             // was locked in at launch; the sim even strips the
                             // target's Endure before it lands.
-                            let landed = match script.seats[1 - side] {
-                                Some(sc) => sc.hit,
-                                None => {
-                                    self.rng.below(100) < if id == "doomdesire" { 85 } else { 90 }
-                                }
-                            };
+                            let landed = sure
+                                || match script.seats[1 - side] {
+                                    Some(sc) => sc.hit,
+                                    None => {
+                                        self.rng.below(100)
+                                            < if id == "doomdesire" { 85 } else { 90 }
+                                    }
+                                };
                             if !landed {
                                 continue;
                             }

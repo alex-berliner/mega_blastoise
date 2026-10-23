@@ -1012,7 +1012,10 @@ impl Battle {
                 }
             }
             StatusAction::BoostFoe(list) => {
-                if self.sides[foe].mon().sub_hp > 0 {
+                // Tickle is the one of these that a doll does NOT stop: the
+                // era's mod hands it the `bypasssub` flag alongside Disable,
+                // Taunt, Mimic and Sketch, whose arms say so themselves.
+                if self.sides[foe].mon().sub_hp > 0 && slot.entry.id != "tickle" {
                     return;
                 }
                 let misted = self.sides[foe].mist_n > 0;

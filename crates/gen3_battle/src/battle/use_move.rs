@@ -1145,26 +1145,6 @@ impl Battle {
             self.log_failed(side, events);
             return true;
         }
-        // Brick Break smashes the target's screens before it hits, unless
-        // the target is outright immune.
-        if slot.entry.id == "brickbreak"
-            && crate::types::effectiveness_against(
-                slot.move_type(),
-                self.immunity_types(foe, slot.move_type()),
-            ) != 0
-        {
-            for cond in [SideCondition::Reflect, SideCondition::LightScreen] {
-                let n = self.sides[foe].condition_n(cond);
-                if *n > 0 {
-                    *n = 0;
-                    events.push(Event::SideEnded {
-                        side: foe as u8 + 1,
-                        condition: cond,
-                    });
-                }
-            }
-        }
-
         // Explosion/Self-Destruct: the user faints ON USE, before the hit
         // resolves — a miss or an immune target changes nothing about that.
         if slot.entry.selfdestruct
@@ -2081,6 +2061,23 @@ impl Battle {
                 self.sides[side].mon_mut().curled = true;
             }
             return true;
+        }
+        // Brick Break smashes the target's screens, and it does it from the
+        // sim's TryHit event: gen 3 runs that after the accuracy roll and
+        // after Protect (priority 3 against Brick Break's 0), so a whiff
+        // smashes nothing and a shielded target keeps its wall. The chart
+        // does not stop it either: the immunity only decides the hit loop.
+        if slot.entry.id == "brickbreak" && hit {
+            for cond in [SideCondition::Reflect, SideCondition::LightScreen] {
+                let n = self.sides[foe].condition_n(cond);
+                if *n > 0 {
+                    *n = 0;
+                    events.push(Event::SideEnded {
+                        side: foe as u8 + 1,
+                        condition: cond,
+                    });
+                }
+            }
         }
         // Type immunity preempts the accuracy step entirely: the sim logs
         // |-immune| without ever rolling to hit, so a scripted miss never
