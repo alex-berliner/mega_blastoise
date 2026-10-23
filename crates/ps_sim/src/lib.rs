@@ -13,10 +13,23 @@
 //! feature so the on-device path stays typed. The PRNG outcome override
 //! for Rust unit tests lives behind `test-override` (or `cfg(test)`).
 //!
-//! P1-2 brings the PRNG (`prng`); later phases fill in state, queue, events.
+//! P1-2 brought the PRNG (`prng`). P1-5 brings the event core: battle state
+//! (`state`), effects and their handlers (`effect`), the dispatch family and
+//! `speedSort` (`events`), relay values (`relay`), fixed-point modifiers
+//! (`modify`) and the per-gen effect registries (`mods`).
 
 #![no_std]
 
 extern crate alloc;
 
+pub mod effect;
+pub mod events;
+pub mod mods;
+pub mod modify;
 pub mod prng;
+pub mod relay;
+pub mod state;
+
+pub use effect::{EffectDef, EffectId, EventArgs, EventId, EventMask, Handler, HandlerFn, Prefix, Registry};
+pub use relay::Relay;
+pub use state::{Battle, EffectState, EffectTable, Field, Holder, MonRef, Pokemon, Side};
