@@ -50,9 +50,10 @@ real case, each in its print pose.
 **The shell (2026-10-21, reworked 2026-10-22).** The top piece (the screen face, the curved steps,
 the speaker's grille in the right bezel, the sides; the four side screws go into it beside the glass)
 and the two decks (the button faces) curve over the sides and meet the tub flush at one seam low on
-the back's round (2.55 mm up), their skirts following the round down to it; each deck seats into the top piece from behind on a 45 degree wedge and has its own
-screw. The tub's tongue stands 4.65 mm up inside the skirts (4.15 at the decks) and keys them: four
-tabs into pockets in the top piece, a post in each corner that pushes a deck onto its wedges, and
+the back's round (2.55 mm up), their skirts following the round down to it; each deck seats into the top piece from behind and has its own
+screw: its plate runs on 1.6 mm under the step, and a lip at the step's foot goes into a groove in
+its face, so the two can't slide apart (2026-10-23). The tub's tongue stands 4.65 mm up inside the skirts (4.15 at the decks) and keys them: four
+tabs into pockets in the top piece, a post in each corner that pushes a deck home, and
 grip ribs, so the case holds together before the screws go in. At each side wall a lap on the
 deck's skirt slides in behind the top piece's skirt (the tongue stops either side of it), and the top
 piece's side round sweeps down into the deck's, so the two meet flush. The cell sits in a hole in the
@@ -63,17 +64,18 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (55.8 g, 1 h 42 min with the top piece, the board mock and the dummies), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (55.6 g, 1 h 41 min with the top piece, the board mock and the dummies), `5_unit` |
 | `top.stl` | 77.4 x 92.5 x 6.9 | `1_case`, `5_unit` |
-| `deck.stl` (print two) | 77.4 x 35.0 x 5.05 (the laps reach 1.8 past the face) | `1_case_decks` (9.2 g, 23 min for both), `5_unit` |
+| `deck.stl` (print two) | 77.4 x 35.0 x 5.05 (the laps reach 1.8 past the face) | `1_case_decks` (9.7 g, 24 min for both), `5_unit` |
 
-`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 64.9 g and 2 h 05 min.
+`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.1 g and 2 h 05 min.
 
 To assemble:
 1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
    front foam ring stuck to the pocket's ceiling.
 2. Each deck face down into its end of the top piece from behind, the laps at its sides going in
-   behind the top piece's skirts: it drops onto its wedges and sits flat (it may settle a little back along them; the tub pushes it home). Caps into the decks from
+   behind the top piece's skirts, its plate under the step and the groove in its face over the top
+   piece's lip: it drops in straight and sits flat (it can lie 0.15 back; the tub pushes it home). Caps into the decks from
    behind (tabs into the slots, notches onto the ribs), silicone on them.
 3. Panel glass down into the top piece's pocket on its tape.
 4. The cell into the tub's floor pocket on double-sided tape, against the pocket's right wall.
@@ -84,7 +86,7 @@ To assemble:
    between the speaker and J4, on the glass's side, then the board down onto the bosses.
 7. Tub over it all, straight down, the board lying centred on its bosses (the cell drops into the
    board's hole, the tub's crush ribs centre the board, the tongue slides 4.5 mm into the skirts, its
-   tabs into the top piece's pockets, the corner posts push each deck onto its wedges). Press it
+   tabs into the top piece's pockets, the corner posts push each deck home). Press it
    down all round until the seam is an even line: it grips, and the case now holds together on its
    own. Six M2 x 6 from the back, snug: they lock it.
 
@@ -149,9 +151,9 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   they won't go together by hand).
 - Panel frame: the real panel (or the dummy) drops in glass down with a little play, the active
   area centred in the window (`panel_fit`, `window_margin`).
-- Seat 1's end, built upside down: the top coupon face down, the deck into it (it should drop onto
-  its wedges over the spine without force: `deck_gap`), caps and silicone, the board mock face down,
-  the tub coupon: its corner posts push the deck onto its wedges.
+- Seat 1's end, built upside down: the top coupon face down, the deck into it (it should drop in
+  over the lip and round the spine without force: `deck_gap`), caps and silicone, the board mock face
+  down, the tub coupon: its corner posts push the deck home, the seam at the step an even line.
 - Speaker (in `1_case`): the dummy (or the real speaker) drops face down into the top piece's
   pocket over the grille without play to speak of, and the cell dummy into the board mock's hole
   and the tub's pocket.

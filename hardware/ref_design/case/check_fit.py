@@ -19,6 +19,8 @@ the case allows at that spot:
   screw bosses             nothing within the boss diameter (four on the top piece, one on each deck)
   crush ribs               nothing within 1 mm of the board's edge at a rib
   top's panel frame        its band round the panel: <= frame limit (it hangs lower)
+  the joint at the step    the decks' plates run on under the top piece, to its end wall: <= its
+                           limit (the decks' underside; case.scad's JOINT echo line)
   folded FPC, J3's range   nothing but J3 under the panel's FPC, over the whole range J3 may move
   edge parts               the USB-C face reaches the wall
   USB-C opening            J1's mouth (its model within 1 mm of its face) centred in the wall's
@@ -126,14 +128,19 @@ def extents(refs):
         return dict(pool.map(lambda ref: extent(ref, tempfile.mkdtemp(dir=tmp)), refs))
 
 
-def usb_opening():
-    """The USB-C opening and the plug it is checked with: case.scad's USBC echo line (not in positions.json)."""
+def case_echo():
+    """case.scad's lines for this check that aren't in positions.json: {"USBC": the USB-C opening and the
+    plug it is checked with, "JOINT": the joint under the step}, each None if missing."""
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "case.echo")
         subprocess.run([*scad.cmd(out), "-o", out, "-D", 'part="none"', os.path.join(HERE, "case.scad")],
                        capture_output=True, text=True)
-        m = re.search(r'ECHO: "USBC (\{.*\})"', open(out).read()) if os.path.exists(out) else None
-    return json.loads(m.group(1).replace('\\"', '"')) if m else None
+        text = open(out).read() if os.path.exists(out) else ""
+    found = {}
+    for key in ("USBC", "JOINT"):
+        m = re.search(r'ECHO: "' + key + r' (\{.*\})"', text)
+        found[key] = json.loads(m.group(1).replace('\\"', '"')) if m else None
+    return found
 
 
 def inside_rect(box, rect, margin=0.0):
@@ -177,6 +184,10 @@ def main():
             boxes[ref] = (court[0], court[1], court[2], court[3], 0.0, h)
             notes.append(f"{ref}: no 3D model in this KiCad install, checked as its courtyard at {h} mm ({name})")
     glass = POS["glass"]
+    echoed, under = case_echo(), []
+    joint = echoed["JOINT"]
+    if not joint:
+        problems.append("no JOINT line in case.scad's echo to check the joint under the step with")
     for ref, box in sorted(boxes.items()):
         if box is None:
             notes.append(f"{ref}: no 3D model exported")
@@ -219,11 +230,20 @@ def main():
             limit, where = frame["limit"], "top piece's panel frame"
         if top > limit + 1e-3:
             problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
+        for zone in (joint or {}).get("zones", []):   # the joint under the step
+            if inside_rect(box, zone):
+                under.append((ref, top))
+                if top > joint["limit"] + 1e-3:
+                    problems.append(f"{ref} is {top:.2f} mm tall under the joint at the step, which allows {joint['limit']:.2f}")
+                    break
         for zone in POS["fpc_zones"]:
             if inside_rect(box, zone, -0.2) and top > 0.3 and not ref.startswith("J3"):
                 problems.append(f"{ref} is under the display's folded FPC")
         if ref.startswith("J3") and not within(box, POS["j3_zone"]):
             problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
+    if joint:
+        notes.append(f"the joint under the step: {len({u[0] for u in under})} parts under it, the tallest "
+                     f"{max((u[1] for u in under), default=0):.2f} (it allows {joint['limit']:.2f})")
     for ref, x, y in tht_leads():
         if not any(min(a[0], b[0]) <= x <= max(a[0], b[0]) and min(a[1], b[1]) <= y <= max(a[1], b[1])
                    for a, b in POS["rib_free"]):
@@ -231,7 +251,7 @@ def main():
     usb = boxes.get("J1")
     if usb and abs(usb[2] - POS["usb"]["front_x"]) > 0.3:
         problems.append(f"USB-C face at x={usb[2]:.2f}, the case expects {POS['usb']['front_x']:.2f}")
-    mouth, hole = MOUTH.get("J1"), usb_opening()
+    mouth, hole = MOUTH.get("J1"), echoed["USBC"]
     if not mouth or not hole:
         problems.append("USB-C: no " + ("J1 model" if not mouth else "USBC line in case.scad's echo") + " to check the opening with")
     else:
