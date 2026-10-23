@@ -835,9 +835,12 @@ impl Battle {
                 // 3's Beat Up retypes itself to '???' there, and nothing in
                 // the chart resists '???', so a Conversion 2 answering a Beat
                 // Up simply fails. Struggle is named outright as Normal.
+                // Weather Ball wears the sky it was used under.
+                let sky_type = self.sides[foe].mon().last_move_used_sky_type;
                 let last = self.sides[foe].mon().last_move_used_id.and_then(|id| match id {
                     "struggle" => Some(Type::Normal),
                     "beatup" => Some(Type::None),
+                    "weatherball" => sky_type,
                     _ => self.sides[foe]
                         .mon()
                         .moves

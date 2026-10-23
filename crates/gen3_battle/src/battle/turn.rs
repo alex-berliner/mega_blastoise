@@ -430,6 +430,11 @@ impl Battle {
         // — but a wipe DURING the phase does not cut it short (the sim
         // finishes both weather chips even when the first one ends it).
         if !self.over() {
+            // Speeds are read before anything in the phase runs: the sim's
+            // `updateSpeed()` precedes the field event, so a sun that expires
+            // in this very phase still doubles a Chlorophyll mon's place in
+            // the residual sort.
+            let speeds = [self.turn_speed(0), self.turn_speed(1)];
             // Weather chips first — the games' upkeep slot: sandstorm hits
             // anything not Rock/Ground/Steel, hail anything not Ice, a
             // sixteenth each, faster side first.
@@ -517,7 +522,8 @@ impl Battle {
             // being there. Speeds are read once, up front, exactly as the sim
             // reads them: `case 'residual'` calls `updateSpeed()` before the
             // field event, so a Salac eaten mid-phase does not reshuffle it.
-            let speeds = [self.turn_speed(0), self.turn_speed(1)];
+            // (`speeds` is taken at the top of the phase, before the weather
+            // clock runs out.)
             // The list holds only the handlers that EXIST, because presence
             // is what displacement runs on. An earlier cut pushed every
             // bucket for both sides and let absent ones no-op — which sorts

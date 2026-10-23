@@ -209,6 +209,11 @@ pub struct Mon {
     /// bounced Toxic retypes its bouncer even though a Torment would still
     /// be greying out the Magic Coat.
     pub last_move_used_id: Option<&'static str>,
+    /// The type Weather Ball took when it went into `last_move_used_id`.
+    /// `lastMoveUsed` is the active move itself and gen 3's onModifyMove
+    /// rewrites its `type` from the sky right after, so Conversion 2 reads
+    /// the weather of the turn it was USED, not of the turn it answers.
+    pub last_move_used_sky_type: Option<Type>,
     /// The last move slot this mon successfully USED (for Spite/Torment).
     pub last_used: Option<u8>,
     /// The last move this mon used MISSED (Mirror Move refuses those).
@@ -519,6 +524,7 @@ impl Mon {
             last_used: None,
             last_used_id: None,
             last_move_used_id: None,
+            last_move_used_sky_type: None,
             last_hit_by: None,
             last_hit_by_slot: None,
             last_missed: false,
@@ -1350,6 +1356,21 @@ impl Battle {
             return None;
         }
         self.weather
+    }
+
+    /// The type Weather Ball takes under the current sky, or `None` for any
+    /// other move: gen 3's onModifyMove sets `move.type` from the weather.
+    fn weather_ball_type(&self, id: &str) -> Option<Type> {
+        if id != "weatherball" {
+            return None;
+        }
+        Some(match self.effective_weather() {
+            Some(Weather::Sun) => Type::Fire,
+            Some(Weather::Rain) => Type::Water,
+            Some(Weather::Sandstorm) => Type::Rock,
+            Some(Weather::Hail) => Type::Ice,
+            None => Type::Normal,
+        })
     }
 
     /// A mon's Speed for the turn order, with the abilities that read the

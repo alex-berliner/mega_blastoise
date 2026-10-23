@@ -627,6 +627,7 @@ impl Battle {
         let encore_forced = self.sides[side].mon().encore_n > 0
             && self.sides[side].mon().encore_fresh
             && self.sides[side].mon().encored_slot.is_some();
+        let chosen = index;
         let index = match (
             self.sides[side].mon().encore_n > 0,
             self.sides[side].mon().encored_slot,
@@ -765,7 +766,21 @@ impl Battle {
         // Torment or an Imprison that landed earlier THIS turn was not there
         // when the choice was made, so it cannot be what put Struggle in the
         // queue — and those are exactly the lost-turn cases below.
-        let struggling_at_request = self.struggling_at_request(side, index, status_movish, releasing);
+        //
+        // A fresh Encore asks that of the move the player PICKED: the queue
+        // still holds it when `OverrideAction` swaps in the encored move, so
+        // a Torment that greys the encored move out did not make the request
+        // come back empty.
+        let struggling_at_request = if encore_forced {
+            let picked_status = self.sides[side]
+                .mon()
+                .moves
+                .get(chosen)
+                .is_some_and(|m| !m.entry.damaging);
+            self.struggling_at_request(side, chosen, picked_status, releasing)
+        } else {
+            self.struggling_at_request(side, index, status_movish, releasing)
+        };
         // Same rule as the Encore paragraph above, seen from the other side of
         // the request: `OverrideAction` is skipped outright for Struggle
         // (`battle-actions.js`: `if (baseMove.id !== "struggle" && ...)`), so
@@ -950,6 +965,7 @@ impl Battle {
         // `lastMoveUsed` is a different register and `useMoveInner` writes it
         // for EVERY move that goes off, called ones included.
         self.sides[side].mon_mut().last_move_used_id = Some(slot.entry.id);
+        self.sides[side].mon_mut().last_move_used_sky_type = self.weather_ball_type(slot.entry.id);
 
         // No living foe to aim at: the sim logs the move and stops there
         // (`-notarget`), PP already spent. Self- and field-aimed moves go
@@ -1076,6 +1092,8 @@ impl Battle {
         // found nothing and bailed, which is what the sim leaves there too.
         if called {
             self.sides[side].mon_mut().last_move_used_id = Some(slot.entry.id);
+            self.sides[side].mon_mut().last_move_used_sky_type =
+                self.weather_ball_type(slot.entry.id);
         }
         // Counter and Mirror Coat read a volatile that only
         // `beforeTurnCallback` creates, and the queue attaches a
@@ -1248,6 +1266,17 @@ impl Battle {
         // Unscripted rolls fold in the accuracy/evasion stages the Gen 3
         // way: one combined stage, (3+s)/3 above zero and 3/(3-s) below.
         // Thunder rides the weather: unmissable in rain, halved in sun.
+        //
+        // Bide's opening use is aimed at the user (`target: "self"`), and
+        // gen 3's `tryMoveHit` rolls accuracy against whatever the target
+        // is: the user's own evasion and Sand Veil answer it, and a Lock-On
+        // the user took on the FOE does not, since `onSourceAccuracy` wants
+        // `target === this.effectState.source`.
+        let aim = if slot.entry.id == "bide" && self.sides[side].mon().bide.is_none() {
+            side
+        } else {
+            foe
+        };
         let acc = if slot.entry.id == "thunder" {
             match self.effective_weather() {
                 Some(Weather::Rain) => 0,
@@ -1266,16 +1295,17 @@ impl Battle {
         } else {
             let chain = ability::accuracy_chain(
                 &self.sides[side].mon().bearer(),
-                &self.sides[foe].mon().bearer(),
+                &self.sides[aim].mon().bearer(),
                 slot.move_type(),
                 self.effective_weather() == Some(Weather::Sandstorm),
             );
             let after = chain.apply(acc as u32);
-            item::accuracy_after_item(&self.sides[foe].mon().holder(), after).clamp(1, 100) as u8
+            item::accuracy_after_item(&self.sides[aim].mon().holder(), after).clamp(1, 100) as u8
         };
         // Pursuit's onModifyMove sets accuracy true against a mon that is
         // already leaving, so the interception cannot whiff.
         let sure = (self.sides[side].mon().sure_hit > 0
+            && aim == foe
             && self.sides[side].mon().sure_hit_on as usize == self.sides[foe].active)
             || (self.pursuing && slot.entry.id == "pursuit");
         // Nothing consumes the lock: the sim's volatile simply runs out its
@@ -1286,10 +1316,10 @@ impl Battle {
                 Some(s) => acc == 0 || s.hit,
                 None => {
                     acc == 0 || {
-                        let eva = if self.sides[foe].mon().identified {
+                        let eva = if self.sides[aim].mon().identified {
                             0
                         } else {
-                            self.sides[foe].mon().eva_stage
+                            self.sides[aim].mon().eva_stage
                         };
                         let s = (self.sides[side].mon().acc_stage - eva).clamp(-6, 6) as i32;
                         let eff = if s >= 0 {
