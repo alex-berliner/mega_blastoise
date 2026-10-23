@@ -140,10 +140,15 @@ fn residuals_follow_each_action() {
 #[test]
 fn endless_battle_clause_caps_the_battle() {
     // Two Ghost-types with only Splash: once PP runs out they Struggle into
-    // each other's Normal immunity forever — the 1000-turn cap must end it.
+    // each other's Normal immunity forever. Snorlax sits on p2's bench with
+    // PP still in its Splash, so neither side is provably stuck and the
+    // 1000-turn cap is what ends it.
     let mut b = mk_battle(
         vec![mon_lvl("gastly", 100, &["splash"])],
-        vec![mon_lvl("haunter", 100, &["splash"])],
+        vec![
+            mon_lvl("haunter", 100, &["splash"]),
+            mon_lvl("snorlax", 100, &["splash"]),
+        ],
         21,
     );
     let _ = drain(&mut b);
@@ -156,4 +161,26 @@ fn endless_battle_clause_caps_the_battle() {
         let _ = drain(&mut b);
     }
     assert!(turns >= 999, "should have run up to the cap, ended at {turns}");
+}
+
+#[test]
+fn a_battle_that_cannot_progress_is_a_draw() {
+    // Two Ghost-types whose only move runs out: Struggle cannot touch a Ghost,
+    // so neither side can ever damage the other and the sim calls the battle
+    // a draw at the end of that turn rather than running to the turn cap.
+    let mut b = mk_battle(
+        vec![mon_lvl("gastly", 100, &["splash"])],
+        vec![mon_lvl("haunter", 100, &["splash"])],
+        21,
+    );
+    let _ = drain(&mut b);
+    let mut turns = 0u32;
+    while !b.ended() {
+        turns += 1;
+        assert!(turns < 100, "a battle that cannot progress must end early");
+        b.set_player_choice("p1", "move 0").unwrap();
+        b.set_player_choice("p2", "move 0").unwrap();
+        let _ = drain(&mut b);
+    }
+    assert!(turns >= 10, "both Splash pools have to run out first, ended at {turns}");
 }

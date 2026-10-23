@@ -123,7 +123,9 @@ Each mon carries **modified stats** alongside its immutable final stats:
   keeps shrinking its Speed.
 - **Boost at 999 / drop at 1**: the stage rises then drops one, the stat
   stays pinned, and the move counts as failed (no re-stack).
-- Boost moves already at ±6 fail outright.
+- Boost moves already at ±6 fail outright, and the ±6 test comes FIRST, so a
+  maxed stat gets neither the stage change nor the 999/1 quirk (`boostBy`
+  opens with `if (delta > 0 && this.boosts[i] >= 6) continue`).
 
 ---
 
@@ -219,6 +221,11 @@ Per turn:
 - **Last-damage register** (`Field::last_damage`): global, persists across
   turns, reset only by moves outside the cartridge skip-list. Counter deals
   2× it; Bide adds it every Bide turn (stale re-adds included).
+- **Move-slot index register** (`Side::last_selected_slot`): which slot the
+  side last picked, read by the Metronome/Mirror Move PP hand-back on a
+  Transformed mon. It resets on EVERY switch-in (chosen, replacement-after-
+  faint, or drag), which is gen 4's `runSwitch` that gen 1 inherits; the
+  move register beside it never resets.
 - **Quick Attack +1 / Counter -1** priority brackets; ties are 50/50.
 - PP underflow glitches: not implemented (see §13).
 
@@ -364,7 +371,7 @@ These get hand-written functions because their behavior is too unique for a sing
 | **Mirror Move** | Looks at target's `last_move_used`. If valid, recurses move execution with that move (no PP cost). If target has no last move, "Mirror Move failed!". |
 | **Mimic** | Picks one of target's known moves at random; replaces user's Mimic slot with it (PP=5). Lasts until switch. |
 | **Transform** | Copies species byte, types, stats (incl. stages), and moves (each with PP=5) from target. Volatile flag set; cleared on switch. |
-| **Substitute** | Costs 1/4 max HP; sub has 1/4 max HP + 1. Fails if user has ≤ 1/4 HP. While active, all damage applies to sub HP; sub breaks when HP would go ≤ 0. **Bug: an attack dealing exact-HP damage breaks the sub** because sub_hp -= dmg goes 0, not -1. Confusion self-hit ignores sub. |
+| **Substitute** | Costs 1/4 max HP; sub has 1/4 max HP + 1. Fails if user has ≤ 1/4 HP. While active, all damage applies to sub HP; sub breaks when HP would go ≤ 0. **Bug: an attack dealing exact-HP damage breaks the sub** because sub_hp -= dmg goes 0, not -1. Confusion self-hit ignores sub. A broken sub raises `Mon::sub_fainted` (the sim's plain `pokemon.subFainted`), which makes the NEXT multi-hit move aimed at that mon stop one hit short: but only if it was called by Mirror Move/Metronome: every action clears the marker on its own target first (`runMove`), a self-targeted action's target being its user, and a move a caller reached goes through `useMove`, which clears nothing. |
 | **Disable** | Picks one of target's moves with PP > 0, disables it for 1..=8 turns. Fails if target has no moves with PP. Cleared on switch. |
 | **Bide** | Turn 1: announce "started storing energy". Turn 2: continue. Turn 3 (or random 2/3): unleash 2× stored damage. Stores damage TAKEN, not dealt. Move always succeeds in unleash phase (no accuracy roll). |
 | **Hyper Beam** | After dealing damage, if target NOT fainted, user gains `MustRecharge` and next turn is wasted on "must recharge". **If target fainted, no recharge.** |
@@ -490,6 +497,12 @@ pub enum Event {
 - **Endless Battle Clause**: hard cap at 1000 turns. Showdown ties; this API
   has no tie, so the side with the higher remaining-HP fraction wins (battle
   RNG coin flip on an exact tie). Deliberate deviation, documented here.
+  The Gen 1 half of the same rule fires FIRST, at the end of any turn where
+  both sides are provably stuck (every mon out of the fight, frozen, holding
+  nothing but Transform against a foe holding nothing but Transform, or out
+  of PP against an all-Ghost foe Struggle cannot touch), that battle ends
+  on the spot through the same winner path. A Transformed mon reads as the
+  types it copied.
 - Species/OHKO/Evasion clauses are TEAM-validation rules — the vendored
   Showdown randbat sets already satisfy them, so the engine doesn't check.
 - AI move choice: not the engine's concern; `RandomAi` already exists outside the engine.
@@ -504,7 +517,8 @@ through Fly/Dig, Substitute suite (exact-quarter faint, confusion
 misdirection, Explosion sub-break survival), Bide stale-register
 accumulation, Thrash/Rage locks with the compounding accuracy bug,
 partial-trap lock semantics, Counter via the last-damage register,
-per-action residuals, faint-ends-turn.
+per-action residuals, faint-ends-turn, the ±6 cap before the 999/1 quirk,
+the broken-Substitute marker, the no-progress draw.
 
 ---
 

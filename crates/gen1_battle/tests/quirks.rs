@@ -336,6 +336,104 @@ fn hyper_beam_no_recharge_on_sub_break() {
     panic!("hyper beam never broke the sub");
 }
 
+#[test]
+fn a_maxed_stat_takes_no_boost_and_no_quirk() {
+    // Gen 1's boostBy opens by skipping a stat that is already at the cap, so
+    // the boost-at-999 quirk (stage up, then one back down) only fires on a
+    // stat that still has room. Acid Armor at +6 with the modified stat at
+    // 999 leaves the stage at +6; a second one leaves it there too.
+    let mut a = fresh_mon("exeggutor", 100, &["acidarmor", "acidarmor", "swordsdance"]);
+    let d = fresh_mon("snorlax", 100, &["rest"]);
+    let mut sides = make_sides(a, d);
+    let mut rng = Rng::new(1);
+    let mut field = Field::default();
+    let mut log = Log::new();
+    for _ in 0..3 {
+        let _ = execute_move(&mut rng, &mut field, &mut sides, 0, 0, &mut log);
+    }
+    let m = sides[0].active();
+    assert_eq!(m.stages[1], 6, "three Acid Armors cap Defense at +6");
+    assert_eq!(m.modified[2], 999, "the +6 stage puts the modified stat on 999");
+    for _ in 0..2 {
+        let _ = execute_move(&mut rng, &mut field, &mut sides, 0, 0, &mut log);
+    }
+    assert_eq!(
+        sides[0].active().stages[1],
+        6,
+        "a +6 stat is skipped outright: no quirk, no stage change"
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The broken-Substitute marker (the sim's `pokemon.subFainted`)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Gen 1 stops a multi-hit move after any hit whose target carries the
+/// broken-Substitute marker, and that marker is a plain field on the
+/// Pokémon: it outlives the Substitute and the action that set it. Every
+/// action aimed at the mon clears it, but Mirror Move is `target: "self"`
+/// in this generation, so ITS action target is the user, and the move it
+/// calls is reached through `useMove`, which clears nothing at all.
+#[test]
+fn mirror_move_calls_a_multi_hit_the_broken_sub_marker_cuts_short() {
+    // Five forced hits, so "the marker cost the rest of the move" counts.
+    let script = SeatForce {
+        hit: Some(true),
+        crit: Some(false),
+        roll: Some(220),
+        hits: Some(5),
+        ..Default::default()
+    };
+    let scripted = || {
+        let mut rng = Rng::new(1);
+        rng.force = Some([script, script]);
+        rng
+    };
+
+    // Tauros wears a 1 HP Substitute, which Snorlax pops with its own Fury
+    // Attack, then rests (an action aimed at itself, so the marker on Tauros
+    // is untouched), then Mirror Moves the Fury Attack Tauros wrote into the
+    // move register.
+    let d = fresh_mon("tauros", 100, &["furyattack"]);
+    let a = fresh_mon("snorlax", 100, &["furyattack", "mirrormove", "rest"]);
+    let mut sides = make_sides(d, a);
+    let mut field = Field::default();
+    let mut log = Log::new();
+
+    let mut rng = scripted();
+    // Tauros swings first, so Mirror Move has something of its to copy.
+    let _ = execute_move(&mut rng, &mut field, &mut sides, 0, 0, &mut log);
+    sides[0].active_mut().volatile.set(Volatile::SUBSTITUTED);
+    sides[0].active_mut().volatile.substitute_hp = 1;
+
+    let broke = execute_move(&mut rng, &mut field, &mut sides, 1, 0, &mut log);
+    assert!(broke.sub_broke, "the Substitute must break");
+    assert!(
+        sides[0].active().sub_fainted,
+        "breaking the Substitute must leave the marker up"
+    );
+    let _ = execute_move(&mut rng, &mut field, &mut sides, 1, 2, &mut log); // Rest
+    assert!(
+        sides[0].active().sub_fainted,
+        "a self-targeted action clears the USER's marker, not the foe's"
+    );
+    let called = execute_move(&mut rng, &mut field, &mut sides, 1, 1, &mut log);
+    assert!(called.hit && called.damage_dealt > 0, "Mirror Move must land");
+    assert!(
+        sides[0].active().sub_fainted,
+        "a called move is not an action: it clears nothing"
+    );
+
+    // A plain action aimed at the same mon does clear it, and the same five
+    // hits all land.
+    let cleared = execute_move(&mut rng, &mut field, &mut sides, 1, 0, &mut log);
+    assert!(!sides[0].active().sub_fainted, "an aimed action clears the marker");
+    assert_eq!(
+        cleared.damage_dealt, called.damage_dealt * 5,
+        "five hits once the marker is gone, one with it"
+    );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Secondary-status type immunity (Body Slam vs Normal)
 // ─────────────────────────────────────────────────────────────────────────────

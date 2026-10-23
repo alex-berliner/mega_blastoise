@@ -174,6 +174,45 @@ pub const FLAG_HITS_INVULN: u8 = 0x40;
 /// Type-effectiveness multiplier ×10: 0 = immune, 5 = ½, 10 = 1×, 20 = 2×.
 pub type TypeEffectiveness = u8;
 
+/// Gen 1's `target: "self"` moves, sorted. The sim aims such an ACTION at
+/// the user rather than the foe (Mirror Move and Metronome are the two that
+/// make it matter), and the vendored cartridge table does not carry the dex
+/// target, so the list lives here. Sorted for `binary_search`.
+static SELF_TARGETED: [&str; 27] = [
+    "acidarmor",
+    "agility",
+    "amnesia",
+    "barrier",
+    "bide",
+    "defensecurl",
+    "doubleteam",
+    "focusenergy",
+    "growth",
+    "harden",
+    "haze",
+    "lightscreen",
+    "meditate",
+    "metronome",
+    "minimize",
+    "mirrormove",
+    "mist",
+    "recover",
+    "reflect",
+    "rest",
+    "sharpen",
+    "softboiled",
+    "splash",
+    "substitute",
+    "swordsdance",
+    "teleport",
+    "withdraw",
+];
+
+/// True when the move's action target is its own user.
+pub fn targets_self(mv: &MoveEntry) -> bool {
+    SELF_TARGETED.binary_search(&mv.id).is_ok()
+}
+
 // Generated `SPECIES`, `MOVES`, `TYPE_CHART`, plus lookup helpers.
 include!(concat!(env!("OUT_DIR"), "/gen1_tables.rs"));
 

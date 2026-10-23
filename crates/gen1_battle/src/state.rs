@@ -146,6 +146,12 @@ pub struct Mon {
     /// the borrowed move goes back to being Mimic — carrying whatever PP the
     /// slot has left, which the two arrays share.
     pub mimic_backup: Option<(u8, &'static str, u8)>,
+    /// The sim's `pokemon.subFainted`: this mon's Substitute broke, and a
+    /// multi-hit move aimed here stops after any hit that finds the marker.
+    /// It is a plain per-Pokémon field, not a volatile, so it outlives the
+    /// Substitute and the action that broke it; only the next action aimed at
+    /// this mon clears it (see `run_move`).
+    pub sub_fainted: bool,
 }
 
 impl Default for Mon {
@@ -169,6 +175,7 @@ impl Default for Mon {
             last_move_used: "",
             rest_sleep: false,
             mimic_backup: None,
+            sub_fainted: false,
         }
     }
 }
@@ -251,6 +258,7 @@ impl Mon {
             last_move_used: "",
             rest_sleep: false,
             mimic_backup: None,
+            sub_fainted: false,
         })
     }
 }

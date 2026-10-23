@@ -17,8 +17,8 @@ use crate::log::Event;
 use crate::rng::Rng;
 use crate::state::{Field, MoveSlot, Side, Status, Volatile};
 use crate::tables::{
-    move_by_id, MoveCategory, MoveEffectKind, MoveEntry, FLAG_HITS_INVULN, FLAG_IGNORE_IMMUNITY,
-    MOVES,
+    move_by_id, targets_self, MoveCategory, MoveEffectKind, MoveEntry, FLAG_HITS_INVULN,
+    FLAG_IGNORE_IMMUNITY, MOVES,
 };
 use crate::types::Type;
 
@@ -114,7 +114,7 @@ pub fn execute_move(
     let Some(mv) = move_by_id(mv_id) else {
         return MoveOutcome::default();
     };
-    execute_move_entry(rng, field, sides, attacker_side_idx, mv, Some(move_slot_idx), false, log)
+    execute_move_entry(rng, field, sides, attacker_side_idx, mv, Some(move_slot_idx), false, false, log)
 }
 
 /// A locked-in continuation (TwoTurn release, Bide, Wrap, Thrash, Rage).
@@ -133,7 +133,7 @@ pub fn execute_move_entry_at(
     pp_slot: usize,
     log: &mut Log,
 ) -> MoveOutcome {
-    execute_move_entry(rng, field, sides, attacker_side_idx, mv, Some(pp_slot), false, log)
+    execute_move_entry(rng, field, sides, attacker_side_idx, mv, Some(pp_slot), false, false, log)
 }
 
 pub fn execute_locked_move(
@@ -154,7 +154,7 @@ pub fn execute_locked_move(
     // a Mirror Move, say, whose Skull Bash release is billed to the Mirror
     // Move slot even when the mon knows Skull Bash itself.
     let slot = Some(sides[attacker_side_idx].last_selected_slot.min(3) as usize);
-    execute_move_entry(rng, field, sides, attacker_side_idx, mv, slot, true, log)
+    execute_move_entry(rng, field, sides, attacker_side_idx, mv, slot, true, false, log)
 }
 
 /// Struggle — forced when every move slot is out of PP. Not slot-based.
@@ -168,7 +168,7 @@ pub fn execute_struggle(
     let Some(mv) = move_by_id("struggle") else {
         return MoveOutcome::default();
     };
-    execute_move_entry(rng, field, sides, attacker_side_idx, mv, None, false, log)
+    execute_move_entry(rng, field, sides, attacker_side_idx, mv, None, false, false, log)
 }
 
 fn execute_move_entry(
@@ -179,10 +179,11 @@ fn execute_move_entry(
     mv: &'static MoveEntry,
     pp_slot: Option<usize>,
     locked: bool,
+    called: bool,
     log: &mut Log,
 ) -> MoveOutcome {
     rng.acting = attacker_side;
-    let outcome = run_move(rng, field, sides, attacker_side, mv, pp_slot, locked, log);
+    let outcome = run_move(rng, field, sides, attacker_side, mv, pp_slot, locked, called, log);
 
     // Disable and Self-Destruct/Explosion build Rage on the target even when
     // they miss or fail (Gen 1 oddity, Showdown scripts.ts).
@@ -201,11 +202,27 @@ fn run_move(
     mv: &'static MoveEntry,
     pp_slot: Option<usize>,
     locked: bool,
+    called: bool,
     log: &mut Log,
 ) -> MoveOutcome {
     use MoveEffectKind::*;
     let defender_side = 1 - attacker_side;
     let ek = mv.effect_kind;
+
+    // Every ACTION opens by clearing the broken-Substitute marker on whatever
+    // it is about to hit (`if (target?.subFainted) target.subFainted = null`,
+    // gen 1's runMove), before the BeforeMove event, so a turn lost to full
+    // paralysis still clears it. A move a CALLER reached (Mirror Move and
+    // Metronome hand their copy to `useMove`, not `runMove`) clears nothing,
+    // and `called` marks one. Mirror Move and Metronome are `target: "self"`
+    // here, so their own action target is the USER: they clear the marker's
+    // own side and leave the foe's up, which is how a multi-hit move called
+    // by one of them meets a marker the foe has been carrying since some
+    // earlier action and stops a hit short.
+    if !called {
+        let aimed = if targets_self(mv) { attacker_side } else { defender_side };
+        sides[aimed].active_mut().sub_fainted = false;
+    }
 
     // PP: locked continuations don't deduct — except the TwoTurn release,
     // which is exactly when Gen 1 charges the PP for two-turn moves.
@@ -616,7 +633,11 @@ fn apply_effect(
                     per_hit = Some(dealt);
                 }
                 landed += 1;
-                if outcome.fainted_target || outcome.sub_broke {
+                // The sim stops after ANY hit that finds the broken-Substitute
+                // marker on the target, not only after the hit that raised
+                // it: the check is `if (target.subFainted)`, and the marker
+                // outlives the action that set it.
+                if outcome.fainted_target || sides[defender_side].active().sub_fainted {
                     break;
                 }
             }
@@ -885,7 +906,7 @@ fn apply_effect(
                 let was_charging =
                     sides[attacker_side].active().volatile.has(Volatile::CHARGING);
                 transformed_call_refunds_pp(sides, attacker_side);
-                outcome = execute_move_entry(rng, field, sides, attacker_side, mv2, None, false, log);
+                outcome = execute_move_entry(rng, field, sides, attacker_side, mv2, None, false, true, log);
                 if mv2.effect_kind == MoveEffectKind::TwoTurn
                     && !was_charging
                     && sides[attacker_side].active().volatile.has(Volatile::CHARGING)
@@ -1240,7 +1261,7 @@ fn apply_effect(
                 &MOVES[idx]
             };
             transformed_call_refunds_pp(sides, attacker_side);
-            outcome = execute_move_entry(rng, field, sides, attacker_side, cand, None, false, log);
+            outcome = execute_move_entry(rng, field, sides, attacker_side, cand, None, false, true, log);
         }
         SelfDestruct => {
             outcome = damage_step(rng, field, sides, attacker_side, mv, true, None, log, outcome);
@@ -1555,6 +1576,10 @@ fn deal_damage(
             let m = sides[target_side].active_mut();
             m.volatile.clear(Volatile::SUBSTITUTED);
             m.volatile.substitute_hp = 0;
+            // A broken Substitute raises the marker the sim keeps in
+            // `pokemon.subFainted`. It is a plain field, so it survives the
+            // volatile going away and any later multi-hit move aimed here.
+            m.sub_fainted = true;
             let s = &sides[target_side];
             log.push_board(format!("end|mon:{},{},0|what:substitute", s.active().name, s.player_id));
             HitRes::Sub { broke: true }
@@ -1618,6 +1643,7 @@ fn self_hit_with_sub_redirect(
                 let m = sides[foe].active_mut();
                 m.volatile.clear(Volatile::SUBSTITUTED);
                 m.volatile.substitute_hp = 0;
+                m.sub_fainted = true;
                 let s = &sides[foe];
                 log.push_board(format!("end|mon:{},{},0|what:substitute", s.active().name, s.player_id));
             } else {
@@ -1784,7 +1810,13 @@ pub fn apply_stage_change(
             }
         } else {
             let stat_i = idx + 1;
-            if delta > 0 && m.modified[stat_i] == 999 {
+            // The cap is checked FIRST: a stat already at +6 (or -6) is
+            // skipped outright, so the 999/1 quirk below never fires on a
+            // stat that has nothing left to give. Gen 1's boostBy opens with
+            // `if (delta > 0 && this.boosts[i] >= 6) continue;`.
+            if (delta > 0 && m.stages[idx] >= 6) || (delta < 0 && m.stages[idx] <= -6) {
+                false
+            } else if delta > 0 && m.modified[stat_i] == 999 {
                 // Boosting a stat at 999: the stage rises then drops one, the
                 // stat stays 999, and the move counts as failed (no re-stack).
                 let s = (m.stages[idx] as i32 + delta as i32).clamp(-6, 6) - 1;
@@ -1906,6 +1938,15 @@ pub fn after_switch_in_with(
     // the foe usually moves again later in the very same turn and sets it
     // afresh.
     sides[1 - side].active_mut().last_move_used = "";
+
+    // The INDEX register resets on every switch-in (a voluntary switch, a
+    // replacement after a faint, a drag), where the move register never
+    // resets at all. The sim puts that in gen 4's runSwitch, which gen 1
+    // inherits, so it is easy to miss reading gen1's own files. It matters
+    // for a replacement as much as for a chosen switch: a frozen mon that
+    // thaws off a Fire move pays for its replayed move out of the register,
+    // which by then points at the first slot of whoever just walked on.
+    sides[side].last_selected_slot = 0;
 
     // Walking on turns bad poison into the ordinary kind: the sim's gen 2
     // `tox` condition does exactly this in its onSwitchIn, and gen 1

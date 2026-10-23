@@ -445,7 +445,7 @@ impl<'a> Battle<'a> {
             self.winner = Some(0);
             self.log.push_board(format!("win|side:0"));
             self.phase = Phase::Ended;
-        } else if self.turn_count >= ENDLESS_BATTLE_TURN_CAP {
+        } else if self.no_progress_possible() || self.turn_count >= ENDLESS_BATTLE_TURN_CAP {
             let w = self.endless_battle_winner();
             self.winner = Some(w);
             self.log.push_board(format!("win|side:{}", w));
@@ -700,11 +700,8 @@ impl<'a> Battle<'a> {
                             let si = &self.sides[side];
                             self.log.push_board(format!("switch|player:{}|name:{}", si.player_id, si.active().name));
                         }
-                        // The INDEX register resets on every switch where
-                        // the move register never resets at all. The sim puts
-                        // that reset in gen 4's runSwitch, which gen 1
-                        // inherits — easy to miss reading gen1's own files.
-                        self.sides[side].last_selected_slot = 0;
+                        // The INDEX register is reset by the switch-in itself
+                        // (see `after_switch_in_with`).
                         after_switch_in(&mut self.field, &mut self.sides, side, &mut self.log);
                     }
                 }
@@ -934,6 +931,37 @@ impl<'a> Battle<'a> {
             .team
             .iter()
             .all(|m| m.empty() || m.fainted())
+    }
+
+    /// The Gen 1 half of the Endless Battle Clause
+    /// (`maybeTriggerEndlessBattleClause`, checked at the end of every turn,
+    /// before the next one is asked for): a battle both sides are provably
+    /// stuck in is called a draw on the spot. A side is stuck when every one
+    /// of its mons is out of the fight: fainted, frozen (nothing in the era
+    /// thaws a frozen mon but the player switching it out, which is no longer
+    /// a choice), holding nothing but Transform against a foe holding
+    /// nothing but Transform, or out of PP against a foe made entirely of
+    /// Ghosts, which Struggle cannot touch. A Transformed mon reads as the
+    /// thing it copied, so a Slowbro wearing a Gastly's face is a Ghost.
+    fn no_progress_possible(&self) -> bool {
+        let stuck = |side: usize| {
+            let team = |s: usize| self.sides[s].team.iter().filter(|m| !m.empty());
+            let foe_all_ghosts = team(1 - side).all(|m| m.fainted() || m.is_type(Type::Ghost));
+            let foe_all_transform = team(1 - side).all(|m| {
+                m.fainted()
+                    || m.moves.iter().filter(|sl| !sl.move_id.is_empty())
+                        .all(|sl| sl.move_id == "transform")
+            });
+            team(side).all(|m| {
+                m.fainted()
+                    || m.status == Status::Freeze
+                    || (m.moves.iter().filter(|sl| !sl.move_id.is_empty())
+                        .all(|sl| sl.move_id == "transform")
+                        && foe_all_transform)
+                    || (m.out_of_pp() && foe_all_ghosts)
+            })
+        };
+        stuck(0) && stuck(1)
     }
 
     /// Endless Battle Clause resolution: higher remaining-HP fraction wins,
