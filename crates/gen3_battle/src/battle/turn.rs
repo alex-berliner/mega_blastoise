@@ -570,7 +570,13 @@ impl Battle {
                 if mon.cursed {
                     plan.push((6, s));
                 }
-                if mon.trapped_n > 0 {
+                // A stale bind has a handler here too: the sim's volatile
+                // outlives its user and deletes itself in `onResidual`, so
+                // it is still one of the gathered handlers on the turn its
+                // clock ran out under something else (a Rapid Spin or a
+                // Substitute zeroes the clock, and the flag has to be spent
+                // here or it eats the NEXT bind's first chip).
+                if mon.trapped_n > 0 || mon.trap_stale {
                     plan.push((7, s));
                 }
                 if mon.bide.is_some() {

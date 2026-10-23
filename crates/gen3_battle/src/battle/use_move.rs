@@ -2732,6 +2732,12 @@ impl Battle {
                 // raises all five of the user's stats.
                 self.self_boost_only(side, &slot, script, events);
             }
+            // The sim's `eachEvent('Update')`, which runs once per strike
+            // inside `tryMoveHit`, over the WHOLE field, not just the two
+            // mons in this swing. A Leppa Berry answers a slot that has just
+            // run dry on the blow itself.
+            self.ability_update(0);
+            self.ability_update(1);
             // Gen 3 runs its own multi-hit loop and reads BOTH mons at the
             // top of it: `for (i = 0; i < hits && target.hp && pokemon.hp;
             // i++)`. An attacker killed by Rough Skin or Liquid Ooze between

@@ -1409,3 +1409,89 @@ fn a_rage_the_substitute_swallowed_still_arms_the_rager() {
         "the hit that followed raised the rager's Attack",
     );
 }
+
+
+/// A bind outlives the mon that threw it, and the sim deletes it in its own
+/// residual: `onResidual` finds the source off the field and clears the
+/// volatile without a chip. A Rapid Spin in that same turn takes the clock
+/// to zero of its own accord, and the volatile IT deletes is gone just the
+/// same, so the stale flag has to be spent at that residual too. Left lying
+/// about the source, it ate the first chip of the NEXT bind.
+///
+/// That is the wide-fuzz seed-2170 shape: Murkrow's Whirlpool binds a
+/// Castform that spins itself free, leaves, comes back and binds again, and
+/// the second Whirlpool's victim only started bleeding once the flag was.
+#[test]
+fn a_bind_left_by_a_departed_user_does_not_eat_the_next_chips() {
+    let mut b = Battle::new(
+        Side::new(alloc::vec![mon("heracross", 50, &["tackle", "rapidspin"])]),
+        Side::new(alloc::vec![
+            mon("murkrow", 50, &["whirlpool"]),
+            mon("beldum", 50, &["splash"]),
+        ]),
+        7,
+    );
+    // The Whirlpool binds, and the bind's own residual chips.
+    let first = b.step_with(
+        [Choice::Move(0), Choice::Move(0)],
+        &scripted([PLAIN, PLAIN]),
+    );
+    assert!(
+        first
+            .iter()
+            .any(|e| matches!(e, Event::TrapDamage { side: 1, .. })),
+        "the bind should have bitten: {first:?}",
+    );
+    // The trapper leaves while the bind still has clock on it, and the Rapid
+    // Spin that follows empties it. There is nothing left to chip.
+    let second = b.step_with(
+        [Choice::Move(1), Choice::Switch(1)],
+        &scripted([PLAIN, PLAIN]),
+    );
+    assert_eq!(b.sides[0].mon().trapped_n, 0, "the spin flung it off");
+    assert!(
+        !second
+            .iter()
+            .any(|e| matches!(e, Event::TrapDamage { side: 1, .. })),
+        "a bind with no clock left cannot bite: {second:?}",
+    );
+    // Murkrow comes back and binds again, and this time nothing clears the
+    // clock mid-turn: the first chip is the one a stale flag would swallow.
+    b.step_with([Choice::Move(0), Choice::Switch(0)], &scripted([PLAIN, PLAIN]));
+    let third = b.step_with(
+        [Choice::Move(0), Choice::Move(0)],
+        &scripted([PLAIN, PLAIN]),
+    );
+    assert!(
+        third
+            .iter()
+            .any(|e| matches!(e, Event::TrapDamage { side: 1, .. })),
+        "the fresh bind should have bitten: {third:?}",
+    );
+}
+
+/// `eachEvent('Update')` runs inside `tryMoveHit`, right after the blow, so
+/// a Leppa Berry is eaten the moment a slot runs dry. Waiting for the top of
+/// the next turn costs the restore whenever that blow ended the battle, which
+/// is the wide-fuzz seed-2311 shape: an Extreme Speed's last point of PP went
+/// out with Exploud.
+#[test]
+fn a_leppa_answers_the_blow_that_empties_the_slot() {
+    let mut holder = mon("pinsir", 50, &["extremespeed"]);
+    holder.item = "leppaberry";
+    holder.moves[0].pp = 1;
+    let mut b = battle(holder, mon("snorlax", 50, &["tackle"]));
+    // The blow ends the battle, so there is no next turn to wait for.
+    b.sides[1].mon_mut().hp = 1;
+    let events = b.step_with(
+        [Choice::Move(0), Choice::Move(0)],
+        &scripted([PLAIN, PLAIN]),
+    );
+    assert!(b.over(), "the battle ended on that blow: {events:?}");
+    assert_eq!(b.sides[0].mon().item, "", "the berry was eaten");
+    assert_eq!(
+        b.sides[0].mon().moves[0].pp,
+        5,
+        "ten points back, capped at the move's own five",
+    );
+}

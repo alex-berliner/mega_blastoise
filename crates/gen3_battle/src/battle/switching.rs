@@ -180,6 +180,11 @@ impl Battle {
     /// refusing abilities do their tidying: they do not merely block a
     /// status arriving, they shed one already there. A mon that walks into
     /// the battle asleep with Insomnia is awake before it has to act.
+    ///
+    /// The same event runs after every landed strike (`eachEvent('Update')`
+    /// inside `tryMoveHit`), which is where the Leppa Berry lives: a slot
+    /// emptied by the blow that ended the battle is topped up on the spot,
+    /// not at the top of the next turn that never comes.
     pub(super) fn ability_update(&mut self, side: usize) {
         let mon = self.sides[side].mon();
         if mon.fainted() {
