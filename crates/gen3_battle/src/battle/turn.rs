@@ -90,17 +90,25 @@ impl Battle {
                 _ => false,
             };
         }
-        // A seat that chose Focus Punch starts tightening its focus before
-        // anything else happens this turn (the sim's priority charge step);
-        // while focusing, the flinch volatile is refused outright.
+        // A seat using Focus Punch tightens its focus before anything else
+        // happens this turn (the sim's before-turn charge step); while
+        // focusing, the flinch volatile is refused outright.
+        //
+        // The charge belongs to the move that is QUEUED, not to the slot
+        // that was picked: the sim throws a locked mon's choice away whole
+        // (`chooseMove` pushes the locked move and returns), so a Rollout
+        // or a recharge never tightens a focus it will not punch with, and
+        // with no volatile there, the flinch lands on it instead.
         for side in 0..2 {
             if let Choice::Move(i) = choices[side] {
-                if self.sides[side]
-                    .mon()
-                    .moves
-                    .get(i)
-                    .is_some_and(|m| m.entry.id == "focuspunch")
-                    && !self.sides[side].mon().fainted()
+                let mon = self.sides[side].mon();
+                let acting = self.acting_slot(side, i);
+                if !mon.must_recharge
+                    && !mon.fainted()
+                    && mon
+                        .moves
+                        .get(acting)
+                        .is_some_and(|m| m.entry.id == "focuspunch")
                 {
                     self.sides[side].mon_mut().focusing = true;
                 }

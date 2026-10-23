@@ -919,9 +919,12 @@ impl Battle {
                 } else {
                     let mon = self.sides[side].mon_mut();
                     mon.stockpile_n = 0;
+                    // The share is the sim's `modify`, not a division: a
+                    // quarter of 195 comes to 49 there, and a division
+                    // would hand back 48.
                     let heal = match n {
-                        1 => mon.max_hp / 4,
-                        2 => mon.max_hp / 2,
+                        1 => ability::modify(mon.max_hp, 1, 4),
+                        2 => ability::modify(mon.max_hp, 1, 2),
                         _ => mon.max_hp,
                     }
                     .min(mon.max_hp - mon.hp);

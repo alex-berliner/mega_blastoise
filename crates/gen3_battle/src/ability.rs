@@ -69,6 +69,14 @@ impl Chain {
     }
 }
 
+/// The sim's `Battle.modify(value, num, den)`: the fraction is taken to a
+/// numerator over 4096 and then through the chain's own rounding, which is
+/// NOT a plain floor. A quarter of 195 is 49, not the 48 an integer divide
+/// gives, and the fuzzer found that one HP on Swallow.
+pub fn modify(value: u16, numerator: u16, denominator: u16) -> u16 {
+    Chain(numerator as u32 * 4096 / denominator as u32).apply(value as u32) as u16
+}
+
 /// Everything about a mon that an ability question needs to see. Passing this
 /// rather than the whole `Mon` keeps the module free of the battle state and
 /// makes each answer a pure function of what the sim's handler actually reads.

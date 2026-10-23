@@ -1832,7 +1832,8 @@ impl Battle {
             // same as any other move that got this far — which matters
             // because both sit in Mirror Move's noMirror list, and a Sketch
             // landing after a Crabhammer is what makes the reply fail.
-            if hit && self.sides[foe].mon().sub_hp == 0 {
+            // A Substitute does not stop the record here either.
+            if hit {
                 self.note_hit_by(side, foe, slot.entry.id);
             }
             // The foe's last move BY ID — a Transform that rewrote its
@@ -2043,7 +2044,12 @@ impl Battle {
                     }
                 }
             }
-            if !self_aimed && hit && !immune && self.sides[foe].mon().sub_hp == 0 {
+            // A Substitute does NOT stop the record. Gen 3 ends its
+            // `tryMoveHit` with an unconditional `gotAttacked`, run on the
+            // target MON after the hit loop whatever the doll swallowed or
+            // refused, so a Trick turned away by a sub is still what the
+            // next Mirror Move answers, not the attack that came before it.
+            if !self_aimed && hit && !immune {
                 self.note_hit_by(side, foe, slot.entry.id);
             }
             self.status_move(
