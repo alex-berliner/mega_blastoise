@@ -7,7 +7,7 @@ Each part's 3D model is exported on its own (kicad-cli pcb export stl
 the case allows at that spot:
 
   under the glass          top of part <= glass_limit above the board
-  side bezels, spines      <= bezel_limit (the top piece's underside)
+  side bezels, spines      <= bezel_limit (the island's underside)
   around the clusters      <= retainer_limit (the decks come down to the cap flanges)
   button decks             <= deck_limit (the ends step down so genuine caps stand proud; the
                               band under the top piece's step walls too)
@@ -19,8 +19,9 @@ the case allows at that spot:
   screw bosses             nothing within the boss diameter (four on the top piece, one on each deck)
   crush ribs               nothing within 1 mm of the board's edge at a rib
   top's panel frame        its band round the panel: <= frame limit (it hangs lower)
-  the joint at the step    the decks' plates run on under the top piece, to its end wall: <= its
-                           limit (the decks' underside; case.scad's JOINT echo line)
+  round the island         its wall and wedge under the decks' lips, across the step, round the
+                           spines and along the side walls under the decks' arms: <= the decks'
+                           underside's limit (case.scad's JOINT echo line, 2026-10-23)
   folded FPC, J3's range   nothing but J3 under the panel's FPC, over the whole range J3 may move
   edge parts               the USB-C face reaches the wall
   USB-C opening            J1's mouth (its model within 1 mm of its face) centred in the wall's
@@ -130,7 +131,7 @@ def extents(refs):
 
 def case_echo():
     """case.scad's lines for this check that aren't in positions.json: {"USBC": the USB-C opening and the
-    plug it is checked with, "JOINT": the joint under the step}, each None if missing."""
+    plug it is checked with, "JOINT": the joint round the island}, each None if missing."""
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "case.echo")
         subprocess.run([*scad.cmd(out), "-o", out, "-D", 'part="none"', os.path.join(HERE, "case.scad")],
@@ -187,7 +188,7 @@ def main():
     echoed, under = case_echo(), []
     joint = echoed["JOINT"]
     if not joint:
-        problems.append("no JOINT line in case.scad's echo to check the joint under the step with")
+        problems.append("no JOINT line in case.scad's echo to check the joint round the island with")
     for ref, box in sorted(boxes.items()):
         if box is None:
             notes.append(f"{ref}: no 3D model exported")
@@ -230,11 +231,11 @@ def main():
             limit, where = frame["limit"], "top piece's panel frame"
         if top > limit + 1e-3:
             problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
-        for zone in (joint or {}).get("zones", []):   # the joint under the step
+        for zone in (joint or {}).get("zones", []):   # the joint round the island
             if inside_rect(box, zone):
                 under.append((ref, top))
                 if top > joint["limit"] + 1e-3:
-                    problems.append(f"{ref} is {top:.2f} mm tall under the joint at the step, which allows {joint['limit']:.2f}")
+                    problems.append(f"{ref} is {top:.2f} mm tall under the joint round the island, which allows {joint['limit']:.2f}")
                     break
         for zone in POS["fpc_zones"]:
             if inside_rect(box, zone, -0.2) and top > 0.3 and not ref.startswith("J3"):
@@ -242,7 +243,7 @@ def main():
         if ref.startswith("J3") and not within(box, POS["j3_zone"]):
             problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
     if joint:
-        notes.append(f"the joint under the step: {len({u[0] for u in under})} parts under it, the tallest "
+        notes.append(f"the joint round the island: {len({u[0] for u in under})} parts under it, the tallest "
                      f"{max((u[1] for u in under), default=0):.2f} (it allows {joint['limit']:.2f})")
     for ref, x, y in tht_leads():
         if not any(min(a[0], b[0]) <= x <= max(a[0], b[0]) and min(a[1], b[1]) <= y <= max(a[1], b[1])

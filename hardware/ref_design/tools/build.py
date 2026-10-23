@@ -65,7 +65,7 @@ FAB_OUT = ["board/fab/gerbers/*", "board/fab/battler_gerbers.zip", "board/fab/ba
            "board/fab/battler_bottom.png", "board/fab/battler_iso.png", "board/fab/battler_schematic.pdf",
            "board/fab/battler_assembly.pdf"]
 FITKIT_STL = ["case/fitkit/*.stl"]
-CASE_STL = ["case/tub.stl", "case/top.stl", "case/deck.stl"]
+CASE_STL = ["case/tub.stl", "case/top.stl", "case/deck1.stl", "case/deck2.stl"]
 
 
 class Stage:
@@ -85,7 +85,7 @@ STAGES = [
     Stage("export", ".", [PY, "case/export.py", "--stl"],
           ["case/export.py", "case/case.scad", "tools/scad.py"],
           ["case/positions.json", "case/board.dxf", *CASE_STL], tools=("scad",),
-          about="case -> positions.json, board.dxf, tub/top/deck STLs"),
+          about="case -> positions.json, board.dxf, tub/top/deck1/deck2 STLs"),
     Stage("check_buttons", ".", [PY, "case/check_buttons.py"],
           ["case/check_buttons.py", "case/check_buttons.scad", "case/case.scad", "tools/scad.py"],
           check=True, tools=("scad",), about="button stacks against the shell"),
