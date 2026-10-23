@@ -1,4 +1,4 @@
-# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22)
+# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), and joints that hold it together (2026-10-22)
 
 The case's redesign after Alex's notes on his last print (items 10, 13, 14 and 15) and the change
 to the EastRising ER-TFT024IPS-3, then reworked for the board with the cell in a hole in it and the
@@ -11,7 +11,10 @@ Four printed parts: a **top piece** (the screen face, the curved steps down to t
 at each end, and the sides), two **decks** (one part,
 printed twice: the button faces at each end), and the **tub** (the back, with a pocket for the
 cell). The top piece and the decks all curve over the sides and meet the tub flush at one seam,
-4.2 mm up the walls, where the back's round ends. Each deck seats into the top piece **from behind**
+4.2 mm up the walls, where the back's round ends; their skirts slide 3 mm (2.5 at the decks) down
+over the tub's **tongue**, which keys them: tabs into pockets in the top piece, a post in each
+corner that pushes a deck home, and grip ribs, so the four parts hold together before the screws
+go in (see "The joints"). Each deck seats into the top piece **from behind**
 on a 45 degree wedge, reaches out to the case's outline and curves over the end and the sides
 itself, and has its own screw. The board, with the cell in a hole in it, lies inside the tub's
 walls. Everything is built **upside down**: the speaker into its pocket, caps and silicone into the
@@ -29,7 +32,7 @@ supports in its own pose: the tub back down, the top piece and the decks face do
 | Cell | under the board | under the board | in the board's hole, its bottom in a 0.6 pocket in the tub's floor |
 | Speaker | floor grille | floor chamber, side outlet | on the board's top in the right bezel, a grille in the face |
 | Parts | tub, lid, two deck inserts | tub, top piece, two decks | the same |
-| Held by | six screws, four snap hooks | six M2 x 8: four into the top piece, one into each deck | six M2 x 6, the same way (the side ones into the top piece beside the glass, since the side screws came back inward) |
+| Held by | six screws, four snap hooks | six M2 x 8: four into the top piece, one into each deck | six M2 x 6, the same way (the side ones into the top piece beside the glass, since the side screws came back inward); before the screws, the tongue's keys and grip ribs |
 | Crush ribs | on the lid | on the top piece's and the decks' walls | on the tub's walls (the board is inside them) |
 
 ![outside, from the front](images/outside_front.png)
@@ -69,9 +72,9 @@ the port and the plug, and check_fit.py checks it against J1's 3D model.
   skirts no longer reach it: the **crush ribs moved to the tub's walls** (sides at y +-28, ends at
   x +-22), their lead-in at the top, where the board meets them as the tub goes on. The tub's
   cavity follows the back's round only 0.2 in (`tub_round_in`), so the board's edge keeps 0.3 to
-  it. The skirts' cut over the tongue is now only the wall's inner half: the decks' plates come
-  down to 5.7, under the tongue's cut, and a cut across the whole inside took 0.1 off them and left
-  the pads' walls hanging.
+  it. The skirts' cut over the tongue is only the wall's inner half (and, where the tongue leans
+  in under the decks, a groove in the plates): a cut across the whole inside took 0.1 off the decks'
+  plates and left the pads' walls hanging.
 - **The side screws** are the board's, inside the top piece (Alex, 2026-10-22: no shoulders): H1
   and H2 at (+-32.5, 29), at the seat-2 ends of the strips beside the cell's hole; H3 at (25.9,
   -21.95) in the right bezel, between the speaker and J4's plug; H4 at (-33.0, -15.2) in the left
@@ -129,6 +132,125 @@ the port and the plug, and check_fit.py checks it against J1's 3D model.
 ![across H4: the slimmed tub boss by the board's edge](images/section_h4.png)
 ![along H3: between the speaker and J4](images/section_h3.png)
 
+## The joints (2026-10-22, after Alex printed the shell)
+
+Alex, on the print of 110d46b: "the top pieces need to flow better and interlock. Right now it
+feels like the pieces are designed to fit on the tub but not mesh with each other. Also it would
+be good if the pieces went farther over the side. Like the tub has a tall inner wall that the top
+piece slides farther down for some more stability. Maybe add some tabs on the tub wall to fit into
+the top pieces?" And: "The last version was pretty sturdy and only needed the screws to lock
+together, this version needs the screws to fit together at all which is bad". So the test is: with
+no screws, the four parts go together and hold as one, nothing rocking or falling apart when
+handled gently; the screws only lock it.
+
+![the side joint from outside](images/joint_outside.png)
+![the seam: the tongue 3.0 up inside the top piece's skirt](images/section_seam_zoom.png)
+![the end wall: a deck over the tongue, 2.5, leaning in under the deck's round](images/section_tongue_end.png)
+![a key: a tab of the tongue in a pocket in the top piece](images/section_key_top.png)
+![a deck's key: the corner post in the deck's notch](images/section_key_post.png)
+![the side joint in the tongue's plane: the tongue steps from 3.0 to 2.5 under the step's band](images/section_side_joint.png)
+![the right wall in the tongue's plane: the top piece's skirt keys between the tongue's ends over the USB-C tab](images/section_usb_wall.png)
+![exploded: the tub's tabs, corner post and grip ribs; the top piece's and the deck's pockets and notch](images/exploded_keys.png)
+
+**What got looser.** The kit Alex printed before was 4df3f96's (f3763df, which raised `slide_fit`
+from 0.15 to 0.25, went in the same minute, so any kit of that shell had 0.25). Between it and
+110d46b:
+
+| | 4df3f96 (held) | 110d46b (needed the screws) |
+|---|---|---|
+| `slide_fit` (`deck_gap`, `seam_fit`) | 0.25 | 0.25 |
+| the decks' wedges under the top piece | 0.95 | 0.95 |
+| the tongue | 1.5 tall, 0.75 thick | the same |
+| `seam_gap` | 0.1 | 0.1 |
+| the board | z 6.0 to 7.6, inside the skirts, over the tongue | z 2.2 to 3.8, inside the tub's walls, under the seam (4.2) |
+| crush ribs (0.05 short of the board) | on the top piece's sides (y +-28) and each deck's end (x +-22), z 5.8 to 8.6 | on the tub's walls |
+| the skirts' height | top piece 9.05, decks 7.2 | 5.25 and 3.4 |
+| shoulders, the decks' notches | none (99e3f04 added them, c955631 took them out) | none |
+
+Only the board and its crush ribs changed. In 4df3f96 the board, laid face down, pressed into ribs
+on the top piece's sides and on both decks' ends: it tied the three top parts into one, and each
+deck's end hugged the board's end inside its 7.2 mm skirt. The tub sat on loosely in both (a 1.5
+tongue at 0.25 a side, nothing gripping). With the cell in the board, the board went under the
+seam and its ribs onto the tub, and nothing tied a deck to the top piece or either to the tub. The
+fits and the wedges were never what held it, so they aren't what's restored: the tongue now does
+the board's old job (below).
+
+**What made the parts read as separate (110d46b, rendered and cut):**
+1. Butt joints with a slot: at each side wall the deck's skirt ended 0.25 from the top piece's, a
+   straight slot through the skirt from the seam over the round to the face, and the same 0.25 slot
+   ran along the step's crease. By design nothing touched.
+2. Nothing held a deck along the case. The 45 degree wedges at the step and round the spine's end
+   both face the same way: they stop a deck coming out of the face, and push it back along the case
+   when it's pushed towards the face. Face down, a deck settled back down its wedges; face up,
+   screws out, it floated 0.25 each way and 0.35 up and down, so the surfaces stepped and the gaps
+   ran 0 to 0.5 at the joints.
+3. The skirts sat on the tub, not over it: 1.4 of overlap on a 1.5 tongue, 0.25 a side, so the top
+   piece could tilt on it, and nothing gripped, so it lifted straight off.
+4. A straight path past the joints: through the side slot into the groove's clearance, and over
+   the tongue's top (0.1 under the decks' plates) into the case.
+5. Not a problem: the rounds and skirt heights match across the joints (both skirts end at 4.3;
+   at the side joints both round over from the decks' 7.7 face through `face_r`). The top piece's
+   side follows the step down over the last 2.1 before the joint, which reads as a soft crease
+   beside the seam; it is continuous, and stays.
+
+**What changed, for each:**
+- **The tongue is 3.0 tall** along the top piece's sides (`tongue_h`, its top 7.2, 0.35 under the
+  top piece's underside): the top piece's skirt runs 2.9 down over it (was 1.4). Under the decks and
+  across the step's band (|y| over 31.8, where the band starts) it is **2.5** (`deck_tongue_h`, top
+  6.7): the decks' skirts run 2.4 down over it. It runs on unbroken under the side joints, so one
+  wall locates both neighbours (the step from 3.0 to 2.5 is under the top piece's band, 2.6 from the
+  joint, and the grooves overlap it 0.35 each way). What limits it under the decks is their face's
+  round: 0.9 under the 7.7 face (the groove's top) it has come 0.86 in, so the groove leans in after it
+  (the skirt never under `skirt_t` 0.7) and the tongue leans in with it, to 2.25 from the outline:
+  0.25 outside the board's edge, which it passes as the tub goes on (its tip is chamfered from the
+  wall's inside, so it leads the board in), and the deck's plate keeps 0.9 over the groove. A 3.0
+  tongue there would leave 0.4 of plate and come within 0.05 of the board's edge. **The seam stays at 4.2**,
+  where the back's round ends: a lower seam would put the skirts' edges on the round (a feather edge
+  in the face-down print, a seam on a curve), and it's the tongue's top, not the seam, that limits
+  the overlap. The skirts still stop `seam_gap` 0.1 over the tub and the grooves 0.1 over the
+  tongue's top, so the screws clamp the board, not the seam; a deck's plate bears on nothing.
+- **Tabs into the top piece** (`keys`): four, at y 18 and -16 on the right wall and 22 and -24 on
+  the left (two a side; clear of the USB-C notch, the side screws' bosses, the speaker's and J4's
+  pockets and the pinholes, asserted). Each carries the tongue 1.3 higher (to 8.5), 5.0 along the
+  wall, its tip leaning in under the face's round and chamfered (0.33 at the very top), its corners
+  0.5 x 45 degrees as lead-ins. They sit in pockets in the top piece's sides, `seam_fit` 0.25 along
+  the wall, with 0.95 of face over each. They locate the top piece along the case and stop it
+  twisting; the two tongues locate it across.
+- **The USB-C notch keys too:** over the tub's tab the top piece's skirt keeps its inner half from
+  the opening's centre up (18.0 wide), and the tongue stops `usb_fit` 0.2 short of it on each side,
+  so the opening's upper half is still all in the top piece.
+- **A post in each corner for the decks:** the board's corners (r 5.5) leave 2 mm inside the tub's
+  corners (r 2.3 inside), the only place on the tongue with room inwards. Each post stands from the
+  floor to the tongue's top, its inner corner at (+-34.80, +-62.45), 0.3 outside the board's corner,
+  about 2.6 x 2.6, its inner faces chamfered 0.4 at the top. It sits in a notch in the deck's plate:
+  across the case with `seam_fit`, along it with none, so as the tub goes on it pushes the deck
+  towards the screen onto its wedges and holds it there. One part still fits both ends.
+- **The decks sit on their wedges:** no clearance on the wedges along the step and round the
+  spine's end (the posts hold the deck on them, at its place over the board's buttons), `deck_gap`
+  0.15 on the straight faces (the land, the skirts' ends at the side walls, the spine's sides; was
+  0.25). The seams across the face and down the sides are an even 0.15. (Pushing the deck past its
+  place to close them moved the openings 0.15 off the buttons: "Alternatives considered".)
+- **Grip ribs** on the tongue's outside (`grips`): 1.0 wide, standing 0.2 off it, 0.05 short of
+  the skirt, as the board's crush ribs are of the board (a skirt's inside prints small, so it grips
+  them), from the seam to 0.1 short of where the tongue's outside starts to lean or chamfer (6.8
+  along the top piece, 5.9 at the decks), each with a 45 degree lead-in. Two a side for the top piece (y +-25), one a side for each
+  deck (y +-52), and one 2.0 wide across each side joint (y +-34.35): it presses both skirts' ends
+  out to the same line, so the two lie flush. They hold the tub on and centre each part across it.
+
+**How each joint holds, no screws:** the top piece is on the tub by its skirts over 2.9 of tongue
+(across), four tabs and the USB-C notch (along, and against twisting) and four grip ribs (on). Each
+deck is on the tub by its skirts over 2.4 of tongue and two grip ribs (across, on) and two corner
+posts (across with 0.25, along by pushing it onto the top piece). Each deck is on the top piece by
+its wedges (held there by the posts: it can't move along the case, towards the face or across) and
+by the rib across each side joint (the skirts flush). The board is centred by the tub's crush ribs
+and sits between the tub's ribs and bosses and the top pieces' bosses.
+
+All of it prints without supports: the tub back down (the tabs, posts and ribs stand up; every lean
+and chamfer 45 degrees or steeper), the top piece and the decks face down (the grooves, pockets and
+notches open upwards). `overhangs.py`: none needed. No new test plate: `slide_fit` (on `6_tests`)
+covers the tongue and the keys, and the seam coupons in `4_fit_coupons` now carry a tab (y 22) and
+a grip rib (y 25).
+
 ## The smooth rounds (2026-10-22)
 
 The top piece's and the decks' rounds and the step were stacks of flat 0.1 mm slabs, as the tub's
@@ -162,8 +284,9 @@ parts on the left.
   of the walls and roll into their faces through `face_r` = 3.0: an arc out of the wall that turns
   into a chamfer at `overhang` where the arc would go flatter in the print pose (the same profile
   as the back's round, `edge_in()`).
-- **The joint at the seam:** the tub's wall carries a **tongue**, its inner half 1.5 mm up past the
-  seam (`tongue_h`); the top pieces' skirts come down outside it, their outer half to the seam. The
+- **The joint at the seam:** the tub's wall carries a **tongue**, its inner half 3.0 mm up past the
+  seam (`tongue_h`; 2.5 at the decks, `deck_tongue_h`; 1.5 until "The joints"); the top pieces'
+  skirts come down outside it, their outer half to the seam. The
   outsides are flush; a skirt can't move inwards; there is no straight path through the seam for
   light or dust; and it is the top pieces that wrap over the tub ("or go over it"), not the tub that
   forms a lip. The skirts stop `seam_gap` 0.1 short of the tub so the screws clamp the board, not
@@ -204,12 +327,16 @@ end wall; they wobbled at the sides and the lip felt fragile. Now each deck:
   by the tub, no lip;
 - **seats into the top piece from behind:** along the step and round the spine its edge goes 0.8
   straight down from the face (`deck_land`) and then out 1.2 at 45 degrees under a matching undercut
-  in the top piece (`wedge_w`, `deck_gap` clearance, 0.25 until `6_tests`). It drops in from behind, centres itself, and can't
-  come out of the front. The wedges on the spine's two sides and its end oppose the ones along the
-  main step, so pushed home it can't move in x or y either;
+  in the top piece (`wedge_w`; `deck_gap` 0.15 on the straight faces and the spine's sides, none on
+  the wedges along the step and round the spine's end, where the tub's corner posts hold it: "The
+  joints"). It drops in from behind, centres itself, and can't
+  come out of the front. The wedges on the spine's two sides oppose each other, so it can't move
+  across the case; along it, the wedges at the step and round the spine's end both face the same
+  way, so they don't hold it: the tub's corner posts push it onto them (2026-10-22; until then
+  nothing did, and a deck slid back down its wedges);
 - **has its own screw:** the end screw now goes through the board into a boss on the deck (the end
   bosses moved off the spine into the deck, just past the spine's end), pulling it down onto the
-  board and its wedges up against the top piece. No anchor ring round a column any more, so the
+  board. No anchor ring round a column any more, so the
   0.15 ring that was too tight is gone with it.
 
 One part fits both ends (the end bosses are each other turned round, as before).
@@ -220,7 +347,8 @@ One part fits both ends (the end bosses are each other turned round, as before).
    its front foam ring stuck to the pocket's ceiling (the pocket centres it; standing on the board,
    0.45 to 0.75 under the ceiling, its front would be open to its back).
 2. **Decks:** each face down into its end of the top piece from behind; it drops onto its wedges
-   and sits flat.
+   and sits flat (it may settle 0.15 back down them, onto the spine's sides: the tub's posts push it
+   home in step 8).
 3. **Caps** into the decks from behind (A/B/X/Y tab into its slot, notches onto their ribs; the
    D-pad; Start/Select), then the **silicone** on them: the walls on the deck's back locate each pad.
    The Start/Select metal domes and their Kapton dots are on the board already.
@@ -233,12 +361,17 @@ One part fits both ends (the end bosses are each other turned round, as before).
    folding under the panel. Just before it lands, the **speaker's plug into J4** (its mouth faces the
    glass; the leads reach about 20 mm, so J4 must be near its place), the leads laid round H3's
    boss on the panel's side; then the board down onto the bosses.
-8. **Tub** over it all: the cell drops into the board's hole, the crush ribs on the tub's walls
-   centre the board, the tongue slides inside the skirts, the tab into the USB-C notch.
-9. **Six M2 x 6** from the back, snug.
+8. **Tub** over it all, straight down (the board lying centred on its bosses, within about 0.5:
+   the tongue's chamfered tip and the posts' lead-ins guide it in, then the crush ribs centre it):
+   the cell drops into the board's hole, the tongue slides 3 mm down inside the skirts, its four
+   tabs into the top piece's pockets and the USB-C tab into its notch, the corner posts push each
+   deck onto its wedges, and the grip ribs take hold. Press it down all round until the seam is an
+   even line. The case now holds together: lift it by the top piece and nothing falls out.
+9. **Six M2 x 6** from the back, snug: they lock it.
 
-Opening it is the same backwards: screws out, lift the tub off (the cell comes with it, on its
-leads), lift the board only a little and **unplug J4 first**: the speaker stays stuck in the top
+Opening it is the same backwards: screws out, ease the tub off (it grips: pull it straight up,
+an end at a time; the cell comes with it, on its leads), lift the board only a little and
+**unplug J4 first**: the speaker stays stuck in the top
 piece (Alex's choice), on 35 mm leads. Then the board comes away, and everything else lies where it
 was. The same goes for anyone opening it face up: unplug J4 before the top piece comes off.
 
@@ -296,14 +429,16 @@ Alex won't print `6_tests` soon, so these are committed as best guesses (2026-10
 | `cap_hole_d` | 8.0 | `tune_openings`: holes 7.6 / 7.8 / 8.2 beside the keyed 8.0 cluster | the smallest hole a real A/B/X/Y cap drops through and presses without catching; smaller if 8.0 rattles |
 | `dpad_gap` | 0.65 | `tune_openings`: D-pad openings 0.55 / 0.65 / 0.75 | the tightest opening the real D-pad rocks freely in every direction |
 | `overhang` | 45 | `test_overhangs`: fins 45 to 75 degrees from vertical, a convex R6 round (on the P1S and the U1) | up to the steepest fin that prints clean on both printers; every round and the step to the decks get rounder with it |
-| `slide_fit` (`deck_gap`, `seam_fit`) | 0.25 a side | `test_rings`: rings 0.2 / 0.3 / 0.4 / 0.5 a side over the 5.0 `test_column` | the smallest ring that slides on the column by hand without force or rocking (0.15 was too tight on the old insert's ring) |
+| `slide_fit` (`seam_fit`) | 0.25 a side | `test_rings`: rings 0.2 / 0.3 / 0.4 / 0.5 a side over the 5.0 `test_column` | the smallest ring that slides on the column by hand without force or rocking (0.15 was too tight on the old insert's ring) |
+| `grip_reach` (2026-10-22) | 0.2: the grip ribs 0.05 short of the skirts | the case itself (and the seam coupons): the tub should press on by hand and stay on when the case is lifted by the top piece | towards 0.25 (touching) if the tub falls off; towards 0.1 if it won't go on |
 
 `slide_fit` is the one parameter for a printed part sliding on a printed part: the tub's tongue
-inside the skirts (`seam_fit`) and each deck's wedge in the top piece's undercut (`deck_gap`) take
-it. Raising it from 0.15 changed no position the board reads (`positions.json` is the same): the
-deck's wedge now stops 0.25 short of the undercut (it reaches 0.95 under the top piece, was 1.05),
-the top piece's wall behind the undercut is as thick as before (`step_wall_t` 1.35, which used to be
-written 1.2 + `deck_gap`), and the tub's tongue is 0.75 thick (was 0.85).
+inside the skirts and the keys in their pockets take it (`seam_fit`). The decks' wedges took it too
+until 2026-10-22 (`deck_gap`); now the posts hold each deck on its wedges, with no clearance there,
+and `deck_gap` is 0.15 on the joint's straight faces. Raising it from 0.15 to 0.25 (2026-10-21)
+changed no position the board reads (`positions.json` is the same): the top piece's wall behind the
+undercut kept its thickness (`step_wall_t` 1.35, which used to be written 1.2 + `deck_gap`), and the
+tub's tongue became 0.75 thick (was 0.85).
 
 ## Alternatives considered
 
@@ -336,15 +471,38 @@ written 1.2 + `deck_gap`), and the tub's tongue is 0.75 thick (was 0.85).
   tab and a thin tub wall above the round. The round's end is the natural line.
 - **The tub's skin over the top's tongue** (the old way round): the tub would form the outer lip,
   which item 10 rules out.
+- **A lap or a tongue in a groove in the skirts at the side joints** (2026-10-22, "The joints"): the
+  skirt there is 1.0 thick, 0.7 near its top; halves of 0.5 or thirds of 0.33 print as one line or
+  not at all. The tub's tongue runs on behind the joint instead, so both skirts lap the same wall,
+  and a grip rib across the joint presses both skirts' ends out to one line.
+- **Keys for the decks on the side walls, as bumps on the tongue's inside into the plates**: anything
+  on the tub inboard of its wall passes the board's edge as the tub goes on, with the board not yet
+  centred (it lies on the bosses). Only the corners, where the board's r 5.5 corner leaves 2 mm, have
+  room: the posts.
+- **Pushing each deck past its place onto the step, to close the seams**: the openings moved 0.15
+  off the buttons, and `check_buttons.py` went from its 11 known failures to 21 (the silicone and
+  the caps against the deck). The decks stay where they were, on their wedges, the seams 0.15.
+- **A 3.0 tongue under the decks too**: the decks' round leaves room for 2.5 (the plate 0.4 over the
+  groove at 3.0, and the tongue's lean within 0.05 of the board's edge). **The seam lower, for more
+  overlap:** the skirts' edges would lie on the back's round, and the tongue's top, not the seam,
+  is the limit.
+- **Shoulders and the decks' notches back** (for the hold): neither kit Alex printed had them (they
+  lived from 99e3f04 to c955631), so they weren't what held 4df3f96; the screws stay inward.
 
 ## Open questions
 
 1. **The overhang limit** (`overhang`, 45, a guess): the `6_tests` ladder on both printers. A higher limit
    makes the step and every edge rounder in one line.
-2. **The deck's wedge and its clearance** (`deck_gap` = `slide_fit` 0.25, a guess; `wedge_w` 1.2): the `0_buttons_end`
-   coupons (top piece end + deck) show whether a deck drops in, centres and sits without rocking, and
-   whether the seam in the step's crease looks right.
-3. **The seam** (`seam_fit` = `slide_fit` 0.25, a guess; `seam_gap` 0.1, `tongue_h` 1.5): the seam coupons.
+2. **The deck's wedge and its clearance** (`deck_gap` 0.15 on the straight faces, none on the
+   wedges along the case; `wedge_w` 1.2): the `0_buttons_end` coupons (top piece end + deck) show
+   whether a deck drops in over the spine and sits on its wedges, and whether the seam in the
+   step's crease looks right. If it binds over the spine, `deck_gap` back towards 0.25.
+3. **The seam and the joints** (`seam_fit` = `slide_fit` 0.25, `grip_reach` 0.2, guesses; `seam_gap`
+   0.1, `tongue_h` 3.0, `deck_tongue_h` 2.5): the seam coupons (a tab and a grip rib on them) and the
+   case. Whether the tub presses on by hand, stays on when the case is lifted by the top piece and
+   eases off again; whether the corner posts push the decks onto their wedges (each deck's seams
+   even, no rocking) without forcing the tub's corners out. Too tight at the posts: take 0.1 off
+   their inner faces (`post_c`).
 4. **J3's range** (`tip_range` 22.5 to 25) is an estimate; a real panel's folded FPC settles it.
 5. **The speaker in its pocket:** stuck by its front ring to the pocket's ceiling, its back stands
    0.45 (worst case) to 0.75 off the board. If Alex would rather tape it to the board (as the board
@@ -356,9 +514,17 @@ written 1.2 + `deck_gap`), and the tub's tongue is 0.75 thick (was 0.85).
    The speaker's lead exit is unknown here (assumed at its seat-1 end).
 7. The screw columns: no column passes through another printed part any more, so the `6_tests`
    rings only matter if one ever does again.
+8. **The board as the tub goes on:** the tongue's leaning top passes 0.25 outside the board's edge
+   (under the decks; 0.5 elsewhere) before the crush ribs centre the board, so the board must lie
+   within about 0.5 of centred on its bosses (the tongue's chamfered tip and the posts' lead-ins
+   guide it in that far).
 
 ## Images
 
 Rendered from the parts of this commit (`case/images/`; the session scratchpad has the sources):
 the outside views with OpenSCAD from the assembled STLs, the sections with matplotlib from
-`trimesh` cuts of the same parts (the cell nominal, the speaker 3.5 tall).
+`trimesh` cuts of the same parts (the cell nominal, the speaker 3.5 tall). The joints' images
+(2026-10-22: `joint_outside`, `section_seam_zoom`, `section_joint_zoom`, `section_tongue_end`,
+`section_key_top`, `section_key_post`, `section_side_joint`, `section_usb_wall`, `exploded_keys`)
+are of 7e9d7e1's parts, the board drawn as its outline's slab; the other sections are older and
+still show the 1.5 tongue at their walls.

@@ -29,7 +29,7 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 | USB | one USB-C, charge + data, SRV05-4 ESD referenced to 3V3, 27 ohm 0402 series in Raspberry Pi's spots | one Extended part ($3 an order): the 27 ohm 0402 (C25100; 22 ohm until the 2026-10-05 pin review, and a 27 ohm 0603 doesn't fit the copied layout) and the ESD array was the second from 2026-10-07 (ProTek's Preferred SRV05-4, C85364, ran out, so U1 became Semtech's Extended SRV05-4.TCT, C13612) until 2026-10-20, when U1 became hongjiacheng's Preferred SRV05-4A (C20615829, Alex): same pinout, no setup fee |
 | Debug | JST SH SWD and UART (Raspberry Pi debug pinout), BOOTSEL and RESET under pinholes in the top piece; SWD again on six 2.54 mm pogo pads on the back (J7: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND); probe pads on every rail (VBUS, VSYS, VBAT, 3V3, 1V1), the panel's SPI, BL_REF, PWR_EN, LS_GATE, AMP_SHDN and two GND clips; cut jumpers isolate the 3V3 regulator, backlight, amplifier, panel logic and cell (JP1-JP5) | no LEDs (approved); pads and jumpers added after Alex's debug-readiness review (2026-10-19) |
 | Board | 2 layers, 1.6 mm, ENIG, every hole >= 0.3 mm; parts on the top only | $3.34 a board at 10, against $9.74 for the 4-layer one with 0.25 mm holes |
-| Case | 77.4 x 132.7 x 9.55 mm (7.7 at the decks; 2026-10-22, for the board with the cell in it): a top piece and two decks (one part) curve over the sides and meet the tub (the back) flush at one seam low on the walls, over the tub's tongue; each deck seats into the top piece from behind on a 45 degree wedge; built upside down; six M2 x 6 screws from the back through the board, four into the top piece beside the glass (no shoulders since 2026-10-22) and one into each deck; no hooks; crush ribs on the tub centre the board; the cell in a pocket in the tub's floor, the speaker under a grille in the right bezel; every part prints without supports, every edge and the step to each deck an arc ending in a chamfer at `overhang` (45 until the 6_tests ladder) (case/SHELL.md, 2026-10-21); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21); FDM at home, about $1.50 of filament |
+| Case | 77.4 x 132.7 x 9.55 mm (7.7 at the decks; 2026-10-22, for the board with the cell in it): a top piece and two decks (one part) curve over the sides and meet the tub (the back) flush at one seam low on the walls, over the tub's tongue (3.0 tall, 2.5 at the decks, since 2026-10-22), which keys them: four tabs into the top piece, a post in each corner that pushes a deck onto its wedges, grip ribs, so the parts hold together before the screws; each deck seats into the top piece from behind on a 45 degree wedge; built upside down; six M2 x 6 screws from the back through the board, four into the top piece beside the glass (no shoulders since 2026-10-22) and one into each deck; no hooks; crush ribs on the tub centre the board; the cell in a pocket in the tub's floor, the speaker under a grille in the right bezel; every part prints without supports, every edge and the step to each deck an arc ending in a chamfer at `overhang` (45 until the 6_tests ladder) (case/SHELL.md, 2026-10-21); the USB-C opening's lower half in a tab of the tub; the button openings, lips and walls from Alex's DS Lite faceplate (2026-10-21), keyed by tab and notches; no lens, light pipes or power cap | Alex's notes 10, 13, 14 and 15 (2026-10-21); FDM at home, about $1.50 of filament |
 | Schematic | generated from `board/design.py` by `tools/build_sch.py`; checked by `check_netlist.py` and ERC | the data is the source of truth |
 
 ## Phases
@@ -60,6 +60,19 @@ Next:
       opening (2 mm up), the debug pinholes and J5/J6 follow. check_fit passes. The speaker stays in
       the top piece: J4 is plugged with the board nearly in place and unplugged before the parts
       come apart (its 35 mm leads: 14 mm round H3's boss closed, about 24 with room to plug in)
+- [x] The joints, after Alex printed the shell (2026-10-22: "the top pieces need to flow better and
+      interlock", a taller inner wall, tabs on the tub wall; and it needed the screws to fit together
+      at all, where 4df3f96's held before them). What got looser: only the board and its crush ribs
+      (4df3f96's board sat inside the skirts, pressed into ribs on the top piece and both decks, and
+      tied them together; the fits, the wedges and the 1.5 tongue were the same). Now the tongue is
+      3.0 (2.5 at the decks, leaning in under their round; it was 1.5), with four tabs into pockets in
+      the top piece, the top piece's skirt keyed over the USB-C notch, a post in each corner that
+      pushes a deck onto its wedges (no clearance there; `deck_gap` 0.15 on the straight faces), and
+      twelve grip ribs 0.05 short of the skirts (one across each side joint, so the skirts lie flush).
+      positions.json unchanged, check_buttons the same 11 known failures, check_fit passes, every
+      part manifold and support-free (case/SHELL.md, "The joints"). To check on the next print: the
+      tub presses on, holds the case together lifted by the top piece, and eases off; the decks sit
+      on their wedges; `grip_reach` (GUESS)
 - [x] Row 4, metal snap domes under Start/Select: the board has them (SW20-SW23); the case has
       `ss_metal_dome` and `ss_plunger_gap` and two asserts (the dome fits the pad's well; the
       plunger rests clear of the apex). `ss_lift` stays 0.35 on the assumed 0.36 plunger height.
@@ -230,6 +243,7 @@ Housekeeping:
   top has a recess for the cap's stem; the gap under the nub; the caps' flange thickness; and the
   DS Lite shell's clover (10.45 across one opening, wall 1.8 thick?)
 - An ER-TFT024IPS-3 against its drawing: outline, where its folded FPC's tip lands (the case keeps 22.5 to 25 mm in from the seat-1 edge clear), that it reaches J3 with a little slack, and which end contact 1 lands on
-- A printed top piece, decks and tub: a deck dropping onto its wedges, the seam's fit
+- A printed top piece, decks and tub: a deck dropping onto its wedges, the seam's fit, the grip
+  ribs' hold (`grip_reach`) and the corner posts' push
 - The 403450 cell: length with its protection board, plug polarity
 

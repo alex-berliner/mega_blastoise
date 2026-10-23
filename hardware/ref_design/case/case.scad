@@ -848,7 +848,8 @@ module post_notch(sx, sy) scale([sx, sy, 1]) intersection() {
 // hold each part on the tub until the screws go in and centre it across the case, so the parts' sides
 // line up. Two on each side of the top piece and one on each side of each deck, and one across each
 // side joint (2.0 wide, on both skirts' ends, so the two lie flush). [side, y, the face's height, width]
-grip_reach = seam_fit - 0.05;  grip_w = 1.0;
+grip_reach = seam_fit - 0.05;  grip_w = 1.0;                 // GUESS (2026-10-22): the first print of these joints
+                                                        // settles it (case/SHELL.md, "Best guesses")
 grips = concat([[1, 25, case_h], [1, -25, case_h], [-1, 25, case_h], [-1, -25, case_h]],
                [for (sx = [-1, 1], sy = [-1, 1]) [sx, sy * joint_y, deck_face, 2.0]],
                [for (sx = [-1, 1], sy = [-1, 1]) [sx, sy * 52, deck_face]]);

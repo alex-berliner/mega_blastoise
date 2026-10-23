@@ -2,7 +2,8 @@
 
 Everything to print for the reference design's case and fit kit, generated from `case/case.scad`
 on the current design (2026-10-22: the 77.4 x 132.7 x 9.55 mm shell for the board with the cell in
-it, built upside down; see `case/SHELL.md`): the tub, the top piece and two decks.
+it, built upside down, its parts keyed to hold together before the screws; see `case/SHELL.md`):
+the tub, the top piece and two decks.
 
 ## The projects
 
@@ -21,7 +22,7 @@ Supports are per part, not per plate: only `board_mock` and `coupon_usb_board` g
 | `2_buttons_quick.3mf` | **Start here (about an hour).** `tune_openings` (three D-pad opening sizes, the keyed A/B/X/Y cluster, three hole sizes), and the D-pad, A/B/X/Y and Start/Select stacks: a board slice each and a deck slice at the 1.75 mm silicone height | first |
 | `3_buttons_heights.3mf` | the same three deck slices at 1.6 and 1.9 mm silicone height | if the 1.75 mm slices don't sit right |
 | `0_buttons_end.3mf` | Seat 1's whole end: tub, board mock (to place the silicone on), the top piece's end (the step, the spine, the undercut), seat 1's deck | any time; it also tests the deck's joint |
-| `4_fit_coupons.3mf` | USB-C opening (the tub's tab, the top piece's skirt, the board's tab with a receptacle stand-in), a stretch of the seam (the tub's tongue under the top piece's skirt, a crush rib), the top piece's panel frame, and seat 1's whole end | second |
+| `4_fit_coupons.3mf` | USB-C opening (the tub's tab, the top piece's skirt, the board's tab with a receptacle stand-in), a stretch of the seam (the tub's 3 mm tongue under the top piece's skirt, with a key tab, a grip rib and a crush rib), the top piece's panel frame, and seat 1's whole end | second |
 | `1_case.3mf` | the tub, the top piece, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
 | `1_case_decks.3mf` | the two decks (the same part, one for each end) | with `1_case` |
 | `6_tests.3mf` | **Questions for the shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and a top piece screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
@@ -50,25 +51,28 @@ real case, each in its print pose.
 the speaker's grille in the right bezel, the sides; the four side screws go into it beside the glass)
 and the two decks (the button faces) curve over the sides and meet the tub flush at one seam low on
 the walls; each deck seats into the top piece from behind on a 45 degree wedge and has its own
-screw. The cell sits in a hole in the board, its bottom in a pocket in the tub's floor. Everything
-is built upside down, and nothing needs supports.
+screw. The tub's tongue stands 3 mm up inside the skirts (2.5 at the decks) and keys them: four
+tabs into pockets in the top piece, a post in each corner that pushes a deck onto its wedges, and
+grip ribs, so the case holds together before the screws go in. The cell sits in a hole in the
+board, its bottom in a pocket in the tub's floor. Everything is built upside down, and nothing
+needs supports.
 
 The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 5.7 | `1_case` (56.4 g, 1 h 39 min with the top piece, the board mock and the dummies), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; its walls 6.7 to 7.2) | `1_case` (56.6 g, 1 h 41 min with the top piece, the board mock and the dummies), `5_unit` |
 | `top.stl` | 77.4 x 92.5 x 5.75 | `1_case`, `5_unit` |
-| `deck.stl` (print two) | 77.4 x 32.9 x 3.9 | `1_case_decks` (8.9 g, 22 min for both), `5_unit` |
+| `deck.stl` (print two) | 77.4 x 33.2 x 3.9 | `1_case_decks` (8.6 g, 22 min for both), `5_unit` |
 
-`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.1 g and 2 h 00 min.
+`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.2 g and 2 h 03 min.
 
 To assemble:
 1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
    front foam ring stuck to the pocket's ceiling.
 2. Each deck face down into its end of the top piece from behind: it drops onto its wedges and sits
-   flat. Caps into the decks from behind (tabs into the slots, notches onto the ribs), silicone on
-   them.
+   flat (it may settle a little back along them; the tub pushes it home). Caps into the decks from
+   behind (tabs into the slots, notches onto the ribs), silicone on them.
 3. Panel glass down into the top piece's pocket on its tape.
 4. The cell into the tub's floor pocket on double-sided tape, against the pocket's right wall.
 5. Board on edge at seat 1's end: the FPC into J3 (close the latch), the cell's plug into J2.
@@ -76,15 +80,20 @@ To assemble:
    right edge, under the speaker; its mouth faces the glass): the speaker stays in the top piece, and
    its 35 mm leads reach J4 only when the board is nearly in place. Lay the leads round the screw boss
    between the speaker and J4, on the glass's side, then the board down onto the bosses.
-7. Tub over it all (the cell drops into the board's hole, the tub's crush ribs centre the board).
-   Six M2 x 6 from the back, snug.
+7. Tub over it all, straight down, the board lying centred on its bosses (the cell drops into the
+   board's hole, the tub's crush ribs centre the board, the tongue slides 3 mm into the skirts, its
+   tabs into the top piece's pockets, the corner posts push each deck onto its wedges). Press it
+   down all round until the seam is an even line: it grips, and the case now holds together on its
+   own. Six M2 x 6 from the back, snug: they lock it.
 
-Opening it: screws out, tub off, then lift the board only a little and unplug J4 before it comes
-away: the top piece comes off with the speaker stuck in it.
+Opening it: screws out, ease the tub off (it grips: straight up, an end at a time), then lift the
+board only a little and unplug J4 before it comes away: the top piece comes off with the speaker
+stuck in it.
 
-Check that each deck drops in without force and doesn't rock, that the seam round the case is an
-even thin line with the outsides flush, and that the seam in the crease at each step's foot looks
-right.
+Check that each deck drops in without force; that with the tub on and no screws the case lifts by
+the top piece without the tub or a deck coming loose and nothing rocks; that the tub still goes on
+and comes off by hand; that the seam round the case is an even thin line with the outsides flush;
+and that the seams at each step's foot and down the sides are an even 0.15.
 
 ## What to check, and what to change
 
@@ -131,12 +140,14 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   skirt's notch). The opening should hug the receptacle stand-in with a small even gap (`usb_gap`
   0.25), and a real plug's overmold should sit flat on the case.
 - Seam: lower `coupon_seam_top` over `coupon_seam_tub`: the skirt slides over the tongue without
-  force and sits flush with the tub (`seam_fit`, `seam_gap`).
+  force, the key tab into its pocket, and sits flush with the tub (`seam_fit`, `seam_gap`); the grip
+  rib should hold the two together lightly (`grip_reach`: raise it if they fall apart, lower it if
+  they won't go together by hand).
 - Panel frame: the real panel (or the dummy) drops in glass down with a little play, the active
   area centred in the window (`panel_fit`, `window_margin`).
 - Seat 1's end, built upside down: the top coupon face down, the deck into it (it should drop onto
-  its wedges and sit without rocking: `deck_gap`), caps and silicone, the board mock face down, the
-  tub coupon.
+  its wedges over the spine without force: `deck_gap`), caps and silicone, the board mock face down,
+  the tub coupon: its corner posts push the deck onto its wedges.
 - Speaker (in `1_case`): the dummy (or the real speaker) drops face down into the top piece's
   pocket over the grille without play to speak of, and the cell dummy into the board mock's hole
   and the tub's pocket.
