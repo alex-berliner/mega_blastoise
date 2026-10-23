@@ -934,7 +934,10 @@ fn apply_effect(
             // Remember what was there. The copy is a `virtual` slot in the
             // sim: leaving the field puts the base slots back, so the mon
             // walks on knowing Mimic again rather than the borrowed move.
-            if a.mimic_backup.is_none() {
+            // A TRANSFORMED mon's slots are already borrowed copies, and the
+            // transform's own snapshot puts the real ones back, so a Mimic
+            // made under it leaves nothing extra to restore.
+            if a.mimic_backup.is_none() && !a.volatile.has(Volatile::TRANSFORMED) {
                 a.mimic_backup = Some((
                     mimic_slot as u8,
                     a.moves[mimic_slot].move_id,
@@ -1064,17 +1067,15 @@ fn apply_effect(
                 && sides[attacker_side].active().volatile.multi_turn_move == mv.id
                 && sides[defender_side].active().volatile.has(Volatile::TRAPPED);
             if continuing {
-                // Auto-hit, repeating the FIRST hit's damage.
+                // Auto-hit, repeating the FIRST hit's damage. A Ghost held by
+                // a Normal trap takes 0 again, and that is still a hit: the
+                // damage line prints and Rage builds off the Hit event.
                 let dmg = sides[attacker_side].active().volatile.stored_damage;
-                if dmg > 0 {
-                    let res = deal_damage(field, sides, defender_side, dmg, log);
-                    // A hit the Substitute ate never reaches the Hit event, and Rage's
-                    // build is an `onHit` on the target's own volatile — so it earns
-                    // nothing off a sub.
-                    land_hit(&mut outcome, res, dmg, sides, defender_side, log);
-                } else {
-                    outcome.hit = true;
-                }
+                let res = deal_damage(field, sides, defender_side, dmg, log);
+                // A hit the Substitute ate never reaches the Hit event, and Rage's
+                // build is an `onHit` on the target's own volatile, so it earns
+                // nothing off a sub.
+                land_hit(&mut outcome, res, dmg, sides, defender_side, log);
                 let a = sides[attacker_side].active_mut();
                 a.volatile.multi_turn_turns = a.volatile.multi_turn_turns.saturating_sub(1);
                 if a.volatile.multi_turn_turns == 0 || outcome.fainted_target {
@@ -1128,6 +1129,12 @@ fn apply_effect(
                             rage_build(sides, defender_side, log);
                         }
                     }
+                } else {
+                    // The Ghost's 0 is a number, not a miss: `damage(0)` prints
+                    // the line, zeroes the last-damage register and runs the
+                    // Hit event, so a raging Ghost builds off it.
+                    let res = deal_damage(field, sides, defender_side, 0, log);
+                    land_hit(&mut outcome, res, 0, sides, defender_side, log);
                 }
                 if !outcome.fainted_target {
                     let total = match rng.forced_hits() {
@@ -1249,9 +1256,13 @@ fn apply_effect(
             // Thrash's lock was handled pre-accuracy; Rage's is the sim's
             // self-volatile — it only arms once the move actually lands
             // (a first-use miss leaves the user free, and paying PP again).
+            // Self effects are skipped when the hit BREAKS a Substitute
+            // (`doSelf` in the sim's moveHit), so a Rage that pops a sub
+            // leaves its user free as well.
             outcome = damage_step(rng, field, sides, attacker_side, mv, false, None, log, outcome);
             if mv.effect_kind == Rage
                 && outcome.hit
+                && !outcome.sub_broke
                 && !sides[attacker_side].active().volatile.has(Volatile::RAGE)
             {
                 let a = sides[attacker_side].active_mut();
