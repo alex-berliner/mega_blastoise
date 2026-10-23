@@ -1238,6 +1238,28 @@ where
     legend(d, &["A REMATCH", "? BATTLE LOG"]);
 }
 
+/// Draw end screen. Same legend as the result screen; both last mons'
+/// sprites flank the DRAW! title the way the result screen flanks its own
+/// sprite. Same panel for both seats, decided in core.
+pub fn render_draw<D>(d: &mut D, ctx: &HalfCtx<'_>)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    play_frame(d, ctx.seat);
+    text_aa_center_font(d, "DRAW!", CX, TOP + 8, &FONT_8X13, C_INK, C_BG);
+    // Both mons as front sprites, the recap owns the screen, so they both
+    // get the bigger 88-px box rather than floating thin in the half.
+    if let Some(spr) = mon_sprite_color(ctx.own_name) {
+        // Own on the seat-side (closest to the seat reading it).
+        draw_sprite_fit(d, spr, LEFT - 4, TOP + 34, 88, 88, false, true);
+    }
+    if let Some(spr) = mon_sprite_color(ctx.foe_name) {
+        // Foe on the rival-side.
+        draw_sprite_fit(d, spr, RIGHT - 84, TOP + 34, 88, 88, false, true);
+    }
+    legend(d, &["A REMATCH", "? BATTLE LOG"]);
+}
+
 /// Full description for the cursor's move — what `?` opens.
 pub fn render_move_info<D>(d: &mut D, mv: &MoveSlot, desc: &str, seat: u8)
 where
@@ -1740,6 +1762,7 @@ mod frame_tests {
         // two. Its constraint is the mon band, not the border.
         check("render_lobby", |f| render_lobby(f, false, false, 1));
         check("render_result", |f| render_result(f, "WINNER!", &c));
+        check("render_draw", |f| render_draw(f, &c));
         check("render_invalid", |f| render_invalid(f, InvalidReason::NoPp, 1));
         check("render_move_info", |f| {
             render_move_info(

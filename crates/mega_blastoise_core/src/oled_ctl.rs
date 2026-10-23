@@ -55,6 +55,10 @@ pub enum OledCmd {
     Faint { player: u8 },
     /// Battle ended — winner is 1 (p1) or 2 (p2); 0 means tie.
     Win { winner: u8 },
+    /// End-of-battle draw. One Draw screen on BOTH displays, the same way
+    /// `|tie|` works in the PS protocol: title DRAW, both last mons'
+    /// sprites, the same legend as the result screen.
+    ShowDraw,
     /// Long-press detail view for a move slot (0-based). `page` 0 = stats;
     /// higher pages show the move's description text (the renderer wraps
     /// the counter around the real page count).
@@ -145,7 +149,7 @@ impl OledCmd {
             | OledCmd::ShowOpponentMon { player }
             | OledCmd::ShowSentOut { player, .. }
             | OledCmd::ShowMoveUsed { player, .. } => *player,
-            OledCmd::Win { .. } | OledCmd::ShowQr | OledCmd::ShowTutorial { .. } => 0,
+            OledCmd::Win { .. } | OledCmd::ShowDraw | OledCmd::ShowQr | OledCmd::ShowTutorial { .. } => 0,
         }
     }
 }
@@ -273,7 +277,10 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
             cmds.push(OledCmd::Win { winner: BoardEvent::win_player_num(side) });
         }
         BoardEvent::Tie => {
-            cmds.push(OledCmd::Win { winner: 0 });
+            // |tie| becomes the Draw end screen, ONE variant distinct from
+            // Win so a host mirror can tell them apart and `OledController`
+            // can decide both seats' contents from one place.
+            cmds.push(OledCmd::ShowDraw);
         }
         BoardEvent::Move { user, name, player_id } => {
             // "X used MOVE!" shows the attacker's sprite with the move's
@@ -362,6 +369,9 @@ pub enum Screen<'a> {
     Stats { slot: &'a PartySlotData, page: u8 },
     EventText(&'a str),
     Win(&'a str),
+    /// End-of-battle draw. Names of BOTH last mons (each seat's own and the
+    /// opponent's), so the renderer can paint both sprites under one title.
+    Draw { own_name: &'a str, foe_name: &'a str },
     Waiting { mon: &'a str, bob: bool, spd: SpeedCmp },
     WaitingForOpponent { mon: &'a str, bob: bool },
     Switch(&'a [PartySlotData]),
@@ -420,6 +430,7 @@ impl Screen<'_> {
             Screen::Stats { .. } => "STATS",
             Screen::EventText(_) => "EVENT_TEXT",
             Screen::Win(_) => "WIN",
+            Screen::Draw { .. } => "DRAW",
             Screen::Waiting { .. } => "LOCKED_IN",
             Screen::WaitingForOpponent { .. } => "WAIT_OPPONENT",
             Screen::Switch(_) => "FORCED_SWITCH",
@@ -454,6 +465,10 @@ where
         Screen::Stats { slot, .. } => render_pokemon_stats(display, slot),
         Screen::EventText(text) => render_event_text(display, text),
         Screen::Win(msg) => render_win_screen(display, msg),
+        // The colour renderer paints the Draw screen; the OLED only
+        // shows a "DRAW!" line (the device-side recap), so seat-2 still
+        // reads a real recap from the recoloured draw function.
+        Screen::Draw { .. } => render_win_screen(display, "DRAW!"),
         Screen::Waiting { mon, bob, spd } => {
             render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to cancel", *spd)
         }
@@ -508,6 +523,7 @@ enum View {
     Stats { team_idx: u8, page: u8 },
     EventFlash,
     Win,
+    Draw,
     Waiting,
     WaitingForOpponent,
     Switch,
@@ -755,6 +771,15 @@ impl OledController {
                 self.p2.view = View::Win;
                 OledRedraw::Both
             }
+            OledCmd::ShowDraw => {
+                // Both seats go to Draw together; the screen() below picks
+                // EACH seat's own mon name plus the opponent's from the
+                // controller's last-known active-mon slots, no payload
+                // needed on the command itself.
+                self.p1.view = View::Draw;
+                self.p2.view = View::Draw;
+                OledRedraw::Both
+            }
             OledCmd::ShowMoveDetail { slot, page, .. } => {
                 let p = self.player_mut(player);
                 if (slot as usize) < p.moves.len() {
@@ -945,6 +970,22 @@ impl OledController {
             View::Win => {
                 let (msg1, msg2) = BoardEvent::win_messages(self.winner);
                 Screen::Win(if player == 1 { msg1 } else { msg2 })
+            }
+            View::Draw => {
+                // Both seats see the same screen content. Each seat reads
+                // its own mon as "own" and the opponent as "foe" so the
+                // sprites frame the title the way the result screen frames
+                // its own. The names are the last-known active mon names
+                // tracked on every ActiveMon / Faint command; we read the
+                // raw name (NOT `battle_mon`, which would say "FAINTED"
+                // after a battlefield KO and wipe the actual species off
+                // the recap) so the draw shows whichever mon was standing,
+                // not whichever seat lost a fight.
+                let foe = if player == 1 { &self.p2 } else { &self.p1 };
+                Screen::Draw {
+                    own_name: p.name_str(),
+                    foe_name: foe.name_str(),
+                }
             }
             View::Waiting => Screen::Waiting { mon: p.battle_mon(), bob: p.bob_up, spd },
             View::WaitingForOpponent => {

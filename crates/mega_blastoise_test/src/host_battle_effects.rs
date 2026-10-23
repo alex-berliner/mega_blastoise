@@ -122,8 +122,11 @@ impl BoardEffects for HostBattleEffects<'_> {
             }
 
             BoardEvent::Tie => {
+                // The Draw end screen is its own command, `Win { winner: 0 }`
+                // used to drive the show, but the new screen is distinct so a
+                // platform can tell them apart from the controller.
                 self.buzzer.win();
-                self.oled.win(0);
+                self.oled.draw();
                 self.led.win(0);
             }
 

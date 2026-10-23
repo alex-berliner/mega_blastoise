@@ -58,9 +58,10 @@ pub struct Battle<'a> {
     turn_count: u32,
 }
 
-/// Endless Battle Clause (format rule): hard cap on battle length. Pokémon
-/// Showdown ties at turn 1000; this API has no tie, so the side with the
-/// higher remaining-HP fraction wins (coin flip on an exact tie).
+/// Endless Battle Clause (format rule): hard cap on battle length. Pokemon
+/// Showdown ties every PS format at or after this point; this engine now
+/// matches that and emits a `tie` log line at the cap, replacing the old
+/// higher-HP-fraction tiebreak (which was itself a divergence from PS).
 const ENDLESS_BATTLE_TURN_CAP: u32 = 1000;
 
 pub type PublicCoreBattle<'a> = Battle<'a>;
@@ -446,9 +447,13 @@ impl<'a> Battle<'a> {
             // happened to drop.
             self.phase = Phase::AwaitSwitch;
         } else if self.no_progress_possible() || self.turn_count >= ENDLESS_BATTLE_TURN_CAP {
-            let w = self.endless_battle_winner();
-            self.winner = Some(w);
-            self.log.push_board(format!("win|side:{}", w));
+            // PS `maybeTriggerEndlessBattleClause` (sim/battle.ts): the no-progress
+            // case TIES for every gen <= 1, regardless of format, and the
+            // turn > 1000 cap is a hard tie in every format. Both are
+            // win()-with-no-side, which the host turns into a `tie|`
+            // log line, `winner` stays None because no side won.
+            self.winner = None;
+            self.log.push_board("tie".to_string());
             self.phase = Phase::Ended;
         } else {
             self.phase = Phase::Turn;
@@ -1005,30 +1010,6 @@ impl<'a> Battle<'a> {
             })
         };
         stuck(0) && stuck(1)
-    }
-
-    /// Endless Battle Clause resolution: higher remaining-HP fraction wins,
-    /// exact tie decided by the battle RNG (deterministic per seed).
-    fn endless_battle_winner(&mut self) -> u8 {
-        let totals = |side: &Side| -> (u64, u64) {
-            side.team.iter().filter(|m| !m.empty()).fold((0u64, 0u64), |(c, m), mon| {
-                (c + mon.hp_cur as u64, m + mon.hp_max as u64)
-            })
-        };
-        let (cur0, max0) = totals(&self.sides[0]);
-        let (cur1, max1) = totals(&self.sides[1]);
-        // Compare cur0/max0 vs cur1/max1 without floats.
-        let lhs = cur0 * max1.max(1);
-        let rhs = cur1 * max0.max(1);
-        if lhs > rhs {
-            0
-        } else if rhs > lhs {
-            1
-        } else if self.rng.coin() {
-            0
-        } else {
-            1
-        }
     }
 }
 

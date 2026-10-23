@@ -60,6 +60,13 @@ impl HostOled {
         self.apply(OledCmd::Win { winner });
     }
 
+    /// Draw end screen (both seats). Distinct from `win` so the controller's
+    /// screen name flips from "WIN" to "DRAW", that's how a host mirror can
+    /// tell them apart in a trace.
+    pub fn draw(&mut self) {
+        self.apply(OledCmd::ShowDraw);
+    }
+
     fn apply(&mut self, cmd: OledCmd) {
         let redraw = self.ctl.apply(cmd);
         if self.silent {

@@ -153,14 +153,28 @@ fn endless_battle_clause_caps_the_battle() {
     );
     let _ = drain(&mut b);
     let mut turns = 0u32;
+    let mut last_log: Vec<String> = Vec::new();
     while !b.ended() {
         turns += 1;
         assert!(turns <= 1005, "battle must end by the turn cap");
         b.set_player_choice("p1", "move 0").unwrap();
         b.set_player_choice("p2", "move 0").unwrap();
-        let _ = drain(&mut b);
+        last_log = drain(&mut b);
     }
     assert!(turns >= 999, "should have run up to the cap, ended at {turns}");
+    // At the turn cap, PS (`maybeTriggerEndlessBattleClause`) emits `tie|`
+    // with no side, not `win|side:N`. The old HP-tiebreak used to call a
+    // winner; P2-3 dropped it under the freeze of P0-1 to bring the engine
+    // into parity with PS, and the host now shows that signal as a Draw end
+    // screen.
+    assert!(
+        last_log.iter().any(|l| l == "tie"),
+        "turn-cap end must emit a `tie` line, got {last_log:?}"
+    );
+    assert!(
+        !last_log.iter().any(|l| l.starts_with("win|")),
+        "no side wins at the turn cap, got {last_log:?}"
+    );
 }
 
 #[test]
@@ -175,12 +189,25 @@ fn a_battle_that_cannot_progress_is_a_draw() {
     );
     let _ = drain(&mut b);
     let mut turns = 0u32;
+    let mut last_log: Vec<String> = Vec::new();
     while !b.ended() {
         turns += 1;
         assert!(turns < 100, "a battle that cannot progress must end early");
         b.set_player_choice("p1", "move 0").unwrap();
         b.set_player_choice("p2", "move 0").unwrap();
-        let _ = drain(&mut b);
+        last_log = drain(&mut b);
     }
     assert!(turns >= 10, "both Splash pools have to run out first, ended at {turns}");
+    // PS: `maybeTriggerEndlessBattleClause`'s `noProgressPossible` arm calls
+    // `this.tie()` (with no side) for every Gen <= 1 format. The old HP
+    // tiebreak used to pick a side; P2-3 dropped it to mirror PS, so what
+    // the host turns into a `BoardEvent::Tie` is a `tie|` log line.
+    assert!(
+        last_log.iter().any(|l| l == "tie"),
+        "no-progress end must emit a `tie` line, got {last_log:?}"
+    );
+    assert!(
+        !last_log.iter().any(|l| l.starts_with("win|")),
+        "no-progress end must not name a winner, got {last_log:?}"
+    );
 }
