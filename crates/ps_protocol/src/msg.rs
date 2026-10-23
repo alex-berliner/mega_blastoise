@@ -118,6 +118,14 @@ pub enum Msg {
     Player(SideId),
     /// `|teamsize|p1|N`
     TeamSize { side: SideId, size: u8 },
+    /// `|split|pN` written by [`crate::text::encode_msg`] before each pair of
+    /// HP-bearing lines (the secret line and the shared line, when they
+    /// differ). The decoder emits one of these between secret and shared
+    /// pairs the rebuild of PS's log, and the codec includes it for byte-exact
+    /// round-trip with the harness recordings. Not an end message a PS server
+    /// forwards to the public stream (the omniscient viewer only sees the
+    /// secret form).
+    Split(SideId),
     /// `|gen|N`
     Gen(u8),
     /// `|tier|[Gen 3] Custom Game` ([`FormatId::name`]).
@@ -291,6 +299,7 @@ impl Msg {
             Msg::GameType(_) => "gametype",
             Msg::Player(_) => "player",
             Msg::TeamSize { .. } => "teamsize",
+            Msg::Split(_) => "split",
             Msg::Gen(_) => "gen",
             Msg::Tier(_) => "tier",
             Msg::Rule(_) => "rule",

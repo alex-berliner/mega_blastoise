@@ -4,7 +4,7 @@
 //! `chooseMove`, `chooseSwitch`, `choosePass`), `sim/SIM-PROTOCOL.md`
 //! "Sending decisions", `data/rulesets.ts`, `config/formats.ts`.
 
-use crate::ident::SideId;
+pub use crate::ident::SideId;
 use crate::team::PackedTeam;
 use crate::{BoundedVec, Name};
 
