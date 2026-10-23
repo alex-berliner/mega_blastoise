@@ -202,6 +202,18 @@ fn fuzz_wide() -> bool {
     std::env::var("FUZZ_WIDE").is_ok_and(|v| v == "1" || v == "2")
 }
 
+/// Whether the reference died of its own internal assertion rather than
+/// refusing one of our choices. Showdown words those "shouldn't happen":
+/// gen 1's `commitChoices` throws "moveSlot is null which shouldn't happen"
+/// when a Transformed mon wakes on a slot index the copied foe never had.
+/// Past that point the reference has no answer to compare against, so the
+/// battle suites compare only the turns it did play.
+fn sim_crashed(got: &Value) -> bool {
+    got["errors"].as_array().is_some_and(|es| {
+        es.iter().any(|e| e.as_str().is_some_and(|s| s.contains("shouldn't happen")))
+    })
+}
+
 fn fuzz_wide_replace() -> bool {
     std::env::var("FUZZ_WIDE").is_ok_and(|v| v == "2")
 }
@@ -1627,6 +1639,7 @@ fn fuzz_gen3_battles() {
     }
     let results = showdown(&Value::Array(scenarios.clone()));
     let mut bad = 0;
+    let mut crashed = 0;
     for (i, ((battle, our_order, our_log, our_states), got)) in expected.iter().zip(&results).enumerate() {
         if got.get("error").is_some() {
             eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
@@ -1715,6 +1728,15 @@ fn fuzz_gen3_battles() {
                 }
             }
         }
+        // The reference crashed mid-battle: keep only what it did play.
+        if sim_crashed(got) {
+            diffs.retain(|d| d.starts_with("FIRST DIVERGENCE"));
+            if diffs.is_empty() {
+                crashed += 1;
+                eprintln!("[gen3-battles] case {i}: the sim crashed ({}); compared up to the crash", got["errors"]);
+                continue;
+            }
+        }
         let ok = diffs.is_empty();
         if !ok {
             let ours: Vec<String> = (0..2)
@@ -1747,6 +1769,9 @@ fn fuzz_gen3_battles() {
             eprintln!("  ours-log:\n{}", our_log.join("\n"));
             bad += 1;
         }
+    }
+    if crashed > 0 {
+        eprintln!("[gen3-battles] {crashed} cases where the sim crashed, compared up to the crash");
     }
     assert_eq!(bad, 0, "{bad} gen3 battle fuzz cases disagree — replay with the seed above");
 }
@@ -2118,6 +2143,7 @@ fn fuzz_gen1_battles() {
     }
     let results = showdown(&Value::Array(scenarios.clone()));
     let mut bad = 0;
+    let mut crashed = 0;
     for (i, ((battle, our_order, our_states, our_log), got)) in expected.iter().zip(&results).enumerate() {
         if got.get("error").is_some() {
             eprintln!("HARNESS ERROR case {i}: {got}\n  scenario: {}", scenarios[i]);
@@ -2212,6 +2238,15 @@ fn fuzz_gen1_battles() {
                 }
             }
         }
+        // The reference crashed mid-battle: keep only what it did play.
+        if sim_crashed(got) {
+            diffs.retain(|d| d.starts_with("FIRST DIVERGENCE"));
+            if diffs.is_empty() {
+                crashed += 1;
+                eprintln!("[gen1-battles] case {i}: the sim crashed ({}); compared up to the crash", got["errors"]);
+                continue;
+            }
+        }
         if !diffs.is_empty() {
             eprintln!(
                 "GEN1 BATTLE FUZZ MISMATCH case {i}:\n  diffs:\n    {}\n  scenario: {}\n  log: {}",
@@ -2222,6 +2257,9 @@ fn fuzz_gen1_battles() {
             eprintln!("  ours-log:\n{}", our_log.join("\n"));
             bad += 1;
         }
+    }
+    if crashed > 0 {
+        eprintln!("[gen1-battles] {crashed} cases where the sim crashed, compared up to the crash");
     }
     assert_eq!(bad, 0, "{bad} gen1 battle fuzz cases disagree — replay with the seed above");
 }
