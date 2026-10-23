@@ -1321,3 +1321,91 @@ fn a_transformed_mon_answers_with_the_hidden_power_it_wears() {
     assert_eq!(back.hidden_power, own.hidden_power, "the copy came off");
     assert_eq!(back.hidden_power_bp, own.hidden_power_bp);
 }
+
+/// The sim builds its turn out of `getMoves`, which greys out the last move
+/// of a mon under Torment and hands a mon with nothing usable left a
+/// Struggle. `beforeTurnMove` and the Pursuit volatile hang off the action as
+/// it was queued, so a pursuiter that was going to Struggle never arms one
+/// and there is nothing to intercept: the switch goes through untouched and
+/// the Struggle lands on the mon that came in.
+///
+/// The interception read the chosen SLOT instead of the action, so it fired
+/// anyway, at double power, on the mon on its way out.
+#[test]
+fn a_pursuiter_going_to_struggle_never_intercepts_the_switch() {
+    let mut b = Battle::new(
+        Side::new(alloc::vec![mon("houndoom", 50, &["pursuit"])]),
+        Side::new(alloc::vec![
+            mon("voltorb", 50, &["torment"]),
+            mon("chansey", 50, &["softboiled"]),
+        ]),
+        5,
+    );
+    b.step_with([Choice::Move(0), Choice::Move(0)], &scripted([PLAIN, PLAIN]));
+    assert!(b.sides[0].mon().tormented, "the Torment landed");
+    let leaving = b.sides[1].party[0].hp;
+    let arriving = b.sides[1].party[1].hp;
+    let events = b.step_with(
+        [Choice::Move(0), Choice::Switch(1)],
+        &scripted([PLAIN, PLAIN]),
+    );
+    let switched = events
+        .iter()
+        .position(|e| matches!(e, Event::Switched { side: 2, party_index: 1 }));
+    let struck = events
+        .iter()
+        .position(|e| matches!(e, Event::Damage { side: 2, .. }));
+    assert!(
+        struck.is_none() || switched < struck,
+        "nothing struck the field before the switch: {events:?}",
+    );
+    assert_eq!(
+        b.sides[1].party[0].hp,
+        leaving,
+        "the mon on its way out took no hit",
+    );
+    assert_eq!(b.sides[1].active, 1);
+    assert!(
+        b.sides[1].mon().hp < arriving,
+        "the Struggle went to the mon that came in"
+    );
+}
+
+/// Rage's volatile rides on `self.volatileStatus`, which the sim adds from
+/// `selfDrops` once the hit is done. That walk skips only a `false` target,
+/// and a Substitute NULLS its target rather than removing it from the list,
+/// so a Rage the doll swallowed still arms the volatile: the next hit the
+/// rager takes raises its Attack, exactly as one taken straight on the rager
+/// would have.
+///
+/// Reading the arming off the damage left the rager cold for a whole turn,
+/// and every hit it took after that came out a point low.
+#[test]
+fn a_rage_the_substitute_swallowed_still_arms_the_rager() {
+    let mut b = battle(
+        mon("tauros", 50, &["tackle", "rage"]),
+        mon("blissey", 50, &["substitute", "tackle"]),
+    );
+    assert!(b.sides[0].mon().spe > b.sides[1].mon().spe);
+    b.step_with(
+        [Choice::Move(0), Choice::Move(0)],
+        &scripted([PLAIN, PLAIN]),
+    );
+    assert!(b.sides[1].mon().sub_hp > 0, "the doll is up");
+    let events = b.step_with(
+        [Choice::Move(1), Choice::Move(1)],
+        &scripted([PLAIN, PLAIN]),
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, Event::SubDamage { side: 2, .. })),
+        "the Rage went into the doll: {events:?}",
+    );
+    assert!(b.sides[1].mon().sub_hp > 0, "and the doll is still standing");
+    assert_eq!(
+        b.sides[0].mon().stages[Stat::Atk as usize],
+        1,
+        "the hit that followed raised the rager's Attack",
+    );
+}

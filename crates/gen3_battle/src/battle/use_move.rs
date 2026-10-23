@@ -2569,6 +2569,16 @@ impl Battle {
                 break; // immune: later strikes land no better
             }
             connected = true;
+            // Rage's own rage state begins on a hit that connects, whether
+            // or not a Substitute ate it. The sim adds `self.volatileStatus`
+            // from `selfDrops`, which walks the target list and skips only a
+            // `false`: a Substitute nulls its target (`damage[i] ===
+            // HIT_SUBSTITUTE` sets `targets[i] = null`) but leaves it on the
+            // list, so the volatile still goes on and the next hit the rager
+            // takes raises its Attack.
+            if slot.entry.id == "rage" {
+                self.sides[side].mon_mut().raging = true;
+            }
 
             let eff = if powered == 0 {
                 100
@@ -2648,10 +2658,6 @@ impl Battle {
                 }
                 // A raging target's Attack climbs with every hit it takes.
                 self.rage_on_hit(foe, events);
-                // Rage's own rage state begins only once it actually lands.
-                if slot.entry.id == "rage" {
-                    self.sides[side].mon_mut().raging = true;
-                }
                 // The faint is NOT announced here. `faintMessages` runs at
                 // the end of the hit, after the secondaries and after the
                 // target has answered being hit — and announcing it early

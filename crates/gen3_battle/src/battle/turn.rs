@@ -143,7 +143,17 @@ impl Battle {
                     || m.rolling.is_some()
                     || m.bide.is_some()
             };
+            // Nor does it count when the request would have handed the mon
+            // Struggle. The sim builds its queue out of `getMoves`, which
+            // greys out the last move of a mon under Torment, a Disabled
+            // slot, a Taunted status move, a move the imprisoning foe knows
+            // and every move but a Choice lock, and answers a mon with no
+            // usable move at all with Struggle. `beforeTurnMove` and its
+            // Pursuit volatile hang off the action as queued, so a mon that
+            // was going to Struggle never arms one and there is nothing to
+            // intercept; it takes its own turn after the switch instead.
             let is_pursuit = !locked
+                && !self.struggles_at_choice(foe, mi)
                 && self.sides[foe]
                     .mon()
                     .moves
