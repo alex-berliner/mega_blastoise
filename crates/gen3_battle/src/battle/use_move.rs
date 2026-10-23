@@ -3504,8 +3504,18 @@ impl Battle {
         // The sim clamps the crash into [1, target's max HP / 2].
         let cap = (self.sides[foe].mon().max_hp / 2).max(1);
         let crash = ((would / 2) as u16).max(1).min(cap);
+        // The crash lands through `this.damage(..., source, source, move)`,
+        // so it runs the Damage event with the kick as its effect and Endure
+        // and Focus Band are both asked about the mon that missed, off its
+        // own seat. Its Substitute cannot swallow it.
+        let survives = self.survives_lethal(side, false);
         let user = self.sides[side].mon_mut();
-        let crash = crash.min(user.hp);
+        let cap = if survives {
+            user.hp.saturating_sub(1)
+        } else {
+            user.hp
+        };
+        let crash = crash.min(cap);
         user.hp -= crash;
         events.push(Event::Recoil {
             side: side as u8 + 1,

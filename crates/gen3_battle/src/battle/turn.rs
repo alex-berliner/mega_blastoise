@@ -642,7 +642,16 @@ impl Battle {
 
             // A Future Sight lands at the end of its third turn, computed from
             // the launcher's snapshot against the target now standing.
-            for side in 0..2 {
+            //
+            // Two of them land in the same residual are sorted by the SPEED OF
+            // THE MON IN THE SLOT EACH ONE AIMS AT, not by seat: the sim hangs
+            // the condition on the target's slot and finds it through that
+            // slot's mon, so `resolvePriority` hands the handler that mon's
+            // `getActionSpeed` and the residual's `speedSort` runs on it. The
+            // faster target's delayed hit lands first, which is what decides
+            // the battle when only one of the two knocks anything out.
+            let first = self.faster_side(scripted);
+            for side in [first, 1 - first] {
                 if self.over() {
                     break;
                 }
