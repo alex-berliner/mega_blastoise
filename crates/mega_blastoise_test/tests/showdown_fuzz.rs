@@ -1549,6 +1549,10 @@ fn fuzz_gen3_battles() {
             // the stream does not depend on whether anything fainted. Each
             // ask in the turn (Spikes can ask twice) reads its own byte.
             let replace_draw = if wide { [fz.next(), fz.next()] } else { [0, 0] };
+            // Who a Baton Pass brings in, drawn the same way but only at
+            // level 2, the one level where the engine asks for it: levels 0
+            // and 1 keep their streams.
+            let pass_draw = if wide_replace { [fz.next(), fz.next()] } else { [0, 0] };
             let seat_script = |v: &Value| SeatScript {
                 hit: v["hit"].as_bool().unwrap(),
                 crit: v["crit"].as_bool().unwrap(),
@@ -1566,6 +1570,7 @@ fn fuzz_gen3_battles() {
             };
             let mut events = battle.step_with(choices, &ts);
             let mut replaced: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
+            let mut passed: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
             let mut guard = 0;
             while wide_replace && !battle.over() && guard < 12 {
                 guard += 1;
@@ -1573,12 +1578,19 @@ fn fuzz_gen3_battles() {
                 if pending.iter().all(|p| p.is_none()) {
                     break;
                 }
+                let pass = battle.pending_pass();
                 let mut picks: [Option<usize>; 2] = [None, None];
                 for seat in 0..2 {
                     if let Some(live) = &pending[seat] {
-                        let byte = replace_draw[seat] >> (8 * (replaced[seat].len() % 8)) & 0xff;
+                        // A seat moves once a turn, so it passes at most once.
+                        let (draw, book) = if pass[seat] {
+                            (pass_draw[seat], &mut passed[seat])
+                        } else {
+                            (replace_draw[seat], &mut replaced[seat])
+                        };
+                        let byte = draw >> (8 * (book.len() % 8)) & 0xff;
                         let j = live[byte as usize % live.len()];
-                        replaced[seat].push(j);
+                        book.push(j);
                         picks[seat] = Some(j);
                     }
                 }
@@ -1587,6 +1599,7 @@ fn fuzz_gen3_battles() {
             if wide_replace {
                 for seat in 0..2 {
                     seats[seat]["replace"] = json!(replaced[seat]);
+                    seats[seat]["pass"] = json!(passed[seat]);
                 }
             }
             our_states.push(snapshot_of(&battle));

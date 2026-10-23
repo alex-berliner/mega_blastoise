@@ -532,7 +532,14 @@ impl Battle {
         })
     }
 
-    /// Answer a pending replacement for each waiting side. Both arrivals are
+    /// Which of the pending answers are a Baton Pass's target rather than a
+    /// faint's replacement. Both are asked and answered the same way.
+    pub fn pending_pass(&self) -> [bool; 2] {
+        [0, 1].map(|side| self.awaiting_pass[side] && self.pending_replacements()[side].is_some())
+    }
+
+    /// Answer a pending replacement (or Baton Pass target) for each waiting
+    /// side. Both arrivals are
     /// PLACED before either is greeted, for the same reason the automatic
     /// path does it that way: an Intimidate on one replacement has to cow the
     /// other replacement, which is already standing there.
@@ -549,6 +556,14 @@ impl Battle {
                 continue;
             };
             self.awaiting_replacement[side] = false;
+            arrived[side] = true;
+            // A Baton Pass target: the passer is still standing there and
+            // leaves the way the pass makes it leave.
+            if self.awaiting_pass[side] {
+                self.awaiting_pass[side] = false;
+                self.baton_pass_in(side, next, events);
+                continue;
+            }
             self.sides[side].mon_mut().status = None;
             let slot_item = self.hand_slot_item_over(side);
             self.sides[side].reorder_for_switch(next);
@@ -558,7 +573,6 @@ impl Battle {
                 side: side as u8 + 1,
                 party_index: next,
             });
-            arrived[side] = true;
         }
         let first = self.faster_side(true);
         for side in [first, 1 - first] {

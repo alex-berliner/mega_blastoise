@@ -252,7 +252,84 @@ impl Battle {
         for side in 0..2 {
             cancelled[side] = pursued[side] || already_down;
         }
-        for side in [first, 1 - first] {
+        let rest = TurnRest::Moves {
+            from: 0,
+            first: first as u8,
+            choices,
+            cancelled,
+        };
+        self.finish_turn(rest, *script, &mut events);
+        events
+    }
+
+    /// The rest of a turn, from `rest` on. A replacement the player has to
+    /// choose STOPS it there: in this era the sim checks for faints at every
+    /// action boundary (`checkFainted` when the next action is a move or the
+    /// residual) and asks for the switch on the spot, and `commitChoices`
+    /// queues the answer AHEAD of what was left of the turn. So the turn is
+    /// parked, `send_out` picks it back up, and the pick is on the field for
+    /// the residual phase exactly as the lowest-slot default's is.
+    pub(super) fn finish_turn(
+        &mut self,
+        mut rest: TurnRest,
+        script: TurnScript,
+        events: &mut Vec<Event>,
+    ) {
+        loop {
+            if self.awaiting_replacement.iter().any(|&w| w) {
+                self.parked_turn = Some((rest, script));
+                return;
+            }
+            match rest {
+                TurnRest::Moves {
+                    from,
+                    first,
+                    choices,
+                    cancelled,
+                } => {
+                    rest = self.move_phase(
+                        from as usize,
+                        first as usize,
+                        choices,
+                        cancelled,
+                        &script,
+                        events,
+                    );
+                }
+                TurnRest::DeferredSwitches => {
+                    self.deferred_switches(events);
+                    rest = TurnRest::Residual;
+                }
+                TurnRest::Residual => {
+                    self.residual_phase(&script, events);
+                    rest = TurnRest::Tidy;
+                }
+                TurnRest::Tidy => {
+                    self.tidy_turn(events);
+                    return;
+                }
+            }
+        }
+    }
+
+    /// The move phase, from the mover at `from` in the turn's order on.
+    /// Returns where the turn goes next: on to the deferred switches, or back
+    /// here for the second mover once the player has answered.
+    fn move_phase(
+        &mut self,
+        from: usize,
+        first: usize,
+        choices: [Choice; 2],
+        mut cancelled: [bool; 2],
+        script: &TurnScript,
+        events: &mut Vec<Event>,
+    ) -> TurnRest {
+        // A pass target that walked onto Spikes and went down there throws
+        // the rest of the turn away like any other faint.
+        if (0..2).any(|s| self.sides[s].mon().fainted()) {
+            cancelled = [true; 2];
+        }
+        for (k, side) in [first, 1 - first].into_iter().enumerate().skip(from) {
             if self.over() {
                 break;
             }
@@ -264,8 +341,8 @@ impl Battle {
                     let foe = 1 - side;
                     self.will_act =
                         side == first && !cancelled[foe] && matches!(choices[foe], Choice::Move(_));
-                    let moved = self.use_move(side, index, script.seats[side], &mut events);
-                    self.run_pending_call(script, &mut events);
+                    let moved = self.use_move(side, index, script.seats[side], events);
+                    self.run_pending_call(script, events);
                     // The band's lock and Charge's cleanup both hang off
                     // `AfterMove`, so they answer an action only if it got
                     // that far: a frozen, sleeping or fully-paralysed mon,
@@ -301,46 +378,21 @@ impl Battle {
             // The sim checks for faints at every action boundary in this
             // era (`gen <= 3` in checkFainted's guard), so a replacement is
             // already on the field when the residual phase runs.
-            self.replace_fainted(&mut events);
-        }
-
-        self.finish_turn(TurnRest::DeferredSwitches, *script, &mut events);
-        events
-    }
-
-    /// The rest of a turn, from `rest` on. A replacement the player has to
-    /// choose STOPS it there: in this era the sim checks for faints at every
-    /// action boundary (`checkFainted` when the next action is a move or the
-    /// residual) and asks for the switch on the spot, and `commitChoices`
-    /// queues the answer AHEAD of what was left of the turn. So the turn is
-    /// parked, `send_out` picks it back up, and the pick is on the field for
-    /// the residual phase exactly as the lowest-slot default's is.
-    pub(super) fn finish_turn(
-        &mut self,
-        mut rest: TurnRest,
-        script: TurnScript,
-        events: &mut Vec<Event>,
-    ) {
-        loop {
-            if self.awaiting_replacement.iter().any(|&w| w) {
-                self.parked_turn = Some((rest, script));
-                return;
-            }
-            match rest {
-                TurnRest::DeferredSwitches => {
-                    self.deferred_switches(events);
-                    rest = TurnRest::Residual;
-                }
-                TurnRest::Residual => {
-                    self.residual_phase(&script, events);
-                    rest = TurnRest::Tidy;
-                }
-                TurnRest::Tidy => {
-                    self.tidy_turn(events);
-                    return;
-                }
+            self.replace_fainted(events);
+            // A question for the player (a Baton Pass target, or a faint's
+            // replacement) is answered before the next action: the sim makes
+            // the switch request at the end of `runAction` and queues the
+            // answer as an instaswitch, ahead of the move still to come.
+            if k == 0 && self.awaiting_replacement.iter().any(|&w| w) {
+                return TurnRest::Moves {
+                    from: 1,
+                    first: first as u8,
+                    choices,
+                    cancelled,
+                };
             }
         }
+        TurnRest::DeferredSwitches
     }
 
     fn deferred_switches(&mut self, events: &mut Vec<Event>) {

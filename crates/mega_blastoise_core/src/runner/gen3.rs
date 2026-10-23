@@ -687,10 +687,12 @@ pub async fn battle_loop<E: BoardEffects>(
     }
 }
 
-/// Ask whoever lost a Pokemon which one comes next. The engine leaves the
-/// fainted mon standing until it is answered, so the board keeps showing the
-/// mon that fell — its replacement's health bar does not appear before the
-/// player has chosen it.
+/// Ask whoever lost a Pokemon which one comes next, or whoever used Baton
+/// Pass which one it passes to: the engine asks both the same way, and the
+/// party picker answers both. The engine leaves the fainted mon (or the
+/// passer) standing until it is answered, so the board keeps showing it:
+/// the replacement's health bar does not appear before the player has chosen
+/// it.
 async fn replace_fainted<E: BoardEffects>(
     battle: &mut Battle,
     bus: &crate::battle_input::InputBus,
@@ -872,6 +874,62 @@ mod tests {
             sent.contains(&"Wigglytuff"),
             "the player's pick never came in: {sent:?}",
         );
+    }
+
+    /// Baton Pass asks its user's player who comes in, with the same party
+    /// picker a faint opens, and the pick is the mon that inherits the pass.
+    #[test]
+    fn a_baton_pass_prompts_the_player_for_its_target() {
+        use crate::battle_input::{InputBus, PlayerChoice};
+        use embassy_futures::select::{select, Either};
+
+        let mut passer = mon("jolteon", 100, &["batonpass"]);
+        passer.stages[0] = 2; // +2 Attack
+        let mut b = Battle::new(
+            Side::new(alloc::vec![
+                passer,
+                mon("magikarp", 50, &["splash"]),
+                mon("wigglytuff", 50, &["pound"]),
+            ]),
+            Side::new(alloc::vec![mon("slowbro", 50, &["splash"])]),
+            7,
+        );
+        b.player_picks_replacement = true;
+        let bus = InputBus::new();
+        let mut rec = Recorder::default();
+
+        // Every move prompt gets slot 0 and the pass gets the LAST party
+        // slot. The next turn's first move prompt means the answer landed.
+        let play = async {
+            let mut answered = false;
+            loop {
+                let p = bus.prompt.receive().await;
+                let choice = if p.slot.forced_switch {
+                    assert_eq!(p.player_id.as_str(), "p1", "the wrong seat was asked");
+                    answered = true;
+                    alloc::string::String::from("switch 2")
+                } else if answered {
+                    break;
+                } else {
+                    alloc::string::String::from("move 0")
+                };
+                bus.choices
+                    .send(PlayerChoice { player_id: p.player_id, choice })
+                    .await;
+            }
+        };
+        block_on(async {
+            match select(battle_loop(&mut b, &bus, &mut rec), play).await {
+                Either::First(()) | Either::Second(()) => {}
+            }
+        });
+
+        assert!(
+            rec.0.iter().any(|e| matches!(e, BoardEvent::Prompt { kind: PromptKind::ChooseSwitch, .. })),
+            "nobody was asked who the pass goes to"
+        );
+        assert_eq!(b.sides[0].active, 2);
+        assert_eq!(b.sides[0].mon().stages[0], 2, "the pick did not inherit the pass");
     }
 
     /// Nothing is put on the field until the answer arrives: the board must

@@ -754,10 +754,17 @@ pub struct SeatScript {
     pub band: bool,
 }
 
-/// Where a turn stopped for a chosen replacement picks up again: the switch
+/// Where a turn stopped for a chosen replacement picks up again: the move
+/// phase from the mover at `from` (a Baton Pass asks mid-phase), the switch
 /// a Pursuit KO pushed back, the residual phase, or the end-of-turn tidy.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum TurnRest {
+    Moves {
+        from: u8,
+        first: u8,
+        choices: [Choice; 2],
+        cancelled: [bool; 2],
+    },
     DeferredSwitches,
     Residual,
     Tidy,
@@ -1062,8 +1069,11 @@ pub struct Battle {
     /// forced switch with the lowest living slot, so the default IS the
     /// reference's behaviour and the fuzz suites need no driver of their own.
     pub player_picks_replacement: bool,
-    /// Set per side when a faint is waiting on that answer.
+    /// Set per side when a faint, or a Baton Pass, is waiting on that answer.
     pub(crate) awaiting_replacement: [bool; 2],
+    /// Which of those waits is a Baton Pass: the answer is the pass's
+    /// target, and the passer is still standing in the slot until it comes.
+    pub(crate) awaiting_pass: [bool; 2],
     /// The part of the turn still to run while that answer is awaited, with
     /// the turn's script. `send_out` resumes it.
     pub(crate) parked_turn: Option<(TurnRest, TurnScript)>,
@@ -1183,6 +1193,7 @@ impl Battle {
             present_bp: 120,
             player_picks_replacement: false,
             awaiting_replacement: [false; 2],
+            awaiting_pass: [false; 2],
             parked_turn: None,
             bounced: false,
             yawn_landing: false,

@@ -362,59 +362,19 @@ impl Battle {
                     None => events.push(Event::Failed {
                         side: side as u8 + 1,
                     }),
+                    // WHO comes in is the player's to pick when a caller
+                    // asks for that: the sim sends the side a switch request
+                    // once the move is over, and the rest of the turn waits
+                    // on it (`move_phase` parks, `send_out` places the pick
+                    // through `baton_pass_in`). By default the engine takes
+                    // the lowest living slot, which is what the parity
+                    // harness answers the same request with.
+                    Some(_) if self.player_picks_replacement => {
+                        self.awaiting_replacement[side] = true;
+                        self.awaiting_pass[side] = true;
+                    }
                     Some(next) => {
-                        let passed = self.sides[side].mon().clone();
-                        // The gaze is held by the TRAPPER, and Baton Pass
-                        // carries it: copyVolatileFrom re-links the victim's
-                        // trapped volatile to the replacement before the
-                        // passer's clearVolatile can cut the link, so the
-                        // victim stays trapped. A plain leave drops it
-                        // (switch_out_reset, as for any other switch-out).
-                        let gaze = self.sides[1 - side].mon().mean_looked;
-                        self.switch_out_reset(side);
-                        if gaze {
-                            self.sides[1 - side].mon_mut().mean_looked = true;
-                        }
-                        let slot_item = self.hand_slot_item_over(side);
-                        self.sides[side].reorder_for_switch(next);
-                        self.sides[side].active = next;
-                        self.sides[side].mon_mut().last_item = slot_item;
-                        {
-                            let m = self.sides[side].mon_mut();
-                            m.stages = passed.stages;
-                            m.acc_stage = passed.acc_stage;
-                            m.eva_stage = passed.eva_stage;
-                            m.sub_hp = passed.sub_hp;
-                            m.seeded = passed.seeded;
-                            m.confusion_n = passed.confusion_n;
-                            m.perish_n = passed.perish_n;
-                            m.cursed = passed.cursed;
-                            m.ingrained = passed.ingrained;
-                            m.focused = passed.focused;
-                            m.mean_looked = passed.mean_looked;
-                            m.trapped_n = passed.trapped_n;
-                            // …and its staleness: a bind whose user already
-                            // left rides the pass as the same dead volatile,
-                            // not a fresh one.
-                            m.trap_stale = passed.trap_stale;
-                            m.charged_elec = passed.charged_elec;
-                            m.taunt_n = passed.taunt_n;
-                            // Water Sport and Mud Sport are volatiles on the
-                            // HUMMER, not the field, so the halving follows
-                            // the pass and dampens the arrival's own moves.
-                            m.sport = passed.sport;
-                            // Lock-On's condition spells `noCopy: false` out
-                            // in the data; the arrival inherits the mark and
-                            // the turn left on it.
-                            m.sure_hit = passed.sure_hit;
-                            // Fury Cutter's doubling counter rides along too.
-                            m.fury_n = passed.fury_n;
-                            m.fury_fresh = passed.fury_fresh;
-                        }
-                        events.push(Event::Switched {
-                            side: side as u8 + 1,
-                            party_index: next,
-                        });
+                        self.baton_pass_in(side, next, events);
                         self.switch_in_greet(side, events);
                     }
                 }
@@ -1184,6 +1144,62 @@ impl Battle {
         self.ability_update(foe);
         events.push(Event::ConfusionStarted {
             side: foe as u8 + 1,
+        });
+    }
+
+    /// Baton Pass's arrival: `next` takes the passer's place and inherits
+    /// what the pass carries. Placed only; the caller greets it.
+    pub(super) fn baton_pass_in(&mut self, side: usize, next: usize, events: &mut Vec<Event>) {
+        let passed = self.sides[side].mon().clone();
+        // The gaze is held by the TRAPPER, and Baton Pass carries it:
+        // copyVolatileFrom re-links the victim's trapped volatile to the
+        // replacement before the passer's clearVolatile can cut the link, so
+        // the victim stays trapped. A plain leave drops it (switch_out_reset,
+        // as for any other switch-out).
+        let gaze = self.sides[1 - side].mon().mean_looked;
+        self.switch_out_reset(side);
+        if gaze {
+            self.sides[1 - side].mon_mut().mean_looked = true;
+        }
+        let slot_item = self.hand_slot_item_over(side);
+        self.sides[side].reorder_for_switch(next);
+        self.sides[side].active = next;
+        self.sides[side].mon_mut().last_item = slot_item;
+        {
+            let m = self.sides[side].mon_mut();
+            m.stages = passed.stages;
+            m.acc_stage = passed.acc_stage;
+            m.eva_stage = passed.eva_stage;
+            m.sub_hp = passed.sub_hp;
+            m.seeded = passed.seeded;
+            m.confusion_n = passed.confusion_n;
+            m.perish_n = passed.perish_n;
+            m.cursed = passed.cursed;
+            m.ingrained = passed.ingrained;
+            m.focused = passed.focused;
+            m.mean_looked = passed.mean_looked;
+            m.trapped_n = passed.trapped_n;
+            // …and its staleness: a bind whose user already
+            // left rides the pass as the same dead volatile,
+            // not a fresh one.
+            m.trap_stale = passed.trap_stale;
+            m.charged_elec = passed.charged_elec;
+            m.taunt_n = passed.taunt_n;
+            // Water Sport and Mud Sport are volatiles on the
+            // HUMMER, not the field, so the halving follows
+            // the pass and dampens the arrival's own moves.
+            m.sport = passed.sport;
+            // Lock-On's condition spells `noCopy: false` out
+            // in the data; the arrival inherits the mark and
+            // the turn left on it.
+            m.sure_hit = passed.sure_hit;
+            // Fury Cutter's doubling counter rides along too.
+            m.fury_n = passed.fury_n;
+            m.fury_fresh = passed.fury_fresh;
+        }
+        events.push(Event::Switched {
+            side: side as u8 + 1,
+            party_index: next,
         });
     }
 }

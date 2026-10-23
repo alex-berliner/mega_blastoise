@@ -1075,3 +1075,45 @@ fn a_pinch_berry_confuses_its_disliked_flavour() {
         assert_eq!(b.sides[0].mon().confusion_n, 0);
     }
 }
+
+#[test]
+fn a_chosen_baton_pass_target_takes_the_passed_stages() {
+    // The sim asks the passer's side who comes in once the move is over, and
+    // the slower foe's move waits for the answer. Whoever is picked inherits
+    // the stages; the mon passed over keeps none of them.
+    let build = |picks: bool| {
+        let mut passer = mon("jolteon", 100, &["batonpass"]);
+        passer.stages[Stat::Atk as usize] = 2;
+        passer.eva_stage = 1;
+        let mut b = Battle::new(
+            Side::new(alloc::vec![
+                passer,
+                mon("magikarp", 50, &["splash"]),
+                mon("blaziken", 50, &["ember"]),
+            ]),
+            Side::new(alloc::vec![mon("slowbro", 50, &["splash"])]),
+            7,
+        );
+        b.player_picks_replacement = picks;
+        b
+    };
+    let mut auto = build(false);
+    auto.step([Choice::Move(0), Choice::Move(0)]);
+    assert_eq!(auto.sides[0].active, 1, "the engine's own pick is the lowest slot");
+
+    let mut chosen = build(true);
+    let mut events = chosen.step([Choice::Move(0), Choice::Move(0)]);
+    assert_eq!(chosen.pending_replacements()[0], Some(alloc::vec![1, 2]));
+    assert_eq!(chosen.pending_pass(), [true, false]);
+    assert!(
+        !events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })),
+        "the foe's move waits for the answer"
+    );
+    chosen.send_out([Some(2), None], &mut events);
+    assert!(chosen.pending_replacements()[0].is_none());
+    assert_eq!(chosen.sides[0].active, 2);
+    assert_eq!(chosen.sides[0].mon().stages[Stat::Atk as usize], 2);
+    assert_eq!(chosen.sides[0].mon().eva_stage, 1);
+    assert_eq!(chosen.sides[0].party[1].stages, [0; 5]);
+    assert!(events.iter().any(|e| matches!(e, Event::Used { side: 2, .. })));
+}
