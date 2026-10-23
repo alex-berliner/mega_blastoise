@@ -881,10 +881,17 @@ impl Battle {
             StatusAction::Curse => {
                 let (t1, t2) = self.sides[side].mon().types();
                 if t1 == Type::Ghost || t2 == Type::Ghost {
-                    // The Ghost pays half its max HP to lay the curse.
-                    if self.sides[foe].mon().cursed || self.sides[foe].mon().fainted() {
+                    // Facing a Substitute, a Ghost's Curse is a spent turn:
+                    // gen 4's ModifyMove (inherited here) deletes both the
+                    // volatile it would start and the `onHit` that charges the
+                    // HP, so with nothing left the doll turns it away once the
+                    // PP is paid.
+                    if self.sides[foe].mon().sub_hp > 0 {
+                        self.log_failed(side, events);
+                    } else if self.sides[foe].mon().cursed || self.sides[foe].mon().fainted() {
                         self.log_failed(side, events);
                     } else {
+                        // The Ghost pays half its max HP to lay the curse.
                         let cost = (self.sides[side].mon().max_hp / 2).max(1);
                         let user = self.sides[side].mon_mut();
                         let cost = cost.min(user.hp);

@@ -553,6 +553,38 @@ impl Battle {
             self.log_failed(side, events);
             return false;
         }
+        // A seal takes the release too. The sim runs both halves of a
+        // two-turn move through `runMove`, so the Imprison standing on the
+        // foe's side answers the release's BeforeMove just as it answered
+        // the charge's: `if (this.effectState.source.hasMove(move.id)) cant`,
+        // priority 4. That seal can land between the two halves (the charge
+        // is the turn it went up), which is why releases are checked live
+        // here and not from the at-choice snapshot. The abort drops the
+        // lock with the turn, so the victim walks free next turn; there is
+        // no second PP charge to spare either half.
+        if releasing
+            && self.sides[1 - side].mon().imprisoning
+            && self.sides[side]
+                .mon()
+                .moves
+                .get(index)
+                .is_some_and(|m| {
+                    self.sides[1 - side]
+                        .mon()
+                        .moves
+                        .iter()
+                        .any(|f| f.entry.id == m.entry.id)
+                })
+        {
+            let _ = was_charging;
+            self.break_rampage(side, script.is_some(), events);
+            self.sides[side].mon_mut().rolling = None;
+            self.sides[side].mon_mut().stall_counter = 0;
+            self.abort_drops_charge(side, index);
+            self.sides[side].mon_mut().locked_move = None;
+            self.log_failed(side, events);
+            return false;
+        }
         let forced = self.forced_entry.take();
         let Some(slot) = forced
             .map(|entry| MoveSlot {
