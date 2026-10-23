@@ -31,6 +31,10 @@ const CANNOT_MOVE: &str = "cannotmove";
 /// it. Like `cannotmove` it is not a move, so the index register answers for
 /// it — and that index starts at the first slot.
 const NO_MOVE: &str = "nomove";
+
+/// What the cartridge puts in the enemy register for a side whose only choice
+/// is Struggle: the pseudo-move itself, not whatever sits in the index.
+const STRUGGLE: &str = "struggle";
 use crate::request::{MonTurnRequest, Request, SwitchRequest, TurnRequest};
 use crate::rng::Rng;
 use crate::state::{Field, Mon, Side, Status, Volatile};
@@ -445,13 +449,21 @@ impl<'a> Battle<'a> {
             self.winner = Some(0);
             self.log.push_board(format!("win|side:0"));
             self.phase = Phase::Ended;
+        } else if self.pending_switch_needed[0] || self.pending_switch_needed[1] {
+            // A side that owes a replacement gets it FIRST: the sim only
+            // asks whether the battle can progress at the tail of `endTurn`,
+            // which `turnLoop` reaches only once the action queue has
+            // drained, and the switch-in is an action in it. A frozen bench
+            // and a foe with nothing left to hit are the same staleness
+            // either way, so calling the battle at the faint instead would
+            // hand the winner to whoever was behind when the last mon
+            // happened to drop.
+            self.phase = Phase::AwaitSwitch;
         } else if self.no_progress_possible() || self.turn_count >= ENDLESS_BATTLE_TURN_CAP {
             let w = self.endless_battle_winner();
             self.winner = Some(w);
             self.log.push_board(format!("win|side:{}", w));
             self.phase = Phase::Ended;
-        } else if self.pending_switch_needed[0] || self.pending_switch_needed[1] {
-            self.phase = Phase::AwaitSwitch;
         } else {
             self.phase = Phase::Turn;
         }
@@ -645,31 +657,35 @@ impl<'a> Battle<'a> {
         // opponent's selected move). A sleeping or frozen mon is on the
         // sim's "fight" pseudo-choice and does NOT re-register — its stale
         // register is exactly what its wake-turn priority reads (a mon
-        // asleep since battle start has selected nothing, priority 0).
+        // asleep since battle start has selected nothing, priority 0), though
+        // the enemy register below is written for it all the same.
         for side in 0..2 {
-            if matches!(self.pending_choice[side], Some(Choice::Move(_)))
-                && !matches!(
-                    self.sides[side].active().status,
-                    Status::Sleep(_) | Status::Freeze
-                )
-            {
-                // A mon held by Wrap and kin has no real choice to register:
-                // the cartridge writes `cannotmove` into the side's move
-                // register instead. That sticks, and the next mon to inherit
-                // the register — an asleep one, which never registers its own
-                // — aborts its turn on it. The sim spells the consequence out
-                // in a hint of its own: the sleep counter does not decrease.
-                //
-                // A side locked into a move is the one case where neither
-                // register moves. Its choice is the lock itself, not the
-                // `fight` pseudo-choice `cannotmove` is written from, so a
-                // Farfetch'd locked into Petal Dance while clamped carries
-                // `petaldance` and not `cannotmove`. The sleeper that
-                // inherits the register that turn then ticks its own sleep on
-                // it. The same no-write is why the slot guard below reads the
-                // same way.
+            if !matches!(self.pending_choice[side], Some(Choice::Move(_))) {
+                continue;
+            }
+            let asleep = matches!(
+                self.sides[side].active().status,
+                Status::Sleep(_) | Status::Freeze
+            );
+            let held = !asleep && self.sides[side].active().volatile.has(Volatile::TRAPPED);
+            // A mon held by Wrap and kin has no real choice to register:
+            // the cartridge writes `cannotmove` into the side's move
+            // register instead. That sticks, and the next mon to inherit
+            // the register (an asleep one, which never registers its own)
+            // aborts its turn on it. The sim spells the consequence out
+            // in a hint of its own: the sleep counter does not decrease.
+            //
+            // A side locked into a move is the one case where neither
+            // register moves. Its choice is the lock itself, not the
+            // `fight` pseudo-choice `cannotmove` is written from, so a
+            // Farfetch'd locked into Petal Dance while clamped carries
+            // `petaldance` and not `cannotmove`. The sleeper that
+            // inherits the register that turn then ticks its own sleep on
+            // it. The same no-write is why the slot guard below reads the
+            // same way.
+            if !asleep {
                 if locked_move_id(&self.sides[side]).is_none() {
-                    if self.sides[side].active().volatile.has(Volatile::TRAPPED) {
+                    if held {
                         self.sides[side].last_selected_move = CANNOT_MOVE;
                     } else if let Some(mv) = self.effective_move(side) {
                         self.sides[side].last_selected_move = mv.id;
@@ -694,6 +710,24 @@ impl<'a> Battle<'a> {
                     }
                 }
             }
+            // The ENEMY register, written last and off whatever the slot
+            // register now points at: the sim reads the slot of the mon that
+            // is out at commit time, before any switch, which is why a side
+            // that switches this turn never refreshes it. A sleeper, a held
+            // mon and a Struggle choice each short-circuit it instead: the
+            // first two on the `fight` pseudo-choice, the third because the
+            // sim names the pseudo-move itself.
+            let struggle = !asleep
+                && !held
+                && self.effective_move(side).is_some_and(|mv| mv.id == STRUGGLE);
+            self.sides[side].last_enemy_selected_move = if held {
+                CANNOT_MOVE
+            } else if struggle {
+                STRUGGLE
+            } else {
+                let slot = self.sides[side].last_selected_slot.min(3) as usize;
+                self.sides[side].active().moves[slot].move_id
+            };
         }
 
         for (i, &side) in order.iter().enumerate() {

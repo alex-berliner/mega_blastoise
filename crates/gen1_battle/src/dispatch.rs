@@ -867,7 +867,14 @@ fn apply_effect(
             // Normal/Fighting with base power > 0, and the battle-global
             // last-damage register is non-zero. Deals 2× that register —
             // which persists across turns and includes residual damage.
-            let enemy_selected = sides[defender_side].last_selected_move;
+            //
+            // The first test reads the ENEMY register, not the move one: the
+            // sim takes the move sitting in the slot the enemy's side last
+            // selected, off whatever mon is out now, and writes it for every
+            // move choice but for no switch. A side that mirrored Counter
+            // last turn therefore fails the check for the whole of the turn
+            // after it, switch or no switch.
+            let enemy_selected = sides[defender_side].last_enemy_selected_move;
             let enemy_used = sides[defender_side].last_move_used;
             // The one-hit-KO moves carry a power of 1 in this table purely
             // as a marker; the reference dex gives them ZERO, and Counter
@@ -896,6 +903,11 @@ fn apply_effect(
             if last.is_empty() || last == "mirrormove" {
                 fail_log(sides, attacker_side, log);
             } else if let Some(mv2) = move_by_id(last) {
+                // The copy is announced as this side's own selection: both
+                // move registers take the copied id, which is what leaves a
+                // foe reading `counter` here and failing its own Counter.
+                sides[attacker_side].last_selected_move = mv2.id;
+                sides[attacker_side].last_enemy_selected_move = mv2.id;
                 // A SUCCESSFUL Mirror Move never pays its own PP: the sim
                 // charges the mirror slot when the called move actually
                 // executes. An immediate call pays now (net one, exactly
@@ -1270,6 +1282,8 @@ fn apply_effect(
                 &MOVES[idx]
             };
             transformed_call_refunds_pp(sides, attacker_side);
+            sides[attacker_side].last_selected_move = cand.id;
+            sides[attacker_side].last_enemy_selected_move = cand.id;
             outcome = execute_move_entry(rng, field, sides, attacker_side, cand, None, false, true, log);
         }
         SelfDestruct => {

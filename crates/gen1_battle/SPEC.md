@@ -226,6 +226,14 @@ Per turn:
   Transformed mon. It resets on EVERY switch-in (chosen, replacement-after-
   faint, or drag), which is gen 4's `runSwitch` that gen 1 inherits; the
   move register beside it never resets.
+- **Enemy selection register** (`Side::last_enemy_selected_move`): the move
+  sitting in the index register's slot of the mon that was out at commit
+  time. Every move choice writes it (a sleeper's `fight` included, a held
+  mon's writing `cannotmove` and a Struggle choice writing `struggle`), no
+  switch ever does, and Mirror Move/Metronome overwrite it with the id they
+  called. Counter's first test reads THIS register, not the move register:
+  a side that copied Counter last turn fails that test for the whole of the
+  turn after it, switch or no switch.
 - **Quick Attack +1 / Counter -1** priority brackets; ties are 50/50.
 - PP underflow glitches: not implemented (see §13).
 
@@ -502,7 +510,11 @@ pub enum Event {
   nothing but Transform against a foe holding nothing but Transform, or out
   of PP against an all-Ghost foe Struggle cannot touch), that battle ends
   on the spot through the same winner path. A Transformed mon reads as the
-  types it copied.
+  types it copied. A side that owes a replacement is sent one FIRST: the sim
+  asks the question at the tail of its `endTurn`, which `turnLoop` reaches
+  only once the action queue has drained, and the switch-in is an action in
+  it, so the walk-out itself (which clears a fainted mon's status) is not
+  part of the state the rule reads.
 - Species/OHKO/Evasion clauses are TEAM-validation rules — the vendored
   Showdown randbat sets already satisfy them, so the engine doesn't check.
 - AI move choice: not the engine's concern; `RandomAi` already exists outside the engine.

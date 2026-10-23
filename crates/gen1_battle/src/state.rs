@@ -303,6 +303,14 @@ pub struct Side {
     /// Last move this side SELECTED. Counter's desync-clause check reads the
     /// opponent's selection.
     pub last_selected_move: &'static str,
+    /// The move sitting in `last_selected_slot` of the mon that was out when
+    /// the choice committed: the sim's `side.lastEnemySelectedMove`, a third
+    /// register beside the two above. Every move choice writes it, a switch
+    /// never does (so a side that brought a mon in hands over what the turn
+    /// before left behind), and Mirror Move and Metronome overwrite it with
+    /// the id they called. Counter reads it first, where the engine used to
+    /// offer up the move register instead.
+    pub last_enemy_selected_move: &'static str,
     /// Which move SLOT this side last selected. The sim keeps
     /// `side.lastSelectedMoveSlot` and a Gen 1 glitch reads it: a transformed
     /// mon using Metronome or Mirror Move hands a PP back to the base slot at
