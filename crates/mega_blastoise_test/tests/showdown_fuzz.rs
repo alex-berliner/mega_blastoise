@@ -1341,21 +1341,8 @@ fn fuzz_gen3_battles() {
     // reason given; the turn suite has always offered it.
     let wide_statuses: [Option<&str>; 7] =
         [None, None, Some("brn"), Some("psn"), Some("par"), Some("slp"), Some("frz")];
-    // Hidden Power's type, from the IVs the way the sim's `getHiddenPower`
-    // reads them for gen 3+: one low bit per stat, in hp/atk/def/spe/spa/spd
-    // order. `Mon::new` only takes a uniform spread, so a per-stat one has to
-    // hand the engine the answer.
-    let hp_type = |ivs: &[u8; 6]| {
-        use gen3_battle::Type::*;
-        const ORDER: [gen3_battle::Type; 16] = [
-            Fighting, Flying, Poison, Ground, Rock, Bug, Ghost, Steel, Fire, Water, Grass,
-            Electric, Psychic, Ice, Dragon, Dark,
-        ];
-        let bits = [ivs[0], ivs[1], ivs[2], ivs[5], ivs[3], ivs[4]];
-        let x: u32 = bits.iter().enumerate().map(|(k, iv)| ((*iv as u32) & 1) << k).sum();
-        ORDER[(x * 15 / 63) as usize]
-    };
-
+    // Hidden Power's type AND power now live on the mon, derived from the
+    // IVs it was built with, so the test computes neither.
     let mut scenarios = Vec::new();
     let mut expected = Vec::new();
     let mut skipped = 0usize;
@@ -1401,25 +1388,29 @@ fn fuzz_gen3_battles() {
                 let nature = if wide { Nature::from_index(fz.below(25) as u8) } else { Nature::Hardy };
                 let spread = wide.then(|| wide_spread(&mut fz));
                 let refs: Vec<&str> = set.iter().map(|m| m.as_str()).collect();
-                let mut mon = Mon::new(sp.id, level, nature, inv, &refs).unwrap();
-                if let Some((ivs, evs)) = spread {
-                    use gen3_battle::{hp_stat, other_stat, Stat};
-                    let at = |k: usize| Invest { iv: ivs[k], ev: evs[k] };
-                    let b = sp.base;
-                    mon.max_hp = hp_stat(b.hp, at(0), level);
-                    mon.hp = mon.max_hp;
-                    mon.atk = other_stat(b.atk, at(1), level, nature, Stat::Atk);
-                    mon.def = other_stat(b.def, at(2), level, nature, Stat::Def);
-                    mon.spa = other_stat(b.spa, at(3), level, nature, Stat::SpAtk);
-                    mon.spd = other_stat(b.spd, at(4), level, nature, Stat::SpDef);
-                    mon.spe = other_stat(b.spe, at(5), level, nature, Stat::Spe);
-                    mon.hidden_power = hp_type(&ivs);
-                    for slot in mon.moves.iter_mut() {
-                        if slot.entry.id == "hiddenpower" {
-                            slot.typed_as = Some(mon.hidden_power);
-                        }
-                    }
-                }
+                let mut mon = match spread {
+                    // The engine's own order for a per-stat spread is the
+                    // sim's stat order hp, atk, def, spe, spa, spd;
+                    // `wide_spread` deals in the spec order hp, atk, def,
+                    // spa, spd, spe, so spe and spa swap on the way in.
+                    // Stats, Hidden Power type and power all come out of it.
+                    Some((ivs, evs)) => Mon::with_spread(
+                        sp.id,
+                        level,
+                        nature,
+                        &[
+                            Invest { iv: ivs[0], ev: evs[0] },
+                            Invest { iv: ivs[1], ev: evs[1] },
+                            Invest { iv: ivs[2], ev: evs[2] },
+                            Invest { iv: ivs[5], ev: evs[5] },
+                            Invest { iv: ivs[3], ev: evs[3] },
+                            Invest { iv: ivs[4], ev: evs[4] },
+                        ],
+                        &refs,
+                    )
+                    .unwrap(),
+                    None => Mon::new(sp.id, level, nature, inv, &refs).unwrap(),
+                };
                 mon.ability = ability;
                 mon.item = item;
                 mon.gender = gender;

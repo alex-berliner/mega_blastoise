@@ -299,7 +299,9 @@ impl Battle {
     }
 
     /// Eat the held berry if the residual phase finds the holder low enough.
-    pub(super) fn ripen(&mut self, side: usize, events: &mut Vec<Event>) {
+    /// `scripted` is the turn's own flag: a berry-induced confusion uses the
+    /// same clock as every other landing, 2 under a script, 2..=5 in play.
+    pub(super) fn ripen(&mut self, side: usize, scripted: bool, events: &mut Vec<Event>) {
         if self.sides[side].mon().fainted() {
             return;
         }
@@ -314,8 +316,31 @@ impl Battle {
             item::Ripe::Heal(flat) => {
                 self.heal(side, flat, events);
             }
-            item::Ripe::HealEighth => {
+            item::Ripe::HealEighth(offends) => {
                 self.heal(side, (self.sides[side].mon().max_hp / 8).max(1), events);
+                // The flavour the holder's nature lowers is the one it
+                // dislikes, and eating it comes with a muddled head. The
+                // sim's addVolatile straight to the eater: a Safeguard does
+                // not block a berry's own vapours (it spares only
+                // foe-inflicted ones), but a muddled head stays muddled:
+                // a confusion already up restarts nothing.
+                let mon = self.sides[side].mon();
+                if !mon.fainted()
+                    && mon.confusion_n == 0
+                    && !mon.nature.is_neutral()
+                    && mon.nature.effect().1 == offends
+                    && !ability::blocks_confusion(&mon.bearer())
+                {
+                    let n = if scripted {
+                        2
+                    } else {
+                        2 + self.rng.below(4) as u8
+                    };
+                    self.sides[side].mon_mut().confusion_n = n;
+                    events.push(Event::ConfusionStarted {
+                        side: side as u8 + 1,
+                    });
+                }
             }
             item::Ripe::Boost(boost) => {
                 self.boost(side, boost, 1, events);

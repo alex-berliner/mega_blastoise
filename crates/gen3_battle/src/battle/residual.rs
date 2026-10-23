@@ -81,7 +81,7 @@ impl Battle {
                     let want = (self.sides[side].mon().max_hp / 16).max(1);
                     self.heal(side, want, events);
                 }
-                self.ripen(side, &mut events);
+                self.ripen(side, scripted, &mut events);
         }
             }
             3 => {

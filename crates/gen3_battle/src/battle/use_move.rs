@@ -2381,7 +2381,12 @@ impl Battle {
                     slot.entry.power * 2
                 }
                 "weatherball" if self.effective_weather().is_some() => 100,
-                "hiddenpower" => 70,
+                // The sim's gen5-mod basePowerCallback reads
+                // `pokemon.hpPower || 70`: the power the ATTACKER's own IVs
+                // pick (see `stats::hidden_power`), with 70 as the fallback
+                // for a mon without per-stat IVs, which never happens on a
+                // real spread.
+                "hiddenpower" => self.sides[side].mon().hidden_power_bp as u16,
                 "magnitude" => {
                     // The spread collapses under a script: the secondary knob
                     // picks Magnitude 4 (10) or 10 (150); play rolls the table.

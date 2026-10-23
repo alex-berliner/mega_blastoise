@@ -1004,3 +1004,74 @@ fn a_base_power_the_chain_floors_to_zero_takes_nothing() {
         "without Thick Fat to halve it, the same sliver of health still burns"
     );
 }
+
+/// A pinch berry heals its holder, and if that holder's nature lowers the
+/// stat whose flavour it carries, the heal comes with confusion. The sim
+/// hangs it off the berry's own onEat: `addVolatile("confusion")` on the
+/// eater, which a Safeguard does not reach (it spares only foe-inflicted
+/// effects), an Own Tempo refuses, and a liked flavour does nothing.
+#[test]
+fn a_pinch_berry_confuses_its_disliked_flavour() {
+    // Lax lowers Sp.Def, so the bitterness Aguav carries is the flavour it
+    // dislikes; Lonely lowers Atk, so Figy's spice is fine with it.
+    let holder = |berry: &'static str, nature: Nature| {
+        let mut m = Mon::new("snorlax", 50, nature, Invest { iv: 31, ev: 0 }, &["splash"])
+            .unwrap_or_else(|| panic!("snorlax is not in the dex"));
+        m.item = berry;
+        m
+    };
+    let scripted_eaten = |berry: &'static str, nature: Nature| {
+        let mut b = battle(
+            holder(berry, nature),
+            mon("treecko", 50, &["splash"]),
+        );
+        // At half, exactly where this era's berries ripen.
+        b.sides[0].mon_mut().hp = b.sides[0].mon().max_hp / 2;
+        let at = b.sides[0].mon().hp;
+        let events = b.step_with(
+            [Choice::Move(0), Choice::Move(0)],
+            &scripted([PLAIN, PLAIN]),
+        );
+        assert_eq!(b.sides[0].mon().item, "", "the {berry} was eaten");
+        assert_eq!(b.sides[0].mon().hp, at + (b.sides[0].mon().max_hp / 8).max(1));
+        (b, events)
+    };
+
+    // Aguav on Lax muddles as it heals: the sim's onStart pins random(2, 6)
+    // to its floor, so the clock is exactly 2.
+    let (b, events) = scripted_eaten("aguavberry", Nature::Lax);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, Event::ConfusionStarted { side: 1 })));
+    assert_eq!(b.sides[0].mon().confusion_n, 2);
+
+    // Figy on Lax only heals: Spicy offends Atk, and Lax lowers nothing.
+    let (b, events) = scripted_eaten("figyberry", Nature::Lax);
+    assert!(!events
+        .iter()
+        .any(|e| matches!(e, Event::ConfusionStarted { side: 1 })));
+    assert_eq!(b.sides[0].mon().confusion_n, 0);
+
+    // A neutral nature lowers NO stat, even though `effect()` reports its
+    // raised stat in both slots: Mago's dryness never muddles a Serious
+    // holder (the seed-23 shape), nor Hardy a Figy, Docile an Iapapa,
+    // Bashful a Wiki, Quirky an Aguav.
+    for (berry, nature) in [
+        ("magoberry", Nature::Serious),
+        ("figyberry", Nature::Hardy),
+        ("iapapaberry", Nature::Docile),
+        ("wikiberry", Nature::Bashful),
+        ("aguavberry", Nature::Quirky),
+    ] {
+        let (b, events) = scripted_eaten(berry, nature);
+        assert!(
+            !events
+                .iter()
+                .any(|e| matches!(e, Event::ConfusionStarted { side: 1 })),
+            "{} confused a {} holder",
+            berry,
+            nature.name(),
+        );
+        assert_eq!(b.sides[0].mon().confusion_n, 0);
+    }
+}

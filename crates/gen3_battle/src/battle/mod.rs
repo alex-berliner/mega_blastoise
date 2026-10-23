@@ -97,6 +97,10 @@ pub struct Mon {
     /// Sleep Talk is typed by whoever is swinging it, and a copy built from
     /// the move table alone has no IVs to ask.
     pub hidden_power: Type,
+    /// And its base power, from the same IVs: the next bit up of each one.
+    /// Under a uniform spread that is 70 when the IV has its second bit set
+    /// (31, 30, 15, ...) and 30 when it does not.
+    pub hidden_power_bp: u8,
     pub level: u8,
     pub nature: Nature,
     pub hp: u16,
@@ -399,17 +403,36 @@ impl Mon {
         inv: Invest,
         moves: &[&str],
     ) -> Option<Mon> {
+        Mon::with_spread(species_id, level, nature, &[inv; 6], moves)
+    }
+
+    /// Build a mon from a per-stat spread: six IV-and-EV pairs in the sim's
+    /// stat order (hp, atk, def, spe, spa, spd), each stat computed off its
+    /// own pair, and Hidden Power read as type AND base power off the six
+    /// IVs. Callers hand in a legal spread (IVs 0..=31, EVs 0..=255 at 510
+    /// total); this engine keeps the team builder honest, not policed.
+    pub fn with_spread(
+        species_id: &str,
+        level: u8,
+        nature: Nature,
+        spread: &[Invest; 6],
+        moves: &[&str],
+    ) -> Option<Mon> {
         let species = species_by_id(species_id)?;
         let b = species.base;
-        let max_hp = hp_stat(b.hp, inv, level);
-        let stat = |base: u16, s: Stat| other_stat(base, inv, level, nature, s);
+        let max_hp = hp_stat(b.hp, spread[0], level);
+        let (hp_type, hp_bp) = crate::stats::hidden_power([
+            spread[0].iv, spread[1].iv, spread[2].iv, spread[3].iv, spread[4].iv, spread[5].iv,
+        ]);
+        let stat = |base: u16, inv: Invest, s: Stat| other_stat(base, inv, level, nature, s);
         let gender = match species.gender {
             "" => "M",
             fixed => fixed,
         };
         Some(Mon {
             species,
-            hidden_power: crate::stats::hidden_power_type(inv),
+            hidden_power: hp_type,
+            hidden_power_bp: hp_bp,
             gender,
             item_knocked_off: false,
             attracted_by: None,
@@ -417,11 +440,11 @@ impl Mon {
             nature,
             hp: max_hp,
             max_hp,
-            atk: stat(b.atk, Stat::Atk),
-            def: stat(b.def, Stat::Def),
-            spa: stat(b.spa, Stat::SpAtk),
-            spd: stat(b.spd, Stat::SpDef),
-            spe: stat(b.spe, Stat::Spe),
+            atk: stat(b.atk, spread[1], Stat::Atk),
+            def: stat(b.def, spread[2], Stat::Def),
+            spa: stat(b.spa, spread[4], Stat::SpAtk),
+            spd: stat(b.spd, spread[5], Stat::SpDef),
+            spe: stat(b.spe, spread[3], Stat::Spe),
             stages: [0; 5],
             acc_stage: 0,
             eva_stage: 0,
@@ -430,7 +453,7 @@ impl Mon {
                 .filter_map(|m| MoveSlot::new(m))
                 .map(|mut s| {
                     if s.entry.id == "hiddenpower" {
-                        s.typed_as = Some(crate::stats::hidden_power_type(inv));
+                        s.typed_as = Some(hp_type);
                     }
                     s
                 })
