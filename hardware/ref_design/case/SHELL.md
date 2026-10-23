@@ -1,4 +1,4 @@
-# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), and joints that hold it together (2026-10-22)
+# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), joints that hold it together, and the seam on the round (2026-10-22)
 
 The case's redesign after Alex's notes on his last print (items 10, 13, 14 and 15) and the change
 to the EastRising ER-TFT024IPS-3, then reworked for the board with the cell in a hole in it and the
@@ -11,8 +11,8 @@ Four printed parts: a **top piece** (the screen face, the curved steps down to t
 at each end, and the sides), two **decks** (one part,
 printed twice: the button faces at each end), and the **tub** (the back, with a pocket for the
 cell). The top piece and the decks all curve over the sides and meet the tub flush at one seam,
-4.2 mm up the walls, where the back's round ends; their skirts slide 3 mm (2.5 at the decks) down
-over the tub's **tongue**, which keys them: tabs into pockets in the top piece, a post in each
+2.55 mm up the walls, low on the back's round: their skirts follow the round down to it and slide
+4.55 mm (4.05 at the decks) down over the tub's **tongue**, which keys them: tabs into pockets in the top piece, a post in each
 corner that pushes a deck home, and grip ribs, so the four parts hold together before the screws
 go in (see "The joints"). Each deck seats into the top piece **from behind**
 on a 45 degree wedge, reaches out to the case's outline and curves over the end and the sides
@@ -68,8 +68,9 @@ the port and the plug, and check_fit.py checks it against J1's 3D model.
   and J5/J6, the right one at x 29.6 under the power latch) and across the right one at y 14 (by
   TH1). They keep off the four Start/Select domes' vents, J1's legs and the test pads on the back
   (`rib_free`, which check_fit reads).
-- **The board is inside the tub's walls.** Its top (3.8) is under the seam (4.2), so the top pieces'
-  skirts no longer reach it: the **crush ribs moved to the tub's walls** (sides at y +-28, ends at
+- **The board is inside the tub's walls.** Its top (3.8) was under the seam (4.2), so the top pieces'
+  skirts no longer reached it (since the seam came down to 2.55 they run down beside its edge, outside
+  the tongue: "The seam on the round"): the **crush ribs moved to the tub's walls** (sides at y +-28, ends at
   x +-22), their lead-in at the top, where the board meets them as the tub goes on. The tub's
   cavity follows the back's round only 0.2 in (`tub_round_in`), so the board's edge keeps 0.3 to
   it. The skirts' cut over the tongue is only the wall's inner half (and, where the tongue leans
@@ -204,7 +205,8 @@ the board's old job (below).
   (the skirt never under `skirt_t` 0.7) and the tongue leans in with it, to 2.25 from the outline:
   0.25 outside the board's edge, which it passes as the tub goes on (its tip is chamfered from the
   wall's inside, so it leads the board in), and the deck's plate keeps 0.9 over the groove. A 3.0
-  tongue there would leave 0.4 of plate and come within 0.05 of the board's edge. **The seam stays at 4.2**,
+  tongue there would leave 0.4 of plate and come within 0.05 of the board's edge. **The seam stayed at 4.2** in this pass (it came down
+  the same day: "The seam on the round"),
   where the back's round ends: a lower seam would put the skirts' edges on the round (a feather edge
   in the face-down print, a seam on a curve), and it's the tongue's top, not the seam, that limits
   the overlap. The skirts still stop `seam_gap` 0.1 over the tub and the grooves 0.1 over the
@@ -251,6 +253,61 @@ notches open upwards). `overhangs.py`: none needed. No new test plate: `slide_fi
 covers the tongue and the keys, and the seam coupons in `4_fit_coupons` now carry a tab (y 22) and
 a grip rib (y 25).
 
+## The seam on the round (2026-10-22)
+
+Alex, after the joints: the top pieces' outer walls should come farther down the side, over most of
+the back's round, to a much lower ledge on the tub, the tub keeping its tongue that the top pieces
+slide over. Agreed: the seam from the round's end (4.2) down to about 2.5.
+
+![the seam at the right wall: the skirt down the round to 2.55, the tongue from there to 7.2](images/section_seam_zoom.png)
+![the USB-C side from outside: the seam low on the round, stepping up round the USB-C tab](images/outside_usb.png)
+![across J1's opening: the tub's tab under it, the top piece over it](images/section_usb.png)
+
+- **The height: `z_seam` 2.55**, one height all round. The skirts' outsides follow the back's round
+  down to their tips at 2.65 (`seam_gap` 0.1 over the tub); their insides stay straight down the
+  tongue (the groove where it was, `wall`/2 in), so they still slide straight on. What sets it is
+  the skirts' tips: the round has come 0.30 in at 2.65, which leaves a tip 0.70 thick
+  (`skirt_t`); at a 2.5 seam it would be 0.32 and the tips 0.68. Going lower means moving the
+  tongue and its groove inwards (and the keys, the posts, the grip ribs and the decks' leaning groove
+  with them) into the board's margin; 2.55 is within 0.05 of what was agreed, with nothing else
+  moved. Asserted: the tips at the top piece and the decks, and the room beside the board's edge.
+- **The margins, all round** (horizontal sections of the parts at 2.67 to 4.13, the side walls, the
+  end walls, the corners, past the side screws' bosses, the crush ribs and the USB-C tab): at the
+  skirts' tips the outside is 2.20 from the board's edge (38.40 against 36.2 at 2.65), of which the
+  skirt takes 0.70, `seam_fit` 0.25 and the tongue 0.75, leaving 0.50; under the round's end the
+  tongue reaches in to the tub's cavity wall below it (`tub_round_in`), so it is 0.95 thick there
+  and 0.30 from the board, as the tub's wall was. The tightest places are the skirts' tips (0.70,
+  everywhere round the case, the same at the ends and the corners since the plan's offsets keep their
+  distance round a corner), the tongue to the board (0.30) and the grip ribs (0.05 to the skirts, by
+  design). The board's corners (r 5.5) are farther from the case's (r 4.3) than its edges are.
+- **The overlap:** the tongue keeps its tops (7.2 along the top piece's sides, 6.7 under the decks)
+  and rises from the new seam: `tongue_h` 4.65, `deck_tongue_h` 4.15. The top piece's skirt runs
+  **4.55** down over it (was 2.9), the decks' **4.05** (was 2.4).
+- **The ledge** on the tub at the seam is a flat step 0.9 wide, from the outside (38.36) to the
+  tongue's outer face (37.45), all round.
+- **Keys, posts and grip ribs** stay where they were: the tabs into the top piece still reach 8.5
+  and now rise from the lower seam with the tongue; the corner posts stand from the floor to 6.7 as
+  before; the grip ribs now run from the seam (2.55) to the same tops (6.8 along the top piece, 5.9 at
+  the decks), 4.25 long instead of 2.6, so they grip over more of the skirt (`grip_reach` is still
+  a guess: see "Best guesses").
+- **USB-C:** the brief for this pass expected the opening to sit wholly in the top piece's wall
+  with the tub's tab gone. It can't: the receptacle's face is 0.15 under the surface, so its front
+  stands 0.85 into the skirt, and the board goes onto the face-down top piece straight down. Any skirt
+  under the receptacle's mouth would be in its way, unless the board went in 0.9 off to the left and
+  slid across under the bosses, the speaker and the panel's frame. So the opening is split as before:
+  its upper half in the top piece, its lower half in the tub's tab, which now rises from the new seam
+  (2.55) to the port's centre (5.43; its outer half to 4.33), 18 wide, in a notch in the skirt, with
+  the stepped seams that keep light out. Under the opening the tab is 1.0 tall. The band (the tongue)
+  is cut behind it, as before, for the board's tab to pass as the tub goes on. The USB-C asserts are
+  tied to the tab (it rises from the seam, at least 0.8 under the opening; and an assert that fails
+  if the notch ever stops being needed). check_fit: J1's mouth 0.25 / 0.25 clear in y, 0.29 / 0.25 in
+  z, a mated plug's overmold 0.16 off the wall, as before.
+- **Printing:** the top piece and the decks print face down, so the skirts' inward-curving edge is
+  at the top of the print and slopes inwards going up: an upward face, no supports (`overhangs.py`,
+  and the P1S slices: supports only under the board mock, as before). The tub prints back down as
+  before; the ledge is an upward face. The top piece is 6.9 tall now (was 5.75), each deck 5.05
+  (was 3.9); both still fit their plates.
+
 ## The smooth rounds (2026-10-22)
 
 The top piece's and the decks' rounds and the step were stacks of flat 0.1 mm slabs, as the tub's
@@ -278,14 +335,16 @@ parts on the left.
 
 ## Item 10: the top pieces curve over the sides and meet the tub flush
 
-- **The seam** (`z_seam` = `back_r` = 4.2) is where the tub's back round ends and the walls go
-  straight up. Below it is the tub: the floor, the round (4.2, ending in a 45 degree chamfer at the
-  bed) and nothing else. Above it the top piece (in the middle) and the decks (at the ends) form all
+- **The seam** (`z_seam` 2.55 since 2026-10-22; 4.2, `back_r`, until then) is low on the tub's back
+  round. Below it is the tub: the floor, the round's lower part (ending in a 45 degree chamfer at the
+  bed) and nothing else. Above it the top piece's and the decks' skirts carry on round it, up into the
+  walls, and the top piece (in the middle) and the decks (at the ends) form all
   of the walls and roll into their faces through `face_r` = 3.0: an arc out of the wall that turns
   into a chamfer at `overhang` where the arc would go flatter in the print pose (the same profile
   as the back's round, `edge_in()`).
-- **The joint at the seam:** the tub's wall carries a **tongue**, its inner half 3.0 mm up past the
-  seam (`tongue_h`; 2.5 at the decks, `deck_tongue_h`; 1.5 until "The joints"); the top pieces'
+- **The joint at the seam:** the tub's wall carries a **tongue**, its inner half up past the
+  seam to 7.2 (4.65 over it, `tongue_h`; to 6.7 at the decks, `deck_tongue_h` 4.15; 1.5 tall until "The
+  joints", 3.0 and 2.5 until "The seam on the round"); the top pieces'
   skirts come down outside it, their outer half to the seam. The
   outsides are flush; a skirt can't move inwards; there is no straight path through the seam for
   light or dust; and it is the top pieces that wrap over the tub ("or go over it"), not the tub that
@@ -293,7 +352,7 @@ parts on the left.
   the seam.
 - **Width:** 77.4 since 2026-10-22 (the board's 72.4); the walls stay 2.0.
 - **USB-C:** with the seam below the port, the opening's lower half is now a **tab of the tub** that
-  rises from the seam into a notch in the top piece's skirt (the old lid tongue, upside down), with
+  rises from the seam (2.55 since "The seam on the round") into a notch in the top piece's skirt (the old lid tongue, upside down), with
   the stepped seams that stopped light showing through. The board's tab sits in a slot in that tab.
 - **Snap hooks: dropped.** They held the lid on the tub while the case was turned over for the
   screws. Built upside down, nothing has to hold anything while the screws go in (gravity does), and
@@ -363,7 +422,7 @@ One part fits both ends (the end bosses are each other turned round, as before).
    boss on the panel's side; then the board down onto the bosses.
 8. **Tub** over it all, straight down (the board lying centred on its bosses, within about 0.5:
    the tongue's chamfered tip and the posts' lead-ins guide it in, then the crush ribs centre it):
-   the cell drops into the board's hole, the tongue slides 3 mm down inside the skirts, its four
+   the cell drops into the board's hole, the tongue slides 4.5 mm down inside the skirts, its four
    tabs into the top piece's pockets and the USB-C tab into its notch, the corner posts push each
    deck onto its wedges, and the grip ribs take hold. Press it down all round until the seam is an
    even line. The case now holds together: lift it by the top piece and nothing falls out.
@@ -483,9 +542,16 @@ tub's tongue became 0.75 thick (was 0.85).
   off the buttons, and `check_buttons.py` went from its 11 known failures to 21 (the silicone and
   the caps against the deck). The decks stay where they were, on their wedges, the seams 0.15.
 - **A 3.0 tongue under the decks too**: the decks' round leaves room for 2.5 (the plate 0.4 over the
-  groove at 3.0, and the tongue's lean within 0.05 of the board's edge). **The seam lower, for more
-  overlap:** the skirts' edges would lie on the back's round, and the tongue's top, not the seam,
-  is the limit.
+  groove at 3.0, and the tongue's lean within 0.05 of the board's edge). (**The seam lower, for more
+  overlap**, was rejected here too: the skirts' edges would lie on the back's round. Alex asked for
+  exactly that next: "The seam on the round".)
+- **The seam at the round's end (4.2)** (2026-10-22, "The seam on the round"): a clean line where
+  the back's round meets the walls, the skirts' tips square. Replaced at Alex's ask: the top pieces'
+  walls over most of the round, to a much lower ledge, for a shell that reads as the top pieces
+  wrapping the case rather than sitting on the tub. **A 2.5 seam:** the skirts' tips would be 0.68,
+  under `skirt_t`, unless the tongue moved inwards. **The USB-C opening wholly in the top piece, the
+  tub's tab gone:** the receptacle stands 0.85 into the skirt and the board goes in straight down
+  (see that section).
 - **Shoulders and the decks' notches back** (for the hold): neither kit Alex printed had them (they
   lived from 99e3f04 to c955631), so they weren't what held 4df3f96; the screws stay inward.
 
@@ -498,7 +564,7 @@ tub's tongue became 0.75 thick (was 0.85).
    whether a deck drops in over the spine and sits on its wedges, and whether the seam in the
    step's crease looks right. If it binds over the spine, `deck_gap` back towards 0.25.
 3. **The seam and the joints** (`seam_fit` = `slide_fit` 0.25, `grip_reach` 0.2, guesses; `seam_gap`
-   0.1, `tongue_h` 3.0, `deck_tongue_h` 2.5): the seam coupons (a tab and a grip rib on them) and the
+   0.1, `tongue_h` 4.65 and `deck_tongue_h` 4.15 over a seam at 2.55): the seam coupons (a tab and a grip rib on them) and the
    case. Whether the tub presses on by hand, stays on when the case is lifted by the top piece and
    eases off again; whether the corner posts push the decks onto their wedges (each deck's seams
    even, no rocking) without forcing the tub's corners out. Too tight at the posts: take 0.1 off
@@ -518,6 +584,10 @@ tub's tongue became 0.75 thick (was 0.85).
    (under the decks; 0.5 elsewhere) before the crush ribs centre the board, so the board must lie
    within about 0.5 of centred on its bosses (the tongue's chamfered tip and the posts' lead-ins
    guide it in that far).
+9. **The tongue is a thin wall now** (0.75, 4.65 tall over the seam, 0.95 thick below 4.2): inside
+   the skirts it is held all along, but off the case it will flex. Handle the tub by its floor. The
+   skirts' tips are 0.70 at the seam; if the face-down print leaves them ragged, the seam can go up
+   (each 0.1 up the round thickens them about 0.04).
 
 ## Images
 
@@ -526,5 +596,6 @@ the outside views with OpenSCAD from the assembled STLs, the sections with matpl
 `trimesh` cuts of the same parts (the cell nominal, the speaker 3.5 tall). The joints' images
 (2026-10-22: `joint_outside`, `section_seam_zoom`, `section_joint_zoom`, `section_tongue_end`,
 `section_key_top`, `section_key_post`, `section_side_joint`, `section_usb_wall`, `exploded_keys`)
-are of 7e9d7e1's parts, the board drawn as its outline's slab; the other sections are older and
-still show the 1.5 tongue at their walls.
+were of 7e9d7e1's parts. Since "The seam on the round" every image here is of 8dbf2c3's parts (the
+board drawn as its outline's slab in the close-ups), except `exploded_keys`, which still shows the
+skirts ending at 4.3; `section_usb` and `outside_usb` are new.

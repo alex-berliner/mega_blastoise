@@ -22,7 +22,7 @@ Supports are per part, not per plate: only `board_mock` and `coupon_usb_board` g
 | `2_buttons_quick.3mf` | **Start here (about an hour).** `tune_openings` (three D-pad opening sizes, the keyed A/B/X/Y cluster, three hole sizes), and the D-pad, A/B/X/Y and Start/Select stacks: a board slice each and a deck slice at the 1.75 mm silicone height | first |
 | `3_buttons_heights.3mf` | the same three deck slices at 1.6 and 1.9 mm silicone height | if the 1.75 mm slices don't sit right |
 | `0_buttons_end.3mf` | Seat 1's whole end: tub, board mock (to place the silicone on), the top piece's end (the step, the spine, the undercut), seat 1's deck | any time; it also tests the deck's joint |
-| `4_fit_coupons.3mf` | USB-C opening (the tub's tab, the top piece's skirt, the board's tab with a receptacle stand-in), a stretch of the seam (the tub's 3 mm tongue under the top piece's skirt, with a key tab, a grip rib and a crush rib), the top piece's panel frame, and seat 1's whole end | second |
+| `4_fit_coupons.3mf` | USB-C opening (the tub's tab, the top piece's skirt, the board's tab with a receptacle stand-in), a stretch of the seam (the tub's tongue, 4.65 mm over the seam, under the top piece's skirt, with a key tab, a grip rib and a crush rib), the top piece's panel frame, and seat 1's whole end | second |
 | `1_case.3mf` | the tub, the top piece, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
 | `1_case_decks.3mf` | the two decks (the same part, one for each end) | with `1_case` |
 | `6_tests.3mf` | **Questions for the shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and a top piece screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
@@ -50,8 +50,8 @@ real case, each in its print pose.
 **The shell (2026-10-21, reworked 2026-10-22).** The top piece (the screen face, the curved steps,
 the speaker's grille in the right bezel, the sides; the four side screws go into it beside the glass)
 and the two decks (the button faces) curve over the sides and meet the tub flush at one seam low on
-the walls; each deck seats into the top piece from behind on a 45 degree wedge and has its own
-screw. The tub's tongue stands 3 mm up inside the skirts (2.5 at the decks) and keys them: four
+the back's round (2.55 mm up), their skirts following the round down to it; each deck seats into the top piece from behind on a 45 degree wedge and has its own
+screw. The tub's tongue stands 4.65 mm up inside the skirts (4.15 at the decks) and keys them: four
 tabs into pockets in the top piece, a post in each corner that pushes a deck onto its wedges, and
 grip ribs, so the case holds together before the screws go in. The cell sits in a hole in the
 board, its bottom in a pocket in the tub's floor. Everything is built upside down, and nothing
@@ -61,11 +61,11 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; its walls 6.7 to 7.2) | `1_case` (56.6 g, 1 h 41 min with the top piece, the board mock and the dummies), `5_unit` |
-| `top.stl` | 77.4 x 92.5 x 5.75 | `1_case`, `5_unit` |
-| `deck.stl` (print two) | 77.4 x 33.2 x 3.9 | `1_case_decks` (8.6 g, 22 min for both), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (56.0 g, 1 h 42 min with the top piece, the board mock and the dummies), `5_unit` |
+| `top.stl` | 77.4 x 92.5 x 6.9 | `1_case`, `5_unit` |
+| `deck.stl` (print two) | 77.4 x 33.2 x 5.05 | `1_case_decks` (9.1 g, 23 min for both), `5_unit` |
 
-`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.2 g and 2 h 03 min.
+`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.0 g and 2 h 04 min.
 
 To assemble:
 1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
@@ -81,7 +81,7 @@ To assemble:
    its 35 mm leads reach J4 only when the board is nearly in place. Lay the leads round the screw boss
    between the speaker and J4, on the glass's side, then the board down onto the bosses.
 7. Tub over it all, straight down, the board lying centred on its bosses (the cell drops into the
-   board's hole, the tub's crush ribs centre the board, the tongue slides 3 mm into the skirts, its
+   board's hole, the tub's crush ribs centre the board, the tongue slides 4.5 mm into the skirts, its
    tabs into the top piece's pockets, the corner posts push each deck onto its wedges). Press it
    down all round until the seam is an even line: it grips, and the case now holds together on its
    own. Six M2 x 6 from the back, snug: they lock it.
