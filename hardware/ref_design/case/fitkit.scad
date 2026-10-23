@@ -127,7 +127,7 @@ module stack_legs(c, ss = false)
               : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
     // up into the deck (0.6 under its face), so a leg under one of the deck's reliefs still meets
     // solid deck and doesn't hang over the relief when printed face down (turned half a facet:
-    // unturned, the wedge's top layer runs exactly through two of a cluster leg's corners)
+    // unturned, the old wedge's top layer ran exactly through two of a cluster leg's corners)
     at(c + p, z_top_cu) rotate(180 / $fn) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
 // It prints deck face down on the bed, as the deck does, so it needs no supports: a slice of the deck
 // itself (less the laps at its side joints), its skirts and boss cut off at the walls' bottom so it

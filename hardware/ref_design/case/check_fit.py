@@ -19,9 +19,8 @@ the case allows at that spot:
   screw bosses             nothing within the boss diameter (four on the top piece, one on each deck)
   crush ribs               nothing within 1 mm of the board's edge at a rib
   top's panel frame        its band round the panel: <= frame limit (it hangs lower)
-  the decks' flange        under the joint (the wedges' flange and the top piece's tongue): <= its
-                           limit, or over a part it stops short for, that part's own keepout limit
-                           (case.scad's FLANGE echo line)
+  the joint at the step    the decks' plates run on under the top piece, to its end wall: <= its
+                           limit (the decks' underside; case.scad's JOINT echo line)
   folded FPC, J3's range   nothing but J3 under the panel's FPC, over the whole range J3 may move
   edge parts               the USB-C face reaches the wall
   USB-C opening            J1's mouth (its model within 1 mm of its face) centred in the wall's
@@ -131,14 +130,14 @@ def extents(refs):
 
 def case_echo():
     """case.scad's lines for this check that aren't in positions.json: {"USBC": the USB-C opening and the
-    plug it is checked with, "FLANGE": the decks' flange and its keepouts}, each None if missing."""
+    plug it is checked with, "JOINT": the joint under the step}, each None if missing."""
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "case.echo")
         subprocess.run([*scad.cmd(out), "-o", out, "-D", 'part="none"', os.path.join(HERE, "case.scad")],
                        capture_output=True, text=True)
         text = open(out).read() if os.path.exists(out) else ""
     found = {}
-    for key in ("USBC", "FLANGE"):
+    for key in ("USBC", "JOINT"):
         m = re.search(r'ECHO: "' + key + r' (\{.*\})"', text)
         found[key] = json.loads(m.group(1).replace('\\"', '"')) if m else None
     return found
@@ -186,9 +185,9 @@ def main():
             notes.append(f"{ref}: no 3D model in this KiCad install, checked as its courtyard at {h} mm ({name})")
     glass = POS["glass"]
     echoed, under = case_echo(), []
-    flange = echoed["FLANGE"]
-    if not flange:
-        problems.append("no FLANGE line in case.scad's echo to check the decks' flange with")
+    joint = echoed["JOINT"]
+    if not joint:
+        problems.append("no JOINT line in case.scad's echo to check the joint under the step with")
     for ref, box in sorted(boxes.items()):
         if box is None:
             notes.append(f"{ref}: no 3D model exported")
@@ -231,25 +230,20 @@ def main():
             limit, where = frame["limit"], "top piece's panel frame"
         if top > limit + 1e-3:
             problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
-        for zone in (flange or {}).get("zones", []):   # the decks' flange under the joint
+        for zone in (joint or {}).get("zones", []):   # the joint under the step
             if inside_rect(box, zone):
-                keep = [k for k in flange["keep"] if within(box, k["box"])]
-                lim = min(k["limit"] for k in keep) if keep else flange["limit"]
-                under.append((ref, top, lim, bool(keep)))
-                if top > lim + 1e-3:
-                    problems.append(f"{ref} is {top:.2f} mm tall under a deck's flange, which allows {lim:.2f}"
-                                    + (" (its keepout's limit)" if keep else ""))
+                under.append((ref, top))
+                if top > joint["limit"] + 1e-3:
+                    problems.append(f"{ref} is {top:.2f} mm tall under the joint at the step, which allows {joint['limit']:.2f}")
                     break
         for zone in POS["fpc_zones"]:
             if inside_rect(box, zone, -0.2) and top > 0.3 and not ref.startswith("J3"):
                 problems.append(f"{ref} is under the display's folded FPC")
         if ref.startswith("J3") and not within(box, POS["j3_zone"]):
             problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
-    if flange:
-        free = [u for u in under if not u[3]]
-        notes.append(f"the decks' flange: {len({u[0] for u in under})} parts under it, the tallest of them clear of its keepouts "
-                     f"{max((u[1] for u in free), default=0):.2f} (it allows {flange['limit']:.2f}), "
-                     f"{len({u[0] for u in under if u[3]})} under its keepouts (it stops short over them)")
+    if joint:
+        notes.append(f"the joint under the step: {len({u[0] for u in under})} parts under it, the tallest "
+                     f"{max((u[1] for u in under), default=0):.2f} (it allows {joint['limit']:.2f})")
     for ref, x, y in tht_leads():
         if not any(min(a[0], b[0]) <= x <= max(a[0], b[0]) and min(a[1], b[1]) <= y <= max(a[1], b[1])
                    for a, b in POS["rib_free"]):
