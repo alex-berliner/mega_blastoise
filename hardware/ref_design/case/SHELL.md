@@ -5,9 +5,89 @@ to the EastRising ER-TFT024IPS-3, then reworked for the board with the cell in a
 speaker on its top (row 19, `CELLCUT_FOR_CASE.md`, which supersedes `BOARD_OUTLINE.md` where they
 differ). Everything here is in `case.scad`; this file says why.
 
+## This branch is the 60 degree variant (2026-10-23)
+
+Alex: "Can you make a variant with improved curves on the tub sides, the ridges and so forth?
+Assuming that the max angle that the printer can print is 60 degrees instead of 45." So on
+`ref-design-cellcut-60` (from `ref-design-cellcut` at ce9bf8e, the lip under the step) `overhang` is
+**60 degrees from vertical** (30 from the bed). It is a variant: it holds only if the overhang test
+plates (`overhang_kit.zip`, the same kit as the main line's) show **both the P1S and the U1 print a
+60 degree face clean, and a convex round down to 60**, at the layer height the case is printed at
+(0.20 mm). Until then the main line stays at 45. The rest of this file describes the 45 degree case
+except where this section says otherwise; its images are the 45 degree parts.
+
+What changed (every number from `case.scad`; sections and outside views of both, side by side, are
+in the session's scratch folder, not in `images/`):
+
+| Shape | At 45 (ce9bf8e) | At 60 (this branch) |
+|---|---|---|
+| The tub's back round (`back_r`) | r 4.2 to 45 degrees, then a 45 chamfer 1.23 tall to the bed (2.46 in from the outline at the bed) | the same r 4.2 carried on to 60, then a 60 chamfer only **0.56** tall (0.97 run; 3.07 in at the bed) |
+| The top piece's and the decks' face rounds (`face_r`) | r 3.0 to 45, then a 45 chamfer 0.88 x 0.88 to the face, its top edge 1.757 in | **r 2.4** to 60, then a 60 chamfer 0.32 tall (0.56 run), its top edge 1.757 in, where it was |
+| The step to each deck (`step_r`) | r 3.0 to 45 and a 0.88 chamfer: a 1.36 run | the same r 3.0 to 60 and a **0.40** chamfer: a **1.79** run (its top edge 0.44 nearer the screen; the foot, the lip and the joint where they were) |
+| The spines | 10.8 across the top | 9.9 (the same step on their sides and ends) |
+| The side blend's band (`blend_overhang`) | 45, the round's own top chamfer carried up | **45** still, above the round's 60 facet (a 15 degree crease between them along the blend) |
+| The joint's hollow and the decks' plate under the step at each side wall (`joint_side`) | out to the wall's inside, the top piece's skin over the hollow's corner **0.07** | stop 1.0 inside it; the skin is 0.75 |
+
+**Why the face rounds got a smaller radius.** Carried on to 60, a 3.0 round ends 2.20 in from the
+outline, past the wall's inside (2.0). Along the side's blend the round comes down to the deck's
+height over the top piece's hollow, and there its top would leave the skin over the underside's
+edge 0.40, over J4's pocket 0.51, and break through over the joint's hollow. A 2.4 round carried to
+60 ends 1.757 in, exactly where the 3.0 at 45 ended, so nothing inside moves: it is rounder (its
+chamfer is 0.32 tall where it was 0.88, and meets the face at 30 degrees instead of 45) but starts
+0.6 lower down the wall. The tongue under the decks leans in less with it (its groove's top 1.23 in
+from the outline, was 1.46), which only adds room.
+
+**What couldn't use the extra 15 degrees, and why:**
+- **The side blend's band** stays 45: it is the skin over the top piece's hollow, J4's pocket and
+  the screws' bosses where the blend brings the round down, and a band at 60 is flatter, so
+  thinner: 0.63 over the underside's edge with the 2.4 round, 0.41 with a 3.0 one (0.7 asserted).
+  Only a round of 2.0 or less would let the band go to 60.
+- **The step can't become an S.** Face down the step's foot is at the top of the print; a cove at
+  the deck's edge would end in a feather edge of the top piece on the deck, and the lip's root needs
+  0.7 of skin over the hollow (it has 0.74). The step's profile has to steepen all the way down to
+  its vertical foot, so the most a higher limit buys is what it has: the arc further up and a short
+  chamfer. Moving the joint out towards the decks only moves the same profile; a bigger `step_r`
+  (4.0: 2.05 run) gives a straighter slope and a sharper crease at the foot, not a smoother step.
+- **The tub's round can't get a bigger radius:** the skirts' tips at the seam (2.55) are 0.70 at
+  r 4.2 (`skirt_t`), and a bigger round thins them.
+- **The cap, D-pad and Start/Select chamfers** (0.6, 0.8, 0.6 at 45) are the DS Lite faceplate's,
+  not the printer's limit, and stay.
+
+**The 45s kept (hidden, functional):** the lead-ins on the tongue's tip, the tabs, the corner posts,
+the grip ribs and the crush ribs (the tub prints back down: they are upward faces anyway); the lip's
+tip and the end wall's foot (lead-ins); the lap's top (face down a 45 underside on a hidden 0.85
+tongue: steeper prints cleaner, and its height isn't what limits it). And the overhang kit's
+first-layer coupon is the 45 tub's edge (`fl_overhang`), so the kit is the same on both lines.
+
+**Found on the way, fixed here (also wrong at 45):** at each side wall the top piece's band came
+within 0.07 of the joint's hollow over the deck's plate (it ran out to the wall's inside where the
+blend had brought the outside down to the deck's height). The hollow, the plate and its groove now
+stop 1.0 inside the wall (the plate's end 0.15 off the top piece's solid band there, which also
+locates the deck across), asserted along the hollow. `overhangs.py` also had cos where it meant sin
+(the same number at 45 only).
+
+**Checks:** every downward face of the three parts in their print poses is 60.000 degrees or steeper
+(tub 634 mm2 of it between 45 and 60, top piece 307, a deck 108; none flatter); `overhangs.py`,
+which now reads `overhang` from `case.scad`: no supports; the P1S slices: supports only under the
+board mock and the USB-C board coupon (their threshold follows the rule: 30 from the bed).
+`positions.json` the same, `check_fit` PASS, `check_buttons` its 11 known failures with the same
+volumes, every part manifold. Asserted: the skin over the blend's underside 0.71, over J4's pocket
+0.78, over the joint's hollow at the walls 0.75, the step's skin at the lip 0.74, the skirts' tips
+0.70, the laps 0.85, and a new one: the tub's counterbores keep 0.5 to the bottom chamfer at the
+first layer (H4's by the left wall has 0.60, was 1.14 at 45).
+
+P1S (0.20 mm): `1_case` 55.6 g, 1 h 44 min (was 55.6 g, 1 h 41); `1_case_decks` 9.8 g, 24 min (9.7 g,
+24); `5_unit` 65.2 g, 2 h 08 (65.1 g, 2 h 05).
+
+**What it depends on:** the overhang kit. If either printer's 60 degree fin or the R3 round below
+its 60 degree tick comes out rough, this variant doesn't print clean there (the rounds' last facets,
+the step's chamfer and the tub's edge are at exactly 60); go back to the main line, or set
+`overhang` to the angle that did print: every round here follows it (`face_r` can then grow as far as
+its top edge stays 1.757 in: 2.58 at 55, 3.0 at 45; the asserts check it).
+
 ## In one paragraph
 
-Four printed parts: a **top piece** (the screen face, the curved steps down to the decks, a spine
+Four printed parts (this branch: see "This branch is the 60 degree variant" first): a **top piece** (the screen face, the curved steps down to the decks, a spine
 at each end, and the sides), two **decks** (one part,
 printed twice: the button faces at each end), and the **tub** (the back, with a pocket for the
 cell). The top piece and the decks all curve over the sides and meet the tub flush at one seam,
@@ -655,7 +735,7 @@ Alex won't print `6_tests` soon, so these are committed as best guesses (2026-10
 |---|---|---|---|
 | `cap_hole_d` | 8.0 | `tune_openings`: holes 7.6 / 7.8 / 8.2 beside the keyed 8.0 cluster | the smallest hole a real A/B/X/Y cap drops through and presses without catching; smaller if 8.0 rattles |
 | `dpad_gap` | 0.65 | `tune_openings`: D-pad openings 0.55 / 0.65 / 0.75 | the tightest opening the real D-pad rocks freely in every direction |
-| `overhang` | 45 | `test_overhangs`: fins 45 to 75 degrees from vertical, a convex R6 round (on the P1S and the U1) | up to the steepest fin that prints clean on both printers; every round and the step to the decks get rounder with it |
+| `overhang` | 45 (60 on this branch, the variant) | `test_overhangs`: fins 45 to 75 degrees from vertical, a convex R6 round (on the P1S and the U1) | up to the steepest fin that prints clean on both printers; every round and the step to the decks get rounder with it |
 | `slide_fit` (`seam_fit`) | 0.25 a side | `test_rings`: rings 0.2 / 0.3 / 0.4 / 0.5 a side over the 5.0 `test_column` | the smallest ring that slides on the column by hand without force or rocking (0.15 was too tight on the old insert's ring) |
 | `grip_reach` (2026-10-22) | 0.2: the grip ribs 0.05 short of the skirts | the case itself (and the seam coupons): the tub should press on by hand and stay on when the case is lifted by the top piece | towards 0.25 (touching) if the tub falls off; towards 0.1 if it won't go on |
 
@@ -755,7 +835,7 @@ tub's tongue became 0.75 thick (was 0.85).
 
 ## Open questions
 
-1. **The overhang limit** (`overhang`, 45, a guess): the `6_tests` ladder on both printers. A higher limit
+1. **The overhang limit** (`overhang`, 45 on the main line, 60 on this variant: a guess either way): the `6_tests` ladder on both printers. A higher limit
    makes the step and every edge rounder in one line.
 2. **The lip and its clearance** (`deck_gap` 0.15 round the lip, over the plate and down the spine's
    sides, none on the end wall's foot): the `0_buttons_end` coupons (top piece end + deck) show

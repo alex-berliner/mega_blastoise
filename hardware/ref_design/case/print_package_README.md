@@ -5,6 +5,12 @@ on the current design (2026-10-22: the 77.4 x 132.7 x 9.55 mm shell for the boar
 it, built upside down, its parts keyed to hold together before the screws; see `case/SHELL.md`):
 the tub, the top piece and two decks.
 
+**This is the 60 degree variant** (branch `ref-design-cellcut-60`, 2026-10-23): every round, the
+steps to the decks and the tub's bottom edge are shaped for a printer that prints a downward face
+60 degrees from vertical (30 from the bed) clean, not 45. Print it only once the overhang kit
+(`overhang_kit.zip`) has shown your printer does: its 60 degree fin and the R3 round down to its 60
+degree tick clean. Otherwise print the main line's kit (`case/SHELL.md`, first section).
+
 ## The projects
 
 <!-- printer -->
@@ -33,7 +39,7 @@ slicers' overhang settings) are a kit of their own, `overhang_kit.zip`, with the
 
 The top piece, the decks and the tuning deck slices print face down as exported (the slices legs
 up), the tub back down, everything else flat. `overhangs.py` checked every part for a downward face
-flatter than 45 degrees that the printer can't bridge (5 mm at most) or step out to (1 mm): only
+flatter than 60 degrees (this variant's limit) that the printer can't bridge (5 mm at most) or step out to (1 mm): only
 two parts have one, so only those parts get tree supports from the build plate (each part's own
 setting in the project; the plate's are off). Until 2026-10-21 the whole plate had them, and the
 slicer also filled the tub's six screw counterbores with support that fused into them: if you
@@ -64,11 +70,11 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (55.6 g, 1 h 41 min with the top piece, the board mock and the dummies), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (55.6 g, 1 h 44 min with the top piece, the board mock and the dummies), `5_unit` |
 | `top.stl` | 77.4 x 92.5 x 6.9 | `1_case`, `5_unit` |
-| `deck.stl` (print two) | 77.4 x 35.0 x 5.05 (the laps reach 1.8 past the face) | `1_case_decks` (9.7 g, 24 min for both), `5_unit` |
+| `deck.stl` (print two) | 77.4 x 35.0 x 5.05 (the laps reach 1.8 past the face) | `1_case_decks` (9.8 g, 24 min for both), `5_unit` |
 
-`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.1 g and 2 h 05 min.
+`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.2 g and 2 h 08 min.
 
 To assemble:
 1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
@@ -131,7 +137,7 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   underside is still clean (no drooping or loose strands) on each printer. The quarter round at the
   ladder's end goes from 85 degrees (near flat, where it leaves its stem) up to vertical, ticked
   at 45, 60 and 75 on its end face: report the tick below which it turns rough. That number goes
-  into `overhang` in `case.scad` (45 now): one line makes the steps and every edge rounder.
+  into `overhang` in `case.scad` (60 on this variant, 45 on the main line): one line makes the steps and every edge rounder.
 - Screw holes: `coupon_screws_tub` (two of the tub's holes, printed flat as the tub: H4's slimmed
   5.0 boss by the left wall and an end boss) should come out
   with the 4.4 mm counterbore and the 2.4 mm hole open, and an M2 screw should pass; the old plates
