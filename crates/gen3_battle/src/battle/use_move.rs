@@ -218,6 +218,49 @@ impl Battle {
             });
             return false;
         }
+        // Disable, at the sim's `onBeforeMovePriority: 7`: under flinch's 8
+        // and over confusion's 3, so the cant lands before the confusion
+        // clock has ticked at all: a locked move Disabled this turn costs
+        // the turn and NOTHING else, with no self-hit and no `-activate`. The
+        // volatile answers about the move the override settles on, which
+        // `acting_slot` mirrors without touching the charge or the lock.
+        //
+        // The cant is an ABORT, and Bide hangs its end off `onMoveAborted`,
+        // so a sealed Bide drops its stored energy with the turn, silently,
+        // since the volatile's own `onEnd` has nothing to say.
+        let mon = self.sides[side].mon();
+        let locked = mon.charging.is_some()
+            || mon.rampage.is_some()
+            || mon.bide.is_some()
+            || mon.rolling.is_some();
+        if locked && mon.disabled_slot == Some(self.acting_slot(side, index) as u8) {
+            self.break_rampage(side, script.is_some(), events);
+            self.sides[side].mon_mut().rolling = None;
+            self.sides[side].mon_mut().stall_counter = 0;
+            self.abort_drops_charge(side, index);
+            self.log_failed(side, events);
+            return false;
+        }
+        true
+    }
+
+    /// The rest of the sim's `BeforeMove` event: confusion, attraction and
+    /// full paralysis, at priorities 3, 2 and 1, and then a storing Bide,
+    /// whose condition is the one handler of the event with no priority at
+    /// all. They are asked AFTER the choice machinery (Encore's
+    /// `onOverrideAction`, the lock a charge or a rampage forced, and the
+    /// Disable, Taunt, Torment, Imprison and Choice gates that come with it),
+    /// because every one of those sits higher in the same event, and a move
+    /// any of them cancelled never reaches the confusion coin. `index` is
+    /// therefore the slot the override settled on rather than the one the
+    /// player pressed.
+    fn before_move_low(
+        &mut self,
+        side: usize,
+        index: usize,
+        script: Option<SeatScript>,
+        events: &mut Vec<Event>,
+    ) -> bool {
         // Confusion: the clock ticks before the action; at zero it lifts
         // and the move proceeds. Otherwise a coin (the script's selfhit
         // knob) decides between acting and the 40 BP typeless self-hit.
@@ -287,6 +330,18 @@ impl Battle {
                 events.push(Event::FullyParalyzed {
                     side: side as u8 + 1,
                 });
+                return false;
+            }
+        }
+        // A storing Bide sits silent (the games log nothing for the two
+        // storing turns) and cannot be re-chosen out of. Its condition is
+        // the one handler of this event left with no priority at all, so it
+        // is asked last of all: a confused, charmed or paralyzed Bider is
+        // stopped by the coin above and loses the volatile with the turn.
+        // Its `onBeforeMove` answers false, so no `AfterMove` either.
+        if let Some((stored, left)) = self.sides[side].mon().bide {
+            if left > 0 {
+                self.sides[side].mon_mut().bide = Some((stored, left - 1));
                 return false;
             }
         }
@@ -538,21 +593,6 @@ impl Battle {
         } else {
             index
         };
-        // A Disabled locked move cannot continue — a mid-charge release, a
-        // rolling Rollout or a rampage all lose the turn silently (the
-        // sim's disable cant; a broken rampage still fatigues). The cant is
-        // an ABORT, and Bide hangs its end off `onMoveAborted`, so a sealed
-        // Bide drops its stored energy with the turn, silently, since the
-        // volatile's own `onEnd` has nothing to say.
-        if releasing && self.sides[side].mon().disabled_slot == Some(index as u8) {
-            let _ = was_charging;
-            self.break_rampage(side, script.is_some(), events);
-            self.sides[side].mon_mut().rolling = None;
-            self.sides[side].mon_mut().stall_counter = 0;
-            self.abort_drops_charge(side, index);
-            self.log_failed(side, events);
-            return false;
-        }
         // A seal takes the release too. The sim runs both halves of a
         // two-turn move through `runMove`, so the Imprison standing on the
         // foe's side answers the release's BeforeMove just as it answered
@@ -622,15 +662,6 @@ impl Battle {
         } else {
             slot
         };
-        // A storing Bide sits silent — the games log nothing for the two
-        // storing turns — and cannot be re-chosen out of.
-        // Its `onBeforeMove` answers false, so no `AfterMove` either.
-        if let Some((stored, left)) = self.sides[side].mon().bide {
-            if left > 0 {
-                self.sides[side].mon_mut().bide = Some((stored, left - 1));
-                return false;
-            }
-        }
 
         // Anything but another Protect/Endure resets the stall gamble.
         if !matches!(
@@ -745,6 +776,22 @@ impl Battle {
             // the other early return out of runMove, so no `AfterMove`
             // either: nothing a White Herb would have answered yet.
             self.log_failed(side, events);
+            return false;
+        }
+        // Confusion, attraction and full paralysis: the sim's `BeforeMove`
+        // handlers at priorities 3, 2 and 1, which sit BELOW a Disable's 7,
+        // below Taunt's 5 and below Imprison's 4, all three of which are
+        // answered by the machinery between `before_move` and this call. That
+        // is the whole point of the split: a move cancelled by any of them
+        // never reaches the confusion clock, so the coin is not even rolled
+        // and a locked move Disabled this turn costs the turn and nothing
+        // else. See `before_move_low`.
+        if !self.pursuing
+            && !self.calling
+            && !self.before_move_low(side, index, script, events)
+        {
+            // As above: `runMove` returns at the BeforeMove event, so the
+            // move never goes off and `AfterMove` never runs.
             return false;
         }
         let struggling = (taunted_out
@@ -2324,7 +2371,11 @@ impl Battle {
             // contributes its own halving: with both actives sporting,
             // Electric comes through at a quarter.
             let sporters = (0..2)
-                .filter(|&w| self.sides[w].mon().sport == Some(move_type))
+                .filter(|&w| {
+                    let mon = self.sides[w].mon();
+                    (mon.mud_sport && move_type == Type::Electric)
+                        || (mon.water_sport && move_type == Type::Fire)
+                })
                 .count();
             // The stomping moves land doubled on a minimized target.
             let stomp_mult: u16 = if self.sides[foe].mon().minimized

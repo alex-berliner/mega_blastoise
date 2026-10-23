@@ -274,8 +274,13 @@ pub struct Mon {
     pub destiny: bool,
     /// Mean Look and kin: cannot switch while the gazer stays.
     pub mean_looked: bool,
-    /// Mud/Water Sport: which attack type this mon's field-hum halves.
-    pub sport: Option<Type>,
+    /// Mud Sport: halves Electric-type damage while it is up. It is a
+    /// VOLATILE of the hummer's own, so a mon that has used Mud Sport AND
+    /// Water Sport carries both: the two hums are separate flags and
+    /// either one damps its own type.
+    pub mud_sport: bool,
+    /// Water Sport: halves Fire-type damage while it is up.
+    pub water_sport: bool,
     /// Tightening focus for a Focus Punch this turn: refuses the flinch
     /// volatile outright. Set as the turn starts, cleared as it ends.
     pub focusing: bool,
@@ -513,7 +518,8 @@ impl Mon {
             perish_n: 0,
             destiny: false,
             mean_looked: false,
-            sport: None,
+            mud_sport: false,
+            water_sport: false,
             sub_hp: 0,
             focusing: false,
             focused: false,

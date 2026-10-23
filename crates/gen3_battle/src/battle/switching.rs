@@ -30,16 +30,15 @@ impl Battle {
             mon.ability_backup = Some(mon.ability);
         }
         mon.ability = id;
-        // Truant handed over mid-battle does NOT start loafing on the spot.
-        // Gen 3's own Truant sets `onStart: void 0`, and `setAbility` only
-        // raises a Start event from gen 4 on, so nothing at all runs when the
-        // ability changes hands: the loaf state is written only by Truant's
-        // switch-in and by its residual. A Traced or Skill Swapped Truant
-        // therefore acts this turn and first loafs on the next, which is
-        // exactly what the residual flip below produces from `false`.
-        if id == "truant" {
-            self.sides[side].mon_mut().loafing = false;
-        }
+        // The loaf clock is `pokemon.truantTurn`, and NOTHING about a change
+        // of hands touches it. Gen 3's own Truant sets `onStart: void 0`,
+        // and `skillSwap` only raises a Start event from gen 4 on
+        // (`if (this.gen > 3) this.singleEvent('Start', ...)`), so the two
+        // hooks that write the clock (Truant's switch-in and its residual
+        // at order 27) are the only writers, and a mon that hands Truant
+        // over keeps whatever it was doing. A Traced or Skill Swapped
+        // Truant therefore does not start fresh: it acts or loafs on the
+        // rhythm it already had.
     }
 
     /// Run whatever a Magic Coat or a Snatch put in someone else's hands.
@@ -492,7 +491,8 @@ impl Battle {
             out.uproar_ending = false;
             out.locked_move = None;
             out.acted = false;
-            out.sport = None;
+            out.mud_sport = false;
+            out.water_sport = false;
             out.sub_hp = 0;
             out.focused = false;
             out.minimized = false;
@@ -667,9 +667,16 @@ impl Battle {
 
     pub(super) fn greet(&mut self, side: usize, tidy: bool, events: &mut Vec<Event>) {
         // Truant counts the turn it arrives on, unless the battle has not
-        // started: the sim keys that off its own turn counter.
+        // started: the sim keys that off its own turn counter. Only Truant
+        // writes the clock, so a mon that arrives WITHOUT it keeps whatever
+        // a Truant of an earlier stint left behind, and a mon that picks
+        // Truant up later (Trace, Skill Swap) starts from that same stale
+        // clock, which is why a Magma Armor that inherits the ability mid-
+        // battle can loaf the very turn it takes it.
         let turn = self.turn;
-        self.sides[side].mon_mut().loafing = turn > 0;
+        if ability::truant(&self.sides[side].mon().bearer()) {
+            self.sides[side].mon_mut().loafing = turn > 0;
+        }
         {
             let mon = self.sides[side].mon_mut();
             if mon.status == Some(Status::Sleep) {

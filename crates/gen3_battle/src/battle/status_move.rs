@@ -227,7 +227,14 @@ impl Battle {
                 }
             }
             StatusAction::Sport(kind) => {
-                self.sides[side].mon_mut().sport = Some(kind);
+                // One volatile per sport, and each hums its own type: Mud
+                // Sport takes Electric down, Water Sport takes Fire down.
+                // Using the second does NOT take the first back down.
+                let mon = self.sides[side].mon_mut();
+                match kind {
+                    Type::Fire => mon.water_sport = true,
+                    _ => mon.mud_sport = true,
+                }
             }
             StatusAction::Spikes => {
                 if self.sides[foe].spikes < 3 {
@@ -1185,10 +1192,12 @@ impl Battle {
             m.trap_stale = passed.trap_stale;
             m.charged_elec = passed.charged_elec;
             m.taunt_n = passed.taunt_n;
-            // Water Sport and Mud Sport are volatiles on the
+            // Mud Sport and Water Sport are volatiles on the
             // HUMMER, not the field, so the halving follows
             // the pass and dampens the arrival's own moves.
-            m.sport = passed.sport;
+            // They are two of them and a pass carries both.
+            m.mud_sport = passed.mud_sport;
+            m.water_sport = passed.water_sport;
             // Lock-On's condition spells `noCopy: false` out
             // in the data; the arrival inherits the mark and
             // the turn left on it.
