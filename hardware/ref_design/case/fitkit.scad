@@ -130,10 +130,11 @@ module stack_legs(c, ss = false)
     // unturned, the wedge's top layer runs exactly through two of a cluster leg's corners)
     at(c + p, z_top_cu) rotate(180 / $fn) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
 // It prints deck face down on the bed, as the deck does, so it needs no supports: a slice of the deck
-// itself, its skirts and boss cut off at the walls' bottom so it stands on its legs
+// itself (less the laps at its side joints), its skirts and boss cut off at the walls' bottom so it
+// stands on its legs
 module tune_stack_lid(c, ss = false) difference() {
   union() {
-    intersection() { deck(-1); stack_box(c, ss); translate([-case_w, -case_l, retainer_bot - 0.01]) cube([2 * case_w, 2 * case_l, case_h]); }
+    intersection() { deck_body(-1); stack_box(c, ss); translate([-case_w, -case_l, retainer_bot - 0.01]) cube([2 * case_w, 2 * case_l, case_h]); }
     stack_legs(c, ss);
   }
   at(c + (ss ? [0, 5.6] : [0, -stack_half + 1.8]), deck_face - engrave) linear_extrude(engrave + 0.01)
