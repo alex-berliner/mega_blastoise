@@ -1,0 +1,21 @@
+[package]
+name = "ps_harness"
+version = "0.1.0"
+edition = "2021"
+description = "std, test-only: the ps_sim_cli binary (PS BattleStream text over stdin/stdout) and the cargo test wrappers. The driver itself is tools/ps-diff/diff.js."
+
+[features]
+default = []
+# Pulls in the on-device codecs alongside the bin so end-to-end tests
+# can take typed Commands and emit typed Msgs.
+text = ["ps_sim/text", "ps_protocol/text"]
+
+[[bin]]
+name = "ps_sim_cli"
+path = "src/bin/ps_sim_cli.rs"
+
+[dependencies]
+ps_sim = { path = "../ps_sim", default-features = false }
+ps_protocol = { path = "../ps_protocol", default-features = false }
+ps_client = { path = "../ps_client", default-features = false }
+ps_dex = { path = "../ps_dex", default-features = false }

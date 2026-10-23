@@ -1,0 +1,16 @@
+[package]
+name = "ps_dex"
+version = "0.1.0"
+edition = "2021"
+description = "Pokemon Showdown dex tables (species, moves, items, abilities, types, conditions). no_std + alloc, build.rs-generated for each gen."
+build = "build.rs"
+
+[features]
+default = []
+defmt = ["dep:defmt"]
+
+[dependencies]
+defmt = { version = "1.0", optional = true }
+
+[build-dependencies]
+serde_json = "1.0"

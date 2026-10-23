@@ -1,0 +1,25 @@
+[package]
+name = "ps_sim"
+version = "0.1.0"
+edition = "2021"
+description = "Pokemon Showdown-compatible battle server: state, queue, events, PRNG, damage, protocol emitter. no_std + alloc."
+
+[features]
+default = []
+# Select the gen scripts at battle-creation time. Both may be linked; the
+# runtime pick is by an enum dispatch (no trait objects in the hot path).
+gen1 = []
+gen3 = []
+# Text codec (PS line protocol + request JSON) lives here for the
+# `Text` transport the harness uses. Off by default on-device.
+text = []
+# Test-only next-N PRNG outcome override (design section 5.5). The
+# firmware never enables this; thumbv8m builds without it must contain
+# no override symbol (P1-2 acceptance).
+test-override = []
+defmt = ["dep:defmt"]
+
+[dependencies]
+ps_protocol = { path = "../ps_protocol", default-features = false }
+ps_dex = { path = "../ps_dex", default-features = false }
+defmt = { version = "1.0", optional = true }

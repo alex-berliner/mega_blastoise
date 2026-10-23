@@ -17,6 +17,9 @@ cargo test --quiet --workspace --exclude mega-blastoise-fw
 echo "── firmware check (thumbv8m, the v2 board's default build) ──"
 (cd crates/mega_blastoise_fw && cargo check --quiet)
 
+echo "── no_std proof: ps_sim, ps_client, ps_dex, ps_protocol for thumbv8m ──"
+cargo check --quiet -p ps_sim -p ps_client -p ps_dex -p ps_protocol --target thumbv8m.main-none-eabihf
+
 if [[ "${1:-}" != "--fast" ]]; then
   echo "── wasm build + headless seat probe ──"
   (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
