@@ -53,7 +53,9 @@ and the two decks (the button faces) curve over the sides and meet the tub flush
 the back's round (2.55 mm up), their skirts following the round down to it; each deck seats into the top piece from behind on a 45 degree wedge and has its own
 screw. The tub's tongue stands 4.65 mm up inside the skirts (4.15 at the decks) and keys them: four
 tabs into pockets in the top piece, a post in each corner that pushes a deck onto its wedges, and
-grip ribs, so the case holds together before the screws go in. The cell sits in a hole in the
+grip ribs, so the case holds together before the screws go in. At each side wall a lap on the
+deck's skirt slides in behind the top piece's skirt (the tongue stops either side of it), and the top
+piece's side round sweeps down into the deck's, so the two meet flush. The cell sits in a hole in the
 board, its bottom in a pocket in the tub's floor. Everything is built upside down, and nothing
 needs supports.
 
@@ -61,17 +63,17 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (56.0 g, 1 h 42 min with the top piece, the board mock and the dummies), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 8.5 (the tabs; the tongue's top 6.7 to 7.2, its outside 2.55 tall) | `1_case` (55.8 g, 1 h 42 min with the top piece, the board mock and the dummies), `5_unit` |
 | `top.stl` | 77.4 x 92.5 x 6.9 | `1_case`, `5_unit` |
-| `deck.stl` (print two) | 77.4 x 33.2 x 5.05 | `1_case_decks` (9.1 g, 23 min for both), `5_unit` |
+| `deck.stl` (print two) | 77.4 x 35.0 x 5.05 (the laps reach 1.8 past the face) | `1_case_decks` (9.2 g, 23 min for both), `5_unit` |
 
-`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 65.0 g and 2 h 04 min.
+`5_unit` (the tub, the top piece, both decks, the board mock and the dummies on one plate) is 64.9 g and 2 h 05 min.
 
 To assemble:
 1. Top piece face down on a cloth. The speaker face down into its pocket over the grille, its
    front foam ring stuck to the pocket's ceiling.
-2. Each deck face down into its end of the top piece from behind: it drops onto its wedges and sits
-   flat (it may settle a little back along them; the tub pushes it home). Caps into the decks from
+2. Each deck face down into its end of the top piece from behind, the laps at its sides going in
+   behind the top piece's skirts: it drops onto its wedges and sits flat (it may settle a little back along them; the tub pushes it home). Caps into the decks from
    behind (tabs into the slots, notches onto the ribs), silicone on them.
 3. Panel glass down into the top piece's pocket on its tape.
 4. The cell into the tub's floor pocket on double-sided tape, against the pocket's right wall.
@@ -93,7 +95,9 @@ stuck in it.
 Check that each deck drops in without force; that with the tub on and no screws the case lifts by
 the top piece without the tub or a deck coming loose and nothing rocks; that the tub still goes on
 and comes off by hand; that the seam round the case is an even thin line with the outsides flush;
-and that the seams at each step's foot and down the sides are an even 0.15.
+and that the seams at each step's foot and down the sides are an even 0.15, the two skirts flush
+across each side joint (the deck's lap behind the top piece's skirt) and the top piece's side round
+running into the deck's without a step.
 
 ## What to check, and what to change
 

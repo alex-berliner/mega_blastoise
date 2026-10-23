@@ -1,4 +1,4 @@
-# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), joints that hold it together, and the seam on the round (2026-10-22)
+# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), joints that hold it together, the seam on the round, and the side joint (2026-10-22)
 
 The case's redesign after Alex's notes on his last print (items 10, 13, 14 and 15) and the change
 to the EastRising ER-TFT024IPS-3, then reworked for the board with the cell in a hole in it and the
@@ -16,7 +16,9 @@ cell). The top piece and the decks all curve over the sides and meet the tub flu
 corner that pushes a deck home, and grip ribs, so the four parts hold together before the screws
 go in (see "The joints"). Each deck seats into the top piece **from behind**
 on a 45 degree wedge, reaches out to the case's outline and curves over the end and the sides
-itself, and has its own screw. The board, with the cell in a hole in it, lies inside the tub's
+itself, and has its own screw. At each side wall a **lap** on the deck's skirt slides in behind
+the top piece's skirt, and the top piece's side round sweeps down into the deck's (see "The side
+joint"). The board, with the cell in a hole in it, lies inside the tub's
 walls. Everything is built **upside down**: the speaker into its pocket, caps and silicone into the
 decks, the decks into the face-down top piece, the panel into its pocket, the board face down (the
 speaker's plug into J4 first), the tub (the cell stuck in its pocket) over it, six screws from the
@@ -200,7 +202,8 @@ the board's old job (below).
   across the step's band (|y| over 31.8, where the band starts) it is **2.5** (`deck_tongue_h`, top
   6.7): the decks' skirts run 2.4 down over it. It runs on unbroken under the side joints, so one
   wall locates both neighbours (the step from 3.0 to 2.5 is under the top piece's band, 2.6 from the
-  joint, and the grooves overlap it 0.35 each way). What limits it under the decks is their face's
+  joint, and the grooves overlap it 0.35 each way). (Since "The side joint" the decks' height starts
+  at |y| 24.0, under the top piece's side blend, and the tongue stops either side of each deck's lap.) What limits it under the decks is their face's
   round: 0.9 under the 7.7 face (the groove's top) it has come 0.86 in, so the groove leans in after it
   (the skirt never under `skirt_t` 0.7) and the tongue leans in with it, to 2.25 from the outline:
   0.25 outside the board's edge, which it passes as the tub goes on (its tip is chamfered from the
@@ -212,7 +215,7 @@ the board's old job (below).
   the overlap. The skirts still stop `seam_gap` 0.1 over the tub and the grooves 0.1 over the
   tongue's top, so the screws clamp the board, not the seam; a deck's plate bears on nothing.
 - **Tabs into the top piece** (`keys`): four, at y 18 and -16 on the right wall and 22 and -24 on
-  the left (two a side; clear of the USB-C notch, the side screws' bosses, the speaker's and J4's
+  the left (20 and -20 since "The side joint": they sit under the full screen face) (two a side; clear of the USB-C notch, the side screws' bosses, the speaker's and J4's
   pockets and the pinholes, asserted). Each carries the tongue 1.3 higher (to 8.5), 5.0 along the
   wall, its tip leaning in under the face's round and chamfered (0.33 at the very top), its corners
   0.5 x 45 degrees as lead-ins. They sit in pockets in the top piece's sides, `seam_fit` 0.25 along
@@ -238,13 +241,15 @@ the board's old job (below).
   along the top piece, 5.9 at the decks), each with a 45 degree lead-in. Two a side for the top piece (y +-25), one a side for each
   deck (y +-52), and one 2.0 wide across each side joint (y +-34.35): it presses both skirts' ends
   out to the same line, so the two lie flush. They hold the tub on and centre each part across it.
+  (Since "The side joint": the rib across each joint went, its job the lap's; the top piece's are at
+  y +-26 on the decks' height of tongue, and each deck has two a side, at y +-40 and +-52.)
 
 **How each joint holds, no screws:** the top piece is on the tub by its skirts over 2.9 of tongue
 (across), four tabs and the USB-C notch (along, and against twisting) and four grip ribs (on). Each
 deck is on the tub by its skirts over 2.4 of tongue and two grip ribs (across, on) and two corner
 posts (across with 0.25, along by pushing it onto the top piece). Each deck is on the top piece by
 its wedges (held there by the posts: it can't move along the case, towards the face or across) and
-by the rib across each side joint (the skirts flush). The board is centred by the tub's crush ribs
+by the lap at each side wall (the skirts flush; until "The side joint", a grip rib across the joint). The board is centred by the tub's crush ribs
 and sits between the tub's ribs and bosses and the top pieces' bosses.
 
 All of it prints without supports: the tub back down (the tabs, posts and ribs stand up; every lean
@@ -307,6 +312,80 @@ slide over. Agreed: the seam from the round's end (4.2) down to about 2.5.
   and the P1S slices: supports only under the board mock, as before). The tub prints back down as
   before; the ledge is an upward face. The top piece is 6.9 tall now (was 5.75), each deck 5.05
   (was 3.9); both still fit their plates.
+
+## The side joint (2026-10-22)
+
+Alex, on the outside where a deck meets the top piece on a side wall: "These parts should flow into
+each other better." It was a butt joint, the two skirts 0.15 apart with nothing hooking them
+together, and the top piece's step from the screen face (9.55) down to the deck (7.7) reached the
+side wall in a 2.1 mm S right at the seam: a notch that read as two parts.
+
+![the side joint from outside, the right wall](images/joint_outside.png)
+![and the left](images/joint_outside_left.png)
+![cut at z 4.5: the deck's lap behind the top piece's skirt, the tongue's slot round it](images/section_lap.png)
+![the lap from inside, the tub off](images/lap_inside.png)
+![exploded: the tongue's slot at the joint](images/exploded_lap.png)
+![the right wall in the tongue's plane: the lap in the slot, its top at 45 degrees](images/section_side_joint.png)
+![along the right wall 0.5 in: the side round sweeping down to the deck's](images/section_blend_along.png)
+
+**The lap** (`lap`, on each deck at each side wall):
+- **Shape and sizes.** The deck's skirt carries a tongue of its own, `lap_l` 3.0 along the wall
+  behind the top piece's skirt end, in the skirts' groove (where the tub's tongue was), and
+  `lap_root` 1.5 back along its own skirt, where it fills the groove so the lap is one with the skirt.
+  Across the wall it runs from `deck_gap` 0.15 behind the top piece's skirt (1.15 in from the outline)
+  to the tub tongue's inside (2.0, leaning in under the deck's round above 6.0 as the tongue does):
+  **0.85 thick**. Both skirts keep their full thickness (1.0, 0.7 at their tips on the round): halving
+  the skirt into a lap, 0.5 and less a side, was the reason a lap was rejected in "The joints"; behind
+  the skirt there is room for a whole one. It stands from the skirts' bottom (2.65) to 6.675 at its
+  root, under the groove's top (6.8). Face down its free end hangs off the deck, so its top (the
+  print's underside) falls at 45 degrees from the root to 3.53 at the tip: full height (4.0) at the
+  joint's line, 0.88 at the tip.
+- **How it engages.** In the face-down build the deck drops into the top piece from behind onto its
+  wedges, and the lap goes straight up the top piece's groove with it (the groove is open at the
+  bottom). Clearances: 0.15 to the top piece's skirt (`deck_gap`), 0.25 to the groove's inner side
+  (`seam_fit`, where the step's band is solid inside), 0.125 under the groove's top, free along the
+  wall. A deck that settles back down its wedges (0.15) only draws the lap's tip out a little.
+- **What it holds.** The top piece's skirt can't move in (the lap is behind it) and the deck's can't
+  move out past it (its lap is behind the top piece's), and the tub's tongue on either side keeps both
+  from moving in: the two skirts lie flush, and there is no straight path through the joint (the
+  0.15 line outside, the lap behind it).
+- **The tub.** The tongue would fill the groove there, so it stops either side of each lap: a slot
+  5.55 long (`lap_slot`: `seam_fit` off the lap's free end, and off its root `seam_fit` plus
+  `post_lead`, the most a deck lies back before the corner posts push it home), from the seam up,
+  through the tongue's thicker foot under the round's end; the ledge runs on under it. So the tongue
+  no longer runs unbroken under the side joints: the lap locates the two skirts to each other, and
+  each part is still on the tongue either side. **The grip rib** that stood across each joint (2.0
+  wide, pressing both skirts out to one line) went: it stood in the slot, and its job is the lap's.
+  Each deck has one more a side instead, at y +-40 (with +-52, two a side). Asserted: the lap's
+  thickness and tip, the slot clear of the crush ribs (y +-28), the keys and the corner posts, the
+  ribs clear of the slots.
+
+**The blend at the side** (`side_run`, `side_drop`):
+- The step across the face stays as it was (the arc and its chamfer, a 2.1 run with the land). On
+  the side walls the top piece's side round now comes down from the screen face's height to the
+  deck's over **9.4 mm** before the step's land, in a smooth S (no slope at either end; the round's
+  top drops 1.85, at most 16 degrees from level along the wall, at mid-run). Over the land (the last
+  0.6) and at the joint it is exactly the deck's round, with no slope along the wall either: **the
+  outside is continuous across the joint**, no step and no kink, and the seam is the 0.15 line.
+- Between the lowered round and the screen face, the round's own top chamfer (45 degrees) carries
+  on up to the face: a band that widens towards the step, up to 1.85 tall where it meets the step's
+  corner. Face down, every face of it slopes 45 degrees or steeper: the chamfer is 45 across the
+  wall and the S adds its slope along it (the flattest face on the mesh is 45.0; `overhangs.py` and
+  the P1S slices: no supports).
+- What it took inside: the top piece's keys and the tongue's tall part (7.2) must stay under the full
+  screen face (the keys' pockets keep 0.7 under the round), so the blend is as long as they allow. The
+  tongue steps to the decks' height (6.7, leaning in under the deck's round) at y +-24.0 (was +-31.8,
+  where the step's band starts), the left keys moved from 22 and -24 to +-20 (the right ones, 18 and
+  -16, stay; all still clear of the bosses, the speaker, J4 and the pinholes), and the top piece's grip
+  ribs from +-25 to +-26. Between y 24 and 31.8 the top piece's skirt runs 4.05 down over the tongue
+  (4.55 before). Where the chamfer comes down furthest over the top piece's hollow (y 31.8, the band's
+  edge), its underside comes down to the groove's top (6.8) from the wall's inside out to 0.4 in
+  (`side_fill`, 0.1 outside the board's edge), which leaves the chamfer 0.71 over that corner (asserted
+  0.7). Near the joint the top piece's skin over the groove is the deck's, 0.7 (`skirt_t`). A longer
+  blend would mean the keys further towards the middle.
+- Nothing the board sees moved: `positions.json` is the same, `check_fit` passes, `check_buttons`
+  has its 11 known failures with the same volumes (the decks' edges at the step didn't move; the laps
+  are at the side walls, outside the board).
 
 ## The smooth rounds (2026-10-22)
 
@@ -376,6 +455,11 @@ further up before the chamfer starts (and makes every other round rounder too); 
 changes. A concave cove at the deck's edge, the softest shape for a thumb, is impossible in any
 face-down print: it would be a downward face at the deck's height with nothing under it.
 
+That rule is why the step can't simply be stretched out across the face: on the flat face any slope
+gentler than 45 degrees is a downward face face down. On the side walls it can (2026-10-22, "The side
+joint"): the side round already slopes 45 degrees or more across the wall, so its height can come
+down along the wall as gently as it likes, and it now does, over 9.4 mm, into the deck's round.
+
 ## Item 14: no more cards slotted in from the front
 
 The inserts dropped in from the front between the tub's walls and tucked under a lip on the tub's
@@ -405,8 +489,8 @@ One part fits both ends (the end bosses are each other turned round, as before).
 1. **Top piece face down** on a clean cloth. **Speaker** face down into its pocket over the grille,
    its front foam ring stuck to the pocket's ceiling (the pocket centres it; standing on the board,
    0.45 to 0.75 under the ceiling, its front would be open to its back).
-2. **Decks:** each face down into its end of the top piece from behind; it drops onto its wedges
-   and sits flat (it may settle 0.15 back down them, onto the spine's sides: the tub's posts push it
+2. **Decks:** each face down into its end of the top piece from behind, the laps at its sides going
+   in behind the top piece's skirts; it drops onto its wedges and sits flat (it may settle 0.15 back down them, onto the spine's sides: the tub's posts push it
    home in step 8).
 3. **Caps** into the decks from behind (A/B/X/Y tab into its slot, notches onto their ribs; the
    D-pad; Start/Select), then the **silicone** on them: the walls on the deck's back locate each pad.
@@ -422,8 +506,8 @@ One part fits both ends (the end bosses are each other turned round, as before).
    boss on the panel's side; then the board down onto the bosses.
 8. **Tub** over it all, straight down (the board lying centred on its bosses, within about 0.5:
    the tongue's chamfered tip and the posts' lead-ins guide it in, then the crush ribs centre it):
-   the cell drops into the board's hole, the tongue slides 4.5 mm down inside the skirts, its four
-   tabs into the top piece's pockets and the USB-C tab into its notch, the corner posts push each
+   the cell drops into the board's hole, the tongue slides 4.5 mm down inside the skirts (either side
+   of the decks' laps), its four tabs into the top piece's pockets and the USB-C tab into its notch, the corner posts push each
    deck onto its wedges, and the grip ribs take hold. Press it down all round until the seam is an
    even line. The case now holds together: lift it by the top piece and nothing falls out.
 9. **Six M2 x 6** from the back, snug: they lock it.
@@ -530,10 +614,19 @@ tub's tongue became 0.75 thick (was 0.85).
   tab and a thin tub wall above the round. The round's end is the natural line.
 - **The tub's skin over the top's tongue** (the old way round): the tub would form the outer lip,
   which item 10 rules out.
-- **A lap or a tongue in a groove in the skirts at the side joints** (2026-10-22, "The joints"): the
-  skirt there is 1.0 thick, 0.7 near its top; halves of 0.5 or thirds of 0.33 print as one line or
-  not at all. The tub's tongue runs on behind the joint instead, so both skirts lap the same wall,
-  and a grip rib across the joint presses both skirts' ends out to one line.
+- **The butt joint at the side walls** (until 2026-10-22, "The side joint"): the deck's skirt ended
+  0.15 from the top piece's, the tub's tongue running on behind both and a grip rib across the joint
+  pressing both skirts out to one line. Replaced: nothing hooked the two walls together, so they
+  could still step in or out of each other by the fits, and from outside the joint read as two parts
+  (Alex: "These parts should flow into each other better"). (In "The joints" a lap was turned down
+  because halving the 1.0 skirt leaves 0.5 or less a side, which prints as one line; the lap now sits
+  behind the whole skirt, in the tongue's place.)
+- **The step ending at the seam on the side walls** (until 2026-10-22, "The side joint"): the side
+  round followed the step's 2.1 S down to the deck right at the joint, a notch beside the seam.
+  Replaced by the 9.4 blend. **A longer blend:** the keys and the tongue's tall part must stay under
+  the full screen face; past 9.4 the left keys would have to move further towards the middle.
+  **Stretching the step across the face too:** on the flat face a slope gentler than 45 degrees is a
+  downward face face down (Item 13).
 - **Keys for the decks on the side walls, as bumps on the tongue's inside into the plates**: anything
   on the tub inboard of its wall passes the board's edge as the tub goes on, with the board not yet
   centred (it lies on the bosses). Only the corners, where the board's r 5.5 corner leaves 2 mm, have
@@ -584,7 +677,12 @@ tub's tongue became 0.75 thick (was 0.85).
    (under the decks; 0.5 elsewhere) before the crush ribs centre the board, so the board must lie
    within about 0.5 of centred on its bosses (the tongue's chamfered tip and the posts' lead-ins
    guide it in that far).
-9. **The tongue is a thin wall now** (0.75, 4.65 tall over the seam, 0.95 thick below 4.2): inside
+9. **The side joints' laps** (2026-10-22): 0.85 thick, 3.0 along the wall behind the top piece's skirt,
+   0.15 off it. Whether each deck still drops in from behind without the lap catching the top piece's
+   skirt's end (a lead-in can go on the lap's tip if it does), whether the two skirts now sit flush and
+   the lap's free end prints clean (its top is a 45 degree face down), and whether the blend's widening
+   chamfer near each step reads as one surface with the round on a real print.
+10. **The tongue is a thin wall now** (0.75, 4.65 tall over the seam, 0.95 thick below 4.2): inside
    the skirts it is held all along, but off the case it will flex. Handle the tub by its floor. The
    skirts' tips are 0.70 at the seam; if the face-down print leaves them ragged, the seam can go up
    (each 0.1 up the round thickens them about 0.04).
@@ -598,4 +696,8 @@ the outside views with OpenSCAD from the assembled STLs, the sections with matpl
 `section_key_top`, `section_key_post`, `section_side_joint`, `section_usb_wall`, `exploded_keys`)
 were of 7e9d7e1's parts. Since "The seam on the round" every image here is of 8dbf2c3's parts (the
 board drawn as its outline's slab in the close-ups), except `exploded_keys`, which still shows the
-skirts ending at 4.3; `section_usb` and `outside_usb` are new.
+skirts ending at 4.3; `section_usb` and `outside_usb` are new. Since "The side joint" (80953e7's
+parts): `joint_outside`, `section_side_joint`, `outside_front`, `outside_back`, `outside_side`,
+`section_h2`, and the new `joint_outside_left`, `section_lap`, `lap_inside`, `exploded_lap` and
+`section_blend_along`; the others don't cut or see the side joints. `exploded_keys` still shows the
+grip rib across the side joint and the left keys at 22 and -24.
