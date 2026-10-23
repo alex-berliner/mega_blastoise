@@ -78,6 +78,49 @@ impl Battle {
     /// `asleep_now` rides back out because three later gates need to know the
     /// mon acted THROUGH a sleep: Snore, Rollout's lock, and Rollout's
     /// base-power callback all read it.
+    /// Whether the REQUEST already replaced the move about to run with
+    /// Struggle: with nothing left to choose, the sim's `getMoves()` comes
+    /// back empty and `chooseMove` queues Struggle, so by the time
+    /// `runMove` fires the `BeforeMove` event the move in hand is Struggle,
+    /// and every gate asked there (sleep and freeze included) answers
+    /// about STRUGGLE, not about the slot the player pressed. The `_fresh`
+    /// flags disqualify their own reason (a Disable, a Torment or an
+    /// Imprison that landed earlier this turn was not there when the choice
+    /// was made), and a lock the turn opened with is handled by the
+    /// mid-turn half below instead.
+    fn struggling_at_request(
+        &self,
+        side: usize,
+        acting: usize,
+        status_movish: bool,
+        releasing: bool,
+    ) -> bool {
+        if releasing {
+            return false;
+        }
+        let mon = self.sides[side].mon();
+        let picked = mon.moves.get(acting).map(|m| m.entry.id);
+        self.pp0_at_choice[side]
+            || (mon.disabled_slot == Some(acting as u8) && !mon.disable_fresh)
+            || (mon.tormented && !mon.torment_fresh && mon.last_used_id == picked)
+            || (mon.taunt_n == 1 && status_movish)
+            || (self.sealed_at_choice[side]
+                && !self.sides[1 - side].mon().imprison_fresh)
+            || mon
+                .choice_locked
+                .is_some_and(|id| picked.is_some_and(|p| p != id))
+    }
+
+    /// Charging, rampaging, storing a Bide or rolling: a lock the turn
+    /// opened with, which rides out the request-time gates.
+    fn locked_into_move(&self, side: usize) -> bool {
+        let mon = self.sides[side].mon();
+        mon.charging.is_some()
+            || mon.rampage.is_some()
+            || mon.bide.is_some()
+            || mon.rolling.is_some()
+    }
+
     fn before_move(
         &mut self,
         side: usize,
@@ -105,14 +148,20 @@ impl Battle {
             return false;
         }
         // Fast asleep: the sleep clock ticks down before each action, and at
-        // zero the mon wakes and moves that same turn.
+        // zero the mon wakes and moves that same turn. The gate asks about
+        // the move as the REQUEST settled it: a sleeper with nothing left to
+        // choose is Struggle, which cannot Snore, so it is turned away like
+        // any other sleeper rather than let loose its doll-swatter.
         if self.sides[side].mon().status == Some(Status::Sleep) {
             let acting = self.acting_slot(side, index);
-            let snoring = self.sides[side]
-                .mon()
-                .moves
-                .get(acting)
-                .is_some_and(|m| matches!(m.entry.id, "snore" | "sleeptalk"));
+            let releasing = self.locked_into_move(side);
+            let mon = self.sides[side].mon();
+            let status_movish = mon.moves.get(acting).is_some_and(|m| !m.entry.damaging);
+            let snoring = !self.struggling_at_request(side, acting, status_movish, releasing)
+                && mon
+                    .moves
+                    .get(acting)
+                    .is_some_and(|m| matches!(m.entry.id, "snore" | "sleeptalk"));
             let mon = self.sides[side].mon_mut();
             if ability::early_bird(&mon.bearer()) {
                 mon.sleep_n = mon.sleep_n.saturating_sub(1);
@@ -178,11 +227,14 @@ impl Battle {
         // gate leaves the user frozen.
         if self.sides[side].mon().status == Some(Status::Freeze) {
             let acting = self.acting_slot(side, index);
-            let defrost = self.sides[side]
-                .mon()
-                .moves
-                .get(acting)
-                .is_some_and(|slot| matches!(slot.entry.id, "flamewheel" | "sacredfire"));
+            let releasing = self.locked_into_move(side);
+            let mon = self.sides[side].mon();
+            let status_movish = mon.moves.get(acting).is_some_and(|m| !m.entry.damaging);
+            let defrost = !self.struggling_at_request(side, acting, status_movish, releasing)
+                && mon
+                    .moves
+                    .get(acting)
+                    .is_some_and(|slot| matches!(slot.entry.id, "flamewheel" | "sacredfire"));
             let lucky = match script {
                 Some(_) => false,
                 None => self.rng.below(5) == 0,
@@ -689,18 +741,7 @@ impl Battle {
         // Torment or an Imprison that landed earlier THIS turn was not there
         // when the choice was made, so it cannot be what put Struggle in the
         // queue — and those are exactly the lost-turn cases below.
-        let struggling_at_request = !releasing && {
-            let mon = self.sides[side].mon();
-            let picked = mon.moves.get(index).map(|m| m.entry.id);
-            self.pp0_at_choice[side]
-                || (mon.disabled_slot == Some(index as u8) && !mon.disable_fresh)
-                || (mon.tormented && !mon.torment_fresh && mon.last_used_id == picked)
-                || (mon.taunt_n == 1 && status_movish)
-                || (self.sealed_at_choice[side] && !self.sides[foe].mon().imprison_fresh)
-                || mon
-                    .choice_locked
-                    .is_some_and(|id| picked.is_some_and(|p| p != id))
-        };
+        let struggling_at_request = self.struggling_at_request(side, index, status_movish, releasing);
         if !struggling_at_request && self.sides[side].mon().taunt_n == 2 && status_movish {
             self.log_failed(side, events);
             return true;
@@ -1474,15 +1515,24 @@ impl Battle {
                 return true;
             }
             if self.sides[foe].mon().sub_hp > 0 {
-                let amount = self.sides[foe].mon().sub_hp;
-                self.sides[foe].mon_mut().sub_hp = 0;
+                // This gen's one-hit KO damage is the target's CURRENT hp
+                // (the sim's getDamage answers target.hp at gen 3, not max
+                // hp), so a doll only takes that much: a 72 hp doll in front
+                // of a 38 hp body keeps standing, and the KO never reaches
+                // the body either way.
+                let mon = self.sides[foe].mon();
+                let amount = mon.hp.min(mon.sub_hp);
+                self.sides[foe].mon_mut().sub_hp -= amount;
+                self.note_hit_by(side, foe, slot.entry.id);
                 events.push(Event::SubDamage {
                     side: foe as u8 + 1,
                     amount,
                 });
-                events.push(Event::SubBroke {
-                    side: foe as u8 + 1,
-                });
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke {
+                        side: foe as u8 + 1,
+                    });
+                }
                 return true;
             }
             let survives = self.survives_at_one(foe);
@@ -1620,7 +1670,7 @@ impl Battle {
         }
 
         // Endeavor drags the target's HP down to the user's — through the
-        // chart, never a substitute, and failing upward.
+        // chart, and failing upward.
         if slot.entry.id == "endeavor" {
             if !hit {
                 return true;
@@ -1639,12 +1689,31 @@ impl Battle {
                 return true;
             }
             let (uhp, thp) = (self.sides[side].mon().hp, self.sides[foe].mon().hp);
-            if self.sides[foe].mon().sub_hp > 0 || uhp >= thp {
+            if uhp >= thp {
                 // Failing upward does NOT write the attacked-by book. The
                 // sim rejects the target in `onTryImmunity`, which runs
                 // before the hit loop, so `gotAttacked` is never reached and
                 // a Mirror Move aimed back finds nothing to copy.
                 self.log_failed(side, events);
+                return true;
+            }
+            // The drag goes through the doll like any other blow: the sim's
+            // Substitute has no bypass clause, so the difference lands on it
+            // first and can break it; the body itself is never touched.
+            if self.sides[foe].mon().sub_hp > 0 {
+                let target = self.sides[foe].mon_mut();
+                let amount = (thp - uhp).min(target.sub_hp);
+                target.sub_hp -= amount;
+                self.note_hit_by(side, foe, slot.entry.id);
+                events.push(Event::SubDamage {
+                    side: foe as u8 + 1,
+                    amount,
+                });
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke {
+                        side: foe as u8 + 1,
+                    });
+                }
                 return true;
             }
             let amount = thp - uhp;
