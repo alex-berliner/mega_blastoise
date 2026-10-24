@@ -5,8 +5,6 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use gen1_battle::Request;
-
 /// Borrowed view of `title|key:value|…` committed log lines from the engine.
 #[derive(Debug, Clone, Copy)]
 pub struct ParsedBattleLogLine<'a> {
@@ -68,20 +66,6 @@ pub fn side_display_name(side: &str) -> &'static str {
         "0" => "White",
         "1" => "Red",
         _ => "?",
-    }
-}
-
-/// Build a prompt event from an engine [`Request`] (emit **before** collecting input).
-pub fn board_prompt_event(player_id: &str, request: &Request) -> BoardEvent {
-    let kind = match request {
-        Request::Turn(_) => PromptKind::ChooseMove,
-        Request::Switch(_) => PromptKind::ChooseSwitch,
-        Request::TeamPreview(_) => PromptKind::TeamPreview,
-        Request::LearnMove(_) => PromptKind::LearnMove,
-    };
-    BoardEvent::Prompt {
-        player_id: String::from(player_id),
-        kind,
     }
 }
 

@@ -1224,7 +1224,7 @@ fn fuzz_gen1_turns() {
     }
     use gen1_battle::testing::{apply_status_drop, SeatForce, Status as G1Status};
     use gen1_battle::{MonData, MoveSlot as G1MoveSlot, PublicCoreBattle, TeamData};
-    use mega_blastoise_core::{battle_options_with_seed, demo_engine_opts, FlashDataStore};
+    use mega_blastoise_core::{battle_options_with_seed, demo_engine_opts};
 
     let moves = vanilla_moves(1, false, |id| gen1_battle::move_by_id(id).is_some());
     assert!(
@@ -1336,7 +1336,6 @@ fn fuzz_gen1_turns() {
 
     let only = checked_case(cases.len(), "gen1-turns");
     let results = showdown(&Value::Array(scenarios.clone()), only);
-    let data = FlashDataStore::new();
     let mut bad = 0;
     for (i, ((s1, s2, level, m1, m2, turns, statuses), got)) in cases.iter().zip(&results).enumerate() {
         if got.get("error").is_some() {
@@ -1365,7 +1364,7 @@ fn fuzz_gen1_turns() {
             item: None,
         };
         let mut battle =
-            PublicCoreBattle::new(battle_options_with_seed(1), &data, demo_engine_opts()).unwrap();
+            PublicCoreBattle::new(battle_options_with_seed(1), &(), demo_engine_opts()).unwrap();
         battle.update_team("p1", TeamData { members: vec![mon_data(s1, m1)], ..Default::default() }).unwrap();
         battle.update_team("p2", TeamData { members: vec![mon_data(s2, m2)], ..Default::default() }).unwrap();
         battle.start().unwrap();
@@ -1979,7 +1978,7 @@ fn fuzz_gen1_battles() {
     }
     use gen1_battle::testing::{apply_status_drop, SeatForce, Status as G1Status};
     use gen1_battle::{MonData, MoveSlot as G1MoveSlot, PublicCoreBattle, Request, TeamData};
-    use mega_blastoise_core::{battle_options_with_seed, demo_engine_opts, FlashDataStore};
+    use mega_blastoise_core::{battle_options_with_seed, demo_engine_opts};
 
     let moves = vanilla_moves(1, true, |id| gen1_battle::move_by_id(id).is_some());
     let moves: Vec<String> = moves.into_iter().map(|(id, _)| id).collect();
@@ -1997,7 +1996,6 @@ fn fuzz_gen1_battles() {
 
     let mut fz = Fuzz::new("gen1-battles");
     let wide = fuzz_wide();
-    let data = FlashDataStore::new();
     let statuses: [Option<&str>; 6] =
         [None, None, None, Some("brn"), Some("psn"), Some("par")];
 
@@ -2065,7 +2063,7 @@ fn fuzz_gen1_battles() {
         }
 
         let mut battle =
-            PublicCoreBattle::new(battle_options_with_seed(1), &data, demo_engine_opts()).unwrap();
+            PublicCoreBattle::new(battle_options_with_seed(1), &(), demo_engine_opts()).unwrap();
         let [t0, t1] = members;
         battle.update_team("p1", TeamData { members: t0, ..Default::default() }).unwrap();
         battle.update_team("p2", TeamData { members: t1, ..Default::default() }).unwrap();

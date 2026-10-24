@@ -18,14 +18,9 @@ web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Locat
 console_error_panic_hook = "0.1"
 embassy-futures = "0.1"
 
-mega-blastoise-core = { path = "../mega_blastoise_core" }
-gen1_battle = { path = "../gen1_battle" }
-gen3_battle = { path = "../gen3_battle" }
-battler = { path = "../../battler/battler" }
-battler-data = { path = "../../battler/battler-data" }
-# getrandom is pulled in transitively by battler → rand.
-# Enable wasm_js so it compiles for wasm32-unknown-unknown.
-getrandom = { version = "0.4", features = ["wasm_js"] }
+# `legacy_gen1`: the legacy Gen 1 engine stays reachable with `engine=legacy`
+# (the UI probe's legacy lane) until G1-10 deletes it.
+mega-blastoise-core = { path = "../mega_blastoise_core", features = ["legacy_gen1"] }
 # The shared DeviceInputChannel is a CriticalSectionRawMutex channel (the
 # firmware pushes from tasks into a static); wasm is single-threaded, so the
 # std critical-section impl satisfies the link.

@@ -7,7 +7,7 @@ use gen1_battle::TeamData;
 use embassy_futures::select::{select, Either};
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
-    ActivePrompt, BoardEffects, BoardEvent, BoardEventQueue, FlashDataStore, InputBus, InputSource,
+    ActivePrompt, BoardEffects, BoardEvent, BoardEventQueue, InputBus, InputSource,
 };
 use mega_blastoise_test::{
     host_battle_controller::HostBattleController,
@@ -103,9 +103,9 @@ fn effects_suppresses_split_and_prompt_events() {
 
 // ── HostBattleController — full automated battle ──────────────────────────────
 
-fn make_battle(data: &FlashDataStore) -> gen1_battle::PublicCoreBattle<'_> {
+fn make_battle() -> gen1_battle::PublicCoreBattle<'static> {
     let mut battle =
-        gen1_battle::PublicCoreBattle::new(demo_battle_options(), data, demo_engine_opts())
+        gen1_battle::PublicCoreBattle::new(demo_battle_options(), &(), demo_engine_opts())
             .expect("battle init");
     battle
         .update_team("p1", TeamData { members: demo_team_red(), ..Default::default() })
@@ -119,8 +119,7 @@ fn make_battle(data: &FlashDataStore) -> gen1_battle::PublicCoreBattle<'_> {
 
 #[test]
 fn battle_completes_with_prefed_button_moves() {
-    let data = FlashDataStore::new();
-    let mut battle = make_battle(&data);
+    let mut battle = make_battle();
     let bus = InputBus::new();
 
     let mut controller = HostBattleController::new();
@@ -137,7 +136,6 @@ fn battle_completes_with_prefed_button_moves() {
 
     pollster::block_on(run_battle(
         &mut battle,
-        &data,
         &bus,
         controller.run(&bus),
         &mut queue,
@@ -152,8 +150,7 @@ fn battle_completes_with_prefed_button_moves() {
 fn battle_completes_with_log_channel_active() {
     // Same as above but routes events through bus.log, exercising the full
     // HostBattleEffects → bus.log → HostBattleController drain path.
-    let data = FlashDataStore::new();
-    let mut battle = make_battle(&data);
+    let mut battle = make_battle();
     let bus = InputBus::new();
 
     let mut controller = HostBattleController::new();
@@ -168,7 +165,6 @@ fn battle_completes_with_log_channel_active() {
 
     pollster::block_on(run_battle(
         &mut battle,
-        &data,
         &bus,
         controller.run(&bus),
         &mut queue,
@@ -190,8 +186,7 @@ fn battle_completes_with_log_channel_active() {
 /// as the driver completes, so the test doesn't hang on the controller's infinite loop.
 #[test]
 fn button_press_sends_move_choice_without_stdin() {
-    let data = FlashDataStore::new();
-    let mut battle = make_battle(&data);
+    let mut battle = make_battle();
 
     // Grab the first real Turn request so the prompt has a genuine move list,
     // distilled exactly as the runner distils it before sending.

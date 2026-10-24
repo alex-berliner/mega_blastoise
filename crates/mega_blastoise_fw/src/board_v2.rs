@@ -14,7 +14,7 @@ use mega_blastoise_core::device_runner::{
 };
 use mega_blastoise_core::device_session::DeviceSession;
 use mega_blastoise_core::device_ui::render_session_frame;
-use mega_blastoise_core::{FlashDataStore, OledController};
+use mega_blastoise_core::OledController;
 
 use crate::subsystems::st7796;
 
@@ -87,6 +87,5 @@ pub async fn run() -> ! {
     defmt::info!("board_v2: device runner up");
     let port = FwPort;
     let runner = DeviceRunner::new(&port, &INPUT);
-    let data = FlashDataStore::new();
-    runner.run(&data).await
+    runner.run().await
 }

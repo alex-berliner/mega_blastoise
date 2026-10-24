@@ -14,10 +14,13 @@
 # page maintains for exactly this purpose. Run it after any change to the
 # collector, the runners, or the web glue:
 #
-#   scripts/ui-probe.sh                # both lanes, the legacy engines
-#   scripts/ui-probe.sh --skip-build   # reuse the existing pkg/
-#   scripts/ui-probe.sh --engine ps    # the PS engine (engine=ps), gen 1
-#                                      # only: ps_sim has no gen 3 port yet
+#   scripts/ui-probe.sh                  # both lanes, the default engine (no
+#                                        # engine= on the URL): PS for gen 1,
+#                                        # legacy for gen 3 until ps_sim ports it
+#   scripts/ui-probe.sh --skip-build     # reuse the existing pkg/
+#   scripts/ui-probe.sh --engine legacy  # both lanes, the legacy engines
+#   scripts/ui-probe.sh --engine ps      # the PS engine (engine=ps), gen 1
+#                                        # only: ps_sim has no gen 3 port yet
 #
 # Chromium: the snap at /usr/bin/chromium-browser cannot write outside $HOME;
 # the playwright build can run anywhere. Override with $CHROME.
@@ -29,24 +32,35 @@ CHROME="${CHROME:-$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux64
 [ -x "$CHROME" ] || { echo "no chromium found; set \$CHROME" >&2; exit 2; }
 
 SKIP_BUILD=0
-ENGINE=legacy
+ENGINE=default
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-build) SKIP_BUILD=1 ;;
-    --engine) ENGINE="${2:?--engine needs legacy or ps}"; shift ;;
+    --engine) ENGINE="${2:?--engine needs default, legacy or ps}"; shift ;;
     *) echo "ui-probe: unknown argument $1" >&2; exit 2 ;;
   esac
   shift
 done
-# The battle seed is pinned per engine. The PS engine's teams keep to
-# `ps_sim::mods::ported(1)`, so a seed's teams change whenever a port lands;
-# 7777 now draws two Rest users on the PS engine, whose battle outlasts the
-# faint check's budget, so that lane plays seed 1.
+# One fixed battle seed for every engine: every Gen 1 move is ported, so the
+# PS engine's teams no longer change as ports land. (7777, the legacy lanes'
+# old seed, freezes the PS lead on turn 1, and a frozen Gen 1 mon's request
+# is a forced move, so seat 1 has nothing to commit and cancel.) Each lane
+# also names the engine it must find playing (`expect=`): the default is the
+# PS engine for Gen 1 and the legacy one for Gen 3, which ps_sim has not
+# fully ported yet.
+SEED=1
 case "$ENGINE" in
-  legacy) LANES="gen1 gen3"; SEED=7777 ;;
-  ps) LANES="gen1"; SEED=1 ;;
-  *) echo "ui-probe: --engine is legacy or ps" >&2; exit 2 ;;
+  default) LANES="gen1 gen3"; PARAM="" ;;
+  legacy) LANES="gen1 gen3"; PARAM="&engine=legacy" ;;
+  ps) LANES="gen1"; PARAM="&engine=ps" ;;
+  *) echo "ui-probe: --engine is default, legacy or ps" >&2; exit 2 ;;
 esac
+expect_for() {
+  case "$ENGINE:$1" in
+    legacy:*|default:gen3) echo legacy ;;
+    *) echo ps ;;
+  esac
+}
 
 if [[ "$SKIP_BUILD" = 0 ]]; then
   echo "building wasm (dev)..."
@@ -102,12 +116,12 @@ try {
   await until('battle opens on the move menu', (s) =>
     s.every((x) => /BATTLE|MOVE|CHOOSE/i.test(x)), 15000);
 
-  // The engine the lane asked for is the one playing (core logs the PS
+  // The engine the lane expects is the one playing (core logs the PS
   // engine's battle start), so a lane cannot pass on the wrong engine.
-  const engine = new URLSearchParams(location.search).get('engine') ?? 'legacy';
+  const engine = new URLSearchParams(location.search).get('expect') ?? 'ps';
   const psStarted = document.getElementById('log').textContent.includes('(PS engine)');
   if (psStarted !== (engine === 'ps')) {
-    say(`FAIL engine=${engine} but the PS engine ${psStarted ? 'started' : 'did not start'}`);
+    say(`FAIL expected the ${engine} engine but the PS engine ${psStarted ? 'started' : 'did not start'}`);
     throw new Error('wrong engine');
   }
   say(`PASS the battle runs on the ${engine} engine`);
@@ -184,10 +198,11 @@ sleep 1
 
 FAILED=0
 for LANE in $LANES; do
-  echo "── lane: $LANE (engine $ENGINE) ──"
+  EXPECT=$(expect_for "$LANE")
+  echo "── lane: $LANE (engine $ENGINE: $EXPECT) ──"
   DOM=$("$CHROME" --headless=new --no-sandbox --disable-gpu \
     --virtual-time-budget=150000 --timeout=180000 \
-    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=$SEED&lane=$LANE&engine=$ENGINE" 2>/dev/null || true)
+    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=$SEED&lane=$LANE$PARAM&expect=$EXPECT" 2>/dev/null || true)
   RESULT=$(echo "$DOM" | python3 -c "
 import re, sys
 m = re.search(r'<pre id=\"out\">(.*?)</pre>', sys.stdin.read(), re.S)

@@ -2,6 +2,7 @@ extern crate alloc;
 
 use alloc::string::String;
 use alloc::vec::Vec;
+#[cfg(feature = "legacy_gen1")]
 use gen1_battle::{MonData, MoveSlot};
 
 pub struct RandBatEntry {
@@ -23,6 +24,7 @@ fn xorshift64(state: &mut u64) -> u64 {
 
 /// Pick `count` distinct Pokémon at random from `RANDBAT_POOL` and return them
 /// as a team ready for `gen1_battle::PublicCoreBattle::update_team`.
+#[cfg(feature = "legacy_gen1")]
 pub fn draw_randbat_team(seed: u64, count: usize) -> Vec<MonData> {
     let n = RANDBAT_POOL.len();
     let take = count.min(n);
@@ -69,6 +71,7 @@ pub const TEAM_SEED_SALT: u64 = 0x9e3779b97f4a7c15;
 
 /// Draw two independent random-battle teams from a single seed.
 /// Returns `(red_team, blue_team)`.
+#[cfg(feature = "legacy_gen1")]
 pub fn draw_two_randbat_teams(seed: u64, count: usize) -> (Vec<MonData>, Vec<MonData>) {
     (
         draw_randbat_team(seed, count),
@@ -87,7 +90,7 @@ fn ps_ported(gen: u8, kind: &str, id: &str) -> bool {
 
 /// One team for the PS engine, in the protocol's packed form (what
 /// `>player` carries, on both transports): `count` distinct mons drawn from
-/// `RANDBAT_POOL` exactly as [`draw_randbat_team`] draws them, each with its
+/// `RANDBAT_POOL` exactly as the legacy `draw_randbat_team` draws them, each with its
 /// randbat level and moves.
 ///
 /// While `ps_sim` is still being ported, a battle that reaches an effect
@@ -160,7 +163,7 @@ pub fn draw_ps_team(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> ps_pr
     team
 }
 
-/// Two PS-engine teams from one seed, as [`draw_two_randbat_teams`] salts
+/// Two PS-engine teams from one seed, as the legacy `draw_two_randbat_teams` salts
 /// it. Returns `[p1, p2]`.
 pub fn draw_two_ps_teams(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> [ps_protocol::PackedTeam; 2] {
     [draw_ps_team(dex, seed, count), draw_ps_team(dex, seed.wrapping_add(TEAM_SEED_SALT), count)]

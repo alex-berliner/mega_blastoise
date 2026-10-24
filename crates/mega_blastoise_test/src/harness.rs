@@ -3,7 +3,7 @@
 use gen1_battle::TeamData;
 use mega_blastoise_core::{
     demo_battle_options, demo_engine_opts, draw_two_randbat_teams, format_active_state, run_battle,
-    BoardEventQueue, FlashDataStore, InputBus, InputSource,
+    BoardEventQueue, InputBus, InputSource,
 };
 
 use crate::host_battle_controller::HostBattleController;
@@ -14,7 +14,6 @@ fn print_active_pokemon_state(battle: &mut gen1_battle::PublicCoreBattle<'_>) {
 }
 
 pub fn run_interactive() {
-    let data = FlashDataStore::new();
     let mut controller = HostBattleController::new();
     let mut queue = BoardEventQueue::new();
 
@@ -26,7 +25,7 @@ pub fn run_interactive() {
     let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
 
     let mut battle =
-        gen1_battle::PublicCoreBattle::new(demo_battle_options(), &data, demo_engine_opts())
+        gen1_battle::PublicCoreBattle::new(demo_battle_options(), &(), demo_engine_opts())
             .expect("battle init");
 
     battle
@@ -44,7 +43,6 @@ pub fn run_interactive() {
     let mut effects = HostBattleEffects::new(Some(&bus));
     pollster::block_on(run_battle(
         &mut battle,
-        &data,
         &bus,
         controller.run(&bus),
         &mut queue,

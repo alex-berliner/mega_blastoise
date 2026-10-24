@@ -22,7 +22,7 @@ use embassy_futures::select::{select, select3, Either, Either3};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel::Channel;
 
-use crate::battle_effects::{BoardEffects, BoardEventQueue};
+use crate::battle_effects::BoardEffects;
 use crate::battle_input::{ActivePrompt, InputBus, PlayerChoice};
 use crate::board_event::{BoardEvent, BoardEventExt};
 use crate::choice_collect::{
@@ -30,7 +30,6 @@ use crate::choice_collect::{
     COLLECT_TICK_MS,
 };
 use crate::cursor_nav::NavOut;
-use battler_data::DataStore;
 use crate::device_session::{Button, Ctx, DeviceSession, Out, TapCtx};
 use crate::display::PartySlotData;
 use crate::oled_ctl::{oled_cmds_for_event, OledCmd, OledController, BOB_TICK_MS};
@@ -38,8 +37,7 @@ use crate::random_ai::RandomAi;
 use crate::transport::LocalTransport;
 use crate::runner;
 use crate::runner::Engine;
-use crate::{draw_two_randbat_teams, player_id_to_num, LOBBY_DEMO_DELAY_MS};
-use gen1_battle::TeamData;
+use crate::{player_id_to_num, LOBBY_DEMO_DELAY_MS};
 use gen3_battle::Ruleset;
 
 // ── The platform's side of the contract ──────────────────────────────────────
@@ -70,8 +68,8 @@ pub trait DevicePort {
         crate::display_color::Battery::Absent
     }
     /// Which engine plays the next battle (asked once per battle). Raw
-    /// configuration only: the web's `engine=` URL parameter, the
-    /// firmware's `ps_engine` feature through [`Engine::DEVICE_DEFAULT`].
+    /// configuration only: the web's `engine=` URL parameter; the firmware
+    /// takes [`Engine::DEVICE_DEFAULT`].
     fn engine(&self) -> Engine {
         Engine::DEVICE_DEFAULT
     }
@@ -455,7 +453,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
 
     // ── The game loop ───────────────────────────────────────────────────
 
-    pub async fn run<DS: DataStore>(&self, data: &DS) -> ! {
+    pub async fn run(&self) -> ! {
         loop {
             {
                 let mut st = self.st.borrow_mut();
@@ -538,7 +536,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
             if ruleset == Ruleset::Gen3 {
                 self.run_gen3(seed, seq_six).await;
             } else {
-                self.run_gen1(data, seed, seq_six).await;
+                self.run_gen1(seed, seq_six).await;
             }
 
             self.port.line_out("");
@@ -666,14 +664,27 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         }
     }
 
-    async fn run_gen1<DS: DataStore>(&self, data: &DS, seed: u64, six: bool) {
+    async fn run_gen1(&self, seed: u64, six: bool) {
         if self.port.engine() == Engine::Ps {
             self.run_ps(1, seed, six).await;
             return;
         }
+        #[cfg(feature = "legacy_gen1")]
+        self.run_gen1_legacy(seed, six).await;
+        #[cfg(not(feature = "legacy_gen1"))]
+        {
+            self.port.line_out("Gen 1: this build has no legacy engine; using the PS engine.");
+            self.run_ps(1, seed, six).await;
+        }
+    }
+
+    /// A Gen 1 battle on the legacy engine (`gen1_battle`, [`runner::gen1`]).
+    #[cfg(feature = "legacy_gen1")]
+    async fn run_gen1_legacy(&self, seed: u64, six: bool) {
+        use gen1_battle::TeamData;
         let mut battle = match gen1_battle::PublicCoreBattle::new(
             runner::gen1::battle_options_with_seed(seed),
-            data,
+            &(),
             runner::gen1::demo_engine_opts(),
         ) {
             Ok(b) => b,
@@ -682,7 +693,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
                 return;
             }
         };
-        let (team_red, team_blue) = draw_two_randbat_teams(seed, if six { 6 } else { 3 });
+        let (team_red, team_blue) = crate::randbat::draw_two_randbat_teams(seed, if six { 6 } else { 3 });
         let ok = battle
             .update_team("p1", TeamData { members: team_red, ..Default::default() })
             .is_ok()
@@ -697,11 +708,10 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         self.port.line_out("── Battle start ────────────────────────");
 
         let bus = InputBus::new();
-        let mut queue = BoardEventQueue::new();
+        let mut queue = crate::battle_effects::BoardEventQueue::new();
         let mut effects = RunnerEffects { r: self, bus: &bus };
         runner::gen1::run_battle(
             &mut battle,
-            data,
             &bus,
             self.collect_battle_input(&bus, seed),
             &mut queue,
@@ -718,13 +728,13 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
 
     async fn run_gen3(&self, seed: u64, six: bool) {
         if self.port.engine() == Engine::Ps {
-            // Until `ps_sim` ports a Gen 3 move, a Gen 3 team would have
-            // nothing to use; the legacy engine plays instead.
-            if ps_sim::mods::ported(3).iter().any(|e| e.starts_with("move:")) {
+            // Until `ps_sim` ports every Gen 3 move, a Gen 3 team would lose
+            // the moves it has not; the legacy engine plays instead.
+            if runner::ps_ports_every_move(3) {
                 self.run_ps(3, seed, six).await;
                 return;
             }
-            self.port.line_out("Gen 3: the PS engine has no ported moves yet; using the legacy engine.");
+            self.port.line_out("Gen 3: the PS engine has not ported every move yet; using the legacy engine.");
         }
         let Some(mut battle) = runner::gen3::drafted_battle(seed, six) else {
             self.port.line_out("Gen 3: could not draft teams.");

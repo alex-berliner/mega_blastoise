@@ -12,11 +12,18 @@ pub fn mon_sprite(name: &str) -> Option<&'static [u8; SPRITE_BYTES]> {
         return Some(&MON_SPRITES[i].1);
     }
     // Fallback for non-canonical casing (e.g. a lowercase id leaking in as a
-    // display name): linear case-insensitive scan — 151 entries, miss-only.
+    // display name) and for Showdown's typographic apostrophe ("Farfetch’d",
+    // the PS dex's spelling): linear scan, 151 entries, miss-only.
     MON_SPRITES
         .iter()
-        .find(|(n, _)| n.eq_ignore_ascii_case(name))
+        .find(|(n, _)| same_name(n, name))
         .map(|(_, spr)| spr)
+}
+
+/// Names equal up to ASCII case and the apostrophe's spelling.
+fn same_name(a: &str, b: &str) -> bool {
+    let fold = |c: char| if c == '\u{2019}' { '\'' } else { c.to_ascii_lowercase() };
+    a.chars().map(fold).eq(b.chars().map(fold))
 }
 
 /// Look up a species' BACK sprite (the player's own mon on choose/wait
@@ -28,7 +35,7 @@ pub fn mon_back_sprite(name: &str) -> Option<&'static [u8; SPRITE_BYTES]> {
     }
     MON_BACK_SPRITES
         .iter()
-        .find(|(n, _)| n.eq_ignore_ascii_case(name))
+        .find(|(n, _)| same_name(n, name))
         .map(|(_, spr)| spr)
         .or_else(|| mon_sprite(name))
 }

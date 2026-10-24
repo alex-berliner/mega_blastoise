@@ -6,9 +6,8 @@ default-run = "mega-blastoise-test"
 
 [dependencies]
 embedded-graphics = "0.8"
-mega-blastoise-core = { path = "../mega_blastoise_core" }
-battler = { path = "../../battler/battler" }
-battler-data = { path = "../../battler/battler-data" }
+# The legacy Gen 1 engine's runner, for the old suites until G1-10.
+mega-blastoise-core = { path = "../mega_blastoise_core", features = ["legacy_gen1"] }
 gen1_battle = { path = "../gen1_battle" }
 gen3_battle = { path = "../gen3_battle" }
 serde_json = "1.0"

@@ -161,7 +161,7 @@ impl SlotOptions {
     /// whole UI contract: whichever generation is playing, the collector sees
     /// nothing but this — which is what keeps one input state machine
     /// serving every engine. Distillers live with their engines
-    /// ([`crate::runner::gen1::slot_options_from_request`] for Gen 1,
+    /// ([`crate::runner::ps::slot_options_from_seat`] for the PS engine,
     /// [`crate::runner::gen3`]'s in its battle loop), because parsing an
     /// engine's request shape is battle logic, not UI.
     pub fn blank(player_num: u8, player_id: String) -> Self {
@@ -1688,40 +1688,30 @@ fn invalid_reason(r: ActionReject) -> InvalidReason {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gen1_battle::{MonTurnRequest, MoveSlot as ApiMove, Request, SwitchRequest, TurnRequest};
 
+    /// A move prompt as the runners distil one: the lead (team slot 0) with
+    /// `n_moves` moves, all usable, not trapped.
     fn turn_prompt(player_id: &str, n_moves: usize) -> SlotOptions {
-        let moves = (0..n_moves)
-            .map(|i| ApiMove {
-                name: format!("Move{i}"),
-                id: format!("move{i}"),
-                typ: String::from("Normal"),
-                pp: 10,
-                max_pp: 10,
-                disabled: false,
-                target: 0,
-            })
-            .collect();
-        crate::runner::gen1::slot_options_from_request(
-            player_id,
-            &Request::Turn(TurnRequest {
-                active: alloc::vec![MonTurnRequest {
-                    team_position: 0,
-                    moves,
-                    trapped: false,
-                    locked_into_move: false,
-                }],
-            }),
-            None,
-        )
+        let mut s = SlotOptions::blank(
+            crate::board_event::player_id_to_num(player_id),
+            String::from(player_id),
+        );
+        s.active_slot = Some(0);
+        s.n_moves = n_moves;
+        for u in s.usable.iter_mut().take(n_moves) {
+            *u = true;
+        }
+        s
     }
 
+    /// A forced switch, with no party data attached (every slot valid).
     fn switch_prompt(player_id: &str) -> SlotOptions {
-        crate::runner::gen1::slot_options_from_request(
-            player_id,
-            &Request::Switch(SwitchRequest { needs_switch: alloc::vec![0] }),
-            None,
-        )
+        let mut s = SlotOptions::blank(
+            crate::board_event::player_id_to_num(player_id),
+            String::from(player_id),
+        );
+        s.forced_switch = true;
+        s
     }
 
     fn two_humans() -> (ChoiceCollector, Vec<Effect>) {

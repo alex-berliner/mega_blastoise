@@ -74,9 +74,10 @@ pub fn bespoke(move_id: &str) -> Option<Effect> {
         "fissure" | "bonemerang" | "bonelub" => Effect::Quake,
         // Contact finishers.
         "seismictoss" | "doubleedge" | "hyperfang" | "submission" => Effect::Impact,
-        // Things done to yourself.
+        // Things done to yourself. Bide too, which PS files as Physical
+        // (the dex's guess would make it a hit).
         "recover" | "rest" | "softboiled" | "swordsdance" | "agility" | "amnesia"
-        | "harden" | "withdraw" | "meditate" | "growth" => Effect::Aura,
+        | "harden" | "withdraw" | "meditate" | "growth" | "bide" => Effect::Aura,
         // Lobbed at the target and left hanging there.
         "hypnosis" | "confuseray" | "sleeppowder" | "stunspore" | "poisonpowder"
         | "spore" | "eggbomb" => Effect::Projectile { arc: true },
@@ -97,26 +98,27 @@ pub struct Anim {
     pub t: u32,
 }
 
-/// Pick an effect for a move id, from the engine's own move table.
+/// Pick an effect for a move id, from the Gen 1 dex (`ps_dex`, PS's
+/// resolved `Dex.mod('gen1')`).
 ///
 /// Ground moves quake whatever their category; status moves are always about
 /// the user; the rest split on whether the type reads as a beam (a continuous
 /// stream) or as something thrown.
 pub fn effect_for(move_id: &str) -> Effect {
-    use gen1_battle::{MoveCategory, Type};
+    use ps_dex::{MoveCategory, Type};
     if let Some(e) = bespoke(move_id) {
         return e;
     }
-    let Some(entry) = gen1_battle::move_by_id(move_id) else {
+    let Some(entry) = gen1_move(move_id) else {
         return Effect::Impact;
     };
-    if entry.move_type == Type::Ground && entry.power > 0 {
+    if entry.type_ == Type::Ground && entry.base_power > 0 {
         return Effect::Quake;
     }
     match entry.category {
         MoveCategory::Status => Effect::Aura,
         MoveCategory::Physical => Effect::Impact,
-        MoveCategory::Special => match entry.move_type {
+        MoveCategory::Special => match entry.type_ {
             Type::Fire | Type::Water | Type::Electric | Type::Ice | Type::Psychic | Type::Dragon => {
                 Effect::Beam
             }
@@ -140,9 +142,15 @@ pub fn anim(move_id: &str, attacker: u8, elapsed_ms: u32, total_ms: u32) -> Opti
     })
 }
 
+/// A move of the Gen 1 dex by id.
+fn gen1_move(move_id: &str) -> Option<&'static ps_dex::MoveDef> {
+    let dex = &ps_dex::GEN1;
+    dex.move_id(move_id).map(|id| dex.move_def(id))
+}
+
 fn type_tint(move_id: &str) -> Rgb565 {
-    let name = gen1_battle::move_by_id(move_id)
-        .map(|e| crate::display::type_abbr(e.move_type))
+    let name = gen1_move(move_id)
+        .map(|e| crate::display::type_abbr(e.type_))
         .unwrap_or("NRM");
     crate::display_color::type_color_of(name)
 }
@@ -348,7 +356,9 @@ mod tests {
     /// every id in it has to name a real move that also has an icon.
     #[test]
     fn every_bespoke_id_is_a_real_move_with_art() {
-        for id in gen1_battle::MOVES.iter().map(|m| m.id) {
+        for m in ps_dex::GEN1.moves {
+            let id = ps_dex::text::IdBuf::from_name(m.name.as_str());
+            let id = id.as_str();
             if let Some(e) = bespoke(id) {
                 assert_eq!(effect_for(id), e, "{id}: the table must win over the guess");
             }
@@ -357,7 +367,7 @@ mod tests {
             "thunderbolt", "surf", "explosion", "hyperbeam", "fissure", "seismictoss",
             "recover", "hypnosis", "blizzard", "skyattack",
         ] {
-            assert!(gen1_battle::move_by_id(id).is_some(), "{id} is not a move id");
+            assert!(gen1_move(id).is_some(), "{id} is not a move id");
             assert!(move_sprite(id).is_some(), "{id} has no icon");
             assert!(bespoke(id).is_some(), "{id} dropped out of the table");
         }

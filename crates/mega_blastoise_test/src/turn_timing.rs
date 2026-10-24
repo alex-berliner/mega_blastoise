@@ -9,7 +9,7 @@ mod tests {
     use gen1_battle::{Request, TeamData};
     use mega_blastoise_core::{
         battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, format_move_choice,
-        format_switch_choice, join_choice_parts, FlashDataStore,
+        format_switch_choice, join_choice_parts,
     };
 
     /// Pick a valid choice string automatically — first usable move for Turn, first
@@ -55,13 +55,12 @@ mod tests {
 
     #[test]
     fn turn_processing_time() {
-        let data = FlashDataStore::new();
         let seed = 0xdead_beef_cafe_u64;
 
         let (team_red, team_blue) = draw_two_randbat_teams(seed, 3);
 
         let mut battle =
-            gen1_battle::PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts())
+            gen1_battle::PublicCoreBattle::new(battle_options_with_seed(seed), &(), demo_engine_opts())
                 .expect("battle init");
         battle
             .update_team("p1", TeamData { members: team_red, ..Default::default() })

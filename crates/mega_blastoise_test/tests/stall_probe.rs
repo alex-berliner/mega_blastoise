@@ -1,17 +1,16 @@
 //! Termination probe: AI-vs-AI battles across many seeds must end.
 use gen1_battle::{PublicCoreBattle, Request, TeamData};
 use mega_blastoise_core::{
-    battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, FlashDataStore, RandomAi,
+    battle_options_with_seed, demo_engine_opts, draw_two_randbat_teams, RandomAi,
 };
 
 #[test]
 #[ignore] // probe — run explicitly
 fn probe_termination() {
-    let data = FlashDataStore::new();
     let mut stalls = Vec::new();
     for seed in 0..3000u64 {
         let (t1, t2) = draw_two_randbat_teams(seed, 3);
-        let mut b = PublicCoreBattle::new(battle_options_with_seed(seed), &data, demo_engine_opts()).unwrap();
+        let mut b = PublicCoreBattle::new(battle_options_with_seed(seed), &(), demo_engine_opts()).unwrap();
         b.update_team("p1", TeamData { members: t1, ..Default::default() }).unwrap();
         b.update_team("p2", TeamData { members: t2, ..Default::default() }).unwrap();
         b.start().unwrap();

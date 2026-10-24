@@ -124,53 +124,32 @@ fn type_color(name: &str) -> Rgb565 {
 }
 
 /// The fifteen types Gen 1 actually uses, in chart order.
-const GEN1_TYPES: [gen1_battle::Type; 15] = [
-    gen1_battle::Type::Normal,
-    gen1_battle::Type::Fire,
-    gen1_battle::Type::Water,
-    gen1_battle::Type::Electric,
-    gen1_battle::Type::Grass,
-    gen1_battle::Type::Ice,
-    gen1_battle::Type::Fighting,
-    gen1_battle::Type::Poison,
-    gen1_battle::Type::Ground,
-    gen1_battle::Type::Flying,
-    gen1_battle::Type::Psychic,
-    gen1_battle::Type::Bug,
-    gen1_battle::Type::Rock,
-    gen1_battle::Type::Ghost,
-    gen1_battle::Type::Dragon,
-];
+const GEN1_TYPES: [ps_dex::Type; 15] = {
+    use ps_dex::Type::*;
+    [
+        Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic,
+        Bug, Rock, Ghost, Dragon,
+    ]
+};
 
-/// The engine's [`gen1_battle::Type`] for a display name or abbreviation —
-/// the inverse of [`crate::display::type_abbr`], so a move's printed type can
-/// be looked up in the chart.
-fn type_from_name(name: &str) -> Option<gen1_battle::Type> {
+/// The [`ps_dex::Type`] for a display name or abbreviation: the inverse of
+/// [`crate::display::type_abbr`], so a move's printed type can be looked up
+/// in the chart.
+fn type_from_name(name: &str) -> Option<ps_dex::Type> {
     GEN1_TYPES
         .iter()
         .copied()
-        .find(|t| crate::display::type_abbr(*t) == name || type_display_name(*t) == name)
+        .find(|t| crate::display::type_abbr(*t) == name || t.name() == name)
 }
 
-fn type_display_name(t: gen1_battle::Type) -> &'static str {
-    use gen1_battle::Type::*;
-    match t {
-        Normal => "Normal",
-        Fire => "Fire",
-        Water => "Water",
-        Electric => "Electric",
-        Grass => "Grass",
-        Ice => "Ice",
-        Fighting => "Fighting",
-        Poison => "Poison",
-        Ground => "Ground",
-        Flying => "Flying",
-        Psychic => "Psychic",
-        Bug => "Bug",
-        Rock => "Rock",
-        Ghost => "Ghost",
-        Dragon => "Dragon",
-        _ => "",
+/// Gen 1's type effectiveness ×10 (0, 5, 10 or 20), from the Gen 1 dex's
+/// chart (PS's `damageTaken` codes: 1 weak, 2 resists, 3 immune).
+fn gen1_effectiveness(attacker: ps_dex::Type, defender: ps_dex::Type) -> u8 {
+    match ps_dex::GEN1.typechart.code(attacker, defender) {
+        1 => 20,
+        2 => 5,
+        3 => 0,
+        _ => 10,
     }
 }
 
@@ -1304,7 +1283,7 @@ where
             text_aa_font(d, label, LEFT, y + 2, &FONT_5X8, C_DIM, C_BG);
             let mut x = LEFT + 20;
             for def in GEN1_TYPES {
-                if gen1_battle::type_effectiveness(t, def) != *mult {
+                if gen1_effectiveness(t, def) != *mult {
                     continue;
                 }
                 let abbr = crate::display::type_abbr(def);

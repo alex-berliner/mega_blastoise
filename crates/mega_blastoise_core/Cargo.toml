@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 battle_types = { path = "../battle_types" }
 embedded-graphics = { version = "0.8", default-features = false }
-battler = { path = "../../battler/battler", default-features = false, features = [] }
-battler-data = { path = "../../battler/battler-data", default-features = false }
-gen1_battle = { path = "../gen1_battle" }
+# The legacy Gen 1 engine, only under the `legacy_gen1` feature (G1-10
+# deletes it).
+gen1_battle = { path = "../gen1_battle", optional = true }
 gen3_battle = { path = "../gen3_battle" }
 # The Showdown split (docs/architecture/showdown-split-plan.md): the PS
 # server, its client and their protocol, behind `runner::ps`.
@@ -16,9 +16,6 @@ ps_client = { path = "../ps_client" }
 ps_dex = { path = "../ps_dex" }
 ps_protocol = { path = "../ps_protocol" }
 ps_sim = { path = "../ps_sim" }
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-anyhow = { version = "1.0", default-features = false }
-ciborium = { version = "0.2", default-features = false }
 embassy-sync = { version = "0.7", default-features = false }
 embassy-futures = "0.1"
 defmt = { version = "1.0", optional = true }
@@ -34,10 +31,11 @@ wrapmoves = []
 defmt = ["dep:defmt"]
 timing = ["dep:embassy-time", "defmt"]
 trace = ["defmt"]
-# The PS engine (`runner::Engine::Ps`) is the device's default engine
-# instead of the legacy ones. It is always compiled in; this only flips the
-# default `DevicePort::engine` answers with.
-ps_engine = []
+# The legacy Gen 1 engine (`gen1_battle` through `runner::gen1`), kept
+# while its fuzz suites and the UI probe's legacy lane still run: the test
+# crate and the web build turn it on, the firmware does not. Without it, a
+# Gen 1 battle always plays on the PS engine.
+legacy_gen1 = ["dep:gen1_battle"]
 # `transport::TextTransport`: the PS line protocol over a byte stream. Off on
 # the device (the typed `LocalTransport` needs no text).
 ps_text = ["ps_protocol/text", "ps_sim/text"]
@@ -54,7 +52,6 @@ critical-section = { version = "1", features = ["std"] }
 
 [build-dependencies]
 serde_json = "1.0"
-ciborium = "0.2"
 ureq = "2"
 png = "0.17"
 qrcode = { version = "0.14", default-features = false }

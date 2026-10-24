@@ -13,7 +13,7 @@ use gen1_battle::{
     SideData,
     TeamData,
 };
-use mega_blastoise_core::{demo_team_blue, demo_team_red, FlashDataStore};
+use mega_blastoise_core::{demo_team_blue, demo_team_red};
 
 fn player(id: &str, name: &str) -> PlayerData {
     PlayerData {
@@ -28,7 +28,6 @@ fn player(id: &str, name: &str) -> PlayerData {
 
 #[test]
 fn battle_starts_with_four_mons_per_player() {
-    let data = FlashDataStore::new();
     let options = CoreBattleOptions {
         seed: Some(12345),
         format: FormatData {
@@ -55,7 +54,7 @@ fn battle_starts_with_four_mons_per_player() {
     };
 
     let mut battle =
-        gen1_battle::PublicCoreBattle::new(options, &data, engine_opts).expect("battle init");
+        gen1_battle::PublicCoreBattle::new(options, &(), engine_opts).expect("battle init");
 
     battle
         .update_team(

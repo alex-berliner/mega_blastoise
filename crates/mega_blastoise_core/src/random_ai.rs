@@ -1,11 +1,15 @@
 extern crate alloc;
 
+#[cfg(feature = "legacy_gen1")]
 use alloc::string::String;
+#[cfg(feature = "legacy_gen1")]
 use alloc::vec::Vec;
 
+#[cfg(feature = "legacy_gen1")]
 use gen1_battle::{PlayerBattleData, Request};
 
 use crate::rng::SimpleRng;
+#[cfg(feature = "legacy_gen1")]
 use crate::{format_move_choice, format_switch_choice, join_choice_parts};
 
 pub struct RandomAi(SimpleRng);
@@ -25,6 +29,8 @@ impl RandomAi {
         &mut self.0
     }
 
+    /// A legacy Gen 1 request's random answer (the old fuzz suites').
+    #[cfg(feature = "legacy_gen1")]
     pub fn make_choice(&mut self, request: &Request, player_data: Option<&PlayerBattleData>) -> String {
         match request {
             Request::Turn(turn) => {

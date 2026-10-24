@@ -1,4 +1,5 @@
-//! Stock demo teams (singles, multiple bench Pokémon) shared by host test binary and firmware.
+//! Stock demo teams (singles, multiple bench Pokémon) for the legacy Gen 1
+//! engine (the `legacy_gen1` feature), shared by the host test binaries.
 
 extern crate alloc;
 

@@ -19,7 +19,6 @@ use gen1_battle::{
     BattleType, CoreBattleEngineOptions, CoreBattleOptions, FormatData, PlayerData, PlayerDex,
     PlayerOptions, PlayerType, Request, SerializedRuleSet, SideData, TeamData,
 };
-use battler_data::DataStore;
 
 use core::future::Future;
 
@@ -27,7 +26,8 @@ use embassy_futures::select::{select, Either};
 
 use crate::battle_effects::{BoardEffects, BoardEventQueue};
 use crate::battle_input::{ActivePrompt, InputBus};
-use crate::board_event::{board_prompt_event, BoardEvent, MoveSlot};
+use crate::board_event::{BoardEvent, MoveSlot, PromptKind};
+use crate::display::PartySlotData;
 
 pub fn make_player(id: &str, name: &str) -> PlayerData {
     PlayerData {
@@ -58,9 +58,6 @@ pub fn battle_options_with_seed(seed: u64) -> CoreBattleOptions {
         },
     }
 }
-
-/// Idle delay (ms) at lobby start before the demo battle begins automatically.
-pub const LOBBY_DEMO_DELAY_MS: u64 = 15_000;
 
 pub fn demo_battle_options() -> CoreBattleOptions {
     CoreBattleOptions {
@@ -133,12 +130,11 @@ impl MoveSlotCache {
     }
 }
 
-// ── DataStore lookup (full CBOR decode, called only on SwitchIn) ──────────────
+// ── Active-mon lookup (called only on SwitchIn) ───────────────────────────────
 
 /// Returns (move slots, team slot index) for the currently active mon.
-fn query_active_moves<DS: DataStore>(
+fn query_active_moves(
     battle: &mut gen1_battle::PublicCoreBattle<'_>,
-    data: &DS,
     player_id: &str,
 ) -> (alloc::vec::Vec<MoveSlot>, Option<u8>, Option<u16>) {
     let Ok(player_data) = battle.player_data(player_id) else {
@@ -148,7 +144,6 @@ fn query_active_moves<DS: DataStore>(
         return (alloc::vec::Vec::new(), None, None);
     };
     let speed = active_mon.stats.get(&gen1_battle::Stat::Spe).copied();
-    let _ = data;
     let moves = active_mon
         .moves
         .into_iter()
@@ -183,15 +178,13 @@ fn query_team_slot_by_name(battle: &mut gen1_battle::PublicCoreBattle<'_>, playe
 
 // ── Event enrichment ──────────────────────────────────────────────────────────
 
-async fn enrich_and_dispatch<E, DS>(
+async fn enrich_and_dispatch<E>(
     battle: &mut gen1_battle::PublicCoreBattle<'_>,
-    data: &DS,
     queue: &mut BoardEventQueue,
     effects: &mut E,
     cache: &mut MoveSlotCache,
 ) where
     E: BoardEffects,
-    DS: DataStore,
 {
     #[cfg(feature = "timing")]
     let t_drain = embassy_time::Instant::now();
@@ -233,7 +226,7 @@ async fn enrich_and_dispatch<E, DS>(
                     // Cache miss (shouldn't happen after SwitchIn) — fall back.
                     #[cfg(feature = "timing")]
                     defmt::info!("  refresh_pp cache miss for {}, falling back", pid.as_str());
-                    let (moves, _, _) = query_active_moves(battle, data, pid.as_str());
+                    let (moves, _, _) = query_active_moves(battle, pid.as_str());
                     cache.store(pid.as_str(), moves.clone());
                     Some((pid.clone(), moves))
                 } else {
@@ -251,7 +244,7 @@ async fn enrich_and_dispatch<E, DS>(
                     #[cfg(feature = "timing")]
                     let t_qam = embassy_time::Instant::now();
 
-                    let (moves, slot, speed) = query_active_moves(battle, data, pid);
+                    let (moves, slot, speed) = query_active_moves(battle, pid);
                     cache.store(pid, moves.clone());
 
                     #[cfg(feature = "timing")]
@@ -282,7 +275,7 @@ async fn enrich_and_dispatch<E, DS>(
                 // update the move corners.
                 let pid = mon.split(',').nth(1).unwrap_or("").to_string();
                 if !pid.is_empty() {
-                    let (moves, _, _) = query_active_moves(battle, data, &pid);
+                    let (moves, _, _) = query_active_moves(battle, &pid);
                     cache.store(&pid, moves.clone());
                     if !moves.is_empty() {
                         inject_extra = Some((pid, moves));
@@ -328,6 +321,46 @@ async fn enrich_and_dispatch<E, DS>(
 
 // ── Prompt distilling ─────────────────────────────────────────────────────────
 
+/// Build a prompt event from an engine [`Request`] (emit **before** collecting input).
+pub fn board_prompt_event(player_id: &str, request: &Request) -> BoardEvent {
+    let kind = match request {
+        Request::Turn(_) => PromptKind::ChooseMove,
+        Request::Switch(_) => PromptKind::ChooseSwitch,
+        Request::TeamPreview(_) => PromptKind::TeamPreview,
+        Request::LearnMove(_) => PromptKind::LearnMove,
+    };
+    BoardEvent::Prompt {
+        player_id: alloc::string::String::from(player_id),
+        kind,
+    }
+}
+
+/// Convert the display-relevant fields of a [`gen1_battle::MonBattleData`] into a
+/// [`PartySlotData`].  Call this once at prompt time; store the result.
+pub fn party_slot_from_mon(mon: &gen1_battle::MonBattleData) -> PartySlotData {
+    use gen1_battle::Stat;
+    let get = |s: Stat| mon.stats.get(&s).copied().unwrap_or(0u16);
+    PartySlotData {
+        name: mon.summary.name.clone(),
+        active: mon.active,
+        level: mon.summary.level,
+        hp: mon.hp,
+        max_hp: mon.max_hp,
+        status: mon.status.clone(),
+        atk: get(Stat::Atk),
+        def: get(Stat::Def),
+        spe: get(Stat::Spe),
+        spc: get(Stat::SpAtk),
+        types: mon.types.clone(),
+        moves: mon.moves.iter().map(|m| (m.name.clone(), m.pp, m.max_pp)).collect(),
+        boost_atk: mon.boosts.atk,
+        boost_def: mon.boosts.def,
+        boost_spe: mon.boosts.spe,
+        boost_spc: mon.boosts.spa,
+        item: mon.item.clone(),
+    }
+}
+
 /// Distil a Gen 1 battler request into the generation-neutral
 /// [`SlotOptions`] the shared collector consumes. This is battle logic — it
 /// knows the battler's `Request` shapes — which is why it lives here with the
@@ -349,7 +382,7 @@ pub fn slot_options_from_request(
         for (i, ok) in s.party_ok.iter_mut().enumerate() {
             *ok = pd.mons.get(i).is_some_and(|m| !m.active && m.hp > 0);
         }
-        s.party = pd.mons.iter().map(crate::display::party_slot_from_mon).collect();
+        s.party = pd.mons.iter().map(party_slot_from_mon).collect();
     }
     match request {
         Request::Turn(turn) => {
@@ -388,9 +421,8 @@ pub fn slot_options_from_request(
 
 // ── Battle runner ─────────────────────────────────────────────────────────────
 
-pub async fn run_battle<E, T, F, DS>(
+pub async fn run_battle<E, T, F>(
     battle: &mut gen1_battle::PublicCoreBattle<'_>,
-    data: &DS,
     bus: &InputBus,
     inputs: F,
     queue: &mut BoardEventQueue,
@@ -400,16 +432,14 @@ pub async fn run_battle<E, T, F, DS>(
     E: BoardEffects,
     T: FnMut(&mut gen1_battle::PublicCoreBattle<'_>),
     F: Future<Output = ()>,
-    DS: DataStore,
 {
-    match select(battle_loop(battle, data, bus, queue, effects, on_turn), inputs).await {
+    match select(battle_loop(battle, bus, queue, effects, on_turn), inputs).await {
         Either::First(()) | Either::Second(()) => {}
     }
 }
 
-async fn battle_loop<E, T, DS>(
+async fn battle_loop<E, T>(
     battle: &mut gen1_battle::PublicCoreBattle<'_>,
-    data: &DS,
     bus: &InputBus,
     queue: &mut BoardEventQueue,
     effects: &mut E,
@@ -417,12 +447,11 @@ async fn battle_loop<E, T, DS>(
 ) where
     E: BoardEffects,
     T: FnMut(&mut gen1_battle::PublicCoreBattle<'_>),
-    DS: DataStore,
 {
     let mut cache = MoveSlotCache::new();
     #[cfg(feature = "trace")]
     defmt::info!("[trace] battle_loop: start, initial dispatch");
-    enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
+    enrich_and_dispatch(battle, queue, effects, &mut cache).await;
 
     // The turn counter feeds only the trace logs.
     #[cfg(feature = "trace")]
@@ -544,7 +573,7 @@ async fn battle_loop<E, T, DS>(
                 #[cfg(feature = "timing")]
                 let t_ead = embassy_time::Instant::now();
 
-                enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
+                enrich_and_dispatch(battle, queue, effects, &mut cache).await;
 
                 #[cfg(feature = "timing")]
                 defmt::info!(
@@ -556,11 +585,11 @@ async fn battle_loop<E, T, DS>(
         }
 
         if !had_request {
-            enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
+            enrich_and_dispatch(battle, queue, effects, &mut cache).await;
             continue;
         }
 
-        enrich_and_dispatch(battle, data, queue, effects, &mut cache).await;
+        enrich_and_dispatch(battle, queue, effects, &mut cache).await;
         on_turn(battle);
     }
     #[cfg(feature = "trace")]

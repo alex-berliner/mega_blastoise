@@ -16,8 +16,9 @@ pub mod runner;
 pub mod device_session;
 pub mod device_ui;
 pub mod choice_collect;
-pub mod data_store;
+#[cfg(feature = "legacy_gen1")]
 pub mod demo_teams;
+#[cfg(feature = "legacy_gen1")]
 pub mod prompt_fmt;
 pub mod oled_ctl;
 pub mod menu;
@@ -37,10 +38,10 @@ pub use battle_effects::{
     anim, process_new_log_lines, BoardEffects, BoardEventQueue, NoopBoardEffects,
 };
 pub use board_event::{
-    board_prompt_event, mon_display_name, mon_player_id, parse_log_line, player_display_name,
+    mon_display_name, mon_player_id, parse_log_line, player_display_name,
     mon_player_num, player_id_to_num, side_display_name, status_abbrev, BoardEvent, BoardEventExt, MoveSlot, ParsedBattleLogLine, PromptKind,
 };
-pub use display::{party_slot_from_mon, render_action_select, render_concealed_moves, render_switch_list, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen, render_qr_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_sent_out, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, InvalidReason, OledFrameBuffer, PartySlotData};
+pub use display::{render_action_select, render_concealed_moves, render_switch_list, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen, render_qr_screen, render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2, render_sent_out, render_switch_screen, render_waiting_for_opponent, render_waiting_screen, render_win_screen, InvalidReason, OledFrameBuffer, PartySlotData};
 pub use oled_ctl::{SeatInfo, flash_buf, name_buf, oled_cmds_for_event, render_screen, OledCmd, OledController, OledRedraw, Screen, BOB_TICK_MS};
 pub use battle_input::{
     format_move_choice, format_switch_choice, join_choice_parts, switch_choice_from_team_indices,
@@ -54,13 +55,18 @@ pub use choice_collect::{
 };
 pub use gen3_battle::Ruleset;
 pub use runner::Engine;
-pub use runner::gen1::{battle_options_with_seed, demo_battle_options, demo_engine_opts, make_player, run_battle, LOBBY_DEMO_DELAY_MS};
+pub use runner::LOBBY_DEMO_DELAY_MS;
+#[cfg(feature = "legacy_gen1")]
+pub use runner::gen1::{battle_options_with_seed, board_prompt_event, demo_battle_options, demo_engine_opts, make_player, party_slot_from_mon, run_battle};
 pub use hp_bar::HpBarState;
+#[cfg(feature = "legacy_gen1")]
 pub use prompt_fmt::{format_active_state, format_player_state, format_prompt};
-pub use data_store::FlashDataStore;
 pub use move_sprites::{move_sprite, MOVE_SPRITE_SIDE};
+#[cfg(feature = "legacy_gen1")]
 pub use demo_teams::{demo_team_blue, demo_team_red};
-pub use randbat::{draw_ps_team, draw_randbat_team, draw_two_ps_teams, draw_two_randbat_teams, TEAM_SEED_SALT};
+pub use randbat::{draw_ps_team, draw_two_ps_teams, TEAM_SEED_SALT};
+#[cfg(feature = "legacy_gen1")]
+pub use randbat::{draw_randbat_team, draw_two_randbat_teams};
 pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
 pub use cli_parse::{

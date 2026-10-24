@@ -1,9 +1,9 @@
 extern crate alloc;
 
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::vec::Vec;
 
-use gen1_battle::{MonData, MoveSlot};
+use ps_protocol::{Name, PackedSet, PackedTeam};
 
 // ── USB battle prompt parsing ─────────────────────────────────────────────────
 
@@ -99,7 +99,8 @@ pub fn parse_lobby_cmd(line: &str) -> LobbyCmd {
     }
 }
 
-/// Parse a `:team` upload line into `(player_index, team)`.
+/// Parse a `:team` upload line into `(player_index, team)`, the team in the
+/// protocol's packed form (what `>player` carries).
 ///
 /// Syntax:
 /// ```text
@@ -110,10 +111,10 @@ pub fn parse_lobby_cmd(line: &str) -> LobbyCmd {
 /// - Level defaults to 100. If no moves are given, the mon gets `tackle`
 ///   so it can still act.
 ///
-/// Species/move strings are passed through verbatim; `gen1_battle::update_team`
-/// canonicalizes them (lowercases, strips non-alphanumerics) and rejects
-/// anything it can't resolve.
-pub fn parse_team_spec(line: &str) -> Option<(u8, Vec<MonData>)> {
+/// Species/move strings are passed through verbatim (a name too long for
+/// the protocol's [`Name`] rejects the line); the sim resolves them the way
+/// PS does (`toID`) and rejects anything it can't.
+pub fn parse_team_spec(line: &str) -> Option<(u8, PackedTeam)> {
     let rest = line.trim().strip_prefix(":team ")?.trim();
     let (who, spec) = rest.split_once(char::is_whitespace)?;
     let player = match who.trim() {
@@ -122,7 +123,7 @@ pub fn parse_team_spec(line: &str) -> Option<(u8, Vec<MonData>)> {
         _ => return None,
     };
 
-    let mut team: Vec<MonData> = Vec::new();
+    let mut team = PackedTeam::new();
     for mon_spec in spec.split(',') {
         let mon_spec = mon_spec.trim();
         if mon_spec.is_empty() {
@@ -136,31 +137,20 @@ pub fn parse_team_spec(line: &str) -> Option<(u8, Vec<MonData>)> {
         let move_strs: Vec<&str> =
             parts.map(|m| m.trim()).filter(|m| !m.is_empty()).take(4).collect();
 
-        let make_slot = |id: &str| MoveSlot {
-            name: id.to_string(),
-            id: id.to_string(),
-            typ: String::new(),
-            pp: 0,
-            max_pp: 0,
-            disabled: false,
-            target: 0,
-        };
-        let moves: Vec<MoveSlot> = if move_strs.is_empty() {
-            alloc::vec![make_slot("tackle")]
-        } else {
-            move_strs.iter().map(|m| make_slot(m)).collect()
-        };
-
-        team.push(MonData {
-            // Leave the name empty: the engine then uses the species' proper
+        let mut set = PackedSet {
+            // Leave the nickname empty: PS then uses the species' proper
             // display name ("Ditto", "Mr. Mime"), which the sprite table and
             // narration are keyed on. Typed input here is lowercase ids.
-            name: String::new(),
-            species: species.to_string(),
+            name: Name::default(),
+            species: Name::from_str(species).ok()?,
             level: 100,
-            moves,
+            happiness: 255,
             ..Default::default()
-        });
+        };
+        for m in if move_strs.is_empty() { &["tackle"][..] } else { &move_strs[..] } {
+            set.moves.push(Name::from_str(m).ok()?).ok()?;
+        }
+        team.push(set).ok()?;
         if team.len() == 6 {
             break;
         }

@@ -1,3 +1,6 @@
+//! Console text for the legacy Gen 1 engine's prompts (the `legacy_gen1`
+//! feature).
+
 extern crate alloc;
 
 use alloc::format;

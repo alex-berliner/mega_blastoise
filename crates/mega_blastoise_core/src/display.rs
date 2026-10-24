@@ -22,8 +22,9 @@ use crate::board_event::MoveSlot;
 /// Compact snapshot of a party Pokémon's in-battle stats, used by all display
 /// targets for the long-press party-stats view.
 ///
-/// Derived from [`gen1_battle::MonBattleData`] via [`party_slot_from_mon`]; cheap
-/// enough to cache on embedded hardware for the duration of a battle prompt.
+/// Filled from a PS request and the client's view (`ps_client`'s
+/// `PartyMon`, through `runner::ps`), or by a legacy runner; cheap enough to
+/// cache on embedded hardware for the duration of a battle prompt.
 #[derive(Clone)]
 pub struct PartySlotData {
     pub name: alloc::string::String,
@@ -38,7 +39,7 @@ pub struct PartySlotData {
     pub spe: u16,
     pub spc: u16,
     /// The mon's types, in dex order. Any engine can fill this now.
-    pub types: alloc::vec::Vec<battle_types::Type>,
+    pub types: alloc::vec::Vec<ps_dex::Type>,
     /// Move name + (pp, max_pp) for each slot, in order.
     pub moves: alloc::vec::Vec<(alloc::string::String, u8, u8)>,
     /// Stat stage boosts (-6 to +6).
@@ -48,32 +49,6 @@ pub struct PartySlotData {
     pub boost_spc: i8,
     /// Held item name, if any.
     pub item: Option<alloc::string::String>,
-}
-
-/// Convert the display-relevant fields of a [`gen1_battle::MonBattleData`] into a
-/// [`PartySlotData`].  Call this once at prompt time; store the result.
-pub fn party_slot_from_mon(mon: &gen1_battle::MonBattleData) -> PartySlotData {
-    use gen1_battle::Stat;
-    let get = |s: Stat| mon.stats.get(&s).copied().unwrap_or(0u16);
-    PartySlotData {
-        name: mon.summary.name.clone(),
-        active: mon.active,
-        level: mon.summary.level,
-        hp: mon.hp,
-        max_hp: mon.max_hp,
-        status: mon.status.clone(),
-        atk: get(Stat::Atk),
-        def: get(Stat::Def),
-        spe: get(Stat::Spe),
-        spc: get(Stat::SpAtk),
-        types: mon.types.clone(),
-        moves: mon.moves.iter().map(|m| (m.name.clone(), m.pp, m.max_pp)).collect(),
-        boost_atk: mon.boosts.atk,
-        boost_def: mon.boosts.def,
-        boost_spe: mon.boosts.spe,
-        boost_spc: mon.boosts.spa,
-        item: mon.item.clone(),
-    }
 }
 
 /// Longest prefix of `s` at most `max_bytes` long, ending on a char boundary.
@@ -461,7 +436,7 @@ where
 
 // ── Shared header for pokémon stat/move pages ─────────────────────────────────
 
-pub fn type_abbr(t: battle_types::Type) -> &'static str {
+pub fn type_abbr(t: ps_dex::Type) -> &'static str {
     t.abbr()
 }
 
@@ -979,25 +954,22 @@ fn split_two_lines(text: &str, max_line: usize) -> (&str, &str) {
 /// True when a move does something TO the opponent — self-buffs, heals,
 /// screens, and other self/field-only moves hide the recipient sprite on
 /// the move-used screen.
+///
+/// Read off the Gen 1 dex (PS's resolved `Dex.mod('gen1')`, through
+/// `ps_dex`): a `target: 'self'` move stays on the user, except Bide and
+/// Haze, which reach the foe, and Teleport, which the screen has always
+/// shown with its recipient. Conversion is the one the other way round: PS
+/// aims it at the foe, whose types it copies onto the user. A move the
+/// Gen 1 dex lacks counts as reaching the foe.
 fn move_affects_opponent(move_id: &str) -> bool {
-    use gen1_battle::MoveEffectKind as K;
-    match gen1_battle::move_by_id(move_id) {
-        Some(m) => !matches!(
-            m.effect_kind,
-            K::BoostSelf
-                | K::HealHalf
-                | K::Rest
-                | K::Substitute
-                | K::LightScreen
-                | K::Reflect
-                | K::Mist
-                | K::FocusEnergy
-                | K::Conversion
-                | K::Metronome
-                | K::MirrorMove
-                | K::NoOp
-        ),
-        None => true,
+    let dex = &ps_dex::GEN1;
+    let Some(id) = dex.move_id(move_id) else {
+        return true;
+    };
+    match move_id {
+        "bide" | "haze" | "teleport" => true,
+        "conversion" => false,
+        _ => dex.move_def(id).target != ps_dex::MoveTarget::Self_,
     }
 }
 

@@ -1,17 +1,19 @@
 //! Every Gen 1 species display name must resolve to a sprite — both from the
-//! sprite table's own keys and from the battle engine's species names.
+//! sprite table's own keys and from the Gen 1 dex's species names (PS's
+//! `Dex.mod('gen1')` through `ps_dex`, the names the PS engine plays with).
 
 use mega_blastoise_core::sprites::{mon_back_sprite, mon_sprite, MON_BACK_SPRITES, MON_SPRITES};
 
 #[test]
 fn every_engine_species_name_has_a_sprite() {
     let mut missing = Vec::new();
-    for entry in gen1_battle::SPECIES {
-        if mon_sprite(entry.name).is_none() {
-            missing.push(entry.name);
+    for entry in ps_dex::GEN1.species {
+        let name = entry.name.as_str();
+        if mon_sprite(name).is_none() {
+            missing.push(name);
         }
-        if mon_back_sprite(entry.name).is_none() {
-            missing.push(entry.name);
+        if mon_back_sprite(name).is_none() {
+            missing.push(name);
         }
     }
     assert!(missing.is_empty(), "no sprite for: {missing:?}");
@@ -63,12 +65,13 @@ fn every_gen3_species_name_has_a_color_sprite() {
 fn every_gen1_species_name_has_a_color_sprite() {
     use mega_blastoise_core::{mon_back_sprite_color, mon_sprite_color};
     let mut missing = Vec::new();
-    for entry in gen1_battle::SPECIES {
-        if mon_sprite_color(entry.name).is_none() {
-            missing.push((entry.name, "front"));
+    for entry in ps_dex::GEN1.species {
+        let name = entry.name.as_str();
+        if mon_sprite_color(name).is_none() {
+            missing.push((name, "front"));
         }
-        if mon_back_sprite_color(entry.name).is_none() {
-            missing.push((entry.name, "back"));
+        if mon_back_sprite_color(name).is_none() {
+            missing.push((name, "back"));
         }
     }
     assert!(missing.is_empty(), "no colour sprite for: {missing:?}");

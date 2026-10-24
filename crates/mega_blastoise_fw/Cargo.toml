@@ -6,7 +6,6 @@ default-run = "mega-blastoise-fw"
 
 [dependencies]
 mega-blastoise-core = { path = "../mega_blastoise_core", features = ["defmt", "timing"] }
-gen1_battle = { path = "../gen1_battle" }
 
 # Cortex-M core
 cortex-m = { version = "0.7", features = ["inline-asm"] }
@@ -26,10 +25,6 @@ embedded-hal-async = "1"
 # Heap allocator
 embedded-alloc = "0.5"
 
-# battler types for MonData, TeamData, etc.
-battler = { path = "../../battler/battler", default-features = false, features = ["timing"] }
-battler-data = { path = "../../battler/battler-data", default-features = false }
-anyhow = { version = "1.0", default-features = false }
 embassy-usb = { version = "0.6", features = ["defmt"] }
 embassy-futures = "0.1"
 
@@ -49,7 +44,3 @@ board_v2 = ["dep:pio", "dep:fixed"]
 input-debug = []
 mem-profile = []
 trace = ["mega-blastoise-core/trace"]
-# Battles run on the PS engine (ps_sim + ps_client, core's runner::ps)
-# instead of the legacy engines. The PS path is always compiled in; this
-# only flips the engine core picks.
-ps_engine = ["mega-blastoise-core/ps_engine"]
