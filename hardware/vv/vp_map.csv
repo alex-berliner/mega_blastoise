@@ -1,6 +1,6 @@
 num,title,maps_to,cut_reason,status_file,status_now,evidence
 1,Datasheet pinout re-verification of every IC and connector,VER-02,,partly,yes,check_pins.py over pin_review/*.json covers all 29 assembled parts and 244 pins with page quotes; PASS 2026-10-24 (VER-02); PDFs are kept out of git by policy (#73)
-2,"LCSC part-number cross-check (C-number -> MPN, package, pin count)",VER-14,,partly,partly,
+2,"LCSC part-number cross-check (C-number -> MPN, package, pin count)",VER-14 VER-130,,partly,partly,
 3,Footprint vs manufacturer land pattern,VER-125,,partly,partly,
 4,Pad-number coverage: every pin in design.py exists on the footprint,VER-04,,yes,yes,
 5,"Ratings table: voltage, current, power per part vs worst case",VER-31,,partly,partly,
@@ -9,17 +9,17 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 8,"JLCPCB order dry run (BOM + CPL upload, stop before payment)",VER-28,,no,no,
 9,CPL rotation normalisation against JLC's part orientation,VER-29 VER-28,,no,no,
 10,DRC against JLCPCB's published 2-layer capability rules,VER-17,,partly,partly,
-11,Independent gerber review (not KiCad rendering KiCad),VER-27,,partly,partly,
-12,Fab output freshness and reproducibility,VER-24,,no,no,
+11,Independent gerber review (not KiCad rendering KiCad),VER-27 VER-132,,partly,partly,
+12,Fab output freshness and reproducibility,VER-24 VER-143,,no,no,
 13,Exposed-pad paste and via-in-pad review,VER-27 DF-08,,no,no,
 14,Solder-joint and tombstone review of 0402s,VER-89 DF-71,,no,no,
 15,Return-path check for signals crossing B.Cu pour gaps,VER-21,,no,no,
 16,SPI and USB signal-integrity estimate,VER-61,,no,no,
 17,Copper resistance and IR drop on power paths,VER-13,,yes,partly,the copper solves predate the 2026-10-19 re-route (a053875) and their script is not in the repo (VER-13)
-18,"Thermal: TP4056 at 1 W, FM8002A, AP3156 in 2x mode, and the cell lying on the board",VER-68 VER-85 VER-86,,partly,partly,
-19,Zone island and stitching integrity,VER-04,,partly,partly,
+18,"Thermal: TP4056 at 1 W, FM8002A, AP3156 in 2x mode, and the cell lying on the board",VER-68 VER-85 VER-86,,partly,partly,"OBSOLETE wording: the AP3156 charge pump was removed (DEF-12); the thermal items live on in VER-68, VER-85, VER-86 and VER-144"
+19,Zone island and stitching integrity,VER-04,,partly,partly,"isolated_copper is a warning in battler.kicad_pro and check_pcb.py passes warnings, so this stays partly until DEF-36 is fixed"
 20,Silkscreen polarity and pin-1 review,VER-28 VER-89,,partly,partly,
-21,Test-point coverage review,VER-115,,partly,partly,"TP1-TP16 now include PWR_EN, LS_GATE, AMP_SHDN, BL_REF, 1V1 and the panel's SPI (design.py, be7ea8a); CHG_TEMP only at C41's pads"
+21,Test-point coverage review,VER-115 VER-158,,partly,partly,"TP1-TP16 now include PWR_EN, LS_GATE, AMP_SHDN, BL_REF, 1V1 and the panel's SPI (design.py, be7ea8a); CHG_TEMP only at C41's pads"
 22,Placement-vs-case consistency after manual edits,VER-19,,no,no,
 23,Exact 3D interference check (not boxes),VER-06 VER-112,,partly,partly,
 24,"check_fit extended for the new stack (cell on a 1.2 mm spacer over the core, speaker over a 6 mm hole, ribs at 0.5 mm)",VER-06 VER-20,,no,partly,the cell went back under the board on 2026-10-09 (226bbb6); check_fit checks back_limit (cell_gap 0.5 mm) and THT leads against the rib cut-aways (2e66f0c)
@@ -42,7 +42,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 41,RP2350 errata review against this design,VER-16,,partly,partly,
 42,Membrane contact test coupon board,VER-45 VER-46,,no,no,
 43,Button actuation force and travel,VER-50,,partly,partly,
-44,"Panel, FPC and ZIF orientation proof",VER-43,,no,no,
+44,"Panel, FPC and ZIF orientation proof",VER-43 VER-136,,no,no,
 45,Snap-fit mechanics calculation and coupon test,VER-92 VER-48,,partly,partly,
 46,Slicer-level printability check,VER-48,,partly,partly,
 47,Case material thermal check,VER-86,,no,no,
@@ -54,12 +54,12 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 53,Unpowered board checks and visual inspection after assembly,VER-52 VER-53 VER-54 VER-89,,no,no,
 54,"Staged bring-up (USB only, test firmware, display, audio, cell, power switch)",VER-55 VER-60 VER-64 VER-65 VER-73,,no,no,
 55,Pin map vs RP2350 peripheral function table,VER-15,,partly,partly,
-56,Generated Rust pin definitions compiled against embassy-rp (rp235xb),VER-76,,no,no,
+56,Generated Rust pin definitions compiled against embassy-rp (rp235xb),VER-149 VER-150 VER-76,,no,no,"generated pins and an rp235xb build moved to the order gate (F-44, O-56)"
 57,Bring-up firmware written before boards arrive,VER-76,,no,no,
 58,ILI9488 driver developed on an off-the-shelf module first,VER-76 VER-43,,no,no,
 59,Panel validated on its own via an FPC breakout,VER-43,,no,no,
 60,Backlight current per cathode pin and sink loop check,VER-62 VER-05,,simulated,simulated,
-61,Battery ADC calibration sweep,VER-67,,no,no,
+61,Battery ADC calibration sweep,VER-67 VER-155,,no,no,
 62,Power-latch firmware timing test,VER-73,,no,no,
 63,Flash integrity across unplug cycles,VER-70,,no,no,
 64,Button bounce and matrix-free scan validation,VER-56,,no,no,
@@ -75,21 +75,21 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 74,Membrane contact mask and pour rules,VER-08 VER-09,,yes,yes,
 75,ERC and design.py-vs-netlist,VER-01 VER-03,,yes,yes,
 76,DRC with schematic parity,VER-04,,yes,yes,
-77,"Mutation pass over the checkers (check_netlist, check_pcb parity, check_fit, pinmap, fab) with seeded faults, and an honest blind-spot table",VER-22,,no,no,
+77,"Mutation pass over the checkers (check_netlist, check_pcb parity, check_fit, pinmap, fab) with seeded faults, and an honest blind-spot table",VER-22 VER-129,,no,no,
 78,"Board bow and twist: copper balance, JLC flatness spec, incoming measurement, tub floor flatness, and a clamped-board design rule",VER-90,,no,no,
-79,Back-powering of an unpowered 3V3 through I/O: path enumeration and a probe-attached off-state test,VER-127,,no,no,
+79,Back-powering of an unpowered 3V3 through I/O: path enumeration and a probe-attached off-state test,VER-159 VER-127,,no,no,
 80,"Weak, current-limited and sagging USB sources: limit-cycle and circulating-current test",VER-80,,no,no,
 81,"Flux and ionic contamination on the bare ENIG combs: wash spec, proximity script and SIR check on arrival",VER-46 DF-74,,no,no,
 82,Fire enclosure and cell-failure containment of the printed case,DF-87,,no,no,
 83,"Persistent-data flash writes under power loss: journal contract, XIP-stall budget and a randomized power-cut HIL test",CUT,application firmware (flash journal); hardware side kept in VER-70's flash check,no,no,
-84,"Power UX spec and two-player hallway test: Y as both game button and power button, no indicator LED",VER-73,,no,partly,"the power button moved from Y to seat 1's Start (a3158fc, 2026-10-19), so no game button doubles as power; pinmap.md still describes Y (DEF-21)"
+84,"Power UX spec and two-player hallway test: Y as both game button and power button, no indicator LED",VER-73,,no,partly,"the power button moved from Y to seat 1's Start (a3158fc, 2026-10-19), so no game button doubles as power; pinmap.md still describes Y (DEF-21); OBSOLETE wording: 'Y as both game button and power' describes a part of the design that is gone"
 85,"Statistical confidence from N=2: margin testing to failure, min/max part swaps, per-batch manufacturer record and a repeat-test rule",VER-97,,no,no,
 86,"Home-assembly process conditions: ESD, heat, shorts and a checked step order for the hand work",VER-91,,no,no,
 87,"Environmental limits table of the non-electronic parts and a cold-boot, hot-soak and condensation test",VER-97,,no,no,
-88,"Conservative fab export profile, pinned tool manifest and a JLC round-trip of the rendered files",VER-24,,partly,partly,
+88,"Conservative fab export profile, pinned tool manifest and a JLC round-trip of the rendered files",VER-24 VER-132,,partly,partly,the export origin flags and the hole-to-copper alignment are VER-132 (h) (F-20)
 89,"Paper single-fault (FMEA) table of the power path, with a 'layers of protection left' column",DOC:dfmea.csv VER-98,,no,partly,hardware/vv/dfmea.csv seeds the power-path rows with layers of protection (2026-10-24); not reviewed yet (VER-98)
 90,"Firmware authority matrix: for each hazard, can firmware observe it and can it act on it",VER-98,,no,no,
-91,"Measurement-uncertainty budget and probe-method spec per quantitative bring-up test, with a known-reference check first",VER-116 VER-39,,no,no,
+91,"Measurement-uncertainty budget and probe-method spec per quantitative bring-up test, with a known-reference check first",VER-116 VER-39 VER-155,,no,no,instrument and accuracy columns in verification.csv; check_trace warns when a pass band is under 4 x the accuracy (F-38)
 92,"Product requirements sheet with numeric pass/fail criteria, bound to the tests that need them",DOC:requirements.md,,no,partly,"hardware/vv/requirements.md (2026-10-24): numbered requirements bound to checks, all PROPOSED"
 93,"Outer-skin touch-temperature map against IEC 62368-1 limits during charge-while-playing, and the structural fixes",VER-86,,no,no,
 94,"USB 2.0 power-state behaviour on legacy hosts: unconfigured, configured and suspended current, and the compliance decision",VER-81,,no,no,
@@ -115,25 +115,25 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 114,Exact-MPN datasheet check for FM8002A shutdown polarity and variant,VER-124,,no,yes,pin_review/u7.json pin 1 quotes C94625's own datasheet: SHUTDOWN high = off (VER-124)
 115,Footprint vs JLC/EasyEDA footprint overlay,VER-125,,no,no,
 116,CPL rotation and centroid audit against JLC's 3D preview,VER-28 VER-29,,partly,partly,
-117,No paste or mask surprises on the membrane combs and bare pads,VER-25,,partly,partly,
+117,No paste or mask surprises on the membrane combs and bare pads,VER-25 VER-132,,partly,partly,
 118,JLC edge-clearance and edge-rail check,VER-18,,no,no,
 119,JLC DFM analysis and PCBA engineering review,VER-28,,partly,partly,
 120,KiCad DRC against JLC's capability rule set,VER-17,,partly,partly,
-121,Gerber/fab-output freshness and parity,VER-24,,no,no,
+121,Gerber/fab-output freshness and parity,VER-24 VER-143,,no,no,
 122,BOM/CPL/LCSC cross-consistency script,VER-14,,partly,partly,
 123,Voltage and power derating table per part,VER-31,,partly,partly,
 124,MLCC DC-bias effective capacitance check,VER-30,,no,no,
 125,USB VBUS capacitance and inrush check,VER-99,,no,no,
 126,Independent ngspice power-path simulation with vendor models,VER-11 VER-12,,partly,partly,
 127,Monte Carlo / tolerance analysis of the analog windows,VER-32,,partly,partly,
-128,Cell spec reconciliation for the 403450,VER-37,,no,no,
+128,Cell spec reconciliation for the 403450,VER-37 VER-160,,no,no,
 129,Cell-on-board mechanical and thermal re-check (new layout),VER-20 VER-85,,no,no,
 130,check_fit.py extended to the new stack and bottom side,VER-06 VER-112,,partly,partly,
 131,Exact CGAL or FreeCAD interference check of the full assembly,VER-06 VER-112,,no,no,
 132,Tolerance stack-up analysis of the case Z stack,VER-20,,no,no,
 133,Printer calibration and dimensional coupons,VER-48,,partly,partly,
 134,Fit kit run with the real parts,VER-48,,partly,partly,
-135,Real-panel electrical pre-test on a breakout,VER-43,,no,no,
+135,Real-panel electrical pre-test on a breakout,VER-43 VER-136,,no,no,
 136,Subcircuit breadboard and module prototypes,CUT,dropped by the plan (section 3); the panel breakout and the comb coupon are the bench work,no,no,
 137,Membrane contact electrical validation,VER-45 VER-46,,partly,partly,
 138,RP2350 hardware design guide and errata checklist,VER-16,,partly,partly,
@@ -153,7 +153,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 152,Hot-plug and unplug scope tests (bring-up 5.5 and 5.6),VER-70 VER-71,,partly,partly,
 153,Audio chain measurements,VER-64,,partly,partly,
 154,Crystal and clock check,VER-55,,no,no,
-155,Test points for spare GPIOs and key signals,VER-115,,partly,partly,
+155,Test points for spare GPIOs and key signals,VER-115 VER-158,,partly,partly,
 156,Board flex and MLCC crack risk review,VER-90 DF-75,,no,no,
 157,Solder-joint inspection,VER-89,,no,no,
 158,"Case drop, heat and durability tests",VER-93 VER-92,,partly,partly,
@@ -170,7 +170,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 169,Clean-room schematic and layout review by a fresh reviewer,VER-40,,partly,partly,
 170,Datasheet application-circuit diff per IC,VER-34,,partly,partly,
 171,Docs and data single-source consistency check,VER-39,,no,no,
-172,Full pipeline reproducibility rebuild,VER-24,,no,no,
+172,Full pipeline reproducibility rebuild,VER-24 VER-143,,no,no,
 173,"Schematic-to-design.py netlist check, ERC, DRC with parity",VER-01 VER-03 VER-04,,yes,yes,
 174,Production test fixture and flashing flow,VER-76 VER-110,,no,no,
 175,Firmware safety interlocks review,VER-98 VER-105,,no,no,
@@ -178,12 +178,12 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 177,Cost and quote re-check after changes,VER-117,,partly,partly,
 178,PWR_HOLD has no external pull-down: reset-state and fault-state table per driven net,VER-77 VER-02,,no,yes,"R42 4.7k on PWR_HOLD (design.py, 4c4d846); pinmap.md 'Power control' rewritten; the release on real silicon is VER-77"
 179,RP2354B silicon stepping (A2 vs A4) that JLC will place,VER-75,,no,no,
-180,Firmware flash/RAM/frame-time budget gate for the RP2354B (and a PSRAM decision),CUT,"application firmware budget, not hardware correctness",partly,partly,
+180,Firmware flash/RAM/frame-time budget gate for the RP2354B (and a PSRAM decision),REQ-DSP-11 VER-43 VER-151,,partly,partly,"un-cut 2026-10-24 (O-25, F-45, O-53): the panel's frame time and the flash size decide hardware before the order"
 181,Panel power sequencing and register health across unplug dips and power-off,VER-70 VER-60,,no,no,
 182,Field-recovery path test: BOOTSEL/RESET pinholes with the case closed and a dead cell,VER-107,,partly,partly,
-183,"Cell as a real object: PCM bump, wire exit, retention and a non-compressible spacer",VER-37 VER-20,,no,partly,"bom.md and assembly.md now name the 403450 and a 0.45 mm foam pad over it, under the board"
+183,"Cell as a real object: PCM bump, wire exit, retention and a non-compressible spacer",VER-37 VER-20 VER-140,,no,partly,"bom.md and assembly.md now name the 403450 and a 0.45 mm foam pad over it, under the board"
 184,Cell internal-resistance sag under peak load (backlight 2x + audio + core),VER-70,,no,no,
-185,"Always-biased P1_Y comb: humidity, sweat and leakage turning the device on",VER-46 VER-79,,no,partly,"R13 33k chosen for about twice the leakage margin (design.py comment); the always-biased comb is now SW21 (Start), not P1_Y; no coupon yet"
+185,"Always-biased P1_Y comb: humidity, sweat and leakage turning the device on",VER-46 VER-79,,no,partly,"R13 33k chosen for about twice the leakage margin (design.py comment); the always-biased comb is now SW21 (Start), not P1_Y; no coupon yet; OBSOLETE wording: the always-biased comb is SW21 (Start), not P1_Y"
 186,"Debris and ingress paths: speaker hole, cap holes, USB-C",VER-48,,no,no,
 187,"DS Lite silicone supply, provenance and incoming inspection",VER-126,,no,no,
 188,Contact-finish decision: ENIG gold thickness vs a sliding carbon pill,VER-45 DF-78,,no,no,
@@ -195,7 +195,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 194,"Serviceability rules: open/close cycles, cell replacement, connector life",VER-92 VER-91,,no,no,
 195,"Revision marking, hardware-revision strap and unit traceability",VER-59,,no,yes,"4-bit revision strap R48-R51 on GPIO22-25, BOARD_REV = 1, REV on the back silk (4c4d846)"
 196,Primary-source audit of comment-claims every model inherited,VER-34,,no,no,
-197,"XY registration chain from pill to comb and from cap to cap hole, with a measured concentricity check",VER-51 VER-20,,no,no,
+197,"XY registration chain from pill to comb and from cap to cap hole, with a measured concentricity check",VER-51 VER-174,,no,no,
 198,Parallel-run crosstalk report per aggressor/victim pair,CUT,effort; the return-path script (VER-21) and the EMC pre-scan (VER-96) cover the coupling that matters,no,no,
 199,"The pouch cell as an electrical conductor over the core: coupling, EMC patch and the fix",VER-96,,no,no,
 200,"Supply ramp, re-power dwell and in-package flash power-up timing versus a bouncing latch",VER-73,,no,no,

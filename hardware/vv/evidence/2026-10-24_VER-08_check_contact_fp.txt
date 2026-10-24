@@ -1,4 +1,8 @@
-# VER-08 check_contact_fp.py, 2026-10-24, commit 76955d2 (worktree clean)
+# VER-08 check_contact_fp
+DATE: 2026-10-24
+COMMIT: 4af820bfb12ec1aa6bf3b073274825f7843e9e17
+TREE: clean under its covers
+TOOLS: python 3.12.3
 $ python3 hardware/membrane/tools/check_contact_fp.py hardware/ref_design/board/lib/battler.pretty/DSL_button_4ring.kicad_mod
 pad 1: 7 shapes, anchor (-1.604, 1.477)
     arc   r=0.7200  sweep 150.7 deg  centre (+0.0000, +0.0000)
@@ -26,4 +30,6 @@ smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across
     worst spot centred at (0.00, -0.35); a 3.5 mm pill clears it comfortably
 
 RESULT: PASS
+
 exit 0
+RESULT: PASS

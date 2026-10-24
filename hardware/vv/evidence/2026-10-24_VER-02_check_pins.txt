@@ -1,4 +1,8 @@
-# VER-02 check_pins.py, 2026-10-24, commit 76955d2 (worktree clean)
+# VER-02 check_pins
+DATE: 2026-10-24
+COMMIT: 4af820bfb12ec1aa6bf3b073274825f7843e9e17
+TREE: clean under its covers
+TOOLS: python 3.12.3
 $ python3 hardware/ref_design/board/tools/check_pins.py
   waived: U4 pin 58: ISSUE: VBAT_SENSE = VBAT/2 (R17/R18 470k/470k, 1.5-2.1 V for a Li-ion cell) is present whenever the cell is connected, including when the device is off and +3V3 (IOVDD) is 0 V. GPIO47_ADC7 is a standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335), and 6.1.5 (p.401) says voltages above IOVDD cause leakage through the ESD diodes. The current is limited to a few uA by the 235 kOhm source, but it is outside the abs max rating. Also: clear IE and the reset pull-down (36-113 kOhm against a 235 kOhm divider) before sampling.  WAIVED: accepted: the 235k source limits the clamp current to a few uA with the device off; a switched divider would cost a part and a GPIO. design_review.md, Off state
   waived: C41: DNP / not in JLC BOM: no part chosen; pick a rating >= net max if ever fitted  WAIVED: unfitted spare footprint (1206): choose a part rated above the net if one is ever fitted
@@ -7,4 +11,6 @@ $ python3 hardware/ref_design/board/tools/check_pins.py
   waived: R48: DNP / not in JLC BOM: no part chosen; pick a rating >= net max if ever fitted  WAIVED: unfitted on purpose: revision strap bit 0 reads 1 (BOARD_REV = 1)
 29 parts, 244 reviewed pins, 94 passives; 5 waived
 RESULT: PASS
+
 exit 0
+RESULT: PASS

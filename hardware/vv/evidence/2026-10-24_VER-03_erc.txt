@@ -1,10 +1,13 @@
-# VER-03 ERC, 2026-10-24, commit 76955d2 (worktree clean), kicad-cli 10.0.6
-$ kicad-cli sch erc --severity-all -o <scratch>/erc.rpt hardware/ref_design/board/battler.kicad_sch
+# VER-03 erc
+DATE: 2026-10-24
+COMMIT: 4af820bfb12ec1aa6bf3b073274825f7843e9e17
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ kicad-cli sch erc --severity-all --exit-code-violations -o {tmp}/erc.rpt hardware/ref_design/board/battler.kicad_sch
 Found 0 violations
-Saved ERC Report to /tmp/claude-1000/-home-alex-Code-mega-blastoise/a7615dab-db5e-42e9-be95-467c193ae3c1/scratchpad/erc.rpt
-exit 0
+Saved ERC Report to /tmp/tmpivulm4iw/erc.rpt
 --- report
-ERC report (2026-10-24T11:00:54, Encoding UTF8)
+ERC report (2026-10-24T12:58:45, Encoding UTF8)
 Report includes: Errors, Warnings, Exclusions
 
 ***** Sheet /
@@ -32,3 +35,6 @@ Report includes: Errors, Warnings, Exclusions
     - Four connection points are joined together
     - SPICE model issue
     - Assigned footprint doesn't match footprint filters
+
+exit 0
+RESULT: PASS

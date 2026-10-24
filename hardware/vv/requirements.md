@@ -7,47 +7,80 @@ proven (T test, A analysis, I inspection, D demonstration), the checks in
 first, and a status.
 
 **Every requirement here is PROPOSED.** Claude seeded them on 2026-10-24 from
-`hardware/ref_design/docs/validation_plan.md` (#92 and the methods it names), the datasheet
-reviews in `hardware/ref_design/board/pin_review/`, `docs/design_review.md` and IEC 62368-1.
-None is binding until Alex marks it APPROVED (or REJECTED, or DEFERRED with a reason).
-`check_trace.py --gate` fails while any is PROPOSED.
+`hardware/ref_design/docs/validation_plan.md` (archived), the datasheet reviews in
+`hardware/ref_design/board/pin_review/`, `docs/design_review.md` and IEC 62368-1, and revised
+them the same day from the two-model review (hardware/vv/PLAN.md). None is binding until
+Alex decides it in [releases/APPROVALS.md](releases/APPROVALS.md): APPROVED, REJECTED, or
+DEFERRED with a reason. A Status here that has no matching line he committed there is a
+structure error, and a statement edited after he approved it needs his approval again.
+`check_trace.py --gate` fails while any requirement in scope is PROPOSED.
 
 How to read a block:
 
 - Level: product (what a player or Alex sees), subsystem (a block of the design), or
   board (one board's make and test).
 - Board: both, ref_design (`hardware/ref_design`, REF-A) or prod_board (Alex's
-  `hardware/prod_board` and `hardware/prod_case`). A requirement for both needs evidence
-  from each board separately.
+  `hardware/prod_board` and `hardware/prod_case`).
+  A product requirement that names one board's parts or numbers is split: the parent
+  (Board: both) states the product need without them, and each board gets its own
+  allocation, `REQ-X.R` for ref_design and `REQ-X.P` for prod_board. Claude writes the .R
+  ones. Alex writes, or opts into, the .P ones for his board. Until he does,
+  `--gate --board prod_board` evaluates only the requirements marked prod_board
+  (REQ-PBD-* and any .P), and the ref_design gate evaluates ref_design and both.
 - Source: a datasheet page (the review file that quotes it is named), a standard clause, a
   validation_plan method (#n), or Alex's use. "Claude's estimate" means nobody has set the
   number yet: Alex should.
-- Phase: ORDER (before the 5-board order), EVT (the 5 boards), DVT (the revised spin), PVT
-  (the 30-board run), SALE (before any unit is sold or given away).
+- Phase: ORDER (before the 5-board order: what the copper and the BOM freeze), CASE (before
+  the printed case is released for the EVT units), EVT (the 5 boards), DVT (the revised
+  spin), PVT (the 30-board run), SALE (before any unit is sold or given away).
+- Applies when (optional, for a .P allocation): the condition on prod_board's design under
+  which it applies, for example "its schematic holds a charger".
 
 The standards' clause numbers below are from memory of IEC 62368-1:2018, IEC 62133-2:2017,
 USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text before relying on it.
 
 ## Product level
 
-### REQ-PRD-01: Twenty independent inputs
+### REQ-PRD-01: Independent inputs
 - Level: product
 - Board: both
-- Statement: The device shall read 20 momentary inputs, 10 per seat (up, down, left, right, A, B, X, Y, Start, Select), each on its own line, with any combination of up to 20 held at once read correctly.
+- Statement: The device shall read at least 8 momentary inputs per seat (D-pad and A, B, X, Y), each on its own line, with any combination held at once read correctly.
 - Rationale: two players press at the same time; a matrix would ghost.
-- Source: Alex's use; README (Start and Select added 2026-10-19, a3158fc).
+- Source: Alex's use.
+- Method: T
+- Verified by: allocated: REQ-PRD-01.R
+- Phase: EVT
+- Status: PROPOSED
+- Notes: prod_board has 16 contacts and no Start or Select at 76955d2; its .P allocation is Alex's.
+
+### REQ-PRD-01.R: Twenty independent inputs (ref_design)
+- Level: product
+- Board: ref_design
+- Statement: The device shall read 20 momentary inputs, 10 per seat (up, down, left, right, A, B, X, Y, Start, Select), each on its own line, with any combination of up to 20 held at once read correctly.
+- Rationale: Start and Select added 2026-10-19 (a3158fc); seat 1's Start is also the power button.
+- Source: Alex's use; README.
 - Method: T
 - Verified by: VER-56, VER-76
 - Phase: EVT
 - Status: PROPOSED
-- Notes: prod_board has 16 contact footprints (no Start or Select) at 76955d2.
 
 ### REQ-PRD-02: One readable screen
 - Level: product
 - Board: both
-- Statement: The 320 x 480 panel shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat.
+- Statement: The one shared screen shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat.
 - Rationale: the one shared screen is the product.
-- Source: Alex's use; ER-TFT035IPS-6 datasheet (pin_review/panel.json).
+- Source: Alex's use.
+- Method: T
+- Verified by: allocated: REQ-PRD-02.R
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-PRD-02.R: One readable screen (ref_design)
+- Level: product
+- Board: ref_design
+- Statement: The 320 x 480 ER-TFT035IPS-6 shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat.
+- Rationale: the one shared screen is the product.
+- Source: ER-TFT035IPS-6 datasheet (pin_review/panel.json).
 - Method: T
 - Verified by: VER-60, VER-61
 - Phase: EVT
@@ -56,24 +89,48 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-03: Play time
 - Level: product
 - Board: both
-- Statement: From charge-done, the device shall play for at least 4.0 h before the 3.50 V cutoff at 25 C, backlight at 50% duty and sound at -12 dBFS.
-- Rationale: about 700 mAh against an estimated 110-140 mA (core up to 50 mA, panel logic 10 mA, backlight 56 mA at 50%, amplifier 4.4 mA plus sound).
+- Statement: From charge-done, the device shall play for at least 4.0 h before its low-cell cutoff at 25 C, backlight at 50% and sound at -12 dBFS.
+- Rationale: a session of play on one charge.
 - Source: Claude's estimate; Alex to set the target.
 - Method: T
-- Verified by: VER-101
+- Verified by: allocated: REQ-PRD-03.R
 - Phase: EVT
 - Status: PROPOSED
+
+### REQ-PRD-03.R: Play time (ref_design)
+- Level: product
+- Board: ref_design
+- Statement: From charge-done, the device shall play for at least 4.0 h before the 3.50 V cutoff at 25 C, backlight at 50% duty and sound at -12 dBFS.
+- Rationale: about 700 mAh against an estimated 110-140 mA (core up to 50 mA, panel logic 10 mA, backlight 56 mA at 50%, amplifier 4.4 mA plus sound); the usable capacity to the cutoff is measured per lot (VER-153), and raising the cutoff to about 3.6 V (DF-34) costs a share of it.
+- Source: Claude's estimate; Alex to set the target.
+- Method: T
+- Verified by: VER-101, VER-153
+- Phase: EVT
+- Status: PROPOSED
+- Notes: proposed: DEFERRED pending VER-37 (the cell's spec sheet) and VER-153 (F-33); only Alex sets it.
 
 ### REQ-PRD-04: Charge time
 - Level: product
 - Board: both
-- Statement: From the 3.50 V cutoff the cell shall reach charge-done (CHG_DONE_N low) within 3.0 h at 25 C from a source offering 1.5 A or more, device on the charging screen.
-- Rationale: 333-364 mA constant current into about 700 mAh is about 1.7 h, plus the constant-voltage tail.
+- Statement: From the low-cell cutoff the cell shall reach charge-done within 3.0 h at 25 C from a source offering 1.5 A or more, device on the charging screen.
+- Rationale: a flat unit is ready again within an evening.
+- Source: Claude's estimate; Alex to set the target.
+- Method: T
+- Verified by: allocated: REQ-PRD-04.R
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-PRD-04.R: Charge time (ref_design)
+- Level: product
+- Board: ref_design
+- Statement: From the 3.50 V cutoff the cell shall reach charge-done (CHG_DONE_N low) within 3.0 h at 25 C from a source offering 1.5 A or more, at 4.75-5.25 V, device on the charging screen.
+- Rationale: 333-364 mA constant current into about 700 mAh is about 1.7 h, plus the constant-voltage tail; below about 4.6 V D7 can hold the charge from terminating (DF-99).
 - Source: TP4056 datasheet p.9 PROG table (pin_review/u2.json); Claude's estimate for the tail.
 - Method: T
 - Verified by: VER-102
 - Phase: EVT
 - Status: PROPOSED
+- Notes: proposed: DEFERRED pending VER-37 (F-33); only Alex sets it.
 
 ### REQ-PRD-05: Shelf life when off
 - Level: product
@@ -94,26 +151,37 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: design_review.md (case 75.4 x 156.2 x 13.4 mm); case.scad.
 - Method: I, A
 - Verified by: VER-48, VER-20
-- Phase: ORDER
+- Phase: CASE
 - Status: PROPOSED
 - Notes: ref_design only. prod_case's preliminary layout is 70.5 x 153 mm and about 19.1 mm thick; Alex sets his own number.
 
 ### REQ-PRD-07: Single-fault safety
 - Level: product
 - Board: both
-- Statement: No single fault in the electronics (one open, short, adjacent-pin bridge, wrong part or wrong rotation) shall cause fire, cell venting or an accessible surface above 48 C, with 1 or more independent protection layers left working after the fault.
-- Rationale: a Li-ion cell in a printed case held in the hands.
-- Source: IEC 62368-1 Annex B.4 (single fault conditions); validation_plan #89, #151.
+- Statement: No single fault in the electronics (one open, short, adjacent-pin bridge, wrong part or wrong rotation) shall cause fire, cell venting, a part above its material limit, or an accessible surface above IEC 62368-1's single-fault limit for its class (TS2, clause to confirm), with 1 or more independent protection layers left working after the fault.
+- Rationale: a Li-ion cell in a printed case held in the hands; the standard sets touch limits for normal operation (REQ-THM-01) and looser ones under a single fault.
+- Source: IEC 62368-1 Annex B.4 (single fault conditions) and clause 9 (to confirm); validation_plan #89, #151.
 - Method: A, T
-- Verified by: VER-98, VER-97
+- Verified by: VER-98, VER-97, VER-168
 - Phase: ORDER
 - Status: PROPOSED
 
 ### REQ-PRD-08: Recoverable firmware
 - Level: product
 - Board: both
-- Statement: A unit with blank, corrupt or hung firmware shall enter the USB boot loader through the lid's pinholes with the case closed, with the cell flat and USB in, 2 out of 2 tries; with the case open SWD shall attach through J5 and through J7.
+- Statement: A unit with blank, corrupt or hung firmware shall enter the USB boot loader with the case closed, with the cell flat and USB in, 2 out of 2 tries, and shall take a debugger with the case open.
 - Rationale: bring-up and field recovery must not need the case opened or a soldering iron.
+- Source: validation_plan #182, #202.
+- Method: D, T
+- Verified by: allocated: REQ-PRD-08.R
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-PRD-08.R: Recoverable firmware (ref_design)
+- Level: product
+- Board: ref_design
+- Statement: A unit with blank, corrupt or hung firmware shall enter the USB boot loader through the lid's pinholes with the case closed, with the cell flat and USB in, 2 out of 2 tries; with the case open SWD shall attach through J5 and through J7.
+- Rationale: BOOTSEL and RESET sit under the pinholes; J5 is a JST SH and J7 a row of pogo pads.
 - Source: validation_plan #182, #202; bringup.md.
 - Method: D, T
 - Verified by: VER-107, VER-58
@@ -128,7 +196,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: docs/bom.md; Alex's use.
 - Method: I
 - Verified by: VER-117
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ### REQ-PRD-10: Serviceable cell and panel
@@ -162,20 +230,32 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: overcharge is the main cell hazard.
 - Source: TP4056 datasheet (4.2 V +-1%, pin_review/u2.json); IEC 62133-2 (upper limit charging voltage set by the cell maker).
 - Method: T, A
-- Verified by: VER-67, VER-14
+- Verified by: VER-67, VER-134, VER-14
 - Phase: EVT
 - Status: PROPOSED
 
 ### REQ-BAT-02: Charge current
 - Level: subsystem
 - Board: both
-- Statement: The constant-current charge shall measure 300-400 mA (designed 333-364 mA) and shall not exceed 0.5 C of the cell's rated capacity or the cell maker's standard charge current, whichever is lower.
-- Rationale: 0.5 C is the usual standard rate for small pouch cells; the 403450's own limit is not known yet.
-- Source: TP4056 datasheet p.9 (1100-1200 V / R5, pin_review/u2.json); validation_plan #28, #128.
-- Method: T, I
-- Verified by: VER-66, VER-37
+- Statement: The constant-current charge shall not exceed 0.5 C of the cell's rated capacity or the cell maker's standard charge current, whichever is lower.
+- Rationale: 0.5 C is the usual standard rate for small pouch cells.
+- Source: IEC 62133-2 (the cell maker's charging limits); validation_plan #28, #128.
+- Method: T, I, A
+- Verified by: allocated: REQ-BAT-02.R
 - Phase: EVT
 - Status: PROPOSED
+
+### REQ-BAT-02.R: Charge current (ref_design)
+- Level: subsystem
+- Board: ref_design
+- Statement: The constant-current charge shall measure 300-400 mA (designed 333-364 mA by R5 = 3.3k) and shall not exceed 0.5 C of the 403450's rated capacity or its maker's standard charge current, whichever is lower; cell.json holds the cell's numbers and an assert recomputes the limit whenever R5 or the cell changes.
+- Rationale: R5 was once kept from the 503450 (DEF-11); the 403450's own limit is not known yet.
+- Source: TP4056 datasheet p.9 (1100-1200 V / R5, pin_review/u2.json).
+- Method: T, I, A
+- Verified by: VER-66, VER-37, VER-160
+- Phase: EVT
+- Status: PROPOSED
+- Notes: proposed: DEFERRED pending VER-37 (F-33); only Alex sets it.
 
 ### REQ-BAT-03: Charge temperature window
 - Level: subsystem
@@ -184,7 +264,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot).
 - Source: IEC 62133-2 (charging within the cell maker's temperature limits); TP4056 TEMP thresholds 45% and 80% of VBUS (pin_review/u2.json); validation_plan #30.
 - Method: A, T
-- Verified by: VER-32, VER-69
+- Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
 - Status: PROPOSED
 - Notes: the design's worst case is -3 to 49 C (design_review.md), so the top edge fails by 1 C as drawn: DF-05.
@@ -203,8 +283,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-BAT-05: Cell polarity
 - Level: subsystem
 - Board: both
-- Statement: 100% of cells shall be checked with a meter before first mating, red lead on J2 pin 1 (silk '+'), and the result recorded per lot.
-- Rationale: PicoBlade has no battery polarity standard; a reversed cell destroys the TP4056 and shorts the cell into it.
+- Statement: 100% of cells shall be checked with a meter before first mating and the result recorded per lot.
+- Rationale: small cell connectors have no battery polarity standard; a reversed cell can destroy the charger.
+- Source: assembly practice; IEC 62133-2.
+- Method: I
+- Verified by: allocated: REQ-BAT-05.R
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-BAT-05.R: Cell polarity (ref_design)
+- Level: subsystem
+- Board: ref_design
+- Statement: 100% of cells shall be checked with a meter before first mating, red lead on J2 pin 1 (silk '+'), and every plug shall latch in a 53261-0271 sample, the results recorded per lot.
+- Rationale: PicoBlade has no battery polarity standard; a reversed cell destroys the TP4056 and shorts the cell into it (DF-55); generic MX1.25 housings may not latch (DF-113).
 - Source: pin_review/j2.json; assembly.md section 2.
 - Method: I
 - Verified by: VER-49, VER-54
@@ -218,7 +309,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the PCM is the independent layer behind every charge-path fault (REQ-BAT-09).
 - Source: validation_plan #32; the cell's spec sheet once obtained (VER-37).
 - Method: T, I
-- Verified by: VER-88, VER-37
+- Verified by: VER-88, VER-37, VER-140
 - Phase: EVT
 - Status: PROPOSED
 
@@ -230,7 +321,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: validation_plan #26.
 - Method: A, I
 - Verified by: VER-20, VER-48
-- Phase: ORDER
+- Phase: CASE
 - Status: PROPOSED
 - Notes: case.scad has cell_gap = 0.5 mm, and assembly.md puts a 0.45 mm foam pad in it: DF-84.
 
@@ -241,7 +332,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: a pierced pouch shorts internally and can burn.
 - Source: validation_plan #27; case.scad cell_gap 0.5 mm.
 - Method: A, I
-- Verified by: VER-06, VER-48, VER-109
+- Verified by: VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -252,18 +343,18 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: a shorted D7 or Q2, or an open D6, charges the cell straight from VSYS with no regulation (validation_plan #89).
 - Source: validation_plan #89; IEC 62368-1 Annex B.4; IEC 62133-2.
 - Method: A, T
-- Verified by: VER-98, VER-82, VER-88
+- Verified by: VER-98, VER-133, VER-169, VER-82, VER-88, VER-168
 - Phase: ORDER
 - Status: PROPOSED
 
 ### REQ-BAT-10: Deep discharge
 - Level: subsystem
 - Board: both
-- Statement: After the firmware shuts down at 3.50 V, the off-state drain shall keep the cell above its PCM's under-voltage trip for 2 months or more at 25 C.
-- Rationale: a cell left flat in a drawer should still charge; between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh), which 30 uA empties in 7-14 weeks.
+- Statement: After the firmware shuts down at its cutoff, the board's off-state drain plus the cell's PCM drain and its self-discharge shall keep the cell above its PCM's under-voltage trip for 2 months or more at 25 C, and for the period Alex sets at 45 C storage.
+- Rationale: a cell left flat in a drawer should still charge. Between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh). 30 uA of board drain alone is 21.6 mAh a month; a DW01-class PCM adds 3-6 uA that never passes JP5; self-discharge is 1-3% a month (7-21 mAh); D5's leakage roughly doubles the board's drain at 45 C (DF-105). With both terms the figure may be nearer 1 month: Alex sets the number knowing them.
 - Source: Claude's estimate; validation_plan #33.
 - Method: A, T
-- Verified by: VER-103, VER-65
+- Verified by: VER-103, VER-65, VER-146
 - Phase: EVT
 - Status: PROPOSED
 
@@ -278,12 +369,68 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: SALE
 - Status: PROPOSED
 
-## Subsystem: power path (PWR)
+### REQ-BAT-12: Cutoff accuracy
+- Level: subsystem
+- Board: ref_design
+- Statement: The firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration (REQ-TST-06), at the highest 3V3 load the firmware draws, including units whose LDO output plus dropout (Vreg + Vd) exceeds 3.50 x CV/4.2.
+- Rationale: the unplug margin (REQ-PWR-05) holds only to about a 3.45 V cell, 50 mV under the cutoff; the VBAT reading uses 3V3 as its reference (ME6211 +-2%), so uncalibrated it is good to about +-105 mV, and on a high-Vreg unit the calibrated reading levels off above 3.50 V and the cutoff never fires (DF-116).
+- Source: design.py D7 comment; pinmap.md; Claude's analysis (O-23, O-49).
+- Method: A, T
+- Verified by: VER-138, VER-139, VER-67
+- Phase: ORDER
+- Status: PROPOSED
+- Notes: if this cannot be met in firmware, the fallback is a 3.6 V cutoff (which also settles DF-34) or a voltage reference, which needs copper: decide before the order.
 
-### REQ-PWR-01: USB input range
+### REQ-BAT-13: Charge timeout
 - Level: subsystem
 - Board: both
-- Statement: The device shall run and charge from 4.40-5.50 V at the USB-C connector, both plug orientations, and shall not limit-cycle on a source that folds back at 500 mA.
+- Statement: The firmware shall stop a charge with CHG_OFF and show a charge fault until USB is re-plugged when CHG_STAT_N has stayed low for more than 4 h, or VBAT has stayed under 3.0 V for more than 30 min while charging.
+- Rationale: the TP4056 has no safety or pre-charge timer (DF-104); about 2 h of CC plus 1 h of CV for 700 mAh at 0.35 A, plus margin.
+- Source: Claude's proposal (O-50); TP4056 datasheet (pin_review/u2.json).
+- Method: T
+- Verified by: VER-145
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-BAT-14: Mating the cell
+- Level: subsystem
+- Board: ref_design
+- Statement: Plugging a 4.2 V cell into J2 with no USB shall not trip the PCM (VBAT present after each plug), shall leave the device off (PWR_EN low), and shall peak VSYS at 4.5 V or less, 10 plugs out of 10.
+- Rationale: with no USB, R6 holds Q2 on, so the plug connects about 47 uF through 0.25-0.35 ohm: about 12-17 A (DF-103).
+- Source: Claude's analysis (O-42).
+- Method: A, T
+- Verified by: VER-140, VER-141
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-BAT-15: Cell leads protected
+- Level: subsystem
+- Board: ref_design
+- Statement: Both cell leads shall be sleeved (heat-shrink or a printed grommet) where they pass the board's hole, with 0 bare lead insulation against the routed FR4 edge, seen in the FAI and after the drop test.
+- Rationale: the routed edge wears the insulation and shorts CELL_P to the GND pour, with only the PCM left (DF-108).
+- Source: Claude's review (F-14).
+- Method: I
+- Verified by: VER-109, VER-93
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-BAT-16: Usable capacity per lot
+- Level: subsystem
+- Board: ref_design
+- Statement: One cell per lot shall deliver 600 mAh or more from charge-done to the chosen cutoff at about 140 mA, with its capacity to 3.50 V and to 3.60 V recorded.
+- Rationale: capacity on low-cost cells is often overstated; play time (REQ-PRD-03.R) and the cutoff choice (DF-34) depend on it.
+- Source: Claude's proposal (O-58): Alex sets the lot limit.
+- Method: T
+- Verified by: VER-153
+- Phase: ORDER
+- Status: PROPOSED
+
+## Subsystem: power path (PWR)
+
+### REQ-PWR-01: USB input range: run
+- Level: subsystem
+- Board: both
+- Statement: The device shall run (3V3 in regulation, no limit-cycling) from 4.40-5.50 V at the USB-C connector, both plug orientations, and shall not limit-cycle on a source that folds back at 500 mA.
 - Rationale: USB 2.0 sources give 4.75-5.25 V; cables drop more.
 - Source: USB 2.0 cl. 7.2.1; TP4056 VCC 4.0-8.0 V (pin_review/u2.json); validation_plan #51, #80.
 - Method: T
@@ -291,16 +438,29 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: PROPOSED
 
+### REQ-PWR-16: USB input range: charge
+- Level: subsystem
+- Board: ref_design
+- Statement: From 4.75-5.25 V at the USB-C connector the cell shall charge to done within REQ-PRD-04.R's time; between 4.40 V and 4.75 V whether CHG_DONE_N goes low, and how much current D7 carries, shall be measured and recorded.
+- Rationale: below about 4.6 V VSYS falls under the cell's CV and D7 conducts, so the charge may never terminate (DF-99); no TP4056 board can promise charge-done at 4.40 V.
+- Source: Claude's analysis (O-24, F-9).
+- Method: T
+- Verified by: VER-80, VER-102
+- Phase: EVT
+- Status: PROPOSED
+- Notes: decision for Alex after VER-80: raise the lower bound, or accept.
+
 ### REQ-PWR-02: Hot-plug peaks
 - Level: subsystem
 - Board: ref_design
-- Statement: At a live plug-in from an always-on USB-A port with a 2 m cable and no cell, VBUS shall peak at 7.5 V or less and VSYS at 5.8 V or less.
-- Rationale: TP4056 absolute maximum 8.0 V; FM8002A absolute maximum 6.0 V (the lowest on VSYS); ME6211 6.5 V.
+- Statement: At a live plug-in from an always-on USB-A port with a 2 m cable and no cell, VBUS shall peak at 7.7 V or less and VSYS at 5.7 V or less.
+- Rationale: REQ-PWR-14's transient rule (0.3 V under the absolute maximum): TP4056 8.0 V; FM8002A 6.0 V, the lowest on VSYS; ME6211 6.5 V.
 - Source: TP4056 p.2 (pin_review/u2.json), FM8002A p.3 (pin_review/u7.json), ME6211 p.5 (pin_review/u3.json); design.py R47 comment.
 - Method: A, T
 - Verified by: VER-12, VER-71
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: bringup.md 5.6 still passes 6.5 V (DEF-06).
 
 ### REQ-PWR-03: LDO enable never above its input
 - Level: subsystem
@@ -331,7 +491,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: QSPI_IOVDD's minimum (the RP2354B's internal flash). A dip below it can corrupt a flash access; the RP2350 has no 3V3 supervisor.
 - Source: design_review.md 'The unplug'; RP2350 datasheet Table 1688 (pin_review/u4.json).
 - Method: A, T
-- Verified by: VER-11, VER-70
+- Verified by: VER-11, VER-70, VER-138
 - Phase: EVT
 - Status: PROPOSED
 - Notes: open question for Alex: VREG_AVDD and USB_OTP_VDD have a 3.135 V minimum (pin_review/u4.json pins 61 and 68). The design meets that only for cells above about 3.6 V during the 1.5-3.3 ms dip. DF-34.
@@ -350,20 +510,20 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-07: Off-state current
 - Level: subsystem
 - Board: both
-- Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C for a cell at 3.7-4.2 V.
-- Rationale: designed 18-22 uA (divider, charger standby, D5 leakage, the amplifier's shutdown current).
-- Source: design_review.md Off state; bringup.md step 5.1.
+- Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V.
+- Rationale: designed 18-22 uA at 25 C (divider, charger standby, D5 leakage, the amplifier's shutdown current); D5 alone adds about 20 uA at 45 C (DF-105).
+- Source: design_review.md Off state; bringup.md step 5.1; the 45 C number is Claude's estimate (O-51).
 - Method: T
-- Verified by: VER-65
+- Verified by: VER-65, VER-146
 - Phase: EVT
 - Status: PROPOSED
 
 ### REQ-PWR-08: Turn-on margin
 - Level: subsystem
 - Board: ref_design
-- Statement: With 1 kohm in series with seat 1's Start contact and the cell at 3.50 V, pressing Start shall bring 3V3 to 3.20 V or more within 50 ms and PWR_BTN_N shall read low.
-- Rationale: a worn or dirty pill adds resistance; the latch must still start near the cutoff.
-- Source: validation_plan section 1 'Latch replica' and Fable's note 6; design.py R13 comment.
+- Statement: With 10 kohm in series with seat 1's Start contact and the cell at 3.50 V, pressing Start shall bring 3V3 to 3.20 V or more within 50 ms and PWR_BTN_N shall read low, with Q1's gate margin over its maximum threshold reported in volts.
+- Rationale: a worn or dirty pill adds resistance (REQ-BTN-01 allows 10 kohm): at VSYS 3.42 V Q1's gate sees 3.42 x 33/43 = 2.62 V against a 2N7002 Vgs(th) of up to 2.5 V, about 0.1 V of margin; 1 kohm would prove nothing.
+- Source: validation_plan section 1 'Latch replica' and Fable's note 6; design.py R13 comment; q1.json.
 - Method: T, A
 - Verified by: VER-78, VER-33
 - Phase: EVT
@@ -417,9 +577,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-13: VBUS capacitance and inrush
 - Level: subsystem
 - Board: ref_design
-- Statement: The board shall present 10 uF or less on VBUS and draw 50 uC or less at plug-in, or carry a written deviation.
-- Rationale: C1 is 10 uF, and with no cell the VSYS capacitors (about 45 uF) charge through D5 at plug-in.
-- Source: USB 2.0 cl. 7.2.4.1; validation_plan #125.
+- Statement: The board shall present 10 uF or less on VBUS. With no cell, its plug-in charge is about 265 uC (C1 10 uF x 5 V = 50 uC, plus 46.8 uF of VSYS capacitance reached through D5 x 4.6 V = 215 uC), over USB 2.0's 50 uC: a written deviation, accepted only with this requirement.
+- Rationale: sources with soft start tolerate it; some hubs fold back at plug-in, which looks like a bad cable at EVT; R47's 0.1 ohm does not slow it.
+- Source: USB 2.0 cl. 7.2.4.1; validation_plan #125; design.py C1, C2, C5, C9, C34, C35.
 - Method: A
 - Verified by: VER-99
 - Phase: ORDER
@@ -428,14 +588,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-14: Derating
 - Level: subsystem
 - Board: ref_design
-- Statement: Every part's voltage, current and power stress in every mode (off, cell, USB, charging, hot plug, unplug) shall be 80% or less of its absolute maximum, 90% or less for transients under 10 us, or carry a waiver.
-- Rationale: one consistent margin rule, so a reviewer can tell an intended stress from an oversight.
-- Source: validation_plan #5, #123 (the 80/90% rule is Claude's proposal).
+- Statement: In every mode (off, cell, USB, charging, hot plug, unplug): each IC's steady-state stress shall be at or below its recommended operating maximum and each transient at least 0.3 V below its absolute maximum; each passive and discrete (MLCC voltage, FET Vds and Vgs, diode VR and IF, resistor power) shall be at 80% or less of its rating, 90% for transients under 10 us; every exception named here.
+- Rationale: the old rule (80% of every absolute maximum) failed by construction: 3V3 at 3.40 V is 94% of the RP2350's 3.63 V, U7 on a 5.45 V USB VSYS is 91% of 6.0 V and U3 is 84% of 6.5 V, so it could not tell an intended stress from an oversight.
+- Source: validation_plan #5, #123; Claude's proposal, revised (O-22).
 - Method: A
-- Verified by: VER-31, VER-02
+- Verified by: VER-31, VER-36
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: the FM8002A at 5.7 V of 6.0 V is 95%: it needs a fix or a waiver.
+- Notes: named exceptions: (1) U7 (FM8002A) at a simulated 5.7 V hot-plug peak against 6.0 V, exactly 0.3 V under, for microseconds, with no cell, from a live always-on port (DEF-06, DF-41); (2) GPIO47 with VBAT/2 on a non-FT pad while IOVDD is 0 V, 24 hours a day on every unit with a cell (pin_review/u4.json pin 58, DF-95), unless Alex takes the BOM-only fix R18 = 56k (0.447 V at 4.20 V, 8 uA of divider drain): decision for Alex (F-46).
 
 ### REQ-PWR-15: 3V3 budget
 - Level: subsystem
@@ -444,7 +604,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the SOT-23's 300 mW allows about 158 mA at that input; the budget was never written down.
 - Source: ME6211 p.5 (pin_review/u3.json: 3V3 budget UNKNOWN).
 - Method: A, T
-- Verified by: VER-31, VER-83
+- Verified by: VER-31, VER-83, VER-144
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -526,7 +686,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-02, VER-75
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: PWR_HOLD (R42 4.7k) and CHG_OFF (R44 4.7k) meet it; AMP_EN (R37 100k) and BL_PWM (103.9k) do not: DF-45, DF-47.
+- Notes: PWR_HOLD (R42 4.7k) and CHG_OFF (R44 4.7k) meet it; AMP_EN (R37 100k) and BL_PWM (R60 + R61, 103.9k) do not: DF-45, DF-47. Decision for Alex: 4.7k pull-downs (BOM only), or rely on firmware and the placed stepping (VER-75).
 
 ### REQ-MCU-08: Chip identity
 - Level: subsystem
@@ -550,6 +710,28 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: PROPOSED
 - Notes: write the DVDD minimum and maximum into VER-84 from Table 1688 on first use.
+
+### REQ-MCU-10: Flash budget
+- Level: subsystem
+- Board: ref_design
+- Statement: The firmware image shall be 1.6 MB or less of the RP2354B's 2 MB (or the limit Alex sets), with a written flash map (image, settings, battle log), checked in scripts/check.sh on every change.
+- Rationale: the firmware already fills about 1.37 MB; Gen 3 data and flash logging are still to land (DF-121).
+- Source: crates/mega_blastoise_fw/memory-rp2350.x; Claude's proposal (O-53).
+- Method: A
+- Verified by: VER-151, VER-150
+- Phase: ORDER
+- Status: PROPOSED
+
+### REQ-MCU-11: A bring-up image for the ordered chip
+- Level: subsystem
+- Board: ref_design
+- Statement: Before the order, a self-test image shall build and link for the RP2354B (embassy-rp rp235xb, 2048K of flash) from pin definitions generated from design.py, with 0 hand-typed pin numbers.
+- Rationale: the fw crate targets the A package with 4 MB and the ST7796, and the only ref-board branch uses origin/main's pin map (DEF-34): the first build for the real chip would be the day the boards arrive.
+- Source: crates/mega_blastoise_fw/Cargo.toml; vp_map #56; Claude's review (F-44, O-37, O-56).
+- Method: A
+- Verified by: VER-149, VER-150
+- Phase: ORDER
+- Status: PROPOSED
 
 ## Subsystem: display (DSP)
 
@@ -582,7 +764,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the folded FPC lands its contact 1 at J3's far end; a reversed map puts VSYS on a logic pin.
 - Source: design.py display section; pin_review/panel.json.
 - Method: A, T
-- Verified by: VER-02, VER-43
+- Verified by: VER-02, VER-43, VER-136
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -600,12 +782,12 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-05: Backlight current
 - Level: subsystem
 - Board: ref_design
-- Statement: At 100% duty the six LEDs shall draw 113 mA +-5% in total (56 mA +-5% a cathode pin, the two pins within 5% of each other), and never more than 120 mA DC at any duty for VSYS 3.5-5.7 V.
-- Rationale: the panel's 120 mA maximum; even brightness across the halves.
-- Source: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section.
+- Statement: At the firmware's maximum duty the six LEDs shall draw 120 mA or less in total at worst-case tolerance (3V3 +2%, R60/R61 1%, U6 offset 4.5 mV, R52/R53 -1%) for VSYS 3.5-5.7 V; at nominal parts and 100% duty they draw 113 mA +-5% (56 mA a cathode pin, the two pins within 5% of each other).
+- Rationale: the panel's 120 mA maximum; the worst case at 100% is about 122.5 mA (61.2 mA a pin), so the firmware caps the duty at 95%, or R61 becomes 3.6k (BOM only).
+- Source: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section; Claude's analysis (F-7, O-21).
 - Method: T, A
-- Verified by: VER-62, VER-05
-- Phase: EVT
+- Verified by: VER-62, VER-137, VER-05
+- Phase: ORDER
 - Status: PROPOSED
 
 ### REQ-DSP-06: Backlight transient
@@ -622,11 +804,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-07: Backlight headroom
 - Level: subsystem
 - Board: ref_design
-- Statement: At 100% duty and VSYS 3.5 V with LED Vf up to 3.2 V, the LED current shall drop by 5% or less from its value at 4.2 V.
-- Rationale: brightness should not sag until the cutoff.
-- Source: board/sim/backlight_results.txt; design_review.md Backlight.
+- Statement: At the firmware's maximum duty and VSYS 3.5 V the LED current shall drop by 5% or less from its value at 4.2 V for LED Vf up to 3.2 V, and by 10% or less for Vf up to 3.4 V (the newer datasheet's maximum).
+- Rationale: brightness should not sag until the cutoff; at Vf 3.4 V the loop opens at VSYS 3.5 V (52.5 mA, -6.3%).
+- Source: board/sim/backlight_results.txt; design_review.md Backlight; pin_review/panel.json.
 - Method: A, T
-- Verified by: VER-05, VER-62
+- Verified by: VER-05, VER-137, VER-62
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -663,13 +845,36 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: PROPOSED
 
+### REQ-DSP-11: Redraw time
+- Level: subsystem
+- Board: ref_design
+- Statement: A full-screen redraw from the core's 320 x 480 RGB565 frame, expanded to the ILI9488's 18-bit format on the fly, shall complete in 120 ms or less (Alex sets the number; 200 ms is the slowest the review called acceptable), and a battle-text update in 50 ms or less, with the frame held in 320 KB of RAM or less.
+- Rationale: the ILI9488 takes only 18-bit colour over SPI: 461 kB a frame, 184 ms at 20 MHz, and an RGB666 frame does not fit the firmware's 384 KB heap; the pico renders a 300 KB RGB565 frame (DF-120).
+- Source: design_review.md (ILI9488 serial: 18-bit only); crates/mega_blastoise_fw/src/mem_profile.rs, st7796.rs; validation_plan #180 (un-cut).
+- Method: A, T
+- Verified by: VER-43
+- Phase: ORDER
+- Status: PROPOSED
+- Notes: if it fails, the fallback is a 320 x 480 ST7796 panel the firmware already drives, or origin/main's 2.4in ST7789V (240 x 320, RGB565): either changes J3, the backlight and the case, so decide before the order.
+
+### REQ-DSP-12: Backlight halves match at low duty
+- Level: subsystem
+- Board: ref_design
+- Statement: At the lowest duty the firmware uses, the two LED groups' currents shall be within 20% of each other; the minimum duty (about 18%, or a firmware floor) shall be written in pinmap.md.
+- Rationale: U6's offset is a larger share of a small BL_REF, so the halves part at low brightness.
+- Source: Claude's analysis (O-21).
+- Method: A, T
+- Verified by: VER-137, VER-62
+- Phase: ORDER
+- Status: PROPOSED
+
 ## Subsystem: audio (AUD)
 
 ### REQ-AUD-01: Loudness
 - Level: subsystem
 - Board: ref_design
-- Statement: A full-scale 1 kHz sine shall deliver 0.35 W or more into the 8 ohm speaker (4.7 V peak-to-peak across it or more) on a 3.8 V cell.
-- Rationale: designed 0.4-0.5 W on the cell, 0.55 W on USB; it clips below a 3.7 V cell.
+- Statement: A full-scale 1 kHz sine shall deliver 0.35 W or more into the 8 ohm speaker (4.75 V peak-to-peak across it or more) on a 3.8 V cell.
+- Rationale: designed 0.4-0.5 W on the cell, 0.55 W on USB; it clips below a 3.7 V cell (4.7 Vpp, the old number, is 0.345 W).
 - Source: design_review.md Audio; pin_review/u7.json.
 - Method: T
 - Verified by: VER-64
@@ -720,6 +925,17 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: PROPOSED
 
+### REQ-AUD-06: Speaker rating
+- Level: subsystem
+- Board: ref_design
+- Statement: The speaker shall be rated 0.6 W or more, or the firmware shall cap full scale to its rating.
+- Rationale: U7 gives about 0.55 W into 8 ohm on USB, more once it clips toward a square wave; 15 mm 8 ohm speakers are often rated 0.25-0.5 W (DF-49).
+- Source: Claude's review (O-31).
+- Method: I
+- Verified by: VER-128
+- Phase: ORDER
+- Status: PROPOSED
+
 ## Subsystem: buttons (BTN)
 
 ### REQ-BTN-01: Contact closes
@@ -730,8 +946,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: validation_plan gate item 5, #42, #137.
 - Method: T
 - Verified by: VER-45, VER-56
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
+- Notes: measured on a bare board from the same JLC order (F-49); a coupon ordered now is advisory.
 
 ### REQ-BTN-02: Contact stays open
 - Level: subsystem
@@ -741,17 +958,17 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: validation_plan gate item 5, #185.
 - Method: T
 - Verified by: VER-46, VER-79
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ### REQ-BTN-03: Comb geometry
 - Level: subsystem
 - Board: both
-- Statement: The combs shall keep a copper gap of 0.20 mm or more, any pill spot of 1.60 mm or more shall bridge them, and one 4.8 mm mask opening shall uncover all comb copper with no paste or silk.
-- Rationale: the DS Lite's measured comb; 0.20 mm sits above JLC's minimum spacing.
-- Source: hardware/membrane/README.md; check_contact_fp.py.
+- Statement: The combs shall keep a copper gap of 0.20 mm or more; the worst bridging spot shall be 1.60 mm or less for the 4-ring under the 3.5 mm D-pad and A/B/X/Y pill, and under half the measured Start/Select pill for the 3-ring; one 4.8 mm mask opening shall uncover all comb copper with no paste or silk.
+- Rationale: the DS Lite's measured comb; 0.20 mm sits above JLC's minimum spacing; SW21, the power button, sits on the 3-ring (DF-124).
+- Source: hardware/membrane/README.md; check_contact_fp.py; case/DSLITE.md.
 - Method: A
-- Verified by: VER-08, VER-09, VER-10, VER-25
+- Verified by: VER-08, VER-09, VER-10, VER-25, VER-162
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -774,7 +991,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: validation_plan #43; case/DSLITE.md.
 - Method: T
 - Verified by: VER-50
-- Phase: ORDER
+- Phase: CASE
 - Status: PROPOSED
 
 ### REQ-BTN-06: Pill registration
@@ -784,7 +1001,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: (3.5 mm pill - 1.6 mm bridging spot) / 2 is about 0.95 mm.
 - Source: validation_plan #197.
 - Method: A, I
-- Verified by: VER-20, VER-51
+- Verified by: VER-174, VER-51
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -820,7 +1037,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: validation_plan #25, #132, gate item 7.
 - Method: A
 - Verified by: VER-20
-- Phase: ORDER
+- Phase: CASE
 - Status: PROPOSED
 
 ### REQ-MEC-03: Buttons work under the shell
@@ -831,7 +1048,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: case/check_buttons.py.
 - Method: A, D
 - Verified by: VER-07, VER-48
-- Phase: ORDER
+- Phase: CASE
 - Status: PROPOSED
 
 ### REQ-MEC-04: Assembly keyed
@@ -842,7 +1059,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: assembly.md sections 3 and 5.
 - Method: I
 - Verified by: VER-48
-- Phase: ORDER
+- Phase: CASE
 - Status: PROPOSED
 
 ### REQ-MEC-05: Opening and closing
@@ -886,6 +1103,39 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: 177123c.
 - Method: A, I
 - Verified by: VER-113, VER-48
+- Phase: CASE
+- Status: PROPOSED
+
+### REQ-MEC-09: Screws engage
+- Level: subsystem
+- Board: ref_design
+- Statement: Each M2 case screw shall engage 4 mm or more of its lid pilot and end 0.5 mm or more short of the pilot's end.
+- Rationale: self-tapping screws in printed PETG want 2 to 2.5 x d; M2 x 8 engages 1.4 mm today (DEF-31).
+- Source: case.scad; Claude's analysis (O-52).
+- Method: A, T
+- Verified by: VER-147, VER-92
+- Phase: CASE
+- Status: PROPOSED
+
+### REQ-MEC-10: Panel stays bonded
+- Level: subsystem
+- Board: ref_design
+- Statement: The panel shall stay bonded to the lid, with no mura and no new contact marks, after 100 presses of 20 N at the glass centre and 24 h at 50 C, on a tape whose part number the release record names.
+- Rationale: two players point at and press the shared screen; the panel hangs on 0.15 mm tape 0.2-0.4 mm above parts (DF-107).
+- Source: Claude's review (O-59).
+- Method: T
+- Verified by: VER-154
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-MEC-11: Connector access
+- Level: subsystem
+- Board: ref_design
+- Statement: Every connector's mouth (J1 with a mated plug, J2's plug and wires, J3's FPC lead-in, J5 and J6 with a JST SH cable) shall be clear of parts taller than 1 mm and of every case wall but its own opening, and no pinhole shall fall inside a boss.
+- Rationale: J6 once faced J5's back (DEF-20), the pinholes once met a side screw (2f43660) and the USB-C opening was fixed twice.
+- Source: Claude's review (F-28).
+- Method: A
+- Verified by: VER-165
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -894,22 +1144,22 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-THM-01: Touch temperature
 - Level: subsystem
 - Board: both
-- Statement: Every outer surface a player holds shall stay at or below 43 C (target) at 25 C ambient, and the measured rise plus the rated maximum ambient shall stay at or below 48 C, while charging and playing with the backlight at 100% and audio at full scale.
-- Rationale: IEC 62368-1's TS1 limit for plastic held 10 min to 8 h is 48 C (43 C beyond 8 h, to confirm); a handheld is held for hours.
-- Source: IEC 62368-1 cl. 9.3, Table 38; validation_plan #93.
-- Method: T
-- Verified by: VER-86
+- Statement: In normal operation, every outer surface a player holds shall stay at or below 43 C (target) at 25 C ambient, and the measured rise plus the rated maximum ambient shall stay at or below 48 C, while charging and playing with the backlight at 100% and audio at full scale.
+- Rationale: IEC 62368-1's TS1 limit for plastic held 10 min to 8 h is 48 C (43 C beyond 8 h, to confirm); a handheld is held for hours. Single faults have their own, looser limit (REQ-PRD-07).
+- Source: IEC 62368-1 cl. 9.3, Table 38 (to confirm); validation_plan #93.
+- Method: T, A
+- Verified by: VER-86, VER-144
 - Phase: EVT
 - Status: PROPOSED
 
 ### REQ-THM-02: Thermistor tracks the cell
 - Level: subsystem
 - Board: ref_design
-- Statement: During a full charge in the closed case, TH1's reading shall stay within 5 C of the cell's surface.
-- Rationale: TH1 sits on the board over the cell, not on it; the window in REQ-BAT-03 is only as good as this.
-- Source: design_review.md Open risks; validation_plan #30.
-- Method: T
-- Verified by: VER-87
+- Statement: During a full charge in the closed case, TH1's reading shall stay within 5 C of the cell's hotter point (its centre or its edge under TH1).
+- Rationale: TH1 sits 2.2 mm inside the cell's long edge, about 15 mm from its centre, behind the board and the foam pad (DF-04); the window in REQ-BAT-03 is only as good as this.
+- Source: design_review.md Open risks; validation_plan #30; placement.py, case.scad.
+- Method: T, A
+- Verified by: VER-87, VER-164
 - Phase: EVT
 - Status: PROPOSED
 
@@ -924,6 +1174,17 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: PROPOSED
 
+### REQ-THM-04: Heat budget per mode
+- Level: subsystem
+- Board: ref_design
+- Statement: Charging while playing (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall dissipate 2.0 W or less in total, tabulated per mode (off, cell play, USB play, charging, charging while playing) with each part's position before the order, and the firmware rule the table implies (for example CHG_OFF or a capped volume while the backlight is at full on USB) shall be in the bring-up image before the touch test.
+- Rationale: a rough worst case on a 5.5 V source with a 3.0 V cell is about 2 W in a 75.4 x 156.24 x 13.4 mm case: about 7 K of mean rise and several times that over U2, beside the glass.
+- Source: Claude's analysis (O-47, F-48).
+- Method: A
+- Verified by: VER-144
+- Phase: ORDER
+- Status: PROPOSED
+
 ## Subsystem: ESD and EMC (EMC)
 
 ### REQ-EMC-01: ESD
@@ -933,9 +1194,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: consumer ESD level; hands touch it all day.
 - Source: IEC 61000-4-2; EN 55035 (Table 1, ESD); validation_plan #163.
 - Method: T
-- Verified by: VER-95
+- Verified by: VER-95, VER-170
 - Phase: DVT
 - Status: PROPOSED
+- Notes: screened at EVT on unit 4 with a piezo igniter (VER-95, comb pads first); the calibrated IEC test on the DVT spin (VER-170).
 
 ### REQ-EMC-02: Emissions
 - Level: subsystem
@@ -975,9 +1237,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-FAB-03: JLC capability
 - Level: board
 - Board: ref_design
-- Statement: The board shall pass DRC against JLC's published 2-layer rules (0.127 mm track and space, the copied core's 0.10 mm confirmed by JLC or widened; copper 0.30 mm or more from the edge; annular ring 0.13 mm or more) with 0 errors.
-- Rationale: KiCad's defaults do not encode JLC's limits.
-- Source: validation_plan #10, #118, #120; JLC capabilities page on order day.
+- Statement: The board shall pass DRC against JLC's published 2-layer limits, copied with the capability page's date into a data file the build reads (track, space, the minimum via pad for a 0.3 mm hole, annular ring, copper to the edge 0.30 mm or more), with 0 errors; where the board's numbers are below the page's (the copied core's 0.10 mm spaces; 0.5 mm vias on 0.3 mm holes, a 0.10 mm ring) JLC confirms them in writing or they are widened.
+- Rationale: KiCad's defaults do not encode JLC's limits; the old 0.13 mm ring, written from memory, failed every via on the board (F-12).
+- Source: validation_plan #10, #118, #120; JLC capabilities page, dated on order day.
 - Method: A, I
 - Verified by: VER-17, VER-18, VER-28
 - Phase: ORDER
@@ -986,22 +1248,22 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-FAB-04: Holes
 - Level: board
 - Board: ref_design
-- Statement: Every drilled hole shall be 0.30 mm or larger.
-- Rationale: smaller holes cost about $40 an order at JLC (a fee, a 4-wire test, TG155).
-- Source: design_review.md Board; assembly.md section 1.
+- Statement: Every drilled hole shall be 0.30 mm or larger, and plated and unplated holes shall be in separate drill files (J1's two 0.65 mm pegs and H1-H6 unplated).
+- Rationale: smaller holes cost about $40 an order at JLC (a fee, a 4-wire test, TG155); a mixed file may plate J1's pegs (DEF-32).
+- Source: design_review.md Board; assembly.md section 1; JLC's KiCad guide.
 - Method: A
-- Verified by: VER-114
+- Verified by: VER-114, VER-131
 - Phase: ORDER
 - Status: PROPOSED
 
 ### REQ-FAB-05: Order options
 - Level: board
 - Board: both
-- Statement: The order shall be 2 layers, 1.6 mm, ENIG, with every option recorded in the release record (1 record per order).
-- Rationale: the pills press on bare combs, so the finish must be gold.
+- Statement: The order shall be 2 layers, 1.6 mm, ENIG, with the order number's location specified ('JLCJLCJLCJLC' on the back silk), edge rails off (or routed removal), and every option recorded line by line in the release record (1 record per order).
+- Rationale: the pills press on bare combs, so the finish must be gold; a V-cut rail leaves a ridge the case slot is not sized for; a stray order number can land on a comb (DF-125).
 - Source: assembly.md section 1; validation_plan #189.
 - Method: I
-- Verified by: VER-42
+- Verified by: VER-42, VER-28
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1012,16 +1274,27 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the right family in the wrong variant passes every other check.
 - Source: validation_plan #2, #122.
 - Method: A, I
-- Verified by: VER-14, VER-28, VER-41
+- Verified by: VER-14, VER-130, VER-28, VER-41
 - Phase: ORDER
 - Status: PROPOSED
 
 ### REQ-FAB-07: Orientation
 - Level: board
 - Board: both
-- Statement: Every polarised part's pin 1 in JLC's placement preview shall match the board's pin 1, with 0 unexplained differences, U1 and D7 included.
-- Rationale: KiCad's footprint zero differs from JLC's for some parts.
-- Source: validation_plan #9, #116; 1fd0956 (U1's JLC footprint).
+- Statement: Every polarised part's pin 1 in the fab house's placement preview shall match the board's pin 1, and every part shall sit on its pads, with 0 unexplained differences.
+- Rationale: a CAD footprint's zero and origin can differ from the fab house's.
+- Source: validation_plan #9, #116.
+- Method: I, A
+- Verified by: allocated: REQ-FAB-07.R
+- Phase: ORDER
+- Status: PROPOSED
+
+### REQ-FAB-07.R: Orientation and centroids (ref_design)
+- Level: board
+- Board: ref_design
+- Statement: Every polarised part's pin 1 in JLC's placement preview shall match the board's pin 1, U1, D7, U4 and J3's pin-1 end included, and every CPL position shall be within 0.1 mm of the part's pad centroid (J1 and J2 corrected), with 0 unexplained differences.
+- Rationale: KiCad's footprint zero differs from JLC's for some parts (DEF-14), and J1's origin is 1.46 mm and J2's 0.60 mm off their pad centres (DEF-33).
+- Source: validation_plan #9, #116; 1fd0956.
 - Method: I, A
 - Verified by: VER-28, VER-29
 - Phase: ORDER
@@ -1030,19 +1303,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-FAB-08: Reproducible outputs
 - Level: board
 - Board: ref_design
-- Statement: The gerbers, drill, BOM and CPL shall come from the released commit, two runs of fab.py shall give identical copper and drill files, and the ordered zip's sha256 shall be in the release record.
-- Rationale: the board ordered must be the board checked.
+- Statement: The gerbers, drill, BOM and CPL shall come from the released commit by one release run from a clean worktree; two runs of fab.py shall give identical copper and drill files once their creation dates are stripped; and the uploaded zip's sha256 shall be in the release record.
+- Rationale: the board ordered must be the board checked; Alex's main checkout had an uncommitted KiCad GUI change to battler.kicad_pro on 2026-10-24.
 - Source: validation_plan #12, #88, #121, gate item 11.
 - Method: A, I
-- Verified by: VER-24, VER-42
+- Verified by: VER-24, VER-143, VER-42, VER-132
 - Phase: ORDER
 - Status: PROPOSED
 
 ### REQ-FAB-09: Independent connectivity
 - Level: board
 - Board: both
-- Statement: JLC shall e-test 100% of the boards against an IPC-D-356 netlist exported from the ordered board.
-- Rationale: a check from outside KiCad's own reading.
+- Statement: JLC shall e-test 100% of the boards against an IPC-D-356 netlist exported from the ordered board with each net-tie pair merged into one net (0 pairs of differently named nets joined by copper), or the order shall go without a netlist.
+- Rationale: a check from outside KiCad's own reading; JP1-JP5 would read as 5 shorts (DF-126).
 - Source: validation_plan #103.
 - Method: I
 - Verified by: VER-26
@@ -1115,7 +1388,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: bring-up must not need rework to measure.
 - Source: validation_plan #21, #155.
 - Method: I
-- Verified by: VER-115
+- Verified by: VER-115, VER-158
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1148,7 +1421,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: one bad reel or rotation affects the whole lot.
 - Source: AS9102 (first article inspection).
 - Method: I
-- Verified by: VER-109
+- Verified by: VER-109, VER-166
 - Phase: EVT
 - Status: PROPOSED
 
@@ -1163,11 +1436,47 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: PVT
 - Status: PROPOSED
 
+### REQ-TST-06: Per-unit VBAT calibration
+- Level: board
+- Board: ref_design
+- Statement: Each unit's VBAT gain shall be set in production test at a true 3.50 V from the bench supply (no USB, the self-test at its highest 3V3 load, a DMM checked that session against a 4.096 V reference) and lie within 0.95-1.05; a re-read at 3.50 V shall be within 10 mV; the firmware shall store no gain from a no-cell CHG_DONE_N edge.
+- Rationale: the charger's CV is only +-1% (+-42 mV) and with no cell CHG_DONE_N flickers, so a gain from it can be off by about 4%, the cutoff's whole margin (DF-117).
+- Source: Claude's review (O-63, O-60).
+- Method: T
+- Verified by: VER-155, VER-156
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-TST-07: Connector mating budget
+- Level: board
+- Board: ref_design
+- Statement: No unit shall ship with J2, J3, J5 or J6 past half its rated mating cycles, counted per unit; no unit used for an FAI or an abuse test shall ship.
+- Rationale: PicoBlade and FH12 are rated for roughly 10-30 matings (confirm per maker) and bring-up alone can use them up (DF-118).
+- Source: Claude's review (O-61).
+- Method: I
+- Verified by: VER-157
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-TST-08: Per-unit findings
+- Level: board
+- Board: both
+- Statement: Every finding on a built unit shall be recorded with its serial, how it was found, its disposition (rework, scrap or use as is) and its re-test; a finding on 2 units shall become a DEF with a check.
+- Rationale: defects.md is for design defects; rework without a re-test, or a recurring process fault never raised, ships bad units.
+- Source: Claude's review (O-36).
+- Method: I
+- Verified by: VER-110
+- Phase: EVT
+- Status: PROPOSED
+
 ## Board: prod_board (PBD)
 
 Alex's board supplies its own evidence. These cover what it has today (16 contacts placed
-from prod_case, an empty schematic); the product-level requirements above apply to it as
-it grows.
+from prod_case, an empty schematic). The product requirements above (Board: both) reach
+prod_board only through the `.P` allocations Alex writes or opts into; until then
+`--gate --board prod_board` evaluates these PBD requirements alone. prod_case uses a 10 mm
+103450 cell (about 2000 mAh, a 19.1 mm case) and 16 contacts with no Start or Select, so
+ref_design's numbers are not his.
 
 ### REQ-PBD-01: Contacts where the case says
 - Level: board

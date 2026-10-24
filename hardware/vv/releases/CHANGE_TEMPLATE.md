@@ -3,7 +3,19 @@
 Copy to `releases/CHG-NN-<slug>.md` with the next free number, keep the first heading as
 `# CHG-NN: title`, and fill it in before the change is committed. One record per change that
 touches the design, a part, a footprint, the case, the fab outputs or a check. Pure doc
-fixes need no record. `check_trace.py` checks that every ID named here exists.
+fixes need no record.
+
+`check_trace.py` reads two fields: the commits on the `- Commit(s):` line, and the VER ids in
+the "What to re-run" section. Once a release record exists, every commit after it that
+touches board/design.py, board/placement.py, board/lib/ or case/case.scad must be named on
+some change record's Commit(s) line, or every gate fails (R6). A bench result on built units
+(covers `release:REL-...`) goes stale only when a change record made after it names the
+check under "What to re-run".
+
+A BOM-only change (a resistor value, a part for stock) still bumps BOARD_REV in design.py,
+so the next release record differs from the last (check_trace refuses the same BOARD_REV on
+a different BOM). If the change moves design.py, placement.py or case.scad, update README's
+design baseline in the same commit.
 
 - Date:
 - Author:
@@ -19,17 +31,16 @@ parameters, check limits.
 
 | Kind | IDs | How |
 |---|---|---|
-| Requirements | REQ-... | statement or limit changed? |
+| Requirements | REQ-... | statement or limit changed? (a changed statement needs Alex's approval again) |
 | DFMEA rows | DF-.. | re-rate S, O, D; new failure modes? |
 | Checks | VER-.. | limits or procedure changed? |
 | Defects | DEF-.. | does this close one? which check proves it? |
 
 ## What to re-run
 
-`python3 hardware/vv/tools/check_trace.py` lists every check whose evidence this change made
-stale. Re-run each one and record the new result, commit and date in verification.csv. List
-here any check the trace gate cannot see (a bench test whose 'covers' does not include the
-changed file) and why it must be re-run anyway.
+`python3 hardware/vv/tools/check_trace.py` lists every analysis check whose evidence this
+change made stale. Name here every check that must be re-run, including each bench check on
+built units that the change affects: naming it here is what makes its result stale.
 
 | Check | Why | New result | Commit | Date |
 |---|---|---|---|---|

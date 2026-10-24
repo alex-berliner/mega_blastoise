@@ -1,12 +1,14 @@
-# VER-04 DRC with schematic parity, 2026-10-24, commit 76955d2 (worktree clean), kicad-cli 10.0.6
-# the same kicad-cli call and the same COSMETIC rule as board/tools/check_pcb.py, written to scratch instead of board/fab/drc.txt
-$ kicad-cli pcb drc --format json --severity-all --schematic-parity -o <scratch>/drc.json hardware/ref_design/board/battler.kicad_pcb
+# VER-04 drc
+DATE: 2026-10-24
+COMMIT: 4af820bfb12ec1aa6bf3b073274825f7843e9e17
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/ref_design/board/tools/check_pcb.py
 DRC: 4 violations, 0 unconnected, 0 schematic parity issues
      2 warning  silk_edge_clearance  (cosmetic)
      1 warning  silk_over_copper  (cosmetic)
      1 warning  silk_overlap  (cosmetic)
-    silk_over_copper: PCB text 'BLREF' on F.Silkscreen / Pad 1 [/USB_Charger/CC1] of C42 on F.Cu
-    silk_overlap: Footprint text of J7 (RUN) / Footprint text of J7 (BOOT)
-    silk_edge_clearance: Segment on Edge.Cuts / Segment of J1 on F.Silkscreen
-    silk_edge_clearance: Segment on Edge.Cuts / Segment of J1 on F.Silkscreen
+RESULT: PASS
+
+exit 0
 RESULT: PASS

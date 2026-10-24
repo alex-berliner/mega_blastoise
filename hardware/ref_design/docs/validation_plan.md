@@ -1,4 +1,4 @@
-**Statuses (2026-10-24):** the Done statuses below are no longer kept up to date here; they are tracked, with evidence, in `hardware/vv/vp_map.csv`.
+> **Archived 2026-10-24.** This plan is frozen as history. Its 218 methods are mapped once, with corrected statuses, in `hardware/vv/vp_map.csv`; the single plan is `hardware/vv/PLAN.md`. Do not edit the numbered methods.
 
 # Validation plan: Fable 5.1 and Opus 5.5
 
