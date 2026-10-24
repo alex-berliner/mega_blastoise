@@ -41,7 +41,7 @@ TITLES = {  # title block of each sheet
     "power.kicad_sch": "3V3 regulator, power latch, cell voltage sense",
     "mcu.kicad_sch": "RP2354B",
     "mcu_power.kicad_sch": "RP2354B supply: decoupling and core regulator",
-    "debug.kicad_sch": "SWD, UART, debug pads, BOOTSEL and RESET",
+    "debug.kicad_sch": "SWD, debug pads, BOOTSEL and RESET",
     "display.kicad_sch": "Panel connector and backlight sinks",
     "audio.kicad_sch": "PWM audio and amplifier",
     "buttons.kicad_sch": "Membrane contacts",

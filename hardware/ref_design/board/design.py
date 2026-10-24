@@ -244,7 +244,7 @@ part("Q1", S, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "GND", "3": "PWR_BTN_N"}, "C8545", "2N7002", "Changjiang")
 R("R16", S, "100k", "PWR_BTN_N", "+3V3")
 # 2026-10-21 (row 1): seat 2's Start turns the device on too. SW23 joins VSYS to P2_START_RAW,
-# D8 ORs it into PWR_EN, and Q7 reads it into GPIO34 (P2_START, low = pressed)
+# D8 ORs it into PWR_EN, and Q7 reads it into GPIO2 (P2_START, low = pressed)
 R("R62", S, "33k", "P2_START_RAW", "GND")
 part("D8", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
      {"1": "PWR_EN", "2": "P2_START_RAW"}, "C7502694", "BAT54WS", "")
@@ -269,7 +269,6 @@ for i, (net, sheet) in enumerate([("+1V1", "mcu_power.kicad_sch"), ("BL_REF", "d
                                   ("GND", S), ("GND", S)]):    # two ground pads on top for scope clips
     part(f"TP{i + 9}", sheet, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
 # hand-solderable spare filter capacitors, fitted only if bring-up shows noise on these lines
-DNP("C41", "usb_charger.kicad_sch", "C", "CHG_TEMP", "GND")
 DNP("C42", "usb_charger.kicad_sch", "C", "CC1", "GND")
 DNP("C43", "usb_charger.kicad_sch", "C", "CC2", "GND")
 
@@ -277,30 +276,34 @@ DNP("C43", "usb_charger.kicad_sch", "C", "CC2", "GND")
 # RP2350B core (Raspberry Pi RP2350B minimal design, MIT) + flash, boot, debug
 # =================================================================================
 S = "mcu.kicad_sch"
-BOARD_REV = 1             # this board's revision number (0-15), read from GPIO22-25 (R48-R51)
+BOARD_REV = 1             # this board's revision number, on the silkscreen (no strap pins since 2026-10-24)
 GPIO = {  # GPIO number: net
-    # 2 layers: each net's pin faces where it goes. Since 2026-10-21 the chip sits in the left
-    # bezel as Raspberry Pi drew it (seat 2's Start/Select face the left strip beside the cell's
-    # hole, the panel's pins J3, seat 1 below, USB and the latch above), and the D-pads and face
-    # buttons come in through two 74HC165s (Buttons sheet). Free: GPIO0, 1, 4-7, 10, 12-19, 31
-    2: "PWR_HOLD", 3: "PWR_BTN_N",
-    8: "AUDIO_PWM", 9: "P2_SELECT", 11: "AMP_EN",
-    20: "UART_TX", 21: "UART_RX",
-    # the buttons' shift registers: load (low), clock, data in
-    28: "SR_PL", 29: "SR_CLK_MCU", 30: "SR_DATA", 32: "LCD_TE",
+    # 2 layers: each net's pin faces where it goes. The chip sits in the left bezel as Raspberry Pi
+    # drew it: GPIO4-19 face the left bezel and, past J2, the left strip beside the cell's hole;
+    # GPIO0-3 the hole; GPIO33-47 J3 and the right; GPIO20-32 seat 1. The D-pads and face buttons
+    # come in through two 74HC165s (Buttons sheet).
+    # 2026-10-24 (routing levers, Alex): pins picked by tools/strip_load.py's ratsnest, each net on the
+    # side facing its far end (the latch above the hole's top edge is reached up the left strip, the
+    # amplifier and the backlight's filter below the core). Free: GPIO0, 1, 5-18, 20-27
+    2: "P2_START", 3: "PWR_BTN_N",              # seat 2's Start (Q7) and seat 1's (Q1), up the left strip
+    4: "P2_SELECT",                             # seat 2's Select: the pin nearest the left strip
+    # the buttons' shift registers: load (low; to both registers, so up the left strip too), clock,
+    # data in
+    19: "SR_PL", 29: "SR_CLK_MCU", 30: "SR_DATA",
+    28: "BL_PWM",                               # PWM6 A: the backlight's reference filter, below
+    31: "AUDIO_PWM",                            # PWM7 B: the audio filter by the amplifier
+    32: "LCD_TE",
     # the panel's pins in its connector's order where SPI0 allows; GPIO33 is an SPI0 CSn pin as
     # well, DC is a plain output
     33: "LCD_CS", 36: "LCD_MISO", 37: "LCD_DC", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
     35: "P1_SELECT",
-    # seat 2's Start (through Q7 by the latch) and the charger's status and control, on the
-    # edge facing them across the board
-    34: "P2_START", 41: "CHG_STAT_N", 42: "CHG_PG_N", 43: "CHG_OFF",
-    # the panel's reset, the backlight, then the ADC inputs (GPIO40-47 are the ADC pins) for the
-    # USB-C CC lines and the cell (P1 Start is the power button: read on GPIO3)
-    40: "LCD_RST", 44: "BL_PWM",
+    34: "AMP_EN",                               # the amplifier's SHUTDOWN switch (Q3)
+    # the charger's status and control, the latch's hold (D2, right strip), on the edge facing them
+    41: "CHG_STAT_N", 42: "CHG_PG_N", 43: "CHG_OFF", 44: "PWR_HOLD",
+    # the panel's reset, then the ADC inputs (GPIO40-47 are the ADC pins) for the USB-C CC lines
+    # and the cell (P1 Start is the power button: read on GPIO3)
+    40: "LCD_RST",
     45: "CC2_SENSE", 46: "CC1_SENSE", 47: "VBAT_SENSE",
-    # the board's revision, 4 bits on GPIO22-25 (16 revisions): see R48-R51
-    22: "REV0", 23: "REV1", 24: "REV2", 25: "REV3",
 }
 GPIO_PIN = {0: 77, 1: 78, 2: 79, 3: 80, 4: 1, 5: 2, 6: 3, 7: 4, 8: 6, 9: 7, 10: 8, 11: 9,
             12: 11, 13: 12, 14: 13, 15: 14, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20, 21: 21,
@@ -341,14 +344,9 @@ R("R20", S, "1k", "XOUT", "XO", fp=R0402_RPI)
 R("R21", S, "27", "USB_DP", "USB_DP_MCU", fp=R0402_RPI)     # 27: the RP2350 datasheet requires it (Table 2),
 R("R22", S, "27", "USB_DM", "USB_DM_MCU", fp=R0402_RPI)     # and Raspberry Pi's own minimal design fits it
 R("R23", S, "10k", "+3V3", "QSPI_SS", fp=R0402_RPI)     # the flash's chip select high at power-up
-# the revision strap: a 1k to GND on each REV bit makes it 0; a bit left unfitted reads 1
-# through the pin's internal pull-up. JLC fits the 0 bits, so a new revision changes the BOM
-# and not the copper (a resistor, not a hard tie, if firmware ever drove a pin high)
-for b in range(4):
-    if (BOARD_REV >> b) & 1:
-        part(f"R{48 + b}", S, "Device:R", "DNP", R0402, {"1": f"REV{b}", "2": "GND"}, bom=False)
-    else:
-        R(f"R{48 + b}", S, "1k", f"REV{b}", "GND")
+# 2026-10-24 (routing levers, Alex): the board-revision straps (REV0-REV3 on GPIO22-25, R48-R51)
+# and the UART console (J6 on GPIO20/21) went to free the strip beside the cell's hole; firmware
+# logs over USB or SWD (RTT), and the revision is on the silkscreen
 R("R25", "debug.kicad_sch", "1k", "QSPI_SS", "BOOTSEL", fp=R0402_RPI)
 part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOTSEL", "battler:SW_SPST_TS-1088-xR020",
      {"1": "BOOTSEL", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
@@ -358,11 +356,6 @@ part("SW19", "debug.kicad_sch", "Switch:SW_Push", "RESET", "battler:SW_SPST_TS-1
 part("J5", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_MountingPin", "SWD",
      "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
      {"1": "SWCLK", "2": "GND", "3": "SWDIO", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
-part("J6", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_MountingPin", "UART",
-     "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
-     {"1": "UART_RX", "2": "GND", "3": "UART_TX", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
-# J6 follows Raspberry Pi's 3-pin debug connector spec (RP-003139-SP), named from the board's
-# side: pin 1 is the board's RX (the probe's TX arrives there), pin 3 the board's TX
 # J7: the same SWD in a row of bare pads on the board's back at 2.54 mm, for pogo pins in a jig,
 # a clip, or soldered wires: flash and debug without J5's cable or the USB port. Power through
 # the 3V3 pad only with the cell out and nothing on USB. BOOTSEL to GND at reset enters the USB
@@ -404,7 +397,7 @@ JP("JP4", S, "+3V3", "LCD_3V3")
 part("#FLG08", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "LCD_3V3"}, bom=False)   # fed through JP4
 # Backlight: a current sink per pair of cathode pins (LEDK1+K3, LEDK2+K4). U6 (MCP6002) holds each
 # 2.2 ohm sense resistor at BL_REF: 0.077 V at 100% duty = 35 mA a sink, 70 mA for the four LEDs
-# (the panel's typical; 80 mA is its maximum). BL_REF is GPIO44's PWM (BL_PWM) through R60/R61 and
+# (the panel's typical; 80 mA is its maximum). BL_REF is GPIO28's PWM (BL_PWM) through R60/R61 and
 # C50 (tau 2.3 ms: 0.5% ripple at 36.6 kHz), so the LED current is DC: no PWM in the LEDs, nothing
 # for the amplifier to hear. R54/R55 (330 ohm) isolate the FET's gate capacitance and C48/C49 with
 # R58/R59 close a local loop (simulated at the 3.5in panel's 56 mA a sink: sim/backlight.py). The
@@ -425,7 +418,7 @@ for k, (q, rs, rg, rpd, rf, cf) in ((1, ("Q5", "R52", "R54", "R56", "R58", "C48"
     R(rpd, S, "100k", f"BL_G{k}", "GND")
     R(rf, S, "10k", f"BL_S{k}", f"BL_FB{k}")
     C(cf, S, "1n", f"BL_OUT{k}", f"BL_FB{k}")
-R("R60", S, "100k", "BL_PWM", "BL_REF")            # GPIO44 PWM into the reference filter
+R("R60", S, "100k", "BL_PWM", "BL_REF")            # GPIO28 PWM into the reference filter
 R("R61", S, "2.4k", "BL_REF", "GND")               # 3.3 V x 2.4 / 102.4 = 0.077 V at 100%
 C("C50", S, "1u", "BL_REF")
 JP("JP2", S, "VSYS", "LED_A")                      # cut it and bridge with an ammeter to read the LED current

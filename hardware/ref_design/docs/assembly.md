@@ -54,9 +54,9 @@ Nothing is soldered at assembly (Alex, 2026-10-20): the cell and the speaker bot
 
 1. Look over the chips with exposed pads (TP4056, RP2354B): their pads must have
    wetted. X-ray is not needed for a prototype; a lifted corner pin shows under a loupe.
-2. Leave the empty footprints empty unless bring-up asks for them. C41-C43 are 1206 (the
-   largest common size, 1.6 mm between pads, fine with an ordinary iron). R48 is left off on
-   purpose: it is the revision strap's bit 0. JP1 and JP2 come bridged; don't cut them.
+2. Leave the empty footprints empty unless bring-up asks for them. C42 and C43 are 1206 (the
+   largest common size, 1.6 mm between pads, fine with an ordinary iron). JP1 and JP2 come
+   bridged; don't cut them.
 
 ## 4. First power, before the case
 

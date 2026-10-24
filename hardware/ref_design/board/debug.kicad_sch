@@ -5,7 +5,7 @@
 	(uuid "74ddddc3-4675-58f5-ac59-5565a292508e")
 	(paper "A4")
 	(title_block
-		(title "SWD, UART, debug pads, BOOTSEL and RESET")
+		(title "SWD, debug pads, BOOTSEL and RESET")
 		(rev "1")
 		(company "Two-player handheld: reference design (REF-A)")
 		(comment 1 "Generated from board/design.py by tools/build_sch.py: edit design.py, not this sheet")
@@ -1080,10 +1080,6 @@
 		(at 27.94 43.18)
 		(uuid "1bcdf1fd-1463-5c2a-b15d-82c6a815361c")
 	)
-	(no_connect
-		(at 91.44 43.18)
-		(uuid "513803a2-a71d-5959-937e-d4036a93619b")
-	)
 	(wire
 		(pts
 			(xy 33.02 48.26) (xy 40.64 48.26)
@@ -1246,56 +1242,6 @@
 	)
 	(wire
 		(pts
-			(xy 96.52 48.26) (xy 104.14 48.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "31b8607b-4b69-5a2a-b53f-3a198bf00e1e")
-	)
-	(wire
-		(pts
-			(xy 96.52 50.8) (xy 101.6 50.8)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ca676405-6ada-574d-992d-5a6a86e3a852")
-	)
-	(wire
-		(pts
-			(xy 96.52 53.34) (xy 99.06 53.34)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "21aa626f-d1b9-5cdf-9783-a213e139b550")
-	)
-	(wire
-		(pts
-			(xy 99.06 53.34) (xy 99.06 58.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e69e7dcf-fdb3-542e-9657-e4178e49b5ff")
-	)
-	(wire
-		(pts
-			(xy 99.06 58.42) (xy 109.22 58.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6ee12646-71ee-5cd1-ba97-fafe7f6c4fce")
-	)
-	(wire
-		(pts
 			(xy 152.4 109.22) (xy 152.4 111.76)
 		)
 		(stroke
@@ -1324,16 +1270,6 @@
 		)
 		(uuid "05c64c7a-14a8-59f0-8154-d6f5c388becd")
 	)
-	(text "UART connector J6"
-		(exclude_from_sim no)
-		(at 96.5064 35.56 0)
-		(effects
-			(font
-				(size 1.8 1.8)
-			)
-		)
-		(uuid "587c9b68-9020-5b64-8494-b1c71d71a9c9")
-	)
 	(text "BOOTSEL button"
 		(exclude_from_sim no)
 		(at 38.6131 97.79 0)
@@ -1342,7 +1278,7 @@
 				(size 1.8 1.8)
 			)
 		)
-		(uuid "b19b75a6-59c0-595c-83ce-94b1a1f2f965")
+		(uuid "587c9b68-9020-5b64-8494-b1c71d71a9c9")
 	)
 	(text "RESET button"
 		(exclude_from_sim no)
@@ -1352,7 +1288,7 @@
 				(size 1.8 1.8)
 			)
 		)
-		(uuid "73cd17b6-5114-55bc-aa74-74e91924b6d2")
+		(uuid "b19b75a6-59c0-595c-83ce-94b1a1f2f965")
 	)
 	(text "Debug pads J7 (back side, 2.54 mm)"
 		(exclude_from_sim no)
@@ -1362,17 +1298,17 @@
 				(size 1.8 1.8)
 			)
 		)
-		(uuid "de0493fe-d8c1-5ce4-9e2c-8ce2afc29a80")
+		(uuid "73cd17b6-5114-55bc-aa74-74e91924b6d2")
 	)
-	(text "J5 SWD and J6 UART follow the Raspberry Pi 3-pin debug connector pinout (Debug Probe cable)."
+	(text "J5 SWD follows the Raspberry Pi 3-pin debug connector pinout (Debug Probe cable)."
 		(exclude_from_sim no)
-		(at 65.7416 165.1 0)
+		(at 59.6633 165.1 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "6891a09a-69a4-56af-88c1-c553ce72fc3b")
+		(uuid "de0493fe-d8c1-5ce4-9e2c-8ce2afc29a80")
 	)
 	(text "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid. J7: power through its 3V3 pad only with the"
 		(exclude_from_sim no)
@@ -1382,7 +1318,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "0efd6f9a-38d4-5d94-8b76-4d007b4a2760")
+		(uuid "6891a09a-69a4-56af-88c1-c553ce72fc3b")
 	)
 	(text "cell out and nothing on USB; BOOTSEL to GND at reset enters the USB boot loader, RUN to GND resets."
 		(exclude_from_sim no)
@@ -1392,7 +1328,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "12879a5d-ad62-5823-a33c-2369ba53d101")
+		(uuid "0efd6f9a-38d4-5d94-8b76-4d007b4a2760")
 	)
 	(global_label "SWDIO"
 		(shape passive)
@@ -1430,52 +1366,6 @@
 		(uuid "ec79fefb-45a7-5049-809d-71ba7ac98635")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 45.72 58.42 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "UART_TX"
-		(shape passive)
-		(at 104.14 48.26 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "64c08428-e0fd-5d1b-ab62-711874cae0c4")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 104.14 48.26 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "UART_RX"
-		(shape passive)
-		(at 109.22 58.42 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "75571442-bc8a-5ca1-ad8b-0071a84943fe")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 109.22 58.42 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1734,124 +1624,6 @@
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
 					(reference "J5")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Generic_MountingPin:Conn_01x03_MountingPin")
-		(at 91.44 50.8 180)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "77637f0d-72c8-5bb6-9c02-3ae98fed1dac")
-		(property "Reference" "J6"
-			(at 86.36 49.53 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "UART"
-			(at 86.36 52.07 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal"
-			(at 91.44 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 91.44 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Generic connectable mounting pin connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 91.44 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C160403"
-			(at 91.44 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "SM03B-SRSS-TB(LF)(SN)"
-			(at 91.44 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Manufacturer" "JST"
-			(at 91.44 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "0cfd770a-c74f-5ad3-b3db-79bd61b92959")
-		)
-		(pin "2"
-			(uuid "f644e876-96a0-5628-b09d-528a250dd251")
-		)
-		(pin "3"
-			(uuid "81ede0d7-6dc2-52f7-99a4-8b6772ea50c0")
-		)
-		(pin "MP"
-			(uuid "2dd69478-db06-5f43-9290-8816c35cb2ec")
-		)
-		(instances
-			(project "battler"
-				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "J6")
 					(unit 1)
 				)
 			)
@@ -2417,8 +2189,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "ffa65e27-2d2d-51cc-9ebd-893d84ae8808")
-		(property "Reference" "#PWR076"
+		(uuid "42e0a3c7-2fc2-5bd9-9323-835bbd63cb4e")
+		(property "Reference" "#PWR071"
 			(at 38.1 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -2473,89 +2245,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "94456de3-2751-5e7a-a314-3cbd6d388b77")
+			(uuid "f556445b-730d-57be-b908-46bf22e16dd3")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR076")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 101.6 50.8 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "f07c1d19-7e6f-5495-aeac-1292c4a55541")
-		(property "Reference" "#PWR077"
-			(at 101.6 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 101.6 54.61 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 101.6 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 101.6 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 101.6 50.8 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "60aad11b-7260-5c38-8bb1-030f26fbb36b")
-		)
-		(instances
-			(project "battler"
-				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR077")
+					(reference "#PWR071")
 					(unit 1)
 				)
 			)
@@ -2571,8 +2266,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "bdcbdfac-5037-57c5-a096-21c041e1e83f")
-		(property "Reference" "#PWR078"
+		(uuid "fe0344a5-0701-51fd-97fb-c78a5bbb8948")
+		(property "Reference" "#PWR072"
 			(at 40.64 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -2627,12 +2322,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "67547e58-76cf-5fc0-bb6f-60ed62827aae")
+			(uuid "4ff7439f-4ea6-5cca-b38c-7fe792d706df")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR078")
+					(reference "#PWR072")
 					(unit 1)
 				)
 			)
@@ -2648,8 +2343,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "05234986-bcec-58e5-96f3-30bb68b5fc1d")
-		(property "Reference" "#PWR079"
+		(uuid "be3048cb-3606-5a8c-b416-8ec1afea1be9")
+		(property "Reference" "#PWR073"
 			(at 152.4 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -2704,12 +2399,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "e488c951-0d2a-5f1a-b20a-31e7bf3dfa2f")
+			(uuid "932b7c09-6930-5e83-8cb3-543e7b8a1848")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR079")
+					(reference "#PWR073")
 					(unit 1)
 				)
 			)
@@ -2725,8 +2420,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "f7258b7d-4ba3-5a73-8dcb-e84a564e74b1")
-		(property "Reference" "#PWR080"
+		(uuid "5418ac23-e8cb-5ad5-a3b0-8987bf760ace")
+		(property "Reference" "#PWR074"
 			(at 76.2 111.76 0)
 			(hide yes)
 			(show_name no)
@@ -2781,12 +2476,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "fd416611-8952-5d9f-ae57-e3d928c1c545")
+			(uuid "7307722a-600b-5406-8630-ab4b2eca95c3")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR080")
+					(reference "#PWR074")
 					(unit 1)
 				)
 			)
@@ -2802,8 +2497,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "fdc20c53-b145-577a-915d-fb946bcec5d7")
-		(property "Reference" "#PWR081"
+		(uuid "bf39003e-3313-5a2f-ae88-4bc8d3763674")
+		(property "Reference" "#PWR075"
 			(at 76.2 127 0)
 			(hide yes)
 			(show_name no)
@@ -2858,12 +2553,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "4762f1e1-d8d4-5786-8edd-35b5f0e704bd")
+			(uuid "94591c32-89fa-50f1-8e61-0f647940f2a8")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR081")
+					(reference "#PWR075")
 					(unit 1)
 				)
 			)
