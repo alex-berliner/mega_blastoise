@@ -238,7 +238,7 @@ def main():
         print_package.tests_zip()
     if not case:
         return
-    for extra in ("top.stl", "deck1.stl", "deck2.stl", "tub.stl"):
+    for extra in ("top.stl", "deck.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not only:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     table = "\n".join(f"| `{n}.3mf` | {'under ' + ', '.join(s) if s else 'none'} | {g:.1f} g | "

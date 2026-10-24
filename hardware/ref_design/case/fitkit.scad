@@ -87,8 +87,9 @@ band_y1 = -(bay_l / 2) + 2;                          // seat 1's end band: from 
 module band_box() translate([-case_w / 2 - 1, -case_l / 2 - 1, -1]) cube([case_w + 2, band_y1 + case_l / 2 + 1, case_h + 2]);
 // the ear and the ends of the right arms that meet it (its laps go 3.15 into them)
 module usb_box() translate([case_w / 2 - 12, usb_y - 16, -1]) cube([13, 32, case_h + 2]);
-// where the arms meet on the left wall: seat 1's lap behind seat 2's skirt, and the island's side over them
-module meet_box() translate([-case_w / 2 - 1, arm_meet_y - 9, -1]) cube([12, 18, case_h + 2]);
+// the left wall's ear (blank, the right one turned round) and the left arms' ends that meet it (2026-10-24: the arms met
+// each other there, seat 1's lap behind seat 2's skirt, until the left wall got its ear)
+module lear_box() rotate(180) usb_box();
 module frame_box() let(w = panel_w + panel_fit + 2 * frame_wall + 8, l = panel_l + panel_fit + 2 * frame_wall + 8)
   translate([-w / 2, -l / 2, -1]) cube([w, l, case_h + 2]);
 
@@ -171,9 +172,9 @@ if (kit == "usb_tub")      intersection() { tub_flat(); usb_box(); }
 if (kit == "usb_top")      flip() intersection() { top(); usb_box(); }
 // the two arms' ends either side of the ear, face down (two pieces)
 if (kit == "usb_arms")     flip_at(deck_face) intersection() { union() { deck(-1); deck(1); } usb_box(); }
-if (kit == "meet_tub")     intersection() { tub_flat(); meet_box(); }
-if (kit == "meet_top")     flip() intersection() { top(); meet_box(); }
-if (kit == "meet_arms")    flip_at(deck_face) intersection() { union() { deck(-1); deck(1); } meet_box(); }
+if (kit == "lear_tub")     intersection() { tub_flat(); lear_box(); }
+if (kit == "lear_top")     flip() intersection() { top(); lear_box(); }
+if (kit == "lear_arms")    flip_at(deck_face) intersection() { union() { deck(-1); deck(1); } lear_box(); }
 // The build bars (2026-10-23): built face down, the decks go in first and the island drops into them from
 // behind, so the decks' faces must stand step_d off the bench (the island's face, step_d proud of them, on the
 // bench; the caps, cap_proud proud, clear of it). Two bars, one under each deck's core's end, on its flat face

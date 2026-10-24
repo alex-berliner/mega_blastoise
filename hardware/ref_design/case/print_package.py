@@ -82,8 +82,9 @@ PLATES = {
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
                ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
-    # seat 1's and seat 2's decks (two parts since the island, 2026-10-23) and the stand they lie on while the case is built
-    "1_case_decks": [("deck1", os.path.join(HERE, "deck1.stl")), ("deck2", os.path.join(HERE, "deck2.stl")),
+    # the deck twice (one part for both ends since 2026-10-24; two, seat 1's and seat 2's, for a day after the island) and
+    # the stand they lie on while the case is built
+    "1_case_decks": [("deck_a", os.path.join(HERE, "deck.stl")), ("deck_b", os.path.join(HERE, "deck.stl")),
                      ("build_bar_a", f"{KIT}/build_bar.stl"), ("build_bar_b", f"{KIT}/build_bar.stl")],
     "2_buttons_quick": [("tune_openings", f"{KIT}/tune_openings.stl")] +
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
@@ -91,11 +92,11 @@ PLATES = {
     "3_buttons_heights": [(f"tune_stack_{c}_lid_dome{d}", f"{KIT}/tune_stack_{c}_lid_dome{d}.stl")
                           for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.9")],
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
-                      ("usb_tub", "usb_top", "usb_arms", "usb_board", "seam_tub", "seam_deck", "meet_tub", "meet_top",
-                       "meet_arms", "frame_top",
+                      ("usb_tub", "usb_top", "usb_arms", "usb_board", "seam_tub", "seam_deck", "lear_tub", "lear_top",
+                       "lear_arms", "frame_top",
                        "buttons_tub", "buttons_board", "buttons_top", "buttons_deck")],
     "5_unit": [("tub_print", PRINT_TUB), ("top", os.path.join(HERE, "top.stl")),     # one whole unit and the
-               ("deck1", os.path.join(HERE, "deck1.stl")), ("deck2", os.path.join(HERE, "deck2.stl")),   # dummies to
+               ("deck_a", os.path.join(HERE, "deck.stl")), ("deck_b", os.path.join(HERE, "deck.stl")),   # dummies to
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),     # fit in it
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),  # (Alex,
                ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl"),
@@ -119,7 +120,7 @@ PLATES = {
 }
 # parts turned a quarter round on their plate (about z) so it packs: 5_unit's two decks and the cell dummy (the
 # decks are twice as long since the island, 2026-10-23, and the plate overflowed)
-TURN = {"5_unit": {"deck1", "deck2", "cell_dummy"}}
+TURN = {"5_unit": {"deck_a", "deck_b", "cell_dummy"}}
 
 
 def load_part(plate, name, path):
@@ -481,7 +482,7 @@ def main():
         tests_zip()
     if not case:
         return
-    for extra in ("top.stl", "deck1.stl", "deck2.stl", "tub.stl"):
+    for extra in ("top.stl", "deck.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not sys.argv[1:]:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     shutil.copy(os.path.join(HERE, "print_package_README.md"), os.path.join(OUT, "README.md"))
