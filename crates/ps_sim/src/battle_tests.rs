@@ -875,10 +875,30 @@ fn format_rules_and_trunc() {
         b.field.pseudo_weather.ids(),
         &[EffectId::Rule(Rule::SleepClauseMod), EffectId::Rule(Rule::FreezeClauseMod)]
     );
+    // `!Cartridge Trunc` turns the plain math back on and nothing else.
+    let math = FormatSpec::gen1_harness().with_repeal(ps_protocol::RuleId::CartridgeTrunc).unwrap();
+    let b = Box::new(Battle::from_start(math, [1, 2, 3, 4], CLOCK));
+    assert!(!b.has_rule(Rule::CartridgeTrunc) && b.has_rule(Rule::SleepClauseMod) && b.has_rule(Rule::DesyncClauseMod));
+    assert_eq!(b.trunc, Trunc::Math);
+    let rb = FormatSpec::parse("gen1randombattle").unwrap();
+    let b = Box::new(Battle::from_start(rb, [1, 2, 3, 4], CLOCK));
+    assert!(b.has_rule(Rule::CartridgeTrunc));
+    let rb = FormatSpec::parse("gen1randombattle@@@!Cartridge Trunc").unwrap();
+    let b = Box::new(Battle::from_start(rb, [1, 2, 3, 4], CLOCK));
+    assert!(!b.has_rule(Rule::CartridgeTrunc) && b.has_rule(Rule::EndlessBattleClause));
+    assert_eq!(b.trunc, Trunc::Math);
     let b = Box::new(Battle::from_start(FormatSpec::gen3_harness(), [1, 2, 3, 4], CLOCK));
     assert!(!b.has_rule(Rule::CartridgeTrunc) && !b.has_rule(Rule::DesyncClauseMod) && b.has_rule(Rule::CancelMod));
     assert_eq!(b.trunc, Trunc::Math);
     assert!(b.field.pseudo_weather.is_empty());
+}
+
+/// PS throws when a repeal finds nothing to repeal (`getRuleTable`).
+#[test]
+#[should_panic(expected = "did nothing because \"Cartridge Trunc\" is not in effect")]
+fn repealing_a_rule_not_in_effect_throws() {
+    let spec = FormatSpec::gen3_harness().with_repeal(ps_protocol::RuleId::CartridgeTrunc).unwrap();
+    let _ = Box::new(Battle::from_start(spec, [1, 2, 3, 4], CLOCK));
 }
 
 /// Design section 6: at most 16 KB per battle. The host's pointers are
@@ -935,5 +955,33 @@ fn scripted_battles_match_ps_gen1() {
             assert_eq!(o, p, "{name}: line {i} differs\n--- ours ---\n{}", ours.join("\n"));
         }
         assert_eq!(ours.len(), ps.len(), "{name}: log length\n--- ours ---\n{}", ours.join("\n"));
+    }
+}
+
+/// Gen 1's `deductPP` at 0 PP: the cartridge wraps to 63, plain math
+/// (`!Cartridge Trunc`) leaves -1, which `getMoves` disables (`pp <= 0`).
+/// The ps-diff wide seeds 1003459, 1004914, 1006883 and 1008774 under
+/// `--trunc math` play it through a binding move.
+#[test]
+fn gen1_pp_underflow_follows_the_rule_set() {
+    use crate::actions::GenScripts;
+    use crate::mods::gen1::scripts::Gen1Scripts;
+    let math = FormatSpec::gen1_harness().with_repeal(ps_protocol::RuleId::CartridgeTrunc).unwrap();
+    for (spec, want) in [(FormatSpec::gen1_harness(), 63), (math, -1)] {
+        let mut b = Box::new(Battle::from_start(spec, [1, 2, 3, 4], CLOCK));
+        for side in [SideId::P1, SideId::P2] {
+            let team = parse_team("Venomoth|||noability|wrap,psychic|||||||");
+            b.set_player(side, "p", "", "", Some(&team)).unwrap();
+        }
+        let _ = flush(&mut b);
+        let mon = b.pokemon_at(0, 0);
+        b.sides[0].last_selected_move_slot = 0;
+        b.mon_mut(mon).move_slots[0].pp = 0;
+        let wrap = b.mon(mon).move_slots[0].id;
+        Gen1Scripts::deduct_pp(&mut b, mon, wrap, 0);
+        assert_eq!(b.mon(mon).move_slots[0].pp, want);
+        let moves = b.get_moves(mon, None, false);
+        assert_eq!(moves[0].pp, Some(want));
+        assert_eq!(moves[0].disabled, Some(want <= 0));
     }
 }

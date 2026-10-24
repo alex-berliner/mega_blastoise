@@ -25,6 +25,10 @@
 //                         `ps_sim_cli --ported <gen>` when run against
 //                         the rust side, otherwise the whole gen.
 //   - `--teams file:<path>` -> two packed teams from a file.
+//   - `--trunc cartridge|math` (Gen 1 only, default `cartridge`) -> the
+//                         Gen 1 rule set: `math` names `!Cartridge Trunc`
+//                         in the `>start` formatid both sides read
+//                         (`rules.js`).
 //   - `--carried gen1` -> the old engines' pinned battles
 //                         (`crates/ps_harness/carried/gen1/*.json`, written
 //                         by `scripts/carried-dump.sh`): every team pair over
@@ -60,6 +64,7 @@ const { spawn, spawnSync } = require('child_process');
 const { BattleStream, PRNG } = require('pokemon-showdown');
 const teams = require('./teams');
 const { spawnPorted } = require('./ported');
+const rules = require('./rules');
 
 const DEFAULT_TIMEOUT_MS = 30000;
 const DEFAULT_JOBS = 14;
@@ -84,6 +89,7 @@ function parseArgs(argv) {
     allowUnported: false,
     slice: undefined,
     carried: undefined, carriedPair: undefined,
+    trunc: undefined,
   };
   let i = 0;
   while (i < argv.length) {
@@ -116,6 +122,7 @@ function parseArgs(argv) {
         break;
       }
       case '--carried-pair': opts.carriedPair = argv[i++]; break;
+      case '--trunc': opts.trunc = argv[i++]; break;
       case '--slice': opts.slice = argv[i++].split(':').map((x) => parseInt(x, 10)); break;
       case '--help': case '-h':
         console.log(
@@ -123,7 +130,7 @@ function parseArgs(argv) {
           + '[--seed S] [--seed-start X --seed-end Y] '
           + '[--teams random|wide|file:<p>] [--focus ids] '
           + '[--jobs N] [--tamper-line K] [--pinned] [--carried gen1 [--carried-pair F#C]] '
-          + '[--quiet] [--allow-unported]'
+          + '[--trunc cartridge|math] [--quiet] [--allow-unported]'
         );
         process.exit(0);
       default:
@@ -140,6 +147,14 @@ function parseArgs(argv) {
   }
   if (![1, 3].includes(opts.gen)) {
     process.stderr.write(`ps-diff: gen must be 1 or 3 (got ${opts.gen})\n`);
+    process.exit(2);
+  }
+  if (opts.trunc !== undefined && !['cartridge', 'math'].includes(opts.trunc)) {
+    process.stderr.write(`ps-diff: --trunc is cartridge or math (got ${opts.trunc})\n`);
+    process.exit(2);
+  }
+  if (opts.trunc !== undefined && opts.gen !== 1 && !opts.pinned) {
+    process.stderr.write('ps-diff: --trunc is a Gen 1 rule set\n');
     process.exit(2);
   }
   return opts;
@@ -169,23 +184,25 @@ function deriveSeeds(driverSeed) {
   return { battle, team, choice };
 }
 
-function formatId(gen, mode) {
-  if (mode === 'random') return `gen${gen}randombattle`;
+/// The `>start` formatid. `trunc` (Gen 1 only) is the rule set:
+/// `cartridge` (the default) or `math` (`@@@!Cartridge Trunc`).
+function formatId(gen, mode, trunc) {
   // Carried and file teams are custom sets: a custom game, like wide.
-  return `gen${gen}customgame`;
+  const base = mode === 'random' ? `gen${gen}randombattle` : `gen${gen}customgame`;
+  return rules.withTrunc(base, gen, trunc || 'cartridge');
 }
 
 /// Build the `>start`/`>player pN` envelope for one driver seed.
 /// `pair` (a carried team pair) replaces the team builder; the battle and
 /// choice seeds still come from the driver seed.
-function driverCommands({ gen, mode, driverSeed, focus, self, psCli, pair }) {
+function driverCommands({ gen, mode, driverSeed, focus, self, psCli, pair, trunc }) {
   const { battle, team, choice } = deriveSeeds(driverSeed);
   // The wide/ps-cli empty-list check is hoisted to main() so the gate
   // fails before any battle runs; this is the per-battle path.
   const built = pair || teams.buildPair({
     gen, mode, seed: team, focus, self, psCli,
   });
-  const fmt = formatId(gen, mode);
+  const fmt = formatId(gen, mode, trunc);
   const cmds = [];
   cmds.push(`>start ${JSON.stringify({ formatid: fmt, seed: battle })}`);
   cmds.push(`>player p1 ${JSON.stringify({ name: 'p1', team: built.packed[0] })}`);
@@ -264,27 +281,16 @@ function pickChoice(req, choicePrng) {
   return null;
 }
 
-/// Cartridge truncation, restored for Gen 1 (one PS-side adaptation).
-/// See `tools/showdown-parity/harness.js:cartridgeTrunc`.
-function applyCartridgeTrunc(battle) {
-  battle.trunc = (num, bits = 0) => (bits ? (num >>> 0) % (2 ** bits) : num >>> 0);
-}
-
-/// Drive a single PS BattleStream with the given envelope, random legal
-/// choices, and cartridge trunc for gen 1. Returns the joined log and
-/// the choice PRNG call count (caller uses this for diagnostics).
-async function drivePS({ gen, cmds, choiceSeed, doCartridge }) {
+/// Drive a single PS BattleStream with the given envelope and random
+/// legal choices. Gen 1's truncation is the formatid's `Cartridge Trunc`
+/// rule (`rules.js`; the old harness's `cartridgeTrunc` restore in
+/// `tools/showdown-parity/harness.js`, as a rule). Returns the joined log
+/// and the choice PRNG call count (caller uses this for diagnostics).
+async function drivePS({ cmds, choiceSeed }) {
+  rules.install();
   const stream = new BattleStream({ keepAlive: false });
   const prng = new PRNG(choiceSeed);
   let prngCalls = 0;
-  if (doCartridge) {
-    const origWriteLines = stream._writeLines.bind(stream);
-    stream._writeLines = (chunk) => {
-      const r = origWriteLines(chunk);
-      if (stream.battle) applyCartridgeTrunc(stream.battle);
-      return r;
-    };
-  }
   stream.write(cmds.join('\n') + '\n');
   const log = [];
   const onRequest = (side, json) => {
@@ -371,7 +377,7 @@ function writeDivergence(scratch, rec) {
   const ctxBefore = rec.ctxBefore || [];
   const ctxAfter = rec.ctxAfter || [];
   fs.writeFileSync(path.join(scratch, `ps-diff-${logName(rec)}.log`),
-    `seed ${rec.seed} gen ${rec.gen} teams ${rec.teams}${pairNote(rec)} diff @ line ${rec.at}\n`
+    `seed ${rec.seed} gen ${rec.gen} teams ${rec.teams}${rec.trunc ? ` trunc ${rec.trunc}` : ''}${pairNote(rec)} diff @ line ${rec.at}\n`
     + `prngCallsA=${rec.prngCallsA} prngCallsB=${rec.prngCallsB}\n`
     + `--- context (left: line ${rec.at - ctxBefore.length + 1}..${rec.at + ctxAfter.length}) ---\n`
     + ctxBefore.map((l, i) => `  [${rec.at - ctxBefore.length + 1 + i}] L: ${l}`).join('\n')
@@ -385,7 +391,7 @@ function writeDivergence(scratch, rec) {
 function writeError(scratch, rec, err) {
   ensureDir(scratch);
   fs.writeFileSync(path.join(scratch, `ps-diff-${logName(rec)}-crash.log`),
-    `seed ${rec.seed} gen ${rec.gen} teams ${rec.teams}${pairNote(rec)}\n`
+    `seed ${rec.seed} gen ${rec.gen} teams ${rec.teams}${rec.trunc ? ` trunc ${rec.trunc}` : ''}${pairNote(rec)}\n`
     + `${err && err.stack ? err.stack : String(err)}\n`);
 }
 
@@ -539,7 +545,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
     info = driverCommands({
       gen: opts.gen, mode: opts.teamsMode, driverSeed,
       focus: opts.focus, self: opts.self, psCli: opts.psCli,
-      pair: opts.pair,
+      pair: opts.pair, trunc: opts.trunc,
     });
   } catch (e) {
     // The empty-ported-list check is hoisted to main() so the gate fails
@@ -547,11 +553,10 @@ async function runOneBattle(driverSeed, opts, scratch) {
     // error and we want the diff driver to die loudly.
     throw e;
   }
-  const doCartridge = opts.gen === 1;
   if (opts.self) {
     try {
-      const aPromise = drivePS({ gen: opts.gen, cmds: info.cmds, choiceSeed: info.choiceSeed, doCartridge });
-      const bPromise = drivePS({ gen: opts.gen, cmds: info.cmds, choiceSeed: info.choiceSeed, doCartridge });
+      const aPromise = drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed });
+      const bPromise = drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed });
       const [a, b] = await Promise.all([aPromise, bPromise]);
       let aLog = applyTamper(a.out, opts.tamper < 0 ? opts.tamper : 0);
       let bLog = applyTamper(b.out, opts.tamper > 0 ? opts.tamper : 0);
@@ -563,7 +568,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
         const ctxBefore = aLines.slice(Math.max(0, at - 3), at);
         const ctxAfter = aLines.slice(at + 1, Math.min(aLines.length, at + 4));
         writeDivergence(scratch, {
-          seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, pair: opts.pairName, at,
+          seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName, at,
           left: aLog, right: bLog,
           prngCallsA: a.prngCalls, prngCallsB: b.prngCalls,
           leftAt: aLines[at], rightAt: bLines[at],
@@ -575,7 +580,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
     } catch (e) {
       // PS itself threw: a PS bug (both sides are PS), not comparable.
       result.psCrash = 1;
-      writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, pair: opts.pairName }, e);
+      writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName }, e);
     }
     return result;
   }
@@ -585,7 +590,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
   try {
     rust = rustFor(opts.psCli);
     bPromise = rust.runBattle(info.cmds, info.choiceSeed, opts.timeoutMs);
-    const a = await drivePS({ gen: opts.gen, cmds: info.cmds, choiceSeed: info.choiceSeed, doCartridge });
+    const a = await drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed });
     rust.graceUntil(RUST_GRACE_MS);
     const bRun = await bPromise;
     const aLog = applyTamper(a.out, opts.tamper < 0 ? opts.tamper : 0);
@@ -604,7 +609,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
       const ctxBefore = aLines.slice(Math.max(0, at - 3), at);
       const ctxAfter = aLines.slice(at + 1, Math.min(aLines.length, at + 4));
       writeDivergence(scratch, {
-        seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, pair: opts.pairName, at,
+        seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName, at,
         left: aLog, right: bLog,
         prngCallsA: a.prngCalls, prngCallsB: bRun.prngCalls,
         leftAt: aLines[at], rightAt: bLines[at],
@@ -616,7 +621,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
       result.unportedId = bRun.detail;
     } else if (bRun.status !== 'end') {
       result.crash = 1;
-      writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, pair: opts.pairName },
+      writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName },
         new Error(`rust side: ${bRun.status}: ${bRun.detail}\n${bRun.stderr}--- right (partial) ---\n${bLog}`));
     }
   } catch (e) {
@@ -631,14 +636,14 @@ async function runOneBattle(driverSeed, opts, scratch) {
       const bRun = await bPromise;
       if (bRun.status === 'crash') {
         result.psCrash = 1;
-        writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, pair: opts.pairName },
+        writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName },
           new Error(`PS threw and ps_sim crashed too (not comparable)\nps_sim: ${bRun.detail}\nPS: ${e && e.stack ? e.stack : e}`));
         return result;
       }
       if (rust.child) rust.kill('ps-crash');
     }
     result.crash = 1;
-    writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, pair: opts.pairName }, e);
+    writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName }, e);
   }
   return result;
 }
@@ -652,7 +657,12 @@ function readPinned(pinnedFile) {
     .map((line) => {
       const stripped = line.replace(/\s*#.*$/, '').trim();
       const parts = stripped.split(/\s+/);
-      return { gen: parseInt(parts[0], 10), teams: parts[1], seed: parts[2] };
+      // An optional fourth field names the Gen 1 rule set (`math`).
+      const entry = { gen: parseInt(parts[0], 10), teams: parts[1], seed: parts[2], trunc: parts[3] };
+      if (entry.trunc !== undefined && (entry.gen !== 1 || !['cartridge', 'math'].includes(entry.trunc))) {
+        throw new Error(`pinned entry \`${stripped}\`: the fourth field is a Gen 1 \`cartridge\` or \`math\``);
+      }
+      return entry;
     });
 }
 
@@ -709,6 +719,7 @@ async function runWithJobs(drivers, opts) {
   if (opts.pinned) childArgs.push('--pinned');
   if (opts.pinnedFile) childArgs.push('--pinned-file', opts.pinnedFile);
   if (opts.carried !== undefined) childArgs.push('--carried', `gen${opts.carried}`);
+  if (opts.trunc !== undefined) childArgs.push('--trunc', opts.trunc);
   if (opts.carriedPair) childArgs.push('--carried-pair', opts.carriedPair);
   if (opts.carried !== undefined && opts.seed !== undefined) childArgs.push('--seed', String(opts.seed));
   if (opts.focus) childArgs.push('--focus', opts.focus.join(','));
@@ -763,11 +774,16 @@ async function runWithJobs(drivers, opts) {
     totalCrash += parsed.crash; totalUn += parsed.unported; totalPsCrash += parsed.psCrash;
     for (const [id, k] of parsed.unportedIds) ids.set(id, (ids.get(id) || 0) + k);
   }
-  const total = `ps-diff: ran=${totalRun} diffs=${totalDiff} crashes=${totalCrash} unported=${totalUn} gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'} jobs=${n}`
+  const total = `ps-diff: ran=${totalRun} diffs=${totalDiff} crashes=${totalCrash} unported=${totalUn} gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'} jobs=${n}${truncNote(opts)}`
     + (totalPsCrash ? ` ps_crashes=${totalPsCrash}` : '');
   process.stdout.write(total + '\n');
   if (ids.size) process.stdout.write(`ps-diff: unported ids: ${formatIds(ids)}\n`);
   return exitCode;
+}
+
+/// ` trunc=<mode>` on a Gen 1 summary (pinned entries carry their own).
+function truncNote(opts) {
+  return opts.gen === 1 && !opts.pinned ? ` trunc=${opts.trunc || 'cartridge'}` : '';
 }
 
 /// `id:count` pairs, most frequent first.
@@ -863,6 +879,7 @@ async function main() {
     const battleOpts = {
       ...opts, gen: entry.gen, teamsMode: entry.teams,
       pair: entry.pair, pairName: entry.pair && entry.pair.name,
+      trunc: entry.trunc || (entry.gen === 1 ? opts.trunc : undefined),
     };
     const r = await runOneBattle(seedInt, battleOpts, scratch);
     nRun++; nDiff += r.diff; nCrash += r.crash; nUnported += r.unported; nPsCrash += r.psCrash;
@@ -872,7 +889,7 @@ async function main() {
   // Always one summary line: the --jobs parent merges them.
   process.stdout.write(
     `ps-diff: ran=${nRun} diffs=${nDiff} crashes=${nCrash} unported=${nUnported}`
-    + ` gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'}`
+    + ` gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'}${truncNote(opts)}`
     + (nPsCrash ? ` ps_crashes=${nPsCrash}` : '')
     + (ids.size ? ` unported_ids=${formatIds(ids)}` : '') + '\n');
   const failures = nDiff + nCrash + (opts.allowUnported ? 0 : nUnported);

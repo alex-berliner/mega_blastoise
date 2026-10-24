@@ -44,7 +44,8 @@ pub struct BattleSetup {
 impl BattleSetup {
     /// The local formats: Gen 1's harness format (`gen1customgame` with
     /// Sleep and Freeze Clause) or `gen3customgame`, the two the protocol
-    /// diff checks `ps_sim` against.
+    /// diff checks `ps_sim` against. Gen 1 plays the default rule set:
+    /// `Cartridge Trunc` is in effect (no `!Cartridge Trunc` repeal).
     pub fn local(gen: u8, seed: u64, teams: [PackedTeam; 2]) -> Self {
         BattleSetup {
             format: if gen == 1 { FormatSpec::gen1_harness() } else { FormatSpec::gen3_harness() },

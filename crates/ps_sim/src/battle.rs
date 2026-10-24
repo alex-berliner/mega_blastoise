@@ -87,6 +87,7 @@ fn rule_of(r: RuleId) -> Rule {
         RuleId::BeatUpNicknamesMod => Rule::BeatUpNicknamesMod,
         RuleId::SwitchPriorityClauseMod => Rule::SwitchPriorityClauseMod,
         RuleId::EvasionItemsClause => Rule::EvasionItemsClause,
+        RuleId::CartridgeTrunc => Rule::CartridgeTrunc,
     }
 }
 
@@ -104,6 +105,10 @@ fn rule_of(r: RuleId) -> Rule {
 /// Clause, Nickname Clause, OHKO Clause, Evasion Items Clause and Evasion
 /// Moves Clause, in the order PS 0.11.11 resolves them (Beat Up Nicknames
 /// Mod comes from the expansion; Team Preview shows nothing before gen 5).
+/// Every Gen 1 format ends its ruleset with our `Cartridge Trunc` (design
+/// section 3; `tools/ps-diff/rules.js` adds it to PS's Gen 1 formats the
+/// same way). A custom `!Name` repeals a rule of the ruleset; repealing one
+/// that is not in effect throws, as PS's `getRuleTable` does.
 fn rule_table(spec: &FormatSpec) -> ([RuleId; 14], usize) {
     let mut out = [RuleId::HpPercentageMod; 14];
     let mut n = 0;
@@ -148,9 +153,19 @@ fn rule_table(spec: &FormatSpec) -> ([RuleId; 14], usize) {
     push(RuleId::CancelMod);
     if spec.base.gen() == 1 {
         push(RuleId::DesyncClauseMod);
+        push(RuleId::CartridgeTrunc);
     }
-    for &r in spec.custom_rules.iter() {
-        push(r);
+    for c in spec.custom_rules.iter().filter(|c| !c.repeal) {
+        push(c.rule);
+    }
+    for c in spec.custom_rules.iter().filter(|c| c.repeal) {
+        match out[..n].iter().position(|&r| r == c.rule) {
+            Some(i) => {
+                out.copy_within(i + 1..n, i);
+                n -= 1;
+            }
+            None => panic!("Rule \"!{}\" did nothing because \"{}\" is not in effect", c.rule.name(), c.rule.name()),
+        }
     }
     (out, n)
 }
@@ -190,9 +205,9 @@ impl Battle {
     // ---- construction -------------------------------------------------
 
     /// PS `new Battle({formatid, seed})`, as `>start` builds it. `clock`
-    /// is the wall clock for `|t:|`, in seconds. Gen 1 turns on the
-    /// `Cartridge Trunc` rule (design section 3): PS's bit-width `trunc`
-    /// in place of the custom game's `Math.trunc`.
+    /// is the wall clock for `|t:|`, in seconds. The `Cartridge Trunc`
+    /// rule (design section 3, on in every Gen 1 format unless repealed)
+    /// is PS's bit-width `trunc` in place of `Math.trunc`.
     // PS: sim/battle.ts constructor
     pub fn from_start(spec: FormatSpec, seed: Seed, clock: u32) -> Battle {
         let dex: &'static Dex = match spec.base.gen() {
@@ -200,18 +215,15 @@ impl Battle {
             _ => &ps_dex::GEN3,
         };
         let registry = crate::mods::registry_for(dex);
-        let cartridge = spec.base.gen() == 1;
+        let (rules, n) = rule_table(&spec);
+        let cartridge = rules[..n].contains(&RuleId::CartridgeTrunc);
         let trunc = if cartridge { Trunc::Cartridge } else { Trunc::Math };
         let mut b = Battle::new(dex, registry, seed, trunc);
         b.clock = clock;
         b.format_spec = spec;
         b.add(Msg::Timestamp(clock));
-        let (rules, n) = rule_table(&spec);
         for &r in &rules[..n] {
             b.rules |= 1 << rule_of(r) as u8;
-        }
-        if cartridge {
-            b.rules |= 1 << Rule::CartridgeTrunc as u8;
         }
         // Both custom games are `debug` formats; random battles are not.
         b.debug_mode = spec.base.debug();
@@ -388,7 +400,7 @@ impl Battle {
             let def = dex.move_def(id);
             let pp_ups = if def.bools.has("noPPBoosts") || def.name.as_str() == "Trump Card" { 0 } else { 3 };
             let pp = crate::stats::calculate_pp(self.gen, def, pp_ups);
-            mon.base_move_slots[n] = MoveSlot { id, pp, maxpp: pp, disabled: 0, used: false, virtual_: false };
+            mon.base_move_slots[n] = MoveSlot { id, pp: pp as i8, maxpp: pp, disabled: 0, used: false, virtual_: false };
             n += 1;
         }
         if n == 0 {
@@ -525,8 +537,18 @@ impl Battle {
         let custom = self.format_spec.custom_rules;
         match custom.len() {
             0 => {}
-            1 => self.add(Msg::Raw(Text::with1(TextId::CustomRules1, TextArg::rule(custom[0])))),
-            2 => self.add(Msg::Raw(Text::with2(TextId::CustomRules2, TextArg::rule(custom[0]), TextArg::rule(custom[1])))),
+            1 => self.add(Msg::Raw(Text::with1(TextId::CustomRules1, TextArg::custom_rule(custom[0])))),
+            2 => self.add(Msg::Raw(Text::with2(
+                TextId::CustomRules2,
+                TextArg::custom_rule(custom[0]),
+                TextArg::custom_rule(custom[1]),
+            ))),
+            3 => self.add(Msg::Raw(Text::with3(
+                TextId::CustomRules3,
+                TextArg::custom_rule(custom[0]),
+                TextArg::custom_rule(custom[1]),
+                TextArg::custom_rule(custom[2]),
+            ))),
             k => panic!("{k} custom rules: no infobox template"),
         }
         // `runPickTeam`: no team preview in our formats.
@@ -556,6 +578,8 @@ impl Battle {
             | RuleId::BeatUpNicknamesMod
             | RuleId::SwitchPriorityClauseMod
             | RuleId::EvasionItemsClause => self.add(Msg::Rule(r)),
+            // `Cartridge Trunc` acts through `self.trunc` (`from_start`).
+            RuleId::CartridgeTrunc => {}
         }
     }
 
@@ -710,7 +734,7 @@ impl Battle {
                 continue;
             }
             let def = self.dex.move_def(ms.id);
-            let pp = def.pp.min(5);
+            let pp = def.pp.min(5) as i8;
             let maxpp = crate::stats::calculate_pp(gen, def, self.pp_ups(m, i));
             slots[i] = MoveSlot { id: ms.id, pp, maxpp, disabled: 0, used: false, virtual_: true };
         }

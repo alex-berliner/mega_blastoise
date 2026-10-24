@@ -152,10 +152,14 @@ pub enum RuleId {
     BeatUpNicknamesMod,
     SwitchPriorityClauseMod,
     EvasionItemsClause,
+    /// Our named deviation (design section 3): Gen 1's bit-width `trunc`
+    /// (`Dex.trunc`) in place of `Math.trunc`. Every Gen 1 format has it in
+    /// its ruleset; `!Cartridge Trunc` after `@@@` turns it off.
+    CartridgeTrunc,
 }
 
 impl RuleId {
-    pub const ALL: [RuleId; 12] = [
+    pub const ALL: [RuleId; 13] = [
         RuleId::HpPercentageMod,
         RuleId::CancelMod,
         RuleId::DesyncClauseMod,
@@ -168,6 +172,7 @@ impl RuleId {
         RuleId::BeatUpNicknamesMod,
         RuleId::SwitchPriorityClauseMod,
         RuleId::EvasionItemsClause,
+        RuleId::CartridgeTrunc,
     ];
 
     /// The rule's name, as a custom rule after `@@@` and in the infobox.
@@ -185,6 +190,7 @@ impl RuleId {
             RuleId::BeatUpNicknamesMod => "Beat Up Nicknames Mod",
             RuleId::SwitchPriorityClauseMod => "Switch Priority Clause Mod",
             RuleId::EvasionItemsClause => "Evasion Items Clause",
+            RuleId::CartridgeTrunc => "Cartridge Trunc",
         }
     }
 
@@ -207,6 +213,8 @@ impl RuleId {
             RuleId::BeatUpNicknamesMod => Some("Beat Up Nicknames Mod: Beat Up will not reveal any party members"),
             RuleId::SwitchPriorityClauseMod => Some("Switch Priority Clause Mod: Faster Pok\u{e9}mon switch first"),
             RuleId::EvasionItemsClause => Some("Evasion Items Clause: Evasion items are banned"),
+            // It has no `onBegin` text (`tools/ps-diff/rules.js`).
+            RuleId::CartridgeTrunc => None,
         }
     }
 
@@ -218,12 +226,50 @@ impl RuleId {
 /// Most custom rules after `@@@`.
 pub const MAX_CUSTOM_RULES: usize = 4;
 
+/// One custom rule after `@@@`: a rule added to the format's ruleset, or
+/// (`!Name`) one repealed from it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct CustomRule {
+    pub rule: RuleId,
+    /// `!Name`: PS's rule repeal (`sim/dex-formats.ts getRuleTable`).
+    pub repeal: bool,
+}
+
+impl CustomRule {
+    pub const fn add(rule: RuleId) -> Self {
+        Self { rule, repeal: false }
+    }
+
+    pub const fn repeal(rule: RuleId) -> Self {
+        Self { rule, repeal: true }
+    }
+
+    /// Calls `f` with the rule as written after `@@@` and in the custom
+    /// rules infobox: `!` for a repeal, then the name.
+    pub fn write(&self, mut f: impl FnMut(&str)) {
+        if self.repeal {
+            f("!");
+        }
+        f(self.rule.name());
+    }
+
+    pub fn parse(s: &str) -> Option<CustomRule> {
+        match s.strip_prefix('!') {
+            // `!!` repeals and replaces a value rule; none of ours has a value.
+            Some(name) if !name.starts_with('!') => Some(CustomRule::repeal(RuleId::parse(name)?)),
+            Some(_) => None,
+            None => Some(CustomRule::add(RuleId::parse(s)?)),
+        }
+    }
+}
+
 /// A `formatid` value: a base format and its custom rules, in the order
 /// given (`gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct FormatSpec {
     pub base: FormatId,
-    pub custom_rules: BoundedVec<RuleId, MAX_CUSTOM_RULES>,
+    pub custom_rules: BoundedVec<CustomRule, MAX_CUSTOM_RULES>,
 }
 
 impl Default for RuleId {
@@ -238,12 +284,13 @@ impl FormatSpec {
     }
 
     /// The gen 1 format the harness plays (`formatFor(1)` in
-    /// `tools/showdown-parity/harness.js`).
+    /// `tools/showdown-parity/harness.js`). `Cartridge Trunc` is in every
+    /// Gen 1 format's ruleset, so it is on.
     pub fn gen1_harness() -> Self {
         let mut f = Self::new(FormatId::Gen1CustomGame);
         // Two rules into a capacity of four cannot fail.
-        let _ = f.custom_rules.push(RuleId::SleepClauseMod);
-        let _ = f.custom_rules.push(RuleId::FreezeClauseMod);
+        let _ = f.custom_rules.push(CustomRule::add(RuleId::SleepClauseMod));
+        let _ = f.custom_rules.push(CustomRule::add(RuleId::FreezeClauseMod));
         f
     }
 
@@ -252,13 +299,20 @@ impl FormatSpec {
         Self::new(FormatId::Gen3CustomGame)
     }
 
+    /// The same format with `rule` repealed (`@@@...,!Name`); `None` when
+    /// the custom rules are full.
+    pub fn with_repeal(mut self, rule: RuleId) -> Option<Self> {
+        self.custom_rules.push(CustomRule::repeal(rule)).ok()?;
+        Some(self)
+    }
+
     /// Calls `f` with the pieces of the `formatid` string in order: the base
-    /// id, then (if any custom rules) `@@@` and the names joined by `,`.
+    /// id, then (if any custom rules) `@@@` and the rules joined by `,`.
     pub fn write_id(&self, mut f: impl FnMut(&str)) {
         f(self.base.id());
         for (i, r) in self.custom_rules.iter().enumerate() {
             f(if i == 0 { "@@@" } else { "," });
-            f(r.name());
+            r.write(&mut f);
         }
     }
 
@@ -271,7 +325,7 @@ impl FormatSpec {
         let mut spec = FormatSpec::new(FormatId::parse(base)?);
         if let Some(rules) = rules {
             for name in rules.split(',') {
-                spec.custom_rules.push(RuleId::parse(name)?).ok()?;
+                spec.custom_rules.push(CustomRule::parse(name)?).ok()?;
             }
         }
         Some(spec)
@@ -299,6 +353,13 @@ mod tests {
         assert_eq!(FormatSpec::parse("gen3customgame"), Some(g3));
         assert_eq!(FormatSpec::parse("gen9ou"), None);
         assert_eq!(FormatSpec::parse("gen1customgame@@@Team Preview"), None);
+        let math = g1.with_repeal(RuleId::CartridgeTrunc).unwrap();
+        assert_eq!(id_of(&math), "gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod,!Cartridge Trunc");
+        assert_eq!(FormatSpec::parse(&id_of(&math)), Some(math));
+        let rb = FormatSpec::parse("gen1randombattle@@@!Cartridge Trunc").unwrap();
+        assert_eq!(rb.custom_rules[0], CustomRule::repeal(RuleId::CartridgeTrunc));
+        assert_eq!(FormatSpec::parse("gen1customgame@@@!!Cartridge Trunc"), None);
+        assert_eq!(FormatSpec::parse("gen1customgame@@@! Cartridge Trunc"), None);
         assert_eq!(FormatSpec::parse("gen1randombattle").map(|f| f.base.name()), Some("[Gen 1] Random Battle"));
         assert_eq!(FormatSpec::parse("gen3randombattle").map(|f| f.base.gen()), Some(3));
         assert_eq!(g1.base.name(), "[Gen 1] Custom Game");

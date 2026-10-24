@@ -93,6 +93,7 @@ fn render_textarg(a: crate::msg::TextArg, dex: &dyn DexNames, names: &dyn Battle
         V::Status(s) => s.as_str().to_string(),
         V::Word(w) => w.as_str().to_string(),
         V::Rule(r) => r.name().to_string(),
+        V::Repeal(r) => alloc::format!("!{}", r.name()),
     }
 }
 
@@ -1036,7 +1037,7 @@ fn match_template(id: TextId, s: &str, dex: &dyn DexNames, names: &mut Battle) -
     let kinds = id.arg_kinds();
     let mut pieces = tmpl.split("{}");
     let mut rest = s.strip_prefix(pieces.next().unwrap_or(""))?;
-    let mut args = [TextArg::NONE; 2];
+    let mut args = [TextArg::NONE; 3];
     for (i, &kind) in kinds.iter().enumerate() {
         let lit = pieces.next().unwrap_or("");
         // An argument ends at the next literal piece (the end of the text
@@ -1070,7 +1071,7 @@ fn parse_text_arg(kind: TextArgKind, s: &str, dex: &dyn DexNames, names: &mut Ba
         }
         TextArgKind::Status => TextArg::status(Status::parse(s)?),
         TextArgKind::Word => TextArg::word(Word::parse(s)?),
-        TextArgKind::Rule => TextArg::rule(RuleId::ALL.into_iter().find(|r| r.name() == s)?),
+        TextArgKind::Rule => TextArg::custom_rule(crate::command::CustomRule::parse(s)?),
     })
 }
 

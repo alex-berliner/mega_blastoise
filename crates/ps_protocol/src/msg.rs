@@ -97,7 +97,7 @@
 //!   when `None`, as `attrLastMove('[still]')` blanks it).
 //! - Names come from [`crate::DexNames`] and [`crate::BattleNames`].
 
-use crate::command::{FormatId, RuleId};
+use crate::command::{CustomRule, FormatId, RuleId};
 use crate::ident::{
     AbilityNum, Details, Health, ItemNum, MoveNum, PokemonIdent, SideId, SpeciesNum, Stat, Status,
     TypeNum,
@@ -1030,20 +1030,24 @@ impl Kw {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Text {
     pub id: TextId,
-    pub args: [TextArg; 2],
+    pub args: [TextArg; 3],
 }
 
 impl Text {
     pub const fn new(id: TextId) -> Text {
-        Text { id, args: [TextArg::NONE; 2] }
+        Text { id, args: [TextArg::NONE; 3] }
     }
 
     pub const fn with1(id: TextId, a: TextArg) -> Text {
-        Text { id, args: [a, TextArg::NONE] }
+        Text { id, args: [a, TextArg::NONE, TextArg::NONE] }
     }
 
     pub const fn with2(id: TextId, a: TextArg, b: TextArg) -> Text {
-        Text { id, args: [a, b] }
+        Text { id, args: [a, b, TextArg::NONE] }
+    }
+
+    pub const fn with3(id: TextId, a: TextArg, b: TextArg, c: TextArg) -> Text {
+        Text { id, args: [a, b, c] }
     }
 }
 
@@ -1067,6 +1071,8 @@ pub enum TextArgValue {
     Word(Word),
     /// A format rule's name (`Sleep Clause Mod`).
     Rule(RuleId),
+    /// A custom rule's repeal, `!` and the name (`!Cartridge Trunc`).
+    Repeal(RuleId),
 }
 
 /// [`TextArgValue`] packed into 5 bytes with alignment 1 (see [`Arg`]).
@@ -1115,6 +1121,10 @@ impl TextArg {
                 data[0] = r as u8;
                 8
             }
+            TextArgValue::Repeal(r) => {
+                data[0] = r as u8;
+                9
+            }
         };
         TextArg { kind, data }
     }
@@ -1131,6 +1141,7 @@ impl TextArg {
             6 => TextArgValue::Status(STATUS_ALL[self.data[0] as usize % STATUS_ALL.len()]),
             7 => TextArgValue::Word(Word::from_u16(u).unwrap_or(Word::ALL[0])),
             8 => TextArgValue::Rule(RuleId::ALL[self.data[0] as usize % RuleId::ALL.len()]),
+            9 => TextArgValue::Repeal(RuleId::ALL[self.data[0] as usize % RuleId::ALL.len()]),
             _ => TextArgValue::None,
         }
     }
@@ -1158,6 +1169,10 @@ impl TextArg {
     }
     pub fn rule(r: RuleId) -> TextArg {
         TextArg::new(TextArgValue::Rule(r))
+    }
+    /// A custom rule as the infobox writes it: the name, or `!` and the name.
+    pub fn custom_rule(c: CustomRule) -> TextArg {
+        TextArg::new(if c.repeal { TextArgValue::Repeal(c.rule) } else { TextArgValue::Rule(c.rule) })
     }
 }
 
@@ -1336,6 +1351,7 @@ texts! {
     // ---- raw (PS: sim/battle.ts start, the custom-rules infobox) -------
     CustomRules1 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>1 custom rule:</strong></summary> {}</details></div>" (Rule),
     CustomRules2 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> {}, {}</details></div>" (Rule, Rule),
+    CustomRules3 => "<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>3 custom rules:</strong></summary> {}, {}, {}</details></div>" (Rule, Rule, Rule),
     // ---- error (PS: sim/side.ts emitChoiceError, after the `[Invalid
     // choice] ` / `[Unavailable choice] ` prefix) ------------------------
     CantDoGameOver => "Can't do anything: The game is over" (),
@@ -1382,7 +1398,8 @@ mod tests {
         assert_eq!(size_of::<Kw>(), 8);
         assert_eq!(size_of::<Health>(), 10);
         assert_eq!(size_of::<TextArg>(), 5);
-        assert_eq!(size_of::<Text>(), 12);
+        // Three arguments (the three-rule custom-rules box); `Msg` stays 24.
+        assert_eq!(size_of::<Text>(), 18);
         assert_eq!(size_of::<Details>(), 7);
         assert_eq!(align_of::<Details>(), 1);
     }
@@ -1450,7 +1467,7 @@ mod tests {
     fn templates_have_as_many_slots_as_args_fit() {
         for &t in TextId::ALL {
             let slots = t.template().matches("{}").count();
-            assert!(slots <= 2, "{:?}", t);
+            assert!(slots <= 3, "{:?}", t);
             assert_eq!(slots, t.arg_kinds().len(), "{:?}: one kind per slot", t);
         }
     }

@@ -1147,7 +1147,7 @@ impl GenScripts for Gen1Scripts {
             let id = b.sides[side].id();
             b.hint(TextId::HintGen1PpUnderflow, false, Some(id));
         }
-        let pp = b.trunc.int(i64::from(pp), 6) as u8;
+        let pp = b.trunc.int(i64::from(pp), 6) as i8;
         let mon = b.mon_mut(pokemon);
         mon.move_slots[slot].pp = pp;
         if mon.move_slots[slot].virtual_ && !mon.transformed {

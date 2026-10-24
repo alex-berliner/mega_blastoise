@@ -1035,7 +1035,8 @@ impl BattleView {
                             mv,
                             ty,
                             power,
-                            pp: x.pp.unwrap_or(0),
+                            // Gen 1's plain math can send -1: none left.
+                            pp: x.pp.unwrap_or(0).max(0) as u8,
                             maxpp: x.maxpp.unwrap_or(0),
                         });
                     }

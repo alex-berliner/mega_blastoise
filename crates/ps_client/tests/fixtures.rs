@@ -209,7 +209,7 @@ fn pp_differs(view: &BattleView, req: &Request) -> Option<String> {
         return None;
     }
     let mine: Vec<u8> = m.moves.iter().map(|k| k.pp).collect();
-    let theirs: Vec<u8> = a.moves.iter().map(|x| x.pp.unwrap()).collect();
+    let theirs: Vec<u8> = a.moves.iter().map(|x| x.pp.unwrap().max(0) as u8).collect();
     (mine != theirs).then(|| format!("view PP {mine:?}, request {theirs:?}"))
 }
 

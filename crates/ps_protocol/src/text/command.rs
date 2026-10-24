@@ -655,7 +655,7 @@ mod tests {
                 assert_eq!(seed, [2535, 52155, 27866, 24143]);
                 assert_eq!(format.base, FormatId::Gen1CustomGame);
                 assert_eq!(
-                    format.custom_rules.iter().copied().collect::<alloc::vec::Vec<_>>(),
+                    format.custom_rules.iter().map(|c| c.rule).collect::<alloc::vec::Vec<_>>(),
                     alloc::vec![RuleId::SleepClauseMod, RuleId::FreezeClauseMod],
                 );
             }

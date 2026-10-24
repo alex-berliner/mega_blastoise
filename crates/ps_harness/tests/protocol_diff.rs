@@ -56,13 +56,13 @@ fn pinned_txt_format() {
     let path = manifest_dir().join("pinned.txt");
     let txt = fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("cannot read {}: {}", path.display(), e));
-    let mut entries: Vec<(u8, String, u32)> = Vec::new();
+    let mut entries: Vec<(u8, String, u32, String)> = Vec::new();
     for (idx, line) in txt.lines().enumerate() {
         let trimmed = line.trim();
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        // Format: "<gen> <teams> <seed>  # <commit> <note>"
+        // Format: "<gen> <teams> <seed> [<trunc>]  # <commit> <note>"
         // A non-comment line must have the entry form: head `gen teams
         // seed` followed by `  # <commit> <note>`.
         let (head, tail) = trimmed.split_once("  # ").unwrap_or_else(|| {
@@ -86,9 +86,17 @@ fn pinned_txt_format() {
             idx + 1,
             teams
         );
+        // The optional Gen 1 rule set (`diff.js --trunc`).
+        let trunc = head_parts.next().unwrap_or("cartridge");
+        assert!(
+            matches!(trunc, "cartridge" | "math") && (gen == 1 || head.split_whitespace().count() == 3),
+            "pinned.txt:{}: the field after the seed is a Gen 1 `cartridge` or `math`, not `{}`",
+            idx + 1,
+            trunc
+        );
         assert!(
             head_parts.next().is_none(),
-            "pinned.txt:{}: trailing tokens after seed",
+            "pinned.txt:{}: trailing tokens after the rule set",
             idx + 1
         );
         let commit_and_note = tail.trim();
@@ -97,7 +105,7 @@ fn pinned_txt_format() {
         assert!(!commit.is_empty(), "pinned.txt:{}: empty commit", idx + 1);
         let note: String = note_parts.collect::<Vec<_>>().join(" ");
         assert!(!note.is_empty(), "pinned.txt:{}: missing note", idx + 1);
-        let coord = (gen, teams.to_string(), seed);
+        let coord = (gen, teams.to_string(), seed, trunc.to_string());
         assert!(
             !entries.contains(&coord),
             "pinned.txt: duplicate {:?}",

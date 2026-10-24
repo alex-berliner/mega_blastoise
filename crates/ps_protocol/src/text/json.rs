@@ -359,7 +359,10 @@ fn decode_request_move(v: &Value, dex: &dyn DexNames) -> Result<RequestMove, Cod
     let mut m = RequestMove::locked(decode_request_move_name(name, id, dex)?);
     for (k, v) in o {
         match k.as_str() {
-            "pp" => m.pp = Some(small(v.uint("pp")?, "pp")?),
+            "pp" => {
+                let n = v.int("pp")?;
+                m.pp = Some(i8::try_from(n).map_err(|_| bad(&format!("pp {}", n)))?);
+            }
             "maxpp" => m.maxpp = Some(small(v.uint("maxpp")?, "maxpp")?),
             "target" => {
                 let t = v.string("target")?;
@@ -531,12 +534,15 @@ fn only_keys(o: &[(String, Value)], allowed: &[&str]) -> Result<(), CodecError> 
 // ---- a small JSON reader ---------------------------------------------------
 
 /// A parsed JSON value. Objects keep their keys in order; numbers are the
-/// non-negative integers a request holds.
+/// integers a request holds (`Neg` is a negative one, Gen 1's `pp` under
+/// plain math).
 #[derive(Debug)]
 pub(crate) enum Value {
     Null,
     Bool(bool),
     Num(u64),
+    /// `-n`, `n > 0`.
+    Neg(u64),
     Str(String),
     Arr(Vec<Value>),
     Obj(Vec<(String, Value)>),
@@ -579,6 +585,15 @@ impl Value {
     pub(crate) fn uint(&self, what: &str) -> Result<u64, CodecError> {
         match self {
             Value::Num(n) => Ok(*n),
+            Value::Neg(_) => Err(bad(&format!("{} is negative", what))),
+            Value::Null => Err(bad(&format!("{} is null", what))),
+            _ => Err(bad(&format!("{} is not a number", what))),
+        }
+    }
+    pub(crate) fn int(&self, what: &str) -> Result<i64, CodecError> {
+        match self {
+            Value::Num(n) => i64::try_from(*n).map_err(|_| bad(&format!("{} {}", what, n))),
+            Value::Neg(n) => i64::try_from(*n).map(|n| -n).map_err(|_| bad(&format!("{} -{}", what, n))),
             Value::Null => Err(bad(&format!("{} is null", what))),
             _ => Err(bad(&format!("{} is not a number", what))),
         }
@@ -668,6 +683,16 @@ impl Parser<'_> {
             Some(b't') => self.eat("true").map(|_| Value::Bool(true)),
             Some(b'f') => self.eat("false").map(|_| Value::Bool(false)),
             Some(b'n') => self.eat("null").map(|_| Value::Null),
+            Some(b'-') => {
+                self.pos += 1;
+                if !matches!(self.s.get(self.pos), Some(b'1'..=b'9')) {
+                    return Err(self.bad("bad negative number"));
+                }
+                match self.value()? {
+                    Value::Num(n) if n > 0 => Ok(Value::Neg(n)),
+                    _ => Err(self.bad("bad negative number")),
+                }
+            }
             Some(b'0'..=b'9') => {
                 let start = self.pos;
                 while matches!(self.s.get(self.pos), Some(b'0'..=b'9')) {

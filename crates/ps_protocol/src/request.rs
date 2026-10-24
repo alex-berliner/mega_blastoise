@@ -115,7 +115,8 @@ pub struct ActiveRequest {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct RequestMove {
     pub name: RequestMoveName,
-    pub pp: Option<u8>,
+    /// Signed: Gen 1's plain math (`!Cartridge Trunc`) can leave it at -1.
+    pub pp: Option<i8>,
     pub maxpp: Option<u8>,
     pub target: Option<MoveTarget>,
     /// PS's `disabled` after `getMoves` resolves `'hidden'`; a plain bool for
@@ -127,7 +128,7 @@ impl RequestMove {
     /// A full move slot.
     pub fn slot(
         name: RequestMoveName,
-        pp: u8,
+        pp: i8,
         maxpp: u8,
         target: MoveTarget,
         disabled: bool,

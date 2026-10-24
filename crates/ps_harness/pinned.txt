@@ -2,10 +2,13 @@
 # vs PS regressions).
 #
 # Format, one entry per line:
-#   <gen> <teams> <seed>  # <commit> <note>
+#   <gen> <teams> <seed> [<trunc>]  # <commit> <note>
 # where `<teams>` is `random` or `wide`, `<seed>` is a non-negative u32
-# driver seed, `<commit>` is the integrating commit on `ps-split`, and
-# `<note>` is a free-form tag for the corridor the entry covers.
+# driver seed, `<trunc>` (Gen 1 only, optional) is the rule set the entry
+# plays, `cartridge` or `math` (`diff.js --trunc`; without it the run's
+# `--trunc`, by default `cartridge`), `<commit>` is the integrating commit
+# on `ps-split`, and `<note>` is a free-form tag for the corridor the
+# entry covers.
 #
 # The harness reads this verbatim and replays every entry as a single
 # self-contained battle: PS against `ps_sim_cli` when `--ps-cli` is given
@@ -94,3 +97,13 @@
 1 random 15  # G1-5 High Jump Kick (was unported: highjumpkick), now plays to the end
 1 random 24  # G1-5 Super Fang (was unported: superfang), now plays to the end
 1 random 52  # G1-5 Soft-Boiled (was unported: softboiled), now plays to the end
+
+# G1-7: Gen 1's plain-math rule set (`!Cartridge Trunc`, the fourth field
+# `math`). A binding move (Clamp, Wrap, Bind, Fire Spin) used again at
+# 0 PP drops to -1 under `Math.trunc` (the cartridge wraps it to 63);
+# ps_sim kept PP in a `u8`, so it read 255: the move stayed selectable
+# (PS: `disabled`, or Struggle when it was the last). PP is signed now.
+1 wide 1003459 math  # G1-7 Clamp at -1 PP, the last move: PS offers Struggle
+1 wide 1004914 math  # G1-7 Wrap at -1 PP, the last move: PS offers Struggle
+1 wide 1006883 math  # G1-7 Bind at -1 PP shows `"pp":-1` and `disabled`
+1 wide 1008774 math  # G1-7 Fire Spin at -1 PP shows `"pp":-1` and `disabled`

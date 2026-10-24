@@ -142,7 +142,7 @@ pub fn slot_options(view: &BattleView, req: &Request) -> Option<SeatOptions> {
                     s.n_moves = n;
                     for i in 0..n {
                         let m = &a.moves[i];
-                        s.usable[i] = m.disabled != Some(true) && m.pp != Some(0);
+                        s.usable[i] = m.disabled != Some(true) && !matches!(m.pp, Some(pp) if pp <= 0);
                     }
                     // PS sends `maybeTrapped` when the foe MIGHT trap (an
                     // unrevealed Shadow Tag); a switch is then allowed and

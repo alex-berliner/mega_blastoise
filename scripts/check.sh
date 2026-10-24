@@ -47,6 +47,7 @@ if [[ "${1:-}" != "--fast" ]]; then
   scripts/ps-diff.sh --self --gen 3 --n 20 --teams random --quiet --jobs 14
   scripts/ps-diff.sh --self --gen 1 --n 20 --teams wide   --quiet --jobs 14
   scripts/ps-diff.sh --self --gen 3 --n 20 --teams wide   --quiet --jobs 14
+  scripts/ps-diff.sh --self --gen 1 --n 20 --teams wide   --quiet --jobs 14 --trunc math
 
   # For each gen whose ps_sim_cli --ported list is non-empty, run the
   # 200-battle parity sweep against the rust side. An empty list is
@@ -57,6 +58,11 @@ if [[ "${1:-}" != "--fast" ]]; then
     if [[ -n "$ported_out" ]]; then
       echo "── protocol-diff harness: ps-sim side gen $gen n=200 jobs=14 ──"
       scripts/ps-diff.sh --ps-cli "$PS_CLI_BIN" --gen "$gen" --n 200 --teams wide --quiet --jobs 14
+      if [[ "$gen" == 1 ]]; then
+        # Gen 1's other rule set: plain math (`!Cartridge Trunc`).
+        echo "── protocol-diff harness: ps-sim side gen 1 n=200 jobs=14 trunc=math ──"
+        scripts/ps-diff.sh --ps-cli "$PS_CLI_BIN" --gen 1 --n 200 --teams wide --quiet --jobs 14 --trunc math
+      fi
     else
       echo "── protocol-diff harness: skipped gen $gen ps-sim (empty --ported list) ──"
     fi

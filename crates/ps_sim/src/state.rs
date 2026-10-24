@@ -285,7 +285,9 @@ impl<const N: usize> EffectTable<N> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct MoveSlot {
     pub id: MoveId,
-    pub pp: u8,
+    /// A JS number in PS: Gen 1's plain math (`!Cartridge Trunc`) lets a
+    /// forced use at 0 PP leave it at -1 (`deductPP`, `trunc(pp, 6)`).
+    pub pp: i8,
     pub maxpp: u8,
     /// `disabled`: 0 `false`, 1 `true`, 2 `'hidden'`.
     pub disabled: u8,

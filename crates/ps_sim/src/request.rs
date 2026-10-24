@@ -290,7 +290,7 @@ impl Battle {
             // `disabled`: false, true or 'hidden'; no Dynamax here.
             let mut disabled = slot.disabled != 0;
             let hidden = slot.disabled == 2;
-            if slot.pp == 0 {
+            if slot.pp <= 0 {
                 disabled = true;
             } else if hidden {
                 disabled = !restrict_data;

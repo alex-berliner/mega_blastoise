@@ -310,7 +310,7 @@ fn a_psychic_detail_is_the_move_unless_it_is_a_typechange() {
 #[test]
 fn text_lines_decode_to_their_templates() {
     let mut state = CodecState::new(load_names());
-    let cases: [(&str, TextId); 5] = [
+    let cases: [(&str, TextId); 7] = [
         ("|debug|BP: 70", TextId::BasePower),
         ("|debug|before turn callback: focuspunch", TextId::BeforeTurnCallback),
         ("|debug|set status [psn] interrupted", TextId::SetStatusInterrupted),
@@ -318,6 +318,14 @@ fn text_lines_decode_to_their_templates() {
         (
             "|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> Sleep Clause Mod, Freeze Clause Mod</details></div>",
             TextId::CustomRules2,
+        ),
+        (
+            "|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>1 custom rule:</strong></summary> !Cartridge Trunc</details></div>",
+            TextId::CustomRules1,
+        ),
+        (
+            "|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>3 custom rules:</strong></summary> Sleep Clause Mod, Freeze Clause Mod, !Cartridge Trunc</details></div>",
+            TextId::CustomRules3,
         ),
     ];
     for (line, id) in cases {
@@ -332,6 +340,21 @@ fn text_lines_decode_to_their_templates() {
     // A number must read back as written; text no template makes fails.
     assert!(decode_line("|debug|BP: 070", &mut state).is_err());
     assert!(decode_line("|debug|something PS never says", &mut state).is_err());
+}
+
+/// Gen 1's plain math (`!Cartridge Trunc`): a binding move forced at 0 PP
+/// is left at -1 (PS ps-diff wide seed 1006883 under `--trunc math`).
+#[test]
+fn a_negative_pp_round_trips() {
+    let mut state = CodecState::new(load_names());
+    let json = r#"{"active":[{"moves":[{"move":"Thunder Punch","id":"thunderpunch","pp":5,"maxpp":24,"target":"normal","disabled":false},{"move":"Bind","id":"bind","pp":-1,"maxpp":32,"target":"normal","disabled":true}]}],"side":{"name":"p1","id":"p1","pokemon":[{"ident":"p1: Meowth","details":"Meowth, L74, F","condition":"39/155","active":true,"stats":{"atk":107,"def":76,"spa":98,"spd":110,"spe":145},"moves":["thunderpunch","bind"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]}}"#;
+    let (dex, battle) = state.split_mut();
+    let req = decode_request(json, dex, battle).unwrap();
+    assert_eq!(encode_request(&req, state.dex(), state.battle()), json);
+    let (dex, battle) = state.split_mut();
+    for bad in ["\"pp\":-0", "\"pp\":- 1", "\"pp\":-01"] {
+        assert!(decode_request(&json.replace("\"pp\":-1", bad), dex, battle).is_err(), "{}", bad);
+    }
 }
 
 #[test]

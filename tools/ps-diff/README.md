@@ -19,7 +19,9 @@ tells working ports from broken ones. Each job process keeps one
 `ps_sim_cli` for all its battles (a new one only after a timeout).
 
 `--pinned` reads `crates/ps_harness/pinned.txt`
-(`<gen> <teams> <seed>  # <commit> <note>`) and replays each entry as a
+(`<gen> <teams> <seed> [<trunc>]  # <commit> <note>`; the optional
+`<trunc>` is a Gen 1 entry's rule set, `cartridge` or `math`, below) and
+replays each entry as a
 self-contained battle: against `ps_sim_cli` with `--ps-cli`, as a
 `--self` battle without it. Pinned seeds are the ones a previous
 regression already pinned to a known-good output; if a future port of
@@ -29,6 +31,9 @@ summary line and exit 0 (the green path for "no pinned regressions yet").
 
 `--carried gen1` replays the carried corpus: the old engines' pinned
 battles (below), every team pair over battle seeds 0..19.
+
+`--trunc cartridge|math` picks the Gen 1 rule set (below); every mode
+takes it, `--self` included.
 
 ## Usage
 
@@ -40,6 +45,7 @@ scripts/ps-diff.sh --self --seed 0 --gen 1
 scripts/ps-diff.sh --pinned
 scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" --allow-unported --jobs 6
 scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 3 --n 200
+scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 1 --n 200 --teams wide --trunc math
 ```
 
 `--self` or `--ps-cli` is required; both can be combined with `--pinned`
@@ -47,6 +53,35 @@ scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 3 --n 200
 runs `--pinned --ps-cli ... --allow-unported`. The smoke runs in `scripts/check.sh` use
 `--self --n 20 --teams random|wide`, the deep sweep uses
 `--gen 1|3 --n 200 --teams random`.
+
+## Gen 1 rule sets (`--trunc`)
+
+Gen 1 has two rule sets, and the harness diffs both. `cartridge` (the
+default) is the cartridge's truncation: `trunc(x, bits)` wraps (PS's
+`Dex.trunc`, `num >>> 0` then `% 2 ** bits`), so a stat past 1023 rolls
+over in the damage formula and a PP underflow lands on 63. `math` is PS's
+Custom Game math: `Math.trunc`, which ignores `bits`. Stock PS decides
+this per format (every Custom Game sets `battle: {trunc: Math.trunc}`,
+Random Battle keeps `Dex.trunc`); here it is a format rule,
+`Cartridge Trunc` (design section 3), that the `>start` formatid names:
+
+| `--trunc` | wide, carried, file | random |
+|---|---|---|
+| `cartridge` | `gen1customgame` | `gen1randombattle` |
+| `math` | `gen1customgame@@@!Cartridge Trunc` | `gen1randombattle@@@!Cartridge Trunc` |
+
+`rules.js` installs the rule in PS before the first battle: it gives both
+Gen 1 formats `battle: {trunc: Math.trunc}`, appends `Cartridge Trunc` to
+their rulesets, and the rule's `onBegin` sets `this.trunc =
+this.dex.trunc`. With the rule in effect `gen1randombattle` is exactly
+stock PS's; `!Cartridge Trunc` repeals it with PS's own repeal logic
+(`getRuleTable`), and PS writes the custom-rule infobox
+(`1 custom rule: !Cartridge Trunc`). `ps_sim` reads the same formatid:
+`Cartridge Trunc` ends every Gen 1 ruleset (`battle.rs rule_table`) and
+picks `Battle::trunc`; the device plays the default. Both sides read the
+one formatid, so `--self` and `--ps-cli` runs need nothing else. `--trunc`
+on another gen exits 2; Gen 3 takes no rule. Gen 1 summary lines end in
+`trunc=<mode>`, and a divergence log's first line names it.
 
 ## Seed derivation
 
@@ -140,9 +175,7 @@ envelope, in order):
 then feeds them to both drivers. On every `|request|pN|{json}` line the
 driver picks a random legal choice from PS's request using the SAME
 choice seed: both drivers deterministically choose the same byte
-sequence. Gen 1 sets `battle.trunc = (n, bits) => n >>> 0` so both
-sides agree on the cartridge-truncated damage (the only place the bug
-tolerance differs).
+sequence. Gen 1's truncation is the formatid's rule set (above).
 
 After both drivers return, `firstDiff` walks both logs at the LINE
 level. `|t:|N` is normalised to `|t:||` (Date.now() drift). Every

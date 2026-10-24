@@ -973,9 +973,9 @@ impl Battle {
             amount += pp;
             pp = 0;
         }
-        mon.move_slots[slot].pp = pp as u8;
+        mon.move_slots[slot].pp = pp as i8;
         if shared {
-            mon.base_move_slots[slot].pp = pp as u8;
+            mon.base_move_slots[slot].pp = pp as i8;
         }
         amount
     }
