@@ -19,6 +19,31 @@ right one turned round, blank), so every arm ends at an ear with its laps and **
 part, printed twice**; **a hook on each arm** that holds it from springing outward; and **the side round
 2.8** (was 3.0). Not changed: the wedge keeps no clearance on its 45 degree faces.
 
+**2026-10-24, the board's routing levers** (86bf694, `CELLCUT_FOR_CASE.md` "Routing levers"): the debug
+buttons left the left strip and J6 went. In the case:
+- **The pinholes** (SW18 BOOTSEL, SW19 RESET) moved to **(-32.35, -20.7) and (-32.35, -24.35)**, in the left
+  bezel below H4, one above the other (were (-31.2, 8.6) and (-31.2, 1.6)). Each switch (TS-1088, 4.8 x 2.9
+  x 1.95, lying across the bezel) has its 3.0 guide down to 2.4 over the board, 0.45 over the switch. The
+  asserts and what they hold: H4 5.54 from the upper pinhole (the 5.4 rule), its boss 3.95 from the upper
+  switch's body; the switches 0.65 (the guides 1.55) inside the island's wall (x -35.4), so clear of
+  everything the joints put along the left wall: the key at y -21 (its pocket starts at x -36.0, 1.25 from
+  the switch), the hook at y -31.5 (its head 3.9 along the wall from SW19's body, and in to x -36.0 only),
+  the grip ribs (on the tongue, x -36.7 and out); the deck's joint band (y -31.8) 6.0 past the guides; the
+  cell's hole 16.9 and J2's plug 16.1 from the pinholes; J5's body 32.0 from SW18's; the panel's frame 8.0 from the guides. The two switches are 0.75 apart, the
+  guides 0.65.
+- **A floor rib under them** (`pin_rib`, 1.2 wide at x -32.35) from the grid's line at y -27.85 up into
+  H4's boss, so a pin's press goes into the floor. Nothing is on the board's back there (no keep-out in
+  `rib_free` near it; asserted). The left strip's rib stays at x -31.2, now under J5 alone (it was tied to
+  the pinholes' x). The right strip's ribs stay (TH1, J1's end); the power latch's parts that left that
+  strip now sit above the cell's hole under seat 2's deck, on the top side, where no rib or keep-out
+  meets them (check_fit: 48 parts under the island's joint, the tallest 1.19 of 1.60).
+- **J6 is gone**, and `uart_pos` with it (`positions.json` loses `uart`; the pinholes are its only other
+  change). J5 alone sets the island's inset on the left, at the same reach (35.11), so **nothing is
+  freed**: 2.6 stays. The hook at y 23.5 on the left, which had J6 0.89 beside its head, now has J5 4.10 away.
+
+![the left bezel below H4 from outside: the two new pinholes](images/pinholes_outside.png)
+![the pinholes in section: across each switch, and along x -32.35 with the floor rib into H4's boss](images/section_pinholes.png)
+
 ![the case from the front, 3/4](images/outside_front.png)
 ![the left wall's blank ear, the left arms either side](images/left_ear.png)
 ![seat 1's right hook in section](images/section_hook.png)
@@ -49,8 +74,8 @@ part, printed twice**; **a hook on each arm** that holds it from springing outwa
 
 **What set the inset (2.6, not 4 to 6).** Under a deck's arm the board may have nothing taller than
 1.6 (the decks' underside, 1.9 over the board, less 0.3); under the island's inside it may have 3.45.
-Along the side walls the final board has, from the outline: J1 (USB-C, 3.25 tall) at 0.19, J5 and J6
-(2.9) at 3.585, J2 (3.4) at 4.17, J4 (3.4) at 4.2, the speaker's pocket (3.8 of speaker) at 4.5, H4's
+Along the side walls the final board has, from the outline: J1 (USB-C, 3.25 tall) at 0.19, J5 (and J6
+until 2026-10-24) (2.9) at 3.585, J2 (3.4) at 4.17, J4 (3.4) at 4.2, the speaker's pocket (3.8 of speaker) at 4.5, H4's
 boss at 3.2. The island's inside must reach out past each of them with its wall (0.7, `isl_wall`, the skin
 over the inside's corner) and the wedge outside that: J5 and J6 set it, 3.585 - 0.25 - 0.7 = 2.635, so
 2.6 (their envelopes 0.29 off the island's inside). At 4.0 the wall would stand on J2, J4, J5 and J6; at
@@ -125,8 +150,8 @@ over the top piece's hollow and J4's pocket; the blend went and nothing hollow i
   edge, and the head's ends past the neck taper in at `overhang` too, so it prints without supports
   (`overhangs.py`, the P1S slice). The head's foot stands **0.5 over the board** and reaches 0.2 in past
   its edge: check_fit checks every part within 0.3 of each head (HOOKS, it allows 0.2): nothing; the
-  nearest parts are J6 0.89 from seat 2's left hook (2.9 tall, beside it, not under it), J4 1.50 from seat
-  1's right one, C5 2.00, D3 2.05. Each hook takes 1.9 of tongue at its slot.
+  nearest parts are J4 1.50 from seat 1's right one, R26 1.45 from seat 1's left one (0.34 tall), D3 2.05,
+  J5 4.10 from seat 2's left one (J6 stood 0.89 from it until it went, 2026-10-24). Each hook takes 1.9 of tongue at its slot.
   **Where:** as near each arm's free end (at the ear) as the rest leaves 3.6 + margins: seat 1's right
   arm at **-23.5** (its key's pocket ends at -20.75 and its first grip rib at -13.25 sits 1.5 from the
   lap's slot: nothing nearer fits; the head 0.95 from the key's pocket, the slot 1.05 from the grip rib
@@ -359,9 +384,9 @@ the port and the plug, and check_fit.py checks it against J1's 3D model.
 - **The cell's pocket** is the hole's outline 0.25 inside (r 0.75 corners). The cell lies against
   its right wall (x 25.05), so TH1, at the hole's right edge, reads it across about 1 mm.
 - **Floor ribs under the strips.** The ring of ribs under the board's edge and the 12 mm grid stay,
-  clear of the hole by 0.5; new ribs run along each strip (the left one at x -31.2 under SW18, SW19
-  and J5/J6, the right one at x 29.6 under the power latch) and across the right one at y 14 (by
-  TH1). They keep off the four Start/Select domes' vents, J1's legs and the test pads on the back
+  clear of the hole by 0.5; new ribs run along each strip (the left one at x -31.2 under J5, and
+  under SW18 and SW19 until they moved below H4 with their own rib, 2026-10-24; the right one at x 29.6,
+  under the power latch until it moved, and TH1) and across the right one at y 14 (by TH1). They keep off the four Start/Select domes' vents, J1's legs and the test pads on the back
   (`rib_free`, which check_fit reads).
 - **The board is inside the tub's walls.** Its top (3.8) was under the seam (4.2), so the top pieces'
   skirts no longer reached it (since the seam came down to 2.55 they run down beside its edge, outside
@@ -409,7 +434,7 @@ the port and the plug, and check_fit.py checks it against J1's 3D model.
   (left) to 25.0 (right), the far end 28.1, each over U7's end. So J4 is plugged with the board just
   off its place: with the leads in, J4 can be at most about 20 mm from where it lands.
 - **J2** (the cell's plug, 3.4) at the hole's seat-1 corner and its mated plug (3.2, over the left
-  strip) sit under the left bezel's 3.75; **J5/J6** (2.9) face the left edge. Their plugs go in
+  strip) sit under the left bezel's 3.75; **J5** (2.9) faces the left edge (J6 went on 2026-10-24). Its plug goes in
   with the tub off; no slot in the wall (debug is case-open, and a slot weakens the wall and lets
   light in).
 - **Start/Select (row 4)** close on 4.0 mm metal snap domes (0.31 high at worst with the Kapton
@@ -879,7 +904,8 @@ it face up: unplug J4 before the board and the island part.
   bosses and the top pieces' bosses, and rests on the tub's floor ribs.
 - **Screws:** side bosses at (+-32.5, 29), (25.9, -21.95) and (-33.0, -15.2) in the top piece;
   end bosses at (+-3.0, +-50.75), on the decks.
-- **Debug pinholes:** BOOTSEL and RESET at (-31.2, 8.6 and 1.6); J5 and J6 at y 15.2 and 22.7.
+- **Debug pinholes:** BOOTSEL and RESET at (-32.35, -20.7 and -24.35), below H4, a floor rib under them;
+  J5 at y 15.2 (J6 went, 2026-10-24).
 
 ## Print orientation and supports
 
@@ -992,7 +1018,7 @@ tub's tongue became 0.75 thick (was 0.85).
 - **A D-shaped or wall-merged tub boss at H2 and H4** (2026-10-22): a round 5.0 boss already keeps
   1.3 from the cell's hole and 0.7 inside the board's edge, and it is only 0.7 tall; a D or a boss
   run into the wall would gain nothing there.
-- **A slot in the left wall for the debug cables** (J5, J6): not done, debug is case-open.
+- **A slot in the left wall for the debug cable** (J5): not done, debug is case-open.
 - **Keeping the hooks:** nothing needs them when the case is built upside down, and they snapped in
   PLA.
 - **The seam higher** (at the port's centre, no USB-C tab): then the tub forms most of the walls and
@@ -1061,8 +1087,7 @@ tub's tongue became 0.75 thick (was 0.85).
       neck), holds the arm (the island_coupons hook pair tests it), and prints clean face down (its top at
       exactly `overhang`). Two hooks are 13 and two 19 from their arm's free end (the ear): if the free
       ends still spring out, a key or a grip rib near the ear can move to make room for the hook there
-      (an asserts-only change). J6 stands 0.89 beside seat 2's left hook's head: a cable plugged into J6
-      leaves past the board's edge under the head (debug is case-open anyway).
+      (an asserts-only change). (J6, which stood 0.89 beside seat 2's left hook's head, went on 2026-10-24.)
    b. **The island's wedge** (45 degrees, 1.2 under each lip, no clearance on the slope, 0.15 at the
       foot): whether the island drops into the decks without binding and doesn't move out of the
       front, and whether the posts seat each deck onto it without forcing the tub's corners.
@@ -1118,6 +1143,11 @@ tub's tongue became 0.75 thick (was 0.85).
    off its buttons, so `post_c` would have to come back 0.15 with it.
 
 ## Images
+
+Since the routing levers (2026-10-24, the pinholes below H4): the new `pinholes_outside` (the left bezel
+from outside) and `section_pinholes` (across each switch, and along x -32.35 with the floor rib), and
+`outside_front` and `left_ear` again (the same cameras; the old pinholes went from them). The other images
+that show the left bezel (`joint_outside_left`, `outside_side`) still show the old pinholes.
 
 Since the left ear and the hooks (2026-10-24, this commit's parts): `outside_front` (3/4 from the front),
 `left_ear`, `section_hook` (seat 1's right hook: across the wall through its neck and its head's end, and

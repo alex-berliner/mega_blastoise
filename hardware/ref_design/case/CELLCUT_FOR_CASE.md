@@ -31,6 +31,8 @@ and the power latch's parts left the right strip. check_fit passes. What the cas
   the debug buttons now sit on the full-width board, which needs a floor rib or boss under each
   pinhole (about (-32.35, -20.7) and (-32.35, -24.35)) so a pin press doesn't bend the board.
   The right strip keeps TH1 and J1 only.
+- **Done in the case (2026-10-24):** the pinholes moved, a floor rib (`pin_rib`) under both switches into
+  H4's boss, J6 and `uart_pos` removed; see `SHELL.md`, "The island", for the asserted clearances.
 
 ## Moved again: the side screws back inward (2026-10-22, Alex: no shoulders)
 

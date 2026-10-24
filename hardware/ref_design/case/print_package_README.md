@@ -73,12 +73,12 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the cores; 5.6 along the sides, the tabs 6.7) | `1_case` (55.3 g, 1 h 44 min with the island, the board mock and the dummies), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the cores; 5.6 along the sides, the tabs 6.7) | `1_case` (55.2 g, 1 h 43 min with the island, the board mock and the dummies), `5_unit` |
 | `top.stl` (the island) | 77.4 x 94.9 x 6.9 (the ears to both walls) | `1_case`, `5_unit` |
 | `deck.stl` (print two) | 77.4 x 57.5 x 5.05 (the arms end at the ears) | `1_case_decks` (10.1 g, 26 min for two and the bars), `5_unit` |
 | `build_bar.stl` (print two) | 71.0 x 2.0 x 1.85 | `1_case_decks`, `5_unit` |
 
-`5_unit` (the tub, the island, the deck twice, the bars, the board mock and the dummies on one plate) is 65.3 g and 2 h 09 min.
+`5_unit` (the tub, the island, the deck twice, the bars, the board mock and the dummies on one plate) is 65.2 g and 2 h 09 min.
 
 To assemble (every part goes in straight down):
 1. The two build bars on a flat bench, parallel, about 126 mm apart (centre to centre).
