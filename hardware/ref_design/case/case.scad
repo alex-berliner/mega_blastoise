@@ -1077,7 +1077,7 @@ hooks = [[1, -23.5], [-1, 23.5], [-1, -31.5], [1, 31.5]];
 hook_neck = 1.6;  hook_len = 3.6;  hook_head = 0.55;     // the neck's width along the wall, the head's length and thickness
 hook_play = deck_gap;     // the head's outer face off the tongue's inside, the neck's off the slot's sides
 hook_lift = 0.5;          // the head's foot over the board's top
-hook_lead = 0.2;          // the lead-in on its outer foot
+hook_lead = 0.15;         // the lead-in on its outer foot (0.2 leaves the head 0.30 to bear on at 45)
 hook_bot = z_top_cu + hook_lift;
 hook_s_out = wall + hook_play;                           // the head's outer face, in from the outline
 hook_s_w = isl_in - wedge_out;                          // the island's wedge's outer edge, in from the outline
