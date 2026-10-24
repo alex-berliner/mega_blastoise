@@ -671,12 +671,13 @@ fn decode_minor(k: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle) 
             } else { None };
             let effect = parse_arg_simple(arg(args, i)?, dex)?.0;
             i += 1;
+            // Details name moves (`-activate|MON|move: Spite|Psychic|4`), never types.
             let a = if let Some(s) = args.get(i).copied() {
-                let (ta, used) = parse_arg_simple(s, dex)?;
+                let (ta, used) = parse_detail_arg(s, dex)?;
                 if used { i += 1; Some(ta) } else { None }
             } else { None };
             let b = if let Some(s) = args.get(i).copied() {
-                let (tb, used) = parse_arg_simple(s, dex)?;
+                let (tb, used) = parse_detail_arg(s, dex)?;
                 if used { i += 1; Some(tb) } else { None }
             } else { None };
             Ok(Msg::Activate { mon, effect, a, b, kw: parse_kwargs(&args[i..], dex, names)? })
@@ -684,13 +685,19 @@ fn decode_minor(k: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle) 
         "-start" => {
             let mon = parse_mon(arg(args, 0)?, names)?;
             let effect = parse_arg_simple(arg(args, 1)?, dex)?.0;
+            // Only `typechange` details are types (`-start|MON|typechange|Psychic`);
+            // other details are moves (`-start|MON|Mimic|Psychic`).
+            let types = effect.value() == ArgValue::Word(Word::TypeChange);
+            let detail = |s: &str| -> Result<(Arg, bool), CodecError> {
+                if types { parse_arg_simple(s, dex) } else { parse_detail_arg(s, dex) }
+            };
             let mut i = 2;
             let a = if let Some(s) = args.get(i).copied() {
-                let (ta, used) = parse_arg_simple(s, dex)?;
+                let (ta, used) = detail(s)?;
                 if used { i += 1; Some(ta) } else { None }
             } else { None };
             let b = if let Some(s) = args.get(i).copied() {
-                let (tb, used) = parse_arg_simple(s, dex)?;
+                let (tb, used) = detail(s)?;
                 if used { i += 1; Some(tb) } else { None }
             } else { None };
             Ok(Msg::StartEffect { mon, effect, a, b, kw: parse_kwargs(&args[i..], dex, names)? })
@@ -784,7 +791,7 @@ fn decode_major(kind: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battl
             let mon = parse_mon(arg(args, 0)?, names)?;
             let reason = parse_arg_simple(arg(args, 1)?, dex)?.0;
             let mv = if let Some(_) = args.get(2) {
-                Some(parse_arg_simple(arg(args, 2)?, dex)?.0)
+                Some(parse_detail_arg(arg(args, 2)?, dex)?.0)
             } else { None };
             Ok(Msg::Cant { mon, reason, mv })
         }
@@ -1168,6 +1175,20 @@ fn parse_arg_simple(s: &str, dex: &dyn DexNames) -> Result<(Arg, bool), CodecErr
     if let Some(m) = dex.move_from_id(&id_str(s)) { return Ok((Arg::new(ArgValue::Move(m)), true)); }
     // Unrecognised argument; return a typed placeholder.
     Ok((Arg::new(ArgValue::Word(Word::Move)), false))
+}
+
+/// [`parse_arg_simple`] for a detail that PS writes as a move's name when it
+/// is a name at all (`-start|MON|Mimic|MOVE`, `-activate|MON|move: Spite|MOVE|N`,
+/// `cant|MON|Disable|MOVE`). `Psychic` names both a type and a move, and
+/// `parse_arg_simple` reads it as the type; here it is the move.
+fn parse_detail_arg(s: &str, dex: &dyn DexNames) -> Result<(Arg, bool), CodecError> {
+    let (a, used) = parse_arg_simple(s, dex)?;
+    if let ArgValue::Type(_) = a.value() {
+        if let Some(m) = dex.move_from_id(&id_str(s)) {
+            return Ok((Arg::new(ArgValue::Move(m)), true));
+        }
+    }
+    Ok((a, used))
 }
 
 // ============================================================================

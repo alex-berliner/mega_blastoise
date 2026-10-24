@@ -530,6 +530,36 @@ mod tests {
         std::println!("50 gen 1 battles: {turns} turns, {ties} ties, identical over both transports");
     }
 
+    /// Mimic and Transform rewrite move slots (Transform also the species and
+    /// Speed), which the request and the protocol lines must carry alike on
+    /// both transports. Plays seeds from 50 on until three battles reached
+    /// each and requires identical streams for every battle played.
+    #[test]
+    fn copied_moves_agree_over_both_transports() {
+        let start = |e: &BoardEvent, w: &str| matches!(e, BoardEvent::EffectStart { what, .. } if what == w);
+        let (mut transforms, mut mimics, mut psychic) = (0, 0, false);
+        let mut seed = 50u64;
+        while transforms < 3 || mimics < 3 || !psychic {
+            assert!(seed < 1050, "seeds 50..{seed}: {transforms} Transform and {mimics} Mimic battles");
+            let mut local = LocalTransport::new();
+            let typed = play(&mut local, seed);
+            let mut text = TextTransport::new(SimLink::default());
+            let decoded = play(&mut text, seed);
+            assert_eq!(text.undecoded(), 0, "seed {seed}");
+            if typed != decoded {
+                let at = typed.iter().zip(&decoded).position(|(a, b)| a != b).unwrap_or(typed.len().min(decoded.len()));
+                panic!("seed {seed}: the streams part at event {at}:\n  typed: {:?}\n  text:  {:?}", typed.get(at), decoded.get(at));
+            }
+            transforms += usize::from(typed.iter().any(|e| start(e, "transform")));
+            mimics += usize::from(typed.iter().any(|e| start(e, "mimic")));
+            psychic |= typed.iter().any(|e| {
+                matches!(e, BoardEvent::EffectStart { what, detail: Some(d), .. } if what == "mimic" && d == "Psychic")
+            });
+            seed += 1;
+        }
+        std::println!("seeds 50..{seed}: {transforms} Transform and {mimics} Mimic battles, identical over both transports");
+    }
+
     #[test]
     fn the_leads_switch_in_complete() {
         let mut local = LocalTransport::new();

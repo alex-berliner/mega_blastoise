@@ -280,6 +280,33 @@ fn kecleon_typechange_round_trips() {
     assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
 }
 
+/// `Psychic` names a type and a move. A Mimic, Disable or Spite detail is the
+/// move (as `ps_sim` sends it typed); only a `typechange` detail is the type.
+#[test]
+fn a_psychic_detail_is_the_move_unless_it_is_a_typechange() {
+    use ps_protocol::ArgValue;
+    let mut state = CodecState::new(load_names());
+    let psychic_move = ArgValue::Move(state.dex().move_from_id("psychic").unwrap());
+    let psychic_type = ArgValue::Type(state.dex().type_from_id("psychic").unwrap());
+    let cases = [
+        ("|-start|p1a: Mew|Mimic|Psychic", psychic_move),
+        ("|-start|p1a: Mew|Disable|Psychic", psychic_move),
+        ("|-start|p1a: Porygon|typechange|Psychic|[from] move: Conversion|[of] p2a: Mew", psychic_type),
+        ("|-activate|p1a: Mew|move: Spite|Psychic", psychic_move),
+        ("|cant|p1a: Mew|Disable|Psychic", psychic_move),
+    ];
+    for (line, want) in cases {
+        let msg = decode_line(line, &mut state).unwrap();
+        let got = match msg {
+            Msg::StartEffect { a, .. } | Msg::Activate { a, .. } => a,
+            Msg::Cant { mv, .. } => mv,
+            ref other => panic!("{:?}", other),
+        };
+        assert_eq!(got.map(|a| a.value()), Some(want), "{}", line);
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    }
+}
+
 #[test]
 fn text_lines_decode_to_their_templates() {
     let mut state = CodecState::new(load_names());

@@ -209,3 +209,99 @@ fn trapping_activations_start_effects() {
     assert_eq!(w, vec![BoardEvent::EffectStart { mon: "Charizard,p1,0".into(), what: "wrap".into(), detail: None }]);
     assert!(line(&mut codec, &mut view, "|-activate|p1a: Charizard|confusion").is_empty());
 }
+
+/// A move request for Growlithe (team slot 2, active) with these `active`
+/// slots and `side.pokemon[].moves`, in PS `getMoveRequestData` /
+/// `getSwitchRequestData` form.
+fn growlithe_request(active: &str, side_moves: &str) -> String {
+    format!(
+        "{{\"active\":[{{\"moves\":[{active}]}}],\"side\":{{\"name\":\"Player 1\",\"id\":\"p1\",\"pokemon\":[{},{},{}]}}}}",
+        mon("Growlithe", "Growlithe, L91", "200/285", true, side_moves),
+        mon("Horsea", "Horsea, L88", "0 fnt", false, "\"surf\""),
+        mon("Charizard", "Charizard, L74", "268/268", false, "\"fireblast\""),
+    )
+}
+
+fn moves_of(ev: &[BoardEvent]) -> Vec<(String, u8, u8)> {
+    let Some(BoardEvent::MovesUpdate { moves, .. }) = ev.iter().find(|e| matches!(e, BoardEvent::MovesUpdate { .. })) else {
+        panic!("no MovesUpdate in {ev:?}");
+    };
+    moves.iter().map(|m| (m.name.clone(), m.pp, m.max_pp)).collect()
+}
+
+/// PS `getMoveRequestData` and `getSwitchRequestData` list `moveSlots`, so a
+/// mimicked slot is the copied move with Mimic's PP. `Psychic` is also a
+/// type's name: the `-start` detail must still read as the move.
+#[test]
+fn a_mimicked_slot_shows_the_copied_move() {
+    let (mut codec, mut view) = setup();
+    let slam = "{\"move\":\"Body Slam\",\"id\":\"bodyslam\",\"pp\":24,\"maxpp\":24,\"target\":\"normal\",\"disabled\":false}";
+    let mimic = "{\"move\":\"Mimic\",\"id\":\"mimic\",\"pp\":15,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false}";
+    let req = request(&mut codec, &growlithe_request(&format!("{slam},{mimic}"), "\"bodyslam\",\"mimic\""));
+    view.apply_request(&req);
+    line(&mut codec, &mut view, "|switch|p2a: Charizard|Charizard, L74|268/268");
+    line(&mut codec, &mut view, "|move|p1a: Growlithe|Mimic|p2a: Charizard");
+    let ev = line(&mut codec, &mut view, "|-start|p1a: Growlithe|Mimic|Psychic");
+    assert!(
+        matches!(&ev[0], BoardEvent::EffectStart { what, detail: Some(d), .. } if what == "mimic" && d == "Psychic"),
+        "{ev:?}"
+    );
+    let copied = vec![("Body Slam".to_string(), 24, 24), ("Psychic".to_string(), 14, 16)];
+    assert_eq!(moves_of(&ev), copied);
+
+    let psychic = "{\"move\":\"Psychic\",\"id\":\"psychic\",\"pp\":14,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false}";
+    let req = request(&mut codec, &growlithe_request(&format!("{slam},{psychic}"), "\"bodyslam\",\"psychic\""));
+    assert_eq!(moves_of(&view.apply_request(&req)), copied);
+    let s = slot_options(&view, &req).unwrap();
+    assert_eq!((s.n_moves, s.usable[1]), (2, true));
+}
+
+/// PS `transformInto` copies species, stats and `moveSlots` (5 PP each,
+/// max PP from the transformer's own PP Ups); the request then lists the
+/// copied moves with the transformer's own `details` and `baseStoredStats`.
+#[test]
+fn a_transformed_mon_shows_the_copied_species_and_moves() {
+    let (mut codec, mut view) = setup();
+    let transform = "{\"move\":\"Transform\",\"id\":\"transform\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false}";
+    let slam = "{\"move\":\"Body Slam\",\"id\":\"bodyslam\",\"pp\":24,\"maxpp\":24,\"target\":\"normal\",\"disabled\":false}";
+    let req = request(&mut codec, &growlithe_request(&format!("{transform},{slam}"), "\"transform\",\"bodyslam\""));
+    view.apply_request(&req);
+    line(&mut codec, &mut view, "|switch|p2a: Charizard|Charizard, L74|268/268");
+    // The runner's view reads both seats' requests: this is how it knows
+    // the target's moves.
+    let foe = mon("Charizard", "Charizard, L74", "268/268", true, "\"psychic\",\"slash\"").replace("p1:", "p2:");
+    let foe = format!(
+        "{{\"active\":[{{\"moves\":[\
+         {{\"move\":\"Psychic\",\"id\":\"psychic\",\"pp\":16,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false}},\
+         {{\"move\":\"Slash\",\"id\":\"slash\",\"pp\":32,\"maxpp\":32,\"target\":\"normal\",\"disabled\":false}}]}}],\
+         \"side\":{{\"name\":\"Player 2\",\"id\":\"p2\",\"pokemon\":[{foe}]}}}}"
+    );
+    let foe = request(&mut codec, &foe);
+    view.apply_request(&foe);
+    line(&mut codec, &mut view, "|move|p1a: Growlithe|Transform|p2a: Charizard");
+    let ev = line(&mut codec, &mut view, "|-transform|p1a: Growlithe|p2a: Charizard");
+    assert!(
+        matches!(&ev[0], BoardEvent::EffectStart { what, detail: Some(d), .. } if what == "transform" && d == "Charizard"),
+        "{ev:?}"
+    );
+    assert!(matches!(&ev[1], BoardEvent::ActiveMonUpdate { name, .. } if name == "Charizard"), "{ev:?}");
+    let copied = vec![("Psychic".to_string(), 5, 16), ("Slash".to_string(), 5, 32)];
+    assert_eq!(moves_of(&ev), copied);
+
+    let psychic = "{\"move\":\"Psychic\",\"id\":\"psychic\",\"pp\":5,\"maxpp\":16,\"target\":\"normal\",\"disabled\":false}";
+    let slash = "{\"move\":\"Slash\",\"id\":\"slash\",\"pp\":5,\"maxpp\":32,\"target\":\"normal\",\"disabled\":false}";
+    let req = request(&mut codec, &growlithe_request(&format!("{psychic},{slash}"), "\"psychic\",\"slash\""));
+    let ev = view.apply_request(&req);
+    assert_eq!(moves_of(&ev), copied);
+    let growlithe = PokemonIdent::active(SideId::P1, 2);
+    let shown = view.mon(growlithe).unwrap().shown_species;
+    let charizard = ps_dex::GEN1.species_id("charizard").unwrap().0;
+    assert_eq!(shown.map(|s| s.0), Some(charizard), "still shown as Charizard after the request");
+
+    // Switching out restores its own moves (PS `clearVolatile`'s
+    // `moveSlots = baseMoveSlots`).
+    line(&mut codec, &mut view, "|switch|p1a: Charizard|Charizard, L74|268/268");
+    let own: Vec<_> = view.mon(growlithe).unwrap().moves.iter().map(|k| k.mv).collect();
+    assert_eq!(own.len(), 2);
+    assert_eq!(own[1], ps_protocol::MoveNum(ps_dex::GEN1.move_id("bodyslam").unwrap().0));
+}
