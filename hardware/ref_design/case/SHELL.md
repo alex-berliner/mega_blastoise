@@ -5,6 +5,12 @@ to the EastRising ER-TFT024IPS-3, then reworked for the board with the cell in a
 speaker on its top (row 19, `CELLCUT_FOR_CASE.md`, which supersedes `BOARD_OUTLINE.md` where they
 differ). Everything here is in `case.scad`; this file says why.
 
+**Experiment (2026-10-24, branch `ref-design-unibody` only): a one-piece top.** `part="top_unibody"` (face up) and
+`"top_unibody_down"` in `case.scad` are a mock-up of the island and both decks as one part, printed with Bambu Support
+For PLA as the support interface: true radii, an S (r 3.0 convex, r 1.5 concave) from the decks' face to the screen
+face all round, no joints. The island parts still build unchanged. Renders, sections, slices and the write-up are in
+that session's scratch folder (`jobs/unibody/REPORT.md`), not in this file.
+
 ## The island (2026-10-23)
 
 Alex, on where the screen block's side round came down into the decks' (the side blend of "The side

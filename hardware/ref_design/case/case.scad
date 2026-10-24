@@ -6,6 +6,7 @@
 //   part="3d"       assembly; explode=<mm> lifts the island and the decks
 //   part="tub", "top", "deck"   printable parts (STL), each in its print pose (top: the island; the deck, printed twice)
 //   part="deck_seat2"   seat 2's deck as built, for the check that it is the deck turned round (export.py)
+//   part="top_unibody", "top_unibody_down"   the one-piece top (a mock-up), face up and face down; "3d_unibody" its assembly
 //
 // The shell (2026-10-21, case/SHELL.md; reshaped 2026-10-23, "The island"): two C-shaped decks (each a core
 // with the button faces at one end, and an arm along each side wall) make the case's whole face and sides at
@@ -1168,13 +1169,13 @@ isl_arc_n = 12;
 // own centre (a convex corner's radius less d, a concave one's more), the straight runs between them. Every
 // ring has the same points, so the rings loft, and the corners follow the edge's profile (all the corners
 // are square)
-function isl_ring(d, z, plan = isl_plan) = let(n = len(plan)) [for (i = [0:n - 1]) let(
+function isl_ring(d, z, plan = isl_plan, arc_n = isl_arc_n) = let(n = len(plan)) [for (i = [0:n - 1]) let(
     a = plan[(i + n - 1) % n][0], b = plan[i][0], c = plan[(i + 1) % n][0], r = plan[i][1],
     u = (b - a) / norm(b - a), v = (c - b) / norm(c - b), nu = [u[1], -u[0]], nv = [v[1], -v[0]],
     convex = u[0] * v[1] - u[1] * v[0] > 0, o = convex ? b - r * (nu + nv) : b + r * (nu + nv),
     t0 = atan2(nu[1], nu[0]), t1r = atan2(nv[1], nv[0]),
     t1 = convex ? (t1r < t0 ? t1r + 360 : t1r) : (t1r > t0 ? t1r - 360 : t1r))
-  for (k = [0:isl_arc_n]) let(t = t0 + (t1 - t0) * k / isl_arc_n, nn = [cos(t), sin(t)], p = convex ? o + r * nn : o - r * nn)
+  for (k = [0:arc_n]) let(t = t0 + (t1 - t0) * k / arc_n, nn = [cos(t), sin(t)], p = convex ? o + r * nn : o - r * nn)
     [p[0] - d * nn[0], p[1] - d * nn[1], z]];
 module isl2d(d = 0) polygon([for (p = isl_ring(d, 0)) [p[0], p[1]]]);
 // a solid lofted through rings that needn't be convex (its caps one face each)
@@ -1454,20 +1455,28 @@ module top() difference() {
     }
     // the ears' laps, in behind the arms' skirts
     for (l = ear_laps) lap(l);
-    // over the USB-C notch the skirt's inner half stays, from the opening's centre up: the tongue
-    // stops either side of it, so it frames the opening's upper half and keys the island along the wall
-    translate([in_x - eps, usb_y - usb_notch_w / 2, usb_zc - eps]) cube([wall / 2 + 2 * eps, usb_notch_w, z_arm_tongue + seam_gap + 0.1 - usb_zc + eps]);
-    // bosses down to the board top: with the tub's bosses they clamp it
-    for (s = side_pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_ceil - z_top_cu + 0.01);
-    // pinhole guides reach down towards the switches
-    for (p = pin_pos) at(p, z_top_cu + pin_guide_z) cylinder(d = pin_guide_d, h = z_ceil - z_top_cu - pin_guide_z + 0.01);
-    // panel locating frame (its opening is the panel's pocket, cut below: one cut, so no two faces
-    // coincide there)
-    translate([0, 0, z_ceil - frame_h]) linear_extrude(frame_h + 0.01) difference() {
-      square([panel_w + panel_fit + 2 * frame_wall, panel_l + panel_fit + 2 * frame_wall], center = true);
-      translate([fpc_x, -panel_l / 2]) square([fpc_w + 4, 6], center = true);   // the FPC's fold passes here
-    }
+    top_inner();
   }
+  top_cuts();
+}
+// what the island carries inside it (shared with the one-piece top, top_unibody)
+module top_inner() {
+  // over the USB-C notch the skirt's inner half stays, from the opening's centre up: the tongue
+  // stops either side of it, so it frames the opening's upper half and keys the island along the wall
+  translate([in_x - eps, usb_y - usb_notch_w / 2, usb_zc - eps]) cube([wall / 2 + 2 * eps, usb_notch_w, z_arm_tongue + seam_gap + 0.1 - usb_zc + eps]);
+  // bosses down to the board top: with the tub's bosses they clamp it
+  for (s = side_pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_ceil - z_top_cu + 0.01);
+  // pinhole guides reach down towards the switches
+  for (p = pin_pos) at(p, z_top_cu + pin_guide_z) cylinder(d = pin_guide_d, h = z_ceil - z_top_cu - pin_guide_z + 0.01);
+  // panel locating frame (its opening is the panel's pocket, cut below: one cut, so no two faces
+  // coincide there)
+  translate([0, 0, z_ceil - frame_h]) linear_extrude(frame_h + 0.01) difference() {
+    square([panel_w + panel_fit + 2 * frame_wall, panel_l + panel_fit + 2 * frame_wall], center = true);
+    translate([fpc_x, -panel_l / 2]) square([fpc_w + 4, 6], center = true);   // the FPC's fold passes here
+  }
+}
+// and what is cut from it
+module top_cuts(j4 = true) {
   // USB-C: the opening's upper half, and below it the notch the tub's tab fills
   usb_opening();
   usb_notch(0);
@@ -1486,8 +1495,9 @@ module top() difference() {
   translate([0, 0, z_ceil - 0.01]) linear_extrude(spk_pocket + 0.01) spk2d(spk_keep);
   translate([0, 0, z_ceil]) linear_extrude(top_t + 1) grille2d();
   // a shallow pocket over J4 and the speaker's mated plug, round H3's boss, inside the island's inside
-  translate([0, 0, z_ceil - 0.01]) linear_extrude(j4_pocket + 0.01) j4_pocket2d();
+  if (j4) j4_pocket3d();
 }
+module j4_pocket3d() translate([0, 0, z_ceil - 0.01]) linear_extrude(j4_pocket + 0.01) j4_pocket2d();
 
 // ---- a deck (sy: -1 seat 1's end, 1 seat 2's): printed face down ----
 // One part since 2026-10-24: each arm ends at an ear (the left one the right one turned round), so seat 2's deck is
@@ -1514,19 +1524,33 @@ module deck_body(sy) difference() {
       }
       translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();   // under the plate
     }
-    // the walls that rest on the silicone pads (the pockets are cut below)
-    // (the A/B/X/Y clover is solid between its pockets, where the faceplate leaves it open round
-    // pinwheel ears: here the tab slots are cut into it and key the caps with the notch ribs)
-    for (c = [abxy1, abxy2]) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) union() {
-      abxy_clover2d();
-      square(abxy_square[0] + 2 * abxy_square[1], center = true);
-    }
-    for (c = [dpad1, dpad2]) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) dpad_wall2d();
-    for (c = ss_centres) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) ss_frame2d();
-    // its boss, down to the board: the end screw pulls the deck onto the board
-    at(end_pin(sy), z_top_cu) cylinder(d = boss_d, h = z_deck_under - z_top_cu + 0.01);
+    deck_inner(sy);
   }
-  // buttons
+  deck_cuts(sy);
+  // the groove the tub's tongue slides up (into the plate round the core, where the tongue leans in), the
+  // notches its corner posts key into and the pockets its keys key into
+  skirt_groove();
+  for (sx = [-1, 1]) post_notch(sx, sy);
+  for (k = keys) if (k[1] * sy > 0) key_pocket(k);
+  // the island, and the joint's clearance round it: deck_gap off its foot, the undercut over its wedge
+  isl_clear();
+}
+// what a deck carries under its plate (shared with the one-piece top, top_unibody)
+module deck_inner(sy) {
+  // the walls that rest on the silicone pads (the pockets are cut below)
+  // (the A/B/X/Y clover is solid between its pockets, where the faceplate leaves it open round
+  // pinwheel ears: here the tab slots are cut into it and key the caps with the notch ribs)
+  for (c = [abxy1, abxy2]) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) union() {
+    abxy_clover2d();
+    square(abxy_square[0] + 2 * abxy_square[1], center = true);
+  }
+  for (c = [dpad1, dpad2]) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) dpad_wall2d();
+  for (c = ss_centres) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) ss_frame2d();
+  // its boss, down to the board: the end screw pulls the deck onto the board
+  at(end_pin(sy), z_top_cu) cylinder(d = boss_d, h = z_deck_under - z_top_cu + 0.01);
+}
+// and its buttons' openings, the pads' reliefs and its pilot
+module deck_cuts(sy) {
   for (k = abxy_keys()) if (k[0][1] * sy > 0) at(k[0], retainer_bot - 0.01) rotate(k[1]) abxy_cut(case_h, k[2]);
   for (c = [dpad1, dpad2]) if (c[1] * sy > 0) at(c, retainer_bot - 0.01) dpad_cut(case_h);
   for (b = ss_buttons) if (b[2][1] * sy > 0) at(b[2], retainer_bot - 0.01) ss_cut(case_h);
@@ -1543,13 +1567,98 @@ module deck_body(sy) difference() {
   for (c = [abxy1, abxy2]) if (c[1] * sy > 0) at(c, retainer_bot - 0.01)  // the A/B/X/Y pad's centre square
     linear_extrude(z_top_cu + abxy_square[2] - retainer_bot + 0.01) square(abxy_square[0], center = true);
   at(end_pin(sy), z_top_cu - 0.01) cylinder(d = screw_pilot, h = deck_engage);
-  // the groove the tub's tongue slides up (into the plate round the core, where the tongue leans in), the
-  // notches its corner posts key into and the pockets its keys key into
-  skirt_groove();
-  for (sx = [-1, 1]) post_notch(sx, sy);
-  for (k = keys) if (k[1] * sy > 0) key_pocket(k);
-  // the island, and the joint's clearance round it: deck_gap off its foot, the undercut over its wedge
-  isl_clear();
+}
+
+
+// ---- the one-piece top (a mock-up, 2026-10-24, on ref-design-unibody; case/SHELL.md is the island's) ----
+// Alex: "we're gonna go uni body for the top and print with pla support material. What does that look like". One
+// part instead of the island and the two decks: no wedge, lips, laps, hooks or build bars; it goes on the tub over
+// the tongue and the keys as the island and the decks did (the tub is unchanged). Printed with supports (Bambu
+// Support For PLA as their interface), so its outside need not keep to `overhang`: the rounds are true arcs, and
+// the screen block's edge is an S, a concave fillet out of the deck's face into a convex round up to the screen
+// face, the same all round (the step, the spines, the sides and the ears' ends). Its foot is where the island's
+// was (isl_in along the sides, the joint across the step), so every opening, screw and the board's zones stay.
+// What keeps it there: under the S along the side walls are J5 (2.9 tall, 3.6 from the outline), J2 and J4 (3.4,
+// 4.2) and the speaker's pocket (4.5); with the S's inside kept uni_skin under it (a normal offset), J2 and J4
+// keep 0.36 or more under it (J4 at seat 1's right corner). A foot further in would leave them no room
+uni_cv = 3.0;             // the S's convex round, up to the screen face (step_r, isl_r)
+uni_cc = 1.5;             // its concave fillet out of the deck's face (2.0 left J4 0.16 under the S's inside at the island's corner)
+uni_skin = 0.7;           // the inside under the S (and the ears' ends) keeps this far under it (isl_wall)
+uni_corner = 4.5;         // the plan's convex corners at the foot: more than the S's run, so its top corners stay round (5.0 drew
+                          // the foot in over J4 at seat 1's right corner)
+uni_fillet = 2.25;        // and its concave ones (not isl_fillet's 2.0: the island's inside, cut from that plan, met it edge on edge)
+uni_ear_fillet = 0.3;     // where an ear's end meets the side: small, so across the side's round (face_r from the wall) the
+                          // S along the ear's end runs straight across the wall and the side's round can follow it down
+uni_theta = acos(1 - step_d / (uni_cv + uni_cc));       // how far each arc turns (53.9 degrees)
+uni_run = (uni_cv + uni_cc) * sin(uni_theta);           // the S's run, foot to the screen face (3.64)
+uni_arc_n = 36;           // the side rounds' levels (true quarter arcs, every 2.5 degrees)
+uni_s_n = 24;             // each arc of the S
+uni_plan_n = 17;          // points on each of its plan's corners (not isl_arc_n: on the island's inside's own radial lines the cuts met it edge on edge)
+function plan_convex(plan, i) = let(n = len(plan), a = plan[(i + n - 1) % n][0], b = plan[i][0], c = plan[(i + 1) % n][0], u = b - a, v = c - b)
+  u[0] * v[1] - u[1] * v[0] > 0;
+uni_plan = [for (i = [0:len(isl_plan) - 1]) let(c = isl_plan[i][0])
+  [c, plan_convex(isl_plan, i) ? uni_corner : abs(c[0]) == isl_x && abs(c[1]) < joint_y ? uni_ear_fillet : uni_fillet]];
+// [z, inset from the foot]: the S, its foot run on straight down (inside the walls the cavity takes it away; at the
+// ears it is the ear's wall, which the case's side at the screen's height trims)
+uni_levels = concat([[z_bot - 1, 0]],
+  [for (k = [0:uni_s_n]) let(p = uni_theta * k / uni_s_n) [deck_face + uni_cc * (1 - cos(p)), uni_cc * sin(p)]],
+  [for (k = [uni_s_n - 1:-1:0]) let(p = uni_theta * k / uni_s_n) [case_h - uni_cv * (1 - cos(p)), uni_run - uni_cv * sin(p)]]);
+// the same S uni_skin under it (each arc about its own centre, the concave one larger, the convex one smaller)
+uni_limit_levels = concat([[z_seam - 2, 0]],
+  [for (k = [0:uni_s_n]) let(p = uni_theta * k / uni_s_n) [deck_face + uni_cc - (uni_cc + uni_skin) * cos(p), (uni_cc + uni_skin) * sin(p)]],
+  [for (k = [uni_s_n - 1:-1:0]) let(p = uni_theta * k / uni_s_n) [case_h - uni_cv + (uni_cv - uni_skin) * cos(p), uni_run - (uni_cv - uni_skin) * sin(p)]]);
+// the case's outside up to a face at H: the skirt down the back's round, the wall, a true quarter arc of face_r
+module uni_shell(H) rr_loft(concat(skirt_levels, [for (k = [0:uni_arc_n]) let(a = 90 * k / uni_arc_n) [H - face_r + face_r * sin(a), face_r * (1 - cos(a))]]));
+module uni_outer() {
+  uni_shell(deck_face);
+  difference() {
+    intersection() { uni_shell(case_h); loft_nc([for (l = uni_levels) isl_ring(l[1], l[0], uni_plan, uni_plan_n)]); }
+    // at each ear's ends the side's round comes down with the S, from the screen face's height to the deck's
+    uni_ear_cut();
+    rotate(180) uni_ear_cut();
+  }
+}
+// the S's height at u in from its foot
+function uni_S(u) = u <= 0 ? deck_face : u >= uni_run ? case_h : u <= uni_cc * sin(uni_theta) ?
+  deck_face + uni_cc - sqrt(uni_cc * uni_cc - u * u) : case_h - uni_cv + sqrt(uni_cv * uni_cv - (uni_run - u) * (uni_run - u));
+// what is outside the side's round (face_r) from the S's height along the right ear, swept along the wall: so the
+// ear's side comes down with its ends' S into the decks' round, with no cliff where they meet. (Its round 0.01 out
+// and down from the S's: crossing the wall and the S, not touching them)
+module uni_ear_cut() let(e = 0.01, n = 18, ys = [for (y = [ear_y[0] - 0.6:0.1:ear_y[1] + 0.6 + 1e-6]) y])
+  loft_nc([for (y = ys) let(H = uni_S(min(y - ear_y[0], ear_y[1] - y)), x = function(s) case_w / 2 - s)
+    concat([[x(-1), y, 12], [x(-1), y, H - face_r - e]],
+           [for (k = [0:n]) let(a = 90 * k / n) [x(face_r - e - face_r * cos(a)), y, H - face_r - e + face_r * sin(a)]],
+           [[x(face_r - e), y, 12]])]);
+// under the S the inside (the island's, and the pocket over J4) stays uni_skin under it
+module uni_limit() {
+  translate([-case_w, -case_l, z_seam - 2]) cube([2 * case_w, 2 * case_l, deck_face - uni_skin - 0.05 - z_seam + 2]);
+  loft_nc([for (l = uni_limit_levels) isl_ring(l[1], l[0], uni_plan, uni_plan_n)]);
+}
+module uni_cavity() {
+  translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the decks' face
+  intersection() {
+    union() {
+      translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) isl_inside2d();  // under the screen block
+      j4_pocket3d();
+    }
+    uni_limit();
+  }
+}
+module top_unibody() difference() {
+  union() {
+    difference() {
+      uni_outer();
+      uni_cavity();
+      // the groove the tub's tongue slides up, all round; the corner posts' notches and the keys' pockets
+      skirt_groove();
+      for (sx = [-1, 1], sy = [-1, 1]) post_notch(sx, sy);
+      for (k = keys) key_pocket(k);
+    }
+    top_inner();
+    for (sy = [-1, 1]) deck_inner(sy);
+  }
+  top_cuts(j4 = false);
+  for (sy = [-1, 1]) deck_cuts(sy);
 }
 
 module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
@@ -1672,9 +1781,22 @@ if (part == "3d") {
   color("#5a5a68") translate([0, 0, explode * 0.8]) for (sy = [-1, 1]) deck(sy);
   color("#e8e8ee") caps();
 }
+if (part == "3d_unibody") {
+  color("#3a3a44") tub();
+  color("#c9c9d1") cell3d();
+  color("#b8912e") speaker3d();
+  board3d();
+  color("#101014") translate([0, 0, z_glass]) linear_extrude(panel_t) square([panel_w, panel_l], center = true);
+  color("#8f8f99") silicone();
+  color("#4a4a56") translate([0, 0, explode]) top_unibody();
+  color("#e8e8ee") caps();
+}
 if (part == "tub") tub();
 if (part == "top") translate([0, 0, case_h]) rotate([180, 0, 0]) top();         // printed face down
 // one deck (2026-10-24), seat 1's as built, printed face down, twice; seat 2's as built, in the same pose turned
 // round, for export.py's check that the two are the same part
+// the one-piece top (the mock-up): face up, as it sits on the case (its skirts' tips on the bed), and face down
+if (part == "top_unibody") translate([0, 0, -z_bot]) top_unibody();
+if (part == "top_unibody_down") translate([0, 0, case_h]) rotate([180, 0, 0]) top_unibody();
 if (part == "deck") translate([0, 0, deck_face]) rotate([180, 0, 0]) deck(-1);
 if (part == "deck_seat2") rotate(180) translate([0, 0, deck_face]) rotate([180, 0, 0]) deck(1);
