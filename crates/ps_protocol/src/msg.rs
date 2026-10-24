@@ -1266,6 +1266,8 @@ texts! {
     // data/rulesets.ts freezeclausemod, sleepclausemod) ----------------
     EndlessBattleNoProgress => "This battle cannot progress. Endless Battle Clause activated!" (),
     FreezeClauseActivated => "Freeze Clause activated." (),
+    // PS: data/mods/gen1/conditions.ts invulnerability onInvulnerability
+    InvulnerableTarget => "The foe {} can't be hit while invulnerable!" (Nickname),
     SleepClauseActivated => "Sleep Clause Mod activated." (),
     // ---- message and bigerror (PS: sim/battle.ts
     // maybeTriggerEndlessBattleClause, the turn limit; start, the EV check)

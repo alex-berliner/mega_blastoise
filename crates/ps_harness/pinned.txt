@@ -34,3 +34,18 @@
 3 random 0  # P1-9 gen3randombattle; Leftovers' residual heal was skipped (diff), now unported
 3 random 24  # P1-9 gen3randombattle; Intimidate on switch-in was skipped (diff), now unported
 3 random 340  # P1-9 Focus Punch's beforeTurnCallback stopped as `beforeTurnCallback of Focus Punch`, now `focuspunch`
+
+# G1-3: the two-turn moves (dig, fly, razorwind, skullbash, skyattack,
+# solarbeam) landed in the gen 1 ported pool, so the wide lane's teams
+# moved with it and the wide lane has to stay green against PS. The
+# two-turn corridor itself (the charge turn's `|-prepare|` and `[still]`
+# lines, the release turn's `[from]` line, the invulnerable message) is
+# reached through the focus flag, which the pinned format has no field
+# for; run the corpus with
+#   scripts/ps-diff.sh --pinned --ps-cli <cli> --allow-unported \
+#     --focus dig,fly,razorwind,skullbash,skyattack,solarbeam
+# to pull the two-turn moves into every entry.
+1 wide 0  # G1-3 wide lane with the two-turn moves in the ported pool; 27 turns
+1 wide 42  # G1-3 wide lane; 17 turns
+1 wide 137  # G1-3 wide lane; 17 turns
+1 wide 999  # G1-3 wide lane; 17 turns

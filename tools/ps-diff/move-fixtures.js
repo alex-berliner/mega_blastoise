@@ -7,10 +7,11 @@
 // crates/ps_sim/src/mods/mod.rs) and no items.
 //
 // The ported list is derived here from PS's resolved dex by the same rule
-// ps_sim uses (`move_is_ported`): a move with no handler functions (its
-// own, its secondaries' and its `self` effect's) whose data names no
-// condition with handlers, Struggle and Hidden Power's typed placeholders
-// aside; in gen 3 also every ability with no handler functions (constant
+// ps_sim uses (`move_is_ported`): a move whose every handler PS's data
+// gives it is one ps_sim implements (`PORTED_HANDLERS`; its secondaries'
+// and its `self` effect's must have none) and whose data names no unported
+// condition, Struggle and Hidden Power's typed placeholders aside; in
+// gen 3 also every ability with no handler functions (constant
 // handlers such as Battle Armor's `onCriticalHit: false` are data the
 // registry carries). The list goes in the fixture's first line (`#ported
 // ...`) and the Rust test checks it against `ported(gen)`. Gen 1's line
@@ -72,18 +73,58 @@ const EDGE = {
 // The ported list
 // ---------------------------------------------------------------------------
 
+// The handlers ps_sim implements, per gen and effect (the registries in
+// crates/ps_sim/src/mods/gen<N>/mod.rs). ps_sim's rule is "every handler
+// PS's data gives the effect is in its registry", so an effect whose
+// handlers are all listed here is ported; an effect with no handler at all
+// is ported as it is. A move or condition that is not listed here and
+// carries a handler is not ported. Keep each table sorted.
+const PORTED_HANDLERS = {
+  1: {
+    moves: {
+      dig: ['onTryMove', 'onPrepareHit'],
+      fly: ['onTryMove', 'onPrepareHit'],
+      razorwind: ['onTryMove', 'onPrepareHit'],
+      skullbash: ['onTryMove', 'onPrepareHit'],
+      skyattack: ['onTryMove', 'onPrepareHit'],
+      solarbeam: ['onTryMove', 'onPrepareHit'],
+    },
+    conditions: {
+      invulnerability: ['onInvulnerability'],
+      twoturnmove: ['onStart', 'onLockMove'],
+    },
+  },
+  3: {moves: {}, conditions: {}},
+};
+
+function handlerKeys(obj) {
+  if (!obj) return [];
+  return Object.keys(obj).filter(k => typeof obj[k] === 'function' && (/^on[A-Z]/.test(k) || k.endsWith('Callback')));
+}
+
 function hasHandlers(obj) {
-  if (!obj) return false;
-  return Object.keys(obj).some(k => typeof obj[k] === 'function' && (/^on[A-Z]/.test(k) || k.endsWith('Callback')));
+  return handlerKeys(obj).length > 0;
 }
 
-function conditionPorted(dex, id) {
+// Every handler of `obj` is one of `ported`'s.
+function handlersPorted(obj, ported) {
+  const keys = handlerKeys(obj);
+  if (!keys.length) return true;
+  const known = ported[obj.id];
+  if (!known) return false;
+  return keys.every(k => known.includes(k));
+}
+
+function conditionPorted(dex, id, gen) {
   if (!id) return true;
-  return !hasHandlers(dex.conditions.get(id));
+  return handlersPorted(dex.conditions.get(id), PORTED_HANDLERS[gen].conditions);
 }
 
-function movePorted(dex, m) {
-  if (hasHandlers(m) || hasHandlers(m.self)) return false;
+function movePorted(dex, m, gen) {
+  if (!handlersPorted(m, PORTED_HANDLERS[gen].moves)) return false;
+  // A `self` effect and the secondaries have no id to register under, so
+  // ps_sim needs none of them to carry a handler.
+  if (hasHandlers(m.self)) return false;
   const secondaries = m.secondaries || [];
   if (secondaries.some(s => hasHandlers(s) || hasHandlers(s.self))) return false;
   const conds = [m.status, m.volatileStatus, m.sideCondition, m.slotCondition, m.weather, m.pseudoWeather];
@@ -92,7 +133,7 @@ function movePorted(dex, m) {
     if (s) conds.push(s.status, s.volatileStatus, s.sideCondition, s.pseudoWeather);
   }
   for (const s of secondaries) conds.push(s.status, s.volatileStatus);
-  return conds.every(id => conditionPorted(dex, id));
+  return conds.every(id => conditionPorted(dex, id, gen));
 }
 
 /// `{moves, abilities, header}`: the ported moves and abilities of `gen`
@@ -102,7 +143,7 @@ function portedFor(gen) {
   // Hidden Power's typed entries are placeholders: their id is
   // `hiddenpower`, which has handlers.
   const moves = dex.moves.all()
-    .filter(m => !m.isNonstandard && m.gen <= gen && m.id !== 'struggle' && m.id === toID(m.name) && movePorted(dex, m))
+    .filter(m => !m.isNonstandard && m.gen <= gen && m.id !== 'struggle' && m.id === toID(m.name) && movePorted(dex, m, gen))
     .map(m => m.id)
     .sort();
   if (gen === 1) return {moves, abilities: [], header: `#ported ${moves.join(',')}`};
@@ -299,8 +340,11 @@ function choose(battle, rec, side, rng) {
   (req.active[0].moves || []).forEach((m, i) => {
     if (!m.disabled) moves.push(i + 1);
   });
+  // A hard-locked Pokemon (the second turn of a two-turn move) cannot
+  // switch: PS rejects the choice and the battle stalls.
+  const locked = !!req.active[0].trapped;
   let choice;
-  if (sw.length && (rng() < 0.12 || !moves.length)) choice = `switch ${pick(rng, sw)}`;
+  if (!locked && sw.length && (rng() < 0.12 || !moves.length)) choice = `switch ${pick(rng, sw)}`;
   else choice = moves.length ? `move ${pick(rng, moves)}` : 'default';
   send(choice);
 }

@@ -2,6 +2,7 @@
 //! effect under `moves/`, `conditions/`, `items/`, `abilities/` and
 //! `rules/` (see `mods/mod.rs`). Entries stay sorted by `EffectId`.
 
+pub mod conditions;
 pub mod moves;
 pub mod rules;
 pub mod scripts;
@@ -11,7 +12,15 @@ use crate::effect::{EffectId, Registry, Rule};
 /// Gen 1's effect definitions, sorted by id.
 pub static REGISTRY: Registry = Registry {
     entries: &[
+        (EffectId::Move(ps_dex::gen1::moves::DIG), &moves::dig::DEF),
+        (EffectId::Move(ps_dex::gen1::moves::FLY), &moves::fly::DEF),
+        (EffectId::Move(ps_dex::gen1::moves::RAZORWIND), &moves::razorwind::DEF),
+        (EffectId::Move(ps_dex::gen1::moves::SKULLBASH), &moves::skullbash::DEF),
+        (EffectId::Move(ps_dex::gen1::moves::SKYATTACK), &moves::skyattack::DEF),
+        (EffectId::Move(ps_dex::gen1::moves::SOLARBEAM), &moves::solarbeam::DEF),
         (EffectId::Move(ps_dex::gen1::moves::TELEPORT), &moves::teleport::DEF),
+        (EffectId::Condition(ps_dex::gen1::conditions::TWOTURNMOVE), &conditions::twoturnmove::DEF),
+        (EffectId::Condition(ps_dex::gen1::conditions::INVULNERABILITY), &conditions::invulnerability::DEF),
         (EffectId::Rule(Rule::SleepClauseMod), &rules::sleepclausemod::DEF),
         (EffectId::Rule(Rule::FreezeClauseMod), &rules::freezeclausemod::DEF),
     ],
@@ -37,6 +46,7 @@ pub static PORTED: &[&str] = &[
     "move:constrict",
     "move:crabhammer",
     "move:cut",
+    "move:dig",
     "move:dizzypunch",
     "move:doubleedge",
     "move:doublekick",
@@ -49,6 +59,7 @@ pub static PORTED: &[&str] = &[
     "move:explosion",
     "move:fissure",
     "move:flash",
+    "move:fly",
     "move:furyattack",
     "move:furyswipes",
     "move:growl",
@@ -74,6 +85,7 @@ pub static PORTED: &[&str] = &[
     "move:psychic",
     "move:quickattack",
     "move:razorleaf",
+    "move:razorwind",
     "move:roar",
     "move:rockslide",
     "move:rockthrow",
@@ -83,9 +95,12 @@ pub static PORTED: &[&str] = &[
     "move:seismictoss",
     "move:selfdestruct",
     "move:sharpen",
+    "move:skullbash",
+    "move:skyattack",
     "move:slam",
     "move:slash",
     "move:smokescreen",
+    "move:solarbeam",
     "move:sonicboom",
     "move:spikecannon",
     "move:strength",
