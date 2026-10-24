@@ -1,6 +1,6 @@
 //! Host stand-in for firmware [`mega_blastoise_core::BoardEffects`] — println only.
 
-use mega_blastoise_core::{BoardEffects, BoardEvent};
+use mega_blastoise_core::{BoardEffects, BoardEvent, BoardEventExt};
 
 #[derive(Debug, Clone)]
 pub struct BoardGameEffects {

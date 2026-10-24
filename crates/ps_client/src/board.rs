@@ -1,11 +1,11 @@
-//! The board events the client yields: the vocabulary the UI already speaks.
+//! The board events: the vocabulary the UI speaks.
 //!
-//! These mirror `mega_blastoise_core::board_event::{BoardEvent, MoveSlot,
-//! PromptKind}` field for field (same variant names, same field names and
-//! types, same string conventions), so the runner (task P2-2) converts them
-//! with one mechanical `match`. They live here because `ps_client` sits below
-//! `mega_blastoise_core` in the crate graph: the core will depend on this
-//! crate, not the other way round.
+//! This is the ONE definition of `BoardEvent`, `MoveSlot` and `PromptKind`.
+//! `mega_blastoise_core::board_event` re-exports them and adds what the UI
+//! does with them (narration, animation pacing) as its `BoardEventExt`
+//! trait. They live here because `ps_client` sits below
+//! `mega_blastoise_core` in the crate graph: the core depends on this crate,
+//! never the other way round.
 //!
 //! The string conventions are the old runners', which `oled_ctl` and the
 //! narration parse:
@@ -13,11 +13,11 @@
 //!   form; `board_event::mon_player_id` reads the seat back out of it);
 //! - `health` is `"CUR/MAX"`, what `hp_bar::HpBarState::parse` reads;
 //! - `Win::side` is the winner's side index, `"0"` or `"1"`, what
-//!   `BoardEvent::win_player_num` reads;
+//!   core's `BoardEventExt::win_player_num` reads;
 //! - `SetStatus` / `CureStatus` carry PS's status id (`"par"`);
 //! - `Cant::reason` and `EffectStart::what` use the Gen 1 runner's words
 //!   where it had one (`"confusion"`, `"trapped"`, `"seeded"`, ...), since
-//!   `BoardEvent::description` narrates exactly those.
+//!   core's `BoardEventExt::description` narrates exactly those.
 //!
 //! No UI decisions here: which screen an event leads to is `oled_ctl`'s
 //! business.
@@ -26,8 +26,8 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-/// Why the engine is waiting on a player. Mirrors core's `PromptKind`; PS
-/// requests only ever produce the first two.
+/// Why the engine is waiting on a player (lights, whose turn on the board).
+/// PS requests only ever produce the first two.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PromptKind {
     ChooseMove,
@@ -36,7 +36,9 @@ pub enum PromptKind {
     LearnMove,
 }
 
-/// One move slot of the active mon. Mirrors core's `MoveSlot`.
+/// One move slot carried in [`BoardEvent::SwitchIn`] and
+/// [`BoardEvent::MovesUpdate`]. The screens render straight from these
+/// fields without any further battle queries.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MoveSlot {
     pub name: String,
@@ -52,12 +54,19 @@ pub struct MoveSlot {
     pub max_pp: u8,
 }
 
-/// Something the board should represent. Mirrors core's `BoardEvent`, minus
-/// `Split`, `SwitchOut` and `Raw`, which the client never yields (the view
-/// consumes PS's `|split|` itself, PS has no switch-out line, and a line with
-/// no board meaning yields nothing rather than a raw dump).
+/// Something the board should represent (sound, LEDs, prompts, screens).
+///
+/// The client never yields `Split`, `SwitchOut` or `Raw`: the view consumes
+/// PS's `|split|` itself, PS has no switch-out line, and a line with no
+/// board meaning yields nothing rather than a raw dump. Those three are the
+/// old Gen 1 runner's, whose battler log parser
+/// (`mega_blastoise_core::board_event::parse_log_line`) still makes them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BoardEvent {
+    /// The battler's `split|side:N`: whose private/public log pair follows.
+    Split {
+        side: String,
+    },
     Damage {
         mon: String,
         health: String,
@@ -71,6 +80,7 @@ pub enum BoardEvent {
         /// Team slot (0-based, the order `>player` gave the team in).
         team_slot: Option<u8>,
     },
+    /// A move was used.
     Move {
         /// The user's name, no seat suffix.
         user: Option<String>,
@@ -78,16 +88,22 @@ pub enum BoardEvent {
         player_id: Option<String>,
         name: String,
     },
+    /// A lead or a bench mon coming in (`switch` / `drag`).
     SwitchIn {
         /// Nickname (PS's `NAME` in `p1a: NAME`).
         name: String,
         species: Option<String>,
         player_id: Option<String>,
+        /// Team slot (0-based); `None` if unknown.
         team_slot: Option<u8>,
-        /// Empty when the view has not seen this side's request yet.
+        /// Empty when the runner has no move list for the mon yet.
         moves: Vec<MoveSlot>,
-        /// The mon's Speed stat, when a request has told the view.
+        /// The mon's Speed stat when known; drives the sprite bob rate.
         speed: Option<u16>,
+    },
+    /// A mon left the field (the old battler log only).
+    SwitchOut {
+        name: String,
     },
     Turn {
         n: u32,
@@ -97,6 +113,7 @@ pub enum BoardEvent {
         side: Option<String>,
     },
     Tie,
+    /// Waiting for input: the board cues this player before blocking.
     Prompt {
         player_id: String,
         kind: PromptKind,
@@ -106,20 +123,34 @@ pub enum BoardEvent {
     Immune { mon: String },
     Miss { mon: String },
     CriticalHit { mon: String },
+    /// A status condition inflicted (PS's status id, `"par"`).
     SetStatus { mon: String, status: String },
+    /// A status condition cured.
     CureStatus { mon: String, status: String },
+    /// Can't move this turn.
     Cant { mon: String, reason: String },
+    /// A stat stage change.
     StatChange { mon: String, stat: String, delta: i8 },
+    /// A volatile effect began: seeded, confusion, substitute, wrap,
+    /// disable, reflect, lightscreen, mist, focusenergy, conversion,
+    /// transform, mimic, charging, bide, haze, ...
     EffectStart { mon: String, what: String, detail: Option<String> },
+    /// A volatile effect ended.
     EffectEnd { mon: String, what: String },
     /// The active mon's display identity changed in place (Transform, a
     /// forme change), or its Speed became known after its switch-in.
+    /// Display-only, not narrated.
     ActiveMonUpdate { mon: String, name: String, speed: Option<u16> },
     Fail { mon: String },
+    /// The active mon's moves refreshed (PP change, switch-in). Not
+    /// narrated.
     MovesUpdate {
         player_id: String,
         moves: Vec<MoveSlot>,
     },
+    /// An old battler log line no variant matched (the old Gen 1 runner
+    /// only).
+    Raw(String),
 }
 
 /// What one protocol message or request turned into, in order.
@@ -161,7 +192,13 @@ impl BoardEvent {
             BoardEvent::Prompt { player_id, .. } | BoardEvent::MovesUpdate { player_id, .. } => {
                 Some(player_id.as_str())
             }
-            BoardEvent::Turn { .. } | BoardEvent::BattleStart | BoardEvent::Win { .. } | BoardEvent::Tie => None,
+            BoardEvent::Turn { .. }
+            | BoardEvent::BattleStart
+            | BoardEvent::Win { .. }
+            | BoardEvent::Tie
+            | BoardEvent::Split { .. }
+            | BoardEvent::SwitchOut { .. }
+            | BoardEvent::Raw(_) => None,
         }
     }
 }

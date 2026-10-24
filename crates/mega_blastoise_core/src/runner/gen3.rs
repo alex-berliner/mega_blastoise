@@ -795,6 +795,7 @@ pub fn drafted_battle(seed: u64, six: bool) -> Option<Battle> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::board_event::BoardEventExt;
     use gen3_battle::{battle::Side, Invest, Mon, Nature};
 
     /// Records what the board was told, so a turn can be asserted on.

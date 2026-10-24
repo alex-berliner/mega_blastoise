@@ -49,3 +49,7 @@ board_v2 = ["dep:pio", "dep:fixed"]
 input-debug = []
 mem-profile = []
 trace = ["mega-blastoise-core/trace"]
+# Battles run on the PS engine (ps_sim + ps_client, core's runner::ps)
+# instead of the legacy engines. The PS path is always compiled in; this
+# only flips the engine core picks.
+ps_engine = ["mega-blastoise-core/ps_engine"]

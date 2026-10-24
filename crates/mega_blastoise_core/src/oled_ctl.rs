@@ -25,7 +25,7 @@ use alloc::vec::Vec;
 
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 
-use crate::board_event::{BoardEvent, MoveSlot};
+use crate::board_event::{BoardEvent, BoardEventExt, MoveSlot};
 use crate::display::{
     render_action_select, render_concealed_moves, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
     render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2,

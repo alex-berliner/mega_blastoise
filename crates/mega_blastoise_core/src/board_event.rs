@@ -1,10 +1,9 @@
 //! Typed events for the physical board. Engine **log lines** and **input prompts** are converted
-//! here; strings are only for human-readable descriptions ([`BoardEvent::description`]).
+//! here; strings are only for human-readable descriptions ([`BoardEventExt::description`]).
 
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::fmt;
 
 use gen1_battle::Request;
 
@@ -42,128 +41,10 @@ impl<'a> ParsedBattleLogLine<'a> {
     }
 }
 
-/// Why the engine is waiting on a player (maps to lights / whose turn on the board).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PromptKind {
-    ChooseMove,
-    ChooseSwitch,
-    TeamPreview,
-    LearnMove,
-}
-
-/// One move slot carried in [`BoardEvent::SwitchIn`] and [`BoardEvent::MovesUpdate`].
-///
-/// Populated by the battle runner from live battle state; the OLED and move-detail
-/// screen render directly from these fields without any further battle queries.
-#[derive(Debug, Clone)]
-pub struct MoveSlot {
-    pub name: String,
-    /// Display type name, e.g. `"Electric"`.
-    pub type_name: String,
-    /// `"Physical"`, `"Special"`, or `"Status"`.
-    pub category: String,
-    /// Base power; `None` for status moves (base_power == 0).
-    pub power: Option<u32>,
-    /// Accuracy 0–100; `None` for moves that always hit.
-    pub accuracy: Option<u8>,
-    pub pp: u8,
-    pub max_pp: u8,
-}
-
-/// Something the board should represent (sound, LEDs, prompts).
-#[derive(Debug, Clone)]
-pub enum BoardEvent {
-    /// Engine `split|side:N` — marks whose private/public log pair follows (see battler
-    /// `log_private_public`).
-    Split {
-        side: String,
-    },
-    Damage {
-        mon: String,
-        health: String,
-    },
-    Heal {
-        mon: String,
-        health: String,
-    },
-    Faint {
-        mon: String,
-        /// Team slot index (0-based) populated by the battle runner; None if unavailable.
-        team_slot: Option<u8>,
-    },
-    /// A move was announced in the log (`move` / `animatemove`).
-    Move {
-        /// The Pokémon that used the move (name extracted from `mon:name,player,pos`).
-        user: Option<String>,
-        /// The player that used the move (`"p1"` / `"p2"`), extracted from the mon field.
-        player_id: Option<String>,
-        name: String,
-    },
-    /// `switch` / `drag` / `appear` — lead or bench coming in (parsed from public log row).
-    ///
-    /// `moves` is empty when produced by [`parse_log_line`]; the battle runner enriches it
-    /// with the full move list before dispatching.
-    SwitchIn {
-        /// Nickname / label (`name` field in the battler log).
-        name: String,
-        species: Option<String>,
-        player_id: Option<String>,
-        /// Team slot index (0-based) populated by the battle runner; None if unavailable.
-        team_slot: Option<u8>,
-        moves: Vec<MoveSlot>,
-        /// Active mon's Speed stat, populated by the battle runner — drives
-        /// the battle-screen sprite bob rate.
-        speed: Option<u16>,
-    },
-    SwitchOut {
-        /// Pokémon that left the field (name extracted from `mon:name,player,pos`).
-        name: String,
-    },
-    Turn {
-        n: u32,
-    },
-    BattleStart,
-    Win {
-        side: Option<String>,
-    },
-    Tie,
-    /// Waiting for input — board should cue this player before blocking on buttons/NFC/stdin.
-    Prompt {
-        player_id: String,
-        kind: PromptKind,
-    },
-    SuperEffective { mon: String },
-    Resisted { mon: String },
-    Immune { mon: String },
-    Miss { mon: String },
-    CriticalHit { mon: String },
-    /// Status condition inflicted (`status|mon:...|status:<name>`).
-    SetStatus { mon: String, status: String },
-    /// Status condition cured (`curestatus|mon:...|status:<name>`).
-    CureStatus { mon: String, status: String },
-    /// Can't move this turn (`cant|mon:...|from:<reason>`).
-    Cant { mon: String, reason: String },
-    /// Stat stage change (`boost|mon:...|stat:<name>|delta:<i8>`).
-    StatChange { mon: String, stat: String, delta: i8 },
-    /// A volatile effect began (`start|mon:...|what:<id>[|move:<name>]`) —
-    /// seeded, confusion, substitute, wrap, disable, reflect, lightscreen,
-    /// mist, focusenergy, conversion, transform, mimic, charging, bide, haze.
-    EffectStart { mon: String, what: String, detail: Option<String> },
-    /// A volatile effect ended (`end|mon:...|what:<id>`).
-    EffectEnd { mon: String, what: String },
-    /// The active mon's display identity changed in place (Transform):
-    /// `activemon|mon:...|name:<new>|speed:<spe>`. Display-only, not narrated.
-    ActiveMonUpdate { mon: String, name: String, speed: Option<u16> },
-    Fail { mon: String },
-    /// Active-mon moves refreshed — emitted after every move (PP change) and at switch-in.
-    /// Internal signal; not narrated to USB/stdout.
-    MovesUpdate {
-        player_id: String,
-        moves: Vec<MoveSlot>,
-    },
-    /// Any log line not matched by a specific variant — preserved so nothing is silently dropped.
-    Raw(String),
-}
+// The board vocabulary has one definition, in `ps_client` (the core sits
+// above it and the PS client yields these directly). What the UI does with
+// an event, its narration and pacing, stays here as [`BoardEventExt`].
+pub use ps_client::board::{BoardEvent, MoveSlot, PromptKind};
 
 /// Short trainer label for messages (`p1` → Red in the stock demo).
 /// Convert `"p1"` / `"p2"` to 1 / 2.  Any other value returns 2.
@@ -347,10 +228,22 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
     }
 }
 
-impl BoardEvent {
+/// What the UI does with a [`BoardEvent`]: its narration, animation pacing
+/// and result-screen words. A trait because the type lives in `ps_client`;
+/// `use mega_blastoise_core::BoardEventExt` (or the crate root re-export)
+/// brings these into scope.
+pub trait BoardEventExt {
+    fn win_player_num(side: &Option<String>) -> u8;
+    fn win_messages(winner: u8) -> (&'static str, &'static str);
+    fn anim_delay_ms(&self) -> u32;
+    fn should_narrate(&self) -> bool;
+    fn description(&self) -> String;
+}
+
+impl BoardEventExt for BoardEvent {
     /// Convert `BoardEvent::Win { side }` to a 1-based player number (1 or 2),
     /// or 0 for a tie / unknown side.  Call at the `Win` arm; panics on other variants.
-    pub fn win_player_num(side: &Option<String>) -> u8 {
+    fn win_player_num(side: &Option<String>) -> u8 {
         match side.as_deref() {
             Some("0") => 1,
             Some("1") => 2,
@@ -359,8 +252,8 @@ impl BoardEvent {
     }
 
     /// Returns the two OLED win-screen messages `(p1_msg, p2_msg)` for a given winner.
-    /// `winner` is 1-based (from [`win_player_num`](Self::win_player_num)); 0 means tie.
-    pub fn win_messages(winner: u8) -> (&'static str, &'static str) {
+    /// `winner` is 1-based (from [`win_player_num`](BoardEventExt::win_player_num)); 0 means tie.
+    fn win_messages(winner: u8) -> (&'static str, &'static str) {
         match winner {
             1 => ("WINNER!", "GG!"),
             2 => ("GG!", "WINNER!"),
@@ -370,7 +263,7 @@ impl BoardEvent {
 
     /// Returns the canonical animation delay (ms) for this event, using the
     /// shared `anim::*` constants.  Returns 0 for events that need no delay.
-    pub fn anim_delay_ms(&self) -> u32 {
+    fn anim_delay_ms(&self) -> u32 {
         use crate::anim;
         match self {
             Self::Move { .. }                                  => anim::MOVE_MS,
@@ -397,7 +290,7 @@ impl BoardEvent {
     /// Returns `true` if this event should be forwarded to USB / log output.
     /// `Split`, `Prompt`, and `MovesUpdate` are internal engine signals that
     /// all targets suppress.
-    pub fn should_narrate(&self) -> bool {
+    fn should_narrate(&self) -> bool {
         !matches!(
             self,
             Self::Split { .. }
@@ -409,7 +302,7 @@ impl BoardEvent {
 
     /// Human-readable battle narrative for display (USB, stdout). Hardware effects code should
     /// branch on the `BoardEvent` variant directly rather than parsing this string.
-    pub fn description(&self) -> String {
+    fn description(&self) -> String {
         match self {
             BoardEvent::Split { side } => {
                 format!("[split side:{}]", side_display_name(side.as_str()))
@@ -578,8 +471,3 @@ impl BoardEvent {
     }
 }
 
-impl fmt::Display for BoardEvent {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.description())
-    }
-}

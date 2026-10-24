@@ -24,7 +24,7 @@ use embassy_sync::channel::Channel;
 
 use crate::battle_effects::{BoardEffects, BoardEventQueue};
 use crate::battle_input::{ActivePrompt, InputBus, PlayerChoice};
-use crate::board_event::BoardEvent;
+use crate::board_event::{BoardEvent, BoardEventExt};
 use crate::choice_collect::{
     ChoiceCollector, ControlMode, Effect as CollectEffect, PadEvent, ReadySequence, SlotOptions,
     COLLECT_TICK_MS,
@@ -35,7 +35,9 @@ use crate::device_session::{Button, Ctx, DeviceSession, Out, TapCtx};
 use crate::display::PartySlotData;
 use crate::oled_ctl::{oled_cmds_for_event, OledCmd, OledController, BOB_TICK_MS};
 use crate::random_ai::RandomAi;
+use crate::transport::LocalTransport;
 use crate::runner;
+use crate::runner::Engine;
 use crate::{draw_two_randbat_teams, player_id_to_num, LOBBY_DEMO_DELAY_MS};
 use gen1_battle::TeamData;
 use gen3_battle::Ruleset;
@@ -66,6 +68,12 @@ pub trait DevicePort {
     /// web, a bench Pico on USB with the switch off) report Absent.
     fn battery(&self) -> crate::display_color::Battery {
         crate::display_color::Battery::Absent
+    }
+    /// Which engine plays the next battle (asked once per battle). Raw
+    /// configuration only: the web's `engine=` URL parameter, the
+    /// firmware's `ps_engine` feature through [`Engine::DEVICE_DEFAULT`].
+    fn engine(&self) -> Engine {
+        Engine::DEVICE_DEFAULT
     }
 }
 
@@ -659,6 +667,10 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
     }
 
     async fn run_gen1<DS: DataStore>(&self, data: &DS, seed: u64, six: bool) {
+        if self.port.engine() == Engine::Ps {
+            self.run_ps(1, seed, six).await;
+            return;
+        }
         let mut battle = match gen1_battle::PublicCoreBattle::new(
             runner::gen1::battle_options_with_seed(seed),
             data,
@@ -705,6 +717,15 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
     }
 
     async fn run_gen3(&self, seed: u64, six: bool) {
+        if self.port.engine() == Engine::Ps {
+            // Until `ps_sim` ports a Gen 3 move, a Gen 3 team would have
+            // nothing to use; the legacy engine plays instead.
+            if ps_sim::mods::ported(3).iter().any(|e| e.starts_with("move:")) {
+                self.run_ps(3, seed, six).await;
+                return;
+            }
+            self.port.line_out("Gen 3: the PS engine has no ported moves yet; using the legacy engine.");
+        }
         let Some(mut battle) = runner::gen3::drafted_battle(seed, six) else {
             self.port.line_out("Gen 3: could not draft teams.");
             return;
@@ -717,6 +738,35 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         let mut effects = RunnerEffects { r: self, bus: &bus };
         runner::gen3::run_battle(
             &mut battle,
+            &bus,
+            self.collect_battle_input(&bus, seed),
+            &mut effects,
+        )
+        .await;
+    }
+
+    /// A battle on the PS engine ([`runner::ps`]): `ps_sim` in-process
+    /// over the typed [`LocalTransport`], read by `ps_client`. The input
+    /// pump and the effects sink are the legacy runners' own.
+    async fn run_ps(&self, gen: u8, seed: u64, six: bool) {
+        let dex: &'static ps_dex::Dex = if gen == 1 { &ps_dex::GEN1 } else { &ps_dex::GEN3 };
+        let teams = crate::randbat::draw_two_ps_teams(dex, seed, if six { 6 } else { 3 });
+        if teams.iter().any(|t| t.is_empty()) {
+            self.port.line_out("PS engine: could not draft teams.");
+            return;
+        }
+        for (label, team) in [("White", &teams[0]), ("Red", &teams[1])] {
+            let names: Vec<&str> = team.iter().map(|s| s.name.as_str()).collect();
+            self.port.line_out(&alloc::format!("{label}: {}", names.join(", ")));
+        }
+        self.port.line_out("── Battle start (PS engine) ────────────");
+        let setup = runner::ps::BattleSetup::local(gen, seed, teams);
+        let mut transport = LocalTransport::new();
+        let bus = InputBus::new();
+        let mut effects = RunnerEffects { r: self, bus: &bus };
+        runner::ps::run_battle(
+            &mut transport,
+            &setup,
             &bus,
             self.collect_battle_input(&bus, seed),
             &mut effects,

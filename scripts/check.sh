@@ -70,6 +70,8 @@ if [[ "${1:-}" != "--fast" ]]; then
   echo "── wasm build + headless seat probe ──"
   (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
   scripts/ui-probe.sh --skip-build
+  # The same seats on the PS engine (engine=ps), Gen 1 only until Gen 3 is ported.
+  scripts/ui-probe.sh --skip-build --engine ps
 fi
 
 echo "check: OK"

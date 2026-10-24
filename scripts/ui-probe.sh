@@ -14,8 +14,10 @@
 # page maintains for exactly this purpose. Run it after any change to the
 # collector, the runners, or the web glue:
 #
-#   scripts/ui-probe.sh            # gen 1 (the default ruleset)
+#   scripts/ui-probe.sh                # both lanes, the legacy engines
 #   scripts/ui-probe.sh --skip-build   # reuse the existing pkg/
+#   scripts/ui-probe.sh --engine ps    # the PS engine (engine=ps), gen 1
+#                                      # only: ps_sim has no gen 3 port yet
 #
 # Chromium: the snap at /usr/bin/chromium-browser cannot write outside $HOME;
 # the playwright build can run anywhere. Override with $CHROME.
@@ -26,7 +28,23 @@ WEB="$ROOT/crates/mega_blastoise_web"
 CHROME="${CHROME:-$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux64/chrome 2>/dev/null | head -1)}"
 [ -x "$CHROME" ] || { echo "no chromium found; set \$CHROME" >&2; exit 2; }
 
-if [[ "${1:-}" != "--skip-build" ]]; then
+SKIP_BUILD=0
+ENGINE=legacy
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-build) SKIP_BUILD=1 ;;
+    --engine) ENGINE="${2:?--engine needs legacy or ps}"; shift ;;
+    *) echo "ui-probe: unknown argument $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+case "$ENGINE" in
+  legacy) LANES="gen1 gen3" ;;
+  ps) LANES="gen1" ;;
+  *) echo "ui-probe: --engine is legacy or ps" >&2; exit 2 ;;
+esac
+
+if [[ "$SKIP_BUILD" = 0 ]]; then
   echo "building wasm (dev)..."
   (cd "$WEB" && wasm-pack build --target web --dev >/dev/null 2>&1)
 fi
@@ -79,6 +97,16 @@ try {
   wasm.nav_a(1); wasm.nav_a(2);
   await until('battle opens on the move menu', (s) =>
     s.every((x) => /BATTLE|MOVE|CHOOSE/i.test(x)), 15000);
+
+  // The engine the lane asked for is the one playing (core logs the PS
+  // engine's battle start), so a lane cannot pass on the wrong engine.
+  const engine = new URLSearchParams(location.search).get('engine') ?? 'legacy';
+  const psStarted = document.getElementById('log').textContent.includes('(PS engine)');
+  if (psStarted !== (engine === 'ps')) {
+    say(`FAIL engine=${engine} but the PS engine ${psStarted ? 'started' : 'did not start'}`);
+    throw new Error('wrong engine');
+  }
+  say(`PASS the battle runs on the ${engine} engine`);
 
   // ── The "Both ready!" hang. Both seats commit; the turn MUST resolve and
   //    re-prompt: neither seat may still be locked-in a grace-window later.
@@ -147,11 +175,11 @@ SERVER_PID=$!
 sleep 1
 
 FAILED=0
-for LANE in gen1 gen3; do
-  echo "── lane: $LANE ──"
+for LANE in $LANES; do
+  echo "── lane: $LANE (engine $ENGINE) ──"
   DOM=$("$CHROME" --headless=new --no-sandbox --disable-gpu \
     --virtual-time-budget=150000 --timeout=180000 \
-    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=7777&lane=$LANE" 2>/dev/null || true)
+    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=7777&lane=$LANE&engine=$ENGINE" 2>/dev/null || true)
   RESULT=$(echo "$DOM" | python3 -c "
 import re, sys
 m = re.search(r'<pre id=\"out\">(.*?)</pre>', sys.stdin.read(), re.S)

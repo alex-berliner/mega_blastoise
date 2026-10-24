@@ -696,6 +696,10 @@ dependencies = [
  "gen1_battle",
  "gen3_battle",
  "png",
+ "ps_client",
+ "ps_dex",
+ "ps_protocol",
+ "ps_sim",
  "qrcode",
  "serde",
  "serde_json",
@@ -872,10 +876,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "ps_client"
+version = "0.1.0"
+dependencies = [
+ "ps_dex",
+ "ps_protocol",
+]
+
+[[package]]
 name = "ps_dex"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+]
+
+[[package]]
+name = "ps_protocol"
+version = "0.1.0"
+
+[[package]]
+name = "ps_sim"
+version = "0.1.0"
+dependencies = [
+ "ps_dex",
+ "ps_protocol",
 ]
 
 [[package]]
