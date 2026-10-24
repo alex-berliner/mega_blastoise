@@ -134,10 +134,17 @@ fn pipeline_conditions(dex: &Dex, m: MoveId) -> impl Iterator<Item = ConditionId
 }
 
 /// A move whose use reaches no unported effect: it is ported and so is
-/// every condition its data names.
+/// every condition its data names. Metronome also calls any move with the
+/// `metronome` flag (gen 1's pool; Metronome itself has no flag), so it
+/// counts only once every one of those does. Mirror Move calls the foe's
+/// last move, which a team of ported moves keeps ported.
 pub fn move_is_ported(dex: &Dex, registry: &Registry, m: MoveId) -> bool {
-    is_ported(dex, registry, EffectId::Move(m))
-        && move_conditions(dex, m).all(|c| is_ported(dex, registry, EffectId::Condition(c)))
+    let own = is_ported(dex, registry, EffectId::Move(m))
+        && move_conditions(dex, m).all(|c| is_ported(dex, registry, EffectId::Condition(c)));
+    if !own || dex.move_def(m).name.as_str() != "Metronome" {
+        return own;
+    }
+    (0..dex.moves.len()).map(|i| MoveId(i as u16)).filter(|&c| dex.move_def(c).flags.has("metronome")).all(|c| move_is_ported(dex, registry, c))
 }
 
 #[cfg(test)]

@@ -49,3 +49,13 @@
 1 wide 42  # G1-3 wide lane; 17 turns
 1 wide 137  # G1-3 wide lane; 17 turns
 1 wide 999  # G1-3 wide lane; 17 turns
+
+# G1-6: the diff found no ps_sim bug in Transform, Mimic, Metronome,
+# Mirror Move or Counter (its one divergence was a PS crash, see the
+# G1-6 report). These random seeds stopped `unported` at the batch's
+# moves before it and now play them, then stop at another batch's effect.
+1 random 57  # G1-6 Transform (was unported: transform), now stops at slp
+1 random 103  # G1-6 Mimic (was unported: mimic), now stops at slp
+1 random 264  # G1-6 Transform (was unported: transform), now stops at reflect
+1 random 32  # G1-6 Counter (was unported: counter), now stops at mustrecharge
+1 random 190  # G1-6 Mimic (was unported: mimic), now stops at par

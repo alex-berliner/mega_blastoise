@@ -654,6 +654,76 @@ impl Battle {
         self.mon_mut(m).speed = i32::from(spe);
     }
 
+    /// PS `pokemon.ppUps[i] || 0`: the constructor pushes 0 for a move
+    /// without PP boosts (and Trump Card) and 3 for every other move, in
+    /// `baseMoveSlots` order; past the last move it is `undefined`.
+    // PS: sim/pokemon.ts constructor (ppUps)
+    pub fn pp_ups(&self, m: MonRef, i: usize) -> u32 {
+        let Some(slot) = self.mon(m).base_move_slots.get(i).filter(|s| !s.id.is_none()) else { return 0 };
+        let def = self.dex.move_def(slot.id);
+        if def.bools.has("noPPBoosts") || def.name.as_str() == "Trump Card" {
+            0
+        } else {
+            3
+        }
+    }
+
+    /// PS `pokemon.transformInto(pokemon, effect)` for gens 1 and 2 (no
+    /// Illusion, abilities, Terastallization or forme items there):
+    /// `false` when it fails. `effect` is always `undefined` from Transform.
+    // PS: sim/pokemon.ts transformInto
+    pub fn transform_into(&mut self, m: MonRef, pokemon: MonRef) -> bool {
+        assert!(self.gen <= 2, "unported: transformInto in gen {} (setAbility)", self.gen);
+        let species = self.mon(pokemon).species;
+        if self.mon(pokemon).fainted || (self.mon(pokemon).transformed && self.gen >= 2) {
+            return false;
+        }
+
+        // `setSpecies` returns the species: no gen 1-2 `ModifySpecies`
+        // handler can clear it.
+        self.set_species(m, species, true);
+
+        self.mon_mut(m).transformed = true;
+        // `weighthg` is not kept: nothing in gens 1-2 reads it.
+
+        // `setType(pokemon.getTypes(true, true), true)` (no Roost before gen
+        // 4, no added type before gen 6).
+        let types = self.get_types(pokemon);
+        self.mon_mut(m).types = types;
+
+        let (stored, modified) = (self.mon(pokemon).stored_stats, self.mon(pokemon).modified_stats);
+        let gen = self.gen;
+        let mon = self.mon_mut(m);
+        mon.stored_stats = stored;
+        // Gen 1: copy the modified stats (only gen 1 has them).
+        if gen == 1 {
+            mon.modified_stats = modified;
+        }
+        let (hp_type, hp_power) = (self.mon(pokemon).hp_type, self.mon(pokemon).hp_power);
+        let mon = self.mon_mut(m);
+        mon.hp_type = hp_type;
+        mon.hp_power = hp_power;
+        // `timesAttacked` is not kept: nothing in gens 1-2 reads it.
+        let mut slots = [MoveSlot::EMPTY; 4];
+        for (i, ms) in self.mon(pokemon).move_slots.iter().enumerate() {
+            if ms.id.is_none() {
+                continue;
+            }
+            let def = self.dex.move_def(ms.id);
+            let pp = def.pp.min(5);
+            let maxpp = crate::stats::calculate_pp(gen, def, self.pp_ups(m, i));
+            slots[i] = MoveSlot { id: ms.id, pp, maxpp, disabled: 0, used: false, virtual_: true };
+        }
+        let boosts = self.mon(pokemon).boosts;
+        let mon = self.mon_mut(m);
+        mon.move_slots = slots;
+        mon.boosts = boosts;
+
+        let (mon, into) = (self.ident(m), self.ident(pokemon));
+        self.add(Msg::Transform { mon, into, kw: Kw::NONE });
+        true
+    }
+
     /// Gen 1's `pokemon.modifyStat(statName, modifier)`, the modifier as a
     /// ratio.
     // PS: data/mods/gen1/scripts.ts modifyStat

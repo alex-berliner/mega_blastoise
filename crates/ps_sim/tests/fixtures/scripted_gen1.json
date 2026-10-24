@@ -1,0 +1,131 @@
+[
+ {
+  "name": "transform_mimic",
+  "format": "gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod",
+  "seed": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "p1": "Ditto|||NoAbility|transform||255,255,255,255,255,255||30,30,30,30,30,30|||]Clefairy|||NoAbility|mimic,tackle||255,255,255,255,255,255||30,30,30,30,30,30|||",
+  "p2": "Snorlax|||NoAbility|tackle,growl,harden,swordsdance||255,255,255,255,255,255||30,30,30,30,30,30|||",
+  "choices": [
+   [
+    "move 1",
+    "move 3"
+   ],
+   [
+    "move 2",
+    "move 1"
+   ],
+   [
+    "switch 2",
+    "move 2"
+   ],
+   [
+    "move 1",
+    "move 1"
+   ],
+   [
+    "move 1",
+    "move 1"
+   ],
+   [
+    "switch 2",
+    "move 1"
+   ],
+   [
+    "move 1",
+    "move 4"
+   ],
+   [
+    "move 1",
+    "move 1"
+   ]
+  ],
+  "log": "|gametype|singles\n|player|p1|Player 1||\n|player|p2|Player 2||\n|gen|1\n|tier|[Gen 1] Custom Game\n|rule|HP Percentage Mod: HP is shown in percentages\n|rule|Desync Clause Mod: Desyncs resolve to link battle behavior from the acting player's perspective.\n|rule|Sleep Clause Mod: Limit one foe put to sleep\n|rule|Freeze Clause Mod: Limit one foe frozen\n|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> Sleep Clause Mod, Freeze Clause Mod</details></div>\n|\n|teamsize|p1|2\n|teamsize|p2|1\n|start\n|split|p1\n|switch|p1a: Ditto|Ditto|299/299\n|switch|p1a: Ditto|Ditto|299/299\n|split|p2\n|switch|p2a: Snorlax|Snorlax|523/523\n|switch|p2a: Snorlax|Snorlax|523/523\n|turn|1\n|\n|move|p1a: Ditto|Transform|p2a: Snorlax\n|-transform|p1a: Ditto|p2a: Snorlax\n|move|p2a: Snorlax|Harden|p2a: Snorlax\n|-boost|p2a: Snorlax|def|1\n|\n|upkeep\n|turn|2\n|\n|move|p1a: Ditto|Growl|p2a: Snorlax\n|-unboost|p2a: Snorlax|atk|1\n|move|p2a: Snorlax|Tackle|p1a: Ditto\n|split|p1\n|-damage|p1a: Ditto|263/299\n|-damage|p1a: Ditto|263/299\n|\n|upkeep\n|turn|3\n|\n|split|p1\n|switch|p1a: Clefairy|Clefairy|343/343\n|switch|p1a: Clefairy|Clefairy|343/343\n|move|p2a: Snorlax|Growl|p1a: Clefairy\n|-unboost|p1a: Clefairy|atk|1\n|\n|upkeep\n|turn|4\n|\n|move|p1a: Clefairy|Mimic|p2a: Snorlax\n|-start|p1a: Clefairy|Mimic|Swords Dance\n|move|p2a: Snorlax|Tackle|p1a: Clefairy\n|-crit|p1a: Clefairy\n|debug|Negating (sp)atk boost/penalty.\n|debug|Negating (sp)def boost/penalty.\n|split|p1\n|-damage|p1a: Clefairy|211/343\n|-damage|p1a: Clefairy|211/343\n|\n|upkeep\n|turn|5\n|\n|move|p1a: Clefairy|Swords Dance|p1a: Clefairy\n|-boost|p1a: Clefairy|atk|2\n|move|p2a: Snorlax|Tackle|p1a: Clefairy\n|split|p1\n|-damage|p1a: Clefairy|166/343\n|-damage|p1a: Clefairy|166/343\n|\n|upkeep\n|turn|6\n|\n|split|p1\n|switch|p1a: Ditto|Ditto|263/299\n|switch|p1a: Ditto|Ditto|263/299\n|move|p2a: Snorlax|Tackle|p1a: Ditto\n|split|p1\n|-damage|p1a: Ditto|216/299\n|-damage|p1a: Ditto|216/299\n|\n|upkeep\n|turn|7\n|\n|move|p1a: Ditto|Transform|p2a: Snorlax\n|-transform|p1a: Ditto|p2a: Snorlax\n|move|p2a: Snorlax|Swords Dance|p2a: Snorlax\n|-boost|p2a: Snorlax|atk|2\n|\n|upkeep\n|turn|8\n|\n|move|p2a: Snorlax|Tackle|p1a: Ditto\n|split|p1\n|-damage|p1a: Ditto|157/299\n|-damage|p1a: Ditto|157/299\n|move|p1a: Ditto|Tackle|p2a: Snorlax\n|-crit|p2a: Snorlax\n|debug|Negating (sp)atk boost/penalty.\n|debug|Negating (sp)def boost/penalty.\n|split|p2\n|-damage|p2a: Snorlax|455/523\n|-damage|p2a: Snorlax|455/523\n|\n|upkeep\n|turn|9"
+ },
+ {
+  "name": "counter_mirrormove",
+  "format": "gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod",
+  "seed": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "p1": "Pidgeot|||NoAbility|mirrormove||255,255,255,255,255,255||30,30,30,30,30,30|||]Hitmonchan|||NoAbility|counter,growl||255,255,255,255,255,255||30,30,30,30,30,30|||",
+  "p2": "Snorlax|||NoAbility|tackle,growl||255,255,255,255,255,255||30,30,30,30,30,30|||]Machamp|||NoAbility|counter,karatechop||255,255,255,255,255,255||30,30,30,30,30,30|||",
+  "choices": [
+   [
+    "move 1",
+    "move 1"
+   ],
+   [
+    "move 1",
+    "move 2"
+   ],
+   [
+    "move 1",
+    "move 1"
+   ],
+   [
+    "switch 2",
+    "move 1"
+   ],
+   [
+    "move 1",
+    "move 1"
+   ],
+   [
+    "move 1",
+    "move 2"
+   ],
+   [
+    "move 2",
+    "switch 2"
+   ],
+   [
+    "move 2",
+    "move 1"
+   ],
+   [
+    "move 1",
+    "move 2"
+   ],
+   [
+    "move 1",
+    "move 1"
+   ]
+  ],
+  "log": "|gametype|singles\n|player|p1|Player 1||\n|player|p2|Player 2||\n|gen|1\n|tier|[Gen 1] Custom Game\n|rule|HP Percentage Mod: HP is shown in percentages\n|rule|Desync Clause Mod: Desyncs resolve to link battle behavior from the acting player's perspective.\n|rule|Sleep Clause Mod: Limit one foe put to sleep\n|rule|Freeze Clause Mod: Limit one foe frozen\n|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> Sleep Clause Mod, Freeze Clause Mod</details></div>\n|\n|teamsize|p1|2\n|teamsize|p2|2\n|start\n|split|p1\n|switch|p1a: Pidgeot|Pidgeot|369/369\n|switch|p1a: Pidgeot|Pidgeot|369/369\n|split|p2\n|switch|p2a: Snorlax|Snorlax|523/523\n|switch|p2a: Snorlax|Snorlax|523/523\n|turn|1\n|\n|move|p1a: Pidgeot|Mirror Move|p1a: Pidgeot\n|-fail|p1a: Pidgeot\n|move|p2a: Snorlax|Tackle|p1a: Pidgeot\n|split|p1\n|-damage|p1a: Pidgeot|314/369\n|-damage|p1a: Pidgeot|314/369\n|\n|upkeep\n|turn|2\n|\n|move|p1a: Pidgeot|Mirror Move|p1a: Pidgeot\n|move|p1a: Pidgeot|Tackle|p2a: Snorlax|[from] Mirror Move\n|split|p2\n|-damage|p2a: Snorlax|475/523\n|-damage|p2a: Snorlax|475/523\n|move|p2a: Snorlax|Growl|p1a: Pidgeot\n|-unboost|p1a: Pidgeot|atk|1\n|\n|upkeep\n|turn|3\n|\n|move|p1a: Pidgeot|Mirror Move|p1a: Pidgeot\n|move|p1a: Pidgeot|Growl|p2a: Snorlax|[from] Mirror Move\n|-unboost|p2a: Snorlax|atk|1\n|move|p2a: Snorlax|Tackle|p1a: Pidgeot\n|split|p1\n|-damage|p1a: Pidgeot|281/369\n|-damage|p1a: Pidgeot|281/369\n|\n|upkeep\n|turn|4\n|\n|split|p1\n|switch|p1a: Hitmonchan|Hitmonchan|303/303\n|switch|p1a: Hitmonchan|Hitmonchan|303/303\n|move|p2a: Snorlax|Tackle|p1a: Hitmonchan\n|split|p1\n|-damage|p1a: Hitmonchan|267/303\n|-damage|p1a: Hitmonchan|267/303\n|\n|upkeep\n|turn|5\n|\n|move|p2a: Snorlax|Tackle|p1a: Hitmonchan\n|split|p1\n|-damage|p1a: Hitmonchan|235/303\n|-damage|p1a: Hitmonchan|235/303\n|move|p1a: Hitmonchan|Counter|p2a: Snorlax\n|split|p2\n|-damage|p2a: Snorlax|411/523\n|-damage|p2a: Snorlax|411/523\n|\n|upkeep\n|turn|6\n|\n|move|p2a: Snorlax|Growl|p1a: Hitmonchan\n|-unboost|p1a: Hitmonchan|atk|1\n|move|p1a: Hitmonchan|Counter|p2a: Snorlax\n|-fail|p1a: Hitmonchan\n|\n|upkeep\n|turn|7\n|\n|split|p2\n|switch|p2a: Machamp|Machamp|383/383\n|switch|p2a: Machamp|Machamp|383/383\n|move|p1a: Hitmonchan|Growl|p2a: Machamp\n|-unboost|p2a: Machamp|atk|1\n|\n|upkeep\n|turn|8\n|\n|move|p1a: Hitmonchan|Growl|p2a: Machamp\n|-unboost|p2a: Machamp|atk|1\n|move|p2a: Machamp|Counter|p1a: Hitmonchan\n|-fail|p2a: Machamp\n|\n|upkeep\n|turn|9\n|\n|move|p2a: Machamp|Karate Chop|p1a: Hitmonchan\n|-crit|p1a: Hitmonchan\n|debug|Negating (sp)atk boost/penalty.\n|debug|Negating (sp)def boost/penalty.\n|split|p1\n|-damage|p1a: Hitmonchan|122/303\n|-damage|p1a: Hitmonchan|122/303\n|move|p1a: Hitmonchan|Counter|p2a: Machamp\n|split|p2\n|-damage|p2a: Machamp|157/383\n|-damage|p2a: Machamp|157/383\n|\n|upkeep\n|turn|10\n|\n|move|p1a: Hitmonchan|Counter|p2a: Machamp\n|-fail|p1a: Hitmonchan\n|move|p2a: Machamp|Counter|p1a: Hitmonchan\n|-fail|p2a: Machamp\n|\n|upkeep\n|turn|11"
+ },
+ {
+  "name": "metronome",
+  "format": "gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod",
+  "seed": [
+   223,
+   2,
+   3,
+   4
+  ],
+  "p1": "Clefable|||NoAbility|metronome||255,255,255,255,255,255||30,30,30,30,30,30|||",
+  "p2": "Chansey|||NoAbility|metronome||255,255,255,255,255,255||30,30,30,30,30,30|||",
+  "choices": [
+   [
+    "move 1",
+    "move 1"
+   ],
+   [
+    "move 1",
+    "move 1"
+   ],
+   [
+    "move 1",
+    "move 1"
+   ]
+  ],
+  "log": "|gametype|singles\n|player|p1|Player 1||\n|player|p2|Player 2||\n|gen|1\n|tier|[Gen 1] Custom Game\n|rule|HP Percentage Mod: HP is shown in percentages\n|rule|Desync Clause Mod: Desyncs resolve to link battle behavior from the acting player's perspective.\n|rule|Sleep Clause Mod: Limit one foe put to sleep\n|rule|Freeze Clause Mod: Limit one foe frozen\n|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>2 custom rules:</strong></summary> Sleep Clause Mod, Freeze Clause Mod</details></div>\n|\n|teamsize|p1|1\n|teamsize|p2|1\n|start\n|split|p1\n|switch|p1a: Clefable|Clefable|393/393\n|switch|p1a: Clefable|Clefable|393/393\n|split|p2\n|switch|p2a: Chansey|Chansey|703/703\n|switch|p2a: Chansey|Chansey|703/703\n|turn|1\n|\n|move|p1a: Clefable|Metronome|p1a: Clefable\n|move|p1a: Clefable|Night Shade|p2a: Chansey|[from] Metronome\n|split|p2\n|-damage|p2a: Chansey|603/703\n|-damage|p2a: Chansey|603/703\n|move|p2a: Chansey|Metronome|p2a: Chansey\n|move|p2a: Chansey|Teleport|p2a: Chansey|[from] Metronome\n|\n|upkeep\n|turn|2\n|\n|move|p1a: Clefable|Metronome|p1a: Clefable\n|move|p1a: Clefable|Pound|p2a: Chansey|[from] Metronome\n|-crit|p2a: Chansey\n|debug|Negating (sp)atk boost/penalty.\n|debug|Negating (sp)def boost/penalty.\n|split|p2\n|-damage|p2a: Chansey|401/703\n|-damage|p2a: Chansey|401/703\n|move|p2a: Chansey|Metronome|p2a: Chansey\n|move|p2a: Chansey|String Shot|p1a: Clefable|[from] Metronome\n|-unboost|p1a: Clefable|spe|1\n|\n|upkeep\n|turn|3\n|\n|move|p2a: Chansey|Metronome|p2a: Chansey\n|move|p2a: Chansey|Absorb|p1a: Clefable|[from] Metronome\n|-crit|p1a: Clefable\n|debug|Negating (sp)atk boost/penalty.\n|debug|Negating (sp)def boost/penalty.\n|split|p1\n|-damage|p1a: Clefable|358/393\n|-damage|p1a: Clefable|358/393\n|split|p2\n|-heal|p2a: Chansey|418/703|[from] drain|[of] p1a: Clefable\n|-heal|p2a: Chansey|418/703|[from] drain|[of] p1a: Clefable\n|move|p1a: Clefable|Metronome|p1a: Clefable\n|move|p1a: Clefable|Hydro Pump|p2a: Chansey|[from] Metronome\n|-crit|p2a: Chansey\n|debug|Negating (sp)atk boost/penalty.\n|debug|Negating (sp)def boost/penalty.\n|split|p2\n|-damage|p2a: Chansey|262/703\n|-damage|p2a: Chansey|262/703\n|\n|upkeep\n|turn|4"
+ }
+]

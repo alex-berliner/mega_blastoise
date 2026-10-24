@@ -831,3 +831,50 @@ fn battle_fits_the_ram_budget() {
     std::eprintln!("size_of::<Battle>() = {size}");
     assert!(size <= 16 * 1024, "{size}");
 }
+
+/// Replays `scripted_gen1.json` (`tools/ps-diff/scripted-fixtures.js`):
+/// short battles with fixed teams, seed and choices, written to reach one
+/// group of handlers each, against PS's whole log.
+#[test]
+fn scripted_battles_match_ps_gen1() {
+    let path = format!("{}/tests/fixtures/scripted_gen1.json", env!("CARGO_MANIFEST_DIR"));
+    let all: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).expect("fixture readable")).unwrap();
+    let scenarios = all.as_array().unwrap();
+    assert!(scenarios.len() >= 3);
+    for sc in scenarios {
+        let name = sc["name"].as_str().unwrap();
+        let seed: Vec<u16> = sc["seed"].as_array().unwrap().iter().map(|x| x.as_u64().unwrap() as u16).collect();
+        let cmds = [
+            format!(r#"start {{"formatid":"{}","seed":[{},{},{},{}]}}"#, sc["format"].as_str().unwrap(), seed[0], seed[1], seed[2], seed[3]),
+            format!(r#"player p1 {{"name":"Player 1","team":"{}"}}"#, sc["p1"].as_str().unwrap()),
+            format!(r#"player p2 {{"name":"Player 2","team":"{}"}}"#, sc["p2"].as_str().unwrap()),
+        ];
+        let mut b = setup(&cmds);
+        b.move_hook = None;
+        b.lax_handlers = false;
+        let mut log = Vec::new();
+        let mut take = |b: &mut Battle| {
+            for (h, body) in flush(b) {
+                if h == "update" {
+                    log.push(body);
+                }
+            }
+        };
+        take(&mut b);
+        for pair in sc["choices"].as_array().unwrap() {
+            for (side, c) in [SideId::P1, SideId::P2].into_iter().zip(pair.as_array().unwrap()) {
+                if let Some(c) = c.as_str() {
+                    b.step(&Command::Choose { side, choice: parse_choice(c) }).unwrap();
+                }
+            }
+            take(&mut b);
+        }
+        let ours: Vec<String> =
+            log.join("\n").split('\n').filter(|l| !l.starts_with("|t:|")).map(String::from).collect();
+        let ps: Vec<&str> = sc["log"].as_str().unwrap().split('\n').collect();
+        for (i, (o, p)) in ours.iter().zip(&ps).enumerate() {
+            assert_eq!(o, p, "{name}: line {i} differs\n--- ours ---\n{}", ours.join("\n"));
+        }
+        assert_eq!(ours.len(), ps.len(), "{name}: log length\n--- ours ---\n{}", ours.join("\n"));
+    }
+}
