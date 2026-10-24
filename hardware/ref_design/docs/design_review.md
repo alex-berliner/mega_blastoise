@@ -135,8 +135,9 @@ every hole 0.3 mm or larger.
 - USB series resistors: 22 ohm 0402 (a basic part) in Raspberry Pi's own spots. The approved
   27 ohm 0603 doesn't fit the copied layout, and 22 ohm works as well at full speed.
 - 12 MHz ABM8 crystal with 15 pF loads and 1k series, as in the reference.
-- Debug: SWD and UART on JST SH 3-pin in the Raspberry Pi Debug Probe pinout;
-  BOOTSEL and RESET buttons under pinholes. No LEDs.
+- Debug: SWD on JST SH 3-pin in the Raspberry Pi Debug Probe pinout (the UART connector
+  and the revision straps went on 2026-10-24 to clear the left strip); BOOTSEL and RESET
+  buttons under pinholes in the left bezel. No LEDs.
 - GPIO map: [pinmap.md](pinmap.md).
 
 ### Display (sheet Display)
@@ -163,7 +164,7 @@ every hole 0.3 mm or larger.
   most), common anode on pin 1, a cathode pin each (K1-K4, pins 2-5). The anode is on VSYS
   (through JP2); K1 with K3 and K2 with K4 each go to a linear current sink: half of U6
   (MCP6002) drives an AO3400A (Q5, Q6) and holds its 2.2 ohm sense resistor (R52, R53) at
-  BL_REF. BL_REF is GPIO44's PWM through R60/R61 (2.4k) and C50, 0.077 V at 100%: 35 mA a
+  BL_REF. BL_REF is GPIO28's PWM through R60/R61 (2.4k) and C50, 0.077 V at 100%: 35 mA a
   sink, 70 mA in all. The sink needs about 0.08 V, so the current holds from a full cell
   (or USB) down to the 3.5 V cutoff even at the 3.4 V maximum Vf. The two LEDs on a sink
   share its current by their Vf match. Efficiency is that of the AP3156 in its 1x mode (Vf / VSYS), so
@@ -185,7 +186,7 @@ every hole 0.3 mm or larger.
 
 ### Audio (sheet Audio)
 
-- PWM from GPIO8 (PWM4 A, 8 bits at 150 MHz: a 586 kHz carrier) through two RC
+- PWM from GPIO31 (PWM7 B, 8 bits at 150 MHz: a 586 kHz carrier) through two RC
   stages (1k and 4.7 nF each). Loaded, the audio band is -3 dB at about 14 kHz, about
   what a 15 mm speaker reproduces, and the carrier comes out about 49 dB down. 10-bit
   PWM (146 kHz) would only come out 26 dB down, so firmware runs 8 bits and dithers or

@@ -44,7 +44,7 @@ or to put a meter in series, bridge it again with a blob of solder:
   an ammeter to read everything the cell gives or takes: sleep current, charge current.
 
 TP6 (PWR_EN), TP7 (LS_GATE) and TP8 (AMP_SHDN) are bare pads for a scope probe.
-C41-C43 are empty 1206 footprints (C41 on the charger's TEMP input, C42/C43 on CC1/CC2): fit one by hand only
+C42 and C43 are empty 1206 footprints (on CC1/CC2): fit one by hand only
 if bring-up shows noise there; see [assembly.md](assembly.md).
 
 ## 1. USB only, no cell
@@ -64,8 +64,8 @@ near the left edge) and tap SW19 (reset) to get back there.
 
 ## 2. Test firmware
 
-Load a bring-up build (UF2) that does each of these and reports over the UART on J6
-(115200 baud, Debug Probe UART cable):
+Load a bring-up build (UF2) that does each of these and reports over USB (CDC) or RTT through
+J5 (the UART connector J6 went on 2026-10-24):
 
 1. Print all 20 buttons (internal pull-ups): short each contact's combs with tweezers.
    The table in [pinmap.md](pinmap.md) says which GPIO is which contact; seat 1's Start
@@ -75,8 +75,6 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 3. Read CHG_STAT_N and CHG_DONE_N: with USB in and no cell the TP4056 has nothing to
    charge, so they may flicker; that's expected.
 4. SWD: attach with probe-rs or openocd through J5, then again through J7's pads.
-5. Read REV3..REV0 (GPIO25-22, pull-ups on) as a number: 1 on this board (the REV on the
-   back silkscreen).
 
 ## 3. Display
 
@@ -90,14 +88,14 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
    white; check pixel order (RGB or BGR bit in 0x36) and rotation.
 4. Raise SPI step by step; watch for corruption at the far edge of the panel. A full
    frame is 154 kB, so redraw only what changes.
-5. Backlight: start PWM10 A on GPIO44 (BL_PWM) at 80% duty (12 bits at 36.6 kHz): BL_REF
+5. Backlight: start PWM6 A on GPIO28 (BL_PWM) at 80% duty (12 bits at 36.6 kHz): BL_REF
    (C50) settles at about 62 mV within 10 ms, and each sink draws 28 mA (14 mA per LED,
    two LEDs a sink: K1 with K3, K2 with K4), 56 mA in all through JP2. Check it on the
    sense resistors: about 62 mV across R52 (LED_K1) and R53 (LED_K2), within a few mV of
    each other, and the panel lit evenly. 100% duty is 70 mA (0.077 V), the panel's typical;
    its limit is 80 mA. Step
    the duty 29% <-> 95% and scope R52: no ringing (simulated phase margin 72 deg or more,
-   board/sim/backlight_results.txt). Duty 0 (or GPIO44 low) turns it off. Also check, on a
+   board/sim/backlight_results.txt). Duty 0 (or GPIO28 low) turns it off. Also check, on a
    nearly flat cell (3.5 V) at 100%, that the drop across R52 stays at 0.077 V (headroom);
    and plug USB in with the backlight on and watch for a flash (simulation: a few us at
    up to 2.4x when VSYS jumps by 1.9 V in 2 us).
@@ -106,8 +104,8 @@ Load a bring-up build (UF2) that does each of these and reports over the UART on
 
 ## 4. Audio
 
-Start PWM4 A on GPIO8 (8 bits, about 586 kHz), idle it at half scale, set AMP_EN
-(GPIO11) high, then play a 1 kHz sine at -20 dBFS into the speaker. On a scope at C39's
+Start PWM7 B on GPIO31 (8 bits, about 586 kHz), idle it at half scale, set AMP_EN
+(GPIO34) high, then play a 1 kHz sine at -20 dBFS into the speaker. On a scope at C39's
 far side the carrier should be gone: a clean sine riding on half the supply. Listen for
 hiss in silence; set AMP_EN low and check it goes quiet. Measure the delay from AMP_EN
 high to full output (about 100 ms expected). Then, on USB, play a full-scale 1 kHz tone
@@ -119,7 +117,7 @@ firmware while VSYS is above 4 V.
 1. Unplug USB. Connect the cell. Nothing should turn on (PWR_EN low): measure the cell
    current, expect about 20 uA (the divider, the charger's standby and D5's leakage), under 30.
 2. Plug USB: CHG_STAT_N goes low while charging. The meter shows about 0.35 A more than
-   the system draws (R5 sets about 333-364 mA). Drive CHG_OFF (GPIO19) high: CHG_STAT_N
+   the system draws (R5 sets about 333-364 mA). Drive CHG_OFF (GPIO43) high: CHG_STAT_N
    goes high and the extra current stops; low again and charging resumes.
 3. ADC7 reads VBAT / 2 against the 3V3 rail: with the cell above about 3.6 V (3V3
    regulated), compare the firmware's computed VBAT with a meter on TP3; they should
@@ -157,7 +155,7 @@ firmware while VSYS is above 4 V.
 With the cell connected and USB unplugged:
 
 1. Press seat 1's Start button: 3V3 comes up while it's held. The firmware sets PWR_HOLD
-   (GPIO2) high once Start has been held for about a second: release it, it stays on.
+   (GPIO44) high once Start has been held for about a second: release it, it stays on.
    Release before that and the board turns off again.
 2. PWR_BTN_N (GPIO3) reads low while Y is held.
 3. Firmware drops PWR_HOLD after a long press: the board turns off when Y is released.

@@ -357,16 +357,6 @@
 		)
 		(uuid "ef431bd3-9e1f-5a9b-83e9-c8c640d29006")
 	)
-	(text "board revision straps"
-		(exclude_from_sim no)
-		(at 162.9415 70.5 0)
-		(effects
-			(font
-				(size 1 1)
-			)
-		)
-		(uuid "d5922642-9fc1-5c83-8e6a-d1b78c637d98")
-	)
 	(text "+3V3 and DVDD decoupling"
 		(exclude_from_sim no)
 		(at 231.3855 57.15 0)
@@ -375,7 +365,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "b49b1056-08f3-5fc2-8f76-380ae6e24d88")
+		(uuid "d5922642-9fc1-5c83-8e6a-d1b78c637d98")
 	)
 	(text "core 1.1 V switcher: VREG_VIN cap,"
 		(exclude_from_sim no)
@@ -385,7 +375,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "e623170e-22d5-5f37-b7a5-30a7616ecf2c")
+		(uuid "b49b1056-08f3-5fc2-8f76-380ae6e24d88")
 	)
 	(text "AVDD filter, inductor, output"
 		(exclude_from_sim no)
@@ -395,7 +385,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "a8e34f0d-8346-5faf-865a-b8f6fa1465e3")
+		(uuid "e623170e-22d5-5f37-b7a5-30a7616ecf2c")
 	)
 	(text "SWD connector J5"
 		(exclude_from_sim no)
@@ -405,37 +395,27 @@
 				(size 1 1)
 			)
 		)
+		(uuid "a8e34f0d-8346-5faf-865a-b8f6fa1465e3")
+	)
+	(text "debug pads J7"
+		(exclude_from_sim no)
+		(at 28.385 112.4 0)
+		(effects
+			(font
+				(size 1 1)
+			)
+		)
 		(uuid "58a0c112-62dd-5a86-a46e-42c32b74a623")
 	)
-	(text "UART connector J6"
+	(text "BOOTSEL and RESET buttons"
 		(exclude_from_sim no)
-		(at 29.908 112.4 0)
+		(at 33.576 116.85 0)
 		(effects
 			(font
 				(size 1 1)
 			)
 		)
 		(uuid "cbe3d068-91c7-5821-9b2c-d886c68811e2")
-	)
-	(text "debug pads J7"
-		(exclude_from_sim no)
-		(at 28.385 116.85 0)
-		(effects
-			(font
-				(size 1 1)
-			)
-		)
-		(uuid "51433b0b-14f7-5673-b78c-5c89baf43229")
-	)
-	(text "BOOTSEL and RESET buttons"
-		(exclude_from_sim no)
-		(at 33.576 121.3 0)
-		(effects
-			(font
-				(size 1 1)
-			)
-		)
-		(uuid "544522b7-e1a3-5b9d-a2ff-9a9aa8b1abdf")
 	)
 	(text "panel connector J3 (50-pin ZIF)"
 		(exclude_from_sim no)
@@ -445,7 +425,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "7cef305b-301f-5cd7-8034-b34d4796e758")
+		(uuid "51433b0b-14f7-5673-b78c-5c89baf43229")
 	)
 	(text "SPI series resistors, panel supply"
 		(exclude_from_sim no)
@@ -455,7 +435,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "ad4877d2-fe63-538e-95f6-8e7a5d2ff29a")
+		(uuid "544522b7-e1a3-5b9d-a2ff-9a9aa8b1abdf")
 	)
 	(text "backlight reference"
 		(exclude_from_sim no)
@@ -465,7 +445,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "5cc36112-b6f8-5a96-a0a8-6d368d714278")
+		(uuid "7cef305b-301f-5cd7-8034-b34d4796e758")
 	)
 	(text "backlight current sinks ch1, ch2"
 		(exclude_from_sim no)
@@ -475,7 +455,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "be444e75-c536-5958-b776-aa026993b964")
+		(uuid "ad4877d2-fe63-538e-95f6-8e7a5d2ff29a")
 	)
 	(text "PWM low-pass filter, DC block"
 		(exclude_from_sim no)
@@ -485,7 +465,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "2e6943dc-89f6-5908-9015-0bbef6a2c455")
+		(uuid "5cc36112-b6f8-5a96-a0a8-6d368d714278")
 	)
 	(text "amplifier (FM8002A) and supply"
 		(exclude_from_sim no)
@@ -495,7 +475,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "1588f925-cbb9-5e9c-bde8-6f8726db42f8")
+		(uuid "be444e75-c536-5958-b776-aa026993b964")
 	)
 	(text "shutdown control"
 		(exclude_from_sim no)
@@ -505,7 +485,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "8fef0b2d-8676-5436-bfd4-6ec9d55703e6")
+		(uuid "2e6943dc-89f6-5908-9015-0bbef6a2c455")
 	)
 	(text "speaker plug J4"
 		(exclude_from_sim no)
@@ -515,7 +495,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "7855acca-e43d-5cfb-9bc1-d4a696f79857")
+		(uuid "1588f925-cbb9-5e9c-bde8-6f8726db42f8")
 	)
 	(text "seat 1 and seat 2 contacts"
 		(exclude_from_sim no)
@@ -525,7 +505,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "2110bae2-4340-5769-b6c2-cbd324b135bc")
+		(uuid "8fef0b2d-8676-5436-bfd4-6ec9d55703e6")
 	)
 	(text "Start/Select per seat (P1 Start"
 		(exclude_from_sim no)
@@ -535,7 +515,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "b0749279-23d8-5987-9527-ad45b9a955e8")
+		(uuid "7855acca-e43d-5cfb-9bc1-d4a696f79857")
 	)
 	(text "is the power button),"
 		(exclude_from_sim no)
@@ -545,7 +525,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "9de1efb6-c29c-5c65-b945-910faca6f9f0")
+		(uuid "2110bae2-4340-5769-b6c2-cbd324b135bc")
 	)
 	(text "20 contacts, one GPIO each"
 		(exclude_from_sim no)
@@ -555,7 +535,7 @@
 				(size 1 1)
 			)
 		)
-		(uuid "994c49b9-f073-54f3-8b94-758b7659493e")
+		(uuid "b0749279-23d8-5987-9527-ad45b9a955e8")
 	)
 	(text "Mechanical: locating holes at positions set by the case; fiducials for assembly."
 		(exclude_from_sim no)
@@ -565,7 +545,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "9469b27e-c2e3-57a3-a1bd-921945772694")
+		(uuid "9de1efb6-c29c-5c65-b945-910faca6f9f0")
 	)
 	(symbol
 		(lib_id "Mechanical:MountingHole")

@@ -46,9 +46,9 @@ CASE["usb"]["tab"] = [[x + WIDEN / 2, y] for x, y in CASE["usb"]["tab"]]
 # stays on the top (Alex: one-sided assembly), and with the core moved to the right bezel there
 # was no room left for the speaker (row 18): it and its amplifier went.
 # The strips beside the hole (7.5 mm on the left, 8.9 on the right, 37 mm long) are the board's
-# weakest part (2026-10-22 review): only the parts that must be there sit in them (the debug
-# connectors and buttons on the left, the power latch and TH1 on the right), every MLCC in them
-# lies with its long axis along the strip (C47; C41 is an unfitted spare), and route.py stitches
+# weakest part (2026-10-22 review): only the parts that must be there sit in them (since 2026-10-24,
+# the routing levers: J5 on the left; TH1, J1 and the latch's VBUS resistors at the top of the
+# right), and route.py stitches
 # their two GND pours together (strip_stitch). The screws H1/H2 hold each strip's seat-2 end 2.8 mm past the
 # hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
 # floor (case/CELLCUT_FOR_CASE.md, "The strips").
@@ -78,7 +78,7 @@ CORE_SIDE = "F"
 CORE_AT = (77.8, 119.5)
 CORE_Y = CORE_AT[1]
 CORE_ESCAPES = True         # Raspberry Pi's pin escapes (False: straight stubs, build_pcb.straight_escapes)
-CORE_ROT = 0                 # the reference as drawn: GPIO4-20 face the left strip, GPIO33-47 J3
+CORE_ROT = 0                 # the reference as drawn: GPIO4-19 face the left bezel, GPIO33-47 J3
 CORE = {                     # reference designator -> ours (same nets, same job); the RP2354B
     "U1": "U4", "X1": "X1", "L1": "L2",    # has its flash inside, so the reference's U3 and R10 stay behind,
     "C12": "C11", "C13": "C12", "C10": "C21",   # and its C2, R1 and R6 (C10, R23, R25 here) sat out by
@@ -166,18 +166,21 @@ put("C51", 109.8, 136.5, 90)                # U6 supply
 put("JP2", 113.0, 116.0, 0)                 # VSYS to LED_A (J3 pin 50): flat, under the FPC
 put("TP16", 93.0, 141.6, 0)                 # GND for a scope clip
 
-# debug: left bezel, beside the cell's hole
-# the debug buttons (Alex: anywhere, next to each other; the case's pinholes follow): 4.4 mm down
-# the strip with J5 and J6 below the screw H2
-PINHOLES = [(68.8, 91.4), (68.8, 98.4)]
-put("SW18", *PINHOLES[0], 90)
-put("SW19", *PINHOLES[1], 90)
-put("R26", 65.6, 99.8, 90)                 # left of SW19
-# J6 (UART) and J5 (SWD) one above the other, both turned so their mouths face the board's left
-# edge (2026-10-22, Alex: they faced each other nose to nose and neither plug went in): the plugs
-# go in from the side with the case open, the pins face the cell's hole
-put("J6", 67.4, 77.3, 270)                  # UART: below the side screw H2
-put("J5", 67.4, 84.8, 270)                  # SWD: below J6, above SW18
+# debug: left bezel
+# the debug buttons (Alex: anywhere, next to each other; the case's pinholes follow): since
+# 2026-10-24 (routing levers) out of the left strip, side by side in the left bezel below the screw
+# H4, where JP1 was (each 5.4 mm or more from H4's centre, case.scad's pinhole assert), their 1k
+# resistors left of U3 (which, with its caps, went 2 mm down for them). Lying across the bezel,
+# one above the other, between the island's joint along the left edge (x <= 64.6) and the core's
+# decouplers. The strip keeps J5 alone
+PINHOLES = [(67.65, 120.7), (67.65, 124.35)]
+put("SW18", *PINHOLES[0], 0)
+put("SW19", *PINHOLES[1], 0)
+put("R25", 65.7, 127.2, 90)                # QSPI_SS -> BOOTSEL, left of U3
+put("R26", 65.7, 129.5, 90)                # RUN -> RUN_SW
+# J5 (SWD) turned so its mouth faces the board's left edge (2026-10-22, Alex): the plug goes in
+# from the side with the case open, the pins face the cell's hole. J6 (UART) went on 2026-10-24
+put("J5", 67.4, 84.8, 270)                  # SWD
 
 # edge part on the right: USB-C
 # Moved down the right wall below the cell's hole (2026-10-21, Alex: it may slide along its wall):
@@ -206,7 +209,7 @@ put("R1", 130.0, 121.15, 0)
 put("R2", 132.0, 121.15, 0)
 put("C1", 120.3, 109.4, 0)                  # below the USB pair
 put("R41", 120.3, 111.1, 0)                # C1's series resistor (hot-plug ringing)
-put("C42", 126.7, 89.5, 90)                 # spares on CC1 and CC2
+put("C42", 126.0, 127.2, 0)                 # spares on CC1 and CC2 (C42 out of the right strip, 2026-10-24)
 put("C43", 125.7, 130.4, 0)
 
 # the cell: J2 at its hole's seat-1 corner, mouth into the hole's lead pocket, so the plug's
@@ -226,7 +229,6 @@ put("TP7", 113.0, 119.6, 0)                 # CHG_TEMP: flat, under the folded F
 put("TP15", 113.0, 130.0, 0)                 # GND for a scope clip, by the charger: flat, under the folded FPC
 # the cell's temperature: TH1 at the hole's right edge, which the cell is pushed against
 put("TH1", 126.1, 86.0, 90)
-put("C41", 133.4, 89.9, 90)                 # spare across TEMP)
 
 # power switch latch: right strip, below the screw H1, its first rows above it (under seat 2's
 # deck, where the old H1 was)
@@ -236,23 +238,31 @@ put("R13", 128.6, 63.6, 90)
 put("R42", 129.8, 63.6, 90)
 put("R14", 128.6, 66.6, 90)
 put("R38", 130.0, 66.8, 90)
-put("Q1", 131.5, 82.9, 0)
-put("R15", 133.6, 86.4, 90)
-put("R16", 131.0, 85.8, 0)
-put("C47", 131.0, 87.4, 90)                 # PWR_EN's slow-rise cap: its long axis along the strip
-put("TP6", 130.0, 89.6, 0)                  # PWR_EN)
+# 2026-10-24 (routing levers): the latch's parts that sat in the right strip (Q1, R15, R16, C47,
+# TP6 and seat 2's Start: D8, Q7, R62, R63) moved up past the hole's top edge under seat 2's right
+# deck, between U9 and the cluster's retainer ring (14.5 mm round its centre for parts over
+# 0.5 mm), Q1 and R16 left of U9: the strip keeps only TH1 and J1. P2_START_RAW no longer
+# crosses the board
+put("R62", 104.8, 65.4, 90)                 # row by the hole's edge
+put("R63", 105.9, 65.4, 90)
+put("R15", 107.0, 65.4, 90)
+put("C47", 108.1, 65.4, 90)                 # PWR_EN's slow-rise cap
+put("TP6", 109.7, 65.4, 0)                  # PWR_EN
+put("Q7", 105.9, 62.3, 0)                   # seat 2's Start into P2_START
+put("D8", 109.6, 62.6, 0)                   # seat 2's Start into PWR_EN
+put("Q1", 90.5, 64.5, 0)                    # seat 1's Start into PWR_BTN_N: left of U9 (no room by D8)
+put("R16", 93.6, 64.8, 90)
 
 # 3V3 LDO: in the left bezel under the core it feeds
-put("U3", 68.6, 126.4, 90)
-put("C5", 66.4, 131.0, 90)                  # VSYS in
-put("C6", 68.6, 131.0, 90)                  # 3V3 out)
-put("C7", 70.8, 131.0, 90)
-put("JP1", 66.4, 121.6, 90)
+put("U3", 68.6, 128.4, 90)                  # 2 mm down since 2026-10-24 (the debug buttons above it)
+put("C5", 66.4, 133.0, 90)                  # VSYS in
+put("C6", 68.6, 133.0, 90)                  # 3V3 out)
+put("C7", 70.8, 133.0, 90)
+put("JP1", 73.6, 130.6, 0)                  # below the core, right of C7 (the debug buttons took its place)
 
 # the core's loose parts: the reference's parts by its flash (QSPI_SS's pull-up, its 1k to the
 # BOOTSEL button, a 3V3 decoupler) and the decouplers that would land on the screw or the FPC
 put("R23", 71.2, 113.0, 90)                # QSPI_SS pull-up, by the core (it was across the board)
-put("R25", 65.6, 97.6, 90)                # left of SW19
 put("C10", 121.0, 130.8, 90)
 
 # battery sense
@@ -265,11 +275,6 @@ for i in range(5):
     put(f"TP{i + 1}", 92.0 + 4.0 * i, 53.0, 0, "B")
 put("TP3", 89.4, 114.0, 0, "B")             # VBAT: on the back under J3, by JP5 and the cell's path
 
-# 2026-10-05: the board revision straps, by their pins
-put("R48", 111.4, 132.2, 90)
-put("R49", 112.6, 132.2, 90)
-put("R50", 113.8, 132.2, 90)
-put("R51", 115.0, 132.2, 90)
 
 # 2026-10-19, debug readiness (Alex's review): SWD pads, probe pads and isolation jumpers
 put("J7", 100.0, 140.4, 0, "B")              # SWD pogo pads on the back, under seat 1's spine
@@ -277,10 +282,6 @@ put("TP9", *core_pt(0.8, 7.22), 0, "B" if CORE_SIDE == "F" else "F")    # +1V1: 
 put("C23", 80.6, 107.9, 90)
 put("C13", 80.0, 105.2, 90)
 put("C19", 73.6, 126.8, 90)
-put("D8", 132.6, 76.4, 0)                   # row 1: seat 2's Start into PWR_EN, beside the latch
-put("R62", 128.6, 76.6, 90)
-put("Q7", 131.5, 79.4, 0)
-put("R63", 128.6, 79.6, 90)
 put("R64", 117.8, 120.4, 90)                # the charger's ILIM
 put("U9", 100.0, 58.5, 90)                  # seat 2's buttons: a 74HC165 between the clusters, 1.2 mm
 put("RN3", 94.2, 57.0, 90)

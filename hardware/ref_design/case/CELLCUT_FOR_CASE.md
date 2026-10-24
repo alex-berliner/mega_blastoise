@@ -10,6 +10,28 @@ wall: the screws moved; the USB-C moved down its wall and, with the speaker, bac
 position. `case.scad` doesn't know any of this yet; nothing in the case was changed.
 The board's side is `board/placement.py` (`CUTOUTS`, `SIDE_SCREWS`, `USB_Y`).
 
+## Routing levers (2026-10-24, branch `ref-design-levers`, an experiment Alex has not picked yet)
+
+To make the board easier to route without changing its size: the UART connector J6, the four
+revision-strap resistors R48-R51 and the spare C41 are gone, the debug buttons left the left strip,
+and the power latch's parts left the right strip. check_fit passes. What the case would change:
+
+| | Case (x, y) now | Was |
+|---|---|---|
+| **Debug pinholes** SW18 BOOTSEL / SW19 RESET (`pin_pos`) | **-32.35, -20.7 / -32.35, -24.35** (left bezel below the screw H4, one above the other, switches lying across the bezel) | -31.2, 8.6 / -31.2, 1.6 |
+| J6 UART (`uart_pos`) | gone: J5 alone sets the island's wall on the left (`side_tall`) | -32.6, 22.7 |
+| U3, C5-C7 (the LDO) | 2 mm towards seat 1 (C5-C7 now under the deck's joint band, 0.9 mm tall) | |
+| Q1, R16 | left of U9 under seat 2's deck: (-9.5, 35.5), (-6.4, 35.2) | right strip |
+| D8, Q7, R62, R63, R15, C47, TP6 | under seat 2's right deck along the hole's top edge, x 4.8 .. 9.7, y 34.6 .. 37.7 | right strip |
+| C42 (unfitted 1206) | right bezel above J4's plug: (26.0, -27.2) | right strip |
+
+- Each pinhole keeps 5.54 mm from H4 (the case's 5.4 assert); the switches (1.94 mm) sit under the
+  left bezel, clear of the joint along the left edge (x <= -35.4).
+- The strip ribs: the left one no longer has buttons to back (only J5, where a cable is pushed in);
+  the debug buttons now sit on the full-width board, which needs a floor rib or boss under each
+  pinhole (about (-32.35, -20.7) and (-32.35, -24.35)) so a pin press doesn't bend the board.
+  The right strip keeps TH1 and J1 only.
+
 ## Moved again: the side screws back inward (2026-10-22, Alex: no shoulders)
 
 **The four side screws now sit at |y| <= 29, inside the top piece's area**, so the shoulders,

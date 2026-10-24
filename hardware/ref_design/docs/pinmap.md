@@ -9,16 +9,16 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 |---|---|---|
 | 0 | (spare) | not connected |
 | 1 | (spare) | not connected |
-| 2 | `PWR_HOLD` | output: set high to stay on (see Power control); low turns the device off once the button is up |
+| 2 | `P2_START` | input, pulled up (R63): low while seat 2's Start (SW23, a power button) is pressed, through Q7 |
 | 3 | `PWR_BTN_N` | input, pulled up (R16): low while seat 1's Start (SW21, a power button) is pressed, through Q1 |
-| 4 | (spare) | not connected |
+| 4 | `P2_SELECT` | metal-dome contact SW22 to GND, input with pull-up, low = pressed |
 | 5 | (spare) | not connected |
 | 6 | (spare) | not connected |
 | 7 | (spare) | not connected |
-| 8 | `AUDIO_PWM` | PWM4 A, 8 bits (586 kHz): audio through two RC stages (-3 dB at about 14 kHz) into U7 (see Audio) |
-| 9 | `P2_SELECT` | metal-dome contact SW22 to GND, input with pull-up, low = pressed |
+| 8 | (spare) | not connected |
+| 9 | (spare) | not connected |
 | 10 | (spare) | not connected |
-| 11 | `AMP_EN` | output: high turns the FM8002A on (Q3 pulls its SHUTDOWN low); low or floating = off (4 uA) |
+| 11 | (spare) | not connected |
 | 12 | (spare) | not connected |
 | 13 | (spare) | not connected |
 | 14 | (spare) | not connected |
@@ -26,22 +26,22 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 16 | (spare) | not connected |
 | 17 | (spare) | not connected |
 | 18 | (spare) | not connected |
-| 19 | (spare) | not connected |
-| 20 | `UART_TX` | UART1 TX to J6 pin 3 (debug console; Raspberry Pi debug connector pinout) |
-| 21 | `UART_RX` | UART1 RX from J6 pin 1 |
-| 22 | `REV0` | input, pull-up: board revision bit 0 (1 = R48 unfitted, 0 = R48 fitted to GND) |
-| 23 | `REV1` | input, pull-up: board revision bit 1 (R49) |
-| 24 | `REV2` | input, pull-up: board revision bit 2 (R50) |
-| 25 | `REV3` | input, pull-up: board revision bit 3 (R51) |
+| 19 | `SR_PL` | output: the 74HC165s' SH/LD (U8, U9 pin 1): low loads the 16 buttons, high to shift them out |
+| 20 | (spare) | not connected |
+| 21 | (spare) | not connected |
+| 22 | (spare) | not connected |
+| 23 | (spare) | not connected |
+| 24 | (spare) | not connected |
+| 25 | (spare) | not connected |
 | 26 | (spare) | not connected |
 | 27 | (spare) | not connected |
-| 28 | `SR_PL` | output: the 74HC165s' SH/LD (U8, U9 pin 1): low loads the 16 buttons, high to shift them out |
+| 28 | `BL_PWM` | PWM6 A: backlight brightness, duty x 70 mA (filtered to a DC reference, see below); low = off |
 | 29 | `SR_CLK_MCU` | output: the 74HC165s' clock (SR_CLK) through R65 (33 ohm, at the MCU end); each rising edge shifts one button |
 | 30 | `SR_DATA` | input: U8's Q7, the end of the chain: 16 buttons, low = pressed (see Buttons) |
-| 31 | (spare) | not connected |
+| 31 | `AUDIO_PWM` | PWM7 B, 8 bits (586 kHz): audio through two RC stages (-3 dB at about 14 kHz) into U7 (see Audio) |
 | 32 | `LCD_TE` | input: the panel's tearing-effect signal (enable with TEON); start a frame on its edge |
 | 33 | `LCD_CS` | SPI0 CSn (or drive as a GPIO) |
-| 34 | `P2_START` | input, pulled up (R63): low while seat 2's Start (SW23, a power button) is pressed, through Q7 |
+| 34 | `AMP_EN` | output: high turns the FM8002A on (Q3 pulls its SHUTDOWN low); low or floating = off (4 uA) |
 | 35 | `P1_SELECT` | metal-dome contact SW20 to GND, input with pull-up, low = pressed |
 | 36 | `LCD_MISO` | SPI0 RX (panel readback, optional) |
 | 37 | `LCD_DC` | display data/command |
@@ -51,7 +51,7 @@ the 60-pin RP2350A on a Pico 2). Buttons read low when pressed; enable the inter
 | 41 | `CHG_STAT_N` | input, pulled up (R10): the BQ24073's CHG, low while charging, 2 Hz on a safety-timer fault |
 | 42 | `CHG_PG_N` | input, pulled up (R9): the BQ24073's PGOOD, low while USB power is valid |
 | 43 | `CHG_OFF` | output: the BQ24073's CE, high stops charging; low or released charges (R44 4.7k pulls it low) |
-| 44 | `BL_PWM` | PWM10 A: backlight brightness, duty x 70 mA (filtered to a DC reference, see below); low = off |
+| 44 | `PWR_HOLD` | output: set high to stay on (see Power control); low turns the device off once the button is up |
 | 45 | `CC2_SENSE` | ADC5: USB-C CC2 through 10k |
 | 46 | `CC1_SENSE` | ADC6: USB-C CC1 through 10k; the source's current offer |
 | 47 | `VBAT_SENSE` | ADC7: battery voltage / 2 (R17/R18, 470k each, 100 nF); off with a cell in, the pin sits above IOVDD, clamped by its ESD diode (under 9 uA, accepted) |
@@ -68,15 +68,15 @@ SR_PL low then high (parallel load), then 16 rising edges on GPIO29 (SR_CLK thro
 SR_DATA shows each bit before the edge that shifts it: P1 Y first, then P1 X, B, A, RIGHT,
 LEFT, DOWN, UP, then seat 2 in the same order; 1 = released. Between reads SR_PL rests high
 and the clock low. Start and Select are metal domes on their own GPIOs: both Selects (GPIO35 seat 1,
-GPIO9 seat 2) to GND with the pin's pull-up; both Starts are power buttons on VSYS, read
-through a transistor (GPIO3 seat 1, GPIO34 seat 2), low = pressed.
+GPIO4 seat 2) to GND with the pin's pull-up; both Starts are power buttons on VSYS, read
+through a transistor (GPIO3 seat 1, GPIO2 seat 2), low = pressed.
 
 ## Power control
 
 PWR_EN (the RT9013's enable, pulled down by R15) is the OR of: seat 1's Start (SW21 joins VSYS
 to PWR_BTN_RAW, into PWR_EN through D2), seat 2's Start (SW23 joins VSYS to P2_START_RAW, into
 PWR_EN through D8), PWR_HOLD (through D2), and USB VBUS (R14, D3). Either Start powers the
-device on; the MCU reads seat 1's on PWR_BTN_N (GPIO3, Q1) and seat 2's on P2_START (GPIO34, Q7).
+device on; the MCU reads seat 1's on PWR_BTN_N (GPIO3, Q1) and seat 2's on P2_START (GPIO2, Q7).
 
 - Turning on: pressing either Start starts the regulator. Firmware sets PWR_HOLD high only once
   that Start has been held for about a second (read on PWR_BTN_N or P2_START), so a knock in a
@@ -93,15 +93,16 @@ device on; the MCU reads seat 1's on PWR_BTN_N (GPIO3, Q1) and seat 2's on P2_ST
 ## Pins at reset
 
 Every GPIO resets with its pull-down on (RP2350 datasheet, Table 1674). Before reading them:
-turn on the pull-ups of REV0-REV3 and of the Selects, and turn off the pull-downs of
+turn on the pull-ups of the Selects, and turn off the pull-downs of
 PWR_BTN_N, P2_START, CHG_STAT_N and CHG_PG_N (their 100k external pull-ups otherwise sit at
 about 1-1.7 V against the pull-down). SR_PL resets low (loading) and the clock low: drive
 SR_PL high before clocking. ADC pins (VBAT_SENSE, CC1/CC2_SENSE): input buffer and
-pull-down both off. Board revision = REV3..REV0 read as a binary number (1 on this board).
+pull-down both off. The board revision is on the silkscreen only (no strap pins since
+2026-10-24); firmware logs over USB or SWD (no UART connector).
 
 ## Backlight (current sinks on BL_PWM)
 
-GPIO44 runs PWM10 A, for example 12 bits at 36.6 kHz (150 MHz / 4096). R60/R61/C50 filter
+GPIO28 runs PWM6 A, for example 12 bits at 36.6 kHz (150 MHz / 4096). R60/R61/C50 filter
 it into BL_REF (0.077 V at 100%, time constant 2.3 ms), and each sink (two cathode pins,
 two LEDs) holds its 2.2 ohm sense resistor at BL_REF: 35 mA a sink at 100% duty, 70 mA
 for the four LEDs (the panel's typical; its maximum is 80 mA). The LED
@@ -110,7 +111,7 @@ proportional to duty; apply a gamma curve in firmware. Keep the lowest level at 
 duty (5 mA per LED): below it the op-amp's offset (up to 4.5 mV against 22 mV) can make
 the two halves of the backlight visibly unequal. A brightness change settles in about
 10 ms (the filter); from off, the sinks start within about 1 ms and then follow BL_REF.
-GPIO44 resets low (pull-down), R61 holds BL_REF at 0 and the sinks run from 3V3, so the
+GPIO28 resets low (pull-down), R61 holds BL_REF at 0 and the sinks run from 3V3, so the
 backlight is off until firmware starts the PWM and whenever 3V3 is off. Off = duty 0.
 Simulated with ngspice before layout: board/sim/backlight.py (results in
 board/sim/backlight_results.txt).
@@ -136,7 +137,7 @@ take the higher of CC1_SENSE and CC2_SENSE.
 
 ## Audio (PWM into the FM8002A)
 
-GPIO8 is PWM4 A. Run it at 8 bits: at 150 MHz that's a 586 kHz carrier, which R32/C37 and
+GPIO31 is PWM7 B (not the backlight's slice). Run it at 8 bits: at 150 MHz that's a 586 kHz carrier, which R32/C37 and
 R33/C38 (1k, 4.7 nF) take 49 dB down, with the audio band -3 dB at about 14 kHz. Not 10 bits:
 146 kHz would only come out 26 dB down (dither or noise-shape for more resolution). C39
 blocks the DC, and U7 drives the speaker bridge-tied at about 1.8x (R35/R34, with the filter's

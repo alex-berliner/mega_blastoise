@@ -26,7 +26,7 @@ SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-32
          "Fiducial", "MountingHole", "DSL_button", "AOTA", "ABM8")
 TEXT_H = 0.8        # mm; JLC's minimum legible silk is about 0.8 mm tall, 0.15 mm line
 # parts whose label below says more than their reference would
-LABELLED = {"J2", "J3", "J5", "J6", "J7", "SW18", "SW19", "TP1", "TP2", "TP3", "TP4", "TP5",
+LABELLED = {"J2", "J3", "J5", "J7", "SW18", "SW19", "TP1", "TP2", "TP3", "TP4", "TP5",
             "TP9", "TP10", "TP11", "TP12", "TP13", "TP14", "TP15", "TP16"}
 # the probe pads added for bring-up (2026-10-19): the name printed beside each
 PROBE_NAMES = {"TP9": "1V1", "TP10": "BLREF", "TP11": "SCK", "TP12": "MOSI", "TP13": "CS", "TP14": "DC",
@@ -127,7 +127,7 @@ def main():
             clashes.append(s)
         obstacles[layer].append(b)
 
-    # the board's name, revision (design.BOARD_REV, which firmware also reads from GPIO22-25)
+    # the board's name, revision (design.BOARD_REV)
     # and build, on the back between seat 2's clusters (the core took the middle of the back)
     import design
     back = pcbnew.B_SilkS
@@ -157,15 +157,15 @@ def main():
     j3 = board.FindFootprintByReference("J3")
     row = [xy for xy in ((pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y)) for p in j3.Pads())]
     text("PANEL", min(x for x, _ in row) - 5.2, row[0][1])
-    for ref, name in (("J5", "SWD"), ("J6", "UART")):
+    for ref, name in (("J5", "SWD"),):
         jb = box(board.FindFootprintByReference(ref))
         text(name, (jb[0] + jb[2]) / 2 - 0.6, (jb[1] + jb[3]) / 2)     # on its body: right of it is the hole
     # the speaker, hand-fitted on the top (build_pcb.py draws its outline): its name inside it
     (sx, sy) = SPEAKER["at"]
     text("SPEAKER", sx, sy - 1.0)
     text("15x10 8R", sx, sy + 1.0)
-    text("BOOT", PINHOLES[0][0] + 4.6, PINHOLES[0][1])
-    text("RESET", PINHOLES[1][0] + 4.8, PINHOLES[1][1])
+    text("BOOT", PINHOLES[0][0], PINHOLES[0][1] - 2.3, h=0.8)   # above the upper one, below the lower one
+    text("RST", PINHOLES[1][0] - 1.0, PINHOLES[1][1] + 2.3, h=0.8)
     if clashes:
         print("labels over pads or other text:", clashes)
     pcbnew.SaveBoard(PCB, board)

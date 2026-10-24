@@ -147,7 +147,7 @@ def audio():
     sh.nc("J4.MP")
     sh.wire("U7.5", "J4.1")
     sh.wire("U7.8", (Jx - 10.16, Uy + 2.54), (Jx - 10.16, Yc + 2.54), "J4.2", v=True)
-    sh.text(17.78, 160.02, "AUDIO_PWM (GPIO8, PWM4 A, 8 bits: 586 kHz) through two RC stages (-3 dB ~14 kHz); gain 2 x R35/R34.")
+    sh.text(17.78, 160.02, "AUDIO_PWM (GPIO31, PWM7 B, 8 bits: 586 kHz) through two RC stages (-3 dB ~14 kHz); gain 2 x R35/R34.")
     sh.text(17.78, 163.83, "AMP_EN high turns the amplifier on (Q3 pulls SHUTDOWN low). 8 ohm speaker on J4 (PicoBlade), lying on the board beside the screen.")
     return sh
 
@@ -167,7 +167,6 @@ def debug():
         sh.label(sh.parts[ref]["pins"]["1"], end, "right")
 
     three_pin("J5", 27.94, 50.8, "SWD connector J5")
-    three_pin("J6", 91.44, 50.8, "UART connector J6")
     # -- BOOTSEL and RESET buttons, J7 (the same SWD on bare pads, for a pogo jig) between
     # them with its BOOTSEL pad wired straight to the BOOTSEL button
     by = 115.57
@@ -187,7 +186,7 @@ def debug():
         sh.tag(f"J7.{n}")
     sh.tag("J7.1")
     sh.tag("J7.6")
-    sh.text(17.78, 165.1, "J5 SWD and J6 UART follow the Raspberry Pi 3-pin debug connector pinout (Debug Probe cable).")
+    sh.text(17.78, 165.1, "J5 SWD follows the Raspberry Pi 3-pin debug connector pinout (Debug Probe cable).")
     sh.text(17.78, 168.91, "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid. J7: power through its 3V3 pad only with the")
     sh.text(17.78, 172.72, "cell out and nothing on USB; BOOTSEL to GND at reset enters the USB boot loader, RUN to GND resets.")
     return sh
@@ -254,7 +253,7 @@ def usb_charger():
     # its resistors, the thermistor and the caps, in a row under it
     yr = 132.08
     sh.heading(101.6, yr - 15.24, "Charge current, input mode, status, cell temperature")
-    for i, ref in enumerate(("R5", "R64", "R43", "R44", "R9", "R10", "TH1", "C41", "C3", "C2")):
+    for i, ref in enumerate(("R5", "R64", "R43", "R44", "R9", "R10", "TH1", "C3", "C2")):
         x = 106.68 + i * 12.7
         sh.place(ref, x, yr, 0, f=("r", G))
         sh.tag(f"{ref}.1", G)
@@ -353,7 +352,7 @@ def power():
     sh.tag("R16.2", 0)
     sh.wire("Q1.3", (Qx + 7.62, Qy - 5.08))
     sh.label("PWR_BTN_N", (Qx + 7.62, Qy - 5.08), "right")
-    # ---- seat 2's Start (row 1, 2026-10-21): D8 ORs it into PWR_EN, Q7 reads it for GPIO10
+    # ---- seat 2's Start (row 1, 2026-10-21): D8 ORs it into PWR_EN, Q7 reads it for GPIO2
     sh.heading(101.6, 121.92, "Seat 2 Start: power on and sense")
     for i, ref in enumerate(("D8", "R62", "Q7", "R63")):
         x = 109.22 + i * 17.78
@@ -501,7 +500,7 @@ def display():
         sh.wire((Ux + 55.88, frow), f"{rf}.1"); sh.wire(f"{rf}.2", (Ux - 15.24, frow))
     sh.text(17.78, 175.26, "EastRising ER-TFT024IPS-3 (ST7789V, 4-line serial II); its 50-pin FPC folds under the panel into J3 (ZIF). J3 pin j is panel pin 51 - j.")
     sh.text(17.78, 179.07, "Unused bus pins as the datasheet says: DB0-17 and RGB low, RD high; IM3-0 = 1110. Backlight: LED_A on VSYS; a current sink per")
-    sh.text(17.78, 182.88, "two cathode pins (U6 half, Q5/Q6, 2.2 ohm R52/R53). GPIO44 PWM, filtered by R60/R61/C50, sets BL_REF: 0.077 V (35 mA a sink)")
+    sh.text(17.78, 182.88, "two cathode pins (U6 half, Q5/Q6, 2.2 ohm R52/R53). GPIO28 PWM, filtered by R60/R61/C50, sets BL_REF: 0.077 V (35 mA a sink)")
     sh.text(17.78, 186.69, "at 100%. Stability: sim/backlight.py. JP2 and JP4: cut to measure the LED or panel logic current.")
     return sh
 
@@ -515,27 +514,13 @@ def mcu():
     geo = kisym.placed(sh.parts["U4"]["lib"], Ux, Uy, 0)
     # right side: GPIO0-39 straight out to their labels
     for num, g in geo.items():
-        if g["out"] != "right" or (pins[num] or "").startswith("REV"):
+        if g["out"] != "right":
             continue
         net = pins[num]
         if net is None:
             sh.nc(f"U4.{num}")
         else:
             sh.tag(f"U4.{num}", 5.08)
-    # board revision straps, wired: the REV pins to a 1k each (a 0 bit) or nothing (a 1)
-    sh.heading(190.5, 93.98, "Board revision straps")
-    rev = {pins[n]: n for n in pins if (pins[n] or "").startswith("REV")}
-    for i in range(4):
-        r = f"R{48 + i}"
-        num = rev[f"REV{i}"]
-        x = 223.52 - i * 10.16
-        y = sh.P(f"U4.{num}")[1]
-        sh.place(r, x, y + 3.81, 0, f="r")
-        sh.wire(f"U4.{num}", (x, y), f"{r}.1")
-        sh.tag(f"{r}.2", 0)
-    sh.text(190.5, 135.89, "A 1k to GND makes a bit 0; a bit left unfitted")
-    sh.text(190.5, 139.7, "reads 1 through the pin's pull-up (GPIO22-25).")
-    sh.text(190.5, 143.51, "REV = 1: R48 not fitted.")
     # top: supply pins on two short buses, the regulator's own pins labelled
     yb = Uy - 60.96
     for dx in (-12.7, -10.16, -5.08, -2.54, 2.54):
@@ -686,11 +671,11 @@ SHEET_NOTES = {
     "Power": ("3V3 regulator (RT9013)", "power latch (button, MCU, USB)",
               "button sense, cell voltage sense", "ground pads"),
     "MCU": ("RP2354B (2 MB flash inside)", "USB series resistors",
-            "12 MHz crystal", "board revision straps"),
+            "12 MHz crystal", ""),
     "MCU_Power": ("+3V3 and DVDD decoupling", "core 1.1 V switcher: VREG_VIN cap,",
                   "AVDD filter, inductor, output", ""),
-    "Debug": ("SWD connector J5", "UART connector J6", "debug pads J7",
-              "BOOTSEL and RESET buttons"),
+    "Debug": ("SWD connector J5", "debug pads J7",
+              "BOOTSEL and RESET buttons", ""),
     "Display": ("panel connector J3 (50-pin ZIF)", "SPI series resistors, panel supply",
                 "backlight reference", "backlight current sinks ch1, ch2"),
     "Audio": ("PWM low-pass filter, DC block", "amplifier (FM8002A) and supply",
