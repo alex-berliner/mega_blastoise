@@ -82,10 +82,13 @@ pub enum FormatId {
     /// `[Gen 1] Random Battle`: the protocol-diff harness's `--teams random`
     /// (it supplies the teams, so only the ruleset differs).
     Gen1RandomBattle,
+    /// `[Gen 3] Random Battle`, the same for gen 3.
+    Gen3RandomBattle,
 }
 
 impl FormatId {
-    pub const ALL: [FormatId; 3] = [FormatId::Gen1CustomGame, FormatId::Gen3CustomGame, FormatId::Gen1RandomBattle];
+    pub const ALL: [FormatId; 4] =
+        [FormatId::Gen1CustomGame, FormatId::Gen3CustomGame, FormatId::Gen1RandomBattle, FormatId::Gen3RandomBattle];
 
     /// The format id (`gen1customgame`).
     pub const fn id(self) -> &'static str {
@@ -93,6 +96,7 @@ impl FormatId {
             FormatId::Gen1CustomGame => "gen1customgame",
             FormatId::Gen3CustomGame => "gen3customgame",
             FormatId::Gen1RandomBattle => "gen1randombattle",
+            FormatId::Gen3RandomBattle => "gen3randombattle",
         }
     }
 
@@ -102,20 +106,21 @@ impl FormatId {
             FormatId::Gen1CustomGame => "[Gen 1] Custom Game",
             FormatId::Gen3CustomGame => "[Gen 3] Custom Game",
             FormatId::Gen1RandomBattle => "[Gen 1] Random Battle",
+            FormatId::Gen3RandomBattle => "[Gen 3] Random Battle",
         }
     }
 
     pub const fn gen(self) -> u8 {
         match self {
             FormatId::Gen1CustomGame | FormatId::Gen1RandomBattle => 1,
-            FormatId::Gen3CustomGame => 3,
+            FormatId::Gen3CustomGame | FormatId::Gen3RandomBattle => 3,
         }
     }
 
     /// The format's `debug` flag: the custom games have it, random battles
     /// do not.
     pub const fn debug(self) -> bool {
-        !matches!(self, FormatId::Gen1RandomBattle)
+        !matches!(self, FormatId::Gen1RandomBattle | FormatId::Gen3RandomBattle)
     }
 
     pub fn parse(id: &str) -> Option<FormatId> {
@@ -129,6 +134,8 @@ impl FormatId {
 /// Freeze Clause Mod; Gen 3 custom game: HP Percentage Mod, Cancel Mod.
 /// Gen 1 random battle (`Standard`) adds Endless Battle Clause and the
 /// validator clauses that announce themselves (Species, OHKO, Evasion Moves).
+/// Gen 3 random battle (gen 3's `Standard`) also announces Beat Up Nicknames
+/// Mod, Switch Priority Clause Mod and Evasion Items Clause.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
@@ -142,10 +149,13 @@ pub enum RuleId {
     SpeciesClause,
     OhkoClause,
     EvasionMovesClause,
+    BeatUpNicknamesMod,
+    SwitchPriorityClauseMod,
+    EvasionItemsClause,
 }
 
 impl RuleId {
-    pub const ALL: [RuleId; 9] = [
+    pub const ALL: [RuleId; 12] = [
         RuleId::HpPercentageMod,
         RuleId::CancelMod,
         RuleId::DesyncClauseMod,
@@ -155,6 +165,9 @@ impl RuleId {
         RuleId::SpeciesClause,
         RuleId::OhkoClause,
         RuleId::EvasionMovesClause,
+        RuleId::BeatUpNicknamesMod,
+        RuleId::SwitchPriorityClauseMod,
+        RuleId::EvasionItemsClause,
     ];
 
     /// The rule's name, as a custom rule after `@@@` and in the infobox.
@@ -169,6 +182,9 @@ impl RuleId {
             RuleId::SpeciesClause => "Species Clause",
             RuleId::OhkoClause => "OHKO Clause",
             RuleId::EvasionMovesClause => "Evasion Moves Clause",
+            RuleId::BeatUpNicknamesMod => "Beat Up Nicknames Mod",
+            RuleId::SwitchPriorityClauseMod => "Switch Priority Clause Mod",
+            RuleId::EvasionItemsClause => "Evasion Items Clause",
         }
     }
 
@@ -187,6 +203,10 @@ impl RuleId {
             RuleId::SpeciesClause => Some("Species Clause: Limit one of each Pok\u{e9}mon"),
             RuleId::OhkoClause => Some("OHKO Clause: OHKO moves are banned"),
             RuleId::EvasionMovesClause => Some("Evasion Moves Clause: Evasion moves are banned"),
+            // `onBegin` announces it only in gens 1 to 4, which are all ours.
+            RuleId::BeatUpNicknamesMod => Some("Beat Up Nicknames Mod: Beat Up will not reveal any party members"),
+            RuleId::SwitchPriorityClauseMod => Some("Switch Priority Clause Mod: Faster Pok\u{e9}mon switch first"),
+            RuleId::EvasionItemsClause => Some("Evasion Items Clause: Evasion items are banned"),
         }
     }
 
@@ -280,6 +300,7 @@ mod tests {
         assert_eq!(FormatSpec::parse("gen9ou"), None);
         assert_eq!(FormatSpec::parse("gen1customgame@@@Team Preview"), None);
         assert_eq!(FormatSpec::parse("gen1randombattle").map(|f| f.base.name()), Some("[Gen 1] Random Battle"));
+        assert_eq!(FormatSpec::parse("gen3randombattle").map(|f| f.base.gen()), Some(3));
         assert_eq!(g1.base.name(), "[Gen 1] Custom Game");
         assert_eq!(g1.base.gen(), 1);
     }

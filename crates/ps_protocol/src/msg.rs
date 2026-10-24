@@ -1216,15 +1216,19 @@ texts! {
     BeforeTurnCallback => "before turn callback: {}" (MoveId),
     // PS: data/abilities.ts compoundeyes onSourceModifyAccuracy
     CompoundEyesAccuracy => "compoundeyes - enhancing accuracy" (),
+    // PS: sim/battle-actions.ts getSpreadDamage
+    DamageCalculationInterrupted => "damage calculation interrupted" (),
     // PS: sim/battle.ts spreadDamage
     DamageEventFailed => "damage event failed" (),
     // PS: data/abilities.ts serenegrace onModifyMove
     DoublingSecondaryChance => "doubling secondary chance" (),
+    // PS: sim/battle-actions.ts runMoveEffects
+    HealInterrupted => "heal interrupted" (),
     // PS: sim/pokemon.ts setStatus
     ImmuneToStatus => "immune to status" (),
     // PS: data/moves.ts attract volatileStatus onStart
     IncompatibleGender => "incompatible gender" (),
-    // PS: sim/battle-actions.ts trySpreadMoveHit
+    // PS: sim/battle-actions.ts runMoveEffects
     MoveFailedNothing => "move failed because it did nothing" (),
     // PS: sim/pokemon.ts runStatusImmunity
     NaturalStatusImmunity => "natural status immunity" (),

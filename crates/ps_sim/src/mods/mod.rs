@@ -32,9 +32,14 @@ use ps_dex::{ConditionId, Dex, MoveId};
 /// The ported effects for `gen`: species, moves, items, abilities, conditions
 /// and rules the new `ps_sim` has handlers for. The protocol-diff harness
 /// (P1-7) consumes this via `ps_sim_cli --ported <gen>` so the wide
-/// generator draws only from what a port already covers. Gen 1 lists the
-/// moves [`move_is_ported`] accepts (P1-8); gen 3's list is empty until its
-/// pipeline lands.
+/// generator draws only from what a port already covers. Each list has
+/// every move [`move_is_ported`] accepts but Struggle (no team carries it;
+/// the pipeline uses it when nothing else is left) and Hidden Power's typed
+/// placeholders (their move is `hiddenpower`), and every species (PS species
+/// have no handlers). Gen 3's also has every ability [`is_ported`] accepts;
+/// gen 1 has no abilities (its dex's No Ability is not listed). The
+/// `ported_lists_are_the_dex_derivation` test derives each list from the dex
+/// and the registry and fails, printing the new list, when they differ.
 ///
 /// Each entry is `<kind>:<id>` where `kind` is one of `move`, `species`,
 /// `item`, `ability`, `condition`, `rule`. The protocol-diff harness
@@ -46,7 +51,7 @@ use ps_dex::{ConditionId, Dex, MoveId};
 pub fn ported(gen: u8) -> &'static [&'static str] {
     match gen {
         1 => gen1::PORTED,
-        3 => &gen3::PORTED,
+        3 => gen3::PORTED,
         _ => &[],
     }
 }
@@ -166,40 +171,45 @@ mod tests {
         }
     }
 
-    /// The `ported(gen)` lists are exactly what the dex and the registry
-    /// allow, sorted: `move:<id>` for every [`move_is_ported`] move but
-    /// Struggle, and `species:<id>` for every species (PS species have no
-    /// handlers; the harness's wide teams draw from these).
-    #[test]
-    fn ported_lists_are_the_dex_derivation() {
-        extern crate std;
-        use std::string::String;
-        use std::vec::Vec;
-        for dex in [&ps_dex::GEN1, &ps_dex::GEN3] {
-            let gen = dex.gen;
-            if gen == 3 {
-                // The gen 3 pipeline is P1-9's.
-                assert!(ported(gen).is_empty());
+    /// The `kind:id` list [`ported`] holds for `dex`, derived from the dex and
+    /// `registry` (allocates: test only).
+    pub fn derive_ported(dex: &Dex, registry: &Registry) -> alloc::vec::Vec<alloc::string::String> {
+        use alloc::format;
+        let mut out = alloc::vec::Vec::new();
+        for i in 0..dex.moves.len() {
+            let m = MoveId(i as u16);
+            let def = dex.move_def(m);
+            let id = format!("{}", PsId(def.name.as_str()));
+            if id == "struggle" || !def.placeholder_for.is_none() || !move_is_ported(dex, registry, m) {
                 continue;
             }
-            let reg = registry_for(dex);
-            let moves = (0..dex.moves.len())
-                .map(|i| MoveId(i as u16))
-                .filter(|&m| move_is_ported(dex, reg, m))
-                .map(|m| ps_id(dex.move_def(m).name.as_str()))
-                .filter(|id| id != "struggle")
-                .map(|id| alloc::format!("move:{id}"));
-            let species = dex.species.iter().filter(|s| s.num > 0).map(|s| alloc::format!("species:{}", ps_id(s.name.as_str())));
-            let mut derived: Vec<String> = moves.chain(species).collect();
-            derived.sort();
-            let listed: Vec<String> = ported(gen).iter().map(|s| String::from(*s)).collect();
-            assert_eq!(listed, derived, "gen {gen}: ported list is stale; derived:\n{derived:?}");
+            out.push(format!("move:{id}"));
         }
+        for i in 0..dex.abilities.len() {
+            let a = ps_dex::AbilityId(i as u16);
+            if dex.gen < 3 {
+                break;
+            }
+            if is_ported(dex, registry, EffectId::Ability(a)) {
+                out.push(format!("ability:{}", PsId(dex.ability_def(a).name.as_str())));
+            }
+        }
+        for s in dex.species.iter().filter(|s| s.num > 0) {
+            out.push(format!("species:{}", PsId(s.name.as_str())));
+        }
+        out.sort();
+        out
     }
 
-    /// PS `toID`.
-    fn ps_id(name: &str) -> alloc::string::String {
-        name.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase()).collect()
+    /// The `ported(gen)` lists are exactly what the dex and the registry
+    /// allow ([`derive_ported`]).
+    #[test]
+    fn ported_lists_are_the_dex_derivation() {
+        for (gen, dex) in [(1, &ps_dex::GEN1), (3, &ps_dex::GEN3)] {
+            let derived = derive_ported(dex, registry_for(dex));
+            let listed: alloc::vec::Vec<alloc::string::String> = ported(gen).iter().map(|s| alloc::string::String::from(*s)).collect();
+            assert_eq!(listed, derived, "gen {gen}: ported list is stale; derived:\n{derived:#?}");
+        }
     }
 }
 

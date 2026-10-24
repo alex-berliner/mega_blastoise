@@ -34,7 +34,7 @@ use crate::state::{Battle, Holder, MonRef};
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Rule {
-    /// The battle's format (`gen1customgame`, `gen3customgame`).
+    /// The battle's format (`gen1customgame`, `gen3randombattle`, ...).
     Format = 0,
     HpPercentageMod,
     CancelMod,
@@ -48,6 +48,9 @@ pub enum Rule {
     SpeciesClause,
     OhkoClause,
     EvasionMovesClause,
+    BeatUpNicknamesMod,
+    SwitchPriorityClauseMod,
+    EvasionItemsClause,
 }
 
 /// Any effect. The derived order (variant, then id) is the registry's

@@ -39,7 +39,7 @@ const { Teams, Dex } = require('pokemon-showdown');
 const { spawnPorted } = require('./ported');
 
 /// Build a team pair.
-/// `opts`: { gen, mode, seed (a 2 u16 array), focus?, self?, psCli? }
+/// `opts`: { gen, mode, seed (a 4 u16 array), focus?, self?, psCli? }
 /// Returns { p1, p2, packed: [packed1, packed2] }.
 function buildPair(opts) {
   const { gen, mode, seed, focus } = opts;
@@ -57,7 +57,7 @@ function buildPair(opts) {
       e.code = 2;
       throw e;
     }
-    return buildWide({ gen, prng, focus, ported });
+    return buildWide({ gen, prng, focus, ported, self: !!opts.self });
   }
   if (mode.startsWith('file:')) {
     return buildFromFile({ path: mode.slice('file:'.length) });
@@ -67,16 +67,19 @@ function buildPair(opts) {
 
 function buildRandom({ gen, prng }) {
   const format = `gen${gen}randombattle`;
-  const team = Teams.generate(format, { seed: prng.battleSeed() });
-  if (!team || !Array.isArray(team) || team.length === 0) {
+  // p1's team from the team seed, p2's from a seed drawn off it (not a
+  // mirror match).
+  const p2Seed = [0, 1, 2, 3].map(() => Math.floor(prng.random() * 0x10000));
+  const teams = [prng.battleSeed(), p2Seed].map((seed) => Teams.generate(format, { seed }));
+  if (teams.some((t) => !t || !Array.isArray(t) || t.length === 0)) {
     throw new Error('random team generation returned an empty team');
   }
-  return { p1: team, p2: team, packed: [Teams.pack(team), Teams.pack(team)] };
+  return { p1: teams[0], p2: teams[1], packed: [Teams.pack(teams[0]), Teams.pack(teams[1])] };
 }
 
-function buildWide({ gen, prng, focus, ported }) {
-  const p1 = makeWideTeam({ gen, prng, focus, ported });
-  const p2 = makeWideTeam({ gen, prng, focus, ported });
+function buildWide({ gen, prng, focus, ported, self }) {
+  const p1 = makeWideTeam({ gen, prng, focus, ported, self });
+  const p2 = makeWideTeam({ gen, prng, focus, ported, self });
   return { p1, p2, packed: [Teams.pack(p1), Teams.pack(p2)] };
 }
 
@@ -91,7 +94,7 @@ function buildFromFile({ path: filePath }) {
 
 /// One team: 1-6 mons. Each mon: 1-4 moves (distinct), level 40-100,
 /// a random species, IVs/EVs (gen 3 also picks item/ability + status).
-function makeWideTeam({ gen, prng, focus, ported }) {
+function makeWideTeam({ gen, prng, focus, ported, self }) {
   const speciesPool = ported.species;
   const movePool = ported.moves;
   const itemPool = ported.items;
@@ -151,6 +154,16 @@ function makeWideTeam({ gen, prng, focus, ported }) {
       const none = prng.random() * 100 < 30;
       if (!none && abilityPool.length) {
         ability = pickAbility(prng, speciesId, gen, slot, abilityPool);
+      }
+      // Against ps_sim_cli the team may only carry ported abilities. A
+      // packed empty ability is not "no ability": PS's `Teams.unpack`
+      // turns it into the species' first ability (from the base dex),
+      // which is usually one with handlers. So when neither the species'
+      // abilities nor the 30% "none" roll gave a ported one, draw one from
+      // the pool (custom games do not validate the set). `--self` keeps
+      // the old stream.
+      if (!self && !ability && abilityPool.length) {
+        ability = pickFromArr(prng, abilityPool);
       }
     }
     const statuses = WIDE_STATUSES[gen];

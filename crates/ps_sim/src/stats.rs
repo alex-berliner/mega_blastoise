@@ -203,6 +203,23 @@ impl Battle {
         value as i32
     }
 
+    /// PS `pokemon.calculateStat(statName, boost, modifier, statUser)` with
+    /// `modifier` 1 (`getDamage`'s): the stored stat at stage `boost`. No
+    /// Wonder Room in gens 1-3.
+    // PS: sim/pokemon.ts calculateStat
+    pub fn calculate_stat(&mut self, m: MonRef, stat: Stat, boost: i8, stat_user: Option<MonRef>) -> i32 {
+        let value = i64::from(self.mon(m).stored_stats[stat as usize]);
+        // `runEvent('ModifyBoost', statUser || this, null, null, boosts)`:
+        // no gen 1-3 effect answers it (see `get_stat`).
+        let user = stat_user.unwrap_or(m);
+        let r = self.run_event(EventId::ModifyBoost, Holder::Mon(user), None, EffectId::None, Some(Relay::TRUE));
+        debug_assert_eq!(r, Relay::TRUE, "ModifyBoost handler: boosts relay not ported");
+        let b = boost.clamp(-6, 6);
+        let value = if b >= 0 { value * BOOST_HALVES[b as usize] / 2 } else { value * 2 / BOOST_HALVES[(-b) as usize] };
+        // `this.battle.modify(stat, modifier || 1)`.
+        crate::modify::modify(self.trunc, value, 1, 1) as i32
+    }
+
     /// PS `pokemon.getActionSpeed()`, gen 3's version (gen 1 inherits it).
     /// No Trick Room in gens 1-3.
     // PS: data/mods/gen3/scripts.ts getActionSpeed

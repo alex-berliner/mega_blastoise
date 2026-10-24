@@ -115,8 +115,9 @@ function parseArgs(argv) {
   return opts;
 }
 
-/// Derive the 4 u16 battle seed, 2 u16 team seed and 2 u16 choice seed
-/// from one driver seed. Root seed is `[drv[0..16], (drv >> 16), drv ^
+/// Derive the 4 u16 battle seed, 4 u16 team seed and 4 u16 choice seed
+/// from one driver seed (PS's `Gen5RNG` needs all four: a 2-element seed
+/// leaves the rest `undefined` and `random()` returns 0 forever). Root seed is `[drv[0..16], (drv >> 16), drv ^
 /// 0xa5a5, 0]` -- fits PS's `Gen5RNG` shape (PRNG([u16; 4])) without a
 /// re-key. Same driver seed -> identical battle in both sides.
 function deriveSeeds(driverSeed) {
@@ -133,8 +134,8 @@ function deriveSeeds(driverSeed) {
     root.random(0x10000),
     root.random(0x10000),
   ];
-  const team = [root.random(0x10000), root.random(0x10000)];
-  const choice = [root.random(0x10000), root.random(0x10000)];
+  const team = [root.random(0x10000), root.random(0x10000), root.random(0x10000), root.random(0x10000)];
+  const choice = [root.random(0x10000), root.random(0x10000), root.random(0x10000), root.random(0x10000)];
   return { battle, team, choice };
 }
 

@@ -281,7 +281,28 @@ impl Battle {
         {
             return self.registry.handler(effect, Prefix::None, EventId::Start);
         }
+        if callback.is_none() {
+            self.require_handler_ported(effect, prefix, event);
+        }
         callback
+    }
+
+    /// The `unported` stop for event dispatch: PS would call `effect`'s
+    /// `prefix` + `event` handler here, and the registry does not carry it
+    /// (an item or ability with handlers, or any other effect whose port
+    /// has not landed). Without this the handler would be skipped silently.
+    pub(crate) fn require_handler_ported(&self, effect: EffectId, prefix: Prefix, event: EventId) {
+        #[cfg(any(test, feature = "test-override"))]
+        if self.lax_handlers {
+            return;
+        }
+        let Some(hs) = crate::mods::dex_handlers(self.dex, effect) else { return };
+        if hs.iter().any(|h| crate::effect::parse_handler_key(h.name()) == Some((prefix, event))) {
+            self.require_ported(effect);
+            // Ported means every dex handler is registered, so a miss here
+            // is a registry bug.
+            panic!("unported: {effect:?} {prefix:?} {event:?} is in the dex but not the registry");
+        }
     }
 
     /// The `target` stored on the state a listener points at.
@@ -640,7 +661,11 @@ impl Battle {
         self.find_event_handlers(target, event, source, &mut handlers);
         if on_effect {
             assert!(!effect.is_none(), "onEffect passed without an effect");
-            if let Some(h) = self.registry.handler(effect, Prefix::None, event) {
+            let h = self.registry.handler(effect, Prefix::None, event);
+            if h.is_none() {
+                self.require_handler_ported(effect, Prefix::None, event);
+            }
+            if let Some(h) = h {
                 let mut l = Listener {
                     effect,
                     handler: Some(h),
@@ -870,6 +895,7 @@ impl Battle {
         }
 
         let Some(h) = custom.or_else(|| self.registry.handler(effect, Prefix::None, event)) else {
+            self.require_handler_ported(effect, Prefix::None, event);
             return relay;
         };
 
@@ -1230,6 +1256,7 @@ mod tests {
     fn battle() -> std::boxed::Box<Battle> {
         calls();
         let mut b = std::boxed::Box::new(Battle::new(&ps_dex::GEN3, &REG, [1, 2, 3, 4], Trunc::Math));
+        b.lax_handlers = true;
         for side in 0..2u8 {
             let mut p = Pokemon::EMPTY;
             p.exists = true;

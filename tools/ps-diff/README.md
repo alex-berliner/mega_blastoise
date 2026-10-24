@@ -50,7 +50,8 @@ All three seeds (battle, team, choice) come from one driver seed via a
 Gen5RNG rooted at `[driver[0..16], (driver >> 16), driver ^ 0xa5a5, 0]`,
 four u16 values laid out to fit `PRNG([u16; 4])` without a re-key. The
 battle seed is four u16, exactly PS's `seed` shape. The team seed and
-choice seed are two u16 each. Same driver seed => identical battle in
+choice seed are four u16 each (PS's `Gen5RNG` returns 0 forever from
+a shorter seed). Same driver seed => identical battle in
 both drivers, no second chance to drift independently.
 
 ## Team builders
@@ -60,7 +61,8 @@ both drivers, no second chance to drift independently.
 
 - `random` -- `Teams.generate('genNrandombattle')` for the chosen
   generation. Listed in `PS/data/random-battles/gen<N>/`. Uses PS's
-  own generator; the only gen-agnostic path.
+  own generator; the only gen-agnostic path. p1's team comes from the
+  team seed, p2's from a seed drawn from it.
 - `wide` -- `buildWide` enumerates species by `dex.species.all()`,
   picks 1-6 mons per side, 1-4 distinct moves each from the gen's
   move pool, level 40-100, IVs 0-31, EVs <= 510 with a rotating
@@ -72,6 +74,9 @@ both drivers, no second chance to drift independently.
   - `--ps-cli`: restricted to the `kind:id` lines
     `ps_sim_cli --ported <gen>` prints; builds call exit 2 with
     "no ported pipeline for gen N" if the list is empty.
+    A gen 3 mon whose species has no ported ability draws one from
+    the ported pool: a packed empty ability is not "none", PS's
+    `Teams.unpack` turns it into the species' first ability.
 - `file:<path>` -- `buildFromFile` reads the file as PS packed teams
   (one per line), unpacking with PS's own `Teams.unpack`. A `focus`
   filter on `--focus ids` makes every team carry at least one of

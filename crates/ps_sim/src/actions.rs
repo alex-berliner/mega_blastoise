@@ -2,16 +2,20 @@
 //!
 //! PS overrides the move pipeline per gen in `data/mods/genN/scripts.ts`,
 //! each mod inheriting from the next gen up. [`GenScripts`] is the set of
-//! functions a gen overrides; `mods::gen1::scripts::Gen1Scripts` folds in
-//! what gen 1 inherits, and [`Battle::run_move`] and friends pick the gen's
-//! implementation by a plain `match` on the gen (no trait objects).
+//! functions a gen overrides; `mods::gen1::scripts::Gen1Scripts` and
+//! `mods::gen3::scripts::Gen3Scripts` fold in what each gen inherits (gen
+//! 3's base functions are in `crate::base_actions`), and
+//! [`Battle::run_move`] and friends pick the gen's implementation by a
+//! plain `match` on the gen (no trait objects).
 //!
 //! This file also holds what every pipeline shares and PS keeps outside
 //! `BattleActions`: the [`ActiveMove`] object and its arena, `addMove` /
 //! `attrLastMove`, `spreadDamage` / `damage` / `heal`, and the `Pokemon`
 //! methods the pipelines call (`runImmunity`, `isGrounded`,
 //! `runEffectiveness`, `hasType`, `gotAttacked`, `moveUsed`, `heal`).
-//! Gen 4's `applyRecoilDamage` (which gens 1 and 3 inherit) is here too.
+//! Gen 4's `applyRecoilDamage` (which gens 1 and 3 inherit) is here too,
+//! with PS's `combineResults` and the `moveData` accessors and move-object
+//! helpers every gen's pipeline uses.
 //!
 //! # The `ActiveMove` object
 //!
@@ -32,14 +36,15 @@
 //! `heal`, `getMoveHitData`; sim/dex.ts `getActiveMove`, `getImmunity`,
 //! `getEffectiveness`; data/mods/gen4/scripts.ts `applyRecoilDamage`.
 
-use ps_dex::{FixedDamage, MoveCategory, MoveId, Type};
-use ps_protocol::{Arg, ArgValue, Kw, KwFlags, Msg, Word};
+use ps_dex::{ConditionId, FixedDamage, MoveCategory, MoveId, MoveTarget, Type};
+use ps_protocol::{Arg, ArgValue, Kw, KwFlags, MoveNum, Msg, Word};
 
-use crate::effect::{EffectId, EventId, Pseudo};
+use crate::effect::{Callback, EffectId, EventArgs, EventId, Prefix, Pseudo};
 use crate::mods::gen1::scripts::Gen1Scripts;
+use crate::mods::gen3::scripts::Gen3Scripts;
 use crate::queue::ActionMove;
 use crate::relay::Relay;
-use crate::state::{Attacker, Battle, Holder, MonRef};
+use crate::state::{Attacker, Battle, Holder, MonRef, StateRef};
 
 /// How many `ActiveMove` objects one action can make: the action's own,
 /// plus the moves it calls (Metronome, Mirror Move) and theirs.
@@ -75,6 +80,9 @@ pub struct ActiveMove {
     /// `type`; `Type::None` is `'???'`.
     pub type_: Type,
     pub category: MoveCategory,
+    /// `target` (a `ModifyMove` handler may change it; gen 3's
+    /// `useMoveInner` re-targets when it does).
+    pub target: MoveTarget,
     /// `accuracy` times 256 (`None` is `true`): every dex accuracy is a
     /// whole percentage, and gen 1's `nomove` is `100 * 81 / 256`.
     pub accuracy_x256: Option<u16>,
@@ -99,6 +107,8 @@ pub struct ActiveMove {
     /// `typeMod`.
     pub crit: bool,
     pub type_mod: i8,
+    /// `selfDropped`: a `self` stat drop already rolled (base `selfDrops`).
+    pub self_dropped: bool,
 }
 
 impl ActiveMove {
@@ -109,6 +119,7 @@ impl ActiveMove {
         base_power: 0,
         type_: Type::None,
         category: MoveCategory::Status,
+        target: MoveTarget::Normal,
         accuracy_x256: None,
         ohko: false,
         ignore_immunity: false,
@@ -121,6 +132,7 @@ impl ActiveMove {
         source_effect: EffectId::None,
         crit: false,
         type_mod: 0,
+        self_dropped: false,
     };
 
     /// PS `dex.getActiveMove(id)`: a fresh copy of the dex move, `hit` 0.
@@ -133,6 +145,7 @@ impl ActiveMove {
             base_power: def.base_power,
             type_: def.type_,
             category: def.category,
+            target: def.target,
             accuracy_x256: match def.accuracy() {
                 ps_dex::Accuracy::Always => None,
                 ps_dex::Accuracy::Percent(p) => Some(u16::from(p) * 256),
@@ -169,6 +182,8 @@ impl ActiveMove {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MoveResult {
     Undefined,
+    /// `''`, PS's `NOT_FAIL`.
+    NotFail,
     Null,
     False,
     True,
@@ -205,8 +220,60 @@ impl MoveResult {
             Relay::Bool(true) => MoveResult::True,
             Relay::Bool(false) => MoveResult::False,
             Relay::Null => MoveResult::Null,
-            Relay::NotFail => MoveResult::Undefined,
+            Relay::NotFail => MoveResult::NotFail,
             other => panic!("pipeline result {other:?}"),
+        }
+    }
+
+    /// `true` or `false`.
+    pub fn from_bool(b: bool) -> MoveResult {
+        if b {
+            MoveResult::True
+        } else {
+            MoveResult::False
+        }
+    }
+
+    /// `x || x === 0 || x === undefined`: the move did not fail.
+    pub fn succeeded(self) -> bool {
+        self.truthy() || self == MoveResult::Int(0) || self == MoveResult::Undefined
+    }
+
+    /// PS `combineResults(left, right)`: of two results, the one that says
+    /// more (`undefined` < `NOT_FAIL` < `null` < a boolean < a number, two
+    /// numbers add up, a success beats a failure).
+    // PS: sim/battle-actions.ts combineResults
+    pub fn combine(left: MoveResult, right: MoveResult) -> MoveResult {
+        // `typeof` ranks: 'undefined', 'string', 'object' (null), 'boolean', 'number'.
+        fn rank(r: MoveResult) -> u8 {
+            match r {
+                MoveResult::Undefined => 0,
+                MoveResult::NotFail => 1,
+                MoveResult::Null => 2,
+                MoveResult::False | MoveResult::True => 3,
+                MoveResult::Int(_) => 4,
+            }
+        }
+        if rank(left) > rank(right) {
+            left
+        } else if left.truthy() && !right.truthy() && right != MoveResult::Int(0) {
+            left
+        } else if let (MoveResult::Int(a), MoveResult::Int(b)) = (left, right) {
+            MoveResult::Int(a + b)
+        } else {
+            right
+        }
+    }
+
+    /// The result as a relay value.
+    pub fn relay(self) -> Option<Relay> {
+        match self {
+            MoveResult::Undefined => None,
+            MoveResult::NotFail => Some(Relay::NotFail),
+            MoveResult::Null => Some(Relay::Null),
+            MoveResult::False => Some(Relay::FAIL),
+            MoveResult::True => Some(Relay::TRUE),
+            MoveResult::Int(n) => Some(Relay::Int(n)),
         }
     }
 }
@@ -220,9 +287,10 @@ pub enum MoveData {
     SelfEffect(&'static ps_dex::SelfEffect),
 }
 
-/// The functions a gen's `scripts.ts` overrides (gen 1's list; later gens
-/// add theirs), as associated functions over the battle. Each gen's
-/// implementation folds in what its mod inherits.
+/// The functions a gen's `scripts.ts` overrides (gen 1's list; gen 3
+/// overrides a subset of it), as associated functions over the battle.
+/// Each gen's implementation folds in what its mod inherits: gen 3's
+/// inherited ones are the base versions in `crate::base_actions`.
 pub trait GenScripts {
     /// `actions.runMove(move, pokemon, targetLoc, {sourceEffect})`.
     fn run_move(b: &mut Battle, mv: ActionMove, pokemon: MonRef, target_loc: i8, source_effect: EffectId);
@@ -251,12 +319,23 @@ pub trait GenScripts {
     ) -> MoveResult;
     /// `actions.getDamage(source, target, move, suppressMessages)`.
     fn get_damage(b: &mut Battle, source: MonRef, target: MonRef, mv: MoveRef, data: MoveData, suppress: bool) -> MoveResult;
-    /// `pokemon.deductPP(move, amount)`: the PP taken.
-    fn deduct_pp(b: &mut Battle, pokemon: MonRef, amount: i32) -> i32;
-    /// `battle.boost(boost, target, source, effect)`: `boosts` in PS's
-    /// `BoostID` order (atk, def, spa, spd, spe, accuracy, evasion), 0 for a
-    /// stat the table leaves out. PS returns `0`, `null` or `true`.
-    fn boost(b: &mut Battle, boosts: [i8; 7], target: MonRef, source: Option<MonRef>, effect: EffectId) -> MoveResult;
+    /// `pokemon.deductPP(move, amount)`: the PP taken. `amount` 0 is PS's
+    /// `null` (1).
+    fn deduct_pp(b: &mut Battle, pokemon: MonRef, mv: MoveId, amount: i32) -> i32;
+    /// `battle.boost(boost, target, source, effect, isSecondary, isSelf)`:
+    /// `boosts` in PS's `BoostID` order (atk, def, spa, spd, spe, accuracy,
+    /// evasion), 0 for a stat the table leaves out (every gen 1 and 3 boost
+    /// table lists its stats in that order). PS returns `0`, `false`,
+    /// `null` or `true`.
+    fn boost(
+        b: &mut Battle,
+        boosts: [i8; 7],
+        target: MonRef,
+        source: Option<MonRef>,
+        effect: EffectId,
+        is_secondary: bool,
+        is_self: bool,
+    ) -> MoveResult;
     /// `pokemon.clearBoosts()`.
     fn clear_boosts(b: &mut Battle, pokemon: MonRef);
 }
@@ -277,6 +356,7 @@ impl Battle {
         self.move_count = 0;
         match self.gen {
             1 => Gen1Scripts::run_move(self, mv, pokemon, target_loc, source_effect),
+            3 => Gen3Scripts::run_move(self, mv, pokemon, target_loc, source_effect),
             g => todo!("unported: the gen {g} move pipeline (runMove)"),
         }
     }
@@ -285,14 +365,29 @@ impl Battle {
     pub fn use_move(&mut self, mv: MoveRef, pokemon: MonRef, target: Option<Option<MonRef>>, source_effect: EffectId) -> bool {
         match self.gen {
             1 => Gen1Scripts::use_move(self, mv, pokemon, target, source_effect),
+            3 => Gen3Scripts::use_move(self, mv, pokemon, target, source_effect),
             g => todo!("unported: the gen {g} move pipeline (useMove)"),
         }
     }
 
     /// PS `battle.boost(boost, target, source, effect)`.
     pub fn boost(&mut self, boosts: [i8; 7], target: MonRef, source: Option<MonRef>, effect: EffectId) -> MoveResult {
+        self.boost_full(boosts, target, source, effect, false, false)
+    }
+
+    /// PS `battle.boost(boost, target, source, effect, isSecondary, isSelf)`.
+    pub fn boost_full(
+        &mut self,
+        boosts: [i8; 7],
+        target: MonRef,
+        source: Option<MonRef>,
+        effect: EffectId,
+        is_secondary: bool,
+        is_self: bool,
+    ) -> MoveResult {
         match self.gen {
-            1 => Gen1Scripts::boost(self, boosts, target, source, effect),
+            1 => Gen1Scripts::boost(self, boosts, target, source, effect, is_secondary, is_self),
+            3 => Gen3Scripts::boost(self, boosts, target, source, effect, is_secondary, is_self),
             g => todo!("unported: the gen {g} boost"),
         }
     }
@@ -301,6 +396,7 @@ impl Battle {
     pub fn clear_boosts(&mut self, pokemon: MonRef) {
         match self.gen {
             1 => Gen1Scripts::clear_boosts(self, pokemon),
+            3 => Gen3Scripts::clear_boosts(self, pokemon),
             g => todo!("unported: the gen {g} clearBoosts"),
         }
     }
@@ -465,9 +561,9 @@ impl Battle {
     }
 
     /// PS `battle.heal(damage, target, source, effect)`: the HP healed, or
-    /// PS's falsy result as 0 (the callers here only test truthiness).
+    /// PS's falsy result (`TryHeal`'s answer, or `false`).
     // PS: sim/battle.ts heal
-    pub fn heal(&mut self, damage: i32, target: Option<MonRef>, source: Option<MonRef>, effect: EffectId) -> i32 {
+    pub fn heal(&mut self, damage: i32, target: Option<MonRef>, source: Option<MonRef>, effect: EffectId) -> MoveResult {
         let target = target.or(self.event.target.mon());
         let source = source.or(self.event.source);
         let effect = if effect.is_none() { self.frame.effect } else { effect };
@@ -479,15 +575,17 @@ impl Battle {
         let holder = target.map_or(Holder::None, Holder::Mon);
         match self.run_event(EventId::TryHeal, holder, source, effect, Some(Relay::Int(damage))) {
             Relay::Int(n) => damage = n,
-            _ => return 0,
+            // `if (!damage) return damage`.
+            other if !other.truthy() => return MoveResult::from_relay(other),
+            other => panic!("TryHeal answered {other:?}"),
         }
         if damage == 0 {
-            return 0;
+            return MoveResult::Int(0);
         }
-        let Some(target) = target else { return 0 };
+        let Some(target) = target else { return MoveResult::False };
         let mon = self.mon(target);
         if mon.hp == 0 || !mon.is_active || mon.hp >= mon.maxhp {
-            return 0;
+            return MoveResult::False;
         }
         let final_damage = self.heal_mon(target, damage);
         let mon = self.ident(target);
@@ -505,7 +603,7 @@ impl Battle {
         };
         self.add(Msg::Heal { mon, health, kw });
         self.run_event(EventId::Heal, Holder::Mon(target), source, effect, Some(Relay::Int(final_damage)));
-        final_damage
+        MoveResult::Int(final_damage)
     }
 
     /// PS `pokemon.heal(d)`: the HP actually healed (0 for PS's `false`).
@@ -550,6 +648,8 @@ impl Battle {
         match id {
             EffectId::Move(m) => panic!("unported: {}", crate::mods::PsId(self.dex.move_def(m).name.as_str())),
             EffectId::Condition(c) => panic!("unported: {}", self.dex.condition_def(c).key.as_str()),
+            EffectId::Item(i) => panic!("unported: {}", crate::mods::PsId(self.dex.item_def(i).name.as_str())),
+            EffectId::Ability(a) => panic!("unported: {}", crate::mods::PsId(self.dex.ability_def(a).name.as_str())),
             other => panic!("unported: {other:?}"),
         }
     }
@@ -712,5 +812,184 @@ impl Battle {
         mon.last_move = id;
         mon.last_move_target_loc = target_loc;
         mon.move_this_turn = id;
+    }
+}
+
+// ---- moveData and the move object, for every gen's pipeline ----------------
+
+impl Battle {
+    /// `key in pokemon.volatiles`.
+    pub(crate) fn has_vol(&self, m: MonRef, c: ConditionId) -> bool {
+        self.mon(m).volatiles.contains(EffectId::Condition(c))
+    }
+
+    /// `pokemon.volatiles[c]`.
+    pub(crate) fn volatile_state(&self, m: MonRef, c: ConditionId) -> Option<crate::state::EffectState> {
+        self.mon(m).volatiles.get(EffectId::Condition(c)).copied()
+    }
+
+    pub(crate) fn volatile_state_mut(&mut self, m: MonRef, c: ConditionId) -> Option<&mut crate::state::EffectState> {
+        self.mon_mut(m).volatiles.get_mut(EffectId::Condition(c))
+    }
+
+    /// Runs a `moveData`'s own handler: the move's through `singleEvent`; a
+    /// secondary or `self` effect has none ported (its handlers are not in
+    /// any registry), so the relay comes back.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn move_data_event(
+        &mut self,
+        event: EventId,
+        data: MoveData,
+        mv: MoveRef,
+        target: Holder,
+        source: Option<MonRef>,
+        relay: Option<Relay>,
+    ) -> Relay {
+        let handlers = match data {
+            MoveData::Move => {
+                let effect = self.mv(mv).effect();
+                return self.single_event(event, effect, StateRef::Scratch, 0, target, source, effect, relay);
+            }
+            MoveData::Secondary(s) => s.handlers,
+            MoveData::SelfEffect(s) => s.handlers,
+        };
+        assert!(handlers.is_empty(), "unported: the handlers of a secondary or self effect of {:?}", self.mv(mv).id);
+        relay.unwrap_or(Relay::TRUE)
+    }
+
+    /// Calls a move's `*Callback` key (`beforeMoveCallback`,
+    /// `damageCallback`, `basePowerCallback`) directly, as PS does
+    /// (`move.xCallback.call(this.battle, ...)`); `None` without one.
+    pub(crate) fn move_callback(&mut self, mv: MoveRef, event: EventId, target: MonRef, source: Option<MonRef>) -> Option<Relay> {
+        let effect = self.mv(mv).effect();
+        let h = self.registry.handler(effect, Prefix::None, event)?;
+        let args = EventArgs { id: event, relay: None, target: Holder::Mon(target), source, effect };
+        match h.callback {
+            Callback::Fn(f) => f(self, &args),
+            Callback::Const(v) => Some(v),
+        }
+    }
+
+    /// The action move a move object stands for, for the target helpers.
+    pub(crate) fn action_move_of(&self, mv: MoveRef) -> ActionMove {
+        let am = self.mv(mv);
+        match am.fake {
+            FakeMove::None => ActionMove::Move(am.id),
+            FakeMove::NoMove => ActionMove::NoMove,
+            FakeMove::CannotMove => ActionMove::CannotMove,
+            FakeMove::Recharge => ActionMove::Recharge,
+        }
+    }
+
+    /// `move.target === 'self'` (a fake move has no target).
+    pub(crate) fn move_targets_self(&self, mv: MoveRef) -> bool {
+        let id = self.mv(mv).id;
+        !id.is_none() && self.dex.move_def(id).target == ps_dex::MoveTarget::Self_
+    }
+
+    /// `[from] EFFECT` of a `|move|` line: `dex.conditions.get(sourceEffect).name`.
+    pub(crate) fn move_from(&self, effect: EffectId) -> Arg {
+        match effect {
+            EffectId::Move(m) => Arg::new(ArgValue::Move(MoveNum(m.0))),
+            other => panic!("unported: |move| [from] {other:?}"),
+        }
+    }
+}
+
+/// `moveData.self`: the move's or the secondary's `self` effect.
+pub fn data_self(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<&'static ps_dex::SelfEffect> {
+    match data {
+        MoveData::Move => def.self_effect(),
+        MoveData::Secondary(s) => s.self_effect,
+        MoveData::SelfEffect(_) => None,
+    }
+}
+
+pub fn data_boosts(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<&'static ps_dex::Boosts> {
+    match data {
+        MoveData::Move => def.boosts(),
+        MoveData::Secondary(s) => s.boosts,
+        MoveData::SelfEffect(s) => s.boosts,
+    }
+}
+
+pub fn data_status(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
+    match data {
+        MoveData::Move => def.status,
+        MoveData::Secondary(s) => s.status,
+        MoveData::SelfEffect(s) => s.status,
+    }
+}
+
+pub fn data_volatile(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
+    match data {
+        MoveData::Move => def.volatile_status,
+        MoveData::Secondary(s) => s.volatile_status,
+        MoveData::SelfEffect(s) => s.volatile_status,
+    }
+}
+
+pub fn data_side_condition(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
+    match data {
+        MoveData::Move => def.side_condition(),
+        MoveData::Secondary(_) => ConditionId::NONE,
+        MoveData::SelfEffect(s) => s.side_condition,
+    }
+}
+
+pub fn data_pseudo_weather(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
+    match data {
+        MoveData::Move => def.pseudo_weather(),
+        MoveData::Secondary(_) => ConditionId::NONE,
+        MoveData::SelfEffect(s) => s.pseudo_weather,
+    }
+}
+
+/// `moveData.secondaries`: only a move has them.
+pub fn data_secondaries(data: MoveData, def: &'static ps_dex::MoveDef) -> &'static [ps_dex::Secondary] {
+    match data {
+        MoveData::Move => def.secondaries(),
+        _ => &[],
+    }
+}
+
+/// `moveData.heal`, `forceSwitch`, `selfdestruct`, `selfSwitch`,
+/// `slotCondition`, `weather`: only a move has them.
+pub fn data_heal(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<ps_dex::Fraction> {
+    match data {
+        MoveData::Move => def.heal(),
+        _ => None,
+    }
+}
+
+pub fn data_force_switch(data: MoveData, def: &'static ps_dex::MoveDef) -> bool {
+    matches!(data, MoveData::Move) && def.bools.has("forceSwitch")
+}
+
+pub fn data_selfdestruct(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<ps_dex::SelfDestruct> {
+    match data {
+        MoveData::Move => def.selfdestruct(),
+        _ => None,
+    }
+}
+
+pub fn data_self_switch(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<ps_dex::SelfSwitch> {
+    match data {
+        MoveData::Move => def.self_switch(),
+        _ => None,
+    }
+}
+
+pub fn data_slot_condition(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
+    match data {
+        MoveData::Move => def.slot_condition(),
+        _ => ConditionId::NONE,
+    }
+}
+
+pub fn data_weather(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
+    match data {
+        MoveData::Move => def.weather(),
+        _ => ConditionId::NONE,
     }
 }

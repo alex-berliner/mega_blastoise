@@ -1,33 +1,38 @@
 #!/usr/bin/env node
 'use strict';
 
-// Records PS 0.11.11 Gen 1 battles for the ps_sim move pipeline tests
-// (task P1-8): whole battles, to the end, whose teams use only the moves
-// ps_sim ports (`ported(1)`, crates/ps_sim/src/mods/mod.rs, whose
-// `move:<id>` entries `ps_sim_cli --ported 1` prints).
+// Records PS 0.11.11 Gen 1 and Gen 3 battles for the ps_sim move pipeline
+// tests (tasks P1-8 and P1-9): whole battles, to the end, whose teams use
+// only the moves and abilities ps_sim ports (`ported(gen)`,
+// crates/ps_sim/src/mods/mod.rs) and no items.
 //
-// The ported list is derived here from PS's resolved gen 1 dex by the same
-// rule ps_sim uses (`move_is_ported`): a move with no handler functions
-// (its own, its secondaries' and its `self` effect's) whose data names no
-// condition with handlers, Struggle aside. The list goes in the fixture's
-// first line (`#ported a,b,...`, bare move ids), and the Rust test checks
-// it against the `move:` entries of `ported(1)`.
+// The ported list is derived here from PS's resolved dex by the same rule
+// ps_sim uses (`move_is_ported`): a move with no handler functions (its
+// own, its secondaries' and its `self` effect's) whose data names no
+// condition with handlers, Struggle and Hidden Power's typed placeholders
+// aside; in gen 3 also every ability with no handler functions (constant
+// handlers such as Battle Armor's `onCriticalHit: false` are data the
+// registry carries). The list goes in the fixture's first line (`#ported
+// ...`) and the Rust test checks it against `ported(gen)`. Gen 1's line
+// predates the `kind:id` form and lists bare move ids; gen 3's lists
+// `ability:<id>` and `move:<id>` entries.
 //
-// Teams: PS's own gen1randombattle generator gives species, levels, DVs and
-// stat exp (two battles in three); the third has random levels, DVs and
-// stat exp. Either way each Pokemon gets 1 to 4 random ported moves. Choices
-// are random legal ones from PS's request: mostly moves, sometimes a switch,
-// now and then an invalid choice or an undo. The battle runs with
-// `cartridgeTrunc`, the one PS-side adaptation the harnesses make
-// (tools/showdown-parity/harness.js).
+// Teams: PS's own gen<N>randombattle generator gives species, levels and
+// stats (DVs and stat exp; gen 3 also natures, IVs and EVs) in two battles
+// of three; the third rolls the level and those stats. Either way each
+// Pokemon gets 1 to 4 random ported moves, no item, and in gen 3 a random
+// ported ability. Choices are random legal ones from PS's request: mostly
+// moves, sometimes a switch, now and then an invalid choice or an undo.
+// Gen 1 runs with `cartridgeTrunc`, the one PS-side adaptation the
+// harnesses make (tools/showdown-parity/harness.js).
 //
 // Format: as tools/ps-diff/battle-fixtures.js (`#battle`, commands,
 // `>update` blocks, requests by FNV-1a 64 hash, `#end`), gzipped. The full
 // text, requests included, goes to .scratch/move-fixtures/ for debugging.
 //
 // Usage:
-//   node tools/ps-diff/move-fixtures.js            write the fixture
-//   node tools/ps-diff/move-fixtures.js --check    regenerate and compare
+//   node tools/ps-diff/move-fixtures.js [--gen 1|3]          write the fixtures
+//   node tools/ps-diff/move-fixtures.js [--gen 1|3] --check  regenerate and compare
 
 const fs = require('fs');
 const path = require('path');
@@ -35,11 +40,16 @@ const zlib = require('zlib');
 const {Battle, Teams, Dex} = require('pokemon-showdown/dist/sim');
 
 const REPO = path.resolve(__dirname, '..', '..');
-const OUT = path.join(REPO, 'crates', 'ps_sim', 'tests', 'fixtures', 'moves_gen1.txt.gz');
+const OUT_DIR = path.join(REPO, 'crates', 'ps_sim', 'tests', 'fixtures');
 const SCRATCH = path.join(REPO, '.scratch', 'move-fixtures');
 
-const FORMAT = 'gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod';
-const BATTLES = 320;
+const FORMATS = {
+  1: 'gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod',
+  3: 'gen3customgame',
+};
+const BATTLES = {1: 320, 3: 330};
+// The recorder's random stream, per gen.
+const SEEDS = {1: 0x9e11 * 7 + 1, 3: 0x9e33 * 7 + 3};
 
 // Battles for the paths random teams rarely reach: a stat boosted at 999
 // and a stat dropped at 1 bounce back (gen 1's `boost`).
@@ -48,30 +58,31 @@ function edgeSet(species, moves, level, dv, statExp) {
   return Teams.pack([{name: '', species, item: '', ability: 'No Ability', moves, nature: '',
     evs: stats(statExp), ivs: stats(2 * dv), level}]);
 }
-const EDGE = [
-  // Swords Dance past 999 Attack.
-  [edgeSet('Rhydon', ['swordsdance'], 100, 15, 255), edgeSet('Chansey', ['tackle'], 100, 15, 255)],
-  // Growl and Screech down to 1.
-  [edgeSet('Caterpie', ['tackle'], 2, 0, 0), edgeSet('Mewtwo', ['growl', 'screech'], 100, 15, 255)],
-];
+const EDGE = {
+  1: [
+    // Swords Dance past 999 Attack.
+    [edgeSet('Rhydon', ['swordsdance'], 100, 15, 255), edgeSet('Chansey', ['tackle'], 100, 15, 255)],
+    // Growl and Screech down to 1.
+    [edgeSet('Caterpie', ['tackle'], 2, 0, 0), edgeSet('Mewtwo', ['growl', 'screech'], 100, 15, 255)],
+  ],
+  3: [],
+};
 
 // ---------------------------------------------------------------------------
 // The ported list
 // ---------------------------------------------------------------------------
-
-const dex = Dex.mod('gen1');
 
 function hasHandlers(obj) {
   if (!obj) return false;
   return Object.keys(obj).some(k => typeof obj[k] === 'function' && (/^on[A-Z]/.test(k) || k.endsWith('Callback')));
 }
 
-function conditionPorted(id) {
+function conditionPorted(dex, id) {
   if (!id) return true;
   return !hasHandlers(dex.conditions.get(id));
 }
 
-function movePorted(m) {
+function movePorted(dex, m) {
   if (hasHandlers(m) || hasHandlers(m.self)) return false;
   const secondaries = m.secondaries || [];
   if (secondaries.some(s => hasHandlers(s) || hasHandlers(s.self))) return false;
@@ -81,13 +92,33 @@ function movePorted(m) {
     if (s) conds.push(s.status, s.volatileStatus, s.sideCondition, s.pseudoWeather);
   }
   for (const s of secondaries) conds.push(s.status, s.volatileStatus);
-  return conds.every(conditionPorted);
+  return conds.every(id => conditionPorted(dex, id));
 }
 
-const PORTED = dex.moves.all()
-  .filter(m => !m.isNonstandard && m.gen <= 1 && m.id !== 'struggle' && movePorted(m))
-  .map(m => m.id)
-  .sort();
+/// `{moves, abilities, header}`: the ported moves and abilities of `gen`
+/// and the fixture's `#ported` line.
+function portedFor(gen) {
+  const dex = Dex.mod(`gen${gen}`);
+  // Hidden Power's typed entries are placeholders: their id is
+  // `hiddenpower`, which has handlers.
+  const moves = dex.moves.all()
+    .filter(m => !m.isNonstandard && m.gen <= gen && m.id !== 'struggle' && m.id === toID(m.name) && movePorted(dex, m))
+    .map(m => m.id)
+    .sort();
+  if (gen === 1) return {moves, abilities: [], header: `#ported ${moves.join(',')}`};
+  const abilities = dex.abilities.all()
+    .filter(a => !a.isNonstandard && !hasHandlers(a))
+    .map(a => a.id)
+    .sort();
+  const entries = [...abilities.map(a => `ability:${a}`), ...moves.map(m => `move:${m}`)].sort();
+  return {moves, abilities, header: `#ported ${entries.join(',')}`};
+}
+
+function toID(text) {
+  return String(text).toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+let PORTED = null;
 
 // ---------------------------------------------------------------------------
 // Random numbers and teams
@@ -120,22 +151,36 @@ function randomMoves(rng) {
   const n = 1 + Math.floor(rng() * 4);
   const moves = [];
   while (moves.length < n) {
-    const m = pick(rng, PORTED);
+    const m = pick(rng, PORTED.moves);
     if (!moves.includes(m)) moves.push(m);
   }
   return moves;
 }
 
-// PS's random battle sets, with ported moves; `wide` re-rolls the level,
-// the DVs (even IVs, as gen 1 stores them) and the stat exp.
-function team(rng, size, wide) {
-  const sets = Teams.getGenerator('gen1randombattle', seedOf(rng)).getTeam().slice(0, size);
+const NATURES = Dex.natures.all().map(n => n.name).sort();
+
+// PS's random battle sets, with ported moves (and in gen 3 a ported
+// ability, no item); `wide` re-rolls the level and the stats: gen 1's DVs
+// (even IVs, as gen 1 stores them) and stat exp, gen 3's IVs, EVs and
+// nature.
+function team(rng, gen, size, wide) {
+  const sets = Teams.getGenerator(`gen${gen}randombattle`, seedOf(rng)).getTeam().slice(0, size);
   for (const set of sets) {
     set.moves = randomMoves(rng);
+    if (gen === 3) {
+      set.item = '';
+      set.ability = pick(rng, PORTED.abilities);
+    }
     if (wide) {
       set.level = 2 + Math.floor(rng() * 99);
-      for (const k of Object.keys(set.ivs)) set.ivs[k] = 2 * Math.floor(rng() * 16);
-      for (const k of Object.keys(set.evs)) set.evs[k] = Math.floor(rng() * 256);
+      if (gen === 1) {
+        for (const k of Object.keys(set.ivs)) set.ivs[k] = 2 * Math.floor(rng() * 16);
+        for (const k of Object.keys(set.evs)) set.evs[k] = Math.floor(rng() * 256);
+      } else {
+        for (const k of Object.keys(set.ivs)) set.ivs[k] = Math.floor(rng() * 32);
+        for (const k of Object.keys(set.evs)) set.evs[k] = 4 * Math.floor(rng() * 64);
+        set.nature = pick(rng, NATURES);
+      }
     }
   }
   return Teams.pack(sets);
@@ -155,8 +200,8 @@ function fnv64(text) {
 }
 
 class Recorder {
-  constructor(index) {
-    this.lines = [`#battle moves gen=1 index=${index}`];
+  constructor(gen, index) {
+    this.lines = [`#battle moves gen=${gen} index=${index}`];
     this.full = [this.lines[0]];
     this.pending = [];
     this.requests = {p1: null, p2: null};
@@ -209,14 +254,15 @@ function cartridgeTrunc(battle) {
   return battle;
 }
 
-function startBattle(rec, seed, team1, team2) {
-  const start = {formatid: FORMAT, seed};
+function startBattle(rec, gen, seed, team1, team2) {
+  const start = {formatid: FORMATS[gen], seed};
   const p1 = {name: 'Player 1', team: team1};
   const p2 = {name: 'Player 2', team: team2};
   rec.command(`>start ${JSON.stringify(start)}`);
   rec.command(`>player p1 ${JSON.stringify(p1)}`);
   rec.command(`>player p2 ${JSON.stringify(p2)}`);
-  const battle = cartridgeTrunc(new Battle({...start, send: (t, d) => rec.send(t, d)}));
+  let battle = new Battle({...start, send: (t, d) => rec.send(t, d)});
+  if (gen === 1) battle = cartridgeTrunc(battle);
   battle.setPlayer('p1', p1);
   battle.setPlayer('p2', p2);
   battle.sendUpdates();
@@ -281,24 +327,25 @@ function play(battle, rec, rng) {
   if (!battle.ended) throw new Error('battle did not end');
 }
 
-function record() {
-  const out = [`#ported ${PORTED.join(',')}`];
+function record(gen) {
+  PORTED = portedFor(gen);
+  const out = [PORTED.header];
   const full = [out[0]];
-  const rng = mulberry32(0x9e11 * 7 + 1);
-  for (let i = 0; i < BATTLES; i++) {
-    const rec = new Recorder(i);
+  const rng = mulberry32(SEEDS[gen]);
+  for (let i = 0; i < BATTLES[gen]; i++) {
+    const rec = new Recorder(gen, i);
     const wide = i % 3 === 2;
     const size1 = 1 + Math.floor(rng() * 6);
     const size2 = 1 + Math.floor(rng() * 6);
-    const battle = startBattle(rec, seedOf(rng), team(rng, size1, wide), team(rng, size2, wide));
+    const battle = startBattle(rec, gen, seedOf(rng), team(rng, gen, size1, wide), team(rng, gen, size2, wide));
     play(battle, rec, rng);
     rec.end();
     out.push(...rec.lines);
     full.push(...rec.full);
   }
-  EDGE.forEach(([team1, team2], k) => {
-    const rec = new Recorder(BATTLES + k);
-    const battle = startBattle(rec, seedOf(rng), team1, team2);
+  EDGE[gen].forEach(([team1, team2], k) => {
+    const rec = new Recorder(gen, BATTLES[gen] + k);
+    const battle = startBattle(rec, gen, seedOf(rng), team1, team2);
     play(battle, rec, rng);
     rec.end();
     out.push(...rec.lines);
@@ -307,29 +354,43 @@ function record() {
   return {text: out.join('\n') + '\n', full: full.join('\n') + '\n'};
 }
 
-function main() {
-  const check = process.argv.includes('--check');
+/// Records (or with `check`, compares) one gen's fixture; false when it
+/// differs.
+function run(gen, check) {
+  const out = path.join(OUT_DIR, `moves_gen${gen}.txt.gz`);
   const realNow = Date.now;
   Date.now = () => 1700000000000;
   let files;
   try {
-    files = record();
+    files = record(gen);
   } finally {
     Date.now = realNow;
   }
   fs.mkdirSync(SCRATCH, {recursive: true});
-  fs.writeFileSync(path.join(SCRATCH, 'full_gen1.txt'), files.full);
-  const name = path.relative(REPO, OUT);
+  fs.writeFileSync(path.join(SCRATCH, `full_gen${gen}.txt`), files.full);
+  const name = path.relative(REPO, out);
   if (check) {
-    const old = fs.existsSync(OUT) ? zlib.gunzipSync(fs.readFileSync(OUT)).toString('utf8') : null;
+    const old = fs.existsSync(out) ? zlib.gunzipSync(fs.readFileSync(out)).toString('utf8') : null;
     const same = old === files.text;
     console.log(`${same ? 'ok     ' : 'DIFFERS'}  ${name}`);
-    if (!same) process.exit(1);
-    return;
+    return same;
   }
   const bytes = zlib.gzipSync(Buffer.from(files.text, 'utf8'), {level: 9});
-  fs.writeFileSync(OUT, bytes);
+  fs.writeFileSync(out, bytes);
   console.log(`wrote    ${name} (${(files.text.length / 1024).toFixed(1)} KB, ${(bytes.length / 1024).toFixed(1)} KB gzipped)`);
+  return true;
+}
+
+function main() {
+  const check = process.argv.includes('--check');
+  const g = process.argv.indexOf('--gen');
+  const gens = g >= 0 ? [Number(process.argv[g + 1])] : [1, 3];
+  for (const gen of gens) {
+    if (!FORMATS[gen]) throw new Error(`no gen ${gen}`);
+  }
+  let ok = true;
+  for (const gen of gens) ok = run(gen, check) && ok;
+  if (!ok) process.exit(1);
 }
 
 main();

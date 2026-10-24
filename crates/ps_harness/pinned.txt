@@ -23,3 +23,14 @@
 1 random 22  # P1-8 gen1randombattle; long ported prefix
 1 random 1  # P1-8 gen1randombattle; long ported prefix
 1 random 90  # P1-8 gen1randombattle; long ported prefix
+
+# P1-9: `gen3randombattle` was not a format ps_sim knew (every gen 3
+# `--teams random` battle crashed at `>start`), and an item or ability
+# whose handlers had no port was skipped silently instead of stopping
+# `unported`, so the battle diverged from PS. Since P1-9 the team and
+# choice seeds are four u16 (they were two, which made PS's PRNG return
+# 0 forever: every seed played the same teams and choices), so the P1-8
+# entries above now play other teams than when they were pinned.
+3 random 0  # P1-9 gen3randombattle; Leftovers' residual heal was skipped (diff), now unported
+3 random 24  # P1-9 gen3randombattle; Intimidate on switch-in was skipped (diff), now unported
+3 random 340  # P1-9 Focus Punch's beforeTurnCallback stopped as `beforeTurnCallback of Focus Punch`, now `focuspunch`

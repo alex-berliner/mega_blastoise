@@ -14,9 +14,9 @@
 //! The hook battles replace PS's `runMove` with a stub, on both sides:
 //! [`stub_run_move`] here, `STUB` in the generator.
 //!
-//! `tests/fixtures/moves_gen1.txt.gz` (`tools/ps-diff/move-fixtures.js`,
-//! same format) holds whole Gen 1 battles with the real pipeline: teams of
-//! ported moves only, played to the end.
+//! `tests/fixtures/moves_gen{1,3}.txt.gz` (`tools/ps-diff/move-fixtures.js`,
+//! same format) hold whole battles with the real pipeline: teams of ported
+//! moves (and, in gen 3, handler-free abilities) only, played to the end.
 
 extern crate std;
 
@@ -256,6 +256,7 @@ fn setup(cmds: &[String]) -> Box<Battle> {
     let spec = FormatSpec::parse(v["formatid"].as_str().unwrap()).unwrap();
     let mut b = Box::new(Battle::from_start(spec, [s[0], s[1], s[2], s[3]], CLOCK));
     b.move_hook = Some(stub_run_move);
+    b.lax_handlers = true;
     b.spill = Some(spill_to_test);
     for c in &cmds[1..] {
         let (side, json) = c.strip_prefix("player ").unwrap().split_once(' ').unwrap();
@@ -280,6 +281,7 @@ fn replay(f: &Fixture, tally: &mut Tally) -> Result<Box<Battle>, String> {
                     let mut b = Box::new(Battle::from_start(spec, [s[0], s[1], s[2], s[3]], CLOCK));
                     if f.kind != "moves" {
                         b.move_hook = Some(stub_run_move);
+                        b.lax_handlers = true;
                     }
                     b.spill = Some(spill_to_test);
                     battle = Some(b);
@@ -590,30 +592,47 @@ fn a_full_log_keeps_the_last_move_line() {
     flush(&mut b);
 }
 
-/// Whole Gen 1 battles through the real move pipeline, to the end, every
-/// line and every request as PS has them. The teams carry only
-/// `ported(1)` moves, and the recorder's list is that list.
-#[test]
-fn move_battles_match_ps_gen1() {
-    let text = fixture_text("moves_gen1.txt.gz");
+/// Replays `moves_gen<gen>.txt.gz` (`tools/ps-diff/move-fixtures.js`):
+/// whole battles through the real move pipeline, to the end, every line
+/// and every request as PS has them. The teams carry only `ported(gen)`
+/// moves and abilities and no items, and the recorder's list (the first
+/// line, `#ported`) is that list less its species. Gen 1's header predates the `kind:`
+/// prefix: its bare ids are the list's moves. Returns the number of
+/// battles.
+fn move_battles_match_ps(gen: u8) -> usize {
+    let file = format!("moves_gen{gen}.txt.gz");
+    let text = fixture_text(&file);
     let header = text.lines().next().unwrap().strip_prefix("#ported ").expect("#ported header");
-    let listed: Vec<&str> = header.split(',').collect();
-    let ported: Vec<&str> = crate::mods::ported(1).iter().filter_map(|e| e.strip_prefix("move:")).collect();
+    let legacy = !header.contains(':');
+    let listed: Vec<String> =
+        header.split(',').map(|e| if legacy { format!("move:{e}") } else { e.to_string() }).collect();
+    // Species are in the list for the harness's wide teams; the recorder
+    // lists only what it derives (moves, and gen 3's abilities).
+    let ported: Vec<&str> = crate::mods::ported(gen)
+        .iter()
+        .copied()
+        .filter(|e| !e.starts_with("species:") && (!legacy || e.starts_with("move:")))
+        .collect();
     assert_eq!(listed, ported, "move-fixtures.js derives another ported list");
 
-    let fixtures = load_file("moves_gen1.txt.gz");
+    let fixtures = load_file(&file);
     let mut tally = Tally::default();
     let mut failures = Vec::new();
     let (mut wins, mut ties, mut turns) = (0, 0, 0u32);
     for f in &fixtures {
-        // Every team move is a ported one.
+        // Every team move and ability is a ported one; no items.
         for c in &f.chunks[0].commands[1..] {
             let (_, json) = c.strip_prefix("player ").unwrap().split_once(' ').unwrap();
             let v: serde_json::Value = serde_json::from_str(json).unwrap();
             for set in parse_team(v["team"].as_str().unwrap()).iter() {
                 for m in set.moves.iter().filter(|m| !m.is_empty()) {
-                    let id = crate::mods::PsId(m.as_str()).to_string();
-                    assert!(listed.contains(&id.as_str()), "#{}: {id} is not ported", f.index);
+                    let id = format!("move:{}", crate::mods::PsId(m.as_str()));
+                    assert!(listed.contains(&id), "#{}: {id} is not ported", f.index);
+                }
+                assert!(set.item.is_empty(), "#{}: an item", f.index);
+                let ability = crate::mods::PsId(set.ability.as_str()).to_string();
+                if gen == 3 {
+                    assert!(listed.contains(&format!("ability:{ability}")), "#{}: ability {ability} is not ported", f.index);
                 }
             }
         }
@@ -632,12 +651,27 @@ fn move_battles_match_ps_gen1() {
     for e in failures.iter().take(3) {
         std::eprintln!("{e}\n");
     }
-    assert!(failures.is_empty(), "{} of {} gen 1 move battles diverge", failures.len(), fixtures.len());
-    std::eprintln!("gen 1 move battles: {tally:?}, {wins} wins, {ties} ties, {turns} turns");
-    // 320 random battles and two for gen 1's 999 / 1 stat bounce.
-    assert_eq!(fixtures.len(), 322);
-    assert_eq!(tally.battles, 322);
+    assert!(failures.is_empty(), "{} of {} gen {gen} move battles diverge", failures.len(), fixtures.len());
+    std::eprintln!("gen {gen} move battles: {tally:?}, {wins} wins, {ties} ties, {turns} turns");
+    assert_eq!(tally.battles, fixtures.len());
+    fixtures.len()
 }
+
+/// Whole Gen 1 battles: 320 random battles and two for gen 1's 999 / 1
+/// stat bounce.
+#[test]
+fn move_battles_match_ps_gen1() {
+    assert_eq!(move_battles_match_ps(1), 322);
+}
+
+/// Whole Gen 3 battles through gen 3's pipeline (P1-9).
+#[test]
+fn move_battles_match_ps_gen3() {
+    assert_eq!(move_battles_match_ps(3), GEN3_MOVE_BATTLES);
+}
+
+/// The battles in `moves_gen3.txt.gz`.
+const GEN3_MOVE_BATTLES: usize = 330;
 
 /// A move with handlers that are not ported panics `unported: <id>`, the
 /// line the CLI reports.
@@ -647,6 +681,22 @@ fn unported_moves_panic() {
     let team = "Chansey|||NoAbility|softboiled||255,255,255,255,255,255||30,30,30,30,30,30||70|";
     let cmds = [
         String::from(r#"start {"formatid":"gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod","seed":[1,2,3,4]}"#),
+        format!(r#"player p1 {{"name":"Player 1","team":"{team}"}}"#),
+        format!(r#"player p2 {{"name":"Player 2","team":"{team}"}}"#),
+    ];
+    let mut b = setup(&cmds);
+    b.move_hook = None;
+    b.step(&Command::Choose { side: SideId::P1, choice: ps_protocol::Choice::Move(1) }).unwrap();
+    b.step(&Command::Choose { side: SideId::P2, choice: ps_protocol::Choice::Move(1) }).unwrap();
+}
+
+/// The same in gen 3: Rest has an `onHit` handler.
+#[test]
+#[should_panic(expected = "unported: rest")]
+fn unported_moves_panic_gen3() {
+    let team = "Snorlax|||illuminate|rest||85,85,85,85,85,85|M||||";
+    let cmds = [
+        String::from(r#"start {"formatid":"gen3customgame","seed":[1,2,3,4]}"#),
         format!(r#"player p1 {{"name":"Player 1","team":"{team}"}}"#),
         format!(r#"player p2 {{"name":"Player 2","team":"{team}"}}"#),
     ];

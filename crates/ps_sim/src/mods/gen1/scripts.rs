@@ -25,12 +25,15 @@
 //!
 //! PS: data/mods/gen1/scripts.ts (whole).
 
-use ps_dex::{ConditionId, FixedDamage, MoveCategory, MoveId, Type};
+use ps_dex::{FixedDamage, MoveCategory, MoveId, Type};
 use ps_protocol::{Arg, ArgValue, Kw, KwFlags, Msg, MoveNum, TextArg, TextId};
 
-use crate::actions::{ActiveMove, FakeMove, GenScripts, MoveData, MoveRef, MoveResult};
+use crate::actions::{
+    data_boosts, data_pseudo_weather, data_self, data_side_condition, data_status, data_volatile, ActiveMove, FakeMove,
+    GenScripts, MoveData, MoveRef, MoveResult,
+};
 use crate::choice::SelectedMove;
-use crate::effect::{Callback, EffectId, EventArgs, EventId, Prefix};
+use crate::effect::{EffectId, EventId};
 use crate::queue::ActionMove;
 use crate::relay::Relay;
 use crate::state::{Battle, Holder, MonRef, StateRef, SwitchFlag};
@@ -75,20 +78,6 @@ const BOOST_TABLE: [i32; 13] = [25, 28, 33, 40, 50, 66, 100, 150, 200, 250, 300,
 pub struct Gen1Scripts;
 
 impl Battle {
-    /// `key in pokemon.volatiles`.
-    fn has_vol(&self, m: MonRef, c: ConditionId) -> bool {
-        self.mon(m).volatiles.contains(EffectId::Condition(c))
-    }
-
-    /// `pokemon.volatiles[c]`.
-    fn volatile_state(&self, m: MonRef, c: ConditionId) -> Option<crate::state::EffectState> {
-        self.mon(m).volatiles.get(EffectId::Condition(c)).copied()
-    }
-
-    fn volatile_state_mut(&mut self, m: MonRef, c: ConditionId) -> Option<&mut crate::state::EffectState> {
-        self.mon_mut(m).volatiles.get_mut(EffectId::Condition(c))
-    }
-
     /// Gen 1's `pokemon.modifyStat(statName, modifier)`: `modifier` is the
     /// JS number PS multiplies by.
     // PS: data/mods/gen1/scripts.ts modifyStat
@@ -168,68 +157,6 @@ impl Battle {
         changed
     }
 
-    /// Runs a `moveData`'s own handler: the move's through `singleEvent`; a
-    /// secondary or `self` effect has none in gen 1 (its handlers would be
-    /// unported), so the relay comes back.
-    #[allow(clippy::too_many_arguments)]
-    fn move_data_event(
-        &mut self,
-        event: EventId,
-        data: MoveData,
-        mv: MoveRef,
-        target: Holder,
-        source: Option<MonRef>,
-        relay: Option<Relay>,
-    ) -> Relay {
-        let handlers = match data {
-            MoveData::Move => {
-                let effect = self.mv(mv).effect();
-                return self.single_event(event, effect, StateRef::Scratch, 0, target, source, effect, relay);
-            }
-            MoveData::Secondary(s) => s.handlers,
-            MoveData::SelfEffect(s) => s.handlers,
-        };
-        assert!(handlers.is_empty(), "unported: the handlers of a secondary or self effect of {:?}", self.mv(mv).id);
-        relay.unwrap_or(Relay::TRUE)
-    }
-
-    /// Calls a move's `*Callback` key (`beforeMoveCallback`,
-    /// `damageCallback`, `basePowerCallback`) directly, as PS does
-    /// (`move.xCallback.call(this.battle, ...)`); `None` without one.
-    fn move_callback(&mut self, mv: MoveRef, event: EventId, target: MonRef, source: Option<MonRef>) -> Option<Relay> {
-        let effect = self.mv(mv).effect();
-        let h = self.registry.handler(effect, Prefix::None, event)?;
-        let args = EventArgs { id: event, relay: None, target: Holder::Mon(target), source, effect };
-        match h.callback {
-            Callback::Fn(f) => f(self, &args),
-            Callback::Const(v) => Some(v),
-        }
-    }
-
-    /// The action move a move object stands for, for the target helpers.
-    fn action_move_of(&self, mv: MoveRef) -> ActionMove {
-        let am = self.mv(mv);
-        match am.fake {
-            FakeMove::None => ActionMove::Move(am.id),
-            FakeMove::NoMove => ActionMove::NoMove,
-            FakeMove::CannotMove => ActionMove::CannotMove,
-            FakeMove::Recharge => ActionMove::Recharge,
-        }
-    }
-
-    /// `move.target === 'self'` (a fake move has no target).
-    fn move_targets_self(&self, mv: MoveRef) -> bool {
-        let id = self.mv(mv).id;
-        !id.is_none() && self.dex.move_def(id).target == ps_dex::MoveTarget::Self_
-    }
-
-    /// `[from] EFFECT` of a `|move|` line: `dex.conditions.get(sourceEffect).name`.
-    fn move_from(&self, effect: EffectId) -> Arg {
-        match effect {
-            EffectId::Move(m) => Arg::new(ArgValue::Move(MoveNum(m.0))),
-            other => panic!("unported: |move| [from] {other:?}"),
-        }
-    }
 }
 
 impl GenScripts for Gen1Scripts {
@@ -306,7 +233,7 @@ impl GenScripts for Gen1Scripts {
             if (!locked && !two_turn) || b.has_vol(pokemon, conditions::TWOTURNMOVE) {
                 let slot = b.sides[pokemon.side as usize].last_selected_move_slot;
                 if b.get_move_slot(pokemon, slot).is_some() {
-                    Self::deduct_pp(b, pokemon, 0);
+                    Self::deduct_pp(b, pokemon, id, 0);
                 }
             }
 
@@ -373,7 +300,7 @@ impl GenScripts for Gen1Scripts {
             let id = b.mv(mv).id;
             let slot = b.sides[pokemon.side as usize].last_selected_move_slot;
             if TWO_TURN_MOVES.contains(&id) && b.get_move_slot(pokemon, slot).is_some() {
-                Self::deduct_pp(b, pokemon, -1);
+                Self::deduct_pp(b, pokemon, id, -1);
             }
             let count = b.mon(pokemon).base_move_slots.iter().filter(|s| !s.id.is_none()).count();
             if b.mon(pokemon).transformed && (slot as usize) < count {
@@ -1200,10 +1127,10 @@ impl GenScripts for Gen1Scripts {
         MoveResult::Int(damage as i32)
     }
 
-    /// PP from `side.lastSelectedMoveSlot`, with gen 1's underflow to 63.
-    /// `amount` 0 is PS's `null` (1).
+    /// PP from `side.lastSelectedMoveSlot` (not `move`'s slot), with gen
+    /// 1's underflow to 63. `amount` 0 is PS's `null` (1).
     // PS: data/mods/gen1/scripts.ts deductPP
-    fn deduct_pp(b: &mut Battle, pokemon: MonRef, amount: i32) -> i32 {
+    fn deduct_pp(b: &mut Battle, pokemon: MonRef, _mv: MoveId, amount: i32) -> i32 {
         let side = pokemon.side as usize;
         let slot = b.sides[side].last_selected_move_slot as usize;
         if b.get_move_slot(pokemon, slot as u8).is_none() {
@@ -1235,7 +1162,16 @@ impl GenScripts for Gen1Scripts {
     /// Gen 1's boosts change the modified stats; a stat at 999 (or 1)
     /// bounces back.
     // PS: data/mods/gen1/scripts.ts boost
-    fn boost(b: &mut Battle, boosts: [i8; 7], target: MonRef, source: Option<MonRef>, effect: EffectId) -> MoveResult {
+    /// (Gen 1's override takes no `isSecondary` / `isSelf`.)
+    fn boost(
+        b: &mut Battle,
+        boosts: [i8; 7],
+        target: MonRef,
+        source: Option<MonRef>,
+        effect: EffectId,
+        _is_secondary: bool,
+        _is_self: bool,
+    ) -> MoveResult {
         let source = source.or(b.event.source);
         let effect = if effect.is_none() { b.frame.effect } else { effect };
         if b.mon(target).hp == 0 {
@@ -1296,54 +1232,5 @@ impl GenScripts for Gen1Scripts {
         let mon = b.mon_mut(pokemon);
         mon.boosts = [0; 7];
         mon.modified_stats = mon.stored_stats;
-    }
-}
-
-/// `moveData.self`: the move's or the secondary's `self` effect.
-fn data_self(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<&'static ps_dex::SelfEffect> {
-    match data {
-        MoveData::Move => def.self_effect(),
-        MoveData::Secondary(s) => s.self_effect,
-        MoveData::SelfEffect(_) => None,
-    }
-}
-
-fn data_boosts(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<&'static ps_dex::Boosts> {
-    match data {
-        MoveData::Move => def.boosts(),
-        MoveData::Secondary(s) => s.boosts,
-        MoveData::SelfEffect(s) => s.boosts,
-    }
-}
-
-fn data_status(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
-    match data {
-        MoveData::Move => def.status,
-        MoveData::Secondary(s) => s.status,
-        MoveData::SelfEffect(s) => s.status,
-    }
-}
-
-fn data_volatile(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
-    match data {
-        MoveData::Move => def.volatile_status,
-        MoveData::Secondary(s) => s.volatile_status,
-        MoveData::SelfEffect(s) => s.volatile_status,
-    }
-}
-
-fn data_side_condition(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
-    match data {
-        MoveData::Move => def.side_condition(),
-        MoveData::Secondary(_) => ConditionId::NONE,
-        MoveData::SelfEffect(s) => s.side_condition,
-    }
-}
-
-fn data_pseudo_weather(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
-    match data {
-        MoveData::Move => def.pseudo_weather(),
-        MoveData::Secondary(_) => ConditionId::NONE,
-        MoveData::SelfEffect(s) => s.pseudo_weather,
     }
 }

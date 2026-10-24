@@ -870,6 +870,11 @@ pub struct Battle {
     /// real one arrives with P1-8 and P1-9.
     #[cfg(any(test, feature = "test-override"))]
     pub move_hook: Option<crate::battle::MoveHook>,
+    /// Test-only (`cfg(test)` / `test-override`): skip a handler the
+    /// registry lacks instead of stopping `unported`, as P1-6's stubbed
+    /// battles and the event unit tests (fake registries) expect.
+    #[cfg(any(test, feature = "test-override"))]
+    pub lax_handlers: bool,
     /// One `initEffectState({})` per event depth.
     pub(crate) scratch: [EffectState; MAX_EVENT_DEPTH + 1],
     /// Recently removed states, by serial.
@@ -934,6 +939,8 @@ impl Battle {
             hints: [None; HINT_CAP],
             #[cfg(any(test, feature = "test-override"))]
             move_hook: None,
+            #[cfg(any(test, feature = "test-override"))]
+            lax_handlers: false,
             scratch: [EffectState::EMPTY; MAX_EVENT_DEPTH + 1],
             graveyard: [EffectState::EMPTY; GRAVEYARD_CAP],
             graveyard_next: 0,

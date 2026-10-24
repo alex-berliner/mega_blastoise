@@ -27,6 +27,7 @@
 extern crate alloc;
 
 pub mod actions;
+pub mod base_actions;
 pub mod battle;
 pub mod choice;
 pub mod effect;

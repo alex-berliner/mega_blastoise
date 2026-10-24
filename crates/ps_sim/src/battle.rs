@@ -84,6 +84,9 @@ fn rule_of(r: RuleId) -> Rule {
         RuleId::SpeciesClause => Rule::SpeciesClause,
         RuleId::OhkoClause => Rule::OhkoClause,
         RuleId::EvasionMovesClause => Rule::EvasionMovesClause,
+        RuleId::BeatUpNicknamesMod => Rule::BeatUpNicknamesMod,
+        RuleId::SwitchPriorityClauseMod => Rule::SwitchPriorityClauseMod,
+        RuleId::EvasionItemsClause => Rule::EvasionItemsClause,
     }
 }
 
@@ -96,8 +99,13 @@ fn rule_of(r: RuleId) -> Rule {
 /// Clause), then Sleep Clause Mod, Freeze Clause Mod, Species Clause,
 /// Nickname Clause, OHKO Clause and Evasion Moves Clause; `Obtainable` and
 /// Nickname Clause only validate teams.
-fn rule_table(spec: &FormatSpec) -> ([RuleId; 12], usize) {
-    let mut out = [RuleId::HpPercentageMod; 12];
+/// `gen3randombattle` is gen 3's `Standard` (`data/mods/gen3/rulesets.ts`):
+/// `Standard AG`, then Sleep Clause Mod, Switch Priority Clause Mod, Species
+/// Clause, Nickname Clause, OHKO Clause, Evasion Items Clause and Evasion
+/// Moves Clause, in the order PS 0.11.11 resolves them (Beat Up Nicknames
+/// Mod comes from the expansion; Team Preview shows nothing before gen 5).
+fn rule_table(spec: &FormatSpec) -> ([RuleId; 14], usize) {
+    let mut out = [RuleId::HpPercentageMod; 14];
     let mut n = 0;
     let mut push = |r: RuleId| {
         if !out[..n].contains(&r) {
@@ -115,6 +123,22 @@ fn rule_table(spec: &FormatSpec) -> ([RuleId; 12], usize) {
             RuleId::FreezeClauseMod,
             RuleId::SpeciesClause,
             RuleId::OhkoClause,
+            RuleId::EvasionMovesClause,
+        ] {
+            push(r);
+        }
+    }
+    if spec.base == FormatId::Gen3RandomBattle {
+        for r in [
+            RuleId::HpPercentageMod,
+            RuleId::CancelMod,
+            RuleId::BeatUpNicknamesMod,
+            RuleId::EndlessBattleClause,
+            RuleId::SleepClauseMod,
+            RuleId::SwitchPriorityClauseMod,
+            RuleId::SpeciesClause,
+            RuleId::OhkoClause,
+            RuleId::EvasionItemsClause,
             RuleId::EvasionMovesClause,
         ] {
             push(r);
@@ -528,7 +552,10 @@ impl Battle {
             | RuleId::EndlessBattleClause
             | RuleId::SpeciesClause
             | RuleId::OhkoClause
-            | RuleId::EvasionMovesClause => self.add(Msg::Rule(r)),
+            | RuleId::EvasionMovesClause
+            | RuleId::BeatUpNicknamesMod
+            | RuleId::SwitchPriorityClauseMod
+            | RuleId::EvasionItemsClause => self.add(Msg::Rule(r)),
         }
     }
 
@@ -961,10 +988,13 @@ impl Battle {
                 let Some(target) = self.get_target(pokemon, action.move_, action.target_loc, None) else {
                     return false;
                 };
+                // A move with a `beforeTurnCallback` is unported until its
+                // port registers it.
+                self.require_ported(EffectId::Move(mv));
                 let h = self
                     .registry
                     .handler(EffectId::Move(mv), Prefix::None, EventId::BeforeTurnCallback)
-                    .unwrap_or_else(|| panic!("unported: beforeTurnCallback of {}", self.dex.move_def(mv).name.as_str()));
+                    .expect("a ported move with beforeTurnCallback registers it");
                 let args = EventArgs {
                     id: EventId::BeforeTurnCallback,
                     relay: None,
@@ -1326,10 +1356,11 @@ impl Battle {
             return false;
         }
         // `stalenessBySide.every(s => !!s)`: staleness comes only from
-        // restorative berries, Recycle-like moves and Skill Swap, none of
-        // which exist in gen 1 (the one format with the clause), so no side
-        // is ever stale and the clause never activates.
-        debug_assert!(self.gen == 1);
+        // restorative berries, Recycle-like moves and Skill Swap. None exists
+        // in gen 1, and in gen 3 all are items and moves with handlers, which
+        // are not ported (they panic `unported` first). So no side is ever
+        // stale and the clause never activates. The berry and Skill Swap
+        // ports must set staleness and port the rest of this function.
         false
     }
 
