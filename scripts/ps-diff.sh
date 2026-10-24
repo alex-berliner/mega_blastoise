@@ -6,6 +6,8 @@
 #   scripts/ps-diff.sh --self --gen 1 --teams wide --n 50
 #   scripts/ps-diff.sh --pinned                        # run crates/ps_harness/pinned.txt
 #   scripts/ps-diff.sh --self --seed 0 --gen 1         # one specific seed
+#   scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" \
+#     --allow-unported --jobs 6                        # the carried old corpus
 #
 # Thin wrapper around tools/ps-diff/diff.js. The actual BattleStream
 # plumbing, request parsing, line-by-line diff and cargo path are all

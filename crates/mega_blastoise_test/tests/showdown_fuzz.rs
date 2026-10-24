@@ -22,6 +22,14 @@
 //! only case `k` is sent to the reference and only case `k` is compared.
 //! The case that fails is the same battle at the same index as when the
 //! finding was made, which is what makes a pinned seed replayable.
+//!
+//! `FUZZ_DUMP=<path>` makes the Gen 1 battle suite write each case's two
+//! teams to `<path>` as PS sets JSON instead of asking the reference: the
+//! suite plays every case's own side as always (the stream does not move),
+//! then dumps and stops. With `FUZZ_CASE=k` only case `k` is dumped. No
+//! reference is needed, so the dump runs unarmed. `scripts/carried-dump.sh`
+//! dumps every gen 1 battle entry of `pinned_seeds.txt` this way, into the
+//! corpus `ps-diff.sh --carried gen1` replays against `ps_sim`.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -175,10 +183,7 @@ struct Fuzz(u64);
 
 impl Fuzz {
     fn new(suite: &str) -> Fuzz {
-        let seed = std::env::var("FUZZ_SEED")
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(0xF00D_2026);
+        let seed = fuzz_seed();
         eprintln!("[{suite}] FUZZ_SEED={seed} FUZZ_N={}", fuzz_n());
         // Mix the suite name in so the suites do not mirror each other.
         let mix = suite.bytes().fold(seed, |a: u64, b| a.rotate_left(7) ^ b as u64);
@@ -205,6 +210,10 @@ impl Fuzz {
     fn pick<'a, T>(&mut self, xs: &'a [T]) -> &'a T {
         &xs[self.below(xs.len() as u64) as usize]
     }
+}
+
+fn fuzz_seed() -> u64 {
+    std::env::var("FUZZ_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or(0xF00D_2026)
 }
 
 fn fuzz_n() -> usize {
@@ -249,6 +258,83 @@ fn checked_case(n_cases: usize, suite: &str) -> Option<usize> {
         }
         None => None,
     }
+}
+
+/// Where `FUZZ_DUMP` asks for the teams to go, if it does.
+fn fuzz_dump() -> Option<PathBuf> {
+    std::env::var("FUZZ_DUMP").ok().filter(|p| !p.trim().is_empty()).map(PathBuf::from)
+}
+
+/// One mon of a battle scenario as a PS set (`PokemonSet`, the shape
+/// `Teams.pack` takes): the fields the reference builds the mon from. The
+/// scenario's starting status is not a set field; the dump keeps it beside
+/// the teams instead.
+///
+/// Gen 1 has no abilities, but a set without one is not "none": PS's
+/// `Teams.unpack` (`sim/teams.ts`) fills an empty ability with the species'
+/// first one from the base dex (Vileplume would walk in with Chlorophyll),
+/// so a gen 1 set names `noability`, as the protocol-diff wide teams do.
+fn ps_set(gen: u8, spec: &Value) -> Value {
+    let mut set = serde_json::Map::new();
+    for field in ["species", "level", "moves", "ivs", "evs", "nature", "ability", "item", "gender"] {
+        if let Some(v) = spec.get(field) {
+            set.insert(field.to_string(), v.clone());
+        }
+    }
+    if gen == 1 {
+        set.entry("ability").or_insert_with(|| json!("noability"));
+    }
+    Value::Object(set)
+}
+
+/// Write the teams of `scenarios` (all of them, or only case `only`) to
+/// `path` as PS sets JSON: a header naming the run that drew them, then one
+/// case a line, so a re-dump diffs line by line. Same env, same file.
+fn dump_teams(path: &Path, suite: &str, gen: u8, scenarios: &[Value], only: Option<usize>) {
+    let env = |k: &str| std::env::var(k).ok().map(Value::String).unwrap_or(Value::Null);
+    let header = json!({
+        "suite": suite,
+        "gen": gen,
+        "seed": fuzz_seed(),
+        "wide": env("FUZZ_WIDE"),
+        "fuzz_n": fuzz_n(),
+        "case": only,
+        "only": env("FUZZ_ONLY"),
+    });
+    let mut out = header.to_string();
+    out.pop(); // reopen the header object for the case list
+    out.push_str(",\"cases\":[\n");
+    let mut lines = Vec::new();
+    for (i, sc) in scenarios.iter().enumerate() {
+        if only.is_some_and(|k| k != i) {
+            continue;
+        }
+        let side = |who: &str| -> Vec<Value> {
+            sc[who]["team"].as_array().map(|t| t.iter().map(|m| ps_set(gen, m)).collect()).unwrap_or_default()
+        };
+        let status = |who: &str| -> Vec<Value> {
+            sc[who]["team"]
+                .as_array()
+                .map(|t| t.iter().map(|m| m.get("status").cloned().unwrap_or(Value::Null)).collect())
+                .unwrap_or_default()
+        };
+        lines.push(
+            json!({
+                "case": i,
+                "p1": side("p1"),
+                "p2": side("p2"),
+                "status": {"p1": status("p1"), "p2": status("p2")},
+            })
+            .to_string(),
+        );
+    }
+    out.push_str(&lines.join(",\n"));
+    out.push_str("\n]}\n");
+    if let Some(dir) = path.parent().filter(|d| !d.as_os_str().is_empty()) {
+        std::fs::create_dir_all(dir).expect("FUZZ_DUMP: create the directory");
+    }
+    std::fs::write(path, out).expect("FUZZ_DUMP: write the teams");
+    eprintln!("[{suite}] dumped {} cases to {}", lines.len(), path.display());
 }
 
 /// `FUZZ_WIDE=1` widens the two battle suites past the shape they were built
@@ -1887,7 +1973,8 @@ fn fuzz_gen3_battles() {
 /// here, not merely the actions of the mons still standing.
 #[test]
 fn fuzz_gen1_battles() {
-    if !armed() {
+    let dump = fuzz_dump();
+    if dump.is_none() && !armed() {
         return;
     }
     use gen1_battle::testing::{apply_status_drop, SeatForce, Status as G1Status};
@@ -2242,6 +2329,10 @@ fn fuzz_gen1_battles() {
         eprintln!("[gen1-battles] {skipped} cases skipped on a Speed tie");
     }
     let only = checked_case(expected.len(), "gen1-battles");
+    if let Some(path) = dump {
+        dump_teams(&path, "fuzz_gen1_battles", 1, &scenarios, only);
+        return;
+    }
     let results = showdown(&Value::Array(scenarios.clone()), only);
     let mut bad = 0;
     let mut crashed = 0;

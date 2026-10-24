@@ -27,6 +27,9 @@ the same logic breaks one of them, the harness fails at that exact
 seed with full divergence context. Empty / comment-only files print one
 summary line and exit 0 (the green path for "no pinned regressions yet").
 
+`--carried gen1` replays the carried corpus: the old engines' pinned
+battles (below), every team pair over battle seeds 0..19.
+
 ## Usage
 
 ```
@@ -35,6 +38,7 @@ scripts/ps-diff.sh --self --gen 3 --n 200 --teams random
 scripts/ps-diff.sh --self --gen 1 --n 50 --teams wide
 scripts/ps-diff.sh --self --seed 0 --gen 1
 scripts/ps-diff.sh --pinned
+scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" --allow-unported --jobs 6
 scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 3 --n 200
 ```
 
@@ -81,6 +85,48 @@ both drivers, no second chance to drift independently.
   (one per line), unpacking with PS's own `Teams.unpack`. A `focus`
   filter on `--focus ids` makes every team carry at least one of
   those ids among its moves.
+
+## Carried corpus
+
+`crates/ps_harness/carried/gen1/*.json` carries the old engines' pinned
+corpus over to this harness. Each file is one `fuzz_gen1_battles` entry of
+`crates/mega_blastoise_test/pinned_seeds.txt`, named the way
+`scripts/pinned-seeds.sh` names its logs
+(`fuzz_gen1_battles_w<wide>_s<seed>[_c<case>][_only].json`), holding every
+case's two teams (one case with `case=`) as PS sets: a header line naming
+the run (`suite`, `gen`, `seed`, `wide`, `fuzz_n`, `case`, `only`), then one
+`{"case", "p1", "p2", "status"}` object a line. `status` is the case's
+starting statuses, which are not a set field; the carried run does not
+apply them. Gen 1 sets name `noability` (an empty ability unpacks to the
+species' later-gen one).
+
+The files come from the fuzz suite itself: `FUZZ_DUMP=<path>` makes
+`fuzz_gen1_battles` play every case's own side (the generator stream is
+unchanged) and write the teams instead of asking the reference.
+`scripts/carried-dump.sh gen1` builds the fuzz binary once and dumps every
+entry; `scripts/carried-dump.sh gen1 --check` dumps to `.scratch/carried/`
+and fails unless the result is byte-identical to the committed files (the
+dump is deterministic). Re-dump after adding a gen 1 battle entry to
+`pinned_seeds.txt`.
+
+`--carried gen1` (PS against itself without `--ps-cli`, like `--pinned`)
+reads the files in name order and plays each distinct team pair (a `case=`
+entry inside a whole-seed one is played once, under the first name) as a
+`gen1customgame` over driver seeds 0..19: the battle and choice seeds come
+from the driver seed as usual, the team seed is unused. `--seed S` plays
+only seed S of every pair; `--carried-pair <file>#<case>` (for example
+`fuzz_gen1_battles_w1_s7132#4`) only that pair. A carried log is named
+after its pair as well as its seed:
+`ps-diff-carried-<file>-<case>-<seed>.log`, and its first line names the
+pair. One divergence replays with
+
+```
+scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" \
+  --carried-pair 'fuzz_gen1_battles_w1_s7132#4' --seed 3 --jobs 1
+```
+
+The carried run is part of the Gen 1 phase gate (after G1-7), not of
+`scripts/check.sh` yet.
 
 ## What the driver does
 

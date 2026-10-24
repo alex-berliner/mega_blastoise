@@ -30,6 +30,9 @@
 //! - `diff_drive_tamper_line` exercises the same path with a different
 //!   seed and a different K, pins the second divergence file. Together
 //!   the two tests cover the divergence reporting.
+//! - `carried_corpus` checks the carried corpus (`carried/gen1/*.json`)
+//!   is well-formed PS sets and that `--carried gen1` plays a pair of it
+//!   and names a divergence after the pair.
 
 use std::fs;
 use std::io::Write as _;
@@ -337,4 +340,68 @@ fn diff_drive_tamper_line() {
     assert!(txt.contains("diff @ line 12"), "diff log should pin line 12:\n{txt}");
     assert!(txt.contains("L: "), "context section missing from:\n{txt}");
     let _ = fs::remove_file(&path);
+}
+
+/// The carried corpus (`carried/gen1/*.json`, written by
+/// `scripts/carried-dump.sh` through showdown_fuzz.rs's `FUZZ_DUMP`): every
+/// file is one old-engine pinned entry's team pairs as PS sets, and
+/// `diff.js --carried gen1` plays a pair of it. A tampered carried battle
+/// lands its divergence under the pair's own name, since every pair
+/// replays the same battle seeds.
+#[test]
+fn carried_corpus() {
+    let dir = manifest_dir().join("carried").join("gen1");
+    let mut files: Vec<PathBuf> = fs::read_dir(&dir)
+        .unwrap_or_else(|e| panic!("read {}: {}", dir.display(), e))
+        .map(|e| e.unwrap().path())
+        .filter(|p| p.extension().is_some_and(|x| x == "json"))
+        .collect();
+    files.sort();
+    assert!(!files.is_empty(), "no carried corpus in {}", dir.display());
+    for path in &files {
+        let doc: serde_json::Value = serde_json::from_str(&fs::read_to_string(path).unwrap())
+            .unwrap_or_else(|e| panic!("{}: not JSON: {e}", path.display()));
+        assert_eq!(doc["gen"], 1, "{}: not a gen 1 dump", path.display());
+        assert_eq!(doc["suite"], "fuzz_gen1_battles", "{}: suite", path.display());
+        let cases = doc["cases"].as_array().unwrap_or_else(|| panic!("{}: no cases", path.display()));
+        assert!(!cases.is_empty(), "{}: no cases", path.display());
+        for c in cases {
+            for side in ["p1", "p2"] {
+                let team = c[side].as_array().unwrap_or_else(|| panic!("{}: no {side}", path.display()));
+                assert!((1..=6).contains(&team.len()), "{}: {side} has {} mons", path.display(), team.len());
+                for set in team {
+                    assert!(set["species"].is_string(), "{}: a set without species", path.display());
+                    assert!(set["moves"].as_array().is_some_and(|m| !m.is_empty()), "{}: a set without moves", path.display());
+                    // An empty ability unpacks to the species' later-gen one.
+                    assert_eq!(set["ability"], "noability", "{}: a gen 1 set needs noability", path.display());
+                }
+            }
+        }
+    }
+
+    let first = files[0].file_stem().unwrap().to_string_lossy().to_string();
+    let pair = format!("{first}#0");
+    let scratch = workspace_root().join(".scratch").join("ps-diff-carried-test");
+    let scratch_s = scratch.to_string_lossy().to_string();
+    let out = node_diff(&[
+        "--carried", "gen1", "--carried-pair", &pair, "--seed", "0", "--jobs", "1",
+        "--quiet", "--scratch", &scratch_s,
+    ]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success() && stdout.contains("ran=1 diffs=0"),
+        "carried self run: status={:?} stdout={stdout:?} stderr={:?}",
+        out.status,
+        String::from_utf8_lossy(&out.stderr),
+    );
+    let log = scratch.join(format!("ps-diff-carried-{first}-0-0.log"));
+    let _ = fs::remove_file(&log);
+    let out = node_diff(&[
+        "--carried", "gen1", "--carried-pair", &pair, "--seed", "0", "--jobs", "1",
+        "--quiet", "--scratch", &scratch_s, "--tamper-line", "9",
+    ]);
+    assert!(!out.status.success(), "tampered carried run should diff");
+    let txt = fs::read_to_string(&log).unwrap_or_else(|e| panic!("read {}: {}", log.display(), e));
+    assert!(txt.contains(&format!("pair {pair} diff @ line 9")), "carried diff log:\n{txt}");
+    let _ = fs::remove_file(&log);
 }

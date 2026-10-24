@@ -21,6 +21,9 @@
 //                   2 with "no ported pipeline for gen N".
 //   'file:...' - one PS packed team per line from <path>.
 //
+// `readCarried(dir)` loads the carried corpus (diff.js `--carried`): the
+// old engines' pinned battles as PS sets JSON, one team pair per case.
+//
 // Each side is returned as the packed-string form PS takes in `>player`,
 // which the driver (diff.js) feeds into both engines.
 //
@@ -90,6 +93,30 @@ function buildFromFile({ path: filePath }) {
   const teams = lines.slice(0, 2).map((line) => Teams.unpack(line));
   if (teams.some((t) => !t)) throw new Error(`failed to unpack a team in ${filePath}`);
   return { p1: teams[0], p2: teams[1], packed: [Teams.pack(teams[0]), Teams.pack(teams[1])] };
+}
+
+/// The carried corpus: every `*.json` under `dir` (written by
+/// `scripts/carried-dump.sh` through showdown_fuzz.rs's `FUZZ_DUMP`), each
+/// holding the team pairs of one old-engine pinned entry as PS sets. Files
+/// in name order, cases in file order; a pair that an earlier file already
+/// holds (a `case=` entry inside a whole-seed one) is played once, under its
+/// first name. Returns [{ name, p1, p2, packed }], name `<file>#<case>`.
+function readCarried(dir) {
+  if (!fs.existsSync(dir)) throw new Error(`no carried corpus at ${dir}`);
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
+  const pairs = [];
+  const seen = new Set();
+  for (const f of files) {
+    const doc = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+    for (const c of doc.cases || []) {
+      const packed = [Teams.pack(c.p1), Teams.pack(c.p2)];
+      const key = packed.join('\n');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      pairs.push({ name: `${f.replace(/\.json$/, '')}#${c.case}`, p1: c.p1, p2: c.p2, packed });
+    }
+  }
+  return pairs;
 }
 
 /// One team: 1-6 mons. Each mon: 1-4 moves (distinct), level 40-100,
@@ -273,6 +300,7 @@ function makePairFromPRNG({ gen, prng, teams }) {
 
 module.exports = {
   buildPair,
+  readCarried,
   _internals: { makeWideTeam, buildRandom, buildWide },
   // Public surface used by diff.js and the cargo tests in
   // crates/ps_harness/tests/protocol_diff.rs.
