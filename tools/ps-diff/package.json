@@ -1,8 +1,11 @@
 {
   "name": "ps-diff",
   "private": true,
-  "description": "Protocol-diff harness: feeds the same command stream to pokemon-showdown's BattleStream and to ps_sim_cli, diffs the output line by line. Own install, pinned to 0.11.11 (design section 3, phase 1-3 decisions).",
+  "description": "Protocol-diff harness: feeds the same command stream to pokemon-showdown's BattleStream and to ps_sim_cli, diffs the output line by line. Own install, pinned to upstream master c0845f33 (2026-10-23), the phase R re-sync (docs/architecture/showdown-resync.md). No npm release exists past 0.11.11, so the pin is a git commit and postinstall builds dist/.",
+  "scripts": {
+    "postinstall": "node node_modules/pokemon-showdown/build"
+  },
   "dependencies": {
-    "pokemon-showdown": "0.11.11"
+    "pokemon-showdown": "https://codeload.github.com/smogon/pokemon-showdown/tar.gz/c0845f33d381402dfcb18ce324c20a94f18af075"
   }
 }
