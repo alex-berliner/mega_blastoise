@@ -35,7 +35,7 @@ fn spot_checks() {
     assert_eq!(MON_SPRITES.len(), 151);
 }
 
-/// The Gen 3 battler drafts from a 220-species random-battle pool, and the
+/// The Gen 3 engine drafts from a 220-species random-battle pool, and the
 /// colour sprite tables were built off a hand-kept list of Kanto's 151 — so
 /// every mon past Mew reached the field with no art at all, and the miss was
 /// silent because `front_sprite_in` just returns false and draws nothing.

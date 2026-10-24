@@ -16,10 +16,6 @@ pub mod runner;
 pub mod device_session;
 pub mod device_ui;
 pub mod choice_collect;
-#[cfg(feature = "legacy_gen1")]
-pub mod demo_teams;
-#[cfg(feature = "legacy_gen1")]
-pub mod prompt_fmt;
 pub mod oled_ctl;
 pub mod menu;
 pub mod move_descs;
@@ -56,17 +52,9 @@ pub use choice_collect::{
 pub use gen3_battle::Ruleset;
 pub use runner::Engine;
 pub use runner::LOBBY_DEMO_DELAY_MS;
-#[cfg(feature = "legacy_gen1")]
-pub use runner::gen1::{battle_options_with_seed, board_prompt_event, demo_battle_options, demo_engine_opts, make_player, party_slot_from_mon, run_battle};
 pub use hp_bar::HpBarState;
-#[cfg(feature = "legacy_gen1")]
-pub use prompt_fmt::{format_active_state, format_player_state, format_prompt};
 pub use move_sprites::{move_sprite, MOVE_SPRITE_SIDE};
-#[cfg(feature = "legacy_gen1")]
-pub use demo_teams::{demo_team_blue, demo_team_red};
 pub use randbat::{draw_ps_team, draw_two_ps_teams, TEAM_SEED_SALT};
-#[cfg(feature = "legacy_gen1")]
-pub use randbat::{draw_randbat_team, draw_two_randbat_teams};
 pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
 pub use cli_parse::{

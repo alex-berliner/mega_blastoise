@@ -664,66 +664,9 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         }
     }
 
+    /// A Gen 1 battle: always the PS engine (the legacy Gen 1 engine is gone).
     async fn run_gen1(&self, seed: u64, six: bool) {
-        if self.port.engine() == Engine::Ps {
-            self.run_ps(1, seed, six).await;
-            return;
-        }
-        #[cfg(feature = "legacy_gen1")]
-        self.run_gen1_legacy(seed, six).await;
-        #[cfg(not(feature = "legacy_gen1"))]
-        {
-            self.port.line_out("Gen 1: this build has no legacy engine; using the PS engine.");
-            self.run_ps(1, seed, six).await;
-        }
-    }
-
-    /// A Gen 1 battle on the legacy engine (`gen1_battle`, [`runner::gen1`]).
-    #[cfg(feature = "legacy_gen1")]
-    async fn run_gen1_legacy(&self, seed: u64, six: bool) {
-        use gen1_battle::TeamData;
-        let mut battle = match gen1_battle::PublicCoreBattle::new(
-            runner::gen1::battle_options_with_seed(seed),
-            &(),
-            runner::gen1::demo_engine_opts(),
-        ) {
-            Ok(b) => b,
-            Err(e) => {
-                self.port.line_out(&alloc::format!("Battle init error: {e}"));
-                return;
-            }
-        };
-        let (team_red, team_blue) = crate::randbat::draw_two_randbat_teams(seed, if six { 6 } else { 3 });
-        let ok = battle
-            .update_team("p1", TeamData { members: team_red, ..Default::default() })
-            .is_ok()
-            && battle
-                .update_team("p2", TeamData { members: team_blue, ..Default::default() })
-                .is_ok()
-            && battle.start().is_ok();
-        if !ok {
-            self.port.line_out("Battle setup failed.");
-            return;
-        }
-        self.port.line_out("── Battle start ────────────────────────");
-
-        let bus = InputBus::new();
-        let mut queue = crate::battle_effects::BoardEventQueue::new();
-        let mut effects = RunnerEffects { r: self, bus: &bus };
-        runner::gen1::run_battle(
-            &mut battle,
-            &bus,
-            self.collect_battle_input(&bus, seed),
-            &mut queue,
-            &mut effects,
-            |b| {
-                let state = crate::format_active_state(b);
-                for line in state.lines() {
-                    self.port.line_out(line);
-                }
-            },
-        )
-        .await;
+        self.run_ps(1, seed, six).await;
     }
 
     async fn run_gen3(&self, seed: u64, six: bool) {

@@ -62,7 +62,7 @@ pub struct PartyMon {
 
 /// What one seat may do for one request. Mirrors the public fields of
 /// core's `choice_collect::SlotOptions` (minus `is_ai` and `prompt_text`,
-/// which the runner and `prompt_fmt` own).
+/// which the runner owns).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SeatOptions {
     /// 1 or 2.

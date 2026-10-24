@@ -6,11 +6,12 @@ default-run = "mega-blastoise-test"
 
 [dependencies]
 embedded-graphics = "0.8"
-# The legacy Gen 1 engine's runner, for the old suites until G1-10.
-mega-blastoise-core = { path = "../mega_blastoise_core", features = ["legacy_gen1"] }
-gen1_battle = { path = "../gen1_battle" }
+mega-blastoise-core = { path = "../mega_blastoise_core" }
+ps_dex = { path = "../ps_dex" }
+# `LocalTransport`'s spill buffer is a critical-section mutex; the host needs
+# an implementation (the firmware's is embassy-rp's, the web's std's).
+critical-section = { version = "1", features = ["std"] }
 gen3_battle = { path = "../gen3_battle" }
 serde_json = "1.0"
-anyhow = "1.0"
 pollster = "0.3"
 embassy-futures = "0.1"

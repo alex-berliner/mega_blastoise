@@ -7,18 +7,15 @@ runtime owns it.  Use it when deciding where new code belongs.
 
 ## mega_blastoise_core  (`no_std`, shared by all targets)
 
-### battle_runner
+### runner
 
 | Feature | Symbol |
 |---------|--------|
-| Battle loop | `run_battle` |
-| Battle options setup | `battle_options_with_seed`, `demo_battle_options`, `demo_engine_opts` |
-| Player setup | `make_player` |
-| Log → `BoardEvent` parsing + dispatch | `enrich_and_dispatch` (private) |
-| PP refresh from battle RAM (no full CBOR decode) | `MoveSlotCache` (private) |
-| Move slot full query on SwitchIn | `query_active_moves` (private) |
-| Team slot lookup by name | `query_team_slot_by_name` (private) |
-| `team_slot` enrichment on Faint/SwitchIn | inside `enrich_and_dispatch` |
+| Battle loop (PS engine, every Gen 1 battle) | `runner::ps::run_battle` |
+| Battle setup | `runner::ps::BattleSetup::local` |
+| Request → `SlotOptions` | `runner::ps::slot_options_from_seat` |
+| Battle loop (legacy Gen 3 engine) | `runner::gen3::run_battle` |
+| Engine switch | `Engine`, `ps_ports_every_move` |
 | Idle-to-demo delay shared constant | `LOBBY_DEMO_DELAY_MS` |
 
 ### battle_effects
@@ -92,26 +89,11 @@ runtime owns it.  Use it when deciding where new code belongs.
 | Choice-submitted waiting overlay | `render_waiting_screen` |
 | Waiting-for-opponent overlay | `render_waiting_for_opponent` |
 
-### prompt_fmt
+### randbat / rng / random_ai
 
 | Feature | Symbol |
 |---------|--------|
-| Full battle state summary (per-turn `on_turn` callback) | `format_active_state` |
-| Single-player state text | `format_player_state` |
-| Move/switch prompt text for CLI display | `format_prompt` |
-
-### data_store
-
-| Feature | Symbol |
-|---------|--------|
-| Static battle data (Pokémon, moves) implementing `battler::DataStore` | `FlashDataStore` |
-
-### randbat / demo_teams / rng / random_ai
-
-| Feature | Symbol |
-|---------|--------|
-| Random battle team draw | `draw_randbat_team` |
-| Fixed test teams | `demo_team_red`, `demo_team_blue` |
+| Random battle team draw (PS packed teams) | `draw_ps_team`, `draw_two_ps_teams` |
 | Simple LCG | `SimpleRng` |
 | Random choice AI | `RandomAi` |
 

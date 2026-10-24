@@ -343,8 +343,7 @@ fn sprite_side() -> usize {
     if std::env::var("CARGO_FEATURE_BIGSPRITE").is_ok() { 56 } else { 48 }
 }
 
-/// The 151 Gen 1 species in dex order, using battler's display names
-/// (`mons/gen1.json` `name` fields) so `render_player_screen` can match the
+/// The 151 Gen 1 species in dex order, using the dex's display names so `render_player_screen` can match the
 /// name it is handed. Index + 1 = national dex number = sprite file name.
 const GEN1_DEX: [&str; 151] = [
     "Bulbasaur", "Ivysaur", "Venusaur", "Charmander", "Charmeleon", "Charizard",
@@ -868,7 +867,7 @@ fn fetch_gen3_front(manifest: &Path, dex: usize) -> PathBuf {
 /// dex the battle engine itself compiles against.
 ///
 /// The sprite tables used to be built off `GEN1_DEX`, a hand-kept list of 151
-/// names, while the Gen 3 battler drafts from a 220-species random-battle
+/// names, while the Gen 3 engine drafts from a 220-species random-battle
 /// pool. Everything past Mew therefore had no art at all: the lookup missed
 /// and the field drew nothing. Reading the species list from the same vendored
 /// file the engine reads means the two cannot drift.

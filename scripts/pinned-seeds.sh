@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# The pinned regression corpus for the OLD engines (Gen 1 and Gen 3).
+# The pinned regression corpus for the legacy Gen 3 engine (Gen 1's replays
+# against ps_sim as the carried corpus: `scripts/ps-diff.sh --carried gen1`).
 #
 #   scripts/pinned-seeds.sh [file]
 #
@@ -8,7 +9,7 @@
 #
 #   <suite> <wide 0|1|2> <seed> [case=<k>] [only=<ids>]  # <fix commit> <note>
 #
-#   suite  the showdown_fuzz test to run (fuzz_gen1_battles, ...)
+#   suite  the showdown_fuzz test to run (fuzz_gen3_battles, ...)
 #   wide   0, 1 or 2: the FUZZ_WIDE level the seed was found at
 #   seed   the FUZZ_SEED the seed was found with
 #   case   optional: compare only this case of the seed (FUZZ_CASE)

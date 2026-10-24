@@ -6,9 +6,8 @@
 //! are not here yet, and the module says so rather than pretending: see the
 //! `Unsupported` note on [`Battle::step`].
 //!
-//! Nothing in here is shared with `gen1_battle`. A Gen 1 battle runs that
-//! engine start to finish and never enters this module, which is what keeps
-//! Gen 1 behaviour exactly as it was.
+//! Nothing in here is shared with Gen 1: a Gen 1 battle runs on `ps_sim`
+//! start to finish and never enters this module.
 
 extern crate alloc;
 

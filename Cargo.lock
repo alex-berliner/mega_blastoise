@@ -30,12 +30,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.102"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
-
-[[package]]
 name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -840,18 +834,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gen1_battle"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "battle_types",
- "defmt 1.0.1",
- "hashbrown 0.14.5",
- "heapless 0.8.0",
- "serde_json",
-]
-
-[[package]]
 name = "gen3_battle"
 version = "0.1.0"
 dependencies = [
@@ -907,15 +889,6 @@ name = "hashbrown"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
-dependencies = [
- "ahash",
-]
-
-[[package]]
-name = "hashbrown"
-version = "0.14.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
 ]
@@ -1171,7 +1144,6 @@ dependencies = [
  "embassy-sync 0.7.2",
  "embassy-time",
  "embedded-graphics",
- "gen1_battle",
  "gen3_battle",
  "png",
  "ps_client",
@@ -1210,13 +1182,13 @@ dependencies = [
 name = "mega-blastoise-test"
 version = "0.1.0"
 dependencies = [
- "anyhow",
+ "critical-section",
  "embassy-futures",
  "embedded-graphics",
- "gen1_battle",
  "gen3_battle",
  "mega-blastoise-core",
  "pollster",
+ "ps_dex",
  "serde_json",
 ]
 

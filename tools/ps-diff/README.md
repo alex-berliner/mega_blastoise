@@ -186,9 +186,10 @@ the battle `unported: <id>` like any other effect.
 
 ## Carried corpus
 
-`crates/ps_harness/carried/gen1/*.json` carries the old engines' pinned
-corpus over to this harness. Each file is one `fuzz_gen1_battles` entry of
-`crates/mega_blastoise_test/pinned_seeds.txt`, named the way
+`crates/ps_harness/carried/gen1/*.json` carries the old Gen 1 engine's
+pinned corpus over to this harness. Each file is one `fuzz_gen1_battles`
+entry of `crates/mega_blastoise_test/pinned_seeds.txt` as it stood before
+G1-10 (which deleted that engine, its suite and those entries), named the way
 `scripts/pinned-seeds.sh` names its logs
 (`fuzz_gen1_battles_w<wide>_s<seed>[_c<case>][_only].json`), holding every
 case's two teams (one case with `case=`) as PS sets: a header line naming
@@ -198,14 +199,13 @@ starting statuses, which are not a set field; the carried run does not
 apply them. Gen 1 sets name `noability` (an empty ability unpacks to the
 species' later-gen one).
 
-The files come from the fuzz suite itself: `FUZZ_DUMP=<path>` makes
-`fuzz_gen1_battles` play every case's own side (the generator stream is
-unchanged) and write the teams instead of asking the reference.
-`scripts/carried-dump.sh gen1` builds the fuzz binary once and dumps every
-entry; `scripts/carried-dump.sh gen1 --check` dumps to `.scratch/carried/`
-and fails unless the result is byte-identical to the committed files (the
-dump is deterministic). Re-dump after adding a gen 1 battle entry to
-`pinned_seeds.txt`.
+The files came from the fuzz suite itself: `FUZZ_DUMP=<path>` made
+`fuzz_gen1_battles` play every case's own side (the generator stream
+unchanged) and write the teams instead of asking the reference, and
+`scripts/carried-dump.sh` dumped every entry. Both went with the legacy
+Gen 1 engine in G1-10, so the corpus is frozen: it can no longer be
+re-dumped, and new Gen 1 findings go to the protocol diff's own pinned
+list, `crates/ps_harness/pinned.txt`.
 
 `--carried gen1` (PS against itself without `--ps-cli`, like `--pinned`)
 reads the files in name order and plays each distinct team pair (a `case=`

@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "crates/battle_types",
-    "crates/gen1_battle",
     "crates/gen3_battle",
     "crates/mega_blastoise_core",
     "crates/mega_blastoise_fw",
@@ -13,7 +12,7 @@ members = [
     "crates/ps_protocol",
     "crates/ps_sim",
 ]
-exclude = ["battler", "crates/mega_blastoise_web", "firmware/bringup/esp32_reset", "firmware/bringup/rp2350_blink"]
+exclude = ["crates/mega_blastoise_web", "firmware/bringup/esp32_reset", "firmware/bringup/rp2350_blink"]
 default-members = [
     "crates/mega_blastoise_core",
     "crates/mega_blastoise_test",

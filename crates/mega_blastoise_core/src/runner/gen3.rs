@@ -1,13 +1,12 @@
 //! Drives a [`gen3_battle`] battle and narrates it as [`BoardEvent`]s.
 //!
-//! This is the Gen 3 half of the engine seam. The Gen 1 half is
-//! [`crate::runner::gen1`] and is deliberately untouched: a Gen 1 battle runs
-//! exactly the code it always ran, and picking a ruleset picks which of the
+//! This is the legacy Gen 3 half of the engine seam. Gen 1 plays on the PS
+//! engine ([`crate::runner::ps`]), and picking a ruleset picks which of the
 //! two a caller drives.
 //!
 //! Both runners own their loop, so a platform drives either the same way:
 //! hand it a battle, somewhere to read choices from, and somewhere to narrate
-//! to. [`run_battle`] here is the counterpart of [`crate::runner::gen1`]'s.
+//! to. [`run_battle`] here is the counterpart of [`crate::runner::ps`]'s.
 //!
 //! Narration pacing is deliberately absent: [`BoardEffects`] sinks already
 //! delay per event, so both engines inherit identical timing by emitting the
@@ -101,7 +100,7 @@ async fn switch_in<E: BoardEffects>(battle: &Battle, side: u8, at: &Onstage, eff
             // seat glued to it — and gluing one on broke two things at once:
             // the plate printed "Blastoise,p1", and the sprite table, which is
             // keyed by species, missed every lookup and drew nothing. Gen 1
-            // fills this field from the battler log's own `name`, which is a
+            // fills this field from the protocol's own `name`, which is a
             // bare nickname; Gen 3 now matches. The `mon:` fields on every
             // other event DO carry the suffix, because those have nowhere else
             // to say which seat they mean.
@@ -506,7 +505,7 @@ async fn narrate<E: BoardEffects>(
 
 /// Distil one Gen 3 seat into the generation-neutral [`SlotOptions`] the
 /// shared collector consumes. The Gen 3 counterpart of
-/// [`crate::runner::gen1::slot_options_from_request`]: parsing the engine's
+/// [`crate::runner::ps::slot_options_from_seat`]: parsing the engine's
 /// state is battle logic and lives with the engine; everything past the
 /// [`crate::battle_input::InputBus`] is generation-blind.
 ///
@@ -583,8 +582,8 @@ pub fn slot_options_for(battle: &Battle, side: u8) -> crate::choice_collect::Slo
     {
         // Mid two-turn move, rampage, roll, Bide or recharge: the engine
         // swings the lock whatever index arrives, so the seat is committed
-        // the moment the turn opens — exactly how the Gen 1 battler's
-        // `locked_into_move` reads. Offering a menu here was a small lie:
+        // the moment the turn opens, exactly how the old Gen 1
+        // engine's `locked_into_move` read. Offering a menu here was a small lie:
         // the player picked Surf and watched Tackle come out.
         s.auto = Some(crate::battle_input::format_move_choice(0));
     } else {
@@ -629,7 +628,7 @@ fn status_id(st: gen3_battle::data::Status) -> &'static str {
 
 /// The shared choice grammar, read back into an engine [`Choice`]. The
 /// collector speaks strings ("move 2" / "switch 4") because that is the Gen 1
-/// battler's own protocol; Gen 3 borrows the grammar rather than inventing a
+/// engines' own protocol; Gen 3 borrows the grammar rather than inventing a
 /// second one, and this is the whole cost of the borrowing.
 pub fn parse_choice(line: &str) -> Choice {
     let mut parts = line.split_whitespace();
@@ -1129,7 +1128,7 @@ mod tests {
     /// recharging — the engine swings the lock whatever index arrives, so the
     /// distiller auto-commits instead of drawing a menu the press cannot
     /// honour. An Encore greys everything but the encored slot. This is the
-    /// same reading the Gen 1 battler's request gives its UI, checked here
+    /// same reading a Gen 1 request gives its UI, checked here
     /// because Gen 3's first cut showed the fake menu.
     #[test]
     fn locked_and_encored_seats_distil_honestly() {

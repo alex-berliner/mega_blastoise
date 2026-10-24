@@ -17,11 +17,9 @@
 //! (`DeviceRunner::run_gen1` / `run_gen3`), picked per battle by
 //! [`Engine`]: the Showdown split's server and client, one runner for both
 //! generations ([`ps`], over a [`crate::transport::Transport`]), and the
-//! legacy per-generation engines (`gen1`, only with the `legacy_gen1`
-//! feature, and [`gen3`], until `ps_sim` ports Gen 3).
+//! legacy Gen 3 engine ([`gen3`], until `ps_sim` ports Gen 3). Gen 1 always
+//! plays on [`ps`].
 
-#[cfg(feature = "legacy_gen1")]
-pub mod gen1;
 pub mod gen3;
 pub mod ps;
 #[cfg(test)]
@@ -38,8 +36,8 @@ pub enum Engine {
     /// its legacy engine).
     #[default]
     Ps,
-    /// `gen1_battle` / `gen3_battle` through their own runners. Gen 1
-    /// needs the `legacy_gen1` feature; without it Gen 1 plays on `Ps`.
+    /// `gen3_battle` through [`gen3::run_battle`]. Gen 1 has no legacy
+    /// engine any more and plays on `Ps` either way.
     Legacy,
 }
 

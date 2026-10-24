@@ -18,7 +18,9 @@
 #                                        # engine= on the URL): PS for gen 1,
 #                                        # legacy for gen 3 until ps_sim ports it
 #   scripts/ui-probe.sh --skip-build     # reuse the existing pkg/
-#   scripts/ui-probe.sh --engine legacy  # both lanes, the legacy engines
+#   scripts/ui-probe.sh --engine legacy  # the legacy Gen 3 engine
+#                                        # (engine=legacy), gen 3 only: Gen 1
+#                                        # has no legacy engine any more
 #   scripts/ui-probe.sh --engine ps      # the PS engine (engine=ps), gen 1
 #                                        # only: ps_sim has no gen 3 port yet
 #
@@ -42,8 +44,8 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 # One fixed battle seed for every engine: every Gen 1 move is ported, so the
-# PS engine's teams no longer change as ports land. (7777, the legacy lanes'
-# old seed, freezes the PS lead on turn 1, and a frozen Gen 1 mon's request
+# PS engine's teams no longer change as ports land. (7777, the lanes' old
+# seed, freezes the PS lead on turn 1, and a frozen Gen 1 mon's request
 # is a forced move, so seat 1 has nothing to commit and cancel.) Each lane
 # also names the engine it must find playing (`expect=`): the default is the
 # PS engine for Gen 1 and the legacy one for Gen 3, which ps_sim has not
@@ -51,13 +53,13 @@ done
 SEED=1
 case "$ENGINE" in
   default) LANES="gen1 gen3"; PARAM="" ;;
-  legacy) LANES="gen1 gen3"; PARAM="&engine=legacy" ;;
+  legacy) LANES="gen3"; PARAM="&engine=legacy" ;;
   ps) LANES="gen1"; PARAM="&engine=ps" ;;
   *) echo "ui-probe: --engine is default, legacy or ps" >&2; exit 2 ;;
 esac
 expect_for() {
   case "$ENGINE:$1" in
-    legacy:*|default:gen3) echo legacy ;;
+    *:gen3) echo legacy ;;
     *) echo ps ;;
   esac
 }

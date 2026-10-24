@@ -9,7 +9,7 @@
 //!
 //! The string conventions are the old runners', which `oled_ctl` and the
 //! narration parse:
-//! - a `mon` field is a position string `"NAME,pN,0"` (the Gen 1 battler's
+//! - a `mon` field is a position string `"NAME,pN,0"` (the old Gen 1 runner's
 //!   form; `board_event::mon_player_id` reads the seat back out of it);
 //! - `health` is `"CUR/MAX"`, what `hp_bar::HpBarState::parse` reads;
 //! - `Win::side` is the winner's side index, `"0"` or `"1"`, what
@@ -59,11 +59,11 @@ pub struct MoveSlot {
 /// The client never yields `Split`, `SwitchOut` or `Raw`: the view consumes
 /// PS's `|split|` itself, PS has no switch-out line, and a line with no
 /// board meaning yields nothing rather than a raw dump. Those three are the
-/// old Gen 1 runner's, whose battler log parser
+/// old Gen 1 runner's, whose log parser
 /// (`mega_blastoise_core::board_event::parse_log_line`) still makes them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BoardEvent {
-    /// The battler's `split|side:N`: whose private/public log pair follows.
+    /// The old Gen 1 log's `split|side:N`: whose private/public log pair follows.
     Split {
         side: String,
     },
@@ -101,7 +101,7 @@ pub enum BoardEvent {
         /// The mon's Speed stat when known; drives the sprite bob rate.
         speed: Option<u16>,
     },
-    /// A mon left the field (the old battler log only).
+    /// A mon left the field (the old Gen 1 log only).
     SwitchOut {
         name: String,
     },
@@ -174,7 +174,7 @@ pub enum BoardEvent {
         player_id: String,
         moves: Vec<MoveSlot>,
     },
-    /// An old battler log line no variant matched (the old Gen 1 runner
+    /// An old Gen 1 log line no variant matched (the old Gen 1 runner
     /// only).
     Raw(String),
 }

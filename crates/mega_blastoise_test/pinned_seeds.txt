@@ -1,11 +1,14 @@
-# The pinned regression corpus for the OLD engines (Gen 1 and Gen 3).
+# The pinned regression corpus for the legacy Gen 3 engine. (The Gen 1
+# entries left with the legacy Gen 1 engine in G1-10: their battles replay
+# against ps_sim as the carried corpus, crates/ps_harness/carried/gen1, via
+# `scripts/ps-diff.sh --carried gen1`.)
 #
 # Every entry is a seed that found a bug, kept as a test that must stay
 # green. One entry per line:
 #
 #   <suite> <wide 0|1|2> <seed> [case=<k>] [only=<ids>]  # <fix commit> <note>
 #
-#   suite  the showdown_fuzz test to run (fuzz_gen1_battles, ...)
+#   suite  the showdown_fuzz test to run (fuzz_gen3_battles, ...)
 #   wide   0, 1 or 2: the FUZZ_WIDE level the seed was found at
 #   seed   the FUZZ_SEED the seed was found with
 #   case   optional: compare only this case of the seed (FUZZ_CASE)
@@ -21,12 +24,6 @@
 # about 2x faster than the whole seed, at FUZZ_N=2000 about 6x), because the
 # reference pays a fixed start-up per run either way.
 #
-# Gen 1, FUZZ_WIDE=1, from the 6001-10200 sweeps.
-fuzz_gen1_battles 1 6359  # 2a9a052 gen 1 Haze soft-locks a thawed charger
-fuzz_gen1_battles 1 7132  # 2a9a052 gen 1 Haze soft-locks a thawed charger
-fuzz_gen1_battles 1 8190  # 2a9a052 gen 1 Dream Eater stops at a doll
-fuzz_gen1_battles 1 8638  # 2a9a052 gen 1 Toxic counter ticks for every poison
-#
 # Gen 3, FUZZ_WIDE=2, from the 7801-12000 sweeps.
 fuzz_gen3_battles 2 8515  # b3ec4de Mirror Move's book is a list
 fuzz_gen3_battles 2 8807  # b3ec4de gen 3 Taunt refuses at priority 0
@@ -39,7 +36,6 @@ fuzz_gen3_battles 2 11980  # ffa67f2 an Encore plus Taunt Struggles at priority 
 # The same findings, narrowed to the one case that failed. Cheaper, but a
 # narrower gate: a regression in another case of the same seed would slip
 # past it, which is why the whole seed is pinned above as well.
-fuzz_gen1_battles 1 7132 case=4  # 2a9a052 gen 1 Haze soft-locks a thawed charger
 fuzz_gen3_battles 2 11873 case=8  # ffa67f2 Struggle is fixed at the request
 fuzz_gen3_battles 2 8807 case=12  # b3ec4de gen 3 Taunt refuses at priority 0
 fuzz_gen3_battles 2 59  # showdown-validation gen 3 wide battle (FUZZ_WIDE=2) fixed during the 2026-10-22/23 sweeps
@@ -120,28 +116,3 @@ fuzz_gen3_battles 0 8 only=thunderwave,imprison,fly,smellingsalts  # showdown-va
 fuzz_gen3_turns 0 4 only=curse,superpower,substitute,followme  # showdown-validation Ghost Curse stops at a Substitute
 fuzz_gen3_battles 0 1 only=curse,superpower,substitute,followme  # showdown-validation Ghost Curse stops at a Substitute
 fuzz_gen3_turns 0 25 only=bide,lockon,doomdesire,futuresight,protect,roar  # showdown-validation two delayed hits land fastest target first
-fuzz_gen1_battles 1 65  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 236  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 371  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 421  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 572  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 735  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 770  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 787  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 850  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 950  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 1029  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 1055  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 1408  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 2070  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 2132  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 2163  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 2515  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 2979  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 3597  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 3723  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 4061  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 1 4413  # showdown-validation gen 1 wide battle (FUZZ_WIDE=1) fixed during the 2026-10-22/23 sweeps (950/1029/1055: the sim itself crashes)
-fuzz_gen1_battles 0 2 only=eruption,waterspout,present,rage,charge,pursuit,substitute,snatch,magiccoat,focuspunch  # showdown-validation gen 1 Rage breaking a Substitute
-fuzz_gen1_battles 0 18 only=eruption,waterspout,present,rage,charge,pursuit,substitute,snatch,magiccoat,focuspunch  # showdown-validation gen 1 Rage breaking a Substitute
-fuzz_gen1_battles 0 24 only=eruption,waterspout,present,rage,charge,pursuit,substitute,snatch,magiccoat,focuspunch  # showdown-validation gen 1 Rage breaking a Substitute

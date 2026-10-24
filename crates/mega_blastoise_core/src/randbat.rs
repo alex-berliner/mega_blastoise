@@ -2,8 +2,6 @@ extern crate alloc;
 
 use alloc::string::String;
 use alloc::vec::Vec;
-#[cfg(feature = "legacy_gen1")]
-use gen1_battle::{MonData, MoveSlot};
 
 pub struct RandBatEntry {
     pub species: &'static str,
@@ -22,62 +20,9 @@ fn xorshift64(state: &mut u64) -> u64 {
     x
 }
 
-/// Pick `count` distinct Pokémon at random from `RANDBAT_POOL` and return them
-/// as a team ready for `gen1_battle::PublicCoreBattle::update_team`.
-#[cfg(feature = "legacy_gen1")]
-pub fn draw_randbat_team(seed: u64, count: usize) -> Vec<MonData> {
-    let n = RANDBAT_POOL.len();
-    let take = count.min(n);
-    let mut rng = if seed == 0 { 0xdeadbeef } else { seed };
-
-    // Partial Fisher-Yates: swap `take` elements to the front of an index array.
-    let mut indices: Vec<usize> = (0..n).collect();
-    let mut team = Vec::with_capacity(take);
-    for i in 0..take {
-        let j = i + (xorshift64(&mut rng) as usize % (n - i));
-        indices.swap(i, j);
-        let e = &RANDBAT_POOL[indices[i]];
-        team.push(MonData {
-            // Leave the name empty: the engine fills in the species' canonical
-            // display name, which the sprite table and ASCII OLED font are
-            // keyed on. Roster strings carry typographic characters (curly
-            // apostrophes) that would miss the sprite and render as '?'.
-            name: String::new(),
-            species: String::from(e.species),
-            ability: Some(String::from("No Ability")),
-            moves: e
-                .moves
-                .iter()
-                .map(|&m| MoveSlot {
-                    name: String::from(m),
-                    id: String::from(m),
-                    typ: String::new(),
-                    pp: 0,
-                    max_pp: 0,
-                    disabled: false,
-                    target: 0,
-                })
-                .collect(),
-            level: e.level,
-            ..Default::default()
-        });
-    }
-    team
-}
-
 /// Canonical two-team seed offset (golden ratio × 2⁶⁴).
 /// Add to one seed to get a well-separated second seed.
 pub const TEAM_SEED_SALT: u64 = 0x9e3779b97f4a7c15;
-
-/// Draw two independent random-battle teams from a single seed.
-/// Returns `(red_team, blue_team)`.
-#[cfg(feature = "legacy_gen1")]
-pub fn draw_two_randbat_teams(seed: u64, count: usize) -> (Vec<MonData>, Vec<MonData>) {
-    (
-        draw_randbat_team(seed, count),
-        draw_randbat_team(seed.wrapping_add(TEAM_SEED_SALT), count),
-    )
-}
 
 // ── Teams for the PS engine ──────────────────────────────────────────────────
 
@@ -99,8 +44,8 @@ fn ps_ported(gen: u8, kind: &str, id: &str) -> bool {
 
 /// One team for the PS engine, in the protocol's packed form (what
 /// `>player` carries, on both transports): `count` distinct mons drawn from
-/// `RANDBAT_POOL` exactly as the legacy `draw_randbat_team` draws them, each with its
-/// randbat level and moves.
+/// `RANDBAT_POOL` by a partial Fisher-Yates shuffle on `xorshift64`, each with
+/// its randbat level and moves.
 ///
 /// While `ps_sim` is still being ported, a battle that reaches an effect
 /// with no port stops (the sim panics `unported: <id>`). So each mon keeps
@@ -172,8 +117,8 @@ pub fn draw_ps_team(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> ps_pr
     team
 }
 
-/// Two PS-engine teams from one seed, as the legacy `draw_two_randbat_teams` salts
-/// it. Returns `[p1, p2]`.
+/// Two PS-engine teams from one seed, the second drawn from the seed plus
+/// [`TEAM_SEED_SALT`]. Returns `[p1, p2]`.
 pub fn draw_two_ps_teams(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> [ps_protocol::PackedTeam; 2] {
     [draw_ps_team(dex, seed, count), draw_ps_team(dex, seed.wrapping_add(TEAM_SEED_SALT), count)]
 }

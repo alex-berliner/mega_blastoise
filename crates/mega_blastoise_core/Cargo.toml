@@ -6,9 +6,6 @@ edition = "2021"
 [dependencies]
 battle_types = { path = "../battle_types" }
 embedded-graphics = { version = "0.8", default-features = false }
-# The legacy Gen 1 engine, only under the `legacy_gen1` feature (G1-10
-# deletes it).
-gen1_battle = { path = "../gen1_battle", optional = true }
 gen3_battle = { path = "../gen3_battle" }
 # The Showdown split (docs/architecture/showdown-split-plan.md): the PS
 # server, its client and their protocol, behind `runner::ps`.
@@ -31,11 +28,6 @@ wrapmoves = []
 defmt = ["dep:defmt"]
 timing = ["dep:embassy-time", "defmt"]
 trace = ["defmt"]
-# The legacy Gen 1 engine (`gen1_battle` through `runner::gen1`), kept
-# while its fuzz suites and the UI probe's legacy lane still run: the test
-# crate and the web build turn it on, the firmware does not. Without it, a
-# Gen 1 battle always plays on the PS engine.
-legacy_gen1 = ["dep:gen1_battle"]
 # `transport::TextTransport`: the PS line protocol over a byte stream. Off on
 # the device (the typed `LocalTransport` needs no text).
 ps_text = ["ps_protocol/text", "ps_sim/text"]

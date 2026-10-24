@@ -1,7 +1,8 @@
 # Showdown parity
 
-Differential tests: the core engines (`gen1_battle`, `gen3_battle`) against
-the real Pokémon Showdown simulator.
+Differential tests: the legacy Gen 3 engine (`gen3_battle`) against the
+real Pokémon Showdown simulator. (The legacy Gen 1 engine went with G1-10;
+Gen 1 is now `ps_sim`, checked by `tools/ps-diff`.)
 
     cd tools/showdown-parity && npm install     # arm (one-time, needs network)
     cargo test -p mega-blastoise-test --test showdown_parity

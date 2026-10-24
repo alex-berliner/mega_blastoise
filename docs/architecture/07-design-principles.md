@@ -19,7 +19,7 @@
 ## Adding New Input Modality
 
 1. Implement `BattleInput` for the new transport/device.
-2. Keep command formatting compatible with battler.
+2. Keep command formatting in the shared choice grammar (`move N` / `switch N`) the runners translate.
 3. Add traces for request shape and accepted choices.
    - Input contract: [`battle_input.rs`](../../crates/mega_blastoise_core/src/battle_input.rs)
    - Firmware adapter example: [`buttons_v2.rs`](../../crates/mega_blastoise_fw/src/subsystems/buttons_v2.rs)

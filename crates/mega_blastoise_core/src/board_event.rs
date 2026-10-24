@@ -60,7 +60,7 @@ pub fn player_display_name(player_id: &str) -> &'static str {
     }
 }
 
-/// Friendly label for battler **side index** in the stock 1v1 demo (`0` / `1`).
+/// Friendly label for a protocol **side index** in the stock 1v1 demo (`0` / `1`).
 pub fn side_display_name(side: &str) -> &'static str {
     match side {
         "0" => "White",
@@ -69,24 +69,24 @@ pub fn side_display_name(side: &str) -> &'static str {
     }
 }
 
-/// Extract the display name from a battler `mon` position field (`"name,player_id,pos"`).
+/// Extract the display name from a `mon` position field (`"name,player_id,pos"`).
 /// Returns the whole string unchanged if no comma is present (e.g. synthetic test values).
 pub fn mon_display_name(position_details: &str) -> &str {
     position_details.split(',').next().unwrap_or(position_details)
 }
 
-/// Extract the player id (`"p1"` or `"p2"`) from a battler `mon` position field.
+/// Extract the player id (`"p1"` or `"p2"`) from a `mon` position field.
 pub fn mon_player_id(mon: &str) -> Option<&str> {
     let id = mon.split(',').nth(1)?.trim();
     if id == "p1" || id == "p2" { Some(id) } else { None }
 }
 
-/// Extract the player number (1 or 2) from a battler `mon` position field.
+/// Extract the player number (1 or 2) from a `mon` position field.
 pub fn mon_player_num(mon: &str) -> Option<u8> {
     mon_player_id(mon).map(player_id_to_num)
 }
 
-/// Convert a battler status ID to its display abbreviation.
+/// Convert a protocol status ID to its display abbreviation.
 pub fn status_abbrev(s: &str) -> &str {
     match s {
         "par" => "PAR",
