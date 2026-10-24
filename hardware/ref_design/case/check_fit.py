@@ -22,6 +22,9 @@ the case allows at that spot:
   round the island         its wall and wedge under the decks' lips, across the step, round the
                            spines and along the side walls under the decks' arms: <= the decks'
                            underside's limit (case.scad's JOINT echo line, 2026-10-23)
+  the arms' hooks         each hook's head (0.5 over the board, 0.2 in past its edge): nothing within
+                           0.3 of its footprint taller than its limit (case.scad's HOOKS echo line,
+                           2026-10-24); the nearest part to each is reported
   folded FPC, J3's range   nothing but J3 under the panel's FPC, over the whole range J3 may move
   edge parts               the USB-C face reaches the wall
   USB-C opening            J1's mouth (its model within 1 mm of its face) centred in the wall's
@@ -131,14 +134,14 @@ def extents(refs):
 
 def case_echo():
     """case.scad's lines for this check that aren't in positions.json: {"USBC": the USB-C opening and the
-    plug it is checked with, "JOINT": the joint round the island}, each None if missing."""
+    plug it is checked with, "JOINT": the joint round the island, "HOOKS": the arms' hooks' heads}, each None if missing."""
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "case.echo")
         subprocess.run([*scad.cmd(out), "-o", out, "-D", 'part="none"', os.path.join(HERE, "case.scad")],
                        capture_output=True, text=True)
         text = open(out).read() if os.path.exists(out) else ""
     found = {}
-    for key in ("USBC", "JOINT"):
+    for key in ("USBC", "JOINT", "HOOKS"):
         m = re.search(r'ECHO: "' + key + r' (\{.*\})"', text)
         found[key] = json.loads(m.group(1).replace('\\"', '"')) if m else None
     return found
@@ -168,6 +171,17 @@ def near_speaker(box):
     r, half = w / 2 + keep, (l - w) / 2
     return near_circle(box, (cx, cy - half), r) or near_circle(box, (cx, cy + half), r) or \
         inside_rect(box, ((cx - r, cy - half), (cx + r, cy + half)))
+
+
+def rect_gap(box, rect):
+    """The horizontal gap between a part's box and a rectangle [[x0, y0], [x1, y1]] (0 if they overlap)."""
+    (x0, y0), (x1, y1) = rect
+    dx = max(0.0, min(x0, x1) - box[2], box[0] - max(x0, x1))
+    dy = max(0.0, min(y0, y1) - box[3], box[1] - max(y0, y1))
+    return math.hypot(dx, dy)
+
+
+HOOK_MARGIN = 0.3                               # a part this near a hook's head counts as under it
 
 
 def main():
@@ -242,6 +256,18 @@ def main():
                 problems.append(f"{ref} is under the display's folded FPC")
         if ref.startswith("J3") and not within(box, POS["j3_zone"]):
             problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
+    hooks = echoed["HOOKS"]
+    if not hooks:
+        problems.append("no HOOKS line in case.scad's echo to check the arms' hooks with")
+    for i, zone in enumerate((hooks or {}).get("zones", [])):
+        near = sorted((rect_gap(b, zone), ref, b[5]) for ref, b in boxes.items() if b is not None and not flipped[ref])
+        for gap, ref, top in near:
+            if gap < HOOK_MARGIN and top > hooks["limit"] + 1e-3:
+                problems.append(f"{ref} is {top:.2f} mm tall {gap:.2f} from hook {i}'s head, which allows {hooks['limit']:.2f} within {HOOK_MARGIN}")
+        if near:
+            gap, ref, top = near[0]
+            notes.append(f"hook {i} (KiCad {zone[0][0]:.2f}..{zone[1][0]:.2f}, {min(zone[0][1], zone[1][1]):.2f}..{max(zone[0][1], zone[1][1]):.2f}): "
+                         f"the nearest part {ref}, {gap:.2f} away, {top:.2f} tall (its head's foot is {hooks['limit'] + 0.3:.2f} over the board)")
     if joint:
         notes.append(f"the joint round the island: {len({u[0] for u in under})} parts under it, the tallest "
                      f"{max((u[1] for u in under), default=0):.2f} (it allows {joint['limit']:.2f})")
