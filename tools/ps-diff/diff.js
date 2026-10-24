@@ -692,7 +692,7 @@ function carriedDrivers(opts) {
 // The child always prints one summary line to stdout, regardless of
 // quiet. The parent decides whether to forward children's summaries
 // verbatim (not quiet) or to suppress them and merge (quiet).
-function runWithJobs(drivers, opts) {
+async function runWithJobs(drivers, opts) {
   const n = Math.max(1, Math.min(opts.jobs, drivers.length));
   const per = Math.ceil(drivers.length / n);
   const slices = [];
@@ -720,15 +720,25 @@ function runWithJobs(drivers, opts) {
   if (opts.seedEnd !== undefined) childArgs.push('--seed-end', String(opts.seedEnd));
   childArgs.push('--jobs', '1');
 
+  // The children run at once (one node process each, each with its own
+  // ps_sim_cli); their output is processed in slice order afterwards.
+  const runs = slices.map((slice) => new Promise((resolve) => {
+    const aargs = childArgs.concat(['--slice', `${slice.start}:${slice.end}`]);
+    const child = spawn(process.execPath, [__filename, ...aargs], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+    child.on('error', (e) => resolve({ stdout, stderr: stderr + e.message + '\n', status: 2 }));
+    child.on('close', (status) => resolve({ stdout, stderr, status }));
+  }));
+  const results = await Promise.all(runs);
   const summaries = [];
   let exitCode = 0;
-  for (const slice of slices) {
-    // Each child builds the same driver list and plays its slice of it.
-    const aargs = childArgs.concat(['--slice', `${slice.start}:${slice.end}`]);
+  for (const r of results) {
     // Children print one summary line on stdout. Each child gets its own
     // quiet flag inherited from opts (the parent strips it during
     // merging: see below).
-    const r = spawnSync(process.execPath, [__filename, ...aargs], { encoding: 'utf8' });
     if (r.stdout) {
       // Forward non-summary lines (crash dumps etc.) and parse summary
       // lines for the merger.
@@ -842,7 +852,7 @@ async function main() {
 
   if (opts.jobs > 1 && drivers.length > 1 && (opts.seed === undefined || opts.carried !== undefined)) {
     // Forward to the child-process distributer.
-    const code = runWithJobs(drivers, opts);
+    const code = await runWithJobs(drivers, opts);
     process.exit(code);
   }
 
