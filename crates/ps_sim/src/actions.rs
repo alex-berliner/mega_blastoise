@@ -542,6 +542,25 @@ impl Battle {
                     _ => Kw::from(from),
                 }
             }
+            EffectId::Condition(c) => {
+                // PS `spreadDamage`, the default case: `const name =
+                // effect.fullname === 'tox' ? 'psn' : effect.fullname`,
+                // then `[from] ${name}`, plus `[of] ${source}` when the
+                // source is another Pokemon (the `effectType === 'Ability'`
+                // half cannot hold for a condition). Only the statuses
+                // are ported; `partiallytrapped` and `confused` have
+                // their own cases in PS.
+                let name = self.dex.condition_def(c).name.as_str();
+                let name = if name == "tox" { "psn" } else { name };
+                let Some(status) = ps_protocol::Status::parse(name) else {
+                    panic!("unported: the -damage line of the {name} status");
+                };
+                let from = Arg::new(ArgValue::Status(status));
+                match source {
+                    Some(s) if s != target => Kw::from_of(from, self.ident(s)),
+                    _ => Kw::from(from),
+                }
+            }
             other => panic!("unported: the -damage line of {other:?}"),
         };
         self.add(Msg::Damage { mon, health, kw });
@@ -600,7 +619,16 @@ impl Battle {
                     None => Kw::from(from),
                 }
             }
-            EffectId::Move(_) => Kw::NONE,
+            EffectId::Move(m) => {
+                // PS `battle.heal`: `case 'rest': this.add('-heal', target,
+                // target.getHealth, '[silent]')`; any other move takes
+                // the default case's plain line.
+                if self.dex.move_def(m).name.as_str() == "Rest" {
+                    Kw::flags(ps_protocol::KwFlags::SILENT)
+                } else {
+                    Kw::NONE
+                }
+            }
             other => panic!("unported: the -heal line of {other:?}"),
         };
         self.add(Msg::Heal { mon, health, kw });

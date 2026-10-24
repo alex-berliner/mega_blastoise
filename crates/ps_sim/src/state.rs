@@ -1336,6 +1336,7 @@ impl Battle {
         // `damageTaken[type] === 3`.
         let types = self.get_types(m);
         if types.as_slice().iter().any(|&t| self.dex.typechart.special_code(key, t) == 3) {
+            self.debug(ps_protocol::Text::new(ps_protocol::TextId::NaturalStatusImmunity));
             if message {
                 let mon = self.ident(m);
                 self.add(Msg::Immune { mon, kw: Kw::default() });
@@ -1350,6 +1351,7 @@ impl Battle {
             Some(Relay::Effect(EffectId::Condition(id))),
         );
         if !immunity.truthy() {
+            self.debug(ps_protocol::Text::new(ps_protocol::TextId::ArtificialStatusImmunity));
             if message && immunity != Relay::Null {
                 let mon = self.ident(m);
                 self.add(Msg::Immune { mon, kw: Kw::default() });
@@ -1543,6 +1545,10 @@ impl Battle {
                     status
                 };
                 if !self.run_status_immunity(m, immunity_id, false) {
+                    // PS `setStatus`: `this.battle.debug('immune to
+                    // status')` (the immunity's own debug line came
+                    // first).
+                    self.debug(ps_protocol::Text::new(ps_protocol::TextId::ImmuneToStatus));
                     if !self.move_status(source_effect).is_none() {
                         let mon = self.ident(m);
                         self.add(Msg::Immune { mon, kw: Kw::default() });
@@ -1558,6 +1564,14 @@ impl Battle {
             let result =
                 self.run_event(EventId::SetStatus, Holder::Mon(m), Some(source), source_effect, Some(Relay::Effect(key)));
             if !result.truthy() {
+                // PS `setStatus`: `this.battle.debug('set status [' +
+                // status.id + '] interrupted')`.
+                if let Some(s) = ps_protocol::Status::parse(self.dex.condition_def(status).key.as_str()) {
+                    self.debug(ps_protocol::Text::with1(
+                        ps_protocol::TextId::SetStatusInterrupted,
+                        ps_protocol::TextArg::status(s),
+                    ));
+                }
                 return result;
             }
         }
@@ -1596,6 +1610,12 @@ impl Battle {
                 None,
             );
             if !started.truthy() {
+                if let Some(s) = ps_protocol::Status::parse(self.dex.condition_def(status).key.as_str()) {
+                    self.debug(ps_protocol::Text::with1(
+                        ps_protocol::TextId::StatusStartInterrupted,
+                        ps_protocol::TextArg::status(s),
+                    ));
+                }
                 let mon = self.mon_mut(m);
                 mon.status = prev_status;
                 mon.status_state = prev_state;
@@ -1622,21 +1642,54 @@ impl Battle {
     }
 
     /// PS `clearStatus()`: no cure message.
-    // PS: sim/pokemon.ts clearStatus
+    // PS: sim/pokemon.ts clearStatus (line 1760)
     pub fn clear_status(&mut self, m: MonRef) -> bool {
         let mon = self.mon(m);
         if mon.hp == 0 || mon.status.is_none() {
             return false;
         }
         let is_slp = self.dex.condition_def(mon.status).key.as_str() == "slp";
-        let nightmare = self.known.nightmare_condition;
-        if is_slp && !nightmare.is_none() && self.remove_volatile(m, nightmare) {
-            let mon = self.ident(m);
-            let effect = Arg::new(ArgValue::Move(MoveNum(self.known.nightmare_move.0)));
-            let kw = Kw { flags: ps_protocol::KwFlags::SILENT, ..Kw::default() };
-            self.add(Msg::EndEffect { mon, effect, kw });
+        if is_slp {
+            self.remove_nightmare(m);
         }
         self.set_status(m, ConditionId::NONE, None, EffectId::None, false);
+        true
+    }
+
+    /// PS `cureStatus(silent)`: the `-curestatus` line, then the status goes.
+    // PS: sim/pokemon.ts cureStatus (line 1680)
+    pub fn cure_status(&mut self, m: MonRef, silent: bool) -> bool {
+        let mon = self.mon(m);
+        if mon.hp == 0 || mon.status.is_none() {
+            return false;
+        }
+        let key = self.dex.condition_def(mon.status).key.as_str();
+        let is_slp = key == "slp";
+        let Some(status) = Status::parse(key) else {
+            panic!("cureStatus of a status with no protocol name: {key}");
+        };
+        let ident = self.ident(m);
+        let flags = if silent { ps_protocol::KwFlags::SILENT } else { ps_protocol::KwFlags::MSG };
+        self.add(Msg::CureStatus { mon: ident, status, kw: Kw::flags(flags) });
+        if is_slp {
+            self.remove_nightmare(m);
+        }
+        self.set_status(m, ConditionId::NONE, None, EffectId::None, false);
+        true
+    }
+
+    /// PS `pokemon.removeVolatile('nightmare')` plus the `-end` line PS
+    /// writes along with it (`clearStatus` and `cureStatus` both do).
+    // PS: sim/pokemon.ts clearStatus (line 1762), cureStatus (line 1683)
+    pub fn remove_nightmare(&mut self, m: MonRef) -> bool {
+        let nightmare = self.known.nightmare_condition;
+        if nightmare.is_none() || !self.remove_volatile(m, nightmare) {
+            return false;
+        }
+        let ident = self.ident(m);
+        let effect = Arg::new(ArgValue::Move(MoveNum(self.known.nightmare_move.0)));
+        let kw = Kw { flags: ps_protocol::KwFlags::SILENT, ..Kw::default() };
+        self.add(Msg::EndEffect { mon: ident, effect, kw });
         true
     }
 

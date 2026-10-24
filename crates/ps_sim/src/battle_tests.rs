@@ -759,6 +759,37 @@ fn gen1_trapping_recharge_rage_and_bide() {
     assert!(log.contains("|-end|p1a: Chansey|Bide"), "{log}");
 }
 
+/// G1-1's effects run through the pipeline: Toxic's counter and its
+/// `[from] psn` line, confusion, Rest's sleep and silent heal, paralysis,
+/// and Dream Eater against an awake target.
+#[test]
+fn gen1_statuses_confusion_and_rest() {
+    let set = |species: &str, mv: &str| format!("{species}|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||90|");
+    let log = play_gen1(&set("Lapras", "toxic"), &set("Chansey", "tackle"), [1, 2, 3, 4]);
+    assert!(log.contains("|-status|p2a: Chansey|tox"), "{log}");
+    // `this.damage(damage, pokemon, pokemon)`: no `[of]`.
+    assert!(log.contains(" tox|[from] psn\n"), "{log}");
+    let log = play_gen1(&set("Weezing", "poisongas"), &set("Chansey", "tackle"), [1, 2, 3, 4]);
+    // Plain poison's `this.damage(damage, pokemon)` takes the foe as its
+    // source.
+    assert!(log.contains(" psn|[from] psn|[of] p1a: Weezing\n"), "{log}");
+
+    let log = play_gen1(&set("Gengar", "confuseray"), &set("Tauros", "bodyslam"), [5, 6, 7, 8]);
+    assert!(log.contains("|-start|p2a: Tauros|confusion"), "{log}");
+    assert!(log.contains("|-activate|p2a: Tauros|confusion"), "{log}");
+
+    let log = play_gen1(&set("Snorlax", "rest"), &set("Tauros", "tackle"), [9, 10, 11, 12]);
+    assert!(log.contains("|-status|p1a: Snorlax|slp|[from] move: Rest"), "{log}");
+    assert!(log.contains("|-heal|p1a: Snorlax|") && log.contains(" slp|[silent]\n"), "{log}");
+    assert!(log.contains("|cant|p1a: Snorlax|slp"), "{log}");
+
+    let log = play_gen1(&set("Jolteon", "thunderwave"), &set("Persian", "slash"), [13, 14, 15, 16]);
+    assert!(log.contains("|-status|p2a: Persian|par"), "{log}");
+
+    let log = play_gen1(&set("Hypno", "dreameater"), &set("Tauros", "tackle"), [17, 18, 19, 20]);
+    assert!(log.contains("|-immune|p2a: Tauros"), "{log}");
+}
+
 /// `>forcetie` and `>forcewin`.
 #[test]
 fn force_win_and_tie() {

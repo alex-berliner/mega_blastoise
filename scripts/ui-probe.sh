@@ -38,9 +38,13 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+# The battle seed is pinned per engine. The PS engine's teams keep to
+# `ps_sim::mods::ported(1)`, so a seed's teams change whenever a port lands;
+# 7777 now draws two Rest users on the PS engine, whose battle outlasts the
+# faint check's budget, so that lane plays seed 1.
 case "$ENGINE" in
-  legacy) LANES="gen1 gen3" ;;
-  ps) LANES="gen1" ;;
+  legacy) LANES="gen1 gen3"; SEED=7777 ;;
+  ps) LANES="gen1"; SEED=1 ;;
   *) echo "ui-probe: --engine is legacy or ps" >&2; exit 2 ;;
 esac
 
@@ -134,17 +138,21 @@ try {
     !s.some((x) => /LOCKED_IN|WAIT_OPPONENT/.test(x)), 30000);
 
   // ── A faint must ASK. Play the battle out with both seats mashing their
-  //    first move until somebody faints; the seat that lost a mon has to be
+  //    moves until somebody faints; the seat that lost a mon has to be
   //    put on the party picker, and nothing may be sent out until it picks.
   //    The report this covers: a replacement appeared on the board, health
   //    bar full, without the player ever being offered the choice.
+  //    Each seat walks its move slots in turn (an empty slot is refused
+  //    and the next press tries the next one): a lead whose first move
+  //    does no damage, such as Hypnosis, would otherwise stall the battle.
   let sawPicker = false;
+  const presses = [0, 0];
   for (let i = 0; i < 400 && !sawPicker; i++) {
     const s = states();
     if (s.some((x) => /FORCED_SWITCH|CONCEALED_SWITCH/.test(x))) { sawPicker = true; break; }
     if (s.some((x) => /WIN/.test(x))) break;
     for (const seat of [1, 2]) {
-      if (/MOVES/.test(s[seat - 1])) wasm.press_move(seat, 0);
+      if (/MOVES/.test(s[seat - 1])) wasm.press_move(seat, presses[seat - 1]++ % 4);
     }
     await sleep(150);
   }
@@ -179,7 +187,7 @@ for LANE in $LANES; do
   echo "── lane: $LANE (engine $ENGINE) ──"
   DOM=$("$CHROME" --headless=new --no-sandbox --disable-gpu \
     --virtual-time-budget=150000 --timeout=180000 \
-    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=7777&lane=$LANE&engine=$ENGINE" 2>/dev/null || true)
+    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=$SEED&lane=$LANE&engine=$ENGINE" 2>/dev/null || true)
   RESULT=$(echo "$DOM" | python3 -c "
 import re, sys
 m = re.search(r'<pre id=\"out\">(.*?)</pre>', sys.stdin.read(), re.S)

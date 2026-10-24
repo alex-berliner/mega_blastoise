@@ -1209,6 +1209,8 @@ texts! {
     // ---- debug (custom games run with debug on) ------------------------
     // PS: sim/pokemon.ts addVolatile (`status.id`)
     AddVolatileInterrupted => "add volatile [{}] interrupted" (Word),
+    // PS: sim/pokemon.ts runStatusImmunity
+    ArtificialStatusImmunity => "artificial status immunity" (),
     // PS: the moves' basePowerCallback (data/moves.ts and data/mods/gen*/moves.ts:
     // Flail, Reversal, Hidden Power, ...)
     BasePower => "BP: {}" (Int),
@@ -1252,6 +1254,8 @@ texts! {
     SetStatusInterrupted => "set status [{}] interrupted" (Status),
     // PS: data/abilities.ts shielddust onModifySecondaries
     ShieldDustPrevent => "Shield Dust prevent secondary" (),
+    // PS: sim/pokemon.ts setStatus (`status.id`)
+    StatusStartInterrupted => "status start [{}] interrupted" (Status),
     // PS: data/conditions.ts stall onStallMove
     SuccessChance => "Success chance: {}%" (Int),
     // PS: data/conditions.ts sunnyday onWeatherModifyDamage
@@ -1293,12 +1297,14 @@ texts! {
     HintGen1HyperBeamSleep => "In Gen 1, if a Pokémon that has just used Hyper Beam and has yet to recharge is targeted with a sleep inducing move, any other status it may already have will be ignored and sleep will be induced regardless." (),
     HintGen1Miss => "In Gen 1, moves with 100% accuracy can still miss 1/256 of the time." (),
     HintGen1NoMove => "In Gen 1, if a Pokémon is thawed from freeze and no move has been selected yet, the Pokémon will use a move with Fissure's animation, 102 base power, ??? type, Special category, and around 31.6% accuracy." (),
+    HintGen1ParSemiInvulnerable => "In Gen 1, when a Dig/Fly user is fully paralyzed while semi-invulnerable, it will remain semi-invulnerable until it switches out or fully executes Dig/Fly" (),
     HintGen1PartialTrapRecharge => "In Gen 1, partial trapping moves negate the recharge turn of Hyper Beam, even if they miss." (),
     HintGen1PpUnderflow => "In Gen 1, if a Pokémon is forced to use a move with 0 PP, the move will underflow to have 63 PP." (),
     HintGen1RageBuild => "In Gen 1, using {} causes the target to build Rage, even if it misses or fails" (Move),
     HintGen1Recovery => "In Gen 1, recovery moves fail if (user's maximum HP - user's current HP + 1) is divisible by 256, unless the current hp is also divisible by 256." (),
     HintGen1SelfDestructSub => "In Gen 1, the user of Self-Destruct will not take damage if it breaks a Substitute." (),
     HintGen1StatRollover => "In Gen 1, a stat will roll over to a small number if it is larger than 1024." (),
+    HintGen1ToxicCounter => "In Gen 1, Toxic's counter is retained after Rest and applies to PSN/BRN." (),
     HintGen3IntimidateSub => "In Gen 3, Intimidate does not activate if every target has a Substitute." (),
     HintGens3To4KnockOff => "In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item." (),
     // PS: sim/battle.ts runAction (faint after Pursuit)

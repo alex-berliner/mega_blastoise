@@ -59,3 +59,14 @@
 1 random 264  # G1-6 Transform (was unported: transform), now stops at reflect
 1 random 32  # G1-6 Counter (was unported: counter), now stops at mustrecharge
 1 random 190  # G1-6 Mimic (was unported: mimic), now stops at par
+
+# G1-1: the statuses, confusion, flinch, Toxic, Rest and Dream Eater.
+# Each entry diverges from PS when one of the fixes below is undone
+# (checked by reverting each fix and re-running the lane). The wide
+# entries draw their teams from the ported pool, so they move whenever
+# `PORTED` grows; the random ones keep their teams.
+1 wide 85  # G1-1 tox's -damage line is `[from] psn`; `[of]` the foe on brn/psn damage; `immune to status` debug; residualdmg counts before the damage
+1 wide 194  # G1-1 Rest's `-heal ... [silent]`; tox's `[from] psn`; `immune to status` debug
+1 wide 2  # G1-1 `[of] <foe>` on the burn and poison -damage lines
+1 random 0  # G1-1 Sleep Clause Mod refuses a second sleeping foe; slp's `[from] move:` on -status
+1 random 21  # G1-1 Sleep Clause Mod; slp's `[from] move:` on -status
