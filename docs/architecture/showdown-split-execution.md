@@ -86,6 +86,9 @@ Regression sweeps:
 |---|---|---|
 | Protocol diff | 0 failures over 20,000 battles (10,000 random-battle teams, 10,000 wide teams), PS 0.11.11 | same, against the re-synced pin |
 | Pinned | diff pinned list and old-engine corpus green | same |
+| Coverage | every registered handler fires in at least 20 battles of the gate sweep; every line of `mods/gen1` runs or is allow-listed with a reason (V-1) | same, `mods/gen3` |
+| Replays | every validated Gen5RNG-era replay replays clean (V-3) | same, plus current-era replays against the new pin (V-4) |
+| Background sweep | no open bucket from the continuous sweep (V-2) | same |
 | check | green, UI probe green with the new engine | same |
 | Budget | `sim-budget.sh` within design section 6, on-board turn time under 2 ms | same, both gens linked |
 | Device | Alex plays a smoke battle on the board, Draw screen seen once (forced tie seed) | same |
@@ -395,6 +398,82 @@ depends: P1-8 · || P2-2
 - Accept: `cargo test -p ps_sim --test budget`; `scripts/sim-budget.sh` prints
   the table; `cargo build --release --bin sim_bench` succeeds for thumbv8m.
 
+### Phase V: verification beyond the random sweep
+
+The protocol diff with random choices proves parity statistically (0 in 20,000
+bounds the per-battle mismatch rate near 1 in 6,700), but uniform random
+choices rarely play the lines strategic players do, and a rare handler can go
+untested. These tasks close that gap. They run alongside the Gen 1 batches and
+feed the phase gates in section 2.
+
+**V-1 Coverage gate** · MM · depends: P1-8 · || G1-1..G1-6
+- Touches: `crates/ps_sim` (a `hit-count` cargo feature, off by default and in
+  the firmware), `crates/ps_harness/src/bin/ps_sim_cli.rs` (`--hits FILE`),
+  `tools/ps-diff/diff.js` (only to forward the flag), new
+  `scripts/ps-coverage.sh`, new `crates/ps_harness/coverage-allow.txt`.
+- Deliverable: (1) per-handler hit counts: under `hit-count` the dispatcher
+  counts each (effect id, event) handler call and the number of distinct
+  battles it fired in; `ps_sim_cli` writes them at exit and the script sums a
+  sweep. (2) line coverage: `cargo llvm-cov` over `ps_sim_cli` for the same
+  sweep, reported for `crates/ps_sim/src/mods/genN/**` and the core files,
+  listing lines never run. (3) the gate: every handler registered for the gen
+  fires in at least 20 battles of the 20,000 sweep, and every line of
+  `mods/genN` runs or is listed in `coverage-allow.txt` with a reason (dead
+  under the format, unreachable in PS too). Under-hit handlers print as a
+  `--focus` id list, so the gate task can aim teams at them.
+- Accept: the script prints both tables for the current Gen 1 port;
+  `cargo size` of the firmware is unchanged with the feature off; check.sh is
+  unchanged (coverage runs at phase gates, not per commit).
+
+**V-2 Continuous sweep** · MM · depends: P1-7, P1-8
+- Touches: new `scripts/ps-sweep.sh`, a section in `tools/ps-diff/README.md`.
+- Deliverable: a loop for tmux on the worker machine. It builds a private copy
+  of `ps_sim_cli` from the tip of `ps-split` (rebuilding when the tip moves),
+  runs batches of 2,000 per gen and team mode with fresh seeds (a counter
+  file, never reused across restarts) under `nice -n 19` with `--jobs 8`, and
+  writes failures to `sweep/<date>/<bucket>/`, bucketed by first differing
+  line like G1-7, each with its seed and the command that reproduces it. A
+  one-line status file holds battles run, diffs, crashes, unported counts by
+  id, and buckets new since the last read.
+- Accept: an hour unattended with no leaked processes and capped disk use;
+  seeds never repeat across a restart; a planted bug (`--tamper-line`) shows
+  up as a bucket.
+- The orchestrator keeps it running from the first Gen 1 gate sweep on and
+  reads the status after each landing; new buckets feed G1-7b/c and G3-7b/c.
+
+**V-3 Replay corpus, Gen5RNG era** · MM · depends: P1-7, P1-4c · || G1 batches
+- Background: `replay.pokemonshowdown.com` serves public replays as JSON
+  (`/search.json?format=<id>&before=<uploadtime>`, `/<id>.json`). Each has an
+  `inputlog`: `>version <commit>`, `>start` with the battle seed, `>player`
+  with a team seed (random battles) or a packed team (OU and the like), then
+  every choice the players made. Replays from before about late 2024 have
+  numeric seeds, which select Gen5RNG (0.11.11 and `ps_sim`); later ones use
+  `sodium,<hex>` (V-4).
+- Touches: new `tools/ps-diff/replays.js`, `tools/ps-diff/diff.js`
+  (`--replays DIR`), new `crates/ps_harness/replays/` (a small committed
+  sample), an untracked cache on the worker machine, a `ps_client` test.
+- Deliverable: (1) a polite fetcher: one request per second, an on-disk cache,
+  resumable, never re-downloads; formats gen1randombattle, gen1ou,
+  gen3randombattle, gen3ou; numeric seeds only. (2) validation: run each
+  inputlog through PS 0.11.11 and keep a replay only when PS's spectator
+  output matches the replay's `log` (ignoring the lines the server adds:
+  chat, `|j|`, `|l|`, `|t:|`, `|inactive|`, `|badge|`, `|uhtml|`, `|raw|`);
+  record kept and dropped counts and the main drop reasons (version drift,
+  team generator changes). (3) `diff.js --replays DIR`: PS 0.11.11 against
+  `ps_sim` with the choices from the inputlog instead of random ones; `ps_sim`
+  gets the team PS generated (packed), since it does not run PS's team
+  generator; a choice `ps_sim` rejects is a diff. (4) `ps_client` parses every
+  line of every cached `log`, server-only lines included, without an error.
+- Accept: at least 1,000 validated replays per gen (or all that exist); the
+  replay diff runs over the Gen 1 set (stopping at unported effects allowed
+  until G1-7); the `ps_client` test passes.
+
+**V-4 Current-era replays** · MM · depends: R-2a, V-3
+- After R-2a ports SodiumRNG, V-3's pipeline also takes `sodium,` seeds,
+  validated against the re-synced pin: the bulk of the public corpus, recent
+  human battles in every format. Accept: as V-3, both gens, against the new
+  pin; the Gen 3 set gates G3-7.
+
 ### Phase 3: Gen 1 pilot
 
 Handler batches. Each: port the listed effects (one file per effect, PS source
@@ -435,7 +514,9 @@ depends: G1-1..G1-6, P2-2 · repeatable as G1-7b, G1-7c
   gets the failure directory), bucket divergences by first differing line, fix
   the buckets in priority order, pin each fixed seed.
 - Accept: the fixed seeds pass; diff 2,000 on fresh seeds green; the report
-  lists remaining buckets with counts. Phase gate when a fresh 20,000 is clean.
+  lists remaining buckets with counts. Phase gate when a fresh 20,000 is clean,
+  V-1's coverage gate passes, the V-3 Gen 1 replays are clean and V-2 has no
+  open bucket.
 
 **G1-8 Old corpus carried over** · MM (plumbing between two harnesses) ·
 depends: P0-1, P1-7 · || G1-1..G1-6
@@ -480,7 +561,9 @@ depends: G1-10
 - Deliverable: a change list, each entry tagged core / gen 1 / gen 3 / protocol
   / PRNG with the PS commit and the `ps_sim` file it hits; confirmation that
   numeric seeds still select `Gen5RNG` (if not, a plan for `SodiumRNG`); a diff
-  100 run of the current Gen 1 server against the new pin.
+  100 run of the current Gen 1 server against the new pin. Public replays since
+  about late 2024 seed with `sodium,<hex>`, so R-2a ports `SodiumRNG` either
+  way (V-4 needs it).
 - Accept: the doc exists and covers every changed file in the listed paths
   (the worker includes the `git diff --stat`); the orchestrator splits R-2.
 
@@ -584,7 +667,9 @@ Alex's device smoke battle
 
 Counts: phase 0 one task (MM); phase 1 ten (5 C2, 5 MM); phase 2 four (2 C2,
 2 MM); phase 3 ten (4 C2, 6 MM); phase R three (2 C2, 1 MM); phase 4 fifteen
-(8 C2, 7 MM). In all 43: 21 C2, 22 MM, plus repeat runs of the two gate tasks.
+(8 C2, 7 MM); phase V four (4 MM). In all 47: 21 C2, 26 MM, plus repeat runs
+of the two gate tasks. Phase V is off the critical path, but the phase gates
+wait for it.
 
 Critical path: P1-0, P1-1, P1-5, P1-6, P1-8, G1-2 (the longest Gen 1 batch),
 G1-7, G1-9, G1-10, R-1, R-2a, G3-0, G3-1, G3-M3, G3-7, G3-8, G3-9. Off the
@@ -605,6 +690,7 @@ other batches. With three concurrent runs the path is about 17 runs deep.
 | Faithful port reproduces PS bugs | Intended (decision 5); each known one is noted with the PS line in `docs/architecture/ps-quirks.md` |
 | UX drifts during the cut-over | Runner and client only translate (checklist); golden `BoardEvent` tests (P2-1, P2-2); UI probe on both engines until deletion |
 | Board measurements need the probe, which this WSL1 machine cannot reach | On-board runs batched at phase exits on the probe machine (question to Alex) |
+| Random choices rarely play strategically, so rare lines go untested | Human choices from public replays (V-3, V-4); per-handler coverage counts with focus teams aimed at the gaps (V-1); a background sweep of 100,000+ battles a day (V-2) |
 | Node or WSL1 flakiness in long sweeps | Per-battle timeouts, crashes reported apart from diffs, private copies of binaries per sweep, cache for the old suites |
 
 ## Decisions taken after this plan was written (Alex, 2026-10-23)
@@ -612,3 +698,4 @@ other batches. With three concurrent runs the path is about 17 runs deep.
 - Formats: implement everything Showdown does for the gens we implement, every format rule included, and default to what Showdown's online Random Battles use. For Gen 1 that means shipping both the truncation (cartridge) rules and the Custom Game (plain math) rules, with truncation on by default; the diff harness covers both.
 - Hardware budgets: there is no RP2350 board for now. Budget checks at the phase exits use host proxies (struct and stack sizes, `cargo size` of the thumbv8m build, a cycle-count estimate) and stay soft gates until a board is available; the on-chip measurement tasks are deferred, not dropped.
 - `battler`: the git submodule is removed in G1-10, together with the last `battler-data` links. The battler repository itself is untouched.
+- Verification beyond the random sweep (2026-10-24): a coverage gate, a continuous background sweep, and public Showdown replays (human choices, exact seeds) as a corpus. Phase V; all three feed the phase gates.
