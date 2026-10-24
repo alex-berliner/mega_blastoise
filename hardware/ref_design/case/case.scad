@@ -1102,9 +1102,10 @@ module hook(h) on_wall(h) {
     rotate([90, 0, 0]) linear_extrude(hook_len, center = true)
       polygon([[hook_s_out - 0.01, hook_bot + hook_lead], [hook_s_out + hook_lead, hook_bot], [hook_s_in, hook_bot],
                [hook_s_in, hook_top(hook_s_in)], [hook_s_out - 0.01, hook_top(hook_s_out - 0.01)]]);
-    let(zt = hook_top(hook_s_out), w = (hook_len - hook_neck) / 2) rotate([90, 0, 90]) translate([0, 0, -1]) linear_extrude(wall + 3)
-      polygon([[-hook_len / 2, hook_bot - 1], [hook_len / 2, hook_bot - 1], [hook_len / 2, zt - w / tan(overhang)], [hook_neck / 2, zt],
-               [hook_neck / 2, zt + 1], [-hook_neck / 2, zt + 1], [-hook_neck / 2, zt], [-hook_len / 2, zt - w / tan(overhang)]]);
+    // (its apex 0.05 over the outer face's top and 0.01 inside the neck: on them it left non-manifold edges at 45)
+    let(zt = hook_top(hook_s_out) + 0.05, n = hook_neck / 2 - 0.01, w = hook_len / 2 - n) rotate([90, 0, 90]) translate([0, 0, -1]) linear_extrude(wall + 3)
+      polygon([[-hook_len / 2, hook_bot - 1], [hook_len / 2, hook_bot - 1], [hook_len / 2, zt - w / tan(overhang)], [n, zt],
+               [n, zt + 1], [-n, zt + 1], [-n, zt], [-hook_len / 2, zt - w / tan(overhang)]]);
   }
 }
 // its slot in the tub's tongue (and the tongue's foot under the round's end), from hook_play under the head up
