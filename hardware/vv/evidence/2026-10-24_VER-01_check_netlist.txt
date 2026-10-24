@@ -1,0 +1,5 @@
+# VER-01 check_netlist.py, 2026-10-24, commit 76955d2 (worktree clean)
+$ python3 hardware/ref_design/board/tools/check_netlist.py
+173 parts, 127 nets in KiCad's netlist; 101 named nets and 26 no-connects in design.py
+RESULT: PASS
+exit 0

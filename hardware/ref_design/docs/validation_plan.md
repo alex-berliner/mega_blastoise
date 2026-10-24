@@ -1,3 +1,5 @@
+**Statuses (2026-10-24):** the Done statuses below are no longer kept up to date here; they are tracked, with evidence, in `hardware/vv/vp_map.csv`.
+
 # Validation plan: Fable 5.1 and Opus 5.5
 
 **2026-10-07:** the AP3156 backlight charge pump ran out at JLC and LCSC and was replaced by two discrete current sinks (U6 MCP6002, Q5/Q6 AO3400A, R52/R53 2.2 ohm, GPIO44 PWM filtered into BL_REF; see design_review.md, Backlight). Items below that tested the AP3156 now test the sinks; their loop stability was simulated before layout (board/sim/backlight.py, board/sim/backlight_results.txt).
