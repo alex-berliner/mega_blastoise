@@ -6,17 +6,14 @@
 // only the moves and abilities ps_sim ports (`ported(gen)`,
 // crates/ps_sim/src/mods/mod.rs) and no items.
 //
-// The ported list is derived here from PS's resolved dex by the same rule
-// ps_sim uses (`move_is_ported`): a move whose every handler PS's data
-// gives it is one ps_sim implements (`PORTED_HANDLERS`; its secondaries'
-// and its `self` effect's must have none) and whose data names no unported
-// condition, Struggle and Hidden Power's typed placeholders aside; in
-// gen 3 also every ability with no handler functions (constant
-// handlers such as Battle Armor's `onCriticalHit: false` are data the
-// registry carries). The list goes in the fixture's first line (`#ported
-// ...`) and the Rust test checks it against `ported(gen)`. Gen 1's line
-// predates the `kind:id` form and lists bare move ids; gen 3's lists
-// `ability:<id>` and `move:<id>` entries.
+// The ported list is ps_sim's own: `ps_sim_cli --ported <gen>` prints the
+// `kind:id` entries of `ported(gen)`, and the fixture's first line
+// (`#ported ...`) is that list less its species, which the Rust test checks
+// against `ported(gen)`. A handler batch therefore never edits this
+// recorder: when `ported(gen)` grows, it regenerates the fixture (build the
+// CLI first: `cargo build --release -p ps_harness --bin ps_sim_cli`). Gen
+// 1's line predates the `kind:id` form and lists bare move ids; gen 3's
+// lists `ability:<id>` and `move:<id>` entries.
 //
 // Teams: PS's own gen<N>randombattle generator gives species, levels and
 // stats (DVs and stat exp; gen 3 also natures, IVs and EVs) in two battles
@@ -32,12 +29,13 @@
 // text, requests included, goes to .scratch/move-fixtures/ for debugging.
 //
 // Usage:
-//   node tools/ps-diff/move-fixtures.js [--gen 1|3]          write the fixtures
-//   node tools/ps-diff/move-fixtures.js [--gen 1|3] --check  regenerate and compare
+//   node tools/ps-diff/move-fixtures.js [--gen 1|3] [--ps-cli PATH]          write the fixtures
+//   node tools/ps-diff/move-fixtures.js [--gen 1|3] [--ps-cli PATH] --check  regenerate and compare
 
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const {execFileSync} = require('child_process');
 const {Battle, Teams, Dex} = require('pokemon-showdown/dist/sim');
 
 const REPO = path.resolve(__dirname, '..', '..');
@@ -73,86 +71,28 @@ const EDGE = {
 // The ported list
 // ---------------------------------------------------------------------------
 
-// The handlers ps_sim implements, per gen and effect (the registries in
-// crates/ps_sim/src/mods/gen<N>/mod.rs). ps_sim's rule is "every handler
-// PS's data gives the effect is in its registry", so an effect whose
-// handlers are all listed here is ported; an effect with no handler at all
-// is ported as it is. A move or condition that is not listed here and
-// carries a handler is not ported. Keep each table sorted.
-const PORTED_HANDLERS = {
-  1: {
-    moves: {
-      dig: ['onTryMove', 'onPrepareHit'],
-      fly: ['onTryMove', 'onPrepareHit'],
-      razorwind: ['onTryMove', 'onPrepareHit'],
-      skullbash: ['onTryMove', 'onPrepareHit'],
-      skyattack: ['onTryMove', 'onPrepareHit'],
-      solarbeam: ['onTryMove', 'onPrepareHit'],
-    },
-    conditions: {
-      invulnerability: ['onInvulnerability'],
-      twoturnmove: ['onStart', 'onLockMove'],
-    },
-  },
-  3: {moves: {}, conditions: {}},
-};
-
-function handlerKeys(obj) {
-  if (!obj) return [];
-  return Object.keys(obj).filter(k => typeof obj[k] === 'function' && (/^on[A-Z]/.test(k) || k.endsWith('Callback')));
-}
-
-function hasHandlers(obj) {
-  return handlerKeys(obj).length > 0;
-}
-
-// Every handler of `obj` is one of `ported`'s.
-function handlersPorted(obj, ported) {
-  const keys = handlerKeys(obj);
-  if (!keys.length) return true;
-  const known = ported[obj.id];
-  if (!known) return false;
-  return keys.every(k => known.includes(k));
-}
-
-function conditionPorted(dex, id, gen) {
-  if (!id) return true;
-  return handlersPorted(dex.conditions.get(id), PORTED_HANDLERS[gen].conditions);
-}
-
-function movePorted(dex, m, gen) {
-  if (!handlersPorted(m, PORTED_HANDLERS[gen].moves)) return false;
-  // A `self` effect and the secondaries have no id to register under, so
-  // ps_sim needs none of them to carry a handler.
-  if (hasHandlers(m.self)) return false;
-  const secondaries = m.secondaries || [];
-  if (secondaries.some(s => hasHandlers(s) || hasHandlers(s.self))) return false;
-  const conds = [m.status, m.volatileStatus, m.sideCondition, m.slotCondition, m.weather, m.pseudoWeather];
-  if (m.condition) conds.push(m.id);
-  for (const s of [m.self, ...secondaries.map(x => x.self)]) {
-    if (s) conds.push(s.status, s.volatileStatus, s.sideCondition, s.pseudoWeather);
+// `ps_sim_cli`, for the ported list (`--ps-cli PATH`, default the release
+// build in this tree).
+function cliPath() {
+  const i = process.argv.indexOf('--ps-cli');
+  const cli = i >= 0 ? process.argv[i + 1] : path.join(REPO, 'target', 'release', 'ps_sim_cli');
+  if (!fs.existsSync(cli)) {
+    throw new Error(`no ${cli}: run cargo build --release -p ps_harness --bin ps_sim_cli`);
   }
-  for (const s of secondaries) conds.push(s.status, s.volatileStatus);
-  return conds.every(id => conditionPorted(dex, id, gen));
+  return cli;
 }
 
 /// `{moves, abilities, header}`: the ported moves and abilities of `gen`
-/// and the fixture's `#ported` line.
+/// and the fixture's `#ported` line, from ps_sim's own list.
 function portedFor(gen) {
-  const dex = Dex.mod(`gen${gen}`);
-  // Hidden Power's typed entries are placeholders: their id is
-  // `hiddenpower`, which has handlers.
-  const moves = dex.moves.all()
-    .filter(m => !m.isNonstandard && m.gen <= gen && m.id !== 'struggle' && m.id === toID(m.name) && movePorted(dex, m, gen))
-    .map(m => m.id)
-    .sort();
+  const entries = execFileSync(cliPath(), ['--ported', String(gen)], {encoding: 'utf8'})
+    .split('\n')
+    .map(l => l.trim())
+    .filter(e => e && !e.startsWith('species:'));
+  const ids = kind => entries.filter(e => e.startsWith(`${kind}:`)).map(e => e.slice(kind.length + 1));
+  const moves = ids('move');
   if (gen === 1) return {moves, abilities: [], header: `#ported ${moves.join(',')}`};
-  const abilities = dex.abilities.all()
-    .filter(a => !a.isNonstandard && !hasHandlers(a))
-    .map(a => a.id)
-    .sort();
-  const entries = [...abilities.map(a => `ability:${a}`), ...moves.map(m => `move:${m}`)].sort();
-  return {moves, abilities, header: `#ported ${entries.join(',')}`};
+  return {moves, abilities: ids('ability'), header: `#ported ${entries.join(',')}`};
 }
 
 function toID(text) {
