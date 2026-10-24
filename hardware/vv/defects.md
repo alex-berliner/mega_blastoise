@@ -332,7 +332,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: the seeded-fault run that tested check_trace was never committed (DEF-28's rule).
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
-- Status: FIXED (check_trace.py rewritten); CLOSED once VER-129 passes on fresh evidence
+- Status: CLOSED (check_trace.py rewritten; VER-129 PASS 2026-10-24 at e7a26e8: 29 seeded faults caught)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24

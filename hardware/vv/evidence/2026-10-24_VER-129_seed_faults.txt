@@ -1,0 +1,41 @@
+# VER-129 seed_faults
+DATE: 2026-10-24
+COMMIT: e7a26e8c1e592f880664a808e18f1d2173c6af58
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/seed_faults.py
+ok      clean copy exits 0
+ok  structure duplicate VER id
+ok  structure dangling DF id in a gate
+ok  structure action priority off the AIAG-VDA table
+ok  structure PASS without a commit
+ok  structure evidence header names another commit
+ok  structure row result disagrees with its evidence
+ok  structure a commit message as evidence
+ok  structure an analysis PASS with no saved output
+ok  report    evidence past its valid_days
+ok  structure CLOSED defect with no check
+ok  structure covers glob matching nothing
+ok  structure covers regex matching no line
+ok  structure covers part not in design.py
+ok  structure a 'both' check covering one board
+ok  structure CUT check with no reason
+ok  structure vp_map status changed with no evidence
+ok  structure requirement with no Verified by
+ok  structure requirement APPROVED with no APPROVALS line
+ok  structure allocation on the wrong board
+ok  structure risk ACCEPTED with no APPROVALS line
+ok  structure approval line signed by Claude
+ok  structure detects names a check the text does not
+ok  structure detection rating better than its checks
+ok  structure occurrence 2 with no built hardware
+ok  structure DONE with no detects
+ok  structure an ORDER check no gate reaches
+ok  structure criterion with a bad board
+ok  structure new BOM under an old BOARD_REV
+ok  gate      design baseline differs from HEAD
+29 seeded faults, 29 caught
+RESULT: PASS
+
+exit 0
+RESULT: PASS

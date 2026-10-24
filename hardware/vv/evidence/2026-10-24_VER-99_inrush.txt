@@ -1,0 +1,36 @@
+# VER-99 inrush
+DATE: 2026-10-24
+COMMIT: e7a26e8c1e592f880664a808e18f1d2173c6af58
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 -c '<inline script below>'
+--- inline script
+import re, sys
+sys.path.insert(0, 'hardware/ref_design/board')
+import design
+UNIT = {'p': 1e-12, 'n': 1e-9, 'u': 1e-6}
+def farads(v):
+    m = re.match(r'([\d.]+)([pnu])', v)
+    return float(m.group(1)) * UNIT[m.group(2)]
+caps = {p['ref']: (p['pins'], farads(p['value'])) for p in design.PARTS if p['lib'] == 'Device:C' and p['bom']}
+vbus = sum(c for pins, c in caps.values() if set(pins.values()) & {'VBUS', 'VBUS_C1'})
+# with no cell, D5 charges VSYS and, through JP3 (bridged), AMP_VDD at plug-in
+vsys = sum(c for pins, c in caps.values() if set(pins.values()) & {'VSYS', 'AMP_VDD'})
+q = vbus * 5.0 + vsys * 4.6
+print(f'VBUS capacitance {vbus * 1e6:.1f} uF (limit 10 uF): {vbus * 5e6:.0f} uC at 5.0 V')
+print(f'VSYS + AMP_VDD capacitance {vsys * 1e6:.1f} uF: {vsys * 4.6e6:.0f} uC at 4.6 V through D5')
+print(f'plug-in charge with no cell {q * 1e6:.0f} uC (USB 2.0 cl. 7.2.4.1: 50 uC)')
+req = open('hardware/vv/requirements.md').read()
+blk = req[req.index('### REQ-PWR-13:'):]
+blk = blk[:blk.index('\n### ', 5)]
+quoted = f'{q * 1e6:.0f} uC' in blk
+print('REQ-PWR-13 carries the deviation with this number:', quoted)
+sys.exit(0 if vbus <= 10e-6 * 1.001 and quoted else 1)
+--- output
+VBUS capacitance 10.0 uF (limit 10 uF): 50 uC at 5.0 V
+VSYS + AMP_VDD capacitance 46.8 uF: 215 uC at 4.6 V through D5
+plug-in charge with no cell 265 uC (USB 2.0 cl. 7.2.4.1: 50 uC)
+REQ-PWR-13 carries the deviation with this number: True
+
+exit 0
+RESULT: PASS
