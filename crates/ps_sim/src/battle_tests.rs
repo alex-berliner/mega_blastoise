@@ -674,7 +674,8 @@ fn move_battles_match_ps_gen3() {
 const GEN3_MOVE_BATTLES: usize = 330;
 
 /// A move with handlers that are not ported panics `unported: <id>`, the
-/// line the CLI reports.
+/// line the CLI reports. The battle runs on gen 1's registry minus
+/// Soft-Boiled, so the test does not depend on which batches have landed.
 #[test]
 #[should_panic(expected = "unported: softboiled")]
 fn unported_moves_panic() {
@@ -686,6 +687,9 @@ fn unported_moves_panic() {
     ];
     let mut b = setup(&cmds);
     b.move_hook = None;
+    let softboiled = EffectId::Move(ps_dex::gen1::moves::SOFTBOILED);
+    let entries: Vec<_> = b.registry.entries.iter().copied().filter(|(id, _)| *id != softboiled).collect();
+    b.registry = Box::leak(Box::new(crate::effect::Registry { entries: entries.leak() }));
     b.step(&Command::Choose { side: SideId::P1, choice: ps_protocol::Choice::Move(1) }).unwrap();
     b.step(&Command::Choose { side: SideId::P2, choice: ps_protocol::Choice::Move(1) }).unwrap();
 }
@@ -788,6 +792,30 @@ fn gen1_statuses_confusion_and_rest() {
 
     let log = play_gen1(&set("Hypno", "dreameater"), &set("Tauros", "tackle"), [17, 18, 19, 20]);
     assert!(log.contains("|-immune|p2a: Tauros"), "{log}");
+}
+
+/// G1-5's handlers run through the pipeline: Conversion's `typechange`
+/// line with both of the target's types, Splash's `-nothing`, Pay Day's
+/// `-fieldactivate`, Soft-Boiled's plain `-heal`, Super Fang's half-HP
+/// damage, and High Jump Kick's 1 HP crash against a Ghost. The expected
+/// lines are PS's for the same teams and seeds.
+#[test]
+fn gen1_simple_handlers() {
+    let set = |species: &str, mv: &str| format!("{species}|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||90|");
+    let log = play_gen1(&set("Gastly", "conversion"), &set("Charizard", "splash"), [1, 2, 3, 4]);
+    assert!(log.contains("|move|p2a: Charizard|Splash|p2a: Charizard\n|-nothing\n"), "{log}");
+    assert!(
+        log.contains("|-start|p1a: Gastly|typechange|Fire/Flying|[from] move: Conversion|[of] p2a: Charizard\n"),
+        "{log}"
+    );
+
+    let log = play_gen1(&set("Persian", "payday"), &set("Chansey", "softboiled"), [5, 6, 7, 8]);
+    assert!(log.contains("|-damage|p2a: Chansey|545/633\n|-fieldactivate|move: Pay Day\n"), "{log}");
+    assert!(log.contains("|move|p2a: Chansey|Soft-Boiled|p2a: Chansey\n|split|p2\n|-heal|p2a: Chansey|633/633\n"), "{log}");
+
+    let log = play_gen1(&set("Hitmonlee", "highjumpkick"), &set("Gengar", "superfang"), [9, 10, 11, 12]);
+    assert!(log.contains("|-damage|p1a: Hitmonlee|137/273\n"), "{log}");
+    assert!(log.contains("|-immune|p2a: Gengar\n|split|p1\n|-damage|p1a: Hitmonlee|136/273\n"), "{log}");
 }
 
 /// `>forcetie` and `>forcewin`.

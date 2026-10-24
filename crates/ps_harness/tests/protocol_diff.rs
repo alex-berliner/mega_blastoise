@@ -154,19 +154,22 @@ fn ps_sim_cli_init_block() {
         eprintln!("(skipping: ps_sim_cli not built; run `cargo build -p ps_harness --bin ps_sim_cli`)");
         return;
     };
-    // Two battles in one process: the first reaches Soft-Boiled (a move with
-    // handlers, unported), the second is left waiting for choices.
+    // Two battles in one process: the first reaches gen 3's Rest (a move
+    // with handlers, unported), the second is left waiting for choices.
+    // Every gen 1 move has a port, so the unported battle is a gen 3 one.
     let team = |mv: &str| format!("Pikachu|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||50|");
+    let team3 = "Snorlax|||illuminate|rest||85,85,85,85,85,85|M||||";
     let start = ">start {\"formatid\":\"gen1customgame\",\"seed\":[0,0,0,0]}\n";
-    let player = |side: &str, name: &str, mv: &str| format!(">player {side} {{\"name\":\"{name}\",\"team\":\"{}\"}}\n", team(mv));
+    let start3 = ">start {\"formatid\":\"gen3customgame\",\"seed\":[0,0,0,0]}\n";
+    let player = |side: &str, name: &str, team: &str| format!(">player {side} {{\"name\":\"{name}\",\"team\":\"{team}\"}}\n");
     let payload = [
-        start.to_string(),
-        player("p1", "a", "softboiled"),
-        player("p2", "b", "softboiled"),
+        start3.to_string(),
+        player("p1", "a", team3),
+        player("p2", "b", team3),
         ">p1 move 1\n>p2 move 1\n".to_string(),
         start.to_string(),
-        player("p1", "c", "tackle"),
-        player("p2", "d", "tackle"),
+        player("p1", "c", &team("tackle")),
+        player("p2", "d", &team("tackle")),
     ]
     .concat();
     let mut child = Command::new(&bin)
@@ -187,18 +190,20 @@ fn ps_sim_cli_init_block() {
         "|gametype|singles",
         "|player|p1|a||",
         "|player|p2|b||",
-        "|gen|1",
-        "|tier|[Gen 1] Custom Game",
+        "|gen|3",
+        "|tier|[Gen 3] Custom Game",
         "|teamsize|p1|1",
-        "|start\n|split|p1\n|switch|p1a: Pikachu|Pikachu, L50|",
+        "|start\n|split|p1\n|switch|p1a: Snorlax|Snorlax, M|",
         "sideupdate\np1\n|request|{\"active\":",
-        "\nunported\nsoftboiled\n",
+        "\nunported\nrest\n",
         "|player|p2|d||",
+        "|gen|1",
+        "|switch|p1a: Pikachu|Pikachu, L50|",
     ];
     for line in &needs {
         assert!(s.contains(line), "ps_sim_cli output missing `{line}`:\n{s}");
     }
-    let second = s.split("\nunported\nsoftboiled\n").nth(1).unwrap();
+    let second = s.split("\nunported\nrest\n").nth(1).unwrap();
     assert!(second.contains("|start\n"), "the second battle did not start:\n{second}");
 }
 

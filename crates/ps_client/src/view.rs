@@ -41,6 +41,7 @@
 //!
 //! Everything else updates state only.
 
+use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
@@ -290,6 +291,9 @@ impl BattleView {
             }
             ArgValue::Species(s) => self.species_name(s).to_string(),
             ArgValue::Type(t) => Self::type_of(t).name().to_string(),
+            ArgValue::TypePair(a, b) => {
+                format!("{}/{}", Self::type_of(a).name(), Self::type_of(b).name())
+            }
             ArgValue::Status(s) => s.as_str().to_string(),
             ArgValue::Stat(s) => s.abbr().to_string(),
             ArgValue::StatName(s) => s.name().to_string(),

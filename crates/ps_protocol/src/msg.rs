@@ -672,6 +672,9 @@ pub enum ArgValue {
     Species(SpeciesNum),
     /// A type's name: `Fire`.
     Type(TypeNum),
+    /// Two type names joined with a slash: `Water/Flying` (Conversion's
+    /// `-start` line prints `source.types.join('/')`).
+    TypePair(TypeNum, TypeNum),
     /// A status id: `brn`.
     Status(Status),
     /// A stat's abbreviation: `atk`.
@@ -710,6 +713,7 @@ enum ArgKind {
     AbilityEffect,
     Species,
     Type,
+    TypePair,
     Status,
     Stat,
     StatName,
@@ -746,6 +750,7 @@ impl Arg {
             ArgValue::AbilityEffect(a) => (ArgKind::AbilityEffect, a.0.to_le_bytes()),
             ArgValue::Species(s) => (ArgKind::Species, s.0.to_le_bytes()),
             ArgValue::Type(t) => (ArgKind::Type, [t.0, 0]),
+            ArgValue::TypePair(a, b) => (ArgKind::TypePair, [a.0, b.0]),
             ArgValue::Status(s) => (ArgKind::Status, [s as u8, 0]),
             ArgValue::Stat(s) => (ArgKind::Stat, [s as u8, 0]),
             ArgValue::StatName(s) => (ArgKind::StatName, [s as u8, 0]),
@@ -770,6 +775,7 @@ impl Arg {
             ArgKind::AbilityEffect => ArgValue::AbilityEffect(AbilityNum(u)),
             ArgKind::Species => ArgValue::Species(SpeciesNum(u)),
             ArgKind::Type => ArgValue::Type(TypeNum(b)),
+            ArgKind::TypePair => ArgValue::TypePair(TypeNum(self.data[0]), TypeNum(self.data[1])),
             // Only `new` writes these bytes, from a valid discriminant.
             ArgKind::Status => ArgValue::Status(STATUS_ALL[b as usize % STATUS_ALL.len()]),
             ArgKind::Stat => ArgValue::Stat(Stat::ALL[b as usize % Stat::ALL.len()]),
@@ -807,6 +813,10 @@ impl Arg {
     }
     pub fn ty(t: TypeNum) -> Arg {
         Arg::new(ArgValue::Type(t))
+    }
+    /// Two types, printed joined with a slash: `Water/Flying`.
+    pub fn type_pair(a: TypeNum, b: TypeNum) -> Arg {
+        Arg::new(ArgValue::TypePair(a, b))
     }
     pub fn status(s: Status) -> Arg {
         Arg::new(ArgValue::Status(s))
@@ -1308,6 +1318,7 @@ texts! {
     HintGen1ParSemiInvulnerable => "In Gen 1, when a Dig/Fly user is fully paralyzed while semi-invulnerable, it will remain semi-invulnerable until it switches out or fully executes Dig/Fly" (),
     HintGen1PartialTrapRecharge => "In Gen 1, partial trapping moves negate the recharge turn of Hyper Beam, even if they miss." (),
     HintGen1PpUnderflow => "In Gen 1, if a Pokémon is forced to use a move with 0 PP, the move will underflow to have 63 PP." (),
+    HintGen1PsywaveSoftlock => "In Gen 1, if a Pokémon at level 0, 1 or 171 uses Psywave, the game softlocks." (),
     HintGen1RageBuild => "In Gen 1, using {} causes the target to build Rage, even if it misses or fails" (Move),
     HintGen1Recovery => "In Gen 1, recovery moves fail if (user's maximum HP - user's current HP + 1) is divisible by 256, unless the current hp is also divisible by 256." (),
     HintGen1SelfDestructSub => "In Gen 1, the user of Self-Destruct will not take damage if it breaks a Substitute." (),

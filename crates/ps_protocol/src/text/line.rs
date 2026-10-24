@@ -522,6 +522,11 @@ fn arg_value_to_str(v: ArgValue, dex: &dyn DexNames, s: &mut String, _for_kw: bo
         }
         ArgValue::Species(sp) => s.push_str(dex.species_name(sp)),
         ArgValue::Type(t) => s.push_str(dex.type_name(t)),
+        ArgValue::TypePair(a, b) => {
+            s.push_str(dex.type_name(a));
+            s.push('/');
+            s.push_str(dex.type_name(b));
+        }
         ArgValue::Status(st) => s.push_str(st.as_str()),
         ArgValue::Stat(st) => s.push_str(st.abbr()),
         ArgValue::StatName(st) => s.push_str(st.name()),
@@ -1166,6 +1171,14 @@ fn parse_arg_simple(s: &str, dex: &dyn DexNames) -> Result<(Arg, bool), CodecErr
             return Ok((Arg::new(ArgValue::ItemEffect(i)), true));
         }
         return Err(CodecError::BadArg(format!("item: {:?}", rest)));
+    }
+    // Two types joined with a slash (`Water/Flying`): PS's
+    // `source.types.join('/')`. Anything else with a slash falls through
+    // to the parsers below.
+    if let Some((first, second)) = s.split_once('/') {
+        if let (Some(a), Some(b)) = (dex.type_from_id(&id_str(first)), dex.type_from_id(&id_str(second))) {
+            return Ok((Arg::new(ArgValue::TypePair(a, b)), true));
+        }
     }
     if let Some(s) = Status::parse(s) { return Ok((Arg::new(ArgValue::Status(s)), true)); }
     if let Some(st) = Stat::parse_name(s) { return Ok((Arg::new(ArgValue::StatName(st)), true)); }

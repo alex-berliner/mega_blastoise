@@ -83,3 +83,14 @@
 1 random 16  # G1-4 Reflect, Substitute twice, Reflect again (was unported: reflect); plays to the end
 1 random 14  # G1-4 Reflect (was unported: reflect); plays to the end
 1 random 18  # G1-4 Reflect (was unported: reflect); plays to the end
+
+# G1-5: the simple handlers (Super Fang, Psywave, Jump Kick, High Jump
+# Kick, Recover, Soft-Boiled, Pay Day, Thunder, Conversion, Splash,
+# Minimize, Defense Curl). The diff found no ps_sim bug in them. These
+# random seeds stopped `unported` at the batch's moves before it and now
+# play to the end against PS.
+1 random 3  # G1-5 Recover (was unported: recover), now plays to the end
+1 random 7  # G1-5 Thunder (was unported: thunder), now plays to the end
+1 random 15  # G1-5 High Jump Kick (was unported: highjumpkick), now plays to the end
+1 random 24  # G1-5 Super Fang (was unported: superfang), now plays to the end
+1 random 52  # G1-5 Soft-Boiled (was unported: softboiled), now plays to the end

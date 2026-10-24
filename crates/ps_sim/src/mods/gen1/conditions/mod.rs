@@ -11,6 +11,7 @@
 pub mod bide;
 pub mod brn;
 pub mod confusion;
+pub mod defensecurl;
 pub mod disable;
 pub mod fakepartiallytrapped;
 pub mod flinch;
@@ -20,6 +21,7 @@ pub mod invulnerability;
 pub mod leechseed;
 pub mod lightscreen;
 pub mod lockedmove;
+pub mod minimize;
 pub mod mist;
 pub mod mustrecharge;
 pub mod par;
