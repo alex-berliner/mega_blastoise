@@ -28,7 +28,10 @@
 //
 // Exit codes: 0 green; 1 diff / crash / unported hit (unported does not
 // count with --allow-unported); 2 misuse or empty
-// `wide --ps-cli`.
+// `wide --ps-cli`. A battle where PS itself throws (a PS bug) and ps_sim
+// crashes too is not comparable: it counts as `ps_crashes=K` on the
+// summary line and does not fail the run; a PS throw that ps_sim plays
+// through is a crash.
 //
 // Important behaviour:
 //   * `--jobs N` (default 14) splits a run into N node child processes
@@ -489,7 +492,7 @@ function applyTamper(testLog, k) {
 }
 
 async function runOneBattle(driverSeed, opts, scratch) {
-  const result = { diff: 0, crash: 0, unported: 0 };
+  const result = { diff: 0, crash: 0, unported: 0, psCrash: 0 };
   let info;
   try {
     info = driverCommands({
@@ -528,15 +531,18 @@ async function runOneBattle(driverSeed, opts, scratch) {
         result.crash = 1;
       }
     } catch (e) {
-      result.crash = 1;
+      // PS itself threw: a PS bug (both sides are PS), not comparable.
+      result.psCrash = 1;
       writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode }, e);
     }
     return result;
   }
   // PS on the left, ps_sim_cli on the right.
+  let rust = null;
+  let bPromise = null;
   try {
-    const rust = rustFor(opts.psCli);
-    const bPromise = rust.runBattle(info.cmds, info.choiceSeed, opts.timeoutMs);
+    rust = rustFor(opts.psCli);
+    bPromise = rust.runBattle(info.cmds, info.choiceSeed, opts.timeoutMs);
     const a = await drivePS({ gen: opts.gen, cmds: info.cmds, choiceSeed: info.choiceSeed, doCartridge });
     rust.graceUntil(RUST_GRACE_MS);
     const bRun = await bPromise;
@@ -572,6 +578,23 @@ async function runOneBattle(driverSeed, opts, scratch) {
         new Error(`rust side: ${bRun.status}: ${bRun.detail}\n${bRun.stderr}--- right (partial) ---\n${bLog}`));
     }
   } catch (e) {
+    // PS itself threw (a PS bug, such as gen 1's `moveSlot is null` after
+    // Transform). ps_sim ports PS faithfully, so it must stop with a crash
+    // in the same battle: such a battle is not comparable and counts as
+    // `ps_crashes`, not as a failure. If ps_sim did not crash, that is a
+    // real crash. Either way the rust process must not carry this battle
+    // into the next one (graceUntil kills it if it is still playing).
+    if (bPromise) {
+      rust.graceUntil(RUST_GRACE_MS);
+      const bRun = await bPromise;
+      if (bRun.status === 'crash') {
+        result.psCrash = 1;
+        writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode },
+          new Error(`PS threw and ps_sim crashed too (not comparable)\nps_sim: ${bRun.detail}\nPS: ${e && e.stack ? e.stack : e}`));
+        return result;
+      }
+      if (rust.child) rust.kill('ps-crash');
+    }
     result.crash = 1;
     writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode }, e);
   }
@@ -647,16 +670,17 @@ function runWithJobs(drivers, opts) {
     if (r.stderr && !opts.quiet) process.stderr.write(r.stderr);
     if (r.status !== 0) exitCode = r.status || 1;
   }
-  let totalRun = 0, totalDiff = 0, totalCrash = 0, totalUn = 0;
+  let totalRun = 0, totalDiff = 0, totalCrash = 0, totalUn = 0, totalPsCrash = 0;
   const ids = new Map();
   for (const line of summaries) {
     const parsed = parseSummary(line);
     if (!parsed) continue;
     totalRun += parsed.ran; totalDiff += parsed.diff;
-    totalCrash += parsed.crash; totalUn += parsed.unported;
+    totalCrash += parsed.crash; totalUn += parsed.unported; totalPsCrash += parsed.psCrash;
     for (const [id, k] of parsed.unportedIds) ids.set(id, (ids.get(id) || 0) + k);
   }
-  const total = `ps-diff: ran=${totalRun} diffs=${totalDiff} crashes=${totalCrash} unported=${totalUn} gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'} jobs=${n}`;
+  const total = `ps-diff: ran=${totalRun} diffs=${totalDiff} crashes=${totalCrash} unported=${totalUn} gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'} jobs=${n}`
+    + (totalPsCrash ? ` ps_crashes=${totalPsCrash}` : '');
   process.stdout.write(total + '\n');
   if (ids.size) process.stdout.write(`ps-diff: unported ids: ${formatIds(ids)}\n`);
   return exitCode;
@@ -679,7 +703,8 @@ function parseSummary(line) {
   const unportedIds = ids
     ? ids[1].split(',').map((p) => { const k = p.lastIndexOf(':'); return [p.slice(0, k), +p.slice(k + 1)]; })
     : [];
-  return { ran: +m[1], diff: +m[2], crash: +m[3], unported: +m[4], unportedIds };
+  const pc = line.match(/\sps_crashes=(\d+)/);
+  return { ran: +m[1], diff: +m[2], crash: +m[3], unported: +m[4], psCrash: pc ? +pc[1] : 0, unportedIds };
 }
 
 async function main() {
@@ -741,13 +766,13 @@ async function main() {
     process.exit(code);
   }
 
-  let nRun = 0, nDiff = 0, nCrash = 0, nUnported = 0;
+  let nRun = 0, nDiff = 0, nCrash = 0, nUnported = 0, nPsCrash = 0;
   const ids = new Map();
   for (const entry of drivers) {
     const seedInt = parseInt(entry.seed, 10) >>> 0;
     const battleOpts = { ...opts, gen: entry.gen, teamsMode: entry.teams };
     const r = await runOneBattle(seedInt, battleOpts, scratch);
-    nRun++; nDiff += r.diff; nCrash += r.crash; nUnported += r.unported;
+    nRun++; nDiff += r.diff; nCrash += r.crash; nUnported += r.unported; nPsCrash += r.psCrash;
     if (r.unportedId) ids.set(r.unportedId, (ids.get(r.unportedId) || 0) + 1);
   }
   if (rustProc) rustProc.close();
@@ -755,6 +780,7 @@ async function main() {
   process.stdout.write(
     `ps-diff: ran=${nRun} diffs=${nDiff} crashes=${nCrash} unported=${nUnported}`
     + ` gen=${opts.gen} teams=${opts.teamsMode} mode=${opts.self ? 'self' : 'ps-vs-rust'}`
+    + (nPsCrash ? ` ps_crashes=${nPsCrash}` : '')
     + (ids.size ? ` unported_ids=${formatIds(ids)}` : '') + '\n');
   const failures = nDiff + nCrash + (opts.allowUnported ? 0 : nUnported);
   process.exit(failures === 0 ? 0 : 1);
