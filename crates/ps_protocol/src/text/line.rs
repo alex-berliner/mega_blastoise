@@ -861,10 +861,15 @@ fn parse_tier(s: &str) -> Result<FormatId, CodecError> {
     FormatId::ALL.into_iter().find(|f| f.name() == s).ok_or_else(|| CodecError::BadArg(format!("tier {:?}", s)))
 }
 
+/// PS before the re-sync pin (0.11.11 and older replays) spelled some
+/// rule and hint texts `Pokémon` where it now writes `Pokemon`
+/// (56bc083aa); decoding takes both, encoding writes the current one.
+const OLD_POKEMON: &str = "Pok\u{e9}mon";
+
 fn parse_rule(s: &str) -> Result<RuleId, CodecError> {
-    RuleId::ALL
-        .into_iter()
-        .find(|r| r.line() == Some(s))
+    let find = |s: &str| RuleId::ALL.into_iter().find(|r| r.line() == Some(s));
+    find(s)
+        .or_else(|| s.contains(OLD_POKEMON).then(|| find(&s.replace(OLD_POKEMON, "Pokemon"))).flatten())
         .ok_or_else(|| CodecError::BadArg(format!("rule {:?}", s)))
 }
 
@@ -1027,6 +1032,14 @@ fn decode_text(s: &str, dex: &dyn DexNames, names: &mut Battle) -> Result<Text, 
     for &id in TextId::ALL {
         if let Some(text) = match_template(id, s, dex, names) {
             return Ok(text);
+        }
+    }
+    if s.contains(OLD_POKEMON) {
+        let current = s.replace(OLD_POKEMON, "Pokemon");
+        for &id in TextId::ALL {
+            if let Some(text) = match_template(id, &current, dex, names) {
+                return Ok(text);
+            }
         }
     }
     Err(CodecError::UnsupportedLine(format!("no text template for {:?}", s)))

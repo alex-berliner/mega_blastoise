@@ -180,6 +180,7 @@ events! {
     Accuracy,
     AfterBoost,
     AfterEachBoost,
+    AfterEntryHazard,
     AfterFaint,
     AfterHit,
     AfterMega,

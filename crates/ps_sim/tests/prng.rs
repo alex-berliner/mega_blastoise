@@ -146,7 +146,7 @@ fn all_one_hundred_thousand_calls_match_ps() {
                 );
                 assert_eq!(
                     prng.get_seed(),
-                    expected_check.seed,
+                    ps_sim::prng::PrngSeed::Gen5(expected_check.seed),
                     "seed state at checkpoint seed_idx={seed_idx} after={}",
                     expected_check.after
                 );
@@ -157,7 +157,7 @@ fn all_one_hundred_thousand_calls_match_ps() {
         // Final state: matches the last checkpoint.
         assert_eq!(
             prng.get_seed(),
-            seed_rec.checks.last().expect("at least one checkpoint").seed,
+            ps_sim::prng::PrngSeed::Gen5(seed_rec.checks.last().expect("at least one checkpoint").seed),
             "final seed state for seed_idx={seed_idx}"
         );
     }
@@ -191,7 +191,7 @@ fn get_seed_matches_standalone_gen5_state() {
     // peer `Gen5Rng` that did the same number of frames.
     let mut prng = Prng::new([7, 11, 13, 17]);
     let mut gen = Gen5Rng::new([7, 11, 13, 17]);
-    assert_eq!(prng.get_seed(), gen.get_seed());
+    assert_eq!(prng.get_seed(), ps_sim::prng::PrngSeed::Gen5(gen.get_seed()));
 
     for _ in 0..10 {
         let _ = prng.random();
@@ -199,7 +199,7 @@ fn get_seed_matches_standalone_gen5_state() {
     for _ in 0..10 {
         gen.next();
     }
-    assert_eq!(prng.get_seed(), gen.get_seed());
+    assert_eq!(prng.get_seed(), ps_sim::prng::PrngSeed::Gen5(gen.get_seed()));
 }
 
 #[test]

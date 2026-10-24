@@ -207,9 +207,12 @@ impl Battle {
         if s.pokemon_left == 0 {
             return (out, 0);
         }
+        // Only relevant for gen 3: a replacement asked for while switches
+        // are still queued cannot pick their targets.
         for i in s.active.len()..s.team_size as usize {
             let slot = s.order[i];
-            if !s.mons[slot as usize].fainted {
+            let queued = self.queue.get_switches(Some(side)).any(|a| a.target == Some(MonRef::new(side, slot)));
+            if !s.mons[slot as usize].fainted && !queued {
                 out[n] = MonRef::new(side, slot);
                 n += 1;
             }

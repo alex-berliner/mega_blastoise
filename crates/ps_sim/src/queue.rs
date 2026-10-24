@@ -254,18 +254,30 @@ impl BattleQueue {
             .find(|a| matches!(a.choice, ActionKind::Switch | ActionKind::InstaSwitch) && a.pokemon == Some(m))
     }
 
-    /// `cancelAction(pokemon)`: drops every action of `pokemon`.
+    /// `cancelAction(pokemon)`: drops every action of `pokemon` but its
+    /// `runSwitch`.
+    // PS: sim/battle-queue.ts cancelAction
     pub fn cancel_action(&mut self, m: MonRef) -> bool {
         let old = self.len();
         let mut i = 0;
         while i < self.len() {
-            if self.list[i].pokemon == Some(m) {
+            if self.list[i].pokemon == Some(m) && self.list[i].choice != ActionKind::RunSwitch {
                 self.remove(i);
             } else {
                 i += 1;
             }
         }
         self.len() != old
+    }
+
+    /// `getSwitches(side)`: the queued `switch` / `instaswitch` actions,
+    /// of one side or (`None`) both.
+    // PS: sim/battle-queue.ts getSwitches
+    pub fn get_switches(&self, side: Option<u8>) -> impl Iterator<Item = &Action> + '_ {
+        self.as_slice().iter().filter(move |a| {
+            matches!(a.choice, ActionKind::Switch | ActionKind::InstaSwitch)
+                && side.is_none_or(|s| a.pokemon.is_some_and(|p| p.side == s))
+        })
     }
 
     /// `cancelMove(pokemon)`: drops `pokemon`'s first move.

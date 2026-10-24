@@ -19,9 +19,10 @@ use crate::{BoundedVec, Name};
 /// one without.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Command {
-    /// `>start {"formatid":"gen3customgame","seed":[a,b,c,d]}`. A numeric
-    /// seed of four 16-bit integers selects PS's `Gen5RNG`.
-    Start { format: FormatSpec, seed: [u16; 4] },
+    /// `>start {"formatid":"gen3customgame","seed":[a,b,c,d]}`, or with a
+    /// seed string (`"a,b,c,d"`, `"gen5,<hex>"`, `"sodium,<hex>"`) as PS
+    /// 0.11.10 and later write it. See [`PrngSeed`].
+    Start { format: FormatSpec, seed: PrngSeed },
     /// `>player p1 {"name":"NAME","team":"PACKED"}`.
     Player { side: SideId, name: Name, team: PackedTeam },
     /// `>p1 CHOICE`.
@@ -30,6 +31,82 @@ pub enum Command {
     ForceWin(SideId),
     /// `>forcetie` (debug only).
     ForceTie,
+}
+
+/// A battle PRNG seed, the forms PS's `PRNG.setSeed` reads.
+///
+/// | `>start` seed | PS | variant |
+/// |---|---|---|
+/// | `[a,b,c,d]` (older inputlogs; joined with `,` first) | `Gen5RNG` | [`PrngSeed::Gen5`] |
+/// | `"a,b,c,d"` (a string starting with a digit) | `Gen5RNG` | [`PrngSeed::Gen5`] |
+/// | `"gen5,<16 hex digits>"` | `Gen5RNG` | [`PrngSeed::Gen5`] |
+/// | `"sodium,<hex>"` | `SodiumRNG` | [`PrngSeed::Sodium`] |
+///
+/// The encoder writes a Gen5 seed as the array (the harness's form) and a
+/// sodium seed as `sodium,` plus 64 hex digits (`SodiumRNG.getSeed`'s
+/// form; PS pads a shorter seed with `0` to the same key).
+///
+/// PS: sim/prng.ts `PRNG` constructor, `PRNG.setSeed`, `SodiumRNG.setSeed`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum PrngSeed {
+    /// Four 16-bit integers, most significant first.
+    Gen5([u16; 4]),
+    /// The 32-byte ChaCha20 key: the hex right-padded with `0` to 64
+    /// digits, two digits a byte.
+    Sodium([u8; 32]),
+}
+
+impl From<[u16; 4]> for PrngSeed {
+    fn from(seed: [u16; 4]) -> PrngSeed {
+        PrngSeed::Gen5(seed)
+    }
+}
+
+impl PrngSeed {
+    /// Parses a seed string as `PRNG.setSeed` does: `sodium,<hex>`,
+    /// `gen5,<16 hex>` or digits `a,b,c,d`. Narrower than PS where PS would
+    /// read garbage: a hex digit that is not one, more than 64 sodium
+    /// digits, or a Gen5 part that is not a 16-bit integer is `None`.
+    pub fn parse(s: &str) -> Option<PrngSeed> {
+        if let Some(hex) = s.strip_prefix("sodium,") {
+            // `seed.split(',')[1]`: anything after a second comma is
+            // ignored.
+            let hex = hex.split(',').next().unwrap_or("");
+            if hex.len() > 64 {
+                return None;
+            }
+            let mut key = [0u8; 32];
+            for (i, b) in hex.bytes().enumerate() {
+                let d = (b as char).to_digit(16)? as u8;
+                key[i / 2] |= if i % 2 == 0 { d << 4 } else { d };
+            }
+            return Some(PrngSeed::Sodium(key));
+        }
+        if let Some(hex) = s.strip_prefix("gen5,") {
+            // `seed.slice(5, 9)` ... `seed.slice(17, 21)`.
+            if hex.len() != 16 {
+                return None;
+            }
+            let mut out = [0u16; 4];
+            for (i, o) in out.iter_mut().enumerate() {
+                *o = u16::from_str_radix(hex.get(i * 4..i * 4 + 4)?, 16).ok()?;
+            }
+            return Some(PrngSeed::Gen5(out));
+        }
+        if !s.starts_with(|c: char| c.is_ascii_digit()) {
+            return None;
+        }
+        // `seed.split(',').map(Number)`.
+        let mut out = [0u16; 4];
+        let mut parts = s.split(',');
+        for o in out.iter_mut() {
+            *o = parts.next()?.parse().ok()?;
+        }
+        if parts.next().is_some() {
+            return None;
+        }
+        Some(PrngSeed::Gen5(out))
+    }
 }
 
 /// One choice, PS's `side.choose` grammar.
@@ -206,12 +283,12 @@ impl RuleId {
             RuleId::SleepClauseMod => Some("Sleep Clause Mod: Limit one foe put to sleep"),
             RuleId::FreezeClauseMod => Some("Freeze Clause Mod: Limit one foe frozen"),
             RuleId::EndlessBattleClause => Some("Endless Battle Clause: Forcing endless battles is banned"),
-            RuleId::SpeciesClause => Some("Species Clause: Limit one of each Pok\u{e9}mon"),
+            RuleId::SpeciesClause => Some("Species Clause: Limit one of each Pokemon"),
             RuleId::OhkoClause => Some("OHKO Clause: OHKO moves are banned"),
             RuleId::EvasionMovesClause => Some("Evasion Moves Clause: Evasion moves are banned"),
             // `onBegin` announces it only in gens 1 to 4, which are all ours.
             RuleId::BeatUpNicknamesMod => Some("Beat Up Nicknames Mod: Beat Up will not reveal any party members"),
-            RuleId::SwitchPriorityClauseMod => Some("Switch Priority Clause Mod: Faster Pok\u{e9}mon switch first"),
+            RuleId::SwitchPriorityClauseMod => Some("Switch Priority Clause Mod: Faster Pokemon switch first"),
             RuleId::EvasionItemsClause => Some("Evasion Items Clause: Evasion items are banned"),
             // It has no `onBegin` text (`tools/ps-diff/rules.js`).
             RuleId::CartridgeTrunc => None,
@@ -381,11 +458,11 @@ mod tests {
     fn command_constructors() {
         let c = Command::Choose { side: SideId::P2, choice: Choice::Move(1) };
         assert_eq!(c, Command::Choose { side: SideId::P2, choice: Choice::Move(1) });
-        let s = Command::Start { format: FormatSpec::gen3_harness(), seed: [1, 2, 3, 4] };
+        let s = Command::Start { format: FormatSpec::gen3_harness(), seed: PrngSeed::Gen5([1, 2, 3, 4]) };
         match s {
             Command::Start { format, seed } => {
                 assert_eq!(format.base, FormatId::Gen3CustomGame);
-                assert_eq!(seed, [1, 2, 3, 4]);
+                assert_eq!(seed, PrngSeed::Gen5([1, 2, 3, 4]));
             }
             _ => unreachable!(),
         }

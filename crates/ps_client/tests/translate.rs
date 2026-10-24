@@ -343,3 +343,93 @@ fn a_single_move_is_forced_only_when_no_switch_is_open() {
     assert_eq!(s.party_ok, [false; 6]);
     assert_eq!(s.auto.as_deref(), Some("move 0"));
 }
+
+/// The lines a current PS server (the re-sync pin, upstream c0845f33d) sends
+/// that 0.11.11 did not, or sends differently (`showdown-resync.md`
+/// section 7): each one decodes and the view takes it.
+#[test]
+fn current_server_lines_decode_and_apply() {
+    use ps_protocol::{RuleId, Status, TextId};
+
+    let hint = |codec: &mut CodecState<Tables>, view: &mut BattleView, l: &str| {
+        let msg = decode_line(l, codec).unwrap_or_else(|e| panic!("{l}: {e}"));
+        view.apply(&msg);
+        match msg {
+            Msg::Hint { text, .. } => text.id,
+            other => panic!("{l}: {other:?}"),
+        }
+    };
+    let rule = |codec: &mut CodecState<Tables>, l: &str| match decode_line(l, codec) {
+        Ok(Msg::Rule(r)) => r,
+        other => panic!("{l}: {other:?}"),
+    };
+
+    for dex in [&ps_dex::GEN1, &ps_dex::GEN3] {
+        let (mut codec, mut view) = setup_with(dex);
+        // `Pokémon` became `Pokemon` in the rule texts (56bc083aa); the
+        // 0.11.11 spelling (older replays) still decodes to the same rule.
+        for l in ["|rule|Species Clause: Limit one of each Pokemon", "|rule|Species Clause: Limit one of each Pokémon"] {
+            assert_eq!(rule(&mut codec, l), RuleId::SpeciesClause);
+        }
+        for l in [
+            "|rule|Switch Priority Clause Mod: Faster Pokemon switch first",
+            "|rule|Switch Priority Clause Mod: Faster Pokémon switch first",
+        ] {
+            assert_eq!(rule(&mut codec, l), RuleId::SwitchPriorityClauseMod);
+        }
+        for l in [
+            "|-hint|Sleep Clause Mod prevents players from putting more than one of their opponent's Pokemon to sleep at a time",
+            "|-hint|Sleep Clause Mod prevents players from putting more than one of their opponent's Pokémon to sleep at a time",
+        ] {
+            assert_eq!(hint(&mut codec, &mut view, l), TextId::HintSleepClause);
+        }
+        // Encoding writes the current spelling.
+        let (names_dex, names) = codec.split_mut();
+        let encoded = ps_protocol::text::line::encode_msg(&Msg::Rule(RuleId::SpeciesClause), names_dex, names);
+        assert_eq!(encoded, "|rule|Species Clause: Limit one of each Pokemon");
+
+        if dex.gen != 1 {
+            continue;
+        }
+        // Gen 1: a benched ex-Toxic Pokemon's `condition` is `psn`.
+        let json = format!(
+            "{{\"active\":[{TWO_MOVES}],\"side\":{{\"name\":\"Player 1\",\"id\":\"p1\",\"pokemon\":[{},{},{}]}}}}",
+            mon("Growlithe", "Growlithe, L91", "200/285", true, "\"bodyslam\",\"reflect\""),
+            mon("Horsea", "Horsea, L88", "120/200 psn", false, "\"surf\""),
+            mon("Charizard", "Charizard, L74", "268/268", false, "\"fireblast\""),
+        );
+        match request(&mut codec, &json) {
+            Request::Move(r) => assert_eq!(r.side.pokemon[1].condition.status, Some(Status::Psn)),
+            other => panic!("{other:?}"),
+        }
+    }
+
+    // Gen 3 lines.
+    let (mut codec, mut view) = setup_with(&ps_dex::GEN3);
+    for l in [
+        "|switch|p1a: Charizard|Charizard, L74|268/268",
+        "|switch|p2a: Horsea|Horsea, L88|200/200",
+        // Pursuit's activation, once per switching target, before its move.
+        "|-activate|p2a: Horsea|move: Pursuit",
+        // Destiny Bond and Grudge now come before the `faint` line.
+        "|-activate|p1a: Charizard|move: Destiny Bond",
+        "|-activate|p1a: Charizard|move: Grudge|Surf",
+        // Hyper Cutter's fail names the stat id (was `Attack`).
+        "|-fail|p2a: Horsea|unboost|atk|[from] ability: Hyper Cutter|[of] p2a: Horsea",
+        "|faint|p2a: Horsea",
+    ] {
+        line(&mut codec, &mut view, l);
+    }
+    for (l, id) in [
+        (
+            "|-hint|In Gens 3-4, Knock Off makes a Pokémon lose its held item every time it switches in.",
+            TextId::HintGens3To4KnockOffSwitchIn,
+        ),
+        (
+            "|-hint|Previously chosen switches continue in Gen 2-4 after a Pursuit target faints.",
+            TextId::HintPursuitSwitch,
+        ),
+    ] {
+        assert_eq!(hint(&mut codec, &mut view, l), id);
+    }
+}

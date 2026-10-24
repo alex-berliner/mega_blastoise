@@ -441,7 +441,7 @@ fn opening_matches_ps_gen3() {
         "gen 3 openings: {compared} match ({with_forme} with an Unown forme), {skipped_ability} wait for lead abilities"
     );
     assert_eq!(compared + skipped_ability, 60);
-    assert_eq!(compared, 45);
+    assert_eq!(compared, 46);
     // An `Unown-X` details string in the requests (and the switch line
     // when it leads).
     assert_eq!(with_forme, 3);
@@ -984,4 +984,56 @@ fn gen1_pp_underflow_follows_the_rule_set() {
         assert_eq!(moves[0].pp, Some(want));
         assert_eq!(moves[0].disabled, Some(want <= 0));
     }
+}
+
+/// `runSwitch` (PS 437926906): both leads switch in under one `SwitchIn`
+/// field event after `speedSort(getAllActive(true))`, and gens <= 4 skip the
+/// `Update` after `start` and after a switch. Through `start` of a Gen 1
+/// mirror match PS draws 3 PRNG calls (the `insertChoice` tie, the
+/// `runSwitch` sort, one `Update` sort; 0.11.11 drew 4); a pairing without
+/// a speed tie draws none. Counted on PS's `Battle` for these teams.
+#[test]
+fn switch_in_prng_calls_follow_ps() {
+    for (foe, want) in [("Wartortle", 3), ("Pidgey", 0)] {
+        let mut b = Box::new(Battle::from_start(FormatSpec::gen1_harness(), [1, 2, 3, 4], CLOCK));
+        for (side, species) in [(SideId::P1, "Wartortle"), (SideId::P2, foe)] {
+            let team = parse_team(&format!("{species}|||noability|tackle|||||||"));
+            b.set_player(side, "p", "", "", Some(&team)).unwrap();
+        }
+        let _ = flush(&mut b);
+        assert_eq!(b.prng.calls, want, "Wartortle vs {foe}");
+        // Both leads are started, the order of the last sort kept.
+        for s in 0..2u8 {
+            assert!(b.mon(b.active_at(s, 0).unwrap()).is_started);
+        }
+        assert!(b.speed_order.iter().all(|&p| p < 2));
+    }
+}
+
+/// `queue.cancelAction` keeps a Pokemon's queued `runSwitch`, and
+/// `getSwitches` lists the queued switches of one side or both.
+#[test]
+fn cancel_action_keeps_run_switch() {
+    use crate::queue::{Action, ActionKind};
+    let mut b = Box::new(Battle::from_start(FormatSpec::gen1_harness(), [1, 2, 3, 4], CLOCK));
+    for side in [SideId::P1, SideId::P2] {
+        let team = parse_team("Wartortle|||noability|tackle|||||||]Pidgey|||noability|tackle|||||||");
+        b.set_player(side, "p", "", "", Some(&team)).unwrap();
+    }
+    let _ = flush(&mut b);
+    let m = b.pokemon_at(0, 0);
+    b.queue.clear();
+    b.queue.push(Action::new(ActionKind::RunSwitch).with_pokemon(m));
+    let mut sw = Action::new(ActionKind::Switch).with_pokemon(m);
+    sw.target = Some(b.pokemon_at(0, 1));
+    b.queue.push(sw);
+    b.queue.push(Action::new(ActionKind::Move).with_pokemon(m));
+    assert_eq!(b.queue.get_switches(Some(0)).count(), 1);
+    assert_eq!(b.queue.get_switches(Some(1)).count(), 0);
+    assert_eq!(b.queue.get_switches(None).count(), 1);
+    // The queued switch's target is no longer a possible switch-in.
+    assert_eq!(b.can_switch(0), 0);
+    assert!(b.queue.cancel_action(m));
+    assert_eq!(b.queue.len(), 1);
+    assert_eq!(b.queue.peek().unwrap().choice, ActionKind::RunSwitch);
 }

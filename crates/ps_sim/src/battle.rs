@@ -4,7 +4,7 @@
 //! `start` writes the header and queues the `start` action; `turnLoop` runs
 //! the queue one `runAction` at a time, `endTurn` closes the turn and asks
 //! for the next choices. Faints are queued by `faint`, announced by
-//! `faintMessages` and replaced through `checkFainted` and a `switch`
+//! `resolveFaints` and replaced through `checkFainted` and a `switch`
 //! request. The battle ends in `win` (a tie is `win` with no side) from
 //! `checkWin`, Gen 1's no-progress check, the turn limit, or `>forcewin` /
 //! `>forcetie`.
@@ -15,11 +15,11 @@
 //!
 //! PS: sim/battle.ts (constructor, `setPlayer`, `getTeam`, `start`,
 //! `turnLoop`, `runAction`, `endTurn`, `maybeTriggerEndlessBattleClause`,
-//! `checkFainted`, `faintMessages`, `checkWin`, `win`, `tie`, `forceWin`,
+//! `checkFainted`, `resolveFaints`, `checkWin`, `win`, `tie`, `forceWin`,
 //! `choose`, `commitChoices`, `undoChoice`, `allChoicesDone`,
 //! `getRandomTarget`, `getTarget`, `validTargetLoc`, `directDamage`,
-//! `faint`); sim/battle-actions.ts `switchIn`, `dragIn`;
-//! data/mods/gen4/scripts.ts `runSwitch` (gens 1 and 3 inherit it);
+//! `faint`); sim/battle-actions.ts `runPursuitActivation`, `switchIn`,
+//! `dragIn`, `runSwitch`;
 //! sim/pokemon.ts (constructor, `clearVolatile`, `setSpecies`,
 //! `copyVolatileFrom`, `faint`, `damage`, `getLocOf`, `getAtLoc`);
 //! sim/teams.ts `unpack` (name resolution); data/rulesets.ts.
@@ -32,7 +32,7 @@ use ps_protocol::{
 
 use crate::effect::{Callback, EffectId, EventArgs, EventId, Prefix, Rule};
 use crate::modify::Trunc;
-use crate::prng::Seed;
+use crate::prng::PrngSeed;
 use crate::queue::{Action, ActionKind, ActionMove};
 use crate::relay::{Relay, TypeList};
 use crate::request::RequestState;
@@ -57,12 +57,22 @@ pub enum TeamError {
     TeamSize,
 }
 
-/// What `switchIn` returns: PS's `false`, `true` or `'pursuitfaint'`.
+/// The options of PS's `resolveFaints({lastFaintFirst, checkWinIfNoFaints,
+/// checkWin})`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SwitchResult {
-    Failed,
-    Done,
-    PursuitFaint,
+pub struct Faints {
+    /// `lastFaintFirst`: the queue's last entry skips the queue.
+    pub last_faint_first: bool,
+    /// `checkWinIfNoFaints`.
+    pub check_win_if_no_faints: bool,
+    /// `checkWin`. A faint that queues another faint (Destiny Bond) checks
+    /// even when this is false, except during Pursuit in gens 2-4.
+    pub check_win: bool,
+}
+
+impl Faints {
+    /// `resolveFaints()` with no options.
+    pub const DEFAULT: Faints = Faints { last_faint_first: false, check_win_if_no_faints: false, check_win: true };
 }
 
 fn side_id(side: u8) -> SideId {
@@ -209,7 +219,7 @@ impl Battle {
     /// rule (design section 3, on in every Gen 1 format unless repealed)
     /// is PS's bit-width `trunc` in place of `Math.trunc`.
     // PS: sim/battle.ts constructor
-    pub fn from_start(spec: FormatSpec, seed: Seed, clock: u32) -> Battle {
+    pub fn from_start(spec: FormatSpec, seed: impl Into<PrngSeed>, clock: u32) -> Battle {
         let dex: &'static Dex = match spec.base.gen() {
             1 => &ps_dex::GEN1,
             _ => &ps_dex::GEN3,
@@ -796,7 +806,7 @@ impl Battle {
         mon.switch_flag = SwitchFlag::No;
         mon.faint_queued = true;
         let slot = self.faint_queue.iter_mut().find(|f| f.is_none()).expect("faint queue full");
-        *slot = Some(FaintData { target: m, source, effect });
+        *slot = Some(FaintData { target: m, source, effect, faint_event_done: false });
         d
     }
 
@@ -886,9 +896,6 @@ impl Battle {
             _ => Kw::NONE,
         };
         self.add(Msg::Damage { mon, health, kw });
-        if self.mon(target).fainted {
-            self.faint(target, None, EffectId::None);
-        }
         damage
     }
 
@@ -1143,13 +1150,7 @@ impl Battle {
                 // ability has `onCheckShow`.
                 let target = action.target.expect("switch action without a target");
                 let position = self.mon(pokemon).position;
-                if self.switch_in(target, position, action.source_effect, false) == SwitchResult::PursuitFaint {
-                    // Gens 2-4: the switch still happens.
-                    self.hint(TextId::HintPursuitSwitch, false, None);
-                    let mut a = action;
-                    a.priority = -101;
-                    self.queue.unshift(a);
-                }
+                self.switch_in(target, position, action.source_effect, false);
             }
             ActionKind::RunSwitch => {
                 let pokemon = action.pokemon.expect("runSwitch without a pokemon");
@@ -1169,6 +1170,10 @@ impl Battle {
             }
         }
 
+        // Gens <= 4 clear the active move before phazing (Mold Breaker must
+        // not let hazards bypass Clear Body and Levitate).
+        self.clear_active_move(false);
+
         // Phazing (Roar, Whirlwind).
         for s in 0..2u8 {
             for pos in 0..self.sides[s as usize].active.len() as u8 {
@@ -1183,29 +1188,31 @@ impl Battle {
             }
         }
 
-        self.clear_active_move(false);
-
-        self.faint_messages(false, false, true);
+        // Fainting. Gen 2 defers faints between switches and gen 4 defers
+        // some win checks; neither applies to gens 1 and 3.
+        let is_switch = matches!(action.choice, ActionKind::Switch | ActionKind::InstaSwitch);
+        self.resolve_faints(Faints { check_win_if_no_faints: true, check_win: true, ..Faints::DEFAULT });
         if self.ended {
             return true;
         }
 
+        // Switching (fainted Pokemon, U-turn, Baton Pass, etc).
+        let next = self.queue.peek().map(|a| a.choice);
+        // Gen 3 brings in replacements after every switch.
+        let check_fainted_after_switch = self.gen == 3 && is_switch;
         // Gen <= 3 brings in replacements after every move, not only at the
         // end of the turn.
-        let next = self.queue.peek().map(|a| a.choice);
-        if next.is_none() || (self.gen <= 3 && matches!(next, Some(ActionKind::Move | ActionKind::Residual))) {
+        let check_fainted_after_moves = self.gen <= 3 && matches!(next, Some(ActionKind::Move | ActionKind::Residual));
+        if next.is_none() || check_fainted_after_switch || check_fainted_after_moves {
             self.check_fainted();
-        } else if next == Some(ActionKind::InstaSwitch) {
-            return false;
         }
+
+        // `if (gen >= 5 && ...)` Update and the residual Emergency Exits.
 
         if action.choice == ActionKind::RunSwitch {
             let m = action.pokemon.expect("runSwitch without a pokemon");
-            let mon = self.mon(m);
-            let half = u32::from(mon.maxhp);
-            if mon.hp != 0 && 2 * u32::from(mon.hp) <= half && original_hp.is_some_and(|h| 2 * u32::from(h) > half) {
-                self.run_event(EventId::EmergencyExit, Holder::Mon(m), None, EffectId::None, None);
-            }
+            let relay = original_hp.map(|h| Relay::Int(i32::from(h)));
+            self.run_event(EventId::EmergencyExit, Holder::Mon(m), None, EffectId::None, relay);
         }
 
         let mut switches = [false; 2];
@@ -1222,10 +1229,8 @@ impl Battle {
             } else if switches[s as usize] {
                 if let Some(m) = self.active_at(s, 0) {
                     let mon = self.mon(m);
-                    if mon.hp != 0 && mon.switch_flag.is_set() && !mon.skip_before_switch_out_event_flag {
-                        self.run_event(EventId::BeforeSwitchOut, Holder::Mon(m), None, EffectId::None, None);
-                        self.mon_mut(m).skip_before_switch_out_event_flag = true;
-                        self.faint_messages(false, false, true);
+                    if mon.hp != 0 && mon.switch_flag.is_set() {
+                        self.run_pursuit_activation(m);
                         if self.ended {
                             return true;
                         }
@@ -1241,7 +1246,7 @@ impl Battle {
             return true;
         }
 
-        if self.gen < 5 {
+        if self.gen < 5 && action.choice != ActionKind::Start && !is_switch {
             self.each_event(EventId::Update, EffectId::None, None);
         }
         false
@@ -1497,11 +1502,19 @@ impl Battle {
             .all(|s| self.dex.move_def(s.id).name.as_str() == "Transform")
     }
 
-    /// PS `checkFainted()`: fainted actives get `fnt` and a switch flag.
+    /// PS `checkFainted()`: fainted actives get `fnt` and a switch flag,
+    /// on each side that can switch. Gen 3 overrides it.
     /// The `fnt` status is no condition; it reads as no status here.
     // PS: sim/battle.ts checkFainted
     pub fn check_fainted(&mut self) {
+        if self.gen == 3 {
+            crate::mods::gen3::scripts::check_fainted(self);
+            return;
+        }
         for s in 0..2u8 {
+            if self.can_switch(s) == 0 {
+                continue;
+            }
             let Some(m) = self.active_at(s, 0) else { continue };
             if self.mon(m).fainted {
                 let mon = self.mon_mut(m);
@@ -1511,26 +1524,41 @@ impl Battle {
         }
     }
 
-    /// PS `faintMessages(lastFirst, forceCheck, checkWin)`. Returns PS's
-    /// `true` when the battle ended.
-    // PS: sim/battle.ts faintMessages
-    pub fn faint_messages(&mut self, last_first: bool, force_check: bool, check_win: bool) -> bool {
+    /// PS `resolveFaints(options)`: runs `BeforeFaint` / `Faint`, writes
+    /// the `faint` lines, cancels what the gen cancels and checks for a
+    /// winner. Returns PS's `true` when the battle ended (`undefined`, the
+    /// battle had already ended, reads as `false`).
+    // PS: sim/battle.ts resolveFaints
+    pub fn resolve_faints(&mut self, opts: Faints) -> bool {
         if self.ended {
             return false;
         }
+        if self.gen <= 4 && self.pivot_pending() {
+            // Keep pivot faints pending, except during the pivot's own
+            // initial blackout check.
+            let pokemon = self.active_pokemon;
+            let blackout = pokemon.is_some_and(|p| {
+                self.mon(p).hp != 0
+                    && self.mon(p).switch_flag == SwitchFlag::Move(self.active_move().map_or(MoveId::NONE, |m| m.id))
+                    && (0..2u8).all(|s| s == p.side || self.sides[s as usize].pokemon().iter().all(|&i| self.sides[s as usize].mons[i as usize].hp == 0))
+            });
+            if !blackout {
+                return false;
+            }
+        }
         let length = self.faint_queue.iter().flatten().count();
         if length == 0 {
-            if force_check && self.check_win(None) {
+            if opts.check_win_if_no_faints && self.check_win(None) {
                 return true;
             }
             return false;
         }
-        if last_first {
+        if opts.last_faint_first {
             let last = self.faint_queue[length - 1];
             self.faint_queue.copy_within(0..length - 1, 1);
             self.faint_queue[0] = last;
         }
-        let mut check_win = check_win;
+        let mut check_win = opts.check_win;
         let mut faint_data = None;
         while let Some(fd) = self.faint_queue[0] {
             let left = self.faint_queue.iter().flatten().count();
@@ -1544,6 +1572,11 @@ impl Battle {
             if !self.run_event(EventId::BeforeFaint, Holder::Mon(m), fd.source, fd.effect, None).truthy() {
                 continue;
             }
+            // Gens <= 4 run `Faint` before the `faint` line, gens >= 5
+            // after it.
+            if self.gen <= 4 && !fd.faint_event_done {
+                self.run_event(EventId::Faint, Holder::Mon(m), fd.source, fd.effect, None);
+            }
             let ident = self.ident(m);
             self.add(Msg::Faint(ident));
             let sd = &mut self.sides[m.side as usize];
@@ -1553,7 +1586,9 @@ impl Battle {
             if sd.total_fainted < 100 {
                 sd.total_fainted += 1;
             }
-            self.run_event(EventId::Faint, Holder::Mon(m), fd.source, fd.effect, None);
+            if self.gen >= 5 && !fd.faint_event_done {
+                self.run_event(EventId::Faint, Holder::Mon(m), fd.source, fd.effect, None);
+            }
             let ability = self.mon(m).ability_effect();
             let serial = self.mon(m).ability_state.serial;
             self.single_event(EventId::End, ability, StateRef::Ability(m), serial, Holder::Mon(m), None, EffectId::None, None);
@@ -1568,7 +1603,17 @@ impl Battle {
             mon.is_started = false;
             self.sides[m.side as usize].fainted_this_turn = Some(m.index);
             if self.faint_queue.iter().flatten().count() >= left {
-                check_win = true;
+                let pursuit = self.mon(m).pursuit_activated;
+                // Gen 2: Destiny Bond during Pursuit processes only the
+                // target.
+                if pursuit && self.gen <= 2 {
+                    break;
+                }
+                // Gens 3-4: no win check when Destiny Bond activates during
+                // a Pursuit faint.
+                if !(pursuit && self.gen <= 4) {
+                    check_win = true;
+                }
             }
         }
 
@@ -1595,6 +1640,13 @@ impl Battle {
             self.run_event(EventId::AfterFaint, Holder::Mon(fd.target), fd.source, fd.effect, Some(Relay::Int(length as i32)));
         }
         false
+    }
+
+    /// `getAllActive().some(pokemon => typeof pokemon.switchFlag ===
+    /// 'string')`: a pivot move's switch is pending.
+    fn pivot_pending(&self) -> bool {
+        let (actives, n) = self.all_active(false);
+        actives[..n].iter().any(|&m| matches!(self.mon(m).switch_flag, SwitchFlag::Move(_)))
     }
 
     /// PS `checkWin(faintData)`: both sides out is a tie in gens 1-4.
@@ -1730,12 +1782,37 @@ impl Battle {
 
     // ---- switching ------------------------------------------------------
 
-    /// PS `actions.switchIn(pokemon, pos, sourceEffect, isDrag)`.
+    /// PS `actions.runPursuitActivation(pokemon)`: `BeforeSwitchOut` once
+    /// per switch-out (Pursuit), then the faints it caused.
+    // PS: sim/battle-actions.ts runPursuitActivation
+    pub fn run_pursuit_activation(&mut self, pokemon: MonRef) {
+        if self.mon(pokemon).skip_pursuit {
+            return;
+        }
+        self.run_event(EventId::BeforeSwitchOut, Holder::Mon(pokemon), None, EffectId::None, None);
+        self.clear_active_move(false);
+        // `if (gen >= 5) eachEvent('Update')`.
+        if self.mon(pokemon).pursuit_activated {
+            self.resolve_faints(Faints { check_win: self.gen >= 5, ..Faints::DEFAULT });
+        }
+        let mon = self.mon_mut(pokemon);
+        if mon.hp != 0 && !mon.switch_flag.is_set() {
+            // The switch was cancelled (Emergency Exit cancelling U-turn).
+            mon.pursuit_activated = false;
+            mon.skip_pursuit = false;
+        } else {
+            // Don't activate Pursuit again.
+            mon.skip_pursuit = true;
+        }
+    }
+
+    /// PS `actions.switchIn(pokemon, pos, sourceEffect, isDrag)`: `true`
+    /// when the Pokemon came in and is still standing.
     // PS: sim/battle-actions.ts switchIn
-    pub fn switch_in(&mut self, pokemon: MonRef, pos: u8, source_effect: EffectId, is_drag: bool) -> SwitchResult {
+    pub fn switch_in(&mut self, pokemon: MonRef, pos: u8, source_effect: EffectId, is_drag: bool) -> bool {
         if self.mon(pokemon).is_active {
             self.hint(TextId::HintSwitchFailed, false, None);
-            return SwitchResult::Failed;
+            return false;
         }
         let s = pokemon.side;
         assert!((pos as usize) < self.sides[s as usize].active.len(), "Invalid switch position {pos}");
@@ -1747,27 +1824,32 @@ impl Battle {
                 EffectId::Move(mv) => matches!(self.dex.move_def(mv).self_switch(), Some(ps_dex::SelfSwitch::CopyVolatile)),
                 _ => false,
             };
-            if !self.mon(old).skip_before_switch_out_event_flag && !is_drag {
-                self.run_event(EventId::BeforeSwitchOut, Holder::Mon(old), None, EffectId::None, None);
+            if !is_drag {
+                self.run_pursuit_activation(old);
             }
-            self.mon_mut(old).skip_before_switch_out_event_flag = false;
             if !self.run_event(EventId::SwitchOut, Holder::Mon(old), None, EffectId::None, None).truthy() {
-                return SwitchResult::Failed;
+                return false;
             }
             if self.mon(old).hp == 0 {
-                return SwitchResult::PursuitFaint;
+                // A Pokemon fainted from Pursuit before it could switch:
+                // gens 2-4 go on with the switch (gen >= 5 cancels it).
+                self.hint(TextId::HintPursuitSwitch, false, None);
+            } else {
+                // Will definitely switch out at this point.
+                let ability = self.mon(old).ability_effect();
+                let serial = self.mon(old).ability_state.serial;
+                self.single_event(EventId::End, ability, StateRef::Ability(old), serial, Holder::Mon(old), None, EffectId::None, None);
+                let item = self.mon(old).item_effect();
+                let serial = self.mon(old).item_state.serial;
+                self.single_event(EventId::End, item, StateRef::Item(old), serial, Holder::Mon(old), None, EffectId::None, None);
+                // A Pokemon forced out cannot use its chosen move.
+                self.queue.cancel_action(old);
+                // The gen 4 `newMove` hand-over is not in gens 1-3.
+                if copy_volatile {
+                    self.copy_volatile_from(pokemon, old);
+                }
+                self.clear_volatile(old, true);
             }
-            let ability = self.mon(old).ability_effect();
-            let serial = self.mon(old).ability_state.serial;
-            self.single_event(EventId::End, ability, StateRef::Ability(old), serial, Holder::Mon(old), None, EffectId::None, None);
-            let item = self.mon(old).item_effect();
-            let serial = self.mon(old).item_state.serial;
-            self.single_event(EventId::End, item, StateRef::Item(old), serial, Holder::Mon(old), None, EffectId::None, None);
-            self.queue.cancel_action(old);
-            if copy_volatile {
-                self.copy_volatile_from(pokemon, old);
-            }
-            self.clear_volatile(old, true);
         }
         if let Some(old) = old_active {
             let in_position = self.mon(pokemon).position;
@@ -1777,6 +1859,8 @@ impl Battle {
             mon.used_item_this_turn = false;
             mon.stats_raised_this_turn = false;
             mon.stats_lowered_this_turn = false;
+            mon.pursuit_activated = false;
+            mon.skip_pursuit = false;
             mon.position = in_position;
             if mon.fainted {
                 mon.status = ps_dex::ConditionId::NONE;
@@ -1800,6 +1884,19 @@ impl Battle {
             }
         }
         self.sides[s as usize].active[pos as usize] = Some(pokemon.index);
+        // Gens <= 4: a knocked-off item is lost again on every switch-in
+        // (`itemKnockedOff`). Knock Off is not ported, so nothing sets it.
+        if self.gen <= 2 {
+            // `lastMove` is reset for every Pokemon on the field after a
+            // switch (Mirror Move).
+            let (actives, n) = self.all_active(false);
+            for &p in &actives[..n] {
+                self.mon_mut(p).last_move = MoveId::NONE;
+            }
+            if self.gen == 1 {
+                self.gen1_switch_in_metronome(pokemon);
+            }
+        }
         let has_ability = !self.mon(pokemon).ability.is_none();
         let st = self.init_effect_state(has_ability, Holder::Mon(pokemon));
         self.mon_mut(pokemon).ability_state = st;
@@ -1822,9 +1919,55 @@ impl Battle {
         });
         let mon = self.mon_mut(pokemon);
         mon.previously_switched_in = mon.previously_switched_in.saturating_add(1);
-        // Gen <= 4: runSwitch is queued, drags included.
-        self.insert_choice(Action::new(ActionKind::RunSwitch).with_pokemon(pokemon), false);
-        SwitchResult::Done
+
+        if self.gen <= 4 {
+            self.run_event(EventId::EntryHazard, Holder::Mon(pokemon), None, EffectId::None, None);
+            if self.gen <= 2 && self.sides[s as usize].fainted_this_turn.is_none() && !is_drag {
+                self.run_event(EventId::AfterSwitchInSelf, Holder::Mon(pokemon), None, EffectId::None, None);
+            }
+            if self.mon(pokemon).hp == 0 {
+                return false;
+            }
+            if self.gen == 3 && self.turn > 0 {
+                // Gen 3 weather abilities activate before other Pokemon
+                // switch in.
+                self.run_event(EventId::AfterEntryHazard, Holder::Mon(pokemon), None, EffectId::None, None);
+            }
+        }
+
+        if is_drag {
+            self.run_switch(pokemon);
+        } else {
+            self.insert_choice(Action::new(ActionKind::RunSwitch).with_pokemon(pokemon), false);
+        }
+
+        self.mon(pokemon).hp != 0
+    }
+
+    /// The gen 1 part of `switchIn`: the switching side's move slot resets,
+    /// and a foe locked into a partial trap by Metronome re-selects it.
+    // PS: sim/battle-actions.ts switchIn
+    fn gen1_switch_in_metronome(&mut self, pokemon: MonRef) {
+        self.sides[pokemon.side as usize].last_selected_move_slot = 0;
+        // `pokemon.foes()`: the non-fainted foe actives.
+        let foe = 1 - pokemon.side;
+        if let Some(poke) = self.active_at(foe, 0).filter(|&p| self.mon(p).hp != 0) {
+            let slot = self.sides[foe as usize].last_selected_move_slot as usize;
+            let lock = self.has_volatile_key(poke, "partialtrappinglock");
+            let id = self.mon(poke).move_slots[slot].id;
+            if lock && !id.is_none() && self.dex.move_def(id).name.as_str() == "Metronome" {
+                // Not done for Mirror Move, a desync on the cartridge.
+                self.sides[foe as usize].last_selected_move = crate::choice::SelectedMove::Move(id);
+                self.sides[foe as usize].last_enemy_selected_move = crate::choice::SelectedMove::Move(id);
+                if self.will_move(poke).is_some() {
+                    // PS passes `poke` (not `pokemon`), so `changeAction`
+                    // fills in the Pokemon.
+                    let mut a = Action::new(ActionKind::Move);
+                    a.move_ = ActionMove::Move(id);
+                    self.change_action(poke, a);
+                }
+            }
+        }
     }
 
     /// PS `actions.dragIn(side, pos)`.
@@ -1841,56 +1984,45 @@ impl Battle {
         if !self.run_event(EventId::DragOut, Holder::Mon(old), None, EffectId::None, None).truthy() {
             return false;
         }
-        self.switch_in(pokemon, pos, EffectId::None, true) == SwitchResult::Done
+        self.switch_in(pokemon, pos, EffectId::None, true)
     }
 
-    /// Gen 4's `actions.runSwitch(pokemon)`, which gens 1 and 3 inherit.
-    // PS: data/mods/gen4/scripts.ts runSwitch
+    /// PS `actions.runSwitch(pokemon)`: every queued `runSwitch` right
+    /// behind this one joins it, and one `SwitchIn` field event runs for
+    /// them all in speed order.
+    // PS: sim/battle-actions.ts runSwitch
     pub fn run_switch(&mut self, pokemon: MonRef) -> bool {
-        self.run_event(EventId::EntryHazard, Holder::Mon(pokemon), None, EffectId::None, None);
-        self.run_event(EventId::SwitchIn, Holder::Mon(pokemon), None, EffectId::None, None);
-        if self.gen <= 2 {
-            let (actives, n) = self.all_active(false);
-            for &p in &actives[..n] {
-                self.mon_mut(p).last_move = MoveId::NONE;
-            }
-            if self.gen == 1 {
-                self.sides[pokemon.side as usize].last_selected_move_slot = 0;
-                let foe = 1 - pokemon.side;
-                if let Some(poke) = self.active_at(foe, 0).filter(|&p| self.mon(p).hp != 0) {
-                    let slot = self.sides[foe as usize].last_selected_move_slot as usize;
-                    let lock = self.has_volatile_key(poke, "partialtrappinglock");
-                    let id = self.mon(poke).move_slots[slot].id;
-                    if lock && !id.is_none() && self.dex.move_def(id).name.as_str() == "Metronome" {
-                        self.sides[foe as usize].last_selected_move = crate::choice::SelectedMove::Move(id);
-                        self.sides[foe as usize].last_enemy_selected_move = crate::choice::SelectedMove::Move(id);
-                        if self.will_move(poke).is_some() {
-                            // PS passes `poke` (not `pokemon`), so
-                            // `changeAction` fills in the Pokemon.
-                            let mut a = Action::new(ActionKind::Move);
-                            a.move_ = ActionMove::Move(id);
-                            self.change_action(poke, a);
-                        }
-                    }
-                }
-            }
-            // `draggedIn` is only set in gen 2.
-            if self.sides[pokemon.side as usize].fainted_this_turn.is_none() {
-                self.run_event(EventId::AfterSwitchInSelf, Holder::Mon(pokemon), None, EffectId::None, None);
-            }
+        let mut switchers_in = [pokemon; 2];
+        let mut n = 1;
+        while self.queue.peek().is_some_and(|a| a.choice == ActionKind::RunSwitch) {
+            let next = self.queue.shift().expect("peeked");
+            assert!(n < switchers_in.len(), "more switchers in than actives");
+            switchers_in[n] = next.pokemon.expect("runSwitch without a pokemon");
+            n += 1;
         }
-        if self.mon(pokemon).hp == 0 {
-            return false;
+        let (mut all_active, k) = self.all_active(true);
+        let speeds: [i32; 2] = core::array::from_fn(|i| if i < k { self.mon(all_active[i]).speed } else { 0 });
+        let mut order = [(all_active[0], speeds[0]), (all_active[1], speeds[1])];
+        // `speedSort(allActive)` with `comparePriority`: a Pokemon has no
+        // order, priority, subOrder or effectOrder, so speed decides.
+        crate::events::speed_sort(&mut self.prng, &mut order[..k], |a, b| b.1.cmp(&a.1));
+        for (i, (m, _)) in order[..k].iter().enumerate() {
+            all_active[i] = *m;
         }
-        self.mon_mut(pokemon).is_started = true;
-        if !self.mon(pokemon).fainted {
-            let ability = self.mon(pokemon).ability_effect();
-            let serial = self.mon(pokemon).ability_state.serial;
-            self.single_event(EventId::Start, ability, StateRef::Ability(pokemon), serial, Holder::Mon(pokemon), None, EffectId::None, None);
-            let item = self.mon(pokemon).item_effect();
-            let serial = self.mon(pokemon).item_state.serial;
-            self.single_event(EventId::Start, item, StateRef::Item(pokemon), serial, Holder::Mon(pokemon), None, EffectId::None, None);
+        let mut speed_order = [crate::state::SPEED_ORDER_NONE; 2];
+        for (i, &m) in all_active[..k].iter().enumerate() {
+            speed_order[i] = self.field_position_value(m);
         }
+        self.speed_order = speed_order;
+        self.field_event(EventId::SwitchIn, Some(&switchers_in[..n]));
+
+        for &poke in &switchers_in[..n] {
+            if self.mon(poke).hp == 0 {
+                continue;
+            }
+            self.mon_mut(poke).is_started = true;
+        }
+        // Gen 4's `substitutebroken` cleanup is not in gens 1-3.
         true
     }
 }

@@ -48,6 +48,6 @@ pub mod text;
 
 pub use effect::{EffectDef, EffectId, Pseudo, EventArgs, EventId, EventMask, Handler, HandlerFn, Prefix, Registry};
 pub use relay::Relay;
-pub use battle::{MoveHook, SwitchResult, TeamError};
+pub use battle::{Faints, MoveHook, TeamError};
 pub use emit::Sink;
 pub use state::{Battle, EffectState, EffectTable, Field, Holder, MonRef, Pokemon, Side};

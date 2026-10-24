@@ -267,24 +267,46 @@ impl Battle {
 
     // ---- gathering --------------------------------------------------------
 
-    /// PS `getCallback(target, effect, callbackName)`.
+    /// PS `getCallback(target, effect, callbackName)`. Abilities and items
+    /// start at different times during `SwitchIn`, so on a Pokemon one
+    /// without `onSwitchIn` (or `onAnySwitchIn`) answers it with `onStart`.
+    /// In gen 3 an ability with `onAfterEntryHazard` answers `SwitchIn` with
+    /// it on turn 0 and not at all later (`switchIn` runs it then).
     // PS: sim/battle.ts getCallback
     fn get_callback(&self, target: Holder, effect: EffectId, prefix: Prefix, event: EventId) -> Option<&'static Handler> {
-        let callback = self.registry.handler(effect, prefix, event);
-        if callback.is_none()
-            && matches!(target, Holder::Mon(_))
-            && self.gen >= 5
-            && prefix == Prefix::None
-            && event == EventId::SwitchIn
-            && self.registry.handler(effect, Prefix::Any, EventId::SwitchIn).is_none()
-            && matches!(self.effect_type(effect), EffectType::Ability | EffectType::Item)
-        {
-            return self.registry.handler(effect, Prefix::None, EventId::Start);
+        let mut key = (prefix, event);
+        if matches!(target, Holder::Mon(_)) && prefix == Prefix::None && event == EventId::SwitchIn {
+            // No innate abilities or items (`ability:` / `item:` statuses)
+            // in gens 1-3.
+            let etype = self.effect_type(effect);
+            if !self.has_dex_handler(effect, Prefix::None, EventId::SwitchIn)
+                && !self.has_dex_handler(effect, Prefix::Any, EventId::SwitchIn)
+                && matches!(etype, EffectType::Ability | EffectType::Item)
+            {
+                key = (Prefix::None, EventId::Start);
+            }
+            if self.gen == 3 && etype == EffectType::Ability && self.has_dex_handler(effect, Prefix::None, EventId::AfterEntryHazard) {
+                if self.turn != 0 {
+                    return None;
+                }
+                key = (Prefix::None, EventId::AfterEntryHazard);
+            }
         }
+        let callback = self.registry.handler(effect, key.0, key.1);
         if callback.is_none() {
-            self.require_handler_ported(effect, prefix, event);
+            self.require_handler_ported(effect, key.0, key.1);
         }
         callback
+    }
+
+    /// Whether the dex lists a `prefix` + `event` handler for `effect`
+    /// (PS's `effect[callbackName] !== undefined`), ported or not.
+    fn has_dex_handler(&self, effect: EffectId, prefix: Prefix, event: EventId) -> bool {
+        if self.registry.handler(effect, prefix, event).is_some() {
+            return true;
+        }
+        crate::mods::dex_handlers(self.dex, effect)
+            .is_some_and(|hs| hs.iter().any(|h| crate::effect::parse_handler_key(h.name()) == Some((prefix, event))))
     }
 
     /// The `unported` stop for event dispatch: PS would call `effect`'s
@@ -1049,7 +1071,7 @@ impl Battle {
                 );
             }
 
-            self.faint_messages(false, false, true);
+            self.resolve_faints(crate::battle::Faints::DEFAULT);
             if self.ended {
                 return;
             }

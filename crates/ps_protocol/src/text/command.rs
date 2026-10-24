@@ -17,6 +17,7 @@
 //! | Line | [`Command`] |
 //! |---|---|
 //! | `>start {"formatid":"gen3customgame","seed":[1,2,3,4]}` | [`Command::Start`] |
+//! | `>start {"formatid":"gen1randombattle","seed":"sodium,<hex>"}` | [`Command::Start`] |
 //! | `>player p1 {"name":"Alice","team":"<packed>"}` | [`Command::Player`] |
 //! | `>p1 move 2` | [`Command::Choose`] with [`Choice::Move`] |
 //! | `>p1 move thunderbolt` | [`Command::Choose`] with [`Choice::MoveName`] |
@@ -37,7 +38,10 @@
 //!
 //! Two PS shapes the codec cannot hold are refused as well: a `>player`
 //! without a team (PS would generate a random one) and a `>start` whose
-//! seed is not four 16-bit numbers.
+//! seed is not one [`PrngSeed`] reads (or has no seed: PS would generate
+//! one). A `>start` may carry more keys (`rated`), and a `>player` more
+//! keys than `name` and `team` (`avatar`, `rating`, and `seed`, the team
+//! generator's seed); the decoder ignores them.
 //!
 //! # The choices
 //!
@@ -55,7 +59,7 @@
 use alloc::format;
 use alloc::string::{String, ToString};
 
-use crate::command::{Choice, Command, FormatSpec};
+use crate::command::{Choice, Command, FormatSpec, PrngSeed};
 use crate::ident::SideId;
 use crate::team::PackedTeam;
 use crate::Name;
@@ -123,20 +127,34 @@ fn encode_command_text(cmd: &Command) -> String {
     s
 }
 
-/// `{"formatid":"...","seed":[a,b,c,d]}`: the two keys PS's `>start`
-/// lines carry, in PS's order.
-fn start_json(spec: &FormatSpec, seed: &[u16; 4]) -> String {
+/// `{"formatid":"...","seed":...}`: the two keys PS's `>start` lines
+/// carry, in PS's order. A Gen5 seed is written as the array, a sodium one
+/// as `"sodium,<64 hex>"`.
+fn start_json(spec: &FormatSpec, seed: &PrngSeed) -> String {
     let mut s = String::new();
     s.push_str("{\"formatid\":");
     push_json_str(&mut s, &format_id_str(spec));
-    s.push_str(",\"seed\":[");
-    for (i, n) in seed.iter().enumerate() {
-        if i > 0 {
-            s.push(',');
+    s.push_str(",\"seed\":");
+    match seed {
+        PrngSeed::Gen5(seed) => {
+            s.push('[');
+            for (i, n) in seed.iter().enumerate() {
+                if i > 0 {
+                    s.push(',');
+                }
+                s.push_str(&n.to_string());
+            }
+            s.push(']');
         }
-        s.push_str(&n.to_string());
+        PrngSeed::Sodium(key) => {
+            s.push_str("\"sodium,");
+            for b in key {
+                s.push_str(&format!("{b:02x}"));
+            }
+            s.push('"');
+        }
     }
-    s.push_str("]}");
+    s.push('}');
     s
 }
 
@@ -208,18 +226,26 @@ fn decode_start(rest: &str) -> Result<Command, CodecError> {
         .string("formatid")?;
     let format = FormatSpec::parse(formatid)
         .ok_or_else(|| CodecError::BadCmd(format!(">start formatid {:?}", formatid)))?;
-    let seed_json = v
-        .get("seed")
-        .ok_or_else(|| CodecError::BadCmd(">start without a seed".into()))?
-        .arr("seed")?;
-    if seed_json.len() != 4 {
-        return Err(CodecError::BadCmd(format!(">start seed has {} entries, want 4", seed_json.len())));
-    }
-    let mut seed = [0u16; 4];
-    for (i, n) in seed_json.iter().enumerate() {
-        let n = n.uint("seed")?;
-        seed[i] = u16::try_from(n).map_err(|_| CodecError::BadCmd(format!(">start seed entry {}", n)))?;
-    }
+    let seed_json = v.get("seed").ok_or_else(|| CodecError::BadCmd(">start without a seed".into()))?;
+    let seed = match seed_json.arr("seed") {
+        Ok(arr) => {
+            // Older inputlogs: PS joins the array with `,` and reads it as
+            // a seed string, so only four numbers make a Gen5 seed here.
+            if arr.len() != 4 {
+                return Err(CodecError::BadCmd(format!(">start seed has {} entries, want 4", arr.len())));
+            }
+            let mut seed = [0u16; 4];
+            for (i, n) in arr.iter().enumerate() {
+                let n = n.uint("seed")?;
+                seed[i] = u16::try_from(n).map_err(|_| CodecError::BadCmd(format!(">start seed entry {}", n)))?;
+            }
+            PrngSeed::Gen5(seed)
+        }
+        Err(_) => {
+            let text = seed_json.string("seed")?;
+            PrngSeed::parse(text).ok_or_else(|| CodecError::BadCmd(format!(">start seed {:?}", text)))?
+        }
+    };
     Ok(Command::Start { format, seed })
 }
 
@@ -444,7 +470,7 @@ mod tests {
     fn start_encode_decode_round_trip() {
         let cmd = Command::Start {
             format: FormatSpec::gen1_harness(),
-            seed: [2535, 52155, 27866, 24143],
+            seed: PrngSeed::Gen5([2535, 52155, 27866, 24143]),
         };
         let s = encode_command(&cmd).unwrap();
         assert_eq!(s, ">start {\"formatid\":\"gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod\",\"seed\":[2535,52155,27866,24143]}");
@@ -453,7 +479,7 @@ mod tests {
 
     #[test]
     fn start_with_no_custom_rules_round_trips() {
-        let cmd = Command::Start { format: FormatSpec::gen3_harness(), seed: [1, 2, 3, 4] };
+        let cmd = Command::Start { format: FormatSpec::gen3_harness(), seed: PrngSeed::Gen5([1, 2, 3, 4]) };
         let s = encode_command(&cmd).unwrap();
         assert_eq!(s, ">start {\"formatid\":\"gen3customgame\",\"seed\":[1,2,3,4]}");
         assert_eq!(decode_command(&s).unwrap(), cmd);
@@ -467,7 +493,79 @@ mod tests {
         assert!(decode_command(">start {\"formatid\":\"gen9ou\",\"seed\":[1,2,3,4]}").is_err());
         // The reader is PS's: the keys may come in any order.
         let cmd = decode_command(">start {\"seed\":[1,2,3,4],\"formatid\":\"gen3customgame\"}").unwrap();
-        assert_eq!(cmd, Command::Start { format: FormatSpec::gen3_harness(), seed: [1, 2, 3, 4] });
+        assert_eq!(cmd, Command::Start { format: FormatSpec::gen3_harness(), seed: PrngSeed::Gen5([1, 2, 3, 4]) });
+    }
+
+    #[test]
+    fn start_reads_every_seed_form_ps_writes() {
+        let start = |seed: &str| decode_command(&format!(">start {{\"formatid\":\"gen3customgame\",\"seed\":{seed}}}"));
+        let gen5 = Command::Start { format: FormatSpec::gen3_harness(), seed: PrngSeed::Gen5([1, 2, 3, 0xabcd]) };
+        // The array (older inputlogs), the string PS 0.11.10+ records and
+        // the `gen5,` hex form are one seed.
+        assert_eq!(start("[1,2,3,43981]").unwrap(), gen5);
+        assert_eq!(start("\"1,2,3,43981\"").unwrap(), gen5);
+        assert_eq!(start("\"gen5,000100020003abcd\"").unwrap(), gen5);
+        // The encoder writes the array.
+        assert_eq!(
+            encode_command(&gen5).unwrap(),
+            ">start {\"formatid\":\"gen3customgame\",\"seed\":[1,2,3,43981]}"
+        );
+        // A sodium seed is the hex padded with `0` to a 32-byte key.
+        let mut key = [0u8; 32];
+        key[..16].copy_from_slice(&[
+            0xd4, 0xe6, 0x9d, 0xd8, 0xca, 0x6b, 0xd8, 0x3e, 0x6f, 0x23, 0x52, 0x0d, 0x0c, 0x6d, 0x79, 0x84,
+        ]);
+        let sodium = start("\"sodium,d4e69dd8ca6bd83e6f23520d0c6d7984\"").unwrap();
+        assert_eq!(sodium, Command::Start { format: FormatSpec::gen3_harness(), seed: PrngSeed::Sodium(key) });
+        let line = encode_command(&sodium).unwrap();
+        assert_eq!(
+            line,
+            ">start {\"formatid\":\"gen3customgame\",\"seed\":\"sodium,d4e69dd8ca6bd83e6f23520d0c6d7984\
+             00000000000000000000000000000000\"}"
+        );
+        assert_eq!(decode_command(&line).unwrap(), sodium);
+        // An odd digit count pads the last byte.
+        assert_eq!(PrngSeed::parse("sodium,abc"), Some(PrngSeed::Sodium({
+            let mut k = [0u8; 32];
+            k[0] = 0xab;
+            k[1] = 0xc0;
+            k
+        })));
+        // What PS throws on, and what it would read as garbage, is refused.
+        for bad in ["\"xyz,1\"", "\"sodium,12g4\"", "\"gen5,0001\"", "\"1,2,3\"", "\"1,2,3,65536\"", "7", "[1,2,3,-4]"] {
+            assert!(start(bad).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn current_inputlog_header_decodes() {
+        // A public gen1randombattle replay's inputlog (2026-10-24): `rated`
+        // on `>start`; `avatar`, `rating` and the team generator's `seed`
+        // on `>player`, which also carries a packed team when replayed.
+        let start = decode_command(
+            ">start {\"formatid\":\"gen1randombattle\",\"seed\":\"sodium,d4e69dd8ca6bd83e6f23520d0c6d7984\",\"rated\":\"Rated battle\"}",
+        )
+        .unwrap();
+        match start {
+            Command::Start { format, seed: PrngSeed::Sodium(key) } => {
+                assert_eq!(format.base, FormatId::Gen1RandomBattle);
+                assert_eq!(key[0], 0xd4);
+                assert_eq!(key[16..], [0; 16]);
+            }
+            other => panic!("{other:?}"),
+        }
+        let player = decode_command(
+            ">player p1 {\"name\":\"Alice\",\"avatar\":\"266\",\"rating\":1110,\"seed\":\"sodium,f4d9760178039e8f23a5a21547fddfbb\",\"team\":\"Mew||||psychic||255,255,255,255,255,255||30,30,30,30,30,30||84|\"}",
+        )
+        .unwrap();
+        match player {
+            Command::Player { side, name, team } => {
+                assert_eq!(side, SideId::P1);
+                assert_eq!(name.as_str(), "Alice");
+                assert_eq!(team.len(), 1);
+            }
+            other => panic!("{other:?}"),
+        }
     }
 
     #[test]
@@ -652,7 +750,7 @@ mod tests {
         let start = decode_command(">start {\"formatid\":\"gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod\",\"seed\":[2535,52155,27866,24143]}").unwrap();
         match start {
             Command::Start { format, seed } => {
-                assert_eq!(seed, [2535, 52155, 27866, 24143]);
+                assert_eq!(seed, PrngSeed::Gen5([2535, 52155, 27866, 24143]));
                 assert_eq!(format.base, FormatId::Gen1CustomGame);
                 assert_eq!(
                     format.custom_rules.iter().map(|c| c.rule).collect::<alloc::vec::Vec<_>>(),

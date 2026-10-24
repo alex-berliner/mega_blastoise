@@ -27,7 +27,7 @@ use crate::choice::{Choice, SelectedMove};
 use crate::effect::{EffectId, EffectType, EventArgs, EventId, Prefix, Registry, Rule};
 use crate::emit::Outbox;
 use crate::modify::Trunc;
-use crate::prng::{Prng, Seed};
+use crate::prng::{Prng, PrngSeed};
 use crate::queue::BattleQueue;
 use crate::relay::{Relay, TypeList};
 use crate::request::{RequestState, SideRequestState};
@@ -53,6 +53,9 @@ pub const LOG_CAP: usize = 64;
 /// Pokemon the faint queue can hold (every Pokemon on the field, twice
 /// over).
 pub const FAINT_QUEUE_CAP: usize = 4;
+/// An unused `speedOrder` entry (PS's list is shorter than two when an
+/// active slot is empty).
+pub const SPEED_ORDER_NONE: u8 = u8::MAX;
 /// Removed effect states kept so a handler gathered before the removal
 /// still sees its state object, as PS's detached objects do.
 const GRAVEYARD_CAP: usize = 4;
@@ -383,7 +386,13 @@ pub struct Pokemon {
     // ---- turn-loop flags (PS field names) -------------------------------
     pub switch_flag: SwitchFlag,
     pub force_switch_flag: bool,
-    pub skip_before_switch_out_event_flag: bool,
+    /// `pursuitActivated`: set on a Pokemon switching out when Pursuit
+    /// activates; cleared on its replacement's switch-in or by
+    /// `runPursuitActivation` when the switch is cancelled.
+    pub pursuit_activated: bool,
+    /// `skipPursuit`: Baton Pass, or `BeforeSwitchOut` already run for this
+    /// switch-out. Cleared like `pursuit_activated`.
+    pub skip_pursuit: bool,
     pub being_called_back: bool,
     pub is_started: bool,
     pub newly_switched: bool,
@@ -461,7 +470,8 @@ impl Pokemon {
         modified_stats: [0; 5],
         switch_flag: SwitchFlag::No,
         force_switch_flag: false,
-        skip_before_switch_out_event_flag: false,
+        pursuit_activated: false,
+        skip_pursuit: false,
         being_called_back: false,
         is_started: false,
         newly_switched: false,
@@ -784,6 +794,9 @@ pub struct FaintData {
     pub target: MonRef,
     pub source: Option<MonRef>,
     pub effect: EffectId,
+    /// `faintEventDone`: gens <= 4 run `Faint` before the `faint` line, and
+    /// `runMove` runs pending ones before resolving the queue.
+    pub faint_event_done: bool,
 }
 
 /// A `|hint|` sent with `once` (PS's `hints` set).
@@ -819,7 +832,8 @@ pub struct Battle {
     pub active_move: Option<crate::actions::MoveRef>,
     pub active_pokemon: Option<MonRef>,
     pub active_target: Option<MonRef>,
-    /// `speedOrder`: field position values sorted by speed.
+    /// `speedOrder`: field position values sorted by speed, as `runSwitch`
+    /// last set them ([`SPEED_ORDER_NONE`] past the end of a shorter list).
     pub speed_order: [u8; 2],
     /// The `ActiveMove` objects of the action being run (see
     /// [`crate::actions`]); the first `move_count` are live.
@@ -892,7 +906,7 @@ impl Battle {
     /// An empty battle over `dex` with the effects of `registry`;
     /// [`Battle::from_start`] builds a format's battle (rules, header) on
     /// top, and [`Battle::set_player`] the teams.
-    pub fn new(dex: &'static Dex, registry: &'static Registry, seed: Seed, trunc: Trunc) -> Battle {
+    pub fn new(dex: &'static Dex, registry: &'static Registry, seed: impl Into<PrngSeed>, trunc: Trunc) -> Battle {
         let mut b = Battle {
             dex,
             gen: dex.gen,
@@ -1521,6 +1535,9 @@ impl Battle {
         ignore_immunities: bool,
     ) -> Relay {
         if self.mon(m).hp == 0 {
+            return Relay::FAIL;
+        }
+        if !self.mon(m).is_active && !status.is_none() {
             return Relay::FAIL;
         }
         let (source, source_effect) = self.default_source(source, source_effect);

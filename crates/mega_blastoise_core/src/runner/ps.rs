@@ -150,7 +150,7 @@ async fn battle_loop<T: Transport, E: BoardEffects>(
         }
     }
 
-    let start = Command::Start { format: setup.format, seed: setup.seed };
+    let start = Command::Start { format: setup.format, seed: setup.seed.into() };
     if transport.send(&start).is_err() {
         return;
     }
@@ -464,7 +464,7 @@ mod tests {
                     let v: serde_json::Value = serde_json::from_str(arg).unwrap();
                     let spec = FormatSpec::parse(v["formatid"].as_str().unwrap()).unwrap();
                     let seed: Vec<u16> = v["seed"].as_array().unwrap().iter().map(|x| x.as_u64().unwrap() as u16).collect();
-                    let mut b = Box::new(Battle::from_start(spec, seed.try_into().unwrap(), 0));
+                    let mut b = Box::new(Battle::from_start(spec, <[u16; 4]>::try_from(seed).unwrap(), 0));
                     b.spill = Some(spill);
                     self.battle = Some(b);
                     self.ended_sent = false;

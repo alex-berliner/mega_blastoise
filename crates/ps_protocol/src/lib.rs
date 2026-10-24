@@ -36,7 +36,7 @@ pub mod team;
 #[cfg(feature = "text")]
 pub mod text;
 
-pub use command::{Choice, Command, CustomRule, FormatId, FormatSpec, RuleId};
+pub use command::{Choice, Command, CustomRule, FormatId, FormatSpec, PrngSeed, RuleId};
 pub use ident::{
     AbilityNum, Details, Gender, Health, Hp, HpStatus, ItemNum, MoveNum, NatureNum, PokemonIdent,
     SideId, SpeciesNum, Stat, Status, TypeNum,

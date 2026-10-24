@@ -191,7 +191,19 @@ impl Battle {
         self.run_event(EventId::AfterMove, Holder::Mon(pokemon), target, effect, None);
 
         // No `cantusetwice` or `dance` move in gens 1-3.
-        self.faint_messages(false, false, true);
+        if self.gen <= 4 {
+            for i in 0..self.faint_queue.len() {
+                let Some(fd) = self.faint_queue[i] else { continue };
+                if fd.faint_event_done {
+                    continue;
+                }
+                if let Some(entry) = self.faint_queue[i].as_mut() {
+                    entry.faint_event_done = true;
+                }
+                self.run_event(EventId::Faint, Holder::Mon(fd.target), fd.source, fd.effect, None);
+            }
+        }
+        self.resolve_faints(crate::battle::Faints::DEFAULT);
         self.check_win(None);
 
         if self.gen <= 4 {
@@ -362,11 +374,10 @@ impl Battle {
             if self.gen < 5 {
                 self.run_event_spread(EventId::DamagingHit, &[t], Some(pokemon), effect, Some(&[Relay::Int(d)]));
             }
-            let mon = self.mon(pokemon);
-            let half = u32::from(mon.maxhp);
-            if mon.hp != 0 && 2 * u32::from(mon.hp) <= half && 2 * u32::from(pokemon_original_hp) > half {
-                self.run_event(EventId::EmergencyExit, Holder::Mon(pokemon), None, EffectId::None, None);
-            }
+            // The half-HP test is the handler's (`onEmergencyExit(originalHp,
+            // pokemon)`); no gen 1-3 effect has one.
+            let relay = Some(Relay::Int(i32::from(pokemon_original_hp)));
+            self.run_event(EventId::EmergencyExit, Holder::Mon(pokemon), None, EffectId::None, relay);
         }
 
         (damage, target)
@@ -588,7 +599,8 @@ impl Battle {
                 self.attr_last_move_still();
             }
             self.debug(ps_protocol::Text::new(ps_protocol::TextId::MoveFailedNothing));
-        } else if def.self_switch().is_some() && self.mon(source).hp != 0 {
+        } else if def.self_switch().is_some() && self.mon(source).hp != 0 && self.can_switch(source.side) != 0 {
+            // No Commander or Revival Blessing in gens 1-3.
             self.mon_mut(source).switch_flag = SwitchFlag::Move(id);
         }
         damage

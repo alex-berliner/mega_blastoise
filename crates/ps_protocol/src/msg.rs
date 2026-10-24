@@ -1341,11 +1341,14 @@ texts! {
     HintGen1SubConfusion => "In Gen 1, moves that inflict confusion as a secondary effect can confuse targets with a Substitute, as long as the move does not break the Substitute." (),
     HintGen1ToxicCounter => "In Gen 1, Toxic's counter is retained after Rest and applies to PSN/BRN." (),
     HintGen3IntimidateSub => "In Gen 3, Intimidate does not activate if every target has a Substitute." (),
+    // PS: data/mods/gen4/moves.ts knockoff (gen 4 only since 41898849e)
     HintGens3To4KnockOff => "In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item." (),
-    // PS: sim/battle.ts runAction (faint after Pursuit)
+    // PS: sim/battle-actions.ts switchIn (gens <= 4, an item knocked off)
+    HintGens3To4KnockOffSwitchIn => "In Gens 3-4, Knock Off makes a Pokémon lose its held item every time it switches in." (),
+    // PS: sim/battle-actions.ts switchIn (a Pursuit faint, gens 2-4)
     HintPursuitSwitch => "Previously chosen switches continue in Gen 2-4 after a Pursuit target faints." (),
     // PS: data/rulesets.ts sleepclausemod onSetStatus
-    HintSleepClause => "Sleep Clause Mod prevents players from putting more than one of their opponent's Pokémon to sleep at a time" (),
+    HintSleepClause => "Sleep Clause Mod prevents players from putting more than one of their opponent's Pokemon to sleep at a time" (),
     // PS: sim/battle-actions.ts switchIn
     HintSwitchFailed => "A switch failed because the Pokémon trying to switch in is already in." (),
     // ---- raw (PS: sim/battle.ts start, the custom-rules infobox) -------

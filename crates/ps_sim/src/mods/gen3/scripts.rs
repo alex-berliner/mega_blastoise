@@ -3,8 +3,9 @@
 //! its control flow.
 //!
 //! Gen 3 overrides `useMoveInner`, `tryMoveHit` and `modifyDamage`
-//! (actions) and `getActionSpeed` (pokemon, in `stats.rs`). From gen 4 it
-//! inherits `runSwitch` (`battle.rs`), `applyRecoilDamage` (`actions.rs`)
+//! (actions), `getActionSpeed` (pokemon, in `stats.rs`) and `checkFainted`
+//! (battle, [`check_fainted`]). From gen 4 it inherits
+//! `applyRecoilDamage` (`actions.rs`)
 //! and gen 4's `modifyDamage`, `hitStepAccuracy` and
 //! `hitStepInvulnerabilityEvent`, which gen 3's own overrides replace or
 //! never reach: gen 3's `useMoveInner` calls its `tryMoveHit` for every
@@ -20,7 +21,7 @@
 //! pipeline reaches it ([`Battle::require_ported`]).
 //!
 //! PS: data/mods/gen3/scripts.ts `useMoveInner`, `tryMoveHit`,
-//! `modifyDamage`.
+//! `modifyDamage`, `checkFainted`.
 
 use ps_dex::gen3::{abilities, conditions, moves};
 use ps_dex::{MoveCategory, MoveId, MoveTarget, Type};
@@ -32,6 +33,42 @@ use crate::effect::{EffectId, EventId};
 use crate::queue::ActionMove;
 use crate::relay::Relay;
 use crate::state::{Battle, Holder, MonRef, StateRef};
+
+/// Gen 3's `checkFainted`: replacements can be requested while other
+/// switches are still queued, so a fainted active with a queued switch-out
+/// is left alone; when only one side has fainted actives, one at a time.
+// PS: data/mods/gen3/scripts.ts checkFainted
+pub fn check_fainted(b: &mut Battle) {
+    let mut candidates = [[None::<MonRef>; 1]; 2];
+    let mut sides_with = 0;
+    for s in 0..2u8 {
+        if b.can_switch(s) == 0 {
+            continue;
+        }
+        let mut found = false;
+        for pos in 0..b.sides[s as usize].active.len() as u8 {
+            let Some(m) = b.active_at(s, pos) else { continue };
+            if b.mon(m).fainted && !b.queue.get_switches(None).any(|a| a.pokemon == Some(m)) {
+                candidates[s as usize][pos as usize] = Some(m);
+                found = true;
+            }
+        }
+        if found {
+            sides_with += 1;
+        }
+    }
+    let one_per_side = sides_with == 1;
+    for side in &candidates {
+        for &m in side.iter().flatten() {
+            let mon = b.mon_mut(m);
+            mon.status = ps_dex::ConditionId::NONE;
+            mon.switch_flag = crate::state::SwitchFlag::Yes;
+            if one_per_side {
+                break;
+            }
+        }
+    }
+}
 
 /// Gen 3's scripts. See the module doc.
 pub struct Gen3Scripts;

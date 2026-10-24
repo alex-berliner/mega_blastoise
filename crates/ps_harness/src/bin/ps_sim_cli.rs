@@ -3,7 +3,8 @@
 //! against PS line for line.
 //!
 //! Input, one command per line, as `diff.js` writes them:
-//! - `>start {"formatid":"gen1customgame","seed":[a,b,c,d]}` makes a new
+//! - `>start {"formatid":"gen1customgame","seed":[a,b,c,d]}` (or a seed string,
+//!   `sodium,<hex>` included) makes a new
 //!   battle (dropping any battle still running);
 //! - `>player pN {"name":"...","team":"PACKED"}` (`avatar` and `rating`
 //!   optional);
@@ -63,7 +64,7 @@ use ps_protocol::text::line::encode_msg;
 use ps_protocol::text::names::Tables;
 use ps_protocol::text::team::unpack;
 use ps_protocol::text::encode_log;
-use ps_protocol::{Choice, Command, FormatSpec, Msg, Request, SideId};
+use ps_protocol::{Choice, Command, FormatSpec, Msg, PrngSeed, Request, SideId};
 use ps_sim::text::{dex_tables, Names};
 use ps_sim::effect::Rule;
 use ps_sim::{Battle, EffectId, EventId, Prefix, Sink};
@@ -415,14 +416,24 @@ impl Stream {
                 let v: serde_json::Value = serde_json::from_str(arg).map_err(|e| bad(format!(">start: {e}")))?;
                 let formatid = v["formatid"].as_str().ok_or_else(|| bad(">start: no formatid"))?;
                 let spec = FormatSpec::parse(formatid).ok_or_else(|| bad(format!("unknown format {formatid}")))?;
-                let seed: Vec<u16> = v["seed"]
-                    .as_array()
-                    .ok_or_else(|| bad(">start: no seed"))?
-                    .iter()
-                    .map(|x| x.as_u64().map(|n| n as u16))
-                    .collect::<Option<_>>()
-                    .ok_or_else(|| bad(">start: bad seed"))?;
-                let seed: [u16; 4] = seed.try_into().map_err(|_| bad(">start: the seed is not four numbers"))?;
+                // An array of four numbers (the harness) or a seed string
+                // (`a,b,c,d`, `gen5,<hex>`, `sodium,<hex>`), as PS reads it.
+                let seed = match &v["seed"] {
+                    serde_json::Value::String(text) => {
+                        PrngSeed::parse(text).ok_or_else(|| bad(format!(">start: bad seed {text:?}")))?
+                    }
+                    other => {
+                        let seed: Vec<u16> = other
+                            .as_array()
+                            .ok_or_else(|| bad(">start: no seed"))?
+                            .iter()
+                            .map(|x| x.as_u64().map(|n| n as u16))
+                            .collect::<Option<_>>()
+                            .ok_or_else(|| bad(">start: bad seed"))?;
+                        let seed: [u16; 4] = seed.try_into().map_err(|_| bad(">start: the seed is not four numbers"))?;
+                        PrngSeed::Gen5(seed)
+                    }
+                };
                 let clock = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .map(|d| d.as_secs() as u32)

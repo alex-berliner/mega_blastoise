@@ -65,7 +65,7 @@ fn speed_sort_matches_ps() {
         }
         let perm: Vec<usize> = tagged.iter().map(|t| t.0).collect();
         assert_eq!(perm, list.perm, "list {n}: permutation");
-        assert_eq!(prng.get_seed(), list.seed_after, "list {n}: seed after");
+        assert_eq!(prng.get_seed(), ps_sim::prng::PrngSeed::Gen5(list.seed_after), "list {n}: seed after");
     }
     // The fixture is meant to exercise ties; make sure it does.
     assert!(ties >= 200, "only {ties} lists shuffled a tie");

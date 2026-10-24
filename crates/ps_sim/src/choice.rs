@@ -172,15 +172,19 @@ impl Battle {
             let can_switch_out = (0..s.active.len())
                 .filter(|&i| s.active[i].is_some_and(|slot| s.mons[slot as usize].switch_flag.is_set()))
                 .count() as u8;
-            let can_switch_in = s.pokemon()[s.active.len()..]
-                .iter()
-                .filter(|&&slot| s.mons[slot as usize].exists && !s.mons[slot as usize].fainted)
-                .count() as u8;
+            let can_switch_in = self.can_switch(side) as u8;
             forced_switches = can_switch_out.min(can_switch_in);
             forced_passes = can_switch_out - forced_switches;
         }
+        // Only relevant for gen 3: the queued switches' targets.
+        let mut switch_ins = 0u8;
+        for a in self.queue.get_switches(Some(side)) {
+            if let Some(t) = a.target {
+                switch_ins |= 1 << self.mon(t).position;
+            }
+        }
         self.sides[side as usize].choice =
-            Choice { forced_switches_left: forced_switches, forced_passes_left: forced_passes, ..Choice::EMPTY };
+            Choice { forced_switches_left: forced_switches, forced_passes_left: forced_passes, switch_ins, ..Choice::EMPTY };
     }
 
     /// PS `side.isChoiceDone()`.

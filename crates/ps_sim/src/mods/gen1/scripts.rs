@@ -901,14 +901,9 @@ impl GenScripts for Gen1Scripts {
                 }
             }
         }
-        if let Some(ss) = def.self_switch() {
-            if b.mon(pokemon).hp != 0 {
-                // `copyvolatile` is the flag's id; no gen 1 move has it.
-                b.mon_mut(pokemon).switch_flag = match ss {
-                    ps_dex::SelfSwitch::True => SwitchFlag::Yes,
-                    ps_dex::SelfSwitch::CopyVolatile => SwitchFlag::Move(id),
-                };
-            }
+        // No gen 1 move has `selfSwitch`; no Commander or Revival Blessing.
+        if def.self_switch().is_some() && b.mon(pokemon).hp != 0 && b.can_switch(pokemon.side) != 0 {
+            b.mon_mut(pokemon).switch_flag = SwitchFlag::Move(id);
         }
         damage
     }

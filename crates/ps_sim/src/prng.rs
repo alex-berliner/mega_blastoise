@@ -1,15 +1,17 @@
 //! Pokemon Showdown-compatible PRNG.
 //!
-//! Bit-for-bit port of `PS/sim/prng.ts` (Pokemon Showdown 0.11.11). Drives
-//! everything that draws randomness in the new battle server; called in
-//! PS's order by `ps_sim` itself so the protocol-diff harness can compare
-//! entire battles without monkeypatching the reference (design section 5.5).
+//! Bit-for-bit port of `PS/sim/prng.ts` (unchanged from 0.11.11 to the
+//! re-sync pin). Drives everything that draws randomness in the new battle
+//! server; called in PS's order by `ps_sim` itself so the protocol-diff
+//! harness can compare entire battles without monkeypatching the reference
+//! (design section 5.5).
 //!
-//! PS uses two PRNGs: `SodiumRNG` (ChaCha20) and `Gen5RNG` (a 64-bit LCG).
-//! The harness starts battles with a numeric `[a, b, c, d]` seed, which PS
-//! resolves to `Gen5RNG`. We only implement the numeric-seed path; the
-//! sodium path is for human-typed online replay seeds and is not a battle
-//! input.
+//! PS uses two PRNGs: `Gen5RNG` (a 64-bit LCG) and `SodiumRNG` (ChaCha20,
+//! libsodium's `randombytes_buf_deterministic`). The harness and the device
+//! start battles with a numeric `[a, b, c, d]` seed, which PS resolves to
+//! `Gen5RNG`; the live server seeds every battle with `sodium,<hex>`, so
+//! replaying a current replay needs [`SodiumRng`]. The seed forms are
+//! [`ps_protocol::PrngSeed`].
 //!
 //! Methods follow PS exactly: `next`, `next_frame`, `multiply_add`, the
 //! `random()` / `random(n)` / `random(m, n)` overloads, `random_chance`,
@@ -33,6 +35,8 @@ extern crate alloc;
 
 #[cfg(any(test, feature = "test-override"))]
 use alloc::collections::VecDeque;
+
+pub use ps_protocol::PrngSeed;
 
 /// 64-bit LCG seed, big-endian 16-bit limbs (`seed[0]` = MSB, `seed[3]` = LSB).
 pub type Seed = [u16; 4];
@@ -143,6 +147,93 @@ impl Gen5Rng {
     }
 }
 
+/// `SodiumRNG.NONCE`: `LibsodiumDRG`, libsodium's
+/// `randombytes_buf_deterministic` nonce.
+const SODIUM_NONCE: [u8; 12] = *b"LibsodiumDRG";
+
+/// The ChaCha20 quarter round (RFC 7539 section 2.1).
+#[inline(always)]
+fn quarter_round(x: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize) {
+    x[a] = x[a].wrapping_add(x[b]);
+    x[d] = (x[d] ^ x[a]).rotate_left(16);
+    x[c] = x[c].wrapping_add(x[d]);
+    x[b] = (x[b] ^ x[c]).rotate_left(12);
+    x[a] = x[a].wrapping_add(x[b]);
+    x[d] = (x[d] ^ x[a]).rotate_left(8);
+    x[c] = x[c].wrapping_add(x[d]);
+    x[b] = (x[b] ^ x[c]).rotate_left(7);
+}
+
+/// The ChaCha20 block function (RFC 7539 section 2.3): 20 rounds over the
+/// constants, the 256-bit key, a 32-bit block counter and a 96-bit nonce,
+/// serialised little-endian.
+// PS: ts-chacha20 1.2.0 Chacha20._chacha
+pub fn chacha20_block(key: &[u8; 32], counter: u32, nonce: &[u8; 12]) -> [u8; 64] {
+    let le = |b: &[u8], i: usize| u32::from_le_bytes([b[4 * i], b[4 * i + 1], b[4 * i + 2], b[4 * i + 3]]);
+    let mut init = [0u32; 16];
+    init[..4].copy_from_slice(&[0x6170_7865, 0x3320_646e, 0x7962_2d32, 0x6b20_6574]);
+    for i in 0..8 {
+        init[4 + i] = le(key, i);
+    }
+    init[12] = counter;
+    for i in 0..3 {
+        init[13 + i] = le(nonce, i);
+    }
+    let mut x = init;
+    for _ in 0..10 {
+        quarter_round(&mut x, 0, 4, 8, 12);
+        quarter_round(&mut x, 1, 5, 9, 13);
+        quarter_round(&mut x, 2, 6, 10, 14);
+        quarter_round(&mut x, 3, 7, 11, 15);
+        quarter_round(&mut x, 0, 5, 10, 15);
+        quarter_round(&mut x, 1, 6, 11, 12);
+        quarter_round(&mut x, 2, 7, 8, 13);
+        quarter_round(&mut x, 3, 4, 9, 14);
+    }
+    let mut out = [0u8; 64];
+    for i in 0..16 {
+        out[4 * i..4 * i + 4].copy_from_slice(&x[i].wrapping_add(init[i]).to_le_bytes());
+    }
+    out
+}
+
+/// PS's `SodiumRNG`: a 32-byte key; each `next()` encrypts 36 zero bytes
+/// with ChaCha20 (counter 0, nonce `LibsodiumDRG`), keeps bytes 0..32 as
+/// the new key and returns bytes 32..36 big-endian.
+// PS: sim/prng.ts SodiumRNG
+#[derive(Debug, Clone)]
+pub struct SodiumRng {
+    seed: [u8; 32],
+}
+
+impl SodiumRng {
+    /// `SodiumRNG.setSeed`: the key as [`ps_protocol::PrngSeed::Sodium`]
+    /// holds it (the hex already padded).
+    pub fn new(seed: [u8; 32]) -> Self {
+        Self { seed }
+    }
+
+    /// PS: `SodiumRNG.next`.
+    pub fn next(&mut self) -> u32 {
+        // Encrypting zeros returns the keystream; 36 bytes is one block.
+        let buf = chacha20_block(&self.seed, 0, &SODIUM_NONCE);
+        self.seed.copy_from_slice(&buf[..32]);
+        u32::from_be_bytes([buf[32], buf[33], buf[34], buf[35]])
+    }
+
+    /// PS: `SodiumRNG.getSeed` (`sodium,` + the key in hex).
+    pub fn get_seed(&self) -> [u8; 32] {
+        self.seed
+    }
+}
+
+/// The RNG behind [`Prng`], chosen by the seed as `PRNG.setSeed` does.
+#[derive(Debug, Clone)]
+enum Rng {
+    Gen5(Gen5Rng),
+    Sodium(SodiumRng),
+}
+
 /// Stack of forced `next()` results, drained FIFO. Used for Rust-side
 /// deterministic tests that need to pin a battle outcome without touching
 /// the underlying RNG state. Off the firmware build path: gated by
@@ -190,10 +281,11 @@ impl OutcomeOverride {
     }
 }
 
-/// The battle-time PRNG. Holds the `Gen5RNG` (numeric seed only), an
-/// override queue when configured, and a public call counter for diffing.
+/// The battle-time PRNG. Holds the `Gen5RNG` or `SodiumRNG` the seed
+/// selects, an override queue when configured, and a public call counter
+/// for diffing.
 pub struct Prng {
-    rng: Gen5Rng,
+    rng: Rng,
     /// Total number of public method calls. Reset only by `reset_calls`.
     pub calls: u64,
     #[cfg(any(test, feature = "test-override"))]
@@ -201,10 +293,16 @@ pub struct Prng {
 }
 
 impl Prng {
-    /// Construct from a numeric `[a, b, c, d]` seed (`>start {"seed":[..]}`).
-    pub fn new(seed: Seed) -> Self {
+    /// PS `new PRNG(seed)`: a numeric `[a, b, c, d]` seed selects
+    /// `Gen5RNG`, a `sodium,` one `SodiumRNG`.
+    // PS: sim/prng.ts PRNG.setSeed
+    pub fn new(seed: impl Into<PrngSeed>) -> Self {
+        let rng = match seed.into() {
+            PrngSeed::Gen5(s) => Rng::Gen5(Gen5Rng::new(s)),
+            PrngSeed::Sodium(k) => Rng::Sodium(SodiumRng::new(k)),
+        };
         Self {
-            rng: Gen5Rng::new(seed),
+            rng,
             calls: 0,
             #[cfg(any(test, feature = "test-override"))]
             override_queue: VecDeque::new(),
@@ -223,9 +321,12 @@ impl Prng {
         self.calls = 0;
     }
 
-    /// PS: `Gen5RNG.getSeed`.
-    pub fn get_seed(&self) -> Seed {
-        self.rng.get_seed()
+    /// PS: `PRNG.getSeed`.
+    pub fn get_seed(&self) -> PrngSeed {
+        match &self.rng {
+            Rng::Gen5(r) => PrngSeed::Gen5(r.get_seed()),
+            Rng::Sodium(r) => PrngSeed::Sodium(r.get_seed()),
+        }
     }
 
     /// `true` if a test or the `test-override` feature has armed any forced
@@ -246,7 +347,16 @@ impl Prng {
     /// `prng.shuffle` which calls `prng.next` repeatedly).
     pub fn advance(&mut self, frames_to_advance: u32) {
         self.calls = self.calls.saturating_add(u64::from(frames_to_advance));
-        self.rng.next_frame(frames_to_advance);
+        match &mut self.rng {
+            Rng::Gen5(r) => {
+                r.next_frame(frames_to_advance);
+            }
+            Rng::Sodium(r) => {
+                for _ in 0..frames_to_advance {
+                    r.next();
+                }
+            }
+        }
     }
 
     /// PS: `Gen5RNG.next` (delegates after consulting the override).
@@ -258,7 +368,10 @@ impl Prng {
                 return v;
             }
         }
-        let v = self.rng.next();
+        let v = match &mut self.rng {
+            Rng::Gen5(r) => r.next(),
+            Rng::Sodium(r) => r.next(),
+        };
         self.calls = self.calls.saturating_add(1);
         v
     }
@@ -340,7 +453,7 @@ impl Prng {
 impl core::fmt::Debug for Prng {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Prng")
-            .field("seed", &self.rng.get_seed())
+            .field("seed", &self.get_seed())
             .field("calls", &self.calls)
             .finish()
     }
@@ -349,6 +462,78 @@ impl core::fmt::Debug for Prng {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn hex32(s: &str) -> [u8; 32] {
+        match PrngSeed::parse(&alloc::format!("sodium,{s}")) {
+            Some(PrngSeed::Sodium(k)) => k,
+            other => panic!("{other:?}"),
+        }
+    }
+
+    // RFC 7539 section 2.3.2: the block function test vector (key 00..1f,
+    // nonce 00:00:00:09:00:00:00:4a:00:00:00:00, counter 1). ts-chacha20
+    // 1.2.0, which PS's SodiumRNG runs on, gives the same 64 bytes.
+    #[test]
+    fn chacha20_block_rfc7539_vector() {
+        let key: [u8; 32] = core::array::from_fn(|i| i as u8);
+        let nonce = [0, 0, 0, 9, 0, 0, 0, 0x4a, 0, 0, 0, 0];
+        let want = hex32("10f1e7e4d13b5915500fdd1fa32071c4c7d1f4c733c068030422aa9ac3d46c4e");
+        let want2 = hex32("d2826446079faa0914c2d705d98b02a2b5129cd1de164eb9cbd083e8a2503c4e");
+        let block = chacha20_block(&key, 1, &nonce);
+        assert_eq!(block[..32], want);
+        assert_eq!(block[32..], want2);
+    }
+
+    // PS's SodiumRNG on the re-sync pin (and 0.11.11, identical): four
+    // `rng.next()` then `getSeed()`, from
+    // `new PRNG('sodium,...')` in tools/ps-diff's install.
+    #[test]
+    fn sodium_rng_matches_ps_vectors() {
+        let cases: [(&str, [u32; 4], &str); 5] = [
+            (
+                "00000000000000000000000000000000",
+                [4267713560, 2597593732, 1237973749, 687352079],
+                "274564c90cb73c6453f4a4152c3fb2c3021f7950723025ec25604fce96de1ed4",
+            ),
+            // A real gen1randombattle replay's battle seed.
+            (
+                "d4e69dd8ca6bd83e6f23520d0c6d7984",
+                [3452080645, 121223913, 3901222867, 1439957731],
+                "2855a2a44139525971584096f7c91a3b41f19ff0e519720ad918afc9adaf03c5",
+            ),
+            // Short and odd-length hex: padded with `0` to 64 digits.
+            ("1", [3939852285, 3702501483, 516247530, 930443638], "1ac48774da8a46a04f89932c8aad8ba33d3b4b7c2b40efd81d73d414ee86c532"),
+            ("abc", [230169386, 2646009527, 2494795265, 3347839838], "e91cc600a065bfc0b058c4bb121278f5dcb3aa0820b53a4560f00e62811ae550"),
+            (
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                [912383416, 2912445401, 4101633452, 327154605],
+                "ae3cb51c26ee94c1069802fe03f45d4aaa02c56b68628b925687e5b8bc00f73b",
+            ),
+        ];
+        for (seed, outs, after) in cases {
+            let mut prng = Prng::new(PrngSeed::Sodium(hex32(seed)));
+            for want in outs {
+                assert_eq!(prng.next(), want, "sodium,{seed}");
+            }
+            assert_eq!(prng.get_seed(), PrngSeed::Sodium(hex32(after)), "sodium,{seed}");
+            assert_eq!(prng.calls, 4);
+        }
+        // A thousand calls in: `next()` and the key after it.
+        let mut prng = Prng::new(PrngSeed::Sodium(hex32("d4e69dd8ca6bd83e6f23520d0c6d7984")));
+        prng.advance(999);
+        assert_eq!(prng.next(), 881997606);
+        assert_eq!(
+            prng.get_seed(),
+            PrngSeed::Sodium(hex32("eccd0ae04587091dbe1cbf604f2124027bd230b3911b608bdb4e65675d06935e"))
+        );
+        // The PRNG API sits on `next()` as for Gen5RNG: PS's `random(100)`,
+        // `random()`, `random(2, 6)`, `randomChance(1, 256)`.
+        let mut prng = Prng::new(PrngSeed::Sodium(hex32("d4e69dd8ca6bd83e6f23520d0c6d7984")));
+        assert_eq!(prng.random_n(100), 80);
+        assert_eq!(prng.random(), 0.028224641690030694);
+        assert_eq!(prng.random_range(2, 6), 5);
+        assert!(!prng.random_chance(1, 256));
+    }
 
     // Reference vector: seed = [1, 2, 3, 4].
     //
