@@ -31,7 +31,7 @@ The list, with the listings found so far: [bom.md](bom.md), "You". In short: the
 ER-TFT024IPS-3 panel (buydisplay.com), a 403450 cell with a Molex PicoBlade (MX1.25) plug, INGHAi's GSPK151035PN speaker (its
 leads end in a 1.25 mm plug), two sets each of DS
 Lite silicone and caps, tape and foam, and the printed case (`case/tub.stl`,
-`case/top.stl` (the island), `case/deck1.stl`, `case/deck2.stl`, and two build bars from
+`case/top.stl` (the island), `case/deck.stl` (print two: one part for both ends), and two build bars from
 `case/fitkit/build_bar.stl`).
 
 Before the first board order, check the parts against the design (the approved
@@ -46,7 +46,7 @@ lead. A reversed cell destroys the charger. If a batch arrives reversed, lift ea
 crimp's latch with a needle, pull the two pins out of the plug and swap them.
 
 Printing: PLA, every part as exported and without supports: the tub back down, the island
-and the two decks face down, the bars flat. FDM holes come out small: drill the 1.2 mm pinholes to size.
+and the two decks (the same part, twice) face down, the bars flat. FDM holes come out small: drill the 1.2 mm pinholes to size.
 
 ## 3. Hand work on the board
 

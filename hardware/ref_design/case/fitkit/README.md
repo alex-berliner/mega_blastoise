@@ -16,17 +16,17 @@ the board mock has the new outline and holes but today's part envelopes, cut to 
 
 | File | What it is | Print |
 |---|---|---|
-| `../tub.stl`, `../top.stl`, `../deck1.stl`, `../deck2.stl` | the real case: the tub (the back), the island (the raised screen block), seat 1's and seat 2's decks | each as exported, no supports: the tub back down, the island and the decks face down |
+| `../tub.stl`, `../top.stl`, `../deck.stl` | the real case: the tub (the back), the island (the raised screen block), the deck (print two: seat 2's is seat 1's turned round) | each as exported, no supports: the tub back down, the island and the decks face down |
 | `build_bar.stl` (print two) | a bar 1.85 mm tall under each deck's end while the case is built face down, so the island's face (1.85 mm proud of the decks') rests on the bench and the caps stand clear of it | flat, as exported |
 | `board_mock.stl` | the board: outline, the six screw holes (0.2 mm oversize), the height envelope of every part 0.8 mm or taller (from its 3D model), the 20 membrane contacts, the four silicone pieces and the two Start/Select membranes engraved, J3's outline to tape a real connector on (ticks mark the two ends of the range J3 may move over) | flat, as exported (supports under the USB-C stand-in) |
 | `panel_dummy.stl` | the panel at its thickest (2.4 mm), active area engraved on the glass side | flat, glass side up |
 | `cell_dummy.stl` | the 403450 cell (50 x 34 x 4 mm, nominal) with a stub where its leads leave its left end: for the board mock's hole and the tub's pocket | flat |
 | `cell_plug_dummy.stl` | a PicoBlade (MX1.25) plug with a cable stub (approximate) | upright |
 | `speaker_dummy.stl` | the GSPK151035PN speaker, 10 x 15 x 3.5 mm, its cone's outline engraved: for its pocket under the grille | flat |
-| `coupon_seam_tub.stl` + `coupon_seam_deck.stl` | a stretch of the left wall at the seam, cut from the real tub and seat 2's deck: the tub's tongue with a key, grip ribs and a crush rib, the arm's skirt over it | as exported |
+| `coupon_seam_tub.stl` + `coupon_seam_deck.stl` | a stretch of the left wall at the seam, cut from the real tub and seat 2's deck: the tub's tongue with a key, grip ribs, a crush rib and a hook's slot, the arm's skirt over it with its hook | as exported |
 | `coupon_buttons_tub.stl` + `_board.stl` + `_top.stl` + `_deck.stl` | seat 1's end of the tub, board, island (the step, the spine and the wedge round them) and seat 1's deck's core: the button stack and the island's wedge under the deck's lip | as exported |
 | `coupon_usb_tub.stl` + `coupon_usb_top.stl` + `coupon_usb_arms.stl` + `coupon_usb_board.stl` | the USB-C opening: its lower half in the tub's tab, its upper half in the island's ear, the two right arms' ends either side of the ear (its laps go behind their skirts), and the board's tab with a stand-in for the receptacle's shell | as exported |
-| `coupon_meet_tub.stl` + `coupon_meet_top.stl` + `coupon_meet_arms.stl` | where the arms meet on the left wall: the tub's tongue and the lap's slot, the island's side and wedge, both arms' ends (seat 1's lap behind seat 2's skirt) | as exported |
+| `coupon_lear_tub.stl` + `coupon_lear_top.stl` + `coupon_lear_arms.stl` | the left wall's blank ear: the tub's tongue and the laps' slots, the island's ear with its laps, the two left arms' ends either side | as exported |
 | `tune_openings.stl` | **the quickest button test (about 30 min):** D-pad openings at 0.55, 0.65 and 0.75 mm round the cross, a whole keyed A/B/X/Y cluster (tab slots and notch ribs), and plain holes at 7.6, 7.8 and 8.2 mm round its 8.0 (`cap_hole_d`); the numbers are engraved in the face | face down, as exported |
 | `tune_stack_dpad_board.stl` + `tune_stack_dpad_lid_dome*.stl` | one D-pad's slice of the board (contact rings engraved) and of the deck, the deck slice on four legs at its real height. Three, for a silicone 1.6, 1.75 or 1.9 mm tall at rest (`dome_h`); the value is engraved in each | board flat, deck slices face down |
 | `tune_stack_abxy_board.stl` + `tune_stack_abxy_lid_dome*.stl` | the same for one A/B/X/Y cluster | as above |
@@ -64,12 +64,12 @@ speaker, 0.15 mm double-sided tape, a USB-C cable, calipers.
 
 **1. Coupons first (about 2 hours of printing):**
 - **Seam:** lower `coupon_seam_deck` over `coupon_seam_tub`. The arm's skirt should slide down over
-  the tongue with no force, the key into its pocket, and sit flush with the tub's outside, a thin
-  even line between them (`seam_fit`, `seam_gap`).
-- **Where the arms meet:** `coupon_meet_arms`' two pieces face down, seat 2's first, then seat 1's,
-  its lap going down behind the other's skirt; `coupon_meet_top` face down beside them, its wedge
-  under their lips; `coupon_meet_tub` over them. The two skirts should lie flush, no light through
-  the joint.
+  the tongue with no force, the key into its pocket, the hook's neck down the tongue's slot (its head
+  behind the tongue), and sit flush with the tub's outside, a thin even line between them (`seam_fit`,
+  `seam_gap`). Pull the skirt outward: the hook should stop it after about 0.15.
+- **The left ear:** `coupon_lear_arms`' two pieces face down, `coupon_lear_top` face down between them
+  (its laps go down behind their skirts, its wedge under their lips), `coupon_lear_tub` over them. The
+  skirts should lie flush with the ear, no light through the joints.
 - **Panel frame:** drop the real panel (or the dummy) into `coupon_frame_top`, glass down. It should
   go in with a little play, and the active area should sit centred in the window with only a thin
   black border showing; the FPC should pass the notch. Tune `panel_fit`, `window_margin`,
@@ -93,8 +93,8 @@ speaker, 0.15 mm double-sided tape, a USB-C cable, calipers.
 **2. Everything together (about a day of printing), upside down:**
 1. Tape the real FH12 connector on the board mock's J3 outline (mouth towards seat 1, pin 1 at the
    marked end).
-2. The two build bars on the table, about 126 mm apart; seat 2's deck face down on them, then seat
-   1's beside it (its left arm's lap goes down behind seat 2's skirt). Caps into the decks from
+2. The two build bars on the table, about 126 mm apart; a deck face down on them, then the other (the
+   same part) turned round, the arms' ends 21.4 apart on each wall. Caps into the decks from
    behind, silicone on them. The speaker (or its dummy) face down into the island's pocket over the
    grille; the island face down into the decks' window from behind, its face on the table.
 3. Panel glass down into the island's pocket on its tape, centred by the frame. Slide its FPC

@@ -1,4 +1,4 @@
-# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), joints that hold it together, the seam on the round, the side joint (2026-10-22), the lip under the step and the island (2026-10-23)
+# The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), joints that hold it together, the seam on the round, the side joint (2026-10-22), the lip under the step and the island (2026-10-23), the left ear and the hooks (2026-10-24)
 
 The case's redesign after Alex's notes on his last print (items 10, 13, 14 and 15) and the change
 to the EastRising ER-TFT024IPS-3, then reworked for the board with the cell in a hole in it and the
@@ -14,23 +14,34 @@ flow, not two." He liked a concept of the case's whole side at the decks' height
 an island on top (the mock in the session's scratch folder), and said "Build it." This section is the
 case as it is now; the sections after it are its history, and where they disagree this one wins.
 
-![the island from the front](images/outside_front.png)
+**2026-10-24, Alex's three changes** (each below in its place): **a matching ear on the left wall** (the
+right one turned round, blank), so every arm ends at an ear with its laps and **the two decks are one
+part, printed twice**; **a hook on each arm** that holds it from springing outward; and **the side round
+2.8** (was 3.0). Not changed: the wedge keeps no clearance on its 45 degree faces.
+
+![the case from the front, 3/4](images/outside_front.png)
+![the left wall's blank ear, the left arms either side](images/left_ear.png)
+![seat 1's right hook in section](images/section_hook.png)
+![the decks and the island lifted off the tub: the hooks under the arms, the slots in the tongue](images/exploded_hooks.png)
+![seat 1's right arm lifted off its wall: the hook, the tongue's slot](images/exploded_hook_close.png)
+
 ![the side: the decks' profile from end to end, the ear over the USB-C](images/outside_side.png)
 ![an island corner: one edge profile round it](images/island_corner.png)
 ![exploded, in the order it is built (face down)](images/exploded_build.png)
 
 **The parts.** Four printed parts, as before, cut differently:
-- **The island** (`top()`, `top.stl`): only the raised screen block, its two spines and, on the right
-  wall, an ear over the USB-C. Its foot is **2.6** (`isl_in`) in from the side outline; across the step
+- **The island** (`top()`, `top.stl`): only the raised screen block, its two spines and an ear on each
+  side wall: over the USB-C on the right, blank on the left (2026-10-24). Its foot is **2.6** (`isl_in`) in from the side outline; across the step
   and round the spines it is where the step's foot was (`joint_y`, `spine_end`: the buttons, Start/Select
   and every `positions.json` entry are where they were). Its plan's corners are rounded at the foot,
   r 3.0 convex and r 2.0 concave (`isl_r`, `isl_fillet`), and **one edge profile runs all round it**: the
   step's (0.35 straight up from the decks' face, then the r 3.0 arc to 60 degrees and its chamfer, a 1.79
   run), built as one loft of the plan's offsets (`isl_ring`: each corner's arc about its own centre), so
   the corners follow the same profile. Its flat face starts 4.39 in from the outline.
-- **Two decks** (`deck(-1)`, `deck(1)`; `deck1.stl`, `deck2.stl`), C-shaped: each is its core (the end
+- **The deck, twice** (`deck(-1)`, `deck(1)`; one `deck.stl`, printed twice since 2026-10-24: seat 2's
+  is seat 1's turned round, which `export.py` checks, 0.000 mm3 apart), C-shaped: each is its core (the end
   with the buttons, as before) and two **arms** along the side walls at its own height, carrying the side
-  skirts. So the case's side, end to end, is the decks' profile: the tub's round, the seam at 2.55, the
+  skirts, each ending at an ear. So the case's side, end to end, is the decks' profile: the tub's round, the seam at 2.55, the
   skirt, the face's round (`face_r`) up to the face at 7.7. No part of the side wall rises to the screen's
   height, except at the ear.
 - **The tub**, as it was except where the skirts changed: the tongue along the side walls is lower, the
@@ -57,17 +68,25 @@ old top piece's side did, for 21.4 along the wall (`ear_y`, usb_y +-10.7): the n
 (18 wide) and, at each end, a lap and its slot clear of the tab. The opening's upper half and the notch
 are in the ear as they were in the top piece; the USB-C asserts and check_fit's plug check are as before
 (J1's mouth 0.25 / 0.25 clear in y, 0.29 / 0.25 in z, a plug's overmold 0.16 off the wall). This is the
-one place the side rises (Alex: report it; the board is final). It makes the two decks different: the
-right arms end at the ear's ends (-8.7 and 12.7), the left ones meet each other at -2.0 (`arm_meet_y`).
+one place the side has to rise (the board is final). The right arms end at its ends (-8.7 and 12.7).
+
+**The left ear** (Alex, 2026-10-24): the right ear turned round about the case's vertical axis
+(`ear_yl`, y -12.7 to 8.7), blank (no USB-C opening, no notch, no tub tab): the island at the screen's
+height out to the left wall, its laps into the left arms' skirts at both ends and their slots in the
+tongue, as on the right. The left arms end at it (-12.7 and 8.7), so each deck's arms end at the same
+places turned round, and the left keys and grip ribs moved to the right ones' places turned round (keys
+-21 and 18, ribs 13.25 and -17.2; every assert held): seat 2's deck is seat 1's turned round, and the kits
+carry one deck model, printed twice. Under it the island's inside reaches the wall's inside, as at the
+right ear (the pinhole switches, J2 and J5 are under the island anyway); check_fit's JOINT zones leave
+both ears out.
 
 ![the ear over the USB-C, the right arms either side](images/joint_outside.png)
 ![across the ear at y 2](images/section_usb.png)
 
-**The side round** is r **3.0** again (`face_r`, carried on to 60, its top edge 2.20 in): the 60 degree
-pass had to take it to 2.4 because the blend brought it down over the top piece's hollow and J4's pocket;
-the blend is gone and nothing hollow is under it. A 3.0 round reads like the 45 line's and the tub's;
-on the arms it leaves 0.25 of flat face before the seam at the island's foot, so the arm reads as the
-case's rounded rim and the island stands on it.
+**The side round** is r **2.8** (`face_r`, Alex 2026-10-24; its top edge 2.05 in at 60): on the arms it
+leaves **0.40** of flat face before the seam at the island's foot (0.25 at 3.0, which risked reading as a
+crease). It was 3.0 for a day (the 60 degree pass had taken it to 2.4 because the blend brought it down
+over the top piece's hollow and J4's pocket; the blend went and nothing hollow is under it).
 
 **The joints.**
 - **The island's wedge under the decks' lips** (the decks' wedge into the top piece of 2026-10-22, the
@@ -80,9 +99,9 @@ case's rounded rim and the island stands on it.
   up: no supports, no bridges. It stops for 6.1 mm at each key (the arm's pocket for the key opens on the
   island's foot there) and at the ear's ends by the wall (1.35 in from the outline the ear's end is
   straight down the wall, or the wedge would come out through the arm's round).
-- **The arms' laps.** On the left wall seat 1's arm carries a lap (`arm_lap`) 3.15 past its end, 0.85
-  thick, behind seat 2's skirt; at the ear's ends the ear carries one into each arm (`ear_laps`). As the
-  side joint's lap: the other skirt can't move in, this one can't move out past it, they lie flush and
+- **The ears' laps.** At each end of each ear the island carries a lap into the arm's skirt (`ear_laps`,
+  four since the left ear; until 2026-10-24 the left arms met each other with seat 1's lap behind seat
+  2's skirt: see "Alternatives considered"). As the side joint's lap: the other skirt can't move in, this one can't move out past it, they lie flush and
   nothing shows through. Face down a lap's free end hangs off its part, so its top falls from its root at
   `overhang` (60; it was 45 with a deeper root): 1.09 tall at its tip. The tongue stops either side of
   each (`lap_slot`).
@@ -90,18 +109,39 @@ case's rounded rim and the island stands on it.
   and **3.03** along the side walls (`arm_tongue_top` 5.58, seam_gap and 0.02 under the decks' underside),
   so it passes under the island's wedge as the tub goes on. It steps at |y| 35.55, where the wedge has
   turned the island's corner away from the walls (the cores' groove 1.43 clear of it).
-- **Keys** (`keys`): one tab in each arm (right 21 and -18, left +-20), 1.1 over the tongue (to 6.68),
+- **Keys** (`keys`): one tab in each arm (right 21 and -18, left -21 and 18: the right ones turned round), 1.1 over the tongue (to 6.68),
   5.0 along the wall, in a pocket in the arm (the arm's plate 0.92 over it): they locate the arm along the
   case and keep its skirt from moving in. The top piece's four keys went with its sides.
 - **Grip ribs** (`grips`): two a side on each core (+-40, +-52), and two on each arm: +-26 and one near
-  its free end (right -13.25 and 17.2, left +-8).
+  its free end (right -13.25 and 17.2, left 13.25 and -17.2).
+- **The hooks** (`hooks`, Alex 2026-10-24): each arm carries one, so it can't spring outward. A neck 1.6
+  wide comes down from the arm's skirt and plate through a vertical slot in the tub's tongue (1.9 wide:
+  0.15 a side, from 4.15, 1.6 over the seam, up through the tongue's top), and a head 3.6 long and 0.55
+  thick stands behind the tongue, 0.15 (`hook_play` = `deck_gap`) inside its inside face: if the arm
+  moves out by 0.15 the head bears on the tongue's inside, over 0.67 of height (`hook_bear`). It goes
+  straight in: the head passes inside the tongue, the neck down the slot (which also keys the arm along
+  the wall, 0.15 a side), a 0.15 lead-in at 45 degrees on the head's outer foot. Face down the hook's top
+  (the print's underside) rises from the arm's plate at `overhang`, 0.15 under the island's wedge's outer
+  edge, and the head's ends past the neck taper in at `overhang` too, so it prints without supports
+  (`overhangs.py`, the P1S slice). The head's foot stands **0.5 over the board** and reaches 0.2 in past
+  its edge: check_fit checks every part within 0.3 of each head (HOOKS, it allows 0.2): nothing; the
+  nearest parts are J6 0.89 from seat 2's left hook (2.9 tall, beside it, not under it), J4 1.50 from seat
+  1's right one, C5 2.00, D3 2.05. Each hook takes 1.9 of tongue at its slot.
+  **Where:** as near each arm's free end (at the ear) as the rest leaves 3.6 + margins: seat 1's right
+  arm at **-23.5** (its key's pocket ends at -20.75 and its first grip rib at -13.25 sits 1.5 from the
+  lap's slot: nothing nearer fits; the head 0.95 from the key's pocket, the slot 1.05 from the grip rib
+  at -26), seat 2's right arm at **31.5** (from the lap's slot at 10.95 to the key's pocket at 23.75 the
+  wall is full: lap slot, grip rib 17.2, key 21; then 1.45 to the grip rib at 26 and the crush rib at 28,
+  so the first room is past it: the head 1.1 from the crush rib, 3.7 short of the tongue's step, 0.5
+  from H1's tub boss in x). The left arms' are those turned round: seat 2's left at 23.5, seat 1's left
+  at -31.5. So two hooks are 13 from their arm's free end and two 19: see "Open questions".
 - **Corner posts**: as before; they now push each deck along the case onto the island's wedge (across
   the step and round the spine's end), its place over the buttons.
 
 ![along the case at x -10: the island's wedge under seat 1's deck's lip](images/section_joint_zoom.png)
 ![across the right wall at y -25: the arm, the wedge, the tongue under it](images/section_arm.png)
 ![across the right wall at y -20: the arm's key in its pocket, the wedge stopped there](images/section_arm_key.png)
-![the arms meeting on the left wall](images/joint_outside_left.png)
+![the left wall's blank ear](images/left_ear.png)
 
 **How each part is held** (Alex asked for this explicitly):
 - **The island:** across and along the case by the window the decks form round it (0.15 at its foot,
@@ -116,13 +156,14 @@ case's rounded rim and the island stands on it.
   side; out of the front by those ribs and its end screw; it rests on the board by its boss.
 - **Each arm:** it is one part with its core. Inward by the tub's tongue inside its skirt (2.93 of overlap)
   and the island's foot (0.15 off its lip); along the case by its core and its key; out of the front by its
-  two grip ribs, its key's pocket and (left wall) the lap with the other arm or (right wall) the ear's lap.
+  two grip ribs, its key's pocket and its ear's lap.
   No screw lands in an arm: H1 and H2 (and H4) are inside the island's foot with plenty of plastic, so they
   stay in the island, and every arm got its key and a second grip rib near its free end instead. Outward
-  (away from the case) nothing holds an arm positively but its core's stiffness, the grip ribs' friction
-  and the lap with its neighbour (the 45 degree faces don't hold that way): see "Open questions".
-- **Without screws:** the tub's grip ribs hold the decks and the island's ear on it; the posts push the
-  decks onto the island's wedge; the decks' lips hold the island in; the laps and the keys hold the arms.
+  (away from the case) its **hook** holds it (since 2026-10-24): its head bears on the tongue's inside
+  after 0.15 (until then only its core's stiffness and the grip ribs' friction did).
+- **Without screws:** the tub's grip ribs hold the decks and the island's ears on it; the posts push the
+  decks onto the island's wedge; the decks' lips hold the island in; the laps, the keys and the hooks hold
+  the arms.
   The screws only lock it.
 
 **Assembly** (built face down; every part goes in straight down, nothing at an angle):
@@ -131,17 +172,17 @@ case's rounded rim and the island stands on it.
    must stand 1.85 (the step) off the bench: the bars carry each deck under its end's flat face (outside
    every opening, asserted), the island's face rests on the bench, the caps (1.41 proud) stand 0.44
    clear of it. (Until now the top piece was the base and held the decks up.)
-2. **Seat 2's deck** face down on the bars, then **seat 1's** beside it, straight down: its left arm's
-   lap goes down behind seat 2's skirt. **Caps** into the decks from behind, **silicone** on them.
+2. **The two decks** (the same part) face down on the bars, end to end, the arms' ends 21.4 apart on
+   each wall (the ears go there). **Caps** into the decks from behind, **silicone** on them.
 3. **The speaker** face down into the island's pocket, its foam ring stuck to the pocket's ceiling.
-4. **The island** face down into the decks' window from behind, straight down: the ear's laps go down
-   behind the right arms' skirts, its wedge settles onto the decks' lips, its face onto the bench.
+4. **The island** face down into the decks' window from behind, straight down: the ears' laps go down
+   behind the arms' skirts, its wedge settles onto the decks' lips, its face onto the bench.
 5. **Panel** glass down into its pocket on its tape.
 6. **The cell** into the tub's floor pocket; **board on edge**: FPC into J3, the cell's plug into J2.
 7. **Board** face down; just before it lands, the **speaker's plug into J4** (unchanged: the speaker is
    in the island, its leads reach J4 only with the board nearly in place), the leads round H3's boss.
-8. **Tub** over it all, straight down: the tongue into every skirt, the keys into the arms' pockets, the
-   USB-C tab into the ear's notch, the posts push each deck onto the island's wedge, the grip ribs take
+8. **Tub** over it all, straight down: the tongue into every skirt (and behind the arms' hooks, their
+   necks down its slots), the keys into the arms' pockets, the USB-C tab into the ear's notch, the posts push each deck onto the island's wedge, the grip ribs take
    hold. Lift it off the bars.
 9. **Six M2 x 6** from the back.
 
@@ -153,21 +194,25 @@ down, so they can't pass its wedge.
 **Thinnest plastic** (each asserted in `case.scad`): the island's skin over its inside 0.70 (0.72 to its
 profile), over the speaker's pocket 1.35; the ear's side over its inside 1.59; the decks' lip's straight
 part 0.95, an arm's plate over the island's wedge 0.95, over its groove 0.77, over a key's pocket 0.92;
-the skirts' tips 0.70; a lap 0.85 (its tip 1.09 tall). The outside skin along every wall is 0.7 or more.
+the skirts' tips 0.70; a lap 0.85 (its tip 1.09 tall); a hook's head 0.55 (its end taper to the neck's 1.6).
+The outside skin along every wall is 0.7 or more.
 
 **Printing** (60 degree rule, `overhangs.py` and the P1S slices): every downward face of the four parts
 in their print poses is 60.0 degrees from vertical or steeper (the island 350 mm2 of it between 45 and
-60, seat 1's deck 210, seat 2's 198, the tub 634); no part needs supports (they stay under the board mock
-and the USB-C board coupon only). No two printed parts overlap (they touch only at the posts and the 45
-degree faces). The island is 7.19 cm3 (the top piece 7.28), each deck 4.0 (4.05). P1S: `1_case` 55.1 g,
-1 h 43 min; `1_case_decks` (both decks and the bars) 10.1 g, 25 min; `5_unit` 65.1 g, 2 h 08 min, still
-one plate (its decks and cell dummy turned a quarter round to pack: `TURN` in `print_package.py`).
+60, a deck 210, the tub 634, as of 2026-10-23; the hooks' tops add faces at exactly 60); no part needs
+supports (they stay under the board mock and the USB-C board coupon only). No two printed parts overlap
+(0.000 mm3 for every pair, 2026-10-24; they touch only at the posts and the 45 degree faces). Each deck is
+3.98 cm3. P1S (2026-10-24): `1_case` 55.3 g, 1 h 44 min; `1_case_decks` (the deck twice and the bars)
+10.1 g, 26 min; `5_unit` 65.3 g, 2 h 09 min, still one plate (its decks and cell dummy turned a quarter
+round to pack: `TURN` in `print_package.py`).
 
 **Gone** (dead code removed): the side blend (`side_run`, `side_drop`, `blend_overhang`, `side_fill`,
 the swept side), the lip, its groove, the decks' plate under the step, the top piece's hollow over it and
 the end wall's foot (`deck_ext`, `lip_*`, `foot_h`, `joint_side`), the top piece's sides and their keys'
-pockets, its 7.2 tongue. The fit kit's coupons that cut the skirts (`seam_top` became `seam_deck`; new
-`usb_arms` and `meet_*`). Found on the way: `fitkit.scad` has its own `groove()` (an engraving helper),
+pockets, its 7.2 tongue; since 2026-10-24 the left arms' meeting (`arm_meet_y`, `arm_lap`, its slot, the
+laps' lie-back field) and the second deck model. The fit kit's coupons that cut the skirts (`seam_top`
+became `seam_deck`; new `usb_arms`; `meet_*` became `lear_*`, the left ear and the arms' ends either side,
+2026-10-24; `seam_*` now carry seat 2's left hook and its slot). Found on the way: `fitkit.scad` has its own `groove()` (an engraving helper),
 which silently replaced `case.scad`'s skirt groove in every fit-kit render, so the kit's skirt coupons
 had no groove for the tongue; the case's is `skirt_groove()` now.
 
@@ -259,15 +304,15 @@ its top edge stays 1.757 in: 2.58 at 55, 3.0 at 45; the asserts check it).
 ## In one paragraph
 
 Four printed parts (since 2026-10-23: "The island", first): the **island** (the raised screen block,
-its spines and an ear over the USB-C on the right wall), two **decks** (seat 1's and seat 2's, each its
-core with the buttons and an arm along each side wall), and the **tub** (the back, with a pocket for the
+its spines and an ear on each side wall, over the USB-C on the right), two **decks** (one part, printed
+twice: each its core with the buttons and an arm along each side wall), and the **tub** (the back, with a pocket for the
 cell). The decks make the case's face and its sides at their own height, end to end, and meet the tub
 flush at one seam, 2.55 mm up the walls, low on the back's round: their skirts follow the round down to
 it and slide over the tub's **tongue** (4.05 round the cores, 2.93 along the sides), which keys them: a
 tab into each arm, a post in each corner that pushes a deck onto the island, and grip ribs, so the four
 parts hold together before the screws go in. The island sits in the window the decks form, 2.6 in from
-the sides, its edge a 45 degree wedge under a lip on the decks' edges; the arms meet in a lap on the left
-wall and meet the ear's laps on the right. The board, with the cell in a hole in it, lies inside the
+the sides, its edge a 45 degree wedge under a lip on the decks' edges; every arm ends at an ear, whose
+lap goes behind its skirt, and carries a hook through a slot in the tongue. The board, with the cell in a hole in it, lies inside the
 tub's walls. Everything is built **upside down**: the decks face down on two build bars, caps and
 silicone into them, the speaker into the island's pocket, the island into the decks from behind, the
 panel, the board face down (the speaker's plug into J4 first), the tub over it, six screws from the back
@@ -842,7 +887,7 @@ it face up: unplug J4 before the board and the island part.
 |---|---|---|
 | tub | back down, as exported | none |
 | island (`top.stl`) | face down | none |
-| deck1, deck2 | face down | none |
+| deck (print two) | face down | none |
 | build bars (print two) | flat | none |
 | board mock, USB-C board coupon | as before | yes, as before (the USB-C stand-in) |
 | speaker dummy | flat | none since 2026-10-22 (a plain racetrack, face up) |
@@ -908,9 +953,18 @@ tub's tongue became 0.75 thick (was 0.85).
   allowed, 2.9 to 3.8 tall) or under the island's wall. Bays in the island round each would bulge it out
   over most of both sides. 2.6 is as far in as it goes (J5 and J6).
 - **The USB-C in an arm** (no ear): the receptacle's top is 0.65 under the decks' face and the opening's
-  top 0.4: the opening would break out through the side's round. **An ear on the left too**, the right
-  one turned round, would make the two decks one part printed twice; it puts a bump in the left side
-  that nothing needs, so the decks are two parts.
+  top 0.4: the opening would break out through the side's round.
+- **The arms meeting each other on the left wall** (2026-10-23 to 2026-10-24): seat 1's left arm carried
+  a lap 3.15 past its end behind seat 2's skirt at y -2.0. It made the decks two parts (the ear is off the
+  case's middle, at J1, so the arms ended at different places on each), and a lap on a deck's arm hangs
+  off the part face down. Alex chose the left ear instead: the same joint as the right's, one deck part.
+  (The day before it was rejected for putting a bump in the left side that nothing needs.)
+- **A tab on the tongue's outside into a slot in the skirt** (to hold an arm outward): it only stops the
+  arm moving up or down; moving out, the slot slides off the tab. To stop outward motion some of the arm
+  must be inboard of the tub, so the hook is on the arm, its head behind the tongue.
+- **The hooks nearer the arms' free ends:** see "The hooks": the laps' slots, the keys and the grip ribs
+  fill the wall there. Moving a key or a grip rib would make room, but Alex set those (the right ones'
+  places turned round), so the hooks went where it is free.
 - **The island face down first and the decks onto it** (as the top piece was the base): face down the
   decks' lips are on the island's far side and can't pass its wedge, so the decks go first, on the build
   bars.
@@ -1003,19 +1057,20 @@ tub's tongue became 0.75 thick (was 0.85).
 ## Open questions
 
 0. **The island (2026-10-23), on the next print, most important first:**
-   a. **The arms outward.** Nothing holds an arm away from the case positively: its core's stiffness,
-      two grip ribs and (left wall) the lap or (right wall) the ear's lap. If an arm's skirt springs out
-      from the tub along the side, the fix is a tab on the tongue's outside into a slot in the skirt
-      (only possible above 4.0, where the skirt is 1.0 thick) or more grip.
+   a. **The hooks** (2026-10-24): whether a hook goes in without force (0.15 round the head and the
+      neck), holds the arm (the island_coupons hook pair tests it), and prints clean face down (its top at
+      exactly `overhang`). Two hooks are 13 and two 19 from their arm's free end (the ear): if the free
+      ends still spring out, a key or a grip rib near the ear can move to make room for the hook there
+      (an asserts-only change). J6 stands 0.89 beside seat 2's left hook's head: a cable plugged into J6
+      leaves past the board's edge under the head (debug is case-open anyway).
    b. **The island's wedge** (45 degrees, 1.2 under each lip, no clearance on the slope, 0.15 at the
       foot): whether the island drops into the decks without binding and doesn't move out of the
       front, and whether the posts seat each deck onto it without forcing the tub's corners.
    c. **The build bars**: whether the decks sit steady on them while the caps, the island and the board
       go in. A deck that rocks on its bar wants a wider bar.
-   d. **The ear**: it is the one raised part of the side. Alex may prefer it (or a second one on the
-      left, which would make the decks one part); the board is final, so J1 decides it's there.
-   e. **The narrow arm face**: 0.25 of flat between the side's round and the seam round the island. If
-      it reads as a crease, the round can go to 2.8 (0.4 of flat).
+   d. **The ears** (the left one blank since 2026-10-24): whether the two raised parts of the side read
+      as intended.
+   e. **The arm face** (0.40 of flat since the 2.8 round, 2026-10-24): whether it still reads as a crease.
 
 1. **The overhang limit** (`overhang`, 45 on the main line, 60 on this variant: a guess either way): the `6_tests` ladder on both printers. A higher limit
    makes the step and every edge rounder in one line.
@@ -1063,6 +1118,12 @@ tub's tongue became 0.75 thick (was 0.85).
    off its buttons, so `post_c` would have to come back 0.15 with it.
 
 ## Images
+
+Since the left ear and the hooks (2026-10-24, this commit's parts): `outside_front` (3/4 from the front),
+`left_ear`, `section_hook` (seat 1's right hook: across the wall through its neck and its head's end, and
+along it), `exploded_hooks` and `exploded_hook_close` (the parts lifted off the tub: the hooks under the
+arms, the slots in the tongue), `print_overhangs` (every part in its print pose, downward faces coloured by
+angle). `joint_outside_left` still shows the arms meeting (the parts before); the others below are of the parts before too.
 
 Since "The island" (2026-10-23, the parts of 8c39dca): `outside_front`, `outside_back`, `outside_side`,
 `outside_usb` and `joint_outside` (the ear), `joint_outside_left` (the arms meeting), `section_joint_zoom`

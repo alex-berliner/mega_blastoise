@@ -3,7 +3,8 @@
 Everything to print for the reference design's case and fit kit, generated from `case/case.scad`
 on the current design (2026-10-22: the 77.4 x 132.7 x 9.55 mm shell for the board with the cell in
 it, built upside down, its parts keyed to hold together before the screws; since 2026-10-23 the
-island: see `case/SHELL.md`, "The island"): the tub, the island (the raised screen block) and two decks.
+island: see `case/SHELL.md`, "The island"; since 2026-10-24 an ear on each side wall, one deck part and a
+hook on each arm): the tub, the island (the raised screen block) and the deck, printed twice.
 
 **This is the 60 degree variant** (2026-10-23): every round, the
 steps to the decks and the tub's bottom edge are shaped for a printer that prints a downward face
@@ -28,9 +29,9 @@ Supports are per part, not per plate: only `board_mock` and `coupon_usb_board` g
 | `2_buttons_quick.3mf` | **Start here (about an hour).** `tune_openings` (three D-pad opening sizes, the keyed A/B/X/Y cluster, three hole sizes), and the D-pad, A/B/X/Y and Start/Select stacks: a board slice each and a deck slice at the 1.75 mm silicone height | first |
 | `3_buttons_heights.3mf` | the same three deck slices at 1.6 and 1.9 mm silicone height | if the 1.75 mm slices don't sit right |
 | `0_buttons_end.3mf` | Seat 1's end: tub, board mock (to place the silicone on), the island's end (the step, the spine, the wedge round them), seat 1's deck's core | any time; it also tests the island's wedge under the deck's lip |
-| `4_fit_coupons.3mf` | USB-C opening (the tub's tab, the island's ear, the two right arms' ends either side of it with the ear's laps, the board's tab with a receptacle stand-in), a stretch of the left wall's seam (the tub's tongue under seat 2's arm, with a key, grip ribs and a crush rib), where the arms meet on the left wall (the tub, the island's side, both arms' ends with seat 1's lap), the island's panel frame, and seat 1's end | second |
+| `4_fit_coupons.3mf` | USB-C opening (the tub's tab, the island's ear, the two right arms' ends either side of it with the ear's laps, the board's tab with a receptacle stand-in), a stretch of the left wall's seam (the tub's tongue under seat 2's arm, with a key, grip ribs, a crush rib and the arm's hook in its slot), the left wall's blank ear (the tub, the island's ear with its laps, the two left arms' ends either side), the island's panel frame, and seat 1's end | second |
 | `1_case.3mf` | the tub, the island, the board mock, and dummies of the panel, speaker, cell and cell plug | last, once the coupons fit |
-| `1_case_decks.3mf` | seat 1's and seat 2's decks (two parts since the island: their arms end in different places) and the two build bars the decks lie on while the case is built | with `1_case` |
+| `1_case_decks.3mf` | the deck twice (one part for both ends since 2026-10-24: seat 2's is seat 1's turned round) and the two build bars the decks lie on while the case is built | with `1_case` |
 | `6_tests.3mf` | **Questions for the shell (about 40 min, no supports):** `tune_openings` (as in `2_buttons_quick`), an overhang ladder, two tub screw holes and an island screw boss cut from the real case, and a 5.0 mm column with four clearance rings | print it on both printers |
 | `5_unit.3mf` | **One whole unit on one plate:** the tub, the island, both decks (turned a quarter round to fit), the build bars, the board mock and the dummies of the panel, speaker, cell and cell plug to fit in it (no coupons) | instead of `1_case` and `1_case_decks`, once the coupons fit |
 
@@ -50,18 +51,18 @@ change a plate, keep supports on those parts only. The P1S kit checks its G-code
   doesn't droop: the opening's fit round it is what the coupon tests.
 
 `stl/` has every part as a plain STL, in case a project won't open in your Orca version: drag them
-onto a plate with the same settings. `top.stl` (the island), `deck1.stl`, `deck2.stl` and `tub.stl`
+onto a plate with the same settings. `top.stl` (the island), `deck.stl` (print two) and `tub.stl`
 are the real case, each in its print pose.
 
-**The shell (2026-10-21; the island, 2026-10-23).** The case's face and sides are the two decks:
+**The shell (2026-10-21; the island, 2026-10-23; the left ear and the hooks, 2026-10-24).** The case's face and sides are the two decks (one part, printed twice):
 each is a core (the buttons, at one end) and two arms along the side walls, all at the decks' height
 (7.7 mm), curving over the sides and down the back's round to the seam with the tub (2.55 mm up). The
 screen block is the island, 1.85 mm higher, sitting in the window the decks form, 2.6 mm in from the
 sides with one rounded edge all round; under the decks' face its edge slopes out at 45 degrees under a
 lip on the decks' edges, so it can't come out of the front. On the right wall it comes out to the side
-as an ear over the USB-C (the receptacle is too tall for a wall at the decks' height). On the left wall
-the arms meet each other, seat 1's lap behind seat 2's skirt; on the right they meet the ear, whose
-laps go behind theirs. The four side screws go into the island beside the glass, one into each deck.
+as an ear over the USB-C (the receptacle is too tall for a wall at the decks' height), and on the left wall
+as the same ear turned round, blank. Every arm ends at an ear, whose laps go behind its skirt, and carries
+a hook: its neck down a slot in the tub's tongue, its head behind the tongue, so the arm can't spring out. The four side screws go into the island beside the glass, one into each deck.
 The tub's tongue stands up inside every skirt (4.15 mm round the decks' cores, 3.0 along the side
 walls) and keys them: a tab into each arm, a post in each corner that pushes a deck onto the island's
 wedge, and grip ribs, so the case holds together before the screws go in. The cell sits in a hole in
@@ -72,23 +73,24 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the cores; 5.6 along the sides, the tabs 6.7) | `1_case` (55.1 g, 1 h 43 min with the island, the board mock and the dummies), `5_unit` |
-| `top.stl` (the island) | 76.0 x 94.9 x 6.9 (the ear to the right wall) | `1_case`, `5_unit` |
-| `deck1.stl`, `deck2.stl` | 77.4 x 67.4 x 5.05 and 77.4 x 68.3 x 5.05 (seat 1's lap reaches 3.15 past its left arm) | `1_case_decks` (10.1 g, 25 min for both and the bars), `5_unit` |
+| `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the cores; 5.6 along the sides, the tabs 6.7) | `1_case` (55.3 g, 1 h 44 min with the island, the board mock and the dummies), `5_unit` |
+| `top.stl` (the island) | 77.4 x 94.9 x 6.9 (the ears to both walls) | `1_case`, `5_unit` |
+| `deck.stl` (print two) | 77.4 x 57.5 x 5.05 (the arms end at the ears) | `1_case_decks` (10.1 g, 26 min for two and the bars), `5_unit` |
 | `build_bar.stl` (print two) | 71.0 x 2.0 x 1.85 | `1_case_decks`, `5_unit` |
 
-`5_unit` (the tub, the island, both decks, the bars, the board mock and the dummies on one plate) is 65.1 g and 2 h 08 min.
+`5_unit` (the tub, the island, the deck twice, the bars, the board mock and the dummies on one plate) is 65.3 g and 2 h 09 min.
 
 To assemble (every part goes in straight down):
 1. The two build bars on a flat bench, parallel, about 126 mm apart (centre to centre).
-2. Seat 2's deck face down on them, its end's flat face on one bar: its face now stands 1.85 mm off
-   the bench. Then seat 1's deck face down on the other bar, straight down beside it: the lap on its
-   left arm goes down behind seat 2's arm's skirt. Caps into the decks from behind (tabs into the
+2. A deck face down on them, its end's flat face on one bar: its face now stands 1.85 mm off the
+   bench. Then the other deck (the same part) face down on the other bar, turned round, its arms
+   pointing at the first one's: on each wall the arms' ends stand 21.4 mm apart (the island's ears go
+   there). Caps into the decks from behind (tabs into the
    slots, notches onto the ribs), silicone on them.
 3. The speaker face down into the island's pocket over the grille, its front foam ring stuck to the
    pocket's ceiling.
 4. The island face down into the window between the decks from behind, straight down: the laps at
-   the ear's ends go down behind the right arms' skirts, its wedge settles onto the decks' lips, and its
+   each ear's ends go down behind the arms' skirts, its wedge settles onto the decks' lips, and its
    face comes down onto the bench.
 5. Panel glass down into the island's pocket on its tape.
 6. The cell into the tub's floor pocket on double-sided tape, against the pocket's right wall.
@@ -98,8 +100,8 @@ To assemble (every part goes in straight down):
    its 35 mm leads reach J4 only when the board is nearly in place. Lay the leads round the screw boss
    between the speaker and J4, on the glass's side, then the board down onto the bosses.
 9. Tub over it all, straight down, the board lying centred on its bosses (the cell drops into the
-   board's hole, the tub's crush ribs centre the board, the tongue slides into the skirts, its
-   tabs into the arms' pockets, the corner posts push each deck onto the island's wedge). Press it
+   board's hole, the tub's crush ribs centre the board, the tongue slides into the skirts and behind
+   the arms' hooks (their necks down its slots), its tabs into the arms' pockets, the corner posts push each deck onto the island's wedge). Press it
    down all round until the seam is an even line: it grips, and the case now holds together on its
    own. Lift it off the bars. Six M2 x 6 from the back, snug: they lock it.
 
@@ -111,8 +113,8 @@ Check that the decks and the island go together straight down without force; tha
 and no screws the case lifts by its ends without anything coming loose and nothing rocks; that the
 tub still goes on and comes off by hand; that the seam round the case is an even thin line with the
 outsides flush; that the seam round the island's foot is an even 0.15 and the island doesn't move
-out of the front; that the two arms meet flush on the left wall and the ear's ends sit flush on the
-right; and that the arms don't spring out from the tub along the sides.
+out of the front; that both ears' ends sit flush with the arms; and that the arms don't spring out
+from the tub along the sides (each arm's hook should stop it after about 0.15 mm).
 
 ## What to check, and what to change
 
@@ -161,12 +163,13 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
   stand-in with a small even gap (`usb_gap` 0.25), a real plug's overmold should sit flat on the
   case, and the ear's ends should sit flush with the arms'.
 - Seam: lower `coupon_seam_deck` (seat 2's left arm) over `coupon_seam_tub`: the skirt slides over the
-  tongue without force, the key tab into its pocket, and sits flush with the tub (`seam_fit`,
+  tongue without force, the key tab into its pocket, the arm's hook's neck down the tongue's slot with
+  its head behind the tongue (pull the skirt outward: the head should stop it after about 0.15), and sits flush with the tub (`seam_fit`,
   `seam_gap`); the grip ribs should hold the two together lightly (`grip_reach`: raise it if they fall
   apart, lower it if they won't go together by hand).
-- Where the arms meet (`coupon_meet_*`): the two arm pieces face down, seat 2's first, seat 1's lap
-  down behind its skirt; the island's side face down beside them (its wedge under their lips); the tub
-  coupon over them: the two skirts flush, no light through the joint.
+- The left ear (`coupon_lear_*`): the two left arm pieces face down, the island's blank ear face down
+  between them (its laps go down behind the arms' skirts, its wedge under their lips), the tub coupon
+  over them: the skirts flush with the ear, no light through the joints.
 - Panel frame: the real panel (or the dummy) drops in glass down with a little play, the active
   area centred in the window (`panel_fit`, `window_margin`).
 - Seat 1's end, built upside down: the deck coupon face down on a build bar, caps and silicone, the
