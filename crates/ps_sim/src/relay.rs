@@ -62,6 +62,12 @@ pub enum Relay {
     /// `onLockMove` (the request's Recharge button, PS's
     /// `getActiveMove('recharge')`).
     Recharge,
+    /// A boosts table (the relay of `TryBoost`, `AfterEachBoost` and
+    /// `AfterBoost`): atk, def, spa, spd, spe, accuracy, evasion, in the
+    /// order of [`ps_protocol::Stat::ALL`]. PS passes `TryBoost` a copy
+    /// (`{...boost}`) that a handler may drop entries from (Mist drops the
+    /// drops); a dropped entry is 0 here.
+    Boosts([i8; 7]),
 }
 
 impl Relay {
@@ -83,7 +89,7 @@ impl Relay {
             Relay::Bool(b) => b,
             Relay::Int(n) => n != 0,
             Relay::Null | Relay::NotFail => false,
-            Relay::Move(_) | Relay::Effect(_) | Relay::Types(_) | Relay::Recharge => true,
+            Relay::Move(_) | Relay::Effect(_) | Relay::Types(_) | Relay::Recharge | Relay::Boosts(_) => true,
         }
     }
 

@@ -1182,10 +1182,13 @@ impl GenScripts for Gen1Scripts {
             return MoveResult::Int(0);
         }
         let mut success = MoveResult::Null;
-        // `runEvent('TryBoost', target, source, effect, {...boost})`: the
-        // boosts table relay arrives with its first handler (Mist).
-        let r = b.run_event(EventId::TryBoost, Holder::Mon(target), source, effect, Some(Relay::TRUE));
-        assert_eq!(r, Relay::TRUE, "TryBoost handler: the boosts relay is not ported");
+        // `boost = runEvent('TryBoost', target, source, effect, {...boost})`:
+        // a handler may drop entries (Mist drops the drops); a dropped
+        // entry is 0, which the loop skips as PS skips a missing key.
+        let mut boosts = match b.run_event(EventId::TryBoost, Holder::Mon(target), source, effect, Some(Relay::Boosts(boosts))) {
+            Relay::Boosts(t) => t,
+            other => panic!("TryBoost answered {other:?}"),
+        };
         let kw = match effect {
             EffectId::None | EffectId::Move(_) => Kw::NONE,
             // `'[from] ' + effect.fullname`: a move's own condition (Rage)
@@ -1212,7 +1215,7 @@ impl GenScripts for Gen1Scripts {
                 } else {
                     Msg::Boost { mon, stat, amount, kw }
                 });
-                b.run_event(EventId::AfterEachBoost, Holder::Mon(target), source, effect, Some(Relay::TRUE));
+                b.run_event(EventId::AfterEachBoost, Holder::Mon(target), source, effect, Some(Relay::Boosts(current)));
             }
             // A boost at 999 or a drop at 1: no success, so no paralysis
             // or burn penalty after.
@@ -1227,10 +1230,15 @@ impl GenScripts for Gen1Scripts {
                     b.add(Msg::Unboost { mon, stat, amount: 1, kw: Kw::NONE });
                     b.hint(TextId::HintGen1BoostAt999, true, None);
                 }
-                b.run_event(EventId::AfterEachBoost, Holder::Mon(target), source, effect, Some(Relay::TRUE));
+                b.run_event(EventId::AfterEachBoost, Holder::Mon(target), source, effect, Some(Relay::Boosts(current)));
+            }
+            // `boost[i] = -boost[i]` for a shown drop: `AfterBoost` sees
+            // the amounts as printed.
+            if (result.truthy() || result == MoveResult::Int(0)) && boosts[i] < 0 {
+                boosts[i] = -boosts[i];
             }
         }
-        b.run_event(EventId::AfterBoost, Holder::Mon(target), source, effect, Some(Relay::TRUE));
+        b.run_event(EventId::AfterBoost, Holder::Mon(target), source, effect, Some(Relay::Boosts(boosts)));
         success
     }
 

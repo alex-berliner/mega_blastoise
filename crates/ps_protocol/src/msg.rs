@@ -643,6 +643,8 @@ words! {
     Stockpile2 => "stockpile2",
     Stockpile3 => "stockpile3",
     Switch => "switch",
+    // PS: data/mods/gen1/moves.ts haze.onHit (`-end|MON|Toxic counter|[silent]`)
+    ToxicCounter => "Toxic counter",
     Trapped => "trapped",
     TypeChange => "typechange",
     Unboost => "unboost",
@@ -1224,6 +1226,8 @@ texts! {
     DamageCalculationInterrupted => "damage calculation interrupted" (),
     // PS: sim/battle.ts spreadDamage
     DamageEventFailed => "damage event failed" (),
+    // PS: data/mods/gen1/moves.ts disable.condition.onStart
+    DisableDisablingMove => "Disable: disabling move {} in slot {}" (Move, Int),
     // PS: data/abilities.ts serenegrace onModifyMove
     DoublingSecondaryChance => "doubling secondary chance" (),
     // PS: sim/battle-actions.ts runMoveEffects
@@ -1290,11 +1294,15 @@ texts! {
     HintGen1Counter => "In Gen 1, from the Counter user's perspective, Counter uses the last announced move by the target's team to determine if it will succeed." (),
     HintGen1CounterSleep => "In Gen 1, if Counter is used against a target that switched in and spent the turn sleeping, from the Counter user's perspective, it will fail if the move in the target's first slot is also Counter." (),
     HintGen1DesyncDefault => "In Gen 1, if both players would see the same Pokémon using different moves, the Pokemon defaults to the move shown from the perspective of the player controlling that Pokémon." (),
+    HintGen1DirectDamageNoSub => "In Gen 1, if a Pokemon with a Substitute hurts itself due to confusion or Jump Kick/Hi Jump Kick recoil and the target does not have a Substitute there is no damage dealt." (),
+    HintGen1DirectDamageSub => "In Gen 1, if a Pokemon with a Substitute hurts itself due to confusion or Jump Kick/Hi Jump Kick recoil and the target has a Substitute, the target's Substitute takes the damage." (),
     HintGen1DropAt1 => "In Gen 1, dropping a stat at 1 will apply a +1 boost afterwards, and the stat remains at 1." (),
     HintGen1ExplosionSub => "In Gen 1, the user of Explosion will not take damage if it breaks a Substitute." (),
     HintGen1HazeBide => "In Gen 1, when Haze cures the sleep/freeze status of a Pokémon during Bide, the move execution will never resolve." (),
     HintGen1HazeLockedMove => "In Gen 1, when Haze cures the sleep/freeze status of a Pokémon during a multi-turn move, that Pokémon will become soft-locked." (),
     HintGen1HyperBeamSleep => "In Gen 1, if a Pokémon that has just used Hyper Beam and has yet to recharge is targeted with a sleep inducing move, any other status it may already have will be ignored and sleep will be induced regardless." (),
+    HintGen1LeechSeedRecovery => "In Gen 1, Leech Seed recovery is not limited by the remaining HP of the seeded Pokemon." (),
+    HintGen1LeechSeedToxic => "In Gen 1, Leech Seed's damage is affected by Toxic's counter." (),
     HintGen1Miss => "In Gen 1, moves with 100% accuracy can still miss 1/256 of the time." (),
     HintGen1NoMove => "In Gen 1, if a Pokémon is thawed from freeze and no move has been selected yet, the Pokémon will use a move with Fissure's animation, 102 base power, ??? type, Special category, and around 31.6% accuracy." (),
     HintGen1ParSemiInvulnerable => "In Gen 1, when a Dig/Fly user is fully paralyzed while semi-invulnerable, it will remain semi-invulnerable until it switches out or fully executes Dig/Fly" (),
@@ -1304,6 +1312,7 @@ texts! {
     HintGen1Recovery => "In Gen 1, recovery moves fail if (user's maximum HP - user's current HP + 1) is divisible by 256, unless the current hp is also divisible by 256." (),
     HintGen1SelfDestructSub => "In Gen 1, the user of Self-Destruct will not take damage if it breaks a Substitute." (),
     HintGen1StatRollover => "In Gen 1, a stat will roll over to a small number if it is larger than 1024." (),
+    HintGen1SubConfusion => "In Gen 1, moves that inflict confusion as a secondary effect can confuse targets with a Substitute, as long as the move does not break the Substitute." (),
     HintGen1ToxicCounter => "In Gen 1, Toxic's counter is retained after Rest and applies to PSN/BRN." (),
     HintGen3IntimidateSub => "In Gen 3, Intimidate does not activate if every target has a Substitute." (),
     HintGens3To4KnockOff => "In Gens 3-4, Knock Off only makes the target's item unusable; it cannot obtain a new item." (),

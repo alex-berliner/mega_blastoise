@@ -22,7 +22,7 @@ use crate::relay::Relay;
 use crate::state::{Battle, EffectState};
 use ps_dex::gen1::{conditions, moves};
 
-fn stored(st: &EffectState) -> i32 {
+pub(crate) fn stored(st: &EffectState) -> i32 {
     i32::from(st.data[1] as u16) | (i32::from(st.data[2] as u16) << 16)
 }
 

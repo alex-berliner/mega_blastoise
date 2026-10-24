@@ -822,7 +822,35 @@ impl Battle {
         if self.gen <= 1 && matches!(key, "confusion" | "jumpkick" | "highjumpkick") {
             self.last_damage = damage as u16;
             if self.has_volatile_key(target, "substitute") {
-                panic!("unported: substitute (gen 1 directDamage against a Substitute)");
+                // A self-inflicted hit lands on the foe's Substitute, if it
+                // has one, and otherwise on nothing.
+                let foe = self.active_at(1 - target.side, 0);
+                if let Some(foe) = foe.filter(|&f| self.has_volatile_key(f, "substitute")) {
+                    let sub = self.dex.condition_id("substitute").expect("substitute in the dex");
+                    let key = EffectId::Condition(sub);
+                    let st = self.mon_mut(foe).volatiles.get_mut(key).expect("the foe's substitute");
+                    // `hp` (data[0], see the substitute condition).
+                    let hp = i32::from(st.data[0]) - damage;
+                    st.data[0] = hp.max(i32::from(i16::MIN)) as i16;
+                    if hp <= 0 {
+                        self.remove_volatile(foe, sub);
+                        self.mon_mut(foe).sub_fainted = true;
+                    } else {
+                        let mon = self.ident(foe);
+                        let sub_move = self.dex.move_id("substitute").expect("substitute in the dex");
+                        self.add(Msg::Activate {
+                            mon: Some(mon),
+                            effect: Arg::new(ArgValue::Move(MoveNum(sub_move.0))),
+                            a: None,
+                            b: None,
+                            kw: Kw::flags(ps_protocol::KwFlags::DAMAGE),
+                        });
+                    }
+                    self.hint(ps_protocol::TextId::HintGen1DirectDamageSub, false, None);
+                    return damage;
+                }
+                self.hint(ps_protocol::TextId::HintGen1DirectDamageNoSub, false, None);
+                return 0;
             }
         }
         let damage = self.damage_mon(target, damage, source, effect);

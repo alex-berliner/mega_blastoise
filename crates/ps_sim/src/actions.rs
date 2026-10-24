@@ -542,6 +542,16 @@ impl Battle {
                     _ => Kw::from(from),
                 }
             }
+            // The default branch for Leech Seed's condition: `[from]` its
+            // fullname (the move's name), `[of]` the seeder.
+            EffectId::Condition(_) if self.effect_key(effect) == "leechseed" => {
+                let seed = self.dex.move_id("leechseed").expect("leechseed in the dex");
+                let from = Arg::new(ArgValue::Move(MoveNum(seed.0)));
+                match source {
+                    Some(s) if s != target => Kw::from_of(from, self.ident(s)),
+                    _ => Kw::from(from),
+                }
+            }
             EffectId::Condition(c) => {
                 // PS `spreadDamage`, the default case: `const name =
                 // effect.fullname === 'tox' ? 'psn' : effect.fullname`,
@@ -629,6 +639,8 @@ impl Battle {
                     Kw::NONE
                 }
             }
+            // `case 'leechseed': case 'rest'`: silent.
+            EffectId::Condition(_) if self.effect_key(effect) == "leechseed" => Kw::flags(KwFlags::SILENT),
             other => panic!("unported: the -heal line of {other:?}"),
         };
         self.add(Msg::Heal { mon, health, kw });

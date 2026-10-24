@@ -70,3 +70,16 @@
 1 wide 2  # G1-1 `[of] <foe>` on the burn and poison -damage lines
 1 random 0  # G1-1 Sleep Clause Mod refuses a second sleeping foe; slp's `[from] move:` on -status
 1 random 21  # G1-1 Sleep Clause Mod; slp's `[from] move:` on -status
+
+# G1-4: the diff found no ps_sim bug in Substitute, Reflect, Light Screen,
+# Mist, Haze, Focus Energy, Leech Seed or Disable. These seeds are the ones
+# that caught deliberate mutations of the port (Substitute's HP without the
+# `+ 1`, Substitute not blocking a foe's stat-drop move, Reflect not failing
+# when already up, Reflect's `-start` as `move: Reflect`). The wide ones
+# play the full ported pool, so like G1-3's they draw other teams whenever
+# `ported(1)` grows; the random ones keep their teams.
+1 wide 41  # G1-4 Substitute up, hit and broken three times; 15 turns
+1 wide 119  # G1-4 Substitute four times, hit three times; 40 turns
+1 random 16  # G1-4 Reflect, Substitute twice, Reflect again (was unported: reflect); plays to the end
+1 random 14  # G1-4 Reflect (was unported: reflect); plays to the end
+1 random 18  # G1-4 Reflect (was unported: reflect); plays to the end
