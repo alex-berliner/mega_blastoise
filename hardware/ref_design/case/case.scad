@@ -312,9 +312,10 @@ deck_gap = 0.15;          // the joint's clearance: between the island's foot an
 // screen block is an island on top of it, its foot isl_in in from the side outline, with one edge profile all
 // round, the step's (an offset loft of its plan, so the corners follow the same profile). What sets isl_in:
 // along the side walls, the board's parts taller than the decks allow (1.6 over the board) must be under the
-// island's inside, isl_wall in from its foot: J5 and J6 (2.9 tall, 3.585 from the outline), J2 and J4 (3.4,
-// 4.17 and 4.2) and the speaker's pocket (4.5). J5 and J6 set it: 2.6 (the aim was 4 to 6; at 2.6 the island's
-// inside is 0.28 clear of them, case/check_fit.py's JOINT zones)
+// island's inside, isl_wall in from its foot: J5 (2.9 tall, 3.585 from the outline), J2 and J4 (3.4,
+// 4.17 and 4.2) and the speaker's pocket (4.5). J5 sets it: 2.6 (the aim was 4 to 6; at 2.6 the island's
+// inside is 0.28 clear of it, case/check_fit.py's JOINT zones). J6 stood beside it at the same reach until it
+// went (2026-10-24, the routing levers), so that frees nothing here: J5 alone keeps 2.6
 isl_in = 2.6;
 isl_wall = 0.7;           // the island's wall along the sides, inside its foot (the skin over its inside's corner)
 isl_r = 3.0;  isl_fillet = 2.0;                         // its plan's corners at the foot: convex, concave
@@ -438,16 +439,21 @@ function ear_of(sx) = sx > 0 ? ear_y : ear_yl;          // the ear on a side wal
 // overmold's front, the overmold 12.35 x 6.5 at most. Mated, its tip is usb_mate inside the
 // receptacle's face (the receptacle's shell length, 6.20 in the Type-C spec)
 plug_len_min = 6.55;  usb_mate = 6.20;
-// left long edge: debug
-pin_pos = [[-31.2, 8.6], [-31.2, 1.6]];                 // SW18 BOOTSEL, SW19 RESET under pinholes in the face
-// J5 (SWD) and J6 (UART), JST SH, their mouths towards the left edge (the board's, 2026-10-22): plugged
-// with the case open (the tub off), as the plugs stand past the board's edge; no slot in the wall
-swd_pos = [-32.6, 15.2];  uart_pos = [-32.6, 22.7];
+// left long edge: debug. SW18 BOOTSEL and SW19 RESET under pinholes in the face: since 2026-10-24 (the routing
+// levers, CELLCUT_FOR_CASE.md) out of the left strip into the left bezel below H4, one above the other, each
+// lying across the bezel (TS-1088, its 3D model 4.8 x 2.9 x 1.95: pin_sw its half size in the plan, pin_sw_h
+// its height). A floor rib in the tub under them (pin_rib) carries a pin's press into the floor
+pin_pos = [[-32.35, -20.7], [-32.35, -24.35]];
+pin_sw = [2.4, 1.45];  pin_sw_h = 1.95;
+pin_guide_d = 3.0;  pin_guide_z = 2.4;                  // the guides round the pinholes, down to this over the board
+// J5 (SWD), JST SH, its mouth towards the left edge (the board's, 2026-10-22): plugged with the case open (the
+// tub off), as the plug stands past the board's edge; no slot in the wall. J6 (UART) went on 2026-10-24
+swd_pos = [-32.6, 15.2];
 debug_h = 2.9;
 // how far out towards the side walls the board's parts that stand taller than the decks allow reach (|x|, their
 // 3D models as check_fit.py exports them, 2026-10-23): they must be under the island's inside (check_fit.py
 // checks every part against the JOINT zones; these are for case.scad's own asserts)
-side_tall = [["J5 and J6", 35.11, 2.9], ["J2", 34.53, 3.4], ["J4", 34.5, 3.4]];
+side_tall = [["J5", 35.11, 2.9], ["J2", 34.53, 3.4], ["J4", 34.5, 3.4]];
 // J2, the cell's plug (PicoBlade 53261, 3.4 tall), at the cell hole's seat-1 corner in the left
 // bezel, its mouth into the hole's corner: the mated plug stands 3 mm out over the left strip and
 // the hole's corner (placement.py), its leads down beside the cell's left end
@@ -511,11 +517,22 @@ assert(usb_recess <= plug_len_min - usb_mate - 0.1, "a mated USB-C plug's overmo
 assert(usb_zc - usb_hole[1] / 2 - z_seam >= 0.8 && usb_zc - usb_step - 0.1 >= usb_zc - usb_hole[1] / 2 + 0.3,
        "the tub's USB-C tab under the opening is too thin");
 assert(usb_front - (case_w / 2 - wall / 2) > 0 && z_seam < z_top_cu, "the USB-C notch isn't needed: drop the tab");
-// J2, J5, J6 under the left bezel
-assert(z_ceil - z_top_cu >= j2_h + 0.3 && z_ceil - z_top_cu >= debug_h + 0.3, "J2 or a debug connector touches the top piece");
+// J2 and J5 under the left bezel
+assert(z_ceil - z_top_cu >= j2_h + 0.3 && z_ceil - z_top_cu >= debug_h + 0.3, "J2 or the debug connector touches the top piece");
 assert(j2_plug[1][0] <= cell_hole[0][0] + 0.2, "J2's plug isn't at the hole's corner");
-assert(swd_pos[1] - 3.5 >= pin_pos[0][1] + 2.4 + 0.3, "the BOOTSEL switch runs into the SWD connector");
-assert(rect_dist(pin_pos[1], j2_plug) >= 2.4 + 0.3, "the RESET switch runs into J2's plug");
+// the debug switches (2026-10-24) in the left bezel below H4: their guides over them, the two side by side, clear
+// of J5, J2's plug, the cell's hole and the panel's frame (H4 and the other screws' bosses: below the side screws'
+// asserts). Along the left wall (the island's inside, the key at y -21, the hook at y -31.5, the grip ribs, the
+// deck's joint across the end): in the "the island" asserts
+function pin_rect(p) = [p - pin_sw, p + pin_sw];
+assert(pin_guide_z >= pin_sw_h + 0.3 && z_ceil - z_top_cu - pin_guide_z >= 1.0, "a pinhole's guide lands on its switch or is too short");
+assert(pin_pos[0][0] == pin_pos[1][0] && abs(pin_pos[0][1] - pin_pos[1][1]) >= 2 * pin_sw[1] + 0.3 && abs(pin_pos[0][1] - pin_pos[1][1]) >= pin_guide_d + 0.6,
+       "the debug switches or their guides run into each other");
+for (p = pin_pos) {
+  assert(abs(p[1] - swd_pos[1]) >= 3.5 + pin_sw[1] + 0.3, "a debug switch runs into J5");
+  assert(rect_dist(p, j2_plug) >= pin_sw[0] + 0.3 && rect_dist(p, j2_plug) >= pin_sw[1] + 0.3, "a debug switch runs into J2's plug");
+  assert(rect_dist(p, cell_hole) >= max(pin_sw) + 1.0, "a debug switch runs into the cell's hole");
+}
 // the side screws in the top piece, beside the glass: clear of the panel's frame, inside the side
 // walls, under the whole screen face (not the step), clear of the joint's band (the decks' plates run on
 // under it) and of the speaker and J4 round H3
@@ -530,7 +547,11 @@ for (s = side_pins) {
   assert(racetrack_dist(s, spk_pos, spk[0] + 2 * spk_keep, spk[1] + 2 * spk_keep) >= boss_d / 2 + 0.3, "a side boss runs into the speaker's pocket");
   assert(rect_dist(s, j4_body) >= boss_d / 2 + 0.3 && rect_dist(s, j4_plug) >= boss_d / 2 + 0.3 - 1e-6, "a side boss runs into J4 or its plug");
 }
-for (p = pin_pos) for (q = pins) assert(norm(p - q) >= boss_d / 2 + 2.4 + 0.5, "a pinhole switch (SW18, SW19) runs into a screw boss");
+for (p = pin_pos) for (i = [0:5]) let(q = pins[i], b = max(tub_boss_d[i], boss_d)) {
+  assert(norm(p - q) >= boss_d / 2 + 2.4 + 0.5, "a pinhole switch (SW18, SW19) runs into a screw boss");
+  assert(rect_dist(q, pin_rect(p)) >= b / 2 + 0.5 && norm(p - q) >= b / 2 + pin_guide_d / 2 + 0.5, "a debug switch or its guide runs into a screw boss");
+}
+for (p = pin_pos) assert(rect_dist(p, frame_rect) >= pin_guide_d / 2 + 0.5, "a pinhole's guide runs into the panel's frame");
 // the screws: each tip short of its pilot's end
 assert(tune || screw_cb[1] + screw_l <= z_top_cu + deck_engage && screw_cb[1] + screw_l <= z_top_cu + screw_engage, "the screws are longer than their pilots");
 assert(z_top_cu + screw_engage <= case_h - 0.8 + 1e-6 && z_top_cu + deck_engage <= deck_face - 0.6 + 1e-6, "a pilot runs too near a face");
@@ -656,6 +677,20 @@ if (!tune) {
   // and 0.7 under its edge, the side screws' bosses inside its foot and their pilots 1.5 in from it
   assert(isl_wall >= 0.7 && isl_edge_skin(isl_in + isl_wall, z_ceil) >= 0.7, "the island's skin over its inside is too thin");
   for (t = side_tall) assert(isl_x - isl_wall >= t[1] + 0.25, str(t[0], " stands under the island's wall or a deck's arm"));
+  // the debug switches and their pinholes' guides under the island's inside, 0.3 (the guides 0.5) in from its wall,
+  // so clear of everything the joints put along the left wall: the key at y -21 (its pocket in to isl_in + 0.1),
+  // the hook at y -31.5 (its head in to hook_s_in), the grip ribs (on the tongue); and in from the deck's joint
+  // band across the island's end
+  for (p = pin_pos) {
+    assert(abs(p[0]) + pin_sw[0] <= isl_x - isl_wall - 0.3 && abs(p[0]) + pin_guide_d / 2 <= isl_x - isl_wall - 0.5,
+           "a debug switch or its guide runs into the island's wall");
+    for (k = keys) if (k[0] * p[0] > 0) assert(abs(k[1] - p[1]) >= key_band + pin_sw[1] + 0.5 || abs(p[0]) + pin_sw[0] <= case_w / 2 - isl_in - 0.1 - 1.0,
+                                               "a debug switch runs into a key's pocket");
+    for (h = hooks) if (h[0] * p[0] > 0) assert(abs(h[1] - p[1]) >= hook_len / 2 + pin_sw[1] + 2.0 && abs(p[0]) + pin_sw[0] <= case_w / 2 - hook_s_in - 1.0,
+                                                "a debug switch runs into a hook");
+    for (g = grips) if (g[0] * p[0] > 0) assert(abs(p[0]) + pin_guide_d / 2 <= in_x - 2.0, "a pinhole's guide runs into a grip rib");
+    assert(abs(p[1]) + max(pin_sw[1], pin_guide_d / 2) <= joint_y - joint_w - 3.0, "a debug switch runs into the deck's joint");
+  }
   assert(spk_pos[0] + spk[0] / 2 + spk_keep <= isl_x - step_in(0), "the speaker's pocket isn't under the island's flat face");
   assert(isl_edge_skin(case_w / 2 - (spk_pos[0] + spk[0] / 2 + spk_keep), z_ceil + spk_pocket) >= 0.7, "the island over the speaker's pocket is too thin");
   for (s = side_pins) assert(abs(s[0]) + boss_d / 2 <= isl_x - 0.3 && abs(s[0]) + screw_pilot / 2 <= isl_x - 1.5, "a side screw's boss runs out of the island");
@@ -753,7 +788,7 @@ echo(str("JSON {",
     ", \"tab\": [", jpt([board_w / 2, usb_y + usb_tab_w / 2]), ", ", jpt([board_w / 2 + usb_tab, usb_y - usb_tab_w / 2]), "]}, ",
   "\"rib_free\": [", join([for (r = rib_free) str("[", jpt([r[0], r[3]]), ", ", jpt([r[2], r[1]]), "]")]), "], ",
   "\"pinholes\": [", jpt(pin_pos[0]), ", ", jpt(pin_pos[1]), "], ",
-  "\"swd\": ", jpt(swd_pos), ", \"uart\": ", jpt(uart_pos), ", ",
+  "\"swd\": ", jpt(swd_pos), ", ",
   "\"cell_hole\": [", jpt([cell_hole[0][0], cell_hole[1][1]]), ", ", jpt([cell_hole[1][0], cell_hole[0][1]]), "], \"cell_top\": ", cell_top, ", ",
   "\"back_limit\": ", jnum(board_lift - 0.2), ", ",
   "\"speaker\": {\"c\": ", jpt(spk_pos), ", \"size\": [", spk[0], ", ", spk[1], "], \"keep\": ", spk_keep,
@@ -1210,12 +1245,20 @@ rib_free = concat([
 ], [for (b = ss_buttons) [b[2][0] - 0.75, b[2][1] - ss_vent - 0.75, b[2][0] + 0.75, b[2][1] - ss_vent + 0.75]]);   // dome vents
 module rib_free2d() for (r = rib_free) translate([r[0], r[1]]) square([r[2] - r[0], r[3] - r[1]]);
 // Ribs under the strips beside the cell's hole, the board's weakest part (2026-10-22 review), along
-// their length: the left one under the debug switches a pin presses (SW18, SW19) and J5/J6, where a
-// cable is pushed in; the right one under the power latch and TH1, with one across it at y 14. The
-// floor's grid and its ring round the board's edge cross them
-strip_ribs = [[[pin_pos[0][0] - 0.6, cell_hole[0][1]], [pin_pos[0][0] + 0.6, cell_hole[1][1]]],
+// their length: the left one under J5, where a cable is pushed in (until 2026-10-24 also under the debug
+// switches, which left the strip, and J6, which went); the right one under TH1 and J1's end (the power latch
+// left it on 2026-10-24), with one across it at y 14. The floor's grid and its ring round the board's edge cross them
+strip_ribs = [[[-31.2 - 0.6, cell_hole[0][1]], [-31.2 + 0.6, cell_hole[1][1]]],
               [[29.6 - 0.6, cell_hole[0][1]], [29.6 + 0.6, cell_hole[1][1]]],
               [[cell_hole[1][0], 14 - 0.6], [board_w / 2, 14 + 0.6]]];
+// and one under the debug switches (2026-10-24) in the left bezel, along under both plungers, from the grid's
+// line below the lower one up into H4's boss: a pin's press goes into the floor, not into bending the board
+pin_rib_y0 = -board_l / 2 + support_pitch * floor((min(pin_pos[0][1], pin_pos[1][1]) + board_l / 2) / support_pitch) - 0.6;
+pin_rib = [[pin_pos[0][0] - 0.6, pin_rib_y0], [pin_pos[0][0] + 0.6, side_pins[3][1] - tub_boss_d[3] / 2 + 0.5]];
+assert(side_pins[3][1] > max(pin_pos[0][1], pin_pos[1][1]) && abs(side_pins[3][0] - pin_pos[0][0]) + 0.6 <= tub_boss_d[3] / 2 - 0.3
+       && pin_rib[0][1] <= min(pin_pos[0][1], pin_pos[1][1]) - pin_sw[1] - 0.5, "the debug switches' floor rib doesn't run under both into H4's boss");
+for (r = rib_free) assert(r[2] <= pin_rib[0][0] || r[0] >= pin_rib[1][0] || r[3] <= pin_rib[0][1] || r[1] >= pin_rib[1][1],
+                          "the debug switches' floor rib is cut by a keep-out");
 // the speaker's outline in the plan, a racetrack along y (grow: out from it), and its grille: slots
 // along it, inside the outline less grille_in
 module spk2d(grow = 0) at(spk_pos) hull() for (s = [-1, 1]) translate([0, s * (spk[1] - spk[0]) / 2]) circle(d = spk[0] + 2 * grow);
@@ -1295,6 +1338,7 @@ module tub() difference() {
           for (x = [-board_w / 2:support_pitch:board_w / 2]) translate([x - 0.6, -board_l / 2]) square([1.2, board_l]);
           for (y = [-board_l / 2:support_pitch:board_l / 2]) translate([-board_w / 2, y - 0.6]) square([board_w, 1.2]);
           for (r = strip_ribs) corners2d(r);
+          corners2d(pin_rib);
         }
       }
       rib_free2d();
@@ -1416,7 +1460,7 @@ module top() difference() {
     // bosses down to the board top: with the tub's bosses they clamp it
     for (s = side_pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_ceil - z_top_cu + 0.01);
     // pinhole guides reach down towards the switches
-    for (p = pin_pos) at(p, z_top_cu + 2.4) cylinder(d = 3.0, h = z_ceil - z_top_cu - 2.4 + 0.01);
+    for (p = pin_pos) at(p, z_top_cu + pin_guide_z) cylinder(d = pin_guide_d, h = z_ceil - z_top_cu - pin_guide_z + 0.01);
     // panel locating frame (its opening is the panel's pocket, cut below: one cut, so no two faces
     // coincide there)
     translate([0, 0, z_ceil - frame_h]) linear_extrude(frame_h + 0.01) difference() {
