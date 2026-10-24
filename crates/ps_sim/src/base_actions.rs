@@ -601,6 +601,7 @@ impl Battle {
             MoveData::Move => self.registry.handler(self.mv(mv).effect(), crate::effect::Prefix::None, event).is_some(),
             MoveData::Secondary(s) => !s.handlers.is_empty(),
             MoveData::SelfEffect(s) => !s.handlers.is_empty(),
+            MoveData::Damage(_) => false,
         }
     }
 

@@ -279,12 +279,14 @@ impl MoveResult {
 }
 
 /// The `moveData` of `moveHit`: the move itself, one of its `secondaries`,
-/// or a `self` effect.
+/// a `self` effect, or a bare `{damage: N}` (gen 1's Bide unleashing its
+/// stored damage).
 #[derive(Clone, Copy, Debug)]
 pub enum MoveData {
     Move,
     Secondary(&'static ps_dex::Secondary),
     SelfEffect(&'static ps_dex::SelfEffect),
+    Damage(i32),
 }
 
 /// The functions a gen's `scripts.ts` overrides (gen 1's list; gen 3
@@ -852,6 +854,7 @@ impl Battle {
             }
             MoveData::Secondary(s) => s.handlers,
             MoveData::SelfEffect(s) => s.handlers,
+            MoveData::Damage(_) => &[],
         };
         assert!(handlers.is_empty(), "unported: the handlers of a secondary or self effect of {:?}", self.mv(mv).id);
         relay.unwrap_or(Relay::TRUE)
@@ -901,7 +904,7 @@ pub fn data_self(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<&'stat
     match data {
         MoveData::Move => def.self_effect(),
         MoveData::Secondary(s) => s.self_effect,
-        MoveData::SelfEffect(_) => None,
+        MoveData::SelfEffect(_) | MoveData::Damage(_) => None,
     }
 }
 
@@ -910,6 +913,7 @@ pub fn data_boosts(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<&'st
         MoveData::Move => def.boosts(),
         MoveData::Secondary(s) => s.boosts,
         MoveData::SelfEffect(s) => s.boosts,
+        MoveData::Damage(_) => None,
     }
 }
 
@@ -918,6 +922,7 @@ pub fn data_status(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId
         MoveData::Move => def.status,
         MoveData::Secondary(s) => s.status,
         MoveData::SelfEffect(s) => s.status,
+        MoveData::Damage(_) => ConditionId::NONE,
     }
 }
 
@@ -926,13 +931,14 @@ pub fn data_volatile(data: MoveData, def: &'static ps_dex::MoveDef) -> Condition
         MoveData::Move => def.volatile_status,
         MoveData::Secondary(s) => s.volatile_status,
         MoveData::SelfEffect(s) => s.volatile_status,
+        MoveData::Damage(_) => ConditionId::NONE,
     }
 }
 
 pub fn data_side_condition(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
     match data {
         MoveData::Move => def.side_condition(),
-        MoveData::Secondary(_) => ConditionId::NONE,
+        MoveData::Secondary(_) | MoveData::Damage(_) => ConditionId::NONE,
         MoveData::SelfEffect(s) => s.side_condition,
     }
 }
@@ -940,7 +946,7 @@ pub fn data_side_condition(data: MoveData, def: &'static ps_dex::MoveDef) -> Con
 pub fn data_pseudo_weather(data: MoveData, def: &'static ps_dex::MoveDef) -> ConditionId {
     match data {
         MoveData::Move => def.pseudo_weather(),
-        MoveData::Secondary(_) => ConditionId::NONE,
+        MoveData::Secondary(_) | MoveData::Damage(_) => ConditionId::NONE,
         MoveData::SelfEffect(s) => s.pseudo_weather,
     }
 }

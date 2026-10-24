@@ -1214,6 +1214,8 @@ texts! {
     BasePower => "BP: {}" (Int),
     // PS: sim/battle.ts runAction `beforeTurnMove` (`action.move.id`)
     BeforeTurnCallback => "before turn callback: {}" (MoveId),
+    // PS: data/mods/gen1/moves.ts bide.condition.onBeforeMove
+    BideNoDamage => "Bide failed because no damage was stored" (),
     // PS: data/abilities.ts compoundeyes onSourceModifyAccuracy
     CompoundEyesAccuracy => "compoundeyes - enhancing accuracy" (),
     // PS: sim/battle-actions.ts getSpreadDamage
@@ -1291,6 +1293,7 @@ texts! {
     HintGen1HyperBeamSleep => "In Gen 1, if a Pokémon that has just used Hyper Beam and has yet to recharge is targeted with a sleep inducing move, any other status it may already have will be ignored and sleep will be induced regardless." (),
     HintGen1Miss => "In Gen 1, moves with 100% accuracy can still miss 1/256 of the time." (),
     HintGen1NoMove => "In Gen 1, if a Pokémon is thawed from freeze and no move has been selected yet, the Pokémon will use a move with Fissure's animation, 102 base power, ??? type, Special category, and around 31.6% accuracy." (),
+    HintGen1PartialTrapRecharge => "In Gen 1, partial trapping moves negate the recharge turn of Hyper Beam, even if they miss." (),
     HintGen1PpUnderflow => "In Gen 1, if a Pokémon is forced to use a move with 0 PP, the move will underflow to have 63 PP." (),
     HintGen1RageBuild => "In Gen 1, using {} causes the target to build Rage, even if it misses or fails" (Move),
     HintGen1Recovery => "In Gen 1, recovery moves fail if (user's maximum HP - user's current HP + 1) is divisible by 256, unless the current hp is also divisible by 256." (),

@@ -100,7 +100,8 @@ pub fn is_ported(dex: &Dex, registry: &Registry, id: EffectId) -> bool {
 
 /// Every condition a move's data can put on the field: its status,
 /// volatile status, own condition, side, slot, weather and pseudo-weather
-/// conditions, and those of its `self` effect and secondaries.
+/// conditions, and those of its `self` effect and secondaries; plus the
+/// ones the gen's pipeline adds for it ([`pipeline_conditions`]).
 pub fn move_conditions(dex: &Dex, m: MoveId) -> impl Iterator<Item = ConditionId> {
     let def = dex.move_def(m);
     let selfs = |s: Option<&'static ps_dex::SelfEffect>| {
@@ -118,7 +119,18 @@ pub fn move_conditions(dex: &Dex, m: MoveId) -> impl Iterator<Item = ConditionId
     .into_iter()
     .chain(selfs(def.self_effect()))
     .chain(def.secondaries().iter().flat_map(move |s| [s.status, s.volatile_status].into_iter().chain(selfs(s.self_effect))))
+    .chain(pipeline_conditions(dex, m))
     .filter(|c| !c.is_none())
+}
+
+/// Conditions a gen's pipeline adds for a move beyond what its data names:
+/// gen 1's `tryMoveHit` confuses a Thrash or Petal Dance user when its
+/// `lockedmove` runs out.
+// PS: data/mods/gen1/scripts.ts tryMoveHit
+fn pipeline_conditions(dex: &Dex, m: MoveId) -> impl Iterator<Item = ConditionId> {
+    let locks = dex.gen == 1
+        && dex.move_def(m).self_effect().is_some_and(|s| Some(s.volatile_status) == dex.condition_id("lockedmove"));
+    locks.then(|| dex.condition_id("confusion")).flatten().into_iter()
 }
 
 /// A move whose use reaches no unported effect: it is ported and so is

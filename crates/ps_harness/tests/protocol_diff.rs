@@ -154,15 +154,15 @@ fn ps_sim_cli_init_block() {
         eprintln!("(skipping: ps_sim_cli not built; run `cargo build -p ps_harness --bin ps_sim_cli`)");
         return;
     };
-    // Two battles in one process: the first reaches Bide (a move with
+    // Two battles in one process: the first reaches Soft-Boiled (a move with
     // handlers, unported), the second is left waiting for choices.
     let team = |mv: &str| format!("Pikachu|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||50|");
     let start = ">start {\"formatid\":\"gen1customgame\",\"seed\":[0,0,0,0]}\n";
     let player = |side: &str, name: &str, mv: &str| format!(">player {side} {{\"name\":\"{name}\",\"team\":\"{}\"}}\n", team(mv));
     let payload = [
         start.to_string(),
-        player("p1", "a", "bide"),
-        player("p2", "b", "bide"),
+        player("p1", "a", "softboiled"),
+        player("p2", "b", "softboiled"),
         ">p1 move 1\n>p2 move 1\n".to_string(),
         start.to_string(),
         player("p1", "c", "tackle"),
@@ -192,13 +192,13 @@ fn ps_sim_cli_init_block() {
         "|teamsize|p1|1",
         "|start\n|split|p1\n|switch|p1a: Pikachu|Pikachu, L50|",
         "sideupdate\np1\n|request|{\"active\":",
-        "\nunported\nbide\n",
+        "\nunported\nsoftboiled\n",
         "|player|p2|d||",
     ];
     for line in &needs {
         assert!(s.contains(line), "ps_sim_cli output missing `{line}`:\n{s}");
     }
-    let second = s.split("\nunported\nbide\n").nth(1).unwrap();
+    let second = s.split("\nunported\nsoftboiled\n").nth(1).unwrap();
     assert!(second.contains("|start\n"), "the second battle did not start:\n{second}");
 }
 

@@ -925,6 +925,10 @@ impl GenScripts for Gen1Scripts {
         if is_move && !b.run_immunity(target, Some(mv), true) {
             return MoveResult::False;
         }
+        // `{damage: N}` has no type, OHKO or callback: `move.damage`.
+        if let MoveData::Damage(n) = data {
+            return MoveResult::Int(n);
+        }
         if is_move {
             if b.mv(mv).ohko {
                 return MoveResult::Int(65535);
@@ -1184,6 +1188,11 @@ impl GenScripts for Gen1Scripts {
         assert_eq!(r, Relay::TRUE, "TryBoost handler: the boosts relay is not ported");
         let kw = match effect {
             EffectId::None | EffectId::Move(_) => Kw::NONE,
+            // `'[from] ' + effect.fullname`: a move's own condition (Rage)
+            // has the move's name.
+            EffectId::Condition(c) if b.dex.condition_def(c).key.as_str() == "rage" => {
+                Kw::from(Arg::new(ArgValue::Move(MoveNum(moves::RAGE.0))))
+            }
             other => panic!("unported: [from] {other:?} on a boost"),
         };
         for i in 0..7 {

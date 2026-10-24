@@ -706,6 +706,59 @@ fn unported_moves_panic_gen3() {
     b.step(&Command::Choose { side: SideId::P2, choice: ps_protocol::Choice::Move(1) }).unwrap();
 }
 
+/// Plays a 1v1 gen 1 battle with the real pipeline, both sides choosing
+/// `move 1` until it ends (or 60 turns), and returns the whole log.
+fn play_gen1(p1: &str, p2: &str, seed: [u16; 4]) -> String {
+    let start = format!(
+        r#"start {{"formatid":"gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod","seed":[{},{},{},{}]}}"#,
+        seed[0], seed[1], seed[2], seed[3]
+    );
+    let cmds = [
+        start,
+        format!(r#"player p1 {{"name":"Player 1","team":"{p1}"}}"#),
+        format!(r#"player p2 {{"name":"Player 2","team":"{p2}"}}"#),
+    ];
+    let mut b = setup(&cmds);
+    b.move_hook = None;
+    let mut log = String::new();
+    let mut take = |b: &mut Battle| {
+        for (h, body) in flush(b) {
+            if h == "update" {
+                log.push_str(&body);
+                log.push('\n');
+            }
+        }
+    };
+    take(&mut b);
+    while !b.ended && b.turn < 60 {
+        b.step(&Command::Choose { side: SideId::P1, choice: ps_protocol::Choice::Move(1) }).unwrap();
+        b.step(&Command::Choose { side: SideId::P2, choice: ps_protocol::Choice::Move(1) }).unwrap();
+        take(&mut b);
+    }
+    log
+}
+
+/// G1-2's conditions run through the pipeline: the partial trap and its
+/// lock, Hyper Beam's recharge, Rage's build-up and Bide.
+#[test]
+fn gen1_trapping_recharge_rage_and_bide() {
+    let set = |species: &str, mv: &str| format!("{species}|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||90|");
+    let log = play_gen1(&set("Arbok", "wrap"), &set("Snorlax", "tackle"), [1, 2, 3, 4]);
+    assert!(log.contains("|cant|p2a: Snorlax|partiallytrapped"), "{log}");
+    assert!(log.contains("|move|p1a: Arbok|Wrap|p2a: Snorlax|[from] Wrap"), "{log}");
+
+    let log = play_gen1(&set("Tauros", "hyperbeam"), &set("Chansey", "rage"), [5, 6, 7, 8]);
+    assert!(log.contains("|-mustrecharge|p1a: Tauros"), "{log}");
+    assert!(log.contains("|cant|p1a: Tauros|recharge"), "{log}");
+    assert!(log.contains("|-boost|p2a: Chansey|atk|1|[from] Rage"), "{log}");
+    assert!(log.contains("|move|p2a: Chansey|Rage|p1a: Tauros|[from] Rage"), "{log}");
+
+    let log = play_gen1(&set("Chansey", "bide"), &set("Rattata", "tackle"), [9, 10, 11, 12]);
+    assert!(log.contains("|-start|p1a: Chansey|Bide"), "{log}");
+    assert!(log.contains("|-activate|p1a: Chansey|Bide"), "{log}");
+    assert!(log.contains("|-end|p1a: Chansey|Bide"), "{log}");
+}
+
 /// `>forcetie` and `>forcewin`.
 #[test]
 fn force_win_and_tie() {
