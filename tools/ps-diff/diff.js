@@ -53,6 +53,10 @@
 //     is the regression the cargo test pins at a known line.
 //   * `--focus <ids>` makes every team carry at least one of those ids
 //     among its moves. Used by the cargo test for replay.
+//   * `--hits <file>` is passed on to every `ps_sim_cli` (a `hit-count`
+//     build): it writes its per-handler hit counts there, `{pid}`
+//     replaced by its process id and start time.
+//     `scripts/ps-coverage.sh` sums them.
 //   * `--quiet` collapses the per-run trace to one summary line at the
 //     end. Without it, the diff's seed, line number, left/right context
 //     and PRNG call counts are written, plus we print per-battle progress
@@ -82,6 +86,7 @@ function parseArgs(argv) {
     quiet: false,
     seedStart: 0, seedEnd: undefined,
     psCli: undefined,
+    hits: undefined,
     scratch: undefined,
     timeoutMs: DEFAULT_TIMEOUT_MS,
     jobs: DEFAULT_JOBS,
@@ -107,6 +112,7 @@ function parseArgs(argv) {
       case '--seed-start': opts.seedStart = parseInt(argv[i++], 10); break;
       case '--seed-end': opts.seedEnd = parseInt(argv[i++], 10); break;
       case '--ps-cli': opts.psCli = argv[i++]; break;
+      case '--hits': opts.hits = argv[i++]; break;
       case '--scratch': opts.scratch = argv[i++]; break;
       case '--per-battle-timeout': opts.timeoutMs = parseInt(argv[i++], 10); break;
       case '--jobs': opts.jobs = parseInt(argv[i++], 10); break;
@@ -130,7 +136,7 @@ function parseArgs(argv) {
           + '[--seed S] [--seed-start X --seed-end Y] '
           + '[--teams random|wide|file:<p>] [--focus ids] '
           + '[--jobs N] [--tamper-line K] [--pinned] [--carried gen1 [--carried-pair F#C]] '
-          + '[--trunc cartridge|math] [--quiet] [--allow-unported]'
+          + '[--trunc cartridge|math] [--quiet] [--allow-unported] [--hits FILE]'
         );
         process.exit(0);
       default:
@@ -406,13 +412,14 @@ const MESSAGE_TYPES = new Set(['update', 'sideupdate', 'end', 'unported', 'crash
 const TERMINAL_TYPES = new Set(['end', 'unported', 'crash']);
 
 class RustProc {
-  constructor(psCli) {
+  constructor(psCli, hits) {
     this.psCli = psCli;
+    this.args = hits ? ['--hits', hits] : [];
     this.child = null;
     this.battle = null;   // the battle being played (see runBattle)
   }
   _spawn() {
-    const child = spawn(this.psCli, [], { stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
+    const child = spawn(this.psCli, this.args, { stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
     this.child = child;
     this.type = null;     // the message being read
     this.lines = [];
@@ -511,10 +518,10 @@ class RustProc {
 }
 
 let rustProc = null;
-function rustFor(psCli) {
+function rustFor(psCli, hits) {
   if (!rustProc || rustProc.psCli !== psCli) {
     if (rustProc) rustProc.close();
-    rustProc = new RustProc(psCli);
+    rustProc = new RustProc(psCli, hits);
   }
   return rustProc;
 }
@@ -588,7 +595,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
   let rust = null;
   let bPromise = null;
   try {
-    rust = rustFor(opts.psCli);
+    rust = rustFor(opts.psCli, opts.hits);
     bPromise = rust.runBattle(info.cmds, info.choiceSeed, opts.timeoutMs);
     const a = await drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed });
     rust.graceUntil(RUST_GRACE_MS);
@@ -715,6 +722,7 @@ async function runWithJobs(drivers, opts) {
   const childArgs = [];
   childArgs.push('--gen', String(opts.gen));
   if (opts.psCli) childArgs.push('--ps-cli', opts.psCli);
+  if (opts.hits) childArgs.push('--hits', opts.hits);
   if (opts.self) childArgs.push('--self');
   if (opts.pinned) childArgs.push('--pinned');
   if (opts.pinnedFile) childArgs.push('--pinned-file', opts.pinnedFile);

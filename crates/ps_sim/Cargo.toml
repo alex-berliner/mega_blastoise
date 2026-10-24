@@ -17,6 +17,9 @@ text = ["ps_protocol/text"]
 # firmware never enables this; thumbv8m builds without it must contain
 # no override symbol (P1-2 acceptance).
 test-override = []
+# Per-handler hit counts in `Battle::hits` (`hits.rs`) for the coverage
+# gate (`scripts/ps-coverage.sh`). Host-only; the firmware never enables it.
+hit-count = []
 defmt = ["dep:defmt"]
 
 [dependencies]

@@ -553,10 +553,20 @@ impl Battle {
         );
     }
 
+    /// Feature `hit-count`: counts one call of `effect`'s handler `h`
+    /// (`hits.rs`). The call sites are `cfg`'d out with the feature, so a
+    /// build without it (the firmware) is unchanged.
+    #[cfg(feature = "hit-count")]
+    pub(crate) fn count_hit(&mut self, effect: EffectId, h: &Handler) {
+        self.hits.count(effect, h.prefix, h.event);
+    }
+
     /// Runs one handler with `this.effect` / `this.effectState` set as
     /// `runEvent` does (`this.effectState.target = effectHolder`).
     fn call_listener(&mut self, l: &Listener, args: &EventArgs) -> Option<Relay> {
         let h = l.handler?;
+        #[cfg(feature = "hit-count")]
+        self.count_hit(l.effect, h);
         match h.callback {
             Callback::Const(v) => Some(v),
             Callback::Fn(f) => {
@@ -915,6 +925,8 @@ impl Battle {
             source,
             effect: source_effect,
         };
+        #[cfg(feature = "hit-count")]
+        self.count_hit(effect, h);
         let ret = match h.callback {
             Callback::Fn(f) => f(self, &args),
             Callback::Const(v) => Some(v),

@@ -877,6 +877,9 @@ pub struct Battle {
     /// battles and the event unit tests (fake registries) expect.
     #[cfg(any(test, feature = "test-override"))]
     pub lax_handlers: bool,
+    /// Feature `hit-count`: the handler calls of this battle.
+    #[cfg(feature = "hit-count")]
+    pub hits: crate::hits::Hits,
     /// One `initEffectState({})` per event depth.
     pub(crate) scratch: [EffectState; MAX_EVENT_DEPTH + 1],
     /// Recently removed states, by serial.
@@ -943,6 +946,8 @@ impl Battle {
             move_hook: None,
             #[cfg(any(test, feature = "test-override"))]
             lax_handlers: false,
+            #[cfg(feature = "hit-count")]
+            hits: crate::hits::Hits::new(),
             scratch: [EffectState::EMPTY; MAX_EVENT_DEPTH + 1],
             graveyard: [EffectState::EMPTY; GRAVEYARD_CAP],
             graveyard_next: 0,
@@ -1381,6 +1386,8 @@ impl Battle {
         effect: EffectId,
     ) -> Option<i8> {
         let h = self.registry.handler(EffectId::Condition(status), Prefix::None, EventId::DurationCallback)?;
+        #[cfg(feature = "hit-count")]
+        self.count_hit(EffectId::Condition(status), h);
         let args = EventArgs { id: EventId::DurationCallback, relay: None, target, source, effect };
         let r = match h.callback {
             crate::effect::Callback::Fn(f) => f(self, &args),

@@ -33,6 +33,8 @@ pub mod choice;
 pub mod effect;
 pub mod emit;
 pub mod events;
+#[cfg(feature = "hit-count")]
+pub mod hits;
 pub mod mods;
 pub mod modify;
 pub mod prng;

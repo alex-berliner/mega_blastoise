@@ -1,0 +1,103 @@
+# Lines of crates/ps_sim/src/mods/genN/** that the coverage gate
+# (scripts/ps-coverage.sh, V-1) accepts as never run: each is dead under
+# the formats the gate plays or unreachable in Showdown too.
+#
+# One entry a line: `<path under crates/ps_sim/src>:<first>[-<last>]  <reason>; PS: <file>:<line>`.
+# Line numbers move with edits: the script lists entries that match no
+# unrun line as stale, so re-check them after touching an allowed file.
+#
+# `handler <gen> <kind:id> <key>  <reason>` entries exempt a registered handler
+# from the 20-battle hit gate the same way (PS's data gives the effect the
+# handler, so the registry must carry it, but gen 1 never calls it).
+#
+# A closing-brace line counts the implicit `else` of the `if` it closes
+# (llvm-cov), so "never runs" there means "the condition is never false".
+
+# ---- gen 1: handlers gen 1 never calls ---------------------------------------
+handler 1 move:dig onPrepareHit  gen 1 never runs the PrepareHit event; PS: data/mods/gen1/scripts.ts (no 'PrepareHit' in tryMoveHit/moveHit), handler from data/mods/gen2/moves.ts dig.onPrepareHit
+handler 1 move:fly onPrepareHit  as dig; PS: data/mods/gen2/moves.ts fly.onPrepareHit
+handler 1 move:razorwind onPrepareHit  as dig; PS: data/mods/gen2/moves.ts razorwind.onPrepareHit
+handler 1 move:skullbash onPrepareHit  as dig; PS: data/mods/gen2/moves.ts skullbash.onPrepareHit
+handler 1 move:skyattack onPrepareHit  as dig; PS: data/mods/gen2/moves.ts skyattack.onPrepareHit
+handler 1 move:solarbeam onPrepareHit  as dig; PS: data/mods/gen2/moves.ts solarbeam.onPrepareHit
+handler 1 move:haze onHitField  gen 1's moveHit runs singleEvent('Hit') only, never HitField; PS: data/mods/gen1/scripts.ts:699, data/mods/gen3/moves.ts haze.onHitField
+handler 1 condition:toxic onSourceInvulnerability  the toxic volatile is only added by gen 7's Toxic onPrepareHit, which gen 1 never runs; PS: data/mods/gen7/moves.ts toxic
+handler 1 condition:toxic onSourceAccuracy  as onSourceInvulnerability; PS: data/mods/gen7/moves.ts toxic
+handler 1 condition:trapped onTrapPokemon  no gen 1 move adds the trapped volatile (Mean Look, Block, Spider Web are later gens); PS: data/mods/gen1/conditions.ts:181
+handler 1 condition:tox onAfterSwitchInSelf  tox.onSwitchIn turns the status into psn before AfterSwitchInSelf runs, so the status check skips tox; PS: data/mods/gen2/conditions.ts:104-111, data/mods/gen4/scripts.ts:21,40
+handler 1 condition:residualdmg onAfterSwitchInSelf  residualdmg is a volatile (gone on switch-out) and gen 1 has no Baton Pass, so a Pokemon never switches in holding it; PS: data/mods/gen2/conditions.ts residualdmg
+
+# ---- gen 1: lines --------------------------------------------------------------
+mods/gen1/moves/dig.rs:25-29  onPrepareHit body: PrepareHit never runs in gen 1 (see the handler entry); PS: data/mods/gen2/moves.ts dig.onPrepareHit
+mods/gen1/moves/fly.rs:25-29  as dig; PS: data/mods/gen2/moves.ts fly.onPrepareHit
+mods/gen1/moves/razorwind.rs:25-29  as dig; PS: data/mods/gen2/moves.ts razorwind.onPrepareHit
+mods/gen1/moves/skullbash.rs:25-29  as dig; PS: data/mods/gen2/moves.ts skullbash.onPrepareHit
+mods/gen1/moves/skyattack.rs:25-29  as dig; PS: data/mods/gen2/moves.ts skyattack.onPrepareHit
+mods/gen1/moves/solarbeam.rs:25-29  as dig; PS: data/mods/gen2/moves.ts solarbeam.onPrepareHit
+mods/gen1/moves/haze.rs:101-108  onHitField body: never run in gen 1 (see the handler entry); PS: data/mods/gen3/moves.ts haze.onHitField
+mods/gen1/moves/haze.rs:35  panic guard: the line before is always the volatile's own -end; PS: data/mods/gen1/moves.ts:366-400 (no branch)
+mods/gen1/moves/haze.rs:92  unreachable!(): every other Haze volatile has a name; PS: data/mods/gen1/moves.ts:366-400 (no branch)
+mods/gen1/conditions/toxic.rs:18-26  onSourceInvulnerability body: the volatile never exists in gen 1; PS: data/mods/gen7/moves.ts toxic
+mods/gen1/conditions/toxic.rs:31-39  onSourceAccuracy body: as above; PS: data/mods/gen7/moves.ts toxic
+mods/gen1/conditions/trapped.rs:16-26  onTrapPokemon body: nothing in gen 1 adds trapped; PS: data/mods/gen1/conditions.ts:181-190
+mods/gen1/conditions/tox.rs:62-67  onAfterSwitchInSelf body: tox is psn by then; PS: data/mods/gen2/conditions.ts:104-111
+mods/gen1/conditions/tox.rs:33  Rust Option guard: residualdmg was just added, PS writes .counter unguarded; PS: data/mods/gen2/conditions.ts:98
+mods/gen1/conditions/residualdmg.rs:36-42  onAfterSwitchInSelf body: never holds on switch-in in gen 1; PS: data/mods/gen2/conditions.ts residualdmg.onAfterSwitchInSelf
+mods/gen1/conditions/mod.rs:69  Rust Option guard: callers bump the counter only while residualdmg is present; PS: data/mods/gen1/conditions.ts:22, data/mods/gen1/moves.ts:451
+mods/gen1/conditions/confusion.rs:61  Rust Option guard: the handler runs from the volatile itself, PS reads pokemon.volatiles['confusion'] unguarded; PS: data/mods/gen1/conditions.ts:146
+mods/gen1/conditions/flinch.rs:29  no gen 1 effect has onFlinch, so runEvent('Flinch') is always truthy; PS: data/mods/gen1/conditions.ts flinch.onBeforeMove
+mods/gen1/conditions/focusenergy.rs:26  Dragon Cheer does not exist in gen 1; PS: data/moves.ts focusenergy.condition.onStart
+mods/gen1/conditions/invulnerability.rs:28  Invulnerability always runs with a move as its effect; PS: data/mods/gen1/conditions.ts:323-327, data/mods/gen1/scripts.ts tryMoveHit
+mods/gen1/conditions/lockedmove.rs:26  panic guard: lockedmove starts only from Thrash or Petal Dance; PS: data/mods/gen1/conditions.ts:293
+mods/gen1/conditions/partialtrappinglock.rs:46  panic guard: the lock starts only from a partial trapping move; PS: data/mods/gen1/conditions.ts:237
+mods/gen1/conditions/partialtrappinglock.rs:77  AfterMove always has a target: a faint clears the gen 1 queue, so no move runs with no foe; PS: data/mods/gen1/conditions.ts:246, sim/battle.ts:2578-2581
+mods/gen1/conditions/mustrecharge.rs:43  as partialtrappinglock.rs:77; PS: data/mods/gen1/conditions.ts:282, sim/battle.ts:2578-2581
+mods/gen1/conditions/slp.rs:30  every gen 1 sleep comes from a move (the sleep moves and Rest); PS: data/mods/gen1/conditions.ts slp.onStart
+mods/gen1/conditions/substitute.rs:41-49  a partially trapped Pokemon never moves (partiallytrapped.onBeforeMove returns false), so it cannot use Substitute; PS: data/mods/gen1/moves.ts:828-831, data/mods/gen1/conditions.ts:201-204
+mods/gen1/conditions/substitute.rs:128  both gen 1 moves with a confusion secondary (Confusion, Psybeam) have a 10% chance; PS: data/mods/gen1/moves.ts:876
+mods/gen1/conditions/twoturnmove.rs:48  Rust guard: onStart always records the move; PS: data/mods/gen1/conditions.ts:311,316
+mods/gen1/moves/bide.rs:19  bide.condition.onBeforeMove always returns false, so beforeMoveCallback never runs while the volatile is up; PS: data/mods/gen1/moves.ts:42-61, data/moves.ts bide.beforeMoveCallback
+mods/gen1/moves/conversion.rs:33  every Pokemon has one or two types; PS: data/mods/gen1/moves.ts conversion (no branch)
+mods/gen1/moves/metronome.rs:39  gen 1's Metronome pool is never empty; PS: data/moves.ts metronome.onHit
+mods/gen1/moves/rest.rs:40  setStatus('slp') on the user fails only if it is already asleep, and a sleeping Pokemon never moves in gen 1; PS: data/mods/gen1/moves.ts:690, sim/pokemon.ts setStatus
+mods/gen1/moves/substitute.rs:42  gen 1 max HP is at least level + 10 > 3; PS: data/mods/gen1/moves.ts:819
+mods/gen1/moves/thunder.rs:21  ModifyMove always has the move's target; PS: data/moves.ts thunder.onModifyMove (target?.)
+mods/gen1/moves/thunder.rs:28-45  no weather in gen 1; PS: data/moves.ts thunder.onModifyMove
+mods/gen1/scripts.rs:175  no gen 1 effect has onOverrideAction; PS: data/mods/gen1/scripts.ts:157
+mods/gen1/scripts.rs:177  panic guard on OverrideAction (no handler); PS: data/mods/gen1/scripts.ts:157-160
+mods/gen1/scripts.rs:207  runMove always has a target in gen 1 singles (a faint clears the queue); PS: data/mods/gen1/scripts.ts runMove, sim/battle.ts:2578-2581
+mods/gen1/scripts.rs:219-220  the only gen 1 beforeMoveCallback (Bide) never returns true (see moves/bide.rs:19); PS: data/mods/gen1/scripts.ts:197
+mods/gen1/scripts.rs:278  Rust: nomove became Fissure and cannotmove aborted above, so the move is never fake here; PS: data/mods/gen1/scripts.ts:221-236
+mods/gen1/scripts.rs:352  useMove already applied the same sourceEffect default before calling useMoveInner; PS: data/mods/gen1/scripts.ts:244,300
+mods/gen1/scripts.rs:357-358  useMove already filled an undefined target; PS: data/mods/gen1/scripts.ts:247,303
+mods/gen1/scripts.rs:378  no gen 1 ModifyMove handler (Thunder only) can faint the user; PS: data/mods/gen1/scripts.ts:325
+mods/gen1/scripts.rs:398-400  the target is never fainted when a gen 1 move starts (a faint clears the queue); PS: data/mods/gen1/scripts.ts:346-347, sim/battle.ts:2578-2581
+mods/gen1/scripts.rs:523  no gen 1 move has ignoreAccuracy; PS: data/mods/gen1/scripts.ts:444
+mods/gen1/scripts.rs:527  no gen 1 move has ignoreEvasion; PS: data/mods/gen1/scripts.ts:447
+mods/gen1/scripts.rs:542  panic guard: Accuracy answers true or a number (no handler returns anything else); PS: data/mods/gen1/scripts.ts:455
+mods/gen1/scripts.rs:547  every gen 1 self-targeting move has accuracy true; PS: data/mods/gen1/scripts.ts:457
+mods/gen1/scripts.rs:573  gen 1 multihit is 2 or [2, 5]; PS: data/mods/gen1/scripts.ts:469-475
+mods/gen1/scripts.rs:697  no gen 1 effect has onTryFieldHit; PS: data/mods/gen1/scripts.ts:566
+mods/gen1/scripts.rs:709-713  only TrySecondaryHit can leave a falsy result here and no gen 1 effect has it; PS: data/mods/gen1/scripts.ts:570,576-578
+mods/gen1/scripts.rs:715  moveHit is always called with a target in gen 1; PS: data/mods/gen1/scripts.ts moveHit
+mods/gen1/scripts.rs:736  battle.damage on an active target with HP returns a number (no gen 1 onDamage handler); PS: data/mods/gen1/scripts.ts:607, sim/battle.ts spreadDamage
+mods/gen1/scripts.rs:738  as above; PS: data/mods/gen1/scripts.ts:609
+mods/gen1/scripts.rs:766-767  the foe's slot is always filled in singles; PS: data/mods/gen1/scripts.ts:627
+mods/gen1/scripts.rs:770-782  no gen 1 move has heal (Recover, Soft-Boiled set heal: undefined); PS: data/mods/gen1/scripts.ts:638, data/mods/gen1/moves.ts:641,780
+mods/gen1/scripts.rs:827-830  no gen 1 move has a sideCondition (Reflect, Light Screen, Mist are volatiles); PS: data/mods/gen1/scripts.ts:688
+mods/gen1/scripts.rs:834-837  no gen 1 move has a pseudoWeather; PS: data/mods/gen1/scripts.ts:693
+mods/gen1/scripts.rs:848  no gen 1 Hit handler answers null or 0 with nothing done; PS: data/mods/gen1/scripts.ts:702-704
+mods/gen1/scripts.rs:887  every gen 1 secondary has a chance; PS: data/mods/gen1/scripts.ts:727
+mods/gen1/scripts.rs:905-911  no gen 1 move has selfSwitch; PS: data/mods/gen1/scripts.ts:741
+mods/gen1/scripts.rs:926  tryMoveHit already ran the same immunity check for this move and target; PS: data/mods/gen1/scripts.ts:404,763
+mods/gen1/scripts.rs:970  no gen 1 move has basePowerCallback; PS: data/mods/gen1/scripts.ts:805
+mods/gen1/scripts.rs:975  as above (only a callback can answer false or null); PS: data/mods/gen1/scripts.ts:808-809
+mods/gen1/scripts.rs:991  every gen 1 move has critRatio 1 or 2; PS: data/mods/gen1/scripts.ts:830-835
+mods/gen1/scripts.rs:996-997  the crit chance is at least 1 (slowest species, Slowpoke base 15: 7, 3 under Focus Energy, 1 after critRatio 1); PS: data/mods/gen1/scripts.ts:841
+mods/gen1/scripts.rs:1005-1006  no gen 1 effect has onBasePower; PS: data/mods/gen1/scripts.ts:849
+mods/gen1/scripts.rs:1010  base power is at least 1 here (clamped, no BasePower handler); PS: data/mods/gen1/scripts.ts:810,849
+mods/gen1/scripts.rs:1043  no gen 1 caller passes suppressMessages; PS: data/mods/gen1/scripts.ts:882
+mods/gen1/scripts.rs:1099  panic guard: Effectiveness has no gen 1 handler; PS: data/mods/gen1/scripts.ts:938
+mods/gen1/scripts.rs:1141  Rust: both callers check the move slot first; PS: data/mods/gen1/scripts.ts:31,209,252
+mods/gen1/scripts.rs:1190  panic guard: TryBoost answers the boosts table; PS: data/mods/gen1/scripts.ts boost
+mods/gen1/scripts.rs:1199  no gen 1 boost comes from an effect other than a move or Rage; PS: data/mods/gen1/scripts.ts boost

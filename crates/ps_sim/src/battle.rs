@@ -1124,6 +1124,8 @@ impl Battle {
                     source: Some(target),
                     effect: EffectId::Move(mv),
                 };
+                #[cfg(feature = "hit-count")]
+                self.count_hit(EffectId::Move(mv), h);
                 if let Callback::Fn(f) = h.callback {
                     f(self, &args);
                 }

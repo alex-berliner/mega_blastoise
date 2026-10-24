@@ -906,6 +906,8 @@ impl Battle {
     pub(crate) fn move_callback(&mut self, mv: MoveRef, event: EventId, target: MonRef, source: Option<MonRef>) -> Option<Relay> {
         let effect = self.mv(mv).effect();
         let h = self.registry.handler(effect, Prefix::None, event)?;
+        #[cfg(feature = "hit-count")]
+        self.count_hit(effect, h);
         let args = EventArgs { id: event, relay: None, target: Holder::Mon(target), source, effect };
         match h.callback {
             Callback::Fn(f) => f(self, &args),

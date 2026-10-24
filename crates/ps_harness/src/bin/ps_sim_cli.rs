@@ -34,8 +34,26 @@
 //!
 //! `--ported <gen>` prints `ps_sim::mods::ported(gen)`, one `kind:id` per
 //! line (gens 1 and 3; others exit 2).
+//!
+//! `--handlers <gen>` prints every handler the gen's registry holds, one
+//! per line: `kind:id`, the handler key (`onResidual`,
+//! `basePowerCallback`) and the ported moves whose data can reach it, comma
+//! separated (the `--focus` ids `scripts/ps-coverage.sh` prints for an
+//! under-hit handler; `-` when the data names none).
+//!
+//! `--hits FILE` (built with the `hit-count` feature) writes the handler
+//! calls of every battle played to FILE, rewritten after each battle and at
+//! exit; a `{pid}` in FILE becomes the process id and start time, so the
+//! processes of a `--jobs` run (and any respawned one) each write their own
+//! file. One `battles <gen> <n>` line per
+//! gen, then one `hit <gen> <kind:id> <key> <calls> <battles>` line per
+//! handler that ran (tab separated), `battles` being the number of battles
+//! it ran in at least once.
 
 use std::cell::RefCell;
+#[cfg(feature = "hit-count")]
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::io::{self, BufRead, Write};
 use std::panic::{self, AssertUnwindSafe};
 use std::sync::OnceLock;
@@ -47,7 +65,8 @@ use ps_protocol::text::team::unpack;
 use ps_protocol::text::encode_log;
 use ps_protocol::{Choice, Command, FormatSpec, Msg, Request, SideId};
 use ps_sim::text::{dex_tables, Names};
-use ps_sim::{Battle, Sink};
+use ps_sim::effect::Rule;
+use ps_sim::{Battle, EffectId, EventId, Prefix, Sink};
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -66,15 +85,42 @@ fn main() {
         }
         return;
     }
+    if args.first().map(|s| s.as_str()) == Some("--handlers") {
+        match args.get(1).and_then(|s| s.parse::<u8>().ok()) {
+            Some(g @ (1 | 3)) => run_handlers(g),
+            _ => {
+                eprintln!("ps_sim_cli: --handlers expects a generation (1 or 3)");
+                std::process::exit(2);
+            }
+        }
+        return;
+    }
+    let mut hits_path = None;
+    if let Some(i) = args.iter().position(|a| a == "--hits") {
+        let Some(path) = args.get(i + 1) else {
+            eprintln!("ps_sim_cli: --hits expects a file");
+            std::process::exit(2);
+        };
+        if !cfg!(feature = "hit-count") {
+            eprintln!("ps_sim_cli: --hits needs a build with `--features hit-count`");
+            std::process::exit(2);
+        }
+        // The process id and start time: a respawned process never reuses
+        // an earlier one's file.
+        let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
+        hits_path = Some(path.replace("{pid}", &format!("{}-{nanos}", std::process::id())));
+    }
     if args.iter().any(|a| a == "--help" || a == "-h") {
         eprintln!(
             "ps_sim_cli: ps_sim behind PS's BattleStream protocol\n  \
              Run on stdin/stdout; reads `>start` / `>player pN` / `>pN <choice>`.\n  \
-             --ported <gen>   print the ported effect ids for `gen`, one per line."
+             --ported <gen>   print the ported effect ids for `gen`, one per line.\n  \
+             --handlers <gen> print the registered handlers for `gen` and their focus moves.\n  \
+             --hits FILE      write per-handler hit counts to FILE (`hit-count` builds)."
         );
         return;
     }
-    run_stream();
+    run_stream(hits_path);
 }
 
 /// `--ported <gen>`: one `<kind>:<id>` per line.
@@ -85,6 +131,147 @@ fn run_ported(gen: u8) {
         let _ = writeln!(out, "{entry}");
     }
     let _ = out.flush();
+}
+
+// ---- handler names and hit counts ------------------------------------------
+
+/// `kind:id` for a registered effect.
+fn effect_name(dex: &ps_dex::Dex, id: EffectId) -> String {
+    use ps_sim::mods::PsId;
+    match id {
+        EffectId::Move(m) => format!("move:{}", PsId(dex.move_def(m).name.as_str())),
+        EffectId::Condition(c) => format!("condition:{}", dex.condition_def(c).key.as_str()),
+        EffectId::Item(i) => format!("item:{}", PsId(dex.item_def(i).name.as_str())),
+        EffectId::Ability(a) => format!("ability:{}", PsId(dex.ability_def(a).name.as_str())),
+        EffectId::Rule(r) => format!("rule:{}", format!("{r:?}").to_ascii_lowercase()),
+        other => format!("{other:?}"),
+    }
+}
+
+/// The PS data key of a handler: `on{prefix}{event}`, or the callback key
+/// (`basePowerCallback`).
+fn handler_key(prefix: Prefix, event: EventId) -> String {
+    let n = event.name();
+    if event.is_callback_key() {
+        format!("{}{}", n[..1].to_ascii_lowercase(), &n[1..])
+    } else {
+        format!("on{}{n}", prefix.name())
+    }
+}
+
+/// Conditions no move's data names, which a handler adds: the moves whose
+/// use reaches the handler that adds each.
+const HANDLER_ADDED: &[(u8, &str, &[&str])] = &[
+    // PS data/mods/gen2/conditions.ts tox.onStart (gen 1 inherits it).
+    (1, "residualdmg", &["toxic"]),
+    // PS data/mods/gen1/moves.ts dig / fly / the charge moves' onTryMove.
+    (1, "twoturnmove", &["dig", "fly", "razorwind", "skullbash", "skyattack", "solarbeam"]),
+    (1, "invulnerability", &["dig", "fly"]),
+    // PS data/mods/gen1/conditions.ts partialtrappinglock.onBeforeMove.
+    (1, "fakepartiallytrapped", &["bind", "clamp", "firespin", "wrap"]),
+];
+
+/// The ported moves whose data can reach `id`'s handlers: the move itself,
+/// the moves that name a condition (`ps_sim::mods::move_conditions`), the
+/// moves of [`HANDLER_ADDED`], and for Sleep and Freeze Clause Mod (whose
+/// `onSetStatus` sees every status) the moves that inflict `slp` / `frz`.
+/// Empty when none can (gen 1's `trapped`: no gen 1 move adds it).
+fn focus_moves(gen: u8, dex: &'static ps_dex::Dex, id: EffectId) -> Vec<String> {
+    if let EffectId::Condition(c) = id {
+        let key = dex.condition_def(c).key.as_str();
+        if let Some((_, _, moves)) = HANDLER_ADDED.iter().find(|(g, k, _)| *g == gen && *k == key) {
+            return moves.iter().map(|m| m.to_string()).collect();
+        }
+    }
+    let ported: BTreeSet<&str> = ps_sim::mods::ported(gen).iter().filter_map(|e| e.strip_prefix("move:")).collect();
+    let cond = match id {
+        EffectId::Condition(c) => Some(c),
+        EffectId::Rule(Rule::SleepClauseMod) => dex.condition_id("slp"),
+        EffectId::Rule(Rule::FreezeClauseMod) => dex.condition_id("frz"),
+        _ => None,
+    };
+    let mut out = Vec::new();
+    for i in 0..dex.moves.len() {
+        let m = ps_dex::MoveId(i as u16);
+        let name = format!("{}", ps_sim::mods::PsId(dex.move_def(m).name.as_str()));
+        if !ported.contains(name.as_str()) {
+            continue;
+        }
+        let hit = match (id, cond) {
+            (EffectId::Move(x), _) => x == m,
+            (_, Some(c)) => ps_sim::mods::move_conditions(dex, m).any(|x| x == c),
+            _ => false,
+        };
+        if hit {
+            out.push(name);
+        }
+    }
+    out
+}
+
+fn dex_of(gen: u8) -> &'static ps_dex::Dex {
+    if gen == 1 {
+        &ps_dex::GEN1
+    } else {
+        &ps_dex::GEN3
+    }
+}
+
+/// `--handlers <gen>`: `kind:id`, key and focus moves, tab separated.
+fn run_handlers(gen: u8) {
+    let dex = dex_of(gen);
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+    for (id, def) in ps_sim::mods::registry_for(dex).entries {
+        let focus = focus_moves(gen, dex, *id);
+        let focus = if focus.is_empty() { "-".to_string() } else { focus.join(",") };
+        for h in def.handlers {
+            let _ = writeln!(out, "{}\t{}\t{focus}", effect_name(dex, *id), handler_key(h.prefix, h.event));
+        }
+    }
+    let _ = out.flush();
+}
+
+/// The sweep's handler calls so far (`--hits`).
+#[cfg(feature = "hit-count")]
+struct HitTotals {
+    path: String,
+    battles: BTreeMap<u8, u64>,
+    /// (gen, effect, prefix, event) -> (calls, battles).
+    calls: BTreeMap<(u8, EffectId, Prefix, EventId), (u64, u64)>,
+}
+
+#[cfg(feature = "hit-count")]
+impl HitTotals {
+    /// Adds one battle's calls (taken out of the battle).
+    fn add(&mut self, b: &mut Battle) {
+        *self.battles.entry(b.gen).or_insert(0) += 1;
+        for ((effect, prefix, event), n) in std::mem::take(&mut b.hits.calls) {
+            let e = self.calls.entry((b.gen, effect, prefix, event)).or_insert((0, 0));
+            e.0 += u64::from(n);
+            e.1 += 1;
+        }
+    }
+
+    fn write(&self) {
+        let mut text = String::new();
+        for (gen, n) in &self.battles {
+            text.push_str(&format!("battles\t{gen}\t{n}\n"));
+        }
+        for ((gen, effect, prefix, event), (calls, battles)) in &self.calls {
+            let name = effect_name(dex_of(*gen), *effect);
+            text.push_str(&format!("hit\t{gen}\t{name}\t{}\t{calls}\t{battles}\n", handler_key(*prefix, *event)));
+        }
+        let tmp = format!("{}.tmp", self.path);
+        if std::fs::write(&tmp, text).and_then(|_| std::fs::rename(&tmp, &self.path)).is_err() {
+            eprintln!("ps_sim_cli: cannot write {}", self.path);
+        }
+    }
+}
+
+#[cfg(feature = "hit-count")]
+thread_local! {
+    static HITS: RefCell<Option<HitTotals>> = const { RefCell::new(None) };
 }
 
 // ---- output ------------------------------------------------------------------
@@ -190,6 +377,27 @@ fn flush(b: &mut Battle, ended_sent: &mut bool) -> String {
 struct Stream {
     battle: Option<Box<Battle>>,
     ended_sent: bool,
+    /// The battle's hit counts are in the totals (`--hits`).
+    counted: bool,
+}
+
+impl Stream {
+    /// `--hits`: adds the battle's handler calls to the totals once (when it
+    /// ends, stops early or is dropped) and rewrites the file.
+    fn count_hits(&mut self) {
+        #[cfg(feature = "hit-count")]
+        if let Some(b) = self.battle.as_mut() {
+            if !self.counted {
+                self.counted = true;
+                HITS.with(|h| {
+                    if let Some(t) = h.borrow_mut().as_mut() {
+                        t.add(b);
+                        t.write();
+                    }
+                });
+            }
+        }
+    }
 }
 
 /// What went wrong with a command (not a panic).
@@ -219,11 +427,13 @@ impl Stream {
                     .duration_since(std::time::UNIX_EPOCH)
                     .map(|d| d.as_secs() as u32)
                     .unwrap_or(0);
+                self.count_hits();
                 let mut b = Box::new(Battle::from_start(spec, seed, clock));
                 b.spill = Some(spill);
                 SPILLED.with(|s| s.borrow_mut().clear());
                 self.battle = Some(b);
                 self.ended_sent = false;
+                self.counted = false;
             }
             "player" => {
                 let Some(b) = self.battle.as_mut() else { return Ok(String::new()) };
@@ -247,7 +457,13 @@ impl Stream {
             other => return Err(bad(format!("command >{other}"))),
         }
         let b = self.battle.as_mut().unwrap();
-        Ok(flush(b, &mut self.ended_sent))
+        let text = flush(b, &mut self.ended_sent);
+        if self.ended_sent {
+            // Counted before the `end` is written, so the file is current
+            // by the time the driver sees the battle over.
+            self.count_hits();
+        }
+        Ok(text)
     }
 }
 
@@ -265,7 +481,15 @@ fn parse_choice(text: &str) -> Option<Choice> {
     })
 }
 
-fn run_stream() {
+fn run_stream(hits_path: Option<String>) {
+    #[cfg(feature = "hit-count")]
+    if let Some(path) = hits_path {
+        let t = HitTotals { path, battles: BTreeMap::new(), calls: BTreeMap::new() };
+        t.write();
+        HITS.with(|h| *h.borrow_mut() = Some(t));
+    }
+    #[cfg(not(feature = "hit-count"))]
+    let _ = hits_path;
     // A panic ends the battle, not the process; keep its message for the
     // `unported` / `crash` report and print nothing (the harness would
     // read stderr as output).
@@ -291,10 +515,12 @@ fn run_stream() {
         let text = match panic::catch_unwind(AssertUnwindSafe(|| stream.command(&line))) {
             Ok(Ok(text)) => text,
             Ok(Err(e)) => {
+                stream.count_hits();
                 stream.battle = None;
                 format!("crash\n{e}\n")
             }
             Err(_) => {
+                stream.count_hits();
                 stream.battle = None;
                 let msg = PANIC.with(|p| p.borrow_mut().take()).unwrap_or_default();
                 match msg.strip_prefix("unported: ") {
@@ -312,4 +538,5 @@ fn run_stream() {
             let _ = out.flush();
         }
     }
+    stream.count_hits();
 }

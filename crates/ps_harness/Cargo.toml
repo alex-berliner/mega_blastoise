@@ -9,6 +9,9 @@ default = []
 # Pulls in the on-device codecs alongside the bin so end-to-end tests
 # can take typed Commands and emit typed Msgs.
 text = ["ps_sim/text", "ps_protocol/text"]
+# `ps_sim_cli --hits FILE`: per-handler hit counts (`ps_sim/hit-count`) for
+# `scripts/ps-coverage.sh`.
+hit-count = ["ps_sim/hit-count"]
 
 [[bin]]
 name = "ps_sim_cli"
