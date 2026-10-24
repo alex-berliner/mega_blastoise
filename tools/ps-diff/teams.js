@@ -119,6 +119,27 @@ function readCarried(dir) {
   return pairs;
 }
 
+/// The targeted battles (diff.js `--targeted`): a JSON array of
+/// `{name, covers, seed, trunc?, p1, p2, choices, expect?}`. A side is a list
+/// of PS sets; a set names its `species` and `moves` and may give `level`,
+/// `evs` and `ivs` (default level 100, every EV 255, every IV 30, ability
+/// `noability`, as the carried sets). Returns the entries with `packed`.
+function readTargeted(file) {
+  if (!fs.existsSync(file)) throw new Error(`no targeted battles at ${file}`);
+  const all = (n) => ({ hp: n, atk: n, def: n, spa: n, spd: n, spe: n });
+  const set = (m) => ({
+    ability: 'noability', level: 100, evs: all(255), ivs: all(30), ...m,
+  });
+  const list = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const names = new Set();
+  for (const t of list) {
+    if (names.has(t.name)) throw new Error(`targeted battle ${t.name} is listed twice`);
+    names.add(t.name);
+    t.packed = [Teams.pack(t.p1.map(set)), Teams.pack(t.p2.map(set))];
+  }
+  return list;
+}
+
 /// One team: 1-6 mons. Each mon: 1-4 moves (distinct), level 40-100,
 /// a random species, IVs/EVs (gen 3 also picks item/ability + status).
 function makeWideTeam({ gen, prng, focus, ported, self }) {
@@ -299,6 +320,7 @@ function makePairFromPRNG({ gen, prng, teams }) {
 }
 
 module.exports = {
+  readTargeted,
   buildPair,
   readCarried,
   _internals: { makeWideTeam, buildRandom, buildWide },

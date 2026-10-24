@@ -413,3 +413,53 @@ fn carried_corpus() {
     assert!(txt.contains(&format!("pair {pair} diff @ line 9")), "carried diff log:\n{txt}");
     let _ = fs::remove_file(&log);
 }
+
+/// The targeted battles (`crates/ps_harness/targeted/gen1.json`, played by
+/// `diff.js --targeted gen1`): every entry is well formed, the whole list
+/// plays green PS against PS (each battle reaches its `expect` lines), and
+/// an entry at a seed that misses its path fails with an `-expect.log`.
+#[test]
+fn targeted_battles() {
+    let path = manifest_dir().join("targeted").join("gen1.json");
+    let doc: serde_json::Value = serde_json::from_str(&fs::read_to_string(&path).unwrap())
+        .unwrap_or_else(|e| panic!("{}: not JSON: {e}", path.display()));
+    let list = doc.as_array().unwrap_or_else(|| panic!("{}: not an array", path.display()));
+    assert!(!list.is_empty(), "{}: no targeted battles", path.display());
+    let mut names = std::collections::BTreeSet::new();
+    for t in list {
+        let name = t["name"].as_str().unwrap_or_else(|| panic!("an entry without a name: {t}"));
+        assert!(names.insert(name.to_string()), "{name} is listed twice");
+        assert!(t["covers"].as_str().is_some_and(|c| c.contains("PS: ")), "{name}: covers names no PS source");
+        assert!(t["seed"].is_u64(), "{name}: seed");
+        assert!(t["expect"].as_array().is_some_and(|e| !e.is_empty()), "{name}: nothing to expect");
+        for row in t["choices"].as_array().unwrap_or_else(|| panic!("{name}: no choices")) {
+            assert!(row.as_array().is_some_and(|r| r.len() == 2), "{name}: a choice row is not [p1, p2]");
+        }
+        for side in ["p1", "p2"] {
+            let team = t[side].as_array().unwrap_or_else(|| panic!("{name}: no {side}"));
+            assert!((1..=6).contains(&team.len()), "{name}: {side} has {} mons", team.len());
+        }
+    }
+
+    let scratch = workspace_root().join(".scratch").join("ps-diff-targeted-test");
+    let scratch_s = scratch.to_string_lossy().to_string();
+    let out = node_diff(&["--targeted", "gen1", "--jobs", "4", "--quiet", "--scratch", &scratch_s]);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success() && stdout.contains(&format!("ran={} diffs=0 crashes=0", list.len())),
+        "targeted self run: status={:?} stdout={stdout:?} stderr={:?}",
+        out.status,
+        String::from_utf8_lossy(&out.stderr),
+    );
+    // Seed 0 disables Growl, not Tackle: the battle misses its path.
+    let log = scratch.join("ps-diff-targeted-transform_disable_slot-0-expect.log");
+    let _ = fs::remove_file(&log);
+    let out = node_diff(&[
+        "--targeted", "gen1", "--targeted-name", "transform_disable_slot", "--seed", "0",
+        "--jobs", "1", "--quiet", "--scratch", &scratch_s,
+    ]);
+    assert!(!out.status.success(), "a targeted battle that misses its path should fail");
+    let txt = fs::read_to_string(&log).unwrap_or_else(|e| panic!("read {}: {}", log.display(), e));
+    assert!(txt.contains("|-start|p1a: Mew|Disable|Tackle"), "expect log:\n{txt}");
+    let _ = fs::remove_file(&log);
+}

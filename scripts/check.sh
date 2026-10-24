@@ -73,6 +73,13 @@ if [[ "${1:-}" != "--fast" ]]; then
   # must still be PS's, line for line.
   scripts/ps-diff.sh --pinned --ps-cli "$PS_CLI_BIN" --allow-unported --quiet
 
+  # Gen 1's targeted battles (crates/ps_harness/targeted/gen1.json): fixed
+  # teams and choices that reach the paths random teams never do, in both
+  # rule sets. A battle that no longer reaches its path fails like a diff.
+  echo "── protocol-diff harness: gen 1 targeted battles (cartridge, math) ──"
+  scripts/ps-diff.sh --targeted gen1 --ps-cli "$PS_CLI_BIN" --quiet --jobs 14
+  scripts/ps-diff.sh --targeted gen1 --ps-cli "$PS_CLI_BIN" --quiet --jobs 14 --trunc math
+
   echo "── wasm build + headless seat probe ──"
   (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
   # The default engine (PS for Gen 1, legacy for Gen 3 until it is ported).

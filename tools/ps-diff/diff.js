@@ -34,6 +34,12 @@
 //                         by `scripts/carried-dump.sh`): every team pair over
 //                         battle seeds 0..19 (`--carried-pair <file#case>`
 //                         narrows to one pair, `--seed S` to one seed).
+//   - `--targeted gen1` -> the targeted battles
+//                         (`crates/ps_harness/targeted/gen1.json`): hand-made
+//                         team pairs, each with its own driver seed and a
+//                         list of fixed choices (random legal choices after
+//                         it runs out), that reach the paths the random
+//                         sweeps never do (`--targeted-name N` plays one).
 //
 // Exit codes: 0 green; 1 diff / crash / unported hit (unported does not
 // count with --allow-unported); 2 misuse or empty
@@ -94,6 +100,7 @@ function parseArgs(argv) {
     allowUnported: false,
     slice: undefined,
     carried: undefined, carriedPair: undefined,
+    targeted: undefined, targetedName: undefined,
     trunc: undefined,
   };
   let i = 0;
@@ -128,6 +135,16 @@ function parseArgs(argv) {
         break;
       }
       case '--carried-pair': opts.carriedPair = argv[i++]; break;
+      case '--targeted': {
+        const m = /^(?:gen)?([0-9]+)$/.exec(argv[i++] || '');
+        if (!m) {
+          process.stderr.write('ps-diff: --targeted takes a gen (gen1)\n');
+          process.exit(2);
+        }
+        opts.targeted = parseInt(m[1], 10);
+        break;
+      }
+      case '--targeted-name': opts.targetedName = argv[i++]; break;
       case '--trunc': opts.trunc = argv[i++]; break;
       case '--slice': opts.slice = argv[i++].split(':').map((x) => parseInt(x, 10)); break;
       case '--help': case '-h':
@@ -136,6 +153,7 @@ function parseArgs(argv) {
           + '[--seed S] [--seed-start X --seed-end Y] '
           + '[--teams random|wide|file:<p>] [--focus ids] '
           + '[--jobs N] [--tamper-line K] [--pinned] [--carried gen1 [--carried-pair F#C]] '
+          + '[--targeted gen1 [--targeted-name N]] '
           + '[--trunc cartridge|math] [--quiet] [--allow-unported] [--hits FILE]'
         );
         process.exit(0);
@@ -150,6 +168,14 @@ function parseArgs(argv) {
     }
     opts.gen = opts.carried;
     opts.teamsMode = `carried:gen${opts.carried}`;
+  }
+  if (opts.targeted !== undefined) {
+    if (opts.targeted !== 1) {
+      process.stderr.write(`ps-diff: no targeted battles for gen ${opts.targeted} (only gen1)\n`);
+      process.exit(2);
+    }
+    opts.gen = opts.targeted;
+    opts.teamsMode = `targeted:gen${opts.targeted}`;
   }
   if (![1, 3].includes(opts.gen)) {
     process.stderr.write(`ps-diff: gen must be 1 or 3 (got ${opts.gen})\n`);
@@ -287,15 +313,34 @@ function pickChoice(req, choicePrng) {
   return null;
 }
 
+/// Answers every `|request|` of one battle: the next fixed choice of that
+/// side's `script` list while there is one (a targeted battle), otherwise a
+/// random legal one from the choice PRNG. A `wait` request takes no choice.
+/// `script` is a list of `[p1, p2]` rows, `null` for a side that does not
+/// choose in that row; each side's choices are used in order.
+function makeChooser(choiceSeed, script) {
+  const prng = new PRNG(choiceSeed);
+  const queues = { p1: [], p2: [] };
+  for (const row of script || []) {
+    if (row[0] !== null) queues.p1.push(row[0]);
+    if (row[1] !== null) queues.p2.push(row[1]);
+  }
+  return (side, req) => {
+    if (!req || req.wait) return null;
+    if (queues[side].length) return queues[side].shift();
+    return pickChoice(req, prng);
+  };
+}
+
 /// Drive a single PS BattleStream with the given envelope and random
 /// legal choices. Gen 1's truncation is the formatid's `Cartridge Trunc`
 /// rule (`rules.js`; the old harness's `cartridgeTrunc` restore in
 /// `tools/showdown-parity/harness.js`, as a rule). Returns the joined log
 /// and the choice PRNG call count (caller uses this for diagnostics).
-async function drivePS({ cmds, choiceSeed }) {
+async function drivePS({ cmds, choiceSeed, script }) {
   rules.install();
   const stream = new BattleStream({ keepAlive: false });
-  const prng = new PRNG(choiceSeed);
+  const choose = makeChooser(choiceSeed, script);
   let prngCalls = 0;
   stream.write(cmds.join('\n') + '\n');
   const log = [];
@@ -303,7 +348,7 @@ async function drivePS({ cmds, choiceSeed }) {
     let req;
     try { req = JSON.parse(json); } catch (_) { return; }
     prngCalls += 1;
-    const c = pickChoice(req, prng);
+    const c = choose(side, req);
     if (c !== null) stream.write(`>${side} ${c}\n`);
   };
   while (true) {
@@ -317,6 +362,14 @@ async function drivePS({ cmds, choiceSeed }) {
     const data = msg.slice(nlIdx + 1);
     if (type !== 'update' && type !== 'sideupdate') continue;
     log.push(data);
+    // A choice PS rejects stalls the battle (PS waits for a valid one): a
+    // targeted battle's fixed choice that no longer fits its request.
+    // It is the battle's fault, not PS's: a crash, never `ps_crashes`.
+    if (data.includes('|error|[Invalid choice]')) {
+      const e = new Error(`PS rejected a choice: ${data.slice(data.indexOf('|error|'))}`);
+      e.rejectedChoice = true;
+      throw e;
+    }
     const lines = data.split('\n');
     let pendingSide = null;
     for (let i = 0; i < lines.length; i++) {
@@ -371,7 +424,8 @@ function ensureDir(d) {
 /// every pair replays the same 20 seeds.
 function logName(rec) {
   if (!rec.pair) return `${rec.seed}`;
-  return `carried-${rec.pair.replace(/[^A-Za-z0-9_]+/g, '-')}-${rec.seed}`;
+  const kind = String(rec.teams).startsWith('targeted') ? 'targeted' : 'carried';
+  return `${kind}-${rec.pair.replace(/[^A-Za-z0-9_]+/g, '-')}-${rec.seed}`;
 }
 
 function pairNote(rec) {
@@ -392,6 +446,20 @@ function writeDivergence(scratch, rec) {
     + '\n'
     + `--- left ---\n${rec.left}\n`
     + `--- right ---\n${rec.right}\n`);
+}
+
+/// A targeted battle names the PS lines it is there to reach (`expect`):
+/// if PS's log lacks one, the battle no longer reaches its path (a changed
+/// seed, team or PS), which fails the run like a diff.
+function expectLines(out, opts, result, scratch, seed) {
+  const missing = (opts.expect || []).filter((e) => !out.includes(e));
+  if (!missing.length) return;
+  result.diff = 1;
+  ensureDir(scratch);
+  const rec = { seed, teams: opts.teamsMode, pair: opts.pairName };
+  fs.writeFileSync(path.join(scratch, `ps-diff-${logName(rec)}-expect.log`),
+    `seed ${seed} gen ${opts.gen} teams ${opts.teamsMode}${pairNote(rec)}: PS's log lacks the expected\n`
+    + missing.map((e) => `  ${e}\n`).join('') + `--- PS ---\n${out}\n`);
 }
 
 function writeError(scratch, rec, err) {
@@ -470,7 +538,7 @@ class RustProc {
     let req;
     try { req = JSON.parse(line.slice('|request|'.length)); } catch (_) { return; }
     b.prngCalls += 1;
-    const choice = pickChoice(req, b.prng);
+    const choice = b.choose(side, req);
     if (choice !== null && this.child) this.child.stdin.write(`>${side} ${choice}\n`);
   }
   _finish(status, detail) {
@@ -485,11 +553,11 @@ class RustProc {
   }
   /// Plays one battle: `cmds` are the `>start` / `>player` lines. Resolves
   /// with { out, prngCalls, status: end|unported|crash|timeout, detail }.
-  runBattle(cmds, choiceSeed, timeoutMs) {
+  runBattle(cmds, choiceSeed, timeoutMs, script) {
     if (!this.child) this._spawn();
     return new Promise((resolve) => {
       this.battle = {
-        log: [], prngCalls: 0, prng: new PRNG(choiceSeed), stderr: '', resolve,
+        log: [], prngCalls: 0, choose: makeChooser(choiceSeed, script), stderr: '', resolve,
         timer: setTimeout(() => this.kill('timeout'), timeoutMs),
       };
       this.type = null;
@@ -562,9 +630,10 @@ async function runOneBattle(driverSeed, opts, scratch) {
   }
   if (opts.self) {
     try {
-      const aPromise = drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed });
-      const bPromise = drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed });
+      const aPromise = drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed, script: opts.script });
+      const bPromise = drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed, script: opts.script });
       const [a, b] = await Promise.all([aPromise, bPromise]);
+      expectLines(a.out, opts, result, scratch, driverSeed);
       let aLog = applyTamper(a.out, opts.tamper < 0 ? opts.tamper : 0);
       let bLog = applyTamper(b.out, opts.tamper > 0 ? opts.tamper : 0);
       const aLines = normaliseLines(aLog);
@@ -586,7 +655,8 @@ async function runOneBattle(driverSeed, opts, scratch) {
       }
     } catch (e) {
       // PS itself threw: a PS bug (both sides are PS), not comparable.
-      result.psCrash = 1;
+      if (e && e.rejectedChoice) result.crash = 1;
+      else result.psCrash = 1;
       writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName }, e);
     }
     return result;
@@ -596,8 +666,9 @@ async function runOneBattle(driverSeed, opts, scratch) {
   let bPromise = null;
   try {
     rust = rustFor(opts.psCli, opts.hits);
-    bPromise = rust.runBattle(info.cmds, info.choiceSeed, opts.timeoutMs);
-    const a = await drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed });
+    bPromise = rust.runBattle(info.cmds, info.choiceSeed, opts.timeoutMs, opts.script);
+    const a = await drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed, script: opts.script });
+    expectLines(a.out, opts, result, scratch, driverSeed);
     rust.graceUntil(RUST_GRACE_MS);
     const bRun = await bPromise;
     const aLog = applyTamper(a.out, opts.tamper < 0 ? opts.tamper : 0);
@@ -641,7 +712,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
     if (bPromise) {
       rust.graceUntil(RUST_GRACE_MS);
       const bRun = await bPromise;
-      if (bRun.status === 'crash') {
+      if (bRun.status === 'crash' && !(e && e.rejectedChoice)) {
         result.psCrash = 1;
         writeError(scratch, { seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName },
           new Error(`PS threw and ps_sim crashed too (not comparable)\nps_sim: ${bRun.detail}\nPS: ${e && e.stack ? e.stack : e}`));
@@ -702,6 +773,27 @@ function carriedDrivers(opts) {
   return drivers;
 }
 
+/// `--targeted gen<N>`: the targeted battles of
+/// `crates/ps_harness/targeted/gen<N>.json`, each at its own driver seed
+/// (`--seed S` replaces it), with its fixed choices and the PS lines it
+/// must reach. Every `--jobs` child rebuilds the same list.
+function targetedDrivers(opts) {
+  const file = path.join(__dirname, '..', '..', 'crates', 'ps_harness', 'targeted', `gen${opts.targeted}.json`);
+  let list = teams.readTargeted(file);
+  if (opts.targetedName) {
+    list = list.filter((t) => t.name === opts.targetedName);
+    if (!list.length) {
+      process.stderr.write(`ps-diff: no targeted battle ${opts.targetedName} in ${file}\n`);
+      process.exit(2);
+    }
+  }
+  return list.map((t) => ({
+    gen: opts.targeted, teams: opts.teamsMode,
+    seed: String(opts.seed !== undefined ? opts.seed : t.seed),
+    pair: t, script: t.choices, expect: t.expect, trunc: t.trunc,
+  }));
+}
+
 // `--jobs N`: spawn N child node processes, each with a slice of the
 // driver seed range, and merge their summary lines. The caller passes
 // `--jobs 1` in each child so the child runs its slice sequentially.
@@ -729,9 +821,13 @@ async function runWithJobs(drivers, opts) {
   if (opts.carried !== undefined) childArgs.push('--carried', `gen${opts.carried}`);
   if (opts.trunc !== undefined) childArgs.push('--trunc', opts.trunc);
   if (opts.carriedPair) childArgs.push('--carried-pair', opts.carriedPair);
-  if (opts.carried !== undefined && opts.seed !== undefined) childArgs.push('--seed', String(opts.seed));
+  if (opts.targeted !== undefined) childArgs.push('--targeted', `gen${opts.targeted}`);
+  if (opts.targetedName) childArgs.push('--targeted-name', opts.targetedName);
+  if ((opts.carried !== undefined || opts.targeted !== undefined) && opts.seed !== undefined) {
+    childArgs.push('--seed', String(opts.seed));
+  }
   if (opts.focus) childArgs.push('--focus', opts.focus.join(','));
-  if (opts.teamsMode !== 'random' && opts.carried === undefined) childArgs.push('--teams', opts.teamsMode);
+  if (opts.teamsMode !== 'random' && opts.carried === undefined && opts.targeted === undefined) childArgs.push('--teams', opts.teamsMode);
   if (opts.scratch) childArgs.push('--scratch', opts.scratch);
   if (opts.timeoutMs !== DEFAULT_TIMEOUT_MS) childArgs.push('--per-battle-timeout', String(opts.timeoutMs));
   if (opts.allowUnported) childArgs.push('--allow-unported');
@@ -817,9 +913,9 @@ function parseSummary(line) {
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
-  if ((opts.pinned || opts.carried !== undefined) && !opts.psCli) opts.self = true;
-  if (opts.pinned && opts.carried !== undefined) {
-    process.stderr.write('ps-diff: --pinned and --carried are separate runs\n');
+  if ((opts.pinned || opts.carried !== undefined || opts.targeted !== undefined) && !opts.psCli) opts.self = true;
+  if ([opts.pinned || undefined, opts.carried, opts.targeted].filter((x) => x !== undefined).length > 1) {
+    process.stderr.write('ps-diff: --pinned, --carried and --targeted are separate runs\n');
     process.exit(2);
   }
   if (!opts.psCli && !opts.self) {
@@ -847,6 +943,8 @@ async function main() {
     drivers = readPinned(opts.pinnedFile);
   } else if (opts.carried !== undefined) {
     drivers = carriedDrivers(opts);
+  } else if (opts.targeted !== undefined) {
+    drivers = targetedDrivers(opts);
   } else if (opts.seed !== undefined) {
     drivers = [{ gen: opts.gen, teams: opts.teamsMode, seed: String(opts.seed) }];
   } else if (opts.seedEnd !== undefined) {
@@ -874,7 +972,8 @@ async function main() {
 
   if (opts.slice) drivers = drivers.slice(opts.slice[0], opts.slice[1]);
 
-  if (opts.jobs > 1 && drivers.length > 1 && (opts.seed === undefined || opts.carried !== undefined)) {
+  if (opts.jobs > 1 && drivers.length > 1
+    && (opts.seed === undefined || opts.carried !== undefined || opts.targeted !== undefined)) {
     // Forward to the child-process distributer.
     const code = await runWithJobs(drivers, opts);
     process.exit(code);
@@ -887,6 +986,7 @@ async function main() {
     const battleOpts = {
       ...opts, gen: entry.gen, teamsMode: entry.teams,
       pair: entry.pair, pairName: entry.pair && entry.pair.name,
+      script: entry.script, expect: entry.expect,
       trunc: entry.trunc || (entry.gen === 1 ? opts.trunc : undefined),
     };
     const r = await runOneBattle(seedInt, battleOpts, scratch);
@@ -914,5 +1014,5 @@ if (require.main === module) {
 
 module.exports = {
   parseArgs, deriveSeeds, driverCommands, pickChoice,
-  normaliseLines, firstDiff, runOneBattle,
+  normaliseLines, firstDiff, runOneBattle, drivePS,
 };

@@ -39,7 +39,6 @@ pub mod trapped;
 pub mod twoturnmove;
 
 use ps_dex::gen1::conditions;
-use ps_dex::ConditionId;
 
 use crate::effect::EffectId;
 use crate::state::{Battle, EffectState, MonRef};
@@ -67,14 +66,4 @@ pub fn bump_residualdmg_counter(b: &mut Battle, pokemon: MonRef) {
     if let Some(s) = b.mon_mut(pokemon).volatiles.get_mut(EffectId::Condition(conditions::RESIDUALDMG)) {
         s.counter = s.counter.saturating_add(1);
     }
-}
-
-/// PS `pokemon.volatiles[c]`.
-pub fn volatile_state(b: &Battle, pokemon: MonRef, c: ConditionId) -> Option<EffectState> {
-    b.mon(pokemon).volatiles.get(EffectId::Condition(c)).copied()
-}
-
-/// PS `pokemon.volatiles[c]`, mutable.
-pub fn volatile_state_mut(b: &mut Battle, pokemon: MonRef, c: ConditionId) -> Option<&mut EffectState> {
-    b.mon_mut(pokemon).volatiles.get_mut(EffectId::Condition(c))
 }

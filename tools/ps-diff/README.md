@@ -32,8 +32,18 @@ summary line and exit 0 (the green path for "no pinned regressions yet").
 `--carried gen1` replays the carried corpus: the old engines' pinned
 battles (below), every team pair over battle seeds 0..19.
 
+`--targeted gen1` plays the targeted battles (below): hand-made team
+pairs with fixed choices that reach the Gen 1 paths random teams never
+do.
+
 `--trunc cartridge|math` picks the Gen 1 rule set (below); every mode
 takes it, `--self` included.
+
+`--hits FILE` (against a `ps_sim_cli` built with the `hit-count`
+feature) has every `ps_sim_cli` write its per-handler hit counts to
+FILE, `{pid}` replaced by `<pid>-<start ns>` so each process, respawns
+included, writes its own; `--jobs` children get the flag too.
+`scripts/ps-coverage.sh` sums the files (Coverage gate, below).
 
 ## Usage
 
@@ -44,6 +54,7 @@ scripts/ps-diff.sh --self --gen 1 --n 50 --teams wide
 scripts/ps-diff.sh --self --seed 0 --gen 1
 scripts/ps-diff.sh --pinned
 scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" --allow-unported --jobs 6
+scripts/ps-diff.sh --targeted gen1 --ps-cli "$PWD/target/release/ps_sim_cli" --trunc math
 scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 3 --n 200
 scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 1 --n 200 --teams wide --trunc math
 ```
@@ -162,6 +173,63 @@ scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" \
 
 The carried run is part of the Gen 1 phase gate (after G1-7), not of
 `scripts/check.sh` yet.
+
+## Targeted battles
+
+`crates/ps_harness/targeted/gen1.json` holds battles built to reach one
+path each that the random and wide sweeps never run (Recover's 255/511
+failure, the `nomove` Fissure, a defense that rolls over to 0, and so on).
+It is a JSON array, one entry a line:
+
+```
+{"name", "covers", "seed", "trunc"?, "p1", "p2", "choices", "expect"}
+```
+
+- `covers`: the `ps_sim` lines the battle is there for, and the PS source.
+- `p1`, `p2`: lists of PS sets. A set gives `species` and `moves`, and may
+  give `level`, `evs`, `ivs`; the rest defaults to level 100, every EV 255,
+  every IV 30 and ability `noability` (the carried sets' defaults).
+- `seed`: the driver seed. The battle and choice seeds come from it as
+  usual (Seed derivation); the team seed is unused.
+- `choices`: `[p1, p2]` rows, `null` for a side that does not choose in
+  that row. Each side's choices answer its requests in order (a `wait`
+  request takes none); once a side's list runs out, it chooses at random
+  from the choice seed, as every other battle does. A choice PS rejects
+  (`[Invalid choice]`) stalls a battle, so the PS side throws and the
+  battle counts as a crash.
+- `expect`: lines (substrings) PS's log must hold, the protocol trace of
+  the path (a hint, a `-start`, a `|debug|` line). If one is missing the
+  battle no longer reaches its path (a changed seed, team or PS) and
+  counts as a diff, with `ps-diff-targeted-<name>-<seed>-expect.log`.
+- `trunc`: an entry that only exists in one rule set names it (the
+  defense rollover is the cartridge's 8-bit truncation); it plays that
+  one whatever `--trunc` says. The others play the run's `--trunc`.
+
+Each battle is a `gen1customgame` (no clauses). `--targeted-name <name>`
+plays one entry; with `--seed S` it plays that entry at driver seed S,
+which is how a seed was found for each: play the entry over a seed range
+on PS alone and keep one whose log has every `expect` line. Divergence
+logs are `ps-diff-targeted-<name>-<seed>.log`.
+
+`scripts/check.sh` plays the targeted battles against `ps_sim_cli` in
+both rule sets, and the coverage gate's sweep includes them (both rule
+sets), so the lines they reach count as covered. A line that only a
+targeted battle runs needs an entry here; a line Showdown cannot reach in
+Gen 1 goes in `crates/ps_harness/coverage-allow.txt` instead.
+
+## Coverage gate
+
+`scripts/ps-coverage.sh` (V-1) builds `ps_sim_cli` with the `hit-count`
+feature under `cargo llvm-cov` and plays the gate sweep against it: by
+default 10,000 `--teams random` and 10,000 `--teams wide` Gen 1 battles
+from seed 1000000, plus (Gen 1) the targeted battles in both rule sets
+(`--no-targeted` leaves them out). Every `ps_sim_cli` writes its hit
+counts with `--hits`. It then prints the per-handler hit table and the
+line coverage of `crates/ps_sim/src/mods/genN/**`, and passes when every
+registered handler ran in at least 20 battles and every line ran or is
+in `crates/ps_harness/coverage-allow.txt` (each entry with its reason and
+the PS line). `--report-only` re-prints the tables after an allow-list
+edit; reports land in `.scratch/coverage/gen<N>/`.
 
 ## What the driver does
 

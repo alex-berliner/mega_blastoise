@@ -2,6 +2,10 @@
 # The coverage gate (V-1, docs/architecture/showdown-split-execution.md):
 # plays a protocol-diff sweep against an instrumented ps_sim_cli and prints
 #
+# Gen 1's sweep also plays the targeted battles (`diff.js --targeted gen1`,
+# crates/ps_harness/targeted/gen1.json) in both rule sets: hand-made team
+# pairs with fixed choices that reach the paths random teams never do.
+#
 #   1. per-handler hit counts: every handler the gen's registry holds, the
 #      number of battles it ran in and its calls (`ps_sim` feature
 #      `hit-count`, `ps_sim_cli --hits`), summed over the sweep;
@@ -21,6 +25,8 @@
 #   scripts/ps-coverage.sh --n 500 --jobs 8      # a quick look
 #   scripts/ps-coverage.sh --teams wide --focus bide,rage --n 2000
 #   scripts/ps-coverage.sh --no-lines            # hit counts only (no llvm-cov)
+#   scripts/ps-coverage.sh --no-targeted         # the sweep without the
+#                                                # targeted battles
 #   scripts/ps-coverage.sh --report-only         # re-print the tables of the
 #                                                # last run (after editing
 #                                                # coverage-allow.txt)
@@ -52,6 +58,7 @@ TEAMS="random wide"
 FOCUS=""
 MIN_BATTLES=20
 LINES=1
+TARGETED=1
 OUT=""
 REPORT_ONLY=0
 while [[ $# -gt 0 ]]; do
@@ -64,6 +71,7 @@ while [[ $# -gt 0 ]]; do
     --focus) FOCUS="$2"; shift 2 ;;
     --min-battles) MIN_BATTLES="$2"; shift 2 ;;
     --no-lines) LINES=0; shift ;;
+    --no-targeted) TARGETED=0; shift ;;
     --report-only) REPORT_ONLY=1; shift ;;
     --out) OUT="$2"; shift 2 ;;
     -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"; exit 0 ;;
@@ -119,6 +127,24 @@ for teams in $TEAMS; do
   [[ "$status" != 0 ]] && FAILED=1
   SWEEP+="$teams=$N "
 done
+
+# The targeted battles (gen 1), once per rule set; an entry that names its
+# own rule set plays that one both times.
+if [[ "$GEN" == 1 && "$TARGETED" == 1 ]]; then
+  ntargeted=0
+  for trunc in cartridge math; do
+    echo "── sweep: gen 1 targeted battles trunc=$trunc ──"
+    set +e
+    node tools/ps-diff/diff.js --ps-cli "$BIN" --targeted gen1 --trunc "$trunc" --jobs "$JOBS" --quiet \
+      --hits "$HITS_DIR/targeted-{pid}.tsv" </dev/null | tee "$OUT/sweep-targeted-$trunc.txt"
+    status=${PIPESTATUS[0]}
+    set -e
+    [[ "$status" != 0 ]] && FAILED=1
+    n=$(sed -n 's/^ps-diff: ran=\([0-9]*\) .*/\1/p' "$OUT/sweep-targeted-$trunc.txt" | tail -1)
+    ntargeted=$((ntargeted + ${n:-0}))
+  done
+  SWEEP+="targeted=$ntargeted "
+fi
 
 # Each ps_sim_cli writes its hit file and .profraw when its stdin closes,
 # which can be just after diff.js exits: wait for them (read-only check).

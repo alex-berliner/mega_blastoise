@@ -43,13 +43,14 @@ mods/gen1/conditions/trapped.rs:16-26  onTrapPokemon body: nothing in gen 1 adds
 mods/gen1/conditions/tox.rs:62-67  onAfterSwitchInSelf body: tox is psn by then; PS: data/mods/gen2/conditions.ts:104-111
 mods/gen1/conditions/tox.rs:33  Rust Option guard: residualdmg was just added, PS writes .counter unguarded; PS: data/mods/gen2/conditions.ts:98
 mods/gen1/conditions/residualdmg.rs:36-42  onAfterSwitchInSelf body: never holds on switch-in in gen 1; PS: data/mods/gen2/conditions.ts residualdmg.onAfterSwitchInSelf
-mods/gen1/conditions/mod.rs:69  Rust Option guard: callers bump the counter only while residualdmg is present; PS: data/mods/gen1/conditions.ts:22, data/mods/gen1/moves.ts:451
+mods/gen1/conditions/mod.rs:68  Rust Option guard: callers bump the counter only while residualdmg is present; PS: data/mods/gen1/conditions.ts:22, data/mods/gen1/moves.ts:451
 mods/gen1/conditions/confusion.rs:61  Rust Option guard: the handler runs from the volatile itself, PS reads pokemon.volatiles['confusion'] unguarded; PS: data/mods/gen1/conditions.ts:146
 mods/gen1/conditions/flinch.rs:29  no gen 1 effect has onFlinch, so runEvent('Flinch') is always truthy; PS: data/mods/gen1/conditions.ts flinch.onBeforeMove
 mods/gen1/conditions/focusenergy.rs:26  Dragon Cheer does not exist in gen 1; PS: data/moves.ts focusenergy.condition.onStart
 mods/gen1/conditions/invulnerability.rs:28  Invulnerability always runs with a move as its effect; PS: data/mods/gen1/conditions.ts:323-327, data/mods/gen1/scripts.ts tryMoveHit
 mods/gen1/conditions/lockedmove.rs:26  panic guard: lockedmove starts only from Thrash or Petal Dance; PS: data/mods/gen1/conditions.ts:293
 mods/gen1/conditions/partialtrappinglock.rs:46  panic guard: the lock starts only from a partial trapping move; PS: data/mods/gen1/conditions.ts:237
+mods/gen1/conditions/partiallytrapped.rs:44-45  only the trapper ever attacks a partially trapped Pokemon: the trapped one cannot move, a switched-in foe acts the next turn at the earliest, and by then endTurn has dropped the volatile (its source fainted or lost partialtrappinglock); PS: data/mods/gen1/conditions.ts:208-210, sim/battle.ts:1638-1651
 mods/gen1/conditions/partialtrappinglock.rs:77  AfterMove always has a target: a faint clears the gen 1 queue, so no move runs with no foe; PS: data/mods/gen1/conditions.ts:246, sim/battle.ts:2578-2581
 mods/gen1/conditions/mustrecharge.rs:43  as partialtrappinglock.rs:77; PS: data/mods/gen1/conditions.ts:282, sim/battle.ts:2578-2581
 mods/gen1/conditions/slp.rs:30  every gen 1 sleep comes from a move (the sleep moves and Rest); PS: data/mods/gen1/conditions.ts slp.onStart
@@ -67,6 +68,8 @@ mods/gen1/scripts.rs:175  no gen 1 effect has onOverrideAction; PS: data/mods/ge
 mods/gen1/scripts.rs:177  panic guard on OverrideAction (no handler); PS: data/mods/gen1/scripts.ts:157-160
 mods/gen1/scripts.rs:207  runMove always has a target in gen 1 singles (a faint clears the queue); PS: data/mods/gen1/scripts.ts runMove, sim/battle.ts:2578-2581
 mods/gen1/scripts.rs:219-220  the only gen 1 beforeMoveCallback (Bide) never returns true (see moves/bide.rs:19); PS: data/mods/gen1/scripts.ts:197
+mods/gen1/scripts.rs:237  the user always has a move in lastSelectedMoveSlot here: commitChoices throws ("moveSlot is null") for every move choice whose slot is missing, except a partially trapped Fight (cannotmove, which returns above) and Struggle (which skips this block), and a Pokemon's move list does not shrink before its own move; PS: data/mods/gen1/scripts.ts:209-210, sim/side.ts:1131-1162
+mods/gen1/scripts.rs:242-243  lastEnemySelectedMove is never nomove or cannotmove when a move gets here: commitChoices sets it to a move-slot id for every move choice except a partially trapped Fight, whose cannotmove action (like the one Haze queues) returns at the cannotmove check above; PS: data/mods/gen1/scripts.ts:168,213, sim/side.ts:1131-1162, data/mods/gen1/moves.ts:374-379
 mods/gen1/scripts.rs:278  Rust: nomove became Fissure and cannotmove aborted above, so the move is never fake here; PS: data/mods/gen1/scripts.ts:221-236
 mods/gen1/scripts.rs:352  useMove already applied the same sourceEffect default before calling useMoveInner; PS: data/mods/gen1/scripts.ts:244,300
 mods/gen1/scripts.rs:357-358  useMove already filled an undefined target; PS: data/mods/gen1/scripts.ts:247,303
@@ -77,6 +80,8 @@ mods/gen1/scripts.rs:527  no gen 1 move has ignoreEvasion; PS: data/mods/gen1/sc
 mods/gen1/scripts.rs:542  panic guard: Accuracy answers true or a number (no handler returns anything else); PS: data/mods/gen1/scripts.ts:455
 mods/gen1/scripts.rs:547  every gen 1 self-targeting move has accuracy true; PS: data/mods/gen1/scripts.ts:457
 mods/gen1/scripts.rs:573  gen 1 multihit is 2 or [2, 5]; PS: data/mods/gen1/scripts.ts:469-475
+mods/gen1/scripts.rs:584  a multi-hit hit never returns false: tryMoveHit already checked immunity, no gen 1 multi-hit move has TryHit, Substitute's onTryHit answers 0 for a damaging move (getDamage gives a number), and no gen 1 effect has onDamage; PS: data/mods/gen1/scripts.ts:487,404, data/mods/gen1/moves.ts:835-865
+mods/gen1/scripts.rs:598  the loop always runs one hit (target and user have HP when a move starts) and a hit never breaks out (above), so i is never 0; PS: data/mods/gen1/scripts.ts:497
 mods/gen1/scripts.rs:697  no gen 1 effect has onTryFieldHit; PS: data/mods/gen1/scripts.ts:566
 mods/gen1/scripts.rs:709-713  only TrySecondaryHit can leave a falsy result here and no gen 1 effect has it; PS: data/mods/gen1/scripts.ts:570,576-578
 mods/gen1/scripts.rs:715  moveHit is always called with a target in gen 1; PS: data/mods/gen1/scripts.ts moveHit
