@@ -237,7 +237,7 @@ fn hp_status_str(hs: HpStatus) -> String {
 /// A JSON string as `JSON.stringify` writes it: `"` and `\` escaped, the
 /// short escapes for backspace, form feed, newline, carriage return and tab,
 /// `\u00XX` for the other control characters, everything else as is.
-fn push_json_str(out: &mut String, s: &str) {
+pub(crate) fn push_json_str(out: &mut String, s: &str) {
     out.push('"');
     for c in s.chars() {
         match c {
@@ -259,15 +259,29 @@ fn push_json_str(out: &mut String, s: &str) {
 // Decoder
 // ============================================================================
 
-/// Decodes a request JSON (the text after `|request|`). Nicknames in
-/// `ident` resolve to team slots through `names`, as the line decoder's do.
-pub fn decode_request(s: &str, dex: &dyn DexNames, names: &mut Battle) -> Result<Request, CodecError> {
-    let mut p = Parser { s: s.as_bytes(), pos: 0 };
+/// Parses one JSON document with PS's reader.
+///
+/// The `>start` and `>player` payloads are JSON too, so they read with
+/// the same reader as the request JSON (the command codec calls this).
+pub(crate) fn parse_value(s: &str) -> Result<Value, CodecError> {
+    parse_value_as(s, "json")
+}
+
+/// Parses one JSON document, with the reader's errors prefixed by `what`.
+fn parse_value_as(s: &str, what: &'static str) -> Result<Value, CodecError> {
+    let mut p = Parser { s: s.as_bytes(), pos: 0, what };
     let v = p.value()?;
     p.ws();
     if p.pos != p.s.len() {
-        return Err(bad("trailing bytes after the request"));
+        return Err(p.bad("trailing bytes after the value"));
     }
+    Ok(v)
+}
+
+/// Decodes a request JSON (the text after `|request|`). Nicknames in
+/// `ident` resolve to team slots through `names`, as the line decoder's do.
+pub fn decode_request(s: &str, dex: &dyn DexNames, names: &mut Battle) -> Result<Request, CodecError> {
+    let v = parse_value_as(s, "request")?;
     let top = v.obj("request")?;
     let first = top.first().map(|(k, _)| k.as_str()).unwrap_or("");
     let side_v = field(top, "side")?;
@@ -519,7 +533,7 @@ fn only_keys(o: &[(String, Value)], allowed: &[&str]) -> Result<(), CodecError> 
 /// A parsed JSON value. Objects keep their keys in order; numbers are the
 /// non-negative integers a request holds.
 #[derive(Debug)]
-enum Value {
+pub(crate) enum Value {
     Null,
     Bool(bool),
     Num(u64),
@@ -529,19 +543,28 @@ enum Value {
 }
 
 impl Value {
-    fn obj(&self, what: &str) -> Result<&[(String, Value)], CodecError> {
+    /// The value of `key` in an object, `None` when the object has no such
+    /// key (or when the value is not an object at all).
+    pub(crate) fn get(&self, key: &str) -> Option<&Value> {
+        match self {
+            Value::Obj(o) => o.iter().find(|(k, _)| k == key).map(|(_, v)| v),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn obj(&self, what: &str) -> Result<&[(String, Value)], CodecError> {
         match self {
             Value::Obj(o) => Ok(o),
             _ => Err(bad(&format!("{} is not an object", what))),
         }
     }
-    fn arr(&self, what: &str) -> Result<&[Value], CodecError> {
+    pub(crate) fn arr(&self, what: &str) -> Result<&[Value], CodecError> {
         match self {
             Value::Arr(a) => Ok(a),
             _ => Err(bad(&format!("{} is not an array", what))),
         }
     }
-    fn string(&self, what: &str) -> Result<&str, CodecError> {
+    pub(crate) fn string(&self, what: &str) -> Result<&str, CodecError> {
         match self {
             Value::Str(s) => Ok(s),
             _ => Err(bad(&format!("{} is not a string", what))),
@@ -553,7 +576,7 @@ impl Value {
             _ => Err(bad(&format!("{} is not a bool", what))),
         }
     }
-    fn uint(&self, what: &str) -> Result<u64, CodecError> {
+    pub(crate) fn uint(&self, what: &str) -> Result<u64, CodecError> {
         match self {
             Value::Num(n) => Ok(*n),
             Value::Null => Err(bad(&format!("{} is null", what))),
@@ -562,12 +585,20 @@ impl Value {
     }
 }
 
-struct Parser<'a> {
+pub(crate) struct Parser<'a> {
     s: &'a [u8],
     pos: usize,
+    /// What the JSON is: `request` for a `|request|` payload, `json` for
+    /// a command's payload. It prefixes the reader's errors.
+    what: &'static str,
 }
 
 impl Parser<'_> {
+    /// The reader's error, prefixed with what it was reading.
+    fn bad(&self, s: &str) -> CodecError {
+        CodecError::BadArg(format!("{}: {}", self.what, s))
+    }
+
     fn ws(&mut self) {
         while matches!(self.s.get(self.pos), Some(b' ' | b'\t' | b'\n' | b'\r')) {
             self.pos += 1;
@@ -579,11 +610,11 @@ impl Parser<'_> {
             self.pos += lit.len();
             Ok(())
         } else {
-            Err(bad(&format!("expected {:?} at byte {}", lit, self.pos)))
+            Err(self.bad(&format!("expected {:?} at byte {}", lit, self.pos)))
         }
     }
 
-    fn value(&mut self) -> Result<Value, CodecError> {
+    pub(crate) fn value(&mut self) -> Result<Value, CodecError> {
         self.ws();
         match self.s.get(self.pos) {
             Some(b'{') => {
@@ -608,7 +639,7 @@ impl Parser<'_> {
                             self.pos += 1;
                             return Ok(Value::Obj(o));
                         }
-                        _ => return Err(bad(&format!("bad object at byte {}", self.pos))),
+                        _ => return Err(self.bad(&format!("bad object at byte {}", self.pos))),
                     }
                 }
             }
@@ -629,7 +660,7 @@ impl Parser<'_> {
                             self.pos += 1;
                             return Ok(Value::Arr(a));
                         }
-                        _ => return Err(bad(&format!("bad array at byte {}", self.pos))),
+                        _ => return Err(self.bad(&format!("bad array at byte {}", self.pos))),
                     }
                 }
             }
@@ -644,11 +675,11 @@ impl Parser<'_> {
                 }
                 let digits = core::str::from_utf8(&self.s[start..self.pos]).unwrap_or("");
                 if digits.len() > 1 && digits.starts_with('0') {
-                    return Err(bad("number with a leading zero"));
+                    return Err(self.bad("number with a leading zero"));
                 }
-                digits.parse().map(Value::Num).map_err(|_| bad("number"))
+                digits.parse().map(Value::Num).map_err(|_| self.bad("number"))
             }
-            _ => Err(bad(&format!("unexpected byte at {}", self.pos))),
+            _ => Err(self.bad(&format!("unexpected byte at {}", self.pos))),
         }
     }
 
@@ -660,14 +691,14 @@ impl Parser<'_> {
             while !matches!(self.s.get(self.pos), Some(b'"' | b'\\') | None) {
                 self.pos += 1;
             }
-            out.push_str(core::str::from_utf8(&self.s[start..self.pos]).map_err(|_| bad("utf-8"))?);
+            out.push_str(core::str::from_utf8(&self.s[start..self.pos]).map_err(|_| self.bad("utf-8"))?);
             match self.s.get(self.pos) {
                 Some(b'"') => {
                     self.pos += 1;
                     return Ok(out);
                 }
                 Some(b'\\') => {
-                    let c = *self.s.get(self.pos + 1).ok_or_else(|| bad("escape"))?;
+                    let c = *self.s.get(self.pos + 1).ok_or_else(|| self.bad("escape"))?;
                     self.pos += 2;
                     match c {
                         b'"' => out.push('"'),
@@ -679,16 +710,16 @@ impl Parser<'_> {
                         b'r' => out.push('\r'),
                         b't' => out.push('\t'),
                         b'u' => {
-                            let hex = self.s.get(self.pos..self.pos + 4).ok_or_else(|| bad("\\u"))?;
-                            let hex = core::str::from_utf8(hex).map_err(|_| bad("\\u"))?;
-                            let n = u32::from_str_radix(hex, 16).map_err(|_| bad("\\u"))?;
+                            let hex = self.s.get(self.pos..self.pos + 4).ok_or_else(|| self.bad("\\u"))?;
+                            let hex = core::str::from_utf8(hex).map_err(|_| self.bad("\\u"))?;
+                            let n = u32::from_str_radix(hex, 16).map_err(|_| self.bad("\\u"))?;
                             self.pos += 4;
-                            out.push(char::from_u32(n).ok_or_else(|| bad("\\u surrogate"))?);
+                            out.push(char::from_u32(n).ok_or_else(|| self.bad("\\u surrogate"))?);
                         }
-                        _ => return Err(bad("escape")),
+                        _ => return Err(self.bad("escape")),
                     }
                 }
-                _ => return Err(bad("unterminated string")),
+                _ => return Err(self.bad("unterminated string")),
             }
         }
     }

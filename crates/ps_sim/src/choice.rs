@@ -11,6 +11,7 @@
 //! `commitChoices`, `updateDisabledRequest`, `updateRequestForPokemon`,
 //! `emitChoiceError`.
 
+use ps_dex::text::{name_is_id, IdBuf};
 use ps_dex::MoveId;
 use ps_protocol::{Arg, ArgValue, Kw, Msg, MoveNum, SideId, Text, TextArg, TextId, Word};
 
@@ -239,9 +240,47 @@ impl Battle {
                     return false;
                 }
             }
+            ps_protocol::Choice::MoveName(name) => {
+                // PS's `chooseMove` answers a wrong request state itself.
+                let rs = self.side_request_state(side);
+                if rs != RequestState::Move {
+                    let t = Text::with1(TextId::CantMoveNeedResponse, rs.word());
+                    return self.emit_choice_error(side, t, None);
+                }
+                match self.resolve_move_name(side, name.as_str()) {
+                    Some(n) => {
+                        if !self.choose_move(side, Some(n)) {
+                            return false;
+                        }
+                    }
+                    None => todo!(
+                        "unported: PS's chooseMove by name (no move matching {:?})",
+                        name.as_str()
+                    ),
+                }
+            }
             ps_protocol::Choice::Switch(n) => {
                 if !self.choose_switch(side, Some(n)) {
                     return false;
+                }
+            }
+            ps_protocol::Choice::SwitchName(name) => {
+                // PS's `chooseSwitch` answers a wrong request state itself.
+                let rs = self.side_request_state(side);
+                if rs != RequestState::Switch {
+                    let t = Text::with1(TextId::CantSwitchNeedResponse, rs.word());
+                    return self.emit_choice_error(side, t, None);
+                }
+                match self.resolve_switch_name(side, name.as_str()) {
+                    Some(n) => {
+                        if !self.choose_switch(side, Some(n)) {
+                            return false;
+                        }
+                    }
+                    None => todo!(
+                        "unported: PS's chooseSwitch by name (no Pokemon named {:?})",
+                        name.as_str()
+                    ),
                 }
             }
             ps_protocol::Choice::Pass => {
@@ -257,6 +296,63 @@ impl Battle {
             ps_protocol::Choice::Undo => panic!("undo is not a choice: route it to undo_choice"),
         }
         !self.sides[side as usize].choice.error
+    }
+
+    /// PS `chooseMove`'s name branch: the move's id is `toID(moveText)`
+    /// and the request's move with that id is the choice. `hiddenpowerXX`
+    /// counts as `hiddenpower`. Returns the 1-based slot.
+    // PS: sim/side.ts chooseMove (the string branch); sim/dex.ts toID.
+    fn resolve_move_name(&mut self, side: u8, name: &str) -> Option<u8> {
+        if self.side_request_state(side) != RequestState::Move {
+            return None;
+        }
+        let index = self.get_choice_index(side, false);
+        if index >= self.sides[side as usize].active.len() {
+            return None;
+        }
+        let pokemon = self.active_mon(side, index);
+        let request = self.get_move_request_data(pokemon);
+        let id = IdBuf::from_name(name);
+        let moveid = id.as_str();
+        // PS: `if (moveid.startsWith("hiddenpower")) moveid = "hiddenpower";`
+        let hidden_power = moveid.starts_with("hiddenpower");
+        for (i, m) in request.moves.iter().enumerate() {
+            let matched = match m.name {
+                ps_protocol::RequestMoveName::Move(mv)
+                | ps_protocol::RequestMoveName::WithPower { mv, .. } => {
+                    name_is_id(self.dex.move_def(MoveId(mv.0)).name.as_str(), moveid)
+                }
+                ps_protocol::RequestMoveName::HiddenPower { .. } => hidden_power,
+                ps_protocol::RequestMoveName::Recharge => moveid == "recharge",
+                ps_protocol::RequestMoveName::Fight => moveid == "fight",
+            };
+            if matched {
+                return Some((i + 1) as u8);
+            }
+        }
+        None
+    }
+
+    /// PS `chooseSwitch`'s name branch: the Pokemon whose nickname matches
+    /// the text (case-insensitively) or whose species id does. Returns the
+    /// 1-based slot.
+    // PS: sim/side.ts chooseSwitch (the name branch); sim/dex.ts toID.
+    fn resolve_switch_name(&self, side: u8, name: &str) -> Option<u8> {
+        let s = &self.sides[side as usize];
+        let id = IdBuf::from_name(name);
+        let lower = name.to_lowercase();
+        for (i, &slot) in s.order.iter().enumerate().take(s.team_size as usize) {
+            let mon = &s.mons[slot as usize];
+            // PS: `slotText.toLowerCase() === mon.name.toLowerCase()`.
+            if mon.name.as_str().to_lowercase() == lower {
+                return Some((i + 1) as u8);
+            }
+            // PS: `toID(slotText) === mon.species.id`.
+            if name_is_id(self.dex.species_def(mon.species).name.as_str(), id.as_str()) {
+                return Some((i + 1) as u8);
+            }
+        }
+        None
     }
 
     /// PS `side.chooseMove(moveText)`: `None` is `autoChoose`'s call with

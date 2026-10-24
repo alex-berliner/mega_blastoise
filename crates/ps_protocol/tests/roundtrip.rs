@@ -9,12 +9,14 @@
 //!   their [`TextId`] templates;
 //! - every `|request|` JSON decodes to a [`Request`] that re-encodes to the
 //!   same bytes;
-//! - every team a `>player` command carries unpacks and packs back to the
-//!   same string.
-//!
-//! The only lines not checked are empty lines and the other `>` lines (the
-//! transcript's block headers and the choices sent). Anything else that does
-//! not round-trip, an unknown kind included, fails the test.
+//! - every `>` line (a PS command: `>start`, `>player`, `>pN ...`,
+//!   `>forcewin`, `>forcetie`; or one of the recorder's block separators:
+//!   `>update`, `>sideupdate pN`) decodes to a [`CmdLine`] that re-encodes
+//!   byte for byte, and every team a `>player` command carries unpacks and
+//!   packs back to the same string;
+//! - the transcript's `#battle gen=G index=I` labels are metadata, not
+//!   protocol lines, and the empty lines are nothing; every other line is
+//!   checked.
 //!
 //! The dex name tables come from `fixtures/names.tsv`. With
 //! `PS_PROTOCOL_FULL_LOGS=DIR` (`record-logs.js --full DIR` writes it), the
@@ -23,17 +25,19 @@
 //! [`Msg`]: ps_protocol::Msg
 //! [`TextId`]: ps_protocol::TextId
 //! [`Request`]: ps_protocol::Request
+//! [`CmdLine`]: ps_protocol::text::command::CmdLine
 
 #![cfg(feature = "text")]
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+use ps_protocol::text::command::{decode_cmd_line, encode_cmd_line, CmdLine};
 use ps_protocol::text::json::{decode_request, encode_request};
 use ps_protocol::text::line::{decode_line, encode_msg, CodecState};
 use ps_protocol::text::names::Tables;
 use ps_protocol::text::team::{pack, unpack};
-use ps_protocol::{Msg, SideId, Text, TextArg, TextId};
+use ps_protocol::{Command, Msg, SideId, Text, TextArg, TextId};
 
 fn fixture_path(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").join("fixtures").join(name)
@@ -60,8 +64,23 @@ struct Counts {
     /// Lines of the kinds the old types could not hold: a details string
     /// with a cosmetic forme, and `-ability` with the old ability.
     forme_or_old_ability: u64,
+    /// Every `>` line that round-trips: the PS commands (`>start`,
+    /// `>player`, `>pN`) and the recorder's block separators (`>update`,
+    /// `>sideupdate pN`).
+    commands: u64,
+    /// The `>start` lines.
+    starts: u64,
+    /// The `>player` lines.
+    players: u64,
+    /// The `>pN <choice>` lines.
+    choices: u64,
+    /// The `>update` and `>sideupdate pN` block separators.
+    blocks: u64,
     skipped_empty: u64,
-    skipped_commands: u64,
+    /// A `>#battle ...` label that begins a battle in the recorded corpus.
+    /// It is not a protocol line and not a `>` line: the transcript's
+    /// table of contents.
+    battle_label: u64,
     failures: Vec<String>,
 }
 
@@ -69,6 +88,13 @@ struct Counts {
 fn gen1_log_round_trips() {
     let c = roundtrip("gen1.log.gz", &read_gz(&fixture_path("gen1.log.gz")));
     assert!(c.lines > 10_000 && c.requests > 1_000 && c.teams == 40, "gen 1 corpus shrank");
+    // Every `>` line of the corpus round-trips; only the empty lines and
+    // the `#battle` labels are not protocol lines.
+    assert_eq!(c.starts, 20, "gen 1 >start lines");
+    assert_eq!(c.players, 40, "gen 1 >player lines");
+    assert_eq!(c.choices, 2164, "gen 1 >pN choice lines");
+    assert_eq!(c.blocks, 1186 + 2436, "gen 1 block separators");
+    assert_eq!(c.commands, 20 + 40 + 2164 + 1186 + 2436, "gen 1 `>` lines");
 }
 
 #[test]
@@ -77,6 +103,11 @@ fn gen3_log_round_trips() {
     assert!(c.lines > 10_000 && c.requests > 1_000 && c.teams == 40, "gen 3 corpus shrank");
     // The 10 Unown switch lines and the 5 Trace lines of the committed battles.
     assert_eq!(c.forme_or_old_ability, 15, "forme / Trace lines round-tripped");
+    assert_eq!(c.starts, 20, "gen 3 >start lines");
+    assert_eq!(c.players, 40, "gen 3 >player lines");
+    assert_eq!(c.choices, 1948, "gen 3 >pN choice lines");
+    assert_eq!(c.blocks, 1078 + 2158, "gen 3 block separators");
+    assert_eq!(c.commands, 20 + 40 + 1948 + 1078 + 2158, "gen 3 `>` lines");
 }
 
 /// All 60 recorded battles per gen, when `PS_PROTOCOL_FULL_LOGS` names the
@@ -103,21 +134,48 @@ fn roundtrip(name: &str, body: &str) -> Counts {
         let mut fail = |what: String| c.failures.push(format!("line {}: {}\n    {:?}", line_no, what, raw));
         if raw.is_empty() {
             c.skipped_empty += 1;
-        } else if raw.starts_with("#battle ") {
+        } else if raw.starts_with('#') {
             // Each battle has its own players and nicknames.
             state = CodecState::new(tables.clone());
-        } else if let Some(cmd) = raw.strip_prefix('>') {
-            if cmd.starts_with("player ") {
-                match team_of(cmd) {
-                    Some(team) => match unpack(&team) {
-                        Ok(t) if pack(&t) == team => c.teams += 1,
-                        Ok(t) => fail(format!("team re-packs as {:?}", pack(&t))),
-                        Err(e) => fail(format!("team: {}", e)),
-                    },
-                    None => fail("no team in >player".into()),
+            c.battle_label += 1;
+        } else if raw.starts_with('>') {
+            // Every `>` line: a PS command (`>start`, `>player`, `>pN`) or
+            // one of the recorder's block separators (`>update`,
+            // `>sideupdate pN`).
+            match decode_cmd_line(raw) {
+                Ok(decoded) => {
+                    let re = encode_cmd_line(&decoded);
+                    if re == raw {
+                        c.commands += 1;
+                        match &decoded {
+                            CmdLine::Command(Command::Start { .. }) => c.starts += 1,
+                            CmdLine::Command(Command::Player { name, team, .. }) => {
+                                c.players += 1;
+                                c.teams += 1;
+                                // The packed team the line carries packs
+                                // back to the same string.
+                                assert_eq!(
+                                    pack(team),
+                                    json_field(raw, "team").expect(">player without a team"),
+                                    "team mismatch in line {}",
+                                    line_no
+                                );
+                                assert_eq!(
+                                    name.as_str(),
+                                    json_field(raw, "name").unwrap_or_default(),
+                                    "name mismatch in line {}",
+                                    line_no
+                                );
+                            }
+                            CmdLine::Command(Command::Choose { .. }) => c.choices += 1,
+                            CmdLine::Block(_) => c.blocks += 1,
+                            CmdLine::Command(_) => {}
+                        }
+                    } else {
+                        fail(format!("re-encodes as\n    {:?}", re));
+                    }
                 }
-            } else {
-                c.skipped_commands += 1;
+                Err(e) => fail(format!("decode: {}", e)),
             }
         } else if let Some(json) = raw.strip_prefix("|request|") {
             let (dex, battle) = state.split_mut();
@@ -152,13 +210,18 @@ fn roundtrip(name: &str, body: &str) -> Counts {
         }
     }
     eprintln!(
-        "{}: {} lines, {} requests, {} teams round-tripped; skipped {} empty and {} `>` lines; {} failures",
+        "{}: {} lines, {} requests, {} teams, {} `>` lines round-tripped ({} start, {} player, {} choice, {} block); skipped {} empty and {} battle labels; {} failures",
         name,
         c.lines,
         c.requests,
         c.teams,
+        c.commands,
+        c.starts,
+        c.players,
+        c.choices,
+        c.blocks,
         c.skipped_empty,
-        c.skipped_commands,
+        c.battle_label,
         c.failures.len()
     );
     for f in c.failures.iter().take(20) {
@@ -168,6 +231,37 @@ fn roundtrip(name: &str, body: &str) -> Counts {
     c
 }
 
+/// The value of a JSON string field of a `>player` line, with PS's escapes
+/// resolved.
+fn json_field(line: &str, key: &str) -> Option<String> {
+    let needle = format!("\"{key}\":\"");
+    let start = line.find(&needle)? + needle.len();
+    let mut out = String::new();
+    let mut chars = line[start..].chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' => return Some(out),
+            '\\' => match chars.next()? {
+                '"' => out.push('"'),
+                '\\' => out.push('\\'),
+                '/' => out.push('/'),
+                'b' => out.push('\u{8}'),
+                'f' => out.push('\u{c}'),
+                'n' => out.push('\n'),
+                'r' => out.push('\r'),
+                't' => out.push('\t'),
+                'u' => {
+                    let hex: String = chars.by_ref().take(4).collect();
+                    out.push(char::from_u32(u32::from_str_radix(&hex, 16).ok()?)?);
+                }
+                _ => return None,
+            },
+            _ => out.push(c),
+        }
+    }
+    None
+}
+
 fn is_forme_or_old_ability(msg: &Msg) -> bool {
     match msg {
         Msg::Switch { details, .. } | Msg::Drag { details, .. } | Msg::DetailsChange { details, .. } => {
@@ -175,27 +269,6 @@ fn is_forme_or_old_ability(msg: &Msg) -> bool {
         }
         Msg::Ability { old, .. } => old.is_some(),
         _ => false,
-    }
-}
-
-/// The `team` string of a `>player p1 {"name":...,"team":"..."}` command.
-fn team_of(cmd: &str) -> Option<String> {
-    let start = cmd.find("\"team\":\"")? + "\"team\":\"".len();
-    let mut out = String::new();
-    let mut chars = cmd[start..].chars();
-    loop {
-        match chars.next()? {
-            '"' => return Some(out),
-            '\\' => match chars.next()? {
-                'u' => {
-                    let hex: String = chars.by_ref().take(4).collect();
-                    out.push(char::from_u32(u32::from_str_radix(&hex, 16).ok()?)?);
-                }
-                'n' => out.push('\n'),
-                c => out.push(c),
-            },
-            c => out.push(c),
-        }
     }
 }
 

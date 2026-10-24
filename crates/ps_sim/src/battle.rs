@@ -214,9 +214,9 @@ impl Battle {
     pub fn step(&mut self, cmd: &Command) -> Result<(), TeamError> {
         match cmd {
             Command::Start { .. } => panic!("the battle has started: >start makes a new Battle"),
-            Command::Player { side, name, avatar, rating, team } => {
+            Command::Player { side, name, team } => {
                 let team = if team.is_empty() { None } else { Some(team) };
-                self.set_player(*side, name, avatar, rating, team)?;
+                self.set_player(*side, name, "", "", team)?;
             }
             Command::Choose { side, choice } => {
                 let s = side.index() as u8;

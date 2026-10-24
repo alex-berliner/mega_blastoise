@@ -156,17 +156,17 @@ fn fnv64(text: &str) -> u64 {
     h
 }
 
-// ---- choices (P1-4b's `decode_command` is still a stub) ---------------------
+// ---- choices ---------------------------------------------------------------
 
+/// One choice of a recorded battle, through the `ps_protocol` command
+/// codec: the fixture writes the choice as PS's `>pN` line writes it
+/// (`move 1`, `switch 3`), so the codec reads it as one.
 fn parse_choice(text: &str) -> ps_protocol::Choice {
-    let (kind, arg) = text.split_once(' ').unwrap_or((text, ""));
-    match kind {
-        "move" => ps_protocol::Choice::Move(arg.parse().unwrap()),
-        "switch" => ps_protocol::Choice::Switch(arg.parse().unwrap()),
-        "pass" => ps_protocol::Choice::Pass,
-        "default" => ps_protocol::Choice::Default,
-        "undo" => ps_protocol::Choice::Undo,
-        other => panic!("choice {other}"),
+    match ps_protocol::text::command::decode_command(&format!(">p1 {text}"))
+        .unwrap_or_else(|e| panic!("choice {text:?}: {e}"))
+    {
+        ps_protocol::Command::Choose { choice, .. } => choice,
+        other => panic!("choice {text:?}: not a choice but {other:?}"),
     }
 }
 

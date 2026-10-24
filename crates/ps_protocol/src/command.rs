@@ -9,15 +9,22 @@ use crate::team::PackedTeam;
 use crate::{BoundedVec, Name};
 
 /// One `BattleStream` input line.
+///
+/// PS's `setPlayer` reads four keys of a `>player` line: `name`, `team`
+/// and, when a server sends them, `avatar` and `rating`. The lines PS
+/// records (and the ones the device and the harness write) carry only
+/// `name` and `team`, in that order, so [`Command::Player`] holds only
+/// those two: the encoder writes exactly the keys PS's lines have, in
+/// PS's order, and a line with extras decodes to the same [`Command`] as
+/// one without.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Command {
     /// `>start {"formatid":"gen3customgame","seed":[a,b,c,d]}`. A numeric
     /// seed of four 16-bit integers selects PS's `Gen5RNG`.
     Start { format: FormatSpec, seed: [u16; 4] },
-    /// `>player p1 {"name":"NAME","team":"PACKED"}` (`avatar` and `rating`
-    /// keys follow `name` when non-empty, as PS's `setPlayer` options).
-    Player { side: SideId, name: Name, avatar: Name, rating: Name, team: PackedTeam },
-    /// `>p1 CHOICE`
+    /// `>player p1 {"name":"NAME","team":"PACKED"}`.
+    Player { side: SideId, name: Name, team: PackedTeam },
+    /// `>p1 CHOICE`.
     Choose { side: SideId, choice: Choice },
     /// `>forcewin p1` (debug only).
     ForceWin(SideId),
@@ -25,25 +32,44 @@ pub enum Command {
     ForceTie,
 }
 
-/// A singles choice, PS grammar. Indices are 1-based as written on the wire
-/// (`move 1` is the first move slot, `switch 2` the second Pokemon in the
-/// request's `side.pokemon` order); the server validates them as PS does, so
-/// an out-of-range index is representable and gets PS's error.
+/// One choice, PS's `side.choose` grammar.
 ///
-/// Not covered: choices by name (`move thunderbolt`, `switch Pikachu`),
-/// targets and gimmick suffixes (doubles, mega, Z, max, tera), `team`, `shift`.
+/// The wire form is `move N`, `move NAME`, `switch N`, `switch NAME`,
+/// `pass`, `default` or `undo`. The numbers are 1-based, as PS writes
+/// them: `move 1` is the first move slot of the request, `switch 2` the
+/// second Pokemon of the request's `side.pokemon`. PS validates them
+/// itself and answers with its own error when they are out of range, so
+/// the codec passes them on as written (`move 0` is PS's "you don't have
+/// a move 0", not a codec error).
+///
+/// PS takes a name instead of a number for both moves (`move thunderbolt`)
+/// and switches (`switch pikachu`), and resolves it at choice time:
+/// `chooseMove` looks the name up in the request's `moves` (by the move's
+/// id, so case and punctuation do not matter), `chooseSwitch` in the
+/// team's Pokemon (by nickname, case-insensitively, or by species id).
+/// The codec keeps the form the line carried, so a line round-trips byte
+/// for byte.
+///
+/// Not covered: the `,` that joins several choices (doubles), the target
+/// of a move (`move 1 +1`), the gimmick suffixes (`mega`, `zmove`,
+/// `dynamax`, `terastallize`), `team` (Team Preview), `shift`, and PS's
+/// synonyms `skip` (for `pass`) and `auto` (for `default`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Choice {
-    /// `move N`
+    /// `move N`: the Nth move slot of the request.
     Move(u8),
-    /// `switch N`
+    /// `move NAME`: the move whose id is NAME.
+    MoveName(Name),
+    /// `switch N`: the Nth Pokemon of the request's `side.pokemon`.
     Switch(u8),
-    /// `pass`
+    /// `switch NAME`: the Pokemon named NAME (its nickname or its species).
+    SwitchName(Name),
+    /// `pass`.
     Pass,
-    /// `default`
+    /// `default`: PS's `autoChoose`.
     Default,
-    /// `undo`
+    /// `undo`: PS's `undoChoice`.
     Undo,
 }
 
@@ -281,5 +307,9 @@ mod tests {
             }
             _ => unreachable!(),
         }
+        let nm = Choice::MoveName(Name::from_str("thunderbolt").unwrap());
+        let sn = Choice::SwitchName(Name::from_str("raichu").unwrap());
+        assert_eq!(nm, Choice::MoveName(Name::from_str("thunderbolt").unwrap()));
+        assert_ne!(nm, sn);
     }
 }

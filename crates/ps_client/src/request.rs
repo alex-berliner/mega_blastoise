@@ -219,7 +219,9 @@ pub fn choice(req: &Request, answer: &str) -> Option<Choice> {
 pub fn choice_string(req: &Request, answer: &str) -> Option<String> {
     Some(match choice(req, answer)? {
         Choice::Move(n) => alloc::format!("move {n}"),
+        Choice::MoveName(name) => alloc::format!("move {}", name.as_str()),
         Choice::Switch(n) => alloc::format!("switch {n}"),
+        Choice::SwitchName(name) => alloc::format!("switch {}", name.as_str()),
         Choice::Pass => String::from("pass"),
         Choice::Default => String::from("default"),
         Choice::Undo => String::from("undo"),
