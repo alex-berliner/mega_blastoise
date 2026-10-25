@@ -1,3 +1,11 @@
+> **Archive: the island and the two decks (rejected 2026-10-25).** This is `SHELL.md` as it stood on 2026-10-25, before
+> the one-piece top became the design (the branch `ref-design-unibody`; Alex chose one flowing surface, printed on support
+> filament, over the island's and decks' joints). It describes a case that `case.scad` no longer builds: the island, the
+> two C-shaped decks, the wedge and lips, the laps, the hooks, the corner posts, the build bars. Its images are in
+> `images/island/`. The current design is in [SHELL.md](SHELL.md), which says in "Rejected" what was dropped and why. The
+> tag `ref-design-island-archive` is the last commit that has the island's and the decks' parts (`case.scad`, the kits, the
+> viewer), if you want to print them again.
+
 # The shell for the 2.4 in panel (2026-10-21), with the cell in the board (2026-10-22), joints that hold it together, the seam on the round, the side joint (2026-10-22), the lip under the step and the island (2026-10-23), the left ear and the hooks (2026-10-24)
 
 The case's redesign after Alex's notes on his last print (items 10, 13, 14 and 15) and the change
@@ -114,18 +122,18 @@ buttons left the left strip and J6 went. In the case:
   change). J5 alone sets the island's inset on the left, at the same reach (35.11), so **nothing is
   freed**: 2.6 stays. The hook at y 23.5 on the left, which had J6 0.89 beside its head, now has J5 4.10 away.
 
-![the left bezel below H4 from outside: the two new pinholes](images/pinholes_outside.png)
-![the pinholes in section: across each switch, and along x -32.35 with the floor rib into H4's boss](images/section_pinholes.png)
+![the left bezel below H4 from outside: the two new pinholes](images/island/pinholes_outside.png)
+![the pinholes in section: across each switch, and along x -32.35 with the floor rib into H4's boss](images/island/section_pinholes.png)
 
-![the case from the front, 3/4](images/outside_front.png)
-![the left wall's blank ear, the left arms either side](images/left_ear.png)
-![seat 1's right hook in section](images/section_hook.png)
-![the decks and the island lifted off the tub: the hooks under the arms, the slots in the tongue](images/exploded_hooks.png)
-![seat 1's right arm lifted off its wall: the hook, the tongue's slot](images/exploded_hook_close.png)
+![the case from the front, 3/4](images/island/outside_front.png)
+![the left wall's blank ear, the left arms either side](images/island/left_ear.png)
+![seat 1's right hook in section](images/island/section_hook.png)
+![the decks and the island lifted off the tub: the hooks under the arms, the slots in the tongue](images/island/exploded_hooks.png)
+![seat 1's right arm lifted off its wall: the hook, the tongue's slot](images/island/exploded_hook_close.png)
 
-![the side: the decks' profile from end to end, the ear over the USB-C](images/outside_side.png)
-![an island corner: one edge profile round it](images/island_corner.png)
-![exploded, in the order it is built (face down)](images/exploded_build.png)
+![the side: the decks' profile from end to end, the ear over the USB-C](images/island/outside_side.png)
+![an island corner: one edge profile round it](images/island/island_corner.png)
+![exploded, in the order it is built (face down)](images/island/exploded_build.png)
 
 **The parts.** Four printed parts, as before, cut differently:
 - **The island** (`top()`, `top.stl`): only the raised screen block, its two spines and an ear on each
@@ -178,8 +186,8 @@ carry one deck model, printed twice. Under it the island's inside reaches the wa
 right ear (the pinhole switches, J2 and J5 are under the island anyway); check_fit's JOINT zones leave
 both ears out.
 
-![the ear over the USB-C, the right arms either side](images/joint_outside.png)
-![across the ear at y 2](images/section_usb.png)
+![the ear over the USB-C, the right arms either side](images/island/joint_outside.png)
+![across the ear at y 2](images/island/section_usb.png)
 
 **The side round** is r **2.8** (`face_r`, Alex 2026-10-24; its top edge 2.05 in at 60): on the arms it
 leaves **0.40** of flat face before the seam at the island's foot (0.25 at 3.0, which risked reading as a
@@ -236,10 +244,10 @@ over the top piece's hollow and J4's pocket; the blend went and nothing hollow i
 - **Corner posts**: as before; they now push each deck along the case onto the island's wedge (across
   the step and round the spine's end), its place over the buttons.
 
-![along the case at x -10: the island's wedge under seat 1's deck's lip](images/section_joint_zoom.png)
-![across the right wall at y -25: the arm, the wedge, the tongue under it](images/section_arm.png)
-![across the right wall at y -20: the arm's key in its pocket, the wedge stopped there](images/section_arm_key.png)
-![the left wall's blank ear](images/left_ear.png)
+![along the case at x -10: the island's wedge under seat 1's deck's lip](images/island/section_joint_zoom.png)
+![across the right wall at y -25: the arm, the wedge, the tongue under it](images/island/section_arm.png)
+![across the right wall at y -20: the arm's key in its pocket, the wedge stopped there](images/island/section_arm_key.png)
+![the left wall's blank ear](images/island/left_ear.png)
 
 **How each part is held** (Alex asked for this explicitly):
 - **The island:** across and along the case by the window the decks form round it (0.15 at its foot,
@@ -428,9 +436,9 @@ tub back down, the island and the decks face down.
 | Held by | six screws, four snap hooks | six M2 x 8: four into the top piece, one into each deck | six M2 x 6, the same way (the side ones into the top piece beside the glass, since the side screws came back inward); before the screws, the tongue's keys and grip ribs |
 | Crush ribs | on the lid | on the top piece's and the decks' walls | on the tub's walls (the board is inside them) |
 
-![outside, from the front](images/outside_front.png)
-![outside, from the back](images/outside_back.png)
-![outside, from the side (USB-C)](images/outside_side.png)
+![outside, from the front](images/island/outside_front.png)
+![outside, from the back](images/island/outside_back.png)
+![outside, from the side (USB-C)](images/island/outside_side.png)
 
 (The images are rendered from the parts of this commit; see "Images" at the end.)
 
@@ -519,12 +527,12 @@ the port and the plug, and check_fit.py checks it against J1's 3D model.
 - **The spines** keep their length; seat 1's covers U6 (1.75, over the decks' 1.6) and seat 2's only
   U9 (1.2), so they could be shorter (not done: the decks and positions.json stay as they are).
 
-![across the cell](images/section_cell.png)
-![across the speaker and its grille](images/section_speaker.png)
-![along the speaker and J4](images/section_speaker_along.png)
-![across H2: the slimmed tub boss by the cell's hole](images/section_h2.png)
-![across H4: the slimmed tub boss by the board's edge](images/section_h4.png)
-![along H3: between the speaker and J4](images/section_h3.png)
+![across the cell](images/island/section_cell.png)
+![across the speaker and its grille](images/island/section_speaker.png)
+![along the speaker and J4](images/island/section_speaker_along.png)
+![across H2: the slimmed tub boss by the cell's hole](images/island/section_h2.png)
+![across H4: the slimmed tub boss by the board's edge](images/island/section_h4.png)
+![along H3: between the speaker and J4](images/island/section_h3.png)
 
 ## The joints (2026-10-22, after Alex printed the shell)
 
@@ -537,11 +545,11 @@ together, this version needs the screws to fit together at all which is bad". So
 no screws, the four parts go together and hold as one, nothing rocking or falling apart when
 handled gently; the screws only lock it.
 
-![the side joint from outside](images/joint_outside.png)
-![the seam: the tongue 3.0 up inside the top piece's skirt](images/section_seam_zoom.png)
-![the end wall: a deck over the tongue, 2.5, leaning in under the deck's round](images/section_tongue_end.png)
-![a deck's key: the corner post in the deck's notch](images/section_key_post.png)
-![the right wall in the tongue's plane: the top piece's skirt keys between the tongue's ends over the USB-C tab](images/section_usb_wall.png)
+![the side joint from outside](images/island/joint_outside.png)
+![the seam: the tongue 3.0 up inside the top piece's skirt](images/island/section_seam_zoom.png)
+![the end wall: a deck over the tongue, 2.5, leaning in under the deck's round](images/island/section_tongue_end.png)
+![a deck's key: the corner post in the deck's notch](images/island/section_key_post.png)
+![the right wall in the tongue's plane: the top piece's skirt keys between the tongue's ends over the USB-C tab](images/island/section_usb_wall.png)
 
 **What got looser.** The kit Alex printed before was 4df3f96's (f3763df, which raised `slide_fit`
 from 0.15 to 0.25, went in the same minute, so any kit of that shell had 0.25). Between it and
@@ -654,9 +662,9 @@ Alex, after the joints: the top pieces' outer walls should come farther down the
 the back's round, to a much lower ledge on the tub, the tub keeping its tongue that the top pieces
 slide over. Agreed: the seam from the round's end (4.2) down to about 2.5.
 
-![the seam at the right wall: the skirt down the round to 2.55, the tongue from there to 7.2](images/section_seam_zoom.png)
-![the USB-C side from outside: the seam low on the round, stepping up round the USB-C tab](images/outside_usb.png)
-![across J1's opening: the tub's tab under it, the top piece over it](images/section_usb.png)
+![the seam at the right wall: the skirt down the round to 2.55, the tongue from there to 7.2](images/island/section_seam_zoom.png)
+![the USB-C side from outside: the seam low on the round, stepping up round the USB-C tab](images/island/outside_usb.png)
+![across J1's opening: the tub's tab under it, the top piece over it](images/island/section_usb.png)
 
 - **The height: `z_seam` 2.55**, one height all round. The skirts' outsides follow the back's round
   down to their tips at 2.65 (`seam_gap` 0.1 over the tub); their insides stay straight down the
@@ -713,8 +721,8 @@ each other better." It was a butt joint, the two skirts 0.15 apart with nothing 
 together, and the top piece's step from the screen face (9.55) down to the deck (7.7) reached the
 side wall in a 2.1 mm S right at the seam: a notch that read as two parts.
 
-![the side joint from outside, the right wall](images/joint_outside.png)
-![and the left](images/joint_outside_left.png)
+![the side joint from outside, the right wall](images/island/joint_outside.png)
+![and the left](images/island/joint_outside_left.png)
 
 **The lap** (`lap`, on each deck at each side wall):
 - **Shape and sizes.** The deck's skirt carries a tongue of its own, `lap_l` 3.0 along the wall
@@ -788,7 +796,7 @@ wall that starts in mid air. So the deck now goes under the top piece at its own
 the bed, and the groove is in that face. The plan Alex approved (2026-10-23) had the sizes rough;
 these are the case's.
 
-![the joint at x -10 (the same cut and framing as before): the plate under the step, the lip in its groove](images/section_joint_zoom.png)
+![the joint at x -10 (the same cut and framing as before): the plate under the step, the lip in its groove](images/island/section_joint_zoom.png)
 
 **The shape** (`deck_ext`, `lip_*`, `end_wall`, `foot_h`, `step_foot` in `case.scad`):
 - **The deck's plate runs on under the step** at its own level, 5.7 to 7.7 (nothing of the deck is
@@ -991,11 +999,11 @@ it face up: unplug J4 before the board and the island part.
 | board mock, USB-C board coupon | as before | yes, as before (the USB-C stand-in) |
 | speaker dummy | flat | none since 2026-10-22 (a plain racetrack, face up) |
 
-![section across seat 1](images/section_seat.png)
-![section along the D-pad's line](images/section_length_dpad.png)
-![section across the screen](images/section_screen.png)
-![the step and the deck's joint](images/section_joint_zoom.png)
-![the seam](images/section_seam_zoom.png)
+![section across seat 1](images/island/section_seat.png)
+![section along the D-pad's line](images/island/section_length_dpad.png)
+![section across the screen](images/island/section_screen.png)
+![the step and the deck's joint](images/island/section_joint_zoom.png)
+![the seam](images/island/section_seam_zoom.png)
 
 ## Row 9: the tub's bottom edge (2026-10-21)
 
