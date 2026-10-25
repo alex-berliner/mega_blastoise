@@ -681,6 +681,10 @@ relay runs `ps_sim` and speaks the same protocol `ps_client` already reads.
 - Accept: two scripted clients play a full battle in both gens; a client
   cannot see the other seat's request; a disconnected seat can rejoin with
   its room code and seat token.
+- Time-boxed by default: the relay exits on its own 60 minutes after it
+  starts (`--max-uptime`, default 3600 s; rooms get a 2 minute warning line
+  first). It is started on demand, never restarted by a supervisor, and
+  refuses new rooms during the last 5 minutes. Tested with a short uptime.
 
 **N-2 WebSocket transport** · C2 · depends: N-1
 - A `Transport` impl in the web crate over the browser WebSocket (raw IO
@@ -715,6 +719,11 @@ relay runs `ps_sim` and speaks the same protocol `ps_client` already reads.
   admin page owns 443), and the Caddy and docker change under `/srv/infra`
   (needs `claude-admin`). The worker writes the exact request, never edits
   the router or Caddy itself.
+- On demand and time-boxed: Alex (or one command) starts the container, it
+  stops itself after an hour (`restart: no`), and the Caddy route and router
+  forward stay in place but answer 502 while it is down. Docker sandbox:
+  non-root, read-only filesystem, no capabilities, its own network with no
+  route to the LAN, size, rate and per-IP limits (N-1).
 - A soak run of 200 scripted battles with random disconnects.
 - Accept: no leaked rooms or tasks after the soak; a client on another
   network plays through the public name; Alex plays one real battle with a
