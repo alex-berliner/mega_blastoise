@@ -8,26 +8,44 @@
 //! PS: data/mods/gen3/conditions.ts, data/mods/gen4/conditions.ts,
 //! data/conditions.ts.
 
+pub mod attract;
 pub mod brn;
 pub mod choicelock;
 pub mod confusion;
+pub mod curse;
+pub mod destinybond;
+pub mod disable;
+pub mod encore;
 pub mod flinch;
+pub mod followme;
+pub mod foresight;
 pub mod frz;
 pub mod futuremove;
+pub mod grudge;
 pub mod hail;
+pub mod helpinghand;
+pub mod imprison;
+pub mod leechseed;
 pub mod lockedmove;
+pub mod lockon;
 pub mod mustrecharge;
+pub mod nightmare;
 pub mod par;
 pub mod partiallytrapped;
+pub mod perishsong;
 pub mod psn;
 pub mod raindance;
 pub mod sandstorm;
 pub mod slp;
 pub mod stall;
+pub mod substitute;
 pub mod sunnyday;
+pub mod taunt;
+pub mod torment;
 pub mod tox;
 pub mod trapped;
 pub mod twoturnmove;
+pub mod yawn;
 
 use ps_dex::{ConditionId, Type};
 use ps_protocol::{Arg, ArgValue, Kw, Msg, Status, Weather};
@@ -102,3 +120,5 @@ pub fn weather_start_kw(b: &Battle, a: &EventArgs) -> Kw {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod volatile_tests;

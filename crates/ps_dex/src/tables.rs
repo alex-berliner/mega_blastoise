@@ -496,6 +496,30 @@ pub struct ConditionDef {
     pub no_copy: bool,
     pub affects_fainted: bool,
     pub handlers: &'static [Handler],
+    /// Residual ordering keys with no residual handler, see
+    /// [`ResidualOrder`].
+    pub residual_order: Option<ResidualOrder>,
+}
+
+/// Which residual a condition's [`ResidualOrder`] keys are for:
+/// `onResidual*` (a Pokemon's), `onSideResidual*`, `onFieldResidual*`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResidualKind {
+    Residual,
+    SideResidual,
+    FieldResidual,
+}
+
+/// A condition's `on{,Side,Field}ResidualOrder` / `Priority` /
+/// `SubOrder` keys where it has no residual handler beside them (gen 3
+/// Taunt 10/15, Yawn 10/19, Wish 7, Reflect 1...). PS's residual gathers a
+/// condition with a `duration` whether or not it answers, and
+/// `resolvePriority` reads these keys for it, so they order its end. The
+/// keys use [`SwitchInOrder`]'s encoding (0 is a missing key).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ResidualOrder {
+    pub kind: ResidualKind,
+    pub keys: SwitchInOrder,
 }
 
 /// A non-type immunity of a defending type (`Poison` is immune to `psn`,

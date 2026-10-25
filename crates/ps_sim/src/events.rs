@@ -339,6 +339,21 @@ impl Battle {
             Some(h) => (h.order, h.priority, h.sub_order),
             None => (0, 0, 0),
         };
+        // A condition gathered for its `duration` alone still has the
+        // residual's keys read for it (`effect.onResidualOrder` with no
+        // `onResidual`: gen 3 Taunt, Yawn, Wish, the screens).
+        if let (None, EffectId::Condition(c)) = (l.handler, l.effect) {
+            if let Some(r) = self.dex.condition_def(c).residual_order {
+                let event = match r.kind {
+                    ps_dex::ResidualKind::Residual => EventId::Residual,
+                    ps_dex::ResidualKind::SideResidual => EventId::SideResidual,
+                    ps_dex::ResidualKind::FieldResidual => EventId::FieldResidual,
+                };
+                if l.event == event && prefix == Prefix::None {
+                    (order, priority, sub_order) = (r.keys.order, r.keys.priority, r.keys.sub_order);
+                }
+            }
+        }
         // `effect[`${callbackName}Priority`]` reads the keys of the event
         // being run: an ability or item answering `onSwitchIn` with its
         // `onStart` (or gen 3's `onAfterEntryHazard`, `getCallback`) is
@@ -458,7 +473,12 @@ impl Battle {
         }
         let side = &self.sides[m.side as usize];
         let pos = mon.position;
-        for (id, st) in side.slot_conditions[pos as usize].iter() {
+        // A benched Pokemon's `position` is its team index, past the active
+        // slots: `for (const id in side.slotConditions[pokemon.position])`
+        // iterates `undefined`, which is nothing (gen 3 Yawn's `setStatus`
+        // with a source that has switched out asks it for `onSource`).
+        let Some(slot_conditions) = side.slot_conditions.get(pos as usize) else { return };
+        for (id, st) in slot_conditions.iter() {
             let cb = self.get_callback(holder, id, f.prefix, f.event);
             if cb.is_some() || (f.duration && st.duration != 0) {
                 self.push_listener(

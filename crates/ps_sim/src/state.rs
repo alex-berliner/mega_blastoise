@@ -60,6 +60,10 @@ pub const SPEED_ORDER_NONE: u8 = u8::MAX;
 /// still sees its state object, as PS's detached objects do.
 const GRAVEYARD_CAP: usize = 4;
 
+/// `data[LINK]` of a linked volatile is its `linkedPokemon` (see
+/// [`Battle::add_volatile_linked`]).
+pub const LINK: usize = 3;
+
 /// A Pokemon: side index (0 for p1) and team slot.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct MonRef {
@@ -790,6 +794,10 @@ pub struct KnownIds {
     pub commanding: ConditionId,
     pub nightmare_condition: ConditionId,
     pub nightmare_move: MoveId,
+    /// The one linked pair of volatiles gens 1-3 have (Mean Look, Block,
+    /// Spider Web): see [`Battle::add_volatile_linked`].
+    pub trapped: ConditionId,
+    pub trapper: ConditionId,
     pub neutralizinggas: AbilityId,
     pub klutz: AbilityId,
     pub corrosion: AbilityId,
@@ -808,6 +816,8 @@ impl KnownIds {
             commanding: c("commanding"),
             nightmare_condition: c("nightmare"),
             nightmare_move: dex.move_id("nightmare").unwrap_or(MoveId::NONE),
+            trapped: c("trapped"),
+            trapper: c("trapper"),
             neutralizinggas: a("neutralizinggas"),
             klutz: a("klutz"),
             corrosion: a("corrosion"),
@@ -1476,8 +1486,8 @@ impl Battle {
         (source, effect)
     }
 
-    /// PS `addVolatile(status, source, sourceEffect)` (no `linkedStatus`:
-    /// nothing in gens 1-3 links volatiles). Returns PS's return value.
+    /// PS `addVolatile(status, source, sourceEffect)` without a
+    /// `linkedStatus`. Returns PS's return value.
     // PS: sim/pokemon.ts addVolatile
     pub fn add_volatile(
         &mut self,
@@ -1487,6 +1497,82 @@ impl Battle {
         source_effect: EffectId,
     ) -> Relay {
         self.add_volatile_key(m, EffectId::Condition(status), source, source_effect)
+    }
+
+    /// PS `addVolatile(status, source, sourceEffect, linkedStatus)`: after
+    /// `status` starts, `source` gets `linkedStatus` and each records the
+    /// other as `linkedPokemon`. Gens 1-3 link one pair only, `trapped` on
+    /// the target and `trapper` on its source (Mean Look, Block, Spider
+    /// Web), and in singles each list holds one Pokemon, kept in
+    /// `data[LINK]` of both states ([`Battle::linked_status`]).
+    // PS: sim/pokemon.ts addVolatile
+    pub fn add_volatile_linked(
+        &mut self,
+        m: MonRef,
+        status: ConditionId,
+        source: MonRef,
+        source_effect: EffectId,
+        linked_status: ConditionId,
+    ) -> Relay {
+        assert!(
+            status == self.known.trapped && linked_status == self.known.trapper,
+            "unported: a linked volatile other than trapped/trapper"
+        );
+        // `if (linkedStatus && source && !source.hp) return false`, after
+        // the fainted-target check.
+        let def = self.dex.condition_def(status);
+        if self.mon(m).hp == 0 && !def.affects_fainted {
+            return Relay::FAIL;
+        }
+        if self.mon(source).hp == 0 {
+            return Relay::FAIL;
+        }
+        let result = self.add_volatile_key(m, EffectId::Condition(status), Some(source), source_effect);
+        // `return true` only after a fresh start; a `Restart` or a refusal
+        // returns before linking.
+        if result != Relay::TRUE || self.mon(m).volatiles.get(EffectId::Condition(status)).is_none() {
+            return result;
+        }
+        let linked = EffectId::Condition(linked_status);
+        if self.mon(source).volatiles.get(linked).is_none() {
+            self.add_volatile_key(source, linked, Some(m), source_effect);
+            let st = self.mon_mut(source).volatiles.get_mut(linked).expect("linkedStatus added");
+            st.set_data_mon(LINK, Some(m));
+        } else {
+            // `linkedPokemon.push(this)`: a second link needs a second foe.
+            panic!("unported: a second Pokemon linked to {linked:?} (doubles)");
+        }
+        let st = self.mon_mut(m).volatiles.get_mut(EffectId::Condition(status)).expect("the linked volatile");
+        st.set_data_mon(LINK, Some(source));
+        Relay::TRUE
+    }
+
+    /// `volatiles[key].linkedStatus`: the other half of a linked pair, when
+    /// the state at `key` holds a link (`data[LINK]`).
+    pub fn linked_status(&self, m: MonRef, key: EffectId) -> Option<(ConditionId, MonRef)> {
+        let c = key.condition()?;
+        let other = if c == self.known.trapped && !c.is_none() {
+            self.known.trapper
+        } else if c == self.known.trapper && !c.is_none() {
+            self.known.trapped
+        } else {
+            return None;
+        };
+        let linked = self.mon(m).volatiles.get(key)?.data_mon(LINK)?;
+        Some((other, linked))
+    }
+
+    /// PS `removeLinkedVolatiles(linkedStatus, linkedPokemon)` with
+    /// `this` = `m`: each linked Pokemon drops `m` from its list (one
+    /// entry in singles; `splice(indexOf(this), 1)` takes the last one
+    /// even when `this` is not in it), and an emptied list removes the
+    /// volatile.
+    // PS: sim/pokemon.ts removeLinkedVolatiles
+    pub fn remove_linked_volatiles(&mut self, linked_status: ConditionId, linked: MonRef) {
+        let key = EffectId::Condition(linked_status);
+        let Some(st) = self.mon_mut(linked).volatiles.get_mut(key) else { return };
+        st.set_data_mon(LINK, None);
+        self.remove_volatile_key(linked, key);
     }
 
     /// The volatile PS's `pokemon.addVolatile(move.id)` adds: the move's own
@@ -1629,6 +1715,8 @@ impl Battle {
         }
         let Some(st) = self.mon(m).volatiles.get(key) else { return false };
         let serial = st.serial;
+        // `const { linkedPokemon, linkedStatus } = this.volatiles[status.id]`.
+        let link = self.linked_status(m, key);
         if key.condition().is_some() {
             self.single_event(EventId::End, key, StateRef::Volatile(m, key), serial, Holder::Mon(m), None, EffectId::None, None);
         }
@@ -1636,6 +1724,9 @@ impl Battle {
         // End re-added it, that newer state is what goes.
         if let Some(gone) = self.mon_mut(m).volatiles.remove(key) {
             self.bury(gone);
+        }
+        if let Some((linked_status, linked)) = link {
+            self.remove_linked_volatiles(linked_status, linked);
         }
         true
     }

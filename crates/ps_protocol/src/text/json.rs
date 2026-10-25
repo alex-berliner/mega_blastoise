@@ -126,6 +126,9 @@ fn push_request_move(out: &mut String, m: &RequestMove, dex: &dyn DexNames) {
         out.push_str(",\"disabled\":");
         out.push_str(if d { "true" } else { "false" });
     }
+    if m.disabled_source_empty {
+        out.push_str(",\"disabledSource\":\"\"");
+    }
     out.push('}');
 }
 
@@ -353,7 +356,7 @@ fn decode_active(v: &Value, dex: &dyn DexNames) -> Result<ActiveRequest, CodecEr
 
 fn decode_request_move(v: &Value, dex: &dyn DexNames) -> Result<RequestMove, CodecError> {
     let o = v.obj("move")?;
-    only_keys(o, &["move", "id", "pp", "maxpp", "target", "disabled"])?;
+    only_keys(o, &["move", "id", "pp", "maxpp", "target", "disabled", "disabledSource"])?;
     let name = field(o, "move")?.string("move")?;
     let id = field(o, "id")?.string("id")?;
     let mut m = RequestMove::locked(decode_request_move_name(name, id, dex)?);
@@ -369,6 +372,13 @@ fn decode_request_move(v: &Value, dex: &dyn DexNames) -> Result<RequestMove, Cod
                 m.target = Some(MoveTarget::parse(t).ok_or_else(|| bad(&format!("target {:?}", t)))?);
             }
             "disabled" => m.disabled = Some(v.boolean("disabled")?),
+            "disabledSource" => {
+                let src = v.string("disabledSource")?;
+                if !src.is_empty() {
+                    return Err(bad(&format!("disabledSource {:?}", src)));
+                }
+                m.disabled_source_empty = true;
+            }
             _ => {}
         }
     }

@@ -30,8 +30,8 @@ use ps_dex::{MoveCategory, MoveId, MoveTarget};
 use ps_protocol::{Arg, ArgValue, Kw, Msg, MoveNum, Word};
 
 use crate::actions::{
-    data_boosts, data_force_switch, data_heal, data_pseudo_weather, data_secondaries, data_self, data_self_switch,
-    data_selfdestruct, data_side_condition, data_slot_condition, data_status, data_volatile, data_weather, FakeMove,
+    data_boosts, data_force_switch, data_heal, data_pseudo_weather, data_secondaries, data_self_switch,
+    data_selfdestruct, data_side_condition, data_slot_condition, data_status, data_weather, FakeMove,
     GenScripts, MoveData, MoveRef, MoveResult,
 };
 use crate::effect::{EffectId, EventId};
@@ -313,7 +313,7 @@ impl Battle {
             damage = MoveResult::True;
             target = HitTarget::Null;
         }
-        if target.mon().is_some() && is_secondary && data_self(data, def).is_none() {
+        if target.mon().is_some() && is_secondary && self.move_data_self(data, mv).is_none() {
             damage = MoveResult::True;
         }
         if !damage.truthy() {
@@ -341,7 +341,7 @@ impl Battle {
         let active_target = self.active_target;
 
         // 4. Self drops (from here on `targets[i] === false` is checked).
-        if data_self(data, def).is_some() && !self.mv(mv).self_dropped {
+        if self.move_data_self(data, mv).is_some() && !self.mv(mv).self_dropped {
             self.self_drops::<S>(target, pokemon, mv, data, is_secondary);
         }
 
@@ -466,7 +466,18 @@ impl Battle {
             if let HitTarget::Mon(t) = target {
                 if let Some(boosts) = data_boosts(data, def) {
                     if !self.mon(t).fainted {
-                        let hit_result = S::boost(self, boosts.as_array(), t, Some(source), effect, is_secondary, is_self);
+                        // A handler's `move.self` brings its own key order
+                        // (gen 3 Curse; gen 3's `boost` is the base one).
+                        let order = match (data, self.mv(mv).self_effect) {
+                            (MoveData::SelfEffect(d), Some((s, order))) if core::ptr::eq(d, s) => Some(order),
+                            _ => None,
+                        };
+                        let hit_result = match order {
+                            Some(order) => {
+                                self.base_boost_in_order(boosts.as_array(), order, t, Some(source), effect, is_secondary, is_self)
+                            }
+                            None => S::boost(self, boosts.as_array(), t, Some(source), effect, is_secondary, is_self),
+                        };
                         did_something = MoveResult::combine(did_something, hit_result);
                     }
                 }
@@ -510,7 +521,7 @@ impl Battle {
                     did_something = MoveResult::combine(did_something, hit_result);
                 }
                 // `forceStatus`: no gen 1-3 move has one.
-                let volatile = data_volatile(data, def);
+                let volatile = self.move_data_volatile(data, mv);
                 if !volatile.is_none() {
                     self.require_ported(EffectId::Condition(volatile));
                     let hit_result = MoveResult::from_relay(self.add_volatile(t, volatile, Some(source), effect));
@@ -591,7 +602,7 @@ impl Battle {
 
         if !did_anything.truthy()
             && did_anything != MoveResult::Int(0)
-            && data_self(data, def).is_none()
+            && self.move_data_self(data, mv).is_none()
             && data_selfdestruct(data, def).is_none()
         {
             if !is_self && !is_secondary && did_anything == MoveResult::False {
@@ -611,6 +622,8 @@ impl Battle {
     /// `if (moveData.onHit)`).
     fn move_data_has(&self, data: MoveData, mv: MoveRef, event: EventId) -> bool {
         match data {
+            // `delete move.onHit` (gen 3 Curse).
+            MoveData::Move if event == EventId::Hit && self.mv(mv).on_hit_deleted => false,
             MoveData::Move => self.registry.handler(self.mv(mv).effect(), crate::effect::Prefix::None, event).is_some(),
             MoveData::Secondary(s) => !s.handlers.is_empty(),
             MoveData::SelfEffect(s) => !s.handlers.is_empty(),
@@ -625,7 +638,7 @@ impl Battle {
             return;
         }
         let def = self.dex.move_def(self.mv(mv).id);
-        let Some(self_effect) = data_self(data, def) else { return };
+        let Some(self_effect) = self.move_data_self(data, mv) else { return };
         if self.mv(mv).self_dropped {
             return;
         }
@@ -872,6 +885,24 @@ impl Battle {
         is_secondary: bool,
         is_self: bool,
     ) -> MoveResult {
+        self.base_boost_in_order(boost, &[0, 1, 2, 3, 4, 5, 6], target, source, effect, is_secondary, is_self)
+    }
+
+    /// [`Battle::base_boost`] of a table whose keys PS iterates in `order`
+    /// (stat indexes; the dex's tables are all in stat order, a handler's
+    /// may not be: gen 3 Curse's `{spe: -1, atk: 1, def: 1}`).
+    // PS: sim/battle.ts boost
+    #[allow(clippy::too_many_arguments)]
+    pub fn base_boost_in_order(
+        &mut self,
+        boost: [i8; 7],
+        order: &[u8],
+        target: MonRef,
+        source: Option<MonRef>,
+        effect: EffectId,
+        is_secondary: bool,
+        is_self: bool,
+    ) -> MoveResult {
         let source = source.or(self.event.source);
         let effect = if effect.is_none() { self.frame.effect } else { effect };
         if self.mon(target).hp == 0 {
@@ -905,8 +936,9 @@ impl Battle {
         let mut success = MoveResult::Null;
         let effect_type = self.effect_type(effect);
         let mut boosted = is_secondary;
-        for (i, &b) in boost.iter().enumerate() {
-            let Some(b) = b else { continue };
+        for &i in order {
+            let i = usize::from(i);
+            let Some(b) = boost[i] else { continue };
             let mut current = [0i8; 7];
             current[i] = b;
             let mut boost_by = self.boost_by(target, current);

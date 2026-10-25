@@ -130,6 +130,14 @@ impl Battle {
             Some((m, f)) => self.update_request_for_pokemon(m, f),
             None => false,
         };
+        self.emit_choice_error_updated(side, text, updated)
+    }
+
+    /// The rest of [`Battle::emit_choice_error`] once its update ran
+    /// (`updated`: the request changed and goes out again).
+    // PS: sim/side.ts emitChoiceError
+    pub fn emit_choice_error_updated(&mut self, side: u8, text: Text, updated: bool) -> bool {
+        self.sides[side as usize].choice.error = true;
         self.outbox.push_side(side_id(side), Msg::Error { side: side_id(side), unavailable: updated, text });
         if updated {
             self.emit_request(side, true);
@@ -475,7 +483,8 @@ impl Battle {
                     is_enabled = true;
                     break;
                 }
-                // `disabledSource` is not tracked (no ported effect sets it).
+                // `else if (m.disabledSource)`: `getMoves` entries carry
+                // no `disabledSource`, so it stays `''`.
             }
             if !is_enabled {
                 assert!(!auto_choose, "autoChoose chose a disabled move");
@@ -484,14 +493,28 @@ impl Battle {
                     TextArg::nickname(self.ident(pokemon)),
                     TextArg::mv(MoveNum(mv.id().map_or(0, |m| m.0))),
                 );
-                fn update(b: &mut Battle, m: MonRef) -> bool {
-                    // Marks the move disabled in the request; the chosen
-                    // move is the one `choose_move` was looking at, which
-                    // is already shown disabled (PS only flips
-                    // `m.disabled` when it is not).
-                    b.update_disabled_request(m)
+                // The update: `updateDisabledRequest`, then the chosen
+                // move's request entry turns `disabled` (a hidden-disabled
+                // move, Imprison's, shows enabled) and gets
+                // `disabledSource: ''`. It runs before the error line here,
+                // which it does not touch.
+                self.sides[side as usize].choice.error = true;
+                let is_move = matches!(self.sides[side as usize].active_request, Some(crate::request::SideRequestState::Move { .. }));
+                assert!(is_move, "Can't update a request without active Pokemon");
+                let mut updated = self.update_disabled_request(pokemon);
+                if let Some(req) = self.stored_active_request_mut(side) {
+                    if let Some(m) = req.moves.iter_mut().find(|m| m.name == moveid) {
+                        if m.disabled != Some(true) {
+                            m.disabled = Some(true);
+                            updated = true;
+                        }
+                        if !m.disabled_source_empty {
+                            m.disabled_source_empty = true;
+                            updated = true;
+                        }
+                    }
                 }
-                return self.emit_choice_error(side, t, Some((pokemon, update)));
+                return self.emit_choice_error_updated(side, t, updated);
             }
         }
 

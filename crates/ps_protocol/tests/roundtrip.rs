@@ -407,3 +407,35 @@ fn packed_sets_with_misc_round_trip() {
     assert!(unpack("A||||||||||100|").is_err());
     assert!(unpack("A||||||||,,,,,31|||").is_err());
 }
+
+/// Gen 3's `useMoveInner` writes `${target}`: an adjacent-ally move in
+/// singles has none and PS writes `null` (ps-diff wide seed 42, G3-M3).
+#[test]
+fn a_null_move_target_round_trips() {
+    let mut state = CodecState::new(load_names());
+    decode_line("|switch|p1a: Pikachu|Pikachu, L50, M|100/100", &mut state).unwrap();
+    let line = "|move|p1a: Pikachu|Helping Hand|null|[notarget]";
+    let msg = decode_line(line, &mut state).unwrap();
+    let Msg::Move { target, .. } = msg else { panic!("{:?}", msg) };
+    assert_eq!(target, Some(ps_protocol::PokemonIdent::JS_NULL));
+    assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    // An empty target stays empty.
+    let still = "|move|p1a: Pikachu|Helping Hand||[still]";
+    let msg = decode_line(still, &mut state).unwrap();
+    assert!(matches!(msg, Msg::Move { target: None, .. }));
+    assert_eq!(encode_msg(&msg, state.dex(), state.battle()), still);
+}
+
+/// `chooseMove` refusing an Imprison-disabled move re-sends the request
+/// with the move `disabled` and `disabledSource: ''` (ps-diff wide seed
+/// 145, G3-M3); any other source is not a gen 1-3 request.
+#[test]
+fn an_empty_disabled_source_round_trips() {
+    let mut state = CodecState::new(load_names());
+    let json = r#"{"active":[{"moves":[{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":true,"disabledSource":""},{"move":"Tackle","id":"tackle","pp":56,"maxpp":56,"target":"normal","disabled":false}],"maybeDisabled":true}],"side":{"name":"p1","id":"p1","pokemon":[{"ident":"p1: Mewtwo","details":"Mewtwo, L80","condition":"300/300","active":true,"stats":{"atk":200,"def":180,"spa":300,"spd":180,"spe":260},"moves":["psychic","tackle"],"baseAbility":"stench","item":"","pokeball":"pokeball"}]}}"#;
+    let (dex, battle) = state.split_mut();
+    let req = decode_request(json, dex, battle).unwrap();
+    assert_eq!(encode_request(&req, state.dex(), state.battle()), json);
+    let (dex, battle) = state.split_mut();
+    assert!(decode_request(&json.replace("\"disabledSource\":\"\"", "\"disabledSource\":\"Imprison\""), dex, battle).is_err());
+}

@@ -309,16 +309,16 @@ impl GenScripts for Gen3Scripts {
         b.single_event(EventId::ModifyMove, effect, StateRef::Scratch, 0, Holder::Mon(pokemon), target, effect, Some(relay));
         if base_target != b.mv(mv).target {
             // The target changed in `ModifyMove`: adjust it before the next
-            // event sees it.
-            let am = b.action_move_of(mv);
-            target = b.get_random_target(pokemon, am);
+            // event sees it (from the move object's new target).
+            let t = b.mv(mv).target;
+            target = b.get_random_target_of(pokemon, Some(t));
         }
         let r = b.run_event(EventId::ModifyMove, Holder::Mon(pokemon), target, effect, Some(relay));
         // `if (!move) return false`: a handler could only clear it.
         assert!(matches!(r, Relay::Move(_)), "ModifyMove answered {r:?}");
         if base_target != b.mv(mv).target {
-            let am = b.action_move_of(mv);
-            target = b.get_random_target(pokemon, am);
+            let t = b.mv(mv).target;
+            target = b.get_random_target_of(pokemon, Some(t));
         }
         if b.mon(pokemon).fainted {
             return false;
@@ -327,7 +327,8 @@ impl GenScripts for Gen3Scripts {
         // `movename`: Hidden Power's is its own name already.
         let kw = if source_effect.is_none() { Kw::NONE } else { Kw::from(b.move_from(source_effect)) };
         let user = b.ident(pokemon);
-        let tgt = target.map(|t| b.ident(t));
+        // `${target!}${attrs}`: no target is written `null`.
+        let tgt = Some(target.map_or(ps_protocol::PokemonIdent::JS_NULL, |t| b.ident(t)));
         let id = b.mv(mv).id;
         b.add_move(Msg::Move { user, mv: MoveNum(id.0), target: tgt, kw });
 

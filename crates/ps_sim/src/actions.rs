@@ -114,6 +114,15 @@ pub struct ActiveMove {
     pub type_mod: i8,
     /// `selfDropped`: a `self` stat drop already rolled (base `selfDrops`).
     pub self_dropped: bool,
+    /// `delete move.volatileStatus` (Curse by a non-Ghost, or against a
+    /// Substitute).
+    pub volatile_status_deleted: bool,
+    /// `delete move.onHit` (the same Curse cases).
+    pub on_hit_deleted: bool,
+    /// `move.self = {...}` written by a handler (Curse by a non-Ghost),
+    /// with its boosts' key order, which decides the order of the boost
+    /// lines (`for (boostName in boost)`); `None` reads the dex's `self`.
+    pub self_effect: Option<(&'static ps_dex::SelfEffect, &'static [u8])>,
 }
 
 impl ActiveMove {
@@ -138,6 +147,9 @@ impl ActiveMove {
         crit: false,
         type_mod: 0,
         self_dropped: false,
+        volatile_status_deleted: false,
+        on_hit_deleted: false,
+        self_effect: None,
     };
 
     /// PS `dex.getActiveMove(id)`: a fresh copy of the dex move, `hit` 0.
@@ -564,11 +576,14 @@ impl Battle {
                     _ => Kw::from(from),
                 }
             }
-            // The default branch for Leech Seed's condition: `[from]` its
-            // fullname (the move's name), `[of]` the seeder.
-            EffectId::Condition(_) if self.effect_key(effect) == "leechseed" => {
-                let seed = self.dex.move_id("leechseed").expect("leechseed in the dex");
-                let from = Arg::new(ArgValue::Move(MoveNum(seed.0)));
+            // The default branch for the conditions of Leech Seed, Curse
+            // and Nightmare: `[from]` the condition's fullname (its move's
+            // name), `[of]` the source when it is another Pokemon (the
+            // seeder; Curse and Nightmare damage from the residual, which
+            // passes no source).
+            EffectId::Condition(_) if matches!(self.effect_key(effect), "leechseed" | "curse" | "nightmare") => {
+                let mv = self.dex.move_id(self.effect_key(effect)).expect("the condition's move in the dex");
+                let from = Arg::new(ArgValue::Move(MoveNum(mv.0)));
                 match source {
                     Some(s) if s != target => Kw::from_of(from, self.ident(s)),
                     _ => Kw::from(from),
@@ -777,8 +792,12 @@ impl Battle {
             return true;
         }
         // `runEvent('NegateImmunity', this, type)`: the type string is no
-        // Pokemon, so no `onSource` handlers.
-        let negate_immunity = !self.run_event(EventId::NegateImmunity, Holder::Mon(m), None, EffectId::None, None).truthy();
+        // Pokemon, so no `onSource` handlers. It rides as the relay here
+        // (a handler reads it as `type`, Foresight's `onNegateImmunity(
+        // pokemon, type)`); like PS's default `true` it is truthy, so the
+        // result reads the same.
+        let relay = Relay::Types(crate::relay::TypeList([t, Type::None]));
+        let negate_immunity = !self.run_event(EventId::NegateImmunity, Holder::Mon(m), None, EffectId::None, Some(relay)).truthy();
         let not_immune = if t == Type::Ground {
             self.is_grounded(m, negate_immunity)
         } else {
@@ -936,6 +955,23 @@ impl Battle {
             Callback::Fn(f) => f(self, &args),
             Callback::Const(v) => Some(v),
         }
+    }
+
+    /// `moveData.self`: a handler's `move.self` on the move in flight
+    /// ([`ActiveMove::self_effect`]), else the data's.
+    pub(crate) fn move_data_self(&self, data: MoveData, mv: MoveRef) -> Option<&'static ps_dex::SelfEffect> {
+        if let (MoveData::Move, Some((s, _))) = (data, self.mv(mv).self_effect) {
+            return Some(s);
+        }
+        data_self(data, self.dex.move_def(self.mv(mv).id))
+    }
+
+    /// `moveData.volatileStatus`, `NONE` once a handler deleted the move's.
+    pub(crate) fn move_data_volatile(&self, data: MoveData, mv: MoveRef) -> ConditionId {
+        if matches!(data, MoveData::Move) && self.mv(mv).volatile_status_deleted {
+            return ConditionId::NONE;
+        }
+        data_volatile(data, self.dex.move_def(self.mv(mv).id))
     }
 
     /// The action move a move object stands for, for the target helpers.

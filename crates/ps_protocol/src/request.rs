@@ -107,7 +107,8 @@ pub struct ActiveRequest {
 }
 
 /// One entry of `active[].moves`, PS `getMoves`. Keys in order `move`,
-/// `id`, then each `Some` field: `pp`, `maxpp`, `target`, `disabled`. PS
+/// `id`, then each `Some` field: `pp`, `maxpp`, `target`, `disabled`
+/// (and `disabledSource`, see [`RequestMove::disabled_source_empty`]). PS
 /// produces three shapes: a full slot (all four), a locked move or Gen 1's
 /// `Fight` button (`move` and `id` only), and Struggle (`target`
 /// `randomNormal` and `disabled` `false`, no PP).
@@ -122,6 +123,10 @@ pub struct RequestMove {
     /// PS's `disabled` after `getMoves` resolves `'hidden'`; a plain bool for
     /// every effect gens 1 to 3 have.
     pub disabled: Option<bool>,
+    /// `disabledSource: ''`, after `disabled`: `chooseMove` writes it into
+    /// the request it re-sends when a hidden-disabled move (Imprison) was
+    /// chosen (`getMoves` carries no source, so it is always empty).
+    pub disabled_source_empty: bool,
 }
 
 impl RequestMove {
@@ -139,12 +144,13 @@ impl RequestMove {
             maxpp: Some(maxpp),
             target: Some(target),
             disabled: Some(disabled),
+            disabled_source_empty: false,
         }
     }
 
     /// A locked move (or `Recharge`, or gen 1's `Fight`): name and id only.
     pub fn locked(name: RequestMoveName) -> Self {
-        Self { name, pp: None, maxpp: None, target: None, disabled: None }
+        Self { name, pp: None, maxpp: None, target: None, disabled: None, disabled_source_empty: false }
     }
 
     /// PS's Struggle entry, given when no move is usable.
@@ -155,6 +161,7 @@ impl RequestMove {
             maxpp: None,
             target: Some(MoveTarget::RandomNormal),
             disabled: Some(false),
+            disabled_source_empty: false,
         }
     }
 }

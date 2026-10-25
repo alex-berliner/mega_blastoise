@@ -119,6 +119,11 @@ impl PokemonIdent {
     pub const fn inactive(side: SideId, slot: u8) -> Self {
         Self { side, slot, active: false }
     }
+
+    /// No Pokemon, written `null`: a `|move|` line's target when PS's is
+    /// `null` (gen 3's `useMoveInner` writes `${target}`, and an
+    /// adjacent-ally move in singles has none). Names no team slot.
+    pub const JS_NULL: PokemonIdent = PokemonIdent { side: SideId::P1, slot: u8::MAX, active: false };
 }
 
 /// Gender as PS stores it (`pokemon.gender`): `M`, `F`, or genderless (`N`,

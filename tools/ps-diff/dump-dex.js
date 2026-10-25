@@ -103,7 +103,8 @@ function handlersOf(obj, where) {
 	// onModifySpDPriority after the mod drops onModifySpD) is never read by
 	// resolvePriority, so it is not dumped here; the one exception, the
 	// `onSwitchIn` keys of an ability or item answering SwitchIn with its
-	// onStart, is `switchInOrderOf`.
+	// onStart, is `switchInOrderOf`, and a condition's residual keys, which
+	// order its duration end, are `residualOrderOf`.
 	return out;
 }
 
@@ -118,6 +119,28 @@ function switchInOrderOf(obj, where) {
 	const subOrder = orderValue(obj, 'onSwitchInSubOrder', where);
 	if (priority === null && order === null && subOrder === null) return null;
 	return { priority, order, subOrder };
+}
+
+/** A condition's residual ordering keys with no handler beside them:
+ * `on{,Side,Field}ResidualOrder` / `Priority` / `SubOrder` where the
+ * condition has no `on{,Side,Field}Residual` function (gen 3 Taunt, Yawn,
+ * Wish, Reflect...). The residual gathers a condition with a `duration`
+ * whether or not it answers (`getKey` 'duration'), and `resolvePriority`
+ * reads the keys of the event being run for it all the same, so they
+ * order its end. Null where it has none. */
+function residualOrderOf(obj, where) {
+	let found = null;
+	for (const event of ['Residual', 'SideResidual', 'FieldResidual']) {
+		const key = `on${event}`;
+		if (isHandler(key, obj[key])) continue;
+		const priority = orderValue(obj, `${key}Priority`, where);
+		const order = orderValue(obj, `${key}Order`, where);
+		const subOrder = orderValue(obj, `${key}SubOrder`, where);
+		if (priority === null && order === null && subOrder === null) continue;
+		if (found) fail(where, `orphan residual keys for ${found.event} and ${event}`);
+		found = { event, priority, order, subOrder };
+	}
+	return found;
 }
 
 /** Checks every non-handler key of `obj` is in `known`. */
@@ -475,7 +498,7 @@ function dumpCondition(key, raw, source, dex) {
 	checkKeys(raw, CONDITION_KNOWN, where);
 	const resolved = dex.conditions.get(key);
 	if (!resolved.exists) fail(where, 'does not resolve');
-	return {
+	const out = {
 		key,
 		name: resolved.name,
 		effectType: resolved.effectType,
@@ -486,6 +509,10 @@ function dumpCondition(key, raw, source, dex) {
 		affectsFainted: bool(raw.affectsFainted, where),
 		handlers: handlersOf(raw, where),
 	};
+	// Only where there is one, so the other entries' dump stays as it was.
+	const residualOrder = residualOrderOf(raw, where);
+	if (residualOrder) out.residualOrder = residualOrder;
+	return out;
 }
 
 // ---------------------------------------------------------------- typechart

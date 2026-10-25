@@ -654,6 +654,8 @@ words! {
     Trapped => "trapped",
     TypeChange => "typechange",
     Unboost => "unboost",
+    // PS: sim/pokemon.ts addVolatile (`add volatile [yawn] interrupted`)
+    Yawn => "yawn",
 }
 
 /// The value of a positional argument or `[from]`, as PS writes it.
@@ -1270,6 +1272,7 @@ texts! {
     // PS: sim/battle.ts runEvent, singleEvent (`eventid`)
     HandlerSuppressedByAirLock => "{} handler suppressed by Air Lock" (Word),
     // PS: data/moves.ts attract volatileStatus onStart
+    AttractEventFailed => "Attract event failed" (),
     IncompatibleGender => "incompatible gender" (),
     // PS: sim/battle-actions.ts runMoveEffects
     MoveFailedNothing => "move failed because it did nothing" (),
@@ -1287,6 +1290,8 @@ texts! {
     RemovingAttractVolatileOn => "Removing Attract volatile on {}" (Mon),
     // PS: data/moves.ts destinybond condition onBeforeMove
     RemovingDestinyBond => "removing Destiny Bond before attack" (),
+    // PS: data/moves.ts grudge condition onBeforeMove
+    RemovingGrudge => "removing Grudge before attack" (),
     // PS: data/mods/gen1/scripts.ts getDamage
     ScreenDoublingDef => "Screen doubling (Sp)Def" (),
     // PS: sim/pokemon.ts setStatus (`status.id`)

@@ -622,7 +622,15 @@ impl Battle {
         mon.ability = mon.base_ability;
         mon.hp_type = mon.base_hp_type;
         mon.hp_power = mon.base_hp_power;
-        // No linked volatiles in gens 1-3; Eternatus is not in them.
+        // `if (this.volatiles[i].linkedStatus) removeLinkedVolatiles(...)`.
+        let ids = mon.volatiles;
+        for &id in ids.ids() {
+            if let Some((linked_status, linked)) = self.linked_status(m, id) {
+                self.remove_linked_volatiles(linked_status, linked);
+            }
+        }
+        // Eternatus is not in gens 1-3.
+        let mon = self.mon_mut(m);
         mon.volatiles.clear();
         if include_switch_flags {
             mon.switch_flag = SwitchFlag::No;
@@ -793,6 +801,18 @@ impl Battle {
             let fresh = self.init_effect_state(true, Holder::Mon(to));
             let copy = EffectState { serial: fresh.serial, effect_order: fresh.effect_order, target: Holder::Mon(to), ..*st };
             self.mon_mut(to).volatiles.insert(id, copy);
+            // A linked volatile moves its link: the old holder's is deleted
+            // (so its `clearVolatile` below unlinks nothing) and the linked
+            // Pokemon's list points at the new holder.
+            if let Some((linked_status, linked)) = self.linked_status(from, id) {
+                if let Some(st) = self.mon_mut(from).volatiles.get_mut(id) {
+                    st.set_data_mon(crate::state::LINK, None);
+                }
+                let key = EffectId::Condition(linked_status);
+                if let Some(st) = self.mon_mut(linked).volatiles.get_mut(key) {
+                    st.set_data_mon(crate::state::LINK, Some(to));
+                }
+            }
         }
         self.clear_volatile(from, true);
         // `singleEvent('Copy', ...)` per volatile: no gen 1-3 condition
@@ -969,8 +989,17 @@ impl Battle {
     /// PS `getRandomTarget(pokemon, move)` in singles.
     // PS: sim/battle.ts getRandomTarget
     pub fn get_random_target(&mut self, pokemon: MonRef, mv: ActionMove) -> Option<MonRef> {
+        let target = self.move_target(mv);
+        self.get_random_target_of(pokemon, target)
+    }
+
+    /// [`Battle::get_random_target`] of a move object, whose `target` a
+    /// `ModifyMove` handler may have changed (`dex.moves.get(move)` hands
+    /// the object back as is: gen 3 Curse's `move.target = 'self'`).
+    // PS: sim/battle.ts getRandomTarget
+    pub fn get_random_target_of(&mut self, pokemon: MonRef, target: Option<ps_dex::MoveTarget>) -> Option<MonRef> {
         use ps_dex::MoveTarget as T;
-        match self.move_target(mv) {
+        match target {
             Some(T::Self_ | T::All | T::AllySide | T::AllyTeam | T::AdjacentAllyOrSelf) => Some(pokemon),
             Some(T::AdjacentAlly) => None,
             _ => self.active_at(1 - pokemon.side, 0),

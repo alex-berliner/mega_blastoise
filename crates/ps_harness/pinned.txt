@@ -116,3 +116,12 @@
 3 wide 257  # G3-1 tox's floored damage, a second team
 3 wide 13  # G3-1 the sandstorm/hail -damage line's `[from] Sandstorm` (crashed); also a confusion self-hit
 3 wide 12  # G3-1 confusion's self-hit: getDamage of a typeless number move runs `BasePower` without an onEffect handler (crashed)
+
+# G3-M3: the volatile-control batch (Disable to Follow Me). Each entry fails
+# with its bug put back (a mutant build per bug); like the other wide
+# entries they draw new teams whenever `ported(3)` grows.
+3 wide 4  # G3-M3 non-Ghost Curse: ModifyMove's `target = 'self'` re-targets from the move object; the boosts come in onTryHit's key order (spe, atk, def)
+3 wide 42  # G3-M3 Helping Hand in singles: `|move|MON|Helping Hand|null|[notarget]` (`${target}` of null)
+3 wide 145  # G3-M3 choosing an Imprison-disabled move: the re-sent request marks it disabled with `disabledSource: ''`
+3 wide 2  # G3-M3 Yawn's sleep with its user benched: a benched Pokemon has no slot conditions (crashed)
+3 wide 322  # G3-M3 Grudge's `pp = 0` lands on the shared base move slot, so it survives a switch

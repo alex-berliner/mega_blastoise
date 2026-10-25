@@ -228,7 +228,12 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
         Msg::Move { user, mv, target, kw: _ } => {
             push_arg(buf, &mon_str(*user, names));
             push_arg(buf, dex.move_name(*mv));
-            push_arg(buf, &target.map(|t| mon_str(t, names)).unwrap_or_default());
+            let target = match target {
+                Some(t) if *t == PokemonIdent::JS_NULL => "null".to_string(),
+                Some(t) => mon_str(*t, names),
+                None => String::new(),
+            };
+            push_arg(buf, &target);
         }
         Msg::Switch { mon, details, health, from }
         | Msg::Drag { mon, details, health, from } => {
@@ -768,7 +773,10 @@ fn decode_major(kind: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battl
         "move" => {
             let user = parse_mon(arg(args, 0)?, names)?;
             let mv = parse_move_name(arg(args, 1)?, dex)?;
-            let target = parse_opt_mon(arg_opt(args, 2), names);
+            let target = match arg_opt(args, 2) {
+                Some("null") => Some(PokemonIdent::JS_NULL),
+                t => parse_opt_mon(t, names),
+            };
             let kw = parse_kwargs(&args[3..], dex, names)?;
             Ok(Msg::Move { user, mv, target, kw })
         }

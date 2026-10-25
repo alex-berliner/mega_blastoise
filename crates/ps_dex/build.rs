@@ -434,6 +434,19 @@ fn switch_in_order(v: &Value, what: &str) -> String {
     )
 }
 
+/// A condition's orphan residual ordering keys (`residualOrder`; absent or
+/// null for none, as in a dump from before the key existed).
+fn residual_order(v: &Value, what: &str) -> String {
+    if v.is_null() {
+        return "None".into();
+    }
+    let kind = match v["event"].as_str() {
+        Some(k @ ("Residual" | "SideResidual" | "FieldResidual")) => k,
+        other => panic!("{what}: residualOrder event {other:?}"),
+    };
+    format!("Some(ResidualOrder {{ kind: ResidualKind::{kind}, keys: {} }})", switch_in_order(v, &format!("{what}.residualOrder")))
+}
+
 fn handlers(v: &Value, names: &Names, what: &str) -> String {
     let list = v["handlers"].as_array().unwrap_or_else(|| panic!("{what}: no handlers"));
     if list.is_empty() {
@@ -787,7 +800,7 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
         writeln!(
             s,
             "    ConditionDef {{ key: {}, name: {}, effect_type: {effect_type}, source: {source}, \
-             duration: {}, counter_max: {}, no_copy: {}, affects_fainted: {}, handlers: {} }},",
+             duration: {}, counter_max: {}, no_copy: {}, affects_fainted: {}, handlers: {}, residual_order: {} }},",
             pool.add(key),
             pool.add(c["name"].as_str().unwrap()),
             opt_u8(&c["duration"], &w),
@@ -795,6 +808,7 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
             boolean(&c["noCopy"], &w),
             boolean(&c["affectsFainted"], &w),
             handlers(c, names, &w),
+            residual_order(&c["residualOrder"], &w),
         )
         .unwrap();
     }
