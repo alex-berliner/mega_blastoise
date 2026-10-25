@@ -619,6 +619,15 @@ impl Battle {
         self.hits.count(effect, h.prefix, h.event);
     }
 
+    /// Counts a handler that a handler calls by name, as PS's
+    /// `this.effect.onStart.call(this, pokemon)` (gen 3's
+    /// `onAfterEntryHazard`): the current effect's `on{event}`.
+    #[cfg(feature = "hit-count")]
+    pub(crate) fn count_named(&mut self, event: EventId) {
+        let effect = self.frame.effect;
+        self.hits.count(effect, Prefix::None, event);
+    }
+
     /// Runs one handler with `this.effect` / `this.effectState` set as
     /// `runEvent` does (`this.effectState.target = effectHolder`).
     fn call_listener(&mut self, l: &Listener, args: &EventArgs) -> Option<Relay> {

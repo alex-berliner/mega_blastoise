@@ -84,7 +84,7 @@ pub mod wish;
 pub mod yawn;
 
 use ps_dex::{ConditionId, MoveCategory, Type};
-use ps_protocol::{Arg, ArgValue, Kw, Msg, Status, Weather};
+use ps_protocol::{Arg, ArgValue, Kw, Msg, Status};
 
 use crate::effect::{EffectId, EventArgs};
 use crate::relay::Relay;
@@ -147,12 +147,6 @@ pub fn weather_from(b: &Battle, weather: ConditionId) -> Arg {
     let key = b.dex.condition_def(weather).key.as_str();
     let m = b.dex.move_id(key).unwrap_or_else(|| panic!("no move named after the weather {key}"));
     Arg::new(ArgValue::Move(ps_protocol::MoveNum(m.0)))
-}
-
-/// The protocol name of a gen 3 weather condition (`-weather|RainDance`).
-pub fn weather_word(b: &Battle, weather: ConditionId) -> Weather {
-    let name = b.dex.condition_def(weather).name.as_str();
-    Weather::parse(name).unwrap_or_else(|| panic!("no protocol weather named {name}"))
 }
 
 /// A `-weather` line's kwargs for a weather's `onFieldStart`: `[from]

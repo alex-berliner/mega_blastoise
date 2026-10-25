@@ -48,7 +48,7 @@ pub use msg::{
 };
 pub use request::{
     ActiveRequest, MoveRequest, MoveTarget, Pokeball, Request, RequestMove, RequestMoveName,
-    SideMoveId, SidePokemon, SideRequest, SwitchRequest, WaitRequest,
+    SideMoveId, SidePokemon, SideRequest, SwitchRequest, TeamPreviewRequest, WaitRequest,
 };
 pub use team::{PackedMisc, PackedSet, PackedTeam, PokemonSet, ShortName, StatTable, Team};
 
@@ -346,6 +346,9 @@ pub trait BattleNames {
     /// The nickname of the Pokemon in team slot `slot` (0-based, team order
     /// as `>player` gave it), the `NAME` of `p1a: NAME`.
     fn nickname(&self, side: SideId, slot: u8) -> &str;
+    /// Custom rule `i` of the format as written after `@@@` (the custom
+    /// rules infobox prints them as given).
+    fn custom_rule(&self, i: u8) -> &str;
 }
 
 #[cfg(test)]

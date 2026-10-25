@@ -29,6 +29,15 @@ fn setup_and_consume(b: &mut Battle, _a: &EventArgs) -> Option<Relay> {
     None
 }
 
+/// `onAnySwitchIn`, `onAnyAfterMega`, `onAnyAfterMove`, `onResidual`:
+/// `this.effect.onStart.call(...)`, a call of `onStart` by name.
+// PS: data/items.ts whiteherb onAnySwitchIn / onAnyAfterMega / onAnyAfterMove / onResidual
+fn call_on_start(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
+    #[cfg(feature = "hit-count")]
+    b.count_named(EventId::Start);
+    setup_and_consume(b, a)
+}
+
 /// `onUse(pokemon)`: PS `pokemon.setBoost(this.effectState.boosts);
 /// this.add('-clearnegativeboost', pokemon, '[silent]')`. We bypass
 /// `Battle::boost` (which would write per-stat lines) and emit
@@ -50,9 +59,9 @@ fn on_use(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
 
 pub static WHITEHERB: EffectDef = EffectDef::new(&[
     Handler::on(EventId::Start, setup_and_consume),
-    Handler::on(EventId::SwitchIn, setup_and_consume).prefix(Prefix::Any),
-    Handler::on(EventId::AfterMega, setup_and_consume).prefix(Prefix::Any),
-    Handler::on(EventId::AfterMove, setup_and_consume).prefix(Prefix::Any),
-    Handler::on(EventId::Residual, setup_and_consume).order(29),
+    Handler::on(EventId::SwitchIn, call_on_start).prefix(Prefix::Any),
+    Handler::on(EventId::AfterMega, call_on_start).prefix(Prefix::Any),
+    Handler::on(EventId::AfterMove, call_on_start).prefix(Prefix::Any),
+    Handler::on(EventId::Residual, call_on_start).order(29),
     Handler::on(EventId::Use, on_use),
 ]);

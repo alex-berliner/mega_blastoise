@@ -2,9 +2,11 @@
 # The coverage gate (V-1, docs/architecture/showdown-split-execution.md):
 # plays a protocol-diff sweep against an instrumented ps_sim_cli and prints
 #
-# Gen 1's sweep also plays the targeted battles (`diff.js --targeted gen1`,
-# crates/ps_harness/targeted/gen1.json) in both rule sets: hand-made team
-# pairs with fixed choices that reach the paths random teams never do.
+# The sweep also plays the targeted battles (`diff.js --targeted genN`,
+# crates/ps_harness/targeted/genN.json; gen 1's in both rule sets): hand-made
+# team pairs with fixed choices that reach the paths random teams never do.
+# A handler that ran in a targeted battle passes the hit gate (`targeted`):
+# that battle is diffed against PS and checks the PS lines it names.
 #
 #   1. per-handler hit counts: every handler the gen's registry holds, the
 #      number of battles it ran in and its calls (`ps_sim` feature
@@ -21,7 +23,7 @@
 #   scripts/ps-coverage.sh                       # gen 1, the gate sweep:
 #                                                # 10,000 random + 10,000 wide
 #                                                # from seed 1000000
-#   scripts/ps-coverage.sh --gen 3               # gen 3 (information)
+#   scripts/ps-coverage.sh --gen 3               # gen 3
 #   scripts/ps-coverage.sh --n 500 --jobs 8      # a quick look
 #   scripts/ps-coverage.sh --teams wide --focus bide,rage --n 2000
 #   scripts/ps-coverage.sh --no-lines            # hit counts only (no llvm-cov)
@@ -116,8 +118,11 @@ fi
 
 # ---- sweep -------------------------------------------------------------------
 for teams in $TEAMS; do
+  # The instrumented build runs several times slower than a release one: a
+  # 1000-turn auto-tie (about 3 s plain) can pass diff.js's default 30 s.
   args=(--ps-cli "$BIN" --gen "$GEN" --n "$N" --seed-start "$SEED_START" --teams "$teams"
-        --jobs "$JOBS" --quiet --allow-unported --hits "$HITS_DIR/$teams-{pid}.tsv")
+        --jobs "$JOBS" --quiet --allow-unported --hits "$HITS_DIR/$teams-{pid}.tsv"
+        --per-battle-timeout 300000)
   [[ -n "$FOCUS" ]] && args+=(--focus "$FOCUS")
   echo "── sweep: gen $GEN teams=$teams n=$N seeds $SEED_START.. ${FOCUS:+focus=$FOCUS} ──"
   set +e
@@ -128,15 +133,17 @@ for teams in $TEAMS; do
   SWEEP+="$teams=$N "
 done
 
-# The targeted battles (gen 1), once per rule set; an entry that names its
-# own rule set plays that one both times.
-if [[ "$GEN" == 1 && "$TARGETED" == 1 ]]; then
+# The targeted battles: gen 1's once per rule set (an entry that names its
+# own rule set plays that one both times), gen 3's once.
+if [[ "$TARGETED" == 1 ]]; then
   ntargeted=0
-  for trunc in cartridge math; do
-    echo "── sweep: gen 1 targeted battles trunc=$trunc ──"
+  if [[ "$GEN" == 1 ]]; then truncs="cartridge math"; else truncs="-"; fi
+  for trunc in $truncs; do
+    targs=(--ps-cli "$BIN" --targeted "gen$GEN" --jobs "$JOBS" --quiet --hits "$HITS_DIR/targeted-{pid}.tsv")
+    [[ "$trunc" != - ]] && targs+=(--trunc "$trunc")
+    echo "── sweep: gen $GEN targeted battles${trunc#-} ──"
     set +e
-    node tools/ps-diff/diff.js --ps-cli "$BIN" --targeted gen1 --trunc "$trunc" --jobs "$JOBS" --quiet \
-      --hits "$HITS_DIR/targeted-{pid}.tsv" </dev/null | tee "$OUT/sweep-targeted-$trunc.txt"
+    node tools/ps-diff/diff.js "${targs[@]}" </dev/null | tee "$OUT/sweep-targeted-$trunc.txt"
     status=${PIPESTATUS[0]}
     set -e
     [[ "$status" != 0 ]] && FAILED=1
@@ -203,6 +210,10 @@ for e in _entries:
 # ---- 1. handler hits ----
 battles = 0
 hits = defaultdict(lambda: [0, 0])  # (effect, key) -> [calls, battles]
+# Handlers a targeted battle ran: each such battle is diffed against PS and
+# names the PS lines it must reach, so it settles a handler the random
+# sweeps reach too rarely (status `targeted`).
+targeted_hits = set()
 for name in sorted(os.listdir(hits_dir)):
     if not name.endswith('.tsv'):
         continue
@@ -213,6 +224,8 @@ for name in sorted(os.listdir(hits_dir)):
         elif f[0] == 'hit' and int(f[1]) == gen:
             h = hits[(f[2], f[3])]
             h[0] += int(f[4]); h[1] += int(f[5])
+            if name.startswith('targeted-') and int(f[5]) > 0:
+                targeted_hits.add((f[2], f[3]))
 
 handlers = []  # (effect, key, focus)
 for line in open(os.path.join(out, 'handlers.tsv')):
@@ -227,7 +240,7 @@ for effect, key, focus in handlers:
 rows.sort(key=lambda r: (r[0], r[2], r[3]))
 under = []
 for r in rows:
-    if r[0] >= min_battles:
+    if r[0] >= min_battles or (r[2], r[3]) in targeted_hits:
         continue
     a = allow_handlers.get((r[2], r[3]))
     if a:
@@ -239,16 +252,18 @@ w = max([len(f'{r[2]} {r[3]}') for r in rows] + [20])
 table = [f'handler hits, gen {gen}: {battles} battles ({sweep.strip()}), {len(rows)} registered handlers, gate {min_battles} battles',
          f'{"battles":>8} {"calls":>9}  {"handler":<{w}}  status']
 for nb, calls, effect, key, focus in rows:
-    status = 'ok' if nb >= min_battles else 'allowed' if (effect, key) in allow_handlers else 'UNDER'
+    status = ('ok' if nb >= min_battles else 'targeted' if (effect, key) in targeted_hits
+              else 'allowed' if (effect, key) in allow_handlers else 'UNDER')
     table.append(f'{nb:>8} {calls:>9}  {effect + " " + key:<{w}}  {status}')
 stray = sorted(set(hits) - registered)
 for e, k in stray:
     table.append(f'{hits[(e, k)][1]:>8} {hits[(e, k)][0]:>9}  {e + " " + k:<{w}}  (not in the registry)')
 focus_ids = sorted({m for r in under for m in r[4]})
 no_focus = [f'{r[2]} {r[3]}' for r in under if not r[4]]
-n_allowed = sum(1 for r in rows if r[0] < min_battles) - len(under)
+n_targeted = sum(1 for r in rows if r[0] < min_battles and (r[2], r[3]) in targeted_hits)
+n_allowed = sum(1 for r in rows if r[0] < min_battles) - len(under) - n_targeted
 table.append(f'under-hit: {len(under)} of {len(rows)} handlers ran in fewer than {min_battles} battles'
-             f' (and {n_allowed} more are allowed by coverage-allow.txt)')
+             f' (and {n_targeted} more ran in a targeted battle, {n_allowed} more are allowed by coverage-allow.txt)')
 if under:
     fail = True
     table.append('--focus ' + (','.join(focus_ids) if focus_ids else '(none)'))

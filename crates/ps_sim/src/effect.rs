@@ -51,6 +51,24 @@ pub enum Rule {
     BeatUpNicknamesMod,
     SwitchPriorityClauseMod,
     EvasionItemsClause,
+    /// The variant formats' custom rules (`ps_protocol::RuleId`). Best Of,
+    /// Same Type Clause, Max Team Size and Blitz only validate or set the
+    /// timer; Picked Team Size and Team Preview ask for a team preview.
+    BestOf,
+    SameTypeClause,
+    MaxTeamSize,
+    PickedTeamSize,
+    TeamPreview,
+    Blitz,
+    /// `ModifySpecies` rules: the base dex's Scalemons Mod, gen 1's own
+    /// one, 350 Cup Mod (gen 1 has its own version, under the same id) and
+    /// Bad 'n Boosted Mod.
+    ScalemonsMod,
+    ScalemonsModGen1,
+    ThreeFiftyCupMod,
+    BadNBoostedMod,
+    /// Every secondary at 100% (`ModifyMove`).
+    GuaranteedSecondaryMod,
 }
 
 /// Any effect. The derived order (variant, then id) is the registry's

@@ -869,7 +869,7 @@ impl GenScripts for Gen1Scripts {
         if let (MoveData::Move, Some(t)) = (data, target) {
             if b.mon(t).hp > 0 {
                 let multihit = def.multihit().is_some();
-                for secondary in def.secondaries() {
+                for (i, secondary) in def.secondaries().iter().enumerate() {
                     // A multi-hit move rolls for its secondaries once.
                     if multihit && !b.mv(mv).last_hit {
                         continue;
@@ -882,7 +882,9 @@ impl GenScripts for Gen1Scripts {
                             continue;
                         }
                     }
-                    match secondary.chance {
+                    // This use's copy: Guaranteed Secondary Mod may have
+                    // set the chance to 100.
+                    match b.mv(mv).secondary_chance(i, secondary) {
                         None => {
                             Self::move_hit(b, Some(t), pokemon, mv, MoveData::Secondary(secondary), true, is_self);
                         }

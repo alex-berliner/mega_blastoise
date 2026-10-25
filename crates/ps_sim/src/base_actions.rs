@@ -710,7 +710,7 @@ impl Battle {
             let secondary_roll = self.prng.random_n(100);
             // Boosts and self effects overflow past 255 in gens 8 and before.
             let overflow = (secondary.boosts.is_some() || secondary.self_effect.is_some()) && self.gen <= 8;
-            let hit = match secondary.chance {
+            let hit = match self.mv(mv).secondary_chance(i, secondary) {
                 None => true,
                 Some(c) => {
                     let c = if doubled { u32::from(c) * 2 } else { u32::from(c) };

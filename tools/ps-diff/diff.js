@@ -43,13 +43,13 @@
 //                         Gen 1 rule set: `math` names `!Cartridge Trunc`
 //                         in the `>start` formatid both sides read
 //                         (`rules.js`).
-//   - `--carried gen1` -> the old engines' pinned battles
-//                         (`crates/ps_harness/carried/gen1/*.json`, written
+//   - `--carried gen1|gen3` -> the old engines' pinned battles
+//                         (`crates/ps_harness/carried/genN/*.json`, written
 //                         by `scripts/carried-dump.sh`): every team pair over
 //                         battle seeds 0..19 (`--carried-pair <file#case>`
 //                         narrows to one pair, `--seed S` to one seed).
-//   - `--targeted gen1` -> the targeted battles
-//                         (`crates/ps_harness/targeted/gen1.json`): hand-made
+//   - `--targeted gen1|gen3` -> the targeted battles
+//                         (`crates/ps_harness/targeted/genN.json`): hand-made
 //                         team pairs, each with its own driver seed and a
 //                         list of fixed choices (random legal choices after
 //                         it runs out), that reach the paths the random
@@ -470,7 +470,7 @@ function parseArgs(argv) {
       case '--carried': {
         const m = /^(?:gen)?([0-9]+)$/.exec(argv[i++] || '');
         if (!m) {
-          process.stderr.write('ps-diff: --carried takes a gen (gen1)\n');
+          process.stderr.write('ps-diff: --carried takes a gen (gen1, gen3)\n');
           process.exit(2);
         }
         opts.carried = parseInt(m[1], 10);
@@ -480,7 +480,7 @@ function parseArgs(argv) {
       case '--targeted': {
         const m = /^(?:gen)?([0-9]+)$/.exec(argv[i++] || '');
         if (!m) {
-          process.stderr.write('ps-diff: --targeted takes a gen (gen1)\n');
+          process.stderr.write('ps-diff: --targeted takes a gen (gen1, gen3)\n');
           process.exit(2);
         }
         opts.targeted = parseInt(m[1], 10);
@@ -499,8 +499,8 @@ function parseArgs(argv) {
           'Usage: node diff.js (--self|--ps-cli P) [--gen 1|3] [--n N] '
           + '[--seed S] [--seed-start X --seed-end Y] '
           + '[--teams random|wide|file:<p>] [--focus ids] '
-          + '[--jobs N] [--tamper-line K] [--pinned] [--carried gen1 [--carried-pair F#C]] '
-          + '[--targeted gen1 [--targeted-name N]] '
+          + '[--jobs N] [--tamper-line K] [--pinned] [--carried gen1|gen3 [--carried-pair F#C]] '
+          + '[--targeted gen1|gen3 [--targeted-name N]] '
           + '[--trunc cartridge|math] [--quiet] [--allow-unported] [--hits FILE] '
           + '[--replays DIR [--validated]] [--format id[,id]] [--limit N]'
         );
@@ -510,16 +510,16 @@ function parseArgs(argv) {
     }
   }
   if (opts.carried !== undefined) {
-    if (opts.carried !== 1) {
-      process.stderr.write(`ps-diff: no carried corpus for gen ${opts.carried} (only gen1)\n`);
+    if (![1, 3].includes(opts.carried)) {
+      process.stderr.write(`ps-diff: no carried corpus for gen ${opts.carried} (gen1 or gen3)\n`);
       process.exit(2);
     }
     opts.gen = opts.carried;
     opts.teamsMode = `carried:gen${opts.carried}`;
   }
   if (opts.targeted !== undefined) {
-    if (opts.targeted !== 1) {
-      process.stderr.write(`ps-diff: no targeted battles for gen ${opts.targeted} (only gen1)\n`);
+    if (![1, 3].includes(opts.targeted)) {
+      process.stderr.write(`ps-diff: no targeted battles for gen ${opts.targeted} (gen1 or gen3)\n`);
       process.exit(2);
     }
     opts.gen = opts.targeted;
@@ -582,7 +582,12 @@ function driverCommands({ gen, mode, driverSeed, focus, self, psCli, pair, trunc
   const built = pair || teams.buildPair({
     gen, mode, seed: team, focus, self, psCli,
   });
-  const fmt = formatId(gen, mode, trunc);
+  let fmt = formatId(gen, mode, trunc);
+  // A targeted battle may add custom rules (`rules: ["Beat Up Nicknames
+  // Mod"]`), as a formatid writes them after `@@@`.
+  if (pair && Array.isArray(pair.rules) && pair.rules.length) {
+    fmt = fmt.includes('@@@') ? fmt.replace('@@@', `@@@${pair.rules.join(',')},`) : `${fmt}@@@${pair.rules.join(',')}`;
+  }
   const cmds = [];
   cmds.push(`>start ${JSON.stringify({ formatid: fmt, seed: battle })}`);
   cmds.push(`>player p1 ${JSON.stringify({ name: 'p1', team: built.packed[0] })}`);
@@ -1009,6 +1014,12 @@ function rustFor(psCli, hits) {
 
 // How long the rust side may still take once PS has finished the battle.
 const RUST_GRACE_MS = 5000;
+/// The grace a battle's ps_sim side gets once PS is done: 5 s, or the whole
+/// `--per-battle-timeout` when a run raised it (the coverage gate's
+/// instrumented build plays a 1000-turn battle well past 5 s).
+function rustGrace(opts) {
+  return opts.timeoutMs > DEFAULT_TIMEOUT_MS ? opts.timeoutMs : RUST_GRACE_MS;
+}
 
 // Apply the test hook: --tamper-line K (positive: right log;
 // negative: left log in absolute terms). The mutation is in a known
@@ -1083,7 +1094,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
     bPromise = rust.runBattle(info.cmds, info.choiceSeed, opts.timeoutMs, opts.script);
     const a = await drivePS({ cmds: info.cmds, choiceSeed: info.choiceSeed, script: opts.script });
     expectLines(a.out, opts, result, scratch, driverSeed);
-    rust.graceUntil(RUST_GRACE_MS);
+    rust.graceUntil(rustGrace(opts));
     const bRun = await bPromise;
     const aLog = applyTamper(a.out, opts.tamper < 0 ? opts.tamper : 0);
     const bLog = applyTamper(bRun.out, opts.tamper > 0 ? opts.tamper : 0);
@@ -1126,7 +1137,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
     // real crash. Either way the rust process must not carry this battle
     // into the next one (graceUntil kills it if it is still playing).
     if (bPromise) {
-      rust.graceUntil(RUST_GRACE_MS);
+      rust.graceUntil(rustGrace(opts));
       const bRun = await bPromise;
       if (bRun.status === 'crash' && !(e && e.rejectedChoice)) {
         result.psCrash = 1;
@@ -1195,7 +1206,7 @@ function carriedDrivers(opts) {
 /// must reach. Every `--jobs` child rebuilds the same list.
 function targetedDrivers(opts) {
   const file = path.join(__dirname, '..', '..', 'crates', 'ps_harness', 'targeted', `gen${opts.targeted}.json`);
-  let list = teams.readTargeted(file);
+  let list = teams.readTargeted(file, opts.targeted);
   if (opts.targetedName) {
     list = list.filter((t) => t.name === opts.targetedName);
     if (!list.length) {
@@ -1348,15 +1359,21 @@ const PS_SIM_RULES = [
   'Freeze Clause Mod', 'Endless Battle Clause', 'Species Clause', 'OHKO Clause',
   'Evasion Moves Clause', 'Beat Up Nicknames Mod', 'Switch Priority Clause Mod',
   'Evasion Items Clause', 'Cartridge Trunc',
+  // The variant formats public servers run (`ps_protocol::RuleId`).
+  'Best Of', 'Same Type Clause', 'Max Team Size', 'Picked Team Size', 'Team Preview',
+  'Blitz', 'Scalemons Mod', '350 Cup Mod', 'Guaranteed Secondary Mod', "Bad 'n Boosted Mod",
 ];
+const toID = (text) => `${text}`.toLowerCase().replace(/[^a-z0-9]+/g, '');
+const PS_SIM_RULE_IDS = new Set(PS_SIM_RULES.map(toID));
 
-/// Can `ps_sim` play the format a replay names?
+/// Can `ps_sim` play the format a replay names? A rule is looked up by the
+/// id of its name, the text before any `=`, as PS's `validateRule` does.
 function psSimKnowsFormat(formatid) {
   if (typeof formatid !== 'string') return false;
   const [base, rules] = formatid.split('@@@');
   if (!PS_SIM_FORMATS.includes(base)) return false;
   if (rules === undefined) return true;
-  return rules.split(',').every((r) => PS_SIM_RULES.includes(r.trim()));
+  return rules.split(',').every((r) => PS_SIM_RULE_IDS.has(toID(r.split('=')[0])));
 }
 
 /// The pinned PS playing the choices the recording made. Returns the raw
@@ -1565,16 +1582,6 @@ async function runReplay(file, opts) {
     result.reason = 'unsupported-format';
     return result;
   }
-  for (const side of ['p1', 'p2']) {
-    for (const c of p.choices[side]) {
-      if (/^team\b/.test(c)) {
-        // The team preview choice is not in ps_sim's choice grammar yet.
-        result.skipped = 1;
-        result.reason = 'team-preview';
-        return result;
-      }
-    }
-  }
   const ps = await drivePSRecorded(p, opts);
   if (ps.error) {
     result.crash = 1;
@@ -1601,6 +1608,13 @@ async function runReplay(file, opts) {
     if (!team) {
       result.skipped = 1;
       result.reason = 'no-team';
+      return result;
+    }
+    // `Max Team Size = 24` and the like: ps_sim holds six Pokemon a side
+    // (`TEAM_CAP`, the fixed RAM budget of design section 6).
+    if (team.split(']').length > 6) {
+      result.skipped = 1;
+      result.reason = 'team-over-cap';
       return result;
     }
     cmds.push(`>player ${side} ${JSON.stringify({

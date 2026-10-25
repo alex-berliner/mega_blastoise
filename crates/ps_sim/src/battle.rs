@@ -98,6 +98,17 @@ fn rule_of(r: RuleId) -> Rule {
         RuleId::SwitchPriorityClauseMod => Rule::SwitchPriorityClauseMod,
         RuleId::EvasionItemsClause => Rule::EvasionItemsClause,
         RuleId::CartridgeTrunc => Rule::CartridgeTrunc,
+        RuleId::BestOf => Rule::BestOf,
+        RuleId::SameTypeClause => Rule::SameTypeClause,
+        RuleId::MaxTeamSize => Rule::MaxTeamSize,
+        RuleId::PickedTeamSize => Rule::PickedTeamSize,
+        RuleId::TeamPreview => Rule::TeamPreview,
+        RuleId::Blitz => Rule::Blitz,
+        RuleId::ScalemonsMod => Rule::ScalemonsMod,
+        RuleId::ScalemonsModGen1 => Rule::ScalemonsModGen1,
+        RuleId::ThreeFiftyCupMod => Rule::ThreeFiftyCupMod,
+        RuleId::GuaranteedSecondaryMod => Rule::GuaranteedSecondaryMod,
+        RuleId::BadNBoostedMod => Rule::BadNBoostedMod,
     }
 }
 
@@ -119,8 +130,8 @@ fn rule_of(r: RuleId) -> Rule {
 /// section 3; `tools/ps-diff/rules.js` adds it to PS's Gen 1 formats the
 /// same way). A custom `!Name` repeals a rule of the ruleset; repealing one
 /// that is not in effect throws, as PS's `getRuleTable` does.
-fn rule_table(spec: &FormatSpec) -> ([RuleId; 14], usize) {
-    let mut out = [RuleId::HpPercentageMod; 14];
+fn rule_table(spec: &FormatSpec) -> ([RuleId; 20], usize) {
+    let mut out = [RuleId::HpPercentageMod; 20];
     let mut n = 0;
     let mut push = |r: RuleId| {
         if !out[..n].contains(&r) {
@@ -235,6 +246,13 @@ impl Battle {
         for &r in &rules[..n] {
             b.rules |= 1 << rule_of(r) as u8;
         }
+        // `ruleTable.pickedTeamSize`: a custom rule's value (no format of
+        // ours has one in its own ruleset).
+        b.picked_team_size = spec
+            .custom_rules
+            .iter()
+            .find(|c| c.rule == RuleId::PickedTeamSize && !c.repeal)
+            .map(|c| u8::try_from(c.value).unwrap_or(u8::MAX));
         // Both custom games are `debug` formats; random battles are not.
         b.debug_mode = spec.base.debug();
         b.report_exact_hp = spec.base.debug();
@@ -554,26 +572,57 @@ impl Battle {
         let custom = self.format_spec.custom_rules;
         match custom.len() {
             0 => {}
-            1 => self.add(Msg::Raw(Text::with1(TextId::CustomRules1, TextArg::custom_rule(custom[0])))),
+            1 => self.add(Msg::Raw(Text::with1(TextId::CustomRules1, TextArg::custom_rule(0)))),
             2 => self.add(Msg::Raw(Text::with2(
                 TextId::CustomRules2,
-                TextArg::custom_rule(custom[0]),
-                TextArg::custom_rule(custom[1]),
+                TextArg::custom_rule(0),
+                TextArg::custom_rule(1),
             ))),
             3 => self.add(Msg::Raw(Text::with3(
                 TextId::CustomRules3,
-                TextArg::custom_rule(custom[0]),
-                TextArg::custom_rule(custom[1]),
-                TextArg::custom_rule(custom[2]),
+                TextArg::custom_rule(0),
+                TextArg::custom_rule(1),
+                TextArg::custom_rule(2),
             ))),
             k => panic!("{k} custom rules: no infobox template"),
         }
-        // `runPickTeam`: no team preview in our formats.
+        self.run_pick_team();
         self.add_choice(Action::new(ActionKind::Start));
         self.mid_turn = true;
         if self.request_state == RequestState::None {
             self.turn_loop();
         }
+    }
+
+    /// PS `runPickTeam()`: the rules' `onTeamPreview` (Team Preview's, gen
+    /// 4's version, which gens 1 to 3 inherit: every Pokemon's `|poke|`
+    /// line with `item` when it holds one, then the request), else, with a
+    /// Picked Team Size and no preview, each player's own Pokemon as
+    /// one-sided splits, then the request. The details lose `, shiny`; no
+    /// gen 1-3 species has a forme the preview hides.
+    // PS: sim/battle.ts runPickTeam; data/mods/gen4/rulesets.ts teampreview.onTeamPreview
+    fn run_pick_team(&mut self) {
+        let preview = self.has_rule(Rule::TeamPreview);
+        if !preview && self.picked_team_size.is_none() {
+            return;
+        }
+        self.add(Msg::ClearPoke);
+        for s in 0..2u8 {
+            for i in 0..self.sides[s as usize].team_size as usize {
+                let m = self.pokemon_at(s, i);
+                let details = self.details(m);
+                let item = preview && !self.mon(m).item.is_none();
+                self.add(Msg::Poke { side: side_id(s), details, item, split: !preview });
+            }
+        }
+        self.make_request(Some(RequestState::TeamPreview));
+    }
+
+    /// PS `side.pickedTeamSize()`: the team, or Picked Team Size if smaller.
+    // PS: sim/side.ts pickedTeamSize
+    pub fn picked_team_size_of(&self, side: u8) -> u8 {
+        let n = self.sides[side as usize].team_size;
+        self.picked_team_size.map_or(n, |p| p.min(n))
     }
 
     /// A rule's `onBegin`.
@@ -594,9 +643,22 @@ impl Battle {
             | RuleId::EvasionMovesClause
             | RuleId::BeatUpNicknamesMod
             | RuleId::SwitchPriorityClauseMod
-            | RuleId::EvasionItemsClause => self.add(Msg::Rule(r)),
+            | RuleId::EvasionItemsClause
+            | RuleId::SameTypeClause
+            | RuleId::Blitz
+            | RuleId::ScalemonsMod
+            | RuleId::ScalemonsModGen1
+            | RuleId::ThreeFiftyCupMod
+            | RuleId::BadNBoostedMod => self.add(Msg::Rule(r)),
             // `Cartridge Trunc` acts through `self.trunc` (`from_start`).
             RuleId::CartridgeTrunc => {}
+            // No `onBegin`; Team Preview's announces only Tera Type Preview
+            // (gen 9).
+            RuleId::BestOf
+            | RuleId::MaxTeamSize
+            | RuleId::PickedTeamSize
+            | RuleId::TeamPreview
+            | RuleId::GuaranteedSecondaryMod => {}
         }
     }
 
@@ -664,18 +726,38 @@ impl Battle {
     /// PS `pokemon.setSpecies(species, source, isTransform)`.
     // PS: sim/pokemon.ts setSpecies
     pub fn set_species(&mut self, m: MonRef, species: SpeciesId, is_transform: bool) {
-        // `runEvent('ModifySpecies', ...)`: no gen 1-3 effect answers it
-        // (the species relay arrives with the first one).
-        let r = self.run_event(EventId::ModifySpecies, Holder::Mon(m), None, self.frame.effect, Some(Relay::TRUE));
-        debug_assert_eq!(r, Relay::TRUE, "ModifySpecies handler: species relay not ported");
         let def = self.dex.species_def(species);
-        let mut stats = self.spread_modify(def.base_stats, self.mon(m));
+        // `species.bst`: the sum of the base stats, the Special once in gen
+        // 1 (`sim/dex-species.ts` `getByID`).
+        let mut bst: u16 = def.base_stats.iter().map(|&s| u16::from(s)).sum();
+        if self.gen == 1 {
+            bst -= u16::from(def.base_stats[4]);
+        }
+        self.set_species_object(m, species, def.base_stats, bst, is_transform);
+    }
+
+    /// `setSpecies` of a species object: `rawSpecies` is `species` with
+    /// the given base stats and `bst` (the dex's, or for Transform the
+    /// target's `pokemon.species`, which a `ModifySpecies` rule may already
+    /// have changed: PS runs the event again on that object).
+    // PS: sim/pokemon.ts setSpecies
+    pub fn set_species_object(&mut self, m: MonRef, species: SpeciesId, base_stats: [u8; 6], bst: u16, is_transform: bool) {
+        // `runEvent('ModifySpecies', this, null, source, rawSpecies)`: only
+        // the format rules answer it in gens 1 to 3, each with a new species
+        // object; none returns a falsy one.
+        let raw = Relay::Species { base_stats, bst };
+        let r = self.run_event(EventId::ModifySpecies, Holder::Mon(m), None, self.frame.effect, Some(raw));
+        let Relay::Species { base_stats, bst } = r else { panic!("unported: ModifySpecies answered {r:?}") };
+        let def = self.dex.species_def(species);
+        let mut stats = self.spread_modify(base_stats, self.mon(m));
         if let Some(hp) = def.max_hp() {
             stats[0] = hp;
         }
         let gen = self.gen;
         let mon = self.mon_mut(m);
         mon.species = species;
+        mon.species_base_stats = base_stats;
+        mon.species_bst = bst;
         // `setType(species.types, true)`, then `knownType = true`.
         mon.types = TypeList(def.types);
         mon.known_type = true;
@@ -727,9 +809,10 @@ impl Battle {
             return false;
         }
 
-        // `setSpecies` returns the species: no gen 1-2 `ModifySpecies`
-        // handler can clear it.
-        self.set_species(m, species, true);
+        // `setSpecies(pokemon.species, ...)`: the target's species object.
+        // It returns the species: no `ModifySpecies` handler clears it.
+        let (base_stats, bst) = (self.mon(pokemon).species_base_stats, self.mon(pokemon).species_bst);
+        self.set_species_object(m, species, base_stats, bst, true);
 
         self.mon_mut(m).transformed = true;
         self.mon_mut(m).weighthg = self.mon(pokemon).weighthg;
@@ -1141,6 +1224,20 @@ impl Battle {
         // objects outside `runMove`.
         self.move_count = 0;
         match action.choice {
+            ActionKind::Team => {
+                // `side.pokemon` is rebuilt in the picked order; the
+                // Pokemon not picked leave it. PS returns at once: no
+                // Update event (nobody is active yet).
+                let pokemon = action.pokemon.expect("a team action's Pokemon");
+                let sd = &mut self.sides[pokemon.side as usize];
+                if action.index == 0 {
+                    sd.team_size = 0;
+                }
+                sd.order[sd.team_size as usize] = pokemon.index;
+                sd.team_size += 1;
+                self.mon_mut(pokemon).position = action.index;
+                return false;
+            }
             ActionKind::Start => {
                 for s in 0..2u8 {
                     let sd = &mut self.sides[s as usize];

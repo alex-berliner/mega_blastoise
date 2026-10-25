@@ -6,7 +6,7 @@
 
 pub use crate::ident::SideId;
 use crate::team::PackedTeam;
-use crate::{BoundedVec, Name};
+use crate::{BoundedStr, BoundedVec, Name};
 
 /// One `BattleStream` input line.
 ///
@@ -129,8 +129,8 @@ impl PrngSeed {
 ///
 /// Not covered: the `,` that joins several choices (doubles), the target
 /// of a move (`move 1 +1`), the gimmick suffixes (`mega`, `zmove`,
-/// `dynamax`, `terastallize`), `team` (Team Preview), `shift`, and PS's
-/// synonyms `skip` (for `pass`) and `auto` (for `default`).
+/// `dynamax`, `terastallize`), `shift`, and PS's synonyms `skip` (for
+/// `pass`) and `auto` (for `default`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Choice {
@@ -148,6 +148,9 @@ pub enum Choice {
     Default,
     /// `undo`: PS's `undoChoice`.
     Undo,
+    /// `team DATA`: the team preview pick, `DATA` as written (`2134`,
+    /// `2, 1`, `[1,2]`); the sim reads it (`chooseTeam`).
+    Team(Name),
 }
 
 /// A base format id, PS `config/formats.ts`. Only the ones the harnesses use.
@@ -213,6 +216,11 @@ impl FormatId {
 /// validator clauses that announce themselves (Species, OHKO, Evasion Moves).
 /// Gen 3 random battle (gen 3's `Standard`) also announces Beat Up Nicknames
 /// Mod, Switch Priority Clause Mod and Evasion Items Clause.
+///
+/// The custom rules public servers add to random battles (the replay
+/// corpus's variant formats) follow: Best Of, Same Type Clause, Max Team
+/// Size, Picked Team Size, Team Preview, Blitz, and the stat and move mods
+/// (Scalemons, 350 Cup, Bad 'n Boosted, Guaranteed Secondary).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
@@ -233,10 +241,39 @@ pub enum RuleId {
     /// (`Dex.trunc`) in place of `Math.trunc`. Every Gen 1 format has it in
     /// its ruleset; `!Cartridge Trunc` after `@@@` turns it off.
     CartridgeTrunc,
+    /// `Best Of = N`: a series of N games. Validator only; nothing in one
+    /// battle reads it.
+    BestOf,
+    /// `Same Type Clause`: validator only, announces itself.
+    SameTypeClause,
+    /// `Max Team Size = N`: validator only (the random team generator reads
+    /// it; the battle takes the team it is given).
+    MaxTeamSize,
+    /// `Picked Team Size = N`: the battle asks for a team preview pick of N
+    /// (`sim/battle.ts runPickTeam`, `sim/side.ts pickedTeamSize`).
+    PickedTeamSize,
+    /// `Team Preview`: the `|poke|` lines and the team preview request.
+    TeamPreview,
+    /// `Blitz`: a timer setting; announces itself.
+    Blitz,
+    /// `Scalemons Mod` (`data/rulesets.ts`): every base stat but HP scaled
+    /// toward a BST of 600.
+    ScalemonsMod,
+    /// Gen 1's own `Scalemons Mod` (`data/mods/gen1/rulesets.ts`): toward
+    /// 500, Special written to both special stats. Same name; a Gen 1
+    /// format resolves the name to this one.
+    ScalemonsModGen1,
+    /// `350 Cup Mod`: a species with a BST of 350 or lower has its base
+    /// stats doubled (gen 1's own version keeps the Special single).
+    ThreeFiftyCupMod,
+    /// `Guaranteed Secondary Mod`: every secondary's chance is 100.
+    GuaranteedSecondaryMod,
+    /// `Bad 'n Boosted Mod`: base stats of 70 or lower are doubled.
+    BadNBoostedMod,
 }
 
 impl RuleId {
-    pub const ALL: [RuleId; 13] = [
+    pub const ALL: [RuleId; 24] = [
         RuleId::HpPercentageMod,
         RuleId::CancelMod,
         RuleId::DesyncClauseMod,
@@ -250,9 +287,20 @@ impl RuleId {
         RuleId::SwitchPriorityClauseMod,
         RuleId::EvasionItemsClause,
         RuleId::CartridgeTrunc,
+        RuleId::BestOf,
+        RuleId::SameTypeClause,
+        RuleId::MaxTeamSize,
+        RuleId::PickedTeamSize,
+        RuleId::TeamPreview,
+        RuleId::Blitz,
+        RuleId::ScalemonsMod,
+        RuleId::ScalemonsModGen1,
+        RuleId::ThreeFiftyCupMod,
+        RuleId::GuaranteedSecondaryMod,
+        RuleId::BadNBoostedMod,
     ];
 
-    /// The rule's name, as a custom rule after `@@@` and in the infobox.
+    /// The rule's name (its `name` in `data/rulesets.ts`).
     pub const fn name(self) -> &'static str {
         match self {
             RuleId::HpPercentageMod => "HP Percentage Mod",
@@ -268,6 +316,16 @@ impl RuleId {
             RuleId::SwitchPriorityClauseMod => "Switch Priority Clause Mod",
             RuleId::EvasionItemsClause => "Evasion Items Clause",
             RuleId::CartridgeTrunc => "Cartridge Trunc",
+            RuleId::BestOf => "Best Of",
+            RuleId::SameTypeClause => "Same Type Clause",
+            RuleId::MaxTeamSize => "Max Team Size",
+            RuleId::PickedTeamSize => "Picked Team Size",
+            RuleId::TeamPreview => "Team Preview",
+            RuleId::Blitz => "Blitz",
+            RuleId::ScalemonsMod | RuleId::ScalemonsModGen1 => "Scalemons Mod",
+            RuleId::ThreeFiftyCupMod => "350 Cup Mod",
+            RuleId::GuaranteedSecondaryMod => "Guaranteed Secondary Mod",
+            RuleId::BadNBoostedMod => "Bad 'n Boosted Mod",
         }
     }
 
@@ -292,52 +350,129 @@ impl RuleId {
             RuleId::EvasionItemsClause => Some("Evasion Items Clause: Evasion items are banned"),
             // It has no `onBegin` text (`tools/ps-diff/rules.js`).
             RuleId::CartridgeTrunc => None,
+            RuleId::SameTypeClause => Some("Same Type Clause: Pokemon in a team must share a type"),
+            RuleId::Blitz => Some("Blitz: Super-fast timer"),
+            RuleId::ScalemonsMod => Some(
+                "Scalemons Mod: Every Pokemon's stats, barring HP, are scaled to come as close to a BST of 600 as possible",
+            ),
+            RuleId::ScalemonsModGen1 => Some(
+                "Scalemons Mod: Every Pokemon's stats, barring HP, are scaled to come as close to a BST of 500 as possible",
+            ),
+            RuleId::ThreeFiftyCupMod => {
+                Some("350 Cup Mod: If a Pokemon's BST is 350 or lower, all of its stats get doubled.")
+            }
+            RuleId::BadNBoostedMod => Some("Bad 'n Boosted Mod: All of a Pokemon's base stats below 70 are doubled."),
+            // Team Preview announces only Tera Type Preview (gen 9).
+            RuleId::BestOf
+            | RuleId::MaxTeamSize
+            | RuleId::PickedTeamSize
+            | RuleId::TeamPreview
+            | RuleId::GuaranteedSecondaryMod => None,
         }
     }
 
+    /// The rule takes a value (`hasValue: 'positive-integer'`, written
+    /// `Name = N`).
+    pub const fn has_value(self) -> bool {
+        matches!(self, RuleId::BestOf | RuleId::MaxTeamSize | RuleId::PickedTeamSize)
+    }
+
+    /// The rule a name resolves to: PS's `toID` of the name, as
+    /// `validateRule` looks a rule up (`same type clause`, `sametypeclause`
+    /// and `Same Type Clause` are one rule). A gen-specific rule resolves
+    /// to its base version; [`FormatSpec::parse`] picks the gen's.
     pub fn parse(name: &str) -> Option<RuleId> {
-        RuleId::ALL.into_iter().find(|r| r.name() == name)
+        let id = crate::to_id::<RULE_TEXT_CAP>(name).ok()?;
+        RuleId::ALL.into_iter().find(|r| {
+            *r != RuleId::ScalemonsModGen1 && crate::to_id::<RULE_TEXT_CAP>(r.name()).is_ok_and(|n| n == id)
+        })
+    }
+
+    /// The version of the rule format `base`'s gen resolves the name to
+    /// (`Dex.mod(gen).formats`: a mod's own entry shadows the base one).
+    pub const fn for_gen(self, gen: u8) -> RuleId {
+        match self {
+            RuleId::ScalemonsMod if gen == 1 => RuleId::ScalemonsModGen1,
+            r => r,
+        }
     }
 }
 
 /// Most custom rules after `@@@`.
 pub const MAX_CUSTOM_RULES: usize = 4;
 
+/// Byte capacity of one custom rule as written (`max team size = 3`).
+pub const RULE_TEXT_CAP: usize = 32;
+
 /// One custom rule after `@@@`: a rule added to the format's ruleset, or
-/// (`!Name`) one repealed from it.
+/// (`!Name`) one repealed from it, with its value (`Best Of = 3`) and the
+/// text it was written as. PS's custom rules infobox prints the rules as
+/// written (`format.customRules`, the `formatid` split at `,`), so the text
+/// is kept: `same type clause` and `Same Type Clause` are the same rule
+/// but not the same line.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct CustomRule {
     pub rule: RuleId,
     /// `!Name`: PS's rule repeal (`sim/dex-formats.ts getRuleTable`).
     pub repeal: bool,
+    /// The value of a rule that takes one, 0 for none.
+    pub value: u16,
+    /// The rule as written after `@@@`.
+    pub text: BoundedStr<RULE_TEXT_CAP>,
 }
 
 impl CustomRule {
-    pub const fn add(rule: RuleId) -> Self {
-        Self { rule, repeal: false }
+    /// `rule` added, written as its name.
+    pub fn add(rule: RuleId) -> Self {
+        Self { rule, repeal: false, value: 0, text: BoundedStr::from_str(rule.name()).unwrap_or_default() }
     }
 
-    pub const fn repeal(rule: RuleId) -> Self {
-        Self { rule, repeal: true }
+    /// `rule` repealed, written `!` and the name.
+    pub fn repeal(rule: RuleId) -> Self {
+        let mut text = BoundedStr::new();
+        let _ = text.push_str("!");
+        let _ = text.push_str(rule.name());
+        Self { rule, repeal: true, value: 0, text }
     }
 
     /// Calls `f` with the rule as written after `@@@` and in the custom
-    /// rules infobox: `!` for a repeal, then the name.
+    /// rules infobox.
     pub fn write(&self, mut f: impl FnMut(&str)) {
-        if self.repeal {
-            f("!");
-        }
-        f(self.rule.name());
+        f(self.text.as_str());
     }
 
+    /// One rule of a `formatid`, PS `validateRule`: the text must be
+    /// trimmed; `Name = value` splits at `=`; the name is looked up by its
+    /// id. A value rule needs a positive integer value (Best Of: odd, 3 to
+    /// 9, its `onValidateRule`) and any other rule takes none. `!!` (repeal
+    /// and replace a value) and `^` are not taken.
     pub fn parse(s: &str) -> Option<CustomRule> {
-        match s.strip_prefix('!') {
-            // `!!` repeals and replaces a value rule; none of ours has a value.
-            Some(name) if !name.starts_with('!') => Some(CustomRule::repeal(RuleId::parse(name)?)),
-            Some(_) => None,
-            None => Some(CustomRule::add(RuleId::parse(s)?)),
+        if s != s.trim() || s.starts_with("!!") || s.starts_with('^') {
+            return None;
         }
+        let (repeal, body) = match s.strip_prefix('!') {
+            Some(rest) => (true, rest),
+            None => (false, s),
+        };
+        // JS `rule.split('=')`: the name, then the text up to the next `=`.
+        let mut parts = body.split('=');
+        let name = parts.next()?;
+        let value = parts.next().map(str::trim);
+        let rule = RuleId::parse(name)?;
+        let value = match (rule.has_value(), value) {
+            (true, Some(v)) if !repeal => {
+                let n: u16 = v.parse().ok().filter(|&n| n > 0)?;
+                if rule == RuleId::BestOf && (n > 9 || n < 3 || n % 2 != 1) {
+                    return None;
+                }
+                n
+            }
+            (_, None) if !rule.has_value() || repeal => 0,
+            _ => return None,
+        };
+        let text = BoundedStr::from_str(s).ok()?;
+        Some(CustomRule { rule, repeal, value, text })
     }
 }
 
@@ -402,7 +537,9 @@ impl FormatSpec {
         let mut spec = FormatSpec::new(FormatId::parse(base)?);
         if let Some(rules) = rules {
             for name in rules.split(',') {
-                spec.custom_rules.push(CustomRule::parse(name)?).ok()?;
+                let mut rule = CustomRule::parse(name)?;
+                rule.rule = rule.rule.for_gen(spec.base.gen());
+                spec.custom_rules.push(rule).ok()?;
             }
         }
         Some(spec)
@@ -429,14 +566,18 @@ mod tests {
         assert_eq!(id_of(&g3), "gen3customgame");
         assert_eq!(FormatSpec::parse("gen3customgame"), Some(g3));
         assert_eq!(FormatSpec::parse("gen9ou"), None);
-        assert_eq!(FormatSpec::parse("gen1customgame@@@Team Preview"), None);
+        assert_eq!(FormatSpec::parse("gen1customgame@@@Inverse Mod"), None);
         let math = g1.with_repeal(RuleId::CartridgeTrunc).unwrap();
         assert_eq!(id_of(&math), "gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod,!Cartridge Trunc");
         assert_eq!(FormatSpec::parse(&id_of(&math)), Some(math));
         let rb = FormatSpec::parse("gen1randombattle@@@!Cartridge Trunc").unwrap();
         assert_eq!(rb.custom_rules[0], CustomRule::repeal(RuleId::CartridgeTrunc));
         assert_eq!(FormatSpec::parse("gen1customgame@@@!!Cartridge Trunc"), None);
-        assert_eq!(FormatSpec::parse("gen1customgame@@@! Cartridge Trunc"), None);
+        // `validateRule` looks the name up by its id, so the space goes.
+        assert_eq!(
+            FormatSpec::parse("gen1customgame@@@! Cartridge Trunc").map(|f| (f.custom_rules[0].rule, f.custom_rules[0].repeal)),
+            Some((RuleId::CartridgeTrunc, true))
+        );
         assert_eq!(FormatSpec::parse("gen1randombattle").map(|f| f.base.name()), Some("[Gen 1] Random Battle"));
         assert_eq!(FormatSpec::parse("gen3randombattle").map(|f| f.base.gen()), Some(3));
         assert_eq!(g1.base.name(), "[Gen 1] Custom Game");
@@ -444,10 +585,48 @@ mod tests {
     }
 
     #[test]
+    fn variant_rules_parse_as_ps_validates_them() {
+        // The variant formats of the public replay corpus.
+        for (id, rules) in [
+            ("gen1randombattle@@@Best of = 7", &[(RuleId::BestOf, 7)][..]),
+            ("gen3randombattle@@@Blitz", &[(RuleId::Blitz, 0)]),
+            ("gen1randombattle@@@Scalemons Mod", &[(RuleId::ScalemonsModGen1, 0)]),
+            ("gen3randombattle@@@scalemonsmod", &[(RuleId::ScalemonsMod, 0)]),
+            ("gen1randombattle@@@guaranteed secondary mod", &[(RuleId::GuaranteedSecondaryMod, 0)]),
+            ("gen1randombattle@@@same type clause,max team size = 3", &[(RuleId::SameTypeClause, 0), (RuleId::MaxTeamSize, 3)]),
+            ("gen1randombattle@@@maxteamsize=3,pickedteamsize=1", &[(RuleId::MaxTeamSize, 3), (RuleId::PickedTeamSize, 1)]),
+            ("gen1randombattle@@@350 cupmod", &[(RuleId::ThreeFiftyCupMod, 0)]),
+            ("gen3randombattle@@@Bad N Boosted Mod", &[(RuleId::BadNBoostedMod, 0)]),
+            (
+                "gen3randombattle@@@sametypeclause,pickedteamsize=4,team preview",
+                &[(RuleId::SameTypeClause, 0), (RuleId::PickedTeamSize, 4), (RuleId::TeamPreview, 0)],
+            ),
+        ] {
+            let spec = FormatSpec::parse(id).unwrap_or_else(|| panic!("{id}"));
+            let got: alloc::vec::Vec<(RuleId, u16)> = spec.custom_rules.iter().map(|c| (c.rule, c.value)).collect();
+            assert_eq!(got, rules, "{id}");
+            // The text is kept as written, so the id prints back unchanged.
+            assert_eq!(id_of(&spec), id);
+        }
+        // A value rule needs its value, a plain rule takes none, the text
+        // must be trimmed, and Best Of is odd and 3 to 9.
+        for bad in [
+            "gen3randombattle@@@Best Of",
+            "gen3randombattle@@@Best Of = 4",
+            "gen3randombattle@@@Best Of = 11",
+            "gen3randombattle@@@Max Team Size = 0",
+            "gen3randombattle@@@Blitz = 2",
+            "gen3randombattle@@@ Blitz",
+        ] {
+            assert_eq!(FormatSpec::parse(bad), None, "{bad}");
+        }
+    }
+
+    #[test]
     fn rule_lines() {
         assert_eq!(RuleId::CancelMod.line(), None);
         for r in RuleId::ALL {
-            assert_eq!(RuleId::parse(r.name()), Some(r));
+            assert_eq!(RuleId::parse(r.name()).map(|p| p.for_gen(if r == RuleId::ScalemonsModGen1 { 1 } else { 3 })), Some(r));
             if let Some(line) = r.line() {
                 assert!(line.starts_with(r.name()));
             }

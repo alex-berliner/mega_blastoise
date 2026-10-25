@@ -13,11 +13,14 @@
 //! `requestState`; sim/pokemon.ts `getMoveRequestData`, `getMoves`,
 //! `getLockedMove`, `getSemiLockedMove`, `getSwitchRequestData`,
 //! `isLastActive`, `getHealth`, `details`.
+//!
+//! The team preview request (PS `getRequests('teampreview')`) carries only
+//! the side data and the Picked Team Size.
 
 use ps_dex::MoveId;
 use ps_protocol::{
     AbilityNum, ActiveRequest, BoundedVec, Details, Health, Hp, HpStatus, ItemNum, MoveNum, MoveRequest, MoveTarget,
-    Request, RequestMove, RequestMoveName, SideMoveId, SidePokemon, SideRequest, SpeciesNum, Status, SwitchRequest,
+    Request, RequestMove, RequestMoveName, SideMoveId, SidePokemon, SideRequest, SpeciesNum, Status, SwitchRequest, TeamPreviewRequest,
     TypeNum, WaitRequest, MAX_MOVES,
 };
 
@@ -26,12 +29,15 @@ use crate::queue::ActionMove;
 use crate::relay::Relay;
 use crate::state::{Battle, Holder, MonRef, Trapped};
 
-/// PS's `RequestState` (no team preview in our formats).
+/// PS's `RequestState`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum RequestState {
     /// `''`
     #[default]
     None,
+    /// `teampreview`: a Team Preview or Picked Team Size format, before the
+    /// battle starts.
+    TeamPreview,
     Move,
     Switch,
 }
@@ -45,6 +51,8 @@ pub enum SideRequestState {
     Switch { force_switch: bool, no_cancel: bool, update: bool },
     /// `{wait: true, side}`
     Wait,
+    /// `{teamPreview: true, maxChosenTeamSize?, side, noCancel?}`
+    TeamPreview { max_chosen_team_size: Option<u8>, no_cancel: bool },
 }
 
 impl SideRequestState {
@@ -54,6 +62,7 @@ impl SideRequestState {
             SideRequestState::Move { .. } => RequestState::Move,
             SideRequestState::Switch { .. } => RequestState::Switch,
             SideRequestState::Wait => RequestState::None,
+            SideRequestState::TeamPreview { .. } => RequestState::TeamPreview,
         }
     }
 }
@@ -92,6 +101,11 @@ impl Battle {
         for s in 0..2 {
             self.sides[s].active_request = None;
         }
+        if kind == RequestState::TeamPreview {
+            // `pickedTeamSize = 6` asks for the whole order; without it the
+            // players pick only their leads.
+            self.add(ps_protocol::Msg::TeamPreview(self.picked_team_size));
+        }
         let requests = self.get_requests(kind);
         for (s, r) in requests.into_iter().enumerate() {
             self.sides[s].active_request = Some(r);
@@ -117,6 +131,12 @@ impl Battle {
     pub fn get_requests(&mut self, kind: RequestState) -> [SideRequestState; 2] {
         let mut requests: [Option<SideRequestState>; 2] = [None, None];
         match kind {
+            RequestState::TeamPreview => {
+                for s in 0..2u8 {
+                    requests[s as usize] =
+                        Some(SideRequestState::TeamPreview { max_chosen_team_size: self.picked_team_size, no_cancel: false });
+                }
+            }
             RequestState::Switch => {
                 for s in 0..2u8 {
                     if self.sides[s as usize].pokemon_left == 0 {
@@ -147,9 +167,9 @@ impl Battle {
                 Some(mut r) => {
                     if !self.support_cancel || !multiple {
                         match &mut r {
-                            SideRequestState::Move { no_cancel, .. } | SideRequestState::Switch { no_cancel, .. } => {
-                                *no_cancel = true
-                            }
+                            SideRequestState::Move { no_cancel, .. }
+                            | SideRequestState::Switch { no_cancel, .. }
+                            | SideRequestState::TeamPreview { no_cancel, .. } => *no_cancel = true,
                             SideRequestState::Wait => {}
                         }
                     }
@@ -466,6 +486,9 @@ impl Battle {
                 rqid: None,
             }),
             SideRequestState::Wait => Request::Wait(WaitRequest { side: data, rqid: None }),
+            SideRequestState::TeamPreview { max_chosen_team_size, no_cancel } => {
+                Request::TeamPreview(TeamPreviewRequest { max_chosen_team_size, side: data, no_cancel, rqid: None })
+            }
         })
     }
 }

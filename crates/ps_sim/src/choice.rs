@@ -65,6 +65,10 @@ pub struct Choice {
     pub forced_passes_left: u8,
     /// `switchIns`: a bit per `side.pokemon` index.
     pub switch_ins: u8,
+    /// The `team` actions (team preview): `side.pokemon` positions in the
+    /// picked order, the first `team_len` of them.
+    pub team: [u8; crate::state::TEAM_CAP],
+    pub team_len: u8,
 }
 
 impl Choice {
@@ -76,6 +80,8 @@ impl Choice {
         forced_switches_left: 0,
         forced_passes_left: 0,
         switch_ins: 0,
+        team: [0; crate::state::TEAM_CAP],
+        team_len: 0,
     };
 
     pub fn actions(&self) -> impl Iterator<Item = &ChosenAction> {
@@ -204,6 +210,9 @@ impl Battle {
         if self.sides[side as usize].choice.forced_switches_left != 0 {
             return false;
         }
+        if self.side_request_state(side) == RequestState::TeamPreview {
+            return self.sides[side as usize].choice.team_len >= self.picked_team_size_of(side);
+        }
         self.get_choice_index(side, false);
         self.sides[side as usize].choice.len as usize >= self.sides[side as usize].active.len()
     }
@@ -302,6 +311,11 @@ impl Battle {
             }
             ps_protocol::Choice::Default => {
                 if !self.auto_choose(side) {
+                    return false;
+                }
+            }
+            ps_protocol::Choice::Team(data) => {
+                if !self.choose_team(side, Some(data.as_str())) {
                     return false;
                 }
             }
@@ -667,10 +681,101 @@ impl Battle {
         true
     }
 
+    /// PS `side.chooseTeam(data)`. `None` is the auto-choice (every
+    /// Pokemon in team order). A bracketed list (`[1,2]`) is taken whole;
+    /// any other is cut to the picked size, and a short one is filled in
+    /// team order. No gen 1-3 format has Max Total Level or `onChooseTeam`.
+    // PS: sim/side.ts chooseTeam
+    pub fn choose_team(&mut self, side: u8, data: Option<&str>) -> bool {
+        if self.side_request_state(side) != RequestState::TeamPreview {
+            return self.emit_choice_error(side, Text::new(TextId::ChooseTeamNotPreview), None);
+        }
+        let team_len = self.sides[side as usize].team_size as usize;
+        let picked = usize::from(self.picked_team_size_of(side));
+        let (bracketed, team_data) = match data {
+            Some(d) if d.starts_with('[') && d.ends_with(']') => (true, d[1..d.len() - 1].trim()),
+            Some(d) => (false, d),
+            None => (false, ""),
+        };
+        // Positions, 0-based; `None` is JS's `NaN` (`parseInt` of no digits).
+        let mut positions: [Option<i32>; 16] = [None; 16];
+        let mut n = 0;
+        if team_data.is_empty() {
+            // `[...this.pokemon.keys()]` (autoChoose, or no data).
+            for i in 0..team_len {
+                positions[n] = Some(i as i32);
+                n += 1;
+            }
+        } else {
+            let by_comma = bracketed || team_data.contains(',') || team_len >= 10;
+            let mut push = |p: Option<i32>| {
+                if n < positions.len() {
+                    positions[n] = p;
+                    n += 1;
+                }
+            };
+            if by_comma {
+                for datum in team_data.split(',') {
+                    push(parse_int(datum).map(|v| v - 1));
+                }
+            } else {
+                for c in team_data.chars() {
+                    push(c.to_digit(10).map(|v| v as i32 - 1));
+                }
+            }
+        }
+        if !bracketed && n > picked {
+            n = picked;
+        }
+        if n < picked {
+            for i in 0..picked as i32 {
+                if !positions[..n].contains(&Some(i)) {
+                    positions[n] = Some(i);
+                    n += 1;
+                }
+                if n >= picked {
+                    break;
+                }
+            }
+        }
+        if n != picked {
+            let t = Text::with1(TextId::ChooseTeamExactly, TextArg::int(picked as i32));
+            return self.emit_choice_error(side, t, None);
+        }
+        for (index, &pos) in positions[..n].iter().enumerate() {
+            match pos {
+                Some(p) if p >= 0 && (p as usize) < team_len => {
+                    if positions[..n].iter().position(|&q| q == pos) != Some(index) {
+                        let t = Text::with1(TextId::ChooseTeamOnce, TextArg::int(p + 1));
+                        return self.emit_choice_error(side, t, None);
+                    }
+                }
+                Some(p) => {
+                    let t = Text::with1(TextId::ChooseTeamNoSlot, TextArg::int(p + 1));
+                    return self.emit_choice_error(side, t, None);
+                }
+                None => return self.emit_choice_error(side, Text::new(TextId::ChooseTeamNoSlotNaN), None),
+            }
+        }
+        let choice = &mut self.sides[side as usize].choice;
+        for &pos in &positions[..n] {
+            let p = pos.expect("checked above") as u8;
+            choice.switch_ins |= 1 << p;
+            choice.team[choice.team_len as usize] = p;
+            choice.team_len += 1;
+        }
+        true
+    }
+
     /// PS `side.autoChoose()`.
     // PS: sim/side.ts autoChoose
     pub fn auto_choose(&mut self, side: u8) -> bool {
         match self.side_request_state(side) {
+            RequestState::TeamPreview => {
+                if !self.is_choice_done(side) {
+                    self.choose_team(side, None);
+                }
+            }
             RequestState::Switch => {
                 let mut i = 0;
                 while !self.is_choice_done(side) {
@@ -697,6 +802,14 @@ impl Battle {
     // PS: sim/side.ts commitChoices
     pub fn side_commit_choices(&mut self, side: u8) {
         let choice = self.sides[side as usize].choice;
+        // The `team` actions, `{choice: 'team', index, pokemon, priority:
+        // -index}`, come first (a team preview choice has nothing else).
+        for (index, &pos) in choice.team[..choice.team_len as usize].iter().enumerate() {
+            let mut a = Action::new(ActionKind::Team).with_pokemon(self.pokemon_at(side, usize::from(pos)));
+            a.index = index as u8;
+            a.priority = -(index as i16);
+            self.add_choice(a);
+        }
         let mut actions = [None; CHOICE_ACTIONS_CAP];
         for (i, c) in choice.actions().enumerate() {
             actions[i] = Some(*c);
@@ -759,7 +872,24 @@ impl RequestState {
         match self {
             RequestState::Move => TextArg::word(Word::Move),
             RequestState::Switch => TextArg::word(Word::Switch),
+            RequestState::TeamPreview => TextArg::word(Word::TeamPreview),
             RequestState::None => TextArg::NONE,
         }
     }
+}
+
+/// JS `parseInt(text)` of a team position: optional blanks, an optional
+/// sign, then the leading digits; `None` (NaN) without any digit.
+fn parse_int(text: &str) -> Option<i32> {
+    let t = text.trim_start();
+    let (neg, digits) = match t.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, t.strip_prefix('+').unwrap_or(t)),
+    };
+    let end = digits.find(|c: char| !c.is_ascii_digit()).unwrap_or(digits.len());
+    if end == 0 {
+        return None;
+    }
+    let v: i32 = digits[..end].parse().unwrap_or(i32::MAX);
+    Some(if neg { -v } else { v })
 }

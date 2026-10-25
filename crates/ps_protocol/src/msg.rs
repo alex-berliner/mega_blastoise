@@ -15,6 +15,9 @@
 //! | `\|gametype\|singles` | [`Msg::GameType`] | |
 //! | `\|player\|p1\|NAME\|AVATAR\|RATING` | [`Msg::Player`] | text from [`crate::BattleNames`] |
 //! | `\|teamsize\|p1\|N` | [`Msg::TeamSize`] | |
+//! | `\|clearpoke` | [`Msg::ClearPoke`] | team preview |
+//! | `\|poke\|p1\|DETAILS\|ITEM` | [`Msg::Poke`] | team preview; may be a one-sided split |
+//! | `\|teampreview\|N` | [`Msg::TeamPreview`] | team preview |
 //! | `\|gen\|N` | [`Msg::Gen`] | |
 //! | `\|tier\|NAME` | [`Msg::Tier`] | |
 //! | `\|rule\|RULE: DESC` | [`Msg::Rule`] | |
@@ -80,11 +83,10 @@
 //! | `\|-nothing` | [`Msg::Nothing`] | gen 2 data's Splash, inherited by gen 1 |
 //! | `\|-message\|TEXT` | [`Msg::Message`] | |
 //! | `\|-hint\|TEXT` | [`Msg::Hint`] | may be a one-sided split |
-//! | `\|split\|pN` | (none) | an encoding detail of [`Health`], [`Msg::Hint`] and [`Msg::Ability`] |
+//! | `\|split\|pN` | (none) | an encoding detail of [`Health`], [`Msg::Hint`], [`Msg::Ability`] and [`Msg::Poke`] |
 //! | `\|request\|JSON` | (none) | [`crate::Request`], sent as `sideupdate` |
 //!
-//! Not covered (unused by gens 1 and 3 singles): `poke`, `clearpoke`,
-//! `teampreview`, `rated`, `inactive`, `replace`, `swap`, `-swapboost`,
+//! Not covered (unused by gens 1 and 3 singles): `rated`, `inactive`, `replace`, `swap`, `-swapboost`,
 //! `-invertboost`, `-clearpositiveboost`, `-swapsideconditions`, `-mega`,
 //! `-primal`, `-burst`, `-zpower`, `-zbroken`, `-center`, `-combine`,
 //! `-waiting`, `message` (without the dash; only the timer tiebreak uses it).
@@ -97,7 +99,7 @@
 //!   when `None`, as `attrLastMove('[still]')` blanks it).
 //! - Names come from [`crate::DexNames`] and [`crate::BattleNames`].
 
-use crate::command::{CustomRule, FormatId, RuleId};
+use crate::command::{FormatId, RuleId};
 use crate::ident::{
     AbilityNum, Details, Health, ItemNum, MoveNum, PokemonIdent, SideId, SpeciesNum, Stat, Status,
     TypeNum,
@@ -120,6 +122,16 @@ pub enum Msg {
     Player(SideId),
     /// `|teamsize|p1|N`
     TeamSize { side: SideId, size: u8 },
+    /// `|clearpoke` (team preview: the `|poke|` list follows).
+    ClearPoke,
+    /// `|poke|p1|DETAILS|ITEM`: one Pokemon of a team preview, `ITEM` is
+    /// `item` when it holds one (gen 4's Team Preview, which gens 1 to 3
+    /// inherit) or empty. With `split`, PS sent it with `addSplit(side,
+    /// [...])` (a Picked Team Size format without Team Preview: only the
+    /// owner sees it): `|split|pN`, the line, then an empty line.
+    Poke { side: SideId, details: Details, item: bool, split: bool },
+    /// `|teampreview` or `|teampreview|N` (`N`: Picked Team Size).
+    TeamPreview(Option<u8>),
     /// `|split|pN` written by [`crate::text::encode_msg`] before each pair of
     /// HP-bearing lines (the secret line and the shared line, when they
     /// differ). The decoder emits one of these between secret and shared
@@ -321,6 +333,9 @@ impl Msg {
             Msg::GameType(_) => "gametype",
             Msg::Player(_) => "player",
             Msg::TeamSize { .. } => "teamsize",
+            Msg::ClearPoke => "clearpoke",
+            Msg::Poke { .. } => "poke",
+            Msg::TeamPreview(_) => "teampreview",
             Msg::Split(_) => "split",
             Msg::Gen(_) => "gen",
             Msg::Tier(_) => "tier",
@@ -401,6 +416,7 @@ impl Msg {
             | Msg::Heal { mon, health, .. }
             | Msg::SetHp { mon, health, .. } => health.split.then_some(mon.side),
             Msg::Hint { split, .. } | Msg::Ability { split, .. } => *split,
+            Msg::Poke { side, split, .. } => split.then_some(*side),
             _ => None,
         }
     }
@@ -669,6 +685,7 @@ words! {
     Stockpile2 => "stockpile2",
     Stockpile3 => "stockpile3",
     Switch => "switch",
+    TeamPreview => "teampreview",
     // PS: data/mods/gen1/moves.ts haze.onHit (`-end|MON|Toxic counter|[silent]`)
     ToxicCounter => "Toxic counter",
     Trapped => "trapped",
@@ -1144,6 +1161,9 @@ pub enum TextArgValue {
     Repeal(RuleId),
     /// A player's name (`${side.name}`).
     Player(SideId),
+    /// Custom rule `i` of the format as written after `@@@` (the custom
+    /// rules infobox), read from [`crate::BattleNames::custom_rule`].
+    CustomRule(u8),
 }
 
 /// [`TextArgValue`] packed into 5 bytes with alignment 1 (see [`Arg`]).
@@ -1208,6 +1228,10 @@ impl TextArg {
                 data[0] = side.index() as u8;
                 12
             }
+            TextArgValue::CustomRule(i) => {
+                data[0] = i;
+                13
+            }
         };
         TextArg { kind, data }
     }
@@ -1228,6 +1252,7 @@ impl TextArg {
             10 => TextArgValue::ItemId(ItemNum(u)),
             11 => TextArgValue::AbilityId(AbilityNum(u)),
             12 => TextArgValue::Player(if self.data[0] == 0 { SideId::P1 } else { SideId::P2 }),
+            13 => TextArgValue::CustomRule(self.data[0]),
             _ => TextArgValue::None,
         }
     }
@@ -1265,9 +1290,10 @@ impl TextArg {
     pub fn rule(r: RuleId) -> TextArg {
         TextArg::new(TextArgValue::Rule(r))
     }
-    /// A custom rule as the infobox writes it: the name, or `!` and the name.
-    pub fn custom_rule(c: CustomRule) -> TextArg {
-        TextArg::new(if c.repeal { TextArgValue::Repeal(c.rule) } else { TextArgValue::Rule(c.rule) })
+    /// The format's custom rule `i`, as the infobox writes it (the text
+    /// after `@@@`).
+    pub fn custom_rule(i: u8) -> TextArg {
+        TextArg::new(TextArgValue::CustomRule(i))
     }
 }
 
@@ -1364,6 +1390,7 @@ texts! {
     DisableDisablingMove => "Disable: disabling move {} in slot {}" (Move, Int),
     // PS: data/abilities.ts serenegrace onModifyMove
     DoublingSecondaryChance => "doubling secondary chance" (),
+    GuaranteeingSecondary => "Freeze test: Guaranteeing secondary" (),
     // PS: data/mods/gen4/abilities.ts flashfire.condition.onModifyDamagePhase1
     FlashFireBoost => "Flash Fire boost" (),
     // PS: sim/battle-actions.ts runMoveEffects
@@ -1519,6 +1546,11 @@ texts! {
     CantDoNotYourTurn => "Can't do anything: It's not your turn" (),
     CantMoveDisabled => "Can't move: {}'s {} is disabled" (Nickname, Move),
     CantMoveNeedResponse => "Can't move: You need a {} response" (Word),
+    ChooseTeamNotPreview => "Can't choose for Team Preview: You're not in a Team Preview phase" (),
+    ChooseTeamExactly => "Can't choose for Team Preview: You must choose exactly {} Pokémon" (Int),
+    ChooseTeamNoSlot => "Can't choose for Team Preview: You do not have a Pokémon in slot {}" (Int),
+    ChooseTeamNoSlotNaN => "Can't choose for Team Preview: You do not have a Pokémon in slot NaN" (),
+    ChooseTeamOnce => "Can't choose for Team Preview: The Pokémon in slot {} can only switch in once" (Int),
     CantMoveNoMoveIndex => "Can't move: Your {} doesn't have a move {}" (Nickname, Int),
     CantMoveTooMany => "Can't move: You sent more choices than unfainted Pokémon." (),
     CantPassMustMove => "Can't pass: Your {} must make a move (or switch)" (Nickname),
@@ -1723,6 +1755,9 @@ mod tests {
             Msg::GameType(GameType::Singles),
             Msg::Player(SideId::P1),
             Msg::TeamSize { side: SideId::P2, size: 6 },
+            Msg::ClearPoke,
+            Msg::Poke { side: SideId::P1, details: d, item: true, split: false },
+            Msg::TeamPreview(Some(4)),
             Msg::Gen(3),
             Msg::Tier(FormatId::Gen3CustomGame),
             Msg::Rule(RuleId::HpPercentageMod),
@@ -1794,7 +1829,7 @@ mod tests {
                 }
             }
         }
-        assert_eq!(all.len(), 68);
+        assert_eq!(all.len(), 71);
     }
 
     #[test]

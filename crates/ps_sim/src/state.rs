@@ -346,6 +346,12 @@ pub struct Pokemon {
     pub exists: bool,
     pub species: SpeciesId,
     pub base_species: SpeciesId,
+    /// `species.baseStats` and `species.bst` of the species object
+    /// `setSpecies` keeps: the dex's, unless a `ModifySpecies` rule
+    /// (Scalemons Mod and the like) handed back new numbers. Transform
+    /// starts from the target's.
+    pub species_base_stats: [u8; 6],
+    pub species_bst: u16,
     pub level: u16,
     pub gender: ps_dex::Gender,
     /// `position`: the active slot index (0 in singles).
@@ -482,6 +488,8 @@ impl Pokemon {
         exists: false,
         species: SpeciesId::NONE,
         base_species: SpeciesId::NONE,
+        species_base_stats: [0; 6],
+        species_bst: 0,
         level: 0,
         gender: ps_dex::Gender::Neutral,
         position: 0,
@@ -932,7 +940,9 @@ pub struct Battle {
     pub format_spec: FormatSpec,
     /// Rules with a bearing on the battle, by `Rule as u8` bit
     /// (`ruleTable.has`).
-    pub rules: u16,
+    pub rules: u32,
+    /// `ruleTable.pickedTeamSize`: the Picked Team Size rule's value.
+    pub picked_team_size: Option<u8>,
     pub queue: BattleQueue,
     pub faint_queue: [Option<FaintData>; FAINT_QUEUE_CAP],
     pub request_state: RequestState,
@@ -1017,6 +1027,7 @@ impl Battle {
                 _ => ps_protocol::FormatId::Gen3CustomGame,
             }),
             rules: 0,
+            picked_team_size: None,
             queue: BattleQueue::new(),
             faint_queue: [None; FAINT_QUEUE_CAP],
             request_state: RequestState::None,

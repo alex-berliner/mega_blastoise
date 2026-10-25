@@ -78,6 +78,10 @@ pub static REGISTRY: Registry = Registry {
         (EffectId::Condition(ps_dex::gen1::conditions::DEFENSECURL), &conditions::defensecurl::DEF),
         (EffectId::Rule(Rule::SleepClauseMod), &rules::sleepclausemod::DEF),
         (EffectId::Rule(Rule::FreezeClauseMod), &rules::freezeclausemod::DEF),
+        (EffectId::Rule(Rule::ScalemonsModGen1), &rules::species_mods::SCALEMONS_GEN1),
+        (EffectId::Rule(Rule::ThreeFiftyCupMod), &rules::species_mods::THREE_FIFTY_CUP_GEN1),
+        (EffectId::Rule(Rule::BadNBoostedMod), &rules::species_mods::BAD_N_BOOSTED),
+        (EffectId::Rule(Rule::GuaranteedSecondaryMod), &rules::guaranteedsecondarymod::DEF),
     ],
 };
 

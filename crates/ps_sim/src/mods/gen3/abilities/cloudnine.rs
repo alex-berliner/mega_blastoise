@@ -34,6 +34,9 @@ fn on_end(b: &mut Battle, _a: &EventArgs) -> Option<Relay> {
 /// `onAfterEntryHazard(pokemon)`: `this.effect.onStart.call(this, pokemon)`.
 // PS: data/mods/gen3/abilities.ts cloudnine.onAfterEntryHazard
 fn on_after_entry_hazard(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
+    // The call by name runs `onStart` (counted as one of its hits).
+    #[cfg(feature = "hit-count")]
+    b.count_named(EventId::Start);
     on_start(b, a)
 }
 

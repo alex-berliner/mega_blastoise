@@ -74,5 +74,6 @@
 {"key":"swiftswim","name":"Swift Swim","num":33,"rating":3,"suppressWeather":false,"flags":[],"condition":null,"handlers":[{"name":"onModifySpe","value":"function","priority":null,"order":null,"subOrder":null}],"switchInOrder":null},
 {"key":"waterabsorb","name":"Water Absorb","num":11,"rating":3.5,"suppressWeather":false,"flags":["breakable"],"condition":null,"handlers":[{"name":"onTryHit","value":"function","priority":null,"order":null,"subOrder":null}],"switchInOrder":null},
 {"key":"waterveil","name":"Water Veil","num":41,"rating":2,"suppressWeather":false,"flags":["breakable"],"condition":null,"handlers":[{"name":"onUpdate","value":"function","priority":null,"order":null,"subOrder":null},{"name":"onSetStatus","value":"function","priority":null,"order":null,"subOrder":null}],"switchInOrder":null},
-{"key":"whitesmoke","name":"White Smoke","num":73,"rating":2,"suppressWeather":false,"flags":["breakable"],"condition":null,"handlers":[{"name":"onTryBoost","value":"function","priority":null,"order":null,"subOrder":null}],"switchInOrder":null}
+{"key":"whitesmoke","name":"White Smoke","num":73,"rating":2,"suppressWeather":false,"flags":["breakable"],"condition":null,"handlers":[{"name":"onTryBoost","value":"function","priority":null,"order":null,"subOrder":null}],"switchInOrder":null},
+{"key":"noability","name":"No Ability","num":0,"rating":0.1,"suppressWeather":false,"flags":[],"condition":null,"handlers":[],"switchInOrder":null}
 ]

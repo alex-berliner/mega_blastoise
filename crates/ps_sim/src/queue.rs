@@ -25,6 +25,8 @@ pub const QUEUE_CAP: usize = 16;
 /// PS's `action.choice`, restricted to what gens 1 and 3 singles queue.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ActionKind {
+    /// `team`: one Pokemon of a team preview pick, in the picked order.
+    Team,
     Start,
     InstaSwitch,
     BeforeTurn,
@@ -43,6 +45,7 @@ impl ActionKind {
     /// PS's `orders` table in `resolveAction`.
     pub fn order(self) -> u16 {
         match self {
+            ActionKind::Team => 1,
             ActionKind::Start => 2,
             ActionKind::InstaSwitch => 3,
             ActionKind::BeforeTurn => 4,
@@ -111,6 +114,8 @@ pub struct Action {
     pub source_effect: EffectId,
     /// An `event` action's event.
     pub event: Option<EventId>,
+    /// A `team` action's `index`: its place in the picked order.
+    pub index: u8,
 }
 
 impl Action {
@@ -129,6 +134,7 @@ impl Action {
             target: None,
             source_effect: EffectId::None,
             event: None,
+            index: 0,
         }
     }
 

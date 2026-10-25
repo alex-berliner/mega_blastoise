@@ -115,7 +115,7 @@ mods/gen1/scripts.rs  `if !b.mon(t).fainted {` .. `did_something = true;` .. `}`
 mods/gen1/scripts.rs  `b.require_ported(EffectId::Condition(side_condition));` .. `}`  no gen 1 move has a sideCondition (Reflect, Light Screen, Mist are volatiles); PS: data/mods/gen1/scripts.ts:688
 mods/gen1/scripts.rs  `b.require_ported(EffectId::Condition(pseudo_weather));` .. `}`  no gen 1 move has a pseudoWeather; PS: data/mods/gen1/scripts.ts:693
 mods/gen1/scripts.rs  `if !hit_result.truthy() && !did_something {` > `}`  no gen 1 Hit handler answers null or 0 with nothing done; PS: data/mods/gen1/scripts.ts:702-704
-mods/gen1/scripts.rs  `match secondary.chance {` > `Self::move_hit(b, Some(t), pokemon, mv, MoveData::Secondary(secondary), true, is_self);`  every gen 1 secondary has a chance; PS: data/mods/gen1/scripts.ts:727
+mods/gen1/scripts.rs  `match b.mv(mv).secondary_chance(i, secondary) {` > `Self::move_hit(b, Some(t), pokemon, mv, MoveData::Secondary(secondary), true, is_self);`  every gen 1 secondary has a chance; PS: data/mods/gen1/scripts.ts:727
 mods/gen1/scripts.rs  `b.mon_mut(pokemon).switch_flag = SwitchFlag::Move(id);`  no gen 1 move has selfSwitch; PS: data/mods/gen1/scripts.ts:741-744
 mods/gen1/scripts.rs  `if is_move && !b.run_immunity(target, Some(mv), true) {` > `return MoveResult::False;`  tryMoveHit already ran the same immunity check for this move and target; PS: data/mods/gen1/scripts.ts:404,764
 mods/gen1/scripts.rs  `base_power = MoveResult::from_relay(r);`  no gen 1 move has basePowerCallback; PS: data/mods/gen1/scripts.ts:806-807
@@ -129,3 +129,235 @@ mods/gen1/scripts.rs  `other => panic!("Effectiveness answered {other:?}"),`  pa
 mods/gen1/scripts.rs  `return 0;`  Rust: both callers check the move slot first; PS: data/mods/gen1/scripts.ts:31,209-210,255-256
 mods/gen1/scripts.rs  `other => panic!("TryBoost answered {other:?}"),`  panic guard: TryBoost answers the boosts table; PS: data/mods/gen1/scripts.ts boost
 mods/gen1/scripts.rs  `other => panic!("unported: [from] {other:?} on a boost"),`  no gen 1 boost comes from an effect other than a move or Rage; PS: data/mods/gen1/scripts.ts boost
+
+mods/gen1/rules/species_mods.rs  `other => panic!("ModifySpecies relay {other:?}"),`  panic guard: setSpecies always passes the species object as the relay; PS: sim/pokemon.ts:1409
+
+# ---- gen 3: handlers gen 3 never calls -------------------------------------------
+handler 3 ability:lightningrod onFoeRedirectTarget  RedirectTarget runs only with activePerHalf > 1 (doubles); PS: sim/pokemon.ts:850-852, data/mods/gen3/abilities.ts:128
+handler 3 condition:counter onRedirectTarget  as Lightning Rod: RedirectTarget is doubles only; PS: sim/pokemon.ts:850-852, data/mods/gen3/moves.ts counter.condition.onRedirectTarget
+handler 3 condition:mirrorcoat onRedirectTarget  as Counter; PS: sim/pokemon.ts:850-852, data/mods/gen3/moves.ts mirrorcoat.condition.onRedirectTarget
+handler 3 condition:followme onFoeRedirectTarget  as Counter; PS: sim/pokemon.ts:850-852, data/mods/gen3/moves.ts followme.condition.onFoeRedirectTarget
+handler 3 condition:followme onStart  Follow Me fails in singles before it adds its volatile (onTry: activePerHalf > 1); PS: data/moves.ts followme.onTry
+handler 3 condition:helpinghand onStart  Helping Hand targets an adjacent ally, and singles has none, so the move never hits and the volatile never starts; PS: data/moves.ts helpinghand (target "adjacentAlly")
+handler 3 condition:helpinghand onRestart  as onStart; PS: data/moves.ts helpinghand.condition.onRestart
+handler 3 condition:helpinghand onBasePower  as onStart; PS: data/moves.ts helpinghand.condition.onBasePower
+handler 3 move:helpinghand onTryHit  as onStart: there is never an ally to hit; PS: data/moves.ts helpinghand.onTryHit
+handler 3 condition:toxic onSourceInvulnerability  the toxic volatile is only added by gen 7's Toxic onPrepareHit, which gen 3's Toxic does not have; PS: data/mods/gen7/moves.ts toxic
+handler 3 condition:toxic onSourceAccuracy  as onSourceInvulnerability; PS: data/mods/gen7/moves.ts toxic
+handler 3 move:hiddenpower onModifyType  gen 3's useMoveInner runs ModifyMove but no ModifyType (gen 3's Hidden Power sets its type in onModifyMove); PS: data/mods/gen3/scripts.ts:163-170, data/mods/gen3/moves.ts:348-356
+handler 3 move:weatherball onModifyType  as Hidden Power (gen 3's Weather Ball sets its type in onModifyMove); PS: data/mods/gen3/scripts.ts:163-170, data/mods/gen3/moves.ts:664-686
+handler 3 move:rapidspin onAfterSubDamage  Substitute's onTryPrimaryHit runs AfterSubDamage as a runEvent without onEffect, so the move's own handler is never called; PS: data/mods/gen4/moves.ts:1338, data/moves.ts rapidspin.onAfterSubDamage
+handler 3 item:belueberry onEat  the flavor and EV berries' onEat is the constant false, and gen 3 eats a berry only from its own trigger, which these have none of (Bug Bite, Pluck and Fling are gen 4); PS: data/items.ts belueberry (onEat: false)
+handler 3 item:blukberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts blukberry (onEat: false)
+handler 3 item:cornnberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts cornnberry (onEat: false)
+handler 3 item:durinberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts durinberry (onEat: false)
+handler 3 item:grepaberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts grepaberry (onEat: false)
+handler 3 item:hondewberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts hondewberry (onEat: false)
+handler 3 item:kelpsyberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts kelpsyberry (onEat: false)
+handler 3 item:magostberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts magostberry (onEat: false)
+handler 3 item:nanabberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts nanabberry (onEat: false)
+handler 3 item:nomelberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts nomelberry (onEat: false)
+handler 3 item:pamtreberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts pamtreberry (onEat: false)
+handler 3 item:pinapberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts pinapberry (onEat: false)
+handler 3 item:pomegberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts pomegberry (onEat: false)
+handler 3 item:qualotberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts qualotberry (onEat: false)
+handler 3 item:rabutaberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts rabutaberry (onEat: false)
+handler 3 item:razzberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts razzberry (onEat: false)
+handler 3 item:spelonberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts spelonberry (onEat: false)
+handler 3 item:tamatoberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts tamatoberry (onEat: false)
+handler 3 item:watmelberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts watmelberry (onEat: false)
+handler 3 item:wepearberry onEat  as belueberry: onEat is false and nothing eats it in gen 3; PS: data/items.ts wepearberry (onEat: false)
+handler 3 item:whiteherb onAnyAfterMega  Mega Evolution is gen 6; PS: data/items.ts whiteherb.onAnyAfterMega
+handler 3 condition:torment onEnd  nothing removes Torment in gen 3: it has no duration, and a switch or faint drops volatiles without End (Mental Herb cures only Attract there); PS: data/moves.ts torment.condition, data/mods/gen4/items.ts:313-318
+
+# ---- gen 3: lines (abilities) ----------------------------------------------------
+mods/gen3/abilities/arenatrap.rs  `if !b.is_adjacent(pokemon, holder) {` > `return None;`  in singles the holder and the only foe are always adjacent: isAdjacent is false only for a fainted Pokemon, and a fainted one is no longer active when the trap events run; PS: sim/pokemon.ts:762-764, data/abilities.ts:198
+mods/gen3/abilities/arenatrap.rs  `if !b.is_adjacent(pokemon, source) {` > `return None;`  as above; PS: sim/pokemon.ts:762-764, data/abilities.ts:205
+mods/gen3/abilities/shadowtag.rs  `if !b.is_adjacent(pokemon, source) {` > `return None;`  as arenatrap.rs; PS: sim/pokemon.ts:762-764, data/abilities.ts:4165
+mods/gen3/abilities/lightningrod.rs  `fn on_foe_redirect_target(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `None` .. `}`  onFoeRedirectTarget body: doubles only (see the handler entry); PS: sim/pokemon.ts:850-852, data/mods/gen3/abilities.ts:128
+mods/gen3/abilities/magnetpull.rs  `Some(s) => s,`  gen 3's Magnet Pull answers only the MaybeTrapPokemon runEvent, which passes no source (the endTurn singleEvent with a source is FoeMaybeTrapPokemon, which gen 3's Magnet Pull drops); PS: sim/battle.ts:1746,1772, data/mods/gen3/abilities.ts:136-151
+mods/gen3/abilities/colorchange.rs  `return Some(Relay::FAIL);`  setType never fails in gen 3 (it refuses only Arceus and Silvally in gens 5+, Multitype in gen 4, and Terastallized Pokemon); PS: sim/pokemon.ts setType, data/mods/gen4/abilities.ts:60
+mods/gen3/abilities/drizzle.rs  `return None;`  Kyogre's Blue Orb is a gen 6 item, not in the gen 3 dex; PS: data/abilities.ts:1080
+mods/gen3/abilities/drought.rs  `return None;`  Groudon's Red Orb is a gen 6 item; PS: data/abilities.ts:1090
+mods/gen3/abilities/forecast.rs  `b.forme_change(pokemon, species, effect, false, KwFlags::MSG);` > `}`  Forecast runs only for an active Castform (onStart at switch-in, WeatherChange through eachEvent over the actives), so isActive is never false here; PS: data/abilities.ts:1496
+mods/gen3/abilities/intimidate.rs  `let mon = b.ident(target);` .. `b.add(Msg::Immune { mon, what: None, kw: Kw::NONE });`  singles has one foe: when it has a Substitute, gen 3's first loop finds no target and returns before this one; PS: data/mods/gen3/abilities.ts:103-113,117-118
+mods/gen3/abilities/liquidooze.rs  `panic!("unported: Liquid Ooze's debug line for the {key} condition");`  panic guard: every gen 3 condition that heals (Leech Seed, Wish, Ingrain) is named after its move; PS: data/mods/gen4/abilities.ts:277
+mods/gen3/abilities/liquidooze.rs  `other => panic!("unported: Liquid Ooze's debug line for {other:?}"),`  panic guard: a heal's effect is a move, item, ability, condition or drain; PS: data/mods/gen4/abilities.ts:277
+mods/gen3/abilities/mod.rs  `other => panic!("not an ability handler: {other:?}"),`  panic guard: called only from ability handlers; PS: this.effect in an ability handler
+mods/gen3/abilities/mod.rs  `other => panic!("SetStatus relay {other:?}"),`  panic guard: SetStatus always carries the status; PS: sim/pokemon.ts setStatus
+mods/gen3/abilities/mod.rs  `Relay::Int(n) => Some(f64::from(n)),`  the accuracy relay travels as a float, and no gen 3 accuracy handler answers an integer; PS: sim/battle-actions.ts hitStepAccuracy (accuracy events)
+mods/gen3/abilities/mod.rs  `None => !b.dex.move_def(m).secondaries().is_empty(),`  a TryBoost whose effect is a move runs during that move, so the move in flight always matches; PS: data/abilities.ts clearbody.onTryBoost (effect.secondaries)
+mods/gen3/abilities/naturalcure.rs  `panic!("unported: Natural Cure of the {key} status");`  panic guard: every status has a protocol name; PS: data/abilities.ts naturalcure.onSwitchOut
+mods/gen3/abilities/oblivious.rs  `if b.dex.move_id("captivate") != Some(mv.id) {` > `}` .. `Some(Relay::Null)`  Captivate is a gen 4 move, not in the gen 3 dex; PS: data/mods/gen5/abilities.ts oblivious.onTryHit
+mods/gen3/abilities/rockhead.rs  `panic!("unported: Rock Head with no move in flight");`  recoil always comes from a move in flight (PS throws there too); PS: data/abilities.ts:3910
+mods/gen3/abilities/synchronize.rs  `other => panic!("AfterSetStatus relay {other:?}"),`  panic guard: AfterSetStatus always carries the status; PS: data/mods/gen4/abilities.ts:512
+mods/gen3/abilities/synchronize.rs  `if b.dex.move_id("toxicspikes") == Some(m) {` > `return None;`  Toxic Spikes is a gen 4 move, not in the gen 3 dex; PS: data/mods/gen4/abilities.ts:514
+mods/gen3/abilities/trace.rs  `if b.mon(target).fainted {` > `return None;`  randomFoe samples only foes with HP; PS: data/mods/gen3/abilities.ts:237-238, sim/side.ts randomFoe
+
+# ---- gen 3: lines (conditions) ---------------------------------------------------
+mods/gen3/conditions/attract.rs  `b.debug(Text::new(TextId::AttractEventFailed));` .. `return Some(Relay::FAIL);`  no gen 3 effect has onAttract (Aroma Veil is gen 6), so the Attract runEvent is always truthy; PS: data/moves.ts attract.condition.onStart
+mods/gen3/conditions/bide.rs  `if last == 0 {` > `b.add(Msg::Fail { mon, what: None, what2: None, kw: Kw::NONE });` .. `return Some(Relay::FAIL);`  Bide's onDamage records the source with every damage it adds up, so a stored total always has a source; PS: data/mods/gen3/moves.ts:67-75, data/moves.ts bide.condition.onDamage
+mods/gen3/conditions/bide.rs  `b.add(Msg::Miss { source: mon, target: None });` .. `return Some(Relay::FAIL);`  a faint skips every remaining action in gen 3 singles and a fainted foe is replaced before the next turn, so Bide's release always finds a foe; PS: data/mods/gen3/moves.ts:76-81, sim/battle.ts:2638-2648
+mods/gen3/conditions/choicelock.rs  `return Some(Relay::FAIL);`  choicelock is added only after its holder used a move, so lastMove is set; PS: data/mods/gen4/items.ts choiceband (choicelock onStart), data/mods/gen3/scripts.ts runMove
+mods/gen3/conditions/choicelock.rs  `if b.ignoring_item(pokemon) {` > `return None;`  ignoringItem is never true in gen 3 (Embargo, Klutz and Magic Room are gen 4+); PS: data/items.ts choicelock.onDisableMove, sim/pokemon.ts ignoringItem
+mods/gen3/conditions/confusion.rs  `(EffectId::Ability(_), Some(source)) => Kw::from_of(b.effect_fullname(a.effect), b.ident(source)),`  no gen 3 ability confuses; PS: data/conditions.ts confusion.onStart
+mods/gen3/conditions/confusion.rs  `other => panic!("Confusion damage not dealt: {other:?}"),`  panic guard: getDamage of the confusion hit is a number; PS: data/mods/gen3/conditions.ts confusion.onBeforeMove
+mods/gen3/conditions/counter.rs  `pub fn on_redirect_target(_b: &mut Battle, _a: &EventArgs) -> Option<Relay> {` .. `}`  onRedirectTarget body: RedirectTarget is doubles only (see the handler entry); PS: sim/pokemon.ts:850-852
+mods/gen3/conditions/disable.rs  `if last.is_none() {` > `return Some(Relay::FAIL);`  Disable's onTryHit fails first when the target has no last move; PS: data/mods/gen3/moves.ts disable.onTryHit
+mods/gen3/conditions/encore.rs  `if encored.is_none() || !b.has_move(pokemon, encored) {` > `return None;`  the encored move stays in the move list: Encore fails on Transform, Mimic and Sketch (failencore) and the encored Pokemon uses only that move; PS: data/mods/gen3/moves.ts encore
+mods/gen3/conditions/focusenergy.rs  `return Some(crate::relay::Relay::FAIL);`  Dragon Cheer is a gen 9 move; PS: data/moves.ts focusenergy.condition.onStart
+mods/gen3/conditions/followme.rs  `fn on_start(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  onStart body: Follow Me fails in singles (see the handler entry); PS: data/moves.ts followme.onTry
+mods/gen3/conditions/followme.rs  `fn on_foe_redirect_target(_b: &mut Battle, _a: &EventArgs) -> Option<Relay> {` .. `}`  onFoeRedirectTarget body: doubles only; PS: sim/pokemon.ts:850-852
+mods/gen3/conditions/frz.rs  `_ => None,`  frz's move handlers always run for a move; PS: data/conditions.ts frz
+mods/gen3/conditions/frz.rs  `b.clear_status(pokemon);` > `}`  a frozen Pokemon reaches ModifyMove only with a defrost move: any other move stops at frz.onBeforeMove, and a thaw there clears the status (and this handler) first; PS: data/conditions.ts frz.onBeforeMove, frz.onModifyMove
+mods/gen3/conditions/frz.rs  `b.cure_status(target, false);`@70  no gen 3 move has thawsTarget (Scald is gen 5); PS: data/conditions.ts frz.onAfterMoveSecondary
+mods/gen3/conditions/futuremove.rs  `if (b.turn as i16 - 1) < ending_turn {` > `}` .. `None`  the duration (3) ends the condition at the end of the turn after next, one turn before endingTurn is reached: this branch is for gen 8's turn-count overflow; PS: data/conditions.ts:383-398, data/mods/gen4/moves.ts:570
+mods/gen3/conditions/futuremove.rs  `ps_dex::Accuracy::Always => None,`  both gen 3 future moves have a numeric accuracy (Future Sight 90, Doom Desire 85); PS: data/mods/gen4/moves.ts futuresight, doomdesire
+mods/gen3/conditions/hail.rs  `if b.has_item(source, r) {` .. `}`  Icy Rock is a gen 4 item, not in the gen 3 dex; PS: data/conditions.ts hail.durationCallback
+mods/gen3/conditions/hail.rs  `b.effect_state().duration = 0;`  no gen 3 ability sets hail (Snow Warning is gen 4); PS: data/conditions.ts hail.onFieldStart
+mods/gen3/conditions/helpinghand.rs  `fn add_line(b: &mut Battle, a: &EventArgs) -> Option<()> {` .. `}`  Helping Hand's volatile never starts in singles (see the handler entries); PS: data/moves.ts helpinghand.condition
+mods/gen3/conditions/helpinghand.rs  `fn on_start(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  as add_line; PS: data/moves.ts helpinghand.condition.onStart
+mods/gen3/conditions/helpinghand.rs  `fn on_restart(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  as add_line; PS: data/moves.ts helpinghand.condition.onRestart
+mods/gen3/conditions/helpinghand.rs  `fn on_base_power(_b: &mut Battle, _a: &EventArgs) -> Option<Relay> {` .. `}`  as add_line; PS: data/moves.ts helpinghand.condition.onBasePower
+mods/gen3/conditions/imprison.rs  `if slot.id == moves::STRUGGLE {` > `continue;`  Struggle is never in a move slot; PS: data/moves.ts imprison.condition.onFoeDisableMove
+mods/gen3/conditions/leechseed.rs  `b.heal(damage.or_zero(), Some(target), Some(pokemon), EffectId::None);` > `}`  the seeded Pokemon is alive when its residual runs and the damage is at least 1 (no gen 3 effect stops residual damage: Magic Guard is gen 4); PS: data/moves.ts leechseed.condition.onResidual
+mods/gen3/conditions/lockedmove.rs  `if let Some(gone) = b.mon_mut(target).volatiles.remove(EffectId::Condition(conditions::LOCKEDMOVE)) {` > `b.bury(gone);` > `}`  Rust Option guard: the handler runs from the volatile itself; PS: data/conditions.ts lockedmove.onResidual
+mods/gen3/conditions/lockedmove.rs  `other => panic!("lockedmove from {other:?}"),`  panic guard: lockedmove starts only from Thrash, Outrage or Petal Dance; PS: data/conditions.ts lockedmove.onStart
+mods/gen3/conditions/mod.rs  `_ => b.dex.move_def(m).type_,`  a handler that reads move.type runs during that move, so the move in flight matches; PS: move.type of the event's move object
+mods/gen3/conditions/mod.rs  `_ => b.dex.move_def(m).category,` .. `_ => None,`  as event_move_type: the move in flight matches, and the effect is always a move; PS: move.category of the event's move object
+mods/gen3/conditions/mod.rs  `(EffectId::Ability(_), None) => Kw::from(b.effect_fullname(a.effect)),`  an ability sets the weather with its holder as the source; PS: data/conditions.ts raindance.onFieldStart (source)
+mods/gen3/conditions/par.rs  `return a.relay;`  Quick Feet is a gen 4 ability; PS: data/conditions.ts par.onModifySpe
+mods/gen3/conditions/par.rs  `if magicguard.is_some_and(|m| b.has_ability(pokemon, m)) {` > `return None;`  Magic Guard is a gen 4 ability; PS: data/conditions.ts par.onBeforeMove
+mods/gen3/conditions/partiallytrapped.rs  `other => panic!("partiallytrapped from {other:?}"),`  panic guard: only a trapping move adds partiallytrapped; PS: data/conditions.ts partiallytrapped.onStart
+mods/gen3/conditions/partiallytrapped.rs  `if b.has_item(source, g) {` .. `}`  Grip Claw is a gen 4 item; PS: data/conditions.ts partiallytrapped.durationCallback
+mods/gen3/conditions/partiallytrapped.rs  `if let Some(gone) = b.mon_mut(pokemon).volatiles.remove(EffectId::Condition(conditions::PARTIALLYTRAPPED)) {` > `b.bury(gone);` > `}`  Rust Option guard: the handler runs from the volatile itself; PS: data/mods/gen5/conditions.ts partiallytrapped.onResidual
+mods/gen3/conditions/partiallytrapped.rs  `return None;` > `}` > `}`  the volatile always has its trapper as the source; PS: data/mods/gen5/conditions.ts partiallytrapped.onResidual
+mods/gen3/conditions/partiallytrapped.rs  `other => panic!("partiallytrapped damage without the volatile's move: {other:?}"),`  panic guard: the volatile keeps its move; PS: data/mods/gen5/conditions.ts partiallytrapped.onResidual
+mods/gen3/conditions/perishsong.rs  `0 => Word::Perish0,`  the residual sees counts 3 to 1: at 0 the duration ends the volatile first (onEnd writes perish0); PS: data/conditions.ts perishsong.onResidual, sim/battle.ts residualEvent
+mods/gen3/conditions/perishsong.rs  `other => panic!("perish{other}"),`  panic guard: the duration is 4 and counts down; PS: data/conditions.ts perishsong
+mods/gen3/conditions/protect.rs  `other => panic!("protect against {other:?}"),`  panic guard: TryHit always carries the move; PS: data/moves.ts protect.condition.onTryHit
+mods/gen3/conditions/pursuit.rs  `b.mon_mut(pokemon).pursuit_activated = true;` > `}`  singles has one Pursuit user, so the flag is never already set when it hits; PS: data/moves.ts pursuit.condition.onBeforeSwitchOut
+mods/gen3/conditions/raindance.rs  `if b.has_item(source, r) {` .. `}`  Damp Rock is a gen 4 item; PS: data/conditions.ts raindance.durationCallback
+mods/gen3/conditions/raindance.rs  `if b.pokemon_effective_weather(defender) != conditions::RAINDANCE {` > `return None;`  gen 3's effectiveWeather of a Pokemon is the field's (Utility Umbrella is gen 8), which is rain while this handler runs; PS: data/conditions.ts raindance.onWeatherModifyDamage, sim/pokemon.ts effectiveWeather
+mods/gen3/conditions/reflect.rs  `if b.has_item(source, clay) {` .. `}`  Light Clay is a gen 4 item; PS: data/moves.ts reflect.condition.durationCallback
+mods/gen3/conditions/reflect.rs  `other => panic!("a damage event of {other:?}"),`  panic guard: the screen's damage handlers run for a move; PS: data/mods/gen3/moves.ts reflect.condition.onAnyModifyDamage
+mods/gen3/conditions/rollout.rs  `if let Some(gone) = b.mon_mut(target).volatiles.remove(EffectId::Condition(id)) {` .. `}`  the volatile locks the move (onLockMove) and a locked move uses no PP, so its holder never Struggles while it lasts; PS: data/moves.ts rollout.condition.onResidual, data/mods/gen3/scripts.ts runMove
+mods/gen3/conditions/safeguard.rs  `assert!(!b.has_ability(s, p), "unported: Persistent's Safeguard");` .. `false`  Persistent is a gen 9 ability (no source has it in gen 3); PS: data/moves.ts safeguard.condition.durationCallback
+mods/gen3/conditions/safeguard.rs  `EffectId::None => return None,`  every gen 3 status comes with an effect (a move, an ability, an item or a condition); PS: data/moves.ts safeguard.condition.onSetStatus
+mods/gen3/conditions/sandstorm.rs  `if b.has_item(source, r) {` .. `}`  Smooth Rock is a gen 4 item; PS: data/conditions.ts sandstorm.durationCallback
+mods/gen3/conditions/slp.rs  `_ => false,`  slp.onBeforeMove always runs for a move; PS: data/conditions.ts slp.onBeforeMove
+mods/gen3/conditions/snatch.rs  `other => panic!("Snatch's volatile came from {other:?}"),`  panic guard: only Snatch adds the volatile; PS: data/moves.ts snatch.condition
+mods/gen3/conditions/stall.rs  `0 => 1,`  stall.onStart sets the counter, so it is never 0 here; PS: data/mods/gen5/conditions.ts stall
+mods/gen3/conditions/stockpile.rs  `if b.effect_state().layers >= 3 {` > `return Some(Relay::FAIL);`  Stockpile's onTry fails at three layers before the volatile restarts; PS: data/moves.ts stockpile.onTry
+mods/gen3/conditions/stockpile.rs  `n => panic!("stockpile layer {n}"),`  panic guard: 1 to 3 layers; PS: data/mods/gen3/moves.ts stockpile.condition
+mods/gen3/conditions/substitute.rs  `other => panic!("partiallytrapped from {other:?}"),`  panic guard: only a trapping move adds partiallytrapped; PS: data/mods/gen3/moves.ts substitute.onHit
+mods/gen3/conditions/substitute.rs  `if let Some(gone) = b.mon_mut(target).volatiles.remove(trapped) {` > `b.bury(gone);` > `}`  Rust Option guard: the volatile was just read; PS: data/mods/gen3/moves.ts substitute.onHit
+mods/gen3/conditions/substitute.rs  `st.move_ = id;` > `}`  Rust Option guard: substitutebroken was just added; PS: data/mods/gen4/moves.ts:1329
+mods/gen3/conditions/substitute.rs  `b.apply_recoil_damage_num(damage, mv, source);` > `}`  a 0 damage roll returns before this (`if (!damage) return damage`); PS: data/mods/gen4/moves.ts substitute.condition.onTryPrimaryHit
+mods/gen3/conditions/sunnyday.rs  `if b.has_item(source, r) {` .. `}`  Heat Rock is a gen 4 item; PS: data/conditions.ts sunnyday.durationCallback
+mods/gen3/conditions/sunnyday.rs  `if b.pokemon_effective_weather(defender) != conditions::SUNNYDAY {` > `return None;`  as raindance.rs: the effective weather is the field's; PS: data/conditions.ts sunnyday.onWeatherModifyDamage
+mods/gen3/conditions/sunnyday.rs  `if b.pokemon_effective_weather(pokemon) != conditions::SUNNYDAY {` > `return None;`  as above; PS: data/conditions.ts sunnyday.onImmunity
+mods/gen3/conditions/taunt.rs  `_ => b.dex.move_def(id).category,`  the move in flight is the event's move; PS: data/mods/gen3/moves.ts taunt.condition.onBeforeMove
+mods/gen3/conditions/torment.rs  `fn on_end(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  onEnd body: nothing removes Torment in gen 3 (see the handler entry); PS: data/moves.ts torment.condition.onEnd
+mods/gen3/conditions/tox.rs  `st.counter += 1;` > `}`  stage 15 needs 15 residuals, which deal 120/16 of the max HP, and no gen 3 healing keeps up with that (Recover plus Leftovers restores 9/16 a turn); PS: data/conditions.ts tox.onResidual
+mods/gen3/conditions/toxic.rs  `fn own_move(b: &mut Battle, a: &EventArgs) -> bool {` .. `}`  the toxic volatile never exists in gen 3 (see the handler entries); PS: data/mods/gen7/moves.ts toxic
+mods/gen3/conditions/toxic.rs  `fn on_source_invulnerability(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  as own_move; PS: data/mods/gen7/moves.ts toxic
+mods/gen3/conditions/toxic.rs  `fn on_source_accuracy(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  as own_move; PS: data/mods/gen7/moves.ts toxic
+mods/gen3/conditions/twoturnmove.rs  `if defender.is_some_and(|d| b.mon(d).fainted) {` > `let foe = 1 - attacker.side;` .. `defender = Some(*b.prng.sample(&foes[..n]));`  a faint skips every remaining action in gen 3 singles and the fainted foe is replaced before the next turn, so a called two-turn move never starts against a fainted foe; PS: data/conditions.ts twoturnmove.onStart, sim/battle.ts:2638-2648
+mods/gen3/conditions/twoturnmove.rs  `st.data[TARGET_LOC] = i16::from(move_target_loc);` > `}`  Rust Option guard: the volatile was just added; PS: data/conditions.ts twoturnmove.onStart
+mods/gen3/conditions/wish.rs  `if b.mon(target).fainted {` > `return None;`  the slot's Pokemon is never marked fainted when Wish ends: a Pokemon that faints during a move is replaced before the residual (gen 3's checkFainted ahead of a residual), and one that faints during the residual is marked only by faintMessages, after it; PS: data/moves.ts wish.condition.onEnd, sim/battle.ts:2904 (checkFaintedAfterMoves), faintMessages
+mods/gen3/conditions/uproar.rs  `if let Some(gone) = b.mon_mut(target).volatiles.remove(EffectId::Condition(conditions::UPROAR)) {` .. `}`  as rollout.rs: the uproar volatile locks the move, which uses no PP, so the holder never Struggles; PS: data/moves.ts uproar.condition.onResidual
+
+# ---- gen 3: lines (items) --------------------------------------------------------
+mods/gen3/items/focusband.rs  `other => panic!("focusband: Damage relay {other:?}"),`  panic guard: Damage always carries the number; PS: data/items.ts focusband.onDamage
+mods/gen3/items/kingsrock.rs  `if id.is_none() {` > `return None;`  ModifyMove always runs for a dex move; PS: data/mods/gen3/items.ts kingsrock.onModifyMove
+mods/gen3/items/leppa.rs  `.or_else(|| slots.iter().position(|s| live(s) && i32::from(s.pp) < i32::from(s.maxpp)))?;`  gen 3 eats a Leppa Berry only from its onUpdate, which requires a 0-PP slot (Bug Bite, Pluck and Fling are gen 4); PS: data/items.ts leppaberry.onUpdate, onEat
+mods/gen3/items/lum.rs  `b.remove_volatile(mon, c);` > `}` > `}`  confusion is always in the dex; PS: data/items.ts lumberry.onEat
+mods/gen3/items/mail.rs  `if mv.id.is_none() {` > `return Some(Relay::FAIL);`  TakeItem always runs with a dex move in flight; PS: data/items.ts mail.onTakeItem
+mods/gen3/items/mentalherb.rs  `if !b.use_item(mon, None, EffectId::None) {` > `return None;`  useItem refuses only an inactive holder or no item (no gen 3 UseItem handler), and onUpdate runs for the active holder of the herb; PS: data/mods/gen4/items.ts:313-318, sim/pokemon.ts useItem
+mods/gen3/items/mod.rs  `other => panic!("ModifyCritRatio relay {other:?}"),`  panic guard: ModifyCritRatio carries the ratio; PS: sim/battle-actions.ts getDamage
+mods/gen3/items/persim.rs  `b.remove_volatile(mon, c);` > `}` .. `}`  the berry is eaten only when its holder is confused (onUpdate), and confusion is always in the dex; PS: data/items.ts persimberry.onUpdate, onEat
+mods/gen3/items/stat_berries.rs  `b.add_volatile(mon, c, None, EffectId::None);` > `}`  focusenergy is always in the dex; PS: data/items.ts lansatberry.onEat
+
+# ---- gen 3: lines (moves) --------------------------------------------------------
+mods/gen3/moves/conversion.rs  `if !b.set_type(target, t, false) {` > `return Some(Relay::FAIL);`  setType never fails in gen 3 (see colorchange.rs); PS: data/moves.ts conversion.onHit, sim/pokemon.ts setType
+mods/gen3/moves/conversion2.rs  `if !b.set_type(source, t, false) {` > `return Some(Relay::FAIL);`  as conversion.rs; PS: data/mods/gen4/moves.ts conversion2.onHit
+mods/gen3/moves/foresight.rs  `return Some(Relay::FAIL);`  Miracle Eye is a gen 4 move; PS: data/moves.ts foresight.onTryHit
+mods/gen3/moves/helpinghand.rs  `fn on_try_hit(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `None` .. `}`  onTryHit body: Helping Hand never has a target in singles (see the handler entry); PS: data/moves.ts helpinghand.onTryHit
+mods/gen3/moves/hiddenpower.rs  `Type::None => Type::Dark,`  every gen 3 Pokemon gets its Hidden Power type from its IVs; PS: data/mods/gen3/moves.ts:352
+mods/gen3/moves/hiddenpower.rs  `fn on_modify_type(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  onModifyType body: gen 3 runs no ModifyType (see the handler entry); PS: data/mods/gen3/scripts.ts:163-170
+mods/gen3/moves/hiddenpower.rs  `0 => 70,`  every gen 3 Pokemon gets its Hidden Power power from its IVs (30 to 70); PS: data/mods/gen5/moves.ts hiddenpower.basePowerCallback
+mods/gen3/moves/highjumpkick.rs  `other => panic!("crash damage of {other:?}"),`  panic guard: PS throws "HJK recoil failed" there too; PS: data/mods/gen3/moves.ts:363
+mods/gen3/moves/imprison.rs  `if b.mon(target).hp == 0 || b.mon(target).fainted {` > `continue;`  a faint skips every remaining action in gen 3 singles and a fainted foe is replaced before the next turn, so the foe is alive when Imprison is used; PS: data/mods/gen4/moves.ts imprison.onTryHit, sim/battle.ts:2638-2648
+mods/gen3/moves/knockoff.rs  `b.hint(TextId::HintGens3To4KnockOff, true, None);`  the hint is for gen 4 only; PS: data/mods/gen4/moves.ts knockoff.onAfterHit
+mods/gen3/moves/metronome.rs  `if n == 0 {` > `return Some(Relay::FAIL);`  the gen 3 dex always has callable moves; PS: data/mods/gen8/moves.ts metronome.onHit
+mods/gen3/moves/mimic.rs  `let Some(mimic_index) = b.mon(source).move_slots.iter().position(|s| s.id == moves::MIMIC) else {` > `return Some(Relay::FAIL);`  Mimic is only used from its own slot: Metronome, Assist and Mirror Move cannot call it (no metronome flag, noassist, no mirror flag), and Sleep Talk calls only the user's own moves; PS: data/moves.ts mimic (flags), data/mods/gen3/moves.ts mimic.onHit
+mods/gen3/moves/sketch.rs  `let Some(sketch_index) = b.mon(source).move_slots.iter().position(|s| s.id == moves::SKETCH) else {` > `return Some(Relay::FAIL);`  as mimic.rs (Sketch has noassist and no metronome flag); PS: data/mods/gen3/moves.ts sketch.onHit
+mods/gen3/moves/mod.rs  `if !b.run_event(EventId::ChargeMove, crate::state::Holder::Mon(attacker), defender, a.effect, None).truthy() {` > `return None;`  no gen 3 effect answers ChargeMove (Power Herb is gen 4); PS: data/moves.ts solarbeam.onTryMove
+mods/gen3/moves/mod.rs  `other => panic!("a future move's damage roll gave {other:?}"),`  panic guard: the future move's getDamage is a number; PS: data/mods/gen4/moves.ts futuresight.onTry
+mods/gen3/moves/mod.rs  `b.mon_mut(target).item = your_item;` .. `return None;`  the put-back never runs: only Mail has onTakeItem in gen 3 and it lets Thief and Covet take it, and setItem refuses only a fainted or inactive user, which Rough Skin's damage (after AfterHit) cannot make; PS: data/moves.ts thief.onAfterHit, data/items.ts mail.onTakeItem, sim/pokemon.ts:1889-1890
+mods/gen3/moves/painsplit.rs  `0 => 1,`  both Pokemon are alive, so the average is at least 1; PS: data/moves.ts painsplit.onHit
+mods/gen3/moves/rapidspin.rs  `fn on_after_sub_damage(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  onAfterSubDamage body: never called in gen 3 (see the handler entry); PS: data/mods/gen4/moves.ts:1338
+mods/gen3/moves/roleplay.rs  `falsy => Some(falsy),`  setAbility refuses only by a SetAbility handler or a cantsuppress ability, and gen 3 has neither; PS: sim/pokemon.ts setAbility, data/moves.ts roleplay.onHit
+mods/gen3/moves/rollout.rs  `st.duration = 2;` > `}` > `}`  a Pokemon holding the rollout volatile is locked into Rollout, so it is never asleep here (Sleep Talk cannot be chosen while locked); PS: data/moves.ts rollout.basePowerCallback
+mods/gen3/moves/skillswap.rs  `if b.mon(source).fainted || b.mon(target).fainted {` > `return Some(Relay::FAIL);`  both Pokemon are alive when the move hits (a faint skips the remaining actions in gen 3 singles); PS: sim/battle.ts skillSwap
+mods/gen3/moves/skillswap.rs  `if !target_can_be_set.truthy() {` > `return Some(target_can_be_set);`  no gen 3 effect answers SetAbility; PS: sim/battle.ts skillSwap
+mods/gen3/moves/skillswap.rs  `if !source_can_be_set.truthy() {` > `return Some(source_can_be_set);`  as above; PS: sim/battle.ts skillSwap
+mods/gen3/moves/skillswap.rs  `b.mon_mut(target).volatile_staleness = true;` > `}`  singles: the target is always a foe; PS: sim/battle.ts skillSwap
+mods/gen3/moves/spitup.rs  `0 => Some(Relay::FAIL),`  Spit Up's onTry fails without the stockpile volatile, before the callback; PS: data/mods/gen4/moves.ts spitup.onTry
+mods/gen3/moves/swallow.rs  `0 => 1,`  Swallow's onTry fails without the stockpile volatile, before onHit; PS: data/mods/gen4/moves.ts swallow.onTry
+mods/gen3/moves/trick.rs  `if mine_refused || yours.is_some_and(|i| !item_take_event(b, i, target, source, target, effect)) {` > `put_back(b, target, yours);` .. `return Some(Relay::FAIL);`  takeItem's TakeItem runEvent already asked the items: only Mail has onTakeItem in gen 3 and it answers by the move in flight alone, so the singleEvent agrees; PS: data/moves.ts trick.onHit, data/items.ts mail.onTakeItem
+mods/gen3/moves/trick.rs  `(None, None) => unreachable!("Trick with no item on either side"),`#1  unreachable!(): the no-item case failed above; PS: data/moves.ts trick.onHit
+mods/gen3/moves/trick.rs  `(None, None) => unreachable!("Trick with no item on either side"),`#2  as above; PS: data/moves.ts trick.onHit
+mods/gen3/moves/uproar.rs  `b.cure_status(ally, false);` > `}` > `}`  singles: the active slot is never empty when the move hits; PS: data/moves.ts uproar.onTryHit
+mods/gen3/moves/uproar.rs  `b.cure_status(foe_active, false);`  the user's own side holds only the user, which cannot be asleep while using Uproar (nosleeptalk); PS: data/moves.ts uproar.onTryHit (flags)
+mods/gen3/moves/uproar.rs  `b.cure_status(foe_active, false);` > `}` > `}`  singles: the slot is never empty; PS: data/moves.ts uproar.onTryHit
+mods/gen3/moves/weatherball.rs  `fn on_modify_type(b: &mut Battle, a: &EventArgs) -> Option<Relay> {` .. `}`  onModifyType body: gen 3 runs no ModifyType (see the handler entry); PS: data/mods/gen3/scripts.ts:163-170
+
+# ---- gen 3: lines (scripts.rs) ---------------------------------------------------
+mods/gen3/scripts.rs  `self.priority_event(event, Holder::Mon(target), source, effect, Some(relay), false)`  no caller asks number_event for a priority event (the accuracy events are runEvents); PS: data/mods/gen4/scripts.ts hitStepAccuracy, data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `Relay::Int(n) if value.is_none_or(|v| v == (v as i64) as f64) => Some(f64::from(n)),` .. `other => panic!("unported: {event:?} changed a fractional relay ({other:?})"),`  the accuracy relay is a float and no gen 3 accuracy handler answers an integer; PS: data/mods/gen3/scripts.ts tryMoveHit (accuracy events)
+mods/gen3/scripts.rs  `other => panic!("{event:?} answered {other:?}"),`  panic guard: a damage event answers a number; PS: data/mods/gen3/scripts.ts modifyDamage
+mods/gen3/scripts.rs  `accuracy *= BOOST_TABLE[boost as usize];`  no gen 3 effect raises accuracy (Hone Claws and Coil are gen 5); PS: data/mods/gen3/scripts.ts tryMoveHit (boostTable)
+mods/gen3/scripts.rs  `accuracy /= BOOST_TABLE[(-boost) as usize];` > `}` > `}`  no gen 3 move has ignoreAccuracy; PS: data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `accuracy *= BOOST_TABLE[(-boost) as usize];` > `}` > `}`  no gen 3 move has ignoreEvasion; PS: data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `b.set_active_move(Some(mv), Some(pokemon), Some(target));`@265 > `}`  the only gen 3 caller is a future move's hit, which passes notActive; PS: data/conditions.ts futuremove.onEnd, sim/battle-actions.ts trySpreadMoveHit
+mods/gen3/scripts.rs  `b.single_event(EventId::PrepareHit, own, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);`@273 > `}`  a future move's moveData has no handlers, so its Try is always truthy; PS: data/conditions.ts futuremove.onEnd (moveData), sim/battle-actions.ts trySpreadMoveHit
+mods/gen3/scripts.rs  `hit_result = b.run_event(EventId::PrepareHit, Holder::Mon(pokemon), Some(target), effect, None);`@276 > `}` .. `return hit_result == Relay::NotFail;`  no gen 3 effect answers PrepareHit falsy for a future move (the charge moves' onPrepareHit is their own); PS: sim/battle-actions.ts trySpreadMoveHit
+mods/gen3/scripts.rs  `if !move_result && !at_least_one_failure {` > `b.mon_mut(pokemon).move_this_turn_result = Some(Relay::Null);`  every hit step that stops a future move answers false; PS: sim/battle-actions.ts trySpreadMoveHit
+mods/gen3/scripts.rs  `fn hit_step_try_hit_event(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {` > `let mon = b.ident(pokemon);` .. `return MoveResult::False;`  no TryHit listener stops a future move's hit (its moveData is typeless and has no protect flag); PS: sim/battle-actions.ts hitStepTryHitEvent
+mods/gen3/scripts.rs  `fn hit_step_try_immunity(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {` > `let mon = b.ident(target);` .. `return MoveResult::False;`  the future move's moveData has no TryImmunity; PS: sim/battle-actions.ts hitStepTryImmunity
+mods/gen3/scripts.rs  `if !b.is_semi_invulnerable(target) {`@381 .. `accuracy = Some(30.0 + f64::from(b.mon(pokemon).level - b.mon(target).level));` .. `}`  a future move is not an OHKO move; PS: data/mods/gen4/scripts.ts hitStepAccuracy
+mods/gen3/scripts.rs  `fn hit_step_accuracy(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {` > `accuracy = None;`  no gen 3 move has alwaysHit; PS: data/mods/gen4/scripts.ts hitStepAccuracy
+mods/gen3/scripts.rs  `Some([lo, hi]) if lo == hi => u32::from(lo),` .. `Some([lo, hi]) => b.prng.random_range(u32::from(lo), u32::from(hi) + 1),`  a future move is not multi-hit; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `fn hit_step_move_hit_loop(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {` > `EffectId::Move(m) => b.dex.move_def(m).bools.has("sleepUsable"),`  a future move has no source effect; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `fn hit_step_move_hit_loop(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {` > `break;`  the loop's first pass never meets a false damage; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `fn hit_step_move_hit_loop(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {` > `break;` > `break;`  a future move's single hit is not stopped by its user's sleep (hit 1); PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `fn hit_step_move_hit_loop(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {` > `break;` > `break;` > `break;`  futuremove.onEnd hits only a target with HP; PS: data/conditions.ts futuremove.onEnd, sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `if bools(b, "multiaccuracy") && hit > 1 {` .. `let (md, t) = b.spread_move_hit::<Self>(targets_copy, pokemon, mv, data, false, false);`  a future move is not multi-hit (Triple Kick's multiaccuracy); PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `targets_copy = t;` > `break;`  a future move's single moveHit never answers false after its checks passed; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `if hit == 1 {` > `return MoveResult::False;`  as above: the one hit is always made; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `if hit == 1 {` > `if null_damage {` > `damage = MoveResult::False;`  a future move's hit always deals damage; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `if hit == 1 {` > `let mon = b.ident(target);` .. `b.add(Msg::HitCount { mon, count: (hit - 1) as u8 });`  a future move is not multi-hit; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `b.got_attacked(t, id, move_damage, pokemon);` > `}`  a future move never hits its own user; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `if b.mv(mv).ohko && b.mon(target).hp == 0 {`@508 > `b.add(Msg::Ohko);`  a future move is not an OHKO move; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `if b.mv(mv).ohko && b.mon(target).hp == 0 {`@508 > `return damage;`  a future move's hit always deals damage; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `b.run_event(EventId::EmergencyExit, Holder::Mon(target), Some(pokemon), EffectId::None, Some(Relay::Int(before)));` > `}` > `}`  no gen 3 Pokemon has Emergency Exit (gen 7), so the branch is never taken; PS: sim/battle-actions.ts hitStepMoveHitLoop
+mods/gen3/scripts.rs  `b.require_ported(b.mv(mv).effect());` > `}`  useMoveInner always runs a dex move (the data-only moves go to tryMoveHit directly); PS: data/mods/gen3/scripts.ts useMoveInner
+mods/gen3/scripts.rs  `if b.mon(pokemon).fainted {` > `return false;`  no gen 3 ModifyMove handler faints its user; PS: data/mods/gen3/scripts.ts:177-179
+mods/gen3/scripts.rs  `MoveTarget::All | MoveTarget::FoeSide | MoveTarget::AllySide | MoveTarget::AllyTeam => {`@670 > `b.mon_mut(pokemon).move_this_turn_result = Some(Relay::Null);`  no gen 3 field or side move answers NOT_FAIL from tryMoveHit; PS: data/mods/gen3/scripts.ts useMoveInner
+mods/gen3/scripts.rs  `MoveTarget::AllAdjacent | MoveTarget::AllAdjacentFoes => {`@680 > `b.attr_last_move(KwFlags::NOTARGET);` .. `return false;`  a faint skips every remaining action in gen 3 singles and a fainted foe is replaced before the next turn, so a spread move always has its target; PS: data/mods/gen3/scripts.ts useMoveInner, sim/battle.ts:2638-2648
+mods/gen3/scripts.rs  `damage = MoveResult::Int(damage.or_zero() + hit_result.or_zero());`  singles: the spread loop runs for one target; PS: data/mods/gen3/scripts.ts useMoveInner
+mods/gen3/scripts.rs  `damage = hit_result;`@697 > `}` .. `}`  no gen 3 spread move answers NOT_FAIL; PS: data/mods/gen3/scripts.ts useMoveInner
+mods/gen3/scripts.rs  `lacks_target = !b.is_adjacent(t, pokemon);` > `}` > `}` .. `return false;`  as the spread move: a single-target move always has a living, adjacent foe in gen 3 singles; PS: data/mods/gen3/scripts.ts useMoveInner, sim/battle.ts:2638-2648
+mods/gen3/scripts.rs  `let t = target.expect("a future move without a target");` > `b.mon_mut(pokemon).move_this_turn_result = Some(Relay::Null);`  no gen 3 single-target move answers NOT_FAIL from tryMoveHit; PS: data/mods/gen3/scripts.ts useMoveInner
+mods/gen3/scripts.rs  `b.run_event(EventId::AfterMoveSecondarySelf, Holder::Mon(pokemon), target, effect, None);` > `}`  Sheer Force is gen 5, so secondaries are never suppressed; PS: data/mods/gen3/scripts.ts useMoveInner
+mods/gen3/scripts.rs  `let event = if move_target == MoveTarget::All { EventId::TryHitField } else { EventId::TryHitSide };` > `if hit_result == Relay::FAIL {` .. `return MoveResult::False;`  no gen 3 TryHitField or TryHitSide listener answers falsy: Magic Coat's onAllyTryHitSide reflects only reflectable moves, and no gen 3 side or field move is reflectable; PS: data/mods/gen3/scripts.ts tryMoveHit, data/moves.ts magiccoat.condition.onAllyTryHitSide
+mods/gen3/scripts.rs  `if !b.is_semi_invulnerable(target) {`@827 > `}` > `}`  an OHKO move never gets past a semi-invulnerable target's Invulnerability check: Dig, Dive, Fly and Bounce let through only Earthquake and Magnitude, Surf and Whirlpool, and Gust, Twister, Thunder and Sky Uppercut; PS: data/mods/gen3/scripts.ts tryMoveHit, data/moves.ts dig.condition.onInvulnerability
+mods/gen3/scripts.rs  `// Bypasses the OHKO accuracy too.` > `accuracy = None;`  no gen 3 move has alwaysHit; PS: data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `if acc_pass {` > `if hit_result == Relay::FAIL {` > `let mon = b.ident(pokemon);` .. `b.attr_last_move_still();`  the TryHit runEvent has no onEffect, so the move's own onTryHit (the ones that answer false) is not in it, and no other gen 3 TryHit listener answers false (they answer null); PS: data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `} else if lo == 2 && hi == 5 {` > `} else {` > `b.prng.random_range(u32::from(lo), u32::from(hi) + 1)`  every gen 3 multi-hit range is [2, 5]; PS: data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `if !b.accuracy_roll(acc) {`@914 > `}` > `}` > `}`  no gen 3 move has alwaysHit; PS: data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `let move_damage = Self::move_hit(b, Some(target), pokemon, mv, data, false, false);` > `break;`  no gen 3 multi-hit move has a TryHit or other check that fails a later hit, and Substitute answers 0 for a damaging move; PS: data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `if i == 0 {` > `return MoveResult::False;`  the loop always makes its first hit: the target and the user have HP, and a sleeping user reaches a multi-hit move only through Sleep Talk; PS: data/mods/gen3/scripts.ts tryMoveHit
+mods/gen3/scripts.rs  `if i == 0 {` > `if null_damage {` > `damage = MoveResult::False;`  a multi-hit hit that lands always deals damage; PS: data/mods/gen3/scripts.ts tryMoveHit

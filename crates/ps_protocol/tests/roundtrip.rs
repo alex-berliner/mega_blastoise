@@ -550,3 +550,67 @@ fn an_empty_disabled_source_round_trips() {
     let (dex, battle) = state.split_mut();
     assert!(decode_request(&json.replace("\"disabledSource\":\"\"", "\"disabledSource\":\"Imprison\""), dex, battle).is_err());
 }
+
+/// The custom rules infobox echoes the rules as the `formatid` wrote them
+/// (`same type clause`, `Best of = 3`), so any text decodes and prints back.
+#[test]
+fn a_custom_rules_box_keeps_the_text_as_written() {
+    let mut state = CodecState::new(load_names());
+    for line in [
+        "|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>1 custom rule:</strong></summary> Best of = 3</details></div>",
+        "|raw|<div class=\"infobox\"><details class=\"readmore\" open><summary><strong>3 custom rules:</strong></summary> same type clause, max team size = 3, bestof = 3</details></div>",
+    ] {
+        let msg = decode_line(line, &mut state).unwrap();
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    }
+}
+
+/// The variant formats' `|rule|` lines decode to their rules.
+#[test]
+fn variant_rule_lines_round_trip() {
+    let mut state = CodecState::new(load_names());
+    for line in [
+        "|rule|Same Type Clause: Pokemon in a team must share a type",
+        "|rule|Blitz: Super-fast timer",
+        "|rule|Scalemons Mod: Every Pokemon's stats, barring HP, are scaled to come as close to a BST of 500 as possible",
+        "|rule|Scalemons Mod: Every Pokemon's stats, barring HP, are scaled to come as close to a BST of 600 as possible",
+        "|rule|350 Cup Mod: If a Pokemon's BST is 350 or lower, all of its stats get doubled.",
+        "|rule|Bad 'n Boosted Mod: All of a Pokemon's base stats below 70 are doubled.",
+    ] {
+        let msg = decode_line(line, &mut state).unwrap();
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    }
+}
+
+/// Team preview: `|clearpoke`, `|poke|` (with `item` or empty; one-sided
+/// under a bare Picked Team Size), `|teampreview|N`, the request and the
+/// `team` choice, as PS writes them.
+#[test]
+fn team_preview_lines_request_and_choice_round_trip() {
+    let mut state = CodecState::new(load_names());
+    for line in ["|clearpoke", "|poke|p1|Snorlax, L50, M|item", "|poke|p2|Starmie, L50|", "|teampreview|2", "|teampreview"] {
+        let msg = decode_line(line, &mut state).unwrap();
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    }
+    let mut msg = decode_line("|poke|p1|Pikachu, L50, F|", &mut state).unwrap();
+    if let Msg::Poke { split, .. } = &mut msg {
+        *split = true;
+    }
+    let log = ps_protocol::text::encode_log(&[msg], state.dex(), state.battle());
+    assert_eq!(log, "|split|p1\n|poke|p1|Pikachu, L50, F|\n");
+    assert!(decode_line("|poke|p1|Pikachu, L50, F|items", &mut state).is_err());
+
+    let json = r#"{"teamPreview":true,"maxChosenTeamSize":2,"side":{"name":"a","id":"p1","pokemon":[{"ident":"p1: Snorlax","details":"Snorlax, L50, M","condition":"235/235","active":true,"stats":{"atk":130,"def":85,"spa":85,"spd":130,"spe":50},"moves":["bodyslam","rest"],"baseAbility":"thickfat","item":"leftovers","pokeball":"pokeball"}]}}"#;
+    let (dex, battle) = state.split_mut();
+    let req = decode_request(json, dex, battle).unwrap();
+    assert_eq!(encode_request(&req, state.dex(), state.battle()), json);
+    let bare = json.replace(r#""maxChosenTeamSize":2,"#, "");
+    let (dex, battle) = state.split_mut();
+    let req = decode_request(&bare, dex, battle).unwrap();
+    assert_eq!(encode_request(&req, state.dex(), state.battle()), bare);
+
+    for line in [">p1 team 2134", ">p2 team 1, 5, 3, 2", ">p1 team [1,2]"] {
+        let cmd = decode_cmd_line(line).unwrap();
+        assert_eq!(encode_cmd_line(&cmd), line);
+    }
+}

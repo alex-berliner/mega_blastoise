@@ -81,6 +81,11 @@ pub enum Relay {
     /// `secondaries[i]` (Shield Dust filters the list; a handler returns
     /// a subset of the same objects).
     Secondaries(u8),
+    /// The species object of `ModifySpecies`, as far as a handler changes
+    /// it: the base stats (hp, atk, def, spa, spd, spe) and `bst`. A rule
+    /// (Scalemons Mod and the like) returns a deep clone with new numbers;
+    /// the next handler reads that one.
+    Species { base_stats: [u8; 6], bst: u16 },
 }
 
 impl Relay {
@@ -107,7 +112,7 @@ impl Relay {
                 let v = f64::from_bits(bits);
                 v != 0.0 && !v.is_nan()
             }
-            Relay::Secondaries(_) => true,
+            Relay::Secondaries(_) | Relay::Species { .. } => true,
         }
     }
 

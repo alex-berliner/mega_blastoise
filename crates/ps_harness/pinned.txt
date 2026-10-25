@@ -68,9 +68,9 @@
 # (checked by reverting each fix and re-running the lane). The wide
 # entries draw their teams from the ported pool, so they move whenever
 # `PORTED` grows; the random ones keep their teams.
-1 wide 85  # G1-1 tox's -damage line is `[from] psn`; `[of]` the foe on brn/psn damage; `immune to status` debug; residualdmg counts before the damage
-1 wide 194  # G1-1 Rest's `-heal ... [silent]`; tox's `[from] psn`; `immune to status` debug
-1 wide 2  # G1-1 `[of] <foe>` on the burn and poison -damage lines
+1 wide 1000021  # G1-1 tox's -damage line is `[from] psn`; `[of]` the foe on brn/psn damage; `immune to status` debug; residualdmg counts before the damage; G3-7 re-pick: 85 no longer caught it
+1 wide 1000017  # G1-1 Rest's `-heal ... [silent]`; tox's `[from] psn`; `immune to status` debug; G3-7 re-pick: 194 no longer caught it
+1 wide 1000002  # G1-1 `[of] <foe>` on the burn and poison -damage lines; G3-7 re-pick: 2 no longer caught it
 1 random 0  # G1-1 Sleep Clause Mod refuses a second sleeping foe; slp's `[from] move:` on -status
 1 random 21  # G1-1 Sleep Clause Mod; slp's `[from] move:` on -status
 
@@ -112,60 +112,60 @@
 # joined the gen 3 ported pool). Each entry fails with its bug put back
 # (checked with a mutant build per bug); like the other wide entries they
 # draw new teams whenever `ported(3)` grows.
-3 wide 150  # G3-1 tox's damage is `max(floor(baseMaxhp / 16), 1) * stage` (`clampIntRange` floors); was 1 HP high
-3 wide 257  # G3-1 tox's floored damage, a second team
-3 wide 13  # G3-1 the sandstorm/hail -damage line's `[from] Sandstorm` (crashed); also a confusion self-hit
-3 wide 12  # G3-1 confusion's self-hit: getDamage of a typeless number move runs `BasePower` without an onEffect handler (crashed)
+3 wide 1000039  # G3-1 tox's damage is `max(floor(baseMaxhp / 16), 1) * stage` (`clampIntRange` floors); was 1 HP high; G3-7 re-pick: 150 no longer caught it
+3 wide 1000116  # G3-1 tox's floored damage, a second team; G3-7 re-pick: 257 no longer caught it
+3 wide 1000001  # G3-1 the sandstorm/hail -damage line's `[from] Sandstorm` (crashed); also a confusion self-hit; G3-7 re-pick: 13 no longer caught it
+3 wide 1000005  # G3-1 confusion's self-hit: getDamage of a typeless number move runs `BasePower` without an onEffect handler (crashed); G3-7 re-pick: 12 no longer caught it
 
 # G3-M3: the volatile-control batch (Disable to Follow Me). Each entry fails
 # with its bug put back (a mutant build per bug); like the other wide
 # entries they draw new teams whenever `ported(3)` grows.
-3 wide 4  # G3-M3 non-Ghost Curse: ModifyMove's `target = 'self'` re-targets from the move object; the boosts come in onTryHit's key order (spe, atk, def); also G3-A2 Pressure's switch-in `-ability|...|[silent]` is a one-sided `addSplit` (`|split|pN`, the line, an empty line)
-3 wide 42  # G3-M3 Helping Hand in singles: `|move|MON|Helping Hand|null|[notarget]` (`${target}` of null)
-3 wide 145  # G3-M3 choosing an Imprison-disabled move: the re-sent request marks it disabled with `disabledSource: ''`; also G3-I2 White Herb checks its holder (`effectState.target`), not the onAnyAfterMove event's target
-3 wide 2  # G3-M3 Yawn's sleep with its user benched: a benched Pokemon has no slot conditions (crashed)
-3 wide 322  # G3-M3 Grudge's `pp = 0` lands on the shared base move slot, so it survives a switch
+3 wide 1000004  # G3-M3 non-Ghost Curse: ModifyMove's `target = 'self'` re-targets from the move object; the boosts come in onTryHit's key order (spe, atk, def); also G3-A2 Pressure's switch-in `-ability|...|[silent]` is a one-sided `addSplit` (`|split|pN`, the line, an empty line); G3-7 re-pick: 4 no longer caught it
+3 wide 1000063  # G3-M3 Helping Hand in singles: `|move|MON|Helping Hand|null|[notarget]` (`${target}` of null); G3-7 re-pick: 42 no longer caught it
+3 wide 1000186  # G3-M3 choosing an Imprison-disabled move: the re-sent request marks it disabled with `disabledSource: ''`; also G3-I2 White Herb checks its holder (`effectState.target`), not the onAnyAfterMove event's target (also the Transform knownType slip, G3-M5, which 222 no longer caught); G3-7 re-pick: 145 no longer caught it
+3 wide 1000011  # G3-M3 Yawn's sleep with its user benched: a benched Pokemon has no slot conditions (crashed); G3-7 re-pick: 2 no longer caught it
+3 wide 1000121  # G3-M3 Grudge's `pp = 0` lands on the shared base move slot, so it survives a switch; G3-7 re-pick: 322 no longer caught it
 
 # G3-A2: the switch-in, weather, immunity and trapping abilities. The
 # focused sweeps found no ps_sim divergence once the port ran, so each
 # entry is a wide seed that fails with one plausible slip put back
 # (checked with a mutant build per slip; the real build passes all four).
-3 wide 294  # G3-A2 Damp's `cant|...|[of] USER` with the move line `[still]`, its target blanked (`attrLastMove('[still]')`, not a bare flag)
-3 wide 3  # G3-A2 Trace's `side.randomFoe()` costs a PRNG call (`sample`) even with one foe
-3 wide 1115  # G3-A2 Synchronize passes bad poison back as regular poison
+3 wide 1000662  # G3-A2 Damp's `cant|...|[of] USER` with the move line `[still]`, its target blanked (`attrLastMove('[still]')`, not a bare flag); G3-7 re-pick: 294 no longer caught it
+3 wide 1000023  # G3-A2 Trace's `side.randomFoe()` costs a PRNG call (`sample`) even with one foe; G3-7 re-pick: 3 no longer caught it
+3 wide 1000710  # G3-A2 Synchronize passes bad poison back as regular poison; G3-7 re-pick: 1115 no longer caught it
 
 # G3-I2: the gen 3 berries and herbs, and every handler-free item, joined
 # the gen 3 ported pool (wide teams hold an item 40% of the time). Each
 # entry fails with its bug put back (a mutant build per bug).
 3 wide 5  # G3-I2 a berry's -heal line is `[from] item: Mago Berry` (battle.heal's default case); was plain
-3 wide 20  # G3-I2 Leppa Berry's `-activate|MON|item: Leppa Berry|MOVE|[consumed]`; also Wiki Berry's `[from] item:` heal
-3 wide 189  # G3-I2 White Herb on the holder after the foe's stat drop, a second team
+3 wide 20  # G3-I2 Wiki Berry's `[from] item:` heal (G3-7: the Leppa `[consumed]` slip moved to 1003078, which catches it)
+3 wide 1000085  # G3-I2 White Herb on the holder after the foe's stat drop, a second team; G3-7 re-pick: 189 no longer caught it
 
 # G3-M4: multi-turn and delayed moves (Bide, Uproar, Rollout, Ice Ball,
 # Fury Cutter, Rage, Charge, Focus Punch, the two-turn moves, Future
 # Sight, Doom Desire, Stockpile, Spit Up, Swallow, Pursuit, Beat Up).
 # Each entry fails with its bug put back (a mutant build per bug).
-3 wide 127  # G3-M4 a future move's benched user as an event source: `slotConditions[position]` past the active slots is no slot (crashed)
-3 wide 17  # G3-M4 a benched future-move user as an event source, a second team (crashed)
-3 wide 166  # G3-M4 a future move's miss appends a second `[miss]` to the turn's last `|move|` line (PS appends text; flags deduped)
-3 wide 894  # G3-M4 the second `[miss]` on another Pokemon's `|move|` line, a second team
+3 wide 1000013  # G3-M4 a future move's benched user as an event source: `slotConditions[position]` past the active slots is no slot (crashed); G3-7 re-pick: 127 no longer caught it
+3 wide 1000075  # G3-M4 a benched future-move user as an event source, a second team (crashed); G3-7 re-pick: 17 no longer caught it
+3 wide 1000595  # G3-M4 a future move's miss appends a second `[miss]` to the turn's last `|move|` line (PS appends text; flags deduped); G3-7 re-pick: 166 no longer caught it
+# G3-7 dropped 3 wide 894: no longer caught its slip; now the same slip as 1000595 (the only wide seed in 1,000 that catches it). Was:  # G3-M4 the second `[miss]` on another Pokemon's `|move|` line, a second team
 # G3-A1: the modifier and contact abilities. 7104 is a real bug the
 # unfocused sweep found (G3-I2's Leppa Berry with G3-M3's Grudge); the
 # others fail with one plausible slip of this batch put back (a mutant
 # build per slip; the real build passes all five).
-3 wide 7104  # G3-A1 Leppa Berry's +10 PP lands on the shared base move slot too, so it survives a switch (after Grudge's PP 0)
-3 wide 81  # G3-A1 Serene Grace doubles this use's secondary chances
-3 wide 87  # G3-A1 Shield Dust keeps only the `self` secondaries
-3 wide 14  # G3-A1 gen 3 accuracy is a JS number: a fractional one takes no event modifier (runEvent's whole-number check)
-3 wide 10  # G3-A1 Clear Body / White Smoke print no `-fail` for a move with secondaries
+3 wide 1003078  # G3-A1 Leppa Berry's +10 PP lands on the shared base move slot too, so it survives a switch (after Grudge's PP 0); G3-7 re-pick: 7104 no longer caught it
+3 wide 1000021  # G3-A1 Serene Grace doubles this use's secondary chances; G3-7 re-pick: 81 no longer caught it
+3 wide 1000102  # G3-A1 Shield Dust keeps only the `self` secondaries; G3-7 re-pick: 87 no longer caught it
+3 wide 1000006  # G3-A1 gen 3 accuracy is a JS number: a fractional one takes no event modifier (runEvent's whole-number check); G3-7 re-pick: 14 no longer caught it
+3 wide 1000282  # G3-A1 Clear Body / White Smoke print no `-fail` for a move with secondaries; G3-7 re-pick: 10 no longer caught it
 
 # G3-M5: the call and copy moves (Assist to Snatch). Each entry fails with
 # its bug put back (a mutant build per bug); like the other wide entries
 # they draw new teams whenever `ported(3)` grows.
-3 wide 69  # G3-M5 Sketch's new move slot has no `target` key, so the request leaves it out
+3 wide 1000022  # G3-M5 Sketch's new move slot has no `target` key, so the request leaves it out; G3-7 re-pick: 69 no longer caught it
 3 wide 70  # G3-M5 Mimic's new move slot has no `target` key either; also G3-M6 Thief's `-enditem ... [silent]|[from] move: Thief|[of] SOURCE` before its `-item`
-3 wide 222  # G3-M5 Transform leaves the foe's copied types unknown (`knownType` false): a foe's Magnet Pull then sets `maybeTrapped` on a non-Steel user
-3 wide 4502  # G3-M5 Conversion 2 reads the type of the move object `lastMoveUsed` holds, after Hidden Power's `ModifyMove`
+# G3-7 dropped 3 wide 222: no longer caught its slip; now merged into 1000186, which catches this slip too. Was:  # G3-M5 Transform leaves the foe's copied types unknown (`knownType` false): a foe's Magnet Pull then sets `maybeTrapped` on a non-Steel user
+3 wide 1001508  # G3-M5 Conversion 2 reads the type of the move object `lastMoveUsed` holds, after Hidden Power's `ModifyMove`; G3-7 re-pick: 4502 no longer caught it
 
 # G3-M6: item moves, Counter, Mirror Coat and the rest (Trick, Knock Off,
 # Thief, Covet, Recycle, Baton Pass, Spite, Fake Out, Dream Eater, Toxic).
@@ -173,34 +173,34 @@
 # after Helping Hand's `[notarget]`); the others fail with one plausible
 # slip of this batch put back (a mutant build per slip; the real build
 # passes all five).
-3 wide 1481  # G3-M6 a future move's `[miss]` after `[notarget]` on the turn's last `|move|` line renders last (PS appends text)
-3 wide 418  # G3-M6 Trick's `-enditem|MON|ITEM|[silent]|[from] move: Trick` (flags first); Spite's 2-5 PP roll
+# G3-7 dropped 3 wide 1481: no longer caught its slip; now the same slip as 1000595. Was:  # G3-M6 a future move's `[miss]` after `[notarget]` on the turn's last `|move|` line renders last (PS appends text)
+3 wide 1000034  # G3-M6 Trick's `-enditem|MON|ITEM|[silent]|[from] move: Trick` (flags first); Spite's 2-5 PP roll; G3-7 re-pick: 418 no longer caught it
 3 wide 609  # G3-M6 Trick's silent `-enditem`, a second team; Fake Out fails after the first action
-3 wide 39  # G3-M6 Counter returns twice the damage it recorded
+3 wide 1000153  # G3-M6 Counter returns twice the damage it recorded; G3-7 re-pick: 39 no longer caught it
 
-3 wide 176  # G3-I1 King's Rock's list ends with Wrap (a draft left it out: no flinch roll, one PRNG call short)
-3 wide 162  # G3-I1 Shell Bell heals `max(1, totalDamage / 8)` (battle.heal raises a fraction up to 1) with `[of]` the move's target
-3 wide 1934  # G3-I1 Bright Powder / Lax Incense keep the accuracy a JS double; truncating it to an integer changes a hit roll
+# G3-7 dropped 3 wide 176: no longer caught its slip; now targeted battle kingsrock_wrap. Was:  # G3-I1 King's Rock's list ends with Wrap (a draft left it out: no flinch roll, one PRNG call short)
+3 wide 1000155  # G3-I1 Shell Bell heals `max(1, totalDamage / 8)` (battle.heal raises a fraction up to 1) with `[of]` the move's target; G3-7 re-pick: 162 no longer caught it
+3 wide 1000027  # G3-I1 Bright Powder / Lax Incense keep the accuracy a JS double; truncating it to an integer changes a hit roll; G3-7 re-pick: 1934 no longer caught it
 3 wide 60  # G3-I1 Focus Band rolls `randomChance(1, 10)` on every damage before it checks the damage or the effect
-3 wide 58510  # G3-I1r2 a future move's `[miss]` appended after a Helping Hand's `[notarget]` (PS appends; the flags render `[notarget]` before `[miss]`)
-3 wide 304  # G3-I1r2 Focus Band saves from confusion's self-hit (PS passes `{id: 'confused', effectType: 'Move'}`)
-3 wide 6444  # G3-I1r2 Leppa Berry's PP lands on the slot `baseMoveSlots` shares, so it outlasts a switch
-3 wide 4280  # G3-I1r2 King's Rock's list ends with Wrap (176 plays other teams since G3-M4 grew the pool)
-3 wide 3090  # G3-I1r2 King's Rock's flinch rolls after the move's own secondaries
+# G3-7 dropped 3 wide 58510: no longer caught its slip; now the same slip as 1000595. Was:  # G3-I1r2 a future move's `[miss]` appended after a Helping Hand's `[notarget]` (PS appends; the flags render `[notarget]` before `[miss]`)
+# G3-7 dropped 3 wide 304: no longer caught its slip; now targeted battle focusband_confusion. Was:  # G3-I1r2 Focus Band saves from confusion's self-hit (PS passes `{id: 'confused', effectType: 'Move'}`)
+3 wide 1003251  # G3-I1r2 Leppa Berry's PP lands on the slot `baseMoveSlots` shares, so it outlasts a switch; G3-7 re-pick: 6444 no longer caught it
+# G3-7 dropped 3 wide 4280: no longer caught its slip; now targeted battle kingsrock_wrap. Was:  # G3-I1r2 King's Rock's list ends with Wrap (176 plays other teams since G3-M4 grew the pool)
+3 wide 1000689  # G3-I1r2 King's Rock's flinch rolls after the move's own secondaries; G3-7 re-pick: 3090 no longer caught it
 3 wide 557  # G3-I1r2 Shell Bell heals `max(1, totalDamage / 8)` with `[of]` the target (162 plays other teams now)
-3 wide 645  # G3-I1r2 Bright Powder / Lax Incense keep the accuracy a JS double (1934 plays other teams now)
-3 wide 209  # G3-I1r2 Focus Band rolls before it checks the damage (60 plays other teams now)
-3 wide 2071  # G3-I1r3 Shield Dust filters King's Rock's added flinch (the ModifySecondaries mask covers the dex's secondaries, then the added one)
-3 wide 9700069  # G3-I1r4 Shell Bell reads the event's own move, not `activeMove`: Nature Power's Swift heals once
+3 wide 1000268  # G3-I1r2 Bright Powder / Lax Incense keep the accuracy a JS double (1934 plays other teams now); G3-7 re-pick: 645 no longer caught it
+3 wide 1000127  # G3-I1r2 Focus Band rolls before it checks the damage (60 plays other teams now); G3-7 re-pick: 209 no longer caught it
+3 wide 1000194  # G3-I1r3 Shield Dust filters King's Rock's added flinch (the ModifySecondaries mask covers the dex's secondaries, then the added one); G3-7 re-pick: 2071 no longer caught it
+3 wide 1001311  # G3-I1r4 Shell Bell reads the event's own move, not `activeMove`: Nature Power's Swift heals once; G3-7 re-pick: 9700069 no longer caught it
 # G3-M2: protection, side conditions and healing. Each entry fails with its
 # bug put back (a mutant build per bug); like the other wide entries they
 # draw new teams whenever `ported(3)` grows. Re-picked after the rebase onto
 # G3-M6 and G3-I1 (the old seeds drew other teams).
-3 wide 1964  # G3-M2 Reflect / Light Screen read the move being calculated, not the active move: Future Sight rolls its damage on a plain moveData object with no id
-3 wide 2254  # G3-M2 the same screens slip, in another team draw
-3 wide 15  # G3-M2 a move's own condition has its bare name as fullname: Ingrain's heal is `[from] Ingrain`, not `[from] move: Ingrain`
-3 wide 47  # G3-M2 the same fullname slip on Spikes' entry damage (`[from] Spikes`)
-3 wide 22  # G3-M2 Rapid Spin's `self` moveHit runs TryHit on the `self` object, which has only onHit (the slip panics as unported, so check's --allow-unported shows it as an unported count)
+# G3-7 dropped 3 wide 1964: no longer caught its slip; now targeted battle lightscreen_futuresight. Was:  # G3-M2 Reflect / Light Screen read the move being calculated, not the active move: Future Sight rolls its damage on a plain moveData object with no id
+# G3-7 dropped 3 wide 2254: no longer caught its slip; now targeted battle lightscreen_futuresight. Was:  # G3-M2 the same screens slip, in another team draw
+3 wide 1000144  # G3-M2 a move's own condition has its bare name as fullname: Ingrain's heal is `[from] Ingrain`, not `[from] move: Ingrain`; G3-7 re-pick: 15 no longer caught it
+3 wide 1000002  # G3-M2 the same fullname slip on Spikes' entry damage (`[from] Spikes`); G3-7 re-pick: 47 no longer caught it
+3 wide 1000029  # G3-M2 Rapid Spin's `self` moveHit runs TryHit on the `self` object, which has only onHit (the slip panics as unported, so check's --allow-unported shows it as an unported count); G3-7 re-pick: 22 no longer caught it
 
 
 # G3-M1: the power and damage callbacks. Each entry fails with one slip
@@ -211,3 +211,13 @@
 3 wide 190  # G3-M1 Low Kick prints `BP: N`
 3 wide 9  # G3-M1 Revenge prints `BP doubled for getting hit by p1a: NAME`
 3 wide 253  # G3-M1 Present's heal case is the move in flight's `move.heal` (`-fail|MON|heal` on a full target)
+
+# G3-7: the wide teams are stable now that both gens are fully ported, so
+# every wide entry above was re-checked with its slip put back (one mutant
+# build per slip, `.scratch/mut` in the G3-7 run). An entry that no longer
+# caught its slip was re-picked from the coverage gates' clean range
+# (seeds 1000000 up, `ps-coverage.sh`), or dropped where a targeted battle
+# now covers the slip (`crates/ps_harness/targeted/gen3.json`). The G1-3
+# lane entries (0, 42, 137, 999) name no slip and stay as they were;
+# G3-M1's four (114, 190, 9, 253) still catch theirs.
+1 wide 1000020  # G1-1 `immune to status` debug (G3-7: 85 and 194 no longer caught it)

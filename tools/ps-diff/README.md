@@ -29,12 +29,11 @@ the same logic breaks one of them, the harness fails at that exact
 seed with full divergence context. Empty / comment-only files print one
 summary line and exit 0 (the green path for "no pinned regressions yet").
 
-`--carried gen1` replays the carried corpus: the old engines' pinned
+`--carried gen1|gen3` replays the carried corpus: the old engines' pinned
 battles (below), every team pair over battle seeds 0..19.
 
-`--targeted gen1` plays the targeted battles (below): hand-made team
-pairs with fixed choices that reach the Gen 1 paths random teams never
-do.
+`--targeted gen1|gen3` plays the targeted battles (below): hand-made team
+pairs with fixed choices that reach the paths random teams never do.
 
 `--trunc cartridge|math` picks the Gen 1 rule set (below); every mode
 takes it, `--self` included.
@@ -44,7 +43,13 @@ choices each replay's `inputlog` recorded: the pinned PS on the left,
 `ps_sim_cli` on the right with the team PS generated (packed). A choice
 `ps_sim` rejects is a diff. `--validated` keeps only the replays
 `replays.js validate` kept; `--format` takes one format id or a comma list.
-The corpus comes from `replays.js` (below, Replays).
+The corpus comes from `replays.js` (below, Replays). The variant formats
+public servers run (`gen3randombattle@@@Best of = 3`, `@@@Scalemons Mod`,
+`@@@sametypeclause,pickedteamsize=4,team preview`, ...) play like the plain
+ones: a rule is looked up by the id of its name, as PS's `validateRule`
+does, and `ps_sim` takes every rule the corpus uses (`ps_protocol::RuleId`).
+A replay whose generated team is larger than six (`Max Team Size = 24`) is
+skipped as `team-over-cap`: `ps_sim` holds six Pokemon a side.
 
 `--hits FILE` (against a `ps_sim_cli` built with the `hit-count`
 feature) has every `ps_sim_cli` write its per-handler hit counts to
@@ -186,31 +191,36 @@ the battle `unported: <id>` like any other effect.
 
 ## Carried corpus
 
-`crates/ps_harness/carried/gen1/*.json` carries the old Gen 1 engine's
-pinned corpus over to this harness. Each file is one `fuzz_gen1_battles`
-entry of `crates/mega_blastoise_test/pinned_seeds.txt` as it stood before
-G1-10 (which deleted that engine, its suite and those entries), named the way
+`crates/ps_harness/carried/gen1/*.json` and `carried/gen3/*.json` carry
+the old engines' pinned corpora over to this harness. Each file is one
+`fuzz_gen1_battles` (or `fuzz_gen3_battles`) battle entry of
+`crates/mega_blastoise_test/pinned_seeds.txt` as it stood before G1-10 and
+G3-9 (which delete those engines, their suites and those entries), named the way
 `scripts/pinned-seeds.sh` names its logs
 (`fuzz_gen1_battles_w<wide>_s<seed>[_c<case>][_only].json`), holding every
 case's two teams (one case with `case=`) as PS sets: a header line naming
 the run (`suite`, `gen`, `seed`, `wide`, `fuzz_n`, `case`, `only`), then one
 `{"case", "p1", "p2", "status"}` object a line. `status` is the case's
 starting statuses, which are not a set field; the carried run does not
-apply them. Gen 1 sets name `noability` (an empty ability unpacks to the
-species' later-gen one).
+apply them, nor the old suites' scripted rolls. Gen 1 sets name
+`noability` (an empty ability unpacks to the species' later-gen one); gen
+3 sets name their ability, `noability` for the old suite's "none", and
+spell out what the old harness left implicit (Hardy, every IV 31, no EVs:
+`teamMon` in `tools/showdown-parity/harness.js`). The gen 3 dex carries
+`noability` for that (PS marks it `Past`; a custom game takes it).
 
 The files came from the fuzz suite itself: `FUZZ_DUMP=<path>` made
-`fuzz_gen1_battles` play every case's own side (the generator stream
-unchanged) and write the teams instead of asking the reference, and
-`scripts/carried-dump.sh` dumped every entry. Both went with the legacy
-Gen 1 engine in G1-10, so the corpus is frozen: it can no longer be
-re-dumped, and new Gen 1 findings go to the protocol diff's own pinned
-list, `crates/ps_harness/pinned.txt`.
+`fuzz_gen1_battles` (and `fuzz_gen3_battles`) play every case's own side (the
+generator stream unchanged) and write the teams instead of asking the
+reference, and `scripts/carried-dump.sh` dumped every entry. Both went with
+the legacy Gen 1 engine in G1-10, so the corpus is frozen: it can no longer
+be re-dumped, and new findings go to the protocol diff's own pinned list,
+`crates/ps_harness/pinned.txt`.
 
-`--carried gen1` (PS against itself without `--ps-cli`, like `--pinned`)
+`--carried genN` (PS against itself without `--ps-cli`, like `--pinned`)
 reads the files in name order and plays each distinct team pair (a `case=`
 entry inside a whole-seed one is played once, under the first name) as a
-`gen1customgame` over driver seeds 0..19: the battle and choice seeds come
+`genNcustomgame` over driver seeds 0..19: the battle and choice seeds come
 from the driver seed as usual, the team seed is unused. `--seed S` plays
 only seed S of every pair; `--carried-pair <file>#<case>` (for example
 `fuzz_gen1_battles_w1_s7132#4`) only that pair. A carried log is named
@@ -223,24 +233,31 @@ scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" \
   --carried-pair 'fuzz_gen1_battles_w1_s7132#4' --seed 3 --jobs 1
 ```
 
-The carried run is part of the Gen 1 phase gate (after G1-7), not of
-`scripts/check.sh` yet.
+The carried runs are part of each gen's phase gate (Gen 1 after G1-7,
+Gen 3 after G3-7: 3,308 distinct pairs, 66,160 battles), not of
+`scripts/check.sh`.
 
 ## Targeted battles
 
-`crates/ps_harness/targeted/gen1.json` holds battles built to reach one
-path each that the random and wide sweeps never run (Recover's 255/511
-failure, the `nomove` Fissure, a defense that rolls over to 0, and so on).
-It is a JSON array, one entry a line:
+`crates/ps_harness/targeted/gen1.json` and `gen3.json` hold battles built
+to reach one path each that the random and wide sweeps never run, or run
+too rarely (Recover's 255/511 failure, the `nomove` Fissure, a defense that
+rolls over to 0; gen 3's status berries, Role Play into Oblivious, a
+Starf Berry with every stat at +6, and so on). Each is a JSON array, one
+entry a line:
 
 ```
-{"name", "covers", "seed", "trunc"?, "p1", "p2", "choices", "expect"}
+{"name", "covers", "seed", "trunc"?, "rules"?, "p1", "p2", "choices", "expect"}
 ```
 
 - `covers`: the `ps_sim` lines the battle is there for, and the PS source.
 - `p1`, `p2`: lists of PS sets. A set gives `species` and `moves`, and may
-  give `level`, `evs`, `ivs`; the rest defaults to level 100, every EV 255,
-  every IV 30 and ability `noability` (the carried sets' defaults).
+  give any other set field; the rest defaults to level 100 and ability
+  `noability`, and in gen 1 every EV 255 and every IV 30 (the carried
+  sets' defaults), in gen 3 nature Hardy, every IV 31 and no EVs.
+- `rules`: custom rules added to the format, as a `formatid` writes them
+  after `@@@` (`["Beat Up Nicknames Mod"]`, `["Scalemons Mod", "Guaranteed
+  Secondary Mod"]`).
 - `seed`: the driver seed. The battle and choice seeds come from it as
   usual (Seed derivation); the team seed is unused.
 - `choices`: `[p1, p2]` rows, `null` for a side that does not choose in
@@ -257,28 +274,31 @@ It is a JSON array, one entry a line:
   defense rollover is the cartridge's 8-bit truncation); it plays that
   one whatever `--trunc` says. The others play the run's `--trunc`.
 
-Each battle is a `gen1customgame` (no clauses). `--targeted-name <name>`
+Each battle is a `gen1customgame` or `gen3customgame` (no clauses) plus
+its `rules`. `--targeted-name <name>`
 plays one entry; with `--seed S` it plays that entry at driver seed S,
 which is how a seed was found for each: play the entry over a seed range
 on PS alone and keep one whose log has every `expect` line. Divergence
 logs are `ps-diff-targeted-<name>-<seed>.log`.
 
-`scripts/check.sh` plays the targeted battles against `ps_sim_cli` in
-both rule sets, and the coverage gate's sweep includes them (both rule
-sets), so the lines they reach count as covered. A line that only a
-targeted battle runs needs an entry here; a line Showdown cannot reach in
-Gen 1 goes in `crates/ps_harness/coverage-allow.txt` instead.
+`scripts/check.sh` plays the targeted battles against `ps_sim_cli` (gen
+1's in both rule sets), and the coverage gate's sweep includes them, so
+the lines they reach count as covered, and a handler one of them runs
+passes the hit gate (status `targeted`). A line that only a targeted
+battle runs needs an entry here; a line Showdown cannot reach in that gen
+goes in `crates/ps_harness/coverage-allow.txt` instead.
 
 ## Coverage gate
 
 `scripts/ps-coverage.sh` (V-1) builds `ps_sim_cli` with the `hit-count`
 feature under `cargo llvm-cov` and plays the gate sweep against it: by
-default 10,000 `--teams random` and 10,000 `--teams wide` Gen 1 battles
-from seed 1000000, plus (Gen 1) the targeted battles in both rule sets
-(`--no-targeted` leaves them out). Every `ps_sim_cli` writes its hit
+default 10,000 `--teams random` and 10,000 `--teams wide` battles of the
+gen from seed 1000000, plus the gen's targeted battles (Gen 1's in both
+rule sets; `--no-targeted` leaves them out). Every `ps_sim_cli` writes its hit
 counts with `--hits`. It then prints the per-handler hit table and the
 line coverage of `crates/ps_sim/src/mods/genN/**`, and passes when every
-registered handler ran in at least 20 battles and every line ran or is
+registered handler ran in at least 20 battles (or in a targeted battle)
+and every line ran or is
 in `crates/ps_harness/coverage-allow.txt` (each entry with its reason and
 the PS line). `--report-only` re-prints the tables after an allow-list
 edit; reports land in `.scratch/coverage/gen<N>/`.

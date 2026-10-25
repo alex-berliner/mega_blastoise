@@ -606,7 +606,8 @@ impl Stream {
 }
 
 /// A singles choice, PS grammar (`move 1`, `move NAME`, `switch 2`,
-/// `switch NAME`, `pass`, `default`, `undo`).
+/// `switch NAME`, `pass`, `default`, `undo`, and the team preview pick
+/// `team DATA`, read by the sim's `chooseTeam`).
 ///
 /// The names are PS's: the replay corpus records the choice the player
 /// typed (`move submission`), and PS resolves it against the request's
@@ -614,6 +615,10 @@ impl Stream {
 /// `ps_sim`'s choice layer implements that resolution, so the name goes
 /// through unchanged.
 fn parse_choice(text: &str) -> Option<Choice> {
+    // `input.startsWith('team ')`: one chunk, commas and all.
+    if let Some(data) = text.strip_prefix("team ") {
+        return Some(Choice::Team(Name::from_str(data.trim()).ok()?));
+    }
     let (kind, arg) = text.trim().split_once(' ').unwrap_or((text.trim(), ""));
     let arg = arg.trim();
     Some(match kind {

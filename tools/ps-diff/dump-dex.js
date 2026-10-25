@@ -570,6 +570,15 @@ function dumpGen(gen) {
 	if (!same(moves, dex.moves.all().filter(standard))) fail(gen, 'moves order');
 	if (!same(items, dex.items.all().filter(standard))) fail(gen, 'items order');
 	if (!same(abilities, dex.abilities.all().filter(standard))) fail(gen, 'abilities order');
+	// `No Ability` is 'Past' from gen 3 on, but a custom game takes it (the
+	// validator lets any ability through there), and the carried gen 3
+	// corpus names it for a mon with none, as the old harness did. It goes
+	// last, so every standard ability keeps its id.
+	if (!abilities.some(([k]) => k === 'noability')) {
+		const none = dex.abilities.getByID('noability');
+		if (!none.exists) fail(gen, 'no noability');
+		abilities.push(['noability', none]);
+	}
 
 	const out = { gen: dex.gen, psVersion: PS_VERSION, psCommit: PS_COMMIT };
 	out.species = species.map(([k, s]) => dumpSpecies(k, s));

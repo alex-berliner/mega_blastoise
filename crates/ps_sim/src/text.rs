@@ -55,4 +55,7 @@ impl BattleNames for Names<'_> {
     fn nickname(&self, side: SideId, slot: u8) -> &str {
         self.0.sides[side.index()].mons[slot as usize].name.as_str()
     }
+    fn custom_rule(&self, i: u8) -> &str {
+        self.0.format_spec.custom_rules.get(i as usize).map_or("", |r| r.text.as_str())
+    }
 }

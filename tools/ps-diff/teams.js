@@ -120,16 +120,19 @@ function readCarried(dir) {
 }
 
 /// The targeted battles (diff.js `--targeted`): a JSON array of
-/// `{name, covers, seed, trunc?, p1, p2, choices, expect?}`. A side is a list
-/// of PS sets; a set names its `species` and `moves` and may give `level`,
-/// `evs` and `ivs` (default level 100, every EV 255, every IV 30, ability
-/// `noability`, as the carried sets). Returns the entries with `packed`.
-function readTargeted(file) {
+/// `{name, covers, seed, trunc?, rules?, p1, p2, choices, expect?}`
+/// (`rules`: custom rules added to the format, as after `@@@`). A side is a list
+/// of PS sets; a set names its `species` and `moves` and may give any other
+/// set field. Defaults: level 100 and ability `noability` (as the carried
+/// sets); gen 1 every EV 255 and every IV 30 (the cartridge's maximum),
+/// gen 3 nature Hardy, every IV 31 and no EVs. Returns the entries with
+/// `packed`.
+function readTargeted(file, gen = 1) {
   if (!fs.existsSync(file)) throw new Error(`no targeted battles at ${file}`);
   const all = (n) => ({ hp: n, atk: n, def: n, spa: n, spd: n, spe: n });
-  const set = (m) => ({
-    ability: 'noability', level: 100, evs: all(255), ivs: all(30), ...m,
-  });
+  const set = gen === 1
+    ? (m) => ({ ability: 'noability', level: 100, evs: all(255), ivs: all(30), ...m })
+    : (m) => ({ ability: 'noability', level: 100, nature: 'Hardy', evs: all(0), ivs: all(31), ...m });
   const list = JSON.parse(fs.readFileSync(file, 'utf8'));
   const names = new Set();
   for (const t of list) {

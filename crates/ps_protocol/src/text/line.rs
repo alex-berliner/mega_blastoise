@@ -16,14 +16,14 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::command::{FormatId, RuleId};
+use crate::command::{FormatId, RuleId, MAX_CUSTOM_RULES, RULE_TEXT_CAP};
 use crate::ident::{
     AbilityNum, Details, Gender, Health, Hp, PokemonIdent, SideId, SpeciesNum, Stat, Status,
 };
 use crate::msg::{
     Arg, ArgValue, GameType, Kw, KwFlags, KwPart, Msg, Text, TextArg, TextArgKind, TextId, Weather, Word,
 };
-use crate::{BattleNames, DexNames, Name};
+use crate::{BattleNames, BoundedStr, DexNames, Name};
 
 /// A codec error.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -118,6 +118,7 @@ fn render_textarg(a: crate::msg::TextArg, dex: &dyn DexNames, names: &dyn Battle
         V::Rule(r) => r.name().to_string(),
         V::Repeal(r) => alloc::format!("!{}", r.name()),
         V::Player(side) => names.player_name(side).to_string(),
+        V::CustomRule(i) => names.custom_rule(i).to_string(),
     }
 }
 
@@ -195,6 +196,10 @@ pub fn encode_log(msgs: &[Msg], dex: &dyn DexNames, names: &dyn BattleNames) -> 
                         out.push(enc(&secret));
                         out.push(String::new());
                     }
+                    Msg::Poke { side, details, item, .. } => {
+                        out.push(enc(&Msg::Poke { side: *side, details: *details, item: *item, split: false }));
+                        out.push(String::new());
+                    }
                     _ => {
                         out.push(enc(&with_health(m, Health::secret)));
                         out.push(enc(&with_health(m, Health::shared)));
@@ -242,6 +247,18 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
         Msg::TeamSize { side, size } => {
             push_arg(buf, side.as_str());
             push_arg(buf, &size.to_string());
+        }
+        Msg::ClearPoke => {}
+        Msg::Poke { side, details, item, split: _ } => {
+            push_arg(buf, side.as_str());
+            // PS drops `, shiny` from the preview's details.
+            push_arg(buf, &details_str(Details { shiny: false, ..*details }, dex, names));
+            push_arg(buf, if *item { "item" } else { "" });
+        }
+        Msg::TeamPreview(n) => {
+            if let Some(n) = n {
+                push_arg(buf, &n.to_string());
+            }
         }
         Msg::Split(side) => push_arg(buf, side.as_str()),
         Msg::Gen(n) => push_arg(buf, &n.to_string()),
@@ -589,6 +606,7 @@ impl BattleNames for NoopNames {
     fn player_avatar(&self, _: SideId) -> &str { "" }
     fn player_rating(&self, _: SideId) -> &str { "" }
     fn nickname(&self, _: SideId, _: u8) -> &str { "" }
+    fn custom_rule(&self, _: u8) -> &str { "" }
 }
 
 // ============================================================================
@@ -624,6 +642,21 @@ fn decode_kind(kind: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle
         }
         "teamsize" => Ok(Msg::TeamSize { side: parse_side(arg(args, 0)?)?, size: parse_u8(arg(args, 1)?, "teamsize")? }),
         "split" => Ok(Msg::Split(parse_side(arg(args, 0)?)?)),
+        "clearpoke" => Ok(Msg::ClearPoke),
+        // A one-sided poke's `|split|pN` comes on the line before, as its own
+        // `Msg::Split`; this line alone is the unsplit form.
+        "poke" => {
+            let item = match arg(args, 2)? {
+                "item" => true,
+                "" => false,
+                other => return Err(CodecError::BadArg(format!("poke item {:?}", other))),
+            };
+            Ok(Msg::Poke { side: parse_side(arg(args, 0)?)?, details: parse_details(arg(args, 1)?, dex, names)?, item, split: false })
+        }
+        "teampreview" => Ok(Msg::TeamPreview(match args.first() {
+            None => None,
+            Some(n) => Some(parse_u8(n, "teampreview")?),
+        })),
         "gen" => Ok(Msg::Gen(parse_u8(arg(args, 0)?, "gen")?)),
         "tier" => Ok(Msg::Tier(parse_tier(arg(args, 0)?)?)),
         "rule" => Ok(Msg::Rule(parse_rule(arg(args, 0)?)?)),
@@ -1148,7 +1181,7 @@ fn match_template(id: TextId, s: &str, dex: &dyn DexNames, names: &mut Battle) -
         // An argument ends at the next literal piece (the end of the text
         // for a trailing argument).
         let end = if lit.is_empty() { rest.len() } else { rest.find(lit)? };
-        args[i] = parse_text_arg(kind, &rest[..end], dex, names)?;
+        args[i] = parse_text_arg(kind, i as u8, &rest[..end], dex, names)?;
         rest = &rest[end + lit.len()..];
     }
     if !rest.is_empty() {
@@ -1157,7 +1190,8 @@ fn match_template(id: TextId, s: &str, dex: &dyn DexNames, names: &mut Battle) -
     Some(Text { id, args })
 }
 
-fn parse_text_arg(kind: TextArgKind, s: &str, dex: &dyn DexNames, names: &mut Battle) -> Option<TextArg> {
+/// Argument `i` of a text, of kind `kind`.
+fn parse_text_arg(kind: TextArgKind, i: u8, s: &str, dex: &dyn DexNames, names: &mut Battle) -> Option<TextArg> {
     Some(match kind {
         TextArgKind::Int => {
             let n: i32 = s.parse().ok()?;
@@ -1187,7 +1221,12 @@ fn parse_text_arg(kind: TextArgKind, s: &str, dex: &dyn DexNames, names: &mut Ba
         }
         TextArgKind::Status => TextArg::status(Status::parse(s)?),
         TextArgKind::Word => TextArg::word(Word::parse(s)?),
-        TextArgKind::Rule => TextArg::custom_rule(crate::command::CustomRule::parse(s)?),
+        // The infobox echoes the custom rules as the `formatid` wrote them;
+        // the battle's rules come from `|rule|` lines, so any text is taken.
+        TextArgKind::Rule => {
+            names.set_custom_rule(i, s)?;
+            TextArg::custom_rule(i)
+        }
         TextArgKind::Player => TextArg::player(parse_win_side(s, names)),
     })
 }
@@ -1369,6 +1408,8 @@ fn parse_activate_detail(s: &str, dex: &dyn DexNames) -> Result<(Arg, bool), Cod
 pub struct Battle {
     players: [PlayerInfo; 2],
     nicks: [Vec<Name>; 2],
+    /// The custom rules as the infobox wrote them.
+    custom_rules: [BoundedStr<RULE_TEXT_CAP>; MAX_CUSTOM_RULES],
 }
 
 impl Battle {
@@ -1376,7 +1417,13 @@ impl Battle {
         Self {
             players: [PlayerInfo::default(), PlayerInfo::default()],
             nicks: [Vec::new(), Vec::new()],
+            custom_rules: [BoundedStr::new(); MAX_CUSTOM_RULES],
         }
+    }
+    /// Custom rule `i` as written; `None` when `i` or the text does not fit.
+    pub fn set_custom_rule(&mut self, i: u8, text: &str) -> Option<()> {
+        *self.custom_rules.get_mut(i as usize)? = BoundedStr::from_str(text).ok()?;
+        Some(())
     }
     fn player(&self, s: SideId) -> &PlayerInfo {
         &self.players[s.index()]
@@ -1437,6 +1484,9 @@ impl BattleNames for Battle {
     fn player_rating(&self, side: SideId) -> &str { self.player(side).rating.as_str() }
     fn nickname(&self, side: SideId, slot: u8) -> &str {
         self.nicks[side.index()].get(slot as usize).map(|n| n.as_str()).unwrap_or("")
+    }
+    fn custom_rule(&self, i: u8) -> &str {
+        self.custom_rules.get(i as usize).map(|r| r.as_str()).unwrap_or("")
     }
 }
 

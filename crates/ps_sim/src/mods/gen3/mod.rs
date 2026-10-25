@@ -349,6 +349,10 @@ pub static REGISTRY: Registry = Registry {
         (EffectId::Item(i::SCOPELENS), &items::scopelens::DEF),
         (EffectId::Item(i::SHELLBELL), &items::shellbell::DEF),
         (EffectId::Rule(Rule::SleepClauseMod), &rules::sleepclausemod::DEF),
+        (EffectId::Rule(Rule::ScalemonsMod), &rules::species_mods::SCALEMONS),
+        (EffectId::Rule(Rule::ThreeFiftyCupMod), &rules::species_mods::THREE_FIFTY_CUP),
+        (EffectId::Rule(Rule::BadNBoostedMod), &crate::mods::gen1::rules::species_mods::BAD_N_BOOSTED),
+        (EffectId::Rule(Rule::GuaranteedSecondaryMod), &crate::mods::gen1::rules::guaranteedsecondarymod::DEF),
     ],
 };
 

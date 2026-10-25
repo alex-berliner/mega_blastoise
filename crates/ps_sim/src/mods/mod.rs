@@ -272,7 +272,9 @@ mod tests {
             if dex.gen < 3 {
                 break;
             }
-            if is_ported(dex, registry, EffectId::Ability(a)) {
+            // `noability` is PS's 'Past' entry, in the gen 3 dex only for
+            // custom games (`dump-dex.js`): not an ability a team draws.
+            if is_ported(dex, registry, EffectId::Ability(a)) && dex.ability_def(a).name.as_str() != "No Ability" {
                 out.push(format!("ability:{}", PsId(dex.ability_def(a).name.as_str())));
             }
         }

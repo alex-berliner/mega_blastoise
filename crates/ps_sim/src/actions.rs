@@ -146,6 +146,10 @@ pub struct ActiveMove {
     /// `getActiveMove` deep-copies the move): Serene Grace. The effects
     /// themselves are the dex's, plus `added_secondary`.
     pub secondary_chances_doubled: bool,
+    /// `secondary.chance = 100` on this use's copy of `secondaries`
+    /// (Guaranteed Secondary Mod's `ModifyMove`): bit `i` for the `i`th of
+    /// [`ActiveMove::secondaries`] as the list stood when it ran.
+    pub secondaries_guaranteed: u8,
     /// `hasBounced`: a move Magic Coat reflected (it is not reflected
     /// again).
     pub has_bounced: bool,
@@ -191,6 +195,7 @@ impl ActiveMove {
         allies: [0; 6],
         allies_len: 0,
         secondary_chances_doubled: false,
+        secondaries_guaranteed: 0,
         has_bounced: false,
         added_secondary: None,
         total_damage: 0,
@@ -232,6 +237,17 @@ impl ActiveMove {
     pub fn secondaries(&self, dex: &'static ps_dex::Dex) -> impl Iterator<Item = &'static ps_dex::Secondary> + Clone {
         let own: &'static [ps_dex::Secondary] = if self.id.is_none() { &[] } else { dex.move_def(self.id).secondaries() };
         own.iter().chain(self.added_secondary)
+    }
+
+    /// `secondary.chance` of the `i`th of [`ActiveMove::secondaries`] on
+    /// this use's copy, before Serene Grace doubles it: 100 once
+    /// Guaranteed Secondary Mod has set it, else the dex's.
+    pub fn secondary_chance(&self, i: usize, secondary: &ps_dex::Secondary) -> Option<u8> {
+        if i < 8 && self.secondaries_guaranteed & (1 << i) != 0 {
+            Some(100)
+        } else {
+            secondary.chance
+        }
     }
 
     /// The move as an effect (`EffectId::None` for a fake move).

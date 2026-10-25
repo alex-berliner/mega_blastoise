@@ -16,7 +16,7 @@ use alloc::vec::Vec;
 use crate::ident::{Hp, HpStatus, PokemonIdent, SideId, Status, TypeNum};
 use crate::request::{
     ActiveRequest, MoveRequest, MoveTarget, Pokeball, Request, RequestMove, RequestMoveName,
-    SideMoveId, SidePokemon, SideRequest, SwitchRequest, WaitRequest,
+    SideMoveId, SidePokemon, SideRequest, SwitchRequest, TeamPreviewRequest, WaitRequest,
 };
 use crate::{to_id, BattleNames, BoundedVec, DexNames, Name};
 
@@ -59,6 +59,15 @@ pub fn encode_request(req: &Request, dex: &dyn DexNames, names: &dyn BattleNames
             out.push_str("\"wait\":true,\"side\":");
             push_side(&mut out, &r.side, dex, names);
             push_tail(&mut out, false, false, r.rqid);
+        }
+        Request::TeamPreview(r) => {
+            out.push_str("\"teamPreview\":true,");
+            if let Some(n) = r.max_chosen_team_size {
+                out.push_str(&format!("\"maxChosenTeamSize\":{n},"));
+            }
+            out.push_str("\"side\":");
+            push_side(&mut out, &r.side, dex, names);
+            push_tail(&mut out, r.no_cancel, false, r.rqid);
         }
     }
     out.push('}');
@@ -324,6 +333,17 @@ pub fn decode_request(s: &str, dex: &dyn DexNames, names: &mut Battle) -> Result
                 return Err(bad("wait is not true"));
             }
             Request::Wait(WaitRequest { side, rqid })
+        }
+        "teamPreview" => {
+            only_keys(top, &["teamPreview", "maxChosenTeamSize", "side", "noCancel", "rqid"])?;
+            if !field(top, "teamPreview")?.boolean("teamPreview")? {
+                return Err(bad("teamPreview is not true"));
+            }
+            let max_chosen_team_size = match top.iter().find(|(k, _)| k == "maxChosenTeamSize") {
+                Some((_, v)) => Some(u8::try_from(v.uint("maxChosenTeamSize")?).map_err(|_| bad("maxChosenTeamSize"))?),
+                None => None,
+            };
+            Request::TeamPreview(TeamPreviewRequest { max_chosen_team_size, side, no_cancel, rqid })
         }
         other => return Err(bad(&format!("request starts with {:?}", other))),
     };

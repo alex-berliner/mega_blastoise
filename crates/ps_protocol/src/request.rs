@@ -25,6 +25,9 @@ pub enum Request {
     Switch(SwitchRequest),
     /// `{"wait":true,"side":{...}}` then `rqid`.
     Wait(WaitRequest),
+    /// `{"teamPreview":true,"maxChosenTeamSize":N,"side":{...}}` then
+    /// `noCancel`, `rqid`.
+    TeamPreview(TeamPreviewRequest),
 }
 
 impl Request {
@@ -33,6 +36,7 @@ impl Request {
             Request::Move(r) => &r.side,
             Request::Switch(r) => &r.side,
             Request::Wait(r) => &r.side,
+            Request::TeamPreview(r) => &r.side,
         }
     }
 
@@ -41,6 +45,7 @@ impl Request {
             Request::Move(r) => &mut r.side,
             Request::Switch(r) => &mut r.side,
             Request::Wait(r) => &mut r.side,
+            Request::TeamPreview(r) => &mut r.side,
         }
     }
 
@@ -50,6 +55,7 @@ impl Request {
             Request::Move(r) => r.rqid,
             Request::Switch(r) => r.rqid,
             Request::Wait(r) => r.rqid,
+            Request::TeamPreview(r) => r.rqid,
         }
     }
 
@@ -90,6 +96,18 @@ pub struct SwitchRequest {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WaitRequest {
     pub side: SideRequest,
+    pub rqid: Option<u32>,
+}
+
+/// A team preview request (PS `getRequests('teampreview')`). Keys:
+/// `teamPreview` (always `true`), `maxChosenTeamSize` (the format's Picked
+/// Team Size, absent without one), `side`, then `noCancel` and `rqid` as
+/// on [`MoveRequest`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TeamPreviewRequest {
+    pub max_chosen_team_size: Option<u8>,
+    pub side: SideRequest,
+    pub no_cancel: bool,
     pub rqid: Option<u32>,
 }
 

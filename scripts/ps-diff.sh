@@ -9,6 +9,8 @@
 #   scripts/ps-diff.sh --self --gen 1 --teams wide --trunc math   # Gen 1 plain math
 #   scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" \
 #     --allow-unported --jobs 6                        # the carried old corpus
+#   scripts/ps-diff.sh --carried gen3 --ps-cli "$PWD/target/release/ps_sim_cli" --jobs 6
+#   scripts/ps-diff.sh --targeted gen3 --ps-cli "$PWD/target/release/ps_sim_cli"
 #
 # Thin wrapper around tools/ps-diff/diff.js. The actual BattleStream
 # plumbing, request parsing, line-by-line diff and cargo path are all

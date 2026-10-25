@@ -368,7 +368,8 @@ fn gen3_round_trips() {
     assert_eq!(GEN3.cosmetic_formes.len(), 1);
     assert_eq!(GEN3.cosmetic_forme_id("unownquestion"), Some((GEN3.species_id("unown").unwrap(), 27)));
     assert_eq!(check_items("gen3"), 106);
-    assert_eq!(check_abilities("gen3"), 76);
+    // 76 standard abilities, then `noability` (dump-dex.js appends it).
+    assert_eq!(check_abilities("gen3"), 77);
     assert_eq!(check_conditions("gen3"), 90);
     check_typechart("gen3");
 }
@@ -440,8 +441,9 @@ fn counts_match_design_section_6() {
     assert_eq!(tally(&GEN1), ((165, 40, 66), (9, 0, 0), (1, 0, 0), 151));
     // Abilities: 96 functions at 0.11.11; the re-synced pin (c0845f33d)
     // adds `onAfterEntryHazard` to Air Lock, Cloud Nine, Drizzle, Drought,
-    // Forecast and Sand Stream (R-1 section 4.3, G3-1).
-    assert_eq!(tally(&GEN3), ((370, 129, 296), (106, 60, 99), (76, 68, 102), 392));
+    // Forecast and Sand Stream (R-1 section 4.3, G3-1). The 77th ability is
+    // `noability` (no handlers), appended for custom games.
+    assert_eq!(tally(&GEN3), ((370, 129, 296), (106, 60, 99), (77, 68, 102), 392));
 }
 
 #[test]

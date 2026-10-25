@@ -184,7 +184,10 @@ async fn battle_loop<T: Transport, E: BoardEffects>(
         // and Speed and needs no catch-up `ActiveMonUpdate`; their prompt
         // events still go out after the update, like every turn's.
         let mut prompt_events: Vec<Vec<BoardEvent>> = Vec::new();
-        if opening && !requests.is_empty() {
+        // A team preview (a Picked Team Size format) comes before the start
+        // update: the opening is the first move requests after it.
+        let preview = requests.iter().any(|r| matches!(r, Request::TeamPreview(_)));
+        if opening && !requests.is_empty() && !preview {
             opening = false;
             prompt_events = requests.iter().map(|r| prompt_events_for(&mut view, r)).collect();
         }
@@ -653,6 +656,43 @@ mod tests {
             }
         }
         std::println!("50 gen 1 battles: {turns} turns, {ties} ties, identical over both transports");
+    }
+
+    /// A Picked Team Size format asks both seats for a team preview pick
+    /// before the battle; the seats answer PS's `default` (the device has
+    /// no preview screen) and the battle plays on, the same over both
+    /// transports (the one-sided `|poke|` lines and the preview request
+    /// decode).
+    #[test]
+    fn a_team_preview_format_plays_over_both_transports() {
+        for seed in 0..5u64 {
+            let run = |transport: &mut dyn FnMut(&BattleSetup) -> Vec<BoardEvent>| {
+                let teams = crate::randbat::draw_two_ps_teams(&ps_dex::GEN1, seed, 6);
+                let mut setup = BattleSetup::local(1, seed, teams);
+                setup.format = FormatSpec::parse("gen1customgame@@@Picked Team Size = 3").unwrap();
+                transport(&setup)
+            };
+            let mut local = LocalTransport::new();
+            let typed = run(&mut |setup| {
+                let bus = InputBus::new();
+                let mut rec = Record::default();
+                block_on(run_battle(&mut local, setup, &bus, robot(&bus, seed ^ 0x5eed), &mut rec));
+                rec.0
+            });
+            let b = local.battle().expect("the battle started");
+            assert!(b.ended, "seed {seed}: the battle did not end (turn {})", b.turn);
+            assert_eq!(b.sides[0].team_size, 3, "seed {seed}: the picked team");
+            let mut text = TextTransport::new(SimLink::default());
+            let decoded = run(&mut |setup| {
+                let bus = InputBus::new();
+                let mut rec = Record::default();
+                block_on(run_battle(&mut text, setup, &bus, robot(&bus, seed ^ 0x5eed), &mut rec));
+                rec.0
+            });
+            assert!(text.link().commands.contains(">p1 default"), "seed {seed}: no team preview answer");
+            assert_eq!(text.undecoded(), 0, "seed {seed}: the text path skipped lines it could not decode");
+            assert_eq!(typed, decoded, "seed {seed}: the streams part");
+        }
     }
 
     /// Mimic and Transform rewrite move slots (Transform also the species and

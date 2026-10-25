@@ -26,6 +26,7 @@
 //! | `>p1 pass` | [`Command::Choose`] with [`Choice::Pass`] |
 //! | `>p1 default` | [`Command::Choose`] with [`Choice::Default`] |
 //! | `>p1 undo` | [`Command::Choose`] with [`Choice::Undo`] |
+//! | `>p1 team 2134` | [`Command::Choose`] with [`Choice::Team`] |
 //! | `>forcewin p1` | [`Command::ForceWin`] |
 //! | `>forcetie` | [`Command::ForceTie`] |
 //!
@@ -188,6 +189,7 @@ fn choice_text(c: Choice) -> String {
         Choice::Pass => String::from("pass"),
         Choice::Default => String::from("default"),
         Choice::Undo => String::from("undo"),
+        Choice::Team(data) => format!("team {}", data.as_str()),
     }
 }
 
@@ -286,9 +288,13 @@ fn default_player_name(side: SideId) -> &'static str {
 fn decode_choose(side_kind: &str, rest: &str) -> Result<Command, CodecError> {
     let side = SideId::parse(side_kind)
         .ok_or_else(|| CodecError::BadCmd(format!(">p slot {:?}", side_kind)))?;
-    // PS's `choose` splits the line on `,` first: one chunk per active
-    // Pokemon. The device plays singles, so a line with more than one
-    // chunk is not modelled.
+    // PS's `choose` splits the line on `,` first (one chunk per active
+    // Pokemon), except a `team` line, which is one chunk. The device plays
+    // singles, so another line with more than one chunk is not modelled.
+    if let Some(data) = rest.strip_prefix("team ") {
+        let data = data.trim();
+        return Ok(Command::Choose { side, choice: Choice::Team(name_arg(data)?) });
+    }
     if rest.contains(',') {
         return Err(CodecError::BadCmd(format!(">{} has more than one choice: {:?}", side_kind, rest)));
     }
@@ -709,7 +715,11 @@ mod tests {
         assert!(decode_command("update").is_err()); // no > prompt
         assert!(decode_command(">update").is_err()); // a block separator
         assert!(decode_command(">nope hello").is_err());
-        assert!(decode_command(">p1 team 1,2,3").is_err()); // Team Preview out of scope
+        // A team preview pick is one chunk, commas and all.
+        assert!(matches!(
+            decode_command(">p1 team 1,2,3"),
+            Ok(Command::Choose { choice: Choice::Team(d), .. }) if d.as_str() == "1,2,3"
+        ));
         assert!(decode_command(">p1 shift").is_err());
         assert!(decode_command(">p1 skip").is_err()); // PS's synonym for pass
         assert!(decode_command(">p1 auto").is_err()); // PS's synonym for default

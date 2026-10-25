@@ -1071,3 +1071,64 @@ fn cancel_action_keeps_run_switch() {
     assert_eq!(b.queue.len(), 1);
     assert_eq!(b.queue.peek().unwrap().choice, ActionKind::RunSwitch);
 }
+
+/// The variant formats' `ModifySpecies` rules give each Pokemon the base
+/// stats PS's rule computes (`data/rulesets.ts`, gen 1's own in
+/// `data/mods/gen1/rulesets.ts`), and the stats follow from them.
+#[test]
+fn species_rules_modify_base_stats() {
+    let base_of = |format: &str, team: &str| -> ([u8; 6], u16, [u16; 5]) {
+        let mut b = Box::new(Battle::from_start(FormatSpec::parse(format).unwrap(), [1, 2, 3, 4], CLOCK));
+        for side in [SideId::P1, SideId::P2] {
+            b.set_player(side, "p", "", "", Some(&parse_team(team))).unwrap();
+        }
+        let m = b.pokemon_at(0, 0);
+        (b.mon(m).species_base_stats, b.mon(m).species_bst, b.mon(m).base_stored_stats)
+    };
+    // Machop 70/80/50/35/35/35: every stat of 70 or lower doubles.
+    let (base, bst, _) = base_of("gen3customgame@@@Bad 'n Boosted Mod", "Machop|||noability|tackle|||||||");
+    assert_eq!((base, bst), ([140, 80, 100, 70, 70, 70], 530));
+    // Pichu 20/40/15/35/35/60 (BST 205): doubled.
+    let (base, bst, _) = base_of("gen3customgame@@@350 Cup Mod", "Pichu|||noability|tackle|||||||");
+    assert_eq!((base, bst), ([40, 80, 30, 70, 70, 120], 410));
+    // Snorlax (BST 540) is left alone.
+    let (base, _, _) = base_of("gen3customgame@@@350 Cup Mod", "Snorlax|||noability|tackle|||||||");
+    assert_eq!(base, [160, 110, 65, 65, 110, 30]);
+    // Gen 3 Scalemons: (600 - hp) / (bst - hp), Snorlax 440/380.
+    let (base, bst, _) = base_of("gen3customgame@@@Scalemons Mod", "Snorlax|||noability|tackle|||||||");
+    assert_eq!((base, bst), ([160, 127, 75, 75, 127, 34], 598));
+    // Gen 1 Scalemons: toward 500, the Special counted once and copied.
+    // Slowbro 95/75/110/80/80/30, gen 1 BST 390: 405/295.
+    let (base, bst, _) = base_of("gen1customgame@@@Scalemons Mod", "Slowbro|||noability|tackle|||||||");
+    assert_eq!((base, bst), ([95, 102, 151, 109, 109, 41], 498));
+    // Gen 1 350 Cup: Rattata (BST 218) doubled, Special copied.
+    let (base, bst, _) = base_of("gen1customgame@@@350 Cup Mod", "Rattata|||noability|tackle|||||||");
+    assert_eq!((base, bst), ([60, 112, 70, 50, 50, 144], 436));
+}
+
+/// A Picked Team Size format asks for a team preview pick before the
+/// battle: `|clearpoke|`, the one-sided `|poke|` lines, `|teampreview|N`,
+/// then the picked Pokemon form the team in the picked order.
+#[test]
+fn picked_team_size_runs_a_team_preview() {
+    let spec = FormatSpec::parse("gen3customgame@@@pickedteamsize=2").unwrap();
+    let mut b = Box::new(Battle::from_start(spec, [1, 2, 3, 4], CLOCK));
+    let team = "Snorlax|||noability|tackle|||||||]Pikachu|||noability|tackle|||||||]Gengar|||noability|tackle|||||||";
+    for side in [SideId::P1, SideId::P2] {
+        b.set_player(side, "p", "", "", Some(&parse_team(team))).unwrap();
+    }
+    assert_eq!(b.request_state, crate::request::RequestState::TeamPreview);
+    let text: Vec<String> = flush(&mut b).into_iter().map(|(_, body)| body).collect();
+    let text = text.join("\n");
+    assert!(text.contains("|clearpoke\n|split|p1\n|poke|p1|Snorlax"), "{text}");
+    assert!(text.contains("|teampreview|2"), "{text}");
+    assert!(text.contains(r#"|request|{"teamPreview":true,"maxChosenTeamSize":2,"side":"#), "{text}");
+    // A bad pick is refused; `team 3` fills in the rest in team order.
+    assert!(!b.choose(0, ps_protocol::Choice::Team(ps_protocol::Name::from_str("9").unwrap())));
+    assert!(b.choose(0, ps_protocol::Choice::Team(ps_protocol::Name::from_str("3").unwrap())));
+    assert!(b.choose(1, ps_protocol::Choice::Default));
+    assert_eq!(b.sides[0].pokemon(), &[2, 0]);
+    assert_eq!(b.sides[1].pokemon(), &[0, 1]);
+    assert_eq!(b.sides[0].pokemon_left, 2);
+    assert!(b.started && b.turn == 1);
+}

@@ -935,6 +935,9 @@ impl BattleView {
 
             // State the board does not show, or lines with no board meaning.
             Msg::Spacer
+            | Msg::ClearPoke
+            | Msg::Poke { .. }
+            | Msg::TeamPreview(_)
             | Msg::Timestamp(_)
             | Msg::GameType(_)
             | Msg::Player(_)
@@ -1241,6 +1244,12 @@ impl BattleView {
     /// the Gen 1 runner's per-seat prompt sequence.
     pub fn apply_request(&mut self, req: &Request) -> BoardEvents {
         let mut out = BoardEvents::new();
+        // A team preview comes before the battle starts: its side list
+        // marks the first Pokemon active by position, and the picked team
+        // arrives with the first move request. Nothing to learn or prompt.
+        if let Request::TeamPreview(_) = req {
+            return out;
+        }
         let side_req = req.side();
         let side = side_req.id;
         let hp_move = self.hidden_power;
@@ -1362,7 +1371,7 @@ impl BattleView {
                 out.push(BoardEvent::Prompt { player_id: pid, kind: PromptKind::ChooseMove });
             }
             Request::Switch(_) => out.push(BoardEvent::Prompt { player_id: pid, kind: PromptKind::ChooseSwitch }),
-            Request::Wait(_) => {}
+            Request::Wait(_) | Request::TeamPreview(_) => {}
         }
         out
     }

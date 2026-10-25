@@ -79,7 +79,7 @@ pub struct SeatOptions {
     pub forced_switch: bool,
     /// A choice already made for the player, in the device grammar: one
     /// move without PP and no switch open (a hard lock, or a last mon on
-    /// Fight or Struggle) is `move 0`.
+    /// Fight or Struggle) is `move 0`; a team preview is `default`.
     pub auto: Option<String>,
     /// By team slot.
     pub party: Vec<PartyMon>,
@@ -129,6 +129,10 @@ pub fn slot_options(view: &BattleView, req: &Request) -> Option<SeatOptions> {
 
     match req {
         Request::Wait(_) => return None,
+        // Team preview (a Picked Team Size or Team Preview format): the
+        // device has no preview screen (design section 2), so the seat
+        // answers PS's own `default` (`autoChoose`: the team in order).
+        Request::TeamPreview(_) => s.auto = Some(String::from("default")),
         Request::Switch(_) => s.forced_switch = true,
         Request::Move(r) => {
             if let Some(a) = r.active.first() {
@@ -234,5 +238,6 @@ pub fn choice_string(req: &Request, answer: &str) -> Option<String> {
         Choice::Pass => String::from("pass"),
         Choice::Default => String::from("default"),
         Choice::Undo => String::from("undo"),
+        Choice::Team(data) => alloc::format!("team {}", data.as_str()),
     })
 }

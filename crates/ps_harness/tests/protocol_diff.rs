@@ -30,8 +30,9 @@
 //! - `diff_drive_tamper_line` exercises the same path with a different
 //!   seed and a different K, pins the second divergence file. Together
 //!   the two tests cover the divergence reporting.
-//! - `carried_corpus` checks the carried corpus (`carried/gen1/*.json`)
-//!   is well-formed PS sets and that `--carried gen1` plays a pair of it
+//! - `carried_corpus` checks the carried corpora (`carried/gen1/*.json`,
+//!   `carried/gen3/*.json`) are well-formed PS sets and that `--carried
+//!   genN` plays a pair of each
 //!   and names a divergence after the pair.
 
 use std::fs;
@@ -350,15 +351,21 @@ fn diff_drive_tamper_line() {
     let _ = fs::remove_file(&path);
 }
 
-/// The carried corpus (`carried/gen1/*.json`, written by
-/// `scripts/carried-dump.sh` through showdown_fuzz.rs's `FUZZ_DUMP`): every
-/// file is one old-engine pinned entry's team pairs as PS sets, and
-/// `diff.js --carried gen1` plays a pair of it. A tampered carried battle
-/// lands its divergence under the pair's own name, since every pair
-/// replays the same battle seeds.
+/// The carried corpus (`carried/gen1/*.json` and `carried/gen3/*.json`,
+/// written by `scripts/carried-dump.sh` through showdown_fuzz.rs's
+/// `FUZZ_DUMP`): every file is one old-engine pinned entry's team pairs as
+/// PS sets, and `diff.js --carried genN` plays a pair of it. A tampered
+/// carried battle lands its divergence under the pair's own name, since
+/// every pair replays the same battle seeds.
 #[test]
 fn carried_corpus() {
-    let dir = manifest_dir().join("carried").join("gen1");
+    for gen in [1u64, 3] {
+        carried_corpus_of(gen);
+    }
+}
+
+fn carried_corpus_of(gen: u64) {
+    let dir = manifest_dir().join("carried").join(format!("gen{gen}"));
     let mut files: Vec<PathBuf> = fs::read_dir(&dir)
         .unwrap_or_else(|e| panic!("read {}: {}", dir.display(), e))
         .map(|e| e.unwrap().path())
@@ -369,8 +376,8 @@ fn carried_corpus() {
     for path in &files {
         let doc: serde_json::Value = serde_json::from_str(&fs::read_to_string(path).unwrap())
             .unwrap_or_else(|e| panic!("{}: not JSON: {e}", path.display()));
-        assert_eq!(doc["gen"], 1, "{}: not a gen 1 dump", path.display());
-        assert_eq!(doc["suite"], "fuzz_gen1_battles", "{}: suite", path.display());
+        assert_eq!(doc["gen"], gen, "{}: not a gen {gen} dump", path.display());
+        assert_eq!(doc["suite"], format!("fuzz_gen{gen}_battles").as_str(), "{}: suite", path.display());
         let cases = doc["cases"].as_array().unwrap_or_else(|| panic!("{}: no cases", path.display()));
         assert!(!cases.is_empty(), "{}: no cases", path.display());
         for c in cases {
@@ -380,8 +387,17 @@ fn carried_corpus() {
                 for set in team {
                     assert!(set["species"].is_string(), "{}: a set without species", path.display());
                     assert!(set["moves"].as_array().is_some_and(|m| !m.is_empty()), "{}: a set without moves", path.display());
-                    // An empty ability unpacks to the species' later-gen one.
-                    assert_eq!(set["ability"], "noability", "{}: a gen 1 set needs noability", path.display());
+                    // An empty ability unpacks to the species' first one
+                    // (gen 1: a later gen's), so every set names one.
+                    if gen == 1 {
+                        assert_eq!(set["ability"], "noability", "{}: a gen 1 set needs noability", path.display());
+                    } else {
+                        assert!(
+                            set["ability"].as_str().is_some_and(|a| !a.is_empty()),
+                            "{}: a gen 3 set names its ability (noability for none)",
+                            path.display()
+                        );
+                    }
                 }
             }
         }
@@ -389,10 +405,11 @@ fn carried_corpus() {
 
     let first = files[0].file_stem().unwrap().to_string_lossy().to_string();
     let pair = format!("{first}#0");
-    let scratch = workspace_root().join(".scratch").join("ps-diff-carried-test");
+    let carried = format!("gen{gen}");
+    let scratch = workspace_root().join(".scratch").join(format!("ps-diff-carried-test-{carried}"));
     let scratch_s = scratch.to_string_lossy().to_string();
     let out = node_diff(&[
-        "--carried", "gen1", "--carried-pair", &pair, "--seed", "0", "--jobs", "1",
+        "--carried", &carried, "--carried-pair", &pair, "--seed", "0", "--jobs", "1",
         "--quiet", "--scratch", &scratch_s,
     ]);
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -405,7 +422,7 @@ fn carried_corpus() {
     let log = scratch.join(format!("ps-diff-carried-{first}-0-0.log"));
     let _ = fs::remove_file(&log);
     let out = node_diff(&[
-        "--carried", "gen1", "--carried-pair", &pair, "--seed", "0", "--jobs", "1",
+        "--carried", &carried, "--carried-pair", &pair, "--seed", "0", "--jobs", "1",
         "--quiet", "--scratch", &scratch_s, "--tamper-line", "9",
     ]);
     assert!(!out.status.success(), "tampered carried run should diff");
@@ -414,13 +431,33 @@ fn carried_corpus() {
     let _ = fs::remove_file(&log);
 }
 
-/// The targeted battles (`crates/ps_harness/targeted/gen1.json`, played by
-/// `diff.js --targeted gen1`): every entry is well formed, the whole list
-/// plays green PS against PS (each battle reaches its `expect` lines), and
-/// an entry at a seed that misses its path fails with an `-expect.log`.
+/// The targeted battles (`crates/ps_harness/targeted/gen1.json` and
+/// `gen3.json`, played by `diff.js --targeted genN`): every entry is well
+/// formed, each whole list plays green PS against PS (each battle reaches
+/// its `expect` lines), and an entry at a seed that misses its path fails
+/// with an `-expect.log`.
 #[test]
 fn targeted_battles() {
-    let path = manifest_dir().join("targeted").join("gen1.json");
+    for gen in [1, 3] {
+        targeted_battles_of(gen);
+    }
+    // Seed 0 disables Growl, not Tackle: the battle misses its path.
+    let scratch = workspace_root().join(".scratch").join("ps-diff-targeted-test");
+    let scratch_s = scratch.to_string_lossy().to_string();
+    let log = scratch.join("ps-diff-targeted-transform_disable_slot-0-expect.log");
+    let _ = fs::remove_file(&log);
+    let out = node_diff(&[
+        "--targeted", "gen1", "--targeted-name", "transform_disable_slot", "--seed", "0",
+        "--jobs", "1", "--quiet", "--scratch", &scratch_s,
+    ]);
+    assert!(!out.status.success(), "a targeted battle that misses its path should fail");
+    let txt = fs::read_to_string(&log).unwrap_or_else(|e| panic!("read {}: {}", log.display(), e));
+    assert!(txt.contains("|-start|p1a: Mew|Disable|Tackle"), "expect log:\n{txt}");
+    let _ = fs::remove_file(&log);
+}
+
+fn targeted_battles_of(gen: u8) {
+    let path = manifest_dir().join("targeted").join(format!("gen{gen}.json"));
     let doc: serde_json::Value = serde_json::from_str(&fs::read_to_string(&path).unwrap())
         .unwrap_or_else(|e| panic!("{}: not JSON: {e}", path.display()));
     let list = doc.as_array().unwrap_or_else(|| panic!("{}: not an array", path.display()));
@@ -439,27 +476,20 @@ fn targeted_battles() {
             let team = t[side].as_array().unwrap_or_else(|| panic!("{name}: no {side}"));
             assert!((1..=6).contains(&team.len()), "{name}: {side} has {} mons", team.len());
         }
+        if let Some(rules) = t.get("rules") {
+            assert!(rules.as_array().is_some_and(|r| r.iter().all(|x| x.is_string())), "{name}: rules is a list of rule names");
+        }
     }
 
-    let scratch = workspace_root().join(".scratch").join("ps-diff-targeted-test");
+    let scratch = workspace_root().join(".scratch").join(format!("ps-diff-targeted-test-gen{gen}"));
     let scratch_s = scratch.to_string_lossy().to_string();
-    let out = node_diff(&["--targeted", "gen1", "--jobs", "4", "--quiet", "--scratch", &scratch_s]);
+    let targeted = format!("gen{gen}");
+    let out = node_diff(&["--targeted", &targeted, "--jobs", "4", "--quiet", "--scratch", &scratch_s]);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success() && stdout.contains(&format!("ran={} diffs=0 crashes=0", list.len())),
-        "targeted self run: status={:?} stdout={stdout:?} stderr={:?}",
+        "targeted self run (gen {gen}): status={:?} stdout={stdout:?} stderr={:?}",
         out.status,
         String::from_utf8_lossy(&out.stderr),
     );
-    // Seed 0 disables Growl, not Tackle: the battle misses its path.
-    let log = scratch.join("ps-diff-targeted-transform_disable_slot-0-expect.log");
-    let _ = fs::remove_file(&log);
-    let out = node_diff(&[
-        "--targeted", "gen1", "--targeted-name", "transform_disable_slot", "--seed", "0",
-        "--jobs", "1", "--quiet", "--scratch", &scratch_s,
-    ]);
-    assert!(!out.status.success(), "a targeted battle that misses its path should fail");
-    let txt = fs::read_to_string(&log).unwrap_or_else(|e| panic!("read {}: {}", log.display(), e));
-    assert!(txt.contains("|-start|p1a: Mew|Disable|Tackle"), "expect log:\n{txt}");
-    let _ = fs::remove_file(&log);
 }

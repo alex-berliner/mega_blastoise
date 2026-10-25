@@ -85,6 +85,9 @@ if [[ "${1:-}" != "--fast" ]]; then
   echo "── protocol-diff harness: gen 1 targeted battles (cartridge, math) ──"
   scripts/ps-diff.sh --targeted gen1 --ps-cli "$PS_CLI_BIN" --quiet --jobs 14
   scripts/ps-diff.sh --targeted gen1 --ps-cli "$PS_CLI_BIN" --quiet --jobs 14 --trunc math
+  # Gen 3's (crates/ps_harness/targeted/gen3.json), the same way.
+  echo "── protocol-diff harness: gen 3 targeted battles ──"
+  scripts/ps-diff.sh --targeted gen3 --ps-cli "$PS_CLI_BIN" --quiet --jobs 14
 
   echo "── wasm build + headless seat probe ──"
   (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
