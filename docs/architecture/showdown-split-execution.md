@@ -474,6 +474,30 @@ feed the phase gates in section 2.
   human battles in every format. Accept: as V-3, both gens, against the new
   pin; the Gen 3 set gates G3-7.
 
+**V-5 Mine Showdown's own tests** · MM · depends: G3-8
+- Background: Showdown's mocha suite (`tools/ps-diff/node_modules/pokemon-showdown/test/`)
+  has hand-written cases per move, ability and item (`test/sim/moves`,
+  `abilities`, `items`, `misc`, `decisions.js`, `events.js`). Most target
+  Gen 5 to 9, but some run for the old gens or name them (`gen: 1`, `gen: 3`,
+  `common.gen(n)`, `Dex.mod('gen1')`, a `gen1customgame` or `gen3customgame`
+  format). They encode what the Showdown authors consider the tricky lines,
+  so they make a second corpus aimed at the corners.
+- Touches: new `docs/ps-tests-gen1-gen3.md` (the inventory), new entries in
+  `crates/ps_harness/targeted/gen1.json` and `gen3.json`, `tools/ps-diff`
+  only to read them.
+- Deliverable: (1) an inventory of every test that can run under Gen 1 or
+  Gen 3 rules (by reading the files, not guessing), each marked covered (name
+  the existing targeted entry or pinned seed that reaches the same handler
+  and line), not applicable (the move or rule does not exist in that gen) or
+  new. (2) a targeted battle for each new one: the test's teams and
+  choices, with a seed chosen so the forced RNG outcome (`forceRandomChance`
+  and the like) happens, and the test's assertion as `expect` lines. Each runs
+  as a diff against PS in the usual way. (3) any diff or crash these find
+  is reported as its own finding with a reproduction, not fixed here.
+- Accept: the inventory lists every test file checked; at least all the
+  Gen 1 and Gen 3 specific ones have an entry; `--targeted gen1` and
+  `--targeted gen3` pass or list the findings; check.sh green.
+
 ### Phase 3: Gen 1 pilot
 
 Handler batches. Each: port the listed effects (one file per effect, PS source
