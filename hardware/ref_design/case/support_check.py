@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Where did the slicer put supports? Read from a sliced Bambu Studio project's own G-code.
+"""Where did the slicer put supports? Read from a sliced Bambu Studio or Snapmaker Orca project's own G-code.
 
     python3 case/support_check.py plate.3mf [object ...] [--designed object ...]
         # objects that must get none; objects that may have support filament under them (the top and its coupons)
@@ -48,6 +48,10 @@ def extrusions(gcode):
                 feature = line[10:].strip()
             elif line.startswith("; Z_HEIGHT:"):
                 z = float(line[11:])
+            elif line.startswith(";TYPE:"):           # Snapmaker Orca's: ;TYPE: per feature, ;Z: per layer
+                feature = line[6:].strip()
+            elif line.startswith(";Z:"):
+                z = float(line[3:])
             continue
         cmd = line.split(";")[0].split()
         if not cmd or cmd[0] not in ("G0", "G1", "G2", "G3"):
@@ -122,13 +126,13 @@ def counterbores(mesh, z=0.5, d=(3.5, 6.0)):
     return [h for h in holes if d[0] < 2 * np.sqrt(h.area / np.pi) < d[1]]
 
 
-def check(path, no_support, designed=()):
+def check(path, no_support, designed=(), moves=None):
     """Support extrusion inside each object's outline, and inside each of the tub's counterbores:
     (lines of a report, [no_support objects that got some], {object: mm of support in its outline},
     [problems with the support filament's use: it prints only interface and the tower, and only under `designed`])."""
     z = zipfile.ZipFile(path)
     gcode = z.read("Metadata/plate_1.gcode").decode()
-    moves = extrusions(gcode)
+    moves = moves if moves is not None else extrusions(gcode)    # (already read: slice_u1 reads them for the bed too)
     objs = register(objects(z), moves)
     sup = [(f, zz, p) for f, zz, p, _ in moves if f in SUPPORT]
     pts = np.concatenate([p for *_, p in sup]) if sup else np.zeros((0, 2))

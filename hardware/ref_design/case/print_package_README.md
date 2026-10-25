@@ -29,8 +29,23 @@ project's printer and settings: Snapmaker U1, 0.20 mm Standard, textured PEI. PL
 toolhead 2 (the template's slot 2's settings, marked as a support filament, in slot 2; slot 1 takes the PLA settings: no PETG), and on a plate with the top a
 prime tower at the back right of the bed. Open it, check the plate, slice.
 (`mega_blastoise_print_P1S.zip` has the same plates sliced for a Bambu Lab P1S, with their weights and times.)
-These projects are written, not sliced here (Snapmaker Orca's command line crashes on a U1 preset): the P1S's weights and times are the
-nearest numbers; the U1 purges far less (about 45 mm3 per tool change, about 2 g in all for the top).
+Print times and weights below are Snapmaker Orca 2.4.1-beta's, sliced from the command line on the build machine (0.08 mm fine layers on
+the release plates, outer wall 60, inner wall 120 mm/s; the weights are what the slicer reports, the prime tower and the purge included).
+The projects stay unsliced: open one, check the plate, slice it yourself. **Use Snapmaker Orca 2.4.1-beta or later**: 2.4.0 opens these
+projects, but its tree supports in the default style count as Organic and Orca refuses Organic supports with the fine layers, and
+`tools/build.py --only print_u1` needs 2.4.1-beta's command line (2.4.0 crashes in it).
+
+| Project | Supports | PLA | Support filament | Tool changes | Time | Parts |
+|---|---|---|---|---|---|---|
+<!-- u1 -->
+| `0_buttons_end.3mf` | buttons_top: tree, interface on toolhead 2 | 19.8 g | 2.1 g | 16 | 1 h 26 min | buttons_tub, buttons_board, buttons_top |
+| `1_case.3mf` | top: tree, interface on toolhead 2 | 41.6 g | 2.7 g | 24 | 3 h 45 min | tub_print, top |
+| `2_buttons_quick.3mf` | none | 18.0 g | 0.0 g | 0 | 0 h 59 min | tune_openings, tune_stack_dpad_board, tune_stack_abxy_board, tune_stack_ss_board, tune_stack_dpad_lid_dome1.75, tune_stack_abxy_lid_dome1.75, tune_stack_ss_lid_dome1.75 |
+| `3_buttons_heights.3mf` | none | 8.1 g | 0.0 g | 0 | 0 h 35 min | tune_stack_dpad_lid_dome1.6, tune_stack_dpad_lid_dome1.9, tune_stack_abxy_lid_dome1.6, tune_stack_abxy_lid_dome1.9, tune_stack_ss_lid_dome1.6, tune_stack_ss_lid_dome1.9 |
+| `4_fit_coupons.3mf` | usb_top, seam_top, buttons_top: tree, interface on toolhead 2; usb_board: plain PLA | 26.3 g | 2.2 g | 16 | 2 h 02 min | usb_tub, usb_top, usb_board, seam_tub, seam_top, frame_top, buttons_tub, buttons_board, buttons_top |
+| `5_unit.3mf` | top: tree, interface on toolhead 2; board_mock: plain PLA | 67.3 g | 2.7 g | 24 | 5 h 42 min | tub_print, top, board_mock, panel_dummy, speaker_dummy, cell_dummy, cell_plug_dummy |
+| `6_tests.3mf` | none | 15.7 g | 0.0 g | 0 | 0 h 59 min | tune_openings, test_overhangs, screws_tub, screws_top, test_column, test_rings |
+<!-- /u1 -->
 
 Supports are per part, not per plate: the top and the coupons cut from it (`coupon_seam_top`, `coupon_usb_top`, `coupon_buttons_top`)
 get the two-filament tree supports above; `board_mock` and `coupon_usb_board` get plain PLA trees (the USB-C stand-in); nothing else
@@ -132,10 +147,12 @@ on a U1 preset), so their numbers are the P1S's.
 
 What the slicer wouldn't take: a plate with a prime tower needs every object on it at the same layer height ranges (Bambu Studio:
 "The prime tower is only supported if all objects have the same variable layer height"), so on `0_buttons_end`, `1_case`,
-`4_fit_coupons` and `5_unit` the tub and every other object get the top's fine layers to 4.5 mm too. The fine layers are the
+`4_fit_coupons` and `5_unit` the tub and every other object get the top's fine layers to 4.5 mm too. (Snapmaker Orca compares the objects'
+layer height profiles element by element, the z of each object's top included, so on the U1 the ranges are also split at every object's top, each
+piece 0.0002 mm off its neighbours' height, which makes each object's profile a prefix of the tallest's; `layer_ranges_xml` in `print_package.py`.) The fine layers are the
 cost (the release plates' 0.08; the test plates' 0.12 costs less): each layer of the top's slope carries support interface in the second filament, so the changes go from 9 to 21 and the purge
 and the prime tower grow with them (at 0.08 mm the tower flushes more per layer and its G-code left the P1S's bed at x 210, so the P1S's
-tower stands at x 200, `TOWER_AT`; the U1's tower is untested at 0.08 mm). `1_case` with only 0.20 mm layers took 2 h 19 min
+tower stands at x 200, `TOWER_AT`; the U1's tower, sliced at 0.08 mm in Snapmaker Orca 2.4.1-beta, spans 54 mm with its ribs and brim and left the bed at x 274 from x 223, so it stands at x 210, `TOWER_AT`). `1_case` with only 0.20 mm layers took 2 h 19 min
 (46.0 g, 6.4 g, 9 changes). To drop them, empty
 `FINE_LAYERS` in `print_package.py`. Flushing into the objects' infill (`flush_into_infill`, `flush_into_objects`) made the support
 filament print part of the walls and infill, which the build refuses, so they stay off; `flush_into_support` is on in the profile

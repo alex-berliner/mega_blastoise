@@ -10,9 +10,10 @@ template's PETG slot 1 takes slot 2's PLA settings) and Bambu Support For PLA on
 supports only (SUPPORT_TOOL). The top prints face down: its slope and side rounds hang over the bed, so it (and the
 coupons cut from it that include them, TOP_PARTS) get tree supports whose interface layers, touching the part, are the
 second filament and whose body is PLA, with a prime tower; the tub and every other part print as before, without
-supports. Only the objects, where they sit on the plate, and the supports change. Orca's CLI can't load U1 projects, so
-the projects are written the way Orca writes them (one object file per part, mesh centred on its own height, placed by
-the build item) and the STLs ship beside them in case a project won't open.
+supports. Only the objects, where they sit on the plate, and the supports change. The projects are written the way Orca
+writes them (one object file per part, mesh centred on its own height, placed by the build item) and the STLs ship beside
+them in case a project won't open. With SNAPMAKER_ORCA set (2.4.1-beta or later: 2.4.0's command line crashes on a U1)
+slice_u1.py slices every plate and fails the build on what the slicer or its checks find; the projects stay unsliced.
 
 Supports are on only for the parts that need them, measured by overhangs.py: per object, not
 per plate (a plate's supports filled the tub's screw counterbores, 2026-10-21). Only the top and its coupons are
@@ -78,6 +79,8 @@ def _threshold():
 
 OBJECT_SUPPORT = {"enable_support": "1", "support_threshold_angle": _threshold(), "support_remove_small_overhang": "0",
                   "support_on_build_plate_only": "1", "bridge_no_support": "1"}
+# On the U1 the same, in the default tree style: Snapmaker Orca refuses a variable layer height (the fine layers) with Organic supports
+U1_OBJECT_SUPPORT = dict(OBJECT_SUPPORT, support_style="default")
 # The top (and the coupons cut from it that have its slope or side rounds): printed face down, so those hang over the
 # bed. Tree supports from the plate or from the part, the body in PLA and the layers that touch the part (3 under it, 2 on
 # top of the part below) in Bambu Support For PLA, top Z distance 0 so the interface sits right on the surface and
@@ -93,7 +96,11 @@ TOP_SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_sty
 # and the front right of the P1S's. 35 wide and about 50 deep with its brim. The P1S's is at x 200, not 210 (2026-10-25): with 0.08 mm
 # layers it flushes more per layer and sliced at 210 the G-code left the bed
 TOWER_W, TOWER_D = 35, 50
-TOWER_AT = {"U1": (223.0, 206.0), "P1S": (200.0, 8.0)}
+# The U1's tower at 0.08 mm layers, as Snapmaker Orca 2.4.1 sliced it (2026-10-25): from 3 mm left of and below its corner (the brim) to
+# 51 mm right of and above it (the ribs and the flush), so the tower at x 223 left the bed at x 274 (the bed ends at 270.5); the P1S's is as it was
+TOWER_SIZE = {"U1": (52, 52), "P1S": (TOWER_W, TOWER_D)}     # (x, y) mm kept clear of other parts from the tower's corner, brim and margin aside
+SUPPORT_REACH = 4.0         # mm of room added round the top on top of GAP: its tree supports spread 8 mm beyond it (measured on the sliced 5_unit), GAP + this is 10
+TOWER_AT = {"U1": (210.0, 206.0), "P1S": (200.0, 8.0)}
 
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts
 TOP_STL = os.path.join(HERE, "top.stl")
@@ -209,13 +216,36 @@ def case_plate(plate):
     return plate.removesuffix("_a").removesuffix("_b") not in TEST_PLATES
 
 
-def layer_ranges_xml(plate, ids, same=False):
+# an object's range ends this far above its top (mm): the slicer adds a layer step if the range ends below the mesh's float top
+TOP_MARGIN = 1e-5
+
+
+def layer_ranges_xml(plate, ids, same=False, heights=None):
     """Metadata/layer_config_ranges.xml: the fine layer height (FINE_LAYER_RELEASE on a RELEASE_PLATES plate, else FINE_LAYER_TEST) over each object's first FINE_LAYERS mm; ids: {object's number in the project, from 1: name}.
     same: every object of the plate gets the highest range of them (Bambu Studio won't slice a prime tower unless all the
-    plate's objects have the same variable layer height). None if no object of the plate has one."""
+    plate's objects have the same variable layer height). None if no object of the plate has one.
+    heights ({object's number: its height in mm}): Snapmaker Orca is stricter, it compares the objects' layer height profiles
+    element by element, the z of each object's top included, so a shorter object would never match a taller one. So (same and
+    heights) the ranges are split at every object's top, each piece a hair (0.0002 mm) off its neighbours' height so the slicer
+    can't merge the pieces back, and every object gets the same list (the slicer trims it at the object's top): each
+    object's profile is then a prefix of the tallest's."""
     top = max((FINE_LAYERS[n] for n in ids.values() if n in FINE_LAYERS), default=0)
+    fine = FINE_LAYER_RELEASE if plate in RELEASE_PLATES else FINE_LAYER_TEST
+    if same and heights and top:
+        cuts = sorted({round(h, 4) + TOP_MARGIN for h in heights.values() if h > 0.001} | {top})
+        if any(0 < b - a < 0.002 for a, b in zip(cuts, cuts[1:])):
+            sys.exit(f"{plate}: two objects' heights differ by under 2 um: {cuts}")
+        pieces, lo = [], 0.0
+        for k, hi in enumerate(cuts):
+            h = float(fine) if hi <= top + 1e-9 else 0.2
+            pieces.append((lo, hi, h + (k % 2) * 0.0002))
+            lo = hi
+        objs = "".join(f' <object id="{i}">\n' + "".join(
+            f'  <range min_z="{a:g}" max_z="{b:g}">\n   <option opt_key="layer_height">{h:.4f}</option>\n  </range>\n'
+            for a, b, h in pieces) + ' </object>\n' for i in ids)
+        return f'<?xml version="1.0" encoding="utf-8"?>\n<objects>\n{objs}</objects>\n'
     ranges = {i: (top if same else FINE_LAYERS.get(n, 0)) for i, n in ids.items()}
-    objs = "".join(f' <object id="{i}">\n  <range min_z="0" max_z="{h}">\n   <option opt_key="layer_height">{FINE_LAYER_RELEASE if plate in RELEASE_PLATES else FINE_LAYER_TEST}'
+    objs = "".join(f' <object id="{i}">\n  <range min_z="0" max_z="{h}">\n   <option opt_key="layer_height">{fine}'
                    f'</option>\n  </range>\n </object>\n' for i, h in ranges.items() if h)
     return f'<?xml version="1.0" encoding="utf-8"?>\n<objects>\n{objs}</objects>\n' if objs else None
 
@@ -383,7 +413,8 @@ def tower_keepout(parts, printer="U1"):
     if not has_top(parts):
         return []
     x, y = TOWER_AT[printer]
-    return [(x - 8, y - 8, x + TOWER_W + 8, y + TOWER_D + 8)]
+    w, d = TOWER_SIZE[printer]
+    return [(x - 8, y - 8, x + w + 8, y + d + 8)]
 
 
 def pack(sizes, taken, bed=BED):
@@ -435,7 +466,10 @@ def build(plate, parts, z, supported):
         m.apply_translation(-(lo + hi) / 2)          # centred on its footprint and its height
         meshes.append((name, m, hi - lo))
     taken, spots = tower_keepout(parts), {}
-    for (n, s), xy in zip([(n, s) for n, m, s in meshes], pack([(s[0], s[1]) for n, m, s in meshes], taken)):
+    # (a part with tree supports gets room for them all round: they spread SUPPORT_REACH beyond it, and Snapmaker Orca refuses a
+    # plate whose supports cross another part's paths)
+    reach = {n: 2 * SUPPORT_REACH if dict(parts)[n] in TOP_PARTS else 0 for n, m, s in meshes}
+    for (n, s), xy in zip([(n, s) for n, m, s in meshes], pack([(s[0] + reach[n], s[1] + reach[n]) for n, m, s in meshes], taken)):
         spots[n] = xy
     files, resources, items, settings, instances, rels = {}, [], [], [], [], []
     for i, (name, m, size) in enumerate(meshes, 1):
@@ -451,7 +485,7 @@ def build(plate, parts, z, supported):
                      f'transform="1 0 0 0 1 0 0 0 1 {x:.4f} {y:.4f} {size[2] / 2:.4f}" printable="1"/>')
         stl_name = V5_NAMES.get(name, name + ".stl")
         stl = dict(parts)[name]
-        own = dict(OBJECT_SUPPORT if stl in supported else TOP_SUPPORT if stl in TOP_PARTS else {}, **OBJECT_SETTINGS.get(name, {}),
+        own = dict(U1_OBJECT_SUPPORT if stl in supported else TOP_SUPPORT if stl in TOP_PARTS else {}, **OBJECT_SETTINGS.get(name, {}),
                    **U1_OBJECT_SETTINGS.get(name, {}))
         own = "".join(f'    <metadata key="{k}" value="{v}"/>\n' for k, v in own.items())
         settings.append(f'  <object id="{oid}">\n    <metadata key="name" value="{stl_name}"/>\n{own}'
@@ -473,7 +507,12 @@ def build(plate, parts, z, supported):
     files["3D/_rels/3dmodel.model.rels"] = ('<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns='
                                             '"http://schemas.openxmlformats.org/package/2006/relationships">\n'
                                             + "\n".join(rels) + "\n</Relationships>")
-    ranges = layer_ranges_xml(plate, {i: n for i, (n, _) in enumerate(parts, 1)}, has_top(parts)) if case_plate(plate) else None
+    # (the heights as the slicer reads them: the mesh's vertices are written to 5 significant digits)
+    def height(m):
+        z = m.vertices[:, 2]
+        return float(f"{z.max():.5g}") - float(f"{z.min():.5g}")
+    ranges = layer_ranges_xml(plate, {i: n for i, (n, _) in enumerate(parts, 1)}, has_top(parts),
+                              {i: height(m) for i, (n, m, _) in enumerate(meshes, 1)}) if case_plate(plate) else None
     if ranges:
         files["Metadata/layer_config_ranges.xml"] = ranges
     cfg = z.read("Metadata/model_settings.config").decode()
@@ -502,7 +541,7 @@ def build(plate, parts, z, supported):
                     cfg[k] = v
                 if tower:                                  # (lists: one value per extruder variant)
                     cfg["wipe_tower_x"], cfg["wipe_tower_y"] = [str(TOWER_AT["U1"][0])], [str(TOWER_AT["U1"][1])]
-                for k in [*OBJECT_SUPPORT, *TOP_SUPPORT, *(k for o in [*OBJECT_SETTINGS.values(), *U1_OBJECT_SETTINGS.values()] for k in o)]:
+                for k in [*U1_OBJECT_SUPPORT, *TOP_SUPPORT, *(k for o in [*OBJECT_SETTINGS.values(), *U1_OBJECT_SETTINGS.values()] for k in o)]:
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                 mark_presets(cfg, U1_SYSTEM, U1_PLATE_PRESETS.get(plate, U1_PRESET),
@@ -551,6 +590,8 @@ def main():
                                                            for n, p in parts))
         for n, p in parts:
             shutil.copy(p, os.path.join(plate_dir(plate, OUT, "U1"), "stl", os.path.basename(p)))
+    import slice_u1       # Snapmaker Orca's command line on every plate: the report and the checks (nothing if SNAPMAKER_ORCA isn't set)
+    sliced = slice_u1.run({plate: parts for plate, parts, _ in jobs}, supported)
     if tests:
         shutil.copy(TESTS_README, os.path.join(TESTS["U1"], "README.md"))
         tests_zip()
@@ -560,6 +601,10 @@ def main():
         if os.path.exists(os.path.join(HERE, extra)) and not sys.argv[1:]:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     shutil.copy(os.path.join(HERE, "print_package_README.md"), os.path.join(OUT, "README.md"))
+    if len([p for p in sliced if p not in TEST_PLATES]) == len([p for p in PLATES if p not in TEST_PLATES]):
+        text = open(os.path.join(OUT, "README.md")).read()      # this build's own numbers over the recorded ones
+        a, b = text.index("<!-- u1 -->"), text.index("<!-- /u1 -->")
+        open(os.path.join(OUT, "README.md"), "w").write(text[:a] + "<!-- u1 -->\n" + slice_u1.table(sliced, PLATES) + "\n" + text[b:])
     with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as o:
         for root, _, names in os.walk(OUT):
             for n in names:

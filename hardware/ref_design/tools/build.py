@@ -28,7 +28,7 @@ reroute the board. The board is the one file several stages rewrite in place:
 End-of-round stages (fitkit, check_manifold, the print kits, viewer) come after every check and run
 only when their inputs changed or when named (--only, --from). On request only, never on their own:
 sim (about 40 min), sync_pcb, route_finish. A stage whose tool is missing (P1S kit without
-BAMBU_STUDIO) is skipped with a note.
+BAMBU_STUDIO) is skipped with a note; the U1 kit without SNAPMAKER_ORCA is still written, just not sliced (no times, no checks).
 
 Defaults: RP2350B_REF and FREEROUTING_JAR from ~/.cache/ref_design_tools when not set; OpenSCAD
 from tools/scad.py (the Manifold snapshot in ~/Applications when there is one); REF_JOBS renders
@@ -53,6 +53,7 @@ CACHE = os.path.expanduser("~/.cache/ref_design_tools")
 DEFAULT_ENV = {
     "RP2350B_REF": os.path.join(CACHE, "rp2350b", "RPI-RP2350B-MINIMAL_R4-S1_public", "RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb"),
     "FREEROUTING_JAR": os.path.join(CACHE, "freerouting-1.9.0.jar"),
+    "SNAPMAKER_ORCA": os.path.expanduser("~/Applications/Snapmaker_Orca-2.4.1-beta.AppImage"),    # 2.4.1-beta or later: 2.4.0's command line crashes on a U1
 }
 sys.path.insert(0, HERE)
 import scad  # noqa: E402
@@ -138,11 +139,11 @@ STAGES = [
           ["case/check_manifold.py", "case/print_package.py", *CASE_STL, *FITKIT_STL], kind="end", check=True,
           about="every printed part's mesh: each edge on two faces"),
     Stage("print_u1", ".", [PY, "case/print_package.py"],
-          ["case/print_package.py", "case/overhangs.py", "case/print/fit_test_v5.3mf", "case/print/u1_system/*.json",
+          ["case/print_package.py", "case/slice_u1.py", "case/support_check.py", "case/overhangs.py", "case/print/fit_test_v5.3mf", "case/print/u1_system/*.json",
            "case/print_package_README.md", "case/print_tests_README.md", *CASE_STL, *FITKIT_STL],
           ["case/print/package_U1/**", "case/print/mega_blastoise_print_U1.zip", "case/print/tests_U1/**",
-           "case/print/overhang_kit.zip"], kind="end",
-          about="Snapmaker U1 print package"),
+           "case/print/overhang_kit.zip"], kind="end", env=("SNAPMAKER_ORCA",),
+          about="Snapmaker U1 print package (sliced with SNAPMAKER_ORCA, else only written)"),
     Stage("print_p1s", ".", [PY, "case/print_package_p1s.py"],
           ["case/print_package.py", "case/print_package_p1s.py", "case/support_check.py", "case/overhangs.py", "case/print/p1s/*.json", "case/print/p1s/system/*.json",
            "case/print_package_README.md", "case/print_tests_README.md", *CASE_STL, *FITKIT_STL],
