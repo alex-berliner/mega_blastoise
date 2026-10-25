@@ -140,14 +140,32 @@ pub struct Invest {
 
 /// Hidden Power's type, which in this era is a property of the HOLDER: the
 /// low bit of each of the six IVs, read as a number, picks one of fifteen
-/// types. Every IV in this engine is the same value, so the whole number is
-/// either 63 (odd IVs) or 0 (even), landing on Dark or Fighting.
+/// types, and the next bit up each picks its base power, `tr(n*40/63)+30`.
+/// Every IV in this engine is the same value in a uniform spread, so the type
+/// number there is either 63 (odd IVs) or 0 (even), landing on Dark or
+/// Fighting.
 ///
 /// It belongs on the move slot rather than being worked out at swing time,
 /// because everything that reads a move's type has to see the same answer:
 /// Conversion 2 picking a type that resists it, Counter and Mirror Coat
 /// deciding whether it was physical, the badge on the move menu.
 pub fn hidden_power_type(inv: Invest) -> crate::types::Type {
+    hidden_power([inv.iv; 6]).0
+}
+
+/// Both halves of a mon's Hidden Power, the type and the base power, read
+/// straight off its six IVs, given in the sim's stat order (hp, atk, def,
+/// spe, spa, spd, which is this engine's `Stat` order with HP in front).
+///
+/// Each stat contributes two bits to one number `n`: its low bit picks the
+/// TYPE (`tr(n*15/63)` through the same sixteen-entry table the type above
+/// walks), and its next bit up the POWER (`tr(n*40/63)+30`, so 30 to 70 in
+/// this era against the sim's `pokemon.hpPower`). The numbers are worked out
+/// separately: a mon can be Dark and 42 BP.
+///
+/// See [`hidden_power_type`] for why the answer belongs on the mon and its
+/// slots rather than at swing time.
+pub fn hidden_power(ivs: [u8; 6]) -> (crate::types::Type, u8) {
     use crate::types::Type;
     const ORDER: [Type; 16] = [
         Type::Fighting,
@@ -167,9 +185,17 @@ pub fn hidden_power_type(inv: Invest) -> crate::types::Type {
         Type::Dragon,
         Type::Dark,
     ];
-    let bit = (inv.iv & 1) as u32;
-    let n = bit + 2 * bit + 4 * bit + 8 * bit + 16 * bit + 32 * bit;
-    ORDER[((n * 15) / 63) as usize]
+    let (mut type_bits, mut power_bits) = (0u32, 0u32);
+    let mut weight = 1u32;
+    for iv in ivs {
+        type_bits += weight * u32::from(iv & 1);
+        power_bits += weight * u32::from((iv >> 1) & 1);
+        weight <<= 1;
+    }
+    (
+        ORDER[((type_bits * 15) / 63) as usize],
+        (power_bits * 40 / 63 + 30) as u8,
+    )
 }
 
 /// HP at `level`. HP takes no nature and uses its own tail.
@@ -241,7 +267,26 @@ mod tests {
         );
     }
 
-    /// Hand-checked against the standard Gen 3 formulas.
+    /// Hand-checked against the sim's `getHiddenPower` for gen 3+.
+    #[test]
+    fn hidden_power_reads_both_bits() {
+        use crate::types::Type;
+        // IVs 31/0/31/0/31/0 (hp, atk, def, spe, spa, spd): both bits add
+        // 1+4+16 = 21, so Bug and `tr(21*40/63)+30` = 43 BP.
+        assert_eq!(hidden_power([31, 0, 31, 0, 31, 0]), (Type::Bug, 43));
+        // Every IV 31 is 63 in both halves: Dark, and the 70 BP that a
+        // uniform-odd spread has always carried.
+        assert_eq!(hidden_power([31; 6]), (Type::Dark, 70));
+        // Every IV 0 is 0 in both: Fighting, and the 30 BP floor.
+        assert_eq!(hidden_power([0; 6]), (Type::Fighting, 30));
+        // Independent halves: hp and atk alone read 3 over both, landing
+        // `tr(3*15/63)` = Fighting and `tr(3*40/63)+30` = 31 BP; spa and
+        // spd alone read 48, giving Electric at 60 BP.
+        assert_eq!(hidden_power([31, 31, 0, 0, 0, 0]), (Type::Fighting, 31));
+        assert_eq!(hidden_power([0, 0, 0, 0, 31, 31]), (Type::Electric, 60));
+        // And a real-world spread: 17/18/19/20/21/22 -> Bug 54.
+        assert_eq!(hidden_power([17, 18, 19, 20, 21, 22]), (Type::Bug, 54));
+    }
     #[test]
     fn stats_match_the_worked_examples() {
         // Blissey, base 255 HP, level 100, maxed: 2*255+31+63 = 604;

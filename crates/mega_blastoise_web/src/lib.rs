@@ -18,8 +18,9 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::device_runner::{DeviceEvent, DeviceInputChannel, DevicePort, DeviceRunner};
+use mega_blastoise_core::Engine;
 use mega_blastoise_core::device_session::{Button, DeviceSession};
-use mega_blastoise_core::{FlashDataStore, OledController, PadEvent, Screen, BATTLE_HELP};
+use mega_blastoise_core::{OledController, PadEvent, Screen, BATTLE_HELP};
 
 // ── Shared input channel ─────────────────────────────────────────────────────
 
@@ -168,6 +169,14 @@ fn fixed_seed_param() -> Option<u64> {
         .and_then(|v| v.parse().ok())
 }
 
+/// The `engine` URL parameter (`engine=ps`): which battle engine core runs.
+/// Absent or unknown means core's default.
+fn engine_param() -> Option<Engine> {
+    let search = web_sys::window()?.location().search().ok()?;
+    let rest = search.strip_prefix('?')?;
+    rest.split('&').find_map(|kv| kv.strip_prefix("engine=")).and_then(Engine::parse)
+}
+
 impl DevicePort for WebPort {
     fn now_ms(&self) -> u64 {
         Date::now() as u64
@@ -223,6 +232,10 @@ impl DevicePort for WebPort {
         battery_param()
     }
 
+    fn engine(&self) -> Engine {
+        engine_param().unwrap_or(Engine::DEVICE_DEFAULT)
+    }
+
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────
@@ -234,8 +247,7 @@ pub fn start() {
     spawn_local(async {
         let port = WebPort;
         let runner = DeviceRunner::new(&port, &INPUT);
-        let data = FlashDataStore::new();
-        runner.run(&data).await
+        runner.run().await
     });
 }
 

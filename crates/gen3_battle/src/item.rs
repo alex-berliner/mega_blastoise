@@ -15,6 +15,7 @@
 
 use crate::ability::{Chain, X0_5, X1_5, X2};
 use crate::data::{Boost, Status};
+use crate::stats::Stat;
 use crate::types::Type;
 
 /// A tenth again, which is what most type boosters are worth.
@@ -201,9 +202,11 @@ pub enum Ripe {
     None,
     /// Heal this many HP flat.
     Heal(u16),
-    /// Heal an eighth of maximum, and muddle a mon whose nature dislikes the
-    /// flavour — which this engine does not track, so it never muddles.
-    HealEighth,
+    /// Heal an eighth of maximum, and muddle a mon whose nature lowers the
+    /// stat carried in the bracket: Figy's spice offends Atk, Wiki's dryness
+    /// Sp.Atk, Mago's sweetness Spe, Aguav's bitterness Sp.Def and Iapapa's
+    /// sourness Def.
+    HealEighth(Stat),
     /// Raise this stat one stage.
     Boost(Boost),
     /// Starf raises a random stat two stages; the sim samples the list, and a
@@ -214,17 +217,19 @@ pub enum Ripe {
 }
 
 /// Whether the residual phase eats this berry, and what happens if it does.
-/// The healing berries wait until the holder is at half, the pinch ones until
-/// a quarter.
+/// In THIS era every healing berry waits until its holder is at half: the
+/// modern quarter-gluttony trigger belongs to a later gen's onUpdate.
 pub fn ripens(mon: &Holder) -> Ripe {
     let half = mon.hp as u32 * 2 <= mon.max_hp as u32;
     let quarter = mon.hp as u32 * 4 <= mon.max_hp as u32;
     match mon.item {
         "oranberry" if half => Ripe::Heal(10),
         "sitrusberry" if half => Ripe::Heal(30),
-        "figyberry" | "wikiberry" | "magoberry" | "aguavberry" | "iapapaberry" if half => {
-            Ripe::HealEighth
-        }
+        "figyberry" if half => Ripe::HealEighth(Stat::Atk),
+        "wikiberry" if half => Ripe::HealEighth(Stat::SpAtk),
+        "magoberry" if half => Ripe::HealEighth(Stat::Spe),
+        "aguavberry" if half => Ripe::HealEighth(Stat::SpDef),
+        "iapapaberry" if half => Ripe::HealEighth(Stat::Def),
         "liechiberry" if quarter => Ripe::Boost(Boost::Atk),
         "ganlonberry" if quarter => Ripe::Boost(Boost::Def),
         "salacberry" if quarter => Ripe::Boost(Boost::Spe),

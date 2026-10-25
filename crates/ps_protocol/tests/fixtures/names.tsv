@@ -1,0 +1,1000 @@
+move	acid	Acid
+move	amnesia	Amnesia
+move	aurorabeam	Aurora Beam
+move	bide	Bide
+move	bind	Bind
+move	bite	Bite
+move	blizzard	Blizzard
+move	bubble	Bubble
+move	bubblebeam	Bubble Beam
+move	clamp	Clamp
+move	constrict	Constrict
+move	conversion	Conversion
+move	counter	Counter
+move	crabhammer	Crabhammer
+move	dig	Dig
+move	disable	Disable
+move	dizzypunch	Dizzy Punch
+move	doubleedge	Double-Edge
+move	dragonrage	Dragon Rage
+move	explosion	Explosion
+move	fireblast	Fire Blast
+move	firespin	Fire Spin
+move	fly	Fly
+move	focusenergy	Focus Energy
+move	glare	Glare
+move	growth	Growth
+move	gust	Gust
+move	haze	Haze
+move	highjumpkick	High Jump Kick
+move	jumpkick	Jump Kick
+move	karatechop	Karate Chop
+move	leechseed	Leech Seed
+move	lightscreen	Light Screen
+move	metronome	Metronome
+move	mimic	Mimic
+move	minimize	Minimize
+move	mirrormove	Mirror Move
+move	mist	Mist
+move	nightshade	Night Shade
+move	petaldance	Petal Dance
+move	poisonsting	Poison Sting
+move	psychic	Psychic
+move	psywave	Psywave
+move	rage	Rage
+move	razorleaf	Razor Leaf
+move	razorwind	Razor Wind
+move	recover	Recover
+move	reflect	Reflect
+move	rest	Rest
+move	roar	Roar
+move	rockslide	Rock Slide
+move	rockthrow	Rock Throw
+move	sandattack	Sand Attack
+move	seismictoss	Seismic Toss
+move	selfdestruct	Self-Destruct
+move	skullbash	Skull Bash
+move	skyattack	Sky Attack
+move	slash	Slash
+move	sludge	Sludge
+move	solarbeam	Solar Beam
+move	sonicboom	Sonic Boom
+move	softboiled	Soft-Boiled
+move	struggle	Struggle
+move	substitute	Substitute
+move	superfang	Super Fang
+move	thrash	Thrash
+move	thunder	Thunder
+move	triattack	Tri Attack
+move	whirlwind	Whirlwind
+move	wingattack	Wing Attack
+move	wrap	Wrap
+move	lowkick	Low Kick
+move	poisongas	Poison Gas
+move	poisonpowder	Poison Powder
+move	toxic	Toxic
+move	transform	Transform
+move	absorb	Absorb
+move	flash	Flash
+move	hypnosis	Hypnosis
+move	megadrain	Mega Drain
+move	surf	Surf
+move	vinewhip	Vine Whip
+move	waterfall	Waterfall
+move	dreameater	Dream Eater
+move	payday	Pay Day
+move	tackle	Tackle
+move	acidarmor	Acid Armor
+move	barrier	Barrier
+move	bodyslam	Body Slam
+move	flamethrower	Flamethrower
+move	growl	Growl
+move	hydropump	Hydro Pump
+move	icebeam	Ice Beam
+move	leechlife	Leech Life
+move	lick	Lick
+move	pinmissile	Pin Missile
+move	screech	Screech
+move	sing	Sing
+move	sleeppowder	Sleep Powder
+move	smog	Smog
+move	spore	Spore
+move	stringshot	String Shot
+move	stunspore	Stun Spore
+move	submission	Submission
+move	supersonic	Supersonic
+move	swordsdance	Swords Dance
+move	thunderbolt	Thunderbolt
+move	thunderwave	Thunder Wave
+move	barrage	Barrage
+move	boneclub	Bone Club
+move	cometpunch	Comet Punch
+move	doubleslap	Double Slap
+move	eggbomb	Egg Bomb
+move	hyperfang	Hyper Fang
+move	meditate	Meditate
+move	rollingkick	Rolling Kick
+move	sharpen	Sharpen
+move	spikecannon	Spike Cannon
+move	teleport	Teleport
+move	twineedle	Twineedle
+move	bonemerang	Bonemerang
+move	cut	Cut
+move	kinesis	Kinesis
+move	lovelykiss	Lovely Kiss
+move	agility	Agility
+move	confuseray	Confuse Ray
+move	confusion	Confusion
+move	defensecurl	Defense Curl
+move	doublekick	Double Kick
+move	doubleteam	Double Team
+move	drillpeck	Drill Peck
+move	earthquake	Earthquake
+move	ember	Ember
+move	firepunch	Fire Punch
+move	fissure	Fissure
+move	furyattack	Fury Attack
+move	furyswipes	Fury Swipes
+move	guillotine	Guillotine
+move	harden	Harden
+move	headbutt	Headbutt
+move	hornattack	Horn Attack
+move	horndrill	Horn Drill
+move	hyperbeam	Hyper Beam
+move	icepunch	Ice Punch
+move	leer	Leer
+move	megakick	Mega Kick
+move	megapunch	Mega Punch
+move	peck	Peck
+move	pound	Pound
+move	psybeam	Psybeam
+move	quickattack	Quick Attack
+move	scratch	Scratch
+move	slam	Slam
+move	smokescreen	Smokescreen
+move	splash	Splash
+move	stomp	Stomp
+move	strength	Strength
+move	swift	Swift
+move	tailwhip	Tail Whip
+move	takedown	Take Down
+move	thunderpunch	Thunder Punch
+move	thundershock	Thunder Shock
+move	visegrip	Vise Grip
+move	watergun	Water Gun
+move	withdraw	Withdraw
+species	bulbasaur	Bulbasaur
+species	ivysaur	Ivysaur
+species	venusaur	Venusaur
+species	charmander	Charmander
+species	charmeleon	Charmeleon
+species	charizard	Charizard
+species	squirtle	Squirtle
+species	wartortle	Wartortle
+species	blastoise	Blastoise
+species	caterpie	Caterpie
+species	metapod	Metapod
+species	butterfree	Butterfree
+species	weedle	Weedle
+species	kakuna	Kakuna
+species	beedrill	Beedrill
+species	pidgey	Pidgey
+species	pidgeotto	Pidgeotto
+species	pidgeot	Pidgeot
+species	rattata	Rattata
+species	raticate	Raticate
+species	spearow	Spearow
+species	fearow	Fearow
+species	ekans	Ekans
+species	arbok	Arbok
+species	pikachu	Pikachu
+species	raichu	Raichu
+species	sandshrew	Sandshrew
+species	sandslash	Sandslash
+species	nidoranf	Nidoran-F
+species	nidorina	Nidorina
+species	nidoqueen	Nidoqueen
+species	nidoranm	Nidoran-M
+species	nidorino	Nidorino
+species	nidoking	Nidoking
+species	clefairy	Clefairy
+species	clefable	Clefable
+species	vulpix	Vulpix
+species	ninetales	Ninetales
+species	jigglypuff	Jigglypuff
+species	wigglytuff	Wigglytuff
+species	zubat	Zubat
+species	golbat	Golbat
+species	oddish	Oddish
+species	gloom	Gloom
+species	vileplume	Vileplume
+species	paras	Paras
+species	parasect	Parasect
+species	venonat	Venonat
+species	venomoth	Venomoth
+species	diglett	Diglett
+species	dugtrio	Dugtrio
+species	meowth	Meowth
+species	persian	Persian
+species	psyduck	Psyduck
+species	golduck	Golduck
+species	mankey	Mankey
+species	primeape	Primeape
+species	growlithe	Growlithe
+species	arcanine	Arcanine
+species	poliwag	Poliwag
+species	poliwhirl	Poliwhirl
+species	poliwrath	Poliwrath
+species	abra	Abra
+species	kadabra	Kadabra
+species	alakazam	Alakazam
+species	machop	Machop
+species	machoke	Machoke
+species	machamp	Machamp
+species	bellsprout	Bellsprout
+species	weepinbell	Weepinbell
+species	victreebel	Victreebel
+species	tentacool	Tentacool
+species	tentacruel	Tentacruel
+species	geodude	Geodude
+species	graveler	Graveler
+species	golem	Golem
+species	ponyta	Ponyta
+species	rapidash	Rapidash
+species	slowpoke	Slowpoke
+species	slowbro	Slowbro
+species	magnemite	Magnemite
+species	magneton	Magneton
+species	farfetchd	Farfetch’d
+species	doduo	Doduo
+species	dodrio	Dodrio
+species	seel	Seel
+species	dewgong	Dewgong
+species	grimer	Grimer
+species	muk	Muk
+species	shellder	Shellder
+species	cloyster	Cloyster
+species	gastly	Gastly
+species	haunter	Haunter
+species	gengar	Gengar
+species	onix	Onix
+species	drowzee	Drowzee
+species	hypno	Hypno
+species	krabby	Krabby
+species	kingler	Kingler
+species	voltorb	Voltorb
+species	electrode	Electrode
+species	exeggcute	Exeggcute
+species	exeggutor	Exeggutor
+species	cubone	Cubone
+species	marowak	Marowak
+species	hitmonlee	Hitmonlee
+species	hitmonchan	Hitmonchan
+species	lickitung	Lickitung
+species	koffing	Koffing
+species	weezing	Weezing
+species	rhyhorn	Rhyhorn
+species	rhydon	Rhydon
+species	chansey	Chansey
+species	tangela	Tangela
+species	kangaskhan	Kangaskhan
+species	horsea	Horsea
+species	seadra	Seadra
+species	goldeen	Goldeen
+species	seaking	Seaking
+species	staryu	Staryu
+species	starmie	Starmie
+species	mrmime	Mr. Mime
+species	scyther	Scyther
+species	jynx	Jynx
+species	electabuzz	Electabuzz
+species	magmar	Magmar
+species	pinsir	Pinsir
+species	tauros	Tauros
+species	magikarp	Magikarp
+species	gyarados	Gyarados
+species	lapras	Lapras
+species	ditto	Ditto
+species	eevee	Eevee
+species	vaporeon	Vaporeon
+species	jolteon	Jolteon
+species	flareon	Flareon
+species	porygon	Porygon
+species	omanyte	Omanyte
+species	omastar	Omastar
+species	kabuto	Kabuto
+species	kabutops	Kabutops
+species	aerodactyl	Aerodactyl
+species	snorlax	Snorlax
+species	articuno	Articuno
+species	zapdos	Zapdos
+species	moltres	Moltres
+species	dratini	Dratini
+species	dragonair	Dragonair
+species	dragonite	Dragonite
+species	mewtwo	Mewtwo
+species	mew	Mew
+item	firestone	Fire Stone
+item	greatball	Great Ball
+item	leafstone	Leaf Stone
+item	masterball	Master Ball
+item	moonstone	Moon Stone
+item	pokeball	Poke Ball
+item	thunderstone	Thunder Stone
+item	ultraball	Ultra Ball
+item	waterstone	Water Stone
+ability	noability	No Ability
+move	ancientpower	Ancient Power
+move	assist	Assist
+move	astonish	Astonish
+move	beatup	Beat Up
+move	brickbreak	Brick Break
+move	charge	Charge
+move	conversion2	Conversion 2
+move	covet	Covet
+move	crunch	Crunch
+move	dive	Dive
+move	doomdesire	Doom Desire
+move	encore	Encore
+move	extrasensory	Extrasensory
+move	fakeout	Fake Out
+move	feintattack	Feint Attack
+move	flail	Flail
+move	followme	Follow Me
+move	foresight	Foresight
+move	furycutter	Fury Cutter
+move	gigadrain	Giga Drain
+move	hiddenpower	Hidden Power
+move	leafblade	Leaf Blade
+move	lockon	Lock-On
+move	memento	Memento
+move	mindreader	Mind Reader
+move	mirrorcoat	Mirror Coat
+move	naturepower	Nature Power
+move	needlearm	Needle Arm
+move	nightmare	Nightmare
+move	odorsleuth	Odor Sleuth
+move	outrage	Outrage
+move	overheat	Overheat
+move	pursuit	Pursuit
+move	reversal	Reversal
+move	rocksmash	Rock Smash
+move	sketch	Sketch
+move	sleeptalk	Sleep Talk
+move	spite	Spite
+move	stockpile	Stockpile
+move	taunt	Taunt
+move	teeterdance	Teeter Dance
+move	tickle	Tickle
+move	uproar	Uproar
+move	volttackle	Volt Tackle
+move	weatherball	Weather Ball
+move	zapcannon	Zap Cannon
+move	aromatherapy	Aromatherapy
+move	bonerush	Bone Rush
+move	bulletseed	Bullet Seed
+move	camouflage	Camouflage
+move	cottonspore	Cotton Spore
+move	curse	Curse
+move	detect	Detect
+move	endeavor	Endeavor
+move	extremespeed	Extreme Speed
+move	focuspunch	Focus Punch
+move	futuresight	Future Sight
+move	healbell	Heal Bell
+move	iciclespear	Icicle Spear
+move	imprison	Imprison
+move	ingrain	Ingrain
+move	knockoff	Knock Off
+move	magiccoat	Magic Coat
+move	moonlight	Moonlight
+move	morningsun	Morning Sun
+move	mudsport	Mud Sport
+move	perishsong	Perish Song
+move	protect	Protect
+move	psychup	Psych Up
+move	rapidspin	Rapid Spin
+move	recycle	Recycle
+move	rockblast	Rock Blast
+move	safeguard	Safeguard
+move	sandtomb	Sand Tomb
+move	scaryface	Scary Face
+move	secretpower	Secret Power
+move	snatch	Snatch
+move	snore	Snore
+move	spikes	Spikes
+move	swallow	Swallow
+move	synthesis	Synthesis
+move	tailglow	Tail Glow
+move	torment	Torment
+move	watersport	Water Sport
+move	whirlpool	Whirlpool
+move	wish	Wish
+move	yawn	Yawn
+move	aircutter	Air Cutter
+move	block	Block
+move	bounce	Bounce
+move	charm	Charm
+move	grasswhistle	Grass Whistle
+move	heatwave	Heat Wave
+move	hypervoice	Hyper Voice
+move	meanlook	Mean Look
+move	metalsound	Metal Sound
+move	meteormash	Meteor Mash
+move	muddywater	Muddy Water
+move	poisonfang	Poison Fang
+move	rocktomb	Rock Tomb
+move	smellingsalts	Smelling Salts
+move	sweetkiss	Sweet Kiss
+move	sweetscent	Sweet Scent
+move	thief	Thief
+move	willowisp	Will-O-Wisp
+move	destinybond	Destiny Bond
+move	sheercold	Sheer Cold
+move	swagger	Swagger
+move	frustration	Frustration
+move	howl	Howl
+move	iceball	Ice Ball
+move	magnitude	Magnitude
+move	psychoboost	Psycho Boost
+move	refresh	Refresh
+move	return	Return
+move	signalbeam	Signal Beam
+move	silverwind	Silver Wind
+move	skyuppercut	Sky Uppercut
+move	spiderweb	Spider Web
+move	grudge	Grudge
+move	hail	Hail
+move	lusterpurge	Luster Purge
+move	milkdrink	Milk Drink
+move	mistball	Mist Ball
+move	octazooka	Octazooka
+move	revenge	Revenge
+move	slackoff	Slack Off
+move	vitalthrow	Vital Throw
+move	aerialace	Aerial Ace
+move	aeroblast	Aeroblast
+move	armthrust	Arm Thrust
+move	attract	Attract
+move	batonpass	Baton Pass
+move	bellydrum	Belly Drum
+move	blastburn	Blast Burn
+move	blazekick	Blaze Kick
+move	bulkup	Bulk Up
+move	calmmind	Calm Mind
+move	cosmicpower	Cosmic Power
+move	crosschop	Cross Chop
+move	crushclaw	Crush Claw
+move	dragonbreath	Dragon Breath
+move	dragonclaw	Dragon Claw
+move	dragondance	Dragon Dance
+move	dynamicpunch	Dynamic Punch
+move	endure	Endure
+move	eruption	Eruption
+move	facade	Facade
+move	faketears	Fake Tears
+move	falseswipe	False Swipe
+move	featherdance	Feather Dance
+move	flamewheel	Flame Wheel
+move	flatter	Flatter
+move	frenzyplant	Frenzy Plant
+move	helpinghand	Helping Hand
+move	hydrocannon	Hydro Cannon
+move	icywind	Icy Wind
+move	irondefense	Iron Defense
+move	irontail	Iron Tail
+move	machpunch	Mach Punch
+move	magicalleaf	Magical Leaf
+move	megahorn	Megahorn
+move	metalclaw	Metal Claw
+move	mudshot	Mud Shot
+move	mudslap	Mud-Slap
+move	painsplit	Pain Split
+move	poisontail	Poison Tail
+move	powdersnow	Powder Snow
+move	present	Present
+move	raindance	Rain Dance
+move	roleplay	Role Play
+move	rollout	Rollout
+move	sacredfire	Sacred Fire
+move	sandstorm	Sandstorm
+move	shadowball	Shadow Ball
+move	shadowpunch	Shadow Punch
+move	shockwave	Shock Wave
+move	skillswap	Skill Swap
+move	sludgebomb	Sludge Bomb
+move	spark	Spark
+move	spitup	Spit Up
+move	steelwing	Steel Wing
+move	sunnyday	Sunny Day
+move	superpower	Superpower
+move	trick	Trick
+move	triplekick	Triple Kick
+move	twister	Twister
+move	waterpulse	Water Pulse
+move	waterspout	Water Spout
+species	milotic	Milotic
+species	chikorita	Chikorita
+species	bayleef	Bayleef
+species	meganium	Meganium
+species	cyndaquil	Cyndaquil
+species	quilava	Quilava
+species	typhlosion	Typhlosion
+species	totodile	Totodile
+species	croconaw	Croconaw
+species	feraligatr	Feraligatr
+species	igglybuff	Igglybuff
+species	togepi	Togepi
+species	togetic	Togetic
+species	cleffa	Cleffa
+species	ampharos	Ampharos
+species	bellossom	Bellossom
+species	marill	Marill
+species	azumarill	Azumarill
+species	jumpluff	Jumpluff
+species	snubbull	Snubbull
+species	granbull	Granbull
+species	tyrogue	Tyrogue
+species	hitmontop	Hitmontop
+species	treecko	Treecko
+species	grovyle	Grovyle
+species	sceptile	Sceptile
+species	torchic	Torchic
+species	combusken	Combusken
+species	blaziken	Blaziken
+species	mudkip	Mudkip
+species	marshtomp	Marshtomp
+species	swampert	Swampert
+species	beautifly	Beautifly
+species	ralts	Ralts
+species	kirlia	Kirlia
+species	gardevoir	Gardevoir
+species	exploud	Exploud
+species	azurill	Azurill
+species	mawile	Mawile
+species	plusle	Plusle
+species	minun	Minun
+species	kecleon	Kecleon
+species	feebas	Feebas
+species	duskull	Duskull
+species	dusclops	Dusclops
+species	regirock	Regirock
+species	regice	Regice
+species	registeel	Registeel
+species	noctowl	Noctowl
+species	ariados	Ariados
+species	qwilfish	Qwilfish
+species	magcargo	Magcargo
+species	corsola	Corsola
+species	mantine	Mantine
+species	raikou	Raikou
+species	entei	Entei
+species	suicune	Suicune
+species	swellow	Swellow
+species	wingull	Wingull
+species	pelipper	Pelipper
+species	masquerain	Masquerain
+species	delcatty	Delcatty
+species	volbeat	Volbeat
+species	illumise	Illumise
+species	torkoal	Torkoal
+species	lunatone	Lunatone
+species	solrock	Solrock
+species	castform	Castform
+species	castformsunny	Castform-Sunny
+species	castformrainy	Castform-Rainy
+species	chimecho	Chimecho
+species	trapinch	Trapinch
+species	vibrava	Vibrava
+species	flygon	Flygon
+species	shiftry	Shiftry
+species	sentret	Sentret
+species	furret	Furret
+species	hoothoot	Hoothoot
+species	ledyba	Ledyba
+species	ledian	Ledian
+species	spinarak	Spinarak
+species	crobat	Crobat
+species	chinchou	Chinchou
+species	lanturn	Lanturn
+species	pichu	Pichu
+species	natu	Natu
+species	xatu	Xatu
+species	mareep	Mareep
+species	flaaffy	Flaaffy
+species	sudowoodo	Sudowoodo
+species	politoed	Politoed
+species	hoppip	Hoppip
+species	skiploom	Skiploom
+species	aipom	Aipom
+species	sunkern	Sunkern
+species	sunflora	Sunflora
+species	yanma	Yanma
+species	wooper	Wooper
+species	quagsire	Quagsire
+species	espeon	Espeon
+species	umbreon	Umbreon
+species	murkrow	Murkrow
+species	slowking	Slowking
+species	misdreavus	Misdreavus
+species	unown	Unown
+species	wobbuffet	Wobbuffet
+species	girafarig	Girafarig
+species	pineco	Pineco
+species	forretress	Forretress
+species	dunsparce	Dunsparce
+species	gligar	Gligar
+species	steelix	Steelix
+species	scizor	Scizor
+species	shuckle	Shuckle
+species	heracross	Heracross
+species	sneasel	Sneasel
+species	teddiursa	Teddiursa
+species	ursaring	Ursaring
+species	slugma	Slugma
+species	swinub	Swinub
+species	piloswine	Piloswine
+species	remoraid	Remoraid
+species	octillery	Octillery
+species	delibird	Delibird
+species	skarmory	Skarmory
+species	houndour	Houndour
+species	houndoom	Houndoom
+species	kingdra	Kingdra
+species	phanpy	Phanpy
+species	donphan	Donphan
+species	porygon2	Porygon2
+species	stantler	Stantler
+species	smeargle	Smeargle
+species	smoochum	Smoochum
+species	elekid	Elekid
+species	magby	Magby
+species	miltank	Miltank
+species	blissey	Blissey
+species	larvitar	Larvitar
+species	pupitar	Pupitar
+species	tyranitar	Tyranitar
+species	lugia	Lugia
+species	hooh	Ho-Oh
+species	celebi	Celebi
+species	poochyena	Poochyena
+species	mightyena	Mightyena
+species	zigzagoon	Zigzagoon
+species	linoone	Linoone
+species	wurmple	Wurmple
+species	silcoon	Silcoon
+species	cascoon	Cascoon
+species	dustox	Dustox
+species	lotad	Lotad
+species	lombre	Lombre
+species	ludicolo	Ludicolo
+species	seedot	Seedot
+species	nuzleaf	Nuzleaf
+species	taillow	Taillow
+species	surskit	Surskit
+species	shroomish	Shroomish
+species	breloom	Breloom
+species	slakoth	Slakoth
+species	vigoroth	Vigoroth
+species	slaking	Slaking
+species	nincada	Nincada
+species	ninjask	Ninjask
+species	shedinja	Shedinja
+species	whismur	Whismur
+species	loudred	Loudred
+species	makuhita	Makuhita
+species	hariyama	Hariyama
+species	nosepass	Nosepass
+species	skitty	Skitty
+species	sableye	Sableye
+species	aron	Aron
+species	lairon	Lairon
+species	aggron	Aggron
+species	meditite	Meditite
+species	medicham	Medicham
+species	electrike	Electrike
+species	manectric	Manectric
+species	roselia	Roselia
+species	gulpin	Gulpin
+species	swalot	Swalot
+species	carvanha	Carvanha
+species	sharpedo	Sharpedo
+species	wailmer	Wailmer
+species	wailord	Wailord
+species	numel	Numel
+species	camerupt	Camerupt
+species	spoink	Spoink
+species	grumpig	Grumpig
+species	spinda	Spinda
+species	cacnea	Cacnea
+species	cacturne	Cacturne
+species	swablu	Swablu
+species	altaria	Altaria
+species	zangoose	Zangoose
+species	seviper	Seviper
+species	barboach	Barboach
+species	whiscash	Whiscash
+species	corphish	Corphish
+species	crawdaunt	Crawdaunt
+species	baltoy	Baltoy
+species	claydol	Claydol
+species	lileep	Lileep
+species	cradily	Cradily
+species	anorith	Anorith
+species	armaldo	Armaldo
+species	castformsnowy	Castform-Snowy
+species	shuppet	Shuppet
+species	banette	Banette
+species	tropius	Tropius
+species	absol	Absol
+species	wynaut	Wynaut
+species	snorunt	Snorunt
+species	glalie	Glalie
+species	spheal	Spheal
+species	sealeo	Sealeo
+species	walrein	Walrein
+species	clamperl	Clamperl
+species	huntail	Huntail
+species	gorebyss	Gorebyss
+species	relicanth	Relicanth
+species	luvdisc	Luvdisc
+species	bagon	Bagon
+species	shelgon	Shelgon
+species	salamence	Salamence
+species	beldum	Beldum
+species	metang	Metang
+species	metagross	Metagross
+species	latias	Latias
+species	latios	Latios
+species	kyogre	Kyogre
+species	groudon	Groudon
+species	rayquaza	Rayquaza
+species	jirachi	Jirachi
+species	deoxys	Deoxys
+species	deoxysattack	Deoxys-Attack
+species	deoxysdefense	Deoxys-Defense
+species	deoxysspeed	Deoxys-Speed
+cosmetic	unownb	Unown-B	unown
+cosmetic	unownc	Unown-C	unown
+cosmetic	unownd	Unown-D	unown
+cosmetic	unowne	Unown-E	unown
+cosmetic	unownf	Unown-F	unown
+cosmetic	unowng	Unown-G	unown
+cosmetic	unownh	Unown-H	unown
+cosmetic	unowni	Unown-I	unown
+cosmetic	unownj	Unown-J	unown
+cosmetic	unownk	Unown-K	unown
+cosmetic	unownl	Unown-L	unown
+cosmetic	unownm	Unown-M	unown
+cosmetic	unownn	Unown-N	unown
+cosmetic	unowno	Unown-O	unown
+cosmetic	unownp	Unown-P	unown
+cosmetic	unownq	Unown-Q	unown
+cosmetic	unownr	Unown-R	unown
+cosmetic	unowns	Unown-S	unown
+cosmetic	unownt	Unown-T	unown
+cosmetic	unownu	Unown-U	unown
+cosmetic	unownv	Unown-V	unown
+cosmetic	unownw	Unown-W	unown
+cosmetic	unownx	Unown-X	unown
+cosmetic	unowny	Unown-Y	unown
+cosmetic	unownz	Unown-Z	unown
+cosmetic	unownexclamation	Unown-Exclamation	unown
+cosmetic	unownquestion	Unown-Question	unown
+item	aguavberry	Aguav Berry
+item	apicotberry	Apicot Berry
+item	blackbelt	Black Belt
+item	blackglasses	Black Glasses
+item	charcoal	Charcoal
+item	dragonfang	Dragon Fang
+item	figyberry	Figy Berry
+item	ganlonberry	Ganlon Berry
+item	hardstone	Hard Stone
+item	iapapaberry	Iapapa Berry
+item	kingsrock	King's Rock
+item	lansatberry	Lansat Berry
+item	laxincense	Lax Incense
+item	liechiberry	Liechi Berry
+item	lightball	Light Ball
+item	magnet	Magnet
+item	magoberry	Mago Berry
+item	metalcoat	Metal Coat
+item	miracleseed	Miracle Seed
+item	mysticwater	Mystic Water
+item	nevermeltice	Never-Melt Ice
+item	oranberry	Oran Berry
+item	petayaberry	Petaya Berry
+item	poisonbarb	Poison Barb
+item	quickclaw	Quick Claw
+item	salacberry	Salac Berry
+item	seaincense	Sea Incense
+item	sharpbeak	Sharp Beak
+item	silkscarf	Silk Scarf
+item	silverpowder	Silver Powder
+item	sitrusberry	Sitrus Berry
+item	softsand	Soft Sand
+item	spelltag	Spell Tag
+item	starfberry	Starf Berry
+item	twistedspoon	Twisted Spoon
+item	wikiberry	Wiki Berry
+item	brightpowder	Bright Powder
+item	choiceband	Choice Band
+item	deepseascale	Deep Sea Scale
+item	deepseatooth	Deep Sea Tooth
+item	leftovers	Leftovers
+item	luckypunch	Lucky Punch
+item	mentalherb	Mental Herb
+item	stick	Stick
+item	thickclub	Thick Club
+item	aspearberry	Aspear Berry
+item	belueberry	Belue Berry
+item	blukberry	Bluk Berry
+item	cheriberry	Cheri Berry
+item	chestoberry	Chesto Berry
+item	cornnberry	Cornn Berry
+item	durinberry	Durin Berry
+item	grepaberry	Grepa Berry
+item	hondewberry	Hondew Berry
+item	kelpsyberry	Kelpsy Berry
+item	leppaberry	Leppa Berry
+item	lumberry	Lum Berry
+item	mail	Mail
+item	magostberry	Magost Berry
+item	nanabberry	Nanab Berry
+item	nomelberry	Nomel Berry
+item	pamtreberry	Pamtre Berry
+item	pechaberry	Pecha Berry
+item	persimberry	Persim Berry
+item	pinapberry	Pinap Berry
+item	pomegberry	Pomeg Berry
+item	qualotberry	Qualot Berry
+item	rabutaberry	Rabuta Berry
+item	rawstberry	Rawst Berry
+item	razzberry	Razz Berry
+item	spelonberry	Spelon Berry
+item	tamatoberry	Tamato Berry
+item	watmelberry	Watmel Berry
+item	wepearberry	Wepear Berry
+item	machobrace	Macho Brace
+item	oldamber	Old Amber
+item	souldew	Soul Dew
+item	clawfossil	Claw Fossil
+item	domefossil	Dome Fossil
+item	helixfossil	Helix Fossil
+item	rootfossil	Root Fossil
+item	dragonscale	Dragon Scale
+item	metalpowder	Metal Powder
+item	upgrade	Up-Grade
+item	diveball	Dive Ball
+item	focusband	Focus Band
+item	friendball	Friend Ball
+item	luxuryball	Luxury Ball
+item	nestball	Nest Ball
+item	netball	Net Ball
+item	premierball	Premier Ball
+item	repeatball	Repeat Ball
+item	scopelens	Scope Lens
+item	shellbell	Shell Bell
+item	sunstone	Sun Stone
+item	timerball	Timer Ball
+item	whiteherb	White Herb
+ability	cutecharm	Cute Charm
+ability	effectspore	Effect Spore
+ability	flamebody	Flame Body
+ability	flashfire	Flash Fire
+ability	forecast	Forecast
+ability	hustle	Hustle
+ability	intimidate	Intimidate
+ability	lightningrod	Lightning Rod
+ability	magnetpull	Magnet Pull
+ability	minus	Minus
+ability	plus	Plus
+ability	poisonpoint	Poison Point
+ability	pressure	Pressure
+ability	raindish	Rain Dish
+ability	roughskin	Rough Skin
+ability	shadowtag	Shadow Tag
+ability	static	Static
+ability	trace	Trace
+ability	truant	Truant
+ability	voltabsorb	Volt Absorb
+ability	airlock	Air Lock
+ability	blaze	Blaze
+ability	cloudnine	Cloud Nine
+ability	colorchange	Color Change
+ability	compoundeyes	Compound Eyes
+ability	insomnia	Insomnia
+ability	liquidooze	Liquid Ooze
+ability	naturalcure	Natural Cure
+ability	overgrow	Overgrow
+ability	pickup	Pickup
+ability	sandveil	Sand Veil
+ability	serenegrace	Serene Grace
+ability	shedskin	Shed Skin
+ability	speedboost	Speed Boost
+ability	stench	Stench
+ability	stickyhold	Sticky Hold
+ability	sturdy	Sturdy
+ability	swarm	Swarm
+ability	synchronize	Synchronize
+ability	thickfat	Thick Fat
+ability	torrent	Torrent
+ability	vitalspirit	Vital Spirit
+ability	wonderguard	Wonder Guard
+ability	keeneye	Keen Eye
+ability	oblivious	Oblivious
+ability	soundproof	Soundproof
+ability	innerfocus	Inner Focus
+ability	owntempo	Own Tempo
+ability	arenatrap	Arena Trap
+ability	battlearmor	Battle Armor
+ability	chlorophyll	Chlorophyll
+ability	clearbody	Clear Body
+ability	damp	Damp
+ability	drizzle	Drizzle
+ability	drought	Drought
+ability	earlybird	Early Bird
+ability	guts	Guts
+ability	hugepower	Huge Power
+ability	hypercutter	Hyper Cutter
+ability	illuminate	Illuminate
+ability	immunity	Immunity
+ability	levitate	Levitate
+ability	limber	Limber
+ability	magmaarmor	Magma Armor
+ability	marvelscale	Marvel Scale
+ability	purepower	Pure Power
+ability	rockhead	Rock Head
+ability	runaway	Run Away
+ability	sandstream	Sand Stream
+ability	shellarmor	Shell Armor
+ability	shielddust	Shield Dust
+ability	suctioncups	Suction Cups
+ability	swiftswim	Swift Swim
+ability	waterabsorb	Water Absorb
+ability	waterveil	Water Veil
+ability	whitesmoke	White Smoke
+type	electric	Electric
+type	ghost	Ghost
+type	grass	Grass
+type	steel	Steel
+type	fairy	Fairy
+type	dark	Dark
+type	stellar	Stellar
+type	bug	Bug
+type	dragon	Dragon
+type	fighting	Fighting
+type	fire	Fire
+type	flying	Flying
+type	ground	Ground
+type	ice	Ice
+type	normal	Normal
+type	poison	Poison
+type	psychic	Psychic
+type	rock	Rock
+type	water	Water
+nature	adamant	Adamant
+nature	bashful	Bashful
+nature	bold	Bold
+nature	brave	Brave
+nature	calm	Calm
+nature	careful	Careful
+nature	docile	Docile
+nature	gentle	Gentle
+nature	hardy	Hardy
+nature	hasty	Hasty
+nature	impish	Impish
+nature	jolly	Jolly
+nature	lax	Lax
+nature	lonely	Lonely
+nature	mild	Mild
+nature	modest	Modest
+nature	naive	Naive
+nature	naughty	Naughty
+nature	quiet	Quiet
+nature	quirky	Quirky
+nature	rash	Rash
+nature	relaxed	Relaxed
+nature	sassy	Sassy
+nature	serious	Serious
+nature	timid	Timid

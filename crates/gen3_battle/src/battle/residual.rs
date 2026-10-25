@@ -81,7 +81,7 @@ impl Battle {
                     let want = (self.sides[side].mon().max_hp / 16).max(1);
                     self.heal(side, want, events);
                 }
-                self.ripen(side, &mut events);
+                self.ripen(side, scripted, &mut events);
         }
             }
             3 => {
@@ -324,6 +324,30 @@ impl Battle {
                     mon.loafing = !mon.loafing;
                 }
         }
+            }
+            13 => {
+            // Bide's volatile: a bare duration one, with no residual order
+            // of its own. The sim's `duration: 3` falls by one at every
+            // residual, and when it is already at the last tick at this one
+            // the volatile is gone with a silent `-end`, which is how the
+            // release turn keeps its date when the release itself was
+            // cancelled: the action the faint took away would have run the
+            // Removing `removeVolatile`, so the residual at the end of that
+            // same turn is the one that drops it. A release that DID run
+            // takes the volatile at its own onBeforeMove, so nothing is
+            // left here to tick, and a next-turn Bide press is a fresh
+            // start, unlocked and able to switch.
+            if self.sides[side].mon().fainted() {
+                return;
+            }
+            let Some((stored, left)) = self.sides[side].mon().bide else { return };
+            if left == 0 {
+                let mon = self.sides[side].mon_mut();
+                mon.bide = None;
+                mon.locked_move = None;
+            } else {
+                self.sides[side].mon_mut().bide = Some((stored, left - 1));
+            }
             }
             _ => {}
         }

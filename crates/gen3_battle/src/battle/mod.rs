@@ -6,9 +6,8 @@
 //! are not here yet, and the module says so rather than pretending: see the
 //! `Unsupported` note on [`Battle::step`].
 //!
-//! Nothing in here is shared with `gen1_battle`. A Gen 1 battle runs that
-//! engine start to finish and never enters this module, which is what keeps
-//! Gen 1 behaviour exactly as it was.
+//! Nothing in here is shared with Gen 1: a Gen 1 battle runs on `ps_sim`
+//! start to finish and never enters this module.
 
 extern crate alloc;
 
@@ -88,6 +87,44 @@ impl MoveSlot {
     }
 }
 
+/// The volatiles that carry an end-of-turn handler, in the order
+/// [`Mon::add_volatile`] stamps them. The numbers are only positions in
+/// [`Mon::vol_stamp`]; the end-of-turn buckets live in [`residual_bucket`].
+pub const VOL_INGRAIN: usize = 0;
+pub const VOL_LEECH_SEED: usize = 1;
+pub const VOL_NIGHTMARE: usize = 2;
+pub const VOL_CURSE: usize = 3;
+pub const VOL_BIND: usize = 4;
+pub const VOL_BIDE: usize = 5;
+pub const VOL_RECHARGE: usize = 6;
+pub const VOL_RAMPAGE: usize = 7;
+pub const VOL_YAWN: usize = 8;
+pub const VOL_COUNT: usize = 9;
+
+/// How many lines the attacked-by book keeps. The shift drops the OLDEST
+/// line, never the newest, so the size cannot hide a recent hit; it decides
+/// only whether a turn can push so much that an older survivor of the purge
+/// is lost, and the worst a single turn can land on one mon is a six-strike
+/// Beat Up, a five-hit multi-hit move plus a delayed hit, and a Pursuit
+/// interception besides.
+pub const ATTACKED_BY_LEN: usize = 8;
+
+/// One line of the attacked-by book: what landed, and who used it.
+///
+/// The sim keeps the attacker itself here and reads `source.lastMove` off it
+/// and a mon that switches out has its `lastMove` cleared, so a Mirror
+/// Move aimed back at a since-swapped attacker finds nothing.
+#[derive(Clone, Copy, Debug)]
+pub struct HitBy {
+    /// The move that hit.
+    pub move_id: &'static str,
+    /// The attacker's PARTY slot. The purge compares it against the other
+    /// side's active mon, which is the shape of the sim's own test
+    /// (`attack.source.isActive`), without the party reordering that a
+    /// switch causes elsewhere.
+    pub from: usize,
+}
+
 /// A battle-ready mon: species, level and investment resolved into stats.
 #[derive(Clone, Debug)]
 pub struct Mon {
@@ -97,6 +134,10 @@ pub struct Mon {
     /// Sleep Talk is typed by whoever is swinging it, and a copy built from
     /// the move table alone has no IVs to ask.
     pub hidden_power: Type,
+    /// And its base power, from the same IVs: the next bit up of each one.
+    /// Under a uniform spread that is 70 when the IV has its second bit set
+    /// (31, 30, 15, ...) and 30 when it does not.
+    pub hidden_power_bp: u8,
     pub level: u8,
     pub nature: Nature,
     pub hp: u16,
@@ -154,6 +195,12 @@ pub struct Mon {
     pub charged_elec: bool,
     /// Grudge is armed until this mon's next action.
     pub grudged: bool,
+    /// This mon's Faint event has already run. The sim queues a faint once
+    /// (`if (this.fainted) return false`) and drains the queue inside
+    /// `faintMessages`, so a KO that two call sites notice inside one move
+    /// (the strike's own resolve and the move's tail) still runs Destiny
+    /// Bond, Grudge and the faint message exactly one time.
+    pub faint_announced: bool,
     /// Torment: the same move twice in a row is refused.
     pub tormented: bool,
     /// True only for the remainder of the turn Torment landed in: the
@@ -168,13 +215,20 @@ pub struct Mon {
     pub fury_n: u8,
     /// Fury Cutter landed THIS turn, so its ramp has been refreshed.
     pub fury_fresh: bool,
-    /// The move id this mon was last HIT by (Mirror Move's source).
-    pub last_hit_by: Option<&'static str>,
-    /// WHICH party slot on the other side landed that hit. The sim keeps the
-    /// attacker itself in its attacked-by book and reads `source.lastMove`
-    /// off it — and a mon that switches out has its `lastMove` cleared, so a
-    /// Mirror Move aimed back at a since-swapped attacker finds nothing.
-    pub last_hit_by_slot: Option<usize>,
+    /// The sim's `attackedBy` book, MOST RECENT FIRST. Every hit appends a
+    /// line and `nextTurn`'s purge splices out the ones whose attacker has
+    /// left the field, so the tail is not necessarily the answer: a Doom
+    /// Desire landing after a Barrade leaves the doomed attacker on top of
+    /// a book whose Barrade line is what a Mirror Move aimed back has to
+    /// find once that attacker is gone. Mirror Move is the only reader, and
+    /// it only ever asks for the top survivor, but the purge cannot be
+    /// applied at read time: dropping an attacker from the field takes its
+    /// lines out for good, and it does not come back with the mon.
+    ///
+    /// Bounded because only one turn's worth can arrive between two purges ,
+    /// the foe's own move (however many times it strikes), at most one
+    /// delayed hit and at most one Pursuit interception.
+    pub attacked_by: [Option<HitBy>; ATTACKED_BY_LEN],
     /// The id of the move this mon last used — survives Transform/Mimic
     /// rewriting the slots, which is exactly when the slot index lies.
     pub last_used_id: Option<&'static str>,
@@ -185,6 +239,11 @@ pub struct Mon {
     /// bounced Toxic retypes its bouncer even though a Torment would still
     /// be greying out the Magic Coat.
     pub last_move_used_id: Option<&'static str>,
+    /// The type Weather Ball took when it went into `last_move_used_id`.
+    /// `lastMoveUsed` is the active move itself and gen 3's onModifyMove
+    /// rewrites its `type` from the sky right after, so Conversion 2 reads
+    /// the weather of the turn it was USED, not of the turn it answers.
+    pub last_move_used_sky_type: Option<Type>,
     /// The last move slot this mon successfully USED (for Spite/Torment).
     pub last_used: Option<u8>,
     /// The last move this mon used MISSED (Mirror Move refuses those).
@@ -199,11 +258,12 @@ pub struct Mon {
     /// wearing a Snubbull weighs what a Snubbull weighs — which is the whole
     /// of Low Kick's power.
     pub weight_override: Option<u16>,
-    /// What Transform borrowed besides the move set: the five battle stats
-    /// and the type line. The sim keeps these in `baseStoredStats` and
+    /// What Transform borrowed besides the move set: the five battle stats,
+    /// the type line and the Hidden Power it now answers with. The sim keeps
+    /// these in `baseStoredStats` (and `baseHpType`/`baseHpPower`) and
     /// restores them with the volatile, so a transformed mon that leaves the
     /// field is its own species again.
-    pub transform_stats: Option<([u16; 5], Option<(Type, Type)>)>,
+    pub transform_stats: Option<([u16; 5], Option<(Type, Type)>, (Type, u8))>,
     /// Bide: damage stored and turns of storing left.
     pub bide: Option<(u16, u8)>,
     /// Rollout/Ice Ball: consecutive uses so far (0..=4).
@@ -234,15 +294,21 @@ pub struct Mon {
     pub disable_skip_tick: bool,
     /// Imprison is up: the foe cannot use moves this mon also knows.
     pub imprisoning: bool,
-    /// True only for the remainder of the turn Imprison landed in: the
-    /// foe's already-chosen sealed move is a lost turn, not a Struggle.
-    pub imprison_fresh: bool,
     /// Camouflage/Conversion retyping.
     pub type_override: Option<(Type, Type)>,
     /// Ghost-Curse victim: a quarter of max HP every end of turn.
     pub cursed: bool,
     /// Ingrain roots: a sixteenth of max HP back every end of turn.
     pub ingrained: bool,
+    /// Which of the `VOL_COUNT` residual volatiles arrived, and when, on
+    /// this mon's own clock. `findPokemonEventHandlers` walks
+    /// `pokemon.volatiles` with `for (const id in ...)`, so the sim hands
+    /// its end-of-turn pool one mon's volatiles in the order they were
+    /// ADDED. Two of them that sort equal are only ever broken by that
+    /// order, so it has to be kept here: a mon seeded on turn 1 and rooted
+    /// on turn 4 pools its Leech Seed ahead of its Ingrain.
+    pub vol_stamp: [u16; VOL_COUNT],
+    pub vol_clock: u16,
     /// Whether this mon has taken any move action yet (Fake Out's window).
     pub acted: bool,
     /// Protect's stall gamble: 0 fresh, then the era's 2-4-8 ladder.
@@ -270,8 +336,13 @@ pub struct Mon {
     pub destiny: bool,
     /// Mean Look and kin: cannot switch while the gazer stays.
     pub mean_looked: bool,
-    /// Mud/Water Sport: which attack type this mon's field-hum halves.
-    pub sport: Option<Type>,
+    /// Mud Sport: halves Electric-type damage while it is up. It is a
+    /// VOLATILE of the hummer's own, so a mon that has used Mud Sport AND
+    /// Water Sport carries both: the two hums are separate flags and
+    /// either one damps its own type.
+    pub mud_sport: bool,
+    /// Water Sport: halves Fire-type damage while it is up.
+    pub water_sport: bool,
     /// Tightening focus for a Focus Punch this turn: refuses the flinch
     /// volatile outright. Set as the turn starts, cleared as it ends.
     pub focusing: bool,
@@ -366,6 +437,14 @@ pub struct Mon {
 }
 
 impl Mon {
+    /// A volatile has just been put on this mon: `pokemon.volatiles[id] = ...`
+    /// appends the key, which is where the sim's end-of-turn order comes
+    /// from. Stamping the clock here is what keeps that order.
+    pub fn add_volatile(&mut self, which: usize) {
+        self.vol_clock = self.vol_clock.wrapping_add(1);
+        self.vol_stamp[which] = self.vol_clock;
+    }
+
     /// The slice of this mon the ability rules read. Handing the rules a
     /// small copy rather than the mon itself keeps them pure, and keeps the
     /// borrow checker out of the middle of a damage calculation.
@@ -399,17 +478,36 @@ impl Mon {
         inv: Invest,
         moves: &[&str],
     ) -> Option<Mon> {
+        Mon::with_spread(species_id, level, nature, &[inv; 6], moves)
+    }
+
+    /// Build a mon from a per-stat spread: six IV-and-EV pairs in the sim's
+    /// stat order (hp, atk, def, spe, spa, spd), each stat computed off its
+    /// own pair, and Hidden Power read as type AND base power off the six
+    /// IVs. Callers hand in a legal spread (IVs 0..=31, EVs 0..=255 at 510
+    /// total); this engine keeps the team builder honest, not policed.
+    pub fn with_spread(
+        species_id: &str,
+        level: u8,
+        nature: Nature,
+        spread: &[Invest; 6],
+        moves: &[&str],
+    ) -> Option<Mon> {
         let species = species_by_id(species_id)?;
         let b = species.base;
-        let max_hp = hp_stat(b.hp, inv, level);
-        let stat = |base: u16, s: Stat| other_stat(base, inv, level, nature, s);
+        let max_hp = hp_stat(b.hp, spread[0], level);
+        let (hp_type, hp_bp) = crate::stats::hidden_power([
+            spread[0].iv, spread[1].iv, spread[2].iv, spread[3].iv, spread[4].iv, spread[5].iv,
+        ]);
+        let stat = |base: u16, inv: Invest, s: Stat| other_stat(base, inv, level, nature, s);
         let gender = match species.gender {
             "" => "M",
             fixed => fixed,
         };
         Some(Mon {
             species,
-            hidden_power: crate::stats::hidden_power_type(inv),
+            hidden_power: hp_type,
+            hidden_power_bp: hp_bp,
             gender,
             item_knocked_off: false,
             attracted_by: None,
@@ -417,11 +515,11 @@ impl Mon {
             nature,
             hp: max_hp,
             max_hp,
-            atk: stat(b.atk, Stat::Atk),
-            def: stat(b.def, Stat::Def),
-            spa: stat(b.spa, Stat::SpAtk),
-            spd: stat(b.spd, Stat::SpDef),
-            spe: stat(b.spe, Stat::Spe),
+            atk: stat(b.atk, spread[1], Stat::Atk),
+            def: stat(b.def, spread[2], Stat::Def),
+            spa: stat(b.spa, spread[4], Stat::SpAtk),
+            spd: stat(b.spd, spread[5], Stat::SpDef),
+            spe: stat(b.spe, spread[3], Stat::Spe),
             stages: [0; 5],
             acc_stage: 0,
             eva_stage: 0,
@@ -430,7 +528,7 @@ impl Mon {
                 .filter_map(|m| MoveSlot::new(m))
                 .map(|mut s| {
                     if s.entry.id == "hiddenpower" {
-                        s.typed_as = Some(crate::stats::hidden_power_type(inv));
+                        s.typed_as = Some(hp_type);
                     }
                     s
                 })
@@ -446,6 +544,7 @@ impl Mon {
             sure_hit_on: 0,
             charged_elec: false,
             grudged: false,
+            faint_announced: false,
             tormented: false,
             torment_fresh: false,
             encore_fresh: false,
@@ -455,8 +554,8 @@ impl Mon {
             last_used: None,
             last_used_id: None,
             last_move_used_id: None,
-            last_hit_by: None,
-            last_hit_by_slot: None,
+            last_move_used_sky_type: None,
+            attacked_by: [None; ATTACKED_BY_LEN],
             last_missed: false,
             mimic_backup: None,
             transform_backup: None,
@@ -473,10 +572,11 @@ impl Mon {
             disable_fresh: false,
             disable_skip_tick: false,
             imprisoning: false,
-            imprison_fresh: false,
             type_override: None,
             cursed: false,
             ingrained: false,
+            vol_stamp: [0; VOL_COUNT],
+            vol_clock: 0,
             acted: false,
             stall_counter: 0,
             protected: false,
@@ -490,7 +590,8 @@ impl Mon {
             perish_n: 0,
             destiny: false,
             mean_looked: false,
-            sport: None,
+            mud_sport: false,
+            water_sport: false,
             sub_hp: 0,
             focusing: false,
             focused: false,
@@ -638,6 +739,9 @@ pub struct Side {
     /// A Future Sight/Doom Desire aimed at THIS side: the countdown, the
     /// damage locked in at launch, and which of the two moves it was.
     pub incoming: Option<(u8, u16, &'static str)>,
+    /// Who launched `incoming`: the party index on the OTHER side. The
+    /// landing's source is that mon, so only its own Lock-On reaches.
+    pub incoming_from: Option<usize>,
 }
 
 impl Side {
@@ -655,6 +759,7 @@ impl Side {
             wish_n: 0,
             wish_amount: 0,
             incoming: None,
+            incoming_from: None,
         }
     }
 
@@ -729,6 +834,22 @@ pub struct SeatScript {
     /// A Focus Band holder's 1-in-10 comes up, so a lethal blow this action
     /// leaves it standing at one HP.
     pub band: bool,
+}
+
+/// Where a turn stopped for a chosen replacement picks up again: the move
+/// phase from the mover at `from` (a Baton Pass asks mid-phase), the switch
+/// a Pursuit KO pushed back, the residual phase, or the end-of-turn tidy.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum TurnRest {
+    Moves {
+        from: u8,
+        first: u8,
+        choices: [Choice; 2],
+        cancelled: [bool; 2],
+    },
+    DeferredSwitches,
+    Residual,
+    Tidy,
 }
 
 /// Per-turn RNG script; see [`Battle::step_with`].
@@ -960,10 +1081,29 @@ pub struct Battle {
     /// split physical/special — what Counter and Mirror Coat bounce.
     taken_physical: [u16; 2],
     taken_special: [u16; 2],
+    /// Whether each side's mon has been HIT by a move this turn, damage or
+    /// not. The damage counters above cannot answer that: the sim fires its
+    /// `Hit` event whatever the move takes off, and the Focus Punch charge
+    /// loses focus on it, so a False Swipe that could not take the last HP,
+    /// or a Present that handed its gift over, still breaks the punch.
+    hit_this_turn: [bool; 2],
     /// Whether each seat's CHOSEN slot was already out of PP at choice
     /// time — that (and only that) is what Struggle substitution reads;
     /// a mid-turn Spite draining it to zero is a silent lost turn.
     pp0_at_choice: [bool; 2],
+    /// Whether EVERY move this side holds was SEALED by an Imprison as the
+    /// turn opened. The sim files the seal in `nextTurn`, before the request
+    /// is built, as a HIDDEN disable, and `Side.chooseMove` re-derives the
+    /// slot list with `pokemon.getMoves()` and no `restrictData`, which
+    /// leaves those flags hidden. A move the imprisoner knows is therefore
+    /// not pickable, and a mon the imprisoner covers move for move has
+    /// nothing left to pick at all: that restricted list comes back empty and
+    /// `chooseMove` queues Struggle in its place, priority and all. The
+    /// request data itself is built with the flags turned back off for the
+    /// last active mon, so it still SHOWS the sealed moves as enabled, which
+    /// is why this is a whole-moveset question and not a per-slot one. See
+    /// `use_move` for the live half of the seal.
+    sealed_at_choice: [bool; 2],
     /// Which sides have already taken their action this turn. Disable needs
     /// it: its clock counts the target's next N ACTIONS, so landing on a mon
     /// that has already moved does not spend one of them.
@@ -1013,19 +1153,19 @@ pub struct Battle {
     /// exemption into Safeguard's own onSetStatus as `if (effect.id ===
     /// 'yawn') return`.
     yawn_landing: bool,
-    /// Whether each side's chosen slot was SEALED by an Imprison as the turn
-    /// opened. The sim clears and recomputes every disable flag in
-    /// `nextTurn`, before it asks for choices, and never revises them — so an
-    /// imprisoner that switches out mid-turn does not give its victim its
-    /// moves back until the turn after.
-    sealed_at_choice: [bool; 2],
     /// The caller answers forced replacements instead of the engine sending
     /// the lowest living slot. Off by default: the parity harness answers a
     /// forced switch with the lowest living slot, so the default IS the
     /// reference's behaviour and the fuzz suites need no driver of their own.
     pub player_picks_replacement: bool,
-    /// Set per side when a faint is waiting on that answer.
+    /// Set per side when a faint, or a Baton Pass, is waiting on that answer.
     pub(crate) awaiting_replacement: [bool; 2],
+    /// Which of those waits is a Baton Pass: the answer is the pass's
+    /// target, and the passer is still standing in the slot until it comes.
+    pub(crate) awaiting_pass: [bool; 2],
+    /// The part of the turn still to run while that answer is awaited, with
+    /// the turn's script. `send_out` resumes it.
+    pub(crate) parked_turn: Option<(TurnRest, TurnScript)>,
     /// Present's roll for this use, in base power: the games draw one number
     /// for four outcomes, so the draw happens once and both the gift branch
     /// and the damage read the same answer.
@@ -1125,7 +1265,9 @@ impl Battle {
             weather_n: 0,
             taken_physical: [0; 2],
             taken_special: [0; 2],
+            hit_this_turn: [false; 2],
             pp0_at_choice: [false; 2],
+            sealed_at_choice: [false; 2],
             acted_this_turn: [false; 2],
             dragged: [false; 2],
             will_act: false,
@@ -1141,9 +1283,11 @@ impl Battle {
             present_bp: 120,
             player_picks_replacement: false,
             awaiting_replacement: [false; 2],
+            awaiting_pass: [false; 2],
+            parked_turn: None,
             bounced: false,
             yawn_landing: false,
-            sealed_at_choice: [false; 2],
+            
             self_destructed: false,
         };
         // The battle's opening switch-ins are switch-ins, and the sim runs
@@ -1243,6 +1387,21 @@ impl Battle {
         self.weather
     }
 
+    /// The type Weather Ball takes under the current sky, or `None` for any
+    /// other move: gen 3's onModifyMove sets `move.type` from the weather.
+    fn weather_ball_type(&self, id: &str) -> Option<Type> {
+        if id != "weatherball" {
+            return None;
+        }
+        Some(match self.effective_weather() {
+            Some(Weather::Sun) => Type::Fire,
+            Some(Weather::Rain) => Type::Water,
+            Some(Weather::Sandstorm) => Type::Rock,
+            Some(Weather::Hail) => Type::Ice,
+            None => Type::Normal,
+        })
+    }
+
     /// A mon's Speed for the turn order, with the abilities that read the
     /// sky folded in.
     fn turn_speed(&self, side: usize) -> u16 {
@@ -1303,10 +1462,19 @@ impl Battle {
             || mon.must_recharge)
     }
 
-    /// Move slots the sim would actually offer this side: PP left and not
-    /// shut off by Disable, Taunt, Torment or Imprison. The sim rejects a
-    /// choice outside this set outright rather than substituting anything,
-    /// so a caller picking a move should pick from here.
+    /// Move slots the sim would actually offer this side: PP left and not shut
+    /// off by Disable, Taunt, Torment, a Choice lock or Imprison. The sim
+    /// rejects a choice outside this set outright rather than substituting
+    /// anything, so a caller picking a move should pick from here.
+    ///
+    /// Imprison is on the list because of WHERE it is refused, not because
+    /// of what it does to the request: `onFoeDisableMove` files the seal as
+    /// a hidden disable, the request data turns hidden flags back off for
+    /// the last active mon (so the seat still SEES a sealed move as enabled),
+    /// and `Side.chooseMove` re-derives the list restricted and refuses the
+    /// choice anyway. A mon the imprisoner covers move for move is the one
+    /// case that still gets something else: the restricted list comes back
+    /// empty and Struggle is queued in its place (`sealed_at_choice`).
     pub fn selectable_moves(&self, side: usize) -> Vec<usize> {
         let mon = self.sides[side].mon();
         // Imprison seals every move the imprisoner itself knows.

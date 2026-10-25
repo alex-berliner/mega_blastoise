@@ -31,8 +31,8 @@ pub struct ActivePrompt {
     pub player_id: String,
     /// The seat's options, ALREADY distilled into the generation-neutral
     /// shape the collector consumes. Each engine's runner does its own
-    /// distilling before it sends — Gen 1 from the battler's `Request`, Gen 3
-    /// from its battle state — so everything downstream of this bus is
+    /// distilling before it sends (Gen 1 from the PS `|request|`, Gen 3
+    /// from its battle state), so everything downstream of this bus is
     /// generation-blind. This used to carry the raw Gen 1 `Request`, which is
     /// exactly how the Gen 3 path ended up with a parallel prompt type and a
     /// parallel turn loop with none of the collector's behaviour.

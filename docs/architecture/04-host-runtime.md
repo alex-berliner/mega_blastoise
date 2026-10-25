@@ -10,11 +10,10 @@ Host runs provide fast feedback using the same shared battle logic before flashi
 
 [`src/harness.rs`](../../crates/mega_blastoise_test/src/harness.rs):
 
-- builds a battle with `FlashDataStore`
-- attaches `StdinBattleInput` (interactive choice input)
-- attaches `BoardGameEffects` (human-readable event output)
-- calls shared `run_battle`
-- prints active-mon snapshots after each turn
+- draws two Gen 1 teams and a `runner::ps::BattleSetup` over a `LocalTransport`
+- attaches `HostBattleController` (stdin choice input, or a pre-fed queue in tests)
+- attaches `HostBattleEffects` (human-readable event output)
+- calls shared `runner::ps::run_battle`
 
 ## Why This Matters
 

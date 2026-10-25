@@ -227,10 +227,13 @@ Showdown's animation sets are the eventual target.
 
 ## 7. Engine
 
-The live engine is `crates/gen1_battle/` — 3,615 lines of hand-written `no_std` Rust,
-with 238 mon entries and 167 moves. Upstream `battler` is vendored and remains
-a dependency, but core has **zero** `battler::` call sites today against 49
-`gen1_battle::` ones. It stays for Gen 3 reference.
+Superseded: this section predates the Showdown split
+(`showdown-split-plan.md`). Gen 1 now plays on `ps_sim`, the hand-written Gen 1
+engine is deleted (G1-10), and the upstream engine this section weighed is no
+longer in the tree. The text below is kept as the reasoning of the time.
+
+At the time, the live engine was a hand-written `no_std` Gen 1 crate of 3,615
+lines, with 238 mon entries and 167 moves.
 
 Gen 3 is not a data swap. It needs the Special stat split into Sp.Atk and
 Sp.Def (which touches all of `combat.rs` and `state.rs`), 77 abilities as
@@ -238,13 +241,13 @@ behavioral hooks, roughly 60 held items, natures, the Gen 3 IV system, four
 weathers, a 17-type chart, and 354 moves instead of 167. Realistically 2-3x the
 current engine.
 
-Upstream `battler` already implements this, with executable fxlang effect
+The upstream engine then vendored as a submodule already implemented this, with executable fxlang effect
 scripts — `battle-data/data/abilities/gen3.json` carries all 76 Gen 3 abilities
 with real callbacks (Intimidate iterates adjacent foes and applies `atk:-1`;
 Levitate overrides `is_grounded`), plus `mons/gen3.json` and `moves/gen3.json`
 as delta layers over gen1 and gen2.
 
-**Before writing any Gen 3 engine code**, build core against upstream `battler`
+**Before writing any Gen 3 engine code**, build core against that upstream engine
 targeting RP2350 and measure flash and RAM. It was presumably dropped because
 it would not fit RP2040; on RP2350 with 4 MB that assumption may be stale. If
 it fits, gens 1 through 9 come free and a large maintenance burden disappears.
@@ -312,5 +315,5 @@ Gen 1 device is the milestone that de-risks everything else.
 
 - Font: whether to keep embedded-graphics `FONT_6X10` / `FONT_5X8` or bake an
   authentic Game Boy bitmap font. Expected to need iteration either way.
-- Whether upstream `battler` fits on RP2350 (§7).
+- Whether the upstream engine fits on RP2350 (§7; moot since the Showdown split).
 - Doubles are out of scope but are a plausible future direction for Gen 3.

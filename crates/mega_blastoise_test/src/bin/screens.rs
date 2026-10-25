@@ -107,6 +107,30 @@ fn main() {
     half("lobby_idle", &dir, |f| dc::render_lobby(f, false, false, 1));
     half("lobby_ready", &dir, |f| dc::render_lobby(f, true, false, 1));
     half("result", &dir, |f| dc::render_result(f, "WINNER!", &ctx));
+    // Draw end screen: same ctx (own mon + foe mon), distinct title and
+    // BOTH sprites framed under one panel. P2-3 made this its own render
+    // function so the screens bin can review the visual mode without
+    // breaking the result screen's "winner takes the screen" layout.
+    half("draw", &dir, |f| dc::render_draw(f, &ctx));
+    half("draw_gengar_vs_blastoise", &dir, |f| {
+        let ctx = dc::HalfCtx {
+            seat: 1,
+            own_name: "Gengar",
+            own_hp: 50,
+            own_level: 60,
+            foe_name: "Blastoise",
+            foe_hp: 70,
+            foe_level: 55,
+            foe_status: None,
+            foe_bob: false,
+            own_status: None,
+            own_hp_numbers: Some((130, 260)),
+            cursor: 0,
+            foe_locked: false,
+            bob: false,
+        };
+        dc::render_draw(f, &ctx)
+    });
     half("move_info", &dir, |f| {
         dc::render_move_info(
             f,
@@ -152,6 +176,53 @@ fn main() {
     }
     mega_blastoise_core::device_view::draw_split_divider(&mut scene);
     write_ppm(&format!("{dir}/device_battle.ppm"), DEV_W, DEV_H, &scene.to_rgba());
+
+    // Draw end screen on the device, head-to-head: BOTH halves show the
+    // same DRAW! panel upright to the seat reading it, that's what the
+    // shared draw function on a shared Screen should look like.
+    let mut draw_dev = DeviceFrame::new();
+    let draw_caption_ctx_1 = dc::HalfCtx {
+        seat: 1,
+        own_name: "Gengar",
+        own_hp: 50,
+        own_level: 60,
+        foe_name: "Blastoise",
+        foe_hp: 70,
+        foe_level: 55,
+        foe_status: None,
+        foe_bob: false,
+        own_status: None,
+        own_hp_numbers: Some((130, 260)),
+        cursor: 0,
+        foe_locked: false,
+        bob: false,
+    };
+    let draw_caption_ctx_2 = dc::HalfCtx {
+        seat: 2,
+        own_name: "Blastoise",
+        own_hp: 70,
+        own_level: 55,
+        foe_name: "Gengar",
+        foe_hp: 50,
+        foe_level: 60,
+        foe_status: None,
+        foe_bob: false,
+        own_status: None,
+        own_hp_numbers: Some((170, 260)),
+        cursor: 0,
+        foe_locked: false,
+        bob: false,
+    };
+    {
+        let mut top = Region::half(&mut draw_dev, false, true);
+        dc::render_draw(&mut top, &draw_caption_ctx_2);
+    }
+    {
+        let mut bottom = Region::half(&mut draw_dev, true, false);
+        dc::render_draw(&mut bottom, &draw_caption_ctx_1);
+    }
+    mega_blastoise_core::device_view::draw_split_divider(&mut draw_dev);
+    write_ppm(&format!("{dir}/device_draw.ppm"), DEV_W, DEV_H, &draw_dev.to_rgba());
 
     // Composed 240x320 panel, head-to-head: far half rotated 180.
     let mut dev = DeviceFrame::new();

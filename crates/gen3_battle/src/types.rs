@@ -1,8 +1,7 @@
 //! Gen 3 typing: seventeen types, the chart, and the physical/special split.
 
 /// Type-effectiveness multiplier x10: 0 = immune, 5 = half, 10 = neutral,
-/// 20 = double. Same encoding `gen1_battle` uses, so callers that hold both
-/// engines do not need two mental models.
+/// 20 = double. Same encoding the old Gen 1 engine used.
 pub type TypeEffectiveness = u8;
 
 // The chart itself is generated; see `crate::data`.

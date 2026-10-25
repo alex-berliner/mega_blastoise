@@ -204,7 +204,7 @@ fn team_spec_player_index() {
 
 #[test]
 fn team_spec_leaves_name_for_engine_canonicalization() {
-    // The engine fills empty names with the species display name ("Ditto"),
+    // PS fills empty names with the species display name ("Ditto"),
     // which the sprite table is keyed on — a raw typed name here would break
     // sprite lookup.
     let (_, team) = parse_team_spec(":team p1 ditto:transform").unwrap();
@@ -215,10 +215,10 @@ fn team_spec_leaves_name_for_engine_canonicalization() {
 fn team_spec_species_only_gets_default_move() {
     let (_, team) = parse_team_spec(":team p1 snorlax").unwrap();
     assert_eq!(team.len(), 1);
-    assert_eq!(team[0].species, "snorlax");
+    assert_eq!(team[0].species.as_str(), "snorlax");
     assert_eq!(team[0].level, 100);
     assert_eq!(team[0].moves.len(), 1);
-    assert_eq!(team[0].moves[0].id, "tackle");
+    assert_eq!(team[0].moves[0].as_str(), "tackle");
 }
 
 #[test]
@@ -226,7 +226,7 @@ fn team_spec_with_moves() {
     let (_, team) =
         parse_team_spec(":team p1 snorlax:bodyslam:earthquake:rest:hyperbeam").unwrap();
     assert_eq!(team.len(), 1);
-    let ids: Vec<&str> = team[0].moves.iter().map(|m| m.id.as_str()).collect();
+    let ids: Vec<&str> = team[0].moves.iter().map(|m| m.as_str()).collect();
     assert_eq!(ids, ["bodyslam", "earthquake", "rest", "hyperbeam"]);
 }
 
@@ -235,9 +235,9 @@ fn team_spec_multiple_mons() {
     let (_, team) =
         parse_team_spec(":team p2 pikachu:thunderbolt,charizard:flamethrower,snorlax").unwrap();
     assert_eq!(team.len(), 3);
-    assert_eq!(team[0].species, "pikachu");
-    assert_eq!(team[1].species, "charizard");
-    assert_eq!(team[2].species, "snorlax");
+    assert_eq!(team[0].species.as_str(), "pikachu");
+    assert_eq!(team[1].species.as_str(), "charizard");
+    assert_eq!(team[2].species.as_str(), "snorlax");
 }
 
 #[test]

@@ -25,7 +25,7 @@ use alloc::vec::Vec;
 
 use embedded_graphics::{draw_target::DrawTarget, pixelcolor::BinaryColor};
 
-use crate::board_event::{BoardEvent, MoveSlot};
+use crate::board_event::{BoardEvent, BoardEventExt, MoveSlot};
 use crate::display::{
     render_action_select, render_concealed_moves, render_controls_select, render_event_text, render_invalid_selection, render_lobby_screen,
     render_move_detail, render_player_screen, render_pokemon_stats, render_pokemon_stats_page2,
@@ -55,6 +55,10 @@ pub enum OledCmd {
     Faint { player: u8 },
     /// Battle ended — winner is 1 (p1) or 2 (p2); 0 means tie.
     Win { winner: u8 },
+    /// End-of-battle draw. One Draw screen on BOTH displays, the same way
+    /// `|tie|` works in the PS protocol: title DRAW, both last mons'
+    /// sprites, the same legend as the result screen.
+    ShowDraw,
     /// Long-press detail view for a move slot (0-based). `page` 0 = stats;
     /// higher pages show the move's description text (the renderer wraps
     /// the counter around the real page count).
@@ -76,6 +80,12 @@ pub enum OledCmd {
     EventFlash { player: u8, text: [u8; 48], len: u8 },
     /// "<mon> — waiting… / tap to unready" after this player locked a move.
     ShowWaiting { player: u8 },
+    /// The same locked-in screen for a seat whose choice was forced and
+    /// committed with the prompt (Recharge, a lock such as Thrash, a last
+    /// mon that can only Fight): nothing to take back, so no "tap to
+    /// cancel", and the forced move is named when the seat's menu is that
+    /// one move.
+    ShowForced { player: u8 },
     /// Opponent still choosing.
     ShowWaitingForOpponent { player: u8 },
     /// Forced-switch party picker (uses the PartyUpdate snapshot).
@@ -134,6 +144,7 @@ impl OledCmd {
             | OledCmd::LobbyState { player, .. }
             | OledCmd::EventFlash { player, .. }
             | OledCmd::ShowWaiting { player }
+            | OledCmd::ShowForced { player }
             | OledCmd::ShowWaitingForOpponent { player }
             | OledCmd::ShowSwitchScreen { player }
             | OledCmd::ShowInvalidSelection { player, .. }
@@ -145,7 +156,7 @@ impl OledCmd {
             | OledCmd::ShowOpponentMon { player }
             | OledCmd::ShowSentOut { player, .. }
             | OledCmd::ShowMoveUsed { player, .. } => *player,
-            OledCmd::Win { .. } | OledCmd::ShowQr | OledCmd::ShowTutorial { .. } => 0,
+            OledCmd::Win { .. } | OledCmd::ShowDraw | OledCmd::ShowQr | OledCmd::ShowTutorial { .. } => 0,
         }
     }
 }
@@ -273,7 +284,10 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
             cmds.push(OledCmd::Win { winner: BoardEvent::win_player_num(side) });
         }
         BoardEvent::Tie => {
-            cmds.push(OledCmd::Win { winner: 0 });
+            // |tie| becomes the Draw end screen, ONE variant distinct from
+            // Win so a host mirror can tell them apart and `OledController`
+            // can decide both seats' contents from one place.
+            cmds.push(OledCmd::ShowDraw);
         }
         BoardEvent::Move { user, name, player_id } => {
             // "X used MOVE!" shows the attacker's sprite with the move's
@@ -309,7 +323,11 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
         | BoardEvent::Immune { .. }
         | BoardEvent::Resisted { .. }
         | BoardEvent::Fail { .. }
-        | BoardEvent::Cant { .. } => flash(&event.description()),
+        | BoardEvent::Cant { .. }
+        | BoardEvent::Ability { .. }
+        | BoardEvent::ItemGained { .. }
+        | BoardEvent::ItemEnded { .. }
+        | BoardEvent::Activate { .. } => flash(&event.description()),
         _ => {}
     }
     cmds
@@ -362,7 +380,13 @@ pub enum Screen<'a> {
     Stats { slot: &'a PartySlotData, page: u8 },
     EventText(&'a str),
     Win(&'a str),
-    Waiting { mon: &'a str, bob: bool, spd: SpeedCmp },
+    /// End-of-battle draw. Names of BOTH last mons (each seat's own and the
+    /// opponent's), so the renderer can paint both sprites under one title.
+    Draw { own_name: &'a str, foe_name: &'a str },
+    /// Locked in. `forced` is `Some` when the choice was forced (no take
+    /// back), holding the forced move's name ("" when the menu was not one
+    /// named move).
+    Waiting { mon: &'a str, bob: bool, spd: SpeedCmp, forced: Option<&'a str> },
     WaitingForOpponent { mon: &'a str, bob: bool },
     Switch(&'a [PartySlotData]),
     Invalid(InvalidReason),
@@ -420,6 +444,7 @@ impl Screen<'_> {
             Screen::Stats { .. } => "STATS",
             Screen::EventText(_) => "EVENT_TEXT",
             Screen::Win(_) => "WIN",
+            Screen::Draw { .. } => "DRAW",
             Screen::Waiting { .. } => "LOCKED_IN",
             Screen::WaitingForOpponent { .. } => "WAIT_OPPONENT",
             Screen::Switch(_) => "FORCED_SWITCH",
@@ -454,8 +479,14 @@ where
         Screen::Stats { slot, .. } => render_pokemon_stats(display, slot),
         Screen::EventText(text) => render_event_text(display, text),
         Screen::Win(msg) => render_win_screen(display, msg),
-        Screen::Waiting { mon, bob, spd } => {
-            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to cancel", *spd)
+        // The colour renderer paints the Draw screen; the OLED only
+        // shows a "DRAW!" line (the device-side recap), so seat-2 still
+        // reads a real recap from the recoloured draw function.
+        Screen::Draw { .. } => render_win_screen(display, "DRAW!"),
+        Screen::Waiting { mon, bob, spd, forced } => {
+            // A forced choice cannot be cancelled: its line names the move.
+            let line = forced.unwrap_or("tap to cancel");
+            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, line, *spd)
         }
         Screen::WaitingForOpponent { mon, bob } => {
             render_waiting_for_opponent(display, mon, if *bob { -2 } else { 0 })
@@ -508,7 +539,9 @@ enum View {
     Stats { team_idx: u8, page: u8 },
     EventFlash,
     Win,
-    Waiting,
+    Draw,
+    /// Locked in; `forced` = the choice was forced ([`OledCmd::ShowForced`]).
+    Waiting { forced: bool },
     WaitingForOpponent,
     Switch,
     Invalid(InvalidReason),
@@ -657,7 +690,7 @@ impl OledController {
                     p.view,
                     View::Battle
                         | View::ActionSelect { .. }
-                        | View::Waiting
+                        | View::Waiting { .. }
                         | View::WaitingForOpponent
                 );
             }
@@ -755,6 +788,15 @@ impl OledController {
                 self.p2.view = View::Win;
                 OledRedraw::Both
             }
+            OledCmd::ShowDraw => {
+                // Both seats go to Draw together; the screen() below picks
+                // EACH seat's own mon name plus the opponent's from the
+                // controller's last-known active-mon slots, no payload
+                // needed on the command itself.
+                self.p1.view = View::Draw;
+                self.p2.view = View::Draw;
+                OledRedraw::Both
+            }
             OledCmd::ShowMoveDetail { slot, page, .. } => {
                 let p = self.player_mut(player);
                 if (slot as usize) < p.moves.len() {
@@ -805,7 +847,11 @@ impl OledController {
                 if both { OledRedraw::Both } else { OledRedraw::for_player(player) }
             }
             OledCmd::ShowWaiting { .. } => {
-                self.player_mut(player).view = View::Waiting;
+                self.player_mut(player).view = View::Waiting { forced: false };
+                OledRedraw::for_player(player)
+            }
+            OledCmd::ShowForced { .. } => {
+                self.player_mut(player).view = View::Waiting { forced: true };
                 OledRedraw::for_player(player)
             }
             OledCmd::ShowWaitingForOpponent { .. } => {
@@ -946,7 +992,34 @@ impl OledController {
                 let (msg1, msg2) = BoardEvent::win_messages(self.winner);
                 Screen::Win(if player == 1 { msg1 } else { msg2 })
             }
-            View::Waiting => Screen::Waiting { mon: p.battle_mon(), bob: p.bob_up, spd },
+            View::Draw => {
+                // Both seats see the same screen content. Each seat reads
+                // its own mon as "own" and the opponent as "foe" so the
+                // sprites frame the title the way the result screen frames
+                // its own. The names are the last-known active mon names
+                // tracked on every ActiveMon / Faint command; we read the
+                // raw name (NOT `battle_mon`, which would say "FAINTED"
+                // after a battlefield KO and wipe the actual species off
+                // the recap) so the draw shows whichever mon was standing,
+                // not whichever seat lost a fight.
+                let foe = if player == 1 { &self.p2 } else { &self.p1 };
+                Screen::Draw {
+                    own_name: p.name_str(),
+                    foe_name: foe.name_str(),
+                }
+            }
+            View::Waiting { forced } => Screen::Waiting {
+                mon: p.battle_mon(),
+                bob: p.bob_up,
+                spd,
+                // The prompt's MovesUpdate left the forced move as the
+                // seat's only slot (the runner names Recharge, a lock,
+                // Struggle and Gen 1's Fight that way).
+                forced: forced.then(|| match p.moves.as_slice() {
+                    [only] => only.name.as_str(),
+                    _ => "",
+                }),
+            },
             View::WaitingForOpponent => {
                 Screen::WaitingForOpponent { mon: p.battle_mon(), bob: p.bob_up }
             }
@@ -1001,5 +1074,58 @@ impl OledController {
                 elapsed_ms: p.move_flash_ms,
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::string::{String, ToString};
+
+    fn slot(name: &str) -> MoveSlot {
+        MoveSlot {
+            name: name.to_string(),
+            type_name: "Normal".to_string(),
+            category: "Physical".to_string(),
+            power: Some(90),
+            accuracy: Some(100),
+            pp: 20,
+            max_pp: 32,
+        }
+    }
+
+    fn forced(ctl: &OledController, player: u8) -> Option<String> {
+        match ctl.screen(player) {
+            Screen::Waiting { forced, .. } => forced.map(|s| s.to_string()),
+            other => panic!("not locked in: {}", other.name()),
+        }
+    }
+
+    /// A forced seat is locked in (`LOCKED_IN`, what the probe and the
+    /// device's press routing key on), naming the forced move when the
+    /// prompt left it as the seat's only slot; a chosen move is plain
+    /// locked in.
+    #[test]
+    fn the_forced_screen_names_the_one_move() {
+        let mut ctl = OledController::new();
+        ctl.apply(OledCmd::MovesUpdate { player: 1, moves: alloc::vec![slot("Thrash")] });
+        ctl.apply(OledCmd::RestoreScreen { player: 1 });
+        assert_eq!(ctl.screen(1).name(), "MOVES");
+        ctl.apply(OledCmd::ShowForced { player: 1 });
+        assert_eq!(ctl.screen(1).name(), "LOCKED_IN");
+        assert!(!ctl.screen(1).is_choosing());
+        assert_eq!(forced(&ctl, 1).as_deref(), Some("Thrash"));
+
+        // A forced choice the menu cannot name (four slots up): no name.
+        ctl.apply(OledCmd::MovesUpdate {
+            player: 2,
+            moves: alloc::vec![slot("Tackle"), slot("Growl"), slot("Ember"), slot("Leer")],
+        });
+        ctl.apply(OledCmd::ShowForced { player: 2 });
+        assert_eq!(forced(&ctl, 2).as_deref(), Some(""));
+
+        ctl.apply(OledCmd::ShowWaiting { player: 2 });
+        assert_eq!(ctl.screen(2).name(), "LOCKED_IN");
+        assert_eq!(forced(&ctl, 2), None);
     }
 }

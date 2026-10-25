@@ -1,0 +1,175 @@
+# BoardEvent stream of tests/narration/gen3_lines.txt: each line, then its events
+# (`(nothing)` when it yields none).
+|start
+    BattleStart
+|switch|p1a: Gardevoir|Gardevoir, L80, F|250/250
+    SwitchIn p1 Gardevoir
+|switch|p2a: Golduck|Golduck, L80, M|260/260
+    SwitchIn p2 Golduck
+|request|...
+    ActiveMonUpdate { mon: "Golduck,p2,0", name: "Golduck", speed: Some(170) }
+    MovesUpdate p2 [Psychic 16/16; Surf 24/24; Ice Beam 16/16; Calm Mind 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|turn|1
+    Turn { n: 1 }
+|-ability|p2a: Golduck|Intimidate|boost
+    Ability { mon: "Golduck,p2,0", ability: "Intimidate", how: "", other: None }
+|-ability|p2a: Golduck|Pressure
+    Ability { mon: "Golduck,p2,0", ability: "Pressure", how: "", other: None }
+|-ability|p2a: Golduck|Pressure|[silent]
+    (nothing)
+|-ability|p1a: Gardevoir|Levitate|Trace|[from] ability: Trace|[of] p2a: Golduck
+    Ability { mon: "Gardevoir,p1,0", ability: "Levitate", how: "trace", other: Some("Golduck,p2,0") }
+|-ability|p1a: Gardevoir|Cloud Nine|Levitate|[from] move: Role Play|[of] p2a: Golduck
+    Ability { mon: "Gardevoir,p1,0", ability: "Cloud Nine", how: "roleplay", other: Some("Golduck,p2,0") }
+|-immune|p2a: Golduck|[from] ability: Water Absorb
+    Ability { mon: "Golduck,p2,0", ability: "Water Absorb", how: "activate", other: None }
+    Immune { mon: "Golduck,p2,0" }
+|-heal|p2a: Golduck|255/260|[from] ability: Water Absorb|[of] p1a: Gardevoir
+    Ability { mon: "Golduck,p2,0", ability: "Water Absorb", how: "activate", other: None }
+    Heal { mon: "Golduck,p2,0", health: "255/260" }
+|-status|p1a: Gardevoir|par|[from] ability: Static|[of] p2a: Golduck
+    Ability { mon: "Golduck,p2,0", ability: "Static", how: "activate", other: None }
+    SetStatus { mon: "Gardevoir,p1,0", status: "par" }
+|-damage|p1a: Gardevoir|230/250|[from] ability: Rough Skin|[of] p2a: Golduck
+    Ability { mon: "Golduck,p2,0", ability: "Rough Skin", how: "activate", other: None }
+    Damage { mon: "Gardevoir,p1,0", health: "230/250" }
+|-weather|SunnyDay|[from] ability: Drought|[of] p1a: Gardevoir
+    Ability { mon: "Gardevoir,p1,0", ability: "Drought", how: "activate", other: None }
+    EffectStart { mon: "", what: "harsh sunlight", detail: None }
+|-curestatus|p1a: Gardevoir|par|[from] ability: Natural Cure
+    Ability { mon: "Gardevoir,p1,0", ability: "Natural Cure", how: "activate", other: None }
+    CureStatus { mon: "Gardevoir,p1,0", status: "par" }
+|-start|p1a: Gardevoir|Attract|[from] ability: Cute Charm|[of] p2a: Golduck
+    Ability { mon: "Golduck,p2,0", ability: "Cute Charm", how: "activate", other: None }
+    EffectStart { mon: "Gardevoir,p1,0", what: "Attract", detail: None }
+|-start|p2a: Golduck|ability: Flash Fire
+    Ability { mon: "Golduck,p2,0", ability: "Flash Fire", how: "activate", other: None }
+    EffectStart { mon: "Golduck,p2,0", what: "Flash Fire", detail: None }
+|-immune|p1a: Gardevoir|confusion|[from] ability: Own Tempo
+    Ability { mon: "Gardevoir,p1,0", ability: "Own Tempo", how: "activate", other: None }
+    Immune { mon: "Gardevoir,p1,0" }
+|-fail|p2a: Golduck|unboost|Attack|[from] ability: Hyper Cutter|[of] p2a: Golduck
+    Ability { mon: "Golduck,p2,0", ability: "Hyper Cutter", how: "activate", other: None }
+    Activate { mon: "Golduck,p2,0", what: "unboost", detail: Some("Attack"), other: None, n: None }
+|-fail|p2a: Golduck|unboost|[from] ability: Clear Body|[of] p2a: Golduck
+    Ability { mon: "Golduck,p2,0", ability: "Clear Body", how: "activate", other: None }
+    Activate { mon: "Golduck,p2,0", what: "unboost", detail: None, other: None, n: None }
+|cant|p2a: Golduck|ability: Truant
+    Ability { mon: "Golduck,p2,0", ability: "Truant", how: "activate", other: None }
+    Cant { mon: "Golduck,p2,0", reason: "truant" }
+|-item|p1a: Gardevoir|Choice Band|[from] move: Trick
+    ItemGained { mon: "Gardevoir,p1,0", item: "Choice Band", how: "trick", other: None }
+|-item|p1a: Gardevoir|Leftovers|[from] move: Thief|[of] p2a: Golduck
+    ItemGained { mon: "Gardevoir,p1,0", item: "Leftovers", how: "thief", other: Some("Golduck,p2,0") }
+|-item|p1a: Gardevoir|Leppa Berry|[from] move: Recycle
+    ItemGained { mon: "Gardevoir,p1,0", item: "Leppa Berry", how: "recycle", other: None }
+|-item|p1a: Gardevoir|Leftovers
+    (nothing)
+|-enditem|p1a: Gardevoir|Salac Berry|[eat]
+    ItemEnded { mon: "Gardevoir,p1,0", item: "Salac Berry", how: "eat", other: None }
+|-enditem|p1a: Gardevoir|Leftovers|[from] move: Knock Off|[of] p2a: Golduck
+    ItemEnded { mon: "Gardevoir,p1,0", item: "Leftovers", how: "knockoff", other: Some("Golduck,p2,0") }
+|-enditem|p1a: Gardevoir|White Herb
+    ItemEnded { mon: "Gardevoir,p1,0", item: "White Herb", how: "", other: None }
+|-enditem|p1a: Gardevoir|Leftovers|[silent]|[from] move: Thief|[of] p2a: Golduck
+    (nothing)
+|-enditem|p1a: Gardevoir|Bright Powder|[silent]|[from] move: Trick
+    (nothing)
+|-activate|p1a: Gardevoir|confusion
+    Activate { mon: "Gardevoir,p1,0", what: "confusion", detail: None, other: None, n: None }
+|-activate|p1a: Gardevoir|move: Struggle
+    Activate { mon: "Gardevoir,p1,0", what: "Struggle", detail: None, other: None, n: None }
+|-activate|p2a: Golduck|Substitute|[damage]
+    Activate { mon: "Golduck,p2,0", what: "Substitute", detail: None, other: None, n: None }
+|-activate|p2a: Golduck|Protect
+    Activate { mon: "Golduck,p2,0", what: "Protect", detail: None, other: None, n: None }
+|-activate|p2a: Golduck|move: Endure
+    Activate { mon: "Golduck,p2,0", what: "Endure", detail: None, other: None, n: None }
+|-activate|p2a: Golduck|item: Focus Band
+    Activate { mon: "Golduck,p2,0", what: "Focus Band", detail: None, other: None, n: None }
+|-activate|p2a: Golduck|move: Spite|psychic|4
+    Activate { mon: "Golduck,p2,0", what: "Spite", detail: Some("Psychic"), other: None, n: Some(4) }
+    MovesUpdate p2 [Psychic 12/16; Surf 24/24; Ice Beam 16/16; Calm Mind 32/32]
+|-activate|p2a: Golduck|move: Grudge|Surf
+    Activate { mon: "Golduck,p2,0", what: "Grudge", detail: Some("Surf"), other: None, n: None }
+    MovesUpdate p2 [Psychic 12/16; Surf 0/24; Ice Beam 16/16; Calm Mind 32/32]
+|-activate|p2a: Golduck|item: Leppa Berry|Psychic|[consumed]
+    Activate { mon: "Golduck,p2,0", what: "Leppa Berry", detail: Some("Psychic"), other: None, n: None }
+    MovesUpdate p2 [Psychic 16/16; Surf 0/24; Ice Beam 16/16; Calm Mind 32/32]
+|-activate|p1a: Gardevoir|move: Attract|[of] p2a: Golduck
+    Activate { mon: "Gardevoir,p1,0", what: "Attract", detail: None, other: Some("Golduck,p2,0"), n: None }
+|-activate|p1a: Gardevoir|move: Trick|[of] p2a: Golduck
+    Activate { mon: "Gardevoir,p1,0", what: "Trick", detail: None, other: Some("Golduck,p2,0"), n: None }
+|-activate|p1a: Gardevoir|move: Lock-On|[of] p2a: Golduck
+    Activate { mon: "Gardevoir,p1,0", what: "Lock-On", detail: None, other: Some("Golduck,p2,0"), n: None }
+|-activate|p1a: Gardevoir|Skill Swap|||[of] p2a: Golduck
+    Activate { mon: "Gardevoir,p1,0", what: "Skill Swap", detail: None, other: Some("Golduck,p2,0"), n: None }
+|-activate|p1a: Gardevoir|move: Snatch|[of] p2a: Golduck
+    Activate { mon: "Gardevoir,p1,0", what: "Snatch", detail: None, other: Some("Golduck,p2,0"), n: None }
+|-activate|p1a: Gardevoir|move: Mimic|Surf
+    EffectStart { mon: "Gardevoir,p1,0", what: "mimic", detail: Some("Surf") }
+|-activate|p1a: Gardevoir|move: Destiny Bond
+    Activate { mon: "Gardevoir,p1,0", what: "Destiny Bond", detail: None, other: None, n: None }
+|-activate|p2a: Golduck|move: Pursuit
+    Activate { mon: "Golduck,p2,0", what: "Pursuit", detail: None, other: None, n: None }
+|-activate|p1a: Gardevoir|move: Beat Up|[of] Snorlax
+    Activate { mon: "Gardevoir,p1,0", what: "Beat Up", detail: None, other: Some("Snorlax,p1,0"), n: None }
+|-activate|p1a: Gardevoir|move: Bide
+    Activate { mon: "Gardevoir,p1,0", what: "Bide", detail: None, other: None, n: None }
+|-activate|p1a: Gardevoir|move: Heal Bell
+    Activate { mon: "Gardevoir,p1,0", what: "Heal Bell", detail: None, other: None, n: None }
+|-activate|p1a: Gardevoir|ability: Shed Skin
+    Ability { mon: "Gardevoir,p1,0", ability: "Shed Skin", how: "activate", other: None }
+|-activate|p1a: Gardevoir|trapped
+    EffectStart { mon: "Gardevoir,p1,0", what: "trapped", detail: None }
+|-activate|p1a: Gardevoir|move: Bind|[of] p2a: Golduck
+    EffectStart { mon: "Gardevoir,p1,0", what: "wrap", detail: None }
+|-cureteam|p1a: Gardevoir|[from] move: Aromatherapy
+    Activate { mon: "Gardevoir,p1,0", what: "Aromatherapy", detail: None, other: None, n: None }
+|-fieldactivate|move: Perish Song
+    Activate { mon: "", what: "Perish Song", detail: None, other: None, n: None }
+|-hitcount|p2a: Golduck|3
+    Activate { mon: "Golduck,p2,0", what: "hitcount", detail: None, other: None, n: Some(3) }
+|-ohko
+    Activate { mon: "", what: "ohko", detail: None, other: None, n: None }
+|-start|p1a: Gardevoir|Uproar|[upkeep]
+    Activate { mon: "Gardevoir,p1,0", what: "Uproar", detail: Some("upkeep"), other: None, n: None }
+|-end|p1a: Gardevoir|Uproar
+    EffectEnd { mon: "Gardevoir,p1,0", what: "Uproar" }
+|-start|p1a: Gardevoir|perish3|[silent]
+    (nothing)
+|-start|p1a: Gardevoir|perish2
+    EffectStart { mon: "Gardevoir,p1,0", what: "perish2", detail: None }
+|-start|p1a: Gardevoir|move: Taunt
+    EffectStart { mon: "Gardevoir,p1,0", what: "Taunt", detail: None }
+|-end|p1a: Gardevoir|move: Taunt|[silent]
+    (nothing)
+|-start|p1a: Gardevoir|Encore
+    EffectStart { mon: "Gardevoir,p1,0", what: "Encore", detail: None }
+|-end|p1a: Gardevoir|Encore
+    EffectEnd { mon: "Gardevoir,p1,0", what: "Encore" }
+|-start|p1a: Gardevoir|stockpile2
+    EffectStart { mon: "Gardevoir,p1,0", what: "stockpile2", detail: None }
+|-start|p2a: Golduck|Future Sight
+    EffectStart { mon: "Golduck,p2,0", what: "Future Sight", detail: None }
+|-end|p1a: Gardevoir|move: Future Sight
+    EffectEnd { mon: "Gardevoir,p1,0", what: "Future Sight" }
+|-start|p2a: Golduck|typechange|Fire
+    EffectStart { mon: "Golduck,p2,0", what: "conversion", detail: Some("Fire") }
+|-singlemove|p1a: Gardevoir|Grudge
+    EffectStart { mon: "Gardevoir,p1,0", what: "Grudge", detail: None }
+|-singleturn|p1a: Gardevoir|move: Magic Coat
+    EffectStart { mon: "Gardevoir,p1,0", what: "Magic Coat", detail: None }
+|-mustrecharge|p1a: Gardevoir
+    (nothing)
+|-prepare|p1a: Gardevoir|Solar Beam
+    EffectStart { mon: "Gardevoir,p1,0", what: "charging", detail: Some("Solar Beam") }
+|-weather|none
+    EffectEnd { mon: "", what: "harsh sunlight" }
+|switch|p1a: Castform|Castform, L80, F|240/240
+    SwitchIn p1 Castform
+|-formechange|p1a: Castform|Castform-Sunny|[msg]|[from] ability: Forecast
+    Ability { mon: "Castform,p1,0", ability: "Forecast", how: "activate", other: None }
+    EffectStart { mon: "Castform,p1,0", what: "transform", detail: None }
+    ActiveMonUpdate { mon: "Castform,p1,0", name: "Castform-Sunny", speed: None }

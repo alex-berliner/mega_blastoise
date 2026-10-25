@@ -1,0 +1,43 @@
+[package]
+name = "ps_sim"
+version = "0.1.0"
+edition = "2021"
+description = "Pokemon Showdown-compatible battle server: state, queue, events, PRNG, damage, protocol emitter. no_std + alloc."
+
+[features]
+default = []
+# Select the gen scripts at battle-creation time. Both may be linked; the
+# runtime pick is by an enum dispatch (no trait objects in the hot path).
+gen1 = []
+gen3 = []
+# Text codec (PS line protocol + request JSON) lives here for the
+# `Text` transport the harness uses. Off by default on-device.
+text = ["ps_protocol/text"]
+# Test-only next-N PRNG outcome override (design section 5.5). The
+# firmware never enables this; thumbv8m builds without it must contain
+# no override symbol (P1-2 acceptance).
+test-override = []
+# Per-handler hit counts in `Battle::hits` (`hits.rs`) for the coverage
+# gate (`scripts/ps-coverage.sh`). Host-only; the firmware never enables it.
+hit-count = []
+# PRNG call tracing (`Prng::trace`): every public PRNG call with its
+# index, method, arguments, result and caller location. Off by default:
+# the firmware never enables it, so its release build is unchanged.
+rng-trace = []
+defmt = ["dep:defmt"]
+
+[dependencies]
+ps_protocol = { path = "../ps_protocol", default-features = false }
+ps_dex = { path = "../ps_dex", default-features = false }
+defmt = { version = "1.0", optional = true }
+
+[dev-dependencies]
+# The tests render the server's output through the real text codec.
+ps_protocol = { path = "../ps_protocol", features = ["text"] }
+# The battle fixtures are stored gzipped.
+flate2 = "1"
+# Fixture parsing only; ps_sim itself (`#![no_std]`) never links serde.
+# `derive` is enabled so the test's struct deserializers work without a
+# hand-rolled Visitor; no production code reaches for serde.
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }

@@ -58,6 +58,7 @@ impl Battle {
         self.dragged = [false; 2];
         self.taken_physical = [0; 2];
         self.taken_special = [0; 2];
+        self.hit_this_turn = [false; 2];
 
         for side in 0..2 {
             self.pp0_at_choice[side] = match choices[side] {
@@ -68,39 +69,34 @@ impl Battle {
                     .is_some_and(|m| m.pp == 0),
                 _ => false,
             };
-            // The Imprison seal is read HERE, before anyone switches, and
-            // held for the turn. The sim recomputes its disable flags once in
-            // `nextTurn` and then commits the choice against them, so an
-            // imprisoner that leaves the field partway through the turn does
-            // not hand its victim's moves back until the next one.
+            // The seal, read HERE and held for the turn: `nextTurn` is where
+            // the sim writes the disable flags the choice is then judged
+            // against, and it does not write them again, so an imprisoner
+            // that leaves the field partway through the turn does not hand
+            // its victim's moves back until the turn after. It is asked here
+            // about the whole moveset, because that is the shape of the
+            // answer `chooseMove` gives (see `sealed_at_choice`).
             let foe = 1 - side;
-            self.sealed_at_choice[side] = match choices[side] {
-                Choice::Move(i) => {
-                    let sealed_id = self.sides[side]
-                        .mon()
-                        .moves
-                        .get(i)
-                        .map(|m| m.entry.id);
-                    self.sides[foe].mon().imprisoning
-                        && sealed_id.is_some_and(|id| {
-                            self.sides[foe].mon().moves.iter().any(|m| m.entry.id == id)
-                        })
-                }
-                _ => false,
-            };
+            self.sealed_at_choice[side] = self.sides[foe].mon().imprisoning
+                && !self.sides[side].mon().moves.is_empty()
+                && self.sides[side].mon().moves.iter().all(|m| {
+                    self.sides[foe].mon().moves.iter().any(|f| f.entry.id == m.entry.id)
+                });
         }
-        // A seat that chose Focus Punch starts tightening its focus before
-        // anything else happens this turn (the sim's priority charge step);
-        // while focusing, the flinch volatile is refused outright.
+        // A seat using Focus Punch tightens its focus before anything else
+        // happens this turn (the sim's before-turn charge step); while
+        // focusing, the flinch volatile is refused outright.
+        //
+        // The charge belongs to the move that is QUEUED, not to the slot
+        // that was picked: the sim throws a locked mon's choice away whole
+        // (`chooseMove` pushes the locked move and returns), so a Rollout
+        // or a recharge never tightens a focus it will not punch with, and
+        // with no volatile there, the flinch lands on it instead.
         for side in 0..2 {
             if let Choice::Move(i) = choices[side] {
-                if self.sides[side]
-                    .mon()
-                    .moves
-                    .get(i)
-                    .is_some_and(|m| m.entry.id == "focuspunch")
-                    && !self.sides[side].mon().fainted()
-                {
+                let mon = self.sides[side].mon();
+                let focusing = self.acting_move_id(side, i) == Some("focuspunch");
+                if focusing && !mon.must_recharge && !mon.fainted() {
                     self.sides[side].mon_mut().focusing = true;
                 }
             }
@@ -142,7 +138,17 @@ impl Battle {
                     || m.rolling.is_some()
                     || m.bide.is_some()
             };
+            // Nor does it count when the request would have handed the mon
+            // Struggle. The sim builds its queue out of `getMoves`, which
+            // greys out the last move of a mon under Torment, a Disabled
+            // slot, a Taunted status move, a move the imprisoning foe knows
+            // and every move but a Choice lock, and answers a mon with no
+            // usable move at all with Struggle. `beforeTurnMove` and its
+            // Pursuit volatile hang off the action as queued, so a mon that
+            // was going to Struggle never arms one and there is nothing to
+            // intercept; it takes its own turn after the switch instead.
             let is_pursuit = !locked
+                && !self.struggles_at_choice(foe, mi)
                 && self.sides[foe]
                     .mon()
                     .moves
@@ -165,11 +171,25 @@ impl Battle {
                 continue;
             }
             self.pursuing = true;
-            self.use_move(foe, mi, script.seats[foe], &mut events);
+            let landed = self.use_move(foe, mi, script.seats[foe], &mut events);
             self.run_pending_call(script, &mut events);
-            self.settle_choice_lock(foe);
-            self.white_herb(foe);
-            self.white_herb(1 - foe);
+            // The interception answers no `AfterMove`: the sim fires it from
+            // the switch-out hook through `useMove`, below `runMove`, so
+            // Charge's cleanup never runs for it. Gen 3's Pursuit writes the
+            // band's lock by hand at the interception itself, right where the
+            // strike is (`if (this.actions.useMove(...) && source.getItem()
+            // .isChoice) source.addVolatile("choicelock")`), so the lock
+            // still goes on. (Ours reads the strike as "reached the move",
+            // so a blow the sim would call a miss still locks; nothing in
+            // this era's Pursuit reaches that branch but a blow it absorbs.)
+            if landed {
+                self.apply_choice_lock(foe, Some("pursuit"));
+            }
+            self.settle_choice_lock(foe, false);
+            // No White Herb here: the sim fires an interception from the
+            // switch-out hook through `useMove`, the caller BELOW `runMove`,
+            // and only `runMove` runs `AfterMove`. The arrival that follows
+            // it is a switch-in, which answers one anyway.
             self.end_of_action();
             self.pursuing = false;
             pursued[foe] = true;
@@ -186,7 +206,14 @@ impl Battle {
         // and what a Trace finds standing opposite: on a double switch the
         // slower side's newcomer is greeted by a field that has already
         // changed, and the faster side's by one that has not.
-        let switch_first = self.faster_side(scripted_now);
+        //
+        // The order is the one the turn was sorted on, held: the sim sorts
+        // as the choices come in, which is before this turn's first
+        // `update()`, so a Cheri Berry eaten a moment later cures the
+        // paralysis of a mon that is on its way OUT and does not reshuffle
+        // the turn. Reading the speeds again here would read them after the
+        // cure and hand the turn to whichever side the berry just freed.
+        let switch_first = self.sorted_first(scripted_now);
         for side in [switch_first, 1 - switch_first] {
             if self.deferred_switch[side].is_some() {
                 continue;
@@ -237,7 +264,84 @@ impl Battle {
         for side in 0..2 {
             cancelled[side] = pursued[side] || already_down;
         }
-        for side in [first, 1 - first] {
+        let rest = TurnRest::Moves {
+            from: 0,
+            first: first as u8,
+            choices,
+            cancelled,
+        };
+        self.finish_turn(rest, *script, &mut events);
+        events
+    }
+
+    /// The rest of a turn, from `rest` on. A replacement the player has to
+    /// choose STOPS it there: in this era the sim checks for faints at every
+    /// action boundary (`checkFainted` when the next action is a move or the
+    /// residual) and asks for the switch on the spot, and `commitChoices`
+    /// queues the answer AHEAD of what was left of the turn. So the turn is
+    /// parked, `send_out` picks it back up, and the pick is on the field for
+    /// the residual phase exactly as the lowest-slot default's is.
+    pub(super) fn finish_turn(
+        &mut self,
+        mut rest: TurnRest,
+        script: TurnScript,
+        events: &mut Vec<Event>,
+    ) {
+        loop {
+            if self.awaiting_replacement.iter().any(|&w| w) {
+                self.parked_turn = Some((rest, script));
+                return;
+            }
+            match rest {
+                TurnRest::Moves {
+                    from,
+                    first,
+                    choices,
+                    cancelled,
+                } => {
+                    rest = self.move_phase(
+                        from as usize,
+                        first as usize,
+                        choices,
+                        cancelled,
+                        &script,
+                        events,
+                    );
+                }
+                TurnRest::DeferredSwitches => {
+                    self.deferred_switches(events);
+                    rest = TurnRest::Residual;
+                }
+                TurnRest::Residual => {
+                    self.residual_phase(&script, events);
+                    rest = TurnRest::Tidy;
+                }
+                TurnRest::Tidy => {
+                    self.tidy_turn(events);
+                    return;
+                }
+            }
+        }
+    }
+
+    /// The move phase, from the mover at `from` in the turn's order on.
+    /// Returns where the turn goes next: on to the deferred switches, or back
+    /// here for the second mover once the player has answered.
+    fn move_phase(
+        &mut self,
+        from: usize,
+        first: usize,
+        choices: [Choice; 2],
+        mut cancelled: [bool; 2],
+        script: &TurnScript,
+        events: &mut Vec<Event>,
+    ) -> TurnRest {
+        // A pass target that walked onto Spikes and went down there throws
+        // the rest of the turn away like any other faint.
+        if (0..2).any(|s| self.sides[s].mon().fainted()) {
+            cancelled = [true; 2];
+        }
+        for (k, side) in [first, 1 - first].into_iter().enumerate().skip(from) {
             if self.over() {
                 break;
             }
@@ -249,14 +353,24 @@ impl Battle {
                     let foe = 1 - side;
                     self.will_act =
                         side == first && !cancelled[foe] && matches!(choices[foe], Choice::Move(_));
-                    self.use_move(side, index, script.seats[side], &mut events);
-                    self.run_pending_call(script, &mut events);
-                    self.settle_choice_lock(side);
+                    let moved = self.use_move(side, index, script.seats[side], events);
+                    self.run_pending_call(script, events);
+                    // The band's lock and Charge's cleanup both hang off
+                    // `AfterMove`, so they answer an action only if it got
+                    // that far: a frozen, sleeping or fully-paralysed mon,
+                    // or a slot drained dry since the choice, leaves both
+                    // standing. An intercepting Pursuit answers neither.
+                    self.settle_choice_lock(side, moved);
                     // `onAnyAfterMove`: a White Herb on either seat undoes
                     // what the move just did to it, without waiting for the
-                    // end of the turn.
-                    self.white_herb(side);
-                    self.white_herb(1 - side);
+                    // end of the turn. The sim runs that event out of
+                    // `runMove`, so an action a gate turned away before the
+                    // move (a frozen mon, a full paralysis, a slot drained
+                    // dry since the choice) never answers one.
+                    if moved {
+                        self.white_herb(side);
+                        self.white_herb(1 - side);
+                    }
                     self.end_of_action();
                 }
             }
@@ -276,9 +390,24 @@ impl Battle {
             // The sim checks for faints at every action boundary in this
             // era (`gen <= 3` in checkFainted's guard), so a replacement is
             // already on the field when the residual phase runs.
-            self.replace_fainted(&mut events);
+            self.replace_fainted(events);
+            // A question for the player (a Baton Pass target, or a faint's
+            // replacement) is answered before the next action: the sim makes
+            // the switch request at the end of `runAction` and queues the
+            // answer as an instaswitch, ahead of the move still to come.
+            if k == 0 && self.awaiting_replacement.iter().any(|&w| w) {
+                return TurnRest::Moves {
+                    from: 1,
+                    first: first as u8,
+                    choices,
+                    cancelled,
+                };
+            }
         }
+        TurnRest::DeferredSwitches
+    }
 
+    fn deferred_switches(&mut self, events: &mut Vec<Event>) {
         // The switch a Pursuit KO pushed back takes its turn now, once the
         // moves are done and BEFORE the residuals — the sim re-queues it at
         // priority -101, so the mon it brings in is on the field to take its
@@ -295,16 +424,24 @@ impl Battle {
                         side: side as u8 + 1,
                         party_index: idx,
                     });
-                    self.switch_in_greet(side, &mut events);
+                    self.switch_in_greet(side, events);
                 }
             }
         }
-        self.replace_fainted(&mut events);
+        self.replace_fainted(events);
+    }
 
+    fn residual_phase(&mut self, script: &TurnScript, events: &mut Vec<Event>) {
+        let scripted = script.seats.iter().any(|s| s.is_some());
         // The whole end-of-turn phase is skipped once the battle is decided
         // — but a wipe DURING the phase does not cut it short (the sim
         // finishes both weather chips even when the first one ends it).
         if !self.over() {
+            // Speeds are read before anything in the phase runs: the sim's
+            // `updateSpeed()` precedes the field event, so a sun that expires
+            // in this very phase still doubles a Chlorophyll mon's place in
+            // the residual sort.
+            let speeds = [self.turn_speed(0), self.turn_speed(1)];
             // Weather chips first — the games' upkeep slot: sandstorm hits
             // anything not Rock/Ground/Steel, hail anything not Ice, a
             // sixteenth each, faster side first.
@@ -323,7 +460,7 @@ impl Battle {
                         // Gen 5 moved it to the wisher; this era did not.
                         let want = self.sides[side].mon().max_hp / 2;
                         if !self.sides[side].mon().fainted() {
-                            self.heal(side, want, &mut events);
+                            self.heal(side, want, events);
                         }
                     }
                 }
@@ -377,7 +514,7 @@ impl Battle {
                         side: side as u8 + 1,
                         amount,
                     });
-                    self.announce_faint(side, &mut events);
+                    self.announce_faint(side, events);
                 }
             }
 
@@ -392,7 +529,8 @@ impl Battle {
             // being there. Speeds are read once, up front, exactly as the sim
             // reads them: `case 'residual'` calls `updateSpeed()` before the
             // field event, so a Salac eaten mid-phase does not reshuffle it.
-            let speeds = [self.turn_speed(0), self.turn_speed(1)];
+            // (`speeds` is taken at the top of the phase, before the weather
+            // clock runs out.)
             // The list holds only the handlers that EXIST, because presence
             // is what displacement runs on. An earlier cut pushed every
             // bucket for both sides and let absent ones no-op — which sorts
@@ -425,36 +563,64 @@ impl Battle {
                     plan.push((4, s));
                 }
                 // Volatiles with a residual callback or a bare duration.
-                // Their order among themselves approximates the add order;
-                // no two share a sort key, so it only matters in corners
-                // where one mon carries several and ties a foe's.
+                // The sim pools one mon's volatiles in the order they were
+                // ADDED: `findPokemonEventHandlers` walks
+                // `pokemon.volatiles` by insertion order, so a mon seeded
+                // before it was rooted hands the pool its Leech Seed ahead
+                // of its Ingrain. Two of one mon's volatiles that tie in
+                // `comparePriority` are broken by nothing else, and the
+                // selection sort moves tied pairs about, so that order
+                // decides which way they come out. `add_volatile` stamped
+                // each one with the clock it landed on; that is the order
+                // here.
+                let mut vol: [(usize, u16); VOL_COUNT] = [(0, 0); VOL_COUNT];
+                let mut nv = 0;
                 if mon.ingrained {
-                    plan.push((0, s));
+                    vol[nv] = (0, mon.vol_stamp[VOL_INGRAIN]);
+                    nv += 1;
                 }
                 if mon.seeded {
-                    plan.push((3, s));
+                    vol[nv] = (3, mon.vol_stamp[VOL_LEECH_SEED]);
+                    nv += 1;
                 }
                 if mon.nightmared {
-                    plan.push((5, s));
+                    vol[nv] = (5, mon.vol_stamp[VOL_NIGHTMARE]);
+                    nv += 1;
                 }
                 if mon.cursed {
-                    plan.push((6, s));
+                    vol[nv] = (6, mon.vol_stamp[VOL_CURSE]);
+                    nv += 1;
                 }
-                if mon.trapped_n > 0 {
-                    plan.push((7, s));
+                // A stale bind has a handler here too: the sim's volatile
+                // outlives its user and deletes itself in `onResidual`, so
+                // it is still one of the gathered handlers on the turn its
+                // clock ran out under something else (a Rapid Spin or a
+                // Substitute zeroes the clock, and the flag has to be spent
+                // here or it eats the NEXT bind's first chip).
+                if mon.trapped_n > 0 || mon.trap_stale {
+                    vol[nv] = (7, mon.vol_stamp[VOL_BIND]);
+                    nv += 1;
+                }
+                if mon.bide.is_some() {
+                    vol[nv] = (13, mon.vol_stamp[VOL_BIDE]);
+                    nv += 1;
                 }
                 if mon.must_recharge {
-                    plan.push((8, s));
+                    vol[nv] = (8, mon.vol_stamp[VOL_RECHARGE]);
+                    nv += 1;
                 }
                 if mon.rampage.is_some() {
-                    if mon.locked_move == Some("uproar") {
-                        plan.push((9, s));
-                    } else {
-                        plan.push((11, s));
-                    }
+                    let bucket = if mon.locked_move == Some("uproar") { 9 } else { 11 };
+                    vol[nv] = (bucket, mon.vol_stamp[VOL_RAMPAGE]);
+                    nv += 1;
                 }
                 if mon.yawn_n > 0 {
-                    plan.push((10, s));
+                    vol[nv] = (10, mon.vol_stamp[VOL_YAWN]);
+                    nv += 1;
+                }
+                vol[..nv].sort_by_key(|&(_, stamp)| stamp);
+                for &(bucket, _) in &vol[..nv] {
+                    plan.push((bucket, s));
                 }
                 // Abilities.
                 if matches!(ability, "raindish" | "shedskin" | "speedboost") {
@@ -492,7 +658,7 @@ impl Battle {
                 if b == WISH_MARK {
                     continue;
                 }
-                self.residual_bucket(b, s, scripted, &mut events);
+                self.residual_bucket(b, s, scripted, events);
             }
 
             // The White Herb's own residual, at order 29 — after every tick
@@ -503,7 +669,16 @@ impl Battle {
 
             // A Future Sight lands at the end of its third turn, computed from
             // the launcher's snapshot against the target now standing.
-            for side in 0..2 {
+            //
+            // Two of them land in the same residual are sorted by the SPEED OF
+            // THE MON IN THE SLOT EACH ONE AIMS AT, not by seat: the sim hangs
+            // the condition on the target's slot and finds it through that
+            // slot's mon, so `resolvePriority` hands the handler that mon's
+            // `getActionSpeed` and the residual's `speedSort` runs on it. The
+            // faster target's delayed hit lands first, which is what decides
+            // the battle when only one of the two knocks anything out.
+            let first = self.faster_side(scripted);
+            for side in [first, 1 - first] {
                 if self.over() {
                     break;
                 }
@@ -514,9 +689,23 @@ impl Battle {
                         self.sides[side].incoming = None;
                         let mon = self.sides[side].mon();
                         if !mon.fainted() {
+                            // A taken aim reaches the mon the launcher
+                            // locked on, whatever it is doing: the sim's
+                            // lockon condition answers the Invulnerability
+                            // event the landing runs through, and then the
+                            // accuracy one that follows it. It answers only
+                            // for moves whose SOURCE holds the lock, and the
+                            // landing's source is the launcher, so a lock
+                            // taken by whoever replaced it does not count.
+                            let launcher = self.sides[1 - side].mon();
+                            let sure = self.sides[side].incoming_from
+                                == Some(self.sides[1 - side].active)
+                                && !launcher.fainted()
+                                && launcher.sure_hit > 0
+                                && launcher.sure_hit_on as usize == self.sides[side].active;
                             // A target mid Fly/Dig/Bounce/Dive when the hit
                             // arrives dodges it like any other attack.
-                            if mon.semi_invulnerable().is_some() {
+                            if !sure && mon.semi_invulnerable().is_some() {
                                 continue;
                             }
                             // Only ACCURACY waits for the landing — 90 for
@@ -525,16 +714,23 @@ impl Battle {
                             // simply drops the delayed hit. The damage itself
                             // was locked in at launch; the sim even strips the
                             // target's Endure before it lands.
-                            let landed = match script.seats[1 - side] {
-                                Some(sc) => sc.hit,
-                                None => {
-                                    self.rng.below(100) < if id == "doomdesire" { 85 } else { 90 }
-                                }
-                            };
+                            let landed = sure
+                                || match script.seats[1 - side] {
+                                    Some(sc) => sc.hit,
+                                    None => {
+                                        self.rng.below(100)
+                                            < if id == "doomdesire" { 85 } else { 90 }
+                                    }
+                                };
                             if !landed {
                                 continue;
                             }
                             if dealt > 0 {
+                                // The band is the one thing that can still cut
+                                // the landing blow back to a single point. Endure
+                                // is not: the sim's `futuremove.onEnd` strips it
+                                // off the target before the move is resolved.
+                                let banded = self.band_saves(side);
                                 let mon = self.sides[side].mon_mut();
                                 let hit_sub = mon.sub_hp > 0;
                                 if hit_sub {
@@ -550,7 +746,12 @@ impl Battle {
                                         });
                                     }
                                 } else {
-                                    let amount = dealt.min(mon.hp);
+                                    let cap = if banded {
+                                        mon.hp.saturating_sub(1)
+                                    } else {
+                                        mon.hp
+                                    };
+                                    let amount = dealt.min(cap);
                                     mon.hp -= amount;
                                     events.push(Event::Damage {
                                         side: side as u8 + 1,
@@ -566,10 +767,24 @@ impl Battle {
                                     // a delayed hit landing is what a Mirror
                                     // Move aimed afterwards finds, and it
                                     // fails on it.
-                                    let who = self.sides[1 - side].active;
+                                    //
+                                    // The line names the LAUNCHER, which is
+                                    // the sim's `effectState.source`, the mon
+                                    // that willed it, not whoever is standing
+                                    // on the far side when it lands. A launcher
+                                    // that has since left the field takes its
+                                    // line out with it at the end of the turn,
+                                    // and the move it was covering on the book
+                                    // surfaces again.
+                                    let who = self.sides[side]
+                                        .incoming_from
+                                        .unwrap_or(self.sides[1 - side].active);
                                     let mon = self.sides[side].mon_mut();
-                                    mon.last_hit_by = Some(id);
-                                    mon.last_hit_by_slot = Some(who);
+                                    mon.attacked_by.rotate_right(1);
+                                    mon.attacked_by[0] = Some(HitBy {
+                                        move_id: id,
+                                        from: who,
+                                    });
                                     // A delayed hit is a real hit: the sim
                                     // resolves it through trySpreadMoveHit,
                                     // so the Hit event runs and everything
@@ -583,9 +798,9 @@ impl Battle {
                                     if self.sides[side].mon().raging
                                         && !self.sides[side].mon().fainted()
                                     {
-                                        self.boost(side, Boost::Atk, 1, &mut events);
+                                        self.boost(side, Boost::Atk, 1, events);
                                     }
-                                    self.announce_faint(side, &mut events);
+                                    self.announce_faint(side, events);
                                 }
                             }
                         }
@@ -625,7 +840,7 @@ impl Battle {
                     });
                     if n == 0 {
                         self.sides[side].mon_mut().hp = 0;
-                        self.announce_faint(side, &mut events);
+                        self.announce_faint(side, events);
                     }
                 }
             }
@@ -692,22 +907,34 @@ impl Battle {
         // The residual phase is one action as far as the queue is concerned:
         // whoever it knocked out is replaced when it finishes, not between
         // its individual ticks.
-        self.replace_fainted(&mut events);
+        self.replace_fainted(events);
+    }
 
+    fn tidy_turn(&mut self, events: &mut Vec<Event>) {
         // `nextTurn` walks each mon's attacked-by book and SPLICES OUT every
         // entry whose attacker is no longer on the field. It is a destructive
         // purge, not a filter applied at read time, so a mon that hit you and
         // then switched out leaves no record — and coming back in does not
-        // restore it, because the entry is already gone. Mirror Move is the
-        // only reader, and this is why it fails against an attacker that took
-        // a lap on the bench, even one that returned to the same party slot.
+        // restore it, because the entry is already gone. What is left after
+        // the walk is not the last line but the LAST SURVIVING one: a delayed
+        // hit landing on top of a live attacker's line only hides that
+        // attacker's move until the delayed hitter leaves the field itself,
+        // and a Mirror Move aimed back then finds it. Mirror Move is the only
+        // reader, and this is why it fails against an attacker that took a lap
+        // on the bench, even one that returned to the same party slot.
         for side in 0..2 {
             let foe = 1 - side;
-            if self.sides[side].mon().last_hit_by_slot != Some(self.sides[foe].active) {
-                let mon = self.sides[side].mon_mut();
-                mon.last_hit_by = None;
-                mon.last_hit_by_slot = None;
+            let active = self.sides[foe].active;
+            let mon = self.sides[side].mon_mut();
+            let mut kept = [None; ATTACKED_BY_LEN];
+            let mut n = 0;
+            for entry in mon.attacked_by.iter().flatten() {
+                if entry.from == active {
+                    kept[n] = Some(*entry);
+                    n += 1;
+                }
             }
+            mon.attacked_by = kept;
         }
 
         // A flinch lasts exactly the turn it landed in — as do Protect's
@@ -721,7 +948,6 @@ impl Battle {
             mon.enduring = false;
             mon.torment_fresh = false;
             mon.encore_fresh = false;
-            mon.imprison_fresh = false;
             mon.uproar_ending = false;
             // Fury Cutter's ramp is a volatile with a two-turn clock that
             // only a landed Fury Cutter refreshes. So a turn that did not
@@ -761,7 +987,6 @@ impl Battle {
         if let Some(win) = self.winner() {
             events.push(Event::Win { side: win });
         }
-        events
     }
 
     pub(super) fn first_mover(&mut self, choices: &[Choice; 2], scripted: bool) -> usize {
@@ -797,12 +1022,23 @@ impl Battle {
         match p0.cmp(&p1) {
             core::cmp::Ordering::Greater => 0,
             core::cmp::Ordering::Less => 1,
-            core::cmp::Ordering::Equal => match self.speed_first {
-                // The order was settled as the turn opened; a berry eaten
-                // since then cures the paralysis without reshuffling it.
-                Some(first) => first,
-                None => self.faster_side(scripted),
-            },
+            core::cmp::Ordering::Equal => self.sorted_first(scripted),
+        }
+    }
+
+    /// The Speed order the turn was sorted on, or a fresh reading of it when
+    /// nothing has sorted this turn yet.
+    ///
+    /// The sim sorts a turn's actions as the choices come in, which is
+    /// BEFORE the turn's first `update()`, so a paralysis a Cheri Berry
+    /// cures a moment later still decides who went first, and a mon freed by
+    /// it does not get its place back. The switch phase and the move order
+    /// both read the turn's order through here; the residual sorts, which the
+    /// sim re-reads with its own `updateSpeed`, read it fresh instead.
+    pub(super) fn sorted_first(&mut self, scripted: bool) -> usize {
+        match self.speed_first {
+            Some(first) => first,
+            None => self.faster_side(scripted),
         }
     }
 
@@ -827,6 +1063,14 @@ impl Battle {
     /// decided at CHOICE time, so turn order uses Struggle's priority 0
     /// instead of the dead move's (the sim's request step offers only
     /// Struggle, so the queued action never carries the old priority).
+    ///
+    /// An Imprison is not one of the per-slot reasons, and that is the sim's
+    /// own shape: `onFoeDisableMove` files the seal as a HIDDEN disable, which
+    /// the request data turns back off for the last active mon before
+    /// `getMoves` counts what is left to pick, so a sealed move is shown,
+    /// and only `chooseMove` refuses it, by handing back an empty list for a
+    /// wholly sealed mon and queuing Struggle instead. That is
+    /// `sealed_at_choice`, and it does not depend on the slot pressed.
     pub(super) fn struggles_at_choice(&self, side: usize, i: usize) -> bool {
         let mon = self.sides[side].mon();
         let locked = mon.charging.is_some()
@@ -836,11 +1080,18 @@ impl Battle {
         if locked {
             return false;
         }
+        // An Encore up at the request greys out every slot but the encored
+        // one (`onDisableMove`), so that slot is the one the request asks
+        // about: an encored move a Taunt or a Torment also greys out leaves
+        // nothing to pick, and the queued action is Struggle.
+        let i = match (mon.encore_n > 0, mon.encored_slot) {
+            (true, Some(e)) => e as usize,
+            _ => i,
+        };
         let Some(slot) = mon.moves.get(i) else {
             return false;
         };
         let status_movish = !slot.entry.damaging;
-        let foe_mon = self.sides[1 - side].mon();
         slot.pp == 0
             // A Choice lock greys out every other slot at REQUEST time, which
             // is where the sim decides Struggle — so the action it queues
@@ -851,18 +1102,26 @@ impl Battle {
             || mon.disabled_slot == Some(i as u8)
             || (mon.tormented && mon.last_used_id == Some(slot.entry.id))
             || (mon.taunt_n == 1 && status_movish)
-            || (foe_mon.imprisoning && foe_mon.moves.iter().any(|m| m.entry.id == slot.entry.id))
+            || self.sealed_at_choice[side]
     }
 
-    /// Which slot a mon is actually about to swing, whatever the player sent.
+    /// Which move a mon is actually about to swing, whatever the player sent.
     /// `Side.chooseMove` throws the choice away and queues `getLockedMove()`
     /// in its place, and `runMove` applies an Encore's override above that —
     /// both of them ABOVE `runEvent('BeforeMove')`. So every gate that reads
     /// the move (the sleep gate asking `sleepUsable`, the freeze gate asking
-    /// whether this one thaws its user) is answered about the lock and never
-    /// about the slot that was picked. This mirrors the override that runs
-    /// for real further down `use_move`, minus its bookkeeping.
-    pub(super) fn acting_slot(&self, side: usize, index: usize) -> usize {
+    /// whether this one thaws its user, Disable naming the move it shut off)
+    /// is answered about the lock and never about the slot that was picked.
+    /// This mirrors the override that runs for real further down `use_move`,
+    /// minus its bookkeeping.
+    ///
+    /// An id, not a slot, because a lock names a MOVE the mon need not know:
+    /// `twoturnmove`'s `onLockMove` hands back the move that charged, so a
+    /// Mirror Move that copied Fly releases Fly on a Steelix that never
+    /// learnt it. Reading such a lock off the moveset finds nothing and falls
+    /// back to the slot that was picked, which is the CALLER, so the gates
+    /// below would answer about Mirror Move where the sim answers about Fly.
+    pub(super) fn acting_move_id(&self, side: usize, index: usize) -> Option<&'static str> {
         let mon = self.sides[side].mon();
         let index = match (mon.encore_n > 0, mon.encored_slot) {
             (true, Some(i)) => i as usize,
@@ -880,12 +1139,11 @@ impl Battle {
             },
         };
         if releasing {
-            mon.locked_move
-                .and_then(|id| mon.moves.iter().position(|m| m.entry.id == id))
-                .unwrap_or(index)
-        } else {
-            index
+            if let Some(id) = mon.locked_move {
+                return Some(id);
+            }
         }
+        mon.moves.get(index).map(|m| m.entry.id)
     }
 
     pub fn over(&self) -> bool {

@@ -7,11 +7,11 @@ default-run = "mega-blastoise-test"
 [dependencies]
 embedded-graphics = "0.8"
 mega-blastoise-core = { path = "../mega_blastoise_core" }
-battler = { path = "../../battler/battler" }
-battler-data = { path = "../../battler/battler-data" }
-gen1_battle = { path = "../gen1_battle" }
+ps_dex = { path = "../ps_dex" }
+# `LocalTransport`'s spill buffer is a critical-section mutex; the host needs
+# an implementation (the firmware's is embassy-rp's, the web's std's).
+critical-section = { version = "1", features = ["std"] }
 gen3_battle = { path = "../gen3_battle" }
 serde_json = "1.0"
-anyhow = "1.0"
 pollster = "0.3"
 embassy-futures = "0.1"

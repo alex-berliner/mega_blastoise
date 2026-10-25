@@ -15,6 +15,20 @@ use crate::types::Type;
 
 use super::*;
 
+/// How much of a flat hit's tail runs, named for the two sim events it
+/// carries. The contact abilities (Color Change, Rough Skin, Static, Effect
+/// Spore) answer `DamagingHit`, which every damaging move reaches because the
+/// hit goes through `tryMoveHit`; Shell Bell is an `AfterMoveSecondarySelf`,
+/// which only a move that got as far as `useMoveInner` ever sees.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Tail {
+    /// Bide's unleash: fired from inside `onBeforeMove`, so the move is
+    /// aborted before `useMoveInner` and only the first hook runs.
+    DamagingHit,
+    /// Every other flat hit.
+    Both,
+}
+
 impl Battle {
     /// In Gen 3 a rampage broken by flinch or full paralysis still ends in
     /// fatigue confusion, on the spot. (A miss or a protecting target ends it
@@ -50,6 +64,20 @@ impl Battle {
         }
     }
 
+    /// Spit Up's `onAfterMove`, which the sim fires from `runMove` itself
+    /// once `useMove` has returned: the bank empties whatever the move did,
+    /// a miss, a Protect, a dodging Fly and an immune Ghost included. Only a
+    /// refusal BEFORE the move keeps it (sleep, flinch, full paralysis),
+    /// because `runMove` returns at its BeforeMove event and never gets this
+    /// far. A CALLED Spit Up is no different: the sim reaches it through
+    /// `useMove`, below `runMove`, so a Sleep Talk that draws one spends
+    /// nothing and neither does a bounce or a Snatch.
+    fn spend_stockpile(&mut self, side: usize, id: &str) {
+        if id == "spitup" && !self.calling && !self.pursuing {
+            self.sides[side].mon_mut().stockpile_n = 0;
+        }
+    }
+
     /// The sim's `BeforeMove` event: everything that can stop an action
     /// before the move itself is even resolved — Rage ending, a Truant loaf,
     /// sleep, freeze, a flinch, the confusion self-hit, infatuation, full
@@ -64,6 +92,49 @@ impl Battle {
     /// `asleep_now` rides back out because three later gates need to know the
     /// mon acted THROUGH a sleep: Snore, Rollout's lock, and Rollout's
     /// base-power callback all read it.
+    /// Whether the REQUEST already replaced the move about to run with
+    /// Struggle: with nothing left to choose, the sim's `getMoves()` comes
+    /// back empty and `chooseMove` queues Struggle, so by the time
+    /// `runMove` fires the `BeforeMove` event the move in hand is Struggle,
+    /// and every gate asked there (sleep and freeze included) answers
+    /// about STRUGGLE, not about the slot the player pressed. The `_fresh`
+    /// flags disqualify their own reason (a Disable or a Torment that landed
+    /// earlier this turn was not there when the choice was made), a lock the
+    /// turn opened with is handled by the mid-turn half below instead, and
+    /// the seal is a whole-moveset snapshot rather than a per-slot gate, see
+    /// `struggles_at_choice`.
+    fn struggling_at_request(
+        &self,
+        side: usize,
+        acting: usize,
+        status_movish: bool,
+        releasing: bool,
+    ) -> bool {
+        if releasing {
+            return false;
+        }
+        let mon = self.sides[side].mon();
+        let picked = mon.moves.get(acting).map(|m| m.entry.id);
+        self.pp0_at_choice[side]
+            || (mon.disabled_slot == Some(acting as u8) && !mon.disable_fresh)
+            || (mon.tormented && !mon.torment_fresh && mon.last_used_id == picked)
+            || (mon.taunt_n == 1 && status_movish)
+            || self.sealed_at_choice[side]
+            || mon
+                .choice_locked
+                .is_some_and(|id| picked.is_some_and(|p| p != id))
+    }
+
+    /// Charging, rampaging, storing a Bide or rolling: a lock the turn
+    /// opened with, which rides out the request-time gates.
+    fn locked_into_move(&self, side: usize) -> bool {
+        let mon = self.sides[side].mon();
+        mon.charging.is_some()
+            || mon.rampage.is_some()
+            || mon.bide.is_some()
+            || mon.rolling.is_some()
+    }
+
     fn before_move(
         &mut self,
         side: usize,
@@ -91,14 +162,23 @@ impl Battle {
             return false;
         }
         // Fast asleep: the sleep clock ticks down before each action, and at
-        // zero the mon wakes and moves that same turn.
+        // zero the mon wakes and moves that same turn. The gate asks about
+        // the move as the REQUEST settled it: a sleeper with nothing left to
+        // choose is Struggle, which cannot Snore, so it is turned away like
+        // any other sleeper rather than let loose its doll-swatter.
         if self.sides[side].mon().status == Some(Status::Sleep) {
-            let acting = self.acting_slot(side, index);
-            let snoring = self.sides[side]
-                .mon()
-                .moves
-                .get(acting)
-                .is_some_and(|m| matches!(m.entry.id, "snore" | "sleeptalk"));
+            let acting = self.acting_move_id(side, index);
+            let releasing = self.locked_into_move(side);
+            let mon = self.sides[side].mon();
+            // The request-time Struggle test asks about the slot the request
+            // offered, which an Encore moves.
+            let slot = match (mon.encore_n > 0, mon.encored_slot) {
+                (true, Some(i)) => i as usize,
+                _ => index,
+            };
+            let status_movish = mon.moves.get(slot).is_some_and(|m| !m.entry.damaging);
+            let snoring = !self.struggling_at_request(side, slot, status_movish, releasing)
+                && matches!(acting, Some("snore") | Some("sleeptalk"));
             let mon = self.sides[side].mon_mut();
             if ability::early_bird(&mon.bearer()) {
                 mon.sleep_n = mon.sleep_n.saturating_sub(1);
@@ -163,12 +243,18 @@ impl Battle {
         // move actually executes, so a flinch or full paralysis after this
         // gate leaves the user frozen.
         if self.sides[side].mon().status == Some(Status::Freeze) {
-            let acting = self.acting_slot(side, index);
-            let defrost = self.sides[side]
-                .mon()
-                .moves
-                .get(acting)
-                .is_some_and(|slot| matches!(slot.entry.id, "flamewheel" | "sacredfire"));
+            let acting = self.acting_move_id(side, index);
+            let releasing = self.locked_into_move(side);
+            let mon = self.sides[side].mon();
+            // The request-time Struggle test asks about the slot the request
+            // offered, which an Encore moves.
+            let slot = match (mon.encore_n > 0, mon.encored_slot) {
+                (true, Some(i)) => i as usize,
+                _ => index,
+            };
+            let status_movish = mon.moves.get(slot).is_some_and(|m| !m.entry.damaging);
+            let defrost = !self.struggling_at_request(side, slot, status_movish, releasing)
+                && matches!(acting, Some("flamewheel") | Some("sacredfire"));
             let lucky = match script {
                 Some(_) => false,
                 None => self.rng.below(5) == 0,
@@ -204,6 +290,58 @@ impl Battle {
             });
             return false;
         }
+        // Disable, at the sim's `onBeforeMovePriority: 7`: under flinch's 8
+        // and over confusion's 3, so the cant lands before the confusion
+        // clock has ticked at all: a locked move Disabled this turn costs
+        // the turn and NOTHING else, with no self-hit and no `-activate`. The
+        // volatile answers about the move the override settles on, which
+        // `acting_move_id` mirrors without touching the charge or the lock,
+        // by id as `move.id === this.effectState.move` does: a Disable on the
+        // caller that copied a two-turn move leaves the release standing.
+        //
+        // The cant is an ABORT, and Bide hangs its end off `onMoveAborted`,
+        // so a sealed Bide drops its stored energy with the turn, silently,
+        // since the volatile's own `onEnd` has nothing to say.
+        let mon = self.sides[side].mon();
+        let locked = mon.charging.is_some()
+            || mon.rampage.is_some()
+            || mon.bide.is_some()
+            || mon.rolling.is_some();
+        let disabled = mon.disabled_slot.and_then(|i| mon.moves.get(i as usize));
+        if locked && disabled.is_some_and(|m| Some(m.entry.id) == self.acting_move_id(side, index))
+        {
+            self.break_rampage(side, script.is_some(), events);
+            self.sides[side].mon_mut().rolling = None;
+            self.sides[side].mon_mut().stall_counter = 0;
+            self.abort_drops_charge(side, index);
+            self.log_failed(side, events);
+            return false;
+        }
+        true
+    }
+
+    /// The rest of the sim's `BeforeMove` event: confusion, attraction and
+    /// full paralysis at priorities 3, 2 and 1, and then the two handlers
+    /// that sit at the bottom of it, a storing Bide, whose condition is
+    /// the one handler of the event with no priority at all, and this era's
+    /// Taunt, whose gen 3 condition nulls the priority that would have put
+    /// it at 5. They are asked AFTER the choice machinery (Encore's
+    /// `onOverrideAction`, the lock a charge or a rampage forced, and the
+    /// Disable, Torment, Imprison and Choice gates that come with it),
+    /// because every one of those sits higher in the same event, and a move
+    /// any of them cancelled never reaches the confusion coin. `index` is
+    /// therefore the slot the override settled on rather than the one the
+    /// player pressed, and `status_in_hand` asks about the move that is
+    /// really about to go off, a Struggle the request already queued is
+    /// Physical and says nothing about the slot behind it.
+    fn before_move_low(
+        &mut self,
+        side: usize,
+        index: usize,
+        status_in_hand: bool,
+        script: Option<SeatScript>,
+        events: &mut Vec<Event>,
+    ) -> bool {
         // Confusion: the clock ticks before the action; at zero it lifts
         // and the move proceeds. Otherwise a coin (the script's selfhit
         // knob) decides between acting and the 40 BP typeless self-hit.
@@ -275,6 +413,39 @@ impl Battle {
                 });
                 return false;
             }
+        }
+        // A storing Bide sits silent (the games log nothing for the two
+        // storing turns) and cannot be re-chosen out of. Its condition is
+        // the one handler of this event left with no priority at all, so it
+        // is asked last of all: a confused, charmed or paralyzed Bider is
+        // stopped by the coin above and loses the volatile with the turn.
+        // Its `onBeforeMove` answers false, so no `AfterMove` either.
+        // The clock itself does NOT run here: the sim's volatile is one of
+        // the bare duration ones, ticked at every residual, and the residual
+        // carries the elimination of a release turn that never happened.
+        if self.sides[side].mon().bide.is_some_and(|(_, left)| left > 0) {
+            return false;
+        }
+        // Taunt, at `onBeforeMovePriority: 0` in this era and nowhere else:
+        // the gen 3 condition keeps the base handler but nulls the priority
+        // that would have put it at 5 (`data/mods/gen3/moves.js`, taunt's
+        // condition, "no inherit"), which drops it UNDER confusion's 3,
+        // attract's 2 and paralysis's 1. A Taunt landing on a victim that
+        // had already chosen its status move therefore does not save the
+        // victim from the confusion coin or the paralysis coin, and a
+        // self-hit off either still lands before the turn is lost. What is
+        // left of it is the turn-away itself: `runMove` returns at the event,
+        // so the move never goes off and no `AfterMove` runs either, not the
+        // White Herb that would otherwise have answered a dropped item.
+        //
+        // The tie with the Bide gate above is real, both sit at 0, but the
+        // sim sorts equal priorities by Speed and then shuffles what is left
+        // (`speedSort`), and both handlers hang off the same mon, so the
+        // order between them is a coin the sim itself does not fix. Bide
+        // keeps the earlier word here, as it has always had.
+        if status_in_hand && self.sides[side].mon().taunt_n == 2 {
+            self.log_failed(side, events);
+            return false;
         }
         true
     }
@@ -416,16 +587,30 @@ impl Battle {
         }))
     }
 
+    /// The sim's `runMove`: the gate band, then the move.
+    ///
+    /// The answer is whether the sim would have run its `AfterMove` event at
+    /// the end, which is where a White Herb answers a drop, so the turn
+    /// driver asks for it. `runMove` only gets there for an action that
+    /// reached `useMove`: a fainted mon's action is dropped before it, and
+    /// so is one a can't-move gate or an empty slot turns away. Everything
+    /// from the move itself onward counts, however the move then went (a
+    /// miss, a refusal, a mon with nothing left to copy).
+    ///
+    /// A Pursuit interception and a Magic Coat bounce come through here too,
+    /// and the answer does not carry: both are fired from BELOW `runMove`
+    /// (the one from the switch-out hook, the other from the coat's own
+    /// `onTryHit`), so neither runs `AfterMove`, and neither caller asks.
     pub(super) fn use_move(
         &mut self,
         side: usize,
         index: usize,
         script: Option<SeatScript>,
         events: &mut Vec<Event>,
-    ) {
+    ) -> bool {
         let foe = 1 - side;
         if self.sides[side].mon().fainted() {
-            return;
+            return false;
         }
         // Fake Out's window is counted in `activeMoveActions`, which the sim
         // bumps at the top of `runMove` — so a sleep-lost turn burns it (the
@@ -451,7 +636,10 @@ impl Battle {
         if !self.pursuing && !self.calling
             && !self.before_move(side, index, script, &mut asleep_now, events)
         {
-            return;
+            // `runMove` returns at the BeforeMove event, so the move never
+            // goes off and `AfterMove` never runs: nothing a White Herb
+            // would have answered has happened yet.
+            return false;
         }
         // Encore overrides the choice with the last move used. The sim does
         // that at EXECUTION time, through `OverrideAction`, which re-checks
@@ -465,6 +653,7 @@ impl Battle {
         let encore_forced = self.sides[side].mon().encore_n > 0
             && self.sides[side].mon().encore_fresh
             && self.sides[side].mon().encored_slot.is_some();
+        let chosen = index;
         let index = match (
             self.sides[side].mon().encore_n > 0,
             self.sides[side].mon().encored_slot,
@@ -507,16 +696,37 @@ impl Battle {
         } else {
             index
         };
-        // A Disabled locked move cannot continue — a mid-charge release, a
-        // rolling Rollout or a rampage all lose the turn silently (the
-        // sim's disable cant; a broken rampage still fatigues).
-        if releasing && self.sides[side].mon().disabled_slot == Some(index as u8) {
+        // A seal takes the release too. The sim runs both halves of a
+        // two-turn move through `runMove`, so the Imprison standing on the
+        // foe's side answers the release's BeforeMove just as it answered
+        // the charge's: `if (this.effectState.source.hasMove(move.id)) cant`,
+        // priority 4. That seal can land between the two halves (the charge
+        // is the turn it went up), which is why releases are checked live
+        // here and not from the at-choice snapshot. The abort drops the
+        // lock with the turn, so the victim walks free next turn; there is
+        // no second PP charge to spare either half.
+        if releasing
+            && self.sides[1 - side].mon().imprisoning
+            && self.sides[side]
+                .mon()
+                .moves
+                .get(index)
+                .is_some_and(|m| {
+                    self.sides[1 - side]
+                        .mon()
+                        .moves
+                        .iter()
+                        .any(|f| f.entry.id == m.entry.id)
+                })
+        {
             let _ = was_charging;
             self.break_rampage(side, script.is_some(), events);
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().stall_counter = 0;
+            self.abort_drops_charge(side, index);
+            self.sides[side].mon_mut().locked_move = None;
             self.log_failed(side, events);
-            return;
+            return false;
         }
         let forced = self.forced_entry.take();
         let Some(slot) = forced
@@ -528,7 +738,7 @@ impl Battle {
             .or_else(|| self.sides[side].mon().moves.get(index).copied())
         else {
             self.log_failed(side, events);
-            return;
+            return true;
         };
         // A called move — one a Magic Coat threw back or a Snatch took — is
         // run through `useMove`, which sits BELOW `runMove`. Every "you may
@@ -555,14 +765,6 @@ impl Battle {
         } else {
             slot
         };
-        // A storing Bide sits silent — the games log nothing for the two
-        // storing turns — and cannot be re-chosen out of.
-        if let Some((stored, left)) = self.sides[side].mon().bide {
-            if left > 0 {
-                self.sides[side].mon_mut().bide = Some((stored, left - 1));
-                return;
-            }
-        }
 
         // Anything but another Protect/Endure resets the stall gamble.
         if !matches!(
@@ -590,22 +792,36 @@ impl Battle {
         // Torment or an Imprison that landed earlier THIS turn was not there
         // when the choice was made, so it cannot be what put Struggle in the
         // queue — and those are exactly the lost-turn cases below.
-        let struggling_at_request = !releasing && {
-            let mon = self.sides[side].mon();
-            let picked = mon.moves.get(index).map(|m| m.entry.id);
-            self.pp0_at_choice[side]
-                || (mon.disabled_slot == Some(index as u8) && !mon.disable_fresh)
-                || (mon.tormented && !mon.torment_fresh && mon.last_used_id == picked)
-                || (mon.taunt_n == 1 && status_movish)
-                || (self.sealed_at_choice[side] && !self.sides[foe].mon().imprison_fresh)
-                || mon
-                    .choice_locked
-                    .is_some_and(|id| picked.is_some_and(|p| p != id))
+        //
+        // A fresh Encore asks that of the move the player PICKED: the queue
+        // still holds it when `OverrideAction` swaps in the encored move, so
+        // a Torment that greys the encored move out did not make the request
+        // come back empty.
+        let struggling_at_request = if encore_forced {
+            let picked_status = self.sides[side]
+                .mon()
+                .moves
+                .get(chosen)
+                .is_some_and(|m| !m.entry.damaging);
+            self.struggling_at_request(side, chosen, picked_status, releasing)
+        } else {
+            self.struggling_at_request(side, index, status_movish, releasing)
         };
-        if !struggling_at_request && self.sides[side].mon().taunt_n == 2 && status_movish {
-            self.log_failed(side, events);
-            return;
-        }
+        // Same rule as the Encore paragraph above, seen from the other side of
+        // the request: `OverrideAction` is skipped outright for Struggle
+        // (`battle-actions.js`: `if (baseMove.id !== "struggle" && ...)`), so
+        // a mon the request already left with nothing keeps its Struggle even
+        // when an Encore lands over it this turn. That Struggle is the one
+        // that becomes `lastMove`, which is what the next turn's Torment reads.
+        let encore_forced = encore_forced && !struggling_at_request;
+        // A Taunt that landed THIS turn is answered way below, in
+        // `before_move_low`: the gen 3 condition nulls its own
+        // `onBeforeMovePriority` (`data/mods/gen3/moves.js`, "no inherit"),
+        // so the handler that turns away a status move sits at priority 0 ,
+        // under confusion's 3, attract's 2 and paralysis's 1, all of which
+        // are asked first. A victim taunted into its already-chosen status
+        // move still gets the confusion coin, the paralysis coin and any
+        // self-hit either of them rolls.
         let taunted_out = self.sides[side].mon().taunt_n == 1
             && status_movish
             && !encore_forced
@@ -628,35 +844,36 @@ impl Battle {
             self.sides[side].mon_mut().disable_fresh = false;
             self.sides[side].mon_mut().stall_counter = 0;
             self.log_failed(side, events);
-            return;
+            return true;
         }
         let disabled_out = self.sides[side].mon().disabled_slot == Some(index as u8)
             && !releasing
             && !encore_forced
             && !forced;
-        // The seal as it stood when the choice was made, plus the live one —
-        // an Imprison that landed EARLIER this turn seals a mon that has not
-        // moved yet, and that is the `imprison_fresh` path just below.
-        let sealed = self.sealed_at_choice[side]
-            || (self.sides[foe].mon().imprisoning
-                && self.sides[foe]
-                    .mon()
-                    .moves
-                    .iter()
-                    .any(|m| m.entry.id == slot.entry.id));
-        if !struggling_at_request
-            && sealed
-            && self.sides[foe].mon().imprison_fresh
-            && !releasing
+        if !releasing
             && !forced
+            && !struggling_at_request
+            && self.sides[foe].mon().imprisoning
+            && self.sides[foe]
+                .mon()
+                .moves
+                .iter()
+                .any(|m| m.entry.id == slot.entry.id)
         {
-            // Imprison landed earlier this same turn: the chosen move is
-            // simply lost — no move line, no PP, no Struggle.
+            // A move the imprisoner knows is refused outright at
+            // `onBeforeMovePriority: 4`, where the handler asks
+            // `this.effectState.source.hasMove(move.id)`, the seal is read
+            // LIVE off the imprisoner's own moveset, so a Transform that
+            // lands earlier in the turn answers for what it has become, and
+            // the seat's own snapshot (`sealed_at_choice`, which is about
+            // having nothing to pick at all) is not consulted here. The
+            // refusal sits above the confusion, attract and paralysis gates,
+            // and `runMove` returns at it: no move line, no PP, no Struggle
+            // a lost turn, exactly as a `cant` is.
             self.sides[side].mon_mut().stall_counter = 0;
             self.log_failed(side, events);
-            return;
+            return false;
         }
-        let imprisoned_out = sealed && !releasing && !encore_forced && !forced;
         // A Choice Band greys its move out the same way Disable does, so a
         // choice outside the lock is no more usable than a disabled one.
         let choice_locked_out = !releasing
@@ -669,21 +886,55 @@ impl Battle {
         if slot.pp == 0
             && !releasing
             && !self.pp0_at_choice[side]
-            && !(taunted_out || tormented_out || disabled_out || imprisoned_out
-                || choice_locked_out)
+            && !(taunted_out || tormented_out || disabled_out || choice_locked_out)
         {
             // Drained to zero AFTER the choice was made: the sim's runMove
-            // hits "cant: nopp" — a silent lost turn, no Struggle.
+            // hits "cant: nopp", a silent lost turn and no Struggle. It is
+            // the other early return out of runMove, so no `AfterMove`
+            // either: nothing a White Herb would have answered yet.
             self.log_failed(side, events);
-            return;
+            return false;
         }
+        // Confusion, attraction, full paralysis and Taunt: the sim's
+        // `BeforeMove` handlers at priorities 3, 2, 1 and 0, which sit BELOW
+        // a Disable's 7 and below Imprison's 4, both of which are answered by
+        // the machinery between `before_move` and this call. That is the
+        // whole point of the split: a move cancelled by either of them never
+        // reaches the confusion clock, so the coin is not even rolled and a
+        // locked move Disabled this turn costs the turn and nothing else. See
+        // `before_move_low`.
+        //
+        // Whether the move in hand is still a STATUS move is asked first,
+        // because everything above already decided whether it is even the
+        // slot the player pressed.
         let struggling = (taunted_out
             || tormented_out
             || disabled_out
-            || imprisoned_out
+            // Nothing left to pick, so `chooseMove` queued Struggle for it:
+            // the whole moveset was sealed by the imprisoner when the choice
+            // was made. Unlike the terms above this one is asked about the
+            // whole slot list, because that is the shape of the sim's answer.
+            || (self.sealed_at_choice[side] && !forced)
             || choice_locked_out
-            || (slot.pp == 0 && !releasing && self.pp0_at_choice[side]))
+            // The slot was dry at the request, so Struggle was queued then;
+            // a Leppa Berry that refills it mid-turn (one a Trick just handed
+            // over) does not take that back.
+            || (self.pp0_at_choice[side] && !forced))
             && !releasing;
+        if !self.pursuing
+            && !self.calling
+            && !self.before_move_low(
+                side,
+                index,
+                !struggling && !slot.entry.damaging,
+                script,
+                events,
+            )
+        {
+            // As above: `runMove` returns at the BeforeMove event, so the
+            // move never goes off and `AfterMove` never runs.
+            return false;
+        }
         let slot = if struggling {
             MoveSlot {
                 entry: &crate::data::STRUGGLE,
@@ -757,6 +1008,7 @@ impl Battle {
         // `lastMoveUsed` is a different register and `useMoveInner` writes it
         // for EVERY move that goes off, called ones included.
         self.sides[side].mon_mut().last_move_used_id = Some(slot.entry.id);
+        self.sides[side].mon_mut().last_move_used_sky_type = self.weather_ball_type(slot.entry.id);
 
         // No living foe to aim at: the sim logs the move and stops there
         // (`-notarget`), PP already spent. Self- and field-aimed moves go
@@ -765,7 +1017,8 @@ impl Battle {
             && self.sides[foe].mon().fainted()
             && !matches!(slot.entry.id, "futuresight" | "doomdesire")
         {
-            return;
+            self.spend_stockpile(side, slot.entry.id);
+            return true;
         }
 
         // Nature Power becomes Swift in the sim's default arena; Hidden
@@ -773,7 +1026,7 @@ impl Battle {
         let chosen_id = slot.entry.id;
         let Some(slot) = self.resolve_caller(side, index, slot, script, asleep_now, events)
         else {
-            return;
+            return true;
         };
 
         // A called move can itself be a caller: Assist and Sleep Talk both
@@ -786,7 +1039,7 @@ impl Battle {
                 None => self.rng.below(100) < 95,
             };
             if !np_hit {
-                return;
+                return true;
             }
             events.push(Event::Used {
                 side: side as u8 + 1,
@@ -811,10 +1064,7 @@ impl Battle {
             // the sim reads `lastAttackedBy.source.lastMove`, and switching
             // out wipes that, so a mon that hit and left leaves nothing to
             // mirror even after it comes back.
-            let same_attacker = self.sides[side].mon().last_hit_by_slot
-                == Some(self.sides[foe].active)
-                && self.sides[foe].mon().last_used_id.is_some();
-            let hit_by = self.sides[side].mon().last_hit_by.filter(|_| same_attacker);
+            let hit_by = self.last_attacked_by(side, foe);
             let callable = hit_by
                 .filter(|id| {
                     !matches!(
@@ -848,7 +1098,7 @@ impl Battle {
             match callable {
                 None => {
                     self.log_failed(side, events);
-                    return;
+                    return true;
                 }
                 Some(e) => {
                     // Both lines are announced: Mirror Move, then the call.
@@ -882,6 +1132,8 @@ impl Battle {
         // found nothing and bailed, which is what the sim leaves there too.
         if called {
             self.sides[side].mon_mut().last_move_used_id = Some(slot.entry.id);
+            self.sides[side].mon_mut().last_move_used_sky_type =
+                self.weather_ball_type(slot.entry.id);
         }
         // Counter and Mirror Coat read a volatile that only
         // `beforeTurnCallback` creates, and the queue attaches a
@@ -890,7 +1142,7 @@ impl Battle {
         // in this era, whose `tryMoveHit` skips the `-fail` the modern one
         // adds — does so in silence.
         if called && matches!(slot.entry.id, "counter" | "mirrorcoat") {
-            return;
+            return true;
         }
 
         // Snatch answers `onAnyPrepareHit`, which fires once per `useMove` —
@@ -921,7 +1173,7 @@ impl Battle {
                 }
             }
             self.pending_call = Some((foe, slot.entry));
-            return;
+            return true;
         }
 
         // Fury Cutter's count belongs to the move that ACTUALLY goes off,
@@ -946,7 +1198,7 @@ impl Battle {
             self.sides[side].mon_mut().charging = Some(index as u8);
             self.sides[side].mon_mut().charge_fresh = true;
             self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
-            return;
+            return true;
         }
 
         // Rollout and Ice Ball lock five doubling uses; Bide stores for two
@@ -995,6 +1247,7 @@ impl Battle {
                 // phase and stores the swings owed here instead.
                 mon.rampage = Some((index as u8, total));
                 mon.rampage_dur = 2;
+                mon.add_volatile(VOL_RAMPAGE);
                 mon.locked_move = Some(slot.entry.id);
             }
         }
@@ -1004,50 +1257,30 @@ impl Battle {
         if slot.entry.id == "spitup" {
             if self.sides[side].mon().stockpile_n == 0 {
                 self.log_failed(side, events);
-                return;
+                return true;
             }
         }
 
         // Focus Punch loses its focus — and the turn — if anything hit the
-        // user before it moved. The sim checks in the move's own onTry,
-        // after every gate has passed and the PP is already spent.
-        if slot.entry.id == "focuspunch"
-            && (self.taken_physical[side] > 0 || self.taken_special[side] > 0)
-        {
+        // user before it moved. The sim's `focuspunch` volatile reads that
+        // off the `Hit` event the move fires on its target, so it is a hit
+        // that counts, not damage taken: the check sits in the move's own
+        // onTry, after every gate has passed and the PP is already spent.
+        if slot.entry.id == "focuspunch" && self.hit_this_turn[side] {
             self.log_failed(side, events);
-            return;
+            return true;
         }
 
         // Fake Out only works on the user's first action on the field.
         if slot.entry.id == "fakeout" && had_acted {
             self.log_failed(side, events);
-            return;
+            return true;
         }
         // Dream Eater only bites a sleeping target.
         if slot.entry.id == "dreameater" && self.sides[foe].mon().status != Some(Status::Sleep) {
             self.log_failed(side, events);
-            return;
+            return true;
         }
-        // Brick Break smashes the target's screens before it hits, unless
-        // the target is outright immune.
-        if slot.entry.id == "brickbreak"
-            && crate::types::effectiveness_against(
-                slot.move_type(),
-                self.immunity_types(foe, slot.move_type()),
-            ) != 0
-        {
-            for cond in [SideCondition::Reflect, SideCondition::LightScreen] {
-                let n = self.sides[foe].condition_n(cond);
-                if *n > 0 {
-                    *n = 0;
-                    events.push(Event::SideEnded {
-                        side: foe as u8 + 1,
-                        condition: cond,
-                    });
-                }
-            }
-        }
-
         // Explosion/Self-Destruct: the user faints ON USE, before the hit
         // resolves — a miss or an immune target changes nothing about that.
         if slot.entry.selfdestruct
@@ -1057,7 +1290,7 @@ impl Battle {
             )
         {
             self.log_failed(side, events);
-            return;
+            return true;
         }
         let boom = slot.entry.selfdestruct;
         // The user's own faint is queued before the hit for these, which is
@@ -1073,6 +1306,17 @@ impl Battle {
         // Unscripted rolls fold in the accuracy/evasion stages the Gen 3
         // way: one combined stage, (3+s)/3 above zero and 3/(3-s) below.
         // Thunder rides the weather: unmissable in rain, halved in sun.
+        //
+        // Bide's opening use is aimed at the user (`target: "self"`), and
+        // gen 3's `tryMoveHit` rolls accuracy against whatever the target
+        // is: the user's own evasion and Sand Veil answer it, and a Lock-On
+        // the user took on the FOE does not, since `onSourceAccuracy` wants
+        // `target === this.effectState.source`.
+        let aim = if slot.entry.id == "bide" && self.sides[side].mon().bide.is_none() {
+            side
+        } else {
+            foe
+        };
         let acc = if slot.entry.id == "thunder" {
             match self.effective_weather() {
                 Some(Weather::Rain) => 0,
@@ -1091,16 +1335,17 @@ impl Battle {
         } else {
             let chain = ability::accuracy_chain(
                 &self.sides[side].mon().bearer(),
-                &self.sides[foe].mon().bearer(),
+                &self.sides[aim].mon().bearer(),
                 slot.move_type(),
                 self.effective_weather() == Some(Weather::Sandstorm),
             );
             let after = chain.apply(acc as u32);
-            item::accuracy_after_item(&self.sides[foe].mon().holder(), after).clamp(1, 100) as u8
+            item::accuracy_after_item(&self.sides[aim].mon().holder(), after).clamp(1, 100) as u8
         };
         // Pursuit's onModifyMove sets accuracy true against a mon that is
         // already leaving, so the interception cannot whiff.
         let sure = (self.sides[side].mon().sure_hit > 0
+            && aim == foe
             && self.sides[side].mon().sure_hit_on as usize == self.sides[foe].active)
             || (self.pursuing && slot.entry.id == "pursuit");
         // Nothing consumes the lock: the sim's volatile simply runs out its
@@ -1111,10 +1356,10 @@ impl Battle {
                 Some(s) => acc == 0 || s.hit,
                 None => {
                     acc == 0 || {
-                        let eva = if self.sides[foe].mon().identified {
+                        let eva = if self.sides[aim].mon().identified {
                             0
                         } else {
-                            self.sides[foe].mon().eva_stage
+                            self.sides[aim].mon().eva_stage
                         };
                         let s = (self.sides[side].mon().acc_stage - eva).clamp(-6, 6) as i32;
                         let eff = if s >= 0 {
@@ -1131,16 +1376,24 @@ impl Battle {
         // energy can whiff outright. Only a Bide already going gets here —
         // the start sits just below, so on the opening turn there is
         // nothing banked to unleash.
+        //
+        // The release is a real hit, not a bookkeeping shortcut: the sim
+        // fires it through `tryMoveHit`, so it carries the release's own
+        // `contact` and `protect` flags and answers the Invulnerability,
+        // TryHit and DamagingHit events like any other move. Only the two
+        // things that ride `useMoveInner` are missing: no move line (the
+        // handler returns false, so the move is aborted), no Shell Bell.
+        // Whatever the hit finds, the volatile is gone afterwards.
         if slot.entry.id == "bide" && self.sides[side].mon().bide.is_some() {
-            let (stored, _) = self.sides[side].mon().bide.unwrap();
-            self.sides[side].mon_mut().bide = None;
+            let (stored, _) = self.sides[side].mon_mut().bide.take().expect("bide is set");
+            self.sides[side].mon_mut().locked_move = None;
             if !hit {
-                return;
+                return false;
             }
             let amount = stored.saturating_mul(2);
             if amount == 0 {
                 self.log_failed(side, events);
-                return;
+                return false;
             }
             let eff = crate::types::effectiveness_against(
                 slot.move_type(),
@@ -1148,10 +1401,34 @@ impl Battle {
             );
             if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
                 self.no_effect(foe, events);
-                return;
+                return false;
             }
-            self.flat_hit(side, foe, &slot, amount, Some(false), false, false, script, events);
-            return;
+            // A shield takes it: `protect` rides the release the flags it is
+            // built with, and TryHit is asked before the damage step.
+            if slot.entry.protectable && self.sides[foe].mon().protected {
+                self.log_failed(side, events);
+                return false;
+            }
+            // A mon off the ground dodges it, and the dodge is asked before
+            // the accuracy roll; nothing pierces a release. A taken aim
+            // (Mind Reader, Lock-On) still reaches it, as it does everything.
+            if !sure && self.sides[foe].mon().semi_invulnerable().is_some() {
+                self.sides[side].mon_mut().last_missed = true;
+                self.log_failed(side, events);
+                return false;
+            }
+            self.flat_hit(
+                side,
+                foe,
+                &slot,
+                amount,
+                Some(false),
+                false,
+                Tail::DamagingHit,
+                script,
+                events,
+            );
+            return false;
         }
         // Bide is started by its own accuracy roll, so it belongs BELOW the
         // roll rather than up with the other locks. This era hands it a real
@@ -1160,16 +1437,20 @@ impl Battle {
         // miss, and never adds the volatile.
         if slot.entry.id == "bide" && self.sides[side].mon().bide.is_none() {
             if !hit {
-                return;
+                return true;
             }
             // Three turns in total, the sim's `duration: 3`: the turn it is
-            // chosen, one silent turn, then the release on the third.
-            self.sides[side].mon_mut().bide = Some((0, 1));
+            // chosen, one silent turn, then the release on the third. The
+            // field counts RESIDUALS left, one less than the sim's own
+            // duration, because the tick runs at the end of every turn rather
+            // than at the Bider's next action (see the residual bucket).
+            self.sides[side].mon_mut().bide = Some((0, 2));
+            self.sides[side].mon_mut().add_volatile(VOL_BIDE);
             self.sides[side].mon_mut().locked_move = Some(slot.entry.id);
             events.push(Event::Charging {
                 side: side as u8 + 1,
             });
-            return;
+            return true;
         }
 
         // A semi-invulnerable target (mid Fly/Dig/Bounce/Dive) dodges
@@ -1249,16 +1530,17 @@ impl Battle {
             }
             self.sides[side].mon_mut().rolling = None;
             self.sides[side].mon_mut().fury_n = 0;
+            self.spend_stockpile(side, chosen_id);
             self.log_failed(side, events);
             // The kicks crash into the shield all the same.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                 self.kick_crash(side, foe, &slot, script, events);
-                return;
+                return true;
             }
             if boom {
                 self.resolve_faints(side, foe, events);
             }
-            return;
+            return true;
         }
         // A delayed hit is aimed at a slot, not a mon: the sim exempts
         // anything flagged `futuremove` from both the no-target check and
@@ -1293,14 +1575,15 @@ impl Battle {
                     }
                     self.sides[side].mon_mut().fury_n = 0;
                     self.sides[side].mon_mut().rolling = None;
+                    self.spend_stockpile(side, chosen_id);
                     if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                         self.kick_crash(side, foe, &slot, script, events);
-                        return;
+                        return true;
                     }
                     if boom {
                         self.resolve_faints(side, foe, events);
                     }
-                    return;
+                    return true;
                 }
                 // WHERE the pierce doubles depends on the hideout: Bounce
                 // doubles gust/twister at BASE POWER, while Fly, Dig and
@@ -1320,7 +1603,7 @@ impl Battle {
         // stopped by type immunity, and otherwise its hit IS the KO.
         if slot.entry.ohko && ability::blocks_ohko(&self.sides[foe].mon().bearer()) {
             self.no_effect(foe, events);
-            return;
+            return true;
         }
         if slot.entry.ohko {
             let eff = crate::types::effectiveness_against(
@@ -1332,38 +1615,48 @@ impl Battle {
                 || ability::immune_to_type(&self.sides[foe].mon().bearer(), slot.move_type())
             {
                 self.no_effect(foe, events);
-                return;
+                return true;
             }
             if self.sides[foe].mon().level > self.sides[side].mon().level {
                 self.log_failed(side, events);
-                return;
+                return true;
             }
             if !hit {
-                return;
+                return true;
             }
             if self.sides[foe].mon().sub_hp > 0 {
-                let amount = self.sides[foe].mon().sub_hp;
-                self.sides[foe].mon_mut().sub_hp = 0;
+                // This gen's one-hit KO damage is the target's CURRENT hp
+                // (the sim's getDamage answers target.hp at gen 3, not max
+                // hp), so a doll only takes that much: a 72 hp doll in front
+                // of a 38 hp body keeps standing, and the KO never reaches
+                // the body either way.
+                let mon = self.sides[foe].mon();
+                let amount = mon.hp.min(mon.sub_hp);
+                self.sides[foe].mon_mut().sub_hp -= amount;
+                self.note_hit_by(side, foe, slot.entry.id);
                 events.push(Event::SubDamage {
                     side: foe as u8 + 1,
                     amount,
                 });
-                events.push(Event::SubBroke {
-                    side: foe as u8 + 1,
-                });
-                return;
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke {
+                        side: foe as u8 + 1,
+                    });
+                }
+                return true;
             }
             let survives = self.survives_at_one(foe);
-            let mon = self.sides[foe].mon_mut();
-            let amount = if survives {
-                mon.hp.saturating_sub(1)
-            } else {
-                mon.hp
+            let amount = {
+                let mon = self.sides[foe].mon_mut();
+                let amount = if survives {
+                    mon.hp.saturating_sub(1)
+                } else {
+                    mon.hp
+                };
+                mon.hp -= amount;
+                amount
             };
-            mon.hp -= amount;
-            mon.last_hit_by = Some(slot.entry.id);
-            let who = self.sides[side].active;
-            self.sides[foe].mon_mut().last_hit_by_slot = Some(who);
+            self.note_hit_by(side, foe, slot.entry.id);
             events.push(Event::Damage {
                 side: foe as u8 + 1,
                 amount,
@@ -1376,14 +1669,23 @@ impl Battle {
             self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
-            return;
+            // A KO that landed is a move that came off the hand, so the sim
+            // runs its `eachEvent('Update')` here as it does for any other
+            // landed strike (`data/mods/gen3/scripts.js` tryMoveHit, the
+            // `eachEvent` past the `-ohko` line). The blow that empties a
+            // Leppa Berry's last slot is answered on the spot. The level
+            // check and a miss above both return before that line in the sim
+            // too, and neither touches the field.
+            self.ability_update(0);
+            self.ability_update(1);
+            return true;
         }
 
         // Fixed damage skips the formula but not the type chart: Seismic
         // Toss still bounces off a Ghost in this era.
         if let Some(kind) = slot.entry.fixed {
             if !hit {
-                return;
+                return true;
             }
             let eff = crate::types::effectiveness_against(
                 slot.move_type(),
@@ -1391,15 +1693,15 @@ impl Battle {
             );
             if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
                 self.no_effect(foe, events);
-                return;
+                return true;
             }
             let amount = match kind {
                 FixedDamage::Flat(n) => n,
                 FixedDamage::Level => self.sides[side].mon().level as u16,
                 FixedDamage::Half => (self.sides[foe].mon().hp / 2).max(1),
             };
-            self.flat_hit(side, foe, &slot, amount, None, true, true, script, events);
-            return;
+            self.flat_hit(side, foe, &slot, amount, None, true, Tail::Both, script, events);
+            return true;
         }
 
         // Present is a gift or a hit, decided by one roll of ten: two of the
@@ -1437,13 +1739,13 @@ impl Battle {
                 ) == 0
                 {
                     self.no_effect(foe, events);
-                    return;
+                    return true;
                 }
                 // A Present that misses hands over nothing. This used to be
                 // decided ABOVE the accuracy roll, so the gift arrived even
                 // on a whiff.
                 if !hit {
-                    return;
+                    return true;
                 }
                 // A Substitute eats the gift. The base sim marks the heal
                 // `infiltrates` so it slips past, but gen 4's Substitute
@@ -1452,8 +1754,14 @@ impl Battle {
                 // is reported as having done nothing.
                 if self.sides[foe].mon().sub_hp > 0 {
                     self.log_failed(side, events);
-                    return;
+                    return true;
                 }
+                // Either way the target ends up in Present's attacked-by
+                // book: gen 3 ends `tryMoveHit` with an unconditional
+                // `gotAttacked`, reached by every move that got this far
+                // whatever it then does, so a gift that finds nothing to give
+                // is Mirror Move-able exactly like one that lands.
+                self.note_hit_by(side, foe, slot.entry.id);
                 let target = self.sides[foe].mon_mut();
                 let amount = (target.max_hp / 4).max(1).min(target.max_hp - target.hp);
                 if amount == 0 {
@@ -1466,16 +1774,26 @@ impl Battle {
                         side: foe as u8 + 1,
                         amount,
                     });
+                    // A gift that LANDS is a hit besides that one. The
+                    // heal runs in `runMoveEffects`, and everything below it
+                    // in that loop still fires: the `Hit` event takes the
+                    // focus off anything charging Focus Punch, since Present
+                    // is a damaging move even at zero base power, and it is
+                    // what a rager reads its Attack off. A gift refused
+                    // leaves that loop before the event ever runs, so it
+                    // costs the charge nothing.
+                    self.hit_this_turn[foe] = true;
+                    self.rage_on_hit(foe, events);
                 }
-                return;
+                return true;
             }
         }
 
         // Endeavor drags the target's HP down to the user's — through the
-        // chart, never a substitute, and failing upward.
+        // chart, and failing upward.
         if slot.entry.id == "endeavor" {
             if !hit {
-                return;
+                return true;
             }
             // Wonder Guard turns away anything that is not super effective,
             // which for a flat-damage move means everything neutral too: the
@@ -1488,20 +1806,40 @@ impl Battle {
                 || self.wonder_guard_blocks(foe, slot.move_type())
             {
                 self.no_effect(foe, events);
-                return;
+                return true;
             }
             let (uhp, thp) = (self.sides[side].mon().hp, self.sides[foe].mon().hp);
-            if self.sides[foe].mon().sub_hp > 0 || uhp >= thp {
+            if uhp >= thp {
                 // Failing upward does NOT write the attacked-by book. The
                 // sim rejects the target in `onTryImmunity`, which runs
                 // before the hit loop, so `gotAttacked` is never reached and
                 // a Mirror Move aimed back finds nothing to copy.
                 self.log_failed(side, events);
-                return;
+                return true;
+            }
+            // The drag goes through the doll like any other blow: the sim's
+            // Substitute has no bypass clause, so the difference lands on it
+            // first and can break it; the body itself is never touched.
+            if self.sides[foe].mon().sub_hp > 0 {
+                let target = self.sides[foe].mon_mut();
+                let amount = (thp - uhp).min(target.sub_hp);
+                target.sub_hp -= amount;
+                self.note_hit_by(side, foe, slot.entry.id);
+                events.push(Event::SubDamage {
+                    side: foe as u8 + 1,
+                    amount,
+                });
+                if self.sides[foe].mon().sub_hp == 0 {
+                    events.push(Event::SubBroke {
+                        side: foe as u8 + 1,
+                    });
+                }
+                return true;
             }
             let amount = thp - uhp;
             self.sides[foe].mon_mut().hp = uhp;
             self.note_hit_by(side, foe, slot.entry.id);
+            self.hit_this_turn[foe] = true;
             self.taken_physical[foe] = amount;
             events.push(Event::Damage {
                 side: foe as u8 + 1,
@@ -1514,7 +1852,7 @@ impl Battle {
             self.on_damaged(side, foe, &slot, slot.move_type(), amount, script, events);
             self.shell_bell(side, amount, events);
             self.resolve_faints(side, foe, events);
-            return;
+            return true;
         }
 
         // Psywave draws a number from 50 to 150 and takes that percentage of
@@ -1523,7 +1861,7 @@ impl Battle {
         // rolled, and a script pins it to either end.
         if slot.entry.id == "psywave" {
             if !hit {
-                return;
+                return true;
             }
             // Wonder Guard turns away anything that is not super effective,
             // which for a flat-damage move means everything neutral too: the
@@ -1536,7 +1874,7 @@ impl Battle {
                 || self.wonder_guard_blocks(foe, slot.move_type())
             {
                 self.no_effect(foe, events);
-                return;
+                return true;
             }
             let level = self.sides[side].mon().level as u32;
             let roll = match script {
@@ -1550,8 +1888,8 @@ impl Battle {
                 None => 50 + self.rng.below(101),
             };
             let amount = ((level * roll) / 100).max(1) as u16;
-            self.flat_hit(side, foe, &slot, amount, Some(true), true, true, script, events);
-            return;
+            self.flat_hit(side, foe, &slot, amount, Some(true), true, Tail::Both, script, events);
+            return true;
         }
 
         // Counter and Mirror Coat bounce back double the last hit this mon
@@ -1560,7 +1898,7 @@ impl Battle {
         // substitute if one stands. Nothing taken means they fail.
         if matches!(slot.entry.id, "counter" | "mirrorcoat") {
             if !hit {
-                return;
+                return true;
             }
             let taken = if slot.entry.id == "counter" {
                 self.taken_physical[side]
@@ -1573,7 +1911,7 @@ impl Battle {
                 // which runs before the hit step ever writes the
                 // attacked-by book. A Mirror Move aimed back finds nothing.
                 self.log_failed(side, events);
-                return;
+                return true;
             }
             let eff = crate::types::effectiveness_against(
                 slot.move_type(),
@@ -1581,11 +1919,11 @@ impl Battle {
             );
             if eff == 0 || self.wonder_guard_blocks(foe, slot.move_type()) {
                 self.no_effect(foe, events);
-                return;
+                return true;
             }
             let amount = taken.saturating_mul(2);
-            self.flat_hit(side, foe, &slot, amount, None, false, true, script, events);
-            return;
+            self.flat_hit(side, foe, &slot, amount, None, false, Tail::Both, script, events);
+            return true;
         }
 
         // Future Sight and Doom Desire: aim a delayed hit two turns out.
@@ -1595,7 +1933,7 @@ impl Battle {
         if matches!(slot.entry.id, "futuresight" | "doomdesire") {
             if self.sides[foe].incoming.is_some() {
                 self.log_failed(side, events);
-                return;
+                return true;
             }
             let (mut attacker, mut defender) = self.attack_pair(side);
             let power = if slot.entry.id == "doomdesire" {
@@ -1630,7 +1968,8 @@ impl Battle {
             let foe_b = self.sides[foe].mon().bearer();
             let user_i = self.sides[side].mon().holder();
             let foe_i = self.sides[foe].mon().holder();
-            attacker.stat_mod = ability::attack_chain(&user_b, physical);
+            let mate = self.mate_on_field(self.sides[side].mon());
+            attacker.stat_mod = ability::attack_chain(&user_b, physical, mate);
         attacker.stat_pre = ability::hustle_chain(&user_b, physical);
             attacker
                 .stat_mod
@@ -1669,10 +2008,11 @@ impl Battle {
                 },
             ) as u16;
             self.sides[foe].incoming = Some((3, dealt, slot.entry.id));
+            self.sides[foe].incoming_from = Some(self.sides[side].active);
             events.push(Event::Charging {
                 side: side as u8 + 1,
             });
-            return;
+            return true;
         }
 
         // Mimic and Sketch write the foe's last move into the slot — after
@@ -1682,7 +2022,8 @@ impl Battle {
             // same as any other move that got this far — which matters
             // because both sit in Mirror Move's noMirror list, and a Sketch
             // landing after a Crabhammer is what makes the reply fail.
-            if hit && self.sides[foe].mon().sub_hp == 0 {
+            // A Substitute does not stop the record here either.
+            if hit {
                 self.note_hit_by(side, foe, slot.entry.id);
             }
             // The foe's last move BY ID — a Transform that rewrote its
@@ -1695,7 +2036,7 @@ impl Battle {
             match (slot.entry.id, foe_last) {
                 (_, None) => {
                     self.log_failed(side, events);
-                    return;
+                    return true;
                 }
                 // The user must not be transformed, must not already know
                 // the move, and Sketch refuses the nosketch set (itself and
@@ -1708,7 +2049,7 @@ impl Battle {
                             && matches!(e.id, "sketch" | "struggle")) =>
                 {
                     self.log_failed(side, events);
-                    return;
+                    return true;
                 }
                 ("mimic", Some(e)) => {
                     // A five-PP overlay; the original slot returns when the
@@ -1722,7 +2063,7 @@ impl Battle {
                         || matches!(e.id, "mimic" | "metronome" | "sketch" | "struggle")
                     {
                         self.log_failed(side, events);
-                        return;
+                        return true;
                     }
                     // The copy goes into the slot holding MIMIC, found by
                     // name — `source.moves.indexOf('mimic')` — and not into
@@ -1737,7 +2078,7 @@ impl Battle {
                         .position(|m| m.entry.id == "mimic")
                     else {
                         self.log_failed(side, events);
-                        return;
+                        return true;
                     };
                     let orig = self.sides[side].mon().moves[home];
                     let mon = self.sides[side].mon_mut();
@@ -1747,7 +2088,7 @@ impl Battle {
                         pp: 5,
                         typed_as: None,
                     };
-                    return;
+                    return true;
                 }
                 ("sketch", Some(e)) => {
                     // A Substitute stops a Sketch in this era even though
@@ -1758,7 +2099,7 @@ impl Battle {
                     // a Sketch with nothing left in it.
                     if self.sides[foe].mon().sub_hp > 0 {
                         self.log_failed(side, events);
-                        return;
+                        return true;
                     }
                     // Same as Mimic: `source.moves.indexOf('sketch')` picks
                     // the slot, so a Sleep-Talked Sketch overwrites SKETCH
@@ -1770,14 +2111,14 @@ impl Battle {
                         .position(|m| m.entry.id == "sketch")
                     else {
                         self.log_failed(side, events);
-                        return;
+                        return true;
                     };
                     self.sides[side].mon_mut().moves[home] = MoveSlot {
                         entry: e,
                         pp: e.pp,
                         typed_as: None,
                     };
-                    return;
+                    return true;
                 }
                 _ => unreachable!(),
             }
@@ -1789,7 +2130,7 @@ impl Battle {
         // actually go off.
         if slot.entry.id == "snore" && !asleep_now {
             self.log_failed(side, events);
-            return;
+            return true;
         }
 
         // A status move is its status action, nothing more. A
@@ -1859,7 +2200,7 @@ impl Battle {
             {
                 self.sides[foe].mon_mut().magic_coat = false;
                 self.pending_call = Some((foe, slot.entry));
-                return;
+                return true;
             }
             // The try-hit abilities answer a status move too: Growl is a
             // sound move whatever its power, and Will-O-Wisp is a Fire one.
@@ -1873,7 +2214,7 @@ impl Battle {
                     ability::Absorb::None => {}
                     ability::Absorb::FlashFire => {
                         self.sides[foe].mon_mut().flash_fire = true;
-                        return;
+                        return true;
                     }
                     ability::Absorb::Drain => {
                         let mon = self.sides[foe].mon_mut();
@@ -1885,15 +2226,20 @@ impl Battle {
                                 amount,
                             });
                         }
-                        return;
+                        return true;
                     }
                     ability::Absorb::Immune => {
                         self.no_effect(foe, events);
-                        return;
+                        return true;
                     }
                 }
             }
-            if !self_aimed && hit && !immune && self.sides[foe].mon().sub_hp == 0 {
+            // A Substitute does NOT stop the record. Gen 3 ends its
+            // `tryMoveHit` with an unconditional `gotAttacked`, run on the
+            // target MON after the hit loop whatever the doll swallowed or
+            // refused, so a Trick turned away by a sub is still what the
+            // next Mirror Move answers, not the attack that came before it.
+            if !self_aimed && hit && !immune {
                 self.note_hit_by(side, foe, slot.entry.id);
             }
             self.status_move(
@@ -1914,7 +2260,24 @@ impl Battle {
             if slot.entry.id == "defensecurl" && hit {
                 self.sides[side].mon_mut().curled = true;
             }
-            return;
+            return true;
+        }
+        // Brick Break smashes the target's screens, and it does it from the
+        // sim's TryHit event: gen 3 runs that after the accuracy roll and
+        // after Protect (priority 3 against Brick Break's 0), so a whiff
+        // smashes nothing and a shielded target keeps its wall. The chart
+        // does not stop it either: the immunity only decides the hit loop.
+        if slot.entry.id == "brickbreak" && hit {
+            for cond in [SideCondition::Reflect, SideCondition::LightScreen] {
+                let n = self.sides[foe].condition_n(cond);
+                if *n > 0 {
+                    *n = 0;
+                    events.push(Event::SideEnded {
+                        side: foe as u8 + 1,
+                        condition: cond,
+                    });
+                }
+            }
         }
         // Type immunity preempts the accuracy step entirely: the sim logs
         // |-immune| without ever rolling to hit, so a scripted miss never
@@ -1990,37 +2353,39 @@ impl Battle {
                 }
                 self.sides[side].mon_mut().rolling = None;
                 self.sides[side].mon_mut().fury_n = 0;
+                self.spend_stockpile(side, chosen_id);
                 if boom {
                     self.resolve_faints(side, foe, events);
                 }
-                return;
+                return true;
             }
         }
         if !hit {
-            // A first-use miss ends a rampage quietly, but a miss once the
-            // lock is running (the [from] lockedmove turns) still ends in
-            // fatigue confusion. Fury Cutter's ramp and a Rollout reset.
+            // A miss does not end a lock that was ALREADY running. Gen 3's
+            // `tryMoveHit` answers false and leaves the `lockedmove` volatile
+            // alone, and the `onAfterMove` that re-arms its clock is void this
+            // era, so the din simply carries on and the residual is what ends
+            // it, and the fatigue confusion is that volatile's own `onEnd`. A
+            // FIRST use leaves no lock at all: the volatile is added in
+            // `moveHit`, which is where this one was set above, and a move
+            // that missed never reaches it. Fury Cutter's ramp and a Rollout
+            // reset.
             self.sides[side].mon_mut().last_missed = true;
-            if ramping {
-                self.break_rampage(side, script.is_some(), events);
-            } else {
-                // A FIRST-use miss leaves no lock at all: the din's volatile
-                // is a self-effect applied in `moveHit`, which a move that
-                // missed never reaches. Only a miss once the lock is already
-                // running keeps it, and that is the `ramping` branch above.
+            if !ramping {
                 self.sides[side].mon_mut().rampage = None;
             }
             self.sides[side].mon_mut().fury_n = 0;
             self.sides[side].mon_mut().rolling = None;
+            self.spend_stockpile(side, chosen_id);
             // The kicks crash for half the damage they would have dealt.
             if matches!(slot.entry.id, "highjumpkick" | "jumpkick") {
                 self.kick_crash(side, foe, &slot, script, events);
-                return;
+                return true;
             }
             if boom {
                 self.resolve_faints(side, foe, events);
             }
-            return;
+            return true;
         }
 
         // Beat Up rallies every healthy party member — the sim builds
@@ -2035,7 +2400,7 @@ impl Battle {
         if slot.entry.id == "beatup" && self.beatup_allies(side).is_empty() {
             self.note_hit_by(side, foe, slot.entry.id);
             self.log_failed(side, events);
-            return;
+            return true;
         }
 
         // Uproar's din wakes every active sleeper — the gen 3 sim cures in
@@ -2159,6 +2524,12 @@ impl Battle {
         // reads. Recoil is paid inline inside the substitute hook, so recoil
         // does see the soaked hits and keeps reading `total`.
         let mut past_sub = 0u16;
+        // Whether any strike of this move reached the mon itself, the shape
+        // the sim's `damagedTargets` encodes: a Focus Band's or an Endure's
+        // zero is still a number, so Thief's and Knock Off's AfterHit still
+        // run; a strike the Substitute soaked is not a number, and theirs
+        // does not.
+        let mut reached = false;
         for hit_i in 0..hits {
             let (mut attacker, mut defender) = self.attack_pair(side);
             // Beat Up strikes with each ally's BASE Attack against the
@@ -2205,7 +2576,11 @@ impl Battle {
             // contributes its own halving: with both actives sporting,
             // Electric comes through at a quarter.
             let sporters = (0..2)
-                .filter(|&w| self.sides[w].mon().sport == Some(move_type))
+                .filter(|&w| {
+                    let mon = self.sides[w].mon();
+                    (mon.mud_sport && move_type == Type::Electric)
+                        || (mon.water_sport && move_type == Type::Fire)
+                })
                 .count();
             // The stomping moves land doubled on a minimized target.
             let stomp_mult: u16 = if self.sides[foe].mon().minimized
@@ -2262,7 +2637,12 @@ impl Battle {
                     slot.entry.power * 2
                 }
                 "weatherball" if self.effective_weather().is_some() => 100,
-                "hiddenpower" => 70,
+                // The sim's gen5-mod basePowerCallback reads
+                // `pokemon.hpPower || 70`: the power the ATTACKER's own IVs
+                // pick (see `stats::hidden_power`), with 70 as the fallback
+                // for a mon without per-stat IVs, which never happens on a
+                // real spread.
+                "hiddenpower" => self.sides[side].mon().hidden_power_bp as u16,
                 "magnitude" => {
                     // The spread collapses under a script: the secondary knob
                     // picks Magnitude 4 (10) or 10 (150); play rolls the table.
@@ -2342,23 +2722,43 @@ impl Battle {
             if solar_cut {
                 bp.mul(ability::X0_5);
             }
-            let power = bp
-                .apply((base_power * pierce_power_mult) as u32)
-                .max(1)
-                .min(u16::MAX as u32) as u16;
+            // What the chain hands back IS the base power, zero included.
+            // The sim floors a power that arrives under one BEFORE the
+            // `BasePower` event (`clampIntRange(basePower, 1)`) and floors
+            // nothing after it: `if (!basePower) return 0`, a move that
+            // connects and takes nothing off. Eruption at a hundredth of its
+            // health is the one power that gets there: 150 BP halved by
+            // Thick Fat floors to zero, and padding it back to one would
+            // invent a point of damage out of thin air.
+            let powered =
+                bp.apply((base_power * pierce_power_mult) as u32).min(u16::MAX as u32);
+            let power = powered as u16;
             // The stats, once their stages are in. Gen 3 reads the category
             // off the move's type, so that is what decides whether an
             // Attack ability speaks at all.
-            let physical = slot.entry.id != "beatup" && ability::physical_category(move_type);
-            let user_i = self.sides[side].mon().holder();
-            let foe_i = self.sides[foe].mon().holder();
-            attacker.stat_mod = ability::attack_chain(&user_b, physical);
-            attacker.stat_pre = ability::hustle_chain(&user_b, physical);
-            attacker.stat_mod
-                .extend(item::attack_chain(&user_i, move_type, physical));
-            attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
-            defender.stat_mod = ability::defence_chain(&foe_b, physical);
-            defender.stat_mod.extend(item::defence_chain(&foe_i, physical));
+            let beatup = slot.entry.id == "beatup";
+            let physical = !beatup && ability::physical_category(move_type);
+            // Beat Up is the one swing that reads no item and no ability at
+            // all. Its volatile answers the sim's ModifySpA and ModifySpD
+            // events with a bare number off the species line AND pins
+            // `event.modifier` back to 1 as it does, which throws away every
+            // stat chain that had spoken by then (`data/mods/gen3/moves.js`
+            // `beatup.condition`, lines 66 and 71). A Deep Sea Tooth in the
+            // attacker's hand, a Deep Sea Scale or a Soul Dew on either
+            // side, a Plus or a Minus out on the field: none of them are
+            // part of the hit.
+            if !beatup {
+                let user_i = self.sides[side].mon().holder();
+                let foe_i = self.sides[foe].mon().holder();
+                let mate = self.mate_on_field(self.sides[side].mon());
+                attacker.stat_mod = ability::attack_chain(&user_b, physical, mate);
+                attacker.stat_pre = ability::hustle_chain(&user_b, physical);
+                attacker.stat_mod
+                    .extend(item::attack_chain(&user_i, move_type, physical));
+                attacker.ignores_burn = ability::ignores_burn_drop(&user_b);
+                defender.stat_mod = ability::defence_chain(&foe_b, physical);
+                defender.stat_mod.extend(item::defence_chain(&foe_i, physical));
+            }
             let mut phase1 = ability::Chain::new();
             if self.sides[side].mon().flash_fire && move_type == Type::Fire {
                 phase1.mul(ability::X1_5);
@@ -2374,16 +2774,38 @@ impl Battle {
                 special: slot.entry.id == "beatup",
                 phase1,
             };
-            let dealt = damage(&attacker, &defender, &m, Roll { crit, random });
-            if dealt == 0 {
+            // A zero power never reaches the damage formula, so it never
+            // reaches the type step either: the sim leaves that hit with no
+            // super-effective or resisted line at all, and neutrality is the
+            // closest the engine's one event can say that.
+            let dealt = if powered == 0 {
+                0
+            } else {
+                damage(&attacker, &defender, &m, Roll { crit, random })
+            };
+            if dealt == 0 && powered != 0 {
                 break; // immune: later strikes land no better
             }
             connected = true;
+            // Rage's own rage state begins on a hit that connects, whether
+            // or not a Substitute ate it. The sim adds `self.volatileStatus`
+            // from `selfDrops`, which walks the target list and skips only a
+            // `false`: a Substitute nulls its target (`damage[i] ===
+            // HIT_SUBSTITUTE` sets `targets[i] = null`) but leaves it on the
+            // list, so the volatile still goes on and the next hit the rager
+            // takes raises its Attack.
+            if slot.entry.id == "rage" {
+                self.sides[side].mon_mut().raging = true;
+            }
 
-            let eff = crate::types::effectiveness_against(
-                m.move_type,
-                self.immunity_types(foe, m.move_type),
-            );
+            let eff = if powered == 0 {
+                100
+            } else {
+                crate::types::effectiveness_against(
+                    m.move_type,
+                    self.immunity_types(foe, m.move_type),
+                )
+            };
             let survives = self.survives_at_one(foe);
             let target = self.sides[foe].mon_mut();
             let hit_sub = target.sub_hp > 0;
@@ -2421,6 +2843,10 @@ impl Battle {
                     });
                 }
             } else {
+                // A hit that got past the doll is a hit for the `Hit` event,
+                // which is all Focus Punch's charge watches.
+                self.hit_this_turn[foe] = true;
+                reached = true;
                 // Which book a hit goes in is the CATEGORY, except that
                 // this era names Hidden Power in both handlers and puts it in
                 // the physical one whatever type it came out as: gen 3's
@@ -2442,18 +2868,15 @@ impl Battle {
                     effectiveness: eff,
                     crit,
                 });
-                // A biding target banks what it just took.
+                // A biding target banks what it just took, after Endure or a
+                // Focus Band has clipped it: the sim runs `Damage` handlers
+                // highest priority first, so Endure (-10) and the band (-40)
+                // have their say before Bide's own (-101) reads the number.
                 if let Some((stored, left)) = self.sides[foe].mon().bide {
                     self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
                 }
                 // A raging target's Attack climbs with every hit it takes.
-                if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
-                    self.boost(foe, Boost::Atk, 1, events);
-                }
-                // Rage's own rage state begins only once it actually lands.
-                if slot.entry.id == "rage" {
-                    self.sides[side].mon_mut().raging = true;
-                }
+                self.rage_on_hit(foe, events);
                 // The faint is NOT announced here. `faintMessages` runs at
                 // the end of the hit, after the secondaries and after the
                 // target has answered being hit — and announcing it early
@@ -2519,6 +2942,12 @@ impl Battle {
                 // raises all five of the user's stats.
                 self.self_boost_only(side, &slot, script, events);
             }
+            // The sim's `eachEvent('Update')`, which runs once per strike
+            // inside `tryMoveHit`, over the WHOLE field, not just the two
+            // mons in this swing. A Leppa Berry answers a slot that has just
+            // run dry on the blow itself.
+            self.ability_update(0);
+            self.ability_update(1);
             // Gen 3 runs its own multi-hit loop and reads BOTH mons at the
             // top of it: `for (i = 0; i < hits && target.hp && pokemon.hp;
             // i++)`. An attacker killed by Rough Skin or Liquid Ooze between
@@ -2527,8 +2956,23 @@ impl Battle {
                 break;
             }
         }
-        if slot.entry.id == "spitup" {
-            self.sides[side].mon_mut().stockpile_n = 0;
+        self.spend_stockpile(side, chosen_id);
+        // Rollout counts its landed uses and lets go after five. The count
+        // rides the sim's base-power callback, so it is spent the moment the
+        // damage is COMPUTED, ahead of anything that can clip what the hit
+        // deals. Endure and a Focus Band both work in the Damage event, long
+        // after that, so a blow held at one HP counts and leaves the mon
+        // locked in exactly as a blow that hurt does. Its sleep guard is
+        // there too, so a Sleep Talk swing neither starts a count nor
+        // advances one.
+        if matches!(slot.entry.id, "rollout" | "iceball")
+            && self.sides[side].mon().rolling.is_some()
+            && !asleep_now
+        {
+            let mon = self.sides[side].mon_mut();
+            let n = mon.rolling.unwrap_or(0) + 1;
+            mon.rolling = if n >= 5 { None } else { Some(n) };
+            mon.rolling_fresh = true;
         }
         if total == 0 {
             // A hit that CONNECTED but was clamped to nothing — Focus Band
@@ -2544,11 +2988,28 @@ impl Battle {
                         }
                     }
                 }
+                // The recharge rides the same bill: `selfDrops` reads
+                // `moveData.self`, `mustrecharge` included, off every target
+                // that is not false, and a Focus Band holding a 1-HP mon is
+                // damage zero rather than a failure. A Frenzy Plant the band
+                // ate still costs the attacker its next turn.
+                if slot.entry.recharge {
+                    let mon = self.sides[side].mon_mut();
+                    mon.must_recharge = true;
+                    mon.recharge_fresh = true;
+                    mon.add_volatile(VOL_RECHARGE);
+                }
+            }
+            // The sim's AfterHit fires for every target whose damage is a
+            // number, and a band-or-Endure-clamped zero is one of them, so
+            // a Thief banked nothing but still pockets whatever was held.
+            if reached {
+                self.pocket_after_hit(side, foe, &slot, reached);
             }
             if boom {
                 self.resolve_faints(side, foe, events);
             }
-            return;
+            return true;
         }
 
         // This runs BEFORE the thaw below, matching the reference sim: a
@@ -2564,18 +3025,6 @@ impl Battle {
             let mon = self.sides[side].mon_mut();
             mon.fury_n = (mon.fury_n + 1).min(4);
             mon.fury_fresh = true;
-        }
-        // Rollout counts its landed uses and lets go after five — and its
-        // base-power callback carries the same sleep guard, so a Sleep Talk
-        // swing neither starts a count nor advances one.
-        if matches!(slot.entry.id, "rollout" | "iceball")
-            && self.sides[side].mon().rolling.is_some()
-            && !asleep_now
-        {
-            let mon = self.sides[side].mon_mut();
-            let n = mon.rolling.unwrap_or(0) + 1;
-            mon.rolling = if n >= 5 { None } else { Some(n) };
-            mon.rolling_fresh = true;
         }
         // Rapid Spin flings off the user's own bind and Leech Seed.
         if slot.entry.id == "rapidspin" {
@@ -2613,42 +3062,7 @@ impl Battle {
             });
         }
 
-        // Thief and Covet pocket what the target was holding, but only if
-        // the thief's own hands are empty; Knock Off simply strikes it away.
-        // Sticky Hold keeps hold of it either way, and in this era Knock Off
-        // gets no extra power for the trouble.
-        // `if (moveData.onAfterHit && pokemon.hp)` — the sim asks after the
-        // THIEF, not after the victim, and the faint is not processed until
-        // the move is over. So a Covet or a Thief that knocks its target out
-        // walks off with the item anyway, and so does a Knock Off.
-        if total > 0 && !self.sides[side].mon().fainted() {
-            let theirs = self.sides[foe].mon().item;
-            let held = self.sides[foe].mon().ability == "stickyhold";
-            match slot.entry.id {
-                // `takeItem` refuses outright when EITHER side of the
-                // exchange has had an item knocked off it in this era.
-                "thief" | "covet"
-                    if self.sides[side].mon().item.is_empty()
-                        && !theirs.is_empty()
-                        && !held
-                        && !self.sides[side].mon().item_knocked_off
-                        && !self.sides[foe].mon().item_knocked_off =>
-                {
-                    self.sides[foe].mon_mut().item = "";
-                    self.sides[side].mon_mut().item = theirs;
-                    // A stolen berry is a berry in hand: the sim's setItem
-                    // runs an update, so a thief that pockets a Rawst eats
-                    // it on the spot and walks away unburned.
-                    self.ability_update(side);
-                }
-                "knockoff" if !theirs.is_empty() && !held => {
-                    let victim = self.sides[foe].mon_mut();
-                    victim.item = "";
-                    victim.item_knocked_off = true;
-                }
-                _ => {}
-            }
-        }
+        self.pocket_after_hit(side, foe, &slot, reached);
         self.shell_bell(side, past_sub, events);
 
 
@@ -2657,9 +3071,11 @@ impl Battle {
             let mon = self.sides[side].mon_mut();
             mon.must_recharge = true;
             mon.recharge_fresh = true;
+            mon.add_volatile(VOL_RECHARGE);
         }
 
         self.resolve_faints(side, foe, events);
+        true
     }
 
     /// The confusion self-hit: 40 base power, typeless, physical, against
@@ -2684,13 +3100,69 @@ impl Battle {
     /// shared hit tail runs. Four copies of this block each missed a
     /// different fix this month, which is why it is one function now.
     ///
-    /// `kings_rock` and `contact_tail` are per-arm because the copies
-    /// genuinely differed: Bide runs neither (even though Bide is in the
-    /// King's Rock move list — the sim was never consulted on that pairing,
-    /// so the unification must not quietly change it), and Counter skips the
-    /// Rock (its move is not in the list, so the call would only be a no-op
-    /// bought with a flag).
+    /// `kings_rock` and `tail` are per-arm because the copies genuinely
+    /// differed: Bide's unleash runs the contact tail but no Rock (even
+    /// though Bide is in the King's Rock move list; the sim was never
+    /// consulted on that pairing, so the unification must not quietly change
+    /// it), and Counter skips the Rock (its move is not in the list, so the
+    /// call would only be a no-op bought with a flag).
     #[allow(clippy::too_many_arguments)]
+    /// Thief and Covet pocket what the target was holding, but only if the
+    /// thief's own hands are empty; Knock Off simply strikes it away. Sticky
+    /// Hold keeps hold of it either way, and in this era Knock Off gets no
+    /// extra power for the trouble.
+    ///
+    /// `if (moveData.onAfterHit && pokemon.hp)`: the sim asks after the
+    /// THIEF, not after the victim, and the faint is not processed until the
+    /// move is over, so a Covet or a Thief that knocks its target out walks
+    /// off with the item anyway, and so does a Knock Off. And it fires on a
+    /// hit the band or Endure clamped to nothing: a zero is still a number
+    /// in `damagedTargets`, and `move.totalDamage` is only the shell bell's
+    /// ledger.
+    ///
+    /// `reached` says a strike got past any Substitute; the sim nulls a
+    /// substitute-soaked target out of `damagedTargets`, so theirs does not
+    /// run for one.
+    fn pocket_after_hit(&mut self, side: usize, foe: usize, slot: &MoveSlot, reached: bool) {
+        if !reached || self.sides[side].mon().fainted() {
+            return;
+        }
+        let theirs = self.sides[foe].mon().item;
+        let held = self.sides[foe].mon().ability == "stickyhold";
+        match slot.entry.id {
+            // `takeItem` refuses outright when EITHER side of the exchange
+            // has had an item knocked off it in this era.
+            "thief" | "covet"
+                if self.sides[side].mon().item.is_empty()
+                    && !theirs.is_empty()
+                    && !held
+                    && !self.sides[side].mon().item_knocked_off
+                    && !self.sides[foe].mon().item_knocked_off =>
+            {
+                self.sides[foe].mon_mut().item = "";
+                self.sides[side].mon_mut().item = theirs;
+                // A stolen berry is a berry in hand: the sim's setItem runs
+                // an update, so a thief that pockets a Rawst eats it on the
+                // spot and walks away unburned.
+                self.ability_update(side);
+            }
+            // Gen 4's Knock Off does not go through `takeItem` at all: it
+            // reads `if (!target.item) return;`, runs `TakeItem` (Sticky
+            // Hold, and Mail only when the move did not come from its own
+            // holder) and then writes `target.item = ""` and
+            // `target.itemKnockedOff = true` itself, `mods/gen4/moves.js`
+            // 723-734. So the robbed-hand rule the other two moves inherit
+            // from `takeItem` does not apply here, and a mon that was robbed
+            // once and has since been handed another item loses that one too.
+            "knockoff" if !theirs.is_empty() && !held => {
+                let victim = self.sides[foe].mon_mut();
+                victim.item = "";
+                victim.item_knocked_off = true;
+            }
+            _ => {}
+        }
+    }
+
     pub(super) fn flat_hit(
         &mut self,
         side: usize,
@@ -2699,7 +3171,7 @@ impl Battle {
         amount: u16,
         special_register: Option<bool>,
         kings_rock: bool,
-        contact_tail: bool,
+        tail: Tail,
         script: Option<SeatScript>,
         events: &mut Vec<Event>,
     ) {
@@ -2729,6 +3201,7 @@ impl Battle {
         };
         let amount = amount.min(cap);
         target.hp -= amount;
+        self.hit_this_turn[foe] = true;
         let special = special_register.unwrap_or_else(|| {
             !matches!(
                 crate::types::category_of(slot.move_type()),
@@ -2750,8 +3223,10 @@ impl Battle {
             self.kings_rock(side, foe, slot, script);
         }
         self.took_a_hit(foe, amount, events);
-        if contact_tail {
+        if matches!(tail, Tail::DamagingHit | Tail::Both) {
             self.on_damaged(side, foe, slot, slot.move_type(), amount, script, events);
+        }
+        if matches!(tail, Tail::Both) {
             self.shell_bell(side, amount, events);
         }
         self.resolve_faints(side, foe, events);
@@ -2776,12 +3251,7 @@ impl Battle {
             self.sides[side].mon_mut().bide = None;
             self.sides[side].mon_mut().locked_move = None;
         }
-        let acting = self.acting_slot(side, index);
-        let keeps = self.sides[side]
-            .mon()
-            .moves
-            .get(acting)
-            .is_some_and(|m| m.entry.id == "charge");
+        let keeps = self.acting_move_id(side, index) == Some("charge");
         if !keeps {
             self.sides[side].mon_mut().charged_elec = false;
         }
@@ -2841,17 +3311,42 @@ impl Battle {
         });
     }
 
+    /// Append a line to `foe`'s attacked-by book, most recent first. The
+    /// sim pushes onto the end and reads off the end; the shift is the same
+    /// book seen from the top, and it drops the oldest line rather than
+    /// growing, which no turn can notice (see `ATTACKED_BY_LEN`).
     pub(super) fn note_hit_by(&mut self, side: usize, foe: usize, id: &'static str) {
         let from = self.sides[side].active;
         let mon = self.sides[foe].mon_mut();
-        mon.last_hit_by = Some(id);
-        mon.last_hit_by_slot = Some(from);
+        mon.attacked_by.rotate_right(1);
+        mon.attacked_by[0] = Some(HitBy { move_id: id, from });
+    }
+
+    /// The top surviving line of `side`'s book, if the attacker is still the
+    /// mon on the field: the sim asks `lastAttackedBy.source.lastMove`, and
+    /// switching out wipes that.
+    pub(super) fn last_attacked_by(&self, side: usize, foe: usize) -> Option<&'static str> {
+        let mon = self.sides[side].mon();
+        let hit = mon.attacked_by[0].as_ref()?;
+        (hit.from == self.sides[foe].active && self.sides[foe].mon().last_used_id.is_some())
+            .then_some(hit.move_id)
     }
 
     pub(super) fn took_a_hit(&mut self, foe: usize, amount: u16, events: &mut Vec<Event>) {
         if let Some((stored, left)) = self.sides[foe].mon().bide {
             self.sides[foe].mon_mut().bide = Some((stored.saturating_add(amount), left));
         }
+        self.rage_on_hit(foe, events);
+    }
+
+    /// Rage's volatile reads the `Hit` event, not the damage: its `onHit`
+    /// fires for anything that reaches the end of the hit loop aimed at the
+    /// rager, so a Present that handed its gift back counts for exactly as
+    /// much as a Present that took HP off. A gift that found nothing to give
+    /// leaves that loop before the event runs, and a move that finds a
+    /// Substitute never gets there at all (the sim nulls the target, so
+    /// `runMoveEffects` skips it); both are already refused upstream.
+    fn rage_on_hit(&mut self, foe: usize, events: &mut Vec<Event>) {
         if self.sides[foe].mon().raging && !self.sides[foe].mon().fainted() {
             self.boost(foe, Boost::Atk, 1, events);
         }
@@ -2957,7 +3452,8 @@ impl Battle {
         // A typeless forty-power physical hit, which means the held items
         // speak as well as the abilities: a confused Choice Band swings half
         // again as hard at itself.
-        let mut atk_chain = ability::attack_chain(&bearer, true);
+        let mate = self.mate_on_field(mon);
+        let mut atk_chain = ability::attack_chain(&bearer, true, mate);
         atk_chain.extend(item::attack_chain(&holder, Type::None, true));
         let mut def_chain = ability::defence_chain(&bearer, true);
         def_chain.extend(item::defence_chain(&holder, true));
@@ -3134,8 +3630,14 @@ impl Battle {
 
         // A Fire-type hit thaws a frozen target — game rule, not RNG. A
         // knocked-out target keeps its freeze; there is nothing left to thaw.
+        //
+        // The type read here is the one in the TABLE, not the one the move
+        // attacks with: gen 3's `frz.onDamagingHit` asks
+        // `dex.moves.get(move.id).type`, which is a Hidden Power's Normal
+        // whatever its holder's IVs typed it as. A Hidden Power Fire goes
+        // through the chart as Fire and still leaves the frozen alone.
         if self.sides[foe].mon().status == Some(Status::Freeze)
-            && slot.move_type() == Type::Fire
+            && slot.entry.move_type == Type::Fire
             && !self.sides[foe].mon().fainted()
         {
             self.sides[foe].mon_mut().status = None;
@@ -3162,6 +3664,7 @@ impl Battle {
                 None => 3 + self.rng.below(4) as u8,
             };
             self.sides[foe].mon_mut().trapped_n = n;
+            self.sides[foe].mon_mut().add_volatile(VOL_BIND);
             events.push(Event::Trapped {
                 side: foe as u8 + 1,
             });
@@ -3212,7 +3715,8 @@ impl Battle {
         let physical = ability::physical_category(slot.move_type());
         let user_i = self.sides[side].mon().holder();
         let foe_i = self.sides[foe].mon().holder();
-        attacker.stat_mod = ability::attack_chain(&user_b, physical);
+        let mate = self.mate_on_field(self.sides[side].mon());
+        attacker.stat_mod = ability::attack_chain(&user_b, physical, mate);
             attacker.stat_pre = ability::hustle_chain(&user_b, physical);
         attacker
             .stat_mod
@@ -3233,14 +3737,39 @@ impl Battle {
         // The sim clamps the crash into [1, target's max HP / 2].
         let cap = (self.sides[foe].mon().max_hp / 2).max(1);
         let crash = ((would / 2) as u16).max(1).min(cap);
+        // The crash lands through `this.damage(..., source, source, move)`,
+        // so it runs the Damage event with the kick as its effect and Endure
+        // and Focus Band are both asked about the mon that missed, off its
+        // own seat. Its Substitute cannot swallow it.
+        let survives = self.survives_lethal(side, false);
         let user = self.sides[side].mon_mut();
-        let crash = crash.min(user.hp);
+        let cap = if survives {
+            user.hp.saturating_sub(1)
+        } else {
+            user.hp
+        };
+        let crash = crash.min(cap);
         user.hp -= crash;
         events.push(Event::Recoil {
             side: side as u8 + 1,
             amount: crash,
         });
         self.resolve_faints(side, foe, events);
+    }
+
+    /// Whether the field carries the mate of this mon's Plus or Minus
+    /// ability. The sim's gen 3 handlers walk `getAllActive()`, which is
+    /// every standing mon on both sides, so a foe counts just as much as
+    /// an ally here.
+    pub(super) fn mate_on_field(&self, user: &Mon) -> bool {
+        let mate = match user.ability {
+            "plus" => "minus",
+            "minus" => "plus",
+            _ => return false,
+        };
+        self.sides
+            .iter()
+            .any(|s| !s.mon().fainted() && s.mon().ability == mate)
     }
 
     pub(super) fn attack_pair(&self, side: usize) -> (Attacker, Defender) {
@@ -3273,22 +3802,19 @@ impl Battle {
     }
 
     /// Base Attack of everyone Beat Up can call: unfainted and unstatused,
-    /// the active first (the sim's `side.pokemon` keeps it at the front) and
-    /// the rest in party order. Order only decides which strike lands first,
-    /// since every ally gets one.
+    /// walked in the sim's own `side.pokemon` order. That list is NOT the
+    /// party's: every switch swaps the incoming mon to the front and pushes
+    /// the outgoing one into the slot it came from, so a side that has been
+    /// through a few replacements strikes in an order the party cannot name.
+    /// It decides which base Attack each strike swings, and so the damage of
+    /// every strike after the first.
     pub(super) fn beatup_allies(&self, side: usize) -> Vec<u16> {
         let s = &self.sides[side];
-        let ok = |m: &Mon| !m.fainted() && m.status.is_none();
-        let mut out = Vec::new();
-        if ok(s.mon()) {
-            out.push(s.mon().species.base.atk as u16);
-        }
-        for (i, m) in s.party.iter().enumerate() {
-            if i != s.active && ok(m) {
-                out.push(m.species.base.atk as u16);
-            }
-        }
-        out
+        s.order
+            .iter()
+            .filter(|&&i| !s.party[i].fainted() && s.party[i].status.is_none())
+            .map(|&i| s.party[i].species.base.atk as u16)
+            .collect()
     }
 
     /// The per-strike aftermath of a landed hit: the secondary (script or
@@ -3341,6 +3867,22 @@ impl Battle {
     /// through unclamped, because those carry a Recoil or a Status effect.
     pub(super) fn survives_at_one(&mut self, side: usize) -> bool {
         self.survives_lethal(side, true)
+    }
+
+    /// The Focus Band coin on its own, with no Endure in front of it. A
+    /// delayed Future Sight lands through `futuremove`'s `onEnd`, which
+    /// strips the target's Endure off first and then resolves the move
+    /// through `trySpreadMoveHit`, so the band is the only thing left that
+    /// can turn the landing blow into a single point.
+    pub(super) fn band_saves(&mut self, side: usize) -> bool {
+        let mon = self.sides[side].mon();
+        if mon.sub_hp > 0 || mon.item != "focusband" {
+            return false;
+        }
+        match self.turn_seats[side] {
+            Some(s) => s.band,
+            None => self.rng.below(10) == 0,
+        }
     }
 
     /// As above, but `through_sub` says whether a Substitute standing in front

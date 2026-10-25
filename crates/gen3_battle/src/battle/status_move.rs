@@ -50,6 +50,7 @@ impl Battle {
                 let grass = target.types().0 == Type::Grass || target.types().1 == Type::Grass;
                 if hit && !grass && !target.fainted() && !target.seeded {
                     self.sides[foe].mon_mut().seeded = true;
+                    self.sides[foe].mon_mut().add_volatile(VOL_LEECH_SEED);
                     events.push(Event::Seeded {
                         side: foe as u8 + 1,
                     });
@@ -143,7 +144,11 @@ impl Battle {
             StatusAction::BellyDrum => {
                 let mon = self.sides[side].mon();
                 let cost = mon.max_hp / 2;
-                if mon.hp > cost && mon.stages[Stat::Atk as usize] < 6 {
+                // The sim's onHit refuses three ways: hp <= maxhp / 2, a drum
+                // already at the +6 cap, or max HP 1. Halving a single point
+                // floors to a zero cost, and the damage that pays for it
+                // clamps sub-1 back up to a lethal full point.
+                if mon.hp > cost && mon.stages[Stat::Atk as usize] < 6 && mon.max_hp > 1 {
                     let mon = self.sides[side].mon_mut();
                     mon.hp -= cost;
                     mon.stages[Stat::Atk as usize] = 6;
@@ -176,6 +181,7 @@ impl Battle {
                     && !ability::blocks_yawn(&target.bearer())
                 {
                     self.sides[foe].mon_mut().yawn_n = 2;
+                    self.sides[foe].mon_mut().add_volatile(VOL_YAWN);
                     events.push(Event::Drowsy {
                         side: foe as u8 + 1,
                     });
@@ -223,7 +229,14 @@ impl Battle {
                 }
             }
             StatusAction::Sport(kind) => {
-                self.sides[side].mon_mut().sport = Some(kind);
+                // One volatile per sport, and each hums its own type: Mud
+                // Sport takes Electric down, Water Sport takes Fire down.
+                // Using the second does NOT take the first back down.
+                let mon = self.sides[side].mon_mut();
+                match kind {
+                    Type::Fire => mon.water_sport = true,
+                    _ => mon.mud_sport = true,
+                }
             }
             StatusAction::Spikes => {
                 if self.sides[foe].spikes < 3 {
@@ -317,8 +330,13 @@ impl Battle {
             StatusAction::LockOn => {
                 // Taking aim at a mon already in your sights does nothing:
                 // addVolatile refuses a lock that is still up, and the move
-                // fails rather than refreshing it.
-                if hit && !self.sides[foe].mon().fainted() && self.sides[side].mon().sure_hit == 0 {
+                // fails rather than refreshing it. Neither Lock-On nor Mind
+                // Reader has `bypasssub`, so a substitute stops the aim too.
+                if hit
+                    && self.sides[foe].mon().sub_hp == 0
+                    && !self.sides[foe].mon().fainted()
+                    && self.sides[side].mon().sure_hit == 0
+                {
                     let aim = self.sides[foe].active as u8;
                     let mon = self.sides[side].mon_mut();
                     mon.sure_hit = 2;
@@ -358,49 +376,19 @@ impl Battle {
                     None => events.push(Event::Failed {
                         side: side as u8 + 1,
                     }),
+                    // WHO comes in is the player's to pick when a caller
+                    // asks for that: the sim sends the side a switch request
+                    // once the move is over, and the rest of the turn waits
+                    // on it (`move_phase` parks, `send_out` places the pick
+                    // through `baton_pass_in`). By default the engine takes
+                    // the lowest living slot, which is what the parity
+                    // harness answers the same request with.
+                    Some(_) if self.player_picks_replacement => {
+                        self.awaiting_replacement[side] = true;
+                        self.awaiting_pass[side] = true;
+                    }
                     Some(next) => {
-                        let passed = self.sides[side].mon().clone();
-                        self.switch_out_reset(side);
-                        let slot_item = self.hand_slot_item_over(side);
-                        self.sides[side].reorder_for_switch(next);
-                        self.sides[side].active = next;
-                        self.sides[side].mon_mut().last_item = slot_item;
-                        {
-                            let m = self.sides[side].mon_mut();
-                            m.stages = passed.stages;
-                            m.acc_stage = passed.acc_stage;
-                            m.eva_stage = passed.eva_stage;
-                            m.sub_hp = passed.sub_hp;
-                            m.seeded = passed.seeded;
-                            m.confusion_n = passed.confusion_n;
-                            m.perish_n = passed.perish_n;
-                            m.cursed = passed.cursed;
-                            m.ingrained = passed.ingrained;
-                            m.focused = passed.focused;
-                            m.mean_looked = passed.mean_looked;
-                            m.trapped_n = passed.trapped_n;
-                            // …and its staleness: a bind whose user already
-                            // left rides the pass as the same dead volatile,
-                            // not a fresh one.
-                            m.trap_stale = passed.trap_stale;
-                            m.charged_elec = passed.charged_elec;
-                            m.taunt_n = passed.taunt_n;
-                            // Water Sport and Mud Sport are volatiles on the
-                            // HUMMER, not the field, so the halving follows
-                            // the pass and dampens the arrival's own moves.
-                            m.sport = passed.sport;
-                            // Lock-On's condition spells `noCopy: false` out
-                            // in the data; the arrival inherits the mark and
-                            // the turn left on it.
-                            m.sure_hit = passed.sure_hit;
-                            // Fury Cutter's doubling counter rides along too.
-                            m.fury_n = passed.fury_n;
-                            m.fury_fresh = passed.fury_fresh;
-                        }
-                        events.push(Event::Switched {
-                            side: side as u8 + 1,
-                            party_index: next,
-                        });
+                        self.baton_pass_in(side, next, events);
                         self.switch_in_greet(side, events);
                     }
                 }
@@ -613,7 +601,6 @@ impl Battle {
                 });
                 if shares && !self.sides[side].mon().imprisoning {
                     self.sides[side].mon_mut().imprisoning = true;
-                    self.sides[side].mon_mut().imprison_fresh = true;
                 } else {
                     self.log_failed(side, events);
                 }
@@ -633,7 +620,16 @@ impl Battle {
                         mon.transform_stats = Some((
                             [mon.atk, mon.def, mon.spa, mon.spd, mon.spe],
                             mon.type_override,
+                            (mon.hidden_power, mon.hidden_power_bp),
                         ));
+                        // The Hidden Power of a transformed mon belongs to the
+                        // thing it is wearing, not to the IVs it was born with:
+                        // `transformInto` answers both halves with the target's
+                        // before gen 5 (`this.hpType = pokemon.hpType`). The
+                        // move slots already carried the TYPE across, so this is
+                        // what the base power was reading instead.
+                        mon.hidden_power = foe_mon.hidden_power;
+                        mon.hidden_power_bp = foe_mon.hidden_power_bp;
                     }
                     mon.atk = foe_mon.atk;
                     mon.def = foe_mon.def;
@@ -686,12 +682,22 @@ impl Battle {
                 // returns null before `onHit` is ever reached. Trick carries
                 // no `bypasssub` in this era, unlike Torment, Taunt, Spite
                 // and the rest of that set.
+                //
+                // One empty hand is fine (the trade gives it the other mon's
+                // item and the giver logs a silent `-enditem`), but a mon
+                // that has already been robbed cannot give anything away at
+                // all: `takeItem` opens with `if (this.battle.gen <= 4 &&
+                // (this.itemKnockedOff || source.itemKnockedOff)) return
+                // false`, so a Knock Off victim refuses every later trade
+                // even when it is the one doing the taking.
                 if !hit
                     || self.sides[foe].mon().sub_hp > 0
                     || self.sides[foe].mon().ability == "stickyhold"
                     || mine == "mail"
                     || theirs == "mail"
                     || (mine.is_empty() && theirs.is_empty())
+                    || self.sides[side].mon().item_knocked_off
+                    || self.sides[foe].mon().item_knocked_off
                     || self.sides[foe].mon().fainted()
                 {
                     self.log_failed(side, events);
@@ -801,6 +807,7 @@ impl Battle {
                     self.log_failed(side, events);
                 } else {
                     self.sides[side].mon_mut().ingrained = true;
+                    self.sides[side].mon_mut().add_volatile(VOL_INGRAIN);
                 }
             }
             StatusAction::Conversion2 => {
@@ -833,9 +840,12 @@ impl Battle {
                 // 3's Beat Up retypes itself to '???' there, and nothing in
                 // the chart resists '???', so a Conversion 2 answering a Beat
                 // Up simply fails. Struggle is named outright as Normal.
+                // Weather Ball wears the sky it was used under.
+                let sky_type = self.sides[foe].mon().last_move_used_sky_type;
                 let last = self.sides[foe].mon().last_move_used_id.and_then(|id| match id {
                     "struggle" => Some(Type::Normal),
                     "beatup" => Some(Type::None),
+                    "weatherball" => sky_type,
                     _ => self.sides[foe]
                         .mon()
                         .moves
@@ -867,15 +877,23 @@ impl Battle {
             StatusAction::Curse => {
                 let (t1, t2) = self.sides[side].mon().types();
                 if t1 == Type::Ghost || t2 == Type::Ghost {
-                    // The Ghost pays half its max HP to lay the curse.
-                    if self.sides[foe].mon().cursed || self.sides[foe].mon().fainted() {
+                    // Facing a Substitute, a Ghost's Curse is a spent turn:
+                    // gen 4's ModifyMove (inherited here) deletes both the
+                    // volatile it would start and the `onHit` that charges the
+                    // HP, so with nothing left the doll turns it away once the
+                    // PP is paid.
+                    if self.sides[foe].mon().sub_hp > 0 {
+                        self.log_failed(side, events);
+                    } else if self.sides[foe].mon().cursed || self.sides[foe].mon().fainted() {
                         self.log_failed(side, events);
                     } else {
+                        // The Ghost pays half its max HP to lay the curse.
                         let cost = (self.sides[side].mon().max_hp / 2).max(1);
                         let user = self.sides[side].mon_mut();
                         let cost = cost.min(user.hp);
                         user.hp -= cost;
                         self.sides[foe].mon_mut().cursed = true;
+                        self.sides[foe].mon_mut().add_volatile(VOL_CURSE);
                         self.announce_faint(side, events);
                     }
                 } else {
@@ -903,6 +921,7 @@ impl Battle {
                     && !target.nightmared
                 {
                     self.sides[foe].mon_mut().nightmared = true;
+                    self.sides[foe].mon_mut().add_volatile(VOL_NIGHTMARE);
                 } else {
                     self.log_failed(side, events);
                 }
@@ -922,9 +941,12 @@ impl Battle {
                 } else {
                     let mon = self.sides[side].mon_mut();
                     mon.stockpile_n = 0;
+                    // The share is the sim's `modify`, not a division: a
+                    // quarter of 195 comes to 49 there, and a division
+                    // would hand back 48.
                     let heal = match n {
-                        1 => mon.max_hp / 4,
-                        2 => mon.max_hp / 2,
+                        1 => ability::modify(mon.max_hp, 1, 4),
+                        2 => ability::modify(mon.max_hp, 1, 2),
                         _ => mon.max_hp,
                     }
                     .min(mon.max_hp - mon.hp);
@@ -949,7 +971,10 @@ impl Battle {
             StatusAction::Substitute => {
                 let mon = self.sides[side].mon();
                 let cost = mon.max_hp / 4;
-                if mon.sub_hp == 0 && mon.hp > cost {
+                // The sim's onTryHit carries the same 1-max-HP refusal as
+                // Belly Drum: a quarter of one HP floors to nothing, and the
+                // damage that pays for it clamps to a lethal point.
+                if mon.sub_hp == 0 && mon.hp > cost && mon.max_hp > 1 {
                     let mon = self.sides[side].mon_mut();
                     mon.hp -= cost;
                     mon.sub_hp = cost;
@@ -1012,7 +1037,10 @@ impl Battle {
                 }
             }
             StatusAction::BoostFoe(list) => {
-                if self.sides[foe].mon().sub_hp > 0 {
+                // Tickle is the one of these that a doll does NOT stop: the
+                // era's mod hands it the `bypasssub` flag alongside Disable,
+                // Taunt, Mimic and Sketch, whose arms say so themselves.
+                if self.sides[foe].mon().sub_hp > 0 && slot.entry.id != "tickle" {
                     return;
                 }
                 let misted = self.sides[foe].mist_n > 0;
@@ -1160,6 +1188,70 @@ impl Battle {
         self.ability_update(foe);
         events.push(Event::ConfusionStarted {
             side: foe as u8 + 1,
+        });
+    }
+
+    /// Baton Pass's arrival: `next` takes the passer's place and inherits
+    /// what the pass carries. Placed only; the caller greets it.
+    pub(super) fn baton_pass_in(&mut self, side: usize, next: usize, events: &mut Vec<Event>) {
+        let passed = self.sides[side].mon().clone();
+        // The gaze is held by the TRAPPER, and Baton Pass carries it:
+        // copyVolatileFrom re-links the victim's trapped volatile to the
+        // replacement before the passer's clearVolatile can cut the link, so
+        // the victim stays trapped. A plain leave drops it (switch_out_reset,
+        // as for any other switch-out).
+        let gaze = self.sides[1 - side].mon().mean_looked;
+        self.switch_out_reset(side);
+        if gaze {
+            self.sides[1 - side].mon_mut().mean_looked = true;
+        }
+        let slot_item = self.hand_slot_item_over(side);
+        self.sides[side].reorder_for_switch(next);
+        self.sides[side].active = next;
+        self.sides[side].mon_mut().last_item = slot_item;
+        {
+            let m = self.sides[side].mon_mut();
+            m.stages = passed.stages;
+            m.acc_stage = passed.acc_stage;
+            m.eva_stage = passed.eva_stage;
+            m.sub_hp = passed.sub_hp;
+            m.seeded = passed.seeded;
+            m.confusion_n = passed.confusion_n;
+            m.perish_n = passed.perish_n;
+            m.cursed = passed.cursed;
+            m.ingrained = passed.ingrained;
+            m.focused = passed.focused;
+            m.mean_looked = passed.mean_looked;
+            m.trapped_n = passed.trapped_n;
+            // …and its staleness: a bind whose user already
+            // left rides the pass as the same dead volatile,
+            // not a fresh one.
+            m.trap_stale = passed.trap_stale;
+            m.charged_elec = passed.charged_elec;
+            m.taunt_n = passed.taunt_n;
+            // Mud Sport and Water Sport are volatiles on the
+            // HUMMER, not the field, so the halving follows
+            // the pass and dampens the arrival's own moves.
+            // They are two of them and a pass carries both.
+            m.mud_sport = passed.mud_sport;
+            m.water_sport = passed.water_sport;
+            // Lock-On's condition spells `noCopy: false` out
+            // in the data; the arrival inherits the mark and
+            // the turn left on it.
+            m.sure_hit = passed.sure_hit;
+            // Fury Cutter's doubling counter rides along too.
+            m.fury_n = passed.fury_n;
+            m.fury_fresh = passed.fury_fresh;
+            // …and the arrival they were given in. The sim's
+            // `copyVolatileFrom` clears the receiver and walks the passer's
+            // `pokemon.volatiles` into it key by key, so the pair comes
+            // across in the passer's order, not the arrival's own history.
+            m.vol_stamp = passed.vol_stamp;
+            m.vol_clock = passed.vol_clock;
+        }
+        events.push(Event::Switched {
+            side: side as u8 + 1,
+            party_index: next,
         });
     }
 }

@@ -18,7 +18,7 @@ for (const species of dex.species.all()) {
     name: species.name,
     // National dex number. The engine has no use for it, but the sprite
     // tables are indexed by it — PokeAPI names its art by dex number — and
-    // building them off a hand-kept Gen 1 list is how the Gen 3 battler
+    // building them off a hand-kept Gen 1 list is how the Gen 3 engine
     // ended up with no art at all.
     num: species.num,
     types,

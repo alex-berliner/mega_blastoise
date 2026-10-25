@@ -1,9 +1,8 @@
 //! Gen 3 (Ruby / Sapphire / Emerald) battle mechanics.
 //!
-//! A sibling to [`gen1_battle`], not a replacement for it. Gen 1 combat is
-//! preserved exactly as it is: this crate is additive, and a device running a
-//! Gen 1 battle never enters it. Which engine a battle uses is chosen once, at
-//! setup, from the ruleset the players picked in the menu.
+//! Gen 3 only: a device running a Gen 1 battle never enters this crate (Gen 1
+//! plays on `ps_sim`). Which engine a battle uses is chosen once, at setup,
+//! from the ruleset the players picked in the menu.
 //!
 //! What is here so far is the arithmetic core, which is where Gen 3 actually
 //! departs from Gen 1:
@@ -23,10 +22,9 @@
 //! Still to come, in rough order of how much they change play: abilities,
 //! held items, weather, and the move set beyond the shared Gen 1 entries.
 //!
-//! The mechanics are implemented from the published Gen 3 formulas. Upstream
-//! `battler` is a useful cross-check for behaviour, but no code is taken from
-//! it: this crate is `no_std` and allocation-free on the hot path, which that
-//! engine is not.
+//! The mechanics are implemented from the published Gen 3 formulas. Other
+//! engines are a useful cross-check for behaviour, but no code is taken from
+//! them: this crate is `no_std` and allocation-free on the hot path.
 
 #![cfg_attr(not(test), no_std)]
 
@@ -95,8 +93,8 @@ mod tests {
 //
 // `Type` really was duplicated and now lives in `battle_types`, shared with
 // every other generation's engine. The rest of the near-twins across
-// `gen1_battle` and `gen3_battle` are NOT the same thing wearing two names,
-// and unifying them would change meanings rather than remove repetition:
+// the old Gen 1 engine and `gen3_battle` were NOT the same thing wearing two names,
+// and unifying them would have changed meanings rather than removed repetition:
 //
 //   Rng      three different generators, deliberately. Gen 1 is xorshift64
 //            (13/7/17) with per-seat forced channels for its parity suites,

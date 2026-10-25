@@ -1,0 +1,29 @@
+[package]
+name = "ps_harness"
+version = "0.1.0"
+edition = "2021"
+description = "std, test-only: the ps_sim_cli binary (PS BattleStream text over stdin/stdout) and the cargo test wrappers. The driver itself is tools/ps-diff/diff.js."
+
+[features]
+default = []
+# Pulls in the on-device codecs alongside the bin so end-to-end tests
+# can take typed Commands and emit typed Msgs.
+text = ["ps_sim/text", "ps_protocol/text"]
+# `ps_sim_cli --hits FILE`: per-handler hit counts (`ps_sim/hit-count`) for
+# `scripts/ps-coverage.sh`.
+hit-count = ["ps_sim/hit-count"]
+# `ps_sim_cli --rng-trace`: the battle's PRNG calls as an `rngtrace`
+# message (`ps_sim/rng-trace`), for the protocol diff's PRNG trace.
+rng-trace = ["ps_sim/rng-trace"]
+
+[[bin]]
+name = "ps_sim_cli"
+path = "src/bin/ps_sim_cli.rs"
+
+[dependencies]
+ps_sim = { path = "../ps_sim", default-features = false, features = ["text"] }
+ps_protocol = { path = "../ps_protocol", default-features = false, features = ["text"] }
+ps_client = { path = "../ps_client", default-features = false }
+ps_dex = { path = "../ps_dex", default-features = false }
+# `>start` / `>player` JSON (std-only crate).
+serde_json = "1.0"

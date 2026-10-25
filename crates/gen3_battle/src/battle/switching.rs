@@ -30,24 +30,17 @@ impl Battle {
             mon.ability_backup = Some(mon.ability);
         }
         mon.ability = id;
-        // Truant handed over mid-battle does NOT start loafing on the spot.
-        // Gen 3's own Truant sets `onStart: void 0`, and `setAbility` only
-        // raises a Start event from gen 4 on, so nothing at all runs when the
-        // ability changes hands: the loaf state is written only by Truant's
-        // switch-in and by its residual. A Traced or Skill Swapped Truant
-        // therefore acts this turn and first loafs on the next, which is
-        // exactly what the residual flip below produces from `false`.
-        if id == "truant" {
-            self.sides[side].mon_mut().loafing = false;
-        }
+        // The loaf clock is `pokemon.truantTurn`, and NOTHING about a change
+        // of hands touches it. Gen 3's own Truant sets `onStart: void 0`,
+        // and `skillSwap` only raises a Start event from gen 4 on
+        // (`if (this.gen > 3) this.singleEvent('Start', ...)`), so the two
+        // hooks that write the clock (Truant's switch-in and its residual
+        // at order 27) are the only writers, and a mon that hands Truant
+        // over keeps whatever it was doing. A Traced or Skill Swapped
+        // Truant therefore does not start fresh: it acts or loafs on the
+        // rhythm it already had.
     }
 
-    /// The sim's `AfterMove`, as far as a Choice Band is concerned: the lock
-    /// goes on once the move is done, and reads whatever the mon is holding
-    /// by then. The lock also lapses on its own the moment its holder stops
-    /// carrying a Choice item or stops knowing the move — which is how a
-    /// Knock Off frees its victim, and why a Struggle forced out by the lock
-    /// never sticks as the locked move.
     /// Run whatever a Magic Coat or a Snatch put in someone else's hands.
     /// The sim reaches these through `useMove`, which is below the gates and
     /// below the PP charge, so the move simply happens.
@@ -67,21 +60,33 @@ impl Battle {
         }
     }
 
-    pub(super) fn settle_choice_lock(&mut self, side: usize) {
+    /// The sim's `AfterMove`, as far as a Choice Band and a Charge are
+    /// concerned: both hang off that event, so `after_move` says whether the
+    /// action got as far as the tail of `runMove`. It does not for an action
+    /// the can't-move gates turned away before the move, and it does not for
+    /// an intercepting Pursuit, which the switch-out hook fires through
+    /// `useMove`, below `runMove` altogether.
+    ///
+    /// The lock goes on once the move is done, and reads whatever the mon is
+    /// holding by then. The lock also lapses on its own the moment its holder
+    /// stops carrying a Choice item or stops knowing the move, which is how
+    /// a Knock Off frees its victim, and why a Struggle forced out by the
+    /// lock never sticks as the locked move. None of that hangs off
+    /// `AfterMove`: the volatile answers `onDisableMove` and `onBeforeMove`,
+    /// so it is settled after every action either way.
+    pub(super) fn settle_choice_lock(&mut self, side: usize, after_move: bool) {
         let committed = self.committed_move[side].take();
         // Charge's volatile is dropped by `onAfterMove` on ANY move but
         // Charge itself, so a charge spent on something that is not Electric
         // is simply spent. Ours only cleared it when an Electric move cashed
         // it in, which left a Raikou holding the doubling indefinitely.
-        if committed.is_some_and(|id| id != "charge") {
+        if after_move && committed.is_some_and(|id| id != "charge") {
             self.sides[side].mon_mut().charged_elec = false;
         }
         let mon = self.sides[side].mon();
         let banded = mon.item == "choiceband";
-        if let Some(id) = committed {
-            if banded && mon.choice_locked.is_none() {
-                self.sides[side].mon_mut().choice_locked = Some(id);
-            }
+        if after_move {
+            self.apply_choice_lock(side, committed);
         }
         let mon = self.sides[side].mon();
         let lapsed = mon.choice_locked.is_some_and(|id| {
@@ -89,6 +94,21 @@ impl Battle {
         });
         if lapsed {
             self.sides[side].mon_mut().choice_locked = None;
+        }
+    }
+
+    /// `pokemon.addVolatile("choicelock")` on a mon holding a Choice item:
+    /// the item's `onAfterMove` does it for a move that ran, and gen 3's
+    /// Pursuit writes it by hand the moment an interception lands. A mon
+    /// already locked keeps the move it had: `addVolatile` on a live
+    /// volatile finds no `onRestart` and stops right there.
+    pub(super) fn apply_choice_lock(&mut self, side: usize, id: Option<&'static str>) {
+        let Some(id) = id else {
+            return;
+        };
+        let mon = self.sides[side].mon();
+        if mon.item == "choiceband" && mon.choice_locked.is_none() {
+            self.sides[side].mon_mut().choice_locked = Some(id);
         }
     }
 
@@ -160,6 +180,11 @@ impl Battle {
     /// refusing abilities do their tidying: they do not merely block a
     /// status arriving, they shed one already there. A mon that walks into
     /// the battle asleep with Insomnia is awake before it has to act.
+    ///
+    /// The same event runs after every landed strike (`eachEvent('Update')`
+    /// inside `tryMoveHit`), which is where the Leppa Berry lives: a slot
+    /// emptied by the blow that ended the battle is topped up on the spot,
+    /// not at the top of the next turn that never comes.
     pub(super) fn ability_update(&mut self, side: usize) {
         let mon = self.sides[side].mon();
         if mon.fainted() {
@@ -227,9 +252,8 @@ impl Battle {
         // A Leppa Berry is an `onUpdate` item too. It waits for a slot to
         // reach zero, then puts ten points back into the FIRST slot at zero
         // — or, failing that, the first slot short of full, which is how a
-        // Leppa handed over by Trick lands on a mon that never ran dry.
-        // (A Mimicked slot's five-point maximum is not modelled: the engine
-        // carries no per-slot maximum, so the move's own PP stands in.)
+        // Leppa handed over by Trick lands on a mon that never ran dry. Both
+        // halves read `maxpp`, which is not always the move's own PP.
         if self.sides[side].mon().item == "leppaberry" {
             let mon = self.sides[side].mon();
             let empty = mon.moves.iter().any(|m| m.pp == 0);
@@ -237,13 +261,14 @@ impl Battle {
                 .moves
                 .iter()
                 .position(|m| m.pp == 0)
-                .or_else(|| mon.moves.iter().position(|m| m.pp < m.entry.pp));
+                .or_else(|| mon.moves.iter().enumerate().position(|(i, m)| m.pp < slot_ceiling(mon, i)));
             if let (true, Some(i)) = (empty, target) {
                 let mon = self.sides[side].mon_mut();
                 mon.last_item = mon.item;
                 mon.item = "";
+                let cap = slot_ceiling(mon, i);
                 let slot = &mut mon.moves[i];
-                slot.pp = (slot.pp + 10).min(slot.entry.pp);
+                slot.pp = (slot.pp + 10).min(cap);
             }
         }
     }
@@ -278,7 +303,9 @@ impl Battle {
     }
 
     /// Eat the held berry if the residual phase finds the holder low enough.
-    pub(super) fn ripen(&mut self, side: usize, events: &mut Vec<Event>) {
+    /// `scripted` is the turn's own flag: a berry-induced confusion uses the
+    /// same clock as every other landing, 2 under a script, 2..=5 in play.
+    pub(super) fn ripen(&mut self, side: usize, scripted: bool, events: &mut Vec<Event>) {
         if self.sides[side].mon().fainted() {
             return;
         }
@@ -293,8 +320,31 @@ impl Battle {
             item::Ripe::Heal(flat) => {
                 self.heal(side, flat, events);
             }
-            item::Ripe::HealEighth => {
+            item::Ripe::HealEighth(offends) => {
                 self.heal(side, (self.sides[side].mon().max_hp / 8).max(1), events);
+                // The flavour the holder's nature lowers is the one it
+                // dislikes, and eating it comes with a muddled head. The
+                // sim's addVolatile straight to the eater: a Safeguard does
+                // not block a berry's own vapours (it spares only
+                // foe-inflicted ones), but a muddled head stays muddled:
+                // a confusion already up restarts nothing.
+                let mon = self.sides[side].mon();
+                if !mon.fainted()
+                    && mon.confusion_n == 0
+                    && !mon.nature.is_neutral()
+                    && mon.nature.effect().1 == offends
+                    && !ability::blocks_confusion(&mon.bearer())
+                {
+                    let n = if scripted {
+                        2
+                    } else {
+                        2 + self.rng.below(4) as u8
+                    };
+                    self.sides[side].mon_mut().confusion_n = n;
+                    events.push(Event::ConfusionStarted {
+                        side: side as u8 + 1,
+                    });
+                }
             }
             item::Ripe::Boost(boost) => {
                 self.boost(side, boost, 1, events);
@@ -326,20 +376,16 @@ impl Battle {
 
     /// Announce and replace one side's active if it just fainted.
     pub(super) fn announce_faint(&mut self, side: usize, events: &mut Vec<Event>) {
-        if self.sides[side].mon().fainted() {
-            if let Some((i, orig)) = self.sides[side].mon_mut().mimic_backup.take() {
-                self.sides[side].mon_mut().moves[i as usize] = orig;
-            }
-            if let Some(orig) = self.sides[side].mon_mut().transform_backup.take() {
-                self.sides[side].mon_mut().moves = orig;
-            }
+        if self.sides[side].mon().fainted() && !self.sides[side].mon().faint_announced {
+            self.sides[side].mon_mut().faint_announced = true;
+            restore_base_moves(self.sides[side].mon_mut());
             self.sides[side].mon_mut().weight_override = None;
             // A borrowed ability goes back with everything else the sim
             // clears when a mon goes down.
             if let Some(born_with) = self.sides[side].mon_mut().ability_backup.take() {
                 self.sides[side].mon_mut().ability = born_with;
             }
-            if let Some((stats, types)) = self.sides[side].mon_mut().transform_stats.take() {
+            if let Some((stats, types, hp)) = self.sides[side].mon_mut().transform_stats.take() {
                 let mon = self.sides[side].mon_mut();
                 mon.atk = stats[0];
                 mon.def = stats[1];
@@ -347,6 +393,8 @@ impl Battle {
                 mon.spd = stats[3];
                 mon.spe = stats[4];
                 mon.type_override = types;
+                mon.hidden_power = hp.0;
+                mon.hidden_power_bp = hp.1;
             }
             // A fainted trapper releases nobody on the spot: the victim's
             // volatile goes STALE and evaporates at its next residual. The
@@ -398,23 +446,20 @@ impl Battle {
             out.last_used = None;
             out.last_used_id = None;
             out.last_move_used_id = None;
-            out.last_hit_by = None;
-            out.last_hit_by_slot = None;
+            out.last_move_used_sky_type = None;
+            out.attacked_by = [None; ATTACKED_BY_LEN];
             out.last_missed = false;
-            if let Some((i, orig)) = out.mimic_backup.take() {
-                out.moves[i as usize] = orig;
-            }
-            if let Some(orig) = out.transform_backup.take() {
-                out.moves = orig;
-            }
+            restore_base_moves(out);
             out.weight_override = None;
-            if let Some((stats, types)) = out.transform_stats.take() {
+            if let Some((stats, types, hp)) = out.transform_stats.take() {
                 out.atk = stats[0];
                 out.def = stats[1];
                 out.spa = stats[2];
                 out.spd = stats[3];
                 out.spe = stats[4];
                 out.type_override = types;
+                out.hidden_power = hp.0;
+                out.hidden_power_bp = hp.1;
             }
             out.bide = None;
             out.rolling = None;
@@ -427,7 +472,6 @@ impl Battle {
             out.disable_fresh = false;
             out.disable_skip_tick = false;
             out.imprisoning = false;
-            out.imprison_fresh = false;
             out.type_override = None;
             out.cursed = false;
             out.ingrained = false;
@@ -456,7 +500,8 @@ impl Battle {
             out.uproar_ending = false;
             out.locked_move = None;
             out.acted = false;
-            out.sport = None;
+            out.mud_sport = false;
+            out.water_sport = false;
             out.sub_hp = 0;
             out.focused = false;
             out.minimized = false;
@@ -472,13 +517,6 @@ impl Battle {
             out.recharge_fresh = false;
     }
 
-    /// Send in replacements for whoever is down. The sim asks for these only
-    /// AFTER the residual phase (`fieldEvent("Residual")`, then
-    /// `checkFainted`), so a mon that faints mid-turn stays in its slot for
-    /// the rest of the turn: the other side's move finds no target, and the
-    /// residuals tick against an empty slot rather than against the
-    /// replacement. The loop repeats because Spikes can drop the incoming
-    /// mon too, and the sim just asks again.
     /// Which sides are waiting for the player to send something out, and the
     /// party slots they may legally choose. Empty when nobody is waiting.
     pub fn pending_replacements(&self) -> [Option<Vec<usize>>; 2] {
@@ -493,7 +531,14 @@ impl Battle {
         })
     }
 
-    /// Answer a pending replacement for each waiting side. Both arrivals are
+    /// Which of the pending answers are a Baton Pass's target rather than a
+    /// faint's replacement. Both are asked and answered the same way.
+    pub fn pending_pass(&self) -> [bool; 2] {
+        [0, 1].map(|side| self.awaiting_pass[side] && self.pending_replacements()[side].is_some())
+    }
+
+    /// Answer a pending replacement (or Baton Pass target) for each waiting
+    /// side. Both arrivals are
     /// PLACED before either is greeted, for the same reason the automatic
     /// path does it that way: an Intimidate on one replacement has to cow the
     /// other replacement, which is already standing there.
@@ -510,6 +555,14 @@ impl Battle {
                 continue;
             };
             self.awaiting_replacement[side] = false;
+            arrived[side] = true;
+            // A Baton Pass target: the passer is still standing there and
+            // leaves the way the pass makes it leave.
+            if self.awaiting_pass[side] {
+                self.awaiting_pass[side] = false;
+                self.baton_pass_in(side, next, events);
+                continue;
+            }
             self.sides[side].mon_mut().status = None;
             let slot_item = self.hand_slot_item_over(side);
             self.sides[side].reorder_for_switch(next);
@@ -519,7 +572,6 @@ impl Battle {
                 side: side as u8 + 1,
                 party_index: next,
             });
-            arrived[side] = true;
         }
         let first = self.faster_side(true);
         for side in [first, 1 - first] {
@@ -531,6 +583,11 @@ impl Battle {
         // An arrival can faint on the way in (Spikes), which asks the same
         // question again. Let the normal path notice it.
         self.replace_fainted(events);
+        // Then the rest of the turn the faint interrupted, unless that same
+        // question is still open (it parks again if so).
+        if let Some((rest, script)) = self.parked_turn.take() {
+            self.finish_turn(rest, script, events);
+        }
     }
 
     pub(super) fn replace_fainted(&mut self, events: &mut Vec<Event>) {
@@ -567,7 +624,8 @@ impl Battle {
                 // suites see no change. A caller that wants the player asked
                 // sets `player_picks_replacement` and answers through
                 // `send_out`; until it does, the fainted mon simply stays on
-                // the field, which is where the sim leaves it too.
+                // the field, which is where the sim leaves it too, and the
+                // rest of the turn waits (`finish_turn` parks it).
                 if self.player_picks_replacement {
                     if self.sides[side].first_healthy().is_some() {
                         self.awaiting_replacement[side] = true;
@@ -618,9 +676,16 @@ impl Battle {
 
     pub(super) fn greet(&mut self, side: usize, tidy: bool, events: &mut Vec<Event>) {
         // Truant counts the turn it arrives on, unless the battle has not
-        // started: the sim keys that off its own turn counter.
+        // started: the sim keys that off its own turn counter. Only Truant
+        // writes the clock, so a mon that arrives WITHOUT it keeps whatever
+        // a Truant of an earlier stint left behind, and a mon that picks
+        // Truant up later (Trace, Skill Swap) starts from that same stale
+        // clock, which is why a Magma Armor that inherits the ability mid-
+        // battle can loaf the very turn it takes it.
         let turn = self.turn;
-        self.sides[side].mon_mut().loafing = turn > 0;
+        if ability::truant(&self.sides[side].mon().bearer()) {
+            self.sides[side].mon_mut().loafing = turn > 0;
+        }
         {
             let mon = self.sides[side].mon_mut();
             if mon.status == Some(Status::Sleep) {
@@ -744,10 +809,14 @@ impl Battle {
     /// Announce whoever is down — target first, then the user (recoil can
     /// faint it too). Replacements are NOT sent in here: the sim only asks
     /// for one at an action boundary, so the empty slot has to survive to
-    /// the end of the current move.
+    /// the end of the current move. The volatiles that answer a Faint read
+    /// the announcement, so they fire on the same "not yet announced" test:
+    /// the sim drains its faint queue once per KO and every later call is a
+    /// no-op.
     pub(super) fn resolve_faints(&mut self, side: usize, foe: usize, events: &mut Vec<Event>) {
+        let fresh = self.sides[foe].mon().fainted() && !self.sides[foe].mon().faint_announced;
         // Destiny Bond: KO the bonded target with a move, go down with it.
-        if self.sides[foe].mon().fainted() && self.sides[foe].mon().destiny {
+        if fresh && self.sides[foe].mon().destiny {
             self.sides[side].mon_mut().hp = 0;
         }
         // Grudge: the killing move's PP drains to nothing — unless the mon
@@ -758,18 +827,64 @@ impl Battle {
         // attacker is gone and takes its PP with it. Recoil is different: the
         // target is dequeued first there, so a Double-Edge that kills its
         // user still loses its PP.
-        if self.sides[foe].mon().fainted()
-            && self.sides[foe].mon().grudged
-            && !self.self_destructed
-        {
+        if fresh && self.sides[foe].mon().grudged && !self.self_destructed {
             if let Some(slot_i) = self.sides[side].mon().last_used {
                 if let Some(ms) = self.sides[side].mon_mut().moves.get_mut(slot_i as usize) {
                     ms.pp = 0;
                 }
             }
+            // The sim's `onFaint` runs once per faint. This settles twice
+            // when a hit's tail and the action's end both look at the same
+            // faint, and a Leppa Berry can refill the slot in between, so the
+            // grudge is spent the first time.
+            self.sides[foe].mon_mut().grudged = false;
         }
         for who in [foe, side] {
             self.announce_faint(who, events);
         }
+    }
+}
+
+/// The move list a mon leaves the field with, shared by the switch and the
+/// faint. The sim answers `moveSlots = baseMoveSlots.slice()` in
+/// `clearVolatile`, and neither of the two moves that ever write here writes
+/// there: Mimic copies into `moveSlots[mimicIndex]` and Transform replaces
+/// the list outright (`transformInto`), so both borrows come off and the
+/// mon walks away with the set it started with.
+///
+/// The Transform comes off FIRST. Its copy is the whole list as it stood
+/// when the Transform landed, which is where the Mimic index was read from,
+/// so restoring the Mimic first would write a slot index belonging to the
+/// pre-Transform list into somebody else's list: a mon that transformed
+/// into a one-move Pokemon indexed three moves past the end.
+fn restore_base_moves(out: &mut Mon) {
+    if let Some(orig) = out.transform_backup.take() {
+        out.moves = orig;
+    }
+    if let Some((i, orig)) = out.mimic_backup.take() {
+        out.moves[i as usize] = orig;
+    }
+}
+
+/// The most a slot can hold: the sim's `maxpp`, which rides beside `pp` in
+/// every move slot and which only a Leppa Berry ever asks about.
+///
+/// A mon's own slot is the move's own PP. A slot a Mimic or a Transform
+/// wrote carries the era's ceiling instead, `calculatePP(move, ppUps)`,
+/// base PP times eight fifths, because that is what both of them store:
+/// `transformInto` and gen 4's Mimic (which gen 3 inherits) each write
+/// `maxpp: this.battle.calculatePP(move, this.ppUps[i] || 0)` beside the
+/// five points the copy starts with. A Sketch copy is the exception: the
+/// slot it writes is the one holding Sketch, and `ppUps` is 0 for a move
+/// the sim refuses to boost (`move.noPPBoosts || move.id === "trumpcard"`),
+/// so its ceiling stays the move's own PP.
+fn slot_ceiling(mon: &Mon, i: usize) -> u8 {
+    let slot = &mon.moves[i];
+    let copied = mon.transform_backup.is_some()
+        || matches!(mon.mimic_backup, Some((home, _)) if home as usize == i);
+    if copied {
+        (slot.entry.pp as u16 * 8 / 5) as u8
+    } else {
+        slot.entry.pp
     }
 }

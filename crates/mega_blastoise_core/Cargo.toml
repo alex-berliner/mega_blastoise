@@ -4,15 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-battle_types = { path = "../battle_types" }
 embedded-graphics = { version = "0.8", default-features = false }
-battler = { path = "../../battler/battler", default-features = false, features = [] }
-battler-data = { path = "../../battler/battler-data", default-features = false }
-gen1_battle = { path = "../gen1_battle" }
-gen3_battle = { path = "../gen3_battle" }
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-anyhow = { version = "1.0", default-features = false }
-ciborium = { version = "0.2", default-features = false }
+# The legacy Gen 3 engine, only under the `legacy_gen3` feature (G3-9
+# deletes it).
+gen3_battle = { path = "../gen3_battle", optional = true }
+# The Showdown split (docs/architecture/showdown-split-plan.md): the PS
+# server, its client and their protocol, behind `runner::ps`.
+ps_client = { path = "../ps_client" }
+ps_dex = { path = "../ps_dex" }
+ps_protocol = { path = "../ps_protocol" }
+ps_sim = { path = "../ps_sim" }
 embassy-sync = { version = "0.7", default-features = false }
 embassy-futures = "0.1"
 defmt = { version = "1.0", optional = true }
@@ -28,10 +29,27 @@ wrapmoves = []
 defmt = ["dep:defmt"]
 timing = ["dep:embassy-time", "defmt"]
 trace = ["defmt"]
+# The legacy Gen 3 engine (`gen3_battle` through `runner::gen3`), kept while
+# the UI probe's `engine=legacy` lane still runs it: the web build turns it
+# on, the firmware does not. Without it, a Gen 3 battle always plays on the
+# PS engine.
+legacy_gen3 = ["dep:gen3_battle"]
+# `transport::TextTransport`: the PS line protocol over a byte stream. Off on
+# the device (the typed `LocalTransport` needs no text).
+ps_text = ["ps_protocol/text", "ps_sim/text"]
+
+[dev-dependencies]
+# The transport tests run the same battles over the typed and the text path.
+ps_protocol = { path = "../ps_protocol", features = ["text"] }
+ps_sim = { path = "../ps_sim", features = ["text"] }
+# The text transport's test server parses `>start` / `>player` JSON.
+serde_json = "1.0"
+# `LocalTransport`'s spill buffer is a critical-section mutex; the host tests
+# need an implementation (the firmware's is embassy-rp's, the web's std's).
+critical-section = { version = "1", features = ["std"] }
 
 [build-dependencies]
 serde_json = "1.0"
-ciborium = "0.2"
 ureq = "2"
 png = "0.17"
 qrcode = { version = "0.14", default-features = false }

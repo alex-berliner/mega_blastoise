@@ -21,7 +21,7 @@ use crate::battle_log::BattleLog;
 use crate::cursor_nav::{Dir, NavOut};
 use crate::device_ui::SeatUi;
 use crate::menu::{GameOptions, Gen, Menu, MenuOut, MenuScreen};
-use gen3_battle::Ruleset;
+use crate::runner::Ruleset;
 
 /// A physical input, after the platform's debounce/hold classification.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

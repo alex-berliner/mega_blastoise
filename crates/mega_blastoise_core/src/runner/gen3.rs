@@ -1,13 +1,12 @@
 //! Drives a [`gen3_battle`] battle and narrates it as [`BoardEvent`]s.
 //!
-//! This is the Gen 3 half of the engine seam. The Gen 1 half is
-//! [`crate::runner::gen1`] and is deliberately untouched: a Gen 1 battle runs
-//! exactly the code it always ran, and picking a ruleset picks which of the
+//! This is the legacy Gen 3 half of the engine seam. Gen 1 plays on the PS
+//! engine ([`crate::runner::ps`]), and picking a ruleset picks which of the
 //! two a caller drives.
 //!
 //! Both runners own their loop, so a platform drives either the same way:
 //! hand it a battle, somewhere to read choices from, and somewhere to narrate
-//! to. [`run_battle`] here is the counterpart of [`crate::runner::gen1`]'s.
+//! to. [`run_battle`] here is the counterpart of [`crate::runner::ps`]'s.
 //!
 //! Narration pacing is deliberately absent: [`BoardEffects`] sinks already
 //! delay per event, so both engines inherit identical timing by emitting the
@@ -101,7 +100,7 @@ async fn switch_in<E: BoardEffects>(battle: &Battle, side: u8, at: &Onstage, eff
             // seat glued to it — and gluing one on broke two things at once:
             // the plate printed "Blastoise,p1", and the sprite table, which is
             // keyed by species, missed every lookup and drew nothing. Gen 1
-            // fills this field from the battler log's own `name`, which is a
+            // fills this field from the protocol's own `name`, which is a
             // bare nickname; Gen 3 now matches. The `mon:` fields on every
             // other event DO carry the suffix, because those have nowhere else
             // to say which seat they mean.
@@ -494,7 +493,10 @@ async fn narrate<E: BoardEffects>(
                 if side == 0 {
                     effects.on_event(BoardEvent::Tie).await;
                 } else {
-                    effects.on_event(BoardEvent::Win { side: Some(player_id(side)) }).await;
+                    // `win_player_num` reads the winner as "0" / "1", as the
+                    // Gen 1 runner sends it; "p1" / "p2" read as a tie.
+                    let winner = if side == 1 { "0" } else { "1" };
+                    effects.on_event(BoardEvent::Win { side: Some(winner.to_string()) }).await;
                 }
             }
         }
@@ -503,7 +505,7 @@ async fn narrate<E: BoardEffects>(
 
 /// Distil one Gen 3 seat into the generation-neutral [`SlotOptions`] the
 /// shared collector consumes. The Gen 3 counterpart of
-/// [`crate::runner::gen1::slot_options_from_request`]: parsing the engine's
+/// [`crate::runner::ps::slot_options_from_seat`]: parsing the engine's
 /// state is battle logic and lives with the engine; everything past the
 /// [`crate::battle_input::InputBus`] is generation-blind.
 ///
@@ -545,7 +547,7 @@ pub fn slot_options_for(battle: &Battle, side: u8) -> crate::choice_collect::Slo
             types: {
                 let (t1, t2) = m.species.types;
                 let mut v = alloc::vec![t1];
-                if t2 != battle_types::Type::None {
+                if t2 != gen3_battle::Type::None {
                     v.push(t2);
                 }
                 v
@@ -580,8 +582,8 @@ pub fn slot_options_for(battle: &Battle, side: u8) -> crate::choice_collect::Slo
     {
         // Mid two-turn move, rampage, roll, Bide or recharge: the engine
         // swings the lock whatever index arrives, so the seat is committed
-        // the moment the turn opens — exactly how the Gen 1 battler's
-        // `locked_into_move` reads. Offering a menu here was a small lie:
+        // the moment the turn opens, exactly how the old Gen 1
+        // engine's `locked_into_move` read. Offering a menu here was a small lie:
         // the player picked Surf and watched Tackle come out.
         s.auto = Some(crate::battle_input::format_move_choice(0));
     } else {
@@ -626,7 +628,7 @@ fn status_id(st: gen3_battle::data::Status) -> &'static str {
 
 /// The shared choice grammar, read back into an engine [`Choice`]. The
 /// collector speaks strings ("move 2" / "switch 4") because that is the Gen 1
-/// battler's own protocol; Gen 3 borrows the grammar rather than inventing a
+/// engines' own protocol; Gen 3 borrows the grammar rather than inventing a
 /// second one, and this is the whole cost of the borrowing.
 pub fn parse_choice(line: &str) -> Choice {
     let mut parts = line.split_whitespace();
@@ -687,10 +689,12 @@ pub async fn battle_loop<E: BoardEffects>(
     }
 }
 
-/// Ask whoever lost a Pokemon which one comes next. The engine leaves the
-/// fainted mon standing until it is answered, so the board keeps showing the
-/// mon that fell — its replacement's health bar does not appear before the
-/// player has chosen it.
+/// Ask whoever lost a Pokemon which one comes next, or whoever used Baton
+/// Pass which one it passes to: the engine asks both the same way, and the
+/// party picker answers both. The engine leaves the fainted mon (or the
+/// passer) standing until it is answered, so the board keeps showing it:
+/// the replacement's health bar does not appear before the player has chosen
+/// it.
 async fn replace_fainted<E: BoardEffects>(
     battle: &mut Battle,
     bus: &crate::battle_input::InputBus,
@@ -790,6 +794,7 @@ pub fn drafted_battle(seed: u64, six: bool) -> Option<Battle> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::board_event::BoardEventExt;
     use gen3_battle::{battle::Side, Invest, Mon, Nature};
 
     /// Records what the board was told, so a turn can be asserted on.
@@ -872,6 +877,62 @@ mod tests {
             sent.contains(&"Wigglytuff"),
             "the player's pick never came in: {sent:?}",
         );
+    }
+
+    /// Baton Pass asks its user's player who comes in, with the same party
+    /// picker a faint opens, and the pick is the mon that inherits the pass.
+    #[test]
+    fn a_baton_pass_prompts_the_player_for_its_target() {
+        use crate::battle_input::{InputBus, PlayerChoice};
+        use embassy_futures::select::{select, Either};
+
+        let mut passer = mon("jolteon", 100, &["batonpass"]);
+        passer.stages[0] = 2; // +2 Attack
+        let mut b = Battle::new(
+            Side::new(alloc::vec![
+                passer,
+                mon("magikarp", 50, &["splash"]),
+                mon("wigglytuff", 50, &["pound"]),
+            ]),
+            Side::new(alloc::vec![mon("slowbro", 50, &["splash"])]),
+            7,
+        );
+        b.player_picks_replacement = true;
+        let bus = InputBus::new();
+        let mut rec = Recorder::default();
+
+        // Every move prompt gets slot 0 and the pass gets the LAST party
+        // slot. The next turn's first move prompt means the answer landed.
+        let play = async {
+            let mut answered = false;
+            loop {
+                let p = bus.prompt.receive().await;
+                let choice = if p.slot.forced_switch {
+                    assert_eq!(p.player_id.as_str(), "p1", "the wrong seat was asked");
+                    answered = true;
+                    alloc::string::String::from("switch 2")
+                } else if answered {
+                    break;
+                } else {
+                    alloc::string::String::from("move 0")
+                };
+                bus.choices
+                    .send(PlayerChoice { player_id: p.player_id, choice })
+                    .await;
+            }
+        };
+        block_on(async {
+            match select(battle_loop(&mut b, &bus, &mut rec), play).await {
+                Either::First(()) | Either::Second(()) => {}
+            }
+        });
+
+        assert!(
+            rec.0.iter().any(|e| matches!(e, BoardEvent::Prompt { kind: PromptKind::ChooseSwitch, .. })),
+            "nobody was asked who the pass goes to"
+        );
+        assert_eq!(b.sides[0].active, 2);
+        assert_eq!(b.sides[0].mon().stages[0], 2, "the pick did not inherit the pass");
     }
 
     /// Nothing is put on the field until the answer arrives: the board must
@@ -1067,7 +1128,7 @@ mod tests {
     /// recharging — the engine swings the lock whatever index arrives, so the
     /// distiller auto-commits instead of drawing a menu the press cannot
     /// honour. An Encore greys everything but the encored slot. This is the
-    /// same reading the Gen 1 battler's request gives its UI, checked here
+    /// same reading a Gen 1 request gives its UI, checked here
     /// because Gen 3's first cut showed the fake menu.
     #[test]
     fn locked_and_encored_seats_distil_honestly() {
@@ -1137,7 +1198,10 @@ mod tests {
         // and fatal.
         assert!(rec.0.iter().any(|e| matches!(e, BoardEvent::SuperEffective { .. })));
         assert!(rec.0.iter().any(|e| matches!(e, BoardEvent::Faint { .. })));
-        assert!(rec.0.iter().any(|e| matches!(e, BoardEvent::Win { .. })));
+        // A win, not the tie screen.
+        assert!(rec.0.iter().any(
+            |e| matches!(e, BoardEvent::Win { side } if BoardEvent::win_player_num(side) != 0)
+        ));
         assert!(over);
     }
 

@@ -69,6 +69,14 @@ impl Chain {
     }
 }
 
+/// The sim's `Battle.modify(value, num, den)`: the fraction is taken to a
+/// numerator over 4096 and then through the chain's own rounding, which is
+/// NOT a plain floor. A quarter of 195 is 49, not the 48 an integer divide
+/// gives, and the fuzzer found that one HP on Swallow.
+pub fn modify(value: u16, numerator: u16, denominator: u16) -> u16 {
+    Chain(numerator as u32 * 4096 / denominator as u32).apply(value as u32) as u16
+}
+
 /// Everything about a mon that an ability question needs to see. Passing this
 /// rather than the whole `Mon` keeps the module free of the battle state and
 /// makes each answer a pure function of what the sim's handler actually reads.
@@ -116,9 +124,18 @@ pub fn thick_fat_cut(target: &Bearer, move_type: Type) -> bool {
 /// Hustle is NOT here. It is the one modifier in the era that does not chain
 /// — the sim's own source says so in a comment above it — so it gets its own
 /// rounding step in [`hustle_chain`].
-pub fn attack_chain(user: &Bearer, physical: bool) -> Chain {
+pub fn attack_chain(user: &Bearer, physical: bool, mate_on_field: bool) -> Chain {
     let mut chain = Chain::new();
     if !physical {
+        // Gen 3's Plus/Minus pair works off the WHOLE FIELD, not just
+        // allies: the sim's gen 3 handlers walk `getAllActive()`, every
+        // standing mon on both sides, so a Minun facing a Plusle swings
+        // half again as hard with a special move even in singles (the
+        // allies-only scan is the gen 4+ wording). Only the special stat
+        // answers; the physical chain (Huge Power and friends) is below.
+        if mate_on_field && matches!(user.ability, "plus" | "minus") {
+            chain.mul(X1_5);
+        }
         return chain;
     }
     match user.ability {

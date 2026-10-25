@@ -14,8 +14,13 @@
 # page maintains for exactly this purpose. Run it after any change to the
 # collector, the runners, or the web glue:
 #
-#   scripts/ui-probe.sh            # gen 1 (the default ruleset)
-#   scripts/ui-probe.sh --skip-build   # reuse the existing pkg/
+#   scripts/ui-probe.sh                  # both lanes, the default engine (no
+#                                        # engine= on the URL): PS for both
+#   scripts/ui-probe.sh --skip-build     # reuse the existing pkg/
+#   scripts/ui-probe.sh --engine legacy  # the legacy Gen 3 engine
+#                                        # (engine=legacy), gen 3 only: Gen 1
+#                                        # has no legacy engine any more
+#   scripts/ui-probe.sh --engine ps      # both lanes, the PS engine (engine=ps)
 #
 # Chromium: the snap at /usr/bin/chromium-browser cannot write outside $HOME;
 # the playwright build can run anywhere. Override with $CHROME.
@@ -26,7 +31,37 @@ WEB="$ROOT/crates/mega_blastoise_web"
 CHROME="${CHROME:-$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux64/chrome 2>/dev/null | head -1)}"
 [ -x "$CHROME" ] || { echo "no chromium found; set \$CHROME" >&2; exit 2; }
 
-if [[ "${1:-}" != "--skip-build" ]]; then
+SKIP_BUILD=0
+ENGINE=default
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-build) SKIP_BUILD=1 ;;
+    --engine) ENGINE="${2:?--engine needs default, legacy or ps}"; shift ;;
+    *) echo "ui-probe: unknown argument $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+# One fixed battle seed for every engine: every Gen 1 move is ported, so the
+# PS engine's teams no longer change as ports land. (7777, the lanes' old
+# seed, freezes the PS lead on turn 1, and a frozen Gen 1 mon's request
+# is a forced move, so seat 1 has nothing to commit and cancel.) Each lane
+# also names the engine it must find playing (`expect=`): the default is the
+# PS engine for both generations.
+SEED=1
+case "$ENGINE" in
+  default) LANES="gen1 gen3"; PARAM="" ;;
+  legacy) LANES="gen3"; PARAM="&engine=legacy" ;;
+  ps) LANES="gen1 gen3"; PARAM="&engine=ps" ;;
+  *) echo "ui-probe: --engine is default, legacy or ps" >&2; exit 2 ;;
+esac
+expect_for() {
+  case "$ENGINE:$1" in
+    legacy:gen3) echo legacy ;;
+    *) echo ps ;;
+  esac
+}
+
+if [[ "$SKIP_BUILD" = 0 ]]; then
   echo "building wasm (dev)..."
   (cd "$WEB" && wasm-pack build --target web --dev >/dev/null 2>&1)
 fi
@@ -80,6 +115,16 @@ try {
   await until('battle opens on the move menu', (s) =>
     s.every((x) => /BATTLE|MOVE|CHOOSE/i.test(x)), 15000);
 
+  // The engine the lane expects is the one playing (core logs the PS
+  // engine's battle start), so a lane cannot pass on the wrong engine.
+  const engine = new URLSearchParams(location.search).get('expect') ?? 'ps';
+  const psStarted = document.getElementById('log').textContent.includes('(PS engine)');
+  if (psStarted !== (engine === 'ps')) {
+    say(`FAIL expected the ${engine} engine but the PS engine ${psStarted ? 'started' : 'did not start'}`);
+    throw new Error('wrong engine');
+  }
+  say(`PASS the battle runs on the ${engine} engine`);
+
   // ── The "Both ready!" hang. Both seats commit; the turn MUST resolve and
   //    re-prompt: neither seat may still be locked-in a grace-window later.
   wasm.press_move(1, 0); wasm.press_move(2, 0);
@@ -106,17 +151,21 @@ try {
     !s.some((x) => /LOCKED_IN|WAIT_OPPONENT/.test(x)), 30000);
 
   // ── A faint must ASK. Play the battle out with both seats mashing their
-  //    first move until somebody faints; the seat that lost a mon has to be
+  //    moves until somebody faints; the seat that lost a mon has to be
   //    put on the party picker, and nothing may be sent out until it picks.
   //    The report this covers: a replacement appeared on the board, health
   //    bar full, without the player ever being offered the choice.
+  //    Each seat walks its move slots in turn (an empty slot is refused
+  //    and the next press tries the next one): a lead whose first move
+  //    does no damage, such as Hypnosis, would otherwise stall the battle.
   let sawPicker = false;
+  const presses = [0, 0];
   for (let i = 0; i < 400 && !sawPicker; i++) {
     const s = states();
     if (s.some((x) => /FORCED_SWITCH|CONCEALED_SWITCH/.test(x))) { sawPicker = true; break; }
     if (s.some((x) => /WIN/.test(x))) break;
     for (const seat of [1, 2]) {
-      if (/MOVES/.test(s[seat - 1])) wasm.press_move(seat, 0);
+      if (/MOVES/.test(s[seat - 1])) wasm.press_move(seat, presses[seat - 1]++ % 4);
     }
     await sleep(150);
   }
@@ -147,11 +196,12 @@ SERVER_PID=$!
 sleep 1
 
 FAILED=0
-for LANE in gen1 gen3; do
-  echo "── lane: $LANE ──"
+for LANE in $LANES; do
+  EXPECT=$(expect_for "$LANE")
+  echo "── lane: $LANE (engine $ENGINE: $EXPECT) ──"
   DOM=$("$CHROME" --headless=new --no-sandbox --disable-gpu \
     --virtual-time-budget=150000 --timeout=180000 \
-    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=7777&lane=$LANE" 2>/dev/null || true)
+    --dump-dom "http://127.0.0.1:8123/_probe.html?seed=$SEED&lane=$LANE$PARAM&expect=$EXPECT" 2>/dev/null || true)
   RESULT=$(echo "$DOM" | python3 -c "
 import re, sys
 m = re.search(r'<pre id=\"out\">(.*?)</pre>', sys.stdin.read(), re.S)
