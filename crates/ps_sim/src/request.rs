@@ -282,12 +282,12 @@ impl Battle {
             }
             let name = self.slot_move_name(m, slot.id);
             let mut target = request_target(self.dex.move_def(slot.id).target);
+            // `case 'curse': if (!this.hasType('Ghost')) target = 'self'`
+            // (the move's `nonGhostTarget` field before c0845f33d).
             if self.dex.move_def(slot.id).name.as_str() == "Curse" {
                 let ghost = self.get_types(m).as_slice().contains(&ps_dex::Type::Ghost);
                 if !ghost {
-                    if let Some(t) = self.dex.move_def(slot.id).non_ghost_target() {
-                        target = request_target(t);
-                    }
+                    target = request_target(ps_dex::MoveTarget::Self_);
                 }
             }
             // `disabled`: false, true or 'hidden'; no Dynamax here.

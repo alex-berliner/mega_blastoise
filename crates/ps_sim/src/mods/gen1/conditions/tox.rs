@@ -1,6 +1,6 @@
 //! Toxic: the `-status` line, Toxic's counter (the `residualdmg`
 //! volatile), the poison damage it deals and the plain poison a
-//! switch-in leaves behind.
+//! switch-out leaves behind.
 //!
 //! The toxic status keeps no state of its own: the counter lives on the
 //! Pokemon as the `residualdmg` volatile (see
@@ -8,13 +8,15 @@
 //!
 //! PS: data/mods/gen2/conditions.ts tox (line 94), inherited by
 //! data/mods/gen1/conditions.ts tox (line 126), which lowers
-//! `onAfterMoveSelfPriority` to 2.
+//! `onAfterMoveSelfPriority` to 2. Since PS 437926906 the plain poison
+//! comes from `onSwitchOut` (it was a silent `-status` line from
+//! `onSwitchIn`).
 
 use crate::effect::{EffectDef, EffectId, EventArgs, EventId, Handler};
 use crate::relay::Relay;
 use crate::state::Battle;
 use ps_dex::gen1::conditions;
-use ps_protocol::{Kw, KwFlags, Msg, Status};
+use ps_protocol::{Kw, Msg, Status};
 
 use super::{residual_damage, residualdmg_counter, residualdmg_state};
 
@@ -45,15 +47,13 @@ fn on_after_move_self(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     None
 }
 
-/// `onSwitchIn(pokemon)`: a switch-in leaves plain poison behind.
-// PS: data/mods/gen2/conditions.ts tox.onSwitchIn
-fn on_switch_in(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
+/// `onSwitchOut(pokemon)`: a switch-out leaves plain poison behind.
+// PS: data/mods/gen2/conditions.ts tox.onSwitchOut
+fn on_switch_out(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let pokemon = a.target.mon()?;
     // PS writes the status straight into the Pokemon (`pokemon.status =
-    // 'psn'`), so the tox state stays but the tox handlers stop running.
+    // 'psn'`): no line, and the bench's request shows `psn`.
     b.mon_mut(pokemon).status = conditions::PSN;
-    let mon = b.ident(pokemon);
-    b.add(Msg::SetStatus { mon, status: Status::Psn, kw: Kw::flags(KwFlags::SILENT) });
     None
 }
 
@@ -69,6 +69,6 @@ fn on_after_switch_in_self(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
 pub static DEF: EffectDef = EffectDef::new(&[
     Handler::on(EventId::Start, on_start),
     Handler::on(EventId::AfterMoveSelf, on_after_move_self).priority(2),
-    Handler::on(EventId::SwitchIn, on_switch_in),
+    Handler::on(EventId::SwitchOut, on_switch_out),
     Handler::on(EventId::AfterSwitchInSelf, on_after_switch_in_self),
 ]);

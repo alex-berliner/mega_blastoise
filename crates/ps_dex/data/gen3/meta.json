@@ -1,6 +1,7 @@
 {
  "gen": 3,
  "psVersion": "0.11.11",
+ "psCommit": "c0845f33d381402dfcb18ce324c20a94f18af075",
  "counts": {
   "species": 392,
   "moves": 370,
@@ -13,8 +14,8 @@
   "itemsWithHandlers": 60,
   "itemFunctions": 99,
   "abilitiesWithHandlers": 68,
-  "abilityFunctions": 96,
-  "handlers": 629
+  "abilityFunctions": 102,
+  "handlers": 636
  },
  "moveBools": [
   "affectsFainted",

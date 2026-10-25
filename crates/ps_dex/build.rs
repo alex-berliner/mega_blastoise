@@ -27,7 +27,7 @@ const GENS: [&str; 2] = ["gen1", "gen3"];
 const EXTRA_NONE: &str = "MoveExtra { secondaries: &[], self_effect: None, boosts: None, side_condition: ConditionId::NONE, \
     slot_condition: ConditionId::NONE, weather: ConditionId::NONE, pseudo_weather: ConditionId::NONE, \
     damage: None, multihit: None, drain: None, recoil: None, heal: None, selfdestruct: None, \
-    self_switch: None, non_ghost_target: None }";
+    self_switch: None }";
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
@@ -53,6 +53,8 @@ fn main() {
 struct GenData {
     name: String,
     gen: u8,
+    /// `psVersion`, plus `psCommit` when the pin is an upstream commit.
+    ps: String,
     species: Vec<Value>,
     moves: Vec<Value>,
     items: Vec<Value>,
@@ -83,6 +85,10 @@ impl GenData {
         GenData {
             name: gen.to_string(),
             gen: meta["gen"].as_u64().unwrap() as u8,
+            ps: match meta["psCommit"].as_str() {
+                Some(c) => format!("{} at {c}", meta["psVersion"].as_str().unwrap()),
+                None => meta["psVersion"].as_str().unwrap().to_string(),
+            },
             species: arr(read(&dir, "species.json")),
             moves: arr(read(&dir, "moves.json")),
             items: arr(read(&dir, "items.json")),
@@ -513,10 +519,6 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
             Value::String(c) if c == "copyvolatile" => "Some(SelfSwitch::CopyVolatile)",
             o => panic!("{w}: selfSwitch {o}"),
         };
-        let non_ghost = match m["nonGhostTarget"].as_str() {
-            None => "None".to_string(),
-            Some(t) => format!("Some({})", target_expr(t, &w)),
-        };
         let mut secondaries = String::from("&[");
         for (i, sec) in m["secondaries"].as_array().into_iter().flatten().enumerate() {
             let ws = format!("{w}.secondaries[{i}]");
@@ -544,7 +546,7 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
         let extra = format!(
             "MoveExtra {{ secondaries: {secondaries}, self_effect: {}, boosts: {}, side_condition: {}, slot_condition: {}, weather: {}, \
              pseudo_weather: {}, damage: {damage}, multihit: {multihit}, drain: {}, recoil: {}, heal: {}, \
-             selfdestruct: {selfdestruct}, self_switch: {self_switch}, non_ghost_target: {non_ghost} }}",
+             selfdestruct: {selfdestruct}, self_switch: {self_switch} }}",
             self_effect(g, &m["self"], names, &format!("{w}.self")),
             boosts(&m["boosts"], &w),
             g.cond(&m["sideCondition"], &w),
@@ -814,7 +816,7 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
          species: &{up}_SPECIES, moves: &{up}_MOVES, items: &{up}_ITEMS, abilities: &{up}_ABILITIES, \
          conditions: &{up}_CONDITIONS, cosmetic_formes: {up}_COSMETIC_FORMES, typechart: TypeChart {{ order: &[{order}], damage_taken: [{rows}], \
          special: &[{special}] }} }};",
-        ps = "0.11.11",
+        ps = g.ps,
         gen = g.gen,
         order = order.iter().map(|t| type_expr(t, gn)).collect::<Vec<_>>().join(", "),
         rows = rows.join(", "),

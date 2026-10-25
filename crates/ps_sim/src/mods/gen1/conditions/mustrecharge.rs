@@ -9,8 +9,8 @@
 //! No effect state.
 //!
 //! PS: data/mods/gen1/conditions.ts mustrecharge (lines 276-288), inheriting
-//! data/conditions.ts mustrecharge (lines 364-378) for `onBeforeMove` and
-//! `onLockMove`
+//! data/mods/gen4/conditions.ts mustrecharge (line 130) for `onBeforeMove`
+//! and data/conditions.ts mustrecharge (line 364) for `onLockMove`
 
 use ps_protocol::{Arg, Msg, Word};
 
@@ -19,14 +19,14 @@ use crate::relay::Relay;
 use crate::state::Battle;
 use ps_dex::gen1::conditions;
 
-/// `onBeforeMove(pokemon)`: the recharge turn.
-// PS: data/conditions.ts mustrecharge.onBeforeMove
+/// `onBeforeMove(pokemon)`: the recharge turn. Gen 4's version, base's
+/// without `pokemon.removeVolatile('truant')` (PS 104641c84).
+// PS: data/mods/gen4/conditions.ts mustrecharge.onBeforeMove
 fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let pokemon = a.target.mon()?;
     let mon = b.ident(pokemon);
     b.add(Msg::Cant { mon, reason: Arg::word(Word::Recharge), mv: None });
     b.remove_volatile(pokemon, conditions::MUSTRECHARGE);
-    // `pokemon.removeVolatile('truant')`: no gen 1 volatile has that id.
     Some(Relay::Null)
 }
 

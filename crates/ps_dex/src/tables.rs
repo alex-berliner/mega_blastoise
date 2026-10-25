@@ -258,8 +258,6 @@ pub struct MoveExtra {
     pub heal: Option<Fraction>,
     pub selfdestruct: Option<SelfDestruct>,
     pub self_switch: Option<SelfSwitch>,
-    /// `nonGhostTarget` (Curse): the target when the user is not a Ghost.
-    pub non_ghost_target: Option<MoveTarget>,
 }
 
 impl MoveExtra {
@@ -279,7 +277,6 @@ impl MoveExtra {
         heal: None,
         selfdestruct: None,
         self_switch: None,
-        non_ghost_target: None,
     };
 }
 
@@ -342,9 +339,6 @@ impl MoveDef {
     }
     pub fn self_switch(&self) -> Option<SelfSwitch> {
         self.extra().self_switch
-    }
-    pub fn non_ghost_target(&self) -> Option<MoveTarget> {
-        self.extra().non_ghost_target
     }
 }
 

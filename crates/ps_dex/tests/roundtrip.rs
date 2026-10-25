@@ -128,7 +128,6 @@ fn check_moves(gen: &str) -> usize {
         assert_eq!(m.base_move_type, ty(s(&j["baseMoveType"])), "{w} baseMoveType");
         assert_eq!(m.category.name(), s(&j["category"]), "{w} category");
         assert_eq!(m.target.id(), s(&j["target"]), "{w} target");
-        assert_eq!(m.non_ghost_target().map(|t| t.id()), j["nonGhostTarget"].as_str(), "{w} nonGhostTarget");
         assert_eq!(m.priority as i64, j["priority"].as_i64().unwrap(), "{w} priority");
         assert_eq!(m.base_power as i64, j["basePower"].as_i64().unwrap(), "{w} basePower");
         match m.accuracy() {
@@ -439,7 +438,10 @@ fn counts_match_design_section_6() {
     // (Poke Balls and evolution stones) and the `noability` ability, none
     // with a handler, so nothing to port.
     assert_eq!(tally(&GEN1), ((165, 40, 66), (9, 0, 0), (1, 0, 0), 151));
-    assert_eq!(tally(&GEN3), ((370, 129, 296), (106, 60, 99), (76, 68, 96), 392));
+    // Abilities: 96 functions at 0.11.11; the re-synced pin (c0845f33d)
+    // adds `onAfterEntryHazard` to Air Lock, Cloud Nine, Drizzle, Drought,
+    // Forecast and Sand Stream (R-1 section 4.3, G3-1).
+    assert_eq!(tally(&GEN3), ((370, 129, 296), (106, 60, 99), (76, 68, 102), 392));
 }
 
 #[test]

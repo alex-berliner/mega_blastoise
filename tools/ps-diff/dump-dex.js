@@ -32,6 +32,11 @@ const path = require('path');
 const { Dex } = require('pokemon-showdown/dist/sim');
 
 const PS_VERSION = require('pokemon-showdown/package.json').version;
+// The pin is an upstream commit (docs/architecture/showdown-resync.md
+// section 9): master's package.json still says 0.11.11, so the dump also
+// records the commit the lockfile resolved, or null for an npm release.
+const PS_RESOLVED = require('./package-lock.json').packages['node_modules/pokemon-showdown'].resolved;
+const PS_COMMIT = (/\/tar\.gz\/([0-9a-f]{40})$/.exec(PS_RESOLVED) || [null, null])[1];
 const DATA_ROOT = path.resolve(__dirname, '../../crates/ps_dex/data');
 
 // PS's toID (sim/dex-data.ts).
@@ -185,7 +190,7 @@ const MOVE_BOOLS = [
 const MOVE_FIELDS = [
 	'num', 'type', 'category', 'target', 'priority', 'basePower', 'accuracy',
 	'pp', 'critRatio', 'damage', 'multihit', 'drain', 'recoil', 'heal',
-	'selfdestruct', 'selfSwitch', 'nonGhostTarget', 'volatileStatus',
+	'selfdestruct', 'selfSwitch', 'volatileStatus',
 	'sideCondition', 'slotCondition', 'weather', 'pseudoWeather', 'status',
 	'boosts', 'secondary', 'secondaries', 'self', 'condition', 'flags',
 	'placeholderFor', 'baseMoveType', 'name', 'id',
@@ -292,7 +297,6 @@ function dumpMove(key, move) {
 		baseMoveType: move.baseMoveType,
 		category: move.category,
 		target: move.target,
-		nonGhostTarget: strOrNull(move.nonGhostTarget, where),
 		priority: move.priority,
 		basePower: move.basePower,
 		accuracy: move.accuracy,
@@ -523,7 +527,7 @@ function dumpGen(gen) {
 	if (!same(items, dex.items.all().filter(standard))) fail(gen, 'items order');
 	if (!same(abilities, dex.abilities.all().filter(standard))) fail(gen, 'abilities order');
 
-	const out = { gen: dex.gen, psVersion: PS_VERSION };
+	const out = { gen: dex.gen, psVersion: PS_VERSION, psCommit: PS_COMMIT };
 	out.species = species.map(([k, s]) => dumpSpecies(k, s));
 	out.moves = moves.map(([k, m]) => dumpMove(k, m));
 	out.items = items.map(([k, i]) => dumpItem(k, i));
@@ -607,7 +611,7 @@ function writeGen(gen) {
 		'abilities.json': dump.abilities,
 		'conditions.json': dump.conditions,
 		'typechart.json': dump.typechart,
-		'meta.json': { gen: dump.gen, psVersion: dump.psVersion, counts: dump.counts, moveBools: MOVE_BOOLS },
+		'meta.json': { gen: dump.gen, psVersion: dump.psVersion, psCommit: dump.psCommit, counts: dump.counts, moveBools: MOVE_BOOLS },
 	};
 	// One entry per line: small, and a re-dump diffs entry by entry.
 	const format = value => (Array.isArray(value)
