@@ -7,7 +7,7 @@ tagged worktree; Alex adds the JLC order number and the file JLC returns. `check
 reads the fields below by their exact names: keep them as `- Name: value` lines. It checks
 that every ID named here exists, that a bench result covering this release names its fab zip
 sha256, and that two release records of one board with different BOMs carry different
-BOARD_REVs (a BOM-only change bumps the strap R48-R51).
+BOARD_REVs (a BOM-only change bumps BOARD_REV in design.py, printed on the silkscreen).
 
 ## Identity
 
@@ -18,7 +18,7 @@ BOARD_REVs (a BOM-only change bumps the strap R48-R51).
 - Branch:
 - Commit (full hash):
 - Tag: `rel/<board>-r<rev>-<phase>` (annotated, on the commit above)
-- Design baseline: the git blob hashes of board/design.py, board/placement.py and case/case.scad at the commit above (README.md's baseline must equal them)
+- Design baseline: the git object hashes of every design path at the commit above (design.py, placement.py, board/lib, battler.kicad_pcb, board/tools/last_route.ses, build_pcb.py, route.py, silk.py, fab.py, case.scad); README.md's baseline must equal them
 - Date ordered:
 - JLC order number:
 - JLC capability page date: (the dated limits VER-17 checked)
@@ -51,8 +51,8 @@ VER-28's screenshots must match each line.
 | Min hole | 0.3 mm | no small-hole fee (REQ-FAB-04) |
 | Via tenting | | |
 | Colour | | |
-| Order number | 'Specify a location' (the JLCJLCJLCJLC marker on B.SilkS by the REV text) | never on a comb or the REV text (DF-125) |
-| Edge rails | no (or routed removal if JLC insists for J5/J6 at 0.12 mm) | a V-cut ridge binds in the USB tab slot |
+| Order number | 'Specify a location' (the JLCJLCJLCJLC marker on B.SilkS by the BOARD_REV text) | never on a comb, a dome pad or the BOARD_REV text (DF-125) |
+| Edge rails | no (or routed removal if JLC insists for J5 at the left edge) | a V-cut ridge binds in the USB tab slot |
 | E-test | against the IPC-D-356 netlist with net ties merged, or none | DF-126 |
 | Confirm production file | yes | see the CPL before placement |
 | PCBA type and side | Economic, top side | |
@@ -73,33 +73,38 @@ These must arrive as designed or the order stops. Pre-ordered or consigned parts
 
 | Designator | Part | LCSC | Why it cannot change | Pre-ordered or consigned |
 |---|---|---|---|---|
-| U4 | RP2354B (2 MB flash inside) | C39843328 | an RP2350B has no flash; another package does not fit | |
-| L2 | Abracon AOTA-B201610S3R3-101-T | C42411119 | the RP2350 hardware guide names this inductor for the core switcher; its polarity dot matters | |
-| U2 | TP4056-42-ESOP8 | C16581 | the -42 variant sets 4.2 V; other variants overcharge (DF-01) | |
-| U3 | ME6211C33M5G-N | C82942 | another output voltage destroys the chip at first power (DF-29) | |
-| U1 | SRV05-4.TCT | C13612 | the JLC footprint orientation is settled for this part only (DF-68) | |
+| U4 | RP2354B (2 MB flash inside) | C39843328 | an RP2350B has no flash; another package does not fit (DF-69); out at JLC and LCSC on 2026-10-21 | pre-order or consign (PLAN.md decision D2) |
+| L2 | Abracon AOTA-B201610S3R3-101-T | C42411119 | the RP2350 hardware guide names this inductor for the core switcher; its polarity dot matters (DF-93); out on 2026-10-21 | pre-order or consign (D2) |
+| U2 | BQ24073RGTR | C15220 | a BQ24075 puts up to 5.5 V on VSYS, a BQ24079 charges to 4.1 V, a BQ24072/74 differs on pin 15 and the timers (DF-144) | |
+| U3 | RT9013-33GB | C47773 | another output voltage of the family (1.2-3.3 V) runs the chip low or puts the panel over its VCI (DF-155) | |
+| U1 | SRV05-4.TCT | C13612 | the JLC footprint orientation is settled for this part only: KiCad's SOT-23-6 turned 180 degrees (DF-68) | |
+| U8, U9 | SN74HC165PWR | C43420 | a 74HCT165 wants 4.5-5.5 V and misreads at 3.3 V (DF-160) | |
+| TH1 | SDNT1005X103F3950FTF (10k, B3950, 1%) | C95939 | its B value sets the charge window (3.5-47.2 C); a fixed 10k in its place disables the temperature pause (DF-146, DF-147) | |
 | D2 | BAT54C,215 | C37704 | BAT54A/S/single share the package and break the latch (DF-20) | |
 | J3 | FH12-50S-0.5SH(55) | C202116 | bottom contact; a top-contact part does not meet the FPC (DF-58) | |
-| TH1 | NCP15XH103F03RC | C77131 | the B value sets the charge temperature window (DF-05) | |
+| J2, J4 | Molex 53261-0271 | C177225 | the cell's and the speaker's PicoBlade plugs must latch in it (DF-113) | |
+| J5 | SM03B-SRSS-TB(LF)(SN) | C160403 | the Megastar clone (C7430445) has another land pattern and is taller (DF-64) | |
+| X1 | ABM8-272-T3 | C20625731 | Raspberry Pi's core layout and its 15 pF load caps are drawn for it (DF-92) | |
 
 ## Case
 
-The printed case is part of the release: fit, hook strength and the lid over J2 depend on
-how it is printed (VER-173). VER-48 and VER-92 evidence name this section's STL hashes.
+The printed case is part of the release: fit, hook strength, the arms' laps and the screws'
+hold depend on how it is printed (VER-173). VER-48 and VER-92 evidence name this section's STL hashes.
 
 - case.scad commit:
 - Case rev (embossed inside the tub):
 - Material and brand:
 - Printer:
-- Slicer profile: layer height, walls, infill, the 100% modifier over J2
+- Slicer profile: layer height, walls, infill, the overhang the parts were exported at (45 or 60: case/print/case_45_60.zip)
 - Panel tape part number:
-- Screws: M2 x <length> (VER-147)
+- Screws: M2 x <length> in the island's pilots, M2 x <length> in the decks' (VER-147)
 
 | Part | File | sha256 |
 |---|---|---|
 | tub | | |
-| lid | | |
-| deck inserts | | |
+| top (the island) | | |
+| deck (printed twice) | | |
+| build bars | | |
 
 ## Gate results
 

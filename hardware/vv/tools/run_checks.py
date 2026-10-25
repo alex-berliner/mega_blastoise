@@ -13,7 +13,8 @@ covered files have uncommitted changes: evidence describes a commit, so commit f
 
 Only quick, read-only checks belong here. The long pipelines (route.py, check_buttons.py,
 board/sim/, the fit kit, case/export.py --stl) keep a hand-run evidence file with the same
-header. Add a check here once its script exists (check_bom_cpl, check_fab_content, ...).
+header. Add a check here once its script exists (check_bom_cpl, check_fab_content, ...). A
+check that FAILs is recorded as FAIL with its evidence: a finding the order gate shows.
 
 Python 3 standard library only.
 """
@@ -33,29 +34,7 @@ import check_trace as ct  # noqa: E402
 ROOT = ct.ROOT
 REG = os.path.join(ct.VV, "verification.csv")
 
-INRUSH = r"""
-import re, sys
-sys.path.insert(0, 'hardware/ref_design/board')
-import design
-UNIT = {'p': 1e-12, 'n': 1e-9, 'u': 1e-6}
-def farads(v):
-    m = re.match(r'([\d.]+)([pnu])', v)
-    return float(m.group(1)) * UNIT[m.group(2)]
-caps = {p['ref']: (p['pins'], farads(p['value'])) for p in design.PARTS if p['lib'] == 'Device:C' and p['bom']}
-vbus = sum(c for pins, c in caps.values() if set(pins.values()) & {'VBUS', 'VBUS_C1'})
-# with no cell, D5 charges VSYS and, through JP3 (bridged), AMP_VDD at plug-in
-vsys = sum(c for pins, c in caps.values() if set(pins.values()) & {'VSYS', 'AMP_VDD'})
-q = vbus * 5.0 + vsys * 4.6
-print(f'VBUS capacitance {vbus * 1e6:.1f} uF (limit 10 uF): {vbus * 5e6:.0f} uC at 5.0 V')
-print(f'VSYS + AMP_VDD capacitance {vsys * 1e6:.1f} uF: {vsys * 4.6e6:.0f} uC at 4.6 V through D5')
-print(f'plug-in charge with no cell {q * 1e6:.0f} uC (USB 2.0 cl. 7.2.4.1: 50 uC)')
-req = open('hardware/vv/requirements.md').read()
-blk = req[req.index('### REQ-PWR-13:'):]
-blk = blk[:blk.index('\n### ', 5)]
-quoted = f'{q * 1e6:.0f} uC' in blk
-print('REQ-PWR-13 carries the deviation with this number:', quoted)
-sys.exit(0 if vbus <= 10e-6 * 1.001 and quoted else 1)
-"""
+DN = "hardware/vv/tools/design_numbers.py"
 
 # VER id: (evidence name, command, uses kicad-cli)
 CHECKS = {
@@ -68,7 +47,19 @@ CHECKS = {
                                     "hardware/ref_design/board/lib/battler.pretty/DSL_button_4ring.kicad_mod"], False),
     "VER-10": ("check_contact_fp", ["python3", "hardware/membrane/tools/check_contact_fp.py",
                                     "hardware/prod_board/prod_board/prod.pretty/DSL_button_4ring.kicad_mod"], False),
-    "VER-99": ("inrush", ["python3", "-c", INRUSH], False),
+    # the pre-order numbers (design_numbers.py); pcbnew ones record KiCad's version
+    "VER-20": ("swell", ["python3", DN, "swell"], False),
+    "VER-99": ("inrush", ["python3", DN, "inrush"], False),
+    "VER-114": ("holes", ["python3", DN, "holes"], True),
+    "VER-131": ("drill", ["python3", DN, "drill"], True),
+    "VER-137": ("backlight", ["python3", DN, "backlight"], False),
+    "VER-138": ("cutoff", ["python3", DN, "cutoff"], False),
+    "VER-142": ("mlcc", ["python3", DN, "mlcc"], True),
+    "VER-147": ("screws", ["python3", DN, "screws"], False),
+    "VER-164": ("th1", ["python3", DN, "th1"], False),
+    "VER-167": ("bom", ["python3", DN, "bom"], False),
+    "VER-176": ("cpl", ["python3", DN, "cpl"], True),
+    "VER-177": ("vbus", ["python3", DN, "vbus"], False),
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
 

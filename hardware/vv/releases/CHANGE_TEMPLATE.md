@@ -7,15 +7,16 @@ fixes need no record.
 
 `check_trace.py` reads two fields: the commits on the `- Commit(s):` line, and the VER ids in
 the "What to re-run" section. Once a release record exists, every commit after it that
-touches board/design.py, board/placement.py, board/lib/ or case/case.scad must be named on
-some change record's Commit(s) line, or every gate fails (R6). A bench result on built units
+touches the design (board/design.py, board/placement.py, board/lib/, battler.kicad_pcb,
+board/tools/last_route.ses, build_pcb.py, route.py, silk.py, fab.py or case/case.scad) must be
+named on some change record's Commit(s) line, or every gate fails (R6). A bench result on built units
 (covers `release:REL-...`) goes stale only when a change record made after it names the
 check under "What to re-run".
 
 A BOM-only change (a resistor value, a part for stock) still bumps BOARD_REV in design.py,
 so the next release record differs from the last (check_trace refuses the same BOARD_REV on
-a different BOM). If the change moves design.py, placement.py or case.scad, update README's
-design baseline in the same commit.
+a different BOM). If the change moves any design path, update README's design baseline in
+the same commit: the default mode fails until it matches (DEF-47).
 
 - Date:
 - Author:

@@ -16,7 +16,10 @@ defects: they go in hardware/vv/evidence/findings.csv (VER-110). A finding seen 
 becomes a DEF here.
 
 Seeded 2026-10-24 from the git log under `hardware/ref_design` (this branch, and three
-commits on other branches where named) and from `docs/design_review.md` ("Found and fixed").
+commits on other branches where named) and from `docs/design_review.md` ("Found and fixed");
+re-seeded 2026-10-25 for 684a609. A defect whose part or function left the design is RETIRED
+with the commit that removed it: it keeps its ID and history, and the DVT gate counts it as
+closed. RETIRED is not a way to close a defect whose part is still on the board.
 
 ### DEF-01: USB ESD array's reference on VBUS back-fed VBUS
 - Found: independent model audit, round 1, design phase before any order (4495595, 2026-09-25)
@@ -43,7 +46,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: no transient simulation of the power path at the time.
 - Check added or changed: the ODE simulation behind design_review.md (not committed: VER-11); VER-70 on the real board.
 - Updated: REQ-PWR-05, REQ-PWR-06, DF-24
-- Status: FIXED (R38 10k to 1k); VER-11 not in the repo, VER-70 not run
+- Status: RETIRED in 2d1124d: Q2, D7 and R38's old role left with the TP4056's load sharing; the BQ24073 joins OUT to BAT with no hand-over gap. VER-11 retired with it; VER-70 measures the unplug
 
 ### DEF-04: 3V3 fell under the flash's 2.97 V on most unplugs
 - Found: Fable and Opus debate, design phase (e565907, 2026-09-26)
@@ -52,7 +55,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: as DEF-03.
 - Check added or changed: VER-11 (not committed), VER-70 (not run).
 - Updated: REQ-PWR-05, DF-15, DF-34
-- Status: FIXED (D7 B5819W across Q2); the 3.135 V question on VREG_AVDD and USB_OTP_VDD is still open (DF-34)
+- Status: RETIRED in 2d1124d: as DEF-03; 3V3 through the unplug is now REQ-PWR-05 (3.135 V, VER-70)
 
 ### DEF-05: Hot plug rang VSYS over the ME6211's 6.5 V
 - Found: Fable and Opus debate, design phase (e565907)
@@ -61,7 +64,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: no hot-plug simulation before the debate.
 - Check added or changed: the hot-plug ODE (not committed: VER-12); VER-71 on the real board.
 - Updated: REQ-PWR-02, DF-39
-- Status: FIXED (R41 2.2 ohm in series with C1); VER-12 not in the repo
+- Status: RETIRED in 2d1124d: VSYS is the BQ24073's regulated OUT (4.3-4.5 V), no longer VBUS through D5; the ME6211 left in 1fd0956. The plug-in ring now meets U2's IN (28 V absolute) and the enables: VER-12, VER-71
 
 ### DEF-06: VSYS rang over the FM8002A's 6.0 V, and bring-up still checks 6.5 V
 - Found: validation checklist, design phase (4c4d846, 2026-10-05); the stale bring-up limit found while seeding this register (2026-10-24)
@@ -70,7 +73,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: no list of every part on each rail with its lowest absolute maximum; procedures are prose.
 - Check added or changed: VER-71's pass limit is now VSYS <= 5.7 V and VBUS <= 7.7 V (REQ-PWR-02 from REQ-PWR-14's transient rule, F-8); VER-31 (ratings per rail) and VER-36's lowest-maximum-per-rail table (not built); VER-161 checks bringup.md's limits against that table.
 - Updated: REQ-PWR-02, REQ-PWR-14, DF-41
-- Status: FIXED (R47); bringup.md 5.6 still says 6.5 V and must say 5.7 V (also in DEF-21)
+- Status: RETIRED in 2d1124d: VSYS no longer follows VBUS (as DEF-05), so U7 sees at most 4.5 V; bringup.md 5.6's text is DEF-21's
 
 ### DEF-07: J6 TX and RX swapped against the Debug Probe
 - Found: datasheet pin review (check_pins.py, pin_review/j6.json), design phase (4c4d846, 2026-10-05)
@@ -79,7 +82,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: ERC, netlist and DRC trust design.py's pin numbers.
 - Check added or changed: VER-02 (check_pins.py fails when a reviewed pin's net changes).
 - Updated: REQ-MCU-04, DF-63
-- Status: CLOSED (VER-02 PASS 2026-10-24). Note: j6.json's issue text still describes the old mismatch (DEF-21).
+- Status: FIXED (VER-02 passed 2026-10-24 at 76955d2; closes again when VER-02 re-runs at 684a609). J6 itself left in 86bf694.
 
 ### DEF-08: USB series resistors were 22 ohm; the RP2350 requires 27
 - Found: datasheet pin review (check_pins.py, pin_review/u4.json pins 66 and 67), design phase (4c4d846)
@@ -88,7 +91,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: values were never checked against a datasheet requirement before the pin review.
 - Check added or changed: VER-02 (passives.json checks each resistor's value and LCSC number). The stale comments are DEF-21's.
 - Updated: REQ-MCU-02
-- Status: CLOSED (VER-02 PASS 2026-10-24). Note: design_review.md, pinmap.md and design.py's comment above R21 still say 22 ohm (DEF-21).
+- Status: FIXED (VER-02 passed 2026-10-24 at 76955d2; closes again when VER-02 re-runs at 684a609)
 
 ### DEF-09: The ME6211's CE could rise above its VIN at a live plug-in
 - Found: datasheet pin review (pin_review/u3.json), design phase (4c4d846)
@@ -97,7 +100,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: no transient check of pin-to-pin limits.
 - Check added or changed: VER-72 (scope PWR_EN - VSYS at plug-in; not run).
 - Updated: REQ-PWR-03, DF-30
-- Status: FIXED (C47 100 nF slows PWR_EN to about 1 ms); VER-72 not run
+- Status: RETIRED in 1fd0956: the RT9013's EN is 6 V absolute whatever VIN is; the enable's limit at a faulty source is DEF-50
 
 ### DEF-10: PWR_HOLD had no external pull-down (RP2350-E9)
 - Found: validation plan (#178), design phase (2026-10-05; fixed in 4c4d846)
@@ -115,7 +118,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: no requirement tied the charge current to the cell; the cell's spec sheet was never obtained.
 - Check added or changed: VER-37 (cell spec sheet; not run); VER-160 (cell.json and an assert that recomputes the limit when the cell or R5 changes; not built: it would have failed at 950afcf and 226bbb6); VER-66 (charge current per unit; not run).
 - Updated: REQ-BAT-02, DF-07
-- Status: FIXED (R5 3.3k, 333-364 mA); the cell's own limit is still unknown
+- Status: FIXED (R5 3.3k: 333-364 mA on the TP4056, 242-295 mA on the BQ24073 since 2d1124d); the cell's own limit is still unknown
 
 ### DEF-12: AP3156 backlight charge pump out of stock
 - Found: stock check before ordering (b7a6238, 2026-10-07)
@@ -141,7 +144,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Root cause: rotation offsets between KiCad and JLC footprints are checked by eye in JLC's preview, and only on order day.
 - Why missed: there is no rotation table and no dry run has been done.
 - Check added or changed: VER-29 (rotation table from the kicad-jlcpcb-tools plugin's corrections, applied to fab.py's CPL; not built); VER-28 (dry run with screenshots; not run).
-- Updated: REQ-FAB-07.R, DF-67, DF-68
+- Updated: REQ-FAB-07.R, DF-67, DF-68 (U1 is Semtech's C13612 again since 1fd0956; assembly.md says JLC's footprint is KiCad's turned 180 degrees)
 - Status: OPEN (FIXED when VER-29's table corrects the CPL; CLOSED on VER-28's screenshot of U1)
 
 ### DEF-15: First PLA print: hooks snapped, lid tight, pins bound
@@ -196,15 +199,15 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: no connector-access keep-out.
 - Check added or changed: VER-165 (connector mouth keep-outs in check_fit; not built).
 - Updated: REQ-MCU-04, REQ-MEC-11
-- Status: FIXED (J6 turned 180 degrees); VER-165 not built
+- Status: RETIRED in 86bf694: J6 left; connector access for J1, J2, J4 and J5 is VER-165 (REQ-MEC-11)
 
 ### DEF-21: Docs disagree with the design
 - Found: while seeding this register (2026-10-24, VER-39); some of these are fixed on other branches (67e3d13), not here
-- Symptom: (a) bringup.md 6.2-6.3 and pinmap.md "Power control" call seat 1's Y the power button (Start since 2026-10-19). (b) design_review.md, pinmap.md and design.py's comment above R21/R22 say 22 ohm; the parts are 27 ohm. (c) bringup.md step 0 expects TP1 above about 1 kohm (R38 1k in parallel with the TEMP divider and the D5/D6 paths reads below that) and one body-diode drop from TP3 to TP2 (D7 in parallel reads 0.15-0.35 V). (d) bringup.md 5.6 passes VSYS to 6.5 V (U7's limit is 6.0 V). (e) README says the caps stand 1.3 mm proud; case.scad has cap_proud = 1.85. (f) assembly.md's polarised-part list leaves out D7. (g) assembly.md 3.3 says "JP1 and JP2 come bridged"; there are five jumpers. (h) pin_review/panel.json pin 10 names a "C44 DNP spare" that design.py does not have; j6.json and u4.json (pins 66, 67) still describe the pre-fix mismatches. (i) design_review.md "Checks run" says 157 parts and 124 nets; today's netlist has 173 parts and 127 nets (VER-01). (j) PLAN.md says the TP4056 runs at 500 mA (it is 333-364 mA). (k) The cell plug's hole: PLAN.md 5.5 x 4.5 mm, design_review.md a 5 x 2.3 mm slot, assembly.md 7.2 x 5.7 mm. (l) datasheets/SOURCES.md points me6211.pdf at C235316, not the placed C82942. Found in the two-model review (2026-10-24): (m) design.py lines 349-350 still say "22 ohm ... fine for full-speed USB" above R21/R22 = 27 (part of b). (n) bom.md buys M2 x 8 screws (DEF-31). (o) bom.md says the Start/Select strip is not used (DEF-42). (p) pinmap.md calibrates the VBAT gain on the first CHG_DONE_N edge (DEF-40). (q) assembly.md mates the cell before the FPC and solders the speaker with the cell in the tub (DEF-41). (r) bringup.md step 1 has no no-cell charge-path screen (VER-133) and step 5's cell-emulation steps cannot hold 3.50 V with USB in (DEF-46).
+- Symptom: re-checked at 684a609 (2026-10-25). Still true or new: (a) bringup.md step 0 expects one body-diode drop from Q2 and TP1 above about 1 kohm; Q2 is gone and R38 is 10k (VER-53 and VER-52 hold the new limits). (b) bringup.md lists TP7 as LS_GATE; it is CHG_TEMP, the BQ24073's TS node. (c) bringup.md steps 1, 2.3, 5.1-5.6 describe the TP4056: D5 feeding VSYS, CHG_DONE_N, 333-364 mA by R5, the TEMP pin at 0.63 x VBUS, D7 for 1.5-3.3 ms at the unplug, VBUS under 8 V for the TP4056; step 4a puts TH1 left of J3. (d) bringup.md 6.2-6.3 still call seat 1's Y the power button (both Starts since 2d1124d). (e) assembly.md section 3 says to look over the TP4056's pad and that 'JP1 and JP2 come bridged' (five jumpers); section 1's polarised list names the TP4056, AO3401A and D5, D6. (f) bom.md: TP4056 at $0.17 among the priciest parts, M2 x 8 screws (case.scad: M2 x 6), 'the Start/Select strip isn't used' and no domes or Start/Select caps (DEF-42), 'Case: tub and lid' and 47 cm3, 118 placements and 49 part numbers from before the shift registers. (g) hardware/ref_design/README.md's first paragraph says the cell lies under the board (it sits in the board's hole since 2026-10-21). (h) pin_review/panel.json and u6.json still name the ME6211 and the 3.5in panel's 124 mV full scale. (i) docs/pinmap.md calibrates the VBAT gain at the end of a charge (DEF-40, DF-117). (j) assembly.md opens the case with the cell still plugged into J2 (DF-169). Items (a)-(r) of 2026-10-24 that concerned the TP4056, ME6211, D7, J6 or the 3.5in panel left with those parts.
 - Root cause: docs repeat numbers from design.py and case.scad by hand; nothing compares them.
 - Why missed: no doc check; reviews read the docs as truth.
 - Check added or changed: VER-39 (stale-doc sweep, FAIL 2026-10-24); VER-161 (check_claims.py: the numbers and lists compared with design.py, case.scad and pin_review; not built) is the real fix.
-- Updated: REQ-TST-01, DF-14, DF-41
+- Updated: REQ-TST-01, DF-102, DF-169
 - Status: OPEN
 
 ### DEF-22: The validation plan's statuses went stale
@@ -245,11 +248,11 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 
 ### DEF-26: The datasheet gate passes with open questions in it
 - Found: while seeding this register (2026-10-24)
-- Symptom: check_pins.py passes while the pin reviews hold open questions and unknown ratings: VREG_AVDD and USB_OTP_VDD's 3.135 V minimum against the 2.97 V unplug target (u4.json pins 61, 68), the missing second 4.7 uF on +1V1 (pin 10), the unknown 3V3 budget and CE transient (u3.json), D5's surge (d5.json), R47's surge (r47.json), the TP4056's BAT absolute maximum (u2.json).
+- Symptom: check_pins.py passes while the pin reviews hold findings it never reads: panel.json's VCI and VDDI (ok false: 3V3 up to 3.366 V against 3.3 V), u4.json pin 58 (GPIO47 above IOVDD when off, 'WAIVED' by the design session in the review file, not by Alex), the missing second 4.7 uF on +1V1 (pin 10), and ratings text that still names parts that left (u6.json: ME6211). The BQ24073's TS tolerances, VBAT(REG), pre-charge and termination limits are not in u2.json at all, though VER-32, VER-134 and VER-138 need them.
 - Root cause: check_pins.py fails only on a pin with ok false; it never reads the ratings, and "OPEN QUESTION" text in an ok true entry is invisible to it.
 - Why missed: the gate was written to catch net changes, not unresolved findings.
 - Check added or changed: VER-36 (read both rating schemas, what/limit and param/ds; fail on ok false or null without a waiver, on open-question text, on a passive rated under 1.25 x its net; not built). Its acceptance test: it must fail today on 9 entries, panel.json's VCI and VDDI (ok false) among them.
-- Updated: REQ-FAB-02, REQ-PWR-05, REQ-PWR-15, REQ-MCU-09, DF-31, DF-34, DF-94
+- Updated: REQ-FAB-02, REQ-PWR-14, REQ-MCU-09, DF-94, DF-95, DF-96
 - Status: OPEN
 
 ### DEF-27: check_fit guesses part heights silently
@@ -263,10 +266,10 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 
 ### DEF-28: Design analyses are not in the repo
 - Found: while seeding this register (2026-10-24)
-- Symptom: the unplug and hot-plug ODEs, the copper-resistance solves and the audio filter run are quoted in design_review.md and validation_plan.md, but no script for them is committed, so nobody can re-run them after a change.
+- Symptom: the hot-plug analysis at U2's IN, the copper-resistance solves and the audio filter run are quoted in design_review.md and validation_plan.md, but no script for them is committed; the backlight sim that is committed runs for the 3.5in panel (DEF-45). Since 2026-10-25 the pre-order numbers this register quotes (inrush, backlight worst case, cutoff, screws, MLCC keep-out, TH1, CPL, drill files, VBUS fault reach, BOM coverage, holes, swelling) come from hardware/vv/tools/design_numbers.py.
 - Root cause: analyses run in scratch sessions; only their conclusions were kept.
 - Why missed: no rule that a quoted number needs its script in the repo.
-- Check added or changed: VER-11, VER-12, VER-13, VER-100 carry them as NOT_BUILT; the README's evidence rule, now enforced: a method A PASS needs a saved output under evidence/ whose header names its commit, tools and result. The backlight sim that is in the repo hard-codes its values (DEF-45).
+- Check added or changed: VER-12, VER-13, VER-100 carry the missing ones as NOT_BUILT; VER-99, VER-114, VER-131, VER-137, VER-138, VER-142, VER-147, VER-164, VER-167, VER-176, VER-177 and VER-20 (in part) now run design_numbers.py through run_checks.py; the README's evidence rule: an analysis or test PASS needs a saved output under evidence/ whose header names its commit, tools and result.
 - Updated: REQ-PWR-02, REQ-PWR-05, REQ-AUD-03
 - Status: OPEN
 
@@ -281,43 +284,43 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 
 ### DEF-30: Which design is the order candidate is not recorded
 - Found: while seeding this register (2026-10-24)
-- Symptom: this branch (vv-plan at 76955d2, the same as local main) is REF-A with the TP4056, ME6211 and the 3.5in ER-TFT035IPS-6. origin/main (56933a5) has moved on: BQ24073 charger, RT9013 LDO, 2.4in ER-TFT024IPS-3 panel, 74HC165 button shift registers, a plug-in speaker. Every check and requirement here describes 76955d2.
+- Symptom: the board to order is hardware/ref_design at 684a609 (branch ref-design-island-45, 2026-10-24), per the 2026-10-25 brief; this register was re-seeded for it and README's design baseline names its files. No release record names it yet, and another session may still commit to ref-design-island-45.
 - Root cause: no release record names the commit being ordered.
 - Why missed: no configuration control before this register.
 - Check added or changed: VER-42 (release record: tag, commit, fab zip hash; not run); check_trace.py's rule R7 fails any gate when HEAD's design files differ from README's design baseline ("gate evaluated against a design it does not describe", F-1); evidence goes stale when HEAD moves past changes it covers, or its commit is not an ancestor of HEAD.
 - Updated: REQ-FAB-08, DF-76
-- Status: OPEN (Alex to name the order candidate)
+- Status: OPEN (the release record names 684a609 or a later commit with a change record; R7 and the default mode fail on anything after it)
 
 ### DEF-31: The case screws engage 1.4 mm of the lid's pilots
 - Found: two-model review (O-52), 2026-10-24, from case.scad
-- Symptom: the counterbore puts the head's face at z = 1.0 mm and the board top is at 7.6 mm, so an M2 x 8 ends at 9.0 mm: about 3.5 turns in the lid's 1.6 mm pilot out of the 5.0 mm it offers. Self-tapping screws in printed PETG want 4-5 mm.
+- Symptom: since the case got 3.8 mm thinner (2026-10-22) the screws are M2 x 6 from a 1 mm counterbore: the tip at z 7.0, 3.2 mm of thread above the board (1.6 x d) in the island's 4.95 mm pilots and the decks' 3.30 mm ones. Self-tapping screws in printed plastic want 4-5 mm. bom.md still buys M2 x 8, which would run past the decks' pilots.
 - Root cause: the stack changed and the fastener and pilot were not recomputed (DEF-19's class).
 - Why missed: no assert ties the screw length to the stack; bom.md's "M2 x 8" is prose.
-- Check added or changed: VER-147 (screw asserts; not built); VER-92 counts stripped bosses after 20 cycles at the chosen length.
+- Check added or changed: VER-147 (design_numbers.py screws: FAIL at 3.2 mm); VER-92 counts stripped bosses after 20 cycles.
 - Updated: REQ-MEC-09, DF-119
-- Status: OPEN (M2 x 11 engages 4.4 mm and ends 0.6 mm short of the pilot's end)
+- Status: OPEN (M2 x 7 in the island's four pilots engages 4.2 mm; the decks' pilots cap at 3.3 mm: PLAN.md decision D18)
 
 ### DEF-32: The drill file mixes plated and unplated holes
 - Found: two-model review (O-14), 2026-10-24, from a scratch export with fab.py's own kicad-cli arguments
-- Symptom: one battler.drl, 'TF.FileFunction,MixedPlating', holds the 0.30 mm vias and pad holes, J1's 0.6 mm plated slots, J1's two 0.65 mm NPTH pegs and the 2.2 mm H1-H6 together. JLC's KiCad guide asks for separate files; a CAM that plates by file shrinks the pegs to about 0.55 mm and J1 rides up off its pads.
+- Symptom: fab.py still exports one Excellon file (kicad-cli's default, MixedPlating) holding the 0.30 mm vias, J1's plated slots, and the unplated holes: J1's two 0.65 mm pegs, SW20-SW23's four 0.5 mm holes and H1-H6 at 2.2 mm. JLC's KiCad guide asks for separate files; a CAM that plates by file shrinks the pegs and J1 rides up off its pads.
 - Root cause: kicad-cli's default drill export; nobody read the drill file.
 - Why missed: VER-27 (the one look at the gerbers and drills) was gated nowhere (O-1).
-- Check added or changed: VER-131 (--excellon-separate-th and a parse of both files; not built); G-ORD-22 now gates every ORDER check.
+- Check added or changed: VER-131 (design_numbers.py drill: FAIL until fab.py passes --excellon-separate-th; then parse both files); VER-114 (every hole >= 0.30 mm: PASS).
 - Updated: REQ-FAB-04, DF-127
 - Status: OPEN
 
 ### DEF-33: The CPL uses footprint origins, and J1's and J2's are off their pads
 - Found: two-model review (O-16), 2026-10-24, measured with pcbnew
-- Symptom: every assembled footprint's origin sits at its pads' centre except J1 (TYPE-C-31-M-12, 1.46 mm along its depth) and J2 (PicoBlade, 0.60 mm). fab.py writes the origin; JLC places at its own footprint's centroid.
+- Symptom: re-measured at 684a609 with pcbnew (design_numbers.py cpl): every assembled footprint's origin sits within 0.10 mm of its pads' centre except J1 (1.50 mm), J2 and J4 (0.95 mm, the same PicoBlade footprint) and J3 (0.23 mm). fab.py writes the origin; JLC places at its own footprint's centroid.
 - Root cause: footprints whose origin is not the centroid, and a CPL that assumes it is.
 - Why missed: no centroid check; the dry run has not been done.
-- Check added or changed: VER-29 (the centroid table beside the rotation table; not built); VER-28 screenshots J1 and J2.
+- Check added or changed: VER-176 (origin against the pads' centre: FAIL); VER-29 (the rotation table; not built); VER-28 screenshots J1-J4.
 - Updated: REQ-FAB-07.R, DF-128
 - Status: OPEN
 
 ### DEF-34: No firmware can run on the ordered board
 - Found: two-model review (O-56, F-44), 2026-10-24
-- Symptom: the fw crate targets the RP2350A (rp235xa, GPIO0-29), 4096K of flash and the ST7796; the only ref-board firmware (fw-ref-board a01f6fb) uses origin/main's pin map: the charger on GPIO41/42 (P1_B and P1_X here), a 74HC165 on GPIO28-30 (P1's cross combs here), no CHG_OFF. Every pin number is typed by hand.
+- Symptom: the fw crate targets the RP2350A (rp235xa, GPIO0-29), 4096K of flash and the ST7796; the only ref-board firmware (fw-ref-board a01f6fb) predates the routing levers (86bf694): it holds PWR_HOLD on GPIO2 (P2_START at 684a609) and drives SR_PL on GPIO28 (BL_PWM); every pin number is typed by hand. pinmap.md is generated from design.py (board/tools/pinmap.py), but no firmware file is.
 - Root cause: firmware written against another branch's design, with no generated pin file.
 - Why missed: the generated pin definitions (vp_map #56) were scheduled for EVT, so the first build for the real chip would be the day the boards arrive.
 - Check added or changed: VER-149 (generated pin file and a host test), VER-150 (an rp235xb build at 2048K), VER-151 (flash budget); all at the order gate (G-ORD-23); not built.
@@ -332,7 +335,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: the seeded-fault run that tested check_trace was never committed (DEF-28's rule).
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
-- Status: CLOSED (check_trace.py rewritten; VER-129 PASS 2026-10-24 at e7a26e8: 29 seeded faults caught)
+- Status: FIXED (check_trace.py rewritten; closes again when VER-129 re-runs with the new seeded faults)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -345,12 +348,12 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 
 ### DEF-37: TH1 sits at the cell's edge, and four bare pads face the pouch
 - Found: two-model review (O-30, F-36), 2026-10-24, from placement.py and case.scad
-- Symptom: TH1 is at (85.2, 124.0), 2.2 mm inside the cell's long edge and about 15 mm from its centre (100, 117), on the GND pour U2's EP vias heat, behind 1.6 mm of FR4 and a 0.45 mm foam pad that alone is about twice the board's thermal resistance. DF-04 said "TH1 over the cell's centre". TP11-TP14 are bare 1.0 mm pads on the back inside the cell's rectangle.
+- Symptom: since the cell sits in the board's hole (2026-10-21) TH1 is on the board's top at (126.1, 86.0), 0.80 mm right of the hole's right edge, facing the cell's end across the routed FR4 edge and an air gap of 0 to 0.5 mm when the case pushes a worst-case cell right (up to 6 mm for a short cell not pushed home); its GND pad ties it to the pour. The bare back-side pads no longer face the cell (none within 1 mm of the hole: VER-164).
 - Root cause: the cell moved under the board (2026-10-09) and nothing checks placement against the cell's rectangle.
 - Why missed: check_fit never reads positions.json's cell and skips test points on its back-side pass.
-- Check added or changed: VER-164 (cell rectangle rule and a TH1 lag estimate; not built); VER-87 (two thermocouples, centre and edge).
+- Check added or changed: VER-164 (design_numbers.py th1: the geometry, PASS); VER-87 (two thermocouples: the lag; not built).
 - Updated: REQ-THM-02, REQ-BAT-08, DF-04
-- Status: OPEN (copper decision before the order: a B.Cu patch under TH1 with vias, or a silicone thermal pad for the foam)
+- Status: OPEN (PLAN.md decision D25 before the case release: a silicone thermal pad across the gap, or accept the lag for EVT)
 
 ### DEF-38: C9 sits 0.9 mm from a screw boss's edge
 - Found: two-model review (O-43), 2026-10-24, measured with pcbnew
@@ -359,52 +362,52 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 - Why missed: DF-38's detection (VER-52) runs before the board is screwed in.
 - Check added or changed: VER-142 (MLCC keep-out; not built); VER-92 (C9 at 40x and TP2 after 20 screw cycles).
 - Updated: DF-38
-- Status: OPEN
+- Status: RETIRED in 2d1124d: C9 left with the TP4056's load sharing; the class (an MLCC by a clamping boss) is VER-142 (PASS: the nearest is C14, 4.40 mm from H4) and REQ-MEC-12
 
 ### DEF-39: Backlight at 100% exceeds the panel's 120 mA at worst-case tolerance
 - Found: two-model review (F-7, O-21), 2026-10-24, by hand
-- Symptom: 3V3 +2%, R61 +1% and R60 -1%, U6's +4.5 mV offset and R52/R53 -1% give about 61.2 mA a pin, 122.5 mA in total. REQ-DSP-05's "+-5%" is below the parts' spread.
+- Symptom: on the 3.5in panel (until 53e21c8), 3V3 +2%, R61 +1% and R60 -1%, U6's +4.5 mV offset and R52/R53 -1% gave about 61.2 mA a pin, 122.5 mA against 120 mA. With the ER-TFT024IPS-3 and R61 2.4k the same stack gives 39.0 mA a sink, 78.0 mA against the panel's 80 mA.
 - Root cause: the requirement and the sim used nominal parts.
 - Why missed: no tolerance sweep; the sim hard-codes its values (DEF-45).
-- Check added or changed: VER-137 (backlight_tol.py; not built); VER-62 at the firmware's maximum duty.
+- Check added or changed: VER-137 (design_numbers.py backlight: the tolerance sum from design.py's values, new); VER-62 at the firmware's maximum duty.
 - Updated: REQ-DSP-05, REQ-DSP-07, REQ-DSP-12, DF-130
-- Status: OPEN (fix with no copper: a 95% duty cap in firmware, or R61 3.6k)
+- Status: FIXED (the panel and R61 changed in 53e21c8; closes when VER-137 passes on fresh evidence)
 
 ### DEF-40: After calibration, the 3.50 V cutoff may never fire
 - Found: two-model review (O-49, O-23, O-60), 2026-10-24, by hand
-- Symptom: the ADC's reference is 3V3. On a unit with a +2% LDO, a -1% CV and 0.14 V of dropout, the calibrated reading rises from 3.54 V at the knee to 3.57 V at a true 3.0 V: the cutoff never fires, and 3V3 falls under QSPI_IOVDD's 2.97 V at about a 3.11 V cell. The gain is also calibrated on the first CHG_DONE_N edge, which flickers with no cell, so a gain off by about 4% can be stored. The cutoff has no tolerance, though the unplug margin depends on it to 50 mV.
+- Symptom: the ADC's reference is 3V3 and pinmap.md sets the gain at the end of a charge taking the cell as 4.20 V (the BQ24073's CV is +-1%): in regulation the cutoff fires at a true 3.465-3.535 V; in dropout the reading rises as the cell falls, and with 3V3 +2%, the RT9013's 120 mV maximum dropout at 150 mA and a -1% CV its lowest reading is 3.521 V, so the cutoff never fires. With no cell the BQ24073's battery detection toggles CHG, so a gain from a false end-of-charge edge can also be stored.
 - Root cause: a ratio measurement treated as absolute; a calibration point chosen for convenience.
 - Why missed: VER-67's limit applies above 3.6 V and its sweep runs with USB in, which keeps 3V3 regulated.
-- Check added or changed: VER-138 (cutoff analysis), VER-139 (bench sweep without USB), VER-155 (bench calibration at 3.50 V), VER-156 (no gain from a no-cell edge); not built.
+- Check added or changed: VER-138 (design_numbers.py cutoff: FAIL at 3.521 V), VER-139 (bench sweep without USB), VER-155 (bench calibration at 3.50 V), VER-156 (no gain from a no-cell edge); the last three not built.
 - Updated: REQ-BAT-12, REQ-TST-06, DF-116, DF-117
 - Status: OPEN (decide before the order: a hardware reference needs copper)
 
 ### DEF-41: Assembly works next to a live cell
 - Found: two-model review (O-29, F-37), 2026-10-24, from assembly.md
-- Symptom: section 5 plugs the cell (step 3) before the FPC goes into J3 (step 4), so VSYS is live on J3 pin 50 through Q2 and JP2 while the FPC is pushed in; step 2 solders the speaker's leads to J4 with the cell already in its pocket, 20 mm away.
+- Symptom: on 2026-10-24 assembly.md plugged the cell before the FPC went into J3 and soldered the speaker with the cell in the tub. Since 7da6a90 and the island's assembly (2026-10-23) nothing is soldered and the FPC is latched before the cell is plugged (section 5 step 6). Still open in the same class: J4 is plugged with the cell in, and the case is opened with the cell still on J2 (DF-169, DF-170).
 - Root cause: the procedure was written in the order the parts stack, not the order that is safe.
 - Why missed: no DFMEA row for hand work near the cell.
 - Check added or changed: VER-91 (records the step order: speaker on the bare board, iron cold, FPC latched, cell last; not run).
 - Updated: DF-102, DF-112
-- Status: OPEN (assembly.md to change)
+- Status: FIXED (assembly.md's order; closes when VER-91 records it on a unit); DF-169's change to the opening steps is still to make
 
 ### DEF-42: The Start/Select pills and caps are not in the BOM
 - Found: two-model review (F-40), 2026-10-24
-- Symptom: since 2026-10-19 design.py puts SW20-SW23 (SW21 is the power button) under the Start/Select membrane, but bom.md says "the Start/Select strip isn't used" and buys only cross and A/B/X/Y caps; DSLITE.md has no Start/Select numbers.
+- Symptom: since 2d1124d SW20-SW23 (Start and Select; SW21 and SW23 power on) are 4 mm metal snap domes (HYP 600-415S-260) under Kapton dots and the DS Lite Start/Select strip, but bom.md says 'the Start/Select strip isn't used' and buys no domes, Kapton dots or Start/Select caps.
 - Root cause: the BOM was not updated with the design.
 - Why missed: nothing checks that every contact class has a bought pill and cap.
-- Check added or changed: VER-167 (bom_coverage.py; not built).
-- Updated: DF-124
+- Check added or changed: VER-167 (design_numbers.py bom: FAIL); VER-126 (incoming silicone, caps and domes).
+- Updated: DF-167, DF-168
 - Status: OPEN
 
 ### DEF-43: Plug-in inrush is over USB 2.0's 50 uC
 - Found: two-model review (F-24), 2026-10-24, by arithmetic
-- Symptom: C1 10 uF x 5 V = 50 uC alone; with no cell, D5 charges the VSYS capacitors at plug-in (C2 4.7 uF, C5 10 uF, C9 22 uF, C34 10 uF, C35 0.1 uF: 46.8 uF x 4.6 V = 215 uC). R47's 0.1 ohm does not slow it.
+- Symptom: at 76955d2, C1 10 uF x 5 V = 50 uC alone, and with no cell D5 charged the VSYS capacitors at plug-in (46.8 uF x 4.6 V = 215 uC): 265 uC against USB 2.0's 50 uC, carried as a written deviation in REQ-PWR-13. Since 2d1124d D5 is gone and VSYS sits behind the BQ24073's input switch: VBUS carries C1 alone, 10 uF and 50 uC at 5.0 V.
 - Root cause: bulk capacitance behind a diode, not a soft-start switch.
 - Why missed: VER-99 was carried as NOT_BUILT behind the hot-plug ODE, though a calculator settles it.
-- Check added or changed: VER-99 (the arithmetic, now an analysis that can be re-run from design.py).
+- Check added or changed: VER-99 (design_numbers.py inrush: the VBUS capacitance and the parts between VBUS and VSYS, changed for the BQ24073); VER-71's scope picture shows U2's start-up current.
 - Updated: REQ-PWR-13
-- Status: OPEN (the deviation is written into REQ-PWR-13; it closes when Alex approves that requirement and VER-99 passes)
+- Status: FIXED (no deviation at 684a609; closes when VER-99 passes on fresh evidence)
 
 ### DEF-44: Requirements that failed by construction
 - Board: both
@@ -418,7 +421,7 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 
 ### DEF-45: The backlight sim cannot follow design.py, and its evidence missed loop-made parts
 - Found: two-model review (O-5), 2026-10-24
-- Symptom: board/sim/backlight_circuit.py hard-codes rs = 2.2, rg = 330, rf = 10k, cf = 1n, rtop = 100k, rbot = 3.9k and gate_pd = 100k. VER-05's covers regex matched design.py lines 428-431 and 437-439 but not 432-436, where R52-R59 and C48/C49 are made in a loop: R52/R53 at 1.8 ohm (69 mA a pin, 138 mA in total) would have left VER-05 fresh.
+- Symptom: board/sim/backlight_circuit.py hard-codes rs = 2.2, rg = 330, rf = 10k, cf = 1n, rtop = 100k, rbot = 3.9k and gate_pd = 100k, and its docstring says BL_REF comes from GPIO44: design.py has R61 2.4k on GPIO28 since 53e21c8, so backlight_results.txt (56 mA a sink, 72.5 degrees of margin) is for the 3.5in panel, not the 35 mA the ER-TFT024IPS-3 runs.
 - Root cause: a sim that copies values, and line-regex freshness.
 - Why missed: nobody changed a value to see whether the evidence went stale.
 - Check added or changed: VER-05 (now covers part:R52-R61, C48-C51, Q5, Q6, U6; backlight.py to assert its defaults against design.PARTS; re-run needed).
@@ -427,9 +430,55 @@ commits on other branches where named) and from `docs/design_review.md` ("Found 
 
 ### DEF-46: Bring-up's cell emulation cannot hold 3.50 V with USB in
 - Found: two-model review (O-19), 2026-10-24
-- Symptom: VER-70 (the unplug at a 3.50 V 'cell' from the bench supply) and VER-67 (a 3.0-4.2 V sweep) both have USB connected; the TP4056 pushes 333-364 mA into the supply, most supplies cannot sink, so the 'cell' climbs toward 4.2 V and the 3.50 V corner is never tested.
+- Symptom: VER-70 (the unplug at a 3.50 V 'cell' from the bench supply) and VER-67 (a 3.0-4.2 V sweep) both have USB connected; the charger pushes its 242-295 mA into the supply, most supplies cannot sink, so the 'cell' climbs toward 4.2 V and the 3.50 V corner is never tested.
 - Root cause: a bench supply treated as a cell.
 - Why missed: the procedure was never run.
 - Check added or changed: VER-70 and VER-67 revised (CHG_OFF held high, or 10 ohm 5 W across the supply; VBAT recorded at the trigger instant).
 - Updated: REQ-PWR-05, DF-34
 - Status: FIXED (procedures revised; bringup.md to follow); closes when VER-70 passes
+
+### DEF-47: The register drifted off the design it was meant to describe
+- Board: both
+- Found: the brief of 2026-10-25 and check_trace.py after vv-plan was rebased onto 684a609: 13 structure errors (covers naming parts that no longer exist: C9, D5, D7, Q2, R6, R39, R40, R47), while the content still described 76955d2
+- Symptom: the register was seeded on 76955d2 (TP4056, ME6211, the 3.5in ILI9488 panel) on 2026-10-24, two days after the design had moved on in other branches (BQ24073 2026-10-22, RT9013 2026-10-22, ER-TFT024IPS-3 2026-10-21, the cell in a hole, 74HC165s, domes). Its order gate, decisions and H rows were about parts that would not be on the ordered board, and the first run's plan estimated half a day to re-seed.
+- Root cause: the register was seeded from the checkout at hand, not from a named order candidate; its design baseline covered only design.py, placement.py and case.scad, and a mismatch was reported in the default mode but failed only at a gate.
+- Why missed: nothing runs check_trace.py on a design commit (it is not in scripts/check.sh); the default mode printed 'baseline differs' as a report line and exited 0; a rebase that changes the design under the register raised nothing until someone ran the tool.
+- Check added or changed: check_trace.py's structure check now fails when README.md's design baseline differs from HEAD or does not name every design path (design.py, placement.py, lib/, battler.kicad_pcb, last_route.ses, build_pcb.py, route.py, silk.py, fab.py, case.scad); VER-129 seeds both faults and passes. Still to do outside hardware/vv: a hardware step in scripts/check.sh that runs check_trace.py (PLAN.md step 0.3).
+- Updated: README (baseline at 684a609), every file of the register
+- Status: FIXED (re-seeded at 684a609; closes when scripts/check.sh runs check_trace.py on every commit and VER-129 passes)
+
+### DEF-48: The charge window's hot edge is 47 C and nothing on the board can move it
+- Found: re-seeding for 684a609 (2026-10-25), from pin_review/u2.json pin 1
+- Symptom: TH1 (B3950 10k) against the BQ24073's fixed TS thresholds (0.30 V hot, 2.1 V cold at 75 uA) gives 3.5-47.2 C nominal. The hot edge is 2.2 C over a typical 45 C cell limit before any tolerance, and with no resistor footprints on CHG_TEMP it can be moved only by changing copper.
+- Root cause: the TP4056's window divider (R39, R40) left with it, and the BQ24073's window was taken as given.
+- Why missed: REQ-BAT-03 was written for the TP4056; nothing computes the window from design.py (VER-32 not built).
+- Check added or changed: VER-32 (the window from SLUS810N's TS limits; not built); VER-135 (per unit, now with a finger-warm step: TH1 is an NTC).
+- Updated: REQ-BAT-03, DF-147, DF-146
+- Status: OPEN (PLAN.md decision D5 before the order: two DNP footprints on CHG_TEMP, or accept 47 C against the cell's spec sheet)
+
+### DEF-49: The shift registers cut the pill margin from 10 kohm to about 3.7 kohm
+- Found: re-seeding for 684a609 (2026-10-25)
+- Symptom: REQ-BTN-01 asked each input to read pressed up to 10 kohm of pill resistance, a margin set against the RP2350's 50k internal pull-up. Since 2d1124d the 16 D-pad and A/B/X/Y contacts feed 74HC165 inputs pulled up by 10k arrays; with a VIL of about 0.94 V at 3.3 V a pill reads pressed only under about 3.7 kohm.
+- Root cause: the pull-up value was chosen for the shift registers without re-deriving the contact's margin (DEF-02's class: a change made without re-deriving the other margins).
+- Why missed: the margin lives in prose; no script computes it from design.py.
+- Check added or changed: VER-45 (pill resistance on a bare board) and VER-56; REQ-BTN-01 restated at 3.3 kohm pending PLAN.md decision D24 (RN1-RN4 at 47k, BOM only, restores about 18 kohm).
+- Updated: REQ-BTN-01, DF-164
+- Status: OPEN
+
+### DEF-50: A faulty USB source reaches the regulator's enable ahead of the charger's OVP
+- Found: re-seeding for 684a609 (2026-10-25), design_numbers.py vbus
+- Symptom: the BQ24073 blocks VBUS from VSYS above 6.6 V (28 V absolute), but PWR_EN is fed from VBUS through R14 and D3 and takes U3's EN (6 V absolute) over its rating above VBUS 6.9 V; EN1 through R43 passes its 7 V above 9.5 V.
+- Root cause: the latch's USB wake path and EN1's pull-up were kept from the TP4056 design, where no part had OVP, so nothing flagged them when U2 gained it.
+- Why missed: no table of which pins VBUS reaches and at what level.
+- Check added or changed: VER-177 (design_numbers.py vbus: FAIL at 6.9 V).
+- Updated: REQ-PWR-17, DF-101
+- Status: OPEN (PLAN.md decision D17)
+
+### DEF-51: A worst-case cell has 0.30 mm to swell under the deck
+- Found: re-seeding for 684a609 (2026-10-25), design_numbers.py swell
+- Symptom: a 4.5 mm cell's top stands 1.6 mm over the board (cell_top, set to the decks' limit); the deck's underside is 1.9 mm over it, the panel's back 2.4 mm. REQ-BAT-07 asks 0.4 mm.
+- Root cause: cell_top was set to what the decks allow, not to the room the cell needs to swell.
+- Why missed: the Z stack has no script (VER-20 was not built).
+- Check added or changed: VER-20 (its swell part written: FAIL at 0.30 mm).
+- Updated: REQ-BAT-07, DF-84
+- Status: OPEN (PLAN.md decision D18 before the case release)

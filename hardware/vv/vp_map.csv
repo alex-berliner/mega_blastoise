@@ -16,13 +16,13 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 15,Return-path check for signals crossing B.Cu pour gaps,VER-21,,no,no,
 16,SPI and USB signal-integrity estimate,VER-61,,no,no,
 17,Copper resistance and IR drop on power paths,VER-13,,yes,partly,the copper solves predate the 2026-10-19 re-route (a053875) and their script is not in the repo (VER-13)
-18,"Thermal: TP4056 at 1 W, FM8002A, AP3156 in 2x mode, and the cell lying on the board",VER-68 VER-85 VER-86,,partly,partly,"OBSOLETE wording: the AP3156 charge pump was removed (DEF-12); the thermal items live on in VER-68, VER-85, VER-86 and VER-144"
+18,"Thermal: TP4056 at 1 W, FM8002A, AP3156 in 2x mode, and the cell lying on the board",VER-68 VER-85 VER-86,,partly,partly,"OBSOLETE wording: the AP3156 (DEF-12) and the TP4056 (part removed in 2d1124d) are gone; the BQ24073's heat lives on in VER-68, VER-85, VER-86 and VER-144"
 19,Zone island and stitching integrity,VER-04,,partly,partly,"isolated_copper is a warning in battler.kicad_pro and check_pcb.py passes warnings, so this stays partly until DEF-36 is fixed"
 20,Silkscreen polarity and pin-1 review,VER-28 VER-89,,partly,partly,
-21,Test-point coverage review,VER-115 VER-158,,partly,partly,"TP1-TP16 now include PWR_EN, LS_GATE, AMP_SHDN, BL_REF, 1V1 and the panel's SPI (design.py, be7ea8a); CHG_TEMP only at C41's pads"
+21,Test-point coverage review,VER-115 VER-158,,partly,partly,"TP1-TP16 include PWR_EN, CHG_TEMP (TP7, the BQ24073's TS node since 2d1124d), AMP_SHDN, BL_REF, 1V1 and the panel's SPI (design.py)"
 22,Placement-vs-case consistency after manual edits,VER-19,,no,no,
 23,Exact 3D interference check (not boxes),VER-06 VER-112,,partly,partly,
-24,"check_fit extended for the new stack (cell on a 1.2 mm spacer over the core, speaker over a 6 mm hole, ribs at 0.5 mm)",VER-06 VER-20,,no,partly,the cell went back under the board on 2026-10-09 (226bbb6); check_fit checks back_limit (cell_gap 0.5 mm) and THT leads against the rib cut-aways (2e66f0c)
+24,"check_fit extended for the new stack (cell on a 1.2 mm spacer over the core, speaker over a 6 mm hole, ribs at 0.5 mm)",VER-06 VER-20,,no,partly,"the cell sits in a hole in the board since 2026-10-21 (2d1124d), its top 1.6 mm over the board at worst case: check_fit checks the decks over it; VER-20's swell script reads 0.30 mm free under the deck"
 25,Z-axis tolerance stack-up,VER-20,,no,no,
 26,Cell swelling allowance,VER-20 DF-84,,no,no,
 27,Insulation and sharp-edge check under the cell,VER-06 VER-109 DF-85,,no,no,
@@ -56,7 +56,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 55,Pin map vs RP2350 peripheral function table,VER-15,,partly,partly,
 56,Generated Rust pin definitions compiled against embassy-rp (rp235xb),VER-149 VER-150 VER-76,,no,no,"generated pins and an rp235xb build moved to the order gate (F-44, O-56)"
 57,Bring-up firmware written before boards arrive,VER-76,,no,no,
-58,ILI9488 driver developed on an off-the-shelf module first,VER-76 VER-43,,no,no,
+58,ILI9488 driver developed on an off-the-shelf module first,CUT,part removed in 53e21c8 (the ILI9488 panel); the ST7789V is lit on a breakout by VER-43,no,no,
 59,Panel validated on its own via an FPC breakout,VER-43,,no,no,
 60,Backlight current per cathode pin and sink loop check,VER-62 VER-05,,simulated,simulated,
 61,Battery ADC calibration sweep,VER-67 VER-155,,no,no,
@@ -72,7 +72,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 71,Pre-order gate checklist,DOC:gates.md,,partly,partly,
 72,Small first order with a spare bare board,VER-42,,no,no,
 73,Datasheet archive completeness,VER-35,,no,no,
-74,Membrane contact mask and pour rules,VER-08 VER-09,,yes,yes,
+74,Membrane contact mask and pour rules,VER-08 VER-178,,yes,partly,the 3-ring left in 2d1124d (VER-09 RETIRED); the 4-ring passes VER-08; the dome pads' rule is VER-178 (not built)
 75,ERC and design.py-vs-netlist,VER-01 VER-03,,yes,yes,
 76,DRC with schematic parity,VER-04,,yes,yes,
 77,"Mutation pass over the checkers (check_netlist, check_pcb parity, check_fit, pinmap, fab) with seeded faults, and an honest blind-spot table",VER-22 VER-129,,no,no,
@@ -82,7 +82,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 81,"Flux and ionic contamination on the bare ENIG combs: wash spec, proximity script and SIR check on arrival",VER-46 DF-74,,no,no,
 82,Fire enclosure and cell-failure containment of the printed case,DF-87,,no,no,
 83,"Persistent-data flash writes under power loss: journal contract, XIP-stall budget and a randomized power-cut HIL test",CUT,application firmware (flash journal); hardware side kept in VER-70's flash check,no,no,
-84,"Power UX spec and two-player hallway test: Y as both game button and power button, no indicator LED",VER-73,,no,partly,"the power button moved from Y to seat 1's Start (a3158fc, 2026-10-19), so no game button doubles as power; pinmap.md still describes Y (DEF-21); OBSOLETE wording: 'Y as both game button and power' describes a part of the design that is gone"
+84,"Power UX spec and two-player hallway test: Y as both game button and power button, no indicator LED",VER-73,,no,partly,"either seat's Start is a power button (metal domes SW21 and SW23 since 2d1124d), so no game button doubles as power; OBSOLETE wording: 'Y as both game button and power' describes a part of the design that is gone"
 85,"Statistical confidence from N=2: margin testing to failure, min/max part swaps, per-batch manufacturer record and a repeat-test rule",VER-97,,no,no,
 86,"Home-assembly process conditions: ESD, heat, shorts and a checked step order for the hand work",VER-91,,no,no,
 87,"Environmental limits table of the non-electronic parts and a cold-boot, hot-soak and condensation test",VER-97,,no,no,
@@ -98,7 +98,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 97,"Cap (hard plastic) provenance: critical dimensions, per-lot sampling, accept limits and lot parameters in case.scad",VER-126,,no,no,
 98,"Shipping, storage and packaging stage: held-Y boot loop in a box, ship state of charge, parcel drop and vibration",CUT,only if units are posted; then add a packaging test beside VER-38,no,no,
 99,"JLC process compatibility: reflow profile and MSL per part, THT/hand-solder route for J1, and a storage rule for home-rework spares",VER-28 DF-52,,no,no,
-100,"TP4056 status decoding: sampling scheme, state table with blinking states, and injected-state tests",VER-76,,no,no,
+100,"TP4056 status decoding: sampling scheme, state table with blinking states, and injected-state tests",CUT,"part removed in 2d1124d (the TP4056); the BQ24073's CHG, PGOOD and 2 Hz timer fault are read by VER-57 and VER-76",no,no,
 101,Verification dependency manifest: inputs hashed per check so a placement or route change marks its results stale,DOC:verification.csv VER-24,,no,partly,hardware/vv/verification.csv 'covers' plus check_trace.py mark evidence stale against git (2026-10-24); no input hashing of fab files yet (VER-24)
 102,"Table-posture acoustics, friction and heat: feet height vs the floor grille, slide/spin under a cap press, and a surface-dependent SPL pass",CUT,"use and comfort, not correctness; the speaker check (VER-64) listens on a table",no,no,
 103,Independent connectivity from the shipped fab files: IPC-D-356 netlist with the order plus a gerber-and-drill copper rebuild diffed against design.py,VER-26,,no,no,
@@ -124,7 +124,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 123,Voltage and power derating table per part,VER-31,,partly,partly,
 124,MLCC DC-bias effective capacitance check,VER-30,,no,no,
 125,USB VBUS capacitance and inrush check,VER-99,,no,no,
-126,Independent ngspice power-path simulation with vendor models,VER-11 VER-12,,partly,partly,
+126,Independent ngspice power-path simulation with vendor models,VER-12,,partly,partly,VER-11 (the unplug sim) RETIRED in 2d1124d: the BQ24073 has no hand-over gap; VER-12 is the hot-plug sim at U2's IN
 127,Monte Carlo / tolerance analysis of the analog windows,VER-32,,partly,partly,
 128,Cell spec reconciliation for the 403450,VER-37 VER-160,,no,no,
 129,Cell-on-board mechanical and thermal re-check (new layout),VER-20 VER-85,,no,no,
@@ -181,9 +181,9 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 180,Firmware flash/RAM/frame-time budget gate for the RP2354B (and a PSRAM decision),REQ-DSP-11 VER-43 VER-151,,partly,partly,"un-cut 2026-10-24 (O-25, F-45, O-53): the panel's frame time and the flash size decide hardware before the order"
 181,Panel power sequencing and register health across unplug dips and power-off,VER-70 VER-60,,no,no,
 182,Field-recovery path test: BOOTSEL/RESET pinholes with the case closed and a dead cell,VER-107,,partly,partly,
-183,"Cell as a real object: PCM bump, wire exit, retention and a non-compressible spacer",VER-37 VER-20 VER-140,,no,partly,"bom.md and assembly.md now name the 403450 and a 0.45 mm foam pad over it, under the board"
+183,"Cell as a real object: PCM bump, wire exit, retention and a non-compressible spacer",VER-37 VER-20 VER-140,,no,partly,the cell lies in the board's hole with its bottom in a 0.6 mm pocket in the tub (no foam pad since 2d1124d); VER-20's swell script reads the free height above it
 184,Cell internal-resistance sag under peak load (backlight 2x + audio + core),VER-70,,no,no,
-185,"Always-biased P1_Y comb: humidity, sweat and leakage turning the device on",VER-46 VER-79,,no,partly,"R13 33k chosen for about twice the leakage margin (design.py comment); the always-biased comb is now SW21 (Start), not P1_Y; no coupon yet; OBSOLETE wording: the always-biased comb is SW21 (Start), not P1_Y"
+185,"Always-biased P1_Y comb: humidity, sweat and leakage turning the device on",VER-46 VER-79,,no,partly,"SW21 and SW23 (both Starts, metal domes since 2d1124d) carry VSYS on their rings into the latch; R13 and R62 33k; no coupon yet; OBSOLETE wording: the always-biased contacts are SW21 and SW23, not P1_Y"
 186,"Debris and ingress paths: speaker hole, cap holes, USB-C",VER-48,,no,no,
 187,"DS Lite silicone supply, provenance and incoming inspection",VER-126,,no,no,
 188,Contact-finish decision: ENIG gold thickness vs a sliding carbon pill,VER-45 DF-78,,no,no,
@@ -193,7 +193,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 192,Speaker part selection and specification,VER-128,,no,no,
 193,Rework capability and spare parts ordered with the boards,VER-42,,no,no,
 194,"Serviceability rules: open/close cycles, cell replacement, connector life",VER-92 VER-91,,no,no,
-195,"Revision marking, hardware-revision strap and unit traceability",VER-59,,no,yes,"4-bit revision strap R48-R51 on GPIO22-25, BOARD_REV = 1, REV on the back silk (4c4d846)"
+195,"Revision marking, hardware-revision strap and unit traceability",VER-109 VER-110,,no,partly,"the strap R48-R51 on GPIO22-25 removed in 86bf694; BOARD_REV = 1 is on the silkscreen, read in the FAI (VER-109); traceability VER-110"
 196,Primary-source audit of comment-claims every model inherited,VER-34,,no,no,
 197,"XY registration chain from pill to comb and from cap to cap hole, with a measured concentricity check",VER-51 VER-174,,no,no,
 198,Parallel-run crosstalk report per aggressor/victim pair,CUT,effort; the return-path script (VER-21) and the EMC pre-scan (VER-96) cover the coupling that matters,no,no,

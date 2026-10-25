@@ -26,7 +26,8 @@ the case, survives use.
 | [evidence/](evidence/) | the saved output of each check run, named `<date>_<VER>_<check>.txt`; units.csv and findings.csv for built units | |
 | [tools/check_trace.py](tools/check_trace.py) | the trace gate (Python 3 standard library) | |
 | [tools/run_checks.py](tools/run_checks.py) | runs the quick scripted checks, writes their evidence with a header and records the result | |
-| [tools/seed_faults.py](tools/seed_faults.py) | proves check_trace can fail: seeds one fault at a time into a copy (VER-129) | |
+| [tools/seed_faults.py](tools/seed_faults.py) | proves check_trace can fail: seeds one fault at a time into a copy, and the faults that need git history into a scratch clone (VER-129) | |
+| [tools/design_numbers.py](tools/design_numbers.py) | recomputes the pre-order numbers from the design files (inrush, backlight, cutoff, screws, MLCC keep-out, TH1, CPL, drill, VBUS fault reach, BOM coverage, holes, swelling) | |
 
 ## How they link
 
@@ -52,9 +53,12 @@ python3 hardware/vv/tools/check_trace.py --gate evt --board prod_board
 python3 hardware/vv/tools/check_trace.py --shopping --gate evt   # what is still to buy, longest lead first
 python3 hardware/vv/tools/run_checks.py                   # re-run the quick scripted checks, save evidence
 python3 hardware/vv/tools/seed_faults.py                  # prove the trace gate fails on seeded faults
+python3 hardware/vv/tools/design_numbers.py --list        # the scripted pre-order numbers
 ```
 
-Default mode fails only on structure; check_trace.py's docstring lists every rule. Then it
+Default mode fails only on structure; check_trace.py's docstring lists every rule. A design
+baseline that differs from HEAD is a structure error (DEF-47): the register no longer
+describes the design until its rows are re-checked and the baseline updated. Then it
 reports what is not yet true: requirements with no check, H-priority risks whose 'detects'
 checks have not passed, checks that are FAIL, NOT_RUN or NOT_BUILT, stale evidence, parts no
 DFMEA row names, and warnings (a pass band narrower than 4 x its instrument's accuracy, a
@@ -63,7 +67,7 @@ DFMEA row names, and warnings (a pass band narrower than 4 x its instrument's ac
 ## Passing a gate
 
 1. Alex decides the requirements in releases/APPROVALS.md (APPROVED, REJECTED, or DEFERRED
-   with a reason) and copies the decision into each Status.
+   with a reason and the last phase it holds for) and copies the decision into each Status.
 2. Run every check the gate needs, save its output under `evidence/` with the header below,
    and record PASS or FAIL, the evidence path, the commit and the date in verification.csv.
    `run_checks.py` does this for the quick scripted checks.
@@ -86,7 +90,8 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
 - **No defect closes without a new or changed check.** CLOSED needs a VER in "Check added
   or changed" that passes on fresh evidence. A design fix with no check is FIXED, not CLOSED.
 - **Evidence is a saved output, not a typed word.** A PASS or FAIL names an evidence file.
-  For an analysis (method A) or a bench result it lives under evidence/ and carries a header:
+  For an analysis (method A), a test (method T) or a bench result it lives under evidence/ and
+  carries a header:
   `COMMIT: <hash>`, `TOOLS: <versions>`, and a last `RESULT: PASS|FAIL` equal to the row;
   a bench result adds `RELEASE: <REL id>`, `UNITS: <serials>` and the release's fab zip
   sha256. A commit message is never evidence.
@@ -96,7 +101,17 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   change in design.py), or a release (`release:REL-...`: a bench result on built units,
   stale only when a later change record names the check under "What to re-run"). It is also
   stale when its commit is not an ancestor of HEAD, or when it is older than its valid_days
-  (stock, quotes, the dry run). Re-run it; never edit the commit field to make it fresh.
+  (stock, quotes, the dry run). Re-run it; never edit the commit field to make it fresh. At
+  DVT and PVT a test of phase EVT or later counts only if it covers a release record of that
+  phase: the revised spin is re-tested, not vouched for by the EVT units. A 'covers' glob
+  matches only files committed to git.
+- **A deferral ends.** DEFERRED names the last phase it holds for; after it the requirement
+  is PROPOSED again at the gate (R1).
+- **Retired rows keep their IDs.** A requirement, DFMEA row, check or defect whose subject left
+  the design is RETIRED with 'RETIRED in <commit>: <why>'; no live row may lean on a retired
+  check. RETIRED is not a way to close a defect whose part is still on the board.
+- **Advisory checks stay advisory.** A check that only ADVISORY criteria name is printed but
+  not counted by PHASE:<p> (VER-40).
 - **Detection is only what can see the failure.** A DFMEA row's 'detects' lists the checks
   that must all pass before it is DONE. Its detection rating is 10 with none, and 8 or more
   while every one is NOT_BUILT. An occurrence of 2 or less needs a passing test on built
@@ -107,9 +122,11 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   VER-129).
 - **A number quoted in a doc needs its script in the repo**, or it is NOT_BUILT (DEF-28).
 - **Every design change gets a change record.** Once a release record exists, a commit that
-  touches design.py, placement.py, board/lib/ or case.scad without one fails every gate. A
-  BOM-only change bumps BOARD_REV. A change to the design files also updates the design
-  baseline below.
+  touches the design without one fails every gate (R6). The design is design.py,
+  placement.py, board/lib/, battler.kicad_pcb, board/tools/last_route.ses, build_pcb.py,
+  route.py, silk.py, fab.py and case.scad: the copper and the scripts that make the fab files,
+  not only the data. A BOM-only change bumps BOARD_REV (on the silkscreen). A change to the
+  design files also updates the design baseline below.
 - **Each board supplies its own evidence.** A check row holds one result, so a test of
   built hardware belongs to one board. Mark a check `both` only when one result serves both
   boards and it covers each board's files (or a shared file under hardware/vv or
@@ -121,15 +138,25 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
 
 ## Design baseline
 
-The design files this register describes, as git blob hashes (`git rev-parse HEAD:<path>`).
-Every ref_design gate fails with "gate evaluated against a design it does not describe" when
-HEAD differs (the order gate reads design.py and placement.py, the case gate case.scad,
-later gates all three). Seeded at 76955d2 on 2026-10-24; origin/main (56933a5) and
-ref-design-levers (86bf694) are different designs.
+The design files this register describes, as git object hashes (`git rev-parse
+HEAD:<path>`; board/lib is a tree). The default mode fails when any differs from HEAD, and
+every ref_design gate fails with "gate evaluated against a design it does not describe" (the
+order gate reads the board's files, the case gate case.scad, later gates all). Re-seeded at
+684a609 (branch ref-design-island-45, 2026-10-24 12:49) on 2026-10-25, the board Alex is
+ordering; 76955d2, the first seed's design, is kept on branch vv-plan-76955d2. A commit to
+ref-design-island-45 after 684a609 that touches these files is a different design until its
+rows are re-checked and these lines updated.
 
-- `hardware/ref_design/board/design.py` 08d17297ca629ef9fbc19ac4a91c4002948d1703
-- `hardware/ref_design/board/placement.py` 266133b2e18e3649c994c97291d9a84ef0fc7055
-- `hardware/ref_design/case/case.scad` 7b8a78b7e1e5bd077f053b0feebbf040a545bb9d
+- `hardware/ref_design/board/design.py` a6eb8306a47b833d2c0e4e136f2712363d65b31d
+- `hardware/ref_design/board/placement.py` dcf9f35aa1f7200f5b3b40407cfb4eb8db1ca7e9
+- `hardware/ref_design/board/lib` 50f371cbf7df2fae7db3746b134434297c38a4fa
+- `hardware/ref_design/board/battler.kicad_pcb` eb810304f358999cc2d0f2491c0302bf70095ef5
+- `hardware/ref_design/board/tools/last_route.ses` ee1a337581e80e62de18c1061ea488a731256f87
+- `hardware/ref_design/board/tools/build_pcb.py` fda10ee12c9ef078546795338163b220e01c554c
+- `hardware/ref_design/board/tools/route.py` 69c8f2fbe1d4d7732e35e805635357f758a5c7ae
+- `hardware/ref_design/board/tools/silk.py` 6e885c0db14aa7e2809b306039a4c2063499accb
+- `hardware/ref_design/board/tools/fab.py` a8215479a00943a1939964ca56821fbef8f201a5
+- `hardware/ref_design/case/case.scad` 6e431b93cf1ba70116b48caee52bb5871ba524c6
 
 ## Ratings (DFMEA)
 
@@ -170,8 +197,8 @@ IEC 62133-2 and UN38.3 (the cell), USB 2.0 cl. 7.2 (power), IEC 61000-4-2 and EN
 ANSI/NCSL Z540.3 (test uncertainty ratio). Clause numbers quoted here are from memory: check
 them against the purchased standards.
 
-## Status on 2026-10-24
+## Status on 2026-10-25
 
-Seeded by Claude at commit 76955d2 (branch vv-plan), attacked by two models, and revised into
-PLAN.md. Every requirement is PROPOSED and APPROVALS.md is empty; the order gate fails, as
-it should. validation_plan.md is archived.
+Seeded by Claude at 76955d2 on 2026-10-24, attacked by two models, then re-seeded on
+2026-10-25 for 684a609, the board being ordered (PLAN.md). Every requirement is PROPOSED and
+APPROVALS.md is empty; the order gate fails, as it should.

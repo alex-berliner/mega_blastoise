@@ -16,15 +16,16 @@ Columns:
 - Item: a REQ, DF or W id.
 - Decision: APPROVED, REJECTED or DEFERRED (requirements); ACCEPTED (DFMEA rows); WAIVED
   (waivers).
-- Scope: for ACCEPTED and WAIVED, the last phase the decision holds for (ORDER, CASE, EVT,
-  DVT, PVT, SALE); an acceptance for EVT does not open the DVT or PVT gate. For requirements,
-  `-`.
+- Scope: for ACCEPTED, WAIVED and DEFERRED, the last phase the decision holds for (ORDER,
+  CASE, EVT, DVT, PVT, SALE); an acceptance for EVT does not open the DVT or PVT gate, and a
+  requirement deferred to EVT is PROPOSED again at DVT. For APPROVED and REJECTED, `-`.
 - Reason: why. Required for everything but APPROVED.
 - By: who decided.
 - Date: YYYY-MM-DD.
 
-Example (not a decision):
+Examples (not decisions):
 `| A-001 | DF-87 | ACCEPTED | DVT | hobby units kept by their builder; revisit before SALE | Alex | 2026-10-25 |`
+`| A-002 | REQ-PRD-03.R | DEFERRED | EVT | set once the cell's spec sheet and a capacity sample exist | Alex | 2026-10-25 |`
 
 | ID | Item | Decision | Scope | Reason | By | Date |
 |---|---|---|---|---|---|---|

@@ -13,31 +13,43 @@ and defined wherever they are referenced; rows and fields well formed; the actio
 agrees with the AIAG-VDA table; a detection rating is no better than its 'detects' checks
 allow; an occurrence of 2 or less is backed by built hardware (or, at 1, by a stated
 physical exclusion); a PASS or FAIL carries a commit, a date and an evidence file whose
-header matches it; a 'covers' pattern matches a tracked file and, with a regex, a line in
-it; a check marked 'both' covers both boards; every check is reached by some gate,
-requirement or high-priority risk no later than its own phase; a status of APPROVED,
-REJECTED, DEFERRED, ACCEPTED or a signed waiver has a matching line in
-releases/APPROVALS.md that Alex committed; an approved requirement's statement has not
-changed since; two release records of one board with different BOMs have different
-BOARD_REVs; no defect is CLOSED without a check. Everything else is a report.
+header matches it (every analysis and every test: COMMIT, TOOLS, RESULT); a 'covers'
+pattern matches a file committed to git and, with a regex, a line in it; a check marked
+'both' covers both boards; every check is reached by some gate, requirement or
+high-priority risk no later than its own phase; a status of APPROVED, REJECTED, DEFERRED,
+ACCEPTED or a signed waiver has a matching line in releases/APPROVALS.md that Alex
+committed (DEFERRED, ACCEPTED and WAIVED name the last phase they hold for); an approved
+requirement's statement has not changed since; two release records of one board with
+different BOMs have different BOARD_REVs; no defect is CLOSED without a check; a RETIRED
+row names the commit that removed its subject, and no live row leans on a retired check;
+README.md's design baseline names every design path and equals HEAD (DEF-47: a register
+that drifted off its design fails here, not only at a gate). Everything else is a report.
 
 --gate PHASE exits 1 unless every criterion of that gate in gates.md is met for the board
 (default ref_design), plus these rules at every gate:
-  R1  no requirement in scope is still PROPOSED;
+  R1  no requirement in scope is still PROPOSED, or DEFERRED past the phase its deferral
+      names;
   R2  every requirement in scope lists a check for the board, and every listed check whose
       phase is at or before the gate has PASSED on fresh evidence;
   R3  every H-priority DFMEA row in scope is ACCEPTED for this phase or a later one, or
       DONE with every one of its 'detects' checks at or before the gate PASSED, fresh;
   R4  no defect of the board is OPEN (order, case, EVT); every one is CLOSED (DVT, PVT);
   R5  no PASSED check covers a file with uncommitted changes;
-  R6  every commit since the newest release record that touches the design is named in a
-      change record (ref_design);
+  R6  every commit since the newest release record that touches the design (DESIGN_PATHS:
+      design.py, placement.py, lib/, case.scad, the routed board and the scripts that
+      route, silk and export it) is named in a change record (ref_design);
   R7  the design files at HEAD are the ones README.md's design baseline names (ref_design).
+At DVT and PVT a test (method T) of phase EVT or later passes only on a result that covers a
+release record of that phase (REL-...-DVT, REL-...-PVT): an EVT unit's bench result does not
+speak for the revised spin.
 
 Scope: for ref_design, requirements and DFMEA rows marked ref_design or both; for
 prod_board, only those marked prod_board (REQ-PBD-* and the .P allocations Alex writes).
 A product requirement split per board (REQ-X and REQ-X.R / REQ-X.P) is verified through
 the child for the board.
+
+A check named only by ADVISORY criteria (and by no requirement or H row) is advisory: it is
+printed, and PHASE:<p> does not count it.
 
 Evidence is fresh when its commit is an ancestor of HEAD, nothing it covers changed since,
 and it is younger than the check's valid_days. 'covers' tokens:
@@ -71,16 +83,23 @@ BOARD_ROOTS = {"ref_design": ("hardware/ref_design/",),
 SHARED_ROOTS = ("hardware/vv/", "hardware/membrane/")
 METHODS = set("TAID")
 LEVELS = ("product", "subsystem", "board")
-REQ_STATUS = ("PROPOSED", "APPROVED", "REJECTED", "DEFERRED")
-VER_RESULT = ("PASS", "FAIL", "NOT_RUN", "NOT_BUILT", "CUT")
-DF_STATUS = ("OPEN", "DONE", "ACCEPTED")
-DEF_STATUS = ("OPEN", "FIXED", "CLOSED")
+REQ_STATUS = ("PROPOSED", "APPROVED", "REJECTED", "DEFERRED", "RETIRED")
+VER_RESULT = ("PASS", "FAIL", "NOT_RUN", "NOT_BUILT", "CUT", "RETIRED")
+DF_STATUS = ("OPEN", "DONE", "ACCEPTED", "RETIRED")
+DEF_STATUS = ("OPEN", "FIXED", "CLOSED", "RETIRED")
 VP_STATUS = ("yes", "partly", "no", "simulated")
 VP_METHODS = 218                         # validation_plan.md is archived with 218 methods
 DESIGN_PY = "hardware/ref_design/board/design.py"
-DESIGN_PATHS = ("hardware/ref_design/board/design.py", "hardware/ref_design/board/placement.py",
-                "hardware/ref_design/board/lib/", "hardware/ref_design/case/case.scad")
-BASELINE_FOR = {"ORDER": ("board/design.py", "board/placement.py"), "CASE": ("case/case.scad",)}
+# What the ordered board is made from (O's sign-off objection, DEF-47): the data, the placement, the
+# library, the routed copper and the scripts that build, route, silk and export it, and the case.
+# A commit touching any of these after a release needs a change record (R6), and README.md's
+# design baseline names each one's git object (R7 and the structure check).
+BOARD_FILES = ("board/design.py", "board/placement.py", "board/lib", "board/battler.kicad_pcb",
+               "board/tools/last_route.ses", "board/tools/build_pcb.py", "board/tools/route.py",
+               "board/tools/silk.py", "board/tools/fab.py")
+CASE_FILES = ("case/case.scad",)
+DESIGN_PATHS = tuple("hardware/ref_design/" + p for p in BOARD_FILES + CASE_FILES)
+BASELINE_FOR = {"ORDER": BOARD_FILES, "CASE": CASE_FILES}
 EVIDENCE_DIR = "hardware/vv/evidence/"
 CLAUDE_TRAILER = re.compile(r"^(Co-Authored-By: Claude|Claude-Session:)", re.M | re.I)
 
@@ -100,9 +119,17 @@ ANY_ID = re.compile(r"(?<![\w-])(" + "|".join(RE[k] for k in ("REQ", "DF", "VER"
 VER_ID = re.compile(r"(?<![\w-])VER-\d{2,3}(?![\w-])")
 REQ_ID = re.compile(r"(?<![\w-])" + RE["REQ"] + r"(?![\w-])")
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+HASH = re.compile(r"\b[0-9a-f]{7,40}\b")
 TODAY = datetime.date.today()
 
 ERRORS, WARNINGS = [], []
+
+
+def retired_ok(where, rid, text):
+    """A RETIRED row names the commit that removed its subject, and that commit exists."""
+    hs = [h for h in HASH.findall(text or "") if resolve(h)]
+    if "RETIRED" not in (text or "") or not hs:
+        err(where, f"{rid}: RETIRED needs 'RETIRED in <commit>: <why>' naming a commit in this repository")
 
 
 def err(where, msg):
@@ -129,7 +156,8 @@ def git(*args):
     return r.returncode, r.stdout
 
 
-TRACKED = set(git("ls-files", "--cached", "--others", "--exclude-standard")[1].split("\n")) - {""}
+# committed or staged files only: a 'covers' glob must not be met by an untracked file (F's objection)
+TRACKED = set(git("ls-files", "--cached")[1].split("\n")) - {""}
 HEAD = git("rev-parse", "HEAD")[1].strip()
 _resolved, _diff, _lines, _anc, _msg, _blame, _design = {}, {}, {}, {}, {}, {}, {}
 
@@ -479,8 +507,8 @@ def parse_approvals():
             continue
         if dec not in want:
             err(w, f"{aid}: decision {dec!r} for {item}: want one of {want}")
-        if kind in ("DF", "W") and scope not in PHASES:
-            err(w, f"{aid}: {item} needs a scope phase (the last gate it holds for): one of {PHASES}")
+        if (kind in ("DF", "W") or dec == "DEFERRED") and scope not in PHASES:
+            err(w, f"{aid}: {item} {dec} needs a scope phase (the last gate it holds for): one of {PHASES}")
         if not who or who == "-" or "claude" in who.lower():
             err(w, f"{aid}: 'by' must name the person who decided (only Alex signs)")
         if not DATE.match(date):
@@ -546,6 +574,8 @@ def load():
             err(w, f"{r['id']}: Phase {f['Phase']!r} not in {PHASES}")
         if f.get("Status") and f["Status"] not in REQ_STATUS:
             err(w, f"{r['id']}: Status {f['Status']!r} not in {REQ_STATUS}")
+        if f.get("Status") == "RETIRED":
+            retired_ok(w, r["id"], "RETIRED " + f.get("Retired", ""))
         vb = f.get("Verified by", "")
         r["vers"] = VER_ID.findall(vb)
         r["children"] = [c for c in REQ_ID.findall(vb) if c.startswith(r["id"] + ".")]
@@ -597,6 +627,8 @@ def load():
             err(w, f"{v['id']}: {v['last_result']} must not carry a commit or date")
         if v["last_result"] == "CUT" and not v["evidence"]:
             err(w, f"{v['id']}: CUT needs its reason in the evidence column")
+        if v["last_result"] == "RETIRED":
+            retired_ok(w, v["id"], v["evidence"])
         if v["valid_days"] and not re.fullmatch(r"\d+", v["valid_days"]):
             err(w, f"{v['id']}: valid_days {v['valid_days']!r} is not a whole number of days")
         if v["needs"] and not re.search(r"\b\d+d\b", v["needs"]):
@@ -605,6 +637,9 @@ def load():
             warn(w, f"{v['id']}: PASS but 'needs' still lists {v['needs'][:40]!r}: clear it")
         v["cov"] = parse_covers(v["covers"])
         v["release"] = [s for k, s, _ in v["cov"] if k == "release"]
+        if v["last_result"] == "RETIRED":          # its subject is gone: nothing to cover or prove
+            vers[v["id"]] = v
+            continue
         for kind, spec, tok in v["cov"]:
             if kind == "glob":
                 g, rx = spec
@@ -634,6 +669,13 @@ def load():
                 err(w, f"{v['id']}: evidence file {tok} does not exist")
         tur_check(v)
         vers[v["id"]] = v
+
+    for r in reqs.values():
+        if r["f"].get("Status") in ("RETIRED", "REJECTED"):
+            continue
+        for t in r["vers"]:
+            if t in vers and vers[t]["last_result"] == "RETIRED":
+                err(r["_where"], f"{r['id']}: verified by {t}, which is RETIRED: name the check that replaced it")
 
     dfs = {}
     for d in read_csv("dfmea.csv", DF_COLS):
@@ -666,6 +708,9 @@ def load():
                 err(w, f"{d['id']}: {k} is empty")
         d["vers"] = VER_ID.findall(d["detection"])
         d["det"] = d["detects"].split()
+        d["live"] = d["status"] != "RETIRED"
+        if not d["live"]:
+            retired_ok(w, d["id"], d["action"])
         for t in d["det"]:
             if not VER_ID.fullmatch(t):
                 err(w, f"{d['id']}: detects token {t!r} is not a VER id")
@@ -675,7 +720,12 @@ def load():
 
     # DFMEA against the checks (O-2, O-26)
     for d in dfs.values():
-        w, live = d["_where"], [t for t in d["det"] if t in vers and vers[t]["last_result"] != "CUT"]
+        if not d["live"]:
+            continue
+        for t in d["det"]:
+            if t in vers and vers[t]["last_result"] == "RETIRED":
+                err(d["_where"], f"{d['id']}: detects {t}, which is RETIRED: name the check that replaced it")
+        w, live = d["_where"], [t for t in d["det"] if t in vers and vers[t]["last_result"] not in ("CUT", "RETIRED")]
         if not live and d["D"] != 10:
             err(w, f"{d['id']}: no live 'detects' check, so detection_rating must be 10 (it is {d['D']})")
         elif live and all(vers[t]["last_result"] == "NOT_BUILT" for t in live) and d["D"] < 8:
@@ -736,6 +786,8 @@ def load():
         if st not in DEF_STATUS:
             err(d["_where"], f"{d['id']}: Status must start with one of {DEF_STATUS}")
         d["vers"] = VER_ID.findall(d["f"].get("Check added or changed", ""))
+        if st == "RETIRED":
+            retired_ok(d["_where"], d["id"], d["f"].get("Status", ""))
         if st == "CLOSED" and not d["vers"]:
             err(d["_where"], f"{d['id']}: CLOSED with no VER in 'Check added or changed' (no defect closes without a check)")
 
@@ -745,6 +797,22 @@ def load():
     db = dict(reqs=reqs, dfs=dfs, vers=vers, vps=vps, defs=defs, crit=crit, waivers=waivers, recs=recs,
               approvals=approvals, eff=eff, baseline=parse_baseline())
 
+    base = db["baseline"]
+    if not base:
+        err("README.md", "no design baseline (## Design baseline, one '- `path` <git object>' line per design path)")
+    else:
+        miss = [p_ for p_ in DESIGN_PATHS if p_ not in base]
+        if miss:
+            err("README.md", "the design baseline does not name " + " ".join(miss))
+        drift = baseline_diff(db, None)
+        if drift:
+            err("README.md", "design baseline differs from HEAD at " + " ".join(drift) + ": the register describes "
+                             "another design (DEF-47); re-check the rows those files touch, then update the baseline")
+    for c in crit.values():
+        for t in c["needs"]:
+            if t in vers and vers[t]["last_result"] == "RETIRED":
+                err(c["_where"], f"{c['id']}: needs {t}, which is RETIRED: name the check that replaced it")
+    db["advisory_only"] = advisory_only(db)
     for v in vers.values():
         check_evidence(v, recs)
     for d in defs.values():
@@ -815,7 +883,9 @@ def tur_check(v):
 
 
 def check_evidence(v, recs):
-    """O-4, F-3, O-6: a PASS or FAIL rests on a saved output whose header matches the row."""
+    """O-4, F-3, O-6: a PASS or FAIL rests on a saved output whose header matches the row. Every
+    analysis (A) and every test (T) needs the header; an inspection or demonstration (I, D) with
+    no release may point at the inspected file itself."""
     if v["last_result"] not in ("PASS", "FAIL"):
         return
     w, ev = v["_where"], v["evidence"]
@@ -826,10 +896,10 @@ def check_evidence(v, recs):
     if not first.startswith("hardware/") or not os.path.isfile(os.path.join(ROOT, first)):
         err(w, f"{v['id']}: evidence must start with a file in the repository")
         return
-    if "A" not in v["method"] and not v["release"]:
+    if not ({"A", "T"} & set(v["method"].split("/"))) and not v["release"]:
         return
     if not first.startswith(EVIDENCE_DIR):
-        err(w, f"{v['id']}: an analysis or bench result needs its saved output under {EVIDENCE_DIR}")
+        err(w, f"{v['id']}: an analysis, a test or a bench result needs its saved output under {EVIDENCE_DIR}")
         return
     text = open(os.path.join(ROOT, first), encoding="utf-8", errors="replace").read()
     m = re.search(r"^COMMIT: ([0-9a-f]{7,40})\b", text, re.M)
@@ -853,9 +923,17 @@ def check_evidence(v, recs):
             err(w, f"{v['id']}: {first} does not name {r}'s fab zip sha256")
 
 
-def eff_req_status(db, rid):
+def eff_req_status(db, rid, phase=None):
+    """Alex's decision for a requirement; at a gate (phase given) a deferral counts only up to
+    the phase it names, after which the requirement is PROPOSED again."""
+    if db["reqs"].get(rid, {}).get("f", {}).get("Status") == "RETIRED" and rid not in db["eff"]:
+        return "RETIRED"
     a = db["eff"].get(rid)
-    return a["decision"] if a else "PROPOSED"
+    if not a:
+        return "PROPOSED"
+    if phase and a["decision"] == "DEFERRED" and not phase_le(phase, a["scope"]):
+        return "PROPOSED"
+    return a["decision"]
 
 
 def eff_df_accept(db, did):
@@ -867,7 +945,9 @@ def cross_check_approvals(db):
     """O-45: statuses that need Alex must match a line he committed in APPROVALS.md."""
     for r in db["reqs"].values():
         st, eff = r["f"].get("Status"), eff_req_status(db, r["id"])
-        if st != "PROPOSED" and st != eff:
+        if st == "RETIRED" and eff != "RETIRED":
+            err(r["_where"], f"{r['id']}: RETIRED, but Alex decided it ({db['eff'][r['id']]['id']}): he rejects it instead")
+        elif st != "PROPOSED" and st != eff:
             err(r["_where"], f"{r['id']}: Status {st} but releases/APPROVALS.md "
                              f"{'says ' + eff if eff != 'PROPOSED' else 'has no committed line for it'}")
         elif st == "PROPOSED" and eff != "PROPOSED":
@@ -893,16 +973,30 @@ def cross_check_approvals(db):
             warn(a["_where"], f"{a['id']} ({a['item']} {a['decision']}) is not committed by Alex yet: it does not count")
 
 
+def binding_reach(db):
+    """Checks a requirement (not REJECTED or RETIRED: a deferral ends) or a live H row lists."""
+    out = set()
+    for r in db["reqs"].values():
+        if eff_req_status(db, r["id"]) not in ("REJECTED", "RETIRED"):
+            out |= set(r["vers"])
+    for d in db["dfs"].values():
+        if d["action_priority"] == "H" and d["live"]:
+            out |= set(d["det"])
+    return out
+
+
+def advisory_only(db):
+    """Checks that only ADVISORY criteria name (F-32: VER-40): printed, never counted by PHASE:."""
+    named, adv = binding_reach(db), set()
+    for c in db["crit"].values():
+        (adv if c["advisory"] else named).update(t for t in c["needs"] if t.startswith("VER-"))
+    return adv - named
+
+
 def check_reach(db):
     """O-1: a check must be reached by a gate, a requirement or an H row no later than its phase."""
     vers, crit = db["vers"], db["crit"]
-    reached = set()
-    for r in db["reqs"].values():
-        if eff_req_status(db, r["id"]) not in ("REJECTED", "DEFERRED"):
-            reached |= set(r["vers"])
-    for d in db["dfs"].values():
-        if d["action_priority"] == "H":
-            reached |= set(d["det"])
+    reached = binding_reach(db) | db["advisory_only"]
     for c in crit.values():
         if c["advisory"]:
             continue
@@ -914,7 +1008,7 @@ def check_reach(db):
             if vid in c["needs"] or any(t.startswith("PHASE:") and phase_le(v["phase"], t[6:]) for t in c["needs"]):
                 reached.add(vid)
     for vid, v in vers.items():
-        if v["last_result"] != "CUT" and vid not in reached:
+        if v["last_result"] not in ("CUT", "RETIRED") and vid not in reached:
             err(v["_where"], f"{vid}: phase {v['phase']}, but no gate criterion at or before {v['phase']}, "
                              "requirement or H-priority risk reaches it: that gate can pass without it")
 
@@ -927,7 +1021,7 @@ def check_releases(db):
             if a["board"] == b["board"] and a["bom_sha"] and b["bom_sha"] and a["board_rev"] and b["board_rev"]:
                 if a["bom_sha"] != b["bom_sha"] and a["board_rev"] == b["board_rev"]:
                     err(b["_where"], f"{b['id']}: its BOM differs from {a['id']}'s but BOARD_REV is still "
-                                     f"{b['board_rev']}: bump the strap (R48-R51) with the BOM change")
+                                     f"{b['board_rev']}: bump design.py's BOARD_REV (the silkscreen's revision) with the BOM change")
         if a["commit"] and not resolve(a["commit"]):
             err(a["_where"], f"{a['id']}: commit {a['commit']!r} is not in this repository")
 
@@ -986,15 +1080,16 @@ def phase_le(a, b):
 def req_scope(db, board):
     """Requirements a board's gate evaluates (O-7)."""
     reqs = db["reqs"]
+    live = {k: r for k, r in reqs.items() if r["f"].get("Status") != "RETIRED"}
     if board == "prod_board":
-        return {k: r for k, r in reqs.items() if r["f"].get("Board") == "prod_board"}
-    return {k: r for k, r in reqs.items() if r["f"].get("Board") in ("ref_design", "both")}
+        return {k: r for k, r in live.items() if r["f"].get("Board") == "prod_board"}
+    return {k: r for k, r in live.items() if r["f"].get("Board") in ("ref_design", "both")}
 
 
 def df_scope(db, board):
     if board == "prod_board":
-        return [d for d in db["dfs"].values() if d["board"] == "prod_board"]
-    return [d for d in db["dfs"].values() if d["board"] in ("ref_design", "both")]
+        return [d for d in db["dfs"].values() if d["board"] == "prod_board" and d["live"]]
+    return [d for d in db["dfs"].values() if d["board"] in ("ref_design", "both") and d["live"]]
 
 
 def coverage(db):
@@ -1004,6 +1099,8 @@ def coverage(db):
     named = set()
     rx = re.compile(r"\b([A-Z]{1,3})(\d{1,3})(?:\s*-\s*([A-Z]{1,3})?(\d{1,3}))?\b")
     for d in db["dfs"].values():
+        if not d["live"]:
+            continue
         text = " ".join(d[k] for k in ("item", "function", "failure_mode", "effect", "cause", "prevention", "action"))
         for m in rx.finditer(text):
             a, n1, b, n2 = m.groups()
@@ -1067,26 +1164,31 @@ def report(db, verbose):
         show(f"in scope for {b} with no check for it",
              [r for r, q in scope.items() if not q["alloc"].get(b) and not any(
                  for_board(vers[v]["board"], b) for v in q["vers"] if v in vers)], verbose)
+    live = {k: q for k, q in reqs.items() if q["f"].get("Status") != "RETIRED"}
     show("product requirements not yet allocated to prod_board (Alex writes the .P ones)",
-         [r for r, q in reqs.items() if q["f"].get("Board") == "both" and "." not in r], verbose, limit=12)
-    show("no listed check has passed", [r for r in reqs if reqs[r]["vers"] and not any(
-        vers.get(v, {}).get("last_result") == "PASS" for v in reqs[r]["vers"])], verbose)
+         [r for r, q in live.items() if q["f"].get("Board") == "both" and "." not in r], verbose, limit=12)
+    show("no listed check has passed", [r for r in live if live[r]["vers"] and not any(
+        vers.get(v, {}).get("last_result") == "PASS" for v in live[r]["vers"])], verbose)
     show("statement has no number (INCOSE: state a value and tolerance)",
-         [r for r in reqs if not re.search(r"\d", reqs[r]["f"].get("Statement", ""))], verbose)
+         [r for r in live if not re.search(r"\d", live[r]["f"].get("Statement", ""))], verbose)
+    show("RETIRED (their subject left the design)", [r for r in reqs if r not in live], verbose)
     print("DFMEA")
-    hi = [d for d in dfs.values() if d["action_priority"] == "H"]
+    show("RETIRED rows", [d["id"] for d in dfs.values() if not d["live"]], verbose)
+    hi = [d for d in dfs.values() if d["action_priority"] == "H" and d["live"]]
     show("H rows", [d["id"] for d in hi], verbose)
     show("H rows with no 'detects' check", [d["id"] for d in hi if not d["det"]], verbose)
     show("H rows whose 'detects' checks have not all passed on fresh evidence",
          [d["id"] for d in hi if d["det"] and not all(
              vers.get(v, {}).get("last_result") == "PASS" and not staleness(vers[v], db) for v in d["det"])
           and not eff_df_accept(db, d["id"])], verbose)
-    show("severity 9-10 rows", [d["id"] for d in dfs.values() if d["S"] >= 9], verbose)
+    show("severity 9-10 rows", [d["id"] for d in dfs.values() if d["S"] >= 9 and d["live"]], verbose)
     want, miss = coverage(db)
     show(f"design.py parts and contacts named in no row (of {len(want)})", miss, verbose)
     print("checks")
-    for res in ("FAIL", "NOT_RUN", "NOT_BUILT", "CUT"):
+    for res in ("FAIL", "NOT_RUN", "NOT_BUILT", "CUT", "RETIRED"):
         show(res, [v for v in vers if vers[v]["last_result"] == res], verbose)
+    show("advisory only (named only by ADVISORY criteria; PHASE: does not count them)",
+         sorted(db["advisory_only"]), verbose)
     stale = [(v, staleness(vers[v], db)) for v in vers]
     stale = [(v, s) for v, s in stale if s]
     print(f"  stale evidence: {len(stale)}")
@@ -1098,6 +1200,8 @@ def report(db, verbose):
     print("defects")
     show("OPEN", [d for d in defs if defs[d]["status"] == "OPEN"], verbose)
     show("FIXED but no check yet passes (cannot close)", [d for d in defs if defs[d]["status"] == "FIXED"], verbose)
+    show("RETIRED (the part or function it concerned left the design)",
+         [d for d in defs if defs[d]["status"] == "RETIRED"], verbose)
     if WARNINGS:
         print(f"warnings: {len(WARNINGS)}")
         for wn in WARNINGS if verbose else WARNINGS[:15]:
@@ -1142,7 +1246,13 @@ def gate(db, phase, board, verbose):
         if v["last_result"] != "PASS":
             return False, f"{vid} {v['last_result']}"
         s = staleness(v, db, dirty)
-        return (False, f"{vid} stale ({s})") if s else (True, "")
+        if s:
+            return False, f"{vid} stale ({s})"
+        # O's objection: at DVT and PVT a bench result on the earlier spin's units does not count
+        if phase in ("DVT", "PVT") and "T" in v["method"].split("/") and phase_le("EVT", v["phase"]) \
+                and not any(r.endswith("-" + phase) for r in v["release"]):
+            return False, f"{vid} covers no {phase} release (its result is from {' '.join(v['release']) or 'no release'})"
+        return True, ""
 
     def df_ok(d):
         acc = eff_df_accept(db, d["id"])
@@ -1161,11 +1271,12 @@ def gate(db, phase, board, verbose):
         if tok.startswith("PHASE:"):
             p = tok.split(":")[1]
             bad = [v for v in vers if for_board(vers[v]["board"], board) and phase_le(vers[v]["phase"], p)
-                   and vers[v]["last_result"] != "CUT" and not ver_ok(v)[0]]
+                   and vers[v]["last_result"] not in ("CUT", "RETIRED") and v not in db["advisory_only"]
+                   and not ver_ok(v)[0]]
             return (not bad), (f"{len(bad)} checks at or before {p} not passing: " + " ".join(bad[:8])
                                + (" ..." if len(bad) > 8 else "")) if bad else ""
         if tok == "DEFECTS:CLOSED":
-            bad = [d for d in defs if for_board(defs[d]["board"], board) and defs[d]["status"] != "CLOSED"]
+            bad = [d for d in defs if for_board(defs[d]["board"], board) and defs[d]["status"] not in ("CLOSED", "RETIRED")]
             return (not bad), (f"not CLOSED: {' '.join(bad[:8])}" + (" ..." if len(bad) > 8 else "")) if bad else ""
         if tok == "DFMEA:COVERAGE":
             if board != "ref_design":
@@ -1182,8 +1293,8 @@ def gate(db, phase, board, verbose):
             r = reqs.get(tok)
             if r is None:
                 return False, f"{tok} undefined"
-            if eff_req_status(db, tok) != "APPROVED":
-                return False, f"{tok} {eff_req_status(db, tok)}"
+            if eff_req_status(db, tok, phase) != "APPROVED":
+                return False, f"{tok} {eff_req_status(db, tok, phase)}"
             target = reqs.get(r["alloc"].get(board), r)
             bad = [v for v in target["vers"] if v in vers and for_board(vers[v]["board"], board)
                    and phase_le(vers[v]["phase"], phase) and not ver_ok(v)[0]]
@@ -1220,12 +1331,18 @@ def gate(db, phase, board, verbose):
             results.append((cid, "FAIL" if reasons else "PASS", reasons))
 
     mine = req_scope(db, board)
-    prop = [k for k in mine if eff_req_status(db, k) == "PROPOSED"]
-    results.append(("R1 requirements approved", "FAIL" if prop else "PASS",
-                     [f"{len(prop)} PROPOSED: " + " ".join(prop[:10]) + (" ..." if len(prop) > 10 else "")] if prop else []))
+    prop = [k for k in mine if eff_req_status(db, k, phase) == "PROPOSED"]
+    ended = [k for k in prop if eff_req_status(db, k) == "DEFERRED"]
+    rs = []
+    if prop:
+        rs.append(f"{len(prop)} PROPOSED: " + " ".join(prop[:10]) + (" ..." if len(prop) > 10 else ""))
+    if ended:
+        rs.append("deferral ended before " + phase + ": " + " ".join(
+            f"{k} ({db['eff'][k]['id']}, to {db['eff'][k]['scope']})" for k in ended[:8]))
+    results.append(("R1 requirements approved", "FAIL" if prop else "PASS", rs))
     nover, notpass = [], []
     for k, r in mine.items():
-        if eff_req_status(db, k) in ("REJECTED", "DEFERRED") or r["alloc"].get(board):
+        if eff_req_status(db, k, phase) in ("REJECTED", "DEFERRED") or r["alloc"].get(board):
             continue                                   # a split requirement is checked through its child
         vs = [v for v in r["vers"] if v in vers and for_board(vers[v]["board"], board)]
         if not vs:
@@ -1241,15 +1358,18 @@ def gate(db, phase, board, verbose):
                   + (" ..." if len(notpass) > 10 else ""))
     results.append(("R2 requirements verified", "FAIL" if rs else "PASS", rs))
     bad = [d["id"] for d in df_scope(db, board) if d["action_priority"] == "H" and not df_ok(d)[0]]
+    ended = [f"{d} accepted only up to {eff_df_accept(db, d)['scope']} ({eff_df_accept(db, d)['id']})"
+             for d in bad if eff_df_accept(db, d)]
     results.append(("R3 high-priority risks covered", "FAIL" if bad else "PASS",
-                    [f"{len(bad)} H rows neither ACCEPTED for {phase} nor DONE with every 'detects' check passing: "
-                     + " ".join(bad[:12]) + (" ..." if len(bad) > 12 else "")] if bad else []))
+                    ([f"{len(bad)} H rows neither ACCEPTED for {phase} nor DONE with every 'detects' check passing: "
+                      + " ".join(bad[:12]) + (" ..." if len(bad) > 12 else "")] + (["acceptance ended: " + "; ".join(ended)]
+                                                                              if ended else [])) if bad else []))
     mydefs = [d for d in defs if for_board(defs[d]["board"], board)]
     if phase in ("ORDER", "CASE", "EVT"):
         bad = [d for d in mydefs if defs[d]["status"] == "OPEN"]
         results.append(("R4 no open defects", "FAIL" if bad else "PASS", [f"OPEN: {' '.join(bad)}"] if bad else []))
     else:
-        bad = [d for d in mydefs if defs[d]["status"] != "CLOSED"]
+        bad = [d for d in mydefs if defs[d]["status"] not in ("CLOSED", "RETIRED")]
         results.append(("R4 every defect closed", "FAIL" if bad else "PASS", [f"not CLOSED: {' '.join(bad)}"] if bad else []))
     dirty_hits = sorted({f for v in vers.values() if v["last_result"] == "PASS"
                          for k, s, _ in v["cov"] if k == "glob" for f in dirty if s[0].match(f)})
@@ -1276,7 +1396,7 @@ def gate(db, phase, board, verbose):
     print(f"gate {phase} for {board} at {HEAD[:7]}")
     for cid, state, reasons in results:
         print(f"  {state:4}  {cid}" + (f"  {crit[cid]['text'][:70]}" if cid in crit else ""))
-        for r in reasons if (verbose or state in ("FAIL", "INFO")) else []:
+        for r in reasons if (verbose or state in ("FAIL", "INFO")) else [x for x in reasons if x.startswith("waived by")]:
             print(f"          {r}")
     counted = [s for _, s, _ in results if s in ("PASS", "FAIL")]
     n_bad = counted.count("FAIL")
